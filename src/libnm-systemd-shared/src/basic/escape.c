@@ -116,7 +116,7 @@ int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit, 
          * instead be copied directly.
          */
 
-        if (length != (size_t) -1 && length < 1)
+        if (length != SIZE_MAX && length < 1)
                 return -EINVAL;
 
         switch (p[0]) {
@@ -161,7 +161,7 @@ int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit, 
                 /* hexadecimal encoding */
                 int a, b;
 
-                if (length != (size_t) -1 && length < 3)
+                if (length != SIZE_MAX && length < 3)
                         return -EINVAL;
 
                 a = unhexchar(p[1]);
@@ -189,7 +189,7 @@ int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit, 
                 size_t i;
                 uint32_t c;
 
-                if (length != (size_t) -1 && length < 5)
+                if (length != SIZE_MAX && length < 5)
                         return -EINVAL;
 
                 for (i = 0; i < 4; i++) {
@@ -216,7 +216,7 @@ int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit, 
                 size_t i;
                 char32_t c;
 
-                if (length != (size_t) -1 && length < 9)
+                if (length != SIZE_MAX && length < 9)
                         return -EINVAL;
 
                 for (i = 0; i < 8; i++) {
@@ -253,7 +253,7 @@ int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit, 
                 int a, b, c;
                 char32_t m;
 
-                if (length != (size_t) -1 && length < 3)
+                if (length != SIZE_MAX && length < 3)
                         return -EINVAL;
 
                 a = unoctchar(p[0]);

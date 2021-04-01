@@ -29,7 +29,7 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
 #define _DEFINE_STRING_TABLE_LOOKUP_FROM_STRING_WITH_BOOLEAN(name,type,yes,scope) \
         scope type name##_from_string(const char *s) {                  \
                 if (!s)                                                 \
-                        return -1;                                      \
+                        return -EINVAL;                                 \
                 int b = parse_boolean(s);                               \
                 if (b == 0)                                             \
                         return (type) 0;                                \
@@ -60,14 +60,16 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
                 unsigned u = 0;                                         \
                 type i;                                                 \
                 if (!s)                                                 \
-                        return (type) -1;                               \
+                        return -EINVAL;                                 \
                 i = (type) string_table_lookup(name##_table, ELEMENTSOF(name##_table), s); \
                 if (i >= 0)                                             \
                         return i;                                       \
-                if (safe_atou(s, &u) >= 0 && u <= max)                  \
-                        return (type) u;                                \
-                return (type) -1;                                       \
-        }                                                               \
+                if (safe_atou(s, &u) < 0)                               \
+                        return -EINVAL;                                 \
+                if (u > max)                                            \
+                        return -EINVAL;                                 \
+                return (type) u;                                        \
+        }
 
 #define _DEFINE_STRING_TABLE_LOOKUP(name,type,scope)                    \
         _DEFINE_STRING_TABLE_LOOKUP_TO_STRING(name,type,scope)          \
@@ -79,12 +81,15 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
 
 #define DEFINE_STRING_TABLE_LOOKUP(name,type) _DEFINE_STRING_TABLE_LOOKUP(name,type,)
 #define DEFINE_STRING_TABLE_LOOKUP_TO_STRING(name,type) _DEFINE_STRING_TABLE_LOOKUP_TO_STRING(name,type,)
+#define DEFINE_STRING_TABLE_LOOKUP_FROM_STRING(name,type) _DEFINE_STRING_TABLE_LOOKUP_FROM_STRING(name,type,)
 #define DEFINE_PRIVATE_STRING_TABLE_LOOKUP(name,type) _DEFINE_STRING_TABLE_LOOKUP(name,type,static)
 #define DEFINE_PRIVATE_STRING_TABLE_LOOKUP_TO_STRING(name,type) _DEFINE_STRING_TABLE_LOOKUP_TO_STRING(name,type,static)
 #define DEFINE_PRIVATE_STRING_TABLE_LOOKUP_FROM_STRING(name,type) _DEFINE_STRING_TABLE_LOOKUP_FROM_STRING(name,type,static)
 
 #define DEFINE_STRING_TABLE_LOOKUP_WITH_BOOLEAN(name,type,yes) _DEFINE_STRING_TABLE_LOOKUP_WITH_BOOLEAN(name,type,yes,)
 #define DEFINE_PRIVATE_STRING_TABLE_LOOKUP_WITH_BOOLEAN(name,type,yes) _DEFINE_STRING_TABLE_LOOKUP_WITH_BOOLEAN(name,type,yes,static)
+#define DEFINE_PRIVATE_STRING_TABLE_LOOKUP_FROM_STRING_WITH_BOOLEAN(name,type,yes) \
+        _DEFINE_STRING_TABLE_LOOKUP_FROM_STRING_WITH_BOOLEAN(name,type,yes,static)
 
 /* For string conversions where numbers are also acceptable */
 #define DEFINE_STRING_TABLE_LOOKUP_WITH_FALLBACK(name,type,max)         \
@@ -98,9 +103,8 @@ ssize_t string_table_lookup(const char * const *table, size_t len, const char *k
 
 #define DUMP_STRING_TABLE(name,type,max)                                \
         do {                                                            \
-                type _k;                                                \
                 flockfile(stdout);                                      \
-                for (_k = 0; _k < (max); _k++) {                        \
+                for (type _k = 0; _k < (max); _k++) {                   \
                         const char *_t;                                 \
                         _t = name##_to_string(_k);                      \
                         if (!_t)                                        \

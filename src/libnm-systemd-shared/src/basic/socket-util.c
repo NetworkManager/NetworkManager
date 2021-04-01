@@ -35,6 +35,7 @@
 #include "string-table.h"
 #include "string-util.h"
 #include "strv.h"
+#include "sysctl-util.h"
 #include "user-util.h"
 #include "utf8.h"
 
@@ -282,10 +283,48 @@ const char* socket_address_get_path(const SocketAddress *a) {
 }
 
 bool socket_ipv6_is_supported(void) {
-        if (access("/proc/net/if_inet6", F_OK) != 0)
+        static int cached = -1;
+
+        if (cached < 0) {
+
+                if (access("/proc/net/if_inet6", F_OK) < 0) {
+
+                        if (errno != ENOENT) {
+                                log_debug_errno(errno, "Unexpected error when checking whether /proc/net/if_inet6 exists: %m");
+                                return false;
+                        }
+
+                        cached = false;
+                } else
+                        cached = true;
+        }
+
+        return cached;
+}
+
+bool socket_ipv6_is_enabled(void) {
+        _cleanup_free_ char *v = NULL;
+        int r;
+
+        /* Much like socket_ipv6_is_supported(), but also checks that the sysctl that disables IPv6 on all
+         * interfaces isn't turned on */
+
+        if (!socket_ipv6_is_supported())
                 return false;
 
-        return true;
+        r = sysctl_read_ip_property(AF_INET6, "all", "disable_ipv6", &v);
+        if (r < 0) {
+                log_debug_errno(r, "Unexpected error reading 'net.ipv6.conf.all.disable_ipv6' sysctl: %m");
+                return true;
+        }
+
+        r = parse_boolean(v);
+        if (r < 0) {
+                log_debug_errno(r, "Failed to pare 'net.ipv6.conf.all.disable_ipv6' sysctl: %m");
+                return true;
+        }
+
+        return !r;
 }
 
 bool socket_address_matches_fd(const SocketAddress *a, int fd) {
@@ -726,6 +765,10 @@ bool ifname_valid_full(const char *p, IfnameValidFlags flags) {
         if (isempty(p))
                 return false;
 
+        /* A valid ifindex? If so, it's valid iff IFNAME_VALID_NUMERIC is set */
+        if (parse_ifindex(p) >= 0)
+                return flags & IFNAME_VALID_NUMERIC;
+
         if (flags & IFNAME_VALID_ALTERNATIVE) {
                 if (strlen(p) >= ALTIFNAMSIZ)
                         return false;
@@ -737,6 +780,11 @@ bool ifname_valid_full(const char *p, IfnameValidFlags flags) {
         if (dot_or_dot_dot(p))
                 return false;
 
+        /* Let's refuse "all" and "default" as interface name, to avoid collisions with the special sysctl
+         * directories /proc/sys/net/{ipv4,ipv6}/conf/{all,default} */
+        if (STR_IN_SET(p, "all", "default"))
+                return false;
+
         for (const char *t = p; *t; t++) {
                 if ((unsigned char) *t >= 127U)
                         return false;
@@ -744,20 +792,19 @@ bool ifname_valid_full(const char *p, IfnameValidFlags flags) {
                 if ((unsigned char) *t <= 32U)
                         return false;
 
-                if (IN_SET(*t, ':', '/'))
+                if (IN_SET(*t,
+                           ':',  /* colons are used by the legacy "alias" interface logic */
+                           '/',  /* slashes cannot work, since we need to use network interfaces in sysfs paths, and in paths slashes are separators */
+                           '%')) /* %d is used in the kernel's weird foo%d format string naming feature which we really really don't want to ever run into by accident */
                         return false;
 
                 numeric = numeric && (*t >= '0' && *t <= '9');
         }
 
-        if (numeric) {
-                if (!(flags & IFNAME_VALID_NUMERIC))
-                        return false;
-
-                /* Verify that the number is well-formatted and in range. */
-                if (parse_ifindex(p) < 0)
-                        return false;
-        }
+        /* It's fully numeric but didn't parse as valid ifindex above? if so, it must be too large or zero or
+         * so, let's refuse that. */
+        if (numeric)
+                return false;
 
         return true;
 }

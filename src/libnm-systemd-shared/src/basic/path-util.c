@@ -595,26 +595,25 @@ char* path_join_internal(const char *first, ...) {
 
 #if 0 /* NM_IGNORED */
 static int check_x_access(const char *path, int *ret_fd) {
-        if (ret_fd) {
-                _cleanup_close_ int fd = -1;
-                int r;
+        _cleanup_close_ int fd = -1;
+        int r;
 
-                /* We need to use O_PATH because there may be executables for which we have only exec
-                 * permissions, but not read (usually suid executables). */
-                fd = open(path, O_PATH|O_CLOEXEC);
-                if (fd < 0)
-                        return -errno;
+        /* We need to use O_PATH because there may be executables for which we have only exec
+         * permissions, but not read (usually suid executables). */
+        fd = open(path, O_PATH|O_CLOEXEC);
+        if (fd < 0)
+                return -errno;
 
-                r = access_fd(fd, X_OK);
-                if (r < 0)
-                        return r;
+        r = fd_verify_regular(fd);
+        if (r < 0)
+                return r;
 
+        r = access_fd(fd, X_OK);
+        if (r < 0)
+                return r;
+
+        if (ret_fd)
                 *ret_fd = TAKE_FD(fd);
-        } else {
-                /* Let's optimize things a bit by not opening the file if we don't need the fd. */
-                if (access(path, X_OK) < 0)
-                        return -errno;
-        }
 
         return 0;
 }
@@ -672,32 +671,20 @@ int find_executable_full(const char *name, bool use_path_envvar, char **ret_file
                         return -ENOMEM;
 
                 r = check_x_access(j, ret_fd ? &fd : NULL);
-                if (r >= 0) {
-                        _cleanup_free_ char *with_dash;
-
-                        with_dash = strjoin(j, "/");
-                        if (!with_dash)
-                                return -ENOMEM;
-
-                        /* If this passes, it must be a directory, and so should be skipped. */
-                        if (access(with_dash, X_OK) >= 0)
-                                continue;
-
-                        /* We can't just `continue` inverting this case, since we need to update last_error. */
-                        if (errno == ENOTDIR) {
-                                /* Found it! */
-                                if (ret_filename)
-                                        *ret_filename = path_simplify(TAKE_PTR(j), false);
-                                if (ret_fd)
-                                        *ret_fd = TAKE_FD(fd);
-
-                                return 0;
-                        }
+                if (r < 0) {
+                        /* PATH entries which we don't have access to are ignored, as per tradition. */
+                        if (r != -EACCES)
+                                last_error = r;
+                        continue;
                 }
 
-                /* PATH entries which we don't have access to are ignored, as per tradition. */
-                if (errno != EACCES)
-                        last_error = -errno;
+                /* Found it! */
+                if (ret_filename)
+                        *ret_filename = path_simplify(TAKE_PTR(j), false);
+                if (ret_fd)
+                        *ret_fd = TAKE_FD(fd);
+
+                return 0;
         }
 
         return last_error;
@@ -774,38 +761,6 @@ int fsck_exists(const char *fstype) {
         return executable_is_good(checker);
 }
 
-int parse_path_argument_and_warn(const char *path, bool suppress_root, char **arg) {
-        char *p;
-        int r;
-
-        /*
-         * This function is intended to be used in command line
-         * parsers, to handle paths that are passed in. It makes the
-         * path absolute, and reduces it to NULL if omitted or
-         * root (the latter optionally).
-         *
-         * NOTE THAT THIS WILL FREE THE PREVIOUS ARGUMENT POINTER ON
-         * SUCCESS! Hence, do not pass in uninitialized pointers.
-         */
-
-        if (isempty(path)) {
-                *arg = mfree(*arg);
-                return 0;
-        }
-
-        r = path_make_absolute_cwd(path, &p);
-        if (r < 0)
-                return log_error_errno(r, "Failed to parse path \"%s\" and make it absolute: %m", path);
-
-        path_simplify(p, false);
-        if (suppress_root && empty_or_root(p))
-                p = mfree(p);
-
-        free_and_replace(*arg, p);
-
-        return 0;
-}
-
 char* dirname_malloc(const char *path) {
         char *d, *dir, *dir2;
 
@@ -845,6 +800,8 @@ const char *last_path_component(const char *path) {
          *    Also, the empty string is mapped to itself.
          *
          * This is different than basename(), which returns "" when a trailing slash is present.
+         *
+         * This always succeeds (except if you pass NULL in which case it returns NULL, too).
          */
 
         unsigned l, k;
@@ -870,24 +827,35 @@ const char *last_path_component(const char *path) {
 
 int path_extract_filename(const char *p, char **ret) {
         _cleanup_free_ char *a = NULL;
-        const char *c, *e = NULL, *q;
+        const char *c;
+        size_t n;
 
         /* Extracts the filename part (i.e. right-most component) from a path, i.e. string that passes
-         * filename_is_valid(). A wrapper around last_path_component(), but eats up trailing slashes. */
+         * filename_is_valid(). A wrapper around last_path_component(), but eats up trailing
+         * slashes. Returns:
+         *
+         * -EINVAL        → if the passed in path is not a valid path
+         * -EADDRNOTAVAIL → if only a directory was specified, but no filename, i.e. the root dir itself is specified
+         * -ENOMEM        → no memory
+         *
+         * Returns >= 0 on success. If the input path has a trailing slash, returns O_DIRECTORY, to indicate
+         * the referenced file must be a directory.
+         *
+         * This function guarantees to return a fully valid filename, i.e. one that passes
+         * filename_is_valid() – this means "." and ".." are not accepted. */
 
-        if (!p)
+        if (!path_is_valid(p))
                 return -EINVAL;
+
+        /* Special case the root dir, because in that case we simply have no filename, but
+         * last_path_component() won't complain */
+        if (path_equal(p, "/"))
+                return -EADDRNOTAVAIL;
 
         c = last_path_component(p);
+        n = strcspn(c, "/");
 
-        for (q = c; *q != 0; q++)
-                if (*q != '/')
-                        e = q + 1;
-
-        if (!e) /* no valid character? */
-                return -EINVAL;
-
-        a = strndup(c, e - c);
+        a = strndup(c, n);
         if (!a)
                 return -ENOMEM;
 
@@ -895,7 +863,48 @@ int path_extract_filename(const char *p, char **ret) {
                 return -EINVAL;
 
         *ret = TAKE_PTR(a);
+        return c[n] == '/' ? O_DIRECTORY : 0;
+}
 
+int path_extract_directory(const char *p, char **ret) {
+        _cleanup_free_ char *a = NULL;
+        const char *c;
+
+        /* The inverse of path_extract_filename(), i.e. returns the directory path prefix. Returns:
+         *
+         * -EINVAL        → if the passed in path is not a valid path
+         * -EDESTADDRREQ  → if no directory was specified in the passed in path, i.e. only a filename was passed
+         * -EADDRNOTAVAIL → if the passed in parameter had no filename but did have a directory, i.e. the root dir itself was specified
+         * -ENOMEM        → no memory (surprise!)
+         *
+         * This function guarantees to return a fully valid path, i.e. one that passes path_is_valid().
+         */
+
+        if (!path_is_valid(p))
+                return -EINVAL;
+
+        /* Special case the root dir, because otherwise for an input of "///" last_path_component() returns
+         * the pointer to the last slash only, which might be seen as a valid path below. */
+        if (path_equal(p, "/"))
+                return -EADDRNOTAVAIL;
+
+        c = last_path_component(p);
+
+        /* Delete trailing slashes, but keep one */
+        while (c > p+1 && c[-1] == '/')
+                c--;
+
+        if (p == c) /* No path whatsoever? Then return a recognizable error */
+                return -EDESTADDRREQ;
+
+        a = strndup(p, c - p);
+        if (!a)
+                return -ENOMEM;
+
+        if (!path_is_valid(a))
+                return -EINVAL;
+
+        *ret = TAKE_PTR(a);
         return 0;
 }
 #endif /* NM_IGNORED */
@@ -913,7 +922,7 @@ bool filename_is_valid(const char *p) {
         if (*e != 0)
                 return false;
 
-        if (e - p > FILENAME_MAX) /* FILENAME_MAX is counted *without* the trailing NUL byte */
+        if (e - p > NAME_MAX) /* NAME_MAX is counted *without* the trailing NUL byte */
                 return false;
 
         return true;
@@ -924,10 +933,25 @@ bool path_is_valid(const char *p) {
         if (isempty(p))
                 return false;
 
-        if (strlen(p) >= PATH_MAX) /* PATH_MAX is counted *with* the trailing NUL byte */
-                return false;
+        for (const char *e = p;;) {
+                size_t n;
 
-        return true;
+                /* Skip over slashes */
+                e += strspn(e, "/");
+                if (e - p >= PATH_MAX) /* Already reached the maximum length for a path? (PATH_MAX is counted
+                                        * *with* the trailing NUL byte) */
+                        return false;
+                if (*e == 0)           /* End of string? Yay! */
+                        return true;
+
+                /* Skip over one component */
+                n = strcspn(e, "/");
+                if (n > NAME_MAX)      /* One component larger than NAME_MAX? (NAME_MAX is counted *without* the
+                                        * trailing NUL byte) */
+                        return false;
+
+                e += n;
+        }
 }
 
 bool path_is_normalized(const char *p) {

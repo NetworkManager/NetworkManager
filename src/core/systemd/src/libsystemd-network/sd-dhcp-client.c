@@ -276,7 +276,6 @@ int sd_dhcp_client_set_request_address(
 }
 
 int sd_dhcp_client_set_ifindex(sd_dhcp_client *client, int ifindex) {
-
         assert_return(client, -EINVAL);
         assert_return(IN_SET(client->state, DHCP_STATE_INIT, DHCP_STATE_STOPPED), -EBUSY);
         assert_return(ifindex > 0, -EINVAL);
@@ -350,13 +349,14 @@ int sd_dhcp_client_get_client_id(
         assert_return(data, -EINVAL);
         assert_return(data_len, -EINVAL);
 
-        *type = 0;
-        *data = NULL;
-        *data_len = 0;
         if (client->client_id_len) {
                 *type = client->client_id.type;
                 *data = client->client_id.raw.data;
                 *data_len = client->client_id_len - sizeof(client->client_id.type);
+        } else {
+                *type = 0;
+                *data = NULL;
+                *data_len = 0;
         }
 
         return 0;
@@ -578,22 +578,26 @@ int sd_dhcp_client_set_mud_url(
 
 int sd_dhcp_client_set_user_class(
                 sd_dhcp_client *client,
-                const char* const* user_class) {
+                char * const *user_class) {
 
-        _cleanup_strv_free_ char **s = NULL;
-        char **p;
+        char * const *p;
+        char **s = NULL;
 
-        STRV_FOREACH(p, (char **) user_class)
-                if (strlen(*p) > 255)
-                        return -ENAMETOOLONG;
+        assert_return(client, -EINVAL);
+        assert_return(!strv_isempty(user_class), -EINVAL);
 
-        s = strv_copy((char **) user_class);
+        STRV_FOREACH(p, user_class) {
+                size_t n = strlen(*p);
+
+                if (n > 255 || n == 0)
+                        return -EINVAL;
+        }
+
+        s = strv_copy(user_class);
         if (!s)
                 return -ENOMEM;
 
-        client->user_class = TAKE_PTR(s);
-
-        return 0;
+        return strv_free_and_replace(client->user_class, s);
 }
 
 int sd_dhcp_client_set_client_port(
@@ -630,11 +634,7 @@ int sd_dhcp_client_add_option(sd_dhcp_client *client, sd_dhcp_option *v) {
         assert_return(client, -EINVAL);
         assert_return(v, -EINVAL);
 
-        r = ordered_hashmap_ensure_allocated(&client->extra_options, &dhcp_option_hash_ops);
-        if (r < 0)
-                return r;
-
-        r = ordered_hashmap_put(client->extra_options, UINT_TO_PTR(v->option), v);
+        r = ordered_hashmap_ensure_put(&client->extra_options, &dhcp_option_hash_ops, UINT_TO_PTR(v->option), v);
         if (r < 0)
                 return r;
 
@@ -2234,7 +2234,7 @@ int sd_dhcp_client_new(sd_dhcp_client **ret, int anonymize) {
                 .mtu = DHCP_DEFAULT_MIN_SIZE,
                 .port = DHCP_PORT_CLIENT,
                 .anonymize = !!anonymize,
-                .max_attempts = (uint64_t) -1,
+                .max_attempts = UINT64_MAX,
                 .ip_service_type = -1,
         };
         /* NOTE: this could be moved to a function. */

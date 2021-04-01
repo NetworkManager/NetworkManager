@@ -80,7 +80,7 @@ void* memdup_suffix0(const void *p, size_t l); /* We can't use _alloc_() here, s
         })
 
 static inline void freep(void *p) {
-        free(*(void**) p);
+        *(void**)p = mfree(*(void**) p);
 }
 
 #define _cleanup_free_ _cleanup_(freep)
@@ -156,15 +156,6 @@ void* greedy_realloc0(void **p, size_t *allocated, size_t need, size_t size);
                 size_t _xsize_ = (size);                                \
                 _new_ = alloca_align(_xsize_, (align));                 \
                 (void*)memset(_new_, 0, _xsize_);                       \
-        })
-
-/* Takes inspiration from Rust's Option::take() method: reads and returns a pointer, but at the same time
- * resets it to NULL. See: https://doc.rust-lang.org/std/option/enum.Option.html#method.take */
-#define TAKE_PTR(ptr)                           \
-        ({                                      \
-                typeof(ptr) _ptr_ = (ptr);      \
-                (ptr) = NULL;                   \
-                _ptr_;                          \
         })
 
 #if HAS_FEATURE_MEMORY_SANITIZER
