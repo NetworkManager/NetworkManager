@@ -6,18 +6,18 @@
 #
 # There are 6 modes:
 #
-#  - "devel" : on master branch to tag a devel release (e.g. "1.25.2-dev").
-#  - "rc1"   : the first release candidate on "master" branch which branches off
+#  - "devel" : on main branch to tag a devel release (e.g. "1.25.2-dev").
+#  - "rc1"   : the first release candidate on "main" branch which branches off
 #              a new "nm-1-X" branch (e.g. tag "1.26-rc1" (1.25.90) and branch
-#              off "nm-1-26"). On master this also bumps the version number
+#              off "nm-1-26"). On main this also bumps the version number
 #              and creates a new devel release (e.g. "1.27.0-dev").
 #  - "rc"    : further release candidates on RC branch (e.g. from "nm-1-26" branch
 #              tag "1.26-rc2" with version number 1.25.91).
 #  - "major" : on stable branch do a major release (e.g. on "nm-1-26" branch
 #              release "1.26.0", followed by "1.26.1-dev").
 #              You should do a "major-post" release right a "major" release.
-#  - "major-post": after a "major" release, merge the release branch with master and
-#              do another devel snapshot on master (e.g. do "1.27.1-dev" release).
+#  - "major-post": after a "major" release, merge the release branch with main and
+#              do another devel snapshot on main (e.g. do "1.27.1-dev" release).
 #  - "minor" : on a stable branch do a minor release (e.g. "1.26.4" on "nm-1-26"
 #              branch and bump to "1.26.5-dev").
 #
@@ -34,7 +34,7 @@
 #
 #   * Your git repository needs a remote "origin" that points to the upstream git repository.
 #
-#   * All your (relevant) local branches (master and nm-1-*) must be up to date with their
+#   * All your (relevant) local branches (main and nm-1-*) must be up to date with their
 #     remote tracking branches for origin.
 #
 # Run with --no-test to do the actual release.
@@ -218,7 +218,7 @@ while [ "$#" -ge 1 ]; do
             DO_CLEANUP=0
             ;;
         --allow-local-branches)
-            # by default, the script errors out if the relevant branch (master, nm-1-Y) are not the same
+            # by default, the script errors out if the relevant branch (main, nm-1-Y) are not the same
             # as the remote branch on origin. You should not do a release if you have local changes
             # that differ from upstream. Set this flag to override that check.
             ALLOW_LOCAL_BRANCHES=1
@@ -262,12 +262,12 @@ CUR_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 CUR_HEAD="$(git rev-parse HEAD)"
 TMP_BRANCH=release-branch
 
-if [ "$CUR_BRANCH" = master ]; then
-    number_is_odd "${VERSION_ARR[1]}" || die "Unexpected version number on master. Should be an odd development version"
+if [ "$CUR_BRANCH" = main ]; then
+    number_is_odd "${VERSION_ARR[1]}" || die "Unexpected version number on main. Should be an odd development version"
     [ "$RELEASE_MODE" = devel -o "$RELEASE_MODE" = rc1 -o "$RELEASE_MODE" = major-post ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
 else
     re='^nm-[0-9]+-[0-9]+$'
-    [[ "$CUR_BRANCH" =~ $re ]] || die "Unexpected current branch $CUR_BRANCH. Should be master or nm-?-??"
+    [[ "$CUR_BRANCH" =~ $re ]] || die "Unexpected current branch $CUR_BRANCH. Should be main or nm-?-??"
     if number_is_odd "${VERSION_ARR[1]}"; then
         # we are on a release candiate branch.
         [ "$RELEASE_MODE" = rc -o "$RELEASE_MODE" = major ] || die "Unexpected branch name \"$CUR_BRANCH\" for \"$RELEASE_MODE\""
@@ -284,12 +284,12 @@ case "$RELEASE_MODE" in
     minor)
         number_is_even "${VERSION_ARR[1]}" &&
         number_is_odd  "${VERSION_ARR[2]}" || die "cannot do minor release on top of version $VERSION_STR"
-        [ "$CUR_BRANCH" != master ] || die "cannot do a minor release on master"
+        [ "$CUR_BRANCH" != main ] || die "cannot do a minor release on main"
         ;;
     devel)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do devel release on top of version $VERSION_STR"
         [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "devel release must have a micro version smaller than 90 but current version is $VERSION_STR"
-        [ "$CUR_BRANCH" == master ] || die "devel release can only be on master"
+        [ "$CUR_BRANCH" == main ] || die "devel release can only be on main"
         ;;
     rc)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do rc release on top of version $VERSION_STR"
@@ -300,7 +300,7 @@ case "$RELEASE_MODE" in
     rc1)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do rc release on top of version $VERSION_STR"
         [ "${VERSION_ARR[2]}" -lt 90 ] || die "rc release must have a micro version smaller than ${VERSION_ARR[0]}.${VERSION_ARR[1]}.90 but current version is $VERSION_STR"
-        [ "$CUR_BRANCH" == master ] || die "rc1 release can only be on master"
+        [ "$CUR_BRANCH" == main ] || die "rc1 release can only be on main"
         RELEASE_BRANCH="nm-${VERSION_ARR[0]}-$((${VERSION_ARR[1]} + 1))"
         ;;
     major)
@@ -311,7 +311,7 @@ case "$RELEASE_MODE" in
     major-post)
         number_is_odd "${VERSION_ARR[1]}" || die "cannot do major-post release on top of version $VERSION_STR"
         [ "$((${VERSION_ARR[2]} + 1))" -lt 90 ] || die "major-post release must have a micro version smaller than 90 but current version is $VERSION_STR"
-        [ "$CUR_BRANCH" == master ] || die "major-post release can only be on master"
+        [ "$CUR_BRANCH" == main ] || die "major-post release can only be on main"
         ;;
     *)
         die "Release mode $RELEASE_MODE not yet implemented"
@@ -326,7 +326,7 @@ if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
 fi
 
 NEWER_BRANCHES=()
-if [ "$CUR_BRANCH" != master ]; then
+if [ "$CUR_BRANCH" != main ]; then
     i="${VERSION_ARR[1]}"
     while : ; do
         i=$((i + 2))
@@ -341,7 +341,7 @@ if [ "$CUR_BRANCH" != master ]; then
         fi
         NEWER_BRANCHES+=("refs/heads/$b")
     done
-    b=master
+    b=main
     if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
         git_same_ref "$b" "refs/heads/$b" || die "branch $b is not a branch??"
         git_same_ref "$b" "refs/remotes/$ORIGIN/$b" || die "branch $b seems not up to date with refs/remotes/$ORIGIN/$b. Git pull or --allow-local-branches?"
@@ -354,7 +354,7 @@ if [ -n "$RELEASE_BRANCH" ]; then
 fi
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
-    cmp <(git show origin/master:contrib/fedora/rpm/release.sh) "$BASH_SOURCE" || die "$BASH_SOURCE is not identical to \`git show origin/master:contrib/fedora/rpm/release.sh\`"
+    cmp <(git show origin/main:contrib/fedora/rpm/release.sh) "$BASH_SOURCE" || die "$BASH_SOURCE is not identical to \`git show origin/main:contrib/fedora/rpm/release.sh\`"
 fi
 
 if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
@@ -365,12 +365,12 @@ if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
 fi
 
 if [ $FIND_BACKPORTS = 1 ]; then
-    git show "$ORIGIN/master:contrib/scripts/find-backports" > ./.git/nm-find-backports \
+    git show "$ORIGIN/main:contrib/scripts/find-backports" > ./.git/nm-find-backports \
     && chmod +x ./.git/nm-find-backports \
     || die "cannot get contrib/scripts/find-backports"
 
-    TMP="$(./.git/nm-find-backports "$CUR_BRANCH" master "${NEWER_BRANCHES[@]}" 2>/dev/null)" || die "nm-find-backports failed"
-    test -z "$TMP" || die "nm-find-backports returned patches that need to be backported (ignore with --no-find-backports): ./.git/nm-find-backports \"$CUR_BRANCH\" master ${NEWER_BRANCHES[@]}"
+    TMP="$(./.git/nm-find-backports "$CUR_BRANCH" main "${NEWER_BRANCHES[@]}" 2>/dev/null)" || die "nm-find-backports failed"
+    test -z "$TMP" || die "nm-find-backports returned patches that need to be backported (ignore with --no-find-backports): ./.git/nm-find-backports \"$CUR_BRANCH\" main ${NEWER_BRANCHES[@]}"
 fi
 
 if [ $CHECK_GITLAB = 1 ]; then
@@ -461,18 +461,18 @@ case "$RELEASE_MODE" in
         TAR_VERSION="$b"
         ;;
     major-post)
-        # We create a merge commit with the content of current "master", with two
-        # parent commits $THE_RELEASE and "master". But we want that the first parent
+        # We create a merge commit with the content of current "main", with two
+        # parent commits $THE_RELEASE and "main". But we want that the first parent
         # is the release, so that `git log --first-parent` follows the path with the
         # release candidates, and not the devel part during that time. Hence this
         # switcheroo here.
         git checkout -B "$TMP_BRANCH" "${VERSION_ARR[0]}.$((${VERSION_ARR[1]} - 1)).0" || die "merge0"
-        git merge -Xours --commit -m tmp master || die "merge1"
+        git merge -Xours --commit -m tmp main || die "merge1"
         git rm --cached -r . || die "merge2"
-        git checkout master -- . || die "merge3"
+        git checkout main -- . || die "merge3"
         b="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))"
         git commit --amend -m tmp -a || die "failed to commit major version bump"
-        test x = "x$(git diff master HEAD)" || die "there is a diff after merge!"
+        test x = "x$(git diff main HEAD)" || die "there is a diff after merge!"
 
         set_version_number "${VERSION_ARR[0]}" "${VERSION_ARR[1]}" "$((${VERSION_ARR[2]} + 1))"
         git commit --amend -m "release: bump version to $b (development)" -a || die "failed to commit major version bump"
