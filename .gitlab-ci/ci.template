@@ -213,7 +213,7 @@ pages:
     paths:
       - public
   only:
-    - master
+    - main
   dependencies:
     - t_{{pages_build.name}}:{{pages_build.version}}
   needs:
