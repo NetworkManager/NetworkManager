@@ -216,7 +216,7 @@ build_edit_connection(NMConnection *orig_connection)
     if (!NM_IS_REMOTE_CONNECTION(orig_connection))
         return edit_connection;
 
-    settings = nm_connection_to_dbus(orig_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+    settings = nm_connection_to_dbus(orig_connection, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET);
     g_variant_iter_init(&iter, settings);
     while (g_variant_iter_next(&iter, "{&s@a{sv}}", &setting_name, NULL)) {
         if (!nm_meta_setting_info_editor_has_secrets(

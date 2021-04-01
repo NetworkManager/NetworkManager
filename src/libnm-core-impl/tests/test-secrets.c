@@ -605,7 +605,7 @@ test_update_secrets_whole_connection_empty_base_setting(void)
      */
 
     connection = wifi_connection_new();
-    secrets    = nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+    secrets    = nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_WITH_SECRETS);
     g_assert_cmpint(g_variant_n_children(secrets), ==, 3);
 
     setting = g_variant_lookup_value(secrets, NM_SETTING_WIRELESS_SETTING_NAME, NULL);

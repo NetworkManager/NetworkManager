@@ -436,27 +436,16 @@ nm_settings_connection_check_permission(NMSettingsConnection *self, const char *
 static void
 update_system_secrets_cache(NMSettingsConnection *self, NMConnection *new)
 {
-    NMSettingsConnectionPrivate *priv               = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-    gs_unref_object NMConnection *connection_cloned = NULL;
-    gs_unref_variant GVariant *old_secrets          = NULL;
+    NMSettingsConnectionPrivate *priv      = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+    gs_unref_variant GVariant *old_secrets = NULL;
 
     old_secrets = g_steal_pointer(&priv->system_secrets);
 
-    if (!new)
-        goto out;
+    if (new) {
+        priv->system_secrets = nm_g_variant_ref_sink(
+            nm_connection_to_dbus(new, NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED));
+    }
 
-    /* FIXME: improve NMConnection API so we can avoid the overhead of cloning the connection,
-     *   in particular if there are no secrets to begin with. */
-
-    connection_cloned = nm_simple_connection_new_clone(new);
-
-    /* Clear out non-system-owned and not-saved secrets */
-    _nm_connection_clear_secrets_by_secret_flags(connection_cloned, NM_SETTING_SECRET_FLAG_NONE);
-
-    priv->system_secrets = nm_g_variant_ref_sink(
-        nm_connection_to_dbus(connection_cloned, NM_CONNECTION_SERIALIZE_ONLY_SECRETS));
-
-out:
     if (_LOGT_ENABLED()) {
         if ((!!old_secrets) != (!!priv->system_secrets)) {
             _LOGT("update system secrets: secrets %s", old_secrets ? "cleared" : "set");
@@ -468,29 +457,18 @@ out:
 static void
 update_agent_secrets_cache(NMSettingsConnection *self, NMConnection *new)
 {
-    NMSettingsConnectionPrivate *priv               = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-    gs_unref_object NMConnection *connection_cloned = NULL;
-    gs_unref_variant GVariant *old_secrets          = NULL;
+    NMSettingsConnectionPrivate *priv      = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+    gs_unref_variant GVariant *old_secrets = NULL;
 
     old_secrets = g_steal_pointer(&priv->agent_secrets);
 
-    if (!new)
-        goto out;
+    if (new) {
+        priv->agent_secrets = nm_g_variant_ref_sink(
+            nm_connection_to_dbus(new,
+                                  NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED
+                                      | NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED));
+    }
 
-    /* FIXME: improve NMConnection API so we can avoid the overhead of cloning the connection,
-     *   in particular if there are no secrets to begin with. */
-
-    connection_cloned = nm_simple_connection_new_clone(new);
-
-    /* Clear out non-system-owned secrets */
-    _nm_connection_clear_secrets_by_secret_flags(connection_cloned,
-                                                 NM_SETTING_SECRET_FLAG_NOT_SAVED
-                                                     | NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-
-    priv->agent_secrets = nm_g_variant_ref_sink(
-        nm_connection_to_dbus(connection_cloned, NM_CONNECTION_SERIALIZE_ONLY_SECRETS));
-
-out:
     if (_LOGT_ENABLED()) {
         if ((!!old_secrets) != (!!priv->agent_secrets)) {
             _LOGT("update agent secrets: secrets %s", old_secrets ? "cleared" : "set");
@@ -1355,7 +1333,7 @@ get_settings_auth_cb(NMSettingsConnection * self,
      * protected against leakage of secrets to unprivileged callers.
      */
     settings = nm_connection_to_dbus_full(nm_settings_connection_get_connection(self),
-                                          NM_CONNECTION_SERIALIZE_NO_SECRETS,
+                                          NM_CONNECTION_SERIALIZE_WITH_NON_SECRET,
                                           &options);
     g_dbus_method_invocation_return_value(context, g_variant_new("(@a{sa{sv}})", settings));
 }
@@ -1568,7 +1546,7 @@ update_auth_cb(NMSettingsConnection * self,
         gs_unref_object NMConnection *for_agent = NULL;
 
         /* Dupe the connection so we can clear out non-agent-owned secrets,
-         * as agent-owned secrets are the only ones we send back be saved.
+         * as agent-owned secrets are the only ones we send back to be saved.
          * Only send secrets to agents of the same UID that called update too.
          */
         for_agent = nm_simple_connection_new_clone(nm_settings_connection_get_connection(self));
@@ -1888,7 +1866,7 @@ dbus_get_agent_secrets_cb(NMSettingsConnection *      self,
          * by the time we get here.
          */
         dict = nm_connection_to_dbus(nm_settings_connection_get_connection(self),
-                                     NM_CONNECTION_SERIALIZE_ONLY_SECRETS);
+                                     NM_CONNECTION_SERIALIZE_WITH_SECRETS);
         if (!dict)
             dict = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
         g_dbus_method_invocation_return_value(context, g_variant_new("(@a{sa{sv}})", dict));

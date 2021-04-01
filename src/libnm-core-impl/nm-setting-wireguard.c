@@ -1494,7 +1494,7 @@ _peers_dbus_only_synth(const NMSettInfoSetting *               sett_info,
                               NM_WIREGUARD_PEER_ATTR_PUBLIC_KEY,
                               g_variant_new_string(peer->public_key));
 
-        if (!NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS) && peer->endpoint)
+        if (_nm_connection_serialize_non_secret(flags) && peer->endpoint)
             g_variant_builder_add(
                 &builder,
                 "{sv}",
@@ -1508,21 +1508,20 @@ _peers_dbus_only_synth(const NMSettInfoSetting *               sett_info,
                                   NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY,
                                   g_variant_new_string(peer->preshared_key));
 
-        if (!NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
+        if (_nm_connection_serialize_non_secret(flags)
             && peer->preshared_key_flags != NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
             g_variant_builder_add(&builder,
                                   "{sv}",
                                   NM_WIREGUARD_PEER_ATTR_PRESHARED_KEY_FLAGS,
                                   g_variant_new_uint32(peer->preshared_key_flags));
 
-        if (!NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS)
-            && peer->persistent_keepalive != 0)
+        if (_nm_connection_serialize_non_secret(flags) && peer->persistent_keepalive != 0)
             g_variant_builder_add(&builder,
                                   "{sv}",
                                   NM_WIREGUARD_PEER_ATTR_PERSISTENT_KEEPALIVE,
                                   g_variant_new_uint32(peer->persistent_keepalive));
 
-        if (!NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS) && peer->allowed_ips
+        if (_nm_connection_serialize_non_secret(flags) && peer->allowed_ips
             && peer->allowed_ips->len > 0) {
             const char *const *  strv       = (const char *const *) peer->allowed_ips->pdata;
             gs_free const char **strv_fixed = NULL;

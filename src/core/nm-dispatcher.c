@@ -550,7 +550,7 @@ _dispatcher_call(NMDispatcherAction    action,
 
     if (applied_connection)
         connection_dict =
-            nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
+            nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET);
     else
         connection_dict = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
 

@@ -1541,9 +1541,7 @@ _add_connection_to_first_plugin(NMSettings *                 self,
         }
 
         agent_owned_secrets =
-            nm_connection_to_dbus(new_connection,
-                                  NM_CONNECTION_SERIALIZE_ONLY_SECRETS
-                                      | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
+            nm_connection_to_dbus(new_connection, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
         connection_to_add_real =
             _connection_changed_normalize_connection(storage,
                                                      connection_to_add,
@@ -2218,9 +2216,7 @@ nm_settings_update_connection(NMSettings *                     self,
             nm_assert(nm_streq(uuid, nm_settings_storage_get_uuid(new_storage)));
 
             agent_owned_secrets =
-                nm_connection_to_dbus(connection,
-                                      NM_CONNECTION_SERIALIZE_ONLY_SECRETS
-                                          | NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
+                nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED);
             new_connection_real = _connection_changed_normalize_connection(new_storage,
                                                                            new_connection,
                                                                            agent_owned_secrets,

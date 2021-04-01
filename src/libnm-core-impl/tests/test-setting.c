@@ -3245,8 +3245,8 @@ test_roundtrip_conversion(gconstpointer test_data)
     gs_unref_ptrarray GPtrArray *        wg_peers = NULL;
     const NMConnectionSerializationFlags dbus_serialization_flags[] = {
         NM_CONNECTION_SERIALIZE_ALL,
-        NM_CONNECTION_SERIALIZE_NO_SECRETS,
-        NM_CONNECTION_SERIALIZE_ONLY_SECRETS,
+        NM_CONNECTION_SERIALIZE_WITH_NON_SECRET,
+        NM_CONNECTION_SERIALIZE_WITH_SECRETS,
     };
     guint           dbus_serialization_flags_idx;
     gs_unref_object NMConnection *con = NULL;
@@ -3643,7 +3643,7 @@ test_roundtrip_conversion(gconstpointer test_data)
 
                 if (flag == NM_CONNECTION_SERIALIZE_ALL)
                     _rndt_wg_peers_assert_equal(s_wg2, wg_peers, TRUE, TRUE, FALSE);
-                else if (flag == NM_CONNECTION_SERIALIZE_NO_SECRETS)
+                else if (flag == NM_CONNECTION_SERIALIZE_WITH_NON_SECRET)
                     _rndt_wg_peers_assert_equal(s_wg2, wg_peers, FALSE, FALSE, TRUE);
                 else
                     g_assert_not_reached();

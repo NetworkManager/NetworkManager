@@ -582,20 +582,20 @@ property_to_dbus(const NMSettInfoSetting *               sett_info,
             return NULL;
 
         if (NM_FLAGS_HAS(property->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
-            if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_NO_SECRETS))
-                return NULL;
+            NMSettingSecretFlags f = NM_SETTING_SECRET_FLAG_NONE;
 
-            if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED)) {
-                NMSettingSecretFlags f;
-
-                /* see also _nm_connection_serialize_secrets() */
+            if (NM_FLAGS_ANY(flags,
+                             NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED
+                                 | NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED
+                                 | NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED)) {
                 if (!nm_setting_get_secret_flags(setting, property->param_spec->name, &f, NULL))
                     return NULL;
-                if (!NM_FLAGS_HAS(f, NM_SETTING_SECRET_FLAG_AGENT_OWNED))
-                    return NULL;
             }
+
+            if (!_nm_connection_serialize_secrets(flags, f))
+                return NULL;
         } else {
-            if (NM_FLAGS_HAS(flags, NM_CONNECTION_SERIALIZE_ONLY_SECRETS))
+            if (!_nm_connection_serialize_non_secret(flags))
                 return NULL;
         }
     }
