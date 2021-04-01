@@ -39,7 +39,15 @@ LogTarget log_get_target(void) _pure_;
 
 void log_set_max_level(int level);
 int log_set_max_level_from_string(const char *e);
+#if 0 /* NM_IGNORED */
 int log_get_max_level(void) _pure_;
+#else /* NM_IGNORED */
+static inline int
+log_get_max_level(void)
+{
+        return 7 /* LOG_DEBUG */;
+}
+#endif /* NM_IGNORED */
 
 void log_set_facility(int facility);
 
@@ -64,8 +72,9 @@ int log_show_tid_from_string(const char *e);
 #if 0 /* NM_IGNORED */
 assert_cc(STRLEN(__FILE__) > STRLEN(RELATIVE_SOURCE_PATH) + 1);
 #define PROJECT_FILE (&__FILE__[STRLEN(RELATIVE_SOURCE_PATH) + 1])
-#endif /* NM_IGNORED */
+#else /* NM_IGNORED */
 #define PROJECT_FILE __FILE__
+#endif /* NM_IGNORED */
 
 int log_open(void);
 void log_close(void);
@@ -85,7 +94,9 @@ int log_dispatch_internal(
                 const char *extra,
                 const char *extra_field,
                 char *buffer);
+#endif /* NM_IGNORED */
 
+#if 0 /* NM_IGNORED */
 int log_internal(
                 int level,
                 int error,
@@ -93,6 +104,30 @@ int log_internal(
                 int line,
                 const char *func,
                 const char *format, ...) _printf_(6,7);
+#else /* NM_IGNORED */
+#define log_internal(level, error, file, line, func, format, ...)                          \
+    ({                                                                                     \
+        const int        _nm_e = (error);                                                  \
+        const NMLogLevel _nm_l = nm_log_level_from_syslog(LOG_PRI(level));                 \
+                                                                                           \
+        if (_nm_log_enabled_impl(!(NM_THREAD_SAFE_ON_MAIN_THREAD), _nm_l, LOGD_SYSTEMD)) { \
+            const char *_nm_location = strrchr(("" file), '/');                            \
+                                                                                           \
+            _nm_log_impl(_nm_location ? _nm_location + 1 : ("" file),                      \
+                         (line),                                                           \
+                         (func),                                                           \
+                         !(NM_THREAD_SAFE_ON_MAIN_THREAD),                                 \
+                         _nm_l,                                                            \
+                         LOGD_SYSTEMD,                                                     \
+                         _nm_e,                                                            \
+                         NULL,                                                             \
+                         NULL,                                                             \
+                         ("%s" format),                                                    \
+                         "libsystemd: ",                                                   \
+                         ##__VA_ARGS__);                                                   \
+        }                                                                                  \
+        (_nm_e > 0 ? -_nm_e : _nm_e);                                                      \
+    })
 #endif /* NM_IGNORED */
 
 #if 0 /* NM_IGNORED */
@@ -117,7 +152,9 @@ int log_object_internalv(
                 const char *extra,
                 const char *format,
                 va_list ap) _printf_(10,0);
+#endif /* NM_IGNORED */
 
+#if 0 /* NM_IGNORED */
 int log_object_internal(
                 int level,
                 int error,
@@ -129,7 +166,35 @@ int log_object_internal(
                 const char *extra_field,
                 const char *extra,
                 const char *format, ...) _printf_(10,11);
+#else /* NM_IGNORED */
+#define log_object_internal(level,              \
+                            error,              \
+                            file,               \
+                            line,               \
+                            func,               \
+                            object_field,       \
+                            object,             \
+                            extra_field,        \
+                            extra,              \
+                            format,             \
+                            ...)                \
+    ({                                          \
+        const char *const _object = (object);   \
+                                                \
+        log_internal((level),                   \
+                     (error),                   \
+                     file,                      \
+                     (line),                    \
+                     (func),                    \
+                     "%s%s" format,             \
+                     _object ?: "",             \
+                     _object ? ": " : "",       \
+                     ##__VA_ARGS__);            \
+    })
+#endif /* NM_IGNORED */
 
+
+#if 0 /* NM_IGNORED */
 int log_struct_internal(
                 int level,
                 int error,
@@ -137,16 +202,18 @@ int log_struct_internal(
                 int line,
                 const char *func,
                 const char *format, ...) _printf_(6,0) _sentinel_;
+#endif /* NM_IGNORED */
 
+#if 0 /* NM_IGNORED */
 int log_oom_internal(
                 int level,
                 const char *file,
                 int line,
                 const char *func);
+#else /* NM_IGNORED */
+#define log_oom_internal(level, file, line, func) \
+    log_internal(level, ENOMEM, file, line, func, "Out of memory.")
 #endif /* NM_IGNORED */
-#define log_oom_internal(realm, file, line, func) \
-    log_internal_realm (LOG_REALM_PLUS_LEVEL (realm, LOG_ERR), \
-                        ENOMEM, file, line, func, "Out of memory.")
 
 #if 0 /* NM_IGNORED */
 int log_format_iovec(
@@ -175,26 +242,84 @@ int log_dump_internal(
                 int line,
                 const char *func,
                 char *buffer);
+#endif /* NM_IGNORED */
 
 /* Logging for various assertions */
+#if 0 /* NM_IGNORED */
 _noreturn_ void log_assert_failed(
                 const char *text,
                 const char *file,
                 int line,
                 const char *func);
+#else /* NM_IGNORED */
+#define log_assert_failed(text, file, line, func)                                \
+    G_STMT_START                                                                 \
+    {                                                                            \
+        log_internal(LOG_CRIT,                                                   \
+                     0,                                                          \
+                     file,                                                       \
+                     line,                                                       \
+                     func,                                                       \
+                     "Assertion '%s' failed at %s:%u, function %s(). Aborting.", \
+                     text,                                                       \
+                     file,                                                       \
+                     line,                                                       \
+                     func);                                                      \
+        g_assert_not_reached();                                                  \
+    }                                                                            \
+    G_STMT_END
+#endif /* NM_IGNORED */
 
+#if 0 /* NM_IGNORED */
 _noreturn_ void log_assert_failed_unreachable(
                 const char *text,
                 const char *file,
                 int line,
                 const char *func);
+#else /* NM_IGNORED */
+#define log_assert_failed_unreachable(text, file, line, func)                              \
+    G_STMT_START                                                                           \
+    {                                                                                      \
+        log_internal(LOG_CRIT,                                                             \
+                     0,                                                                    \
+                     file,                                                                 \
+                     line,                                                                 \
+                     func,                                                                 \
+                     "Code should not be reached '%s' at %s:%u, function %s(). Aborting.", \
+                     text,                                                                 \
+                     file,                                                                 \
+                     line,                                                                 \
+                     func);                                                                \
+        g_assert_not_reached();                                                            \
+    }                                                                                      \
+    G_STMT_END
+#endif /* NM_IGNORED */
 
+#if 0 /* NM_IGNORED */
 void log_assert_failed_return(
                 const char *text,
                 const char *file,
                 int line,
                 const char *func);
+#else /* NM_IGNORED */
+#define log_assert_failed_return(text, file, line, func)                         \
+    ({                                                                           \
+        log_internal(LOG_DEBUG,                                                  \
+                     0,                                                          \
+                     file,                                                       \
+                     line,                                                       \
+                     func,                                                       \
+                     "Assertion '%s' failed at %s:%u, function %s(). Ignoring.", \
+                     text,                                                       \
+                     file,                                                       \
+                     line,                                                       \
+                     func);                                                      \
+        g_return_if_fail_warning(G_LOG_DOMAIN, G_STRFUNC, text);                 \
+        (void) 0;                                                                \
+    })
+#endif /* NM_IGNORED */
 
+#if 0 /* NM_IGNORED */
 #define log_dispatch(level, error, buffer)                              \
         log_dispatch_internal(level, error, PROJECT_FILE, __LINE__, __func__, NULL, NULL, NULL, NULL, buffer)
 #endif /* NM_IGNORED */
@@ -284,9 +409,10 @@ int log_syntax_internal(
                 int line,
                 const char *func,
                 const char *format, ...) _printf_(9, 10);
-#endif /* NM_IGNORED */
+#else /* NM_IGNORED */
 #define log_syntax_internal(unit, level, config_file, config_line, error, file, line, func, format, ...) \
-    log_internal_realm((level), (error), file, (line), (func), "syntax[%s]: "format, (config_file), __VA_ARGS__) \
+    log_internal((level), (error), file, (line), (func), "syntax[%s]: "format, (config_file), __VA_ARGS__)
+#endif /* NM_IGNORED */
 
 int log_syntax_invalid_utf8_internal(
                 const char *unit,

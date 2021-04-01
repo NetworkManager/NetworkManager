@@ -781,6 +781,7 @@ char* dirname_malloc(const char *path) {
 
         return dir2;
 }
+#endif /* NM_IGNORED */
 
 const char *last_path_component(const char *path) {
 
@@ -907,7 +908,6 @@ int path_extract_directory(const char *p, char **ret) {
         *ret = TAKE_PTR(a);
         return 0;
 }
-#endif /* NM_IGNORED */
 
 bool filename_is_valid(const char *p) {
         const char *e;

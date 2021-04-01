@@ -216,6 +216,7 @@ int in_addr_prefix_next(int family, union in_addr_union *u, unsigned prefixlen) 
 
         return in_addr_prefix_nth(family, u, prefixlen, 1);
 }
+#endif /* NM_IGNORED */
 
 /*
  * Calculates the nth prefix of size prefixlen starting from the address denoted by u.
@@ -295,6 +296,7 @@ int in_addr_prefix_nth(int family, union in_addr_union *u, unsigned prefixlen, u
         return -EAFNOSUPPORT;
 }
 
+#if 0 /* NM_IGNORED */
 int in_addr_random_prefix(
                 int family,
                 union in_addr_union *u,

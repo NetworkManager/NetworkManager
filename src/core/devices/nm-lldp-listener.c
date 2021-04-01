@@ -903,7 +903,7 @@ handle_changed:
 }
 
 static void
-lldp_event_handler(sd_lldp *lldp, sd_lldp_event event, sd_lldp_neighbor *n, void *userdata)
+lldp_event_handler(sd_lldp *lldp, sd_lldp_event_t event, sd_lldp_neighbor *n, void *userdata)
 {
     process_lldp_neighbor(
         userdata,

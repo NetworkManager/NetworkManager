@@ -1637,6 +1637,7 @@ int path_is_encrypted(const char *path) {
 
         return blockdev_is_encrypted(p, 10 /* safety net: maximum recursion depth */);
 }
+#endif /* NM_IGNORED */
 
 int conservative_renameat(
                 int olddirfd, const char *oldpath,
@@ -1728,4 +1729,3 @@ do_rename:
 
         return 1;
 }
-#endif /* NM_IGNORED */

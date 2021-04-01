@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
+#include "nm-sd-adapt-shared.h"
+
 #include "fileio.h"
 #include "ordered-set.h"
 #include "strv.h"
