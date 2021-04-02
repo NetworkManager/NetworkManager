@@ -35,15 +35,18 @@ _sort() {
 }
 
 call_nm() {
-    "${NM:-nm}" "$1" |
-        sed -n 's/.* \([^ ]\) \([^ ]*\)$/\1 \2/p'
+    if [ -n "$from_meson" ]; then
+        "${NM:-nm}" "$1" |
+            sed -n 's/.* \([^ ]\) \([^ ]*\)$/\1 \2/p'
+    else
+        libtool=(${LIBTOOL:-libtool})
+        ${libtool[@]} --mode=execute "${NM:-nm}" "$1" |
+            sed -n 's/.* \([^ ]\) \([^ ]*\)$/\1 \2/p'
+    fi
 }
 
 get_symbols_nm () {
-    base=./src/core/.libs/NetworkManager-all-sym
-    if ! test -f "$base"; then
-        base=./src/core/NetworkManager-all-sym
-    fi
+    base=./src/core/NetworkManager-all-sym
     call_nm "$base" |
         sed -n 's/^[tTDGRBS] //p' |
         _sort
