@@ -2645,6 +2645,7 @@ src_core_libNetworkManagerTest_la_LIBADD = \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(GLIB_LIBS) \
 	$(LIBUDEV_LIBS) \
+	$(PTHREAD_LIBS) \
 	$(NULL)
 
 $(src_core_libNetworkManagerTest_la_OBJECTS): $(src_libnm_core_public_mkenums_h)

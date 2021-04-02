@@ -1229,6 +1229,8 @@ else
 fi
 AC_SUBST(NM_LOG_COMPILER, 'LOG_COMPILER = "$(top_srcdir)/tools/run-nm-test.sh" --called-from-make "$(abs_top_builddir)" "$(LIBTOOL)" "$(with_valgrind)" "'"$with_valgrind_suppressions"'" --launch-dbus=auto')
 
+AX_PTHREAD([,AC_MSG_ERROR([Threads are required for the NetworkManager tests])])
+
 if test -n "$PYTHON" ; then
     AM_PATH_PYTHON([], [], [])
 else
