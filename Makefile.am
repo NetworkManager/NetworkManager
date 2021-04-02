@@ -2671,7 +2671,7 @@ src_core_NetworkManager_all_sym_LDFLAGS = \
 $(src_core_NetworkManager_all_sym_OBJECTS): $(src_libnm_core_public_mkenums_h)
 
 src/core/NetworkManager.ver: src/core/NetworkManager-all-sym $(core_plugins)
-	$(AM_V_GEN) NM="$(NM)" "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-build "$(srcdir)"
+	$(AM_V_GEN) LIBTOOL="$(LIBTOOL)" NM="$(NM)" "$(srcdir)/tools/create-exports-NetworkManager.sh" --called-from-build "$(srcdir)"
 
 CLEANFILES += src/core/NetworkManager.ver
 
