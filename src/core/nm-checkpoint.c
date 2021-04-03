@@ -229,14 +229,16 @@ restore_and_activate_connection(NMCheckpoint *self, DeviceCheckpoint *dev_checkp
         if (need_update) {
             _LOGD("rollback: updating connection %s", nm_settings_connection_get_uuid(connection));
             persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP;
-            nm_settings_connection_update(connection,
-                                          dev_checkpoint->settings_connection,
-                                          persist_mode,
-                                          sett_flags,
-                                          sett_mask,
-                                          NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE,
-                                          "checkpoint-rollback",
-                                          NULL);
+            nm_settings_connection_update(
+                connection,
+                dev_checkpoint->settings_connection,
+                persist_mode,
+                sett_flags,
+                sett_mask,
+                NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
+                    | NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET,
+                "checkpoint-rollback",
+                NULL);
         }
     } else {
         /* The connection was deleted, recreate it */
