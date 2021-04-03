@@ -13604,7 +13604,7 @@ nm_device_set_ip_config(NMDevice *  self,
                                           NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
                                           NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
                                           NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
-                                          NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE,
+                                          NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET,
                                           "update-external",
                                           NULL);
         }

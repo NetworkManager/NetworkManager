@@ -1433,7 +1433,8 @@ _plugin_connections_reload(NMSettings *self)
         NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
         TRUE,
         NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
-            | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS);
+            | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS
+            | NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET);
 
     for (iter = priv->plugins; iter; iter = iter->next)
         nm_settings_plugin_load_connections_done(iter->data);
@@ -1910,7 +1911,8 @@ again_delete_tombstone:
         _NM_SETTINGS_CONNECTION_INT_FLAGS_PERSISTENT_MASK,
         FALSE,
         NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
-            | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS
+            | NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_AGENT_SECRETS
+            | NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET
             | (NM_FLAGS_HAS(add_reason, NM_SETTINGS_CONNECTION_ADD_REASON_BLOCK_AUTOCONNECT)
                    ? NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT
                    : NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE));
@@ -2810,7 +2812,8 @@ impl_settings_load_connections(NMDBusObject *                     obj,
             NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
             TRUE,
             NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
-                | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS);
+                | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS
+                | NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET);
 
         for (iter = priv->plugins; iter; iter = iter->next)
             nm_settings_plugin_load_connections_done(iter->data);
