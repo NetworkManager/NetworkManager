@@ -252,3 +252,12 @@
 #mesondefine HAVE_PIDFD_OPEN
 #mesondefine HAVE_PIDFD_SEND_SIGNAL
 #mesondefine HAVE_RT_SIGQUEUEINFO
+
+/* Define to 1 if you have the <editline/readline.h> header file. */
+#mesondefine HAVE_EDITLINE_READLINE_H
+
+/* Define to 1 if you have the <readline/history.h> header file. */
+#mesondefine HAVE_READLINE_HISTORY_H
+
+/* Define to 1 if you have the <readline/readline.h> header file. */
+#mesondefine HAVE_READLINE_READLINE_H

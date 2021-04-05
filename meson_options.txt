@@ -71,3 +71,4 @@ option('ld_gc', type: 'boolean', value: true, description: 'Enable garbage colle
 option('libpsl', type: 'boolean', value: true, description: 'Link against libpsl')
 option('crypto', type: 'combo', choices: ['nss', 'gnutls'], value: 'nss', description: 'Cryptography library to use for certificate and key operations')
 option('qt', type: 'boolean', value: true, description: 'enable Qt examples')
+option('readline', type: 'boolean', value: true, description: 'Allow using readline (alternative libedit)')

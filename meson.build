@@ -733,22 +733,25 @@ endif
 config_h.set10('WITH_CONCHECK', enable_concheck)
 
 enable_nmcli = get_option('nmcli')
+found_realdine = false
 if enable_nmcli
-  # FIXME: check for readline
-  # AX_LIB_READLINE
-  readline_dep = declare_dependency(link_args: '-lreadline')
-  '''
-  foreach readline_lib: ['-lreadline', '-ledit', '-leditline']
-    if not is_variable('readline_dep')
-      foreach termcap_lib: ['', '-lncurses', '-ltermcap', '-lcurses']
-        test_dep = declare_dependency(link_args: ' '.join([readline_lib, termcap_lib]))
-        if cc.has_function('readline', dependencies: test_dep) and cc.has_header('readline', dependencies: test_dep)
-          readline_dep = test_dep
-        endif
-      endforeach
+  enable_readline = get_option('readline')
+  if enable_readline
+    readline = cc.find_library('readline')
+    if readline.found()
+      readline_dep = declare_dependency(link_args: '-lreadline')
+      config_h.set10('HAVE_READLINE_READLINE_H', true)
+      config_h.set10('HAVE_READLINE_HISTORY_H', true)
+      found_realdine = true
     endif
-  endforeach
-  '''
+  endif
+  if found_realdine == false
+    edit = dependency('libedit')
+    if edit.found()
+      readline_dep = declare_dependency(link_args: '-ledit')
+      config_h.set10('HAVE_EDITLINE_READLINE_H', true)
+    endif
+  endif
   assert(readline_dep.found(), 'readline library with terminfo support is required (one of readline, edit, or editline, AND one of ncurses, curses, or termcap)')
 endif
 
@@ -1083,4 +1086,5 @@ output += '  sanitizers: ' + get_option('b_sanitize') + '\n'
 output += '  Mozilla Public Suffix List: ' + enable_libpsl.to_string() + '\n'
 output += '  vapi: ' + enable_vapi.to_string() + '\n'
 output += '  ebpf: ' + enable_ebpf.to_string() + '\n'
+output += '  readline: ' + found_realdine.to_string() + '\n'
 message(output)
