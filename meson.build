@@ -733,24 +733,33 @@ if enable_concheck
 endif
 config_h.set10('WITH_CONCHECK', enable_concheck)
 
+config_h.set10('HAVE_READLINE_HISTORY', false)
+config_h.set10('HAVE_EDITLINE_READLINE', false)
+enable_readline = get_option('readline')
+if enable_readline != 'none'
+  if enable_readline == 'libreadline' or enable_readline == 'auto'
+    readline = cc.find_library('readline')
+    if readline.found()
+      readline_dep = declare_dependency(link_args: '-lreadline')
+      config_h.set10('HAVE_READLINE_HISTORY', true)
+    else
+      assert(enable_readline == 'auto', 'libreadline was not found')
+    endif
+  endif
+  if enable_readline == 'libedit' or (enable_readline == 'auto' and not readline.found())
+    edit = dependency('libedit')
+    if edit.found()
+      readline_dep = declare_dependency(link_args: '-ledit')
+      config_h.set10('HAVE_EDITLINE_READLINE', true)
+    else
+      assert(enable_readline == 'auto', 'libedit was not found')
+    endif
+  endif
+endif
+
 enable_nmcli = get_option('nmcli')
 if enable_nmcli
-  # FIXME: check for readline
-  # AX_LIB_READLINE
-  readline_dep = declare_dependency(link_args: '-lreadline')
-  '''
-  foreach readline_lib: ['-lreadline', '-ledit', '-leditline']
-    if not is_variable('readline_dep')
-      foreach termcap_lib: ['', '-lncurses', '-ltermcap', '-lcurses']
-        test_dep = declare_dependency(link_args: ' '.join([readline_lib, termcap_lib]))
-        if cc.has_function('readline', dependencies: test_dep) and cc.has_header('readline', dependencies: test_dep)
-          readline_dep = test_dep
-        endif
-      endforeach
-    endif
-  endforeach
-  '''
-  assert(readline_dep.found(), 'readline library with terminfo support is required (one of readline, edit, or editline, AND one of ncurses, curses, or termcap)')
+  assert(enable_readline != 'none', 'readline library with terminfo support is required (one of readline, edit, or editline, AND one of ncurses, curses, or termcap)')
 endif
 
 enable_nmtui = get_option('nmtui')
@@ -1086,4 +1095,5 @@ output += '  sanitizers: ' + get_option('b_sanitize') + '\n'
 output += '  Mozilla Public Suffix List: ' + enable_libpsl.to_string() + '\n'
 output += '  vapi: ' + enable_vapi.to_string() + '\n'
 output += '  ebpf: ' + enable_ebpf.to_string() + '\n'
+output += '  readline: ' + enable_readline + '\n'
 message(output)
