@@ -255,3 +255,9 @@
 #mesondefine HAVE_PIDFD_OPEN
 #mesondefine HAVE_PIDFD_SEND_SIGNAL
 #mesondefine HAVE_RT_SIGQUEUEINFO
+
+/* Define to 1 if you want to use -ledit, otherwise 0 for default -lreadline. */
+#mesondefine HAVE_EDITLINE_READLINE
+
+/* Define to 1 if you have history support from -lreadline. */
+#mesondefine HAVE_READLINE_HISTORY
