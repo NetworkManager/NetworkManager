@@ -1245,16 +1245,13 @@ _collect_resolv_conf_data(NMDnsManager *     self,
             } else if (first_prio < 0 && first_prio != prio)
                 skip = TRUE;
 
-            if (nm_ip_config_get_num_nameservers(ip_data->ip_config)) {
-                _LOGT(
-                    "config: %8d %-7s v%c %-5d %s: %s",
-                    prio,
-                    _config_type_to_string(ip_data->ip_config_type),
-                    nm_utils_addr_family_to_char(nm_ip_config_get_addr_family(ip_data->ip_config)),
-                    ip_data->data->ifindex,
-                    skip ? "<SKIP>" : "",
-                    get_nameserver_list(ip_data->ip_config, &tmp_strbuf));
-            }
+            _LOGT("config: %8d %-7s v%c %-5d %s: %s",
+                  prio,
+                  _config_type_to_string(ip_data->ip_config_type),
+                  nm_utils_addr_family_to_char(nm_ip_config_get_addr_family(ip_data->ip_config)),
+                  ip_data->data->ifindex,
+                  skip ? "<SKIP>" : "",
+                  get_nameserver_list(ip_data->ip_config, &tmp_strbuf));
 
             if (!skip)
                 merge_one_ip_config(&rc, ip_data->data->ifindex, ip_data->ip_config);
