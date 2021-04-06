@@ -22,6 +22,7 @@
     #include <libpsl.h>
 #endif
 
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dns-manager.h"
@@ -1169,27 +1170,26 @@ merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 }
 
 static const char *
-get_nameserver_list(const NMIPConfig *config, GString **str)
+get_nameserver_list(const NMIPConfig *config, NMStrBuf *tmp_strbuf)
 {
-    guint num, i;
     char  buf[NM_UTILS_INET_ADDRSTRLEN];
     int   addr_family;
+    guint num;
+    guint i;
 
-    if (*str)
-        g_string_truncate(*str, 0);
-    else
-        *str = g_string_sized_new(64);
+    nm_str_buf_reset(tmp_strbuf);
 
     addr_family = nm_ip_config_get_addr_family(config);
     num         = nm_ip_config_get_num_nameservers(config);
     for (i = 0; i < num; i++) {
         nm_utils_inet_ntop(addr_family, nm_ip_config_get_nameserver(config, i), buf);
         if (i > 0)
-            g_string_append_c(*str, ' ');
-        g_string_append(*str, buf);
+            nm_str_buf_append_c(tmp_strbuf, ' ');
+        nm_str_buf_append(tmp_strbuf, buf);
     }
 
-    return (*str)->str;
+    nm_str_buf_maybe_expand(tmp_strbuf, 1, FALSE);
+    return nm_str_buf_get_str(tmp_strbuf);
 }
 
 static char **
@@ -1224,11 +1224,12 @@ _collect_resolv_conf_data(NMDnsManager *     self,
     if (global_config)
         merge_global_dns_config(&rc, global_config);
     else {
-        nm_auto_free_gstring GString *tmp_gstring = NULL;
-        int                           prio, first_prio = 0;
-        const NMDnsConfigIPData *     ip_data;
-        const CList *                 head;
-        gboolean                      is_first = TRUE;
+        nm_auto_str_buf NMStrBuf tmp_strbuf = NM_STR_BUF_INIT(0, FALSE);
+        int                      prio;
+        int                      first_prio = 0;
+        const NMDnsConfigIPData *ip_data;
+        const CList *            head;
+        gboolean                 is_first = TRUE;
 
         head = _mgr_get_ip_configs_lst_head(self);
         c_list_for_each_entry (ip_data, head, ip_config_lst) {
@@ -1252,7 +1253,7 @@ _collect_resolv_conf_data(NMDnsManager *     self,
                     nm_utils_addr_family_to_char(nm_ip_config_get_addr_family(ip_data->ip_config)),
                     ip_data->data->ifindex,
                     skip ? "<SKIP>" : "",
-                    get_nameserver_list(ip_data->ip_config, &tmp_gstring));
+                    get_nameserver_list(ip_data->ip_config, &tmp_strbuf));
             }
 
             if (!skip)
