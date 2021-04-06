@@ -2304,6 +2304,8 @@ src_core_libnm_systemd_core_la_SOURCES = \
 	src/core/systemd/src/libsystemd-network/lldp-neighbor.h \
 	src/core/systemd/src/libsystemd-network/lldp-network.c \
 	src/core/systemd/src/libsystemd-network/lldp-network.h \
+	src/core/systemd/src/libsystemd-network/network-common.c \
+	src/core/systemd/src/libsystemd-network/network-common.h \
 	src/core/systemd/src/libsystemd-network/network-internal.c \
 	src/core/systemd/src/libsystemd-network/network-internal.h \
 	src/core/systemd/src/libsystemd-network/sd-dhcp-client.c \

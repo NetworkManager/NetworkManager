@@ -752,6 +752,7 @@ static const char* const ip_tos_table[] = {
 };
 
 DEFINE_STRING_TABLE_LOOKUP_WITH_FALLBACK(ip_tos, int, 0xff);
+#endif /* NM_IGNORED */
 
 bool ifname_valid_full(const char *p, IfnameValidFlags flags) {
         bool numeric = true;
@@ -809,6 +810,7 @@ bool ifname_valid_full(const char *p, IfnameValidFlags flags) {
         return true;
 }
 
+#if 0 /* NM_IGNORED */
 bool address_label_valid(const char *p) {
 
         if (isempty(p))

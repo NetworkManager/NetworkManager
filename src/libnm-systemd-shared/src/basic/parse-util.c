@@ -93,6 +93,7 @@ int parse_mode(const char *s, mode_t *ret) {
                 *ret = m;
         return 0;
 }
+#endif /* NM_IGNORED */
 
 int parse_ifindex(const char *s) {
         int ifi, r;
@@ -108,6 +109,7 @@ int parse_ifindex(const char *s) {
         return ifi;
 }
 
+#if 0 /* NM_IGNORED */
 int parse_mtu(int family, const char *s, uint32_t *ret) {
         uint64_t u;
         size_t m;

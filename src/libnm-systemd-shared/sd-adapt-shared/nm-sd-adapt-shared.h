@@ -114,6 +114,10 @@ _nm_gettid(void)
         #define HAVE_RT_SIGQUEUEINFO 0
     #endif
 
+    #ifndef ALTIFNAMSIZ
+        #define ALTIFNAMSIZ 128
+    #endif
+
     #define HAVE_LINUX_TIME_TYPES_H 0
 
     #ifndef __COMPAR_FN_T
