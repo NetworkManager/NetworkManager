@@ -1033,8 +1033,11 @@ fi
 
 PKG_CHECK_MODULES(LIBNDP, [libndp])
 
+AC_ARG_WITH(readline,
+	AS_HELP_STRING([--with-readline=yes|no], [Prefer readline]))
+
 AC_ARG_WITH(nmcli,
-            AS_HELP_STRING([--with-nmcli=yes|no], [Build nmcli]))
+	AS_HELP_STRING([--with-nmcli=yes|no], [Build nmcli]))
 if test "$with_nmcli" != no; then
 	AX_LIB_READLINE
 	build_nmcli=yes
@@ -1406,4 +1409,5 @@ echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
 echo "  eBPF: $have_ebpf"
+echo "  readline: $READLINE_LIBS"
 echo

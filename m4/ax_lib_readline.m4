@@ -65,7 +65,11 @@ AC_DEFUN([AX_LIB_READLINE], [
   AC_CACHE_CHECK([for a readline compatible library],
                  ax_cv_lib_readline, [
     ORIG_LIBS="$LIBS"
-    for readline_lib in readline edit editline; do
+    search_readlines="readline edit"
+    if test "$with_readline" = no; then
+      search_readlines="edit"
+    fi
+    for readline_lib in $search_readlines; do
       # prefer ncurses since we use it for nmtui too
       for termcap_lib in "" ncurses termcap curses; do
         if test -z "$termcap_lib"; then
@@ -87,12 +91,16 @@ AC_DEFUN([AX_LIB_READLINE], [
   ])
 
   if test -z "$ax_cv_lib_readline"; then
-    AC_MSG_ERROR([readline library with terminfo support is required (one of readline, edit, or editline, AND one of ncurses, curses, or termcap)])
+    AC_MSG_ERROR([readline library with terminfo support is required (one of readline or edit, AND one of ncurses, curses, or termcap)])
   fi
 
   ORIG_LIBS="$LIBS"
   LIBS="$LIBS $ax_cv_lib_readline"
-  AC_CHECK_HEADERS(readline.h readline/readline.h editline/readline.h)
+  if test "$with_readline" = no; then
+    AC_CHECK_HEADERS(editline/readline.h)
+  else
+    AC_CHECK_HEADERS(readline/readline.h editline/readline.h)
+  fi
 
   # Check history
   AC_CACHE_CHECK([whether readline supports history],
@@ -103,7 +111,11 @@ AC_DEFUN([AX_LIB_READLINE], [
   if test "$ax_cv_lib_readline_history" != "yes"; then
     AC_MSG_ERROR(readline history support is required)
   fi
-  AC_CHECK_HEADERS(history.h readline/history.h histedit.h)
+  if test "$with_readline" = no; then
+    AC_CHECK_HEADERS(histedit.h)
+  else
+    AC_CHECK_HEADERS(readline/history.h histedit.h)
+  fi
 
   # check rl_echo_signal_char()
   AC_CACHE_CHECK([whether readline supports rl_echo_signal_char()],
