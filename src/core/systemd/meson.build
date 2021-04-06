@@ -19,6 +19,7 @@ libnm_systemd_core = static_library(
     'src/libsystemd-network/dhcp6-option.c',
     'src/libsystemd-network/lldp-neighbor.c',
     'src/libsystemd-network/lldp-network.c',
+    'src/libsystemd-network/network-common.c',
     'src/libsystemd-network/network-internal.c',
     'src/libsystemd-network/sd-dhcp-client.c',
     'src/libsystemd-network/sd-dhcp-lease.c',
