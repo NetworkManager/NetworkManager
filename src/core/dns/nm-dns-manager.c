@@ -270,6 +270,8 @@ _dns_config_ip_data_new(NMDnsConfigData * data,
     c_list_link_tail(&NM_DNS_MANAGER_GET_PRIVATE(data->self)->ip_config_lst_head,
                      &ip_data->ip_config_lst);
 
+    /* We also need to set priv->ip_config_lst_need_sort, but the caller will do that! */
+
     g_signal_connect(ip_config,
                      NM_IS_IP4_CONFIG(ip_config) ? "notify::" NM_IP4_CONFIG_DNS_PRIORITY
                                                  : "notify::" NM_IP6_CONFIG_DNS_PRIORITY,
