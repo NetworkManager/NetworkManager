@@ -1107,7 +1107,7 @@ update_resolv_conf(NMDnsManager *                self,
 }
 
 static void
-compute_hash(NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[HASH_LEN])
+compute_hash(NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[static HASH_LEN])
 {
     nm_auto_free_checksum GChecksum *sum = NULL;
     NMDnsConfigIPData *              ip_data;
