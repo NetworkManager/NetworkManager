@@ -14,6 +14,7 @@
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
+#include "libnm-base/nm-config-base.h"
 
 static gboolean
 verify_no_wep(NMSettingWirelessSecurity *s_wsec, const char *tag, GError **error)
@@ -1683,6 +1684,7 @@ nm_wifi_utils_connection_to_iwd_config(NMConnection *connection,
     gsize                 ssid_len;
     NMIwdNetworkSecurity  security;
     const char *          cloned_mac_addr;
+    gs_free char *        comment        = NULL;
     nm_auto_unref_keyfile GKeyFile *file = NULL;
 
     if (!s_conn || !s_wifi
@@ -1724,6 +1726,14 @@ nm_wifi_utils_connection_to_iwd_config(NMConnection *connection,
     }
 
     file = g_key_file_new();
+
+    comment = g_strdup_printf(" Auto-generated from NetworkManager connection \"%s\"\n"
+                              " Changes to that connection overwrite this file when "
+                              "enabled by NM's [%s].%s value",
+                              nm_setting_connection_get_id(s_conn),
+                              NM_CONFIG_KEYFILE_GROUP_MAIN,
+                              NM_CONFIG_KEYFILE_KEY_MAIN_IWD_CONFIG_PATH);
+    g_key_file_set_comment(file, NULL, NULL, comment, NULL);
 
     if (!nm_setting_connection_get_autoconnect(s_conn))
         g_key_file_set_boolean(file, "Settings", "AutoConnect", FALSE);
