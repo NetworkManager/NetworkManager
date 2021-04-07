@@ -452,10 +452,10 @@ sett_conn_changed(NMSettingsConnection *  sett_conn,
 
     nm_assert(sett_conn == data->mirror_connection);
 
-    if (update_reason
-        & (NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_SYSTEM_SECRETS
-           | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
-           | NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT))
+    if (!NM_FLAGS_ANY(update_reason,
+                      NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET
+                          | NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_SYSTEM_SECRETS
+                          | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS))
         return;
 
     /* If this is a generated connection it may be ourselves updating it */
