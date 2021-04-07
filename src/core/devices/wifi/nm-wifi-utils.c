@@ -996,6 +996,9 @@ nm_wifi_utils_get_iwd_config_filename(const char *         ssid,
 
 /*****************************************************************************/
 
+#define SECRETS_DONT_STORE_FLAGS \
+    (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED)
+
 static gboolean
 psk_setting_to_iwd_config(GKeyFile *file, NMSettingWirelessSecurity *s_wsec, GError **error)
 {
@@ -1005,13 +1008,13 @@ psk_setting_to_iwd_config(GKeyFile *file, NMSettingWirelessSecurity *s_wsec, GEr
     guint8               buffer[32];
     const char *         key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
 
-    if (!psk || (psk_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
+    if (!psk || NM_FLAGS_ANY(psk_flags, SECRETS_DONT_STORE_FLAGS)) {
         g_key_file_set_comment(file,
                                "Security",
                                NULL,
                                "The passphrase is to be queried through the agent",
                                NULL);
-        if (psk_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED) {
+        if (NM_FLAGS_ANY(psk_flags, SECRETS_DONT_STORE_FLAGS)) {
             nm_log_info(
                 LOGD_WIFI,
                 "IWD network config is being created wihout the PSK but IWD will save the PSK on "
@@ -1184,7 +1187,7 @@ eap_certs_to_iwd_config(GKeyFile *      file,
                                 : nm_setting_802_1x_get_private_key_password(s_8021x);
     key_password_flags = phase2 ? nm_setting_802_1x_get_phase2_private_key_password_flags(s_8021x)
                                 : nm_setting_802_1x_get_private_key_password_flags(s_8021x);
-    if (!key_password || (key_password_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
+    if (!key_password || NM_FLAGS_ANY(key_password_flags, SECRETS_DONT_STORE_FLAGS)) {
         g_key_file_set_comment(
             file,
             "Security",
@@ -1320,7 +1323,7 @@ eap_optional_password_to_iwd_config(GKeyFile *      file,
                             "the \"password\" property");
         return FALSE;
     }
-    if (!password || (flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
+    if (!password || NM_FLAGS_ANY(flags, SECRETS_DONT_STORE_FLAGS)) {
         return g_key_file_set_comment(file,
                                       "Security",
                                       nm_sprintf_buf(setting_buf, "%s%s", iwd_prefix, "Method"),
