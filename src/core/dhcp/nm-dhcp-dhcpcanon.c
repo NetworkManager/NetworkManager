@@ -156,6 +156,7 @@ dhcpcanon_start(NMDhcpClient *client,
     nm_assert(pid > 0);
     _LOGI("dhcpcanon started with pid %d", pid);
     nm_dhcp_client_watch_child(client, pid);
+    nm_dhcp_client_start_timeout(self);
     priv->pid_file = g_steal_pointer(&pid_file);
     return TRUE;
 }

@@ -9312,6 +9312,7 @@ dhcp4_state_changed(NMDhcpClient *client,
     switch (state) {
     case NM_DHCP_STATE_BOUND:
     case NM_DHCP_STATE_EXTENDED:
+    case NM_DHCP_STATE_TIMEOUT:
         if (!ip4_config) {
             _LOGW(LOGD_DHCP4, "failed to get IPv4 config in response to DHCP event.");
             dhcp4_fail(self, state);
@@ -9357,9 +9358,6 @@ dhcp4_state_changed(NMDhcpClient *client,
             else
                 dhcp4_fail(self, state);
         }
-        break;
-    case NM_DHCP_STATE_TIMEOUT:
-        dhcp4_fail(self, state);
         break;
     case NM_DHCP_STATE_EXPIRE:
         /* Ignore expiry before we even have a lease (NAK, old lease, etc) */
@@ -12926,8 +12924,7 @@ impl_device_get_applied_connection(NMDBusObject *                     obj,
         return;
     }
 
-    var_settings =
-        nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET);
+    var_settings = nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_NO_SECRETS);
     if (!var_settings)
         var_settings = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
 
