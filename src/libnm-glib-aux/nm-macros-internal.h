@@ -1275,8 +1275,14 @@ default:                                    \
     (G_STATIC_ASSERT_EXPR((check) > 0 && ((check) & ((check) -1)) == 0), \
      NM_FLAGS_ANY((flags), (check)))
 
-#define NM_FLAGS_ANY(flags, check) ((((flags) & (check)) != 0) ? TRUE : FALSE)
-#define NM_FLAGS_ALL(flags, check) ((((flags) & (check)) == (check)) ? TRUE : FALSE)
+#define NM_FLAGS_ANY(flags, check) (((flags) & (check)) != 0)
+
+#define NM_FLAGS_ALL(flags, check)            \
+    ({                                        \
+        const typeof(check) _check = (check); \
+                                              \
+        (((flags) & (_check)) == (_check));   \
+    })
 
 #define NM_FLAGS_SET(flags, val)              \
     ({                                        \
