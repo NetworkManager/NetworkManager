@@ -10,12 +10,13 @@
 
 #include "libnm-client-aux-extern/nm-default-client.h"
 
+#include "nmt-newt-utils.h"
+
 #include <stdarg.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include "libnm-glib-aux/nm-io-utils.h"
 
-#include "nmt-newt-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 
 static void
 nmt_newt_dialog_g_log_handler(const char *   log_domain,
