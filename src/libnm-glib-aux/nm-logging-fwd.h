@@ -93,6 +93,8 @@ void _nm_log_impl(const char *file,
                   const char *fmt,
                   ...) _nm_printf(10, 11);
 
+#define _nm_log_full(...) _nm_log_impl(__VA_ARGS__)
+
 static inline NMLogLevel
 nm_log_level_from_syslog(int syslog_level)
 {
