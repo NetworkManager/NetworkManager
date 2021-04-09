@@ -110,11 +110,16 @@ _audit_field_init_uint64(AuditField *field, const char *name, guint64 val, Audit
     };
 }
 
-static char *
-build_message(GPtrArray *fields, AuditBackend backend)
+static const char *
+build_message(NMStrBuf *strbuf, AuditBackend backend, GPtrArray *fields)
 {
-    NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
-    guint    i;
+    guint i;
+
+    if (strbuf->len == 0) {
+        /* preallocate a large buffer... */
+        nm_str_buf_maybe_expand(strbuf, NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
+    } else
+        nm_str_buf_reset(strbuf);
 
     for (i = 0; i < fields->len; i++) {
         const AuditField *field = fields->pdata[i];
@@ -122,7 +127,7 @@ build_message(GPtrArray *fields, AuditBackend backend)
         if (!NM_FLAGS_ANY(field->backends, backend))
             continue;
 
-        nm_str_buf_append_required_delimiter(&strbuf, ' ');
+        nm_str_buf_append_required_delimiter(strbuf, ' ');
 
         if (field->value_type == NM_VALUE_TYPE_STRING) {
             const char *str = field->value.v_string;
@@ -133,19 +138,19 @@ build_message(GPtrArray *fields, AuditBackend backend)
                     gs_free char *value = NULL;
 
                     value = audit_encode_nv_string(field->name, str, 0);
-                    nm_str_buf_append(&strbuf, value);
+                    nm_str_buf_append(strbuf, value);
                 } else
-                    nm_str_buf_append_printf(&strbuf, "%s=%s", field->name, str);
+                    nm_str_buf_append_printf(strbuf, "%s=%s", field->name, str);
                 continue;
             }
 #endif /* HAVE_LIBAUDIT */
 
-            nm_str_buf_append_printf(&strbuf, "%s=\"%s\"", field->name, str);
+            nm_str_buf_append_printf(strbuf, "%s=\"%s\"", field->name, str);
             continue;
         }
 
         if (field->value_type == NM_VALUE_TYPE_UINT64) {
-            nm_str_buf_append_printf(&strbuf,
+            nm_str_buf_append_printf(strbuf,
                                      "%s=%" G_GUINT64_FORMAT,
                                      field->name,
                                      field->value.v_uint64);
@@ -155,7 +160,7 @@ build_message(GPtrArray *fields, AuditBackend backend)
         g_return_val_if_reached(NULL);
     }
 
-    return nm_str_buf_finalize(&strbuf, NULL);
+    return nm_str_buf_get_str(strbuf);
 }
 
 static void
@@ -166,10 +171,10 @@ nm_audit_log(NMAuditManager *self,
              const char *    func,
              gboolean        success)
 {
+    nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(0, FALSE);
 #if HAVE_LIBAUDIT
     NMAuditManagerPrivate *priv;
 #endif
-    char *msg;
 
     g_return_if_fail(NM_IS_AUDIT_MANAGER(self));
 
@@ -177,14 +182,17 @@ nm_audit_log(NMAuditManager *self,
     priv = NM_AUDIT_MANAGER_GET_PRIVATE(self);
 
     if (priv->auditd_fd >= 0) {
-        msg = build_message(fields, BACKEND_AUDITD);
-        audit_log_user_message(priv->auditd_fd, AUDIT_USYS_CONFIG, msg, NULL, NULL, NULL, success);
-        g_free(msg);
+        audit_log_user_message(priv->auditd_fd,
+                               AUDIT_USYS_CONFIG,
+                               build_message(&strbuf, BACKEND_AUDITD, fields),
+                               NULL,
+                               NULL,
+                               NULL,
+                               success);
     }
 #endif
 
     if (nm_logging_enabled(AUDIT_LOG_LEVEL, LOGD_AUDIT)) {
-        msg = build_message(fields, BACKEND_LOG);
         _nm_log_full(file,
                      line,
                      func,
@@ -196,8 +204,7 @@ nm_audit_log(NMAuditManager *self,
                      NULL,
                      "%s%s",
                      _NMLOG_PREFIX_NAME ": ",
-                     msg);
-        g_free(msg);
+                     build_message(&strbuf, BACKEND_LOG, fields));
     }
 }
 
