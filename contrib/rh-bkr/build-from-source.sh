@@ -212,7 +212,7 @@ if [[ "$DO_TEST_PACKAGE" == yes || "$DO_INSTALL" == yes ]]; then
     fi
     NM_BUILD_SNAPSHOT="${BUILD_SNAPSHOT}" \
     PYTHON="${PYTHON}" \
-        ./contrib/fedora/rpm/build_clean.sh -c "${A[@]}"
+        ./contrib/fedora/rpm/build_clean.sh -c --with test "${A[@]}"
 fi
 
 if [[ "$DO_INSTALL" == yes ]]; then
