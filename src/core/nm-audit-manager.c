@@ -11,6 +11,7 @@
     #include <libaudit.h>
 #endif
 
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "nm-config.h"
 #include "nm-dbus-manager.h"
@@ -104,23 +105,16 @@ _audit_field_init_uint(AuditField *field, const char *name, uint val, AuditBacke
 static char *
 build_message(GPtrArray *fields, AuditBackend backend)
 {
-    GString *   string;
-    AuditField *field;
-    gboolean    first = TRUE;
-    guint       i;
-
-    string = g_string_new(NULL);
+    NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
+    guint    i;
 
     for (i = 0; i < fields->len; i++) {
-        field = fields->pdata[i];
+        AuditField *field = fields->pdata[i];
 
         if (!NM_FLAGS_ANY(field->backends, backend))
             continue;
 
-        if (first)
-            first = FALSE;
-        else
-            g_string_append_c(string, ' ');
+        nm_str_buf_append_required_delimiter(&strbuf, ' ');
 
         if (G_VALUE_HOLDS_STRING(&field->value)) {
             const char *str = g_value_get_string(&field->value);
@@ -128,23 +122,25 @@ build_message(GPtrArray *fields, AuditBackend backend)
 #if HAVE_LIBAUDIT
             if (backend == BACKEND_AUDITD) {
                 if (field->need_encoding) {
-                    char *value;
+                    gs_free char *value = NULL;
 
                     value = audit_encode_nv_string(field->name, str, 0);
-                    g_string_append(string, value);
-                    g_free(value);
+                    nm_str_buf_append(&strbuf, value);
                 } else
-                    g_string_append_printf(string, "%s=%s", field->name, str);
+                    nm_str_buf_append_printf(&strbuf, "%s=%s", field->name, str);
                 continue;
             }
 #endif /* HAVE_LIBAUDIT */
-            g_string_append_printf(string, "%s=\"%s\"", field->name, str);
+            nm_str_buf_append_printf(&strbuf, "%s=\"%s\"", field->name, str);
         } else if (G_VALUE_HOLDS_UINT(&field->value)) {
-            g_string_append_printf(string, "%s=%u", field->name, g_value_get_uint(&field->value));
+            nm_str_buf_append_printf(&strbuf,
+                                     "%s=%u",
+                                     field->name,
+                                     g_value_get_uint(&field->value));
         } else
             g_assert_not_reached();
     }
-    return g_string_free(string, FALSE);
+    return nm_str_buf_finalize(&strbuf, NULL);
 }
 
 static void
