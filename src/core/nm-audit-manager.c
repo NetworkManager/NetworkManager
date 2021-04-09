@@ -174,7 +174,18 @@ nm_audit_log(NMAuditManager *self,
 
     if (nm_logging_enabled(AUDIT_LOG_LEVEL, LOGD_AUDIT)) {
         msg = build_message(fields, BACKEND_LOG);
-        _NMLOG(AUDIT_LOG_LEVEL, LOGD_AUDIT, "%s", msg);
+        _nm_log_full(file,
+                     line,
+                     func,
+                     !(NM_THREAD_SAFE_ON_MAIN_THREAD),
+                     AUDIT_LOG_LEVEL,
+                     LOGD_AUDIT,
+                     0,
+                     NULL,
+                     NULL,
+                     "%s%s",
+                     _NMLOG_PREFIX_NAME ": ",
+                     msg);
         g_free(msg);
     }
 }
