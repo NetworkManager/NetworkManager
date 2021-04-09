@@ -1386,7 +1386,7 @@ nm_device_get_autoconnect(NMDevice *device)
  * Enables or disables automatic activation of the #NMDevice.
  *
  * Deprecated: 1.22: Use the async command nm_client_dbus_set_property() on
- * nm_object_get_path(), %NM_DBUS_INTERFACE_DEVICE to set "AutoConnect" property to a "(b)" value.
+ * nm_object_get_path(), %NM_DBUS_INTERFACE_DEVICE to set "Autoconnect" property to a "(b)" value.
  * This function is deprecated because it calls a synchronous D-Bus method
  * and modifies the content of the NMClient cache client side.
  **/
@@ -1400,7 +1400,7 @@ nm_device_set_autoconnect(NMDevice *device, gboolean autoconnect)
     _nm_client_set_property_sync_legacy(_nm_object_get_client(device),
                                         _nm_object_get_path(device),
                                         NM_DBUS_INTERFACE_DEVICE,
-                                        "AutoConnect",
+                                        "Autoconnect",
                                         "b",
                                         autoconnect);
 }
