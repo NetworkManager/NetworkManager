@@ -5008,6 +5008,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-page-vlan.h \
 	src/nmtui/nmt-page-wifi.c \
 	src/nmtui/nmt-page-wifi.h \
+	src/nmtui/nmt-page-wireguard.c \
+	src/nmtui/nmt-page-wireguard.h \
 	src/nmtui/nmt-password-dialog.c \
 	src/nmtui/nmt-password-dialog.h \
 	src/nmtui/nmt-password-fields.c \
@@ -5020,6 +5022,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-route-table.h \
 	src/nmtui/nmt-slave-list.c \
 	src/nmtui/nmt-slave-list.h \
+	src/nmtui/nmt-peer-list.c \
+	src/nmtui/nmt-peer-list.h \
 	src/nmtui/nmt-utils.c \
 	src/nmtui/nmt-utils.h \
 	src/nmtui/nmt-widget-list.c \
