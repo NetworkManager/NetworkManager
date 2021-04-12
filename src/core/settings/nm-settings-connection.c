@@ -477,39 +477,6 @@ update_agent_secrets_cache(NMSettingsConnection *self, NMConnection *new)
     }
 }
 
-void
-nm_settings_connection_clear_secrets(NMSettingsConnection *self,
-                                     gboolean              clear_cached_system_secrets,
-                                     gboolean              persist)
-{
-    gs_unref_object NMConnection *connection_cloned = NULL;
-
-    if (!nm_settings_connection_still_valid(self))
-        return;
-
-    /* FIXME: add API to NMConnection so that we can clone a profile without secrets. */
-
-    connection_cloned = nm_simple_connection_new_clone(nm_settings_connection_get_connection(self));
-
-    nm_connection_clear_secrets(connection_cloned);
-
-    if (!nm_settings_connection_update(
-            self,
-            connection_cloned,
-            persist ? NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP
-                    : NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST,
-            NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
-            NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
-            NM_SETTINGS_CONNECTION_UPDATE_REASON_IGNORE_PERSIST_FAILURE
-                | (clear_cached_system_secrets
-                       ? NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_SYSTEM_SECRETS
-                       : NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE)
-                | NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_AGENT_SECRETS,
-            "clear-secrets",
-            NULL))
-        nm_assert_not_reached();
-}
-
 static gboolean
 _secrets_update(NMConnection * connection,
                 const char *   setting_name,
@@ -1938,8 +1905,9 @@ dbus_clear_secrets_auth_cb(NMSettingsConnection * self,
                            GError *               error,
                            gpointer               user_data)
 {
-    NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-    gs_free_error GError *local       = NULL;
+    NMSettingsConnectionPrivate *priv               = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+    gs_free_error GError *local                     = NULL;
+    gs_unref_object NMConnection *connection_cloned = NULL;
 
     if (error) {
         g_dbus_method_invocation_return_gerror(context, error);
@@ -1952,7 +1920,24 @@ dbus_clear_secrets_auth_cb(NMSettingsConnection * self,
         return;
     }
 
-    nm_settings_connection_clear_secrets(self, TRUE, TRUE);
+    /* FIXME: add API to NMConnection so that we can clone a profile without secrets. */
+
+    connection_cloned = nm_simple_connection_new_clone(nm_settings_connection_get_connection(self));
+
+    nm_connection_clear_secrets(connection_cloned);
+
+    if (!nm_settings_connection_update(
+            self,
+            connection_cloned,
+            NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+            NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
+            NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
+            NM_SETTINGS_CONNECTION_UPDATE_REASON_IGNORE_PERSIST_FAILURE
+                | NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_SYSTEM_SECRETS
+                | NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_AGENT_SECRETS,
+            "clear-secrets",
+            NULL))
+        nm_assert_not_reached();
 
     /* Tell agents to remove secrets for this connection */
     nm_agent_manager_delete_secrets(priv->agent_mgr,
