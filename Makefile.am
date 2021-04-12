@@ -127,6 +127,7 @@ src/libnm-std-aux/.dirstamp:                        config-extra.h
 src/libnm-udev-aux/.dirstamp:                       config-extra.h
 src/libnm-systemd-shared/.dirstamp:                 config-extra.h
 src/libnm-systemd-shared/src/basic/.dirstamp:       config-extra.h
+src/libnm-systemd-shared/src/fundamental/.dirstamp: config-extra.h
 src/libnm-systemd-shared/src/shared/.dirstamp:      config-extra.h
 src/libnm-client-public/.dirstamp:                  config-extra.h
 src/libnm-client-public/.dirstamp:                  config-extra.h
