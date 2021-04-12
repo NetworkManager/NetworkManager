@@ -85,13 +85,6 @@ typedef struct _NMSettingsConnectionPrivate {
 
     NMDevice *default_wired_device;
 
-    /* Caches secrets from on-disk connections; were they not cached any
-     * call to nm_connection_clear_secrets() wipes them out and we'd have
-     * to re-read them from disk which defeats the purpose of having the
-     * connection in-memory at all.
-     */
-    GVariant *system_secrets;
-
     /* Caches secrets from agents during the activation process; if new system
      * secrets are returned from an agent, they get written out to disk,
      * triggering a re-read of the connection, which reads only system
@@ -168,7 +161,6 @@ static const GDBusSignalInfo             signal_info_updated;
 static const GDBusSignalInfo             signal_info_removed;
 static const NMDBusInterfaceInfoExtended interface_info_settings_connection;
 
-static void update_system_secrets_cache(NMSettingsConnection *self, NMConnection *new);
 static void update_agent_secrets_cache(NMSettingsConnection *self, NMConnection *new);
 
 /*****************************************************************************/
@@ -297,11 +289,6 @@ _nm_settings_connection_set_connection(NMSettingsConnection *           self,
          *  - return the previous pointer if the connection changed. */
         NM_SET_OUT(out_connection_old, g_steal_pointer(&connection_old));
     }
-
-    if (NM_FLAGS_HAS(update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_SYSTEM_SECRETS))
-        update_system_secrets_cache(self, NULL);
-    else if (NM_FLAGS_HAS(update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS))
-        update_system_secrets_cache(self, priv->connection);
 
     if (NM_FLAGS_HAS(update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_CLEAR_AGENT_SECRETS))
         update_agent_secrets_cache(self, NULL);
@@ -432,27 +419,6 @@ nm_settings_connection_check_permission(NMSettingsConnection *self, const char *
 }
 
 /*****************************************************************************/
-
-static void
-update_system_secrets_cache(NMSettingsConnection *self, NMConnection *new)
-{
-    NMSettingsConnectionPrivate *priv      = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-    gs_unref_variant GVariant *old_secrets = NULL;
-
-    old_secrets = g_steal_pointer(&priv->system_secrets);
-
-    if (new) {
-        priv->system_secrets = nm_g_variant_ref_sink(
-            nm_connection_to_dbus(new, NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED));
-    }
-
-    if (_LOGT_ENABLED()) {
-        if ((!!old_secrets) != (!!priv->system_secrets)) {
-            _LOGT("update system secrets: secrets %s", old_secrets ? "cleared" : "set");
-        } else if (priv->system_secrets && !g_variant_equal(old_secrets, priv->system_secrets))
-            _LOGT("update system secrets: secrets updated");
-    }
-}
 
 static void
 update_agent_secrets_cache(NMSettingsConnection *self, NMConnection *new)
@@ -774,6 +740,18 @@ nm_settings_connection_new_secrets(NMSettingsConnection *self,
     return TRUE;
 }
 
+static gboolean
+match_secret_by_setting_name_and_flags_cb(NMSetting *          setting,
+                                          const char *         secret,
+                                          NMSettingSecretFlags flags,
+                                          gpointer             user_data)
+{
+    const char *get_secrets_setting_name = user_data;
+
+    return nm_streq(nm_setting_get_name(setting), get_secrets_setting_name)
+           && NM_FLAGS_HAS(flags, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+}
+
 static void
 get_secrets_done_cb(NMAgentManager *             manager,
                     NMAgentManagerCallId         call_id_a,
@@ -791,7 +769,6 @@ get_secrets_done_cb(NMAgentManager *             manager,
     NMSettingsConnectionPrivate *priv;
     NMConnection *               applied_connection;
     gs_free_error GError *local                    = NULL;
-    gs_unref_variant GVariant *system_secrets      = NULL;
     gs_unref_object NMConnection *new_connection   = NULL;
     gboolean                      agent_had_system = FALSE;
     ForEachSecretFlags cmp_flags = {NM_SETTING_SECRET_FLAG_NONE, NM_SETTING_SECRET_FLAG_NONE};
@@ -862,18 +839,12 @@ get_secrets_done_cb(NMAgentManager *             manager,
 
     _LOGD("(%s:%p) secrets request completed", setting_name, call_id);
 
-    system_secrets = nm_g_variant_ref(priv->system_secrets);
-
     new_connection = nm_simple_connection_new_clone(nm_settings_connection_get_connection(self));
 
-    nm_connection_clear_secrets(new_connection);
-
-    if (!_secrets_update(new_connection, setting_name, system_secrets, NULL, &local)) {
-        _LOGD("(%s:%p) failed to update with existing secrets: %s",
-              setting_name,
-              call_id,
-              local->message);
-    }
+    /* Remove old agent-owned secrets in the requested setting */
+    nm_connection_clear_secrets_with_flags(new_connection,
+                                           match_secret_by_setting_name_and_flags_cb,
+                                           (gpointer) setting_name);
 
     /* Update the connection with the agent's secrets; by this point if any
      * system-owned secrets exist in 'secrets' the agent that provided them
@@ -907,7 +878,8 @@ get_secrets_done_cb(NMAgentManager *             manager,
             NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
             NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
             NM_SETTINGS_CONNECTION_UPDATE_REASON_IGNORE_PERSIST_FAILURE
-                | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
+                | (agent_had_system ? NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_SYSTEM_SECRETS
+                                    : NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE)
                 | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS,
             "get-new-secrets",
             NULL))
@@ -915,6 +887,8 @@ get_secrets_done_cb(NMAgentManager *             manager,
 
     applied_connection = call_id->applied_connection;
     if (applied_connection) {
+        gs_unref_variant GVariant *filtered_secrets2 = NULL;
+
         get_cmp_flags(self,
                       call_id,
                       applied_connection,
@@ -926,18 +900,12 @@ get_secrets_done_cb(NMAgentManager *             manager,
                       &agent_had_system,
                       &cmp_flags);
 
-        nm_connection_clear_secrets(applied_connection);
+        nm_connection_clear_secrets_with_flags(applied_connection,
+                                               match_secret_by_setting_name_and_flags_cb,
+                                               (gpointer) setting_name);
 
-        if (!system_secrets
-            || nm_connection_update_secrets(applied_connection,
-                                            setting_name,
-                                            system_secrets,
-                                            NULL)) {
-            gs_unref_variant GVariant *filtered_secrets2 = NULL;
-
-            filtered_secrets2 = validate_secret_flags(applied_connection, secrets, &cmp_flags);
-            nm_connection_update_secrets(applied_connection, setting_name, filtered_secrets2, NULL);
-        }
+        filtered_secrets2 = validate_secret_flags(applied_connection, secrets, &cmp_flags);
+        nm_connection_update_secrets(applied_connection, setting_name, filtered_secrets2, NULL);
     }
 
     _get_secrets_info_callback(call_id, agent_username, setting_name, local);
@@ -1005,7 +973,8 @@ nm_settings_connection_get_secrets(NMSettingsConnection *          self,
     NMAgentManagerCallId         call_id_a;
     gs_free char *               joined_hints = NULL;
     NMSettingsConnectionCallId * call_id;
-    GError *                     local = NULL;
+    GError *                     local        = NULL;
+    gs_unref_variant GVariant *system_secrets = NULL;
 
     g_return_val_if_fail(NM_IS_SETTINGS_CONNECTION(self), NULL);
     g_return_val_if_fail(
@@ -1056,14 +1025,15 @@ nm_settings_connection_get_secrets(NMSettingsConnection *          self,
      * Then we know that the this request probably did not yet include the latest secret-agent. */
     priv->last_secret_agent_version_id = nm_agent_manager_get_agent_version_id(priv->agent_mgr);
 
-    /* Use priv->system_secrets to work around the fact that nm_connection_clear_secrets()
-     * will clear secrets on this object's settings.
-     */
+    system_secrets = nm_g_variant_ref_sink(
+        nm_connection_to_dbus(nm_settings_connection_get_connection(self),
+                              NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED));
+
     call_id_a = nm_agent_manager_get_secrets(priv->agent_mgr,
                                              nm_dbus_object_get_path(NM_DBUS_OBJECT(self)),
                                              nm_settings_connection_get_connection(self),
                                              subject,
-                                             priv->system_secrets,
+                                             system_secrets,
                                              setting_name,
                                              flags,
                                              hints,
@@ -1433,14 +1403,21 @@ update_auth_cb(NMSettingsConnection * self,
         if (!_nm_connection_aggregate(info->new_settings,
                                       NM_CONNECTION_AGGREGATE_ANY_SECRETS,
                                       NULL)) {
+            gs_unref_variant GVariant *secrets = NULL;
+
             /* If the new connection has no secrets, we do not want to remove all
              * secrets, rather we keep all the existing ones. Do that by merging
              * them in to the new connection.
              */
+            secrets = nm_g_variant_ref_sink(
+                nm_connection_to_dbus(nm_settings_connection_get_connection(self),
+                                      NM_CONNECTION_SERIALIZE_WITH_SECRETS));
+
+            if (secrets)
+                nm_connection_update_secrets(info->new_settings, NULL, secrets, NULL);
+
             if (priv->agent_secrets)
                 nm_connection_update_secrets(info->new_settings, NULL, priv->agent_secrets, NULL);
-            if (priv->system_secrets)
-                nm_connection_update_secrets(info->new_settings, NULL, priv->system_secrets, NULL);
         } else {
             /* Cache the new secrets from the agent, as stuff like inotify-triggered
              * changes to connection's backing config files will blow them away if
@@ -2623,7 +2600,6 @@ dispose(GObject *object)
             _get_secrets_cancel(self, call_id, TRUE);
     }
 
-    nm_clear_pointer(&priv->system_secrets, g_variant_unref);
     nm_clear_pointer(&priv->agent_secrets, g_variant_unref);
 
     nm_clear_pointer(&priv->seen_bssids, g_hash_table_destroy);
