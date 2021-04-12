@@ -2003,19 +2003,12 @@ device_state_changed(NMDevice *          device,
                           nm_settings_connection_get_id(sett_conn));
                 }
             }
-
-            nm_settings_connection_clear_secrets(sett_conn, FALSE, FALSE);
         }
         break;
     case NM_DEVICE_STATE_ACTIVATED:
         if (sett_conn) {
             /* Reset auto retries back to default since connection was successful */
             nm_settings_connection_autoconnect_retries_reset(sett_conn);
-
-            /* And clear secrets so they will always be requested from the
-             * settings service when the next connection is made.
-             */
-            nm_settings_connection_clear_secrets(sett_conn, FALSE, FALSE);
         }
 
         /* Add device's new IPv4 and IPv6 configs to DNS */
