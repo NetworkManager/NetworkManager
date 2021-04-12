@@ -11,14 +11,18 @@
     #include <libaudit.h>
 #endif
 
+#define NM_VALUE_TYPE_DEFINE_FUNCTIONS
+
 #include "libnm-core-aux-intern/nm-auth-subject.h"
+#include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-value-type.h"
 #include "nm-config.h"
 #include "nm-dbus-manager.h"
 #include "settings/nm-settings-connection.h"
 
 /*****************************************************************************/
 
-typedef enum {
+typedef enum _nm_packed {
     BACKEND_LOG    = (1 << 0),
     BACKEND_AUDITD = (1 << 1),
     _BACKEND_LAST,
@@ -26,10 +30,11 @@ typedef enum {
 } AuditBackend;
 
 typedef struct {
-    const char * name;
-    GValue       value;
-    gboolean     need_encoding;
-    AuditBackend backends;
+    const char *    name;
+    AuditBackend    backends;
+    bool            need_encoding;
+    NMValueType     value_type;
+    NMValueTypUnion value;
 } AuditField;
 
 /*****************************************************************************/
@@ -85,66 +90,77 @@ _audit_field_init_string(AuditField * field,
                          gboolean     need_encoding,
                          AuditBackend backends)
 {
-    field->name          = name;
-    field->need_encoding = need_encoding;
-    field->backends      = backends;
-    g_value_init(&field->value, G_TYPE_STRING);
-    g_value_set_static_string(&field->value, str);
+    *field = (AuditField){
+        .name           = name,
+        .need_encoding  = need_encoding,
+        .backends       = backends,
+        .value_type     = NM_VALUE_TYPE_STRING,
+        .value.v_string = str,
+    };
 }
 
 static void
-_audit_field_init_uint(AuditField *field, const char *name, uint val, AuditBackend backends)
+_audit_field_init_uint64(AuditField *field, const char *name, guint64 val, AuditBackend backends)
 {
-    field->name     = name;
-    field->backends = backends;
-    g_value_init(&field->value, G_TYPE_UINT);
-    g_value_set_uint(&field->value, val);
+    *field = (AuditField){
+        .name           = name,
+        .backends       = backends,
+        .value_type     = NM_VALUE_TYPE_UINT64,
+        .value.v_uint64 = val,
+    };
 }
 
-static char *
-build_message(GPtrArray *fields, AuditBackend backend)
+static const char *
+build_message(NMStrBuf *strbuf, AuditBackend backend, GPtrArray *fields)
 {
-    GString *   string;
-    AuditField *field;
-    gboolean    first = TRUE;
-    guint       i;
+    guint i;
 
-    string = g_string_new(NULL);
+    if (strbuf->len == 0) {
+        /* preallocate a large buffer... */
+        nm_str_buf_maybe_expand(strbuf, NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
+    } else
+        nm_str_buf_reset(strbuf);
 
     for (i = 0; i < fields->len; i++) {
-        field = fields->pdata[i];
+        const AuditField *field = fields->pdata[i];
 
         if (!NM_FLAGS_ANY(field->backends, backend))
             continue;
 
-        if (first)
-            first = FALSE;
-        else
-            g_string_append_c(string, ' ');
+        nm_str_buf_append_required_delimiter(strbuf, ' ');
 
-        if (G_VALUE_HOLDS_STRING(&field->value)) {
-            const char *str = g_value_get_string(&field->value);
+        if (field->value_type == NM_VALUE_TYPE_STRING) {
+            const char *str = field->value.v_string;
 
 #if HAVE_LIBAUDIT
             if (backend == BACKEND_AUDITD) {
                 if (field->need_encoding) {
-                    char *value;
+                    gs_free char *value = NULL;
 
                     value = audit_encode_nv_string(field->name, str, 0);
-                    g_string_append(string, value);
-                    g_free(value);
+                    nm_str_buf_append(strbuf, value);
                 } else
-                    g_string_append_printf(string, "%s=%s", field->name, str);
+                    nm_str_buf_append_printf(strbuf, "%s=%s", field->name, str);
                 continue;
             }
 #endif /* HAVE_LIBAUDIT */
-            g_string_append_printf(string, "%s=\"%s\"", field->name, str);
-        } else if (G_VALUE_HOLDS_UINT(&field->value)) {
-            g_string_append_printf(string, "%s=%u", field->name, g_value_get_uint(&field->value));
-        } else
-            g_assert_not_reached();
+
+            nm_str_buf_append_printf(strbuf, "%s=\"%s\"", field->name, str);
+            continue;
+        }
+
+        if (field->value_type == NM_VALUE_TYPE_UINT64) {
+            nm_str_buf_append_printf(strbuf,
+                                     "%s=%" G_GUINT64_FORMAT,
+                                     field->name,
+                                     field->value.v_uint64);
+            continue;
+        }
+
+        g_return_val_if_reached(NULL);
     }
-    return g_string_free(string, FALSE);
+
+    return nm_str_buf_get_str(strbuf);
 }
 
 static void
@@ -155,10 +171,10 @@ nm_audit_log(NMAuditManager *self,
              const char *    func,
              gboolean        success)
 {
+    nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(0, FALSE);
 #if HAVE_LIBAUDIT
     NMAuditManagerPrivate *priv;
 #endif
-    char *msg;
 
     g_return_if_fail(NM_IS_AUDIT_MANAGER(self));
 
@@ -166,16 +182,29 @@ nm_audit_log(NMAuditManager *self,
     priv = NM_AUDIT_MANAGER_GET_PRIVATE(self);
 
     if (priv->auditd_fd >= 0) {
-        msg = build_message(fields, BACKEND_AUDITD);
-        audit_log_user_message(priv->auditd_fd, AUDIT_USYS_CONFIG, msg, NULL, NULL, NULL, success);
-        g_free(msg);
+        audit_log_user_message(priv->auditd_fd,
+                               AUDIT_USYS_CONFIG,
+                               build_message(&strbuf, BACKEND_AUDITD, fields),
+                               NULL,
+                               NULL,
+                               NULL,
+                               success);
     }
 #endif
 
     if (nm_logging_enabled(AUDIT_LOG_LEVEL, LOGD_AUDIT)) {
-        msg = build_message(fields, BACKEND_LOG);
-        _NMLOG(AUDIT_LOG_LEVEL, LOGD_AUDIT, "%s", msg);
-        g_free(msg);
+        _nm_log_full(file,
+                     line,
+                     func,
+                     !(NM_THREAD_SAFE_ON_MAIN_THREAD),
+                     AUDIT_LOG_LEVEL,
+                     LOGD_AUDIT,
+                     0,
+                     NULL,
+                     NULL,
+                     "%s%s",
+                     _NMLOG_PREFIX_NAME ": ",
+                     build_message(&strbuf, BACKEND_LOG, fields));
     }
 }
 
@@ -190,9 +219,13 @@ _audit_log_helper(NMAuditManager *self,
                   gpointer        subject_context,
                   const char *    reason)
 {
-    AuditField      op_field = {}, pid_field = {}, uid_field = {};
-    AuditField      result_field = {}, reason_field = {};
-    gulong          pid, uid;
+    AuditField      op_field;
+    AuditField      pid_field;
+    AuditField      uid_field;
+    AuditField      result_field;
+    AuditField      reason_field;
+    gulong          pid;
+    gulong          uid;
     NMAuthSubject * subject                     = NULL;
     gs_unref_object NMAuthSubject *subject_free = NULL;
 
@@ -213,11 +246,11 @@ _audit_log_helper(NMAuditManager *self,
         pid = nm_auth_subject_get_unix_process_pid(subject);
         uid = nm_auth_subject_get_unix_process_uid(subject);
         if (pid != G_MAXULONG) {
-            _audit_field_init_uint(&pid_field, "pid", pid, BACKEND_ALL);
+            _audit_field_init_uint64(&pid_field, "pid", pid, BACKEND_ALL);
             g_ptr_array_add(fields, &pid_field);
         }
         if (uid != G_MAXULONG) {
-            _audit_field_init_uint(&uid_field, "uid", uid, BACKEND_ALL);
+            _audit_field_init_uint64(&uid_field, "uid", uid, BACKEND_ALL);
             g_ptr_array_add(fields, &uid_field);
         }
     }
@@ -262,8 +295,10 @@ _nm_audit_manager_log_connection_op(NMAuditManager *      self,
                                     gpointer              subject_context,
                                     const char *          reason)
 {
-    gs_unref_ptrarray GPtrArray *fields     = NULL;
-    AuditField                   uuid_field = {}, name_field = {}, args_field = {};
+    gs_unref_ptrarray GPtrArray *fields = NULL;
+    AuditField                   uuid_field;
+    AuditField                   name_field;
+    AuditField                   args_field;
 
     g_return_if_fail(op);
 
@@ -304,8 +339,8 @@ _nm_audit_manager_log_generic_op(NMAuditManager *self,
                                  gpointer        subject_context,
                                  const char *    reason)
 {
-    gs_unref_ptrarray GPtrArray *fields    = NULL;
-    AuditField                   arg_field = {};
+    gs_unref_ptrarray GPtrArray *fields = NULL;
+    AuditField                   arg_field;
 
     g_return_if_fail(op);
     g_return_if_fail(arg);
@@ -330,8 +365,10 @@ _nm_audit_manager_log_device_op(NMAuditManager *self,
                                 gpointer        subject_context,
                                 const char *    reason)
 {
-    gs_unref_ptrarray GPtrArray *fields          = NULL;
-    AuditField                   interface_field = {}, ifindex_field = {}, args_field = {};
+    gs_unref_ptrarray GPtrArray *fields = NULL;
+    AuditField                   interface_field;
+    AuditField                   ifindex_field;
+    AuditField                   args_field;
     int                          ifindex;
 
     g_return_if_fail(op);
@@ -348,7 +385,7 @@ _nm_audit_manager_log_device_op(NMAuditManager *self,
 
     ifindex = nm_device_get_ip_ifindex(device);
     if (ifindex > 0) {
-        _audit_field_init_uint(&ifindex_field, "ifindex", ifindex, BACKEND_ALL);
+        _audit_field_init_uint64(&ifindex_field, "ifindex", ifindex, BACKEND_ALL);
         g_ptr_array_add(fields, &ifindex_field);
     }
 

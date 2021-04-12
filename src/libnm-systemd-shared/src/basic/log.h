@@ -113,7 +113,7 @@ int log_internal(
         if (_nm_log_enabled_impl(!(NM_THREAD_SAFE_ON_MAIN_THREAD), _nm_l, LOGD_SYSTEMD)) { \
             const char *_nm_location = strrchr(("" file), '/');                            \
                                                                                            \
-            _nm_log_impl(_nm_location ? _nm_location + 1 : ("" file),                      \
+            _nm_log_full(_nm_location ? _nm_location + 1 : ("" file),                      \
                          (line),                                                           \
                          (func),                                                           \
                          !(NM_THREAD_SAFE_ON_MAIN_THREAD),                                 \

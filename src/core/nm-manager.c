@@ -7102,6 +7102,85 @@ typedef struct {
 
 #define NM_PERM_DENIED_ERROR "org.freedesktop.NetworkManager.PermissionDenied"
 
+static const char *
+_dbus_set_property_audit_log_get_args(NMDBusObject *obj,
+                                      const char *  property_name,
+                                      GVariant *    value,
+                                      char **       str_to_free)
+{
+    nm_assert(str_to_free && !*str_to_free);
+
+    /* We assert here that the property is one of the few expected ones.
+     *
+     * Future properties should not made writable! Add a D-Bus method instead,
+     * they are more flexible (for example, you can set multiple properties at
+     * once). */
+
+    if (NM_IS_DEVICE(obj)) {
+        nm_assert(NM_IN_STRSET(property_name,
+                               NM_DEVICE_MANAGED,
+                               NM_DEVICE_AUTOCONNECT,
+                               NM_DEVICE_STATISTICS_REFRESH_RATE_MS));
+        return (*str_to_free = g_variant_print(value, FALSE));
+    }
+
+    nm_assert(NM_IS_MANAGER(obj));
+    if (NM_IN_STRSET(property_name,
+                     NM_MANAGER_WIRELESS_ENABLED,
+                     NM_MANAGER_WWAN_ENABLED,
+                     NM_MANAGER_WIMAX_ENABLED,
+                     NM_MANAGER_CONNECTIVITY_CHECK_ENABLED)) {
+        return (*str_to_free = g_strdup_printf("%s:%s",
+                                               property_name,
+                                               g_variant_get_boolean(value) ? "on" : "off"));
+    }
+    if (NM_IN_STRSET(property_name, NM_MANAGER_GLOBAL_DNS_CONFIGURATION)) {
+        return NM_MANAGER_GLOBAL_DNS_CONFIGURATION;
+    }
+
+    return nm_assert_unreachable_val("???");
+}
+
+/* this is a macro to catch the caller's line number. */
+#define _dbus_set_property_audit_log(obj,                                                  \
+                                     audit_op,                                             \
+                                     auth_subject,                                         \
+                                     property_name,                                        \
+                                     value,                                                \
+                                     error_message)                                        \
+    G_STMT_START                                                                           \
+    {                                                                                      \
+        NMDBusObject *const  _obj           = (obj);                                       \
+        const char *const    _audit_op      = (audit_op);                                  \
+        NMAuthSubject *const _auth_subject  = (auth_subject);                              \
+        const char *const    _property_name = (property_name);                             \
+        GVariant *const      _value         = (value);                                     \
+        const char *const    _error_message = (error_message);                             \
+        gs_free char *       _args_to_free  = NULL;                                        \
+                                                                                           \
+        if (NM_IS_DEVICE(_obj)) {                                                          \
+            nm_audit_log_device_op(_audit_op,                                              \
+                                   NM_DEVICE(_obj),                                        \
+                                   !_error_message,                                        \
+                                   _dbus_set_property_audit_log_get_args(_obj,             \
+                                                                         _property_name,   \
+                                                                         _value,           \
+                                                                         &_args_to_free),  \
+                                   _auth_subject,                                          \
+                                   _error_message);                                        \
+        } else {                                                                           \
+            nm_audit_log_control_op(_audit_op,                                             \
+                                    _dbus_set_property_audit_log_get_args(_obj,            \
+                                                                          _property_name,  \
+                                                                          _value,          \
+                                                                          &_args_to_free), \
+                                    !_error_message,                                       \
+                                    _auth_subject,                                         \
+                                    _error_message);                                       \
+        }                                                                                  \
+    }                                                                                      \
+    G_STMT_END
+
 static void
 _dbus_set_property_auth_cb(NMAuthChain *          chain,
                            GDBusMethodInvocation *invocation,
@@ -7159,11 +7238,13 @@ _dbus_set_property_auth_cb(NMAuthChain *          chain,
     g_value_unset(&gvalue);
 
 out:
-    nm_audit_log_control_op(property_info->writable.audit_op,
-                            property_info->property_name,
-                            !error_message,
-                            nm_auth_chain_get_subject(chain),
-                            error_message);
+    _dbus_set_property_audit_log(obj,
+                                 property_info->writable.audit_op,
+                                 nm_auth_chain_get_subject(chain),
+                                 property_info->property_name,
+                                 value,
+                                 error_message);
+
     if (error_message)
         g_dbus_method_invocation_return_dbus_error(invocation, error_name, error_message);
     else
@@ -7187,10 +7268,27 @@ nm_manager_dbus_set_property_handle(NMDBusObject *                     obj,
     gs_unref_object NMAuthSubject *subject = NULL;
     DBusSetPropertyHandle *        handle_data;
 
+    /* we only have writable properties on Device or Manager. In the future,
+     * we probably should not add new API with writable properties. Add
+     * methods instead. Systemd also avoids writable properties. */
+    nm_assert(obj == (gpointer) self || NM_IS_DEVICE(obj));
+
     subject = nm_dbus_manager_new_auth_subject_from_context(invocation);
     if (!subject) {
         error_message = NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN;
-        goto err;
+
+        _dbus_set_property_audit_log(obj,
+                                     property_info->writable.audit_op,
+                                     NULL,
+                                     property_info->property_name,
+                                     value,
+                                     error_message);
+
+        g_dbus_method_invocation_return_error_literal(invocation,
+                                                      G_DBUS_ERROR,
+                                                      G_DBUS_ERROR_AUTH_FAILED,
+                                                      error_message);
+        return;
     }
 
     handle_data                    = g_slice_new0(DBusSetPropertyHandle);
@@ -7204,18 +7302,6 @@ nm_manager_dbus_set_property_handle(NMDBusObject *                     obj,
     chain = nm_auth_chain_new_subject(subject, invocation, _dbus_set_property_auth_cb, handle_data);
     c_list_link_tail(&priv->auth_lst_head, nm_auth_chain_parent_lst_list(chain));
     nm_auth_chain_add_call_unsafe(chain, property_info->writable.permission, TRUE);
-    return;
-
-err:
-    nm_audit_log_control_op(property_info->writable.audit_op,
-                            property_info->property_name,
-                            FALSE,
-                            invocation,
-                            error_message);
-    g_dbus_method_invocation_return_error_literal(invocation,
-                                                  G_DBUS_ERROR,
-                                                  G_DBUS_ERROR_AUTH_FAILED,
-                                                  error_message);
 }
 
 /*****************************************************************************/

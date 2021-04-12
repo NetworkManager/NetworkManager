@@ -33,6 +33,12 @@ nm_json_gstr_append_int64(GString *gstr, gint64 v)
     g_string_append_printf(gstr, "%" G_GINT64_FORMAT, v);
 }
 
+static inline void
+nm_json_gstr_append_uint64(GString *gstr, guint64 v)
+{
+    g_string_append_printf(gstr, "%" G_GUINT64_FORMAT, v);
+}
+
 void nm_json_gstr_append_obj_name(GString *gstr, const char *key, char start_container);
 
 /*****************************************************************************/
@@ -240,6 +246,44 @@ nm_jansson_json_as_int(const NMJsonVt *vt, const nm_json_t *elem, int *out_val)
 }
 
 static inline int
+nm_jansson_json_as_int64(const NMJsonVt *vt, const nm_json_t *elem, gint64 *out_val)
+{
+    nm_json_int_t v;
+
+    if (!elem)
+        return 0;
+
+    if (!nm_json_is_integer(elem))
+        return -EINVAL;
+
+    v = vt->nm_json_integer_value(elem);
+    if (v < G_MININT64 || v > G_MAXINT64)
+        return -ERANGE;
+
+    NM_SET_OUT(out_val, v);
+    return 1;
+}
+
+static inline int
+nm_jansson_json_as_uint64(const NMJsonVt *vt, const nm_json_t *elem, guint64 *out_val)
+{
+    nm_json_int_t v;
+
+    if (!elem)
+        return 0;
+
+    if (!nm_json_is_integer(elem))
+        return -EINVAL;
+
+    v = vt->nm_json_integer_value(elem);
+    if (v < 0 || v > G_MAXUINT64)
+        return -ERANGE;
+
+    NM_SET_OUT(out_val, v);
+    return 1;
+}
+
+static inline int
 nm_jansson_json_as_string(const NMJsonVt *vt, const nm_json_t *elem, const char **out_val)
 {
     if (!elem)
@@ -272,6 +316,12 @@ nm_value_type_to_json(NMValueType value_type, GString *gstr, gconstpointer p_fie
     case NM_VALUE_TYPE_INT:
         nm_json_gstr_append_int64(gstr, *((const int *) p_field));
         return;
+    case NM_VALUE_TYPE_INT64:
+        nm_json_gstr_append_int64(gstr, *((const gint64 *) p_field));
+        return;
+    case NM_VALUE_TYPE_UINT64:
+        nm_json_gstr_append_uint64(gstr, *((const guint64 *) p_field));
+        return;
     case NM_VALUE_TYPE_STRING:
         nm_json_gstr_append_string(gstr, *((const char *const *) p_field));
         return;
@@ -294,6 +344,10 @@ nm_value_type_from_json(const NMJsonVt * vt,
         return (nm_jansson_json_as_int32(vt, elem, out_val) > 0);
     case NM_VALUE_TYPE_INT:
         return (nm_jansson_json_as_int(vt, elem, out_val) > 0);
+    case NM_VALUE_TYPE_INT64:
+        return (nm_jansson_json_as_int64(vt, elem, out_val) > 0);
+    case NM_VALUE_TYPE_UINT64:
+        return (nm_jansson_json_as_uint64(vt, elem, out_val) > 0);
 
     /* warning: this overwrites/leaks the previous value. You better have *out_val
      * point to uninitialized memory or NULL. */

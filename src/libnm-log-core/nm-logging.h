@@ -26,24 +26,20 @@
 //#define _NM_LOG_FUNC G_STRFUNC
 #define _NM_LOG_FUNC NULL
 
-/* A wrapper for the _nm_log_impl() function that adds call site information.
+/* A wrapper for _nm_log_full() function that adds call site information.
  * Contrary to nm_log(), it unconditionally calls the function without
  * checking whether logging for the given level and domain is enabled. */
 #define _nm_log_mt(mt_require_locking, level, domain, error, ifname, con_uuid, ...) \
-    G_STMT_START                                                                    \
-    {                                                                               \
-        _nm_log_impl(__FILE__,                                                      \
-                     __LINE__,                                                      \
-                     _NM_LOG_FUNC,                                                  \
-                     (mt_require_locking),                                          \
-                     (level),                                                       \
-                     (domain),                                                      \
-                     (error),                                                       \
-                     (ifname),                                                      \
-                     (con_uuid),                                                    \
-                     ""__VA_ARGS__);                                                \
-    }                                                                               \
-    G_STMT_END
+    _nm_log_full(__FILE__,                                                          \
+                 __LINE__,                                                          \
+                 _NM_LOG_FUNC,                                                      \
+                 (mt_require_locking),                                              \
+                 (level),                                                           \
+                 (domain),                                                          \
+                 (error),                                                           \
+                 (ifname),                                                          \
+                 (con_uuid),                                                        \
+                 ""__VA_ARGS__)
 
 #define _nm_log(level, domain, error, ifname, con_uuid, ...) \
     _nm_log_mt(!(NM_THREAD_SAFE_ON_MAIN_THREAD),             \

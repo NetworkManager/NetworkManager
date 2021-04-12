@@ -6,12 +6,14 @@
 #ifndef __NM_VALUE_TYPE_H__
 #define __NM_VALUE_TYPE_H__
 
-typedef enum {
+typedef enum _nm_packed {
     NM_VALUE_TYPE_UNSPEC = 1,
     NM_VALUE_TYPE_BOOL   = 2,
     NM_VALUE_TYPE_INT32  = 3,
     NM_VALUE_TYPE_INT    = 4,
-    NM_VALUE_TYPE_STRING = 5,
+    NM_VALUE_TYPE_INT64  = 5,
+    NM_VALUE_TYPE_UINT64 = 6,
+    NM_VALUE_TYPE_STRING = 7,
 } NMValueType;
 
 /*****************************************************************************/
@@ -21,6 +23,8 @@ typedef enum {
 typedef union {
     bool        v_bool;
     gint32      v_int32;
+    gint64      v_int64;
+    guint64     v_uint64;
     int         v_int;
     const char *v_string;
 
@@ -78,6 +82,12 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
     case NM_VALUE_TYPE_INT:
         NM_CMP_DIRECT(*((const int *) p_a), *((const int *) p_b));
         return 0;
+    case NM_VALUE_TYPE_INT64:
+        NM_CMP_DIRECT(*((const gint64 *) p_a), *((const gint64 *) p_b));
+        return 0;
+    case NM_VALUE_TYPE_UINT64:
+        NM_CMP_DIRECT(*((const guint64 *) p_a), *((const guint64 *) p_b));
+        return 0;
     case NM_VALUE_TYPE_STRING:
         return nm_strcmp0(*((const char *const *) p_a), *((const char *const *) p_b));
     case NM_VALUE_TYPE_UNSPEC:
@@ -106,6 +116,12 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
     case NM_VALUE_TYPE_INT:
         (*((int *) dst) = *((const int *) src));
         return;
+    case NM_VALUE_TYPE_INT64:
+        (*((gint64 *) dst) = *((const gint64 *) src));
+        return;
+    case NM_VALUE_TYPE_UINT64:
+        (*((guint64 *) dst) = *((const guint64 *) src));
+        return;
     case NM_VALUE_TYPE_STRING:
         /* self assignment safe! */
         if (*((char **) dst) != *((const char *const *) src)) {
@@ -131,6 +147,12 @@ nm_value_type_get_from_variant(NMValueType value_type,
         return;
     case NM_VALUE_TYPE_INT32:
         *((gint32 *) dst) = g_variant_get_int32(variant);
+        return;
+    case NM_VALUE_TYPE_INT64:
+        *((gint64 *) dst) = g_variant_get_int64(variant);
+        return;
+    case NM_VALUE_TYPE_UINT64:
+        *((guint64 *) dst) = g_variant_get_uint64(variant);
         return;
     case NM_VALUE_TYPE_STRING:
         if (clone) {
@@ -163,6 +185,10 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
         return g_variant_new_boolean(*((const bool *) src));
     case NM_VALUE_TYPE_INT32:
         return g_variant_new_int32(*((const gint32 *) src));
+    case NM_VALUE_TYPE_INT64:
+        return g_variant_new_int64(*((const gint64 *) src));
+    case NM_VALUE_TYPE_UINT64:
+        return g_variant_new_uint64(*((const guint64 *) src));
     case NM_VALUE_TYPE_STRING:
         v_string = *((const char *const *) src);
         return v_string ? g_variant_new_string(v_string) : NULL;
@@ -187,6 +213,10 @@ nm_value_type_get_variant_type(NMValueType value_type)
         return G_VARIANT_TYPE_BOOLEAN;
     case NM_VALUE_TYPE_INT32:
         return G_VARIANT_TYPE_INT32;
+    case NM_VALUE_TYPE_INT64:
+        return G_VARIANT_TYPE_INT64;
+    case NM_VALUE_TYPE_UINT64:
+        return G_VARIANT_TYPE_UINT64;
     case NM_VALUE_TYPE_STRING:
         return G_VARIANT_TYPE_STRING;
 
