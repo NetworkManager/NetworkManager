@@ -407,30 +407,19 @@ _nm_g_hash_table_get_keys_as_array(GHashTable *hash_table, guint *length)
 
 /*****************************************************************************/
 
-static inline gpointer
-_nm_g_steal_pointer(gpointer pp)
-{
-    gpointer *ptr = (gpointer *) pp;
-    gpointer  ref;
-
-    ref  = *ptr;
-    *ptr = NULL;
-
-    return ref;
-}
-
-#if !GLIB_CHECK_VERSION(2, 44, 0)
-static inline gpointer
-g_steal_pointer(gpointer pp)
-{
-    return _nm_g_steal_pointer(pp);
-}
-#endif
-
 #ifdef g_steal_pointer
     #undef g_steal_pointer
 #endif
-#define g_steal_pointer(pp) ((typeof(*(pp))) _nm_g_steal_pointer(pp))
+
+#define g_steal_pointer(pp)                                \
+    ({                                                     \
+        typeof(*(pp)) *const         _pp           = (pp); \
+        typeof(**_pp) *const         _p            = *_pp; \
+        _nm_unused const void *const _p_type_check = _p;   \
+                                                           \
+        *_pp = NULL;                                       \
+        _p;                                                \
+    })
 
 /*****************************************************************************/
 

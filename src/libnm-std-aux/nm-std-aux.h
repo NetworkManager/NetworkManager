@@ -753,18 +753,15 @@ _nm_auto_fclose(FILE **pfd)
 
 /*****************************************************************************/
 
-static inline void *
-_nm_steal_pointer(void *pp)
-{
-    void **ptr = (void **) pp;
-    void * ref;
-
-    ref  = *ptr;
-    *ptr = NULL;
-    return ref;
-}
-
-#define nm_steal_pointer(pp) ((typeof(*(pp))) _nm_steal_pointer(pp))
+#define nm_steal_pointer(pp)                               \
+    ({                                                     \
+        typeof(*(pp)) *const         _pp           = (pp); \
+        typeof(**_pp) *const         _p            = *_pp; \
+        _nm_unused const void *const _p_type_check = _p;   \
+                                                           \
+        *_pp = NULL;                                       \
+        _p;                                                \
+    })
 
 /**
  * nm_steal_int:
