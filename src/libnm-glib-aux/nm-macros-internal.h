@@ -1837,6 +1837,19 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
 
 /*****************************************************************************/
 
+#define nm_va_args_one_ptr(last)           \
+    ({                                     \
+        va_list  _va_args;                 \
+        gpointer _ptr;                     \
+                                           \
+        va_start(_va_args, (last));        \
+        _ptr = va_arg(_va_args, gpointer); \
+        va_end(_va_args);                  \
+        _ptr;                              \
+    })
+
+/*****************************************************************************/
+
 #ifdef _G_BOOLEAN_EXPR
     /* g_assert() uses G_LIKELY(), which in turn uses _G_BOOLEAN_EXPR().
  * As glib's implementation uses a local variable _g_boolean_var_,
