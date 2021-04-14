@@ -299,6 +299,7 @@ write_blobs(GHashTable *blobs, GError **error)
                                         g_bytes_get_size(blob),
                                         0600,
                                         NULL,
+                                        NULL,
                                         &write_error)) {
             g_set_error(error,
                         NM_SETTINGS_ERROR,
