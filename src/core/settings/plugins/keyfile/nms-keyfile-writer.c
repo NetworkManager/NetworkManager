@@ -125,12 +125,13 @@ cert_writer(NMConnection *                    connection,
 
         /* FIXME(keyfile-parse-in-memory): writer must not access/write to the file system before
          * being sure that the entire profile can be written and all circumstances are good to
-         * proceed. That means, while writing we must only collect the blogs in-memory, and write
+         * proceed. That means, while writing we must only collect the blobs in-memory, and write
          * them all in the end together (or not at all). */
         success = nm_utils_file_set_contents(new_path,
                                              (const char *) blob_data,
                                              blob_len,
                                              0600,
+                                             NULL,
                                              NULL,
                                              &local);
         if (success) {
@@ -378,7 +379,7 @@ _internal_write_connection(NMConnection *                  connection,
         }
     }
 
-    nm_utils_file_set_contents(path, kf_content_buf, kf_content_len, 0600, NULL, &local_err);
+    nm_utils_file_set_contents(path, kf_content_buf, kf_content_len, 0600, NULL, NULL, &local_err);
     if (local_err) {
         g_set_error(error,
                     NM_SETTINGS_ERROR,
