@@ -5289,6 +5289,8 @@ device_update_interface_flags(NMDevice *self, const NMPlatformLink *plink)
         flags |= NM_DEVICE_INTERFACE_FLAG_UP;
     if (plink && NM_FLAGS_HAS(plink->n_ifi_flags, IFF_LOWER_UP))
         flags |= NM_DEVICE_INTERFACE_FLAG_LOWER_UP;
+    if (plink && NM_FLAGS_HAS(plink->n_ifi_flags, IFF_PROMISC))
+        flags |= NM_DEVICE_INTERFACE_FLAG_PROMISC;
 
     if (NM_FLAGS_ALL(priv->capabilities,
                      NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
@@ -5301,7 +5303,8 @@ device_update_interface_flags(NMDevice *self, const NMPlatformLink *plink)
 
     set_interface_flags_full(self,
                              NM_DEVICE_INTERFACE_FLAG_UP | NM_DEVICE_INTERFACE_FLAG_LOWER_UP
-                                 | NM_DEVICE_INTERFACE_FLAG_CARRIER,
+                                 | NM_DEVICE_INTERFACE_FLAG_CARRIER
+                                 | NM_DEVICE_INTERFACE_FLAG_PROMISC,
                              flags,
                              TRUE);
 }
