@@ -40,8 +40,8 @@ struct _NMLldpListener {
     gpointer             notify_user_data;
 
     /* the timestamp in nsec until which we delay updates. */
-    gint64 ratelimit_next_nsec;
-    guint  ratelimit_id;
+    GSource *ratelimit_source;
+    gint64   ratelimit_next_nsec;
 
     int ifindex;
 };
@@ -812,10 +812,10 @@ data_changed_timeout(gpointer user_data)
 {
     NMLldpListener *self = user_data;
 
-    self->ratelimit_id        = 0;
+    nm_clear_g_source_inst(&self->ratelimit_source);
     self->ratelimit_next_nsec = nm_utils_get_monotonic_timestamp_nsec() + MIN_UPDATE_INTERVAL_NSEC;
     data_changed_notify(self);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -823,21 +823,23 @@ data_changed_schedule(NMLldpListener *self)
 {
     gint64 now_nsec;
 
-    if (self->ratelimit_id != 0)
+    if (self->ratelimit_source)
         return;
 
     now_nsec = nm_utils_get_monotonic_timestamp_nsec();
     if (now_nsec < self->ratelimit_next_nsec) {
-        self->ratelimit_id =
-            g_timeout_add_full(G_PRIORITY_LOW,
-                               NM_UTILS_NSEC_TO_MSEC_CEIL(self->ratelimit_next_nsec - now_nsec),
-                               data_changed_timeout,
-                               self,
-                               NULL);
-        return;
+        self->ratelimit_source = nm_g_timeout_source_new(
+            NM_UTILS_NSEC_TO_MSEC_CEIL(self->ratelimit_next_nsec - now_nsec),
+            G_PRIORITY_LOW,
+            data_changed_timeout,
+            self,
+            NULL);
+    } else {
+        self->ratelimit_source =
+            nm_g_idle_source_new(G_PRIORITY_LOW, data_changed_timeout, self, NULL);
     }
 
-    self->ratelimit_id = g_idle_add_full(G_PRIORITY_LOW, data_changed_timeout, self, NULL);
+    g_source_attach(self->ratelimit_source, NULL);
 }
 
 static void
@@ -1012,7 +1014,7 @@ nm_lldp_listener_destroy(NMLldpListener *self)
     sd_lldp_detach_event(self->lldp_handle);
     sd_lldp_unref(self->lldp_handle);
 
-    nm_clear_g_source(&self->ratelimit_id);
+    nm_clear_g_source_inst(&self->ratelimit_source);
 
     g_hash_table_destroy(self->lldp_neighbors);
 
