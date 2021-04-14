@@ -755,8 +755,8 @@ _nm_auto_fclose(FILE **pfd)
 
 #define nm_steal_pointer(pp)                               \
     ({                                                     \
-        typeof(*(pp)) *const         _pp           = (pp); \
-        typeof(**_pp) *const         _p            = *_pp; \
+        typeof(*(pp)) *const _pp                   = (pp); \
+        typeof(*_pp) _p                            = *_pp; \
         _nm_unused const void *const _p_type_check = _p;   \
                                                            \
         *_pp = NULL;                                       \
