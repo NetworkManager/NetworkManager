@@ -10,12 +10,14 @@
 #include <net/if.h>
 #include <glib/gstdio.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-manager.h"
 #include "nm-device-iwd.h"
 #include "nm-wifi-utils.h"
 #include "libnm-glib-aux/nm-random-utils.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "settings/nm-settings.h"
 #include "libnm-std-aux/nm-dbus-compat.h"
 #include "nm-config.h"
@@ -430,6 +432,25 @@ known_network_update_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     }
 }
 
+static gboolean
+iwd_config_write(GKeyFile *             config,
+                 const char *           filepath,
+                 const struct timespec *mtime,
+                 GError **              error)
+{
+    gsize           length;
+    gs_free char *  data     = g_key_file_to_data(config, &length, NULL);
+    struct timespec times[2] = {{.tv_nsec = UTIME_OMIT}, *mtime};
+
+    /* Atomically write or replace the file with the right permission bits
+     * and timestamps set.  We rely on the temporary file created by
+     * nm_utils_file_set_contents having only upper-case letters and digits
+     * in the last few filename characters -- it cannot end in .open, .psk
+     * or .8021x.
+     */
+    return nm_utils_file_set_contents(filepath, data, length, 0600, times, NULL, error);
+}
+
 static void
 sett_conn_changed(NMSettingsConnection *  sett_conn,
                   guint                   update_reason,
@@ -449,6 +470,8 @@ sett_conn_changed(NMSettingsConnection *  sett_conn,
     const guint8 *        ssid_data;
     gsize                 ssid_len;
     gboolean              removed;
+    GStatBuf              statbuf;
+    gboolean              have_mtime;
 
     nm_assert(sett_conn == data->mirror_connection);
 
@@ -496,9 +519,10 @@ sett_conn_changed(NMSettingsConnection *  sett_conn,
      * create another anyway because the SSID and security type are in the
      * D-Bus object path, so no point renaming the file.
      */
-    ssid      = nm_setting_wireless_get_ssid(s_wifi);
-    ssid_data = ssid ? g_bytes_get_data(ssid, &ssid_len) : NULL;
-    removed   = FALSE;
+    ssid       = nm_setting_wireless_get_ssid(s_wifi);
+    ssid_data  = ssid ? g_bytes_get_data(ssid, &ssid_len) : NULL;
+    removed    = FALSE;
+    have_mtime = FALSE;
 
     if (!nm_wifi_connection_get_iwd_ssid_and_security(conn, NULL, &security)
         || security != data->id->security || !ssid_data || ssid_len != strlen(data->id->name)
@@ -506,6 +530,9 @@ sett_conn_changed(NMSettingsConnection *  sett_conn,
         gs_free char *orig_filename =
             nm_wifi_utils_get_iwd_config_filename(data->id->name, -1, data->id->security);
         gs_free char *orig_full_path = g_strdup_printf("%s/%s", iwd_dir, orig_filename);
+
+        if (g_stat(orig_full_path, &statbuf) == 0)
+            have_mtime = TRUE;
 
         if (g_remove(orig_full_path) == 0)
             nm_log_dbg(LOGD_WIFI, "iwd: profile at %s removed", orig_full_path);
@@ -558,7 +585,21 @@ sett_conn_changed(NMSettingsConnection *  sett_conn,
         return;
     }
 
-    if (!g_key_file_save_to_file(iwd_config, full_path, &error)) {
+    if (!removed && g_stat(full_path, &statbuf) == 0)
+        have_mtime = TRUE;
+
+    /* If modifying an existing network try to preserve the file mtime,
+     * otherwise use a small non-zero timespec value to signal that the
+     * network is autoconnectable (according to its AutoConnect value)
+     * but hasn't recently been connected to and thus shouldn't be
+     * prioritized by autoconnect.
+     */
+    if (!have_mtime) {
+        statbuf.st_mtim.tv_sec  = 1;
+        statbuf.st_mtim.tv_nsec = 0;
+    }
+
+    if (!iwd_config_write(iwd_config, full_path, &statbuf.st_mtim, &error)) {
         nm_log_dbg(LOGD_WIFI,
                    "iwd: changed Wi-Fi connection %s not mirrored as IWD profile: save error: %s",
                    nm_settings_connection_get_id(sett_conn),
