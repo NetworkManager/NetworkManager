@@ -2600,6 +2600,39 @@ _active_connection_set_state_flags(NMDevice *self, NMActivationStateFlags flags)
 
 /*****************************************************************************/
 
+static gboolean
+set_interface_flags_full(NMDevice *             self,
+                         NMDeviceInterfaceFlags mask,
+                         NMDeviceInterfaceFlags interface_flags,
+                         gboolean               notify)
+{
+    NMDevicePrivate *      priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDeviceInterfaceFlags f;
+
+    nm_assert(!!mask);
+    nm_assert(!NM_FLAGS_ANY(mask, ~_NM_DEVICE_INTERFACE_FLAG_ALL));
+    nm_assert(!NM_FLAGS_ANY(interface_flags, ~mask));
+
+    f = (priv->interface_flags & ~mask) | (interface_flags & mask);
+
+    if (f == priv->interface_flags)
+        return FALSE;
+
+    priv->interface_flags = f;
+    if (notify)
+        _notify(self, PROP_INTERFACE_FLAGS);
+    return TRUE;
+}
+
+static gboolean
+set_interface_flags(NMDevice *self, NMDeviceInterfaceFlags interface_flags, gboolean set)
+{
+    return set_interface_flags_full(self,
+                                    interface_flags,
+                                    set ? interface_flags : NM_DEVICE_INTERFACE_FLAG_NONE,
+                                    TRUE);
+}
+
 void
 nm_device_assume_state_get(NMDevice *   self,
                            gboolean *   out_assume_state_guess_assume,
@@ -4912,7 +4945,9 @@ nm_device_update_dynamic_ip_setup(NMDevice *self)
                   priv->lldp_listener,
                   error->message);
             g_clear_error(&error);
-        }
+            set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
+        } else
+            set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, TRUE);
     }
 }
 
@@ -5030,18 +5065,16 @@ nm_device_set_carrier(NMDevice *self, gboolean carrier)
 
     if (NM_FLAGS_ALL(priv->capabilities,
                      NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
-        if (carrier)
-            priv->interface_flags |= NM_DEVICE_INTERFACE_FLAG_CARRIER;
-        else
-            priv->interface_flags &= ~NM_DEVICE_INTERFACE_FLAG_CARRIER;
-        notify_flags = TRUE;
+        notify_flags = set_interface_flags_full(self,
+                                                NM_DEVICE_INTERFACE_FLAG_CARRIER,
+                                                carrier ? NM_DEVICE_INTERFACE_FLAG_CARRIER
+                                                        : NM_DEVICE_INTERFACE_FLAG_NONE,
+                                                FALSE);
     }
 
     priv->carrier = carrier;
-    if (notify_flags)
-        nm_gobject_notify_together(self, PROP_CARRIER, PROP_INTERFACE_FLAGS);
-    else
-        _notify(self, PROP_CARRIER);
+
+    nm_gobject_notify_together(self, PROP_CARRIER, notify_flags ? PROP_INTERFACE_FLAGS : PROP_0);
 
     if (priv->carrier) {
         _LOGI(LOGD_DEVICE, "carrier: link connected");
@@ -5282,10 +5315,11 @@ device_update_interface_flags(NMDevice *self, const NMPlatformLink *plink)
             flags |= NM_DEVICE_INTERFACE_FLAG_CARRIER;
     }
 
-    if (flags != priv->interface_flags) {
-        priv->interface_flags = flags;
-        _notify(self, PROP_INTERFACE_FLAGS);
-    }
+    set_interface_flags_full(self,
+                             NM_DEVICE_INTERFACE_FLAG_UP | NM_DEVICE_INTERFACE_FLAG_LOWER_UP
+                                 | NM_DEVICE_INTERFACE_FLAG_CARRIER,
+                             flags,
+                             TRUE);
 }
 
 static gboolean
@@ -8227,8 +8261,10 @@ lldp_init(NMDevice *self, gboolean restart)
         gs_free_error GError *error = NULL;
 
         if (priv->lldp_listener) {
-            if (restart && nm_lldp_listener_is_running(priv->lldp_listener))
+            if (restart && nm_lldp_listener_is_running(priv->lldp_listener)) {
                 nm_lldp_listener_stop(priv->lldp_listener);
+                set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
+            }
         } else {
             priv->lldp_listener = nm_lldp_listener_new();
             g_signal_connect(priv->lldp_listener,
@@ -8238,9 +8274,10 @@ lldp_init(NMDevice *self, gboolean restart)
         }
 
         if (!nm_lldp_listener_is_running(priv->lldp_listener)) {
-            if (nm_lldp_listener_start(priv->lldp_listener, nm_device_get_ifindex(self), &error))
+            if (nm_lldp_listener_start(priv->lldp_listener, nm_device_get_ifindex(self), &error)) {
                 _LOGD(LOGD_DEVICE, "LLDP listener %p started", priv->lldp_listener);
-            else {
+                set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, TRUE);
+            } else {
                 _LOGD(LOGD_DEVICE,
                       "LLDP listener %p could not be started: %s",
                       priv->lldp_listener,
@@ -8248,8 +8285,10 @@ lldp_init(NMDevice *self, gboolean restart)
             }
         }
     } else {
-        if (priv->lldp_listener)
+        if (priv->lldp_listener) {
             nm_lldp_listener_stop(priv->lldp_listener);
+            set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
+        }
     }
 }
 
@@ -15935,8 +15974,10 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
                                            FALSE,
                                            NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
-    if (priv->lldp_listener)
+    if (priv->lldp_listener) {
         nm_lldp_listener_stop(priv->lldp_listener);
+        set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
+    }
 
     nm_device_update_metered(self);
 
@@ -18377,6 +18418,7 @@ dispose(GObject *object)
                                              G_CALLBACK(lldp_neighbors_changed),
                                              self);
         nm_lldp_listener_stop(priv->lldp_listener);
+        set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
         g_clear_object(&priv->lldp_listener);
     }
 

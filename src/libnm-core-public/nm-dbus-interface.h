@@ -1186,6 +1186,8 @@ typedef enum {                                      /*< flags >*/
  * @NM_DEVICE_INTERFACE_FLAG_CARRIER: the interface has carrier. In most
  *   cases this is equal to the value of @NM_DEVICE_INTERFACE_FLAG_LOWER_UP.
  *   However some devices have a non-standard carrier detection mechanism.
+ * @NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED: the flag to indicate device
+ *   LLDP status. Since: 1.32.
  *
  * Flags for a network interface.
  *
@@ -1197,7 +1199,8 @@ typedef enum { /*< flags >*/
                NM_DEVICE_INTERFACE_FLAG_UP       = 0x1,
                NM_DEVICE_INTERFACE_FLAG_LOWER_UP = 0x2,
                /* NM-specific flags */
-               NM_DEVICE_INTERFACE_FLAG_CARRIER = 0x10000,
+               NM_DEVICE_INTERFACE_FLAG_CARRIER             = 0x10000,
+               NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED = 0x20000,
 } NMDeviceInterfaceFlags;
 
 /**
