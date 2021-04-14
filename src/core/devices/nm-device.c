@@ -2625,12 +2625,15 @@ set_interface_flags_full(NMDevice *             self,
 }
 
 static gboolean
-set_interface_flags(NMDevice *self, NMDeviceInterfaceFlags interface_flags, gboolean set)
+set_interface_flags(NMDevice *             self,
+                    NMDeviceInterfaceFlags interface_flags,
+                    gboolean               set,
+                    gboolean               notify)
 {
     return set_interface_flags_full(self,
                                     interface_flags,
                                     set ? interface_flags : NM_DEVICE_INTERFACE_FLAG_NONE,
-                                    TRUE);
+                                    notify);
 }
 
 void
@@ -5051,11 +5054,7 @@ nm_device_set_carrier(NMDevice *self, gboolean carrier)
 
     if (NM_FLAGS_ALL(priv->capabilities,
                      NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
-        notify_flags = set_interface_flags_full(self,
-                                                NM_DEVICE_INTERFACE_FLAG_CARRIER,
-                                                carrier ? NM_DEVICE_INTERFACE_FLAG_CARRIER
-                                                        : NM_DEVICE_INTERFACE_FLAG_NONE,
-                                                FALSE);
+        notify_flags = set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_CARRIER, carrier, FALSE);
     }
 
     priv->carrier = carrier;
@@ -7944,14 +7943,6 @@ master_ready_cb(NMActiveConnection *active, GParamSpec *pspec, NMDevice *self)
         nm_device_activate_schedule_stage1_device_prepare(self, FALSE);
 }
 
-static void
-lldp_neighbors_changed(NMLldpListener *lldp_listener, GParamSpec *pspec, gpointer user_data)
-{
-    NMDevice *self = NM_DEVICE(user_data);
-
-    _notify(self, PROP_LLDP_NEIGHBORS);
-}
-
 static NMPlatformVF *
 sriov_vf_config_to_platform(NMDevice *self, NMSriovVF *vf, GError **error)
 {
@@ -8239,43 +8230,56 @@ act_stage2_config(NMDevice *self, NMDeviceStateReason *out_failure_reason)
 }
 
 static void
-lldp_init(NMDevice *self, gboolean restart)
+_lldp_neighbors_changed_cb(NMLldpListener *lldp_listener, gpointer user_data)
+{
+    _notify(user_data, PROP_LLDP_NEIGHBORS);
+}
+
+static void
+lldp_setup(NMDevice *self, NMTernary enabled)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    int              ifindex;
+    gboolean         notify_lldp_neighbors  = FALSE;
+    gboolean         notify_interface_flags = FALSE;
 
-    if (priv->ifindex > 0 && _prop_get_connection_lldp(self)) {
-        gs_free_error GError *error = NULL;
+    ifindex = nm_device_get_ifindex(self);
 
-        if (priv->lldp_listener) {
-            if (restart && nm_lldp_listener_is_running(priv->lldp_listener)) {
-                nm_lldp_listener_stop(priv->lldp_listener);
-                set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
-            }
-        } else {
-            priv->lldp_listener = nm_lldp_listener_new();
-            g_signal_connect(priv->lldp_listener,
-                             "notify::" NM_LLDP_LISTENER_NEIGHBORS,
-                             G_CALLBACK(lldp_neighbors_changed),
-                             self);
-        }
+    if (ifindex <= 0)
+        enabled = FALSE;
+    else if (enabled == NM_TERNARY_DEFAULT)
+        enabled = _prop_get_connection_lldp(self);
 
-        if (!nm_lldp_listener_is_running(priv->lldp_listener)) {
-            if (nm_lldp_listener_start(priv->lldp_listener, nm_device_get_ifindex(self), &error)) {
-                _LOGD(LOGD_DEVICE, "LLDP listener %p started", priv->lldp_listener);
-                set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, TRUE);
-            } else {
-                _LOGD(LOGD_DEVICE,
-                      "LLDP listener %p could not be started: %s",
-                      priv->lldp_listener,
-                      error->message);
-            }
-        }
-    } else {
-        if (priv->lldp_listener) {
-            nm_lldp_listener_stop(priv->lldp_listener);
-            set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
+    if (priv->lldp_listener) {
+        if (!enabled || nm_lldp_listener_get_ifindex(priv->lldp_listener) != ifindex) {
+            nm_clear_pointer(&priv->lldp_listener, nm_lldp_listener_destroy);
+            notify_lldp_neighbors = TRUE;
         }
     }
+
+    if (enabled && !priv->lldp_listener) {
+        gs_free_error GError *error = NULL;
+
+        priv->lldp_listener =
+            nm_lldp_listener_new(ifindex, _lldp_neighbors_changed_cb, self, &error);
+        if (!priv->lldp_listener) {
+            /* This really shouldn't happen. It's likely a bug. Investigate when this happens! */
+            _LOGW(LOGD_DEVICE,
+                  "LLDP listener for ifindex %d could not be started: %s",
+                  ifindex,
+                  error->message);
+        } else
+            notify_lldp_neighbors = TRUE;
+    }
+
+    notify_interface_flags = set_interface_flags(self,
+                                                 NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED,
+                                                 !!priv->lldp_listener,
+                                                 FALSE);
+
+    nm_gobject_notify_together(self,
+                               notify_lldp_neighbors ? PROP_LLDP_NEIGHBORS : PROP_0,
+                               notify_interface_flags ? PROP_INTERFACE_FLAGS : PROP_0);
 }
 
 /* set-mode can be:
@@ -8488,7 +8492,7 @@ activate_stage2_device_config(NMDevice *self)
             nm_device_queue_recheck_assume(info->slave);
     }
 
-    lldp_init(self, TRUE);
+    lldp_setup(self, NM_TERNARY_DEFAULT);
 
     nm_device_activate_schedule_stage3_ip_config_start(self);
 }
@@ -12720,7 +12724,7 @@ check_and_reapply_connection(NMDevice *    self,
     klass->reapply_connection(self, con_old, con_new);
 
     if (priv->state >= NM_DEVICE_STATE_CONFIG)
-        lldp_init(self, FALSE);
+        lldp_setup(self, NM_TERNARY_DEFAULT);
 
     if (priv->state >= NM_DEVICE_STATE_IP_CONFIG) {
         s_ip4_old = nm_connection_get_setting_ip4_config(con_old);
@@ -15960,10 +15964,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
                                            FALSE,
                                            NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
-    if (priv->lldp_listener) {
-        nm_lldp_listener_stop(priv->lldp_listener);
-        set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
-    }
+    lldp_setup(self, NM_TERNARY_FALSE);
 
     nm_device_update_metered(self);
 
@@ -18396,14 +18397,7 @@ dispose(GObject *object)
     nm_clear_g_source(&priv->device_link_changed_id);
     nm_clear_g_source(&priv->device_ip_link_changed_id);
 
-    if (priv->lldp_listener) {
-        g_signal_handlers_disconnect_by_func(priv->lldp_listener,
-                                             G_CALLBACK(lldp_neighbors_changed),
-                                             self);
-        nm_lldp_listener_stop(priv->lldp_listener);
-        set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
-        g_clear_object(&priv->lldp_listener);
-    }
+    lldp_setup(self, FALSE);
 
     nm_clear_g_source(&priv->concheck_x[0].p_cur_id);
     nm_clear_g_source(&priv->concheck_x[1].p_cur_id);

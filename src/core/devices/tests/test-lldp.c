@@ -83,6 +83,7 @@ typedef struct {
     const uint8_t *frame;
     const char *   as_variant;
 } TestRecvFrame;
+
 #define TEST_RECV_FRAME_DEFINE(name, _as_variant, ...)        \
     static const guint8        _##name##_v[] = {__VA_ARGS__}; \
     static const TestRecvFrame name          = {              \
@@ -92,11 +93,17 @@ typedef struct {
     }
 
 typedef struct {
+    int        num_called;
+    GMainLoop *loop_to_quit;
+} TestRecvCallbackInfo;
+
+typedef struct {
     guint                expected_num_called;
     gsize                frames_len;
     const TestRecvFrame *frames[10];
-    void (*check)(GMainLoop *loop, NMLldpListener *listener);
+    void (*check)(GMainLoop *loop, NMLldpListener *listener, TestRecvCallbackInfo *info);
 } TestRecvData;
+
 #define TEST_RECV_DATA_DEFINE(name, _expected_num_called, _check, ...) \
     static const TestRecvData name = {                                 \
         .expected_num_called = _expected_num_called,                   \
@@ -213,7 +220,7 @@ _test_recv_data0_check_do(GMainLoop *loop, NMLldpListener *listener, const TestR
 }
 
 static void
-_test_recv_data0_check(GMainLoop *loop, NMLldpListener *listener)
+_test_recv_data0_check(GMainLoop *loop, NMLldpListener *listener, TestRecvCallbackInfo *info)
 {
     _test_recv_data0_check_do(loop, listener, &_test_recv_data0_frame0);
 }
@@ -528,7 +535,7 @@ TEST_RECV_FRAME_DEFINE(
 );
 
 static void
-_test_recv_data1_check(GMainLoop *loop, NMLldpListener *listener)
+_test_recv_data1_check(GMainLoop *loop, NMLldpListener *listener, TestRecvCallbackInfo *info)
 {
     GVariant *       neighbors, *attr, *child;
     gs_unref_variant GVariant *neighbor = NULL;
@@ -756,21 +763,17 @@ TEST_RECV_FRAME_DEFINE(
 );
 
 static void
-_test_recv_data2_ttl1_check(GMainLoop *loop, NMLldpListener *listener)
+_test_recv_data2_ttl1_check(GMainLoop *loop, NMLldpListener *listener, TestRecvCallbackInfo *info)
 {
-    gulong    notify_id;
     GVariant *neighbors;
 
     _test_recv_data0_check_do(loop, listener, &_test_recv_data2_frame0_ttl1);
 
     /* wait for signal. */
-    notify_id = g_signal_connect(listener,
-                                 "notify::" NM_LLDP_LISTENER_NEIGHBORS,
-                                 nmtst_main_loop_quit_on_notify,
-                                 loop);
+    info->loop_to_quit = loop;
     if (!nmtst_main_loop_run(loop, 5000))
         g_assert_not_reached();
-    nm_clear_g_signal_handler(listener, &notify_id);
+    info->loop_to_quit = NULL;
 
     neighbors = nm_lldp_listener_get_neighbors(listener);
     nmtst_assert_variant_is_of_type(neighbors, G_VARIANT_TYPE("aa{sv}"));
@@ -852,46 +855,37 @@ again:
     memcpy(fixture->mac, link->l_address.data, ETH_ALEN);
 }
 
-typedef struct {
-    int num_called;
-} TestRecvCallbackInfo;
-
 static void
-lldp_neighbors_changed(NMLldpListener *lldp_listener, GParamSpec *pspec, gpointer user_data)
+lldp_neighbors_changed(NMLldpListener *lldp_listener, gpointer user_data)
 {
     TestRecvCallbackInfo *info = user_data;
 
     info->num_called++;
+    if (info->loop_to_quit)
+        g_main_loop_quit(info->loop_to_quit);
 }
 
 static void
 test_recv(TestRecvFixture *fixture, gconstpointer user_data)
 {
-    const TestRecvData *data                 = user_data;
-    gs_unref_object NMLldpListener *listener = NULL;
-    GMainLoop *                     loop;
-    TestRecvCallbackInfo            info = {};
-    gsize                           i_frames;
-    gulong                          notify_id;
-    GError *                        error = NULL;
-    guint                           sd_id;
+    const TestRecvData * data = user_data;
+    NMLldpListener *     listener;
+    GMainLoop *          loop;
+    TestRecvCallbackInfo info = {};
+    gsize                i_frames;
+    GError *             error = NULL;
+    guint                sd_id;
 
     if (fixture->ifindex == 0) {
         g_test_skip("Tun device not available");
         return;
     }
 
-    listener = nm_lldp_listener_new();
-    g_assert(listener != NULL);
-    g_assert(nm_lldp_listener_start(listener, fixture->ifindex, &error));
-    g_assert_no_error(error);
+    listener = nm_lldp_listener_new(fixture->ifindex, lldp_neighbors_changed, &info, &error);
+    nmtst_assert_success(listener, error);
 
-    notify_id = g_signal_connect(listener,
-                                 "notify::" NM_LLDP_LISTENER_NEIGHBORS,
-                                 (GCallback) lldp_neighbors_changed,
-                                 &info);
-    loop      = g_main_loop_new(NULL, FALSE);
-    sd_id     = nm_sd_event_attach_default();
+    loop  = g_main_loop_new(NULL, FALSE);
+    sd_id = nm_sd_event_attach_default();
 
     for (i_frames = 0; i_frames < data->frames_len; i_frames++) {
         const TestRecvFrame *f = data->frames[i_frames];
@@ -904,9 +898,9 @@ test_recv(TestRecvFixture *fixture, gconstpointer user_data)
 
     g_assert_cmpint(info.num_called, ==, data->expected_num_called);
 
-    nm_clear_g_signal_handler(listener, &notify_id);
+    data->check(loop, listener, &info);
 
-    data->check(loop, listener);
+    nm_clear_pointer(&listener, nm_lldp_listener_destroy);
 
     nm_clear_g_source(&sd_id);
     nm_clear_pointer(&loop, g_main_loop_unref);
