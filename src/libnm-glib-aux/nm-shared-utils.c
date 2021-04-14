@@ -556,6 +556,54 @@ nm_g_variant_singleton_u_0(void)
     return _variant_singleton_get(g_variant_new_uint32(0));
 }
 
+static GVariant *
+_variant_singleton_get_array_init(GVariant **p_singleton, const char *variant_type)
+{
+    GVariant *v;
+
+    v = g_variant_new_array(G_VARIANT_TYPE(variant_type), NULL, 0);
+    g_variant_ref_sink(v);
+
+    if (G_LIKELY(g_atomic_pointer_compare_and_exchange(p_singleton, NULL, v)))
+        return v;
+
+    g_variant_unref(v);
+
+    return g_atomic_pointer_get(p_singleton);
+}
+
+#define _variant_singleton_get_array(variant_type)                                   \
+    ({                                                                               \
+        static GVariant *_singleton = NULL;                                          \
+        GVariant *       _v;                                                         \
+                                                                                     \
+        _v = g_atomic_pointer_get(&_singleton);                                      \
+        if (G_UNLIKELY(!_v)) {                                                       \
+            _v = _variant_singleton_get_array_init(&_singleton, "" variant_type ""); \
+            nm_assert(_v);                                                           \
+        }                                                                            \
+        nm_assert(g_variant_is_of_type(_v, G_VARIANT_TYPE("a" variant_type "")));    \
+        _v;                                                                          \
+    })
+
+GVariant *
+nm_g_variant_singleton_aLsvI(void)
+{
+    return _variant_singleton_get_array("{sv}");
+}
+
+GVariant *
+nm_g_variant_singleton_aLsaLsvII(void)
+{
+    return _variant_singleton_get_array("{sa{sv}}");
+}
+
+GVariant *
+nm_g_variant_singleton_aaLsvI(void)
+{
+    return _variant_singleton_get_array("a{sv}");
+}
+
 /*****************************************************************************/
 
 GHashTable *
