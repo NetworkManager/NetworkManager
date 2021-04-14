@@ -4903,7 +4903,6 @@ void
 nm_device_update_dynamic_ip_setup(NMDevice *self)
 {
     NMDevicePrivate *priv;
-    GError *         error = NULL;
 
     g_return_if_fail(NM_IS_DEVICE(self));
 
@@ -4935,19 +4934,6 @@ nm_device_update_dynamic_ip_setup(NMDevice *self)
     }
     if (priv->dnsmasq_manager) {
         /* FIXME: todo */
-    }
-
-    if (priv->lldp_listener && nm_lldp_listener_is_running(priv->lldp_listener)) {
-        nm_lldp_listener_stop(priv->lldp_listener);
-        if (!nm_lldp_listener_start(priv->lldp_listener, nm_device_get_ifindex(self), &error)) {
-            _LOGD(LOGD_DEVICE,
-                  "LLDP listener %p could not be restarted: %s",
-                  priv->lldp_listener,
-                  error->message);
-            g_clear_error(&error);
-            set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, FALSE);
-        } else
-            set_interface_flags(self, NM_DEVICE_INTERFACE_FLAG_LLDP_CLIENT_ENABLED, TRUE);
     }
 }
 
