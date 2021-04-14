@@ -309,7 +309,7 @@ nm_device_wifi_request_scan_options(NMDeviceWifi *device,
     g_return_val_if_fail(!error || !*error, FALSE);
 
     if (!options)
-        options = g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0);
+        options = nm_g_variant_singleton_aLsvI();
 
     return _nm_client_dbus_call_sync_void(_nm_object_get_client(device),
                                           cancellable,
@@ -382,7 +382,7 @@ nm_device_wifi_request_scan_options_async(NMDeviceWifi *      device,
     g_return_if_fail(!cancellable || G_IS_CANCELLABLE(cancellable));
 
     if (!options)
-        options = g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0);
+        options = nm_g_variant_singleton_aLsvI();
 
     _nm_client_dbus_call(_nm_object_get_client(device),
                          device,

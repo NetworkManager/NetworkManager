@@ -5637,7 +5637,7 @@ activation_add_done(NMSettings *           settings,
         result_floating = g_variant_new("(oo@a{sv})",
                                         nm_dbus_object_get_path(NM_DBUS_OBJECT(new_connection)),
                                         nm_dbus_object_get_path(NM_DBUS_OBJECT(active)),
-                                        g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0));
+                                        nm_g_variant_singleton_aLsvI());
     }
     g_dbus_method_invocation_return_value(context, result_floating);
 

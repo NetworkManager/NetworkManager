@@ -2303,7 +2303,7 @@ nm_device_reapply(NMDevice *    device,
     if (connection)
         arg_connection = nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_ALL);
     if (!arg_connection)
-        arg_connection = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
+        arg_connection = nm_g_variant_singleton_aLsaLsvII();
 
     return _nm_client_dbus_call_sync_void(
         _nm_object_get_client(device),
@@ -2355,7 +2355,7 @@ nm_device_reapply_async(NMDevice *          device,
     if (connection)
         arg_connection = nm_connection_to_dbus(connection, NM_CONNECTION_SERIALIZE_ALL);
     if (!arg_connection)
-        arg_connection = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
+        arg_connection = nm_g_variant_singleton_aLsaLsvII();
 
     _nm_client_dbus_call(_nm_object_get_client(device),
                          device,

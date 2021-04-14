@@ -156,7 +156,7 @@ nm_device_wifi_p2p_start_find(NMDeviceWifiP2P *   device,
     g_return_if_fail(!cancellable || G_IS_CANCELLABLE(cancellable));
 
     if (!options)
-        options = g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0);
+        options = nm_g_variant_singleton_aLsvI();
 
     _nm_client_dbus_call(_nm_object_get_client(device),
                          device,
