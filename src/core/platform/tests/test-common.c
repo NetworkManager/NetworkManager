@@ -1543,12 +1543,15 @@ nmtstp_link_bridge_add(NMPlatform *               platform,
     ll = NMP_OBJECT_CAST_LNK_BRIDGE(NMP_OBJECT_UP_CAST(pllink)->_link.netlink.lnk);
 
     /* account for roundtrip rounding error with clock_t_to_jiffies()/jiffies_to_clock_t(). */
-    g_assert_cmpint(lnk->forward_delay, >=, ll->forward_delay - 1);
-    g_assert_cmpint(lnk->forward_delay, <=, ll->forward_delay);
+    g_assert_cmpint(lnk->forward_delay, >=, ll->forward_delay);
+    g_assert_cmpint(lnk->forward_delay, <=, ll->forward_delay + 1);
+    g_assert_cmpint(lnk->hello_time, >=, ll->hello_time);
+    g_assert_cmpint(lnk->hello_time, <=, ll->hello_time + 1);
+    g_assert_cmpint(lnk->max_age, >=, ll->max_age);
+    g_assert_cmpint(lnk->max_age, <=, ll->max_age + 1);
+    g_assert_cmpint(lnk->ageing_time, >=, ll->ageing_time);
+    g_assert_cmpint(lnk->ageing_time, <=, ll->ageing_time + 1);
 
-    g_assert_cmpint(lnk->hello_time, ==, ll->hello_time);
-    g_assert_cmpint(lnk->max_age, ==, ll->max_age);
-    g_assert_cmpint(lnk->ageing_time, ==, ll->ageing_time);
     g_assert_cmpint(lnk->stp_state, ==, ll->stp_state);
     g_assert_cmpint(lnk->priority, ==, ll->priority);
     g_assert_cmpint(lnk->vlan_stats_enabled, ==, ll->vlan_stats_enabled);
@@ -1560,12 +1563,20 @@ nmtstp_link_bridge_add(NMPlatform *               platform,
     g_assert_cmpint(lnk->mcast_hash_max, ==, ll->mcast_hash_max);
     g_assert_cmpint(lnk->mcast_last_member_count, ==, ll->mcast_last_member_count);
     g_assert_cmpint(lnk->mcast_startup_query_count, ==, ll->mcast_startup_query_count);
-    g_assert_cmpint(lnk->mcast_last_member_interval, ==, ll->mcast_last_member_interval);
-    g_assert_cmpint(lnk->mcast_membership_interval, ==, ll->mcast_membership_interval);
-    g_assert_cmpint(lnk->mcast_querier_interval, ==, ll->mcast_querier_interval);
-    g_assert_cmpint(lnk->mcast_query_interval, ==, ll->mcast_query_interval);
-    g_assert_cmpint(lnk->mcast_query_response_interval, ==, ll->mcast_query_response_interval);
-    g_assert_cmpint(lnk->mcast_startup_query_interval, ==, ll->mcast_startup_query_interval);
+
+    /* account for roundtrip rounding error with clock_t_to_jiffies()/jiffies_to_clock_t(). */
+    g_assert_cmpint(lnk->mcast_last_member_interval, >=, ll->mcast_last_member_interval);
+    g_assert_cmpint(lnk->mcast_last_member_interval, <=, ll->mcast_last_member_interval + 1);
+    g_assert_cmpint(lnk->mcast_membership_interval, >=, ll->mcast_membership_interval);
+    g_assert_cmpint(lnk->mcast_membership_interval, <=, ll->mcast_membership_interval + 1);
+    g_assert_cmpint(lnk->mcast_querier_interval, >=, ll->mcast_querier_interval);
+    g_assert_cmpint(lnk->mcast_querier_interval, <=, ll->mcast_querier_interval + 1);
+    g_assert_cmpint(lnk->mcast_query_interval, >=, ll->mcast_query_interval);
+    g_assert_cmpint(lnk->mcast_query_interval, <=, ll->mcast_query_interval + 1);
+    g_assert_cmpint(lnk->mcast_query_response_interval, >=, ll->mcast_query_response_interval);
+    g_assert_cmpint(lnk->mcast_query_response_interval, <=, ll->mcast_query_response_interval + 1);
+    g_assert_cmpint(lnk->mcast_startup_query_interval, >=, ll->mcast_startup_query_interval);
+    g_assert_cmpint(lnk->mcast_startup_query_interval, <=, ll->mcast_startup_query_interval + 1);
 
     return pllink;
 }
