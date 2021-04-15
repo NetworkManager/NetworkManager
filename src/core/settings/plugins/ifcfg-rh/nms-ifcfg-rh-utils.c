@@ -800,6 +800,7 @@ nms_ifcfg_rh_utils_is_numbered_tag_impl(const char *key,
     }
 
 const NMSIfcfgKeyTypeInfo nms_ifcfg_well_known_keys[] = {
+    _KEY_TYPE("ACCEPT_ALL_MAC_ADDRESSES", NMS_IFCFG_KEY_TYPE_IS_PLAIN),
     _KEY_TYPE("ACD_TIMEOUT", NMS_IFCFG_KEY_TYPE_IS_PLAIN),
     _KEY_TYPE("ADDRESS", NMS_IFCFG_KEY_TYPE_IS_NUMBERED),
     _KEY_TYPE("AP_ISOLATION", NMS_IFCFG_KEY_TYPE_IS_PLAIN),

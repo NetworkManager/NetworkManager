@@ -44,7 +44,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingWired,
                              PROP_S390_NETTYPE,
                              PROP_S390_OPTIONS,
                              PROP_WAKE_ON_LAN,
-                             PROP_WAKE_ON_LAN_PASSWORD, );
+                             PROP_WAKE_ON_LAN_PASSWORD,
+                             PROP_ACCEPT_ALL_MAC_ADDRESSES, );
 
 typedef struct {
     struct {
@@ -62,6 +63,7 @@ typedef struct {
     char *                  s390_nettype;
     char *                  wol_password;
     NMSettingWiredWakeOnLan wol;
+    NMTernary               accept_all_mac_addresses;
     guint32                 speed;
     guint32                 mtu;
     bool                    auto_negotiate : 1;
@@ -735,6 +737,22 @@ nm_setting_wired_get_wake_on_lan_password(NMSettingWired *setting)
     return NM_SETTING_WIRED_GET_PRIVATE(setting)->wol_password;
 }
 
+/**
+ * nm_setting_wired_get_accept_all_mac_addresses:
+ * @setting: the #NMSettingWired
+ *
+ * Returns: the #NMSettingWired:accept-all-mac-addresses property of the setting
+ *
+ * Since: 1.32
+ **/
+NMTernary
+nm_setting_wired_get_accept_all_mac_addresses(NMSettingWired *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NM_TERNARY_DEFAULT);
+
+    return NM_SETTING_WIRED_GET_PRIVATE(setting)->accept_all_mac_addresses;
+}
+
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
@@ -1039,6 +1057,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_WAKE_ON_LAN_PASSWORD:
         g_value_set_string(value, priv->wol_password);
         break;
+    case PROP_ACCEPT_ALL_MAC_ADDRESSES:
+        g_value_set_enum(value, priv->accept_all_mac_addresses);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -1174,6 +1195,9 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_free(priv->wol_password);
         priv->wol_password = g_value_dup_string(value);
         break;
+    case PROP_ACCEPT_ALL_MAC_ADDRESSES:
+        priv->accept_all_mac_addresses = g_value_get_enum(value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -1191,7 +1215,8 @@ nm_setting_wired_init(NMSettingWired *setting)
     priv->mac_address_blacklist = g_array_new(TRUE, FALSE, sizeof(char *));
     g_array_set_clear_func(priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
 
-    priv->wol = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
+    priv->wol                      = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
+    priv->accept_all_mac_addresses = NM_TERNARY_DEFAULT;
 }
 
 /**
@@ -1684,6 +1709,29 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                             "",
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    /**
+     * NMSettingWired:accept-all-mac-addresses:
+     *
+     * When %TRUE, setup the interface to accept packets for all MAC addresses.
+     * This is enabling the kernel interface flag IFF_PROMISC.
+     * When %FALSE, the interface will only accept the packets with the
+     * interface destination mac address or broadcast.
+     *
+     * Since: 1.32
+     **/
+    /* ---ifcfg-rh---
+     * property: accept-all-mac-addresses
+     * variable: ACCEPT_ALL_MAC_ADDRESSES
+     * description: Enforce the interface to accept all the packets.
+     * ---end---
+     */
+    obj_properties[PROP_ACCEPT_ALL_MAC_ADDRESSES] =
+        g_param_spec_enum(NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
+                          "",
+                          "",
+                          NM_TYPE_TERNARY,
+                          NM_TERNARY_DEFAULT,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
