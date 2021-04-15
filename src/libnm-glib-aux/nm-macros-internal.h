@@ -683,6 +683,21 @@ NM_G_ERROR_MSG(GError *error)
     #define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) G_STRUCT_OFFSET(container, field)
 #endif
 
+/* Casts (arg) to (type**), but also having a compile time check that
+ * the arg is some sort of pointer to a pointer.
+ *
+ * The only purpose of this macro is some additional compile time safety,
+ * that the argument is a pointer to pointer. But then it will C cast any kind
+ * of such argument. */
+#define NM_CAST_PPTR(type, arg)                                   \
+    ({                                                            \
+        typeof(*(arg)) *const _arg         = (arg);               \
+        typeof(*_arg) _arg2                = _arg ? *_arg : NULL; \
+        _nm_unused const void *const _arg3 = _arg2;               \
+                                                                  \
+        (type **) _arg;                                           \
+    })
+
 #if _NM_CC_SUPPORT_GENERIC
     /* these macros cast (value) to
      *  - "const char **"      (for "MC", mutable-const)
