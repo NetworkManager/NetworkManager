@@ -2978,10 +2978,10 @@ nm_device_take_over_link(NMDevice *self, int ifindex, char **old_name, GError **
 
         /* Rename the link to the device ifname */
         if (up)
-            nm_platform_link_set_down(platform, ifindex);
+            nm_platform_link_change_flags(platform, ifindex, IFF_UP, FALSE);
         success = nm_platform_link_set_name(platform, ifindex, nm_device_get_iface(self));
         if (up)
-            nm_platform_link_set_up(platform, ifindex, NULL);
+            nm_platform_link_change_flags(platform, ifindex, IFF_UP, TRUE);
 
         if (!success) {
             nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "failure renaming link %d", ifindex);
@@ -3109,7 +3109,7 @@ _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
             nm_platform_link_set_user_ipv6ll_enabled(platform, priv->ip_ifindex, TRUE);
 
         if (!nm_platform_link_is_up(platform, priv->ip_ifindex))
-            nm_platform_link_set_up(platform, priv->ip_ifindex, NULL);
+            nm_platform_link_change_flags(platform, priv->ip_ifindex, IFF_UP, TRUE);
     }
 
     /* We don't care about any saved values from the old iface */
@@ -11833,7 +11833,7 @@ activate_stage5_ip_config_result_x(NMDevice *self, int addr_family)
 
     if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex)
         && !nm_device_sys_iface_state_is_external_or_assume(self)) {
-        nm_platform_link_set_up(nm_device_get_platform(self), ip_ifindex, NULL);
+        nm_platform_link_change_flags(nm_device_get_platform(self), ip_ifindex, IFF_UP, TRUE);
         if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex))
             _LOGW(LOGD_DEVICE,
                   "interface %s not up for IP configuration",
@@ -14049,6 +14049,7 @@ nm_device_bring_up(NMDevice *self, gboolean block, gboolean *no_firmware)
     gboolean             device_is_up = FALSE;
     NMDeviceCapabilities capabilities;
     int                  ifindex;
+    int                  r;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
@@ -14064,7 +14065,9 @@ nm_device_bring_up(NMDevice *self, gboolean block, gboolean *no_firmware)
     if (ifindex <= 0) {
         /* assume success. */
     } else {
-        if (!nm_platform_link_set_up(nm_device_get_platform(self), ifindex, no_firmware))
+        r = nm_platform_link_change_flags(nm_device_get_platform(self), ifindex, IFF_UP, TRUE);
+        NM_SET_OUT(no_firmware, (r == -NME_PL_NO_FIRMWARE));
+        if (r < 0)
             return FALSE;
     }
 
@@ -14151,7 +14154,7 @@ nm_device_take_down(NMDevice *self, gboolean block)
         return;
     }
 
-    if (!nm_platform_link_set_down(nm_device_get_platform(self), ifindex))
+    if (!nm_platform_link_change_flags(nm_device_get_platform(self), ifindex, IFF_UP, FALSE))
         return;
 
     device_is_up = nm_device_is_up(self);

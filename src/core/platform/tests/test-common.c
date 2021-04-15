@@ -2284,9 +2284,9 @@ nmtstp_link_set_updown(NMPlatform *platform, gboolean external_command, int ifin
         nmtstp_run_command_check("ip link set %s %s", ifname, up ? "up" : "down");
     } else {
         if (up)
-            g_assert(nm_platform_link_set_up(platform, ifindex, NULL));
+            g_assert(nm_platform_link_change_flags(platform, ifindex, IFF_UP, TRUE) >= 0);
         else
-            g_assert(nm_platform_link_set_down(platform, ifindex));
+            g_assert(nm_platform_link_change_flags(platform, ifindex, IFF_UP, FALSE) >= 0);
     }
 
     /* Let's wait until we get the result */

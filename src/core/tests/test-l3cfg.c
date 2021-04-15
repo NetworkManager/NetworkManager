@@ -82,8 +82,8 @@ _test_fixture_1_setup(TestFixture1 *f, int test_idx)
     f->hwaddr0 = l0->l_address;
     f->hwaddr1 = l1->l_address;
 
-    g_assert(nm_platform_link_set_up(f->platform, f->ifindex0, NULL));
-    g_assert(nm_platform_link_set_up(f->platform, f->ifindex1, NULL));
+    g_assert(nm_platform_link_change_flags(f->platform, f->ifindex0, IFF_UP, TRUE) >= 0);
+    g_assert(nm_platform_link_change_flags(f->platform, f->ifindex1, IFF_UP, TRUE) >= 0);
 
     return f;
 }
