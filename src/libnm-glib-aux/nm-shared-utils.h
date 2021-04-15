@@ -1489,6 +1489,12 @@ nm_g_variant_new_ay(const guint8 *data, gsize len)
 }
 
 static inline GVariant *
+nm_g_variant_new_au(const guint32 *data, gsize len)
+{
+    return g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, data, len, sizeof(guint32));
+}
+
+static inline GVariant *
 nm_g_variant_new_ay_inaddr(int addr_family, gconstpointer addr)
 {
     return g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
