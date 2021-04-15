@@ -206,10 +206,7 @@ dump_ip_to_props(NMIPConfig *ip, GVariantBuilder *builder)
             array[0] = addr->a4.address;
             array[1] = addr->a4.plen;
             array[2] = gw;
-            g_variant_builder_add(
-                &int_builder,
-                "@au",
-                g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 3, sizeof(guint32)));
+            g_variant_builder_add(&int_builder, "@au", nm_g_variant_new_au(array, 3));
         } else {
             const struct in6_addr *gw = &in6addr_any;
 
@@ -278,10 +275,7 @@ dump_ip_to_props(NMIPConfig *ip, GVariantBuilder *builder)
             array[1] = route->r4.plen;
             array[2] = route->r4.gateway;
             array[3] = route->r4.metric;
-            g_variant_builder_add(
-                &int_builder,
-                "@au",
-                g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 4, sizeof(guint32)));
+            g_variant_builder_add(&int_builder, "@au", nm_g_variant_new_au(array, 4));
         } else {
             var1 = nm_g_variant_new_ay_in6addr(&route->r6.network);
             var2 = nm_g_variant_new_ay_in6addr(&route->r6.gateway);

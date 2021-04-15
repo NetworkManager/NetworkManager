@@ -1377,10 +1377,7 @@ nm_utils_ip4_addresses_to_variant(GPtrArray *addresses, const char *gateway)
             array[1] = nm_ip_address_get_prefix(addr);
             array[2] = gw;
 
-            g_variant_builder_add(
-                &builder,
-                "@au",
-                g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 3, sizeof(guint32)));
+            g_variant_builder_add(&builder, "@au", nm_g_variant_new_au(array, 3));
         }
     }
 
@@ -1479,10 +1476,7 @@ nm_utils_ip4_routes_to_variant(GPtrArray *routes)
             /* The old routes format uses "0" for default, not "-1" */
             array[3] = MAX(0, nm_ip_route_get_metric(route));
 
-            g_variant_builder_add(
-                &builder,
-                "@au",
-                g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 4, sizeof(guint32)));
+            g_variant_builder_add(&builder, "@au", nm_g_variant_new_au(array, 4));
         }
     }
 

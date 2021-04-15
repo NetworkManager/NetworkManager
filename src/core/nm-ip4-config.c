@@ -3016,11 +3016,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_take_variant(value, g_variant_builder_end(&builder_data));
         break;
     case PROP_NAMESERVERS:
-        g_value_take_variant(value,
-                             g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32,
-                                                       priv->nameservers->data,
-                                                       priv->nameservers->len,
-                                                       sizeof(guint32)));
+        g_value_take_variant(
+            value,
+            nm_g_variant_new_au((const guint32 *) priv->nameservers->data, priv->nameservers->len));
         break;
     case PROP_DOMAINS:
         nm_utils_g_value_set_strv(value, priv->domains);
@@ -3045,11 +3043,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_take_variant(value, g_variant_builder_end(&builder_data));
         break;
     case PROP_WINS_SERVERS:
-        g_value_take_variant(value,
-                             g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32,
-                                                       priv->wins->data,
-                                                       priv->wins->len,
-                                                       sizeof(guint32)));
+        g_value_take_variant(
+            value,
+            nm_g_variant_new_au((const guint32 *) priv->wins->data, priv->wins->len));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);

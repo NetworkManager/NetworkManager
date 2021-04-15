@@ -1496,12 +1496,7 @@ nm_utils_ip_addresses_to_dbus(int                          addr_family,
                         : (guint32) 0,
                 };
 
-                g_variant_builder_add(&builder_legacy,
-                                      "@au",
-                                      g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32,
-                                                                dbus_addr,
-                                                                3,
-                                                                sizeof(guint32)));
+                g_variant_builder_add(&builder_legacy, "@au", nm_g_variant_new_au(dbus_addr, 3));
             } else {
                 g_variant_builder_add(
                     &builder_legacy,
@@ -1623,12 +1618,7 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
                     r->r4.metric,
                 };
 
-                g_variant_builder_add(&builder_legacy,
-                                      "@au",
-                                      g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32,
-                                                                dbus_route,
-                                                                4,
-                                                                sizeof(guint32)));
+                g_variant_builder_add(&builder_legacy, "@au", nm_g_variant_new_au(dbus_route, 4));
             } else {
                 g_variant_builder_add(&builder_legacy,
                                       "(@ayu@ayu)",

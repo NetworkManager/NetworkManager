@@ -226,11 +226,10 @@ nm_ip_up(void *data, int arg)
         if (opts.dnsaddr[1])
             dns[len++] = opts.dnsaddr[1];
 
-        g_variant_builder_add(
-            &builder,
-            "{sv}",
-            NM_PPP_IP4_CONFIG_DNS,
-            g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, dns, len, sizeof(guint32)));
+        g_variant_builder_add(&builder,
+                              "{sv}",
+                              NM_PPP_IP4_CONFIG_DNS,
+                              nm_g_variant_new_au(dns, len));
     }
 
     if (opts.winsaddr[0] || opts.winsaddr[1]) {
@@ -242,11 +241,10 @@ nm_ip_up(void *data, int arg)
         if (opts.winsaddr[1])
             wins[len++] = opts.winsaddr[1];
 
-        g_variant_builder_add(
-            &builder,
-            "{sv}",
-            NM_PPP_IP4_CONFIG_WINS,
-            g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, wins, len, sizeof(guint32)));
+        g_variant_builder_add(&builder,
+                              "{sv}",
+                              NM_PPP_IP4_CONFIG_WINS,
+                              nm_g_variant_new_au(wins, len));
     }
 
     g_message("nm-ppp-plugin: sending IPv4 config to NetworkManager...");
