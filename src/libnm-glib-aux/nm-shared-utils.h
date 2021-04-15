@@ -1497,10 +1497,7 @@ nm_g_variant_new_au(const guint32 *data, gsize len)
 static inline GVariant *
 nm_g_variant_new_ay_inaddr(int addr_family, gconstpointer addr)
 {
-    return g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
-                                     addr ?: &nm_ip_addr_zero,
-                                     nm_utils_addr_family_to_size(addr_family),
-                                     1);
+    return nm_g_variant_new_ay(addr ?: &nm_ip_addr_zero, nm_utils_addr_family_to_size(addr_family));
 }
 
 static inline GVariant *
@@ -1527,10 +1524,7 @@ nm_g_variant_builder_add_sv_bytearray(GVariantBuilder *builder,
                                       const guint8 *   arr,
                                       gsize            len)
 {
-    g_variant_builder_add(builder,
-                          "{sv}",
-                          key,
-                          g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, arr, len, 1));
+    g_variant_builder_add(builder, "{sv}", key, nm_g_variant_new_ay(arr, len));
 }
 
 static inline void

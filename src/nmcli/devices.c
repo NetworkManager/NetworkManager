@@ -3774,10 +3774,9 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 
         g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
         g_variant_builder_init(&array_builder, G_VARIANT_TYPE("aay"));
-        g_variant_builder_add(
-            &array_builder,
-            "@ay",
-            g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, param_user, strlen(param_user), 1));
+        g_variant_builder_add(&array_builder,
+                              "@ay",
+                              nm_g_variant_new_ay((const guint8 *) param_user, strlen(param_user)));
         g_variant_builder_add(&builder, "{sv}", "ssids", g_variant_builder_end(&array_builder));
         options = g_variant_builder_end(&builder);
 
@@ -4538,10 +4537,9 @@ do_device_wifi_rescan(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
         for (i = 0; i < ssids->len; i++) {
             const char *ssid = g_ptr_array_index(ssids, i);
 
-            g_variant_builder_add(
-                &array_builder,
-                "@ay",
-                g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, ssid, strlen(ssid), 1));
+            g_variant_builder_add(&array_builder,
+                                  "@ay",
+                                  nm_g_variant_new_ay((const guint8 *) ssid, strlen(ssid)));
         }
 
         g_variant_builder_add(&builder, "{sv}", "ssids", g_variant_builder_end(&array_builder));

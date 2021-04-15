@@ -4227,7 +4227,7 @@ _nm_utils_hwaddr_to_dbus_impl(const char *str)
     if (!_nm_utils_hwaddr_aton(str, buf, sizeof(buf), &len))
         return NULL;
 
-    return g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, buf, len, 1);
+    return nm_g_variant_new_ay(buf, len);
 }
 
 static GVariant *

@@ -92,7 +92,7 @@ build_signal_parameters(void)
         g_variant_builder_add(&builder,
                               "{sv}",
                               name,
-                              g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, val, strlen(val), 1));
+                              nm_g_variant_new_ay((const guint8 *) val, strlen(val)));
 
 next:;
     }

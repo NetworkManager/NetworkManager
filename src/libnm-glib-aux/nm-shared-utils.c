@@ -516,16 +516,15 @@ nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len)
 GVariant *
 nm_utils_gbytes_to_variant_ay(GBytes *bytes)
 {
-    const guint8 *p;
-    gsize         l;
+    const guint8 *p = NULL;
+    gsize         l = 0;
 
     if (!bytes) {
         /* for convenience, accept NULL to return an empty variant */
-        return g_variant_new_array(G_VARIANT_TYPE_BYTE, NULL, 0);
-    }
+    } else
+        p = g_bytes_get_data(bytes, &l);
 
-    p = g_bytes_get_data(bytes, &l);
-    return g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, p, l, 1);
+    return nm_g_variant_new_ay(p, l);
 }
 
 /*****************************************************************************/

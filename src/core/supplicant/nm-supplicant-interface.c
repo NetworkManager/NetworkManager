@@ -1619,11 +1619,10 @@ _wps_handle_set_pc_cb(GVariant *res, GError *error, gpointer user_data)
          * enroll with any BSS in range. */
         if (!nm_utils_hwaddr_aton(wps_data->bssid, bssid_buf, sizeof(bssid_buf)))
             nm_assert_not_reached();
-        g_variant_builder_add(
-            &start_args,
-            "{sv}",
-            "Bssid",
-            g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, bssid_buf, ETH_ALEN, sizeof(guint8)));
+        g_variant_builder_add(&start_args,
+                              "{sv}",
+                              "Bssid",
+                              nm_g_variant_new_ay(bssid_buf, ETH_ALEN));
     }
 
     wps_data->needs_cancelling = TRUE;
