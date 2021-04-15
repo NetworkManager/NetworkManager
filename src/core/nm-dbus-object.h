@@ -168,7 +168,7 @@ void nm_dbus_object_unexport_on_idle(gpointer /* (NMDBusObject *) */ self_take);
 
 void _nm_dbus_object_clear_and_unexport(NMDBusObject **location);
 #define nm_dbus_object_clear_and_unexport(location) \
-    _nm_dbus_object_clear_and_unexport((NMDBusObject **) (location))
+    _nm_dbus_object_clear_and_unexport(NM_CAST_PPTR(NMDBusObject, (location)))
 
 void nm_dbus_object_emit_signal_variant(NMDBusObject *                     self,
                                         const NMDBusInterfaceInfoExtended *interface_info,
