@@ -733,7 +733,7 @@ _nm_setting_dcb_uint_array_to_dbus(const GValue *prop_value)
 {
     GArray *src = g_value_get_boxed(prop_value);
 
-    return g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, src->data, src->len, sizeof(guint32));
+    return nm_g_variant_new_au((const guint32 *) src->data, src->len);
 }
 
 static void

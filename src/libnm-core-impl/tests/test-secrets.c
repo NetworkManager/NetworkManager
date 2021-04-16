@@ -526,20 +526,25 @@ test_update_secrets_whole_connection(void)
 static void
 test_update_secrets_whole_connection_empty_hash(void)
 {
-    NMConnection *connection;
-    GVariant *    secrets;
-    GError *      error = NULL;
-    gboolean      success;
+    gs_unref_object NMConnection *connection = NULL;
+    GVariant *                    secrets;
+    GError *                      error = NULL;
+    gboolean                      success;
 
     /* Test that updating secrets with an empty connection hash returns success */
 
     connection = wifi_connection_new();
     secrets    = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
     success    = nm_connection_update_secrets(connection, NULL, secrets, &error);
-    g_assert_no_error(error);
-    g_assert(success == TRUE);
+    nmtst_assert_success(success, error);
     g_variant_unref(secrets);
-    g_object_unref(connection);
+
+    g_clear_object(&connection);
+
+    connection = wifi_connection_new();
+    secrets    = nm_g_variant_singleton_aLsaLsvII();
+    success    = nm_connection_update_secrets(connection, NULL, secrets, &error);
+    nmtst_assert_success(success, error);
 }
 
 static void

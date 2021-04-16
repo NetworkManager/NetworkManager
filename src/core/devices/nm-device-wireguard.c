@@ -1939,11 +1939,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
     switch (prop_id) {
     case PROP_PUBLIC_KEY:
-        g_value_take_variant(value,
-                             g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
-                                                       priv->lnk_curr.public_key,
-                                                       sizeof(priv->lnk_curr.public_key),
-                                                       1));
+        g_value_take_variant(
+            value,
+            nm_g_variant_new_ay(priv->lnk_curr.public_key, sizeof(priv->lnk_curr.public_key)));
         break;
     case PROP_LISTEN_PORT:
         g_value_set_uint(value, priv->lnk_curr.listen_port);

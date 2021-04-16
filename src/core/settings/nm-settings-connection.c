@@ -1868,7 +1868,7 @@ dbus_get_agent_secrets_cb(NMSettingsConnection *      self,
         dict = nm_connection_to_dbus(nm_settings_connection_get_connection(self),
                                      NM_CONNECTION_SERIALIZE_WITH_SECRETS);
         if (!dict)
-            dict = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
+            dict = nm_g_variant_singleton_aLsaLsvII();
         g_dbus_method_invocation_return_value(context, g_variant_new("(@a{sa{sv}})", dict));
     }
 }

@@ -5137,11 +5137,11 @@ _add_and_activate_connection(NMClient *          self,
     if (partial)
         arg_connection = nm_connection_to_dbus(partial, NM_CONNECTION_SERIALIZE_ALL);
     if (!arg_connection)
-        arg_connection = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
+        arg_connection = nm_g_variant_singleton_aLsaLsvII();
 
     if (is_v2) {
         if (!options)
-            options = g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0);
+            options = nm_g_variant_singleton_aLsvI();
         use_add_and_activate_v2 = TRUE;
         source_tag              = nm_client_add_and_activate_connection2;
     } else {
@@ -5641,7 +5641,7 @@ _add_connection_call(NMClient *                    self,
     NML_NMCLIENT_LOG_D(self, "AddConnection() started...");
 
     if (!settings)
-        settings = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
+        settings = nm_g_variant_singleton_aLsaLsvII();
 
     /* Although AddConnection2() being capable to handle also AddConnection() and
      * AddConnectionUnsaved() variants, we prefer to use the old D-Bus methods when
@@ -5678,24 +5678,23 @@ _add_connection_call(NMClient *                    self,
                              NM_DBUS_DEFAULT_TIMEOUT_MSEC,
                              _add_connection_cb_without_extra_result);
     } else {
-        _nm_client_dbus_call(
-            self,
-            self,
-            source_tag,
-            cancellable,
-            callback,
-            user_data,
-            NM_DBUS_PATH_SETTINGS,
-            NM_DBUS_INTERFACE_SETTINGS,
-            "AddConnection2",
-            g_variant_new("(@a{sa{sv}}u@a{sv})",
-                          settings,
-                          (guint32) flags,
-                          args ?: g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0)),
-            G_VARIANT_TYPE("(oa{sv})"),
-            G_DBUS_CALL_FLAGS_NONE,
-            NM_DBUS_DEFAULT_TIMEOUT_MSEC,
-            _add_connection_cb_with_extra_result);
+        _nm_client_dbus_call(self,
+                             self,
+                             source_tag,
+                             cancellable,
+                             callback,
+                             user_data,
+                             NM_DBUS_PATH_SETTINGS,
+                             NM_DBUS_INTERFACE_SETTINGS,
+                             "AddConnection2",
+                             g_variant_new("(@a{sa{sv}}u@a{sv})",
+                                           settings,
+                                           (guint32) flags,
+                                           args ?: nm_g_variant_singleton_aLsvI()),
+                             G_VARIANT_TYPE("(oa{sv})"),
+                             G_DBUS_CALL_FLAGS_NONE,
+                             NM_DBUS_DEFAULT_TIMEOUT_MSEC,
+                             _add_connection_cb_with_extra_result);
     }
 }
 

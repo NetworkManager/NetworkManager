@@ -95,9 +95,9 @@ nm_remote_connection_update2(NMRemoteConnection *   connection,
     g_return_if_fail(!cancellable || G_IS_CANCELLABLE(cancellable));
 
     if (!settings)
-        settings = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
+        settings = nm_g_variant_singleton_aLsaLsvII();
     if (!args)
-        args = g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0);
+        args = nm_g_variant_singleton_aLsvI();
 
     _nm_client_dbus_call(_nm_object_get_client(connection),
                          connection,
@@ -185,7 +185,7 @@ nm_remote_connection_commit_changes(NMRemoteConnection *connection,
                       nm_connection_to_dbus(NM_CONNECTION(connection), NM_CONNECTION_SERIALIZE_ALL),
                       (guint32)(save_to_disk ? NM_SETTINGS_UPDATE2_FLAG_TO_DISK
                                              : NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY),
-                      g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0)),
+                      nm_g_variant_singleton_aLsvI()),
         G_VARIANT_TYPE("(a{sv})"),
         G_DBUS_CALL_FLAGS_NONE,
         NM_DBUS_DEFAULT_TIMEOUT_MSEC,
