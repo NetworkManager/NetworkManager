@@ -31,33 +31,20 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMLldpListener, PROP_NEIGHBORS, );
-
-typedef struct {
+struct _NMLldpListener {
     sd_lldp *   lldp_handle;
     GHashTable *lldp_neighbors;
     GVariant *  variant;
 
+    NMLldpListenerNotify notify_callback;
+    gpointer             notify_user_data;
+
     /* the timestamp in nsec until which we delay updates. */
-    gint64 ratelimit_next_nsec;
-    guint  ratelimit_id;
+    GSource *ratelimit_source;
+    gint64   ratelimit_next_nsec;
 
     int ifindex;
-} NMLldpListenerPrivate;
-
-struct _NMLldpListener {
-    GObject               parent;
-    NMLldpListenerPrivate _priv;
 };
-
-struct _NMLldpListenerClass {
-    GObjectClass parent;
-};
-
-G_DEFINE_TYPE(NMLldpListener, nm_lldp_listener, G_TYPE_OBJECT)
-
-#define NM_LLDP_LISTENER_GET_PRIVATE(self) \
-    _NM_GET_PRIVATE(self, NMLldpListener, NM_IS_LLDP_LISTENER)
 
 /*****************************************************************************/
 
@@ -74,27 +61,28 @@ typedef struct {
 
 #define _NMLOG_PREFIX_NAME "lldp"
 #define _NMLOG_DOMAIN      LOGD_DEVICE
-#define _NMLOG(level, ...)                                                                      \
-    G_STMT_START                                                                                \
-    {                                                                                           \
-        const NMLogLevel _level = (level);                                                      \
-                                                                                                \
-        if (nm_logging_enabled(_level, _NMLOG_DOMAIN)) {                                        \
-            char _sbuf[64];                                                                     \
-            int  _ifindex = (self) ? NM_LLDP_LISTENER_GET_PRIVATE(self)->ifindex : 0;           \
-                                                                                                \
-            _nm_log(_level,                                                                     \
-                    _NMLOG_DOMAIN,                                                              \
-                    0,                                                                          \
-                    _ifindex > 0 ? nm_platform_link_get_name(NM_PLATFORM_GET, _ifindex) : NULL, \
-                    NULL,                                                                       \
-                    "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                                \
-                    _NMLOG_PREFIX_NAME,                                                         \
-                    ((_ifindex > 0) ? nm_sprintf_buf(_sbuf, "[%p,%d]", (self), _ifindex)        \
-                                    : ((self) ? nm_sprintf_buf(_sbuf, "[%p]", (self)) : ""))    \
-                        _NM_UTILS_MACRO_REST(__VA_ARGS__));                                     \
-        }                                                                                       \
-    }                                                                                           \
+#define _NMLOG(level, ...)                                                                       \
+    G_STMT_START                                                                                 \
+    {                                                                                            \
+        const NMLogLevel _level = (level);                                                       \
+                                                                                                 \
+        if (nm_logging_enabled(_level, _NMLOG_DOMAIN)) {                                         \
+            char _sbuf[100];                                                                     \
+                                                                                                 \
+            _nm_log(_level,                                                                      \
+                    _NMLOG_DOMAIN,                                                               \
+                    0,                                                                           \
+                    (self) ? nm_platform_link_get_name(NM_PLATFORM_GET, (self)->ifindex) : NULL, \
+                    NULL,                                                                        \
+                    "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                                 \
+                    _NMLOG_PREFIX_NAME,                                                          \
+                    ((self) ? nm_sprintf_buf(_sbuf,                                              \
+                                             "[" NM_HASH_OBFUSCATE_PTR_FMT ",%d]",               \
+                                             NM_HASH_OBFUSCATE_PTR(self),                        \
+                                             (self)->ifindex)                                    \
+                            : "") _NM_UTILS_MACRO_REST(__VA_ARGS__));                            \
+        }                                                                                        \
+    }                                                                                            \
     G_STMT_END
 
 #define LOG_NEIGH_FMT "CHASSIS=%u/%s PORT=%u/%s"
@@ -812,66 +800,59 @@ nmtst_lldp_parse_from_raw(const guint8 *raw_data, gsize raw_len)
 /*****************************************************************************/
 
 static void
-data_changed_notify(NMLldpListener *self, NMLldpListenerPrivate *priv)
+data_changed_notify(NMLldpListener *self)
 {
-    nm_clear_g_variant(&priv->variant);
-    _notify(self, PROP_NEIGHBORS);
+    nm_clear_g_variant(&self->variant);
+
+    self->notify_callback(self, self->notify_user_data);
 }
 
 static gboolean
 data_changed_timeout(gpointer user_data)
 {
-    NMLldpListener *       self = user_data;
-    NMLldpListenerPrivate *priv;
+    NMLldpListener *self = user_data;
 
-    g_return_val_if_fail(NM_IS_LLDP_LISTENER(self), G_SOURCE_REMOVE);
-
-    priv = NM_LLDP_LISTENER_GET_PRIVATE(self);
-
-    priv->ratelimit_id        = 0;
-    priv->ratelimit_next_nsec = nm_utils_get_monotonic_timestamp_nsec() + MIN_UPDATE_INTERVAL_NSEC;
-    data_changed_notify(self, priv);
-    return G_SOURCE_REMOVE;
+    nm_clear_g_source_inst(&self->ratelimit_source);
+    self->ratelimit_next_nsec = nm_utils_get_monotonic_timestamp_nsec() + MIN_UPDATE_INTERVAL_NSEC;
+    data_changed_notify(self);
+    return G_SOURCE_CONTINUE;
 }
 
 static void
 data_changed_schedule(NMLldpListener *self)
 {
-    NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE(self);
-    gint64                 now_nsec;
+    gint64 now_nsec;
 
-    if (priv->ratelimit_id != 0)
+    if (self->ratelimit_source)
         return;
 
     now_nsec = nm_utils_get_monotonic_timestamp_nsec();
-    if (now_nsec < priv->ratelimit_next_nsec) {
-        priv->ratelimit_id =
-            g_timeout_add_full(G_PRIORITY_LOW,
-                               NM_UTILS_NSEC_TO_MSEC_CEIL(priv->ratelimit_next_nsec - now_nsec),
-                               data_changed_timeout,
-                               self,
-                               NULL);
-        return;
+    if (now_nsec < self->ratelimit_next_nsec) {
+        self->ratelimit_source = nm_g_timeout_source_new(
+            NM_UTILS_NSEC_TO_MSEC_CEIL(self->ratelimit_next_nsec - now_nsec),
+            G_PRIORITY_LOW,
+            data_changed_timeout,
+            self,
+            NULL);
+    } else {
+        self->ratelimit_source =
+            nm_g_idle_source_new(G_PRIORITY_LOW, data_changed_timeout, self, NULL);
     }
 
-    priv->ratelimit_id = g_idle_add_full(G_PRIORITY_LOW, data_changed_timeout, self, NULL);
+    g_source_attach(self->ratelimit_source, NULL);
 }
 
 static void
 process_lldp_neighbor(NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboolean remove)
 {
-    NMLldpListenerPrivate *                    priv;
     nm_auto(lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
     LldpNeighbor *                             neigh_old;
 
-    g_return_if_fail(NM_IS_LLDP_LISTENER(self));
+    nm_assert(self);
+    nm_assert(self->lldp_handle);
+    nm_assert(self->lldp_neighbors);
 
-    priv = NM_LLDP_LISTENER_GET_PRIVATE(self);
-
-    g_return_if_fail(priv->lldp_handle);
     g_return_if_fail(neighbor_sd);
-
-    nm_assert(priv->lldp_neighbors);
 
     neigh = lldp_neighbor_new(neighbor_sd);
     if (!neigh) {
@@ -879,13 +860,13 @@ process_lldp_neighbor(NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gbool
         return;
     }
 
-    neigh_old = g_hash_table_lookup(priv->lldp_neighbors, neigh);
+    neigh_old = g_hash_table_lookup(self->lldp_neighbors, neigh);
 
     if (remove) {
         if (neigh_old) {
             _LOGT("process: %s neigh: " LOG_NEIGH_FMT, "remove", LOG_NEIGH_ARG(neigh));
 
-            g_hash_table_remove(priv->lldp_neighbors, neigh_old);
+            g_hash_table_remove(self->lldp_neighbors, neigh_old);
             goto handle_changed;
         }
         return;
@@ -896,7 +877,7 @@ process_lldp_neighbor(NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gbool
 
     _LOGD("process: %s neigh: " LOG_NEIGH_FMT, neigh_old ? "update" : "new", LOG_NEIGH_ARG(neigh));
 
-    g_hash_table_add(priv->lldp_neighbors, g_steal_pointer(&neigh));
+    g_hash_table_add(self->lldp_neighbors, g_steal_pointer(&neigh));
 
 handle_changed:
     data_changed_schedule(self);
@@ -911,25 +892,57 @@ lldp_event_handler(sd_lldp *lldp, sd_lldp_event_t event, sd_lldp_neighbor *n, vo
         !NM_IN_SET(event, SD_LLDP_EVENT_ADDED, SD_LLDP_EVENT_UPDATED, SD_LLDP_EVENT_REFRESHED));
 }
 
-gboolean
-nm_lldp_listener_start(NMLldpListener *self, int ifindex, GError **error)
+/*****************************************************************************/
+
+int
+nm_lldp_listener_get_ifindex(NMLldpListener *self)
 {
-    NMLldpListenerPrivate *priv;
-    int                    ret;
+    g_return_val_if_fail(self, 0);
 
-    g_return_val_if_fail(NM_IS_LLDP_LISTENER(self), FALSE);
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(!error || !*error, FALSE);
+    return self->ifindex;
+}
 
-    priv = NM_LLDP_LISTENER_GET_PRIVATE(self);
+/*****************************************************************************/
 
-    if (priv->lldp_handle) {
-        g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "already running");
-        return FALSE;
+GVariant *
+nm_lldp_listener_get_neighbors(NMLldpListener *self)
+{
+    g_return_val_if_fail(self, FALSE);
+
+    if (G_UNLIKELY(!self->variant)) {
+        gs_free LldpNeighbor **neighbors = NULL;
+        GVariantBuilder        array_builder;
+        guint                  i, n;
+
+        g_variant_builder_init(&array_builder, G_VARIANT_TYPE("aa{sv}"));
+        neighbors = (LldpNeighbor **)
+            nm_utils_hash_keys_to_array(self->lldp_neighbors, lldp_neighbor_id_cmp_p, NULL, &n);
+        for (i = 0; i < n; i++)
+            g_variant_builder_add_value(&array_builder, lldp_neighbor_to_variant(neighbors[i]));
+        self->variant = g_variant_ref_sink(g_variant_builder_end(&array_builder));
     }
 
-    ret = sd_lldp_new(&priv->lldp_handle);
-    if (ret < 0) {
+    return self->variant;
+}
+
+/*****************************************************************************/
+
+NMLldpListener *
+nm_lldp_listener_new(int                  ifindex,
+                     NMLldpListenerNotify notify_callback,
+                     gpointer             notify_user_data,
+                     GError **            error)
+{
+    NMLldpListener *self = NULL;
+    sd_lldp *       lldp_handle;
+    int             r;
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(!error || !*error, FALSE);
+    g_return_val_if_fail(notify_callback, FALSE);
+
+    r = sd_lldp_new(&lldp_handle);
+    if (r < 0) {
         g_set_error_literal(error,
                             NM_DEVICE_ERROR,
                             NM_DEVICE_ERROR_FAILED,
@@ -937,189 +950,77 @@ nm_lldp_listener_start(NMLldpListener *self, int ifindex, GError **error)
         return FALSE;
     }
 
-    ret = sd_lldp_set_ifindex(priv->lldp_handle, ifindex);
-    if (ret < 0) {
+    r = sd_lldp_set_ifindex(lldp_handle, ifindex);
+    if (r < 0) {
         g_set_error_literal(error,
                             NM_DEVICE_ERROR,
                             NM_DEVICE_ERROR_FAILED,
                             "failed setting ifindex");
-        goto err;
+        goto fail_handle;
     }
 
-    ret = sd_lldp_set_callback(priv->lldp_handle, lldp_event_handler, self);
-    if (ret < 0) {
+    r = sd_lldp_set_neighbors_max(lldp_handle, MAX_NEIGHBORS);
+    nm_assert(r == 0);
+
+    self  = g_slice_new(NMLldpListener);
+    *self = (NMLldpListener){
+        .ifindex          = ifindex,
+        .notify_callback  = notify_callback,
+        .notify_user_data = notify_user_data,
+    };
+
+    r = sd_lldp_set_callback(lldp_handle, lldp_event_handler, self);
+    if (r < 0) {
         g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "set callback failed");
-        goto err;
+        goto fail_handle;
     }
 
-    ret = sd_lldp_set_neighbors_max(priv->lldp_handle, MAX_NEIGHBORS);
-    nm_assert(ret == 0);
-
-    priv->ifindex = ifindex;
-
-    ret = sd_lldp_attach_event(priv->lldp_handle, NULL, 0);
-    if (ret < 0) {
+    r = sd_lldp_attach_event(lldp_handle, NULL, 0);
+    if (r < 0) {
         g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "attach event failed");
-        goto err_free;
+        goto fail_attached;
     }
 
-    ret = sd_lldp_start(priv->lldp_handle);
-    if (ret < 0) {
+    r = sd_lldp_start(lldp_handle);
+    if (r < 0) {
         g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "start failed");
-        goto err;
+        goto fail_attached;
     }
 
-    priv->lldp_neighbors = g_hash_table_new_full(lldp_neighbor_id_hash,
+    self->lldp_neighbors = g_hash_table_new_full(lldp_neighbor_id_hash,
                                                  lldp_neighbor_id_equal,
                                                  (GDestroyNotify) lldp_neighbor_free,
                                                  NULL);
+    self->lldp_handle    = lldp_handle;
 
-    _LOGD("start");
+    _LOGD("start lldp listener");
+    return self;
 
-    return TRUE;
-
-err:
-    sd_lldp_detach_event(priv->lldp_handle);
-err_free:
-    sd_lldp_unref(priv->lldp_handle);
-    priv->lldp_handle = NULL;
-    priv->ifindex     = 0;
-    return FALSE;
+fail_attached:
+    sd_lldp_detach_event(lldp_handle);
+fail_handle:
+    if (self)
+        nm_g_slice_free(self);
+    sd_lldp_unref(lldp_handle);
+    return NULL;
 }
 
 void
-nm_lldp_listener_stop(NMLldpListener *self)
+nm_lldp_listener_destroy(NMLldpListener *self)
 {
-    NMLldpListenerPrivate *priv;
-    guint                  size;
-    gboolean               changed = FALSE;
+    g_return_if_fail(self);
 
-    g_return_if_fail(NM_IS_LLDP_LISTENER(self));
-    priv = NM_LLDP_LISTENER_GET_PRIVATE(self);
+    sd_lldp_stop(self->lldp_handle);
+    sd_lldp_detach_event(self->lldp_handle);
+    sd_lldp_unref(self->lldp_handle);
 
-    if (priv->lldp_handle) {
-        _LOGD("stop");
-        sd_lldp_stop(priv->lldp_handle);
-        sd_lldp_detach_event(priv->lldp_handle);
-        sd_lldp_unref(priv->lldp_handle);
-        priv->lldp_handle = NULL;
+    nm_clear_g_source_inst(&self->ratelimit_source);
 
-        size = g_hash_table_size(priv->lldp_neighbors);
-        g_hash_table_remove_all(priv->lldp_neighbors);
-        nm_clear_pointer(&priv->lldp_neighbors, g_hash_table_unref);
-        if (size > 0 || priv->ratelimit_id != 0)
-            changed = TRUE;
-    }
+    g_hash_table_destroy(self->lldp_neighbors);
 
-    nm_clear_g_source(&priv->ratelimit_id);
-    priv->ratelimit_next_nsec = 0;
-    priv->ifindex             = 0;
-
-    if (changed)
-        data_changed_notify(self, priv);
-}
-
-gboolean
-nm_lldp_listener_is_running(NMLldpListener *self)
-{
-    NMLldpListenerPrivate *priv;
-
-    g_return_val_if_fail(NM_IS_LLDP_LISTENER(self), FALSE);
-
-    priv = NM_LLDP_LISTENER_GET_PRIVATE(self);
-    return !!priv->lldp_handle;
-}
-
-GVariant *
-nm_lldp_listener_get_neighbors(NMLldpListener *self)
-{
-    NMLldpListenerPrivate *priv;
-
-    g_return_val_if_fail(NM_IS_LLDP_LISTENER(self), FALSE);
-
-    priv = NM_LLDP_LISTENER_GET_PRIVATE(self);
-
-    if (G_UNLIKELY(!priv->variant)) {
-        gs_free LldpNeighbor **neighbors = NULL;
-        GVariantBuilder        array_builder;
-        guint                  i, n;
-
-        g_variant_builder_init(&array_builder, G_VARIANT_TYPE("aa{sv}"));
-        neighbors = (LldpNeighbor **)
-            nm_utils_hash_keys_to_array(priv->lldp_neighbors, lldp_neighbor_id_cmp_p, NULL, &n);
-        for (i = 0; i < n; i++)
-            g_variant_builder_add_value(&array_builder, lldp_neighbor_to_variant(neighbors[i]));
-        priv->variant = g_variant_ref_sink(g_variant_builder_end(&array_builder));
-    }
-    return priv->variant;
-}
-
-static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMLldpListener *self = NM_LLDP_LISTENER(object);
-
-    switch (prop_id) {
-    case PROP_NEIGHBORS:
-        g_value_set_variant(value, nm_lldp_listener_get_neighbors(self));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-nm_lldp_listener_init(NMLldpListener *self)
-{
-    _LOGT("lldp listener created");
-}
-
-NMLldpListener *
-nm_lldp_listener_new(void)
-{
-    return g_object_new(NM_TYPE_LLDP_LISTENER, NULL);
-}
-
-static void
-dispose(GObject *object)
-{
-    nm_lldp_listener_stop(NM_LLDP_LISTENER(object));
-
-    G_OBJECT_CLASS(nm_lldp_listener_parent_class)->dispose(object);
-}
-
-static void
-finalize(GObject *object)
-{
-    NMLldpListener *       self = NM_LLDP_LISTENER(object);
-    NMLldpListenerPrivate *priv = NM_LLDP_LISTENER_GET_PRIVATE(self);
-
-    nm_lldp_listener_stop(self);
-
-    nm_clear_g_variant(&priv->variant);
+    nm_g_variant_unref(self->variant);
 
     _LOGT("lldp listener destroyed");
 
-    G_OBJECT_CLASS(nm_lldp_listener_parent_class)->finalize(object);
-}
-
-static void
-nm_lldp_listener_class_init(NMLldpListenerClass *klass)
-{
-    GObjectClass *object_class = G_OBJECT_CLASS(klass);
-
-    object_class->dispose      = dispose;
-    object_class->finalize     = finalize;
-    object_class->get_property = get_property;
-
-    obj_properties[PROP_NEIGHBORS] =
-        g_param_spec_variant(NM_LLDP_LISTENER_NEIGHBORS,
-                             "",
-                             "",
-                             G_VARIANT_TYPE("aa{sv}"),
-                             NULL,
-                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-
-    g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
+    nm_g_slice_free(self);
 }
