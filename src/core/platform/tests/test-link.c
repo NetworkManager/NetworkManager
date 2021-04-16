@@ -1679,17 +1679,25 @@ test_software_detect(gconstpointer user_data)
         case NM_LINK_TYPE_BRIDGE:
         {
             const NMPlatformLnkBridge *plnk = &lnk->lnk_bridge;
+            NMPlatformLnkBridge        lnk_bridge_norm_stack;
+            const NMPlatformLnkBridge *lnk_bridge_norm;
 
             g_assert(plnk == nm_platform_link_get_lnk_bridge(NM_PLATFORM_GET, ifindex, NULL));
-            g_assert_cmpint(nm_platform_lnk_bridge_cmp(&lnk_bridge, plnk), ==, 0);
-            g_assert_cmpint(plnk->forward_delay, ==, 1560);
-            g_assert_cmpint(plnk->hello_time, ==, 150);
-            g_assert_cmpint(plnk->max_age, ==, 2100);
-            g_assert_cmpint(plnk->ageing_time, ==, 2200);
+
+            lnk_bridge_norm = nmtstp_link_bridge_normalize_jiffies_time(&lnk_bridge,
+                                                                        plnk,
+                                                                        &lnk_bridge_norm_stack);
+
+            g_assert_cmpint(nm_platform_lnk_bridge_cmp(lnk_bridge_norm, plnk), ==, 0);
+
+            g_assert_cmpint(plnk->forward_delay, ==, lnk_bridge_norm->forward_delay);
+            g_assert_cmpint(plnk->hello_time, ==, lnk_bridge_norm->hello_time);
+            g_assert_cmpint(plnk->max_age, ==, lnk_bridge_norm->max_age);
+            g_assert_cmpint(plnk->ageing_time, ==, lnk_bridge_norm->ageing_time);
             g_assert_cmpint(plnk->stp_state, ==, TRUE);
             g_assert_cmpint(plnk->priority, ==, 22);
             g_assert_cmpint(plnk->vlan_protocol, ==, 0x8100);
-            g_assert_cmpint(plnk->vlan_stats_enabled, ==, lnk_bridge.vlan_stats_enabled);
+            g_assert_cmpint(plnk->vlan_stats_enabled, ==, lnk_bridge_norm->vlan_stats_enabled);
             g_assert_cmpint(plnk->group_fwd_mask, ==, 8);
             g_assert_cmpint(plnk->mcast_snooping, ==, TRUE);
             g_assert_cmpint(plnk->mcast_router, ==, 1);
@@ -1698,12 +1706,22 @@ test_software_detect(gconstpointer user_data)
             g_assert_cmpint(plnk->mcast_hash_max, ==, 1024);
             g_assert_cmpint(plnk->mcast_last_member_count, ==, 2);
             g_assert_cmpint(plnk->mcast_startup_query_count, ==, 3);
-            g_assert_cmpint(plnk->mcast_last_member_interval, ==, 5000);
-            g_assert_cmpint(plnk->mcast_membership_interval, ==, 25000);
-            g_assert_cmpint(plnk->mcast_querier_interval, ==, 26000);
-            g_assert_cmpint(plnk->mcast_query_interval, ==, 12000);
-            g_assert_cmpint(plnk->mcast_query_response_interval, ==, 5200);
-            g_assert_cmpint(plnk->mcast_startup_query_interval, ==, 3000);
+            g_assert_cmpint(plnk->mcast_last_member_interval,
+                            ==,
+                            lnk_bridge_norm->mcast_last_member_interval);
+            g_assert_cmpint(plnk->mcast_membership_interval,
+                            ==,
+                            lnk_bridge_norm->mcast_membership_interval);
+            g_assert_cmpint(plnk->mcast_querier_interval,
+                            ==,
+                            lnk_bridge_norm->mcast_querier_interval);
+            g_assert_cmpint(plnk->mcast_query_interval, ==, lnk_bridge_norm->mcast_query_interval);
+            g_assert_cmpint(plnk->mcast_query_response_interval,
+                            ==,
+                            lnk_bridge_norm->mcast_query_response_interval);
+            g_assert_cmpint(plnk->mcast_startup_query_interval,
+                            ==,
+                            lnk_bridge_norm->mcast_startup_query_interval);
             g_assert_cmpint(nm_platform_lnk_bridge_cmp(&lnk_bridge, plnk), ==, 0);
             break;
         }

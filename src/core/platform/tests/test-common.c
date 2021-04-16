@@ -1413,6 +1413,44 @@ nmtstp_ip6_address_del(NMPlatform *    platform,
     }                                                                                       \
     G_STMT_END
 
+/* Due to rounding errors with clock_t_to_jiffies()/jiffies_to_clock_t(), kernel cannot
+ * store all requested values. That means, when we try to configure a bridge with
+ * the @requested values, the actually configured settings are slightly off, as
+ * @kernel.
+ *
+ * This function takes @requested and returns it as @dst output. All fields
+ * that might be mangled by kernel (according to @kernel) are adjusted. The
+ * result is almost identical to @requested, but some fields might be adjusted
+ * to their @kernel value. */
+const NMPlatformLnkBridge *
+nmtstp_link_bridge_normalize_jiffies_time(const NMPlatformLnkBridge *requested,
+                                          const NMPlatformLnkBridge *kernel,
+                                          NMPlatformLnkBridge *      dst)
+{
+    if (dst != requested)
+        *dst = *requested;
+
+#define _normalize_field(dst, kernel, field)                                         \
+    G_STMT_START                                                                     \
+    {                                                                                \
+        (dst)->field = nmtstp_normalize_jiffies_time((dst)->field, (kernel)->field); \
+    }                                                                                \
+    G_STMT_END
+
+    _normalize_field(dst, kernel, forward_delay);
+    _normalize_field(dst, kernel, hello_time);
+    _normalize_field(dst, kernel, max_age);
+    _normalize_field(dst, kernel, ageing_time);
+    _normalize_field(dst, kernel, mcast_last_member_interval);
+    _normalize_field(dst, kernel, mcast_membership_interval);
+    _normalize_field(dst, kernel, mcast_querier_interval);
+    _normalize_field(dst, kernel, mcast_query_interval);
+    _normalize_field(dst, kernel, mcast_query_response_interval);
+    _normalize_field(dst, kernel, mcast_startup_query_interval);
+
+    return dst;
+}
+
 const NMPlatformLink *
 nmtstp_link_bridge_add(NMPlatform *               platform,
                        gboolean                   external_command,
@@ -1421,7 +1459,8 @@ nmtstp_link_bridge_add(NMPlatform *               platform,
 {
     const NMPlatformLink *     pllink = NULL;
     const NMPlatformLnkBridge *ll     = NULL;
-    int                        r      = 0;
+    NMPlatformLnkBridge        lnk_normalized;
+    int                        r = 0;
 
     g_assert(nm_utils_ifname_valid_kernel(name, NULL));
 
@@ -1542,10 +1581,9 @@ nmtstp_link_bridge_add(NMPlatform *               platform,
 
     ll = NMP_OBJECT_CAST_LNK_BRIDGE(NMP_OBJECT_UP_CAST(pllink)->_link.netlink.lnk);
 
-    /* account for roundtrip rounding error with clock_t_to_jiffies()/jiffies_to_clock_t(). */
-    g_assert_cmpint(lnk->forward_delay, >=, ll->forward_delay - 1);
-    g_assert_cmpint(lnk->forward_delay, <=, ll->forward_delay);
+    lnk = nmtstp_link_bridge_normalize_jiffies_time(lnk, ll, &lnk_normalized);
 
+    g_assert_cmpint(lnk->forward_delay, ==, ll->forward_delay);
     g_assert_cmpint(lnk->hello_time, ==, ll->hello_time);
     g_assert_cmpint(lnk->max_age, ==, ll->max_age);
     g_assert_cmpint(lnk->ageing_time, ==, ll->ageing_time);

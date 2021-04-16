@@ -22,6 +22,24 @@
 
 /*****************************************************************************/
 
+#define nmtstp_normalize_jiffies_time(requested_value, kernel_value)                             \
+    ({                                                                                           \
+        typeof(kernel_value) _kernel_value     = (kernel_value);                                 \
+        typeof(_kernel_value) _requested_value = (requested_value);                              \
+                                                                                                 \
+        /* kernel stores some values (like bridge's forward_delay) in jiffies. When converting
+         * back and forth (clock_t_to_jiffies()/jiffies_to_clock_t()), the value reported back
+         * to user space may have rounding errors (of +/- 1), depending on CONFIG_HZ setting.
+         *
+         * Normalize the requested_value to the kernel_value, if it look as if a rounding
+         * error happens. If the difference is larger than +/- 1, no normalization happens! */   \
+                                                                                                 \
+        ((_requested_value >= (NM_MAX(_kernel_value, 1) - 1))                                    \
+         && (_requested_value <= (NM_MIN(_kernel_value, ~((typeof(_kernel_value)) 0) - 1) + 1))) \
+            ? _kernel_value                                                                      \
+            : _requested_value;                                                                  \
+    })
+
 #define _NMLOG_PREFIX_NAME "platform-test"
 #define _NMLOG_DOMAIN      LOGD_PLATFORM
 #define _NMLOG(level, ...) _LOG(level, _NMLOG_DOMAIN, __VA_ARGS__)
@@ -436,6 +454,11 @@ gboolean nmtstp_kernel_support_get(NMPlatformKernelSupportType type);
 
 void
 nmtstp_link_set_updown(NMPlatform *platform, gboolean external_command, int ifindex, gboolean up);
+
+const NMPlatformLnkBridge *
+nmtstp_link_bridge_normalize_jiffies_time(const NMPlatformLnkBridge *requested,
+                                          const NMPlatformLnkBridge *kernel,
+                                          NMPlatformLnkBridge *      dst);
 
 const NMPlatformLink *nmtstp_link_bridge_add(NMPlatform *               platform,
                                              gboolean                   external_command,
