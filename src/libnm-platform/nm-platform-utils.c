@@ -277,6 +277,7 @@ static NM_UTILS_ENUM2STR_DEFINE(_ethtool_cmd_to_string,
                                 NM_UTILS_ENUM2STR(ETHTOOL_GDRVINFO, "ETHTOOL_GDRVINFO"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GFEATURES, "ETHTOOL_GFEATURES"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GLINK, "ETHTOOL_GLINK"),
+                                NM_UTILS_ENUM2STR(ETHTOOL_GLINKSETTINGS, "ETHTOOL_GLINKSETTINGS"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GPERMADDR, "ETHTOOL_GPERMADDR"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GRINGPARAM, "ETHTOOL_GRINGPARAM"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GSET, "ETHTOOL_GSET"),
@@ -286,6 +287,7 @@ static NM_UTILS_ENUM2STR_DEFINE(_ethtool_cmd_to_string,
                                 NM_UTILS_ENUM2STR(ETHTOOL_GWOL, "ETHTOOL_GWOL"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SCOALESCE, "ETHTOOL_SCOALESCE"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SFEATURES, "ETHTOOL_SFEATURES"),
+                                NM_UTILS_ENUM2STR(ETHTOOL_SLINKSETTINGS, "ETHTOOL_SLINKSETTINGS"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SRINGPARAM, "ETHTOOL_SRINGPARAM"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SSET, "ETHTOOL_SSET"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SWOL, "ETHTOOL_SWOL"), );
@@ -1351,6 +1353,107 @@ get_baset_mode(guint32 speed, NMPlatformLinkDuplexType duplex)
     }
 }
 
+static gboolean
+platform_link_duplex_type_to_native(NMPlatformLinkDuplexType duplex_type, guint8 *out_native)
+{
+    switch (duplex_type) {
+    case NM_PLATFORM_LINK_DUPLEX_HALF:
+        *out_native = DUPLEX_HALF;
+        return TRUE;
+    case NM_PLATFORM_LINK_DUPLEX_FULL:
+        *out_native = DUPLEX_FULL;
+        return TRUE;
+    case NM_PLATFORM_LINK_DUPLEX_UNKNOWN:
+        return FALSE;
+    default:
+        g_return_val_if_reached(FALSE);
+    }
+}
+
+static NMOptionBool
+set_link_settings_new(SocketHandle *           shandle,
+                      gboolean                 autoneg,
+                      guint32                  speed,
+                      NMPlatformLinkDuplexType duplex)
+{
+    struct ethtool_link_settings          edata0;
+    gs_free struct ethtool_link_settings *edata = NULL;
+    gsize                                 edata_size;
+    guint                                 nwords;
+
+    memset(&edata0, 0, sizeof(edata0));
+    edata0.cmd = ETHTOOL_GLINKSETTINGS;
+
+    /* perform the handshake to find the size of masks */
+    if (_ethtool_call_handle(shandle, &edata0, sizeof(edata0)) < 0
+        || edata0.link_mode_masks_nwords >= 0) {
+        /* new API not supported */
+        return NM_OPTION_BOOL_DEFAULT;
+    }
+
+    nwords                        = -edata0.link_mode_masks_nwords;
+    edata_size                    = sizeof(*edata) + sizeof(guint32) * nwords * 3;
+    edata                         = g_malloc0(edata_size);
+    edata->cmd                    = ETHTOOL_GLINKSETTINGS;
+    edata->link_mode_masks_nwords = nwords;
+
+    /* retrieve first current settings */
+    if (_ethtool_call_handle(shandle, edata, edata_size) < 0)
+        return FALSE;
+
+    /* then change the needed ones */
+    edata->cmd = ETHTOOL_SLINKSETTINGS;
+    if (autoneg) {
+        edata->autoneg = AUTONEG_ENABLE;
+
+        /* copy @map_supported to @map_advertising and @map_lp_advertising */
+        memcpy(&edata->link_mode_masks[nwords],
+               &edata->link_mode_masks[0],
+               sizeof(guint32) * nwords);
+        memcpy(&edata->link_mode_masks[nwords * 2],
+               &edata->link_mode_masks[0],
+               sizeof(guint32) * nwords);
+
+        if (speed != 0) {
+            guint32 mode;
+
+            mode = get_baset_mode(speed, duplex);
+
+            if (mode == ADVERTISED_INVALID) {
+                nm_log_trace(LOGD_PLATFORM,
+                             "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
+                             shandle->ifindex,
+                             speed,
+                             nm_platform_link_duplex_type_to_string(duplex));
+                return FALSE;
+            }
+
+            /* We only support BASE-T modes in the first word */
+            if (!(edata->link_mode_masks[0] & mode)) {
+                nm_log_trace(LOGD_PLATFORM,
+                             "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
+                             shandle->ifindex,
+                             speed,
+                             nm_platform_link_duplex_type_to_string(duplex));
+                return FALSE;
+            }
+
+            edata->link_mode_masks[nwords] =
+                (edata->link_mode_masks[nwords] & ~BASET_ALL_MODES) | mode;
+            edata->link_mode_masks[nwords * 2] = edata->link_mode_masks[nwords];
+        }
+    } else {
+        edata->autoneg = AUTONEG_DISABLE;
+
+        if (speed)
+            edata->speed = speed;
+
+        platform_link_duplex_type_to_native(duplex, &edata->duplex);
+    }
+
+    return _ethtool_call_handle(shandle, edata, edata_size) >= 0;
+}
+
 gboolean
 nmp_utils_ethtool_set_link_settings(int                      ifindex,
                                     gboolean                 autoneg,
@@ -1361,32 +1464,35 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
     struct ethtool_cmd                 edata   = {
         .cmd = ETHTOOL_GSET,
     };
+    NMOptionBool ret;
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail((speed && duplex != NM_PLATFORM_LINK_DUPLEX_UNKNOWN)
                              || (!speed && duplex == NM_PLATFORM_LINK_DUPLEX_UNKNOWN),
                          FALSE);
 
+    ret = set_link_settings_new(&shandle, autoneg, speed, duplex);
+    if (ret != NM_OPTION_BOOL_DEFAULT)
+        return ret;
+
+    /* new ETHTOOL_GLINKSETTINGS API not supported, fall back to GSET */
+
     /* retrieve first current settings */
     if (_ethtool_call_handle(&shandle, &edata, sizeof(edata)) < 0)
         return FALSE;
-
-    /* FIXME: try first new ETHTOOL_GLINKSETTINGS/SLINKSETTINGS API
-     * https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=3f1ac7a700d039c61d8d8b99f28d605d489a60cf
-     */
 
     /* then change the needed ones */
     edata.cmd = ETHTOOL_SSET;
     if (autoneg) {
         edata.autoneg = AUTONEG_ENABLE;
-        if (!speed)
+        if (speed == 0)
             edata.advertising = edata.supported;
         else {
             guint32 mode;
 
             mode = get_baset_mode(speed, duplex);
 
-            if (!mode) {
+            if (mode == ADVERTISED_INVALID) {
                 nm_log_trace(LOGD_PLATFORM,
                              "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
                              ifindex,
@@ -1410,18 +1516,7 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
         if (speed)
             ethtool_cmd_speed_set(&edata, speed);
 
-        switch (duplex) {
-        case NM_PLATFORM_LINK_DUPLEX_HALF:
-            edata.duplex = DUPLEX_HALF;
-            break;
-        case NM_PLATFORM_LINK_DUPLEX_FULL:
-            edata.duplex = DUPLEX_FULL;
-            break;
-        case NM_PLATFORM_LINK_DUPLEX_UNKNOWN:
-            break;
-        default:
-            g_return_val_if_reached(FALSE);
-        }
+        platform_link_duplex_type_to_native(duplex, &edata.duplex);
     }
 
     return _ethtool_call_handle(&shandle, &edata, sizeof(edata)) >= 0;
