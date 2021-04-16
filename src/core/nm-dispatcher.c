@@ -206,10 +206,7 @@ dump_ip_to_props(NMIPConfig *ip, GVariantBuilder *builder)
             array[0] = addr->a4.address;
             array[1] = addr->a4.plen;
             array[2] = gw;
-            g_variant_builder_add(
-                &int_builder,
-                "@au",
-                g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 3, sizeof(guint32)));
+            g_variant_builder_add(&int_builder, "@au", nm_g_variant_new_au(array, 3));
         } else {
             const struct in6_addr *gw = &in6addr_any;
 
@@ -278,10 +275,7 @@ dump_ip_to_props(NMIPConfig *ip, GVariantBuilder *builder)
             array[1] = route->r4.plen;
             array[2] = route->r4.gateway;
             array[3] = route->r4.metric;
-            g_variant_builder_add(
-                &int_builder,
-                "@au",
-                g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, array, 4, sizeof(guint32)));
+            g_variant_builder_add(&int_builder, "@au", nm_g_variant_new_au(array, 4));
         } else {
             var1 = nm_g_variant_new_ay_in6addr(&route->r6.network);
             var2 = nm_g_variant_new_ay_in6addr(&route->r6.gateway);
@@ -552,7 +546,7 @@ _dispatcher_call(NMDispatcherAction    action,
         connection_dict =
             nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET);
     else
-        connection_dict = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
+        connection_dict = nm_g_variant_singleton_aLsaLsvII();
 
     g_variant_builder_init(&connection_props, G_VARIANT_TYPE_VARDICT);
     if (settings_connection) {
@@ -620,8 +614,8 @@ _dispatcher_call(NMDispatcherAction    action,
                       &device_proxy_props,
                       &device_ip4_props,
                       &device_ip6_props,
-                      device_dhcp4_props ?: g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0),
-                      device_dhcp6_props ?: g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0),
+                      device_dhcp4_props ?: nm_g_variant_singleton_aLsvI(),
+                      device_dhcp6_props ?: nm_g_variant_singleton_aLsvI(),
                       connectivity_state_string,
                       vpn_iface ?: "",
                       &vpn_proxy_props,

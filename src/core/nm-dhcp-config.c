@@ -116,8 +116,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
     switch (prop_id) {
     case PROP_OPTIONS:
-        g_value_set_variant(value,
-                            priv->options ?: g_variant_new_array(G_VARIANT_TYPE("{sv}"), NULL, 0));
+        g_value_set_variant(value, priv->options ?: nm_g_variant_singleton_aLsvI());
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);

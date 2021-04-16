@@ -12968,7 +12968,7 @@ impl_device_get_applied_connection(NMDBusObject *                     obj,
     var_settings =
         nm_connection_to_dbus(applied_connection, NM_CONNECTION_SERIALIZE_WITH_NON_SECRET);
     if (!var_settings)
-        var_settings = g_variant_new_array(G_VARIANT_TYPE("{sa{sv}}"), NULL, 0);
+        var_settings = nm_g_variant_singleton_aLsaLsvII();
 
     g_dbus_method_invocation_return_value(
         invocation,
@@ -17900,7 +17900,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
     NMDevice *       self = NM_DEVICE(object);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    GVariantBuilder  array_builder;
 
     switch (prop_id) {
     case PROP_UDI:
@@ -18051,12 +18050,10 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_uint(value, priv->metered);
         break;
     case PROP_LLDP_NEIGHBORS:
-        if (priv->lldp_listener)
-            g_value_set_variant(value, nm_lldp_listener_get_neighbors(priv->lldp_listener));
-        else {
-            g_variant_builder_init(&array_builder, G_VARIANT_TYPE("aa{sv}"));
-            g_value_take_variant(value, g_variant_builder_end(&array_builder));
-        }
+        g_value_set_variant(value,
+                            priv->lldp_listener
+                                ? nm_lldp_listener_get_neighbors(priv->lldp_listener)
+                                : nm_g_variant_singleton_aaLsvI());
         break;
     case PROP_REAL:
         g_value_set_boolean(value, nm_device_is_real(self));

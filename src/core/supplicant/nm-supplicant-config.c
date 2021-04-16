@@ -334,11 +334,10 @@ nm_supplicant_config_to_variant(NMSupplicantConfig *self)
             break;
         case NM_SUPPL_OPT_TYPE_BYTES:
         case NM_SUPPL_OPT_TYPE_UTF8:
-            g_variant_builder_add(
-                &builder,
-                "{sv}",
-                key,
-                g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, option->value, option->len, 1));
+            g_variant_builder_add(&builder,
+                                  "{sv}",
+                                  key,
+                                  nm_g_variant_new_ay((const guint8 *) option->value, option->len));
             break;
         case NM_SUPPL_OPT_TYPE_KEYWORD:
         case NM_SUPPL_OPT_TYPE_STRING:

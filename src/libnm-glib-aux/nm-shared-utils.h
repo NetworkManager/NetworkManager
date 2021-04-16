@@ -1442,6 +1442,9 @@ char *nm_utils_str_utf8safe_unescape_cp(const char *str, NMUtilsStrUtf8SafeFlags
 char *nm_utils_str_utf8safe_escape_take(char *str, NMUtilsStrUtf8SafeFlags flags);
 
 GVariant *nm_g_variant_singleton_u_0(void);
+GVariant *nm_g_variant_singleton_aLsvI(void);
+GVariant *nm_g_variant_singleton_aLsaLsvII(void);
+GVariant *nm_g_variant_singleton_aaLsvI(void);
 
 static inline void
 nm_g_variant_unref_floating(GVariant *var)
@@ -1480,12 +1483,21 @@ nm_g_variant_is_of_type(GVariant *value, const GVariantType *type)
 }
 
 static inline GVariant *
+nm_g_variant_new_ay(const guint8 *data, gsize len)
+{
+    return g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, data, len, 1);
+}
+
+static inline GVariant *
+nm_g_variant_new_au(const guint32 *data, gsize len)
+{
+    return g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, data, len, sizeof(guint32));
+}
+
+static inline GVariant *
 nm_g_variant_new_ay_inaddr(int addr_family, gconstpointer addr)
 {
-    return g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
-                                     addr ?: &nm_ip_addr_zero,
-                                     nm_utils_addr_family_to_size(addr_family),
-                                     1);
+    return nm_g_variant_new_ay(addr ?: &nm_ip_addr_zero, nm_utils_addr_family_to_size(addr_family));
 }
 
 static inline GVariant *
@@ -1512,10 +1524,7 @@ nm_g_variant_builder_add_sv_bytearray(GVariantBuilder *builder,
                                       const guint8 *   arr,
                                       gsize            len)
 {
-    g_variant_builder_add(builder,
-                          "{sv}",
-                          key,
-                          g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE, arr, len, 1));
+    g_variant_builder_add(builder, "{sv}", key, nm_g_variant_new_ay(arr, len));
 }
 
 static inline void

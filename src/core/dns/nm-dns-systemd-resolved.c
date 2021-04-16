@@ -201,10 +201,7 @@ update_add_ip_config(NMDnsSystemdResolved *self,
         g_variant_builder_add(dns, "i", addr_family);
         g_variant_builder_add_value(
             dns,
-            g_variant_new_fixed_array(G_VARIANT_TYPE_BYTE,
-                                      nm_ip_config_get_nameserver(data->ip_config, i),
-                                      addr_size,
-                                      1));
+            nm_g_variant_new_ay(nm_ip_config_get_nameserver(data->ip_config, i), addr_size));
         g_variant_builder_close(dns);
         has_config = TRUE;
     }
