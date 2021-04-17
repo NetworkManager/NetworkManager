@@ -5230,6 +5230,15 @@ add_connection_cb(GObject *client, GAsyncResult *result, gpointer user_data)
             }
         }
 
+        /* We print here human readable text, but as scripts might parse this output
+         * (with LANG=C), this is important to not change in the future. At least
+         * not unless called with a new command line flag, that requests a different output.
+         *
+         * That means, be very careful if you change this message, it might break
+         * scripts!!
+         *
+         * This is true for many messages that the user might parse. But this one
+         * seems in particular interesting for a user to parse. */
         g_print(_("Connection '%s' (%s) successfully added.\n"),
                 nm_connection_get_id(NM_CONNECTION(connection)),
                 nm_connection_get_uuid(NM_CONNECTION(connection)));
