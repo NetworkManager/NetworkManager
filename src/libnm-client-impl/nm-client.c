@@ -87,7 +87,7 @@ nm_context_busy_watcher_integrate_source(GMainContext *outer_context,
      *
      * NMClient is associated with a GMainContext, just like its underlying GDBusConnection
      * also queues signals and callbacks on that main context. During operation, NMClient
-     * will schedule async operations which will return asynchronously on the GMainContext.
+     * will schedule async operations which will return asynchronously on that GMainContext.
      *
      * Note that depending on whether NMClient got initialized synchronously or asynchronously,
      * it has an internal priv->dbus_context that is different from the outer priv->main_context.
@@ -116,7 +116,7 @@ nm_context_busy_watcher_integrate_source(GMainContext *outer_context,
      * subscribe a weak pointer to that instance and should keep iterating as long as the object
      * exists.
      *
-     * Now, back to synchronous initialization. Here we have the internal priv->dbus_context context.
+     * Now, back to synchronous initialization: here we have the internal priv->dbus_context context.
      * We also cannot remove that context right away, instead we need to keep it integrated in the
      * caller's priv->main_context as long as we have pending calls: that is, as long as the
      * context-busy-watcher is alive.
@@ -1027,16 +1027,25 @@ nm_client_get_main_context(NMClient *self)
  * keep the GMainContext alive. In order to fully release all resources,
  * the user must keep iterating the main context until all these callbacks
  * are handled. Of course, at this point no more actual callbacks will be invoked
- * for the user, those are all internally cancelled.
+ * for the user, those are all cancelled internally.
  *
  * This just leaves one problem: how long does the user need to keep the
  * GMainContext running to ensure everything is cleaned up? The answer is
  * this GObject. Subscribe a weak reference to the returned object and keep
  * iterating the main context until the object got unreferenced.
  *
- * Note that after the NMClient instance gets destroyed, the remaining callbacks
- * will be invoked right away. That means, the user won't have to iterate the
- * main context much longer.
+ * Note that after the NMClient instance gets destroyed, all outstanding operations
+ * will be cancelled right away. That means, the user needs to iterate the #GMainContext
+ * a bit longer, but it is guaranteed that the cleanup happens soon after.
+ *
+ * The way of using the context-busy-watch, is by registering a weak pointer to
+ * see when it gets destroyed. That means, user code should not take additional
+ * references on this object to not keep it alive longer.
+ *
+ * If you plan to exit the program after releasing the NMClient instance
+ * you may not need to worry about these "leaks". Also, if you anyway plan to continue
+ * iterating the #GMainContext afterwards, then you don't need to care when exactly
+ * NMClient is gone completely.
  *
  * Since: 1.22
  */
@@ -7766,9 +7775,17 @@ nm_client_init(NMClient *self)
  * while it is still initializing.
  *
  * Using the synchronous initialization creates an #NMClient instance
- * that uses an internal #GMainContext. This introduces an additional
- * overhead that you can avoid by using the asynchronous initialization
- * with g_async_initable_init_async() or nm_client_new_async().
+ * that uses an internal #GMainContext. This context is invisible to the
+ * user. This introduces an additional overhead that is payed not
+ * only during object initialization, but for the entire lifetime of
+ * this object.
+ * Also, due to this internal #GMainContext, the events are no longer
+ * in sync with other messages from #GDBusConnection (but all events
+ * of the NMClient will themselves still be ordered).
+ * For a serious program, you should therefore avoid these problems by
+ * using g_async_initable_init_async() or nm_client_new_async() instead.
+ * The sync initialization is still useful for simple scripts or interactive
+ * testing for example via pygobject.
  *
  * Creating an #NMClient instance can only fail for two reasons. First, if you didn't
  * provide a %NM_CLIENT_DBUS_CONNECTION and the call to g_bus_get()
@@ -7808,7 +7825,7 @@ nm_client_new(GCancellable *cancellable, GError **error)
  *
  * Creating an #NMClient instance can only fail for two reasons. First, if you didn't
  * provide a %NM_CLIENT_DBUS_CONNECTION and the call to g_bus_get()
- * fails. You can avoid that by using g_initable_new() directly and
+ * fails. You can avoid that by using g_async_initable_new_async() directly and
  * set a D-Bus connection.
  * Second, if you cancelled the creation. If you do that, then note
  * that after the failure there might still be idle actions pending
