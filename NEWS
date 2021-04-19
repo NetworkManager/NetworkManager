@@ -1,4 +1,16 @@
 ===============================================
+NetworkManager-1.30.4
+Overview of changes since NetworkManager-1.30.2
+===============================================
+
+* Fix crash evaluating match setting properties (CVE-2021-20297).
+* Fix leak of local route added by NetworkManager for configured
+  addresses.
+* Fix name of the device autoconnect D-Bus property.
+* Multiple bugfixes in the initrd generator.
+* Various minor bugfixes.
+
+===============================================
 NetworkManager-1.30.2
 Overview of changes since NetworkManager-1.30.0
 ===============================================
