@@ -63,6 +63,9 @@ typedef enum {
 
     NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT = (1u << 8),
 
+    /* Is anything other than secrets changing */
+    NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET = (1u << 9),
+
 } NMSettingsConnectionUpdateReason;
 
 typedef enum {

@@ -14,6 +14,7 @@
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
+#include "libnm-base/nm-config-base.h"
 
 static gboolean
 verify_no_wep(NMSettingWirelessSecurity *s_wsec, const char *tag, GError **error)
@@ -996,6 +997,9 @@ nm_wifi_utils_get_iwd_config_filename(const char *         ssid,
 
 /*****************************************************************************/
 
+#define SECRETS_DONT_STORE_FLAGS \
+    (NM_SETTING_SECRET_FLAG_AGENT_OWNED | NM_SETTING_SECRET_FLAG_NOT_SAVED)
+
 static gboolean
 psk_setting_to_iwd_config(GKeyFile *file, NMSettingWirelessSecurity *s_wsec, GError **error)
 {
@@ -1005,13 +1009,13 @@ psk_setting_to_iwd_config(GKeyFile *file, NMSettingWirelessSecurity *s_wsec, GEr
     guint8               buffer[32];
     const char *         key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
 
-    if (!psk || (psk_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
+    if (!psk || NM_FLAGS_ANY(psk_flags, SECRETS_DONT_STORE_FLAGS)) {
         g_key_file_set_comment(file,
                                "Security",
                                NULL,
                                "The passphrase is to be queried through the agent",
                                NULL);
-        if (psk_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED) {
+        if (NM_FLAGS_ANY(psk_flags, SECRETS_DONT_STORE_FLAGS)) {
             nm_log_info(
                 LOGD_WIFI,
                 "IWD network config is being created wihout the PSK but IWD will save the PSK on "
@@ -1184,7 +1188,7 @@ eap_certs_to_iwd_config(GKeyFile *      file,
                                 : nm_setting_802_1x_get_private_key_password(s_8021x);
     key_password_flags = phase2 ? nm_setting_802_1x_get_phase2_private_key_password_flags(s_8021x)
                                 : nm_setting_802_1x_get_private_key_password_flags(s_8021x);
-    if (!key_password || (key_password_flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
+    if (!key_password || NM_FLAGS_ANY(key_password_flags, SECRETS_DONT_STORE_FLAGS)) {
         g_key_file_set_comment(
             file,
             "Security",
@@ -1320,7 +1324,7 @@ eap_optional_password_to_iwd_config(GKeyFile *      file,
                             "the \"password\" property");
         return FALSE;
     }
-    if (!password || (flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)) {
+    if (!password || NM_FLAGS_ANY(flags, SECRETS_DONT_STORE_FLAGS)) {
         return g_key_file_set_comment(file,
                                       "Security",
                                       nm_sprintf_buf(setting_buf, "%s%s", iwd_prefix, "Method"),
@@ -1680,6 +1684,7 @@ nm_wifi_utils_connection_to_iwd_config(NMConnection *connection,
     gsize                 ssid_len;
     NMIwdNetworkSecurity  security;
     const char *          cloned_mac_addr;
+    gs_free char *        comment        = NULL;
     nm_auto_unref_keyfile GKeyFile *file = NULL;
 
     if (!s_conn || !s_wifi
@@ -1721,6 +1726,14 @@ nm_wifi_utils_connection_to_iwd_config(NMConnection *connection,
     }
 
     file = g_key_file_new();
+
+    comment = g_strdup_printf(" Auto-generated from NetworkManager connection \"%s\"\n"
+                              " Changes to that connection overwrite this file when "
+                              "enabled by NM's [%s].%s value",
+                              nm_setting_connection_get_id(s_conn),
+                              NM_CONFIG_KEYFILE_GROUP_MAIN,
+                              NM_CONFIG_KEYFILE_KEY_MAIN_IWD_CONFIG_PATH);
+    g_key_file_set_comment(file, NULL, NULL, comment, NULL);
 
     if (!nm_setting_connection_get_autoconnect(s_conn))
         g_key_file_set_boolean(file, "Settings", "AutoConnect", FALSE);

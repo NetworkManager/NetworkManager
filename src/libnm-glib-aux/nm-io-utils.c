@@ -332,15 +332,17 @@ nm_utils_file_get_contents(int                         dirfd,
 
 /*
  * Copied from GLib's g_file_set_contents() et al., but allows
- * specifying a mode for the new file.
+ * specifying a mode for the new file and optionally the last access
+ * and last modification times.
  */
 gboolean
-nm_utils_file_set_contents(const char *filename,
-                           const char *contents,
-                           gssize      length,
-                           mode_t      mode,
-                           int *       out_errsv,
-                           GError **   error)
+nm_utils_file_set_contents(const char *           filename,
+                           const char *           contents,
+                           gssize                 length,
+                           mode_t                 mode,
+                           const struct timespec *times,
+                           int *                  out_errsv,
+                           GError **              error)
 {
     gs_free char *tmp_name = NULL;
     struct stat   statbuf;
@@ -397,6 +399,17 @@ nm_utils_file_set_contents(const char *filename,
             unlink(tmp_name);
             return _get_contents_error(error, errsv, out_errsv, "failed to fsync %s", tmp_name);
         }
+    }
+
+    if (times && futimens(fd, times) != 0) {
+        errsv = NM_ERRNO_NATIVE(errno);
+        nm_close(fd);
+        unlink(tmp_name);
+        return _get_contents_error(error,
+                                   errsv,
+                                   out_errsv,
+                                   "failed to set atime and mtime on %s",
+                                   tmp_name);
     }
 
     nm_close(fd);

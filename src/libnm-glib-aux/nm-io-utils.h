@@ -40,12 +40,13 @@ gboolean nm_utils_file_get_contents(int                         dirfd,
                                     int *                       out_errsv,
                                     GError **                   error);
 
-gboolean nm_utils_file_set_contents(const char *filename,
-                                    const char *contents,
-                                    gssize      length,
-                                    mode_t      mode,
-                                    int *       out_errsv,
-                                    GError **   error);
+gboolean nm_utils_file_set_contents(const char *           filename,
+                                    const char *           contents,
+                                    gssize                 length,
+                                    mode_t                 mode,
+                                    const struct timespec *times,
+                                    int *                  out_errsv,
+                                    GError **              error);
 
 struct _NMStrBuf;
 

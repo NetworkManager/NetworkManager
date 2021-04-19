@@ -2892,15 +2892,16 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
                                                        NM_SETTING_IP4_CONFIG_METHOD_AUTO,
                                                        NULL));
 
-                nm_settings_connection_update(sett_conn,
-                                              con2,
-                                              NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
-                                              NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
-                                              NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
-                                                  | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL,
-                                              NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE,
-                                              "assume-initrd",
-                                              NULL);
+                nm_settings_connection_update(
+                    sett_conn,
+                    con2,
+                    NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+                    NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
+                    NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
+                        | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL,
+                    NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET,
+                    "assume-initrd",
+                    NULL);
             }
         }
     }

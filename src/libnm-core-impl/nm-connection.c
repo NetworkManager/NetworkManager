@@ -3375,9 +3375,9 @@ nm_connection_default_init(NMConnectionInterface *iface)
      * NMConnection::changed:
      * @connection: the object on which the signal is emitted
      *
-     * The ::changed signal is emitted when any property of any property
-     * (including secrets) of any setting of the connection is modified,
-     * or when settings are added or removed.
+     * The ::changed signal is emitted when any property (including secrets)
+     * of any setting of the connection is modified, or when settings are
+     * added or removed.
      */
     signals[CHANGED] = g_signal_new(NM_CONNECTION_CHANGED,
                                     NM_TYPE_CONNECTION,
