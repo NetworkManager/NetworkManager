@@ -1,4 +1,17 @@
 ===============================================
+NetworkManager-1.26.8
+Overview of changes since NetworkManager-1.26.6
+===============================================
+
+* Fix delay in activating Wi-Fi connections after wake-up.
+* Fix configuring a large number of allowed-ips on WireGuard link.
+* cloud-setup: fix replacing IPv4 addresses during update.
+* initrd: apply the MTU from bond= argument to the bond connection.
+* initrd: add support for rd.net.timeout.carrier.
+* Fix crash evaluating match setting properties (CVE-2021-20297).
+* Various minor fixes.
+
+===============================================
 NetworkManager-1.26.6
 Overview of changes since NetworkManager-1.26.4
 ===============================================
