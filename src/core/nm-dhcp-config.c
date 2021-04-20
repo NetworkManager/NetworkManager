@@ -59,11 +59,20 @@ struct _NMDhcpConfig {
 
 struct _NMDhcpConfigClass {
     NMDBusObjectClass parent;
+    int               addr_family;
 };
 
 G_DEFINE_ABSTRACT_TYPE(NMDhcpConfig, nm_dhcp_config, NM_TYPE_DBUS_OBJECT)
 
 #define NM_DHCP_CONFIG_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDhcpConfig, NM_IS_DHCP_CONFIG)
+
+/*****************************************************************************/
+
+int
+nm_dhcp_config_get_addr_family(NMDhcpConfig *self)
+{
+    return NM_DHCP_CONFIG_GET_CLASS(self)->addr_family;
+}
 
 /*****************************************************************************/
 
@@ -197,10 +206,13 @@ static void
 nm_dhcp4_config_class_init(NMDhcp4ConfigClass *klass)
 {
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
+    NMDhcpConfigClass *dhcp_config_class = NM_DHCP_CONFIG_CLASS(klass);
 
     dbus_object_class->export_path     = NM_DBUS_EXPORT_PATH_NUMBERED(NM_DBUS_PATH "/DHCP4Config");
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_dhcp4_config);
     dbus_object_class->export_on_construction = TRUE;
+
+    dhcp_config_class->addr_family = AF_INET;
 }
 
 /*****************************************************************************/
@@ -234,8 +246,11 @@ static void
 nm_dhcp6_config_class_init(NMDhcp6ConfigClass *klass)
 {
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
+    NMDhcpConfigClass *dhcp_config_class = NM_DHCP_CONFIG_CLASS(klass);
 
     dbus_object_class->export_path     = NM_DBUS_EXPORT_PATH_NUMBERED(NM_DBUS_PATH "/DHCP6Config");
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_dhcp6_config);
     dbus_object_class->export_on_construction = TRUE;
+
+    dhcp_config_class->addr_family = AF_INET6;
 }

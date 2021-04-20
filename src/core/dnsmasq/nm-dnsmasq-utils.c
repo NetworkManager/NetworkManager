@@ -5,9 +5,10 @@
 
 #include "src/core/nm-default-daemon.h"
 
+#include "nm-dnsmasq-utils.h"
+
 #include <arpa/inet.h>
 
-#include "nm-dnsmasq-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-utils.h"
 

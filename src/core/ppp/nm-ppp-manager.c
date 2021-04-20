@@ -1446,8 +1446,8 @@ nm_ppp_manager_class_init(NMPPPManagerClass *manager_class)
                                   NULL,
                                   G_TYPE_NONE,
                                   2,
-                                  G_TYPE_UINT /*guint32 in_bytes*/,
-                                  G_TYPE_UINT /*guint32 out_bytes*/);
+                                  G_TYPE_UINT,  /* guint32 in_bytes */
+                                  G_TYPE_UINT); /* guint32 out_bytes */
 }
 
 NMPPPOps ppp_ops = {

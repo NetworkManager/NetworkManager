@@ -183,23 +183,25 @@ nm_dbus_object_unexport_on_idle(gpointer /* (NMDBusObject *) */ self_take)
 
 /*****************************************************************************/
 
-void
+gboolean
 _nm_dbus_object_clear_and_unexport(NMDBusObject **location)
 {
     NMDBusObject *self;
 
-    g_return_if_fail(location);
+    g_return_val_if_fail(location, FALSE);
+
     if (!*location)
-        return;
+        return FALSE;
 
     self = g_steal_pointer(location);
 
-    g_return_if_fail(NM_IS_DBUS_OBJECT(self));
+    g_return_val_if_fail(NM_IS_DBUS_OBJECT(self), FALSE);
 
     if (self->internal.path)
         nm_dbus_object_unexport(self);
 
     g_object_unref(self);
+    return TRUE;
 }
 
 /*****************************************************************************/
