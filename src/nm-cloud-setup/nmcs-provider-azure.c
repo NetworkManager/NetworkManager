@@ -95,6 +95,7 @@ detect(NMCSProvider *provider, GTask *task)
 
 typedef enum {
     GET_CONFIG_FETCH_TYPE_IPV4_IPADDRESS_X_PRIVATEIPADDRESS,
+    GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_ADDRESS,
     GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_PREFIX,
 } GetConfigFetchType;
 
@@ -159,6 +160,18 @@ _get_config_fetch_done_cb(NMHttpClient *     http_client,
         iface_get_config->ipv4s_len++;
         break;
 
+    case GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_ADDRESS:
+
+        if (!nmcs_utils_ipaddr_normalize_bin(AF_INET, resp_str, resp_len, NULL, &tmp_addr)) {
+            error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "ip is not a subnet address");
+            goto out_done;
+        }
+        _LOGD("interface[%" G_GSSIZE_FORMAT "]: received subnet address %s",
+              iface_data->intern_iface_idx,
+              _nm_utils_inet4_ntop(tmp_addr, tmp_addr_str));
+        iface_get_config->cidr_addr = tmp_addr;
+        break;
+
     case GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_PREFIX:
 
         tmp_prefix = _nm_utils_ascii_str_to_int64_bin(resp_str, resp_len, 10, 0, 32, -1);
@@ -181,6 +194,10 @@ out_done:
         --iface_data->n_iface_data_pending;
         if (iface_data->n_iface_data_pending > 0)
             return;
+
+        /* we surely have cidr_addr and cidr_prefix, otherwise
+         * we would have errored out above. */
+        iface_get_config->has_cidr = TRUE;
     }
 
     --get_config_data->n_pending;
@@ -196,6 +213,17 @@ _get_config_fetch_done_cb_ipv4_ipaddress_x_privateipaddress(GObject *     source
                               result,
                               user_data,
                               GET_CONFIG_FETCH_TYPE_IPV4_IPADDRESS_X_PRIVATEIPADDRESS);
+}
+
+static void
+_get_config_fetch_done_cb_ipv4_subnet_0_address(GObject *     source,
+                                                GAsyncResult *result,
+                                                gpointer      user_data)
+{
+    _get_config_fetch_done_cb(NM_HTTP_CLIENT(source),
+                              result,
+                              user_data,
+                              GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_ADDRESS);
 }
 
 static void
@@ -287,6 +315,23 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
 
     {
         gs_free char *uri = NULL;
+
+        iface_data->n_iface_data_pending++;
+        nm_http_client_poll_get(
+            NM_HTTP_CLIENT(source),
+            (uri = _azure_uri_interfaces(iface_idx_str, "/ipv4/subnet/0/address/")),
+            HTTP_TIMEOUT_MS,
+            512 * 1024,
+            10000,
+            1000,
+            NM_MAKE_STRV(NM_AZURE_METADATA_HEADER),
+            get_config_data->intern_cancellable,
+            NULL,
+            NULL,
+            _get_config_fetch_done_cb_ipv4_subnet_0_address,
+            iface_data);
+
+        nm_clear_g_free(&uri);
 
         iface_data->n_iface_data_pending++;
         nm_http_client_poll_get(
