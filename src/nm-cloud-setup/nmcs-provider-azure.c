@@ -154,14 +154,9 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
         iface_get_config->has_ipv4s                              = TRUE;
         iface_get_config->ipv4s_len++;
     } else {
-        int tmp_prefix = -1;
+        int tmp_prefix;
 
-        if (fip_len > 0 && memchr(fip_str, '\0', fip_len - 1)) {
-            /* we have an embedded "\0" inside the string (except trailing). That is not
-             * allowed*/
-        } else
-            tmp_prefix = _nm_utils_ascii_str_to_int64(fip_str, 10, 0, 32, -1);
-
+        tmp_prefix = _nm_utils_ascii_str_to_int64_bin(fip_str, fip_len, 10, 0, 32, -1);
         if (tmp_prefix == -1) {
             _LOGD("interface[%" G_GSSIZE_FORMAT "]: invalid prefix", iface_data->intern_iface_idx);
             error =
@@ -244,7 +239,6 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
             ((char *) line)[--line_len] = '\0';
 
         ips_prefix_idx = _nm_utils_ascii_str_to_int64(line, 10, 0, G_MAXINT64, -1);
-
         if (ips_prefix_idx < 0)
             continue;
 
