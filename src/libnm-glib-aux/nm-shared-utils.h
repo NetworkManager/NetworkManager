@@ -985,6 +985,13 @@ guint64 _nm_utils_ascii_str_to_uint64(const char *str,
                                       guint64     max,
                                       guint64     fallback);
 
+gint64 _nm_utils_ascii_str_to_int64_bin(const char *str,
+                                        gssize      len,
+                                        guint       base,
+                                        gint64      min,
+                                        gint64      max,
+                                        gint64      fallback);
+
 int _nm_utils_ascii_str_to_bool(const char *str, int default_value);
 
 /*****************************************************************************/

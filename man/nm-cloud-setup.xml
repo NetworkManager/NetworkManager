@@ -317,7 +317,9 @@
         <listitem>
           <para>Then, for each IP address index fetch the address at
           <literal>http://169.254.169.254/metadata/instance/network/interface/$IFACE_INDEX/ipv4/ipAddress/$ADDR_INDEX/privateIpAddress?format=text&amp;api-version=2017-04-02</literal>.
-          Also fetch the size of the subnet (the netmask) for the interface from
+          Also fetch the size of the subnet and prefix for the interface from
+          <literal>http://169.254.169.254/metadata/instance/network/interface/$IFACE_INDEX/ipv4/subnet/0/address/?format=text&amp;api-version=2017-04-02</literal>.
+          and
           <literal>http://169.254.169.254/metadata/instance/network/interface/$IFACE_INDEX/ipv4/subnet/0/prefix/?format=text&amp;api-version=2017-04-02</literal>.
           </para>
         </listitem>

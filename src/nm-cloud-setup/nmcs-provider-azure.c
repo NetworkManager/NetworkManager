@@ -93,12 +93,18 @@ detect(NMCSProvider *provider, GTask *task)
 
 /*****************************************************************************/
 
+typedef enum {
+    GET_CONFIG_FETCH_TYPE_IPV4_IPADDRESS_X_PRIVATEIPADDRESS,
+    GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_ADDRESS,
+    GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_PREFIX,
+} GetConfigFetchType;
+
 typedef struct {
     NMCSProviderGetConfigTaskData * get_config_data;
     NMCSProviderGetConfigIfaceData *iface_get_config;
     gssize                          intern_iface_idx;
     gssize                          extern_iface_idx;
-    guint                           n_ips_prefix_pending;
+    guint                           n_iface_data_pending;
     const char *                    hwaddr;
 } AzureIfaceData;
 
@@ -109,59 +115,66 @@ _azure_iface_data_destroy(AzureIfaceData *iface_data)
 }
 
 static void
-_get_config_fetch_done_cb(NMHttpClient *  http_client,
-                          GAsyncResult *  result,
-                          AzureIfaceData *iface_data,
-                          gboolean        is_ipv4)
+_get_config_fetch_done_cb(NMHttpClient *     http_client,
+                          GAsyncResult *     result,
+                          AzureIfaceData *   iface_data,
+                          GetConfigFetchType fetch_type)
 {
     NMCSProviderGetConfigTaskData * get_config_data;
     NMCSProviderGetConfigIfaceData *iface_get_config;
     gs_unref_bytes GBytes *response = NULL;
     gs_free_error GError *error     = NULL;
-    const char *          fip_str   = NULL;
-    gsize                 fip_len;
+    const char *          resp_str  = NULL;
+    gsize                 resp_len;
+    char                  tmp_addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    in_addr_t             tmp_addr;
+    int                   tmp_prefix = -1;
 
     nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
 
     if (nm_utils_error_is_cancelled(error))
         return;
 
-    get_config_data = iface_data->get_config_data;
+    get_config_data  = iface_data->get_config_data;
+    iface_get_config = iface_data->iface_get_config;
 
     if (error)
         goto out_done;
 
-    fip_str = g_bytes_get_data(response, &fip_len);
-    nm_assert(fip_str[fip_len] == '\0');
+    resp_str = g_bytes_get_data(response, &resp_len);
+    nm_assert(resp_str[resp_len] == '\0');
 
-    iface_data->iface_get_config =
-        g_hash_table_lookup(get_config_data->result_dict, iface_data->hwaddr);
-    iface_get_config = iface_data->iface_get_config;
+    switch (fetch_type) {
+    case GET_CONFIG_FETCH_TYPE_IPV4_IPADDRESS_X_PRIVATEIPADDRESS:
 
-    if (is_ipv4) {
-        char      tmp_addr_str[NM_UTILS_INET_ADDRSTRLEN];
-        in_addr_t tmp_addr;
-
-        if (!nmcs_utils_ipaddr_normalize_bin(AF_INET, fip_str, fip_len, NULL, &tmp_addr)) {
+        if (!nmcs_utils_ipaddr_normalize_bin(AF_INET, resp_str, resp_len, NULL, &tmp_addr)) {
             error =
                 nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "ip is not a valid private ip address");
             goto out_done;
         }
-        _LOGD("interface[%" G_GSSIZE_FORMAT "]: adding private ip %s",
+        _LOGD("interface[%" G_GSSIZE_FORMAT "]: received address %s",
               iface_data->intern_iface_idx,
               _nm_utils_inet4_ntop(tmp_addr, tmp_addr_str));
         iface_get_config->ipv4s_arr[iface_get_config->ipv4s_len] = tmp_addr;
         iface_get_config->has_ipv4s                              = TRUE;
         iface_get_config->ipv4s_len++;
-    } else {
-        int tmp_prefix = -1;
+        break;
 
-        if (fip_len > 0 && memchr(fip_str, '\0', fip_len - 1)) {
-            /* we have an embedded "\0" inside the string (except trailing). That is not
-             * allowed*/
-        } else
-            tmp_prefix = _nm_utils_ascii_str_to_int64(fip_str, 10, 0, 32, -1);
+    case GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_ADDRESS:
 
+        if (!nmcs_utils_ipaddr_normalize_bin(AF_INET, resp_str, resp_len, NULL, &tmp_addr)) {
+            error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "ip is not a subnet address");
+            goto out_done;
+        }
+        _LOGD("interface[%" G_GSSIZE_FORMAT "]: received subnet address %s",
+              iface_data->intern_iface_idx,
+              _nm_utils_inet4_ntop(tmp_addr, tmp_addr_str));
+        iface_get_config->cidr_addr = tmp_addr;
+        break;
+
+    case GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_PREFIX:
+
+        tmp_prefix = _nm_utils_ascii_str_to_int64_bin(resp_str, resp_len, 10, 0, 32, -1);
         if (tmp_prefix == -1) {
             _LOGD("interface[%" G_GSSIZE_FORMAT "]: invalid prefix", iface_data->intern_iface_idx);
             error =
@@ -169,18 +182,22 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
             goto out_done;
         }
 
-        _LOGD("interface[%" G_GSSIZE_FORMAT "]: adding prefix %d",
+        _LOGD("interface[%" G_GSSIZE_FORMAT "]: received subnet prefix %d",
               iface_data->intern_iface_idx,
               tmp_prefix);
         iface_get_config->cidr_prefix = tmp_prefix;
-        iface_get_config->has_cidr    = TRUE;
+        break;
     }
 
 out_done:
     if (!error) {
-        --iface_data->n_ips_prefix_pending;
-        if (iface_data->n_ips_prefix_pending > 0)
+        --iface_data->n_iface_data_pending;
+        if (iface_data->n_iface_data_pending > 0)
             return;
+
+        /* we surely have cidr_addr and cidr_prefix, otherwise
+         * we would have errored out above. */
+        iface_get_config->has_cidr = TRUE;
     }
 
     --get_config_data->n_pending;
@@ -188,17 +205,36 @@ out_done:
 }
 
 static void
-_get_config_fetch_done_cb_private_ipv4s(GObject *source, GAsyncResult *result, gpointer user_data)
+_get_config_fetch_done_cb_ipv4_ipaddress_x_privateipaddress(GObject *     source,
+                                                            GAsyncResult *result,
+                                                            gpointer      user_data)
 {
-    _get_config_fetch_done_cb(NM_HTTP_CLIENT(source), result, user_data, TRUE);
+    _get_config_fetch_done_cb(NM_HTTP_CLIENT(source),
+                              result,
+                              user_data,
+                              GET_CONFIG_FETCH_TYPE_IPV4_IPADDRESS_X_PRIVATEIPADDRESS);
 }
 
 static void
-_get_config_fetch_done_cb_subnet_cidr_prefix(GObject *     source,
-                                             GAsyncResult *result,
-                                             gpointer      user_data)
+_get_config_fetch_done_cb_ipv4_subnet_0_address(GObject *     source,
+                                                GAsyncResult *result,
+                                                gpointer      user_data)
 {
-    _get_config_fetch_done_cb(NM_HTTP_CLIENT(source), result, user_data, FALSE);
+    _get_config_fetch_done_cb(NM_HTTP_CLIENT(source),
+                              result,
+                              user_data,
+                              GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_ADDRESS);
+}
+
+static void
+_get_config_fetch_done_cb_ipv4_subnet_0_prefix(GObject *     source,
+                                               GAsyncResult *result,
+                                               gpointer      user_data)
+{
+    _get_config_fetch_done_cb(NM_HTTP_CLIENT(source),
+                              result,
+                              user_data,
+                              GET_CONFIG_FETCH_TYPE_IPV4_SUBNET_0_PREFIX);
 }
 
 static void
@@ -212,6 +248,7 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
     NMCSProviderGetConfigTaskData *get_config_data;
     const char *                   line;
     gsize                          line_len;
+    char                           iface_idx_str[30];
 
     nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
@@ -227,15 +264,20 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
     /* NMHttpClient guarantees that there is a trailing NUL after the data. */
     nm_assert(response_str[response_len] == 0);
 
-    nm_assert(!iface_data->iface_get_config->has_ipv4s);
     nm_assert(!iface_data->iface_get_config->ipv4s_arr);
+    nm_assert(!iface_data->iface_get_config->has_ipv4s);
     nm_assert(!iface_data->iface_get_config->has_cidr);
 
+    nm_sprintf_buf(iface_idx_str, "%" G_GSSIZE_FORMAT, iface_data->intern_iface_idx);
+
     while (nm_utils_parse_next_line(&response_str, &response_len, &line, &line_len)) {
-        gint64 ips_prefix_idx;
+        gint64        ips_prefix_idx;
+        gs_free char *uri = NULL;
+        char          buf[100];
 
         if (line_len == 0)
             continue;
+
         /* Truncate the string. It's safe to do, because we own @response an it has an
          * extra NULL character after the buffer. */
         ((char *) line)[line_len] = '\0';
@@ -248,45 +290,14 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
         if (ips_prefix_idx < 0)
             continue;
 
-        {
-            gs_free const char *uri = NULL;
-            char                buf[100];
+        iface_data->n_iface_data_pending++;
 
-            iface_data->n_ips_prefix_pending++;
-
-            nm_http_client_poll_get(
-                NM_HTTP_CLIENT(source),
-                (uri = _azure_uri_interfaces(nm_sprintf_buf(
-                     buf,
-                     "%" G_GSSIZE_FORMAT "/ipv4/ipAddress/%" G_GINT64_FORMAT "/privateIpAddress",
-                     iface_data->intern_iface_idx,
-                     ips_prefix_idx))),
-                HTTP_TIMEOUT_MS,
-                512 * 1024,
-                10000,
-                1000,
-                NM_MAKE_STRV(NM_AZURE_METADATA_HEADER),
-                get_config_data->intern_cancellable,
-                NULL,
-                NULL,
-                _get_config_fetch_done_cb_private_ipv4s,
-                iface_data);
-        }
-    }
-
-    iface_data->iface_get_config->ipv4s_len = 0;
-    iface_data->iface_get_config->ipv4s_arr = g_new(in_addr_t, iface_data->n_ips_prefix_pending);
-
-    {
-        gs_free const char *uri = NULL;
-        char                buf[30];
-
-        iface_data->n_ips_prefix_pending++;
         nm_http_client_poll_get(
             NM_HTTP_CLIENT(source),
-            (uri = _azure_uri_interfaces(
-                 nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT, iface_data->intern_iface_idx),
-                 "/ipv4/subnet/0/prefix/")),
+            (uri = _azure_uri_interfaces(iface_idx_str,
+                                         "/ipv4/ipAddress/",
+                                         nm_sprintf_buf(buf, "%" G_GINT64_FORMAT, ips_prefix_idx),
+                                         "/privateIpAddress")),
             HTTP_TIMEOUT_MS,
             512 * 1024,
             10000,
@@ -295,7 +306,46 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
             get_config_data->intern_cancellable,
             NULL,
             NULL,
-            _get_config_fetch_done_cb_subnet_cidr_prefix,
+            _get_config_fetch_done_cb_ipv4_ipaddress_x_privateipaddress,
+            iface_data);
+    }
+
+    iface_data->iface_get_config->ipv4s_len = 0;
+    iface_data->iface_get_config->ipv4s_arr = g_new(in_addr_t, iface_data->n_iface_data_pending);
+
+    {
+        gs_free char *uri = NULL;
+
+        iface_data->n_iface_data_pending++;
+        nm_http_client_poll_get(
+            NM_HTTP_CLIENT(source),
+            (uri = _azure_uri_interfaces(iface_idx_str, "/ipv4/subnet/0/address/")),
+            HTTP_TIMEOUT_MS,
+            512 * 1024,
+            10000,
+            1000,
+            NM_MAKE_STRV(NM_AZURE_METADATA_HEADER),
+            get_config_data->intern_cancellable,
+            NULL,
+            NULL,
+            _get_config_fetch_done_cb_ipv4_subnet_0_address,
+            iface_data);
+
+        nm_clear_g_free(&uri);
+
+        iface_data->n_iface_data_pending++;
+        nm_http_client_poll_get(
+            NM_HTTP_CLIENT(source),
+            (uri = _azure_uri_interfaces(iface_idx_str, "/ipv4/subnet/0/prefix/")),
+            HTTP_TIMEOUT_MS,
+            512 * 1024,
+            10000,
+            1000,
+            NM_MAKE_STRV(NM_AZURE_METADATA_HEADER),
+            get_config_data->intern_cancellable,
+            NULL,
+            NULL,
+            _get_config_fetch_done_cb_ipv4_subnet_0_prefix,
             iface_data);
     }
     return;
@@ -432,7 +482,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
          * extra NULL character after the buffer. */
         ((char *) line)[line_len] = '\0';
 
-        if (line[line_len - 1] == '/' && line_len != 0)
+        if (line[line_len - 1] == '/')
             ((char *) line)[--line_len] = '\0';
 
         intern_iface_idx = _nm_utils_ascii_str_to_int64(line, 10, 0, G_MAXSSIZE, -1);
@@ -445,7 +495,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
             .iface_get_config     = NULL,
             .intern_iface_idx     = intern_iface_idx,
             .extern_iface_idx     = extern_iface_idx_cnt++,
-            .n_ips_prefix_pending = 0,
+            .n_iface_data_pending = 0,
             .hwaddr               = NULL,
         };
         g_ptr_array_add(ifaces_arr, iface_data);
