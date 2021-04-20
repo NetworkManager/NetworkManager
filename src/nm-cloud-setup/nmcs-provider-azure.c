@@ -432,7 +432,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
          * extra NULL character after the buffer. */
         ((char *) line)[line_len] = '\0';
 
-        if (line[line_len - 1] == '/' && line_len != 0)
+        if (line[line_len - 1] == '/')
             ((char *) line)[--line_len] = '\0';
 
         intern_iface_idx = _nm_utils_ascii_str_to_int64(line, 10, 0, G_MAXSSIZE, -1);
