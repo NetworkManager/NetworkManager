@@ -1443,6 +1443,44 @@ _nm_utils_ascii_str_to_uint64(const char *str,
 
 /*****************************************************************************/
 
+gint64
+_nm_utils_ascii_str_to_int64_bin(const char *str,
+                                 gssize      len,
+                                 guint       base,
+                                 gint64      min,
+                                 gint64      max,
+                                 gint64      fallback)
+{
+    /* This is like _nm_utils_ascii_str_to_int64(), but the user may provide
+     * an optional string length, in which case str is not assumed to be NUL
+     * terminated. In that case, any NUL characters inside the first len characters
+     * lead to a failure, except one last NUL character is allowed. */
+
+    if (len >= 0) {
+        gs_free char *str_clone = NULL;
+        gsize         l         = len;
+
+        nm_assert(l == 0 || str);
+
+        if (l > 0 && str[l - 1u] == '\0') {
+            /* we accept one '\0' at the end of the string. */
+            l--;
+        }
+
+        if (l > 0 && memchr(str, '\0', l)) {
+            /* but we don't accept other NUL characters in the middle. */
+            errno = EINVAL;
+            return fallback;
+        }
+
+        str = nm_strndup_a(300, str, len, &str_clone);
+    }
+
+    return _nm_utils_ascii_str_to_int64(str, base, min, max, fallback);
+}
+
+/*****************************************************************************/
+
 int
 nm_strcmp_with_data(gconstpointer a, gconstpointer b, gpointer user_data)
 {
