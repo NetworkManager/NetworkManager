@@ -98,7 +98,7 @@ typedef struct {
     NMCSProviderGetConfigIfaceData *iface_get_config;
     gssize                          intern_iface_idx;
     gssize                          extern_iface_idx;
-    guint                           n_ips_prefix_pending;
+    guint                           n_iface_data_pending;
     const char *                    hwaddr;
 } AzureIfaceData;
 
@@ -118,8 +118,8 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
     NMCSProviderGetConfigIfaceData *iface_get_config;
     gs_unref_bytes GBytes *response = NULL;
     gs_free_error GError *error     = NULL;
-    const char *          fip_str   = NULL;
-    gsize                 fip_len;
+    const char *          resp_str  = NULL;
+    gsize                 resp_len;
 
     nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
 
@@ -131,8 +131,8 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
     if (error)
         goto out_done;
 
-    fip_str = g_bytes_get_data(response, &fip_len);
-    nm_assert(fip_str[fip_len] == '\0');
+    resp_str = g_bytes_get_data(response, &resp_len);
+    nm_assert(resp_str[resp_len] == '\0');
 
     iface_data->iface_get_config =
         g_hash_table_lookup(get_config_data->result_dict, iface_data->hwaddr);
@@ -142,7 +142,7 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
         char      tmp_addr_str[NM_UTILS_INET_ADDRSTRLEN];
         in_addr_t tmp_addr;
 
-        if (!nmcs_utils_ipaddr_normalize_bin(AF_INET, fip_str, fip_len, NULL, &tmp_addr)) {
+        if (!nmcs_utils_ipaddr_normalize_bin(AF_INET, resp_str, resp_len, NULL, &tmp_addr)) {
             error =
                 nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "ip is not a valid private ip address");
             goto out_done;
@@ -156,7 +156,7 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
     } else {
         int tmp_prefix;
 
-        tmp_prefix = _nm_utils_ascii_str_to_int64_bin(fip_str, fip_len, 10, 0, 32, -1);
+        tmp_prefix = _nm_utils_ascii_str_to_int64_bin(resp_str, resp_len, 10, 0, 32, -1);
         if (tmp_prefix == -1) {
             _LOGD("interface[%" G_GSSIZE_FORMAT "]: invalid prefix", iface_data->intern_iface_idx);
             error =
@@ -173,8 +173,8 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
 
 out_done:
     if (!error) {
-        --iface_data->n_ips_prefix_pending;
-        if (iface_data->n_ips_prefix_pending > 0)
+        --iface_data->n_iface_data_pending;
+        if (iface_data->n_iface_data_pending > 0)
             return;
     }
 
@@ -246,7 +246,7 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
             gs_free const char *uri = NULL;
             char                buf[100];
 
-            iface_data->n_ips_prefix_pending++;
+            iface_data->n_iface_data_pending++;
 
             nm_http_client_poll_get(
                 NM_HTTP_CLIENT(source),
@@ -269,13 +269,13 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
     }
 
     iface_data->iface_get_config->ipv4s_len = 0;
-    iface_data->iface_get_config->ipv4s_arr = g_new(in_addr_t, iface_data->n_ips_prefix_pending);
+    iface_data->iface_get_config->ipv4s_arr = g_new(in_addr_t, iface_data->n_iface_data_pending);
 
     {
         gs_free const char *uri = NULL;
         char                buf[30];
 
-        iface_data->n_ips_prefix_pending++;
+        iface_data->n_iface_data_pending++;
         nm_http_client_poll_get(
             NM_HTTP_CLIENT(source),
             (uri = _azure_uri_interfaces(
@@ -439,7 +439,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
             .iface_get_config     = NULL,
             .intern_iface_idx     = intern_iface_idx,
             .extern_iface_idx     = extern_iface_idx_cnt++,
-            .n_ips_prefix_pending = 0,
+            .n_iface_data_pending = 0,
             .hwaddr               = NULL,
         };
         g_ptr_array_add(ifaces_arr, iface_data);
