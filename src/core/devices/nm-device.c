@@ -125,7 +125,6 @@ typedef struct {
 typedef struct {
     NMDevice *device;
     guint     idle_add_id;
-    int       ifindex;
 } DeleteOnDeactivateData;
 
 typedef struct {
@@ -12169,28 +12168,19 @@ nm_device_is_nm_owned(NMDevice *self)
 static gboolean
 delete_on_deactivate_link_delete(gpointer user_data)
 {
-    DeleteOnDeactivateData *data = user_data;
-    NMDevice *              self = data->device;
+    DeleteOnDeactivateData *data        = user_data;
+    nm_auto_unref_object NMDevice *self = data->device;
+    NMDevicePrivate *              priv = NM_DEVICE_GET_PRIVATE(self);
+    gs_free_error GError *error         = NULL;
 
     _LOGD(LOGD_DEVICE,
-          "delete_on_deactivate: cleanup and delete virtual link #%d (id=%u)",
-          data->ifindex,
+          "delete_on_deactivate: cleanup and delete virtual link (id=%u)",
           data->idle_add_id);
 
-    if (data->device) {
-        NMDevicePrivate *priv       = NM_DEVICE_GET_PRIVATE(data->device);
-        gs_free_error GError *error = NULL;
+    priv->delete_on_deactivate_data = NULL;
 
-        g_object_remove_weak_pointer(G_OBJECT(data->device), (void **) &data->device);
-        priv->delete_on_deactivate_data = NULL;
-
-        if (!nm_device_unrealize(data->device, TRUE, &error))
-            _LOGD(LOGD_DEVICE,
-                  "delete_on_deactivate: unrealizing %d failed (%s)",
-                  data->ifindex,
-                  error->message);
-    } else if (data->ifindex > 0)
-        nm_platform_link_delete(nm_device_get_platform(self), data->ifindex);
+    if (!nm_device_unrealize(self, TRUE, &error))
+        _LOGD(LOGD_DEVICE, "delete_on_deactivate: unrealizing failed (%s)", error->message);
 
     nm_device_emit_recheck_auto_activate(self);
 
@@ -12209,17 +12199,16 @@ delete_on_deactivate_unschedule(NMDevice *self)
         priv->delete_on_deactivate_data = NULL;
 
         g_source_remove(data->idle_add_id);
-        g_object_remove_weak_pointer(G_OBJECT(self), (void **) &data->device);
         _LOGD(LOGD_DEVICE,
-              "delete_on_deactivate: cancel cleanup and delete virtual link #%d (id=%u)",
-              data->ifindex,
+              "delete_on_deactivate: cancel cleanup and delete virtual link (id=%u)",
               data->idle_add_id);
+        g_object_unref(data->device);
         g_free(data);
     }
 }
 
 static void
-delete_on_deactivate_check_and_schedule(NMDevice *self, int ifindex)
+delete_on_deactivate_check_and_schedule(NMDevice *self)
 {
     NMDevicePrivate *       priv = NM_DEVICE_GET_PRIVATE(self);
     DeleteOnDeactivateData *data;
@@ -12236,16 +12225,13 @@ delete_on_deactivate_check_and_schedule(NMDevice *self, int ifindex)
         return;
     delete_on_deactivate_unschedule(self); /* always cancel and reschedule */
 
-    data = g_new(DeleteOnDeactivateData, 1);
-    g_object_add_weak_pointer(G_OBJECT(self), (void **) &data->device);
-    data->device                    = self;
-    data->ifindex                   = ifindex;
+    data                            = g_new(DeleteOnDeactivateData, 1);
+    data->device                    = g_object_ref(self);
     data->idle_add_id               = g_idle_add(delete_on_deactivate_link_delete, data);
     priv->delete_on_deactivate_data = data;
 
     _LOGD(LOGD_DEVICE,
-          "delete_on_deactivate: schedule cleanup and delete virtual link #%d (id=%u)",
-          ifindex,
+          "delete_on_deactivate: schedule cleanup and delete virtual link (id=%u)",
           data->idle_add_id);
 }
 
@@ -15883,7 +15869,7 @@ _cleanup_generic_post(NMDevice *self, CleanupType cleanup_type)
         /* Check if the device was deactivated, and if so, delete_link.
          * Don't call delete_link synchronously because we are currently
          * handling a state change -- which is not reentrant. */
-        delete_on_deactivate_check_and_schedule(self, nm_device_get_ip_ifindex(self));
+        delete_on_deactivate_check_and_schedule(self);
     }
 
     /* ip_iface should be cleared after flushing all routes and addresses, since
