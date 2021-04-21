@@ -7470,13 +7470,14 @@ link_change_flags(NMPlatform *platform, int ifindex, unsigned flags_mask, unsign
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     char                         s_flags[100];
+    char                         s_flags2[100];
 
     _LOGD("link: change %d: flags: set 0x%x/0x%x ([%s] / [%s])",
           ifindex,
           flags_set,
           flags_mask,
           nm_platform_link_flags2str(flags_set, s_flags, sizeof(s_flags)),
-          nm_platform_link_flags2str(flags_mask, NULL, 0));
+          nm_platform_link_flags2str(flags_mask, s_flags2, sizeof(s_flags2)));
 
     nlmsg = _nl_msg_new_link_full(RTM_NEWLINK, 0, ifindex, NULL, AF_UNSPEC, flags_mask, flags_set);
     if (!nlmsg)
