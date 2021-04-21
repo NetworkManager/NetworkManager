@@ -18,17 +18,21 @@
 
 /*****************************************************************************/
 
-static NMPPPOps *ppp_ops = NULL;
+static const NMPPPOps *_ppp_ops = NULL;
+
+#define ppp_ops_get() ((const NMPPPOps *) g_atomic_pointer_get(&_ppp_ops))
 
 NMPPPManager *
 nm_ppp_manager_create(const char *iface, GError **error)
 {
-    NMPPPManager *ret;
-    GModule *     plugin;
-    GError *      error_local = NULL;
-    NMPPPOps *    ops;
-    struct stat   st;
+    NMPPPManager *  ret;
+    GModule *       plugin;
+    GError *        error_local = NULL;
+    struct stat     st;
+    const NMPPPOps *ppp_ops;
 
+again:
+    ppp_ops = ppp_ops_get();
     if (G_UNLIKELY(!ppp_ops)) {
         if (stat(PPP_PLUGIN_PATH, &st) != 0) {
             g_set_error_literal(error,
@@ -58,7 +62,7 @@ nm_ppp_manager_create(const char *iface, GError **error)
             return NULL;
         }
 
-        if (!g_module_symbol(plugin, "ppp_ops", (gpointer) &ops)) {
+        if (!g_module_symbol(plugin, "ppp_ops", (gpointer *) &ppp_ops)) {
             g_set_error(error,
                         NM_MANAGER_ERROR,
                         NM_MANAGER_ERROR_MISSING_PLUGIN,
@@ -67,17 +71,20 @@ nm_ppp_manager_create(const char *iface, GError **error)
             return NULL;
         }
 
+        nm_assert(ppp_ops);
+        nm_assert(ppp_ops->create);
+        nm_assert(ppp_ops->start);
+        nm_assert(ppp_ops->stop);
+        nm_assert(ppp_ops->stop_cancel);
+
+        if (!g_atomic_pointer_compare_and_exchange(&_ppp_ops, NULL, ppp_ops)) {
+            g_module_close(plugin);
+            goto again;
+        }
+
         /* after loading glib types from the plugin, we cannot unload the library anymore.
          * Make it resident. */
         g_module_make_resident(plugin);
-
-        nm_assert(ops);
-        nm_assert(ops->create);
-        nm_assert(ops->start);
-        nm_assert(ops->stop);
-        nm_assert(ops->stop_cancel);
-
-        ppp_ops = ops;
 
         nm_log_info(LOGD_CORE | LOGD_PPP, "loaded PPP plugin " PPP_PLUGIN_PATH);
     }
@@ -94,6 +101,8 @@ nm_ppp_manager_set_route_parameters(NMPPPManager *self,
                                     guint32       ip6_route_table,
                                     guint32       ip6_route_metric)
 {
+    const NMPPPOps *ppp_ops = ppp_ops_get();
+
     g_return_if_fail(ppp_ops);
 
     ppp_ops->set_route_parameters(self,
@@ -111,6 +120,8 @@ nm_ppp_manager_start(NMPPPManager *self,
                      guint         baud_override,
                      GError **     err)
 {
+    const NMPPPOps *ppp_ops = ppp_ops_get();
+
     g_return_val_if_fail(ppp_ops, FALSE);
 
     return ppp_ops->start(self, req, ppp_name, timeout_secs, baud_override, err);
@@ -122,6 +133,8 @@ nm_ppp_manager_stop(NMPPPManager *           self,
                     NMPPPManagerStopCallback callback,
                     gpointer                 user_data)
 {
+    const NMPPPOps *ppp_ops = ppp_ops_get();
+
     g_return_val_if_fail(ppp_ops, NULL);
 
     return ppp_ops->stop(self, cancellable, callback, user_data);
@@ -130,6 +143,8 @@ nm_ppp_manager_stop(NMPPPManager *           self,
 void
 nm_ppp_manager_stop_cancel(NMPPPManagerStopHandle *handle)
 {
+    const NMPPPOps *ppp_ops = ppp_ops_get();
+
     g_return_if_fail(ppp_ops);
     g_return_if_fail(handle);
 

@@ -1450,7 +1450,7 @@ nm_ppp_manager_class_init(NMPPPManagerClass *manager_class)
                                   G_TYPE_UINT); /* guint32 out_bytes */
 }
 
-NMPPPOps ppp_ops = {
+const NMPPPOps ppp_ops = {
     .create               = _ppp_manager_new,
     .set_route_parameters = _ppp_manager_set_route_parameters,
     .start                = _ppp_manager_start,
