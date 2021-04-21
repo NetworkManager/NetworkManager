@@ -1722,7 +1722,6 @@ test_software_detect(gconstpointer user_data)
             g_assert_cmpint(plnk->mcast_startup_query_interval,
                             ==,
                             lnk_bridge_norm->mcast_startup_query_interval);
-            g_assert_cmpint(nm_platform_lnk_bridge_cmp(&lnk_bridge, plnk), ==, 0);
             break;
         }
         case NM_LINK_TYPE_GRE:
