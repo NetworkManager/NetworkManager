@@ -10,6 +10,7 @@
 
 #include <fcntl.h>
 #include <termios.h>
+#include <linux/if.h>
 #include <linux/rtnetlink.h>
 
 #include "libnm-core-intern/nm-core-internal.h"
@@ -799,8 +800,10 @@ nm_modem_ip4_pre_commit(NMModem *modem, NMDevice *device, NMIP4Config *config)
 
         g_assert(address);
         if (address->plen == 32)
-            nm_platform_link_set_noarp(nm_device_get_platform(device),
-                                       nm_device_get_ip_ifindex(device));
+            nm_platform_link_change_flags(nm_device_get_platform(device),
+                                          nm_device_get_ip_ifindex(device),
+                                          IFF_NOARP,
+                                          TRUE);
     }
 }
 
@@ -1199,7 +1202,7 @@ deactivate_cleanup(NMModem *self, NMDevice *device, gboolean stop_ppp_manager)
 
                 nm_platform_ip_route_flush(platform, AF_UNSPEC, ifindex);
                 nm_platform_ip_address_flush(platform, AF_UNSPEC, ifindex);
-                nm_platform_link_set_down(platform, ifindex);
+                nm_platform_link_change_flags(platform, ifindex, IFF_UP, FALSE);
             }
         }
     }

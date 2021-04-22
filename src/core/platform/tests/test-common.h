@@ -542,7 +542,7 @@ _nmtstp_env1_wrapper_setup(const NmtstTestData *test_data)
     g_assert_cmpint(NMTSTP_ENV1_IFINDEX, ==, -1);
 
     if (GPOINTER_TO_INT(p_ifup))
-        g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, *p_ifindex, NULL));
+        g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, *p_ifindex, IFF_UP, TRUE) >= 0);
 
     nm_platform_process_events(NM_PLATFORM_GET);
 

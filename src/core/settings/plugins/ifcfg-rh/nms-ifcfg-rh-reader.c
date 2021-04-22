@@ -5179,6 +5179,11 @@ make_wired_setting(shvarFile *ifcfg, const char *file, NMSetting8021x **s_8021x,
     }
     nm_clear_g_free(&value);
 
+    g_object_set(s_wired,
+                 NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
+                 svGetValueTernary(ifcfg, "ACCEPT_ALL_MAC_ADDRESSES"),
+                 NULL);
+
     if (!found) {
         g_set_error(error,
                     NM_UTILS_ERROR,

@@ -79,6 +79,7 @@ typedef enum {                                             /*< flags >*/
 #define NM_SETTING_WIRED_S390_OPTIONS              "s390-options"
 #define NM_SETTING_WIRED_WAKE_ON_LAN               "wake-on-lan"
 #define NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD      "wake-on-lan-password"
+#define NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES  "accept-all-mac-addresses"
 
 /**
  * NMSettingWired:
@@ -105,6 +106,9 @@ const char *nm_setting_wired_get_duplex(NMSettingWired *setting);
 gboolean    nm_setting_wired_get_auto_negotiate(NMSettingWired *setting);
 const char *nm_setting_wired_get_mac_address(NMSettingWired *setting);
 const char *nm_setting_wired_get_cloned_mac_address(NMSettingWired *setting);
+
+NM_AVAILABLE_IN_1_32
+NMTernary nm_setting_wired_get_accept_all_mac_addresses(NMSettingWired *setting);
 
 NM_AVAILABLE_IN_1_4
 const char *nm_setting_wired_get_generate_mac_address_mask(NMSettingWired *setting);

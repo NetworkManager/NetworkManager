@@ -232,6 +232,8 @@
                   description="The NMSettingWiredWakeOnLan options to enable. Not all devices support all options. May be any combination of NM_SETTING_WIRED_WAKE_ON_LAN_PHY (0x2), NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST (0x4), NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST (0x8), NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST (0x10), NM_SETTING_WIRED_WAKE_ON_LAN_ARP (0x20), NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC (0x40) or the special values NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT (0x1) (to use global settings) and NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE (0x8000) (to disable management of Wake-on-LAN in NetworkManager)." />
         <property name="wake-on-lan-password"
                   description="If specified, the password used with magic-packet-based Wake-on-LAN, represented as an Ethernet MAC address.  If NULL, no password will be required." />
+        <property name="accept-all-mac-addresses"
+                  description="When TRUE, setup the interface to accept packets for all MAC addresses. This is enabling the kernel interface flag IFF_PROMISC. When FALSE, the interface will only accept the packets with the interface destination mac address or broadcast." />
     </setting>
     <setting name="adsl" >
         <property name="username"

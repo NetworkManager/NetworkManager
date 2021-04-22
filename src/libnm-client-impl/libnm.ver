@@ -1788,4 +1788,5 @@ global:
 libnm_1_32_0 {
 global:
 	nm_setting_match_new;
+	nm_setting_wired_get_accept_all_mac_addresses;
 } libnm_1_30_0;
