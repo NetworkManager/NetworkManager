@@ -1890,8 +1890,8 @@ endif
 
 libnm_docs_sources = $(src_libnm_core_impl_lib_c_settings_real)
 
-src/libnm-client-impl/nm-property-infos-%.xml: tools/generate-docs-nm-property-infos.pl $(libnm_docs_sources)
-	$(AM_V_GEN) $(srcdir)/tools/generate-docs-nm-property-infos.pl $(patsubst nm-property-infos-%.xml,%,$(notdir $@)) $@ $(filter-out $<,$^)
+src/libnm-client-impl/nm-property-infos-%.xml: tools/generate-docs-nm-property-infos.py $(libnm_docs_sources)
+	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-property-infos.py $(patsubst nm-property-infos-%.xml,%,$(notdir $@)) $@ $(filter-out $<,$^)
 
 src/libnm-client-impl/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-docs-gir.py src/libnm-client-impl/NM-1.0.gir src/libnm-client-impl/NM-1.0.typelib src/libnm-client-impl/libnm.la $(libnm_docs_sources)
 	$(AM_V_GEN) \
@@ -1918,7 +1918,7 @@ DISTCLEANFILES += $(libnm_noinst_data)
 endif
 
 EXTRA_DIST += \
-	tools/generate-docs-nm-property-infos.pl \
+	tools/generate-docs-nm-property-infos.py \
 	tools/generate-docs-nm-settings-docs-merge.py \
 	tools/generate-docs-nm-settings-docs-gir.py \
 	src/libnm-client-impl/meson.build \

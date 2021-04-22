@@ -162,8 +162,8 @@ if enable_introspection
       input: libnm_core_settings_sources,
       output: 'nm-propery-infos-' + info + '.xml',
       command: [
-        perl,
-        join_paths(meson.source_root(), 'tools', 'generate-docs-nm-property-infos.pl'),
+        python.path(),
+        join_paths(meson.source_root(), 'tools', 'generate-docs-nm-property-infos.py'),
         info,
         '@OUTPUT@',
         '@INPUT@'
