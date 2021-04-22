@@ -1632,7 +1632,7 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
                 route.metric        = route_metric;
                 route.rt_source     = NM_IP_CONFIG_SOURCE_VPN;
 
-                if (plen > 32 || plen == 0)
+                if (plen > 32)
                     break;
                 route.plen    = plen;
                 route.network = nm_utils_ip4_address_clear_host_address(route.network, plen);
@@ -1825,7 +1825,7 @@ nm_vpn_connection_ip6_config_get(NMVpnConnection *self, GVariant *dict)
             if (!ip6_addr_from_variant(dest, &route.network))
                 goto next;
 
-            if (prefix > 128 || prefix == 0)
+            if (prefix > 128)
                 goto next;
 
             route.plen = prefix;
