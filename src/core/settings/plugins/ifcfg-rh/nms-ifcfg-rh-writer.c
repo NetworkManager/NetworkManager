@@ -1170,6 +1170,10 @@ write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
 
     svSetValueStr(ifcfg, "TYPE", TYPE_ETHERNET);
 
+    svSetValueTernary(ifcfg,
+                      "ACCEPT_ALL_MAC_ADDRESSES",
+                      nm_setting_wired_get_accept_all_mac_addresses(s_wired));
+
     return TRUE;
 }
 

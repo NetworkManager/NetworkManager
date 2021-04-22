@@ -44,9 +44,12 @@ test_cleanup_internal(void)
     g_assert(NMTST_NM_ERR_SUCCESS(nm_platform_link_dummy_add(NM_PLATFORM_GET, DEVICE_NAME, NULL)));
     accept_signal(link_added);
     free_signal(link_added);
-    g_assert(nm_platform_link_set_up(NM_PLATFORM_GET,
-                                     nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME),
-                                     NULL));
+    g_assert(
+        nm_platform_link_change_flags(NM_PLATFORM_GET,
+                                      nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME),
+                                      IFF_UP,
+                                      TRUE)
+        >= 0);
     ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     g_assert(ifindex > 0);
 

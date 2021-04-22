@@ -1091,10 +1091,10 @@ typedef struct {
     gboolean (*link_delete)(NMPlatform *self, int ifindex);
     gboolean (*link_refresh)(NMPlatform *self, int ifindex);
     gboolean (*link_set_netns)(NMPlatform *self, int ifindex, int netns_fd);
-    gboolean (*link_set_up)(NMPlatform *self, int ifindex, gboolean *out_no_firmware);
-    gboolean (*link_set_down)(NMPlatform *self, int ifindex);
-    gboolean (*link_set_arp)(NMPlatform *self, int ifindex);
-    gboolean (*link_set_noarp)(NMPlatform *self, int ifindex);
+    int (*link_change_flags)(NMPlatform *platform,
+                             int         ifindex,
+                             unsigned    flags_mask,
+                             unsigned    flags_set);
 
     int (*link_set_user_ipv6ll_enabled)(NMPlatform *self, int ifindex, gboolean enabled);
     gboolean (*link_set_token)(NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
@@ -1817,10 +1817,28 @@ void     nm_platform_process_events(NMPlatform *self);
 const NMPlatformLink *
 nm_platform_process_events_ensure_link(NMPlatform *self, int ifindex, const char *ifname);
 
-gboolean nm_platform_link_set_up(NMPlatform *self, int ifindex, gboolean *out_no_firmware);
-gboolean nm_platform_link_set_down(NMPlatform *self, int ifindex);
-gboolean nm_platform_link_set_arp(NMPlatform *self, int ifindex);
-gboolean nm_platform_link_set_noarp(NMPlatform *self, int ifindex);
+int nm_platform_link_change_flags_full(NMPlatform *self,
+                                       int         ifindex,
+                                       unsigned    flags_mask,
+                                       unsigned    flags_set);
+
+/**
+ * nm_platform_link_change_flags:
+ * @self: platform instance
+ * @ifindex: interface index
+ * @value: flag to be set
+ * @set: value to be set
+ *
+ * Change the interface flag to the value set.
+ *
+ * Returns: nm-errno code.
+ *
+ */
+static inline int
+nm_platform_link_change_flags(NMPlatform *self, int ifindex, unsigned value, gboolean set)
+{
+    return nm_platform_link_change_flags_full(self, ifindex, value, set ? value : 0u);
+}
 
 const char *nm_platform_link_get_udi(NMPlatform *self, int ifindex);
 const char *nm_platform_link_get_path(NMPlatform *self, int ifindex);

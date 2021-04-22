@@ -1858,12 +1858,12 @@ IP6.DNS[1]:                             2001:a::2934:bd66:550d:ec19
 IP6.DOMAIN[1]:                          sear6.fo.x.y
 
 <<<
-size: 22438
+size: 22653
 location: src/tests/client/test-client.py:test_004()/39
 cmd: $NMCLI -f all dev show
 lang: C
 returncode: 0
-stdout: 22303 bytes
+stdout: 22518 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -1900,6 +1900,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -2002,6 +2003,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.49.34/22
 IP4.ADDRESS[2]:                         192.168.135.86/19
@@ -2070,6 +2072,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.127.210/25
 IP4.GATEWAY:                            192.168.88.4
@@ -2145,6 +2148,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -2241,6 +2245,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -2282,12 +2287,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 22601
+size: 22821
 location: src/tests/client/test-client.py:test_004()/40
 cmd: $NMCLI -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 22456 bytes
+stdout: 22676 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -2324,6 +2329,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -2426,6 +2432,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.49.34/22
 IP4.ADDRESS[2]:                         192.168.135.86/19
@@ -2494,6 +2501,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.127.210/25
 IP4.GATEWAY:                            192.168.88.4
@@ -2569,6 +2577,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -2665,6 +2674,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -2772,12 +2782,12 @@ IP6.DOMAIN[5]:                          sear6.foo3.bar
 IP6.DOMAIN[6]:                          sear6.foo4.bar
 
 <<<
-size: 5363
+size: 5406
 location: src/tests/client/test-client.py:test_004()/43
 cmd: $NMCLI -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 5223 bytes
+stdout: 5266 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -2814,6 +2824,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -2882,12 +2893,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5423
+size: 5467
 location: src/tests/client/test-client.py:test_004()/44
 cmd: $NMCLI -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5273 bytes
+stdout: 5317 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -2924,6 +2935,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -3404,12 +3416,12 @@ AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infrastruktura  1   
 
 
 <<<
-size: 5366
+size: 5409
 location: src/tests/client/test-client.py:test_004()/63
 cmd: $NMCLI -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 5223 bytes
+stdout: 5266 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -3446,6 +3458,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -3514,12 +3527,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5426
+size: 5470
 location: src/tests/client/test-client.py:test_004()/64
 cmd: $NMCLI -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5273 bytes
+stdout: 5317 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -3556,6 +3569,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -5080,12 +5094,12 @@ IP6.DNS[1]:                             2001:a::2934:bd66:550d:ec19
 IP6.DOMAIN[1]:                          sear6.fo.x.y
 
 <<<
-size: 22774
+size: 22989
 location: src/tests/client/test-client.py:test_004()/89
 cmd: $NMCLI --color yes -f all dev show
 lang: C
 returncode: 0
-stdout: 22627 bytes
+stdout: 22842 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -5122,6 +5136,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -5224,6 +5239,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.49.34/22
 IP4.ADDRESS[2]:                         192.168.135.86/19
@@ -5292,6 +5308,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.127.210/25
 IP4.GATEWAY:                            192.168.88.4
@@ -5367,6 +5384,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -5463,6 +5481,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -5504,12 +5523,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 22937
+size: 23157
 location: src/tests/client/test-client.py:test_004()/90
 cmd: $NMCLI --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 22780 bytes
+stdout: 23000 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -5546,6 +5565,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -5648,6 +5668,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.49.34/22
 IP4.ADDRESS[2]:                         192.168.135.86/19
@@ -5716,6 +5737,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.127.210/25
 IP4.GATEWAY:                            192.168.88.4
@@ -5791,6 +5813,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -5887,6 +5910,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -5994,12 +6018,12 @@ IP6.DOMAIN[5]:                          sear6.foo3.bar
 IP6.DOMAIN[6]:                          sear6.foo4.bar
 
 <<<
-size: 5618
+size: 5661
 location: src/tests/client/test-client.py:test_004()/93
 cmd: $NMCLI --color yes -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 5466 bytes
+stdout: 5509 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -6036,6 +6060,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -6104,12 +6129,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5678
+size: 5722
 location: src/tests/client/test-client.py:test_004()/94
 cmd: $NMCLI --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5516 bytes
+stdout: 5560 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -6146,6 +6171,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -6626,12 +6652,12 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 
 
 <<<
-size: 5622
+size: 5665
 location: src/tests/client/test-client.py:test_004()/113
 cmd: $NMCLI --color yes -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 5466 bytes
+stdout: 5509 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -6668,6 +6694,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -6736,12 +6763,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5682
+size: 5726
 location: src/tests/client/test-client.py:test_004()/114
 cmd: $NMCLI --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5516 bytes
+stdout: 5560 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -6778,6 +6805,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -8526,12 +8554,12 @@ IP6.DOMAIN[1]:                          sear6.fo.x.y
 -------------------------------------------------------------------------------
 
 <<<
-size: 27423
+size: 27638
 location: src/tests/client/test-client.py:test_004()/139
 cmd: $NMCLI --pretty -f all dev show
 lang: C
 returncode: 0
-stdout: 27278 bytes
+stdout: 27493 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -8573,6 +8601,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -8690,6 +8719,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -8770,6 +8800,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -8857,6 +8888,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -8966,6 +8998,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -9014,12 +9047,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 27619
+size: 27839
 location: src/tests/client/test-client.py:test_004()/140
 cmd: $NMCLI --pretty -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 27464 bytes
+stdout: 27684 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -9061,6 +9094,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -9178,6 +9212,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -9258,6 +9293,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -9345,6 +9381,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -9454,6 +9491,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -9592,12 +9630,12 @@ IP6.DOMAIN[6]:                          sear6.foo4.bar
 -------------------------------------------------------------------------------
 
 <<<
-size: 6544
+size: 6587
 location: src/tests/client/test-client.py:test_004()/143
 cmd: $NMCLI --pretty -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 6394 bytes
+stdout: 6437 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -9639,6 +9677,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -9717,12 +9756,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 6611
+size: 6655
 location: src/tests/client/test-client.py:test_004()/144
 cmd: $NMCLI --pretty -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6451 bytes
+stdout: 6495 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -9764,6 +9803,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -10382,12 +10422,12 @@ AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infrastruktura  1   
 
 
 <<<
-size: 6547
+size: 6590
 location: src/tests/client/test-client.py:test_004()/163
 cmd: $NMCLI --pretty -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 6394 bytes
+stdout: 6437 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -10429,6 +10469,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -10507,12 +10548,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 6614
+size: 6658
 location: src/tests/client/test-client.py:test_004()/164
 cmd: $NMCLI --pretty -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6451 bytes
+stdout: 6495 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -10554,6 +10595,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -12420,12 +12462,12 @@ IP6.DOMAIN[1]:                          sear6.fo.x.y
 -------------------------------------------------------------------------------
 
 <<<
-size: 27759
+size: 27974
 location: src/tests/client/test-client.py:test_004()/189
 cmd: $NMCLI --pretty --color yes -f all dev show
 lang: C
 returncode: 0
-stdout: 27602 bytes
+stdout: 27817 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -12467,6 +12509,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -12584,6 +12627,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -12664,6 +12708,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -12751,6 +12796,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -12860,6 +12906,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -12908,12 +12955,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 27955
+size: 28175
 location: src/tests/client/test-client.py:test_004()/190
 cmd: $NMCLI --pretty --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 27788 bytes
+stdout: 28008 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -12955,6 +13002,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -13072,6 +13120,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -13152,6 +13201,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -13239,6 +13289,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -13348,6 +13399,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -13486,12 +13538,12 @@ IP6.DOMAIN[6]:                          sear6.foo4.bar
 -------------------------------------------------------------------------------
 
 <<<
-size: 6799
+size: 6842
 location: src/tests/client/test-client.py:test_004()/193
 cmd: $NMCLI --pretty --color yes -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 6637 bytes
+stdout: 6680 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -13533,6 +13585,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -13611,12 +13664,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 6866
+size: 6910
 location: src/tests/client/test-client.py:test_004()/194
 cmd: $NMCLI --pretty --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6694 bytes
+stdout: 6738 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -13658,6 +13711,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -14276,12 +14330,12 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 
 
 <<<
-size: 6802
+size: 6845
 location: src/tests/client/test-client.py:test_004()/213
 cmd: $NMCLI --pretty --color yes -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 6637 bytes
+stdout: 6680 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -14323,6 +14377,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -14401,12 +14456,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 6869
+size: 6913
 location: src/tests/client/test-client.py:test_004()/214
 cmd: $NMCLI --pretty --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6694 bytes
+stdout: 6738 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -14448,6 +14503,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -16086,12 +16142,12 @@ IP6.DNS[1]:2001:a::2934:bd66:550d:ec19
 IP6.DOMAIN[1]:sear6.fo.x.y
 
 <<<
-size: 12986
+size: 13121
 location: src/tests/client/test-client.py:test_004()/239
 cmd: $NMCLI --terse -f all dev show
 lang: C
 returncode: 0
-stdout: 12842 bytes
+stdout: 12977 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -16128,6 +16184,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -16230,6 +16287,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.49.34/22
 IP4.ADDRESS[2]:192.168.135.86/19
@@ -16298,6 +16356,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.127.210/25
 IP4.GATEWAY:192.168.88.4
@@ -16373,6 +16432,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -16469,6 +16529,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -16510,12 +16571,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 13032
+size: 13167
 location: src/tests/client/test-client.py:test_004()/240
 cmd: $NMCLI --terse -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 12878 bytes
+stdout: 13013 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -16552,6 +16613,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -16654,6 +16716,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.49.34/22
 IP4.ADDRESS[2]:192.168.135.86/19
@@ -16722,6 +16785,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.127.210/25
 IP4.GATEWAY:192.168.88.4
@@ -16797,6 +16861,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -16893,6 +16958,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -17000,12 +17066,12 @@ IP6.DOMAIN[5]:sear6.foo3.bar
 IP6.DOMAIN[6]:sear6.foo4.bar
 
 <<<
-size: 2990
+size: 3017
 location: src/tests/client/test-client.py:test_004()/243
 cmd: $NMCLI --terse -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 2841 bytes
+stdout: 2868 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -17042,6 +17108,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -17110,12 +17177,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3027
+size: 3054
 location: src/tests/client/test-client.py:test_004()/244
 cmd: $NMCLI --terse -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2868 bytes
+stdout: 2895 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -17152,6 +17219,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -17606,12 +17674,12 @@ AP[1]:wlan0-ap-2:776C616E302D61702D32:C0\:E2\:BE\:E8\:EF\:B6:Infrastruktura:1:24
 
 
 <<<
-size: 2993
+size: 3020
 location: src/tests/client/test-client.py:test_004()/263
 cmd: $NMCLI --terse -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 2841 bytes
+stdout: 2868 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -17648,6 +17716,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -17716,12 +17785,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3030
+size: 3057
 location: src/tests/client/test-client.py:test_004()/264
 cmd: $NMCLI --terse -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2868 bytes
+stdout: 2895 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -17758,6 +17827,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -19278,12 +19348,12 @@ IP6.DNS[1]:2001:a::2934:bd66:550d:ec19
 IP6.DOMAIN[1]:sear6.fo.x.y
 
 <<<
-size: 13322
+size: 13457
 location: src/tests/client/test-client.py:test_004()/289
 cmd: $NMCLI --terse --color yes -f all dev show
 lang: C
 returncode: 0
-stdout: 13166 bytes
+stdout: 13301 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -19320,6 +19390,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -19422,6 +19493,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.49.34/22
 IP4.ADDRESS[2]:192.168.135.86/19
@@ -19490,6 +19562,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.127.210/25
 IP4.GATEWAY:192.168.88.4
@@ -19565,6 +19638,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -19661,6 +19735,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -19702,12 +19777,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 13368
+size: 13503
 location: src/tests/client/test-client.py:test_004()/290
 cmd: $NMCLI --terse --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 13202 bytes
+stdout: 13337 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -19744,6 +19819,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -19846,6 +19922,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.49.34/22
 IP4.ADDRESS[2]:192.168.135.86/19
@@ -19914,6 +19991,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.127.210/25
 IP4.GATEWAY:192.168.88.4
@@ -19989,6 +20067,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -20085,6 +20164,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -20192,12 +20272,12 @@ IP6.DOMAIN[5]:sear6.foo3.bar
 IP6.DOMAIN[6]:sear6.foo4.bar
 
 <<<
-size: 3245
+size: 3272
 location: src/tests/client/test-client.py:test_004()/293
 cmd: $NMCLI --terse --color yes -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 3084 bytes
+stdout: 3111 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -20234,6 +20314,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -20302,12 +20383,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3282
+size: 3309
 location: src/tests/client/test-client.py:test_004()/294
 cmd: $NMCLI --terse --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3111 bytes
+stdout: 3138 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -20344,6 +20425,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -20798,12 +20880,12 @@ stdout: 422 bytes
 
 
 <<<
-size: 3248
+size: 3275
 location: src/tests/client/test-client.py:test_004()/313
 cmd: $NMCLI --terse --color yes -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 3084 bytes
+stdout: 3111 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -20840,6 +20922,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -20908,12 +20991,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3285
+size: 3312
 location: src/tests/client/test-client.py:test_004()/314
 cmd: $NMCLI --terse --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3111 bytes
+stdout: 3138 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -20950,6 +21033,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -21972,12 +22056,12 @@ GROUP  ADDRESS                        GATEWAY  ROUTE                            
 IP6    2001:a::88ca:3654:96b:ab44/89  --       dst = 2001:a::cc8b:7c09:4673:bbb0/85, nh = ::, mt = 2821465568 | dst = 2001:a::a976:2488:f49f:b48/106, nh = 2001:a::62ae:c734:fc7b:e931, mt = 2248613879 | dst = 2001:a::afb7:4449:3787:8bb4/123, nh = ::  2001:a::2934:bd66:550d:ec19  sear6.fo.x.y 
 
 <<<
-size: 15979
+size: 16069
 location: src/tests/client/test-client.py:test_004()/339
 cmd: $NMCLI --mode tabular -f all dev show
 lang: C
 returncode: 0
-stdout: 15828 bytes
+stdout: 15918 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/wlan0  --    wlan0     no           yes         yes          no                no                 --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  unknown 
@@ -21985,8 +22069,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -22017,8 +22101,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  on       --               
@@ -22044,8 +22128,8 @@ GENERAL  eth1    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  on       --               
@@ -22071,8 +22155,8 @@ GENERAL  wlan1   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/4  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              unknown  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -22101,8 +22185,8 @@ GENERAL  wlan1   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/5  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              unknown  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -22125,12 +22209,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 16135
+size: 16225
 location: src/tests/client/test-client.py:test_004()/340
 cmd: $NMCLI --mode tabular -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 15974 bytes
+stdout: 16064 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/wlan0  --    wlan0     nie          tak         tak          nie               nie                --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  nieznane 
@@ -22138,8 +22222,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -22170,8 +22254,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 WIRED-PROPERTIES  włączone  --               
@@ -22197,8 +22281,8 @@ GENERAL  eth1    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 WIRED-PROPERTIES  włączone  --               
@@ -22224,8 +22308,8 @@ GENERAL  wlan1   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/4  
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             nieznane  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -22254,8 +22338,8 @@ GENERAL  wlan1   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/5  
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             nieznane  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -22348,12 +22432,12 @@ GROUP  ADDRESS  GATEWAY  ROUTE                                                  
 IP6    --       --       dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086  --   sear6.foo2.bar | sear6.foo1.bar | sear6.fo.x.y | sear6.fo.o.bar | sear6.foo3.bar | sear6.foo4.bar 
 
 <<<
-size: 3297
+size: 3315
 location: src/tests/client/test-client.py:test_004()/343
 cmd: $NMCLI --mode tabular -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 3141 bytes
+stdout: 3159 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/wlan0  --    wlan0     no           yes         yes          no                no                 --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  unknown 
@@ -22361,8 +22445,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -22388,12 +22472,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 3361
+size: 3379
 location: src/tests/client/test-client.py:test_004()/344
 cmd: $NMCLI --mode tabular -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3195 bytes
+stdout: 3213 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/wlan0  --    wlan0     nie          tak         tak          nie               nie                --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  nieznane 
@@ -22401,8 +22485,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -22712,12 +22796,12 @@ AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infrastruktura  1   
 
 
 <<<
-size: 3300
+size: 3318
 location: src/tests/client/test-client.py:test_004()/363
 cmd: $NMCLI --mode tabular -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 3141 bytes
+stdout: 3159 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/wlan0  --    wlan0     no           yes         yes          no                no                 --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  unknown 
@@ -22725,8 +22809,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -22752,12 +22836,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 3364
+size: 3382
 location: src/tests/client/test-client.py:test_004()/364
 cmd: $NMCLI --mode tabular -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3195 bytes
+stdout: 3213 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/wlan0  --    wlan0     nie          tak         tak          nie               nie                --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  nieznane 
@@ -22765,8 +22849,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -23626,12 +23710,12 @@ GROUP  ADDRESS                        GATEWAY  ROUTE                            
 IP6    2001:a::88ca:3654:96b:ab44/89  --       dst = 2001:a::cc8b:7c09:4673:bbb0/85, nh = ::, mt = 2821465568 | dst = 2001:a::a976:2488:f49f:b48/106, nh = 2001:a::62ae:c734:fc7b:e931, mt = 2248613879 | dst = 2001:a::afb7:4449:3787:8bb4/123, nh = ::  2001:a::2934:bd66:550d:ec19  sear6.fo.x.y 
 
 <<<
-size: 16351
+size: 16441
 location: src/tests/client/test-client.py:test_004()/389
 cmd: $NMCLI --mode tabular --color yes -f all dev show
 lang: C
 returncode: 0
-stdout: 16188 bytes
+stdout: 16278 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/wlan0  --    wlan0     no           yes         yes          no                no                 --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  unknown 
@@ -23639,8 +23723,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -23671,8 +23755,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  on       --               
@@ -23698,8 +23782,8 @@ GENERAL  eth1    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  on       --               
@@ -23725,8 +23809,8 @@ GENERAL  wlan1   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/4  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              unknown  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -23755,8 +23839,8 @@ GENERAL  wlan1   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/5  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              unknown  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -23779,12 +23863,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 16507
+size: 16597
 location: src/tests/client/test-client.py:test_004()/390
 cmd: $NMCLI --mode tabular --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 16334 bytes
+stdout: 16424 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/wlan0  --    wlan0     nie          tak         tak          nie               nie                --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  nieznane 
@@ -23792,8 +23876,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -23824,8 +23908,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 WIRED-PROPERTIES  włączone  --               
@@ -23851,8 +23935,8 @@ GENERAL  eth1    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 WIRED-PROPERTIES  włączone  --               
@@ -23878,8 +23962,8 @@ GENERAL  wlan1   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/4  
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             nieznane  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -23908,8 +23992,8 @@ GENERAL  wlan1   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/5  
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             nieznane  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -24002,12 +24086,12 @@ GROUP  ADDRESS  GATEWAY  ROUTE                                                  
 IP6    --       --       dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086  --   sear6.foo2.bar | sear6.foo1.bar | sear6.fo.x.y | sear6.fo.o.bar | sear6.foo3.bar | sear6.foo4.bar 
 
 <<<
-size: 3579
+size: 3597
 location: src/tests/client/test-client.py:test_004()/393
 cmd: $NMCLI --mode tabular --color yes -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 3411 bytes
+stdout: 3429 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/wlan0  --    wlan0     no           yes         yes          no                no                 --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  unknown 
@@ -24015,8 +24099,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -24042,12 +24126,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 3643
+size: 3661
 location: src/tests/client/test-client.py:test_004()/394
 cmd: $NMCLI --mode tabular --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3465 bytes
+stdout: 3483 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/wlan0  --    wlan0     nie          tak         tak          nie               nie                --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  nieznane 
@@ -24055,8 +24139,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -24366,12 +24450,12 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 
 
 <<<
-size: 3582
+size: 3600
 location: src/tests/client/test-client.py:test_004()/413
 cmd: $NMCLI --mode tabular --color yes -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 3411 bytes
+stdout: 3429 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/wlan0  --    wlan0     no           yes         yes          no                no                 --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  unknown 
@@ -24379,8 +24463,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 WIFI-PROPERTIES  yes  yes  yes   yes   yes   yes  yes    unknown  unknown  no    no       
@@ -24406,12 +24490,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 3646
+size: 3664
 location: src/tests/client/test-client.py:test_004()/414
 cmd: $NMCLI --mode tabular --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3465 bytes
+stdout: 3483 bytes
 >>>
 NAME     DEVICE  TYPE  NM-TYPE       DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                         PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  --      --       virtual  --              --                13:E0:74:85:7C:D9  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/wlan0  --    wlan0     nie          tak         tak          nie               nie                --            con-vpn-1   UUID-con-vpn-1-REPLACED-REPLACED-REP  /org/freedesktop/NetworkManager/ActiveConnection/2  nieznane 
@@ -24419,8 +24503,8 @@ GENERAL  wlan0   wifi  NMDeviceWifi  /org/freedesktop/NetworkManager/Devices/3  
 NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 WIFI-PROPERTIES  tak  tak  tak   tak   tak   tak  tak    nieznane  nieznane  nie   nie      
@@ -25504,12 +25588,12 @@ GROUP  ADDRESS                        GATEWAY  ROUTE                            
 IP6    2001:a::88ca:3654:96b:ab44/89  --       dst = 2001:a::cc8b:7c09:4673:bbb0/85, nh = ::, mt = 2821465568 | dst = 2001:a::a976:2488:f49f:b48/106, nh = 2001:a::62ae:c734:fc7b:e931, mt = 2248613879 | dst = 2001:a::afb7:4449:3787:8bb4/123, nh = ::  2001:a::2934:bd66:550d:ec19  sear6.fo.x.y 
 
 <<<
-size: 24255
+size: 24390
 location: src/tests/client/test-client.py:test_004()/439
 cmd: $NMCLI --mode tabular --pretty -f all dev show
 lang: C
 returncode: 0
-stdout: 24095 bytes
+stdout: 24230 bytes
 >>>
 ==========================
   Device details (wlan0)
@@ -25522,9 +25606,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -25567,9 +25651,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -25606,9 +25690,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -25645,9 +25729,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              unknown  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -25688,9 +25772,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              unknown  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -25720,12 +25804,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 24610
+size: 24745
 location: src/tests/client/test-client.py:test_004()/440
 cmd: $NMCLI --mode tabular --pretty -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 24440 bytes
+stdout: 24575 bytes
 >>>
 ===================================
   Informacje o urządzeniu (wlan0)
@@ -25738,9 +25822,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -25783,9 +25867,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 ----------------------------------------------
@@ -25822,9 +25906,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 ----------------------------------------------
@@ -25861,9 +25945,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             nieznane  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -25904,9 +25988,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             nieznane  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -26030,12 +26114,12 @@ GROUP  ADDRESS  GATEWAY  ROUTE                                                  
 IP6    --       --       dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086  --   sear6.foo2.bar | sear6.foo1.bar | sear6.fo.x.y | sear6.fo.o.bar | sear6.foo3.bar | sear6.foo4.bar 
 
 <<<
-size: 4866
+size: 4893
 location: src/tests/client/test-client.py:test_004()/443
 cmd: $NMCLI --mode tabular --pretty -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 4701 bytes
+stdout: 4728 bytes
 >>>
 ==========================
   Device details (wlan0)
@@ -26048,9 +26132,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -26083,12 +26167,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 4974
+size: 5001
 location: src/tests/client/test-client.py:test_004()/444
 cmd: $NMCLI --mode tabular --pretty -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4799 bytes
+stdout: 4826 bytes
 >>>
 ===================================
   Informacje o urządzeniu (wlan0)
@@ -26101,9 +26185,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -26548,12 +26632,12 @@ AP[1]  wlan0-ap-2  776C616E302D61702D32  C0:E2:BE:E8:EF:B6  Infrastruktura  1   
 
 
 <<<
-size: 4869
+size: 4896
 location: src/tests/client/test-client.py:test_004()/463
 cmd: $NMCLI --mode tabular --pretty -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 4701 bytes
+stdout: 4728 bytes
 >>>
 ==========================
   Device details (wlan0)
@@ -26566,9 +26650,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -26601,12 +26685,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 4977
+size: 5004
 location: src/tests/client/test-client.py:test_004()/464
 cmd: $NMCLI --mode tabular --pretty -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4799 bytes
+stdout: 4826 bytes
 >>>
 ===================================
   Informacje o urządzeniu (wlan0)
@@ -26619,9 +26703,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -27812,12 +27896,12 @@ GROUP  ADDRESS                        GATEWAY  ROUTE                            
 IP6    2001:a::88ca:3654:96b:ab44/89  --       dst = 2001:a::cc8b:7c09:4673:bbb0/85, nh = ::, mt = 2821465568 | dst = 2001:a::a976:2488:f49f:b48/106, nh = 2001:a::62ae:c734:fc7b:e931, mt = 2248613879 | dst = 2001:a::afb7:4449:3787:8bb4/123, nh = ::  2001:a::2934:bd66:550d:ec19  sear6.fo.x.y 
 
 <<<
-size: 24627
+size: 24762
 location: src/tests/client/test-client.py:test_004()/489
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show
 lang: C
 returncode: 0
-stdout: 24455 bytes
+stdout: 24590 bytes
 >>>
 ==========================
   Device details (wlan0)
@@ -27830,9 +27914,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -27875,9 +27959,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -27914,9 +27998,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -27953,9 +28037,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              unknown  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -27996,9 +28080,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              unknown  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -28028,12 +28112,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 24982
+size: 25117
 location: src/tests/client/test-client.py:test_004()/490
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 24800 bytes
+stdout: 24935 bytes
 >>>
 ===================================
   Informacje o urządzeniu (wlan0)
@@ -28046,9 +28130,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -28091,9 +28175,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 ----------------------------------------------
@@ -28130,9 +28214,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 ----------------------------------------------
@@ -28169,9 +28253,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             nieznane  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -28212,9 +28296,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             nieznane  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -28338,12 +28422,12 @@ GROUP  ADDRESS  GATEWAY  ROUTE                                                  
 IP6    --       --       dst = 2001:a::dd5b:aa7b:b4a2:e42/102, nh = ::, mt = 2504159086  --   sear6.foo2.bar | sear6.foo1.bar | sear6.fo.x.y | sear6.fo.o.bar | sear6.foo3.bar | sear6.foo4.bar 
 
 <<<
-size: 5148
+size: 5175
 location: src/tests/client/test-client.py:test_004()/493
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 4971 bytes
+stdout: 4998 bytes
 >>>
 ==========================
   Device details (wlan0)
@@ -28356,9 +28440,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -28391,12 +28475,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 5256
+size: 5283
 location: src/tests/client/test-client.py:test_004()/494
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5069 bytes
+stdout: 5096 bytes
 >>>
 ===================================
   Informacje o urządzeniu (wlan0)
@@ -28409,9 +28493,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -28856,12 +28940,12 @@ NAME   SSID        SSID-HEX              BSSID              MODE            CHAN
 
 
 <<<
-size: 5151
+size: 5178
 location: src/tests/client/test-client.py:test_004()/513
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 4971 bytes
+stdout: 4998 bytes
 >>>
 ==========================
   Device details (wlan0)
@@ -28874,9 +28958,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  no              21 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ     5GHZ     MESH  IBSS-RSN 
 -------------------------------------------------------------------------------------------
@@ -28909,12 +28993,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                               AVAILABLE-
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{2}  UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 
 
 <<<
-size: 5259
+size: 5286
 location: src/tests/client/test-client.py:test_004()/514
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5069 bytes
+stdout: 5096 bytes
 >>>
 ===================================
   Informacje o urządzeniu (wlan0)
@@ -28927,9 +29011,9 @@ NAME          CARRIER-DETECT  SPEED    IS-SOFTWARE  SRIOV
 -----------------------------------------------------------
 CAPABILITIES  nie             21 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME             WEP  WPA  WPA2  TKIP  CCMP  AP   ADHOC  2GHZ      5GHZ      MESH  IBSS-RSN 
 ---------------------------------------------------------------------------------------------
@@ -29638,16 +29722,16 @@ IP4:192.168.97.124/29 | 192.168.76.154/18::dst = 192.168.33.233/22, nh = 192.168
 IP6:2001\:a\:\:88ca\:3654\:96b\:ab44/89::dst = 2001\:a\:\:cc8b\:7c09\:4673\:bbb0/85, nh = \:\:, mt = 2821465568 | dst = 2001\:a\:\:a976\:2488\:f49f\:b48/106, nh = 2001\:a\:\:62ae\:c734\:fc7b\:e931, mt = 2248613879 | dst = 2001\:a\:\:afb7\:4449\:3787\:8bb4/123, nh = \:\::2001\:a\:\:2934\:bd66\:550d\:ec19:sear6.fo.x.y
 
 <<<
-size: 6793
+size: 6808
 location: src/tests/client/test-client.py:test_004()/539
 cmd: $NMCLI --mode tabular --terse -f all dev show
 lang: C
 returncode: 0
-stdout: 6635 bytes
+stdout: 6650 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 AP[1]: :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2
 AP[2]: :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infra:1:54 Mbit/s:81:****:WPA1
@@ -29660,7 +29744,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1
 
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::AB\:B7\:BF\:E2\:48\:E8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.49.34/22 | 192.168.135.86/19:::192.168.45.230 | 192.168.180.201 | 192.168.253.2:sear4.foo2.bar | sear4.foo1.bar:192.168.163.23 | 192.168.151.246
 DHCP4:dhcp-4-opt-8 = val-8 | dhcp-4-opt-9 = val-9
@@ -29670,7 +29754,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e6
 
 GENERAL:eth1:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/2:::virtual:::E7\:78\:B1\:93\:2B\:22:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth1::eth1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.127.210/25:192.168.88.4:dst = 192.168.222.35/19, nh = 192.168.170.142, mt = 3609264321 | dst = 192.168.135.81/32, nh = 192.168.32.11, mt = 1316413247 | dst = 192.168.24.65/26, nh = 192.168.23.163, mt = 3855574583:192.168.16.144 | 192.168.79.53 | 192.168.237.155:sear4.foo4.bar | sear4.foo3.bar | sear4.foo1.bar:192.168.211.91 | 192.168.58.182 | 192.168.114.97
 DHCP4:dhcp-4-opt-0 = val-0 | dhcp-4-opt-1 = val-1 | dhcp-4-opt-2 = val-2 | dhcp-4-opt-3 = val-3 | dhcp-4-opt-4 = val-4 | dhcp-4-opt-5 = val-5 | dhcp-4-opt-7 = val-7 | dhcp-4-opt-8 = val-8 | dhcp-4-opt-9 = val-9
@@ -29680,7 +29764,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e6
 
 GENERAL:wlan1:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/4:::virtual:::21\:E9\:64\:81\:8C\:A8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::wlan1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 AP[1]: :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infra:1:54 Mbit/s:48:**  :WPA1 WPA2
 IP4::192.168.57.160:dst = 192.168.36.106/21, nh = 192.168.199.128, mt = 979274165 | dst = 192.168.238.130/19, nh = 0.0.0.0 | dst = 192.168.224.39/32, nh = 192.168.148.69:192.168.61.83:sear4.foo4.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo1.bar | sear4.fo.o.bar | sear4.foo3.bar:
@@ -29691,7 +29775,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1
 
 GENERAL:wlan1:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/5:::virtual:::71\:52\:AD\:63\:5C\:7C:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::wlan1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 IP4:192.168.97.124/29 | 192.168.76.154/18::dst = 192.168.33.233/22, nh = 192.168.222.210, mt = 2810496551:192.168.107.109:sear4.fo.o.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo3.bar | sear4.foo4.bar:192.168.60.60 | 192.168.63.92
 DHCP4:dhcp-4-opt-0 = val-0 | dhcp-4-opt-5 = val-5
@@ -29700,16 +29784,16 @@ DHCP6:dhcp-6-opt-2 = val-2 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-7 = val-7 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 6839
+size: 6854
 location: src/tests/client/test-client.py:test_004()/540
 cmd: $NMCLI --mode tabular --terse -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6671 bytes
+stdout: 6686 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 AP[1]: :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
 AP[2]: :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infrastruktura:1:54 Mb/s:81:****:WPA1
@@ -29722,7 +29806,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1
 
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::AB\:B7\:BF\:E2\:48\:E8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.49.34/22 | 192.168.135.86/19:::192.168.45.230 | 192.168.180.201 | 192.168.253.2:sear4.foo2.bar | sear4.foo1.bar:192.168.163.23 | 192.168.151.246
 DHCP4:dhcp-4-opt-8 = val-8 | dhcp-4-opt-9 = val-9
@@ -29732,7 +29816,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e6
 
 GENERAL:eth1:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/2:::virtual:::E7\:78\:B1\:93\:2B\:22:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth1::eth1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.127.210/25:192.168.88.4:dst = 192.168.222.35/19, nh = 192.168.170.142, mt = 3609264321 | dst = 192.168.135.81/32, nh = 192.168.32.11, mt = 1316413247 | dst = 192.168.24.65/26, nh = 192.168.23.163, mt = 3855574583:192.168.16.144 | 192.168.79.53 | 192.168.237.155:sear4.foo4.bar | sear4.foo3.bar | sear4.foo1.bar:192.168.211.91 | 192.168.58.182 | 192.168.114.97
 DHCP4:dhcp-4-opt-0 = val-0 | dhcp-4-opt-1 = val-1 | dhcp-4-opt-2 = val-2 | dhcp-4-opt-3 = val-3 | dhcp-4-opt-4 = val-4 | dhcp-4-opt-5 = val-5 | dhcp-4-opt-7 = val-7 | dhcp-4-opt-8 = val-8 | dhcp-4-opt-9 = val-9
@@ -29742,7 +29826,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e6
 
 GENERAL:wlan1:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/4:::virtual:::21\:E9\:64\:81\:8C\:A8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::wlan1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 AP[1]: :94\:2B\:E8\:F6\:D2\:86:wlan1-ap-4:Infrastruktura:1:54 Mb/s:48:**  :WPA1 WPA2
 IP4::192.168.57.160:dst = 192.168.36.106/21, nh = 192.168.199.128, mt = 979274165 | dst = 192.168.238.130/19, nh = 0.0.0.0 | dst = 192.168.224.39/32, nh = 192.168.148.69:192.168.61.83:sear4.foo4.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo1.bar | sear4.fo.o.bar | sear4.foo3.bar:
@@ -29753,7 +29837,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1
 
 GENERAL:wlan1:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/5:::virtual:::71\:52\:AD\:63\:5C\:7C:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::wlan1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 IP4:192.168.97.124/29 | 192.168.76.154/18::dst = 192.168.33.233/22, nh = 192.168.222.210, mt = 2810496551:192.168.107.109:sear4.fo.o.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo3.bar | sear4.foo4.bar:192.168.60.60 | 192.168.63.92
 DHCP4:dhcp-4-opt-0 = val-0 | dhcp-4-opt-5 = val-5
@@ -29798,16 +29882,16 @@ IP4:192.168.228.18/32 | 192.168.209.179/25:192.168.41.120:::sear4.foo2.bar | sea
 IP6:::dst = 2001\:a\:\:dd5b\:aa7b\:b4a2\:e42/102, nh = \:\:, mt = 2504159086::sear6.foo2.bar | sear6.foo1.bar | sear6.fo.x.y | sear6.fo.o.bar | sear6.foo3.bar | sear6.foo4.bar
 
 <<<
-size: 1502
+size: 1505
 location: src/tests/client/test-client.py:test_004()/543
 cmd: $NMCLI --mode tabular --terse -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 1338 bytes
+stdout: 1341 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 AP[1]: :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2
 AP[2]: :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infra:1:54 Mbit/s:81:****:WPA1
@@ -29819,16 +29903,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1539
+size: 1542
 location: src/tests/client/test-client.py:test_004()/544
 cmd: $NMCLI --mode tabular --terse -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1365 bytes
+stdout: 1368 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 AP[1]: :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
 AP[2]: :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infrastruktura:1:54 Mb/s:81:****:WPA1
@@ -30078,16 +30162,16 @@ AP[1]:wlan0-ap-2:776C616E302D61702D32:C0\:E2\:BE\:E8\:EF\:B6:Infrastruktura:1:24
 
 
 <<<
-size: 1505
+size: 1508
 location: src/tests/client/test-client.py:test_004()/563
 cmd: $NMCLI --mode tabular --terse -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 1338 bytes
+stdout: 1341 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 AP[1]: :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infra:1:54 Mbit/s:92:****:WPA1 WPA2
 AP[2]: :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infra:1:54 Mbit/s:81:****:WPA1
@@ -30099,16 +30183,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1542
+size: 1545
 location: src/tests/client/test-client.py:test_004()/564
 cmd: $NMCLI --mode tabular --terse -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1365 bytes
+stdout: 1368 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 AP[1]: :C0\:E2\:BE\:E8\:EF\:B6:wlan0-ap-2:Infrastruktura:1:54 Mb/s:92:****:WPA1 WPA2
 AP[2]: :61\:95\:77\:AC\:1E\:4C:wlan0-ap-1:Infrastruktura:1:54 Mb/s:81:****:WPA1
@@ -30576,16 +30660,16 @@ IP4:192.168.97.124/29 | 192.168.76.154/18::dst = 192.168.33.233/22, nh = 192.168
 IP6:2001\:a\:\:88ca\:3654\:96b\:ab44/89::dst = 2001\:a\:\:cc8b\:7c09\:4673\:bbb0/85, nh = \:\:, mt = 2821465568 | dst = 2001\:a\:\:a976\:2488\:f49f\:b48/106, nh = 2001\:a\:\:62ae\:c734\:fc7b\:e931, mt = 2248613879 | dst = 2001\:a\:\:afb7\:4449\:3787\:8bb4/123, nh = \:\::2001\:a\:\:2934\:bd66\:550d\:ec19:sear6.fo.x.y
 
 <<<
-size: 7165
+size: 7180
 location: src/tests/client/test-client.py:test_004()/589
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show
 lang: C
 returncode: 0
-stdout: 6995 bytes
+stdout: 7010 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 [32mAP[1][0m:[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
 [32mAP[2][0m:[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
@@ -30598,7 +30682,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1
 
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::AB\:B7\:BF\:E2\:48\:E8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.49.34/22 | 192.168.135.86/19:::192.168.45.230 | 192.168.180.201 | 192.168.253.2:sear4.foo2.bar | sear4.foo1.bar:192.168.163.23 | 192.168.151.246
 DHCP4:dhcp-4-opt-8 = val-8 | dhcp-4-opt-9 = val-9
@@ -30608,7 +30692,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e6
 
 GENERAL:eth1:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/2:::virtual:::E7\:78\:B1\:93\:2B\:22:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth1::eth1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.127.210/25:192.168.88.4:dst = 192.168.222.35/19, nh = 192.168.170.142, mt = 3609264321 | dst = 192.168.135.81/32, nh = 192.168.32.11, mt = 1316413247 | dst = 192.168.24.65/26, nh = 192.168.23.163, mt = 3855574583:192.168.16.144 | 192.168.79.53 | 192.168.237.155:sear4.foo4.bar | sear4.foo3.bar | sear4.foo1.bar:192.168.211.91 | 192.168.58.182 | 192.168.114.97
 DHCP4:dhcp-4-opt-0 = val-0 | dhcp-4-opt-1 = val-1 | dhcp-4-opt-2 = val-2 | dhcp-4-opt-3 = val-3 | dhcp-4-opt-4 = val-4 | dhcp-4-opt-5 = val-5 | dhcp-4-opt-7 = val-7 | dhcp-4-opt-8 = val-8 | dhcp-4-opt-9 = val-9
@@ -30618,7 +30702,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e6
 
 GENERAL:wlan1:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/4:::virtual:::21\:E9\:64\:81\:8C\:A8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::wlan1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 [35mAP[1][0m:[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfra[0m:[35m1[0m:[35m54 Mbit/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m
 IP4::192.168.57.160:dst = 192.168.36.106/21, nh = 192.168.199.128, mt = 979274165 | dst = 192.168.238.130/19, nh = 0.0.0.0 | dst = 192.168.224.39/32, nh = 192.168.148.69:192.168.61.83:sear4.foo4.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo1.bar | sear4.fo.o.bar | sear4.foo3.bar:
@@ -30629,7 +30713,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1
 
 GENERAL:wlan1:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/5:::virtual:::71\:52\:AD\:63\:5C\:7C:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::wlan1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 IP4:192.168.97.124/29 | 192.168.76.154/18::dst = 192.168.33.233/22, nh = 192.168.222.210, mt = 2810496551:192.168.107.109:sear4.fo.o.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo3.bar | sear4.foo4.bar:192.168.60.60 | 192.168.63.92
 DHCP4:dhcp-4-opt-0 = val-0 | dhcp-4-opt-5 = val-5
@@ -30638,16 +30722,16 @@ DHCP6:dhcp-6-opt-2 = val-2 | dhcp-6-opt-6 = val-6 | dhcp-6-opt-7 = val-7 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 7211
+size: 7226
 location: src/tests/client/test-client.py:test_004()/590
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7031 bytes
+stdout: 7046 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 [32mAP[1][0m:[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
 [32mAP[2][0m:[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
@@ -30660,7 +30744,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1
 
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::AB\:B7\:BF\:E2\:48\:E8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.49.34/22 | 192.168.135.86/19:::192.168.45.230 | 192.168.180.201 | 192.168.253.2:sear4.foo2.bar | sear4.foo1.bar:192.168.163.23 | 192.168.151.246
 DHCP4:dhcp-4-opt-8 = val-8 | dhcp-4-opt-9 = val-9
@@ -30670,7 +30754,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e6
 
 GENERAL:eth1:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/2:::virtual:::E7\:78\:B1\:93\:2B\:22:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth1::eth1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.127.210/25:192.168.88.4:dst = 192.168.222.35/19, nh = 192.168.170.142, mt = 3609264321 | dst = 192.168.135.81/32, nh = 192.168.32.11, mt = 1316413247 | dst = 192.168.24.65/26, nh = 192.168.23.163, mt = 3855574583:192.168.16.144 | 192.168.79.53 | 192.168.237.155:sear4.foo4.bar | sear4.foo3.bar | sear4.foo1.bar:192.168.211.91 | 192.168.58.182 | 192.168.114.97
 DHCP4:dhcp-4-opt-0 = val-0 | dhcp-4-opt-1 = val-1 | dhcp-4-opt-2 = val-2 | dhcp-4-opt-3 = val-3 | dhcp-4-opt-4 = val-4 | dhcp-4-opt-5 = val-5 | dhcp-4-opt-7 = val-7 | dhcp-4-opt-8 = val-8 | dhcp-4-opt-9 = val-9
@@ -30680,7 +30764,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1}:5fcfd6d7-1e6
 
 GENERAL:wlan1:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/4:::virtual:::21\:E9\:64\:81\:8C\:A8:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::wlan1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 [35mAP[1][0m:[35m [0m:[35m94\:2B\:E8\:F6\:D2\:86[0m:[35mwlan1-ap-4[0m:[35mInfrastruktura[0m:[35m1[0m:[35m54 Mb/s[0m:[35m48[0m:[35m**  [0m:[35mWPA1 WPA2[0m
 IP4::192.168.57.160:dst = 192.168.36.106/21, nh = 192.168.199.128, mt = 979274165 | dst = 192.168.238.130/19, nh = 0.0.0.0 | dst = 192.168.224.39/32, nh = 192.168.148.69:192.168.61.83:sear4.foo4.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo1.bar | sear4.fo.o.bar | sear4.foo3.bar:
@@ -30691,7 +30775,7 @@ CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1
 
 GENERAL:wlan1:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/5:::virtual:::71\:52\:AD\:63\:5C\:7C:0:20 (unavailable):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan1::wlan1:no:yes:yes:no:no:::::unknown
 CAPABILITIES:no:unknown:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 IP4:192.168.97.124/29 | 192.168.76.154/18::dst = 192.168.33.233/22, nh = 192.168.222.210, mt = 2810496551:192.168.107.109:sear4.fo.o.bar | sear4.fo.x.y | sear4.foo2.bar | sear4.foo3.bar | sear4.foo4.bar:192.168.60.60 | 192.168.63.92
 DHCP4:dhcp-4-opt-0 = val-0 | dhcp-4-opt-5 = val-5
@@ -30736,16 +30820,16 @@ IP4:192.168.228.18/32 | 192.168.209.179/25:192.168.41.120:::sear4.foo2.bar | sea
 IP6:::dst = 2001\:a\:\:dd5b\:aa7b\:b4a2\:e42/102, nh = \:\:, mt = 2504159086::sear6.foo2.bar | sear6.foo1.bar | sear6.fo.x.y | sear6.fo.o.bar | sear6.foo3.bar | sear6.foo4.bar
 
 <<<
-size: 1784
+size: 1787
 location: src/tests/client/test-client.py:test_004()/593
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 1608 bytes
+stdout: 1611 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 [32mAP[1][0m:[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
 [32mAP[2][0m:[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
@@ -30757,16 +30841,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1821
+size: 1824
 location: src/tests/client/test-client.py:test_004()/594
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1635 bytes
+stdout: 1638 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 [32mAP[1][0m:[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
 [32mAP[2][0m:[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
@@ -31016,16 +31100,16 @@ stdout: 422 bytes
 
 
 <<<
-size: 1787
+size: 1790
 location: src/tests/client/test-client.py:test_004()/613
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 1608 bytes
+stdout: 1611 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 [32mAP[1][0m:[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
 [32mAP[2][0m:[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfra[0m:[32m1[0m:[32m54 Mbit/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
@@ -31037,16 +31121,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-2 = val-2 | dhcp-6-opt-3 = val-3 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{2}:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 1824
+size: 1827
 location: src/tests/client/test-client.py:test_004()/614
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1635 bytes
+stdout: 1638 bytes
 >>>
 GENERAL:wlan0:wifi:NMDeviceWifi:/org/freedesktop/NetworkManager/Devices/3:::virtual:::13\:E0\:74\:85\:7C\:D9:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/wlan0::wlan0:no:yes:yes:no:no::con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:/org/freedesktop/NetworkManager/ActiveConnection/2:unknown
 CAPABILITIES:no:21 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIFI-PROPERTIES:yes:yes:yes:yes:yes:yes:yes:unknown:unknown:no:no
 [32mAP[1][0m:[32m [0m:[32mC0\:E2\:BE\:E8\:EF\:B6[0m:[32mwlan0-ap-2[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m92[0m:[32m****[0m:[32mWPA1 WPA2[0m
 [32mAP[2][0m:[32m [0m:[32m61\:95\:77\:AC\:1E\:4C[0m:[32mwlan0-ap-1[0m:[32mInfrastruktura[0m:[32m1[0m:[32m54 Mb/s[0m:[32m81[0m:[32m****[0m:[32mWPA1[0m
@@ -32380,12 +32464,12 @@ IP6.DNS[1]:                             2001:a::2934:bd66:550d:ec19
 IP6.DOMAIN[1]:                          sear6.fo.x.y
 
 <<<
-size: 22456
+size: 22671
 location: src/tests/client/test-client.py:test_004()/639
 cmd: $NMCLI --mode multiline -f all dev show
 lang: C
 returncode: 0
-stdout: 22303 bytes
+stdout: 22518 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -32422,6 +32506,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -32524,6 +32609,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.49.34/22
 IP4.ADDRESS[2]:                         192.168.135.86/19
@@ -32592,6 +32678,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.127.210/25
 IP4.GATEWAY:                            192.168.88.4
@@ -32667,6 +32754,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -32763,6 +32851,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -32804,12 +32893,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 22619
+size: 22839
 location: src/tests/client/test-client.py:test_004()/640
 cmd: $NMCLI --mode multiline -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 22456 bytes
+stdout: 22676 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -32846,6 +32935,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -32948,6 +33038,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.49.34/22
 IP4.ADDRESS[2]:                         192.168.135.86/19
@@ -33016,6 +33107,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.127.210/25
 IP4.GATEWAY:                            192.168.88.4
@@ -33091,6 +33183,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -33187,6 +33280,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -33294,12 +33388,12 @@ IP6.DOMAIN[5]:                          sear6.foo3.bar
 IP6.DOMAIN[6]:                          sear6.foo4.bar
 
 <<<
-size: 5381
+size: 5424
 location: src/tests/client/test-client.py:test_004()/643
 cmd: $NMCLI --mode multiline -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 5223 bytes
+stdout: 5266 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -33336,6 +33430,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -33404,12 +33499,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5441
+size: 5485
 location: src/tests/client/test-client.py:test_004()/644
 cmd: $NMCLI --mode multiline -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5273 bytes
+stdout: 5317 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -33446,6 +33541,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -34320,12 +34416,12 @@ DBUS-PATH:                              /org/freedesktop/NetworkManager/AccessPo
 
 
 <<<
-size: 5384
+size: 5427
 location: src/tests/client/test-client.py:test_004()/663
 cmd: $NMCLI --mode multiline -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 5223 bytes
+stdout: 5266 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -34362,6 +34458,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -34430,12 +34527,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5444
+size: 5488
 location: src/tests/client/test-client.py:test_004()/664
 cmd: $NMCLI --mode multiline -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5273 bytes
+stdout: 5317 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -34472,6 +34569,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -36102,12 +36200,12 @@ IP6.DNS[1]:                             2001:a::2934:bd66:550d:ec19
 IP6.DOMAIN[1]:                          sear6.fo.x.y
 
 <<<
-size: 22792
+size: 23007
 location: src/tests/client/test-client.py:test_004()/689
 cmd: $NMCLI --mode multiline --color yes -f all dev show
 lang: C
 returncode: 0
-stdout: 22627 bytes
+stdout: 22842 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -36144,6 +36242,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -36246,6 +36345,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.49.34/22
 IP4.ADDRESS[2]:                         192.168.135.86/19
@@ -36314,6 +36414,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.127.210/25
 IP4.GATEWAY:                            192.168.88.4
@@ -36389,6 +36490,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -36485,6 +36587,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -36526,12 +36629,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 22955
+size: 23175
 location: src/tests/client/test-client.py:test_004()/690
 cmd: $NMCLI --mode multiline --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 22780 bytes
+stdout: 23000 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -36568,6 +36671,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -36670,6 +36774,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.49.34/22
 IP4.ADDRESS[2]:                         192.168.135.86/19
@@ -36738,6 +36843,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.127.210/25
 IP4.GATEWAY:                            192.168.88.4
@@ -36813,6 +36919,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -36909,6 +37016,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -37016,12 +37124,12 @@ IP6.DOMAIN[5]:                          sear6.foo3.bar
 IP6.DOMAIN[6]:                          sear6.foo4.bar
 
 <<<
-size: 5636
+size: 5679
 location: src/tests/client/test-client.py:test_004()/693
 cmd: $NMCLI --mode multiline --color yes -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 5466 bytes
+stdout: 5509 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -37058,6 +37166,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -37126,12 +37235,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5696
+size: 5740
 location: src/tests/client/test-client.py:test_004()/694
 cmd: $NMCLI --mode multiline --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5516 bytes
+stdout: 5560 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -37168,6 +37277,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -38042,12 +38152,12 @@ DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Acc
 
 
 <<<
-size: 5639
+size: 5682
 location: src/tests/client/test-client.py:test_004()/713
 cmd: $NMCLI --mode multiline --color yes -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 5466 bytes
+stdout: 5509 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -38084,6 +38194,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
 WIFI-PROPERTIES.WPA2:                   yes
@@ -38152,12 +38263,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS: /org/freedesktop/NetworkManager/Settings
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 5699
+size: 5743
 location: src/tests/client/test-client.py:test_004()/714
 cmd: $NMCLI --mode multiline --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5516 bytes
+stdout: 5560 bytes
 >>>
 GENERAL.DEVICE:                         wlan0
 GENERAL.TYPE:                           wifi
@@ -38194,6 +38305,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
 WIFI-PROPERTIES.WPA2:                   tak
@@ -40064,12 +40176,12 @@ IP6.DOMAIN[1]:                          sear6.fo.x.y
 -------------------------------------------------------------------------------
 
 <<<
-size: 27440
+size: 27655
 location: src/tests/client/test-client.py:test_004()/739
 cmd: $NMCLI --mode multiline --pretty -f all dev show
 lang: C
 returncode: 0
-stdout: 27278 bytes
+stdout: 27493 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -40111,6 +40223,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -40228,6 +40341,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -40308,6 +40422,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -40395,6 +40510,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -40504,6 +40620,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -40552,12 +40669,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 27636
+size: 27856
 location: src/tests/client/test-client.py:test_004()/740
 cmd: $NMCLI --mode multiline --pretty -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 27464 bytes
+stdout: 27684 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -40599,6 +40716,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -40716,6 +40834,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -40796,6 +40915,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -40883,6 +41003,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -40992,6 +41113,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -41130,12 +41252,12 @@ IP6.DOMAIN[6]:                          sear6.foo4.bar
 -------------------------------------------------------------------------------
 
 <<<
-size: 6561
+size: 6604
 location: src/tests/client/test-client.py:test_004()/743
 cmd: $NMCLI --mode multiline --pretty -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 6394 bytes
+stdout: 6437 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -41177,6 +41299,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -41255,12 +41378,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 6628
+size: 6672
 location: src/tests/client/test-client.py:test_004()/744
 cmd: $NMCLI --mode multiline --pretty -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6451 bytes
+stdout: 6495 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -41302,6 +41425,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -42328,12 +42452,12 @@ DBUS-PATH:                              /org/freedesktop/NetworkManager/AccessPo
 
 
 <<<
-size: 6564
+size: 6607
 location: src/tests/client/test-client.py:test_004()/763
 cmd: $NMCLI --mode multiline --pretty -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 6394 bytes
+stdout: 6437 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -42375,6 +42499,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -42453,12 +42578,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 6631
+size: 6675
 location: src/tests/client/test-client.py:test_004()/764
 cmd: $NMCLI --mode multiline --pretty -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6451 bytes
+stdout: 6495 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -42500,6 +42625,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -44488,12 +44614,12 @@ IP6.DOMAIN[1]:                          sear6.fo.x.y
 -------------------------------------------------------------------------------
 
 <<<
-size: 27776
+size: 27991
 location: src/tests/client/test-client.py:test_004()/789
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show
 lang: C
 returncode: 0
-stdout: 27602 bytes
+stdout: 27817 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -44535,6 +44661,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -44652,6 +44779,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -44732,6 +44860,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -44819,6 +44948,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -44928,6 +45058,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -44976,12 +45107,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 27972
+size: 28192
 location: src/tests/client/test-client.py:test_004()/790
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 27788 bytes
+stdout: 28008 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -45023,6 +45154,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -45140,6 +45272,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -45220,6 +45353,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -45307,6 +45441,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -45416,6 +45551,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -45554,12 +45690,12 @@ IP6.DOMAIN[6]:                          sear6.foo4.bar
 -------------------------------------------------------------------------------
 
 <<<
-size: 6816
+size: 6859
 location: src/tests/client/test-client.py:test_004()/793
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 6637 bytes
+stdout: 6680 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -45601,6 +45737,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -45679,12 +45816,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 6883
+size: 6927
 location: src/tests/client/test-client.py:test_004()/794
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6694 bytes
+stdout: 6738 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -45726,6 +45863,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -46752,12 +46890,12 @@ DBUS-PATH:                              [32m/org/freedesktop/NetworkManager/Acc
 
 
 <<<
-size: 6819
+size: 6862
 location: src/tests/client/test-client.py:test_004()/813
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 6637 bytes
+stdout: 6680 bytes
 >>>
 ===============================================================================
                             Device details (wlan0)
@@ -46799,6 +46937,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    yes
 WIFI-PROPERTIES.WPA:                    yes
@@ -46877,12 +47016,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[1]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 -------------------------------------------------------------------------------
 
 <<<
-size: 6886
+size: 6930
 location: src/tests/client/test-client.py:test_004()/814
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6694 bytes
+stdout: 6738 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (wlan0)
@@ -46924,6 +47063,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIFI-PROPERTIES.WEP:                    tak
 WIFI-PROPERTIES.WPA:                    tak
@@ -48672,12 +48812,12 @@ IP6.DNS[1]:2001:a::2934:bd66:550d:ec19
 IP6.DOMAIN[1]:sear6.fo.x.y
 
 <<<
-size: 13003
+size: 13138
 location: src/tests/client/test-client.py:test_004()/839
 cmd: $NMCLI --mode multiline --terse -f all dev show
 lang: C
 returncode: 0
-stdout: 12842 bytes
+stdout: 12977 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -48714,6 +48854,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -48816,6 +48957,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.49.34/22
 IP4.ADDRESS[2]:192.168.135.86/19
@@ -48884,6 +49026,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.127.210/25
 IP4.GATEWAY:192.168.88.4
@@ -48959,6 +49102,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -49055,6 +49199,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -49096,12 +49241,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 13049
+size: 13184
 location: src/tests/client/test-client.py:test_004()/840
 cmd: $NMCLI --mode multiline --terse -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 12878 bytes
+stdout: 13013 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -49138,6 +49283,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -49240,6 +49386,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.49.34/22
 IP4.ADDRESS[2]:192.168.135.86/19
@@ -49308,6 +49455,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.127.210/25
 IP4.GATEWAY:192.168.88.4
@@ -49383,6 +49531,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -49479,6 +49628,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -49586,12 +49736,12 @@ IP6.DOMAIN[5]:sear6.foo3.bar
 IP6.DOMAIN[6]:sear6.foo4.bar
 
 <<<
-size: 3007
+size: 3034
 location: src/tests/client/test-client.py:test_004()/843
 cmd: $NMCLI --mode multiline --terse -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 2841 bytes
+stdout: 2868 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -49628,6 +49778,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -49696,12 +49847,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3044
+size: 3071
 location: src/tests/client/test-client.py:test_004()/844
 cmd: $NMCLI --mode multiline --terse -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2868 bytes
+stdout: 2895 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -49738,6 +49889,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -50612,12 +50764,12 @@ DBUS-PATH:/org/freedesktop/NetworkManager/AccessPoint/2
 
 
 <<<
-size: 3010
+size: 3037
 location: src/tests/client/test-client.py:test_004()/863
 cmd: $NMCLI --mode multiline --terse -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 2841 bytes
+stdout: 2868 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -50654,6 +50806,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -50722,12 +50875,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3047
+size: 3074
 location: src/tests/client/test-client.py:test_004()/864
 cmd: $NMCLI --mode multiline --terse -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2868 bytes
+stdout: 2895 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -50764,6 +50917,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -52394,12 +52548,12 @@ IP6.DNS[1]:2001:a::2934:bd66:550d:ec19
 IP6.DOMAIN[1]:sear6.fo.x.y
 
 <<<
-size: 13339
+size: 13474
 location: src/tests/client/test-client.py:test_004()/889
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show
 lang: C
 returncode: 0
-stdout: 13166 bytes
+stdout: 13301 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -52436,6 +52590,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -52538,6 +52693,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.49.34/22
 IP4.ADDRESS[2]:192.168.135.86/19
@@ -52606,6 +52762,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.127.210/25
 IP4.GATEWAY:192.168.88.4
@@ -52681,6 +52838,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -52777,6 +52935,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -52818,12 +52977,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 13385
+size: 13520
 location: src/tests/client/test-client.py:test_004()/890
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 13202 bytes
+stdout: 13337 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -52860,6 +53019,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -52962,6 +53122,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.49.34/22
 IP4.ADDRESS[2]:192.168.135.86/19
@@ -53030,6 +53191,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.127.210/25
 IP4.GATEWAY:192.168.88.4
@@ -53105,6 +53267,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -53201,6 +53364,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -53308,12 +53472,12 @@ IP6.DOMAIN[5]:sear6.foo3.bar
 IP6.DOMAIN[6]:sear6.foo4.bar
 
 <<<
-size: 3262
+size: 3289
 location: src/tests/client/test-client.py:test_004()/893
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show wlan0
 lang: C
 returncode: 0
-stdout: 3084 bytes
+stdout: 3111 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -53350,6 +53514,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -53418,12 +53583,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3299
+size: 3326
 location: src/tests/client/test-client.py:test_004()/894
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3111 bytes
+stdout: 3138 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -53460,6 +53625,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -54334,12 +54500,12 @@ DBUS-PATH:[32m/org/freedesktop/NetworkManager/AccessPoint/2[0m
 
 
 <<<
-size: 3265
+size: 3292
 location: src/tests/client/test-client.py:test_004()/913
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL device show wlan0
 lang: C
 returncode: 0
-stdout: 3084 bytes
+stdout: 3111 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -54376,6 +54542,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes
@@ -54444,12 +54611,12 @@ CONNECTIONS.AVAILABLE-CONNECTION-PATHS:/org/freedesktop/NetworkManager/Settings/
 CONNECTIONS.AVAILABLE-CONNECTIONS[1]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1
 
 <<<
-size: 3302
+size: 3329
 location: src/tests/client/test-client.py:test_004()/914
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL device show wlan0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3111 bytes
+stdout: 3138 bytes
 >>>
 GENERAL.DEVICE:wlan0
 GENERAL.TYPE:wifi
@@ -54486,6 +54653,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIFI-PROPERTIES.WEP:yes
 WIFI-PROPERTIES.WPA:yes
 WIFI-PROPERTIES.WPA2:yes

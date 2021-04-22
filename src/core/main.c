@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <linux/if.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/resource.h>
@@ -508,7 +509,7 @@ main(int argc, char *argv[])
      * physical interfaces.
      */
     nm_log_dbg(LOGD_CORE, "setting up local loopback");
-    nm_platform_link_set_up(NM_PLATFORM_GET, 1, NULL);
+    nm_platform_link_change_flags(NM_PLATFORM_GET, 1, IFF_UP, TRUE);
 
     success = TRUE;
 

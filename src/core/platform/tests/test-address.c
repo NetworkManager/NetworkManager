@@ -235,7 +235,7 @@ test_ip4_address_general_2(void)
     /* Looks like addresses are not announced by kernel when the interface
      * is down. Link-local IPv6 address is automatically added.
      */
-    g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, DEVICE_IFINDEX, NULL));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, DEVICE_IFINDEX, IFF_UP, TRUE) >= 0);
 
     /* Add/delete notification */
     nmtstp_ip4_address_add(NULL, EX, ifindex, addr, IP4_PLEN, addr, lifetime, preferred, 0, NULL);
@@ -325,7 +325,7 @@ test_ip4_address_peer(void)
 
     g_assert(addr != addr_peer);
 
-    g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, ifindex, NULL));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, TRUE) >= 0);
     accept_signals(address_removed, 0, G_MAXINT);
     accept_signals(address_added, 0, G_MAXINT);
 
@@ -397,7 +397,7 @@ test_ip4_address_peer_zero(void)
     peers[1] = addr_peer;
     peers[2] = 0;
 
-    g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, ifindex, NULL));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, TRUE) >= 0);
 
     nmtst_rand_perm(NULL, r_peers, peers, sizeof(peers[0]), G_N_ELEMENTS(peers));
     for (i = 0; i < G_N_ELEMENTS(peers); i++) {

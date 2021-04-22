@@ -1873,76 +1873,28 @@ nm_platform_link_set_bridge_vlans(NMPlatform *                       self,
 }
 
 /**
- * nm_platform_link_set_up:
+ * nm_platform_link_change_flags_full:
  * @self: platform instance
- * @ifindex: Interface index
- * @out_no_firmware: (allow-none): if the failure reason is due to missing firmware.
+ * @ifindex: interface index
+ * @flags_mask: flag mask to be set
+ * @flags_set: flag to be set on the flag mask
  *
- * Bring the interface up.
+ * Change the interface flag mask to the value specified.
+ *
+ * Returns: nm-errno code.
+ *
  */
-gboolean
-nm_platform_link_set_up(NMPlatform *self, int ifindex, gboolean *out_no_firmware)
+int
+nm_platform_link_change_flags_full(NMPlatform *self,
+                                   int         ifindex,
+                                   unsigned    flags_mask,
+                                   unsigned    flags_set)
 {
     _CHECK_SELF(self, klass, FALSE);
 
-    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(ifindex > 0, -NME_BUG);
 
-    _LOG3D("link: setting up");
-    return klass->link_set_up(self, ifindex, out_no_firmware);
-}
-
-/**
- * nm_platform_link_set_down:
- * @self: platform instance
- * @ifindex: Interface index
- *
- * Take the interface down.
- */
-gboolean
-nm_platform_link_set_down(NMPlatform *self, int ifindex)
-{
-    _CHECK_SELF(self, klass, FALSE);
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-
-    _LOG3D("link: setting down");
-    return klass->link_set_down(self, ifindex);
-}
-
-/**
- * nm_platform_link_set_arp:
- * @self: platform instance
- * @ifindex: Interface index
- *
- * Enable ARP on the interface.
- */
-gboolean
-nm_platform_link_set_arp(NMPlatform *self, int ifindex)
-{
-    _CHECK_SELF(self, klass, FALSE);
-
-    g_return_val_if_fail(ifindex >= 0, FALSE);
-
-    _LOG3D("link: setting arp");
-    return klass->link_set_arp(self, ifindex);
-}
-
-/**
- * nm_platform_link_set_noarp:
- * @self: platform instance
- * @ifindex: Interface index
- *
- * Disable ARP on the interface.
- */
-gboolean
-nm_platform_link_set_noarp(NMPlatform *self, int ifindex)
-{
-    _CHECK_SELF(self, klass, FALSE);
-
-    g_return_val_if_fail(ifindex >= 0, FALSE);
-
-    _LOG3D("link: setting noarp");
-    return klass->link_set_noarp(self, ifindex);
+    return klass->link_change_flags(self, ifindex, flags_mask, flags_set);
 }
 
 /**

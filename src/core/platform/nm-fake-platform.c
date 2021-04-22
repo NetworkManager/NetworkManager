@@ -503,6 +503,21 @@ link_set_flags(NMPlatform *platform, NMFakePlatformLink *device, guint n_ifi_fla
     link_set_obj(platform, device, obj_tmp);
 }
 
+static int
+link_change_flags(NMPlatform *platform, int ifindex, unsigned flags_mask, unsigned flags_set)
+{
+    NMFakePlatformLink *device = link_get(platform, ifindex);
+
+    if (!device)
+        return -ENOENT;
+
+    link_set_flags(platform,
+                   device,
+                   NM_FLAGS_ASSIGN_MASK(device->obj->link.n_ifi_flags, flags_mask, flags_set));
+
+    return 0;
+}
+
 static void
 link_changed(NMPlatform *        platform,
              NMFakePlatformLink *device,
@@ -538,65 +553,6 @@ link_changed(NMPlatform *        platform,
         master = link_get(platform, device->obj->link.master);
         link_set_obj(platform, master, NULL);
     }
-}
-
-static gboolean
-link_set_up(NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
-{
-    NMFakePlatformLink *device = link_get(platform, ifindex);
-
-    if (out_no_firmware)
-        *out_no_firmware = FALSE;
-
-    if (!device) {
-        _LOGE("failure changing link: netlink error (No such device)");
-        return FALSE;
-    }
-
-    link_set_flags(platform, device, NM_FLAGS_ASSIGN(device->obj->link.n_ifi_flags, IFF_UP, TRUE));
-    return TRUE;
-}
-
-static gboolean
-link_set_down(NMPlatform *platform, int ifindex)
-{
-    NMFakePlatformLink *device = link_get(platform, ifindex);
-
-    if (!device) {
-        _LOGE("failure changing link: netlink error (No such device)");
-        return FALSE;
-    }
-
-    link_set_flags(platform, device, NM_FLAGS_UNSET(device->obj->link.n_ifi_flags, IFF_UP));
-    return TRUE;
-}
-
-static gboolean
-link_set_arp(NMPlatform *platform, int ifindex)
-{
-    NMFakePlatformLink *device = link_get(platform, ifindex);
-
-    if (!device) {
-        _LOGE("failure changing link: netlink error (No such device)");
-        return FALSE;
-    }
-
-    link_set_flags(platform, device, NM_FLAGS_UNSET(device->obj->link.n_ifi_flags, IFF_NOARP));
-    return TRUE;
-}
-
-static gboolean
-link_set_noarp(NMPlatform *platform, int ifindex)
-{
-    NMFakePlatformLink *device = link_get(platform, ifindex);
-
-    if (!device) {
-        _LOGE("failure changing link: netlink error (No such device)");
-        return FALSE;
-    }
-
-    link_set_flags(platform, device, NM_FLAGS_SET(device->obj->link.n_ifi_flags, IFF_NOARP));
-    return TRUE;
 }
 
 static int
@@ -1354,13 +1310,10 @@ nm_fake_platform_class_init(NMFakePlatformClass *klass)
     platform_class->link_add    = link_add;
     platform_class->link_delete = link_delete;
 
-    platform_class->link_set_up    = link_set_up;
-    platform_class->link_set_down  = link_set_down;
-    platform_class->link_set_arp   = link_set_arp;
-    platform_class->link_set_noarp = link_set_noarp;
-
     platform_class->link_set_address = link_set_address;
     platform_class->link_set_mtu     = link_set_mtu;
+
+    platform_class->link_change_flags = link_change_flags;
 
     platform_class->link_get_driver_info = link_get_driver_info;
 

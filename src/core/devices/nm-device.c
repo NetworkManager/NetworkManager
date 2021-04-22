@@ -693,6 +693,8 @@ typedef struct _NMDevicePrivate {
     } stats;
 
     bool mtu_force_set_done : 1;
+
+    NMOptionBool promisc_reset;
 } NMDevicePrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDevice, nm_device, NM_TYPE_DBUS_OBJECT)
@@ -2978,10 +2980,10 @@ nm_device_take_over_link(NMDevice *self, int ifindex, char **old_name, GError **
 
         /* Rename the link to the device ifname */
         if (up)
-            nm_platform_link_set_down(platform, ifindex);
+            nm_platform_link_change_flags(platform, ifindex, IFF_UP, FALSE);
         success = nm_platform_link_set_name(platform, ifindex, nm_device_get_iface(self));
         if (up)
-            nm_platform_link_set_up(platform, ifindex, NULL);
+            nm_platform_link_change_flags(platform, ifindex, IFF_UP, TRUE);
 
         if (!success) {
             nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "failure renaming link %d", ifindex);
@@ -3109,7 +3111,7 @@ _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
             nm_platform_link_set_user_ipv6ll_enabled(platform, priv->ip_ifindex, TRUE);
 
         if (!nm_platform_link_is_up(platform, priv->ip_ifindex))
-            nm_platform_link_set_up(platform, priv->ip_ifindex, NULL);
+            nm_platform_link_change_flags(platform, priv->ip_ifindex, IFF_UP, TRUE);
     }
 
     /* We don't care about any saved values from the old iface */
@@ -5289,6 +5291,8 @@ device_update_interface_flags(NMDevice *self, const NMPlatformLink *plink)
         flags |= NM_DEVICE_INTERFACE_FLAG_UP;
     if (plink && NM_FLAGS_HAS(plink->n_ifi_flags, IFF_LOWER_UP))
         flags |= NM_DEVICE_INTERFACE_FLAG_LOWER_UP;
+    if (plink && NM_FLAGS_HAS(plink->n_ifi_flags, IFF_PROMISC))
+        flags |= NM_DEVICE_INTERFACE_FLAG_PROMISC;
 
     if (NM_FLAGS_ALL(priv->capabilities,
                      NM_DEVICE_CAP_CARRIER_DETECT | NM_DEVICE_CAP_NONSTANDARD_CARRIER)) {
@@ -5301,7 +5305,8 @@ device_update_interface_flags(NMDevice *self, const NMPlatformLink *plink)
 
     set_interface_flags_full(self,
                              NM_DEVICE_INTERFACE_FLAG_UP | NM_DEVICE_INTERFACE_FLAG_LOWER_UP
-                                 | NM_DEVICE_INTERFACE_FLAG_CARRIER,
+                                 | NM_DEVICE_INTERFACE_FLAG_CARRIER
+                                 | NM_DEVICE_INTERFACE_FLAG_PROMISC,
                              flags,
                              TRUE);
 }
@@ -8432,8 +8437,10 @@ activate_stage2_device_config(NMDevice *self)
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceClass *  klass;
     NMActStageReturn ret;
+    NMSettingWired * s_wired;
     gboolean         no_firmware = FALSE;
     CList *          iter;
+    NMTernary        accept_all_mac_addresses;
 
     nm_device_state_changed(self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
@@ -8489,6 +8496,25 @@ activate_stage2_device_config(NMDevice *self)
         else if (priv->act_request.obj && nm_device_sys_iface_state_is_external(self)
                  && slave_state <= NM_DEVICE_STATE_DISCONNECTED)
             nm_device_queue_recheck_assume(info->slave);
+    }
+
+    s_wired = nm_device_get_applied_setting(self, NM_TYPE_SETTING_WIRED);
+    accept_all_mac_addresses =
+        s_wired ? nm_setting_wired_get_accept_all_mac_addresses(s_wired) : NM_TERNARY_DEFAULT;
+    if (accept_all_mac_addresses != NM_TERNARY_DEFAULT) {
+        int ifi_flags;
+
+        ifi_flags = nm_platform_link_get_ifi_flags(nm_device_get_platform(self),
+                                                   nm_device_get_ip_ifindex(self),
+                                                   IFF_PROMISC);
+        if (ifi_flags >= 0 && ((!!ifi_flags) != (!!accept_all_mac_addresses))) {
+            nm_platform_link_change_flags(nm_device_get_platform(self),
+                                          nm_device_get_ip_ifindex(self),
+                                          IFF_PROMISC,
+                                          !!accept_all_mac_addresses);
+            if (priv->promisc_reset == NM_OPTION_BOOL_DEFAULT)
+                priv->promisc_reset = !accept_all_mac_addresses;
+        }
     }
 
     lldp_setup(self, NM_TERNARY_DEFAULT);
@@ -11830,7 +11856,7 @@ activate_stage5_ip_config_result_x(NMDevice *self, int addr_family)
 
     if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex)
         && !nm_device_sys_iface_state_is_external_or_assume(self)) {
-        nm_platform_link_set_up(nm_device_get_platform(self), ip_ifindex, NULL);
+        nm_platform_link_change_flags(nm_device_get_platform(self), ip_ifindex, IFF_UP, TRUE);
         if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex))
             _LOGW(LOGD_DEVICE,
                   "interface %s not up for IP configuration",
@@ -14046,6 +14072,7 @@ nm_device_bring_up(NMDevice *self, gboolean block, gboolean *no_firmware)
     gboolean             device_is_up = FALSE;
     NMDeviceCapabilities capabilities;
     int                  ifindex;
+    int                  r;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
@@ -14061,7 +14088,9 @@ nm_device_bring_up(NMDevice *self, gboolean block, gboolean *no_firmware)
     if (ifindex <= 0) {
         /* assume success. */
     } else {
-        if (!nm_platform_link_set_up(nm_device_get_platform(self), ifindex, no_firmware))
+        r = nm_platform_link_change_flags(nm_device_get_platform(self), ifindex, IFF_UP, TRUE);
+        NM_SET_OUT(no_firmware, (r == -NME_PL_NO_FIRMWARE));
+        if (r < 0)
             return FALSE;
     }
 
@@ -14148,7 +14177,7 @@ nm_device_take_down(NMDevice *self, gboolean block)
         return;
     }
 
-    if (!nm_platform_link_set_down(nm_device_get_platform(self), ifindex))
+    if (!nm_platform_link_change_flags(nm_device_get_platform(self), ifindex, IFF_UP, FALSE))
         return;
 
     device_is_up = nm_device_is_up(self);
@@ -16000,6 +16029,14 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
     }
 
     _ethtool_state_reset(self);
+
+    if (priv->promisc_reset != NM_OPTION_BOOL_DEFAULT && ifindex > 0) {
+        nm_platform_link_change_flags(nm_device_get_platform(self),
+                                      ifindex,
+                                      IFF_PROMISC,
+                                      !!priv->promisc_reset);
+        priv->promisc_reset = NM_OPTION_BOOL_DEFAULT;
+    }
 
     _cleanup_generic_post(self, cleanup_type);
 }
@@ -18206,6 +18243,8 @@ nm_device_init(NMDevice *self)
 
     priv->v4_commit_first_time = TRUE;
     priv->v6_commit_first_time = TRUE;
+
+    priv->promisc_reset = NM_OPTION_BOOL_DEFAULT;
 }
 
 static GObject *

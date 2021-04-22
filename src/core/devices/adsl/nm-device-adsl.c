@@ -265,7 +265,7 @@ pppoe_vcc_config(NMDeviceAdsl *self)
     _LOGD(LOGD_ADSL, "ATM setup successful");
 
     /* otherwise we're good for stage3 */
-    nm_platform_link_set_up(nm_device_get_platform(device), priv->nas_ifindex, NULL);
+    nm_platform_link_change_flags(nm_device_get_platform(device), priv->nas_ifindex, IFF_UP, TRUE);
 
     return TRUE;
 }

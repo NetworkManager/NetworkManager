@@ -494,12 +494,12 @@ UUID                                  NAME
 UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
 
 <<<
-size: 4311
+size: 4364
 location: src/tests/client/test-client.py:test_003()/25
 cmd: $NMCLI -f ALL con s ethernet
 lang: C
 returncode: 0
-stdout: 4171 bytes
+stdout: 4224 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -539,6 +539,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -595,12 +596,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4339
+size: 4392
 location: src/tests/client/test-client.py:test_003()/26
 cmd: $NMCLI -f ALL con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4189 bytes
+stdout: 4242 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -640,6 +641,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -716,12 +718,12 @@ stdout: 51 bytes
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 5013
+size: 5066
 location: src/tests/client/test-client.py:test_003()/29
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 4880 bytes
+stdout: 4933 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -761,6 +763,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -830,12 +833,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5045
+size: 5098
 location: src/tests/client/test-client.py:test_003()/30
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4902 bytes
+stdout: 4955 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -875,6 +878,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -994,12 +998,12 @@ stderr: 54 bytes
 Błąd: nieprawidłowy dodatkowy parametr „eth0”.
 
 <<<
-size: 3749
+size: 3792
 location: src/tests/client/test-client.py:test_003()/35
 cmd: $NMCLI -f ALL dev show eth0
 lang: C
 returncode: 0
-stdout: 3610 bytes
+stdout: 3653 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -1036,6 +1040,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -1065,12 +1070,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3786
+size: 3830
 location: src/tests/client/test-client.py:test_003()/36
 cmd: $NMCLI -f ALL dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3637 bytes
+stdout: 3681 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -1107,6 +1112,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -1136,12 +1142,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2393
+size: 2420
 location: src/tests/client/test-client.py:test_003()/37
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: C
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -1178,6 +1184,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -1207,12 +1214,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2403
+size: 2430
 location: src/tests/client/test-client.py:test_003()/38
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -1249,6 +1256,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -1418,12 +1426,12 @@ UUID                                  NAME
 UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
 
 <<<
-size: 4311
+size: 4364
 location: src/tests/client/test-client.py:test_003()/50
 cmd: $NMCLI -f ALL con s ethernet
 lang: C
 returncode: 0
-stdout: 4171 bytes
+stdout: 4224 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1463,6 +1471,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -1519,12 +1528,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4339
+size: 4392
 location: src/tests/client/test-client.py:test_003()/51
 cmd: $NMCLI -f ALL con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4189 bytes
+stdout: 4242 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1564,6 +1573,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -1644,12 +1654,12 @@ GENERAL.STATE:                          aktywowano
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 5723
+size: 5776
 location: src/tests/client/test-client.py:test_003()/54
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 5590 bytes
+stdout: 5643 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1689,6 +1699,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -1772,12 +1783,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5759
+size: 5812
 location: src/tests/client/test-client.py:test_003()/55
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5616 bytes
+stdout: 5669 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1817,6 +1828,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -1950,12 +1962,12 @@ stderr: 54 bytes
 Błąd: nieprawidłowy dodatkowy parametr „eth0”.
 
 <<<
-size: 3749
+size: 3792
 location: src/tests/client/test-client.py:test_003()/60
 cmd: $NMCLI -f ALL dev show eth0
 lang: C
 returncode: 0
-stdout: 3610 bytes
+stdout: 3653 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -1992,6 +2004,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -2021,12 +2034,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3786
+size: 3830
 location: src/tests/client/test-client.py:test_003()/61
 cmd: $NMCLI -f ALL dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3637 bytes
+stdout: 3681 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -2063,6 +2076,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -2092,12 +2106,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2393
+size: 2420
 location: src/tests/client/test-client.py:test_003()/62
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: C
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -2134,6 +2148,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -2163,12 +2178,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2403
+size: 2430
 location: src/tests/client/test-client.py:test_003()/63
 cmd: $NMCLI -f ALL -t dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -2205,6 +2220,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -2292,12 +2308,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 5726
+size: 5779
 location: src/tests/client/test-client.py:test_003()/68
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 5593 bytes
+stdout: 5646 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2337,6 +2353,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -2420,12 +2437,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5763
+size: 5816
 location: src/tests/client/test-client.py:test_003()/69
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5620 bytes
+stdout: 5673 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2465,6 +2482,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -2548,12 +2566,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5056
+size: 5109
 location: src/tests/client/test-client.py:test_003()/70
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4883 bytes
+stdout: 4936 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2593,6 +2611,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -2662,12 +2681,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5089
+size: 5142
 location: src/tests/client/test-client.py:test_003()/71
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4906 bytes
+stdout: 4959 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2707,6 +2726,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -2776,12 +2796,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3749
+size: 3792
 location: src/tests/client/test-client.py:test_003()/72
 cmd: $NMCLI -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3610 bytes
+stdout: 3653 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -2818,6 +2838,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -2847,12 +2868,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3786
+size: 3830
 location: src/tests/client/test-client.py:test_003()/73
 cmd: $NMCLI -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3637 bytes
+stdout: 3681 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -2889,6 +2910,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -2976,12 +2998,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 5738
+size: 5791
 location: src/tests/client/test-client.py:test_003()/78
 cmd: $NMCLI --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 5593 bytes
+stdout: 5646 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3021,6 +3043,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -3104,12 +3127,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5775
+size: 5828
 location: src/tests/client/test-client.py:test_003()/79
 cmd: $NMCLI --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5620 bytes
+stdout: 5673 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3149,6 +3172,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -3232,12 +3256,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5068
+size: 5121
 location: src/tests/client/test-client.py:test_003()/80
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4883 bytes
+stdout: 4936 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3277,6 +3301,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -3346,12 +3371,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5101
+size: 5154
 location: src/tests/client/test-client.py:test_003()/81
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4906 bytes
+stdout: 4959 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3391,6 +3416,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -3460,12 +3486,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3761
+size: 3804
 location: src/tests/client/test-client.py:test_003()/82
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3610 bytes
+stdout: 3653 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -3502,6 +3528,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -3531,12 +3558,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3798
+size: 3842
 location: src/tests/client/test-client.py:test_003()/83
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3637 bytes
+stdout: 3681 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -3573,6 +3600,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -3676,12 +3704,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6980
+size: 7033
 location: src/tests/client/test-client.py:test_003()/88
 cmd: $NMCLI --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 6838 bytes
+stdout: 6891 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -3725,6 +3753,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -3820,12 +3849,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7036
+size: 7089
 location: src/tests/client/test-client.py:test_003()/89
 cmd: $NMCLI --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6884 bytes
+stdout: 6937 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -3869,6 +3898,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -3964,12 +3994,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 5997
+size: 6050
 location: src/tests/client/test-client.py:test_003()/90
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5815 bytes
+stdout: 5868 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4013,6 +4043,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -4090,12 +4121,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6042
+size: 6095
 location: src/tests/client/test-client.py:test_003()/91
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5850 bytes
+stdout: 5903 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -4139,6 +4170,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -4216,12 +4248,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4689
+size: 4732
 location: src/tests/client/test-client.py:test_003()/92
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4541 bytes
+stdout: 4584 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -4263,6 +4295,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -4299,12 +4332,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4732
+size: 4776
 location: src/tests/client/test-client.py:test_003()/93
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4574 bytes
+stdout: 4618 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -4346,6 +4379,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -4456,12 +4490,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6992
+size: 7045
 location: src/tests/client/test-client.py:test_003()/98
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6838 bytes
+stdout: 6891 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4505,6 +4539,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -4600,12 +4635,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7048
+size: 7101
 location: src/tests/client/test-client.py:test_003()/99
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6884 bytes
+stdout: 6937 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -4649,6 +4684,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -4744,12 +4780,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6010
+size: 6063
 location: src/tests/client/test-client.py:test_003()/100
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5815 bytes
+stdout: 5868 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4793,6 +4829,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -4870,12 +4907,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6055
+size: 6108
 location: src/tests/client/test-client.py:test_003()/101
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5850 bytes
+stdout: 5903 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -4919,6 +4956,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -4996,12 +5034,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4702
+size: 4745
 location: src/tests/client/test-client.py:test_003()/102
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4541 bytes
+stdout: 4584 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -5043,6 +5081,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -5079,12 +5118,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4745
+size: 4789
 location: src/tests/client/test-client.py:test_003()/103
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4574 bytes
+stdout: 4618 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -5126,6 +5165,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -5216,12 +5256,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3073
+size: 3116
 location: src/tests/client/test-client.py:test_003()/108
 cmd: $NMCLI --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 2931 bytes
+stdout: 2974 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5261,6 +5301,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -5344,12 +5385,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3083
+size: 3126
 location: src/tests/client/test-client.py:test_003()/109
 cmd: $NMCLI --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2931 bytes
+stdout: 2974 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5389,6 +5430,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -5472,12 +5514,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2723
+size: 2766
 location: src/tests/client/test-client.py:test_003()/110
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2541 bytes
+stdout: 2584 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5517,6 +5559,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -5586,12 +5629,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2733
+size: 2776
 location: src/tests/client/test-client.py:test_003()/111
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2541 bytes
+stdout: 2584 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5631,6 +5674,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -5700,12 +5744,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2399
+size: 2426
 location: src/tests/client/test-client.py:test_003()/112
 cmd: $NMCLI --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -5742,6 +5786,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -5771,12 +5816,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2409
+size: 2436
 location: src/tests/client/test-client.py:test_003()/113
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -5813,6 +5858,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -5896,12 +5942,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3085
+size: 3128
 location: src/tests/client/test-client.py:test_003()/118
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 2931 bytes
+stdout: 2974 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -5941,6 +5987,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -6024,12 +6071,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3095
+size: 3138
 location: src/tests/client/test-client.py:test_003()/119
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2931 bytes
+stdout: 2974 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6069,6 +6116,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -6152,12 +6200,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2735
+size: 2778
 location: src/tests/client/test-client.py:test_003()/120
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2541 bytes
+stdout: 2584 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6197,6 +6245,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -6266,12 +6315,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2745
+size: 2788
 location: src/tests/client/test-client.py:test_003()/121
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2541 bytes
+stdout: 2584 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6311,6 +6360,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -6380,12 +6430,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2411
+size: 2438
 location: src/tests/client/test-client.py:test_003()/122
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -6422,6 +6472,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -6451,12 +6502,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2421
+size: 2448
 location: src/tests/client/test-client.py:test_003()/123
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -6493,6 +6544,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -6580,18 +6632,18 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 3841
+size: 3893
 location: src/tests/client/test-client.py:test_003()/128
 cmd: $NMCLI --mode tabular con s ethernet
 lang: C
 returncode: 0
-stdout: 3692 bytes
+stdout: 3744 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)  --                            --                  
@@ -6611,18 +6663,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 3875
+size: 3927
 location: src/tests/client/test-client.py:test_003()/129
 cmd: $NMCLI --mode tabular con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3716 bytes
+stdout: 3768 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)  --                            --                  
@@ -6642,18 +6694,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3379
+size: 3431
 location: src/tests/client/test-client.py:test_003()/130
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3190 bytes
+stdout: 3242 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)  --                            --                  
@@ -6669,18 +6721,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 3411
+size: 3463
 location: src/tests/client/test-client.py:test_003()/131
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3212 bytes
+stdout: 3264 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)  --                            --                  
@@ -6696,12 +6748,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3149
+size: 3167
 location: src/tests/client/test-client.py:test_003()/132
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2994 bytes
+stdout: 3012 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --    eth0      no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
@@ -6709,8 +6761,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  on       --               
@@ -6731,12 +6783,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 3179
+size: 3197
 location: src/tests/client/test-client.py:test_003()/133
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3014 bytes
+stdout: 3032 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --    eth0      nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
@@ -6744,8 +6796,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 WIRED-PROPERTIES  włączone  --               
@@ -6824,18 +6876,18 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 3853
+size: 3905
 location: src/tests/client/test-client.py:test_003()/138
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3692 bytes
+stdout: 3744 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)  --                            --                  
@@ -6855,18 +6907,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 3887
+size: 3939
 location: src/tests/client/test-client.py:test_003()/139
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3716 bytes
+stdout: 3768 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)  --                            --                  
@@ -6886,18 +6938,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3391
+size: 3443
 location: src/tests/client/test-client.py:test_003()/140
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3190 bytes
+stdout: 3242 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)  --                            --                  
@@ -6913,18 +6965,18 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 3423
+size: 3475
 location: src/tests/client/test-client.py:test_003()/141
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3212 bytes
+stdout: 3264 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         wait-device-timeout 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)  --                            --                  
@@ -6940,12 +6992,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3161
+size: 3179
 location: src/tests/client/test-client.py:test_003()/142
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2994 bytes
+stdout: 3012 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --    eth0      no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
@@ -6953,8 +7005,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  on       --               
@@ -6975,12 +7027,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 3191
+size: 3209
 location: src/tests/client/test-client.py:test_003()/143
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3014 bytes
+stdout: 3032 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --    eth0      nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
@@ -6988,8 +7040,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 WIRED-PROPERTIES  włączone  --               
@@ -7084,12 +7136,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6245
+size: 6323
 location: src/tests/client/test-client.py:test_003()/148
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 6087 bytes
+stdout: 6165 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -7098,9 +7150,9 @@ name        id        uuid                                  stable-id  type     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -7131,12 +7183,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6339
+size: 6417
 location: src/tests/client/test-client.py:test_003()/149
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6171 bytes
+stdout: 6249 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -7145,9 +7197,9 @@ name        id        uuid                                  stable-id  type     
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -7178,12 +7230,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 5321
+size: 5399
 location: src/tests/client/test-client.py:test_003()/150
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5123 bytes
+stdout: 5201 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -7192,9 +7244,9 @@ name        id        uuid                                  stable-id  type     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -7217,12 +7269,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 5393
+size: 5471
 location: src/tests/client/test-client.py:test_003()/151
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5185 bytes
+stdout: 5263 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -7231,9 +7283,9 @@ name        id        uuid                                  stable-id  type     
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -7256,12 +7308,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 4736
+size: 4763
 location: src/tests/client/test-client.py:test_003()/152
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4572 bytes
+stdout: 4599 bytes
 >>>
 =========================
   Device details (eth0)
@@ -7274,9 +7326,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -7303,12 +7355,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 4802
+size: 4829
 location: src/tests/client/test-client.py:test_003()/153
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4628 bytes
+stdout: 4655 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -7321,9 +7373,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 ----------------------------------------------
@@ -7424,12 +7476,12 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6257
+size: 6335
 location: src/tests/client/test-client.py:test_003()/158
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6087 bytes
+stdout: 6165 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -7438,9 +7490,9 @@ name        id        uuid                                  stable-id  type     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -7471,12 +7523,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6351
+size: 6429
 location: src/tests/client/test-client.py:test_003()/159
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6171 bytes
+stdout: 6249 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -7485,9 +7537,9 @@ name        id        uuid                                  stable-id  type     
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -7518,12 +7570,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 5333
+size: 5411
 location: src/tests/client/test-client.py:test_003()/160
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5123 bytes
+stdout: 5201 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -7532,9 +7584,9 @@ name        id        uuid                                  stable-id  type     
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu   s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -7557,12 +7609,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 5405
+size: 5483
 location: src/tests/client/test-client.py:test_003()/161
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5185 bytes
+stdout: 5263 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -7571,9 +7623,9 @@ name        id        uuid                                  stable-id  type     
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1                  
 
-name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password 
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                   
+name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-address  generate-mac-address-mask  mac-address-blacklist  mtu           s390-subchannels  s390-nettype  s390-options  wake-on-lan  wake-on-lan-password  accept-all-mac-addresses 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  dad-timeout   dhcp-vendor-class-identifier  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -7596,12 +7648,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 4748
+size: 4775
 location: src/tests/client/test-client.py:test_003()/162
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4572 bytes
+stdout: 4599 bytes
 >>>
 =========================
   Device details (eth0)
@@ -7614,9 +7666,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -7643,12 +7695,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet 
 
 <<<
-size: 4814
+size: 4841
 location: src/tests/client/test-client.py:test_003()/163
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4628 bytes
+stdout: 4655 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -7661,9 +7713,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 ----------------------------------------------
@@ -7744,15 +7796,15 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 856
+size: 859
 location: src/tests/client/test-client.py:test_003()/168
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 700 bytes
+stdout: 703 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
-802-3-ethernet::0::no:::::auto::::default:
+802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
@@ -7761,15 +7813,15 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 866
+size: 869
 location: src/tests/client/test-client.py:test_003()/169
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 700 bytes
+stdout: 703 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
-802-3-ethernet::0::no:::::auto::::default:
+802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
@@ -7778,46 +7830,46 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 704
+size: 707
 location: src/tests/client/test-client.py:test_003()/170
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 508 bytes
+stdout: 511 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
-802-3-ethernet::0::no:::::auto::::default:
+802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 714
+size: 717
 location: src/tests/client/test-client.py:test_003()/171
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 508 bytes
+stdout: 511 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
-802-3-ethernet::0::no:::::auto::::default:
+802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1446
+size: 1449
 location: src/tests/client/test-client.py:test_003()/172
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1283 bytes
+stdout: 1286 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -7826,16 +7878,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 1456
+size: 1459
 location: src/tests/client/test-client.py:test_003()/173
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1283 bytes
+stdout: 1286 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -7898,15 +7950,15 @@ UUID-con-gsm1-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 868
+size: 871
 location: src/tests/client/test-client.py:test_003()/178
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 700 bytes
+stdout: 703 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
-802-3-ethernet::0::no:::::auto::::default:
+802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
@@ -7915,15 +7967,15 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 878
+size: 881
 location: src/tests/client/test-client.py:test_003()/179
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 700 bytes
+stdout: 703 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
-802-3-ethernet::0::no:::::auto::::default:
+802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
@@ -7932,46 +7984,46 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 716
+size: 719
 location: src/tests/client/test-client.py:test_003()/180
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 508 bytes
+stdout: 511 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
-802-3-ethernet::0::no:::::auto::::default:
+802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 726
+size: 729
 location: src/tests/client/test-client.py:test_003()/181
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 508 bytes
+stdout: 511 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
-802-3-ethernet::0::no:::::auto::::default:
+802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1458
+size: 1461
 location: src/tests/client/test-client.py:test_003()/182
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1283 bytes
+stdout: 1286 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -7980,16 +8032,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 1468
+size: 1471
 location: src/tests/client/test-client.py:test_003()/183
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1283 bytes
+stdout: 1286 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -8200,12 +8252,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 5744
+size: 5797
 location: src/tests/client/test-client.py:test_003()/188
 cmd: $NMCLI --mode multiline con s ethernet
 lang: C
 returncode: 0
-stdout: 5593 bytes
+stdout: 5646 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8245,6 +8297,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -8328,12 +8381,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5781
+size: 5834
 location: src/tests/client/test-client.py:test_003()/189
 cmd: $NMCLI --mode multiline con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5620 bytes
+stdout: 5673 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8373,6 +8426,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -8456,12 +8510,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5074
+size: 5127
 location: src/tests/client/test-client.py:test_003()/190
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4883 bytes
+stdout: 4936 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8501,6 +8555,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -8570,12 +8625,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5107
+size: 5160
 location: src/tests/client/test-client.py:test_003()/191
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4906 bytes
+stdout: 4959 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -8615,6 +8670,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -8684,12 +8740,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3767
+size: 3810
 location: src/tests/client/test-client.py:test_003()/192
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3610 bytes
+stdout: 3653 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -8726,6 +8782,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -8755,12 +8812,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3804
+size: 3848
 location: src/tests/client/test-client.py:test_003()/193
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3637 bytes
+stdout: 3681 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -8797,6 +8854,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -9028,12 +9086,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 5756
+size: 5809
 location: src/tests/client/test-client.py:test_003()/198
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 5593 bytes
+stdout: 5646 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9073,6 +9131,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -9156,12 +9215,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5793
+size: 5846
 location: src/tests/client/test-client.py:test_003()/199
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5620 bytes
+stdout: 5673 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9201,6 +9260,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -9284,12 +9344,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5086
+size: 5139
 location: src/tests/client/test-client.py:test_003()/200
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 4883 bytes
+stdout: 4936 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9329,6 +9389,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -9398,12 +9459,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5119
+size: 5172
 location: src/tests/client/test-client.py:test_003()/201
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4906 bytes
+stdout: 4959 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9443,6 +9504,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -9512,12 +9574,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3779
+size: 3822
 location: src/tests/client/test-client.py:test_003()/202
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3610 bytes
+stdout: 3653 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -9554,6 +9616,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -9583,12 +9646,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 3816
+size: 3860
 location: src/tests/client/test-client.py:test_003()/203
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3637 bytes
+stdout: 3681 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -9625,6 +9688,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -9886,12 +9950,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 6998
+size: 7051
 location: src/tests/client/test-client.py:test_003()/208
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 6838 bytes
+stdout: 6891 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -9935,6 +9999,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -10030,12 +10095,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7054
+size: 7107
 location: src/tests/client/test-client.py:test_003()/209
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6884 bytes
+stdout: 6937 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -10079,6 +10144,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -10174,12 +10240,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6015
+size: 6068
 location: src/tests/client/test-client.py:test_003()/210
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5815 bytes
+stdout: 5868 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -10223,6 +10289,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -10300,12 +10367,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6060
+size: 6113
 location: src/tests/client/test-client.py:test_003()/211
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5850 bytes
+stdout: 5903 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -10349,6 +10416,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -10426,12 +10494,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4707
+size: 4750
 location: src/tests/client/test-client.py:test_003()/212
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4541 bytes
+stdout: 4584 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -10473,6 +10541,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -10509,12 +10578,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4750
+size: 4794
 location: src/tests/client/test-client.py:test_003()/213
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4574 bytes
+stdout: 4618 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -10556,6 +10625,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -10824,12 +10894,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 7010
+size: 7063
 location: src/tests/client/test-client.py:test_003()/218
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6838 bytes
+stdout: 6891 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -10873,6 +10943,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -10968,12 +11039,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7066
+size: 7119
 location: src/tests/client/test-client.py:test_003()/219
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6884 bytes
+stdout: 6937 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -11017,6 +11088,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -11112,12 +11184,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6027
+size: 6080
 location: src/tests/client/test-client.py:test_003()/220
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5815 bytes
+stdout: 5868 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -11161,6 +11233,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -11238,12 +11311,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6072
+size: 6125
 location: src/tests/client/test-client.py:test_003()/221
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5850 bytes
+stdout: 5903 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -11287,6 +11360,7 @@ connection.wait-device-timeout:         -1
 802-3-ethernet.s390-options:            --
 802-3-ethernet.wake-on-lan:             default
 802-3-ethernet.wake-on-lan-password:    --
+802-3-ethernet.accept-all-mac-addresses:-1 (default)
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -11364,12 +11438,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4719
+size: 4762
 location: src/tests/client/test-client.py:test_003()/222
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4541 bytes
+stdout: 4584 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -11411,6 +11485,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -11447,12 +11522,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   UUID-ethernet-REPLACED-REPLACED-REPL | e
 -------------------------------------------------------------------------------
 
 <<<
-size: 4762
+size: 4806
 location: src/tests/client/test-client.py:test_003()/223
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4574 bytes
+stdout: 4618 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -11494,6 +11569,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -11732,12 +11808,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3090
+size: 3133
 location: src/tests/client/test-client.py:test_003()/228
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 2931 bytes
+stdout: 2974 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -11777,6 +11853,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -11860,12 +11937,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3100
+size: 3143
 location: src/tests/client/test-client.py:test_003()/229
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2931 bytes
+stdout: 2974 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -11905,6 +11982,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -11988,12 +12066,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2740
+size: 2783
 location: src/tests/client/test-client.py:test_003()/230
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2541 bytes
+stdout: 2584 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -12033,6 +12111,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -12102,12 +12181,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2750
+size: 2793
 location: src/tests/client/test-client.py:test_003()/231
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2541 bytes
+stdout: 2584 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -12147,6 +12226,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -12216,12 +12296,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2416
+size: 2443
 location: src/tests/client/test-client.py:test_003()/232
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -12258,6 +12338,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -12287,12 +12368,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2426
+size: 2453
 location: src/tests/client/test-client.py:test_003()/233
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -12329,6 +12410,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -12560,12 +12642,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3102
+size: 3145
 location: src/tests/client/test-client.py:test_003()/238
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 2931 bytes
+stdout: 2974 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -12605,6 +12687,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -12688,12 +12771,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3112
+size: 3155
 location: src/tests/client/test-client.py:test_003()/239
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2931 bytes
+stdout: 2974 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -12733,6 +12816,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -12816,12 +12900,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2752
+size: 2795
 location: src/tests/client/test-client.py:test_003()/240
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2541 bytes
+stdout: 2584 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -12861,6 +12945,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -12930,12 +13015,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2762
+size: 2805
 location: src/tests/client/test-client.py:test_003()/241
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2541 bytes
+stdout: 2584 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -12975,6 +13060,7 @@ connection.wait-device-timeout:-1
 802-3-ethernet.s390-options:
 802-3-ethernet.wake-on-lan:default
 802-3-ethernet.wake-on-lan-password:
+802-3-ethernet.accept-all-mac-addresses:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -13044,12 +13130,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2428
+size: 2455
 location: src/tests/client/test-client.py:test_003()/242
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -13086,6 +13172,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -13115,12 +13202,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:UUID-ethernet-REPLACED-REPLACED-REPL | ethernet
 
 <<<
-size: 2438
+size: 2465
 location: src/tests/client/test-client.py:test_003()/243
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2251 bytes
+stdout: 2278 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -13157,6 +13244,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -13306,12 +13394,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3770
+size: 3813
 location: src/tests/client/test-client.py:test_003()/252
 cmd: $NMCLI -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3630 bytes
+stdout: 3673 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -13348,6 +13436,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -13377,12 +13466,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3809
+size: 3853
 location: src/tests/client/test-client.py:test_003()/253
 cmd: $NMCLI -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3659 bytes
+stdout: 3703 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -13419,6 +13508,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -13568,12 +13658,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3782
+size: 3825
 location: src/tests/client/test-client.py:test_003()/262
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3630 bytes
+stdout: 3673 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -13610,6 +13700,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -13639,12 +13730,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3821
+size: 3865
 location: src/tests/client/test-client.py:test_003()/263
 cmd: $NMCLI --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3659 bytes
+stdout: 3703 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -13681,6 +13772,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -13860,12 +13952,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4710
+size: 4753
 location: src/tests/client/test-client.py:test_003()/272
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4561 bytes
+stdout: 4604 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -13907,6 +13999,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -13943,12 +14036,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4755
+size: 4799
 location: src/tests/client/test-client.py:test_003()/273
 cmd: $NMCLI --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4596 bytes
+stdout: 4640 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -13990,6 +14083,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -14176,12 +14270,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4722
+size: 4765
 location: src/tests/client/test-client.py:test_003()/282
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4561 bytes
+stdout: 4604 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -14223,6 +14317,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -14259,12 +14354,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4767
+size: 4811
 location: src/tests/client/test-client.py:test_003()/283
 cmd: $NMCLI --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4596 bytes
+stdout: 4640 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -14306,6 +14401,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -14458,12 +14554,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2419
+size: 2446
 location: src/tests/client/test-client.py:test_003()/292
 cmd: $NMCLI --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2271 bytes
+stdout: 2298 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -14500,6 +14596,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -14529,12 +14626,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2429
+size: 2456
 location: src/tests/client/test-client.py:test_003()/293
 cmd: $NMCLI --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2271 bytes
+stdout: 2298 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -14571,6 +14668,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -14716,12 +14814,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2431
+size: 2458
 location: src/tests/client/test-client.py:test_003()/302
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2271 bytes
+stdout: 2298 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -14758,6 +14856,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -14787,12 +14886,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2441
+size: 2468
 location: src/tests/client/test-client.py:test_003()/303
 cmd: $NMCLI --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2271 bytes
+stdout: 2298 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -14829,6 +14928,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -14958,12 +15058,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3189
+size: 3207
 location: src/tests/client/test-client.py:test_003()/312
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3034 bytes
+stdout: 3052 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --    eth0      no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
@@ -14971,8 +15071,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  on       --               
@@ -14993,12 +15093,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 3223
+size: 3241
 location: src/tests/client/test-client.py:test_003()/313
 cmd: $NMCLI --mode tabular -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3058 bytes
+stdout: 3076 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --    eth0      nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
@@ -15006,8 +15106,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 WIRED-PROPERTIES  włączone  --               
@@ -15128,12 +15228,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3201
+size: 3219
 location: src/tests/client/test-client.py:test_003()/322
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3034 bytes
+stdout: 3052 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON               IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED 
 GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    100 (connected)  0 (No reason given)  0 (unknown)       0 (unknown)       /sys/devices/virtual/eth0  --    eth0      no           yes         yes          no                no                 --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  unknown 
@@ -15141,8 +15241,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 WIRED-PROPERTIES  on       --               
@@ -15163,12 +15263,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 3235
+size: 3253
 location: src/tests/client/test-client.py:test_003()/323
 cmd: $NMCLI --mode tabular --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3058 bytes
+stdout: 3076 bytes
 >>>
 NAME     DEVICE  TYPE      NM-TYPE           DBUS-PATH                                  VENDOR  PRODUCT  DRIVER   DRIVER-VERSION  FIRMWARE-VERSION  HWADDR             MTU  STATE            REASON                    IP4-CONNECTIVITY  IP6-CONNECTIVITY  UDI                        PATH  IP-IFACE  IS-SOFTWARE  NM-MANAGED  AUTOCONNECT  FIRMWARE-MISSING  NM-PLUGIN-MISSING  PHYS-PORT-ID  CONNECTION  CON-UUID                              CON-PATH                                            METERED  
 GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Devices/1  --      --       virtual  --              --                C0:61:AE:26:4D:D7  0    100 (połączono)  0 (Nie podano przyczyny)  0 (nieznane)      0 (nieznane)      /sys/devices/virtual/eth0  --    eth0      nie          tak         tak          nie               nie                --            ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1  nieznane 
@@ -15176,8 +15276,8 @@ GENERAL  eth0    ethernet  NMDeviceEthernet  /org/freedesktop/NetworkManager/Dev
 NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV 
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 WIRED-PROPERTIES  włączone  --               
@@ -15328,12 +15428,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 4796
+size: 4823
 location: src/tests/client/test-client.py:test_003()/332
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4632 bytes
+stdout: 4659 bytes
 >>>
 =========================
   Device details (eth0)
@@ -15346,9 +15446,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -15375,12 +15475,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 4868
+size: 4895
 location: src/tests/client/test-client.py:test_003()/333
 cmd: $NMCLI --mode tabular --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4694 bytes
+stdout: 4721 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -15393,9 +15493,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 ----------------------------------------------
@@ -15552,12 +15652,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 4808
+size: 4835
 location: src/tests/client/test-client.py:test_003()/342
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4632 bytes
+stdout: 4659 bytes
 >>>
 =========================
   Device details (eth0)
@@ -15570,9 +15670,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  no              100 Mb/s  no           no    
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  yes  yes       no      
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  yes  yes       no       no      
 
 NAME              CARRIER  S390-SUBCHANNELS 
 ---------------------------------------------
@@ -15599,12 +15699,12 @@ NAME         AVAILABLE-CONNECTION-PATHS                                   AVAILA
 CONNECTIONS  /org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}  5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4 
 
 <<<
-size: 4880
+size: 4907
 location: src/tests/client/test-client.py:test_003()/343
 cmd: $NMCLI --mode tabular --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4694 bytes
+stdout: 4721 bytes
 >>>
 ==================================
   Informacje o urządzeniu (eth0)
@@ -15617,9 +15717,9 @@ NAME          CARRIER-DETECT  SPEED     IS-SOFTWARE  SRIOV
 ------------------------------------------------------------
 CAPABILITIES  nie             100 Mb/s  nie          nie   
 
-NAME             UP   LOWER-UP  CARRIER 
------------------------------------------
-INTERFACE-FLAGS  tak  tak       nie     
+NAME             UP   LOWER-UP  CARRIER  PROMISC 
+--------------------------------------------------
+INTERFACE-FLAGS  tak  tak       nie      nie     
 
 NAME              CARRIER   S390-SUBCHANNELS 
 ----------------------------------------------
@@ -15738,16 +15838,16 @@ stdout: 194 bytes
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1466
+size: 1469
 location: src/tests/client/test-client.py:test_003()/352
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1303 bytes
+stdout: 1306 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -15756,16 +15856,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 1476
+size: 1479
 location: src/tests/client/test-client.py:test_003()/353
 cmd: $NMCLI --mode tabular --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1303 bytes
+stdout: 1306 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -15866,16 +15966,16 @@ stdout: 194 bytes
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/4::
 
 <<<
-size: 1478
+size: 1481
 location: src/tests/client/test-client.py:test_003()/362
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 1303 bytes
+stdout: 1306 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -15884,16 +15984,16 @@ DHCP6:dhcp-6-opt-1 = val-1 | dhcp-6-opt-5 = val-5 | dhcp-6-opt-6 = val-6 | dhcp-
 CONNECTIONS:/org/freedesktop/NetworkManager/Settings/Connection/{1,2,4}:5fcfd6d7-1e63-3332-8826-a7eda103792d | con-1 | UUID-con-xx1-REPLACED-REPLACED-REPLA | con-xx1 | <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 1488
+size: 1491
 location: src/tests/client/test-client.py:test_003()/363
 cmd: $NMCLI --mode tabular --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1303 bytes
+stdout: 1306 bytes
 >>>
 GENERAL:eth0:ethernet:NMDeviceEthernet:/org/freedesktop/NetworkManager/Devices/1:::virtual:::C0\:61\:AE\:26\:4D\:D7:0:100 (connected):0 (No reason given):0 (unknown):0 (unknown):/sys/devices/virtual/eth0::eth0:no:yes:yes:no:no::ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:/org/freedesktop/NetworkManager/ActiveConnection/1:unknown
 CAPABILITIES:no:100 Mb/s:no:no
-INTERFACE-FLAGS:yes:yes:no
+INTERFACE-FLAGS:yes:yes:no:no
 WIRED-PROPERTIES:on:
 IP4:192.168.6.238/29::dst = 192.168.58.133/31, nh = 192.168.50.116, mt = 3130348792 | dst = 192.168.155.50/19, nh = 192.168.127.64:192.168.213.113:sear4.foo4.bar:192.168.156.115 | 192.168.8.33
 DHCP4:
@@ -16164,12 +16264,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3787
+size: 3830
 location: src/tests/client/test-client.py:test_003()/372
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3630 bytes
+stdout: 3673 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -16206,6 +16306,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -16235,12 +16336,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3826
+size: 3870
 location: src/tests/client/test-client.py:test_003()/373
 cmd: $NMCLI --mode multiline -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3659 bytes
+stdout: 3703 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -16277,6 +16378,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -16568,12 +16670,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 3799
+size: 3842
 location: src/tests/client/test-client.py:test_003()/382
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 3630 bytes
+stdout: 3673 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -16610,6 +16712,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 WIRED-PROPERTIES.CARRIER:               on
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -16639,12 +16742,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:   UUID-con-xx1-REPLACED-REPLACED-REPLA | c
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 3838
+size: 3882
 location: src/tests/client/test-client.py:test_003()/383
 cmd: $NMCLI --mode multiline --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3659 bytes
+stdout: 3703 bytes
 >>>
 GENERAL.DEVICE:                         eth0
 GENERAL.TYPE:                           ethernet
@@ -16681,6 +16784,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 WIRED-PROPERTIES.CARRIER:               włączone
 IP4.ADDRESS[1]:                         192.168.6.238/29
 IP4.GATEWAY:                            --
@@ -17014,12 +17118,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4727
+size: 4770
 location: src/tests/client/test-client.py:test_003()/392
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4561 bytes
+stdout: 4604 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -17061,6 +17165,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -17097,12 +17202,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4772
+size: 4816
 location: src/tests/client/test-client.py:test_003()/393
 cmd: $NMCLI --mode multiline --pretty -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4596 bytes
+stdout: 4640 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -17144,6 +17249,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -17484,12 +17590,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4739
+size: 4782
 location: src/tests/client/test-client.py:test_003()/402
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 4561 bytes
+stdout: 4604 bytes
 >>>
 ===============================================================================
                              Device details (eth0)
@@ -17531,6 +17637,7 @@ CAPABILITIES.SRIOV:                     no
 INTERFACE-FLAGS.UP:                     yes
 INTERFACE-FLAGS.LOWER-UP:               yes
 INTERFACE-FLAGS.CARRIER:                no
+INTERFACE-FLAGS.PROMISC:                no
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               on
 -------------------------------------------------------------------------------
@@ -17567,12 +17674,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[3]:   <invisible> | /org/freedesktop/NetworkMa
 -------------------------------------------------------------------------------
 
 <<<
-size: 4784
+size: 4828
 location: src/tests/client/test-client.py:test_003()/403
 cmd: $NMCLI --mode multiline --pretty --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4596 bytes
+stdout: 4640 bytes
 >>>
 ===============================================================================
                         Informacje o urządzeniu (eth0)
@@ -17614,6 +17721,7 @@ CAPABILITIES.SRIOV:                     nie
 INTERFACE-FLAGS.UP:                     tak
 INTERFACE-FLAGS.LOWER-UP:               tak
 INTERFACE-FLAGS.CARRIER:                nie
+INTERFACE-FLAGS.PROMISC:                nie
 -------------------------------------------------------------------------------
 WIRED-PROPERTIES.CARRIER:               włączone
 -------------------------------------------------------------------------------
@@ -17912,12 +18020,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2436
+size: 2463
 location: src/tests/client/test-client.py:test_003()/412
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2271 bytes
+stdout: 2298 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -17954,6 +18062,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -17983,12 +18092,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2446
+size: 2473
 location: src/tests/client/test-client.py:test_003()/413
 cmd: $NMCLI --mode multiline --terse -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2271 bytes
+stdout: 2298 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -18025,6 +18134,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -18316,12 +18426,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2448
+size: 2475
 location: src/tests/client/test-client.py:test_003()/422
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: C
 returncode: 0
-stdout: 2271 bytes
+stdout: 2298 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -18358,6 +18468,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:
@@ -18387,12 +18498,12 @@ CONNECTIONS.AVAILABLE-CONNECTIONS[2]:UUID-con-xx1-REPLACED-REPLACED-REPLA | con-
 CONNECTIONS.AVAILABLE-CONNECTIONS[3]:<invisible> | /org/freedesktop/NetworkManager/Settings/Connection/4
 
 <<<
-size: 2458
+size: 2485
 location: src/tests/client/test-client.py:test_003()/423
 cmd: $NMCLI --mode multiline --terse --color yes -f all dev show eth0
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2271 bytes
+stdout: 2298 bytes
 >>>
 GENERAL.DEVICE:eth0
 GENERAL.TYPE:ethernet
@@ -18429,6 +18540,7 @@ CAPABILITIES.SRIOV:no
 INTERFACE-FLAGS.UP:yes
 INTERFACE-FLAGS.LOWER-UP:yes
 INTERFACE-FLAGS.CARRIER:no
+INTERFACE-FLAGS.PROMISC:no
 WIRED-PROPERTIES.CARRIER:on
 IP4.ADDRESS[1]:192.168.6.238/29
 IP4.GATEWAY:

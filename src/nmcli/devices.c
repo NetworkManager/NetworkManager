@@ -662,6 +662,9 @@ static gconstpointer
     case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_CARRIER:
         return nmc_meta_generic_get_bool(NM_FLAGS_HAS(flags, NM_DEVICE_INTERFACE_FLAG_CARRIER),
                                          get_type);
+    case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_PROMISC:
+        return nmc_meta_generic_get_bool(NM_FLAGS_HAS(flags, NM_DEVICE_INTERFACE_FLAG_PROMISC),
+                                         get_type);
     default:
         break;
     }
@@ -685,6 +688,9 @@ const NmcMetaGenericInfo *const
         _METAGEN_DEVICE_DETAIL_INTERFACE_FLAGS(
             NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_CARRIER,
             "CARRIER"),
+        _METAGEN_DEVICE_DETAIL_INTERFACE_FLAGS(
+            NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_INTERFACE_FLAGS_PROMISC,
+            "PROMISC"),
 };
 
 /*****************************************************************************/

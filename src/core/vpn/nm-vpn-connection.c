@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <linux/if.h>
 #include <linux/rtnetlink.h>
 
 #include "nm-proxy-config.h"
@@ -371,7 +372,7 @@ vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
     if (priv->ip_ifindex) {
         NMPlatform *platform = nm_netns_get_platform(priv->netns);
 
-        nm_platform_link_set_down(platform, priv->ip_ifindex);
+        nm_platform_link_change_flags(platform, priv->ip_ifindex, IFF_UP, FALSE);
         nm_platform_ip_route_flush(platform, AF_UNSPEC, priv->ip_ifindex);
         nm_platform_ip_address_flush(platform, AF_UNSPEC, priv->ip_ifindex);
     }
@@ -1157,7 +1158,10 @@ nm_vpn_connection_apply_config(NMVpnConnection *self)
     apply_parent_device_config(self);
 
     if (priv->ip_ifindex > 0) {
-        nm_platform_link_set_up(nm_netns_get_platform(priv->netns), priv->ip_ifindex, NULL);
+        nm_platform_link_change_flags(nm_netns_get_platform(priv->netns),
+                                      priv->ip_ifindex,
+                                      IFF_UP,
+                                      TRUE);
 
         if (priv->ip4_config) {
             nm_assert(priv->ip_ifindex == nm_ip4_config_get_ifindex(priv->ip4_config));

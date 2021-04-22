@@ -48,13 +48,15 @@ test_bogus(void)
     g_assert(!nm_platform_link_get_type(NM_PLATFORM_GET, BOGUS_IFINDEX));
     g_assert(!nm_platform_link_get_type_name(NM_PLATFORM_GET, BOGUS_IFINDEX));
 
-    g_assert(!nm_platform_link_set_up(NM_PLATFORM_GET, BOGUS_IFINDEX, NULL));
+    g_assert(!(nm_platform_link_change_flags(NM_PLATFORM_GET, BOGUS_IFINDEX, IFF_UP, TRUE) >= 0));
 
-    g_assert(!nm_platform_link_set_down(NM_PLATFORM_GET, BOGUS_IFINDEX));
+    g_assert(!(nm_platform_link_change_flags(NM_PLATFORM_GET, BOGUS_IFINDEX, IFF_UP, FALSE) >= 0));
 
-    g_assert(!nm_platform_link_set_arp(NM_PLATFORM_GET, BOGUS_IFINDEX));
+    g_assert(
+        !(nm_platform_link_change_flags(NM_PLATFORM_GET, BOGUS_IFINDEX, IFF_NOARP, TRUE) >= 0));
 
-    g_assert(!nm_platform_link_set_noarp(NM_PLATFORM_GET, BOGUS_IFINDEX));
+    g_assert(
+        !(nm_platform_link_change_flags(NM_PLATFORM_GET, BOGUS_IFINDEX, IFF_NOARP, FALSE) >= 0));
 
     g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, BOGUS_IFINDEX));
     g_assert(!nm_platform_link_is_connected(NM_PLATFORM_GET, BOGUS_IFINDEX));
@@ -147,7 +149,8 @@ software_add(NMLinkType link_type, const char *name)
                                                 NM_PLATFORM_SIGNAL_CHANGED,
                                                 link_callback,
                                                 parent_ifindex);
-            g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, parent_ifindex, NULL));
+            g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, parent_ifindex, IFF_UP, TRUE)
+                     >= 0);
             if (was_up) {
                 /* when NM is running in the background, it will mess with addrgenmode which might cause additional signals. */
                 accept_signals(parent_changed, 0, 1);
@@ -233,7 +236,7 @@ test_slave(int master, int type, SignalData *master_changed)
      * See https://bugzilla.redhat.com/show_bug.cgi?id=910348
      */
     g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
-    g_assert(nm_platform_link_set_down(NM_PLATFORM_GET, ifindex));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, FALSE) >= 0);
     g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
     ensure_no_signal(link_changed);
 
@@ -263,7 +266,7 @@ test_slave(int master, int type, SignalData *master_changed)
                      &test_link_changed_signal_arg2);
 
     /* Set master up */
-    g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, master, NULL));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, master, IFF_UP, TRUE) >= 0);
     g_assert(nm_platform_link_is_up(NM_PLATFORM_GET, master));
     accept_signals(master_changed, 1, 3);
 
@@ -284,7 +287,7 @@ test_slave(int master, int type, SignalData *master_changed)
     switch (nm_platform_link_get_type(NM_PLATFORM_GET, master)) {
     case NM_LINK_TYPE_BOND:
     case NM_LINK_TYPE_TEAM:
-        g_assert(nm_platform_link_set_down(NM_PLATFORM_GET, ifindex));
+        g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, FALSE) >= 0);
         accept_signal(link_changed);
         accept_signals(master_changed, 0, 3);
         break;
@@ -317,7 +320,7 @@ test_slave(int master, int type, SignalData *master_changed)
     }
 
     /* Set slave up and see if master gets up too */
-    g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, ifindex, NULL));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, TRUE) >= 0);
     g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex));
     g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, master));
     accept_signals(link_changed, 1, 3);
@@ -439,10 +442,10 @@ test_software(NMLinkType link_type, const char *link_typename)
 
     /* Set ARP/NOARP */
     g_assert(nm_platform_link_uses_arp(NM_PLATFORM_GET, ifindex));
-    g_assert(nm_platform_link_set_noarp(NM_PLATFORM_GET, ifindex));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_NOARP, TRUE) >= 0);
     g_assert(!nm_platform_link_uses_arp(NM_PLATFORM_GET, ifindex));
     accept_signals(link_changed, 1, 2);
-    g_assert(nm_platform_link_set_arp(NM_PLATFORM_GET, ifindex));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_NOARP, FALSE) >= 0);
     g_assert(nm_platform_link_uses_arp(NM_PLATFORM_GET, ifindex));
     accept_signal(link_changed);
 
@@ -672,21 +675,21 @@ test_internal(void)
     /* Up/connected */
     g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
     g_assert(!nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex));
-    g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, ifindex, NULL));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, TRUE) >= 0);
     g_assert(nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
     g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex));
     accept_signals(link_changed, 1, 2);
-    g_assert(nm_platform_link_set_down(NM_PLATFORM_GET, ifindex));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, FALSE) >= 0);
     g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
     g_assert(!nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex));
     accept_signal(link_changed);
 
     /* arp/noarp */
     g_assert(!nm_platform_link_uses_arp(NM_PLATFORM_GET, ifindex));
-    g_assert(nm_platform_link_set_arp(NM_PLATFORM_GET, ifindex));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_NOARP, FALSE) >= 0);
     g_assert(nm_platform_link_uses_arp(NM_PLATFORM_GET, ifindex));
     accept_signal(link_changed);
-    g_assert(nm_platform_link_set_noarp(NM_PLATFORM_GET, ifindex));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_NOARP, TRUE) >= 0);
     g_assert(!nm_platform_link_uses_arp(NM_PLATFORM_GET, ifindex));
     accept_signal(link_changed);
 

@@ -7485,34 +7485,6 @@ link_change_flags(NMPlatform *platform, int ifindex, unsigned flags_mask, unsign
     return do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL);
 }
 
-static gboolean
-link_set_up(NMPlatform *platform, int ifindex, gboolean *out_no_firmware)
-{
-    int r;
-
-    r = link_change_flags(platform, ifindex, IFF_UP, IFF_UP);
-    NM_SET_OUT(out_no_firmware, (r == -NME_PL_NO_FIRMWARE));
-    return r >= 0;
-}
-
-static gboolean
-link_set_down(NMPlatform *platform, int ifindex)
-{
-    return (link_change_flags(platform, ifindex, IFF_UP, 0) >= 0);
-}
-
-static gboolean
-link_set_arp(NMPlatform *platform, int ifindex)
-{
-    return (link_change_flags(platform, ifindex, IFF_NOARP, 0) >= 0);
-}
-
-static gboolean
-link_set_noarp(NMPlatform *platform, int ifindex)
-{
-    return (link_change_flags(platform, ifindex, IFF_NOARP, IFF_NOARP) >= 0);
-}
-
 static int
 link_set_user_ipv6ll_enabled(NMPlatform *platform, int ifindex, gboolean enabled)
 {
@@ -9664,10 +9636,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
 
     platform_class->link_set_netns = link_set_netns;
 
-    platform_class->link_set_up    = link_set_up;
-    platform_class->link_set_down  = link_set_down;
-    platform_class->link_set_arp   = link_set_arp;
-    platform_class->link_set_noarp = link_set_noarp;
+    platform_class->link_change_flags = link_change_flags;
 
     platform_class->link_set_user_ipv6ll_enabled = link_set_user_ipv6ll_enabled;
     platform_class->link_set_token               = link_set_token;

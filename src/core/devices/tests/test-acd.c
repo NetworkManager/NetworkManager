@@ -78,8 +78,8 @@ fixture_setup(test_fixture *fixture, gconstpointer user_data)
     fixture->ifindex1 =
         nmtstp_link_get_typed(NM_PLATFORM_GET, -1, IFACE_VETH1, NM_LINK_TYPE_VETH)->ifindex;
 
-    g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, fixture->ifindex0, NULL));
-    g_assert(nm_platform_link_set_up(NM_PLATFORM_GET, fixture->ifindex1, NULL));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, fixture->ifindex0, IFF_UP, TRUE) >= 0);
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, fixture->ifindex1, IFF_UP, TRUE) >= 0);
 
     fixture->hwaddr0 =
         nm_platform_link_get_address(NM_PLATFORM_GET, fixture->ifindex0, &fixture->hwaddr0_len);
