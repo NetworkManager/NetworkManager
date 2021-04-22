@@ -3511,6 +3511,45 @@ typedef struct {
 } PlatformLinkCbData;
 
 static gboolean
+_check_remove_dev_on_link_deleted(NMManager *self, NMDevice *device)
+{
+    NMManagerPrivate *           priv  = NM_MANAGER_GET_PRIVATE(self);
+    NMSettingsConnection *const *scons = NULL;
+    NMConnection *               con;
+    guint                        i;
+
+    nm_assert(nm_device_is_software(device));
+
+    /* In general, software devices stick around as unrealized
+     * until their connection is removed. However, we don't want
+     * that a NM-generated connection keeps the device alive.
+     * If there are no other compatible connections, the device
+     * should be also removed.
+     */
+
+    scons = nm_settings_get_connections(priv->settings, NULL);
+
+    for (i = 0; scons[i]; i++) {
+        con = nm_settings_connection_get_connection(scons[i]);
+        if (!nm_connection_is_virtual(con))
+            continue;
+
+        if (NM_FLAGS_HAS(nm_settings_connection_get_flags(scons[i]),
+                         NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
+            continue;
+
+        if (!nm_device_check_connection_compatible(device, con, NULL))
+            continue;
+
+        /* Found a virtual connection compatible, the device must
+         * stay around unrealized. */
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static gboolean
 _platform_link_cb_idle(PlatformLinkCbData *data)
 {
     int                   ifindex = data->ifindex;
@@ -3535,13 +3574,15 @@ _platform_link_cb_idle(PlatformLinkCbData *data)
         if (device) {
             if (nm_device_is_software(device)) {
                 nm_device_sys_iface_state_set(device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
-                /* Our software devices stick around until their connection is removed */
                 if (!nm_device_unrealize(device, FALSE, &error)) {
                     _LOG2W(LOGD_DEVICE, device, "failed to unrealize: %s", error->message);
                     g_clear_error(&error);
                     remove_device(self, device, FALSE);
                 } else {
-                    nm_device_update_from_platform_link(device, NULL);
+                    if (_check_remove_dev_on_link_deleted(self, device))
+                        remove_device(self, device, FALSE);
+                    else
+                        nm_device_update_from_platform_link(device, NULL);
                 }
             } else {
                 /* Hardware and external devices always get removed when their kernel link is gone */
