@@ -213,12 +213,11 @@ client_start(NMDhcpManager *           self,
              guint32                   iaid,
              gboolean                  iaid_explicit,
              guint32                   timeout,
+             NMDhcpClientFlags         client_flags,
              const char *              dhcp_anycast_addr,
              const char *              hostname,
-             gboolean                  hostname_use_fqdn,
              NMDhcpHostnameFlags       hostname_flags,
              const char *              mud_url,
-             gboolean                  info_only,
              NMSettingIP6ConfigPrivacy privacy,
              const char *              last_ip4_address,
              guint                     needed_prefixes,
@@ -263,12 +262,14 @@ client_start(NMDhcpManager *           self,
     }
 
     if (hostname) {
-        if ((hostname_use_fqdn && !nm_sd_dns_name_is_valid(hostname))
-            || (!hostname_use_fqdn && !nm_sd_hostname_is_valid(hostname, FALSE))) {
+        gboolean use_fqdn = NM_FLAGS_HAS(client_flags, NM_DHCP_CLIENT_FLAGS_USE_FQDN);
+
+        if ((use_fqdn && !nm_sd_dns_name_is_valid(hostname))
+            || (!use_fqdn && !nm_sd_hostname_is_valid(hostname, FALSE))) {
             nm_log_warn(LOGD_DHCP,
                         "dhcp%c: %s '%s' is invalid, will be ignored",
                         nm_utils_addr_family_to_char(addr_family),
-                        hostname_use_fqdn ? "FQDN" : "hostname",
+                        use_fqdn ? "FQDN" : "hostname",
                         hostname);
             hostname = NULL;
         }
@@ -334,8 +335,7 @@ client_start(NMDhcpManager *           self,
                           NM_DHCP_CLIENT_REJECT_SERVERS,
                           reject_servers,
                           NM_DHCP_CLIENT_FLAGS,
-                          (guint)(0 | (hostname_use_fqdn ? NM_DHCP_CLIENT_FLAGS_USE_FQDN : 0)
-                                  | (info_only ? NM_DHCP_CLIENT_FLAGS_INFO_ONLY : 0)),
+                          (guint) client_flags,
                           NULL);
     nm_assert(client && c_list_is_empty(&client->dhcp_client_lst));
     c_list_link_tail(&priv->dhcp_client_lst_head, &client->dhcp_client_lst);
@@ -467,12 +467,11 @@ nm_dhcp_manager_start_ip4(NMDhcpManager *     self,
                         0,
                         FALSE,
                         timeout,
+                        (use_fqdn ? NM_DHCP_CLIENT_FLAGS_USE_FQDN : NM_DHCP_CLIENT_FLAGS_NONE),
                         dhcp_anycast_addr,
                         hostname,
-                        use_fqdn,
                         hostname_flags,
                         mud_url,
-                        FALSE,
                         0,
                         last_ip_address,
                         0,
@@ -516,34 +515,35 @@ nm_dhcp_manager_start_ip6(NMDhcpManager *           self,
         /* Always prefer the explicit dhcp-hostname if given */
         hostname = dhcp_hostname ?: priv->default_hostname;
     }
-    return client_start(self,
-                        AF_INET6,
-                        multi_idx,
-                        iface,
-                        ifindex,
-                        NULL,
-                        NULL,
-                        uuid,
-                        route_table,
-                        route_metric,
-                        ll_addr,
-                        duid,
-                        enforce_duid,
-                        iaid,
-                        iaid_explicit,
-                        timeout,
-                        dhcp_anycast_addr,
-                        hostname,
-                        TRUE,
-                        hostname_flags,
-                        mud_url,
-                        info_only,
-                        privacy,
-                        NULL,
-                        needed_prefixes,
-                        NULL,
-                        NULL,
-                        error);
+    return client_start(
+        self,
+        AF_INET6,
+        multi_idx,
+        iface,
+        ifindex,
+        NULL,
+        NULL,
+        uuid,
+        route_table,
+        route_metric,
+        ll_addr,
+        duid,
+        enforce_duid,
+        iaid,
+        iaid_explicit,
+        timeout,
+        NM_DHCP_CLIENT_FLAGS_USE_FQDN
+            | (info_only ? NM_DHCP_CLIENT_FLAGS_INFO_ONLY : NM_DHCP_CLIENT_FLAGS_NONE),
+        dhcp_anycast_addr,
+        hostname,
+        hostname_flags,
+        mud_url,
+        privacy,
+        NULL,
+        needed_prefixes,
+        NULL,
+        NULL,
+        error);
 }
 
 void
