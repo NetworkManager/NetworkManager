@@ -30,4 +30,34 @@ NMDnsPlugin *nm_dns_systemd_resolved_new(void);
 
 gboolean nm_dns_systemd_resolved_is_running(NMDnsSystemdResolved *self);
 
+/*****************************************************************************/
+
+typedef struct _NMDnsSystemdResolvedResolveHandle NMDnsSystemdResolvedResolveHandle;
+
+typedef struct {
+    const char *name;
+    int         ifindex;
+} NMDnsSystemdResolvedAddressResult;
+
+typedef void (*NMDnsSystemdResolvedResolveAddressCallback)(
+    NMDnsSystemdResolved *                   self,
+    NMDnsSystemdResolvedResolveHandle *      handle,
+    const NMDnsSystemdResolvedAddressResult *names,
+    guint                                    names_len,
+    guint64                                  flags,
+    GError *                                 error,
+    gpointer                                 user_data);
+
+NMDnsSystemdResolvedResolveHandle *
+nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved *                     self,
+                                        int                                        ifindex,
+                                        int                                        addr_family,
+                                        const NMIPAddr *                           addr,
+                                        guint64                                    flags,
+                                        guint                                      timeout_msec,
+                                        NMDnsSystemdResolvedResolveAddressCallback callback,
+                                        gpointer                                   user_data);
+
+void nm_dns_systemd_resolved_resolve_cancel(NMDnsSystemdResolvedResolveHandle *handle);
+
 #endif /* __NETWORKMANAGER_DNS_SYSTEMD_RESOLVED_H__ */
