@@ -64,7 +64,7 @@ typedef struct {
     bool             try_start_blocked : 1;
     bool             dbus_has_owner : 1;
     bool             dbus_initied : 1;
-    bool             request_queue_to_send : 1;
+    bool             send_updates_waiting : 1;
     NMTernary        has_link_default_route : 3;
 } NMDnsSystemdResolvedPrivate;
 
@@ -362,7 +362,7 @@ send_updates(NMDnsSystemdResolved *self)
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     RequestItem *                request_item;
 
-    if (!priv->request_queue_to_send) {
+    if (!priv->send_updates_waiting) {
         /* nothing to do. */
         return;
     }
@@ -374,7 +374,7 @@ send_updates(NMDnsSystemdResolved *self)
 
     if (c_list_is_empty(&priv->request_queue_lst_head)) {
         _LOGT("send-updates: no requests to send");
-        priv->request_queue_to_send = FALSE;
+        priv->send_updates_waiting = FALSE;
         return;
     }
 
@@ -382,7 +382,7 @@ send_updates(NMDnsSystemdResolved *self)
 
     priv->cancellable = g_cancellable_new();
 
-    priv->request_queue_to_send = FALSE;
+    priv->send_updates_waiting = FALSE;
 
     c_list_for_each_entry (request_item, &priv->request_queue_lst_head, request_queue_lst) {
         if (request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
@@ -487,7 +487,7 @@ update(NMDnsPlugin *            plugin,
         }
     }
 
-    priv->request_queue_to_send = TRUE;
+    priv->send_updates_waiting = TRUE;
     send_updates(self);
     return TRUE;
 }
@@ -508,8 +508,8 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
 
     priv->dbus_has_owner = !!owner;
     if (owner) {
-        priv->try_start_blocked     = FALSE;
-        priv->request_queue_to_send = TRUE;
+        priv->try_start_blocked    = FALSE;
+        priv->send_updates_waiting = TRUE;
     } else
         priv->has_link_default_route = NM_TERNARY_DEFAULT;
 
