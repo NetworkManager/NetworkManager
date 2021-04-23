@@ -848,7 +848,8 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
         g_string_append(key_mgmt_conf, "OWE");
 
     } else if (nm_streq(key_mgmt, "wpa-psk")) {
-        g_string_append(key_mgmt_conf, "WPA-PSK");
+        if (pmf != NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)
+            g_string_append(key_mgmt_conf, "WPA-PSK");
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF))
             g_string_append(key_mgmt_conf, " WPA-PSK-SHA256");
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
@@ -867,7 +868,8 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
             g_string_append(key_mgmt_conf, " FT-SAE");
 
     } else if (nm_streq(key_mgmt, "wpa-eap")) {
-        g_string_append(key_mgmt_conf, "WPA-EAP");
+        if (pmf != NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)
+            g_string_append(key_mgmt_conf, "WPA-EAP");
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT)) {
             g_string_append(key_mgmt_conf, " FT-EAP");
             if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SHA384))
