@@ -58,6 +58,7 @@ typedef struct {
     GDBusConnection *dbus_connection;
     GHashTable *     dirty_interfaces;
     GCancellable *   cancellable;
+    GSource *        try_start_timeout_source;
     CList            request_queue_lst_head;
     guint            name_owner_changed_id;
     bool             send_updates_warn_ratelimited : 1;
@@ -323,6 +324,20 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     return has_config;
 }
 
+static gboolean
+_ensure_resolved_running_timeout(gpointer user_data)
+{
+    NMDnsSystemdResolved *       self = user_data;
+    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+
+    nm_clear_g_source_inst(&priv->try_start_timeout_source);
+
+    _LOGT("send-updates: timeout waiting for systemd-resolved to start. Systemd-resolved won't be "
+          "used until it appears on the bus");
+
+    return G_SOURCE_CONTINUE;
+}
+
 static NMTernary
 ensure_resolved_running(NMDnsSystemdResolved *self)
 {
@@ -343,6 +358,14 @@ ensure_resolved_running(NMDnsSystemdResolved *self)
 
         _LOGT("send-updates: no name owner. Try start service...");
         priv->try_start_blocked = TRUE;
+
+        priv->try_start_timeout_source =
+            nm_g_source_attach(nm_g_timeout_source_new(4000,
+                                                       G_PRIORITY_DEFAULT,
+                                                       _ensure_resolved_running_timeout,
+                                                       self,
+                                                       NULL),
+                               NULL);
 
         nm_dbus_connection_call_start_service_by_name(priv->dbus_connection,
                                                       SYSTEMD_RESOLVED_DBUS_SERVICE,
@@ -506,6 +529,8 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
     else
         _LOGT("D-Bus name for systemd-resolved has owner %s", owner);
 
+    nm_clear_g_source_inst(&priv->try_start_timeout_source);
+
     priv->dbus_has_owner = !!owner;
     if (owner) {
         priv->try_start_blocked    = FALSE;
@@ -627,6 +652,8 @@ dispose(GObject *object)
     nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
 
     nm_clear_g_cancellable(&priv->cancellable);
+
+    nm_clear_g_source_inst(&priv->try_start_timeout_source);
 
     g_clear_object(&priv->dbus_connection);
     nm_clear_pointer(&priv->dirty_interfaces, g_hash_table_unref);
