@@ -1104,13 +1104,13 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                          "wpa-psk",
                          "sae",
                          "owe")) {
-        g_set_error(
-            error,
-            NM_CONNECTION_ERROR,
-            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-            _("'%s' can only be used with 'wpa-eap', 'wpa-eap-suite-b-192', 'wpa-psk' or 'sae' key "
-              "management "),
-            priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional" : "required");
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' can only be used with 'owe', 'wpa-psk', 'sae', 'wpa-eap' "
+                      "or 'wpa-eap-suite-b-192' key management"),
+                    priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional"
+                                                                           : "required");
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
