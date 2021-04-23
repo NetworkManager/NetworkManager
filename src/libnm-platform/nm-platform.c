@@ -1477,7 +1477,7 @@ nm_platform_link_get_unmanaged(NMPlatform *self, int ifindex, gboolean *unmanage
     const char *value;
 
     if (nm_platform_link_get_udev_property(self, ifindex, "NM_UNMANAGED", &value)) {
-        NM_SET_OUT(unmanaged, nm_udev_utils_property_as_boolean(value));
+        NM_SET_OUT(unmanaged, _nm_utils_ascii_str_to_bool(value, FALSE));
         return TRUE;
     }
 
