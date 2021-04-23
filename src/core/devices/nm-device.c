@@ -9482,6 +9482,7 @@ dhcp4_start(NMDevice *self)
                                   nm_connection_get_uuid(connection),
                                   nm_device_get_route_table(self, AF_INET),
                                   nm_device_get_route_metric(self, AF_INET),
+                                  NM_DHCP_CLIENT_FLAGS_NONE,
                                   nm_setting_ip_config_get_dhcp_send_hostname(s_ip4),
                                   nm_setting_ip_config_get_dhcp_hostname(s_ip4),
                                   nm_setting_ip4_config_get_dhcp_fqdn(NM_SETTING_IP4_CONFIG(s_ip4)),
@@ -9931,6 +9932,8 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
         nm_connection_get_uuid(connection),
         nm_device_get_route_table(self, AF_INET6),
         nm_device_get_route_metric(self, AF_INET6),
+        (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF) ? NM_DHCP_CLIENT_FLAGS_INFO_ONLY
+                                                            : NM_DHCP_CLIENT_FLAGS_NONE,
         nm_setting_ip_config_get_dhcp_send_hostname(s_ip6),
         nm_setting_ip_config_get_dhcp_hostname(s_ip6),
         _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET6),
@@ -9941,7 +9944,6 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
         iaid_explicit,
         _prop_get_ipvx_dhcp_timeout(self, AF_INET6),
         priv->dhcp_anycast_address,
-        (priv->dhcp6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF) ? TRUE : FALSE,
         nm_setting_ip6_config_get_ip6_privacy(NM_SETTING_IP6_CONFIG(s_ip6)),
         priv->dhcp6.needed_prefixes,
         &error);
