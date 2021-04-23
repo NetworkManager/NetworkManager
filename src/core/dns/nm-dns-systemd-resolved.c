@@ -60,10 +60,10 @@ typedef struct {
     GCancellable *   cancellable;
     GSource *        try_start_timeout_source;
     CList            request_queue_lst_head;
+    char *           dbus_owner;
     guint            name_owner_changed_id;
     bool             send_updates_warn_ratelimited : 1;
     bool             try_start_blocked : 1;
-    bool             dbus_has_owner : 1;
     bool             dbus_initied : 1;
     bool             send_updates_waiting : 1;
     NMTernary        has_link_default_route : 3;
@@ -348,7 +348,7 @@ ensure_resolved_running(NMDnsSystemdResolved *self)
         return NM_TERNARY_DEFAULT;
     }
 
-    if (!priv->dbus_has_owner) {
+    if (!priv->dbus_owner) {
         if (priv->try_start_blocked) {
             /* we have no name owner and we already tried poking the service to
              * autostart. */
@@ -531,7 +531,8 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
 
     nm_clear_g_source_inst(&priv->try_start_timeout_source);
 
-    priv->dbus_has_owner = !!owner;
+    nm_utils_strdup_reset(&priv->dbus_owner, owner);
+
     if (owner) {
         priv->try_start_blocked    = FALSE;
         priv->send_updates_waiting = TRUE;
@@ -599,7 +600,7 @@ nm_dns_systemd_resolved_is_running(NMDnsSystemdResolved *self)
 
     priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
 
-    return priv->dbus_initied && (priv->dbus_has_owner || !priv->try_start_blocked);
+    return priv->dbus_initied && (priv->dbus_owner || !priv->try_start_blocked);
 }
 
 /*****************************************************************************/
@@ -659,6 +660,8 @@ dispose(GObject *object)
     nm_clear_pointer(&priv->dirty_interfaces, g_hash_table_unref);
 
     G_OBJECT_CLASS(nm_dns_systemd_resolved_parent_class)->dispose(object);
+
+    nm_clear_g_free(&priv->dbus_owner);
 }
 
 static void
