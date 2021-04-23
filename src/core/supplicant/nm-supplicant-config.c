@@ -883,9 +883,6 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
             g_string_append(key_mgmt_conf, " ft-sae");
     } else if (nm_streq(key_mgmt, "wpa-eap-suite-b-192")) {
         pmf = NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED;
-        if (!nm_supplicant_config_add_option(self, "pairwise", "GCMP-256", -1, NULL, error)
-            || !nm_supplicant_config_add_option(self, "group", "GCMP-256", -1, NULL, error))
-            return FALSE;
     }
 
     if (!add_string_val(self, key_mgmt_conf->str, "key_mgmt", TRUE, NULL, error))
@@ -968,7 +965,7 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
     }
 
     /* Only WPA-specific things when using WPA */
-    if (NM_IN_STRSET(key_mgmt, "wpa-psk", "wpa-eap", "sae", "owe")) {
+    if (NM_IN_STRSET(key_mgmt, "owe", "wpa-psk", "sae", "wpa-eap", "wpa-eap-suite-b-192")) {
         if (!ADD_STRING_LIST_VAL(self,
                                  setting,
                                  wireless_security,
@@ -980,28 +977,36 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
                                  NULL,
                                  error))
             return FALSE;
-        if (!ADD_STRING_LIST_VAL(self,
-                                 setting,
-                                 wireless_security,
-                                 pairwise,
-                                 pairwise,
-                                 "pairwise",
-                                 ' ',
-                                 TRUE,
-                                 NULL,
-                                 error))
-            return FALSE;
-        if (!ADD_STRING_LIST_VAL(self,
-                                 setting,
-                                 wireless_security,
-                                 group,
-                                 groups,
-                                 "group",
-                                 ' ',
-                                 TRUE,
-                                 NULL,
-                                 error))
-            return FALSE;
+
+        if (nm_streq(key_mgmt, "wpa-eap-suite-b-192")) {
+            if (!nm_supplicant_config_add_option(self, "pairwise", "GCMP-256", -1, NULL, error))
+                return FALSE;
+            if (!nm_supplicant_config_add_option(self, "group", "GCMP-256", -1, NULL, error))
+                return FALSE;
+        } else {
+            if (!ADD_STRING_LIST_VAL(self,
+                                     setting,
+                                     wireless_security,
+                                     pairwise,
+                                     pairwise,
+                                     "pairwise",
+                                     ' ',
+                                     TRUE,
+                                     NULL,
+                                     error))
+                return FALSE;
+            if (!ADD_STRING_LIST_VAL(self,
+                                     setting,
+                                     wireless_security,
+                                     group,
+                                     groups,
+                                     "group",
+                                     ' ',
+                                     TRUE,
+                                     NULL,
+                                     error))
+                return FALSE;
+        }
 
         /* We set the supplicants global "pmf" config value to "1" (optional),
          * so no need to set it network-specific again if PMF_OPTIONAL is set.
