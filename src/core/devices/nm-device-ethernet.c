@@ -1747,7 +1747,7 @@ new_default_connection(NMDevice *self)
     if (dev)
         uprop = udev_device_get_property_value(dev, "NM_AUTO_DEFAULT_LINK_LOCAL_ONLY");
 
-    if (nm_udev_utils_property_as_boolean(uprop)) {
+    if (_nm_utils_ascii_str_to_bool(uprop, FALSE)) {
         setting = nm_setting_ip4_config_new();
         g_object_set(setting,
                      NM_SETTING_IP_CONFIG_METHOD,
