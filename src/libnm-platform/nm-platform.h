@@ -1840,6 +1840,10 @@ nm_platform_link_change_flags(NMPlatform *self, int ifindex, unsigned value, gbo
     return nm_platform_link_change_flags_full(self, ifindex, value, set ? value : 0u);
 }
 
+gboolean    nm_platform_link_get_udev_property(NMPlatform * self,
+                                               int          ifindex,
+                                               const char * name,
+                                               const char **out_value);
 const char *nm_platform_link_get_udi(NMPlatform *self, int ifindex);
 const char *nm_platform_link_get_path(NMPlatform *self, int ifindex);
 
