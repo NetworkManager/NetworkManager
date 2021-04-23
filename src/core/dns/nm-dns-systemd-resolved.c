@@ -52,6 +52,25 @@ typedef struct {
     int                   ifindex;
 } RequestItem;
 
+struct _NMDnsSystemdResolvedResolveHandle {
+    CList                 handle_lst;
+    NMDnsSystemdResolved *self;
+    GSource *             timeout_source;
+    GCancellable *        handle_cancellable;
+    gpointer              callback_user_data;
+    guint                 timeout_msec;
+    bool                  is_failing_on_idle;
+    union {
+        struct {
+            NMDnsSystemdResolvedResolveAddressCallback callback;
+            guint64                                    flags;
+            int                                        ifindex;
+            int                                        addr_family;
+            NMIPAddr                                   addr;
+        } r_address;
+    };
+};
+
 /*****************************************************************************/
 
 typedef struct {
@@ -61,6 +80,7 @@ typedef struct {
     GSource *        try_start_timeout_source;
     CList            request_queue_lst_head;
     char *           dbus_owner;
+    CList            handle_lst_head;
     guint            name_owner_changed_id;
     bool             send_updates_warn_ratelimited : 1;
     bool             try_start_blocked : 1;
@@ -85,9 +105,39 @@ G_DEFINE_TYPE(NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN)
 
 /*****************************************************************************/
 
-#define _NMLOG_DOMAIN LOGD_DNS
+#define _NMLOG_DOMAIN      LOGD_DNS
+#define _NMLOG_PREFIX_NAME "dns-sd-resolved"
+
 #define _NMLOG(level, ...) \
-    __NMLOG_DEFAULT_WITH_ADDR(level, _NMLOG_DOMAIN, "dns-sd-resolved", __VA_ARGS__)
+    __NMLOG_DEFAULT_WITH_ADDR(level, _NMLOG_DOMAIN, _NMLOG_PREFIX_NAME, __VA_ARGS__)
+
+#define _NMLOG2(level, handle, ...)                                                         \
+    G_STMT_START                                                                            \
+    {                                                                                       \
+        const NMLogLevel _level = (level);                                                  \
+                                                                                            \
+        if (nm_logging_enabled(_level, (_NMLOG_DOMAIN))) {                                  \
+            const NMDnsSystemdResolvedResolveHandle *const _handle = (handle);              \
+                                                                                            \
+            _nm_log(_level,                                                                 \
+                    (_NMLOG_DOMAIN),                                                        \
+                    0,                                                                      \
+                    NULL,                                                                   \
+                    NULL,                                                                   \
+                    "%s[" NM_HASH_OBFUSCATE_PTR_FMT "]: request[" NM_HASH_OBFUSCATE_PTR_FMT \
+                    "]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                               \
+                    _NMLOG_PREFIX_NAME,                                                     \
+                    NM_HASH_OBFUSCATE_PTR(self),                                            \
+                    NM_HASH_OBFUSCATE_PTR(_handle) _NM_UTILS_MACRO_REST(__VA_ARGS__));      \
+        }                                                                                   \
+    }                                                                                       \
+    G_STMT_END
+
+/*****************************************************************************/
+
+static void _resolve_complete_error(NMDnsSystemdResolvedResolveHandle *handle, GError *error);
+
+static void _resolve_start(NMDnsSystemdResolved *self, NMDnsSystemdResolvedResolveHandle *handle);
 
 /*****************************************************************************/
 
@@ -327,13 +377,28 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
 static gboolean
 _ensure_resolved_running_timeout(gpointer user_data)
 {
-    NMDnsSystemdResolved *       self = user_data;
-    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMDnsSystemdResolved *             self = user_data;
+    NMDnsSystemdResolvedPrivate *      priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMDnsSystemdResolvedResolveHandle *handle;
 
     nm_clear_g_source_inst(&priv->try_start_timeout_source);
 
-    _LOGT("send-updates: timeout waiting for systemd-resolved to start. Systemd-resolved won't be "
+    _LOGT("timeout waiting to D-Bus activate systemd-resolved. Systemd-resolved won't be "
           "used until it appears on the bus");
+
+again:
+    c_list_for_each_entry (handle, &priv->handle_lst_head, handle_lst) {
+        gs_free_error GError *error = NULL;
+
+        if (handle->is_failing_on_idle)
+            continue;
+
+        nm_utils_error_set_literal(&error,
+                                   NM_UTILS_ERROR_NOT_READY,
+                                   "timeout waiting for systemd-resolved to start");
+        _resolve_complete_error(handle, error);
+        goto again;
+    }
 
     return G_SOURCE_CONTINUE;
 }
@@ -343,20 +408,17 @@ ensure_resolved_running(NMDnsSystemdResolved *self)
 {
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
 
-    if (!priv->dbus_initied) {
-        _LOGT("send-updates: D-Bus connection not ready");
+    if (!priv->dbus_initied)
         return NM_TERNARY_DEFAULT;
-    }
 
     if (!priv->dbus_owner) {
         if (priv->try_start_blocked) {
             /* we have no name owner and we already tried poking the service to
              * autostart. */
-            _LOGT("send-updates: no name owner");
             return NM_TERNARY_FALSE;
         }
 
-        _LOGT("send-updates: no name owner. Try start service...");
+        _LOGT("try D-Bus activating systemd-resolved...");
         priv->try_start_blocked = TRUE;
 
         priv->try_start_timeout_source =
@@ -382,8 +444,9 @@ ensure_resolved_running(NMDnsSystemdResolved *self)
 static void
 send_updates(NMDnsSystemdResolved *self)
 {
-    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
-    RequestItem *                request_item;
+    NMDnsSystemdResolvedPrivate *      priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    RequestItem *                      request_item;
+    NMDnsSystemdResolvedResolveHandle *handle;
 
     if (!priv->send_updates_waiting) {
         /* nothing to do. */
@@ -398,16 +461,18 @@ send_updates(NMDnsSystemdResolved *self)
     if (c_list_is_empty(&priv->request_queue_lst_head)) {
         _LOGT("send-updates: no requests to send");
         priv->send_updates_waiting = FALSE;
-        return;
+        goto start_resolve;
     }
-
-    _LOGT("send-updates: start %lu requests", c_list_length(&priv->request_queue_lst_head));
 
     priv->cancellable = g_cancellable_new();
 
     priv->send_updates_waiting = FALSE;
 
+    _LOGT("send-updates: start %lu requests", c_list_length(&priv->request_queue_lst_head));
+
     c_list_for_each_entry (request_item, &priv->request_queue_lst_head, request_queue_lst) {
+        gs_free char *ss = NULL;
+
         if (request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
             && priv->has_link_default_route == NM_TERNARY_FALSE) {
             /* The "SetLinkDefaultRoute" API is only supported since v240.
@@ -416,6 +481,10 @@ send_updates(NMDnsSystemdResolved *self)
              * to do the right thing automatically. */
             continue;
         }
+
+        _LOGT("send-updates: %s ( %s )",
+              request_item->operation,
+              (ss = g_variant_print(request_item->argument, FALSE)));
 
         g_dbus_connection_call(priv->dbus_connection,
                                priv->dbus_owner,
@@ -429,6 +498,15 @@ send_updates(NMDnsSystemdResolved *self)
                                priv->cancellable,
                                call_done,
                                request_item);
+    }
+
+start_resolve:
+    c_list_for_each_entry (handle, &priv->handle_lst_head, handle_lst) {
+        if (handle->handle_cancellable)
+            continue;
+        if (handle->is_failing_on_idle)
+            continue;
+        _resolve_start(self, handle);
     }
 }
 
@@ -557,6 +635,7 @@ name_owner_changed_cb(GDBusConnection *connection,
          * returns. */
         priv->dbus_initied = TRUE;
         nm_clear_g_cancellable(&priv->cancellable);
+        _LOGT("D-Bus connection is ready");
     }
 
     name_owner_changed(user_data, new_owner);
@@ -577,6 +656,7 @@ get_name_owner_cb(const char *name_owner, GError *error, gpointer user_data)
     g_clear_object(&priv->cancellable);
 
     priv->dbus_initied = TRUE;
+    _LOGT("D-Bus connection is ready");
 
     name_owner_changed(self, name_owner);
 }
@@ -598,6 +678,252 @@ nm_dns_systemd_resolved_is_running(NMDnsSystemdResolved *self)
 /*****************************************************************************/
 
 static void
+_resolve_complete(NMDnsSystemdResolvedResolveHandle *      handle,
+                  const NMDnsSystemdResolvedAddressResult *names,
+                  guint                                    names_len,
+                  guint64                                  flags,
+                  GError *                                 error)
+{
+    NMDnsSystemdResolved *       self;
+    NMDnsSystemdResolvedPrivate *priv;
+
+    g_return_if_fail(handle && NM_IS_DNS_SYSTEMD_RESOLVED(handle->self));
+
+    self = handle->self;
+    priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+
+    nm_assert(c_list_contains(&priv->handle_lst_head, &handle->handle_lst));
+
+    c_list_unlink(&handle->handle_lst);
+
+    handle->self = NULL;
+
+    nm_clear_g_source_inst(&handle->timeout_source);
+    nm_clear_g_cancellable(&handle->handle_cancellable);
+
+    handle->r_address
+        .callback(self, handle, names, names_len, flags, error, handle->callback_user_data);
+
+    nm_g_slice_free(handle);
+}
+
+static void
+_resolve_complete_error(NMDnsSystemdResolvedResolveHandle *handle, GError *error)
+{
+    NMDnsSystemdResolved *self = handle->self;
+
+    nm_assert(error);
+    _LOG2T(handle, "request failed: %s", error->message);
+    _resolve_complete(handle, NULL, 0, 0, error);
+}
+
+static void
+_resolve_handle_call_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    gs_unref_variant GVariant *v             = NULL;
+    gs_free_error GError *             error = NULL;
+    NMDnsSystemdResolvedResolveHandle *handle;
+    NMDnsSystemdResolved *             self;
+    GVariantIter *                     v_names_iter;
+    guint64                            v_flags;
+    int                                v_ifindex;
+    char *                             v_name;
+    gs_unref_array GArray *v_names = NULL;
+    gs_free char *         ss      = NULL;
+
+    v = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    handle = user_data;
+    self   = handle->self;
+
+    if (error) {
+        gs_free char *remote_error = NULL;
+
+        remote_error = g_dbus_error_get_remote_error(error);
+        if (nm_streq0(remote_error, "org.freedesktop.DBus.Error.ServiceUnknown")) {
+            _LOG2T(handle, "request failed due to service stop. Retry");
+            g_clear_object(&handle->handle_cancellable);
+            _resolve_start(self, handle);
+            return;
+        }
+
+        _resolve_complete_error(handle, error);
+        return;
+    }
+
+    _LOG2T(handle, "request completed: %s", (ss = g_variant_print(v, FALSE)));
+
+    v_names = g_array_new(FALSE, FALSE, sizeof(NMDnsSystemdResolvedAddressResult));
+
+    G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMDnsSystemdResolvedAddressResult, name) == 0);
+    g_array_set_clear_func(v_names, nm_indirect_g_free);
+
+    g_variant_get(v, "(a(is)t)", &v_names_iter, &v_flags);
+
+    while (g_variant_iter_next(v_names_iter, "(is)", &v_ifindex, &v_name)) {
+        NMDnsSystemdResolvedAddressResult *n;
+
+        n  = nm_g_array_append_new(v_names, NMDnsSystemdResolvedAddressResult);
+        *n = (NMDnsSystemdResolvedAddressResult){
+            .name    = g_strdup(v_name),
+            .ifindex = v_ifindex,
+        };
+    }
+    g_variant_iter_free(v_names_iter);
+
+    _resolve_complete(handle,
+                      &g_array_index(v_names, NMDnsSystemdResolvedAddressResult, 0),
+                      v_names->len,
+                      v_flags,
+                      NULL);
+}
+
+static gboolean
+_resolve_failing_on_idle(gpointer user_data)
+{
+    NMDnsSystemdResolvedResolveHandle *handle = user_data;
+    gs_free_error GError *error               = NULL;
+
+    nm_utils_error_set_literal(&error,
+                               NM_UTILS_ERROR_NOT_READY,
+                               "systemd-resolved is not available");
+    _resolve_complete_error(handle, error);
+    return G_SOURCE_CONTINUE;
+}
+
+static gboolean
+_resolve_handle_timeout(gpointer user_data)
+{
+    NMDnsSystemdResolvedResolveHandle *handle = user_data;
+    gs_free_error GError *error               = NULL;
+
+    nm_utils_error_set_literal(&error, NM_UTILS_ERROR_UNKNOWN, "timeout for request");
+    _resolve_complete_error(handle, error);
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+_resolve_start(NMDnsSystemdResolved *self, NMDnsSystemdResolvedResolveHandle *handle)
+{
+    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMTernary                    is_running;
+
+    nm_assert(!handle->handle_cancellable);
+    nm_assert(!handle->is_failing_on_idle);
+
+    is_running = ensure_resolved_running(self);
+
+    if (is_running == NM_TERNARY_FALSE) {
+        /* Systemd-resolved is not is_running and shall not be used. We fail
+         * on an idle handler. */
+        _LOG2T(handle, "systemd-resolved not running. Failing on idle...");
+        nm_assert(!handle->timeout_source);
+        handle->is_failing_on_idle = TRUE;
+        handle->timeout_source     = nm_g_source_attach(
+            nm_g_idle_source_new(G_PRIORITY_DEFAULT, _resolve_failing_on_idle, handle, NULL),
+            NULL);
+        return;
+    }
+
+    if (!handle->timeout_source) {
+        handle->timeout_source = nm_g_source_attach(nm_g_timeout_source_new(handle->timeout_msec,
+                                                                            G_PRIORITY_DEFAULT,
+                                                                            _resolve_handle_timeout,
+                                                                            handle,
+                                                                            NULL),
+                                                    NULL);
+    }
+
+    if (is_running == NM_TERNARY_DEFAULT) {
+        /* we are D-Bus activating systemd-resolved. Wait for it... */
+        _LOG2T(handle, "waiting for systemd-resolved to start...");
+        return;
+    }
+
+    nm_assert(!priv->send_updates_waiting);
+
+    handle->handle_cancellable = g_cancellable_new();
+
+    _LOG2T(handle, "start D-Bus request...");
+    g_dbus_connection_call(priv->dbus_connection,
+                           priv->dbus_owner,
+                           SYSTEMD_RESOLVED_DBUS_PATH,
+                           SYSTEMD_RESOLVED_MANAGER_IFACE,
+                           "ResolveAddress",
+                           g_variant_new("(ii@ayt)",
+                                         handle->r_address.ifindex,
+                                         handle->r_address.addr_family,
+                                         nm_g_variant_new_ay_inaddr(handle->r_address.addr_family,
+                                                                    &handle->r_address.addr),
+                                         handle->r_address.flags),
+                           G_VARIANT_TYPE("(a(is)t)"),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           handle->timeout_msec + 1000u,
+                           handle->handle_cancellable,
+                           _resolve_handle_call_cb,
+                           handle);
+}
+
+NMDnsSystemdResolvedResolveHandle *
+nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved *                     self,
+                                        int                                        ifindex,
+                                        int                                        addr_family,
+                                        const NMIPAddr *                           addr,
+                                        guint64                                    flags,
+                                        guint                                      timeout_msec,
+                                        NMDnsSystemdResolvedResolveAddressCallback callback,
+                                        gpointer                                   user_data)
+{
+    NMDnsSystemdResolvedPrivate *      priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMDnsSystemdResolvedResolveHandle *handle;
+    char                               addr_str[NM_UTILS_INET_ADDRSTRLEN];
+
+    g_return_val_if_fail(NM_IS_DNS_SYSTEMD_RESOLVED(self), NULL);
+    nm_assert_addr_family(addr_family);
+    nm_assert(addr);
+    nm_assert(callback);
+
+    handle  = g_slice_new(NMDnsSystemdResolvedResolveHandle);
+    *handle = (NMDnsSystemdResolvedResolveHandle){
+        .self               = self,
+        .timeout_msec       = timeout_msec,
+        .callback_user_data = user_data,
+        .r_address =
+            {
+                .ifindex     = ifindex,
+                .addr_family = addr_family,
+                .addr        = *addr,
+                .flags       = flags,
+                .callback    = callback,
+            },
+    };
+    c_list_link_tail(&priv->handle_lst_head, &handle->handle_lst);
+
+    _LOG2T(handle,
+           "resolve-address(ifindex=%d, %s, flags=%" G_GINT64_MODIFIER "x): new request",
+           handle->r_address.ifindex,
+           nm_utils_inet_ntop(handle->r_address.addr_family, &handle->r_address.addr, addr_str),
+           handle->r_address.flags);
+
+    _resolve_start(self, handle);
+
+    return handle;
+}
+
+void
+nm_dns_systemd_resolved_resolve_cancel(NMDnsSystemdResolvedResolveHandle *handle)
+{
+    gs_free_error GError *error = NULL;
+
+    nm_utils_error_set_cancelled(&error, FALSE, "NMDnsSystemdResolved");
+    _resolve_complete_error(handle, error);
+}
+
+/*****************************************************************************/
+
+static void
 nm_dns_systemd_resolved_init(NMDnsSystemdResolved *self)
 {
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
@@ -605,6 +931,7 @@ nm_dns_systemd_resolved_init(NMDnsSystemdResolved *self)
     priv->has_link_default_route = NM_TERNARY_DEFAULT;
 
     c_list_init(&priv->request_queue_lst_head);
+    c_list_init(&priv->handle_lst_head);
     priv->dirty_interfaces = g_hash_table_new(nm_direct_hash, NULL);
 
     priv->dbus_connection = nm_g_object_ref(NM_MAIN_DBUS_CONNECTION_GET);
@@ -637,8 +964,18 @@ nm_dns_systemd_resolved_new(void)
 static void
 dispose(GObject *object)
 {
-    NMDnsSystemdResolved *       self = NM_DNS_SYSTEMD_RESOLVED(object);
-    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMDnsSystemdResolved *             self = NM_DNS_SYSTEMD_RESOLVED(object);
+    NMDnsSystemdResolvedPrivate *      priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMDnsSystemdResolvedResolveHandle *handle;
+
+    while ((handle = c_list_first_entry(&priv->handle_lst_head,
+                                        NMDnsSystemdResolvedResolveHandle,
+                                        handle_lst))) {
+        gs_free_error GError *error = NULL;
+
+        nm_utils_error_set_cancelled(&error, TRUE, "NMDnsSystemdResolved");
+        _resolve_complete_error(handle, error);
+    }
 
     free_pending_updates(self);
 
