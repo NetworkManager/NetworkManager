@@ -277,10 +277,6 @@ nm_settings_connection_get_secrets(NMSettingsConnection *          self,
 void nm_settings_connection_cancel_secrets(NMSettingsConnection *      self,
                                            NMSettingsConnectionCallId *call_id);
 
-void nm_settings_connection_clear_secrets(NMSettingsConnection *self,
-                                          gboolean              clear_cached_system_secrets,
-                                          gboolean              persist);
-
 gboolean nm_settings_connection_check_visibility(NMSettingsConnection *self,
                                                  NMSessionMonitor *    session_monitor);
 

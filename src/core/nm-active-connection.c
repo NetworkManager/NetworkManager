@@ -516,11 +516,6 @@ nm_active_connection_clear_secrets(NMActiveConnection *self)
 
     priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
-    if (nm_settings_connection_has_unmodified_applied_connection(priv->settings_connection.obj,
-                                                                 priv->applied_connection,
-                                                                 NM_SETTING_COMPARE_FLAG_NONE)) {
-        nm_settings_connection_clear_secrets(priv->settings_connection.obj, FALSE, FALSE);
-    }
     nm_connection_clear_secrets(priv->applied_connection);
 }
 

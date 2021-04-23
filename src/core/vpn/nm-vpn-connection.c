@@ -399,11 +399,6 @@ vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
 
     g_free(priv->bus_name);
     priv->bus_name = NULL;
-
-    /* Clear out connection secrets to ensure that the settings service
-     * gets asked for them next time the connection is activated.
-     */
-    nm_active_connection_clear_secrets(NM_ACTIVE_CONNECTION(self));
 }
 
 static void
@@ -965,11 +960,6 @@ plugin_state_changed(NMVpnConnection *self, NMVpnServiceState new_service_state)
     priv->service_state = new_service_state;
 
     if (new_service_state == NM_VPN_SERVICE_STATE_STOPPED) {
-        /* Clear connection secrets to ensure secrets get requested each time the
-         * connection is activated.
-         */
-        nm_active_connection_clear_secrets(NM_ACTIVE_CONNECTION(self));
-
         if ((priv->vpn_state >= STATE_WAITING) && (priv->vpn_state <= STATE_ACTIVATED)) {
             VpnState old_state = priv->vpn_state;
 
