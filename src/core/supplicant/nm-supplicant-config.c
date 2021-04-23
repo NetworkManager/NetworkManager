@@ -843,6 +843,8 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
         g_string_append(key_mgmt_conf, "IEEE8021X");
 
     } else if (nm_streq(key_mgmt, "owe")) {
+        pmf = NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED;
+
         g_string_append(key_mgmt_conf, "OWE");
 
     } else if (nm_streq(key_mgmt, "wpa-psk")) {
@@ -858,6 +860,8 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
         }
 
     } else if (nm_streq(key_mgmt, "sae")) {
+        pmf = NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED;
+
         g_string_append(key_mgmt_conf, "SAE");
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
             g_string_append(key_mgmt_conf, " FT-SAE");
