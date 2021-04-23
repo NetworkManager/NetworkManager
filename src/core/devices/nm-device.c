@@ -9447,6 +9447,8 @@ dhcp4_start(NMDevice *self)
     GError *               error = NULL;
     const NMPlatformLink * pllink;
     const char *const *    reject_servers;
+    gboolean               request_broadcast;
+    const char *           str;
 
     connection = nm_device_get_applied_connection(self);
     g_return_val_if_fail(connection, FALSE);
@@ -9460,10 +9462,22 @@ dhcp4_start(NMDevice *self)
     nm_dbus_object_clear_and_unexport(&priv->dhcp_data_4.config);
     priv->dhcp_data_4.config = nm_dhcp_config_new(AF_INET);
 
+    request_broadcast = FALSE;
+
     pllink = nm_platform_link_get(nm_device_get_platform(self), nm_device_get_ip_ifindex(self));
     if (pllink) {
         hwaddr       = nmp_link_address_get_as_bytes(&pllink->l_address);
         bcast_hwaddr = nmp_link_address_get_as_bytes(&pllink->l_broadcast);
+
+        str = nmp_object_link_udev_device_get_property_value(NMP_OBJECT_UP_CAST(pllink),
+                                                             "ID_NET_DHCP_BROADCAST");
+        if (str && _nm_utils_ascii_str_to_bool(str, FALSE)) {
+            /* Use the device property ID_NET_DHCP_BROADCAST setting, which may be set for interfaces
+             * requiring that the DHCPOFFER message is being broadcast because they can't handle unicast
+             * messages while not fully configured.
+             */
+            request_broadcast = TRUE;
+        }
     }
 
     client_id = _prop_get_ipv4_dhcp_client_id(self, connection, hwaddr);
@@ -9472,29 +9486,29 @@ dhcp4_start(NMDevice *self)
     reject_servers = nm_setting_ip_config_get_dhcp_reject_servers(s_ip4, NULL);
 
     g_warn_if_fail(priv->dhcp_data_4.client == NULL);
-    priv->dhcp_data_4.client =
-        nm_dhcp_manager_start_ip4(nm_dhcp_manager_get(),
-                                  nm_netns_get_multi_idx(nm_device_get_netns(self)),
-                                  nm_device_get_ip_iface(self),
-                                  nm_device_get_ip_ifindex(self),
-                                  hwaddr,
-                                  bcast_hwaddr,
-                                  nm_connection_get_uuid(connection),
-                                  nm_device_get_route_table(self, AF_INET),
-                                  nm_device_get_route_metric(self, AF_INET),
-                                  NM_DHCP_CLIENT_FLAGS_NONE,
-                                  nm_setting_ip_config_get_dhcp_send_hostname(s_ip4),
-                                  nm_setting_ip_config_get_dhcp_hostname(s_ip4),
-                                  nm_setting_ip4_config_get_dhcp_fqdn(NM_SETTING_IP4_CONFIG(s_ip4)),
-                                  _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET),
-                                  _prop_get_connection_mud_url(self, s_con, &mud_url_free),
-                                  client_id,
-                                  _prop_get_ipvx_dhcp_timeout(self, AF_INET),
-                                  priv->dhcp_anycast_address,
-                                  NULL,
-                                  vendor_class_identifier,
-                                  reject_servers,
-                                  &error);
+    priv->dhcp_data_4.client = nm_dhcp_manager_start_ip4(
+        nm_dhcp_manager_get(),
+        nm_netns_get_multi_idx(nm_device_get_netns(self)),
+        nm_device_get_ip_iface(self),
+        nm_device_get_ip_ifindex(self),
+        hwaddr,
+        bcast_hwaddr,
+        nm_connection_get_uuid(connection),
+        nm_device_get_route_table(self, AF_INET),
+        nm_device_get_route_metric(self, AF_INET),
+        request_broadcast ? NM_DHCP_CLIENT_FLAGS_REQUEST_BROADCAST : NM_DHCP_CLIENT_FLAGS_NONE,
+        nm_setting_ip_config_get_dhcp_send_hostname(s_ip4),
+        nm_setting_ip_config_get_dhcp_hostname(s_ip4),
+        nm_setting_ip4_config_get_dhcp_fqdn(NM_SETTING_IP4_CONFIG(s_ip4)),
+        _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET),
+        _prop_get_connection_mud_url(self, s_con, &mud_url_free),
+        client_id,
+        _prop_get_ipvx_dhcp_timeout(self, AF_INET),
+        priv->dhcp_anycast_address,
+        NULL,
+        vendor_class_identifier,
+        reject_servers,
+        &error);
     if (!priv->dhcp_data_4.client) {
         _LOGW(LOGD_DHCP4, "failure to start DHCP: %s", error->message);
         g_clear_error(&error);

@@ -435,6 +435,12 @@ dhclient_start(NMDhcpClient *client,
     if (release)
         g_ptr_array_add(argv, (gpointer) "-r");
 
+    if (!release
+        && NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(NM_DHCP_CLIENT(self)),
+                        NM_DHCP_CLIENT_FLAGS_REQUEST_BROADCAST)) {
+        g_ptr_array_add(argv, (gpointer) "-B");
+    }
+
     if (addr_family == AF_INET6) {
         g_ptr_array_add(argv, (gpointer) "-6");
 
