@@ -73,8 +73,7 @@ typedef struct _NMDhcpClientPrivate {
     guint32             iaid;
     NMDhcpState         state;
     NMDhcpHostnameFlags hostname_flags;
-    bool                info_only : 1;
-    bool                use_fqdn : 1;
+    NMDhcpClientFlags   client_flags;
     bool                iaid_explicit : 1;
 } NMDhcpClientPrivate;
 
@@ -292,20 +291,12 @@ nm_dhcp_client_get_hostname_flags(NMDhcpClient *self)
     return NM_DHCP_CLIENT_GET_PRIVATE(self)->hostname_flags;
 }
 
-gboolean
-nm_dhcp_client_get_info_only(NMDhcpClient *self)
+NMDhcpClientFlags
+nm_dhcp_client_get_client_flags(NMDhcpClient *self)
 {
-    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
+    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), NM_DHCP_CLIENT_FLAGS_NONE);
 
-    return NM_DHCP_CLIENT_GET_PRIVATE(self)->info_only;
-}
-
-gboolean
-nm_dhcp_client_get_use_fqdn(NMDhcpClient *self)
-{
-    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
-
-    return NM_DHCP_CLIENT_GET_PRIVATE(self)->use_fqdn;
+    return NM_DHCP_CLIENT_GET_PRIVATE(self)->client_flags;
 }
 
 const char *
@@ -930,12 +921,12 @@ nm_dhcp_client_handle_event(gpointer      unused,
                                                           priv->route_metric));
             } else {
                 prefix    = nm_dhcp_utils_ip6_prefix_from_options(str_options);
-                ip_config = NM_IP_CONFIG_CAST(
-                    nm_dhcp_utils_ip6_config_from_options(nm_dhcp_client_get_multi_idx(self),
-                                                          priv->ifindex,
-                                                          priv->iface,
-                                                          str_options,
-                                                          priv->info_only));
+                ip_config = NM_IP_CONFIG_CAST(nm_dhcp_utils_ip6_config_from_options(
+                    nm_dhcp_client_get_multi_idx(self),
+                    priv->ifindex,
+                    priv->iface,
+                    str_options,
+                    NM_FLAGS_HAS(priv->client_flags, NM_DHCP_CLIENT_FLAGS_INFO_ONLY)));
             }
         } else
             g_warn_if_reached();
@@ -1052,11 +1043,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_FLAGS:
         /* construct-only */
         flags = g_value_get_uint(value);
-        nm_assert(
-            (flags & ~((guint)(NM_DHCP_CLIENT_FLAGS_INFO_ONLY | NM_DHCP_CLIENT_FLAGS_USE_FQDN)))
-            == 0);
-        priv->info_only = NM_FLAGS_HAS(flags, NM_DHCP_CLIENT_FLAGS_INFO_ONLY);
-        priv->use_fqdn  = NM_FLAGS_HAS(flags, NM_DHCP_CLIENT_FLAGS_USE_FQDN);
+        nm_assert(!NM_FLAGS_ANY(flags, ~((guint) NM_DHCP_CLIENT_FLAGS_ALL)));
+        priv->client_flags = flags;
         break;
     case PROP_MULTI_IDX:
         /* construct-only */

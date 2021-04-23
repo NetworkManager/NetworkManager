@@ -68,9 +68,14 @@ typedef struct {
     CList                        dhcp_client_lst;
 } NMDhcpClient;
 
-typedef enum {
+typedef enum _nm_packed {
+    NM_DHCP_CLIENT_FLAGS_NONE = 0,
+
     NM_DHCP_CLIENT_FLAGS_INFO_ONLY = (1LL << 0),
     NM_DHCP_CLIENT_FLAGS_USE_FQDN  = (1LL << 1),
+
+    _NM_DHCP_CLIENT_FLAGS_LAST,
+    NM_DHCP_CLIENT_FLAGS_ALL = ((_NM_DHCP_CLIENT_FLAGS_LAST - 1) << 1) - 1,
 } NMDhcpClientFlags;
 
 typedef struct {
@@ -148,9 +153,7 @@ const char *const *nm_dhcp_client_get_reject_servers(NMDhcpClient *self);
 
 NMDhcpHostnameFlags nm_dhcp_client_get_hostname_flags(NMDhcpClient *self);
 
-gboolean nm_dhcp_client_get_info_only(NMDhcpClient *self);
-
-gboolean nm_dhcp_client_get_use_fqdn(NMDhcpClient *self);
+NMDhcpClientFlags nm_dhcp_client_get_client_flags(NMDhcpClient *self);
 
 GBytes *nm_dhcp_client_get_vendor_class_identifier(NMDhcpClient *self);
 

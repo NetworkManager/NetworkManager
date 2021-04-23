@@ -520,19 +520,20 @@ ip4_start(NMDhcpClient *client,
 
     client_id = nm_dhcp_client_get_client_id(client);
 
-    priv->conf_file = create_dhclient_config(self,
-                                             AF_INET,
-                                             nm_dhcp_client_get_iface(client),
-                                             nm_dhcp_client_get_uuid(client),
-                                             client_id,
-                                             dhcp_anycast_addr,
-                                             nm_dhcp_client_get_hostname(client),
-                                             nm_dhcp_client_get_timeout(client),
-                                             nm_dhcp_client_get_use_fqdn(client),
-                                             nm_dhcp_client_get_hostname_flags(client),
-                                             nm_dhcp_client_get_mud_url(client),
-                                             nm_dhcp_client_get_reject_servers(client),
-                                             &new_client_id);
+    priv->conf_file = create_dhclient_config(
+        self,
+        AF_INET,
+        nm_dhcp_client_get_iface(client),
+        nm_dhcp_client_get_uuid(client),
+        client_id,
+        dhcp_anycast_addr,
+        nm_dhcp_client_get_hostname(client),
+        nm_dhcp_client_get_timeout(client),
+        NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(client), NM_DHCP_CLIENT_FLAGS_USE_FQDN),
+        nm_dhcp_client_get_hostname_flags(client),
+        nm_dhcp_client_get_mud_url(client),
+        nm_dhcp_client_get_reject_servers(client),
+        &new_client_id);
     if (!priv->conf_file) {
         nm_utils_error_set_literal(error,
                                    NM_UTILS_ERROR_UNKNOWN,
@@ -582,7 +583,10 @@ ip6_start(NMDhcpClient *            client,
     }
 
     return dhclient_start(client,
-                          nm_dhcp_client_get_info_only(NM_DHCP_CLIENT(self)) ? "-S" : "-N",
+                          NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(NM_DHCP_CLIENT(self)),
+                                       NM_DHCP_CLIENT_FLAGS_INFO_ONLY)
+                              ? "-S"
+                              : "-N",
                           FALSE,
                           NULL,
                           needed_prefixes,
