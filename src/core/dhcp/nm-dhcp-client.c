@@ -1152,8 +1152,10 @@ constructed(GObject *object)
      * for that. */
     if (NM_IS_IPv4(priv->addr_family))
         nm_assert(!NM_FLAGS_ANY(priv->client_flags, NM_DHCP_CLIENT_FLAGS_INFO_ONLY));
-    else
+    else {
         nm_assert(NM_FLAGS_HAS(priv->client_flags, NM_DHCP_CLIENT_FLAGS_USE_FQDN));
+        nm_assert(!NM_FLAGS_ANY(priv->client_flags, NM_DHCP_CLIENT_FLAGS_REQUEST_BROADCAST));
+    }
 
     G_OBJECT_CLASS(nm_dhcp_client_parent_class)->constructed(object);
 }

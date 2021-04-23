@@ -632,6 +632,11 @@ ip4_start(NMDhcpClient *client,
             sd_dhcp_lease_get_address(lease, &last_addr);
     }
 
+    r = sd_dhcp_client_set_request_broadcast(sd_client,
+                                             NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(client),
+                                                          NM_DHCP_CLIENT_FLAGS_REQUEST_BROADCAST));
+    nm_assert(r >= 0);
+
     if (last_addr.s_addr) {
         r = sd_dhcp_client_set_request_address(sd_client, &last_addr);
         if (r < 0) {
