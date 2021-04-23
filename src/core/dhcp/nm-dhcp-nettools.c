@@ -1110,7 +1110,7 @@ ip4_start(NMDhcpClient *client,
     }
     hostname = nm_dhcp_client_get_hostname(client);
     if (hostname) {
-        if (nm_dhcp_client_get_use_fqdn(client)) {
+        if (NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(client), NM_DHCP_CLIENT_FLAGS_USE_FQDN)) {
             uint8_t             buffer[255];
             NMDhcpHostnameFlags flags;
             size_t              fqdn_len;

@@ -16154,7 +16154,8 @@ nm_device_spawn_iface_helper(NMDevice *self)
 
             hostname = nm_dhcp_client_get_hostname(priv->dhcp_data_4.client);
             if (hostname) {
-                if (nm_dhcp_client_get_use_fqdn(priv->dhcp_data_4.client))
+                if (NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(priv->dhcp_data_4.client),
+                                 NM_DHCP_CLIENT_FLAGS_USE_FQDN))
                     g_ptr_array_add(argv, g_strdup("--dhcp4-fqdn"));
                 else
                     g_ptr_array_add(argv, g_strdup("--dhcp4-hostname"));
