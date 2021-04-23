@@ -417,16 +417,8 @@ send_updates(NMDnsSystemdResolved *self)
             continue;
         }
 
-        /* Above we explicitly call "StartServiceByName" trying to avoid D-Bus activating systmd-resolved
-         * multiple times. There is still a race, were we might hit this line although actually
-         * the service just quit this very moment. In that case, we would try to D-Bus activate the
-         * service multiple times during each call (something we wanted to avoid).
-         *
-         * But this is hard to avoid, because we'd have to check the error failure to detect the reason
-         * and retry. The race is not critical, because at worst it results in logging a warning
-         * about failure to start systemd.resolved. */
         g_dbus_connection_call(priv->dbus_connection,
-                               SYSTEMD_RESOLVED_DBUS_SERVICE,
+                               priv->dbus_owner,
                                SYSTEMD_RESOLVED_DBUS_PATH,
                                SYSTEMD_RESOLVED_MANAGER_IFACE,
                                request_item->operation,
