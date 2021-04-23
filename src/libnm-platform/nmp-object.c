@@ -257,6 +257,24 @@ nm_sock_addr_union_to_string(const NMSockAddrUnion *sa, char *buf, gsize len)
 
 /*****************************************************************************/
 
+const char *
+nmp_object_link_udev_device_get_property_value(const NMPObject *obj, const char *key)
+{
+    nm_assert(key);
+
+    if (!obj)
+        return nm_assert_unreachable_val(NULL);
+
+    nm_assert(NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_LINK);
+
+    if (!obj->_link.udev.device)
+        return NULL;
+
+    return udev_device_get_property_value(obj->_link.udev.device, key);
+}
+
+/*****************************************************************************/
+
 static const NMDedupMultiIdxTypeClass _dedup_multi_idx_type_class;
 
 static void
