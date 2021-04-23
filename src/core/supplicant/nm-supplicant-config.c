@@ -1007,6 +1007,9 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
                                  error))
             return FALSE;
 
+        /* We set the supplicants global "pmf" config value to "1" (optional),
+         * so no need to set it network-specific again if PMF_OPTIONAL is set.
+         */
         if (set_pmf
             && NM_IN_SET(pmf,
                          NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE,
