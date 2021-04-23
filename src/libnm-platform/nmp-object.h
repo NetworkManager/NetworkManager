@@ -1067,6 +1067,10 @@ nmp_object_ip6_address_is_not_link_local(const NMPObject *obj)
 
 /*****************************************************************************/
 
+const char *nmp_object_link_udev_device_get_property_value(const NMPObject *obj, const char *key);
+
+/*****************************************************************************/
+
 static inline gboolean
 nm_platform_dedup_multi_iter_next_obj(NMDedupMultiIter *ipconf_iter,
                                       const NMPObject **out_obj,
