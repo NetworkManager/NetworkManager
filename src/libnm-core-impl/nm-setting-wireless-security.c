@@ -1117,6 +1117,22 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
+    if (NM_IN_STRSET(priv->key_mgmt, "owe", "sae", "wpa-eap-suite-b-192")
+        && !NM_IN_SET(priv->pmf,
+                      NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT,
+                      NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("pmf can only be 'default' or 'required' when using 'owe', 'sae' or "
+                      "'wpa-eap-suite-b-192' key management"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+                       NM_SETTING_WIRELESS_SECURITY_PMF);
+        return FALSE;
+    }
+
     if (!_nm_utils_wps_method_validate(priv->wps_method,
                                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
                                        NM_SETTING_WIRELESS_SECURITY_WPS_METHOD,
