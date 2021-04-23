@@ -907,6 +907,9 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
         pmf = NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED;
 
         g_string_append(key_mgmt_conf, "WPA-EAP-SUITE-B-192");
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT)
+            && _get_capability(priv, NM_SUPPL_CAP_TYPE_SHA384))
+            g_string_append(key_mgmt_conf, " FT-EAP-SHA384");
     }
 
     if (!add_string_val(self, key_mgmt_conf->str, "key_mgmt", TRUE, NULL, error))
