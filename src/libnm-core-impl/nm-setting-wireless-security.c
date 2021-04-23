@@ -1498,17 +1498,19 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
     /**
      * NMSettingWirelessSecurity:key-mgmt:
      *
-     * Key management used for the connection.  One of "none" (WEP),
-     * "ieee8021x" (Dynamic WEP), "wpa-psk" (infrastructure WPA-PSK), "sae"
-     * (SAE), "owe" (Opportunistic Wireless Encryption), "wpa-eap"
-     * (WPA-Enterprise) or "wpa-eap-suite-b-192" (WPA3-Enterprise Suite B).
+     * Key management used for the connection. One of "none" (WEP or no
+     * password protection), "ieee8021x" (Dynamic WEP), "owe" (Opportunistic
+     * Wireless Encryption), "wpa-psk" (WPA2 + WPA3 personal), "sae" (WPA3
+     * personal only), "wpa-eap" (WPA2 + WPA3 enterprise) or
+     * "wpa-eap-suite-b-192" (WPA3 enterprise only).
+     *
      * This property must be set for any Wi-Fi connection that uses security.
      **/
     /* ---ifcfg-rh---
      * property: key-mgmt
      * variable: KEY_MGMT(+)
-     * values: IEEE8021X, WPA-PSK, WPA-EAP, WPA-EAP-SUITE-B-192
-     * description: Key management menthod.
+     * values: none, ieee8021x, owe, wpa-psk, sae, wpa-eap, wpa-eap-suite-b-192
+     * description: Key management method.
      * ---end---
      */
     obj_properties[PROP_KEY_MGMT] =
