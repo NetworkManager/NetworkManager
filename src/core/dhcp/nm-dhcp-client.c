@@ -1141,6 +1141,24 @@ nm_dhcp_client_init(NMDhcpClient *self)
     priv->pid = -1;
 }
 
+#if NM_MORE_ASSERTS
+static void
+constructed(GObject *object)
+{
+    NMDhcpClient *       self = NM_DHCP_CLIENT(object);
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    /* certain flags only make sense with certain address family. Assert
+     * for that. */
+    if (NM_IS_IPv4(priv->addr_family))
+        nm_assert(!NM_FLAGS_ANY(priv->client_flags, NM_DHCP_CLIENT_FLAGS_INFO_ONLY));
+    else
+        nm_assert(NM_FLAGS_HAS(priv->client_flags, NM_DHCP_CLIENT_FLAGS_USE_FQDN));
+
+    G_OBJECT_CLASS(nm_dhcp_client_parent_class)->constructed(object);
+}
+#endif
+
 static void
 dispose(GObject *object)
 {
@@ -1179,6 +1197,9 @@ nm_dhcp_client_class_init(NMDhcpClientClass *client_class)
 
     g_type_class_add_private(client_class, sizeof(NMDhcpClientPrivate));
 
+#if NM_MORE_ASSERTS
+    object_class->constructed = constructed;
+#endif
     object_class->dispose      = dispose;
     object_class->get_property = get_property;
     object_class->set_property = set_property;
