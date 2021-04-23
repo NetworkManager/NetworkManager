@@ -323,20 +323,14 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     return has_config;
 }
 
-static void
-send_updates(NMDnsSystemdResolved *self)
+static NMTernary
+ensure_resolved_running(NMDnsSystemdResolved *self)
 {
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
-    RequestItem *                request_item;
-
-    if (!priv->request_queue_to_send) {
-        /* nothing to do. */
-        return;
-    }
 
     if (!priv->dbus_initied) {
         _LOGT("send-updates: D-Bus connection not ready");
-        return;
+        return NM_TERNARY_DEFAULT;
     }
 
     if (!priv->dbus_has_owner) {
@@ -344,7 +338,7 @@ send_updates(NMDnsSystemdResolved *self)
             /* we have no name owner and we already tried poking the service to
              * autostart. */
             _LOGT("send-updates: no name owner");
-            return;
+            return NM_TERNARY_FALSE;
         }
 
         _LOGT("send-updates: no name owner. Try start service...");
@@ -356,8 +350,25 @@ send_updates(NMDnsSystemdResolved *self)
                                                       NULL,
                                                       NULL,
                                                       NULL);
+        return NM_TERNARY_DEFAULT;
+    }
+
+    return NM_TERNARY_TRUE;
+}
+
+static void
+send_updates(NMDnsSystemdResolved *self)
+{
+    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    RequestItem *                request_item;
+
+    if (!priv->request_queue_to_send) {
+        /* nothing to do. */
         return;
     }
+
+    if (ensure_resolved_running(self) != NM_TERNARY_TRUE)
+        return;
 
     nm_clear_g_cancellable(&priv->cancellable);
 
