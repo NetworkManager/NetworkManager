@@ -491,7 +491,7 @@ sett_conn_changed(NMSettingsConnection *  sett_conn,
         gboolean nm_autoconnectable  = nm_setting_connection_get_autoconnect(s_conn);
         gboolean iwd_autoconnectable = get_property_bool(data->known_network, "AutoConnect", TRUE);
 
-        if (iwd_autoconnectable == nm_autoconnectable) {
+        if (iwd_autoconnectable != nm_autoconnectable) {
             nm_log_dbg(LOGD_WIFI,
                        "iwd: updating AutoConnect on known network at %s based on connection %s",
                        g_dbus_proxy_get_object_path(data->known_network),
