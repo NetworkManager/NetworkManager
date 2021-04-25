@@ -742,7 +742,9 @@ mirror_connection(NMIwdManager *        self,
             g_object_set(G_OBJECT(s_wifi), NM_SETTING_WIRELESS_HIDDEN, hidden, NULL);
         } else {
             KnownNetworkData data = {known_network, settings_connection, id};
-            sett_conn_changed(settings_connection, 0, &data);
+            sett_conn_changed(settings_connection,
+                              NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET,
+                              &data);
         }
     }
 
