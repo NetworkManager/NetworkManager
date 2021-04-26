@@ -10,7 +10,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Add an 'accept-all-mac-addresses' property to the ethernet setting
   to accept frames with any MAC address (also known as promiscuous
-  mode)
+  mode).
+* nmcli: fix setting property aliases to empty value to reset the
+  default value.
 
 =============================================
 NetworkManager-1.30
