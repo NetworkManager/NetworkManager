@@ -190,6 +190,7 @@ complain ("XXX marker are reserved for development while work-in-progress. Use T
 complain ("This gtk-doc annotation looks wrong") if $line =~ /\*.*\( *(transfer-(none|container|full)|allow none) *\) *(:|\()/;
 complain ("Prefer nm_assert() or g_return*() to g_assert*()") if $line =~ /g_assert/ and (not $filename =~ /\/tests\//) and (not $filename =~ /\/nm-test-/);
 complain ("Use gs_free_error with GError variables") if $line =~ /\bgs_free\b +GError *\*/;
+complain ("Don't use strcmp/g_strcmp0 unless you need to sort. Consider nm_streq()/nm_streq0(),NM_IN_STRSET() for testing equality") if $line =~ /\b(strcmp|g_strcmp0)\b/;
 #complain ("Use spaces instead of tabs") if $line =~ /\t/;
 
 # Further on we process stuff without comments.
