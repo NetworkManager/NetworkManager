@@ -1010,11 +1010,6 @@ psk_setting_to_iwd_config(GKeyFile *file, NMSettingWirelessSecurity *s_wsec, GEr
     const char *         key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
 
     if (!psk || NM_FLAGS_ANY(psk_flags, SECRETS_DONT_STORE_FLAGS)) {
-        g_key_file_set_comment(file,
-                               "Security",
-                               NULL,
-                               "The passphrase is to be queried through the agent",
-                               NULL);
         if (NM_FLAGS_ANY(psk_flags, SECRETS_DONT_STORE_FLAGS)) {
             nm_log_info(
                 LOGD_WIFI,
