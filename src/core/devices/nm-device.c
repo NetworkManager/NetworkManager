@@ -8502,18 +8502,20 @@ activate_stage2_device_config(NMDevice *self)
     accept_all_mac_addresses =
         s_wired ? nm_setting_wired_get_accept_all_mac_addresses(s_wired) : NM_TERNARY_DEFAULT;
     if (accept_all_mac_addresses != NM_TERNARY_DEFAULT) {
-        int ifi_flags;
+        int ifindex = nm_device_get_ip_ifindex(self);
 
-        ifi_flags = nm_platform_link_get_ifi_flags(nm_device_get_platform(self),
-                                                   nm_device_get_ip_ifindex(self),
-                                                   IFF_PROMISC);
-        if (ifi_flags >= 0 && ((!!ifi_flags) != (!!accept_all_mac_addresses))) {
-            nm_platform_link_change_flags(nm_device_get_platform(self),
-                                          nm_device_get_ip_ifindex(self),
-                                          IFF_PROMISC,
-                                          !!accept_all_mac_addresses);
-            if (priv->promisc_reset == NM_OPTION_BOOL_DEFAULT)
-                priv->promisc_reset = !accept_all_mac_addresses;
+        if (ifindex > 0) {
+            int ifi_flags =
+                nm_platform_link_get_ifi_flags(nm_device_get_platform(self), ifindex, IFF_PROMISC);
+
+            if (ifi_flags >= 0 && ((!!ifi_flags) != (!!accept_all_mac_addresses))) {
+                nm_platform_link_change_flags(nm_device_get_platform(self),
+                                              ifindex,
+                                              IFF_PROMISC,
+                                              !!accept_all_mac_addresses);
+                if (priv->promisc_reset == NM_OPTION_BOOL_DEFAULT)
+                    priv->promisc_reset = !accept_all_mac_addresses;
+            }
         }
     }
 
