@@ -91,12 +91,15 @@ nmc_string_to_uint(const char *       str,
 gboolean
 nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
 {
-    const char *s_true[]  = {"true", "yes", "on", "1", NULL};
-    const char *s_false[] = {"false", "no", "off", "0", NULL};
+    gs_free char *str_to_free = NULL;
+    int           i;
 
-    g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
+    nm_assert(!error || !*error);
+    nm_assert(val_bool);
 
-    if (g_strcmp0(str, "o") == 0) {
+    str = nm_strstrip_avoid_copy_a(300, str, &str_to_free);
+
+    if (nm_streq0(str, "o")) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
                            /* TRANSLATORS: the first %s is the partial value entered by
@@ -108,11 +111,13 @@ nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
         return FALSE;
     }
 
-    if (nmc_string_is_valid(str, s_true, NULL))
+    if (nmc_string_is_valid(str, NM_MAKE_STRV("true", "yes", "on"), NULL))
         *val_bool = TRUE;
-    else if (nmc_string_is_valid(str, s_false, NULL))
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("false", "no", "off"), NULL))
         *val_bool = FALSE;
-    else {
+    else if ((i = _nm_utils_ascii_str_to_int64(str, 0, 0, 1, -1)) >= 0) {
+        *val_bool = !!i;
+    } else {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
                            _("'%s' is not valid; use [%s] or [%s]"),
