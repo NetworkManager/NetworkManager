@@ -3101,6 +3101,28 @@ static gboolean _set_fcn_dcb_bool(ARGS_SET_FCN)
     return TRUE;
 }
 
+static gboolean _set_fcn_gsm_auto_config(ARGS_SET_FCN)
+{
+    if (!_set_fcn_gobject_bool_impl(property_info, setting, modifier, value, error))
+        return FALSE;
+
+    if (nm_setting_gsm_get_auto_config(NM_SETTING_GSM(setting))) {
+        /* the auto-config flag gets normalized to FALSE, if any of
+         * APN, username or password is set. Thus, setting auto-config
+         * needs us to reset those flags too. */
+        g_object_set(setting,
+                     NM_SETTING_GSM_APN,
+                     NULL,
+                     NM_SETTING_GSM_USERNAME,
+                     NULL,
+                     NM_SETTING_GSM_PASSWORD,
+                     NULL,
+                     NULL);
+    }
+
+    return TRUE;
+}
+
 static gboolean _set_fcn_gsm_sim_operator_id(ARGS_SET_FCN)
 {
     const char *p = value;
@@ -5640,7 +5662,11 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_GSM
 static const NMMetaPropertyInfo *const property_infos_GSM[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_AUTO_CONFIG,
-        .property_type =                &_pt_gobject_bool,
+        .property_type = DEFINE_PROPERTY_TYPE (
+            .get_fcn =                  _get_fcn_gobject,
+            .set_fcn =                  _set_fcn_gsm_auto_config,
+            .complete_fcn =             _complete_fcn_gobject_bool,
+        ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_NUMBER,
         .property_type =                &_pt_gobject_string,
