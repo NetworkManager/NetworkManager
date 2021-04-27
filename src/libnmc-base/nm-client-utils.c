@@ -175,12 +175,12 @@ nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
  * On failure: error->code : 0 - string not found; 1 - string is ambiguous
  */
 const char *
-nmc_string_is_valid(const char *input, const char **allowed, GError **error)
+_nmc_string_is_valid(const char *input, const char *const *allowed, GError **error)
 {
-    const char **p;
-    size_t       input_ln, p_len;
-    const char * partial_match = NULL;
-    gboolean     ambiguous     = FALSE;
+    const char *const *p;
+    size_t             input_ln, p_len;
+    const char *       partial_match = NULL;
+    gboolean           ambiguous     = FALSE;
 
     g_return_val_if_fail(!error || !*error, NULL);
 

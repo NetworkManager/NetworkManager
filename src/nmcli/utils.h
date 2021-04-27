@@ -33,23 +33,22 @@ void     nmc_terminal_show_progress(const char *str);
 pid_t    nmc_terminal_spawn_pager(const NmcConfig *nmc_config);
 char *   nmc_colorize(const NmcConfig *nmc_config, NMMetaColor color, const char *fmt, ...)
     _nm_printf(3, 4);
-void        nmc_filter_out_colors_inplace(char *str);
-char *      nmc_filter_out_colors(const char *str);
-char *      nmc_get_user_input(const char *ask_str);
-int         nmc_string_to_arg_array(const char *line,
-                                    const char *delim,
-                                    gboolean    unquote,
-                                    char ***    argv,
-                                    int *       argc);
-const char *nmc_string_is_valid(const char *input, const char **allowed, GError **error);
-char *      nmc_util_strv_for_display(const char *const *strv, gboolean brackets);
-int         nmc_string_screen_width(const char *start, const char *end);
-void        set_val_str(NmcOutputField fields_array[], guint32 index, char *value);
-void        set_val_strc(NmcOutputField fields_array[], guint32 index, const char *value);
-void        set_val_arr(NmcOutputField fields_array[], guint32 index, char **value);
-void        set_val_arrc(NmcOutputField fields_array[], guint32 index, const char **value);
-void        set_val_color_all(NmcOutputField fields_array[], NMMetaColor color);
-void        nmc_free_output_field_values(NmcOutputField fields_array[]);
+void  nmc_filter_out_colors_inplace(char *str);
+char *nmc_filter_out_colors(const char *str);
+char *nmc_get_user_input(const char *ask_str);
+int   nmc_string_to_arg_array(const char *line,
+                              const char *delim,
+                              gboolean    unquote,
+                              char ***    argv,
+                              int *       argc);
+char *nmc_util_strv_for_display(const char *const *strv, gboolean brackets);
+int   nmc_string_screen_width(const char *start, const char *end);
+void  set_val_str(NmcOutputField fields_array[], guint32 index, char *value);
+void  set_val_strc(NmcOutputField fields_array[], guint32 index, const char *value);
+void  set_val_arr(NmcOutputField fields_array[], guint32 index, char **value);
+void  set_val_arrc(NmcOutputField fields_array[], guint32 index, const char **value);
+void  set_val_color_all(NmcOutputField fields_array[], NMMetaColor color);
+void  nmc_free_output_field_values(NmcOutputField fields_array[]);
 
 GArray *        parse_output_fields(const char *                     fields_str,
                                     const NMMetaAbstractInfo *const *fields_array,
