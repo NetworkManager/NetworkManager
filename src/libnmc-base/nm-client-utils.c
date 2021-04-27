@@ -132,13 +132,15 @@ nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
 gboolean
 nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
 {
-    const char *s_true[]    = {"true", "yes", "on", NULL};
-    const char *s_false[]   = {"false", "no", "off", NULL};
-    const char *s_unknown[] = {"unknown", NULL};
+    gs_free char *str_to_free = NULL;
+    int           i;
 
-    g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
+    nm_assert(!error || !*error);
+    nm_assert(val);
 
-    if (g_strcmp0(str, "o") == 0) {
+    str = nm_strstrip_avoid_copy_a(300, str, &str_to_free);
+
+    if (nm_streq0(str, "o")) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
                            /* TRANSLATORS: the first %s is the partial value entered by
@@ -150,12 +152,14 @@ nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
         return FALSE;
     }
 
-    if (nmc_string_is_valid(str, s_true, NULL))
+    if (nmc_string_is_valid(str, NM_MAKE_STRV("true", "yes", "on"), NULL))
         *val = NM_TERNARY_TRUE;
-    else if (nmc_string_is_valid(str, s_false, NULL))
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("false", "no", "off"), NULL))
         *val = NM_TERNARY_FALSE;
-    else if (nmc_string_is_valid(str, s_unknown, NULL))
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("unknown", "default"), NULL))
         *val = NM_TERNARY_DEFAULT;
+    else if ((i = _nm_utils_ascii_str_to_int64(str, 0, -1, 1, -2)) >= -1)
+        *val = (NMTernary) i;
     else {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
