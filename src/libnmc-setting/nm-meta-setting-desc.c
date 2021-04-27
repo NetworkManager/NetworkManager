@@ -4465,7 +4465,6 @@ static const NMMetaPropertyType _pt_gobject_bool = {
     .complete_fcn =                 _complete_fcn_gobject_bool,
 };
 
-_nm_unused
 static const NMMetaPropertyType _pt_gobject_ternary = {
     .get_fcn =                      _get_fcn_gobject_enum,
     .set_fcn =                      _set_fcn_gobject_ternary,
@@ -5709,13 +5708,13 @@ static const NMMetaPropertyInfo *const property_infos_HOSTNAME[] = {
         .property_type =                &_pt_gobject_int,
     ),
     PROPERTY_INFO (NM_SETTING_HOSTNAME_FROM_DHCP, DESCRIBE_DOC_NM_SETTING_HOSTNAME_FROM_DHCP,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     PROPERTY_INFO (NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP, DESCRIBE_DOC_NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     PROPERTY_INFO (NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT, DESCRIBE_DOC_NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
@@ -6784,7 +6783,7 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
@@ -7512,7 +7511,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
         .property_type =                &_pt_gobject_mac,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
@@ -7543,10 +7542,10 @@ static const NMMetaPropertyInfo *const property_infos_WIREGUARD[] = {
         .property_type =                &_pt_gobject_mtu,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
@@ -7680,7 +7679,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_AP_ISOLATION,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
