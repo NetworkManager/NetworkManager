@@ -1258,7 +1258,12 @@ static gboolean _set_fcn_gobject_string(ARGS_SET_FCN)
     return TRUE;
 }
 
-static gboolean _set_fcn_gobject_bool(ARGS_SET_FCN)
+static gboolean
+_set_fcn_gobject_bool_impl(const NMMetaPropertyInfo *property_info,
+                           NMSetting *               setting,
+                           NMMetaAccessorModifier    modifier,
+                           const char *              value,
+                           GError **                 error)
 {
     gboolean val_bool;
 
@@ -1270,6 +1275,11 @@ static gboolean _set_fcn_gobject_bool(ARGS_SET_FCN)
 
     g_object_set(setting, property_info->property_name, val_bool, NULL);
     return TRUE;
+}
+
+static gboolean _set_fcn_gobject_bool(ARGS_SET_FCN)
+{
+    return _set_fcn_gobject_bool_impl(property_info, setting, modifier, value, error);
 }
 
 static gboolean _set_fcn_gobject_int(ARGS_SET_FCN)
