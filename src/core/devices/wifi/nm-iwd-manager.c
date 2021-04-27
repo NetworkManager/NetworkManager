@@ -491,7 +491,7 @@ sett_conn_changed(NMSettingsConnection *  sett_conn,
         gboolean nm_autoconnectable  = nm_setting_connection_get_autoconnect(s_conn);
         gboolean iwd_autoconnectable = get_property_bool(data->known_network, "AutoConnect", TRUE);
 
-        if (iwd_autoconnectable == nm_autoconnectable) {
+        if (iwd_autoconnectable != nm_autoconnectable) {
             nm_log_dbg(LOGD_WIFI,
                        "iwd: updating AutoConnect on known network at %s based on connection %s",
                        g_dbus_proxy_get_object_path(data->known_network),
@@ -742,7 +742,9 @@ mirror_connection(NMIwdManager *        self,
             g_object_set(G_OBJECT(s_wifi), NM_SETTING_WIRELESS_HIDDEN, hidden, NULL);
         } else {
             KnownNetworkData data = {known_network, settings_connection, id};
-            sett_conn_changed(settings_connection, 0, &data);
+            sett_conn_changed(settings_connection,
+                              NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET,
+                              &data);
         }
     }
 
