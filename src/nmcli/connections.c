@@ -3532,7 +3532,7 @@ check_valid_name(const char *                             val,
     /* Check string validity */
     str = nmc_string_is_valid(val, (const char **) tmp_arr->pdata, &tmp_err);
     if (!str) {
-        if (tmp_err->code == 1)
+        if (nm_g_error_matches(tmp_err, NM_UTILS_ERROR, NM_UTILS_ERROR_AMBIGUOUS))
             g_propagate_error(error, tmp_err);
         else {
             /* We want to handle aliases, so construct own error message */
@@ -3590,7 +3590,7 @@ check_valid_name_toplevel(const char *val, const char **slave_type, GError **err
     /* Check string validity */
     str = nmc_string_is_valid(val, (const char **) tmp_arr->pdata, &tmp_err);
     if (!str) {
-        if (tmp_err->code == 1)
+        if (nm_g_error_matches(tmp_err, NM_UTILS_ERROR, NM_UTILS_ERROR_AMBIGUOUS))
             g_propagate_error(error, g_steal_pointer(&tmp_err));
         else {
             /* We want to handle aliases, so construct own error message */
