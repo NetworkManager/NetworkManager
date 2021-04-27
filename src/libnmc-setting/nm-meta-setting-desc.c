@@ -1282,6 +1282,23 @@ static gboolean _set_fcn_gobject_bool(ARGS_SET_FCN)
     return _set_fcn_gobject_bool_impl(property_info, setting, modifier, value, error);
 }
 
+static gboolean _set_fcn_gobject_ternary(ARGS_SET_FCN)
+{
+    NMTernary val;
+
+    nm_assert(_gobject_property_get_gtype(G_OBJECT(setting), property_info->property_name)
+              == NM_TYPE_TERNARY);
+
+    if (_SET_FCN_DO_RESET_DEFAULT(property_info, modifier, value))
+        return _gobject_property_reset_default(setting, property_info->property_name);
+
+    if (!nmc_string_to_ternary(value, &val, error))
+        return FALSE;
+
+    g_object_set(setting, property_info->property_name, (int) val, NULL);
+    return TRUE;
+}
+
 static gboolean _set_fcn_gobject_int(ARGS_SET_FCN)
 {
     int                            errsv;
@@ -1702,6 +1719,28 @@ static const char *const *_complete_fcn_gobject_bool(ARGS_COMPLETE_FCN)
 
     if (!text || !text[0])
         return &v[6];
+    return v;
+}
+
+static const char *const *_complete_fcn_gobject_ternary(ARGS_COMPLETE_FCN)
+{
+    static const char *const v[] = {
+        "on",
+        "off",
+        "1",
+        "0",
+        "-1",
+        "yes",
+        "no",
+        "unknown",
+        "true",
+        "false",
+        "default",
+        NULL,
+    };
+
+    if (!text || !text[0])
+        return &v[8];
     return v;
 }
 
@@ -4424,6 +4463,13 @@ static const NMMetaPropertyType _pt_gobject_bool = {
     .get_fcn =                      _get_fcn_gobject,
     .set_fcn =                      _set_fcn_gobject_bool,
     .complete_fcn =                 _complete_fcn_gobject_bool,
+};
+
+_nm_unused
+static const NMMetaPropertyType _pt_gobject_ternary = {
+    .get_fcn =                      _get_fcn_gobject_enum,
+    .set_fcn =                      _set_fcn_gobject_ternary,
+    .complete_fcn =                 _complete_fcn_gobject_ternary,
 };
 
 static const NMMetaPropertyType _pt_gobject_int = {
