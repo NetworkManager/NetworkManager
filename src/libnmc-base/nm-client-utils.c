@@ -104,7 +104,7 @@ nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
                             */
                            _("'%s' is ambiguous (%s)"),
                            str,
-                           "on x off");
+                           "on, off");
         return FALSE;
     }
 
@@ -141,7 +141,7 @@ nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
                             */
                            _("'%s' is ambiguous (%s)"),
                            str,
-                           "on x off");
+                           "on, off");
         return FALSE;
     }
 
