@@ -727,7 +727,7 @@ AC_ARG_WITH(dbus-sys-dir,
 if test -n "$with_dbus_sys_dir" ; then
 	DBUS_SYS_DIR="$with_dbus_sys_dir"
 else
-	DBUS_SYS_DIR="${sysconfdir}/dbus-1/system.d"
+	DBUS_SYS_DIR="${datadir}/dbus-1/system.d"
 fi
 AC_SUBST(DBUS_SYS_DIR)
 
