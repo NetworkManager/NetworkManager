@@ -113,7 +113,7 @@
 
 ###############################################################################
 
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 7
 %global dbus_version 1.9.18
 %global dbus_sys_dir %{_datadir}/dbus-1/system.d
 %else
