@@ -182,12 +182,12 @@ id
 path
 uuid
 <<<
-size: 4536
+size: 4538
 location: src/tests/client/test-client.py:test_003()/14
 cmd: $NMCLI con s con-gsm1
 lang: C
 returncode: 0
-stdout: 4403 bytes
+stdout: 4405 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -273,7 +273,7 @@ gsm.number:                             --
 gsm.username:                           --
 gsm.password:                           <hidden>
 gsm.password-flags:                     0 (none)
-gsm.apn:                                xyz.con-gsm1
+gsm.apn:                                "xyz.con-gsm1"
 gsm.network-id:                         --
 gsm.pin:                                <hidden>
 gsm.pin-flags:                          0 (none)
@@ -288,12 +288,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4566
+size: 4568
 location: src/tests/client/test-client.py:test_003()/15
 cmd: $NMCLI con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4423 bytes
+stdout: 4425 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -379,7 +379,7 @@ gsm.number:                             --
 gsm.username:                           --
 gsm.password:                           <hidden>
 gsm.password-flags:                     0 (brak)
-gsm.apn:                                xyz.con-gsm1
+gsm.apn:                                "xyz.con-gsm1"
 gsm.network-id:                         --
 gsm.pin:                                <hidden>
 gsm.pin-flags:                          0 (brak)
@@ -757,7 +757,7 @@ gsm.number:                             --
 gsm.username:                           --
 gsm.password:                           <hidden>
 gsm.password-flags:                     0 (none)
-gsm.apn:                                --
+gsm.apn:                                ""
 gsm.network-id:                         --
 gsm.pin:                                <hidden>
 gsm.pin-flags:                          0 (none)
@@ -863,7 +863,7 @@ gsm.number:                             --
 gsm.username:                           --
 gsm.password:                           <hidden>
 gsm.password-flags:                     0 (brak)
-gsm.apn:                                --
+gsm.apn:                                ""
 gsm.network-id:                         --
 gsm.pin:                                <hidden>
 gsm.pin-flags:                          0 (brak)
@@ -878,33 +878,33 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 465
+size: 466
 location: src/tests/client/test-client.py:test_003()/24
 cmd: $NMCLI -g all con s con-gsm3
 lang: C
 returncode: 0
-stdout: 326 bytes
+stdout: 327 bytes
 >>>
 connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
+gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto
 proxy:none:no::
 
 <<<
-size: 475
+size: 476
 location: src/tests/client/test-client.py:test_003()/25
 cmd: $NMCLI -g all con s con-gsm3
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 326 bytes
+stdout: 327 bytes
 >>>
 connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1::
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:stable-privacy:0:::0:yes::0x0:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
+gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto
 proxy:none:no::
 
 <<<
