@@ -864,7 +864,7 @@ _get_fcn_gobject_impl(const NMMetaPropertyInfo *property_info,
              * signal them differently. */
             cstr = g_value_get_string(&val);
             nm_assert((!!is_default) == (cstr == NULL));
-            RETURN_STR_EMPTYUNSET(get_type, is_default, NULL);
+            RETURN_STR_EMPTYUNSET(get_type, is_default, cstr);
         }
     }
 
