@@ -938,6 +938,10 @@ nettools_create(NMDhcpNettools *self, const char *dhcp_anycast_addr, GError **er
     n_dhcp4_client_config_set_transport(config, transport);
     n_dhcp4_client_config_set_mac(config, hwaddr_arr, hwaddr_len);
     n_dhcp4_client_config_set_broadcast_mac(config, bcast_hwaddr_arr, bcast_hwaddr_len);
+    n_dhcp4_client_config_set_request_broadcast(
+        config,
+        NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(NM_DHCP_CLIENT(self)),
+                     NM_DHCP_CLIENT_FLAGS_REQUEST_BROADCAST));
     r = n_dhcp4_client_config_set_client_id(config,
                                             client_id_arr,
                                             NM_MIN(client_id_len, 1 + _NM_SD_MAX_CLIENT_ID_LEN));
@@ -1110,7 +1114,7 @@ ip4_start(NMDhcpClient *client,
     }
     hostname = nm_dhcp_client_get_hostname(client);
     if (hostname) {
-        if (nm_dhcp_client_get_use_fqdn(client)) {
+        if (NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(client), NM_DHCP_CLIENT_FLAGS_USE_FQDN)) {
             uint8_t             buffer[255];
             NMDhcpHostnameFlags flags;
             size_t              fqdn_len;

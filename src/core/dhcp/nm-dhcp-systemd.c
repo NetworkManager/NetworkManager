@@ -632,6 +632,11 @@ ip4_start(NMDhcpClient *client,
             sd_dhcp_lease_get_address(lease, &last_addr);
     }
 
+    r = sd_dhcp_client_set_request_broadcast(sd_client,
+                                             NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(client),
+                                                          NM_DHCP_CLIENT_FLAGS_REQUEST_BROADCAST));
+    nm_assert(r >= 0);
+
     if (last_addr.s_addr) {
         r = sd_dhcp_client_set_request_address(sd_client, &last_addr);
         if (r < 0) {
@@ -844,14 +849,16 @@ bound6_handle(NMDhcpSystemd *self)
 
     _LOGD("lease available");
 
-    ip6_config = lease_to_ip6_config(nm_dhcp_client_get_multi_idx(NM_DHCP_CLIENT(self)),
-                                     iface,
-                                     nm_dhcp_client_get_ifindex(NM_DHCP_CLIENT(self)),
-                                     lease,
-                                     nm_dhcp_client_get_info_only(NM_DHCP_CLIENT(self)),
-                                     &options,
-                                     ts,
-                                     &error);
+    ip6_config =
+        lease_to_ip6_config(nm_dhcp_client_get_multi_idx(NM_DHCP_CLIENT(self)),
+                            iface,
+                            nm_dhcp_client_get_ifindex(NM_DHCP_CLIENT(self)),
+                            lease,
+                            NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(NM_DHCP_CLIENT(self)),
+                                         NM_DHCP_CLIENT_FLAGS_INFO_ONLY),
+                            &options,
+                            ts,
+                            &error);
 
     if (!ip6_config) {
         _LOGW("%s", error->message);
@@ -938,7 +945,7 @@ ip6_start(NMDhcpClient *            client,
 
     _LOGT("dhcp-client6: set %p", sd_client);
 
-    if (nm_dhcp_client_get_info_only(client)) {
+    if (NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(client), NM_DHCP_CLIENT_FLAGS_INFO_ONLY)) {
         sd_dhcp6_client_set_address_request(sd_client, 0);
         if (needed_prefixes == 0)
             sd_dhcp6_client_set_information_request(sd_client, 1);

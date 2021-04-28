@@ -668,6 +668,7 @@ main(int argc, char *argv[])
                                                  global_opt.uuid,
                                                  RT_TABLE_MAIN,
                                                  global_opt.priority_v4,
+                                                 NM_DHCP_CLIENT_FLAGS_NONE,
                                                  !!global_opt.dhcp4_hostname,
                                                  global_opt.dhcp4_hostname,
                                                  global_opt.dhcp4_fqdn,

@@ -1441,8 +1441,11 @@ nm_platform_link_get_type_name(NMPlatform *self, int ifindex)
     return obj->link.kind ?: "unknown";
 }
 
-static gboolean
-link_get_udev_property(NMPlatform *self, int ifindex, const char *name, const char **out_value)
+gboolean
+nm_platform_link_get_udev_property(NMPlatform * self,
+                                   int          ifindex,
+                                   const char * name,
+                                   const char **out_value)
 {
     struct udev_device *udevice = NULL;
     const char *        uproperty;
@@ -1473,8 +1476,8 @@ nm_platform_link_get_unmanaged(NMPlatform *self, int ifindex, gboolean *unmanage
 {
     const char *value;
 
-    if (link_get_udev_property(self, ifindex, "NM_UNMANAGED", &value)) {
-        NM_SET_OUT(unmanaged, nm_udev_utils_property_as_boolean(value));
+    if (nm_platform_link_get_udev_property(self, ifindex, "NM_UNMANAGED", &value)) {
+        NM_SET_OUT(unmanaged, _nm_utils_ascii_str_to_bool(value, FALSE));
         return TRUE;
     }
 
@@ -1633,8 +1636,7 @@ nm_platform_link_get_path(NMPlatform *self, int ifindex)
 {
     const char *value = NULL;
 
-    link_get_udev_property(self, ifindex, "ID_PATH", &value);
-
+    nm_platform_link_get_udev_property(self, ifindex, "ID_PATH", &value);
     return value;
 }
 
