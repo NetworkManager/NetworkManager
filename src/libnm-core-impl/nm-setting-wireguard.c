@@ -1527,8 +1527,19 @@ _peers_dbus_only_synth(const NMSettInfoSetting *               sett_info,
             gs_free const char **strv_fixed = NULL;
 
             for (i = 0; i < peer->allowed_ips->len; i++) {
-                if (strv[i][0] != ALLOWED_IP_INVALID_X)
+                /* This is a bit odd. The original peer->allowed_ips is a strv array
+                 * of all allowed-ips, but some of them may have an ALLOWED_IP_INVALID_X prefix
+                 * (as first character).
+                 *
+                 * When we serialize the array to GVariant, we need to get rid of this
+                 * character, by pointing to the second character.
+                 *
+                 * In that case, first clone the strv array to strv_fixed. Once we cloned
+                 * it, adjust the pointer to drop the first character. */
+                if (strv[i][0] != ALLOWED_IP_INVALID_X) {
+                    /* this string is valid, no need for adjustment. */
                     continue;
+                }
                 if (!strv_fixed) {
                     strv_fixed = nm_memdup(strv, sizeof(strv[0]) * peer->allowed_ips->len);
                     strv       = strv_fixed;
