@@ -186,6 +186,22 @@ void nm_dbus_connection_call_finish_variant_strip_dbus_error_cb(GObject *     so
 
 /*****************************************************************************/
 
+void nm_dbus_call(GBusType            bus_type,
+                  const char *        bus_name,
+                  const char *        object_path,
+                  const char *        interface_name,
+                  const char *        method_name,
+                  GVariant *          parameters,
+                  const GVariantType *reply_type,
+                  GCancellable *      cancellable,
+                  int                 timeout_msec,
+                  GAsyncReadyCallback callback,
+                  gpointer            user_data);
+
+GVariant *nm_dbus_call_finish(GAsyncResult *result, GError **error);
+
+/*****************************************************************************/
+
 gboolean _nm_dbus_error_is(GError *error, ...) G_GNUC_NULL_TERMINATED;
 
 #define nm_dbus_error_is(error, ...)                           \
