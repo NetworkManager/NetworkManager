@@ -191,6 +191,37 @@
 
   </refsect1>
 
+  <refsect1 id="deploy">
+    <title>Example Setup for Configuring and Predeploying nm-cloud-setup</title>
+
+    <para>As detailed before, nm-cloud-setup needs to be explicitly enabled. As it
+      runs as a systemd service and timer, that basically means to enable and configure
+      those. This can be done by dropping the correct files and symlinks to disk.
+    </para>
+    <para>
+      The following example enables nm-cloud-setup for Amazon EC2 cloud:
+      <programlisting>
+dnf install -y NetworkManager-cloud-setup
+
+mkdir -p /etc/systemd/system/nm-cloud-setup.service.d
+cat &gt; /etc/systemd/system/nm-cloud-setup.service.d/10-enable-ec2.conf &lt;&lt; EOF
+[Service]
+Environment=NM_CLOUD_SETUP_EC2=yes
+EOF
+
+# systemctl enable nm-cloud-setup.service
+mkdir -p /etc/systemd/system/NetworkManager.service.wants/
+ln -s /usr/lib/systemd/system/nm-cloud-setup.service /etc/systemd/system/NetworkManager.service.wants/nm-cloud-setup.service
+
+# systemctl enable nm-cloud-setup.timer
+mkdir -p /etc/systemd/system/timers.target.wants/
+ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/systemd/system/nm-cloud-setup.timer
+
+# systemctl daemon-reload
+      </programlisting>
+    </para>
+  </refsect1>
+
   <refsect1 id="providers">
     <title>Supported Cloud Providers</title>
 
