@@ -224,9 +224,17 @@
         <varlistentry>
           <term><varname>SIGUSR1</varname></term>
           <listitem><para>
-            The signal forces a rewrite of DNS configuration. Contrary to
-            SIGHUP, this does not restart the DNS plugin and will not interrupt
-            name resolution.
+            The signal forces a rewrite of DNS configuration. Contrary
+            to SIGHUP, this does not restart the DNS plugin and will not
+            interrupt name resolution.
+
+            When NetworkManager is not managing DNS, the signal forces
+            a restart of operations that depend on the DNS
+            configuration (like the resolution of the system hostname
+            via reverse DNS, or the resolution of WireGuard peers);
+            therefore, it can be used to tell NetworkManager that the
+            content of resolv.conf was changed externally.
+
             In the future, further actions may be added. A SIGUSR1
             means to write out data like resolv.conf, or refresh a cache.
             It is a subset of what is done for SIGHUP without reloading
