@@ -9,6 +9,7 @@
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
 
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnmc-base/nm-client-utils.h"
 
 #include "polkit-agent.h"
@@ -600,14 +601,30 @@ show_nm_permissions(NmCli *nmc)
 }
 
 static void
+reload_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    NmCli *       nmc              = user_data;
+    gs_free_error GError *error    = NULL;
+    gs_unref_variant GVariant *ret = NULL;
+
+    ret = nm_dbus_call_finish(result, &error);
+    if (error) {
+        g_string_printf(nmc->return_text,
+                        _("Error: failed to reload: %s"),
+                        nmc_error_get_simple_message(error));
+        nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+    }
+
+    quit();
+}
+
+static void
 do_general_reload(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    gs_unref_variant GVariant *result = NULL;
-    gs_free_error GError *error       = NULL;
-    gs_free const char ** values      = NULL;
-    gs_free char *        err_token   = NULL;
-    gs_free char *        joined      = NULL;
-    int                   flags       = 0;
+    gs_free const char **values    = NULL;
+    gs_free char *       err_token = NULL;
+    gs_free char *       joined    = NULL;
+    int                  flags     = 0;
 
     next_arg(nmc, &argc, &argv, NULL);
 
@@ -650,20 +667,18 @@ do_general_reload(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
         return;
     }
 
-    result = nmc_dbus_call_sync(nmc,
-                                "/org/freedesktop/NetworkManager",
-                                "org.freedesktop.NetworkManager",
-                                "Reload",
-                                g_variant_new("(u)", flags),
-                                G_VARIANT_TYPE("()"),
-                                &error);
-
-    if (error) {
-        g_string_printf(nmc->return_text,
-                        _("Error: failed to reload: %s"),
-                        nmc_error_get_simple_message(error));
-        nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
-    }
+    nmc->should_wait++;
+    nm_dbus_call(G_BUS_TYPE_SYSTEM,
+                 NM_DBUS_SERVICE,
+                 NM_DBUS_PATH,
+                 NM_DBUS_INTERFACE,
+                 "Reload",
+                 g_variant_new("(u)", flags),
+                 G_VARIANT_TYPE("()"),
+                 NULL,
+                 (nmc->timeout == -1 ? 90 : nmc->timeout) * 1000,
+                 reload_cb,
+                 nmc);
 }
 
 static void
