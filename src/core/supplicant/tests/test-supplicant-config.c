@@ -815,9 +815,10 @@ test_wifi_eap_suite_b_generation(void)
     NMTST_EXPECT_NM_INFO("Config: added 'scan_ssid' value '1'*");
     NMTST_EXPECT_NM_INFO("Config: added 'bssid' value '11:22:33:44:55:66'*");
     NMTST_EXPECT_NM_INFO("Config: added 'freq_list' value *");
+    NMTST_EXPECT_NM_INFO("Config: added 'key_mgmt' value 'WPA-EAP-SUITE-B-192'");
     NMTST_EXPECT_NM_INFO("Config: added 'pairwise' value 'GCMP-256'");
     NMTST_EXPECT_NM_INFO("Config: added 'group' value 'GCMP-256'");
-    NMTST_EXPECT_NM_INFO("Config: added 'key_mgmt' value 'WPA-EAP-SUITE-B-192'");
+    NMTST_EXPECT_NM_INFO("Config: added 'ieee80211w' value '2'");
     NMTST_EXPECT_NM_INFO("Config: added 'eap' value 'TLS'");
     NMTST_EXPECT_NM_INFO("Config: added 'fragment_size' value '1086'");
     NMTST_EXPECT_NM_INFO("Config: added 'ca_cert' value '*/test-ca-cert.pem'");
