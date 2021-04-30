@@ -1027,7 +1027,7 @@ active_connection_find(
             NMSettingsConnection *ac_conn;
 
             ac      = async_op_data->ac_auth.active;
-            ac_conn = nm_active_connection_get_settings_connection(ac);
+            ac_conn = _nm_active_connection_get_settings_connection(ac);
             if (sett_conn && sett_conn != ac_conn)
                 continue;
             if (uuid && !nm_streq0(uuid, nm_settings_connection_get_uuid(ac_conn)))
