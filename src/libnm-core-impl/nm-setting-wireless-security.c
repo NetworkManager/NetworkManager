@@ -904,33 +904,32 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (g_strcmp0(wifi_mode, NM_SETTING_WIRELESS_MODE_MESH) == 0) {
-        if ((strcmp(priv->key_mgmt, "none") == 0) || (strcmp(priv->key_mgmt, "sae") == 0)) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("'%s' is not a valid value for '%s' mode connections"),
-                        priv->key_mgmt,
-                        NM_SETTING_WIRELESS_MODE_MESH);
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-                           NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-            return FALSE;
-        }
-    } else {
-        if (!g_strv_contains(valid_key_mgmt, priv->key_mgmt)) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("'%s' is not a valid value for the property"),
-                        priv->key_mgmt);
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-                           NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
-            return FALSE;
-        }
+    if (!g_strv_contains(valid_key_mgmt, priv->key_mgmt)) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' is not a valid value for the property"),
+                    priv->key_mgmt);
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+                       NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+        return FALSE;
+    }
+
+    if (NM_IN_STRSET(wifi_mode, NM_SETTING_WIRELESS_MODE_MESH)
+        && !NM_IN_STRSET(priv->key_mgmt, "none", "sae")) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' is not a valid value for '%s' mode connections"),
+                    priv->key_mgmt,
+                    NM_SETTING_WIRELESS_MODE_MESH);
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+                       NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+        return FALSE;
     }
 
     if (priv->auth_alg && !strcmp(priv->auth_alg, "leap")) {
@@ -1104,13 +1103,13 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                          "wpa-psk",
                          "sae",
                          "owe")) {
-        g_set_error(
-            error,
-            NM_CONNECTION_ERROR,
-            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-            _("'%s' can only be used with 'wpa-eap', 'wpa-eap-suite-b-192', 'wpa-psk' or 'sae' key "
-              "management "),
-            priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional" : "required");
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' can only be used with 'owe', 'wpa-psk', 'sae', 'wpa-eap' "
+                      "or 'wpa-eap-suite-b-192' key management"),
+                    priv->pmf == NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL ? "optional"
+                                                                           : "required");
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
