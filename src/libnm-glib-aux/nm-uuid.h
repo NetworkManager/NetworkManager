@@ -27,4 +27,6 @@ nm_uuid_parse(const char *str, NMUuid *out_uuid)
     return out_uuid;
 }
 
+NMUuid *nm_uuid_generate_random(NMUuid *out_uuid);
+
 #endif /* __NM_UUID_H__ */

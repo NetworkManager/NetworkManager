@@ -4,6 +4,8 @@
 
 #include "nm-uuid.h"
 
+#include "libnm-glib-aux/nm-random-utils.h"
+
 /*****************************************************************************/
 
 char *
@@ -92,4 +94,34 @@ nm_uuid_parse_full(const char *str, NMUuid *out_uuid, gboolean *out_is_normalize
 
         *(p++) = (v0 << 4) + v1;
     }
+}
+
+/*****************************************************************************/
+
+NMUuid *
+nm_uuid_generate_random(NMUuid *out_uuid)
+{
+    nm_assert(out_uuid);
+
+    /* https://tools.ietf.org/html/rfc4122#section-4.4 */
+
+    /* See also, systemd's id128_make_v4_uuid() */
+
+    /* nm_utils_random_bytes() is supposed to try hard to give good
+     * randomness. If it fails, it still makes an effort to fill
+     * random data into the buffer. There is not much we can do about
+     * that case, except making sure that it does not happen in the
+     * first place. */
+    nm_utils_random_bytes(out_uuid, sizeof(*out_uuid));
+
+    /* Set the four most significant bits (bits 12 through 15) of the
+     * time_hi_and_version field to the 4-bit version number from
+     * Section 4.1.3. */
+    out_uuid->uuid[6] = (out_uuid->uuid[6] & 0x0Fu) | 0x40u;
+
+    /* Set the two most significant bits (bits 6 and 7) of the
+     * clock_seq_hi_and_reserved to zero and one, respectively. */
+    out_uuid->uuid[8] = (out_uuid->uuid[8] & 0x3Fu) | 0x80u;
+
+    return out_uuid;
 }
