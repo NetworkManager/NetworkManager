@@ -352,8 +352,6 @@ gboolean _nm_utils_check_module_file(const char *              name,
 
 /*****************************************************************************/
 
-gboolean nm_utils_uuid_is_null(const NMUuid *uuid);
-
 #define NM_UTILS_UUID_TYPE_LEGACY   0
 #define NM_UTILS_UUID_TYPE_VERSION3 3
 #define NM_UTILS_UUID_TYPE_VERSION5 5

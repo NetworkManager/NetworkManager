@@ -7859,10 +7859,10 @@ test_nm_utils_uuid_generate_from_strings(void)
 
     g_assert_cmpmem(&uuid0, sizeof(uuid0), _uuid("00000000-0000-0000-0000-000000000000"), 16);
 
-    g_assert(nm_utils_uuid_is_null(NULL));
-    g_assert(nm_utils_uuid_is_null(&uuid0));
-    g_assert(nm_utils_uuid_is_null(_uuid("00000000-0000-0000-0000-000000000000")));
-    g_assert(!nm_utils_uuid_is_null(_uuid("10000000-0000-0000-0000-000000000000")));
+    g_assert(nm_uuid_is_null(NULL));
+    g_assert(nm_uuid_is_null(&uuid0));
+    g_assert(nm_uuid_is_null(_uuid("00000000-0000-0000-0000-000000000000")));
+    g_assert(!nm_uuid_is_null(_uuid("10000000-0000-0000-0000-000000000000")));
 
     _test_uuid("b07c334a-399b-32de-8d50-58e4e08f98e3", "", 0, NULL);
     _test_uuid("b8a426cb-bcb5-30a3-bd8f-6786fea72df9", "\0", 1, "");
