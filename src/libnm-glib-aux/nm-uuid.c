@@ -129,6 +129,47 @@ nm_uuid_generate_random(NMUuid *out_uuid)
 
 /*****************************************************************************/
 
+/**
+ * nm_uuid_is_valid_nmlegacy()
+ * @str: the string to check whether it's a valid UUID.
+ *
+ * Note that this does not perform a strict check.
+ * Instead, it checks a more relaxed format (including
+ * non valid UUID strings). This is for backward compatibility,
+ * where older code did not perform a strict check.
+ *
+ * Returns: %TRUE, if the string is a valid legacy format.
+ *   This may not be a valid UUID!
+ */
+gboolean
+nm_uuid_is_valid_nmlegacy(const char *str)
+{
+    const char *p          = str;
+    int         num_dashes = 0;
+
+    if (!p)
+        return FALSE;
+
+    while (*p) {
+        if (*p == '-')
+            num_dashes++;
+        else if (!g_ascii_isxdigit(*p))
+            return FALSE;
+        p++;
+    }
+
+    if ((num_dashes == 4) && (p - str == 36))
+        return TRUE;
+
+    /* Backwards compat for older configurations */
+    if ((num_dashes == 0) && (p - str == 40))
+        return TRUE;
+
+    return FALSE;
+}
+
+/*****************************************************************************/
+
 gboolean
 nm_uuid_is_null(const NMUuid *uuid)
 {
