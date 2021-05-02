@@ -3044,23 +3044,6 @@ _nm_utils_sriov_vf_from_strparts(const char *index,
 /*****************************************************************************/
 
 /**
- * nm_utils_uuid_generate_buf_:
- * @buf: input buffer, must contain at least 37 bytes
- *
- * Returns: generates a new random UUID, writes it to @buf and returns @buf.
- **/
-char *
-nm_utils_uuid_generate_buf_(char *buf)
-{
-    NMUuid uuid;
-
-    nm_assert(buf);
-
-    nm_uuid_generate_random(&uuid);
-    return nm_uuid_unparse(&uuid, buf);
-}
-
-/**
  * nm_utils_uuid_generate:
  *
  * Returns: a newly allocated UUID suitable for use as the #NMSettingConnection
@@ -3069,7 +3052,7 @@ nm_utils_uuid_generate_buf_(char *buf)
 char *
 nm_utils_uuid_generate(void)
 {
-    return nm_utils_uuid_generate_buf_(g_malloc(37));
+    return nm_uuid_generate_random_str_malloc();
 }
 
 /**

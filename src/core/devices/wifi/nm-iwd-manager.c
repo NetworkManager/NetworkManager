@@ -774,7 +774,7 @@ mirror_connection(NMIwdManager *        self,
                            NM_SETTING_CONNECTION_ID,
                            id->name,
                            NM_SETTING_CONNECTION_UUID,
-                           nm_utils_uuid_generate_buf(uuid),
+                           nm_uuid_generate_random_str_arr(uuid),
                            NM_SETTING_CONNECTION_AUTOCONNECT,
                            autoconnectable,
                            NULL);

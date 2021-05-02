@@ -7238,7 +7238,7 @@ nm_device_generate_connection(NMDevice *self,
 
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_UUID,
-                 nm_utils_uuid_generate_buf(uuid),
+                 nm_uuid_generate_random_str_arr(uuid),
                  NM_SETTING_CONNECTION_ID,
                  ifname,
                  NM_SETTING_CONNECTION_AUTOCONNECT,

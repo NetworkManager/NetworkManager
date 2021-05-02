@@ -254,7 +254,7 @@ nm_utils_complete_generic(NMPlatform *         platform,
 
         g_object_set(G_OBJECT(s_con),
                      NM_SETTING_CONNECTION_UUID,
-                     nm_utils_uuid_generate_buf(uuid),
+                     nm_uuid_generate_random_str_arr(uuid),
                      NULL);
     }
 

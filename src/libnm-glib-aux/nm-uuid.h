@@ -31,4 +31,20 @@ NMUuid *nm_uuid_generate_random(NMUuid *out_uuid);
 
 gboolean nm_uuid_is_null(const NMUuid *uuid);
 
+/*****************************************************************************/
+
+char *nm_uuid_generate_random_str(char buf[static 37]);
+
+#define nm_uuid_generate_random_str_arr(buf)                                    \
+    ({                                                                          \
+        G_STATIC_ASSERT(sizeof(buf) == G_N_ELEMENTS(buf) && sizeof(buf) >= 37); \
+        nm_uuid_generate_random_str(buf);                                       \
+    })
+
+#define nm_uuid_generate_random_str_a() (nm_uuid_generate_random_str(g_alloca(37)))
+
+#define nm_uuid_generate_random_str_malloc() (nm_uuid_generate_random_str(g_new(char, 37)))
+
+/*****************************************************************************/
+
 #endif /* __NM_UUID_H__ */
