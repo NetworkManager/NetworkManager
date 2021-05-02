@@ -1718,11 +1718,11 @@ new_default_connection(NMDevice *self)
 
     /* Create a stable UUID. The UUID is also the Network_ID for stable-privacy addr-gen-mode,
      * thus when it changes we will also generate different IPv6 addresses. */
-    uuid = _nm_utils_uuid_generate_from_strings("default-wired",
-                                                nm_utils_machine_id_str(),
-                                                defname,
-                                                perm_hw_addr ?: iface,
-                                                NULL);
+    uuid = nm_uuid_generate_from_strings("default-wired",
+                                         nm_utils_machine_id_str(),
+                                         defname,
+                                         perm_hw_addr ?: iface,
+                                         NULL);
 
     g_object_set(setting,
                  NM_SETTING_CONNECTION_ID,

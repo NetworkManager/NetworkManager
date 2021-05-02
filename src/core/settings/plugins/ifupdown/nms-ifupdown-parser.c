@@ -635,7 +635,7 @@ ifupdown_new_connection_from_if_block(if_block *block, gboolean autoconnect, GEr
     type  = _ifupdownplugin_guess_connection_type(block);
     idstr = g_strconcat("Ifupdown (", block->name, ")", NULL);
 
-    uuid = nm_utils_uuid_generate_from_string(idstr, -1, NM_UTILS_UUID_TYPE_LEGACY, NULL);
+    uuid = nm_uuid_generate_from_string_str(idstr, -1, NM_UUID_TYPE_LEGACY, NULL);
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_TYPE,
                  type,

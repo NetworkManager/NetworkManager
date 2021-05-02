@@ -7232,7 +7232,7 @@ _test_uuid(int         uuid_type,
 {
     gs_free char *uuid_test = NULL;
 
-    uuid_test = nm_utils_uuid_generate_from_string(str, slen, uuid_type, type_args);
+    uuid_test = nm_uuid_generate_from_string_str(str, slen, uuid_type, type_args);
 
     g_assert(uuid_test);
     g_assert(nm_utils_is_uuid(uuid_test));
@@ -7242,7 +7242,7 @@ _test_uuid(int         uuid_type,
                 uuid_type,
                 str,
                 (long long) slen,
-                NM_IN_SET(uuid_type, NM_UTILS_UUID_TYPE_VERSION3, NM_UTILS_UUID_TYPE_VERSION5)
+                NM_IN_SET(uuid_type, NM_UUID_TYPE_VERSION3, NM_UUID_TYPE_VERSION5)
                     ? (((const char *) type_args) ?: "(all-zero)")
                     : (type_args ? "(unknown)" : "(null)"),
                 uuid_test,
@@ -7257,8 +7257,7 @@ _test_uuid(int         uuid_type,
         _test_uuid(uuid_type, expected_uuid, NULL, 0, type_args);
     }
 
-    if (NM_IN_SET(uuid_type, NM_UTILS_UUID_TYPE_VERSION3, NM_UTILS_UUID_TYPE_VERSION5)
-        && !type_args) {
+    if (NM_IN_SET(uuid_type, NM_UUID_TYPE_VERSION3, NM_UUID_TYPE_VERSION5) && !type_args) {
         /* For version3 and version5, a missing @type_args is equal to UUID_NS_ZERO */
         _test_uuid(uuid_type, expected_uuid, str, slen, UUID_NS_ZERO);
     }
@@ -7679,76 +7678,44 @@ test_nm_utils_uuid_generate_from_string(void)
     char  i_str[30];
     guint i;
 
-    _test_uuid(NM_UTILS_UUID_TYPE_LEGACY, "d41d8cd9-8f00-b204-e980-0998ecf8427e", "", -1, NULL);
-    _test_uuid(NM_UTILS_UUID_TYPE_LEGACY, "0cc175b9-c0f1-b6a8-31c3-99e269772661", "a", -1, NULL);
-    _test_uuid(NM_UTILS_UUID_TYPE_LEGACY, "098f6bcd-4621-d373-cade-4e832627b4f6", "test", -1, NULL);
-    _test_uuid(NM_UTILS_UUID_TYPE_LEGACY, "70350f60-27bc-e371-3f6b-76473084309b", "a\0b", 3, NULL);
-    _test_uuid(NM_UTILS_UUID_TYPE_LEGACY,
+    _test_uuid(NM_UUID_TYPE_LEGACY, "d41d8cd9-8f00-b204-e980-0998ecf8427e", "", -1, NULL);
+    _test_uuid(NM_UUID_TYPE_LEGACY, "0cc175b9-c0f1-b6a8-31c3-99e269772661", "a", -1, NULL);
+    _test_uuid(NM_UUID_TYPE_LEGACY, "098f6bcd-4621-d373-cade-4e832627b4f6", "test", -1, NULL);
+    _test_uuid(NM_UUID_TYPE_LEGACY, "70350f60-27bc-e371-3f6b-76473084309b", "a\0b", 3, NULL);
+    _test_uuid(NM_UUID_TYPE_LEGACY,
                "59c0547b-7fe2-1c15-2cce-e328e8bf6742",
                "/etc/NetworkManager/system-connections/em1",
                -1,
                NULL);
 
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3, "4ae71336-e44b-39bf-b9d2-752e234818a5", "", -1, NULL);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3, "0531103a-d8fc-3dd4-b972-d98e4750994e", "a", -1, NULL);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
-               "96e17d7a-ac89-38cf-95e1-bf5098da34e1",
-               "test",
-               -1,
-               NULL);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
-               "8156568e-4ae6-3f34-a93e-18e2c6cbbf78",
-               "a\0b",
-               3,
-               NULL);
+    _test_uuid(NM_UUID_TYPE_VERSION3, "4ae71336-e44b-39bf-b9d2-752e234818a5", "", -1, NULL);
+    _test_uuid(NM_UUID_TYPE_VERSION3, "0531103a-d8fc-3dd4-b972-d98e4750994e", "a", -1, NULL);
+    _test_uuid(NM_UUID_TYPE_VERSION3, "96e17d7a-ac89-38cf-95e1-bf5098da34e1", "test", -1, NULL);
+    _test_uuid(NM_UUID_TYPE_VERSION3, "8156568e-4ae6-3f34-a93e-18e2c6cbbf78", "a\0b", 3, NULL);
 
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
-               "c87ee674-4ddc-3efe-a74e-dfe25da5d7b3",
-               "",
-               -1,
-               UUID_NS_DNS);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
-               "4c104dd0-4821-30d5-9ce3-0e7a1f8b7c0d",
-               "a",
-               -1,
-               UUID_NS_DNS);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
+    _test_uuid(NM_UUID_TYPE_VERSION3, "c87ee674-4ddc-3efe-a74e-dfe25da5d7b3", "", -1, UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION3, "4c104dd0-4821-30d5-9ce3-0e7a1f8b7c0d", "a", -1, UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION3,
                "45a113ac-c7f2-30b0-90a5-a399ab912716",
                "test",
                -1,
                UUID_NS_DNS);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
+    _test_uuid(NM_UUID_TYPE_VERSION3,
                "002a0ada-f547-375a-bab5-896a11d1927e",
                "a\0b",
                3,
                UUID_NS_DNS);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
+    _test_uuid(NM_UUID_TYPE_VERSION3,
                "9a75f5f2-195e-31a9-9d07-8c18b5d3b285",
                "test123",
                -1,
                UUID_NS_DNS);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
-               "ec794efe-a384-3b11-a0b6-ec8995bc6acc",
-               "x",
-               -1,
-               UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION3, "ec794efe-a384-3b11-a0b6-ec8995bc6acc", "x", -1, UUID_NS_DNS);
 
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION5,
-               "a7650b9f-f19f-5300-8a13-91160ea8de2c",
-               "a\0b",
-               3,
-               NULL);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION5,
-               "4f3f2898-69e3-5a0d-820a-c4e87987dbce",
-               "a",
-               -1,
-               UUID_NS_DNS);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION5,
-               "05b16a01-46c6-56dd-bd6e-c6dfb4a1427a",
-               "x",
-               -1,
-               UUID_NS_DNS);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION5,
+    _test_uuid(NM_UUID_TYPE_VERSION5, "a7650b9f-f19f-5300-8a13-91160ea8de2c", "a\0b", 3, NULL);
+    _test_uuid(NM_UUID_TYPE_VERSION5, "4f3f2898-69e3-5a0d-820a-c4e87987dbce", "a", -1, UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION5, "05b16a01-46c6-56dd-bd6e-c6dfb4a1427a", "x", -1, UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION5,
                "c9ed566a-6b79-5d3a-b2b7-96a936b48cf3",
                "test123",
                -1,
@@ -7756,58 +7723,58 @@ test_nm_utils_uuid_generate_from_string(void)
 
     for (i = 0; i < G_N_ELEMENTS(zero_uuids); i++) {
         nm_sprintf_buf(i_str, "%u", i),
-            _test_uuid(NM_UTILS_UUID_TYPE_VERSION3, zero_uuids[i].uuid3, i_str, -1, NULL);
-        _test_uuid(NM_UTILS_UUID_TYPE_VERSION5, zero_uuids[i].uuid5, i_str, -1, NULL);
+            _test_uuid(NM_UUID_TYPE_VERSION3, zero_uuids[i].uuid3, i_str, -1, NULL);
+        _test_uuid(NM_UUID_TYPE_VERSION5, zero_uuids[i].uuid5, i_str, -1, NULL);
     }
     for (i = 0; i < G_N_ELEMENTS(dns_uuids); i++) {
         nm_sprintf_buf(i_str, "%u", i),
-            _test_uuid(NM_UTILS_UUID_TYPE_VERSION3, dns_uuids[i].uuid3, i_str, -1, UUID_NS_DNS);
-        _test_uuid(NM_UTILS_UUID_TYPE_VERSION5, dns_uuids[i].uuid5, i_str, -1, UUID_NS_DNS);
+            _test_uuid(NM_UUID_TYPE_VERSION3, dns_uuids[i].uuid3, i_str, -1, UUID_NS_DNS);
+        _test_uuid(NM_UUID_TYPE_VERSION5, dns_uuids[i].uuid5, i_str, -1, UUID_NS_DNS);
     }
 
     /* examples from cpython unit tests: */
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
+    _test_uuid(NM_UUID_TYPE_VERSION3,
                "6fa459ea-ee8a-3ca4-894e-db77e160355e",
                "python.org",
                -1,
                UUID_NS_DNS);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION5,
+    _test_uuid(NM_UUID_TYPE_VERSION5,
                "886313e1-3b8a-5372-9b90-0c9aee199e5d",
                "python.org",
                -1,
                UUID_NS_DNS);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
+    _test_uuid(NM_UUID_TYPE_VERSION3,
                "9fe8e8c4-aaa8-32a9-a55c-4535a88b748d",
                "http://python.org/",
                -1,
                UUID_NS_URL);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION5,
+    _test_uuid(NM_UUID_TYPE_VERSION5,
                "4c565f0d-3f5a-5890-b41b-20cf47701c5e",
                "http://python.org/",
                -1,
                UUID_NS_URL);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
+    _test_uuid(NM_UUID_TYPE_VERSION3,
                "dd1a1cef-13d5-368a-ad82-eca71acd4cd1",
                "1.3.6.1",
                -1,
                UUID_NS_OID);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION5,
+    _test_uuid(NM_UUID_TYPE_VERSION5,
                "1447fa61-5277-5fef-a9b3-fbc6e44f4af3",
                "1.3.6.1",
                -1,
                UUID_NS_OID);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION3,
+    _test_uuid(NM_UUID_TYPE_VERSION3,
                "658d3002-db6b-3040-a1d1-8ddd7d189a4d",
                "c=ca",
                -1,
                UUID_NS_X500);
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION5,
+    _test_uuid(NM_UUID_TYPE_VERSION5,
                "cc957dd1-a972-5349-98cd-874190002798",
                "c=ca",
                -1,
                UUID_NS_X500);
 
-    _test_uuid(NM_UTILS_UUID_TYPE_VERSION5,
+    _test_uuid(NM_UUID_TYPE_VERSION5,
                "74738ff5-5367-5958-9aee-98fffdcd1876",
                "www.example.org",
                -1,
@@ -7831,10 +7798,7 @@ __test_uuid(const char *expected_uuid, const char *str, gssize slen, char *uuid_
     }
     g_free(uuid_test);
 
-    uuid_test = nm_utils_uuid_generate_from_string(str,
-                                                   slen,
-                                                   NM_UTILS_UUID_TYPE_VERSION3,
-                                                   NM_UTILS_UUID_NS);
+    uuid_test = nm_uuid_generate_from_string_str(str, slen, NM_UUID_TYPE_VERSION3, NM_UUID_NS1);
 
     g_assert(uuid_test);
     g_assert(nm_utils_is_uuid(uuid_test));
@@ -7850,7 +7814,7 @@ __test_uuid(const char *expected_uuid, const char *str, gssize slen, char *uuid_
 }
 
 #define _test_uuid(expected_uuid, str, strlen, ...) \
-    __test_uuid(expected_uuid, str, strlen, _nm_utils_uuid_generate_from_strings(__VA_ARGS__, NULL))
+    __test_uuid(expected_uuid, str, strlen, nm_uuid_generate_from_strings(__VA_ARGS__, NULL))
 
 static void
 test_nm_utils_uuid_generate_from_strings(void)
@@ -10828,7 +10792,7 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/nm_strquote", test_nm_strquote);
     g_test_add_func("/core/general/test_nm_utils_uuid_generate_from_string",
                     test_nm_utils_uuid_generate_from_string);
-    g_test_add_func("/core/general/_nm_utils_uuid_generate_from_strings",
+    g_test_add_func("/core/general/nm_uuid_generate_from_strings",
                     test_nm_utils_uuid_generate_from_strings);
 
     g_test_add_func("/core/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);

@@ -3695,7 +3695,7 @@ nm_keyfile_read_ensure_uuid(NMConnection *connection, const char *fallback_uuid_
     if (nm_setting_connection_get_uuid(s_con))
         return FALSE;
 
-    hashed_uuid = _nm_utils_uuid_generate_from_strings("keyfile", fallback_uuid_seed, NULL);
+    hashed_uuid = nm_uuid_generate_from_strings("keyfile", fallback_uuid_seed, NULL);
     g_object_set(s_con, NM_SETTING_CONNECTION_UUID, hashed_uuid, NULL);
     return TRUE;
 }

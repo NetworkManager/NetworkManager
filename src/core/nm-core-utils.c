@@ -2500,11 +2500,11 @@ again:
 
             /* the fake machine-id is based on secret-key/boot-id, but we hash it
              * again, so that they are not literally the same. */
-            nm_utils_uuid_generate_from_string_bin(&uuid,
-                                                   (const char *) seed_bin,
-                                                   seed_len,
-                                                   NM_UTILS_UUID_TYPE_VERSION5,
-                                                   (gpointer) hash_seed);
+            nm_uuid_generate_from_string(&uuid,
+                                         (const char *) seed_bin,
+                                         seed_len,
+                                         NM_UUID_TYPE_VERSION5,
+                                         (gpointer) hash_seed);
         }
 
         if (!g_once_init_enter(&lock))
