@@ -3045,17 +3045,6 @@ _nm_utils_sriov_vf_from_strparts(const char *index,
 /*****************************************************************************/
 
 NMUuid *
-_nm_utils_uuid_parse(const char *str, NMUuid *out_uuid)
-{
-    nm_assert(str);
-    nm_assert(out_uuid);
-
-    if (uuid_parse(str, out_uuid->uuid) != 0)
-        return NULL;
-    return out_uuid;
-}
-
-NMUuid *
 _nm_utils_uuid_generate_random(NMUuid *out_uuid)
 {
     nm_assert(out_uuid);
@@ -3148,7 +3137,7 @@ nm_utils_uuid_generate_from_string_bin(NMUuid *    uuid,
 
         if (type_args) {
             /* type_args can be a name space UUID. Interpret it as (char *) */
-            if (!_nm_utils_uuid_parse(type_args, &ns_uuid))
+            if (!nm_uuid_parse(type_args, &ns_uuid))
                 g_return_val_if_reached(NULL);
         }
 

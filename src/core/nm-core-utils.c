@@ -2854,7 +2854,7 @@ again:
                                    NULL,
                                    NULL,
                                    NULL);
-        if (!contents || !_nm_utils_uuid_parse(nm_strstrip(contents), &uuid)) {
+        if (!contents || !nm_uuid_parse(nm_strstrip(contents), &uuid)) {
             /* generate a random UUID instead. */
             is_fake = TRUE;
             _nm_utils_uuid_generate_random(&uuid);
