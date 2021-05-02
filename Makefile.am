@@ -1394,7 +1394,6 @@ nodist_src_libnm_core_impl_libnm_core_impl_la_SOURCES = \
 
 src_libnm_core_impl_libnm_core_impl_la_LIBADD = \
 	$(GLIB_LIBS) \
-	$(UUID_LIBS) \
 	$(NULL)
 
 src_libnm_core_impl_libnm_core_impl_la_LDFLAGS = \
@@ -1762,7 +1761,6 @@ src_libnm_client_impl_libnm_client_impl_la_LIBADD = \
 	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(DL_LIBS) \
-	$(UUID_LIBS) \
 	$(LIBUDEV_LIBS) \
 	$(NULL)
 
