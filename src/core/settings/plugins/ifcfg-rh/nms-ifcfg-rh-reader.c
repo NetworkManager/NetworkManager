@@ -18,6 +18,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/if_ether.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-connection.h"
 #include "nm-dbus-interface.h"

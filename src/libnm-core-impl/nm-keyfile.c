@@ -18,6 +18,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"

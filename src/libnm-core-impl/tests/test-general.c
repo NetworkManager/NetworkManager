@@ -14,6 +14,7 @@
 #include <linux/if_infiniband.h>
 
 #include "libnm-std-aux/c-list-util.h"
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-enum-utils.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-json-aux.h"

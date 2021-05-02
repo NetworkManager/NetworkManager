@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <linux/if_ether.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-platform/nm-platform-utils.h"
