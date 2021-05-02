@@ -15,4 +15,16 @@ nm_uuid_unparse(const NMUuid *uuid, char out_str[static 37])
     return nm_uuid_unparse_case(uuid, out_str, FALSE);
 }
 
+gboolean nm_uuid_parse_full(const char *str, NMUuid *out_uuid, gboolean *out_is_normalized);
+
+static inline NMUuid *
+nm_uuid_parse(const char *str, NMUuid *out_uuid)
+{
+    nm_assert(out_uuid);
+
+    if (!nm_uuid_parse_full(str, out_uuid, NULL))
+        return NULL;
+    return out_uuid;
+}
+
 #endif /* __NM_UUID_H__ */
