@@ -4438,28 +4438,7 @@ nm_utils_iface_valid_name(const char *name)
 gboolean
 nm_utils_is_uuid(const char *str)
 {
-    const char *p          = str;
-    int         num_dashes = 0;
-
-    if (!p)
-        return FALSE;
-
-    while (*p) {
-        if (*p == '-')
-            num_dashes++;
-        else if (!g_ascii_isxdigit(*p))
-            return FALSE;
-        p++;
-    }
-
-    if ((num_dashes == 4) && (p - str == 36))
-        return TRUE;
-
-    /* Backwards compat for older configurations */
-    if ((num_dashes == 0) && (p - str == 40))
-        return TRUE;
-
-    return FALSE;
+    return nm_uuid_is_valid_nmlegacy(str);
 }
 
 static _nm_thread_local char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
