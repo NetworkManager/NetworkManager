@@ -5,6 +5,7 @@
 #include "nm-uuid.h"
 
 #include "libnm-glib-aux/nm-random-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 /*****************************************************************************/
 
@@ -152,4 +153,151 @@ nm_uuid_generate_random_str(char buf[static 37])
 
     nm_uuid_generate_random(&uuid);
     return nm_uuid_unparse(&uuid, buf);
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_uuid_generate_from_string_bin:
+ * @uuid: the UUID to update inplace. This function cannot
+ *   fail to succeed.
+ * @s: a string to use as the seed for the UUID
+ * @slen: if negative, treat @s as zero terminated C string.
+ *   Otherwise, assume the length as given (and allow @s to be
+ *   non-null terminated or contain '\0').
+ * @uuid_type: a type identifier which UUID format to generate.
+ * @type_args: additional arguments, depending on the uuid_type
+ *
+ * For a given @s, this function will always return the same UUID.
+ *
+ * Returns: the input @uuid. This function cannot fail.
+ **/
+NMUuid *
+nm_utils_uuid_generate_from_string_bin(NMUuid *    uuid,
+                                       const char *s,
+                                       gssize      slen,
+                                       int         uuid_type,
+                                       gpointer    type_args)
+{
+    g_return_val_if_fail(uuid, FALSE);
+    g_return_val_if_fail(slen == 0 || s, FALSE);
+
+    if (slen < 0)
+        slen = s ? strlen(s) : 0;
+
+    switch (uuid_type) {
+    case NM_UTILS_UUID_TYPE_LEGACY:
+        g_return_val_if_fail(!type_args, NULL);
+        nm_crypto_md5_hash(NULL, 0, (guint8 *) s, slen, (guint8 *) uuid, sizeof(*uuid));
+        break;
+    case NM_UTILS_UUID_TYPE_VERSION3:
+    case NM_UTILS_UUID_TYPE_VERSION5:
+    {
+        NMUuid ns_uuid = {};
+
+        if (type_args) {
+            /* type_args can be a name space UUID. Interpret it as (char *) */
+            if (!nm_uuid_parse(type_args, &ns_uuid))
+                g_return_val_if_reached(NULL);
+        }
+
+        if (uuid_type == NM_UTILS_UUID_TYPE_VERSION3) {
+            nm_crypto_md5_hash((guint8 *) s,
+                               slen,
+                               (guint8 *) &ns_uuid,
+                               sizeof(ns_uuid),
+                               (guint8 *) uuid,
+                               sizeof(*uuid));
+        } else {
+            nm_auto_free_checksum GChecksum *sum = NULL;
+            union {
+                guint8 sha1[NM_UTILS_CHECKSUM_LENGTH_SHA1];
+                NMUuid uuid;
+            } digest;
+
+            sum = g_checksum_new(G_CHECKSUM_SHA1);
+            g_checksum_update(sum, (guchar *) &ns_uuid, sizeof(ns_uuid));
+            g_checksum_update(sum, (guchar *) s, slen);
+            nm_utils_checksum_get_digest(sum, digest.sha1);
+
+            G_STATIC_ASSERT_EXPR(sizeof(digest.sha1) > sizeof(digest.uuid));
+            *uuid = digest.uuid;
+        }
+
+        uuid->uuid[6] = (uuid->uuid[6] & 0x0F) | (uuid_type << 4);
+        uuid->uuid[8] = (uuid->uuid[8] & 0x3F) | 0x80;
+        break;
+    }
+    default:
+        g_return_val_if_reached(NULL);
+    }
+
+    return uuid;
+}
+
+/**
+ * nm_utils_uuid_generate_from_string:
+ * @s: a string to use as the seed for the UUID
+ * @slen: if negative, treat @s as zero terminated C string.
+ *   Otherwise, assume the length as given (and allow @s to be
+ *   non-null terminated or contain '\0').
+ * @uuid_type: a type identifier which UUID format to generate.
+ * @type_args: additional arguments, depending on the uuid_type
+ *
+ * For a given @s, this function will always return the same UUID.
+ *
+ * Returns: a newly allocated UUID suitable for use as the #NMSettingConnection
+ * object's #NMSettingConnection:id: property
+ **/
+char *
+nm_utils_uuid_generate_from_string(const char *s, gssize slen, int uuid_type, gpointer type_args)
+{
+    NMUuid uuid;
+
+    nm_utils_uuid_generate_from_string_bin(&uuid, s, slen, uuid_type, type_args);
+    return nm_uuid_unparse(&uuid, g_new(char, 37));
+}
+
+/**
+ * _nm_utils_uuid_generate_from_strings:
+ * @string1: a variadic list of strings. Must be NULL terminated.
+ *
+ * Returns a variant3 UUID based on the concatenated C strings.
+ * It does not simply concatenate them, but also includes the
+ * terminating '\0' character. For example "a", "b", gives
+ * "a\0b\0".
+ *
+ * This has the advantage, that the following invocations
+ * all give different UUIDs: (NULL), (""), ("",""), ("","a"), ("a",""),
+ * ("aa"), ("aa", ""), ("", "aa"), ...
+ */
+char *
+_nm_utils_uuid_generate_from_strings(const char *string1, ...)
+{
+    if (!string1)
+        return nm_utils_uuid_generate_from_string(NULL,
+                                                  0,
+                                                  NM_UTILS_UUID_TYPE_VERSION3,
+                                                  NM_UTILS_UUID_NS);
+
+    {
+        nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+        va_list                  args;
+        const char *             s;
+
+        nm_str_buf_append_len(&str, string1, strlen(string1) + 1u);
+
+        va_start(args, string1);
+        s = va_arg(args, const char *);
+        while (s) {
+            nm_str_buf_append_len(&str, s, strlen(s) + 1u);
+            s = va_arg(args, const char *);
+        }
+        va_end(args);
+
+        return nm_utils_uuid_generate_from_string(nm_str_buf_get_str_unsafe(&str),
+                                                  str.len,
+                                                  NM_UTILS_UUID_TYPE_VERSION3,
+                                                  NM_UTILS_UUID_NS);
+    }
 }
