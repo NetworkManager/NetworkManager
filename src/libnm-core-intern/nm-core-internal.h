@@ -21,7 +21,6 @@
 #endif
 
 #include "libnm-base/nm-base.h"
-#include "libnm-glib-aux/nm-uuid.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-meta-setting-base.h"

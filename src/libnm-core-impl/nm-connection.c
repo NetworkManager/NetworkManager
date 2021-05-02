@@ -10,6 +10,7 @@
 
 #include <arpa/inet.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"

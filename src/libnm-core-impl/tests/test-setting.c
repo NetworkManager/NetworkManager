@@ -8,6 +8,7 @@
 #include <linux/pkt_sched.h>
 #include <net/if.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-base/nm-ethtool-utils-base.h"
 #include "libnm-core-intern/nm-core-internal.h"

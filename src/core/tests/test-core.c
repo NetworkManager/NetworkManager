@@ -11,6 +11,7 @@
 /* need math.h for isinf() and INFINITY. No need to link with -lm */
 #include <math.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "NetworkManagerUtils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-core-utils.h"

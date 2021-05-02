@@ -16,6 +16,7 @@
 #include "nm-manager.h"
 #include "nm-device-iwd.h"
 #include "nm-wifi-utils.h"
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-random-utils.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "settings/nm-settings.h"

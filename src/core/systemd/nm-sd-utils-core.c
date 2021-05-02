@@ -7,7 +7,7 @@
 
 #include "nm-sd-utils-core.h"
 
-#include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-glib-aux/nm-uuid.h"
 
 #include "nm-sd-adapt-core.h"
 

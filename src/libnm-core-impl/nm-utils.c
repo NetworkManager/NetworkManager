@@ -17,6 +17,7 @@
 #include <linux/pkt_sched.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-enum-utils.h"

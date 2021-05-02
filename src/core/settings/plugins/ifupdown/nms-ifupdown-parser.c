@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "settings/nm-settings-plugin.h"
 

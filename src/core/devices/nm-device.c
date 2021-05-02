@@ -24,6 +24,7 @@
 #include <linux/if_infiniband.h>
 
 #include "libnm-std-aux/unaligned.h"
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "libnm-glib-aux/nm-random-utils.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
