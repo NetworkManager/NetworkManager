@@ -158,6 +158,9 @@ nm_uuid_is_valid_nmlegacy(const char *str)
         p++;
     }
 
+    /* While we accept here bogus strings as UUIDs, they must contain only
+     * hexdigits and '-', and they must be eithr 36 or 40 chars long. */
+
     if ((num_dashes == 4) && (p - str == 36))
         return TRUE;
 
@@ -165,6 +168,68 @@ nm_uuid_is_valid_nmlegacy(const char *str)
     if ((num_dashes == 0) && (p - str == 40))
         return TRUE;
 
+    return FALSE;
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_uuid_is_valid_nm(const char *str,
+                    gboolean *  out_normalized,
+                    char *      out_normalized_str /* [static 37] */)
+{
+    NMUuid   uuid;
+    gboolean is_normalized;
+
+    if (!str)
+        return FALSE;
+
+    if (nm_uuid_parse_full(str, &uuid, &is_normalized)) {
+        if (is_normalized) {
+            /* @str is a normalized (lower-case), valid UUID. Nothing to normalize,
+             * and return success. */
+            NM_SET_OUT(out_normalized, FALSE);
+            return TRUE;
+        }
+
+        /* @str is a valid UUID, but not normalized. That means that it's
+         * upper case. Normalize the UUID. */
+        NM_SET_OUT(out_normalized, TRUE);
+        if (out_normalized_str)
+            nm_uuid_unparse(&uuid, out_normalized_str);
+        return TRUE;
+    }
+
+    if (nm_uuid_is_valid_nmlegacy(str)) {
+        /* This is not a valid UUID, but something that we used to
+         * accept according to nm_uuid_is_valid_nmlegacy().
+         *
+         * Normalize it by sha1 hashing the string. Upper case characters
+         * are made lower case first. */
+        NM_SET_OUT(out_normalized, TRUE);
+        if (out_normalized_str) {
+            char str_lower[40 + 1];
+            int  i;
+
+            nm_assert(strlen(str) < G_N_ELEMENTS(str_lower));
+
+            /* normalize first to lower-case. */
+            g_strlcpy(str_lower, str, sizeof(str_lower));
+            for (i = 0; str_lower[i]; i++)
+                str_lower[i] = g_ascii_tolower(str_lower[i]);
+
+            /* The namespace UUID is chosen randomly. */
+            nm_uuid_generate_from_string(&uuid,
+                                         str_lower,
+                                         -1,
+                                         NM_UUID_TYPE_VERSION5,
+                                         "4e72f709-ca95-4405-9053-1f43294a618c");
+            nm_uuid_unparse(&uuid, out_normalized_str);
+        }
+        return TRUE;
+    }
+
+    /* UUID is not valid. */
     return FALSE;
 }
 
