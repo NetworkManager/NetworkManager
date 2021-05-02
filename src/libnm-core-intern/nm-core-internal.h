@@ -21,6 +21,7 @@
 #endif
 
 #include "libnm-base/nm-base.h"
+#include "libnm-glib-aux/nm-uuid.h"
 #include "nm-connection.h"
 #include "nm-core-enum-types.h"
 #include "nm-meta-setting-base.h"
@@ -350,10 +351,6 @@ gboolean _nm_utils_check_module_file(const char *              name,
                                      GError **                 error);
 
 /*****************************************************************************/
-
-typedef struct _NMUuid {
-    guchar uuid[16];
-} NMUuid;
 
 NMUuid *_nm_utils_uuid_parse(const char *str, NMUuid *uuid);
 char *  _nm_utils_uuid_unparse(const NMUuid *uuid, char *out_str /*[37]*/);
