@@ -7219,7 +7219,7 @@ _uuid(const char *str)
     static NMUuid u;
 
     g_assert(str);
-    g_assert(_nm_utils_uuid_parse(str, &u));
+    g_assert(nm_uuid_parse(str, &u));
     return &u;
 }
 
