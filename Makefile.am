@@ -444,6 +444,8 @@ src_libnm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	src/libnm-glib-aux/nm-test-utils.h \
 	src/libnm-glib-aux/nm-time-utils.c \
 	src/libnm-glib-aux/nm-time-utils.h \
+	src/libnm-glib-aux/nm-uuid.c \
+	src/libnm-glib-aux/nm-uuid.h \
 	src/libnm-glib-aux/nm-value-type.h \
 	$(NULL)
 
