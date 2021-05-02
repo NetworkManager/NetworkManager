@@ -2402,7 +2402,7 @@ _uuid_data_init(UuidData *uuid_data, gboolean packed, gboolean is_fake, const NM
         nm_utils_bin2hexstr_full(uuid, sizeof(*uuid), '\0', FALSE, uuid_data->str);
     } else {
         G_STATIC_ASSERT_EXPR(sizeof(uuid_data->str) >= 37);
-        _nm_utils_uuid_unparse(uuid, uuid_data->str);
+        nm_uuid_unparse(uuid, uuid_data->str);
     }
     return uuid_data;
 }

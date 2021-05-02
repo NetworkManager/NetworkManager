@@ -353,7 +353,6 @@ gboolean _nm_utils_check_module_file(const char *              name,
 /*****************************************************************************/
 
 NMUuid *_nm_utils_uuid_parse(const char *str, NMUuid *uuid);
-char *  _nm_utils_uuid_unparse(const NMUuid *uuid, char *out_str /*[37]*/);
 NMUuid *_nm_utils_uuid_generate_random(NMUuid *out_uuid);
 
 gboolean nm_utils_uuid_is_null(const NMUuid *uuid);

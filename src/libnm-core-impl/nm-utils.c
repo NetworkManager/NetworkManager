@@ -3055,20 +3055,6 @@ _nm_utils_uuid_parse(const char *str, NMUuid *out_uuid)
     return out_uuid;
 }
 
-char *
-_nm_utils_uuid_unparse(const NMUuid *uuid, char *out_str /*[37]*/)
-{
-    nm_assert(uuid);
-
-    if (!out_str) {
-        /* for convenience, allow %NULL to indicate that a new
-         * string should be allocated. */
-        out_str = g_malloc(37);
-    }
-    uuid_unparse_lower(uuid->uuid, out_str);
-    return out_str;
-}
-
 NMUuid *
 _nm_utils_uuid_generate_random(NMUuid *out_uuid)
 {
@@ -3107,7 +3093,7 @@ nm_utils_uuid_generate_buf_(char *buf)
     nm_assert(buf);
 
     _nm_utils_uuid_generate_random(&uuid);
-    return _nm_utils_uuid_unparse(&uuid, buf);
+    return nm_uuid_unparse(&uuid, buf);
 }
 
 /**
@@ -3220,7 +3206,7 @@ nm_utils_uuid_generate_from_string(const char *s, gssize slen, int uuid_type, gp
     NMUuid uuid;
 
     nm_utils_uuid_generate_from_string_bin(&uuid, s, slen, uuid_type, type_args);
-    return _nm_utils_uuid_unparse(&uuid, NULL);
+    return nm_uuid_unparse(&uuid, g_new(char, 37));
 }
 
 /**
