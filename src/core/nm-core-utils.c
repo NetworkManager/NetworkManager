@@ -2455,7 +2455,7 @@ again:
                                          (guint8 *) &uuid,
                                          sizeof(uuid),
                                          NULL)) {
-                if (!nm_utils_uuid_is_null(&uuid)) {
+                if (!nm_uuid_is_null(&uuid)) {
                     /* an all-zero machine-id is not valid. */
                     is_fake = FALSE;
                 }
