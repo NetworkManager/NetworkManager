@@ -158,7 +158,7 @@ nm_uuid_generate_random_str(char buf[static 37])
 /*****************************************************************************/
 
 /**
- * nm_utils_uuid_generate_from_string_bin:
+ * nm_uuid_generate_from_string:
  * @uuid: the UUID to update inplace. This function cannot
  *   fail to succeed.
  * @s: a string to use as the seed for the UUID
@@ -173,11 +173,11 @@ nm_uuid_generate_random_str(char buf[static 37])
  * Returns: the input @uuid. This function cannot fail.
  **/
 NMUuid *
-nm_utils_uuid_generate_from_string_bin(NMUuid *    uuid,
-                                       const char *s,
-                                       gssize      slen,
-                                       int         uuid_type,
-                                       gpointer    type_args)
+nm_uuid_generate_from_string(NMUuid *    uuid,
+                             const char *s,
+                             gssize      slen,
+                             int         uuid_type,
+                             gpointer    type_args)
 {
     g_return_val_if_fail(uuid, FALSE);
     g_return_val_if_fail(slen == 0 || s, FALSE);
@@ -186,12 +186,12 @@ nm_utils_uuid_generate_from_string_bin(NMUuid *    uuid,
         slen = s ? strlen(s) : 0;
 
     switch (uuid_type) {
-    case NM_UTILS_UUID_TYPE_LEGACY:
+    case NM_UUID_TYPE_LEGACY:
         g_return_val_if_fail(!type_args, NULL);
         nm_crypto_md5_hash(NULL, 0, (guint8 *) s, slen, (guint8 *) uuid, sizeof(*uuid));
         break;
-    case NM_UTILS_UUID_TYPE_VERSION3:
-    case NM_UTILS_UUID_TYPE_VERSION5:
+    case NM_UUID_TYPE_VERSION3:
+    case NM_UUID_TYPE_VERSION5:
     {
         NMUuid ns_uuid = {};
 
@@ -201,7 +201,7 @@ nm_utils_uuid_generate_from_string_bin(NMUuid *    uuid,
                 g_return_val_if_reached(NULL);
         }
 
-        if (uuid_type == NM_UTILS_UUID_TYPE_VERSION3) {
+        if (uuid_type == NM_UUID_TYPE_VERSION3) {
             nm_crypto_md5_hash((guint8 *) s,
                                slen,
                                (guint8 *) &ns_uuid,
@@ -236,7 +236,7 @@ nm_utils_uuid_generate_from_string_bin(NMUuid *    uuid,
 }
 
 /**
- * nm_utils_uuid_generate_from_string:
+ * nm_uuid_generate_from_string_str:
  * @s: a string to use as the seed for the UUID
  * @slen: if negative, treat @s as zero terminated C string.
  *   Otherwise, assume the length as given (and allow @s to be
@@ -250,16 +250,16 @@ nm_utils_uuid_generate_from_string_bin(NMUuid *    uuid,
  * object's #NMSettingConnection:id: property
  **/
 char *
-nm_utils_uuid_generate_from_string(const char *s, gssize slen, int uuid_type, gpointer type_args)
+nm_uuid_generate_from_string_str(const char *s, gssize slen, int uuid_type, gpointer type_args)
 {
     NMUuid uuid;
 
-    nm_utils_uuid_generate_from_string_bin(&uuid, s, slen, uuid_type, type_args);
+    nm_uuid_generate_from_string(&uuid, s, slen, uuid_type, type_args);
     return nm_uuid_unparse(&uuid, g_new(char, 37));
 }
 
 /**
- * _nm_utils_uuid_generate_from_strings:
+ * nm_uuid_generate_from_strings:
  * @string1: a variadic list of strings. Must be NULL terminated.
  *
  * Returns a variant3 UUID based on the concatenated C strings.
@@ -272,13 +272,10 @@ nm_utils_uuid_generate_from_string(const char *s, gssize slen, int uuid_type, gp
  * ("aa"), ("aa", ""), ("", "aa"), ...
  */
 char *
-_nm_utils_uuid_generate_from_strings(const char *string1, ...)
+nm_uuid_generate_from_strings(const char *string1, ...)
 {
     if (!string1)
-        return nm_utils_uuid_generate_from_string(NULL,
-                                                  0,
-                                                  NM_UTILS_UUID_TYPE_VERSION3,
-                                                  NM_UTILS_UUID_NS);
+        return nm_uuid_generate_from_string_str(NULL, 0, NM_UUID_TYPE_VERSION3, NM_UUID_NS1);
 
     {
         nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
@@ -295,9 +292,9 @@ _nm_utils_uuid_generate_from_strings(const char *string1, ...)
         }
         va_end(args);
 
-        return nm_utils_uuid_generate_from_string(nm_str_buf_get_str_unsafe(&str),
-                                                  str.len,
-                                                  NM_UTILS_UUID_TYPE_VERSION3,
-                                                  NM_UTILS_UUID_NS);
+        return nm_uuid_generate_from_string_str(nm_str_buf_get_str_unsafe(&str),
+                                                str.len,
+                                                NM_UUID_TYPE_VERSION3,
+                                                NM_UUID_NS1);
     }
 }
