@@ -11,7 +11,6 @@
 #include <net/ethernet.h>
 #include <arpa/inet.h>
 #include <net/if_arp.h>
-#include <uuid/uuid.h>
 #include <libintl.h>
 #include <gmodule.h>
 #include <sys/stat.h>
