@@ -3044,15 +3044,6 @@ _nm_utils_sriov_vf_from_strparts(const char *index,
 
 /*****************************************************************************/
 
-NMUuid *
-_nm_utils_uuid_generate_random(NMUuid *out_uuid)
-{
-    nm_assert(out_uuid);
-
-    uuid_generate_random(out_uuid->uuid);
-    return out_uuid;
-}
-
 gboolean
 nm_utils_uuid_is_null(const NMUuid *uuid)
 {
@@ -3081,7 +3072,7 @@ nm_utils_uuid_generate_buf_(char *buf)
 
     nm_assert(buf);
 
-    _nm_utils_uuid_generate_random(&uuid);
+    nm_uuid_generate_random(&uuid);
     return nm_uuid_unparse(&uuid, buf);
 }
 
