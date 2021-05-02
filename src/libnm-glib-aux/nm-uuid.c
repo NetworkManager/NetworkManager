@@ -176,7 +176,7 @@ NMUuid *
 nm_uuid_generate_from_string(NMUuid *    uuid,
                              const char *s,
                              gssize      slen,
-                             int         uuid_type,
+                             NMUuidType  uuid_type,
                              gpointer    type_args)
 {
     g_return_val_if_fail(uuid, FALSE);
@@ -250,7 +250,10 @@ nm_uuid_generate_from_string(NMUuid *    uuid,
  * object's #NMSettingConnection:id: property
  **/
 char *
-nm_uuid_generate_from_string_str(const char *s, gssize slen, int uuid_type, gpointer type_args)
+nm_uuid_generate_from_string_str(const char *s,
+                                 gssize      slen,
+                                 NMUuidType  uuid_type,
+                                 gpointer    type_args)
 {
     NMUuid uuid;
 
