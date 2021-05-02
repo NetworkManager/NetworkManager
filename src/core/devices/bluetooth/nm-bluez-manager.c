@@ -1321,7 +1321,7 @@ _conn_create_panu_connection(NMBluezManager *self, BzDBusObj *bzobj)
     char                          uuid[37];
     gs_free_error GError *error = NULL;
 
-    nm_utils_uuid_generate_buf(uuid);
+    nm_uuid_generate_random_str_arr(uuid);
     id = g_strdup_printf(_("%s Network"), bzobj->d_device.name);
 
     connection = nm_simple_connection_new();

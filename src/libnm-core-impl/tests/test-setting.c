@@ -2219,7 +2219,7 @@ test_sriov_setting(void)
                  NM_SETTING_CONNECTION_ID,
                  "Test SR-IOV connection",
                  NM_SETTING_CONNECTION_UUID,
-                 nm_utils_uuid_generate_a(),
+                 nm_uuid_generate_random_str_a(),
                  NM_SETTING_CONNECTION_AUTOCONNECT,
                  TRUE,
                  NM_SETTING_CONNECTION_INTERFACE_NAME,

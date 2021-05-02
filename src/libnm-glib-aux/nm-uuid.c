@@ -142,3 +142,14 @@ nm_uuid_is_null(const NMUuid *uuid)
     }
     return TRUE;
 }
+
+char *
+nm_uuid_generate_random_str(char buf[static 37])
+{
+    NMUuid uuid;
+
+    nm_assert(buf);
+
+    nm_uuid_generate_random(&uuid);
+    return nm_uuid_unparse(&uuid, buf);
+}

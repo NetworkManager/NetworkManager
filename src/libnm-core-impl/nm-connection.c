@@ -710,7 +710,7 @@ _normalize_connection_uuid(NMConnection *self)
     if (nm_setting_connection_get_uuid(s_con))
         return FALSE;
 
-    g_object_set(s_con, NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_buf(uuid), NULL);
+    g_object_set(s_con, NM_SETTING_CONNECTION_UUID, nm_uuid_generate_random_str_arr(uuid), NULL);
     return TRUE;
 }
 
