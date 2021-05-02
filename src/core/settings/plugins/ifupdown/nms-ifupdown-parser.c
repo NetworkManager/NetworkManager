@@ -32,14 +32,6 @@
 
 /*****************************************************************************/
 
-#define _str_has_prefix(val, prefix, require_suffix)                   \
-    ({                                                                 \
-        const char *_val = (val);                                      \
-                                                                       \
-        (strncmp(_val, "" prefix "", NM_STRLEN(prefix)) == 0)          \
-            && (!(require_suffix) || _val[NM_STRLEN(prefix)] != '\0'); \
-    })
-
 static const char *
 _ifupdownplugin_guess_connection_type(if_block *block)
 {
@@ -51,8 +43,7 @@ _ifupdownplugin_guess_connection_type(if_block *block)
         if_data *ifb;
 
         c_list_for_each_entry (ifb, &block->data_lst_head, data_lst) {
-            if (_str_has_prefix(ifb->key, "wireless-", FALSE)
-                || _str_has_prefix(ifb->key, "wpa-", FALSE)) {
+            if (NM_STR_HAS_PREFIX(ifb->key, "wireless-") || NM_STR_HAS_PREFIX(ifb->key, "wpa-")) {
                 ret_type = NM_SETTING_WIRELESS_SETTING_NAME;
                 break;
             }
@@ -102,7 +93,7 @@ update_wireless_setting_from_if_block(NMConnection *connection, if_block *block)
     wireless_setting = NM_SETTING_WIRELESS(nm_setting_wireless_new());
 
     c_list_for_each_entry (curr, &block->data_lst_head, data_lst) {
-        if (_str_has_prefix(curr->key, "wireless-", TRUE)) {
+        if (NM_STR_HAS_PREFIX_WITH_MORE(curr->key, "wireless-")) {
             const char *newkey = map_by_mapping(mapping, curr->key + NM_STRLEN("wireless-"));
 
             _LOGI("wireless setting key: %s='%s'", newkey, curr->data);
@@ -137,7 +128,7 @@ update_wireless_setting_from_if_block(NMConnection *connection, if_block *block)
             } else {
                 g_object_set(wireless_setting, newkey, curr->data, NULL);
             }
-        } else if (_str_has_prefix(curr->key, "wpa-", TRUE)) {
+        } else if (NM_STR_HAS_PREFIX_WITH_MORE(curr->key, "wpa-")) {
             const char *newkey = map_by_mapping(mapping, curr->key + NM_STRLEN("wpa-"));
 
             if (nm_streq0(newkey, "ssid")) {
@@ -304,7 +295,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection, if_bloc
     wireless_security_setting = NM_SETTING_WIRELESS_SECURITY(nm_setting_wireless_security_new());
 
     c_list_for_each_entry (curr, &block->data_lst_head, data_lst) {
-        if (_str_has_prefix(curr->key, "wireless-", TRUE)) {
+        if (NM_STR_HAS_PREFIX_WITH_MORE(curr->key, "wireless-")) {
             const char *          key                  = curr->key + NM_STRLEN("wireless-");
             char *                property_value       = NULL;
             gpointer              typed_property_value = NULL;
@@ -336,7 +327,7 @@ wireless_next:
             if (typed_property_value && free_func)
                 (*free_func)(typed_property_value);
 
-        } else if (_str_has_prefix(curr->key, "wpa-", TRUE)) {
+        } else if (NM_STR_HAS_PREFIX_WITH_MORE(curr->key, "wpa-")) {
             const char *          key                  = curr->key + NM_STRLEN("wpa-");
             char *                property_value       = NULL;
             gpointer              typed_property_value = NULL;
