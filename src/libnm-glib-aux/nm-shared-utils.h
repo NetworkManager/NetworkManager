@@ -2786,4 +2786,13 @@ gboolean nm_utils_sysctl_ip_conf_is_path(int         addr_family,
                                          const char *ifname,
                                          const char *property);
 
+/*****************************************************************************/
+
+void nm_crypto_md5_hash(const guint8 *salt,
+                        gsize         salt_len,
+                        const guint8 *password,
+                        gsize         password_len,
+                        guint8 *      buffer,
+                        gsize         buflen);
+
 #endif /* __NM_SHARED_UTILS_H__ */

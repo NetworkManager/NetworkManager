@@ -63,13 +63,6 @@ NMCryptoFileFormat nm_crypto_verify_private_key(const char *file,
                                                 gboolean *  out_is_encrypted,
                                                 GError **   error);
 
-void nm_crypto_md5_hash(const guint8 *salt,
-                        gsize         salt_len,
-                        const guint8 *password,
-                        gsize         password_len,
-                        guint8 *      buffer,
-                        gsize         buflen);
-
 gboolean nm_crypto_randomize(void *buffer, gsize buffer_len, GError **error);
 
 /*****************************************************************************/
