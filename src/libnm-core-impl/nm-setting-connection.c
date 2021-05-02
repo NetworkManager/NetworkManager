@@ -8,6 +8,7 @@
 
 #include "nm-setting-connection.h"
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
@@ -1065,6 +1066,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     const char *                normerr_missing_slave_type      = NULL;
     const char *                normerr_missing_slave_type_port = NULL;
     gboolean                    normerr_base_setting            = FALSE;
+    gboolean                    uuid_was_normalized             = FALSE;
 
     if (!priv->id) {
         g_set_error_literal(error,
@@ -1088,7 +1090,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (priv->uuid && !nm_utils_is_uuid(priv->uuid)) {
+    if (priv->uuid && !nm_uuid_is_valid_nm(priv->uuid, &uuid_was_normalized, NULL)) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1458,6 +1460,18 @@ after_interface_name:
                            NM_SETTING_CONNECTION_SLAVE_TYPE);
             return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
         }
+    }
+
+    if (uuid_was_normalized) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("UUID needs normalization"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_CONNECTION_SETTING_NAME,
+                       NM_SETTING_CONNECTION_UUID);
+        return NM_SETTING_VERIFY_NORMALIZABLE;
     }
 
     return TRUE;

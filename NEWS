@@ -13,6 +13,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   mode).
 * nmcli: fix setting property aliases to empty value to reset the
   default value.
+* Enforce valid "connection.uuid" by normalizing the string to lower
+  case. This changes the UUID of existing profiles that had an invalid,
+  non-normalized value.
 
 =============================================
 NetworkManager-1.30

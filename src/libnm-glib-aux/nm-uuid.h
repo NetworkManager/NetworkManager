@@ -43,6 +43,10 @@ nm_uuid_is_valid(const char *str)
 
 gboolean nm_uuid_is_valid_nmlegacy(const char *str);
 
+gboolean nm_uuid_is_valid_nm(const char *str,
+                             gboolean *  out_normalized,
+                             char *      out_normalized_str /* [static 37] */);
+
 /*****************************************************************************/
 
 char *nm_uuid_generate_random_str(char buf[static 37]);

@@ -238,6 +238,8 @@ _do_test_connection_uuid(NMConnection *con, const char *uuid, const char *expect
     NMSettingConnection *s_con;
     gs_free char *       uuid_old = NULL;
     gboolean             success;
+    gboolean             is_normalized;
+    char                 uuid_normalized[37];
 
     nmtst_assert_connection_verifies_without_normalization(con);
 
@@ -257,6 +259,9 @@ _do_test_connection_uuid(NMConnection *con, const char *uuid, const char *expect
     if (nm_streq0(uuid, expected_uuid)) {
         nmtst_assert_connection_verifies_without_normalization(con);
         g_assert(nm_utils_is_uuid(uuid));
+        g_assert(nm_uuid_is_valid(uuid));
+        g_assert(nm_uuid_is_valid_nm(uuid, &is_normalized, NULL));
+        g_assert(!is_normalized);
     } else if (!expected_uuid) {
         gs_free_error GError *error = NULL;
 
@@ -265,11 +270,35 @@ _do_test_connection_uuid(NMConnection *con, const char *uuid, const char *expect
         g_assert_error(error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
 
         g_assert(!nm_utils_is_uuid(uuid));
-    } else
-        g_assert_not_reached();
+        g_assert(!nm_uuid_is_valid(uuid));
+        g_assert(!nm_uuid_is_valid_nmlegacy(uuid));
+        g_assert(!nm_uuid_is_valid_nm(uuid, NULL, NULL));
+    } else {
+        gs_free_error GError *error = NULL;
+
+        nmtst_assert_connection_verifies_and_normalizable(con);
+
+        success = nm_connection_verify(con, &error);
+        nmtst_assert_success(success, error);
+
+        if (!nmtst_connection_normalize(con))
+            g_assert_not_reached();
+
+        g_assert_cmpstr(expected_uuid, ==, nm_setting_connection_get_uuid(s_con));
+        g_assert(nm_uuid_is_valid(expected_uuid));
+
+        g_assert(nm_utils_is_uuid(uuid));
+        g_assert(nm_uuid_is_valid_nmlegacy(uuid));
+        g_assert(nm_uuid_is_valid_nm(uuid, &is_normalized, uuid_normalized));
+
+        g_assert_cmpstr(expected_uuid, ==, uuid_normalized);
+    }
 
     g_object_set(s_con, NM_SETTING_CONNECTION_UUID, uuid_old, NULL);
     nmtst_assert_connection_verifies_without_normalization(con);
+
+    if (expected_uuid && !nm_streq(expected_uuid, uuid))
+        _do_test_connection_uuid(con, expected_uuid, expected_uuid);
 }
 
 static void
@@ -286,19 +315,36 @@ test_connection_uuid(void)
 #define _do_test_connection_uuid_good(con, uuid) \
     _do_test_connection_uuid((con), "" uuid "", "" uuid "")
 
+#define _do_test_connection_uuid_norm(con, uuid, expected_uuid) \
+    _do_test_connection_uuid((con), "" uuid "", "" expected_uuid "")
+
     _do_test_connection_uuid_bad(con, "x1e775e3-a316-4eb2-b4d8-4b0f2bcaea53");
     _do_test_connection_uuid_bad(con, "1e775e3aa3164eb2b4d84b0f2bcaea53abcdabc");
     _do_test_connection_uuid_bad(con, "1e775e3aa3164eb2b4d84b0f2bcaea53abcdabcdd");
 
     _do_test_connection_uuid_good(con, "a1e775e3-a316-4eb2-b4d8-4b0f2bcaea53");
 
-    _do_test_connection_uuid_good(con, "A1E775e3-a316-4eb2-b4d8-4b0f2bcaea53");
-    _do_test_connection_uuid_good(con, "A1E775E3-A316-4EB2-B4D8-4B0F2BCAEA53");
-    _do_test_connection_uuid_good(con, "-1e775e3aa316-4eb2-b4d8-4b0f2bcaea53");
-    _do_test_connection_uuid_good(con, "----1e775e3aa3164eb2b4d84b0f2bcaea53");
-    _do_test_connection_uuid_good(con, "1e775e3aa3164eb2b4d84b0f2bcaea53abcdabcd");
-    _do_test_connection_uuid_good(con, "1e775e3Aa3164eb2b4d84b0f2bcaea53abcdabcd");
-    _do_test_connection_uuid_good(con, "1E775E3AA3164EB2B4D84B0F2BCAEA53ABCDABCD");
+    _do_test_connection_uuid_norm(con,
+                                  "A1E775e3-a316-4eb2-b4d8-4b0f2bcaea53",
+                                  "a1e775e3-a316-4eb2-b4d8-4b0f2bcaea53");
+    _do_test_connection_uuid_norm(con,
+                                  "A1E775E3-A316-4EB2-B4D8-4B0F2BCAEA53",
+                                  "a1e775e3-a316-4eb2-b4d8-4b0f2bcaea53");
+    _do_test_connection_uuid_norm(con,
+                                  "-1e775e3aa316-4eb2-b4d8-4b0f2bcaea53",
+                                  "bdd73688-5c87-5454-917d-f5c3faed39c0");
+    _do_test_connection_uuid_norm(con,
+                                  "----1e775e3aa3164eb2b4d84b0f2bcaea53",
+                                  "8a232814-c6cf-54c9-9384-71a60011d0b2");
+    _do_test_connection_uuid_norm(con,
+                                  "1e775e3aa3164eb2b4d84b0f2bcaea53abcdabcd",
+                                  "ae35a4a8-4029-5770-9fa4-d79a672874c3");
+    _do_test_connection_uuid_norm(con,
+                                  "1e775e3Aa3164eb2b4d84b0f2bcaea53abcdabcd",
+                                  "ae35a4a8-4029-5770-9fa4-d79a672874c3");
+    _do_test_connection_uuid_norm(con,
+                                  "1E775E3AA3164EB2B4D84B0F2BCAEA53ABCDABCD",
+                                  "ae35a4a8-4029-5770-9fa4-d79a672874c3");
 }
 
 /*****************************************************************************/
