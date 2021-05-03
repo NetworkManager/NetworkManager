@@ -1624,7 +1624,7 @@ _mgr_configs_data_clear(NMDnsManager *self)
 /*****************************************************************************/
 
 static gboolean
-update_dns(NMDnsManager *self, gboolean no_caching, GError **error)
+update_dns(NMDnsManager *self, gboolean no_caching, gboolean force_emit, GError **error)
 {
     NMDnsManagerPrivate *priv                = NM_DNS_MANAGER_GET_PRIVATE(self);
     const char *         nis_domain          = NULL;
@@ -1816,7 +1816,7 @@ plugin_skip:;
     }
 
     /* signal that DNS resolution configs were changed */
-    if ((do_update || caching) && result == SR_SUCCESS)
+    if ((do_update || caching || force_emit) && result == SR_SUCCESS)
         g_signal_emit(self, signals[CONFIG_CHANGED], 0);
 
     nm_clear_pointer(&priv->config_variant, g_variant_unref);
@@ -1924,7 +1924,7 @@ changed:
     if (!priv->updates_queue) {
         gs_free_error GError *error = NULL;
 
-        if (!update_dns(self, FALSE, &error))
+        if (!update_dns(self, FALSE, FALSE, &error))
             _LOGW("could not commit DNS changes: %s", error->message);
     }
 
@@ -1965,7 +1965,7 @@ nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean s
     if (!priv->updates_queue) {
         gs_free_error GError *error = NULL;
 
-        if (!update_dns(self, FALSE, &error))
+        if (!update_dns(self, FALSE, FALSE, &error))
             _LOGW("could not commit DNS changes: %s", error->message);
     }
 }
@@ -2012,7 +2012,7 @@ nm_dns_manager_end_updates(NMDnsManager *self, const char *func)
 
     /* Commit all the outstanding changes */
     _LOGD("(%s): committing DNS changes (%d)", func, priv->updates_queue);
-    if (!update_dns(self, FALSE, &error))
+    if (!update_dns(self, FALSE, FALSE, &error))
         _LOGW("could not commit DNS changes: %s", error->message);
 
     memset(priv->prev_hash, 0, sizeof(priv->prev_hash));
@@ -2038,7 +2038,7 @@ nm_dns_manager_stop(NMDnsManager *self)
     if (priv->dns_touched && priv->plugin && NM_IS_DNS_DNSMASQ(priv->plugin)) {
         gs_free_error GError *error = NULL;
 
-        if (!update_dns(self, TRUE, &error))
+        if (!update_dns(self, TRUE, FALSE, &error))
             _LOGW("could not commit DNS changes on shutdown: %s", error->message);
 
         priv->dns_touched = FALSE;
@@ -2363,7 +2363,7 @@ config_changed_cb(NMConfig *          config,
                          | NM_CONFIG_CHANGE_GLOBAL_DNS_CONFIG)) {
         gs_free_error GError *error = NULL;
 
-        if (!update_dns(self, FALSE, &error))
+        if (!update_dns(self, FALSE, TRUE, &error))
             _LOGW("could not commit DNS changes: %s", error->message);
     }
 }

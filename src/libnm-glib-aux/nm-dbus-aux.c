@@ -268,6 +268,119 @@ nm_dbus_connection_call_finish_variant_strip_dbus_error_cb(GObject *     source,
 
 /*****************************************************************************/
 
+typedef struct {
+    char *              bus_name;
+    char *              object_path;
+    char *              interface_name;
+    char *              method_name;
+    GVariant *          parameters;
+    GDBusConnection *   connection;
+    const GVariantType *reply_type;
+    int                 timeout_msec;
+} CallAsyncInfo;
+
+static void
+call_async_info_destroy(CallAsyncInfo *info)
+{
+    g_free(info->bus_name);
+    g_free(info->object_path);
+    g_free(info->interface_name);
+    g_free(info->method_name);
+    g_variant_unref(info->parameters);
+    nm_g_object_unref(info->connection);
+    g_free(info);
+}
+
+static void
+call_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    gs_unref_object GTask *task  = user_data;
+    GError *               error = NULL;
+    GVariant *             ret;
+
+    ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
+    if (!ret) {
+        g_task_return_error(task, error);
+        return;
+    }
+
+    g_task_return_pointer(task, ret, (GDestroyNotify) g_variant_unref);
+}
+
+static void
+call_bus_get_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    gs_unref_object GTask *task = user_data;
+    GCancellable *         cancellable;
+    CallAsyncInfo *        info;
+    GError *               error = NULL;
+
+    info             = g_task_get_task_data(task);
+    info->connection = g_bus_get_finish(result, &error);
+    cancellable      = g_task_get_cancellable(task);
+
+    if (!info->connection) {
+        g_task_return_error(task, g_steal_pointer(&error));
+        return;
+    }
+
+    g_dbus_connection_call(info->connection,
+                           info->bus_name,
+                           info->object_path,
+                           info->interface_name,
+                           info->method_name,
+                           info->parameters,
+                           info->reply_type,
+                           G_DBUS_CALL_FLAGS_NONE,
+                           info->timeout_msec,
+                           cancellable,
+                           call_cb,
+                           g_steal_pointer(&task));
+}
+
+void
+nm_dbus_call(GBusType            bus_type,
+             const char *        bus_name,
+             const char *        object_path,
+             const char *        interface_name,
+             const char *        method_name,
+             GVariant *          parameters,
+             const GVariantType *reply_type,
+             GCancellable *      cancellable,
+             int                 timeout_msec,
+             GAsyncReadyCallback callback,
+             gpointer            user_data)
+{
+    GTask *        task;
+    CallAsyncInfo *info;
+
+    info  = g_new(CallAsyncInfo, 1);
+    *info = (CallAsyncInfo){
+        .bus_name       = g_strdup(bus_name),
+        .object_path    = g_strdup(object_path),
+        .interface_name = g_strdup(interface_name),
+        .method_name    = g_strdup(method_name),
+        .parameters     = g_variant_ref_sink(parameters),
+        .reply_type     = reply_type,
+        .timeout_msec   = timeout_msec,
+    };
+
+    task = nm_g_task_new(NULL, cancellable, nm_dbus_call, callback, user_data);
+    g_task_set_task_data(task, info, (GDestroyNotify) call_async_info_destroy);
+
+    g_bus_get(bus_type, cancellable, call_bus_get_cb, task);
+}
+
+GVariant *
+nm_dbus_call_finish(GAsyncResult *result, GError **error)
+{
+    nm_assert(nm_g_task_is_valid(result, NULL, nm_dbus_call));
+
+    return g_task_propagate_pointer(G_TASK(result), error);
+}
+
+/*****************************************************************************/
+
 gboolean
 _nm_dbus_error_is(GError *error, ...)
 {

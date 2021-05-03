@@ -1446,50 +1446,6 @@ nmc_error_get_simple_message(GError *error)
         return error->message;
 }
 
-GVariant *
-nmc_dbus_call_sync(NmCli *             nmc,
-                   const char *        object_path,
-                   const char *        interface_name,
-                   const char *        method_name,
-                   GVariant *          parameters,
-                   const GVariantType *reply_type,
-                   GError **           error)
-{
-    gs_unref_object GDBusConnection *connection = NULL;
-    gs_free_error GError *local                 = NULL;
-    GVariant *            result;
-
-    if (nmc->timeout == -1)
-        nmc->timeout = 90;
-
-    connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &local);
-    if (!connection) {
-        g_set_error(error,
-                    NMCLI_ERROR,
-                    NMC_RESULT_ERROR_UNKNOWN,
-                    _("Error: error connecting to system bus: %s"),
-                    local->message);
-        return NULL;
-    }
-
-    result = g_dbus_connection_call_sync(connection,
-                                         "org.freedesktop.NetworkManager",
-                                         object_path,
-                                         interface_name,
-                                         method_name,
-                                         parameters,
-                                         reply_type,
-                                         G_DBUS_CALL_FLAGS_NONE,
-                                         nmc->timeout * 1000,
-                                         NULL,
-                                         error);
-
-    if (error && *error)
-        g_dbus_error_strip_remote_error(*error);
-
-    return result;
-}
-
 /*****************************************************************************/
 
 NM_UTILS_LOOKUP_STR_DEFINE(nm_connectivity_to_string,
