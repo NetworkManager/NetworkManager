@@ -324,7 +324,7 @@ _handle_dbus_start(NMFirewallManager *self, NMFirewallManagerCallId *call_id)
         dbus_method = "addInterface";
         break;
     case OPS_TYPE_CHANGE:
-        dbus_method = "changeZone";
+        dbus_method = "changeZoneOfInterface";
         break;
     case OPS_TYPE_REMOVE:
         dbus_method = "removeInterface";
