@@ -859,15 +859,23 @@ nmp_utils_ethtool_set_features(
     return success;
 }
 
-static gboolean
-ethtool_get_coalesce(SocketHandle *shandle, NMEthtoolCoalesceState *coalesce)
+gboolean
+nmp_utils_ethtool_get_coalesce(int ifindex, NMEthtoolCoalesceState *coalesce)
 {
     struct ethtool_coalesce eth_data;
 
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(coalesce, FALSE);
+
     eth_data.cmd = ETHTOOL_GCOALESCE;
 
-    if (_ethtool_call_handle(shandle, &eth_data, sizeof(struct ethtool_coalesce)) != 0)
+    if (_ethtool_call_once(ifindex, &eth_data, sizeof(eth_data)) < 0) {
+        nm_log_trace(LOGD_PLATFORM,
+                     "ethtool[%d]: %s: failure getting coalesce settings",
+                     ifindex,
+                     "get-coalesce");
         return FALSE;
+    }
 
     *coalesce = (NMEthtoolCoalesceState){
         .s = {
@@ -917,23 +925,6 @@ ethtool_get_coalesce(SocketHandle *shandle, NMEthtoolCoalesceState *coalesce)
                 eth_data.rate_sample_interval,
         }};
     return TRUE;
-}
-
-gboolean
-nmp_utils_ethtool_get_coalesce(int ifindex, NMEthtoolCoalesceState *coalesce)
-{
-    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(coalesce, FALSE);
-
-    if (!ethtool_get_coalesce(&shandle, coalesce)) {
-        nm_log_trace(LOGD_PLATFORM,
-                     "ethtool[%d]: %s: failure getting coalesce settings",
-                     ifindex,
-                     "get-coalesce");
-        return FALSE;
-    }
 
     nm_log_trace(LOGD_PLATFORM,
                  "ethtool[%d]: %s: retrieved kernel coalesce settings",
@@ -942,14 +933,13 @@ nmp_utils_ethtool_get_coalesce(int ifindex, NMEthtoolCoalesceState *coalesce)
     return TRUE;
 }
 
-static gboolean
-ethtool_set_coalesce(SocketHandle *shandle, const NMEthtoolCoalesceState *coalesce)
+gboolean
+nmp_utils_ethtool_set_coalesce(int ifindex, const NMEthtoolCoalesceState *coalesce)
 {
     struct ethtool_coalesce eth_data;
-    gboolean                success;
 
-    nm_assert(shandle);
-    nm_assert(coalesce);
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(coalesce, FALSE);
 
     eth_data = (struct ethtool_coalesce){
         .cmd = ETHTOOL_SCOALESCE,
@@ -999,19 +989,7 @@ ethtool_set_coalesce(SocketHandle *shandle, const NMEthtoolCoalesceState *coales
             coalesce->s[_NM_ETHTOOL_ID_COALESCE_AS_IDX(NM_ETHTOOL_ID_COALESCE_SAMPLE_INTERVAL)],
     };
 
-    success = (_ethtool_call_handle(shandle, &eth_data, sizeof(struct ethtool_coalesce)) == 0);
-    return success;
-}
-
-gboolean
-nmp_utils_ethtool_set_coalesce(int ifindex, const NMEthtoolCoalesceState *coalesce)
-{
-    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(coalesce, FALSE);
-
-    if (!ethtool_set_coalesce(&shandle, coalesce)) {
+    if (_ethtool_call_once(ifindex, &eth_data, sizeof(eth_data)) < 0) {
         nm_log_trace(LOGD_PLATFORM,
                      "ethtool[%d]: %s: failure setting coalesce settings",
                      ifindex,
@@ -1026,39 +1004,30 @@ nmp_utils_ethtool_set_coalesce(int ifindex, const NMEthtoolCoalesceState *coales
     return TRUE;
 }
 
-static gboolean
-ethtool_get_ring(SocketHandle *shandle, NMEthtoolRingState *ring)
-{
-    struct ethtool_ringparam eth_data;
-
-    eth_data.cmd = ETHTOOL_GRINGPARAM;
-
-    if (_ethtool_call_handle(shandle, &eth_data, sizeof(struct ethtool_ringparam)) != 0)
-        return FALSE;
-
-    ring->rx_pending       = eth_data.rx_pending;
-    ring->rx_jumbo_pending = eth_data.rx_jumbo_pending;
-    ring->rx_mini_pending  = eth_data.rx_mini_pending;
-    ring->tx_pending       = eth_data.tx_pending;
-
-    return TRUE;
-}
-
 gboolean
 nmp_utils_ethtool_get_ring(int ifindex, NMEthtoolRingState *ring)
 {
-    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
+    struct ethtool_ringparam eth_data;
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(ring, FALSE);
 
-    if (!ethtool_get_ring(&shandle, ring)) {
+    eth_data.cmd = ETHTOOL_GRINGPARAM;
+
+    if (_ethtool_call_once(ifindex, &eth_data, sizeof(eth_data)) < 0) {
         nm_log_trace(LOGD_PLATFORM,
                      "ethtool[%d]: %s: failure getting ring settings",
                      ifindex,
                      "get-ring");
         return FALSE;
     }
+
+    *ring = (NMEthtoolRingState){
+        .rx_pending       = eth_data.rx_pending,
+        .rx_jumbo_pending = eth_data.rx_jumbo_pending,
+        .rx_mini_pending  = eth_data.rx_mini_pending,
+        .tx_pending       = eth_data.tx_pending,
+    };
 
     nm_log_trace(LOGD_PLATFORM,
                  "ethtool[%d]: %s: retrieved kernel ring settings",
@@ -1067,13 +1036,12 @@ nmp_utils_ethtool_get_ring(int ifindex, NMEthtoolRingState *ring)
     return TRUE;
 }
 
-static gboolean
-ethtool_set_ring(SocketHandle *shandle, const NMEthtoolRingState *ring)
+gboolean
+nmp_utils_ethtool_set_ring(int ifindex, const NMEthtoolRingState *ring)
 {
-    gboolean                 success;
     struct ethtool_ringparam eth_data;
 
-    g_return_val_if_fail(shandle, FALSE);
+    g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(ring, FALSE);
 
     eth_data = (struct ethtool_ringparam){
@@ -1084,19 +1052,7 @@ ethtool_set_ring(SocketHandle *shandle, const NMEthtoolRingState *ring)
         .tx_pending       = ring->tx_pending,
     };
 
-    success = (_ethtool_call_handle(shandle, &eth_data, sizeof(struct ethtool_ringparam)) == 0);
-    return success;
-}
-
-gboolean
-nmp_utils_ethtool_set_ring(int ifindex, const NMEthtoolRingState *ring)
-{
-    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
-
-    g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(ring, FALSE);
-
-    if (!ethtool_set_ring(&shandle, ring)) {
+    if (_ethtool_call_once(ifindex, &eth_data, sizeof(eth_data)) < 0) {
         nm_log_trace(LOGD_PLATFORM,
                      "ethtool[%d]: %s: failure setting ring settings",
                      ifindex,
@@ -1381,8 +1337,10 @@ set_link_settings_new(SocketHandle *           shandle,
     gsize                                 edata_size;
     guint                                 nwords;
 
-    memset(&edata0, 0, sizeof(edata0));
-    edata0.cmd = ETHTOOL_GLINKSETTINGS;
+    edata0 = (struct ethtool_link_settings){
+        .cmd                    = ETHTOOL_GLINKSETTINGS,
+        .link_mode_masks_nwords = 0,
+    };
 
     /* perform the handshake to find the size of masks */
     if (_ethtool_call_handle(shandle, &edata0, sizeof(edata0)) < 0
