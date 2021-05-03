@@ -44,11 +44,11 @@ variables:
   # these tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular NM version
-  FEDORA_TAG:  '2021-01-28.0-936f8a196a26'
-  UBUNTU_TAG:  '2021-01-28.0-397adbc67ac4'
-  DEBIAN_TAG:  '2021-01-28.0-397adbc67ac4'
-  CENTOS_TAG:  '2021-01-28.0-936f8a196a26'
-  ALPINE_TAG:  '2021-01-28.0-35b8aa24ed67'
+  FEDORA_TAG:  '2021-01-28.0-3837215f2bb3'
+  UBUNTU_TAG:  '2021-01-28.0-cab31bc3200b'
+  DEBIAN_TAG:  '2021-01-28.0-cab31bc3200b'
+  CENTOS_TAG:  '2021-01-28.0-3837215f2bb3'
+  ALPINE_TAG:  '2021-01-28.0-6367bd8801af'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -138,6 +138,16 @@ fedora:33@container-prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: '33'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+
+fedora:34@container-prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '34'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
 
@@ -409,6 +419,15 @@ fedora:33@container-clean:
     FDO_DISTRIBUTION_VERSION: '33'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
 
+fedora:34@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '34'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+
 fedora:rawhide@container-clean:
   extends:
     - .container-clean
@@ -656,6 +675,17 @@ t_fedora:33:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:33@container-prep"
+
+t_fedora:34:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+  variables:
+    FDO_DISTRIBUTION_VERSION: '34'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "fedora:34@container-prep"
+  when: manual
 
 t_fedora:rawhide:
   extends:
