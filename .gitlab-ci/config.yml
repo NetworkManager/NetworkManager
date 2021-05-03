@@ -24,6 +24,7 @@ distributions:
       - '31'
       - '32'
       - '33'
+      - '34'
       - 'rawhide'
     always:
       - '33'
