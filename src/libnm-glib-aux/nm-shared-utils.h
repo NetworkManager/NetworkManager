@@ -1205,6 +1205,8 @@ typedef enum {
     NM_UTILS_ERROR_INVALID_ARGUMENT,    /*< nick=InvalidArgument >*/
     NM_UTILS_ERROR_NOT_READY,           /*< nick=NotReady >*/
 
+    NM_UTILS_ERROR_AMBIGUOUS, /*< nick=Ambiguous >*/
+
     /* the following codes have a special meaning and are exactly used for
      * nm_device_check_connection_compatible() and nm_device_check_connection_available().
      *

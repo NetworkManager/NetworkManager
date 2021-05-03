@@ -3532,7 +3532,7 @@ check_valid_name(const char *                             val,
     /* Check string validity */
     str = nmc_string_is_valid(val, (const char **) tmp_arr->pdata, &tmp_err);
     if (!str) {
-        if (tmp_err->code == 1)
+        if (nm_g_error_matches(tmp_err, NM_UTILS_ERROR, NM_UTILS_ERROR_AMBIGUOUS))
             g_propagate_error(error, tmp_err);
         else {
             /* We want to handle aliases, so construct own error message */
@@ -3590,7 +3590,7 @@ check_valid_name_toplevel(const char *val, const char **slave_type, GError **err
     /* Check string validity */
     str = nmc_string_is_valid(val, (const char **) tmp_arr->pdata, &tmp_err);
     if (!str) {
-        if (tmp_err->code == 1)
+        if (nm_g_error_matches(tmp_err, NM_UTILS_ERROR, NM_UTILS_ERROR_AMBIGUOUS))
             g_propagate_error(error, g_steal_pointer(&tmp_err));
         else {
             /* We want to handle aliases, so construct own error message */
@@ -4182,23 +4182,17 @@ set_option(NmCli *                   nmc,
                        NULL);
     if (option && option->check_and_set) {
         return option->check_and_set(nmc, connection, option, value, error);
-    } else if (value) {
-        return set_property(nmc->client,
-                            connection,
-                            setting_name,
-                            property_name,
-                            value,
-                            inf_flags & NM_META_PROPERTY_INF_FLAG_MULTI
-                                ? NM_META_ACCESSOR_MODIFIER_ADD
-                                : NM_META_ACCESSOR_MODIFIER_SET,
-                            error);
-    } else if (inf_flags & NM_META_PROPERTY_INF_FLAG_REQD) {
-        g_set_error(error,
-                    NMCLI_ERROR,
-                    NMC_RESULT_ERROR_USER_INPUT,
-                    _("Error: '%s' is mandatory."),
-                    option_name);
-        return FALSE;
+    } else {
+        set_property(nmc->client,
+                     connection,
+                     setting_name,
+                     property_name,
+                     value,
+                     !value ? NM_META_ACCESSOR_MODIFIER_DEL
+                            : (inf_flags & NM_META_PROPERTY_INF_FLAG_MULTI
+                                   ? NM_META_ACCESSOR_MODIFIER_ADD
+                                   : NM_META_ACCESSOR_MODIFIER_SET),
+                     error);
     }
 
     return TRUE;
