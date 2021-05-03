@@ -44,11 +44,11 @@ variables:
   # these tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular NM version
-  FEDORA_TAG:  '2021-01-28.0-3837215f2bb3'
-  UBUNTU_TAG:  '2021-01-28.0-cab31bc3200b'
-  DEBIAN_TAG:  '2021-01-28.0-cab31bc3200b'
-  CENTOS_TAG:  '2021-01-28.0-3837215f2bb3'
-  ALPINE_TAG:  '2021-01-28.0-6367bd8801af'
+  FEDORA_TAG:  '2021-01-28.0-bda9933006ae'
+  UBUNTU_TAG:  '2021-01-28.0-418bdf37a634'
+  DEBIAN_TAG:  '2021-01-28.0-418bdf37a634'
+  CENTOS_TAG:  '2021-01-28.0-bda9933006ae'
+  ALPINE_TAG:  '2021-01-28.0-50c3effca8f8'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -669,7 +669,6 @@ t_fedora:33:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
-    - .nm_artifacts
   variables:
     FDO_DISTRIBUTION_VERSION: '33'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -680,6 +679,7 @@ t_fedora:34:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
+    - .nm_artifacts
   variables:
     FDO_DISTRIBUTION_VERSION: '34'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -893,7 +893,7 @@ t_alpine:latest:
 
 check-patch:
   extends:
-   - t_fedora:33
+   - t_fedora:34
    - .nm_artifacts_undo
   stage: test
   script:
@@ -902,7 +902,7 @@ check-patch:
 
 check-tree:
   extends:
-   - t_fedora:33
+   - t_fedora:34
    - .nm_artifacts_undo
   stage: test
   script:
@@ -922,9 +922,9 @@ pages:
   only:
     - main
   dependencies:
-    - t_fedora:33
+    - t_fedora:34
   needs:
-    - t_fedora:33
+    - t_fedora:34
 
 triage:issues:
   stage: triage
