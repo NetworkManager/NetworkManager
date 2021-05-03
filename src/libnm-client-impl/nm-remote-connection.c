@@ -183,8 +183,8 @@ nm_remote_connection_commit_changes(NMRemoteConnection *connection,
         "Update2",
         g_variant_new("(@a{sa{sv}}u@a{sv})",
                       nm_connection_to_dbus(NM_CONNECTION(connection), NM_CONNECTION_SERIALIZE_ALL),
-                      (guint32)(save_to_disk ? NM_SETTINGS_UPDATE2_FLAG_TO_DISK
-                                             : NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY),
+                      (guint32) (save_to_disk ? NM_SETTINGS_UPDATE2_FLAG_TO_DISK
+                                              : NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY),
                       nm_g_variant_singleton_aLsvI()),
         G_VARIANT_TYPE("(a{sv})"),
         G_DBUS_CALL_FLAGS_NONE,

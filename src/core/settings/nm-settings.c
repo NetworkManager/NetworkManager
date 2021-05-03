@@ -2689,9 +2689,9 @@ impl_settings_add_connection2(NMDBusObject *                     obj,
     g_variant_get(parameters, "(@a{sa{sv}}u@a{sv})", &settings, &flags_u, &args);
 
     if (NM_FLAGS_ANY(flags_u,
-                     ~((guint32)(NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK
-                                 | NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY
-                                 | NM_SETTINGS_ADD_CONNECTION2_FLAG_BLOCK_AUTOCONNECT)))) {
+                     ~((guint32) (NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK
+                                  | NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY
+                                  | NM_SETTINGS_ADD_CONNECTION2_FLAG_BLOCK_AUTOCONNECT)))) {
         g_dbus_method_invocation_take_error(invocation,
                                             g_error_new_literal(NM_SETTINGS_ERROR,
                                                                 NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
@@ -2831,7 +2831,7 @@ impl_settings_load_connections(NMDBusObject *                     obj,
 
     g_dbus_method_invocation_return_value(invocation,
                                           g_variant_new("(b^as)",
-                                                        (gboolean)(!failures),
+                                                        (gboolean) (!failures),
                                                         failures
                                                             ? (const char **) failures->pdata
                                                             : NM_PTRARRAY_EMPTY(const char *)));
@@ -3203,7 +3203,7 @@ add_plugin_load_file(NMSettings *self, const char *pname, GError **error)
 
     /* errors after this point are fatal, because we loaded the shared library already. */
 
-    if (!g_module_symbol(module, "nm_settings_plugin_factory", (gpointer)(&factory_func))) {
+    if (!g_module_symbol(module, "nm_settings_plugin_factory", (gpointer) (&factory_func))) {
         g_set_error(error,
                     NM_SETTINGS_ERROR,
                     NM_SETTINGS_ERROR_FAILED,

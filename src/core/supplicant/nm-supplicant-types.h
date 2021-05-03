@@ -51,9 +51,9 @@ typedef enum {
     _NM_SUPPL_CAP_TYPE_NUM,
 } NMSupplCapType;
 
-#define NM_SUPPL_CAP_MASK_NO(type)   ((NMSupplCapMask)(1llu << ((type) *2u)))
-#define NM_SUPPL_CAP_MASK_YES(type)  ((NMSupplCapMask)(2llu << ((type) *2u)))
-#define NM_SUPPL_CAP_MASK_MASK(type) ((NMSupplCapMask)(3llu << ((type) *2u)))
+#define NM_SUPPL_CAP_MASK_NO(type)   ((NMSupplCapMask) (1llu << ((type) *2u)))
+#define NM_SUPPL_CAP_MASK_YES(type)  ((NMSupplCapMask) (2llu << ((type) *2u)))
+#define NM_SUPPL_CAP_MASK_MASK(type) ((NMSupplCapMask) (3llu << ((type) *2u)))
 
 typedef enum {
     NM_SUPPL_CAP_MASK_NONE = 0,
@@ -114,7 +114,7 @@ NM_SUPPL_CAP_MASK_GET(NMSupplCapMask features, NMSupplCapType type)
 
     nm_assert(NM_IN_SET(f, 0, 1, 2));
 
-    return (NMTernary)(f - 1);
+    return (NMTernary) (f - 1);
 }
 
 static inline char

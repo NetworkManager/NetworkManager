@@ -132,7 +132,7 @@ _nm_dbus_signal_connect_data(GDBusProxy *        proxy,
     sd->signal_name = g_strdup(signal_name);
     sd->signature   = signature;
 
-    closure = (swapped ? g_cclosure_new_swap : g_cclosure_new)(c_handler, data, destroy_data);
+    closure = (swapped ? g_cclosure_new_swap : g_cclosure_new) (c_handler, data, destroy_data);
     g_closure_set_marshal(closure, g_cclosure_marshal_generic);
     g_closure_set_meta_marshal(closure, sd, dbus_signal_meta_marshal);
     g_closure_add_finalize_notifier(closure, sd, dbus_signal_data_free);

@@ -153,7 +153,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     nm_dhcp_option_add_option_u64(options,
                                   AF_INET,
                                   NM_DHCP_OPTION_DHCP4_NM_EXPIRY,
-                                  (guint64)(ts_time + a_lifetime));
+                                  (guint64) (ts_time + a_lifetime));
 
     if (sd_dhcp_lease_get_next_server(lease, &a_next_server) == 0) {
         _nm_utils_inet4_ntop(a_next_server.s_addr, addr_str);

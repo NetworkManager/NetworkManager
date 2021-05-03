@@ -806,7 +806,7 @@ solicit_retransmit_time_jitter(gint32 solicit_retransmit_time_msec)
     ten_percent = NM_MAX(1, solicit_retransmit_time_msec / 10);
 
     return solicit_retransmit_time_msec - ten_percent
-           + ((gint32)(g_random_int() % (2u * ((guint32) ten_percent))));
+           + ((gint32) (g_random_int() % (2u * ((guint32) ten_percent))));
 }
 
 static gboolean
@@ -882,7 +882,7 @@ solicit_timer_start(NMNDisc *ndisc)
      * a suitable delay in 2021. Wait only up to 250 msec instead. */
 
     delay_msec =
-        g_random_int() % ((guint32)(NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY * 1000 / 4));
+        g_random_int() % ((guint32) (NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY * 1000 / 4));
 
     _LOGD("solicit: schedule sending first solicitation (of %d) in %.3f seconds",
           priv->router_solicitations,

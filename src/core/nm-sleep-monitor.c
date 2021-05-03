@@ -108,7 +108,7 @@ upower_resuming_cb(GDBusProxy *proxy, gpointer user_data)
     sleep_signal(user_data, FALSE);
 }
 
-#else /* USE_UPOWER */
+#else  /* USE_UPOWER */
 
 static void
 drop_inhibitor(NMSleepMonitor *self, gboolean force)

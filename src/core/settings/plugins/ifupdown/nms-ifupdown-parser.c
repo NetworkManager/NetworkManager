@@ -655,7 +655,7 @@ ifupdown_new_connection_from_if_block(if_block *block, gboolean autoconnect, GEr
                  NM_SETTING_CONNECTION_UUID,
                  uuid,
                  NM_SETTING_CONNECTION_AUTOCONNECT,
-                 (gboolean)(!!autoconnect),
+                 (gboolean) (!!autoconnect),
                  NULL);
 
     _LOGD("update_connection_setting_from_if_block: name:%s, type:%s, id:%s, uuid: %s",

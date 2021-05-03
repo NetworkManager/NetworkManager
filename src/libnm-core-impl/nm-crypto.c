@@ -70,7 +70,7 @@ nm_crypto_cipher_get_info(NMCryptoCipherType cipher)
         for (i = 0; i < (int) G_N_ELEMENTS(cipher_infos); i++) {
             const NMCryptoCipherInfo *info = &cipher_infos[i];
 
-            nm_assert(info->cipher == (NMCryptoCipherType)(i + 1));
+            nm_assert(info->cipher == (NMCryptoCipherType) (i + 1));
             nm_assert(info->name && info->name[0]);
             for (j = 0; j < i; j++)
                 nm_assert(g_ascii_strcasecmp(info->name, cipher_infos[j].name) != 0);

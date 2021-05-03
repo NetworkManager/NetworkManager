@@ -58,9 +58,9 @@ again:
          * doesn't use siphash itself. */
         h = c_siphash_hash(t_arr.v8, (const guint8 *) &t_arr, sizeof(t_arr));
         if (sizeof(h) > sizeof(guint))
-            t_arr.vuint = t_arr.vuint ^ ((guint)(h & G_MAXUINT)) ^ ((guint)(h >> 32));
+            t_arr.vuint = t_arr.vuint ^ ((guint) (h & G_MAXUINT)) ^ ((guint) (h >> 32));
         else
-            t_arr.vuint = t_arr.vuint ^ ((guint)(h & G_MAXUINT));
+            t_arr.vuint = t_arr.vuint ^ ((guint) (h & G_MAXUINT));
 
         if (!g_once_init_enter(&g_lock)) {
             /* lost a race. The random key is already initialized. */

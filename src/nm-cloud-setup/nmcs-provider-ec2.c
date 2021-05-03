@@ -354,7 +354,7 @@ _get_config_metadata_ready_check(long     response_code,
 
         hwaddr = nmcs_utils_hwaddr_normalize(
             cur_line,
-            cur_line[cur_line_len - 1u] == '/' ? (gssize)(cur_line_len - 1u) : -1);
+            cur_line[cur_line_len - 1u] == '/' ? (gssize) (cur_line_len - 1u) : -1);
         if (!hwaddr)
             continue;
 

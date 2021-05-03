@@ -1178,7 +1178,7 @@ _l3_config_best_default_route_find_better(const NMPObject *obj_cur, const NMPObj
                 return c < 0 ? obj_cur : obj_cmp;
 
             /* as last resort, compare pointers. */
-            if (((uintptr_t)((void *) (obj_cmp))) < ((uintptr_t)((void *) (obj_cur))))
+            if (((uintptr_t) ((void *) (obj_cmp))) < ((uintptr_t) ((void *) (obj_cur))))
                 return obj_cmp;
         }
     }

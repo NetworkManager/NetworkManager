@@ -244,8 +244,8 @@ nm_mult_clamped_u(unsigned a, unsigned b)
 #define NM_CLAMP(x, low, high) __NM_CLAMP(NM_UNIQ, x, NM_UNIQ, low, NM_UNIQ, high)
 #define __NM_CLAMP(xq, x, lowq, low, highq, high)                             \
     ({                                                                        \
-        typeof(x) NM_UNIQ_T(X, xq)          = (x);                            \
-        typeof(low) NM_UNIQ_T(LOW, lowq)    = (low);                          \
+        typeof(x)    NM_UNIQ_T(X, xq)       = (x);                            \
+        typeof(low)  NM_UNIQ_T(LOW, lowq)   = (low);                          \
         typeof(high) NM_UNIQ_T(HIGH, highq) = (high);                         \
                                                                               \
         ((NM_UNIQ_T(X, xq) > NM_UNIQ_T(HIGH, highq)) ? NM_UNIQ_T(HIGH, highq) \
@@ -273,7 +273,7 @@ nm_mult_clamped_u(unsigned a, unsigned b)
  * For negative values and zero, this always returns FALSE. */
 #define nm_utils_is_power_of_two(x)                       \
     ({                                                    \
-        typeof(x) _x2          = (x);                     \
+        typeof(x)         _x2  = (x);                     \
         const typeof(_x2) _X_0 = ((typeof(_x2)) 0);       \
         const typeof(_x2) _X_1 = ((typeof(_x2)) 1);       \
                                                           \
@@ -293,7 +293,7 @@ nm_mult_clamped_u(unsigned a, unsigned b)
     do {                                    \
         typeof(*(p_a)) *const _p_a = (p_a); \
         typeof(*(p_a)) *const _p_b = (p_b); \
-        typeof(*(p_a)) _tmp;                \
+        typeof(*(p_a))        _tmp;         \
                                             \
         _tmp  = *_p_a;                      \
         *_p_a = *_p_b;                      \
@@ -726,8 +726,8 @@ _nm_auto_fclose(FILE **pfd)
 #define nm_clear_pointer(pp, destroy)                                                \
     ({                                                                               \
         typeof(*(pp)) *_pp = (pp);                                                   \
-        typeof(*_pp) _p;                                                             \
-        int _changed = false;                                                        \
+        typeof(*_pp)   _p;                                                           \
+        int            _changed = false;                                             \
                                                                                      \
         if (_pp && (_p = *_pp)) {                                                    \
             _nm_unused const void *_p_check_is_pointer = _p;                         \
@@ -755,8 +755,8 @@ _nm_auto_fclose(FILE **pfd)
 
 #define nm_steal_pointer(pp)                               \
     ({                                                     \
-        typeof(*(pp)) *const _pp                   = (pp); \
-        typeof(*_pp) _p                            = *_pp; \
+        typeof(*(pp)) *const         _pp           = (pp); \
+        typeof(*_pp)                 _p            = *_pp; \
         _nm_unused const void *const _p_type_check = _p;   \
                                                            \
         *_pp = NULL;                                       \
@@ -773,7 +773,7 @@ _nm_auto_fclose(FILE **pfd)
 #define nm_steal_int(p_val)                   \
     ({                                        \
         typeof(p_val) const _p_val = (p_val); \
-        typeof(*_p_val) _val       = 0;       \
+        typeof(*_p_val)     _val   = 0;       \
                                               \
         if (_p_val && (_val = *_p_val)) {     \
             *_p_val = 0;                      \
@@ -912,11 +912,11 @@ nm_ptr_to_uintptr(const void *p)
 
 /*****************************************************************************/
 
-#define NM_AF_UNSPEC 0 /* AF_UNSPEC */
-#define NM_AF_INET   2 /* AF_INET   */
+#define NM_AF_UNSPEC 0  /* AF_UNSPEC */
+#define NM_AF_INET   2  /* AF_INET   */
 #define NM_AF_INET6  10 /* AF_INET6  */
 
-#define NM_AF_INET_SIZE  4 /* sizeof (in_addr_t)      */
+#define NM_AF_INET_SIZE  4  /* sizeof (in_addr_t)      */
 #define NM_AF_INET6_SIZE 16 /* sizeof (stuct in6_addr) */
 
 static inline char

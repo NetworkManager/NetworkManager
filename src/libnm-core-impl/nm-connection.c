@@ -62,7 +62,7 @@ _gtype_to_hash_key(GType gtype)
 #if NM_MORE_ASSERTS
     _nm_unused const gsize *const test_gtype_typedef = &gtype;
 
-    nm_assert((GType)(GPOINTER_TO_SIZE(GSIZE_TO_POINTER(gtype))) == gtype);
+    nm_assert((GType) (GPOINTER_TO_SIZE(GSIZE_TO_POINTER(gtype))) == gtype);
     G_STATIC_ASSERT_EXPR(sizeof(gpointer) >= sizeof(gsize));
     G_STATIC_ASSERT_EXPR(sizeof(gsize) == sizeof(GType));
 #endif

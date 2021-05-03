@@ -584,7 +584,7 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
     nmtst_stable_rand(710086081, rand_map, sizeof(rand_map[0]) * N_ADDRESSES);
 
     for (i = 0; i < N_ADDRESSES; i++) {
-        NMPlatformIPXAddress *a = (gpointer)(&addresses[i * ELM_SIZE]);
+        NMPlatformIPXAddress *a = (gpointer) (&addresses[i * ELM_SIZE]);
         guint64               r = rand_map[i];
         struct in6_addr *     a6;
 
@@ -684,10 +684,10 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
                       (gpointer) test_data);
 
     for (i = 0; i < N_ADDRESSES; i++) {
-        const NMPlatformIPXAddress *a = (gconstpointer)(&addresses[i * ELM_SIZE]);
+        const NMPlatformIPXAddress *a = (gconstpointer) (&addresses[i * ELM_SIZE]);
 
         for (j = i + 1; j < N_ADDRESSES; j++) {
-            const NMPlatformIPXAddress *b = (gconstpointer)(&addresses[j * ELM_SIZE]);
+            const NMPlatformIPXAddress *b = (gconstpointer) (&addresses[j * ELM_SIZE]);
             int                         c1;
             int                         c2;
 

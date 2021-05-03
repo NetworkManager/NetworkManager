@@ -84,12 +84,12 @@ G_STATIC_ASSERT(sizeof(int) == sizeof(gint32));
             _Generic((value), int : TRUE);             \
         })
 #else
-    #define _NM_INT_LE_MAXINT32(value)                 \
-        ({                                             \
-            _nm_unused typeof(value) _value = (value); \
-            _nm_unused const int *_p_value  = &_value; \
-                                                       \
-            TRUE;                                      \
+    #define _NM_INT_LE_MAXINT32(value)                   \
+        ({                                               \
+            _nm_unused typeof(value) _value   = (value); \
+            _nm_unused const int *   _p_value = &_value; \
+                                                         \
+            TRUE;                                        \
         })
 #endif
 
@@ -422,8 +422,8 @@ nm_utils_ip_address_same_prefix(int           addr_family,
 
 /*****************************************************************************/
 
-#define NM_IPV4LL_NETWORK ((in_addr_t)(htonl(0xA9FE0000lu)))
-#define NM_IPV4LL_NETMASK ((in_addr_t)(htonl(0xFFFF0000lu)))
+#define NM_IPV4LL_NETWORK ((in_addr_t) (htonl(0xA9FE0000lu)))
+#define NM_IPV4LL_NETMASK ((in_addr_t) (htonl(0xFFFF0000lu)))
 
 static inline gboolean
 nm_utils_ip4_address_is_link_local(in_addr_t addr)

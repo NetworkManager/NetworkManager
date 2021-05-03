@@ -30,10 +30,11 @@
 #define AUTOCONNECT_RETRIES_FOREVER     -1
 #define AUTOCONNECT_RESET_RETRIES_TIMER 300
 
-#define _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES                           \
-    ((NMSettingsUpdate2Flags)(                                                \
-        NM_SETTINGS_UPDATE2_FLAG_TO_DISK | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY \
-        | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))
+#define _NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES                          \
+    ((NMSettingsUpdate2Flags) (NM_SETTINGS_UPDATE2_FLAG_TO_DISK              \
+                               | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY          \
+                               | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_DETACHED \
+                               | NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY_ONLY))
 
 /*****************************************************************************/
 
@@ -1677,10 +1678,10 @@ impl_settings_connection_update2(NMDBusObject *                     obj,
     g_variant_get(parameters, "(@a{sa{sv}}u@a{sv})", &settings, &flags_u, &args);
 
     if (NM_FLAGS_ANY(flags_u,
-                     ~((guint32)(_NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES
-                                 | NM_SETTINGS_UPDATE2_FLAG_VOLATILE
-                                 | NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT
-                                 | NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY)))) {
+                     ~((guint32) (_NM_SETTINGS_UPDATE2_FLAG_ALL_PERSIST_MODES
+                                  | NM_SETTINGS_UPDATE2_FLAG_VOLATILE
+                                  | NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT
+                                  | NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY)))) {
         error = g_error_new_literal(NM_SETTINGS_ERROR,
                                     NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
                                     "Unknown flags");
