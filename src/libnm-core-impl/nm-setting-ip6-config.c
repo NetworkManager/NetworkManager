@@ -737,6 +737,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * variable: DHCPV6_HOSTNAME_FLAGS
      * description: flags for the DHCP hostname property
      * example: DHCPV6_HOSTNAME_FLAGS=5
+     * ---end---
      */
 
     /* ---ifcfg-rh---
