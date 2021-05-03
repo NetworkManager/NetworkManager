@@ -665,15 +665,15 @@ NM_G_ERROR_MSG(GError *error)
      * It's useful to check the let the compiler ensure that @value is
      * of a certain type. */
     #define _NM_ENSURE_TYPE(type, value) (_Generic((value), type : (value)))
-    #define _NM_ENSURE_TYPE_CONST(type, value)              \
-        (_Generic((value), const type                       \
-                  : ((const type)(value)), const type const \
-                  : ((const type)(value)), type             \
-                  : ((const type)(value)), type const       \
-                  : ((const type)(value))))
+    #define _NM_ENSURE_TYPE_CONST(type, value)               \
+        (_Generic((value), const type                        \
+                  : ((const type) (value)), const type const \
+                  : ((const type) (value)), type             \
+                  : ((const type) (value)), type const       \
+                  : ((const type) (value))))
 #else
     #define _NM_ENSURE_TYPE(type, value)       (value)
-    #define _NM_ENSURE_TYPE_CONST(type, value) ((const type)(value))
+    #define _NM_ENSURE_TYPE_CONST(type, value) ((const type) (value))
 #endif
 
 #if _NM_CC_SUPPORT_GENERIC && (!defined(__clang__) || __clang_major__ > 3)
@@ -691,8 +691,8 @@ NM_G_ERROR_MSG(GError *error)
  * of such argument. */
 #define NM_CAST_PPTR(type, arg)                                   \
     ({                                                            \
-        typeof(*(arg)) *const _arg         = (arg);               \
-        typeof(*_arg) _arg2                = _arg ? *_arg : NULL; \
+        typeof(*(arg)) *const        _arg  = (arg);               \
+        typeof(*_arg)                _arg2 = _arg ? *_arg : NULL; \
         _nm_unused const void *const _arg3 = _arg2;               \
                                                                   \
         (type **) _arg;                                           \
@@ -1009,10 +1009,10 @@ nm_g_object_unref(gpointer obj)
  * */
 #define nm_g_object_ref_set(pp, obj)                   \
     ({                                                 \
-        typeof(*(pp)) *const _pp = (pp);               \
-        typeof(*_pp) const _obj  = (obj);              \
-        typeof(*_pp) _p;                               \
-        gboolean _changed = FALSE;                     \
+        typeof(*(pp)) *const _pp  = (pp);              \
+        typeof(*_pp) const   _obj = (obj);             \
+        typeof(*_pp)         _p;                       \
+        gboolean             _changed = FALSE;         \
                                                        \
         nm_assert(!_pp || !*_pp || G_IS_OBJECT(*_pp)); \
         nm_assert(!_obj || G_IS_OBJECT(_obj));         \
@@ -1028,10 +1028,10 @@ nm_g_object_unref(gpointer obj)
 
 #define nm_g_object_ref_set_take(pp, obj)              \
     ({                                                 \
-        typeof(*(pp)) *const _pp = (pp);               \
-        typeof(*_pp) const _obj  = (obj);              \
-        typeof(*_pp) _p;                               \
-        gboolean _changed = FALSE;                     \
+        typeof(*(pp)) *const _pp  = (pp);              \
+        typeof(*_pp) const   _obj = (obj);             \
+        typeof(*_pp)         _p;                       \
+        gboolean             _changed = FALSE;         \
                                                        \
         nm_assert(!_pp || !*_pp || G_IS_OBJECT(*_pp)); \
         nm_assert(!_obj || G_IS_OBJECT(_obj));         \
@@ -1531,8 +1531,8 @@ nm_memdup(gconstpointer data, gsize size)
 
 #define nm_malloc_maybe_a(alloca_maxlen, bytes, to_free)  \
     ({                                                    \
-        const gsize _bytes       = (bytes);               \
-        typeof(to_free) _to_free = (to_free);             \
+        const gsize       _bytes   = (bytes);             \
+        typeof(to_free)   _to_free = (to_free);           \
         typeof(*_to_free) _ptr;                           \
                                                           \
         G_STATIC_ASSERT_EXPR((alloca_maxlen) <= 500u);    \
@@ -1551,8 +1551,8 @@ nm_memdup(gconstpointer data, gsize size)
 
 #define nm_malloc0_maybe_a(alloca_maxlen, bytes, to_free) \
     ({                                                    \
-        const gsize _bytes       = (bytes);               \
-        typeof(to_free) _to_free = (to_free);             \
+        const gsize       _bytes   = (bytes);             \
+        typeof(to_free)   _to_free = (to_free);           \
         typeof(*_to_free) _ptr;                           \
                                                           \
         G_STATIC_ASSERT_EXPR((alloca_maxlen) <= 500u);    \
@@ -1575,9 +1575,9 @@ nm_memdup(gconstpointer data, gsize size)
 
 #define nm_memdup_maybe_a(alloca_maxlen, data, size, to_free)                 \
     ({                                                                        \
-        const gsize _size            = (size);                                \
-        typeof(to_free) _to_free_md  = (to_free);                             \
-        typeof(*_to_free_md) _ptr_md = NULL;                                  \
+        const gsize          _size       = (size);                            \
+        typeof(to_free)      _to_free_md = (to_free);                         \
+        typeof(*_to_free_md) _ptr_md     = NULL;                              \
                                                                               \
         nm_assert(_to_free_md && !*_to_free_md);                              \
                                                                               \
@@ -1675,10 +1675,10 @@ _nm_strndup_a_step(char *s, const char *str, gsize len)
                  : g_strdup_printf("%lu", (unsigned long) (val)), unsigned long long \
                  : g_strdup_printf("%llu", (unsigned long long) (val)))
 #else
-    #define nm_strdup_int(val)                                       \
-        ((sizeof(val) == sizeof(guint64) && ((typeof(val)) - 1) > 0) \
-             ? g_strdup_printf("%" G_GUINT64_FORMAT, (guint64)(val)) \
-             : g_strdup_printf("%" G_GINT64_FORMAT, (gint64)(val)))
+    #define nm_strdup_int(val)                                        \
+        ((sizeof(val) == sizeof(guint64) && ((typeof(val)) -1) > 0)   \
+             ? g_strdup_printf("%" G_GUINT64_FORMAT, (guint64) (val)) \
+             : g_strdup_printf("%" G_GINT64_FORMAT, (gint64) (val)))
 #endif
 
 /*****************************************************************************/
@@ -1810,8 +1810,8 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
  * must not be larger than 300 bytes, as this gets stack allocated. */
 #define nm_sprintf_buf_unsafe_a(bufsize, format, ...)                       \
     ({                                                                      \
-        char *_buf;                                                         \
-        int   _buf_len;                                                     \
+        char *          _buf;                                               \
+        int             _buf_len;                                           \
         typeof(bufsize) _bufsize = (bufsize);                               \
                                                                             \
         nm_assert(_bufsize <= 300);                                         \
@@ -1841,7 +1841,7 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
         char *            _buf2;                                                           \
                                                                                            \
         nm_assert(_p_val_to_free && !*_p_val_to_free);                                     \
-        if (NM_STRLEN(format) <= 290 && _name_len < (gsize)(290 - NM_STRLEN(format)))      \
+        if (NM_STRLEN(format) <= 290 && _name_len < (gsize) (290 - NM_STRLEN(format)))     \
             _buf2 = nm_sprintf_buf_unsafe_a(NM_STRLEN(format) + _name_len, format, _name); \
         else {                                                                             \
             _buf2           = g_strdup_printf(format, _name);                              \

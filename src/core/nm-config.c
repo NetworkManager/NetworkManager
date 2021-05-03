@@ -3144,7 +3144,7 @@ nm_config_class_init(NMConfigClass *config_class)
                      NM_TYPE_CONFIG_DATA);
 
     G_STATIC_ASSERT_EXPR(sizeof(guint) == sizeof(NMConfigChangeFlags));
-    G_STATIC_ASSERT_EXPR(((gint64)((NMConfigChangeFlags) -1)) > ((gint64) 0));
+    G_STATIC_ASSERT_EXPR(((gint64) ((NMConfigChangeFlags) -1)) > ((gint64) 0));
 }
 
 static void

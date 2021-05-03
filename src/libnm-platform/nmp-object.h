@@ -611,18 +611,18 @@ nmp_object_unref(const NMPObject *obj)
     }
 }
 
-#define nm_clear_nmp_object(ptr)       \
-    ({                                 \
-        typeof(ptr) _ptr = (ptr);      \
-        typeof(*_ptr) _pptr;           \
-        gboolean _changed = FALSE;     \
-                                       \
-        if (_ptr && (_pptr = *_ptr)) { \
-            *_ptr = NULL;              \
-            nmp_object_unref(_pptr);   \
-            _changed = TRUE;           \
-        }                              \
-        _changed;                      \
+#define nm_clear_nmp_object(ptr)        \
+    ({                                  \
+        typeof(ptr)   _ptr = (ptr);     \
+        typeof(*_ptr) _pptr;            \
+        gboolean      _changed = FALSE; \
+                                        \
+        if (_ptr && (_pptr = *_ptr)) {  \
+            *_ptr = NULL;               \
+            nmp_object_unref(_pptr);    \
+            _changed = TRUE;            \
+        }                               \
+        _changed;                       \
     })
 
 static inline gboolean

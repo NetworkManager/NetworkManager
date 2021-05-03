@@ -182,7 +182,7 @@ nm_hostname_manager_read_hostname(NMHostnameManager *self)
 #if defined(HOSTNAME_PERSIST_GENTOO)
     hostname = read_hostname_gentoo(HOSTNAME_FILE);
 #elif defined(HOSTNAME_PERSIST_SLACKWARE)
-    hostname = read_hostname_slackware(HOSTNAME_FILE);
+    hostname     = read_hostname_slackware(HOSTNAME_FILE);
 #else
     if (g_file_get_contents(HOSTNAME_FILE, &hostname, NULL, NULL))
         g_strchomp(hostname);

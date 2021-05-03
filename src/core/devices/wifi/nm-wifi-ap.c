@@ -537,8 +537,8 @@ nm_wifi_ap_to_string(const NMWifiAP *self, char *str_buf, gulong buf_len, gint64
         priv->last_seen_msec != G_MININT64
             ? nm_sprintf_buf(str_buf_ts,
                              "%3u.%03us",
-                             (guint)((now_msec - priv->last_seen_msec) / 1000),
-                             (guint)((now_msec - priv->last_seen_msec) % 1000))
+                             (guint) ((now_msec - priv->last_seen_msec) / 1000),
+                             (guint) ((now_msec - priv->last_seen_msec) % 1000))
             : "        ",
         supplicant_id,
         export_path);

@@ -116,8 +116,8 @@ test_wired_wake_on_lan_enum(void)
     G_STATIC_ASSERT_EXPR(sizeof(NMSettingWiredWakeOnLan) < sizeof(gint64));
 
     G_STATIC_ASSERT_EXPR(sizeof(NMSettingWiredWakeOnLan) < sizeof(gint64));
-    g_assert((((gint64)((NMSettingWiredWakeOnLan) -1)) < 0)
-             == (((gint64)((_NMSettingWiredWakeOnLan) -1)) < 0));
+    g_assert((((gint64) ((NMSettingWiredWakeOnLan) -1)) < 0)
+             == (((gint64) ((_NMSettingWiredWakeOnLan) -1)) < 0));
 
 #define _E(n)                                                    \
     G_STMT_START                                                 \
@@ -168,8 +168,8 @@ test_wireless_wake_on_wlan_enum(void)
     G_STATIC_ASSERT_EXPR(sizeof(NMSettingWirelessWakeOnWLan) < sizeof(gint64));
 
     G_STATIC_ASSERT_EXPR(sizeof(NMSettingWirelessWakeOnWLan) < sizeof(gint64));
-    g_assert((((gint64)((NMSettingWirelessWakeOnWLan) -1)) < 0)
-             == (((gint64)((_NMSettingWirelessWakeOnWLan) -1)) < 0));
+    g_assert((((gint64) ((NMSettingWirelessWakeOnWLan) -1)) < 0)
+             == (((gint64) ((_NMSettingWirelessWakeOnWLan) -1)) < 0));
 
 #define _E(n)                                                        \
     G_STMT_START                                                     \
@@ -221,8 +221,8 @@ test_device_wifi_capabilities(void)
     G_STATIC_ASSERT_EXPR(sizeof(NMDeviceWifiCapabilities) < sizeof(gint64));
 
     G_STATIC_ASSERT_EXPR(sizeof(NMDeviceWifiCapabilities) < sizeof(gint64));
-    g_assert((((gint64)((NMDeviceWifiCapabilities) -1)) < 0)
-             == (((gint64)((_NMDeviceWifiCapabilities) -1)) < 0));
+    g_assert((((gint64) ((NMDeviceWifiCapabilities) -1)) < 0)
+             == (((gint64) ((_NMDeviceWifiCapabilities) -1)) < 0));
 
 #define _E(n)                                             \
     G_STMT_START                                          \
@@ -274,7 +274,7 @@ test_80211_mode(void)
     G_STATIC_ASSERT_EXPR(sizeof(NM80211Mode) < sizeof(gint64));
 
     G_STATIC_ASSERT_EXPR(sizeof(NM80211Mode) < sizeof(gint64));
-    g_assert((((gint64)((NM80211Mode) -1)) < 0) == (((gint64)((_NM80211Mode) -1)) < 0));
+    g_assert((((gint64) ((NM80211Mode) -1)) < 0) == (((gint64) ((_NM80211Mode) -1)) < 0));
 
 #define _E(n)                                            \
     G_STMT_START                                         \
@@ -318,7 +318,7 @@ test_vlan_flags(void)
     G_STATIC_ASSERT_EXPR(sizeof(NMVlanFlags) < sizeof(gint64));
 
     G_STATIC_ASSERT_EXPR(sizeof(NMVlanFlags) < sizeof(gint64));
-    g_assert((((gint64)((NMVlanFlags) -1)) < 0) == (((gint64)((_NMVlanFlags) -1)) < 0));
+    g_assert((((gint64) ((NMVlanFlags) -1)) < 0) == (((gint64) ((_NMVlanFlags) -1)) < 0));
 
 #define _E(n)                                             \
     G_STMT_START                                          \
@@ -8499,8 +8499,8 @@ enum TEST_IS_POWER_OF_TWP_ENUM_UNSIGNED_64 {
     G_STMT_START                                                            \
     {                                                                       \
         typeof(x) x1 = (x);                                                 \
-        type     x2  = (type) x1;                                           \
-        gboolean val;                                                       \
+        type      x2 = (type) x1;                                           \
+        gboolean  val;                                                      \
                                                                             \
         val = nm_utils_is_power_of_two(x1);                                 \
         g_assert_cmpint(expect, ==, val);                                   \
@@ -8696,7 +8696,7 @@ _test_find_binary_search_do_uint32(const int *int_array, gsize len)
         g_assert(v > -OFFSET);
         g_assert(v < OFFSET);
         g_assert(idx == 0 || v > int_array[idx - 1]);
-        array[idx] = (guint32)(int_array[idx] + OFFSET);
+        array[idx] = (guint32) (int_array[idx] + OFFSET);
         if (array[idx] == NEEDLE)
             expected_result = idx;
     }
@@ -10496,15 +10496,15 @@ test_nm_utils_wifi_ghz_freqs(void)
 static void
 test_vpn_connection_state_reason(void)
 {
-#define ASSERT(v1, v2)                                                \
-    G_STMT_START                                                      \
-    {                                                                 \
-        G_STATIC_ASSERT((gint64)(v1) == v2);                          \
-        G_STATIC_ASSERT((gint64)(v2) == v1);                          \
-                                                                      \
-        nm_assert(((NMActiveConnectionStateReason)(int) (v1)) == v2); \
-        nm_assert(((NMVpnConnectionStateReason)(int) (v2)) == v1);    \
-    }                                                                 \
+#define ASSERT(v1, v2)                                                 \
+    G_STMT_START                                                       \
+    {                                                                  \
+        G_STATIC_ASSERT((gint64) (v1) == v2);                          \
+        G_STATIC_ASSERT((gint64) (v2) == v1);                          \
+                                                                       \
+        nm_assert(((NMActiveConnectionStateReason) (int) (v1)) == v2); \
+        nm_assert(((NMVpnConnectionStateReason) (int) (v2)) == v1);    \
+    }                                                                  \
     G_STMT_END
 
     ASSERT(NM_VPN_CONNECTION_STATE_REASON_UNKNOWN, NM_ACTIVE_CONNECTION_STATE_REASON_UNKNOWN);

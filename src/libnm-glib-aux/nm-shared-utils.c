@@ -3124,7 +3124,7 @@ nm_utils_fd_wait_for_event(int fd, int event, gint64 timeout_nsec)
     if (timeout_nsec < 0)
         pts = NULL;
     else {
-        ts.tv_sec  = (time_t)(timeout_nsec / NM_UTILS_NSEC_PER_SEC);
+        ts.tv_sec  = (time_t) (timeout_nsec / NM_UTILS_NSEC_PER_SEC);
         ts.tv_nsec = (long int) (timeout_nsec % NM_UTILS_NSEC_PER_SEC);
         pts        = &ts;
     }

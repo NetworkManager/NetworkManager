@@ -738,7 +738,7 @@ _team_setting_get_field(const NMTeamSetting *self, const TeamAttrData *attr_data
 
 #if NM_MORE_ASSERTS > 5
     if (attr_data->for_master && attr_data->team_attr == NM_TEAM_ATTRIBUTE_MASTER_RUNNER_SYS_PRIO)
-        nm_assert((gpointer)(((char *) self) + attr_data->field_offset)
+        nm_assert((gpointer) (((char *) self) + attr_data->field_offset)
                   == &self->d.master.runner_sys_prio);
 #endif
 

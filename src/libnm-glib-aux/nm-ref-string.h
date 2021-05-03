@@ -125,7 +125,7 @@ NM_REF_STRING_UPCAST(const char *str)
     if (!str)
         return NULL;
 
-    rstr = (gpointer)(((char *) str) - G_STRUCT_OFFSET(NMRefString, str));
+    rstr = (gpointer) (((char *) str) - G_STRUCT_OFFSET(NMRefString, str));
     nm_assert_nm_ref_string(rstr);
     return rstr;
 }

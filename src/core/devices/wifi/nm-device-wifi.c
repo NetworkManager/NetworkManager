@@ -1885,13 +1885,13 @@ ap_list_dump(gpointer user_data)
 
         _LOGD(LOGD_WIFI_SCAN,
               "APs: [now:%u.%03u, last:%s]",
-              (guint)(now_msec / NM_UTILS_MSEC_PER_SEC),
-              (guint)(now_msec % NM_UTILS_MSEC_PER_SEC),
+              (guint) (now_msec / NM_UTILS_MSEC_PER_SEC),
+              (guint) (now_msec % NM_UTILS_MSEC_PER_SEC),
               priv->scan_last_complete_msec > 0
                   ? nm_sprintf_buf(str_buf,
                                    "%u.%03u",
-                                   (guint)(priv->scan_last_complete_msec / NM_UTILS_MSEC_PER_SEC),
-                                   (guint)(priv->scan_last_complete_msec % NM_UTILS_MSEC_PER_SEC))
+                                   (guint) (priv->scan_last_complete_msec / NM_UTILS_MSEC_PER_SEC),
+                                   (guint) (priv->scan_last_complete_msec % NM_UTILS_MSEC_PER_SEC))
                   : "-1");
         c_list_for_each_entry (ap, &priv->aps_lst_head, aps_lst)
             _ap_dump(self, LOGL_DEBUG, ap, "dump", now_msec);

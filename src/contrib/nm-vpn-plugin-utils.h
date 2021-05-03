@@ -8,11 +8,11 @@
 
 #include <NetworkManager.h>
 
-typedef NMVpnEditor *(NMVpnPluginUtilsEditorFactory)(gpointer           factory,
-                                                     NMVpnEditorPlugin *editor_plugin,
-                                                     NMConnection *     connection,
-                                                     gpointer           user_data,
-                                                     GError **          error);
+typedef NMVpnEditor *(NMVpnPluginUtilsEditorFactory) (gpointer           factory,
+                                                      NMVpnEditorPlugin *editor_plugin,
+                                                      NMConnection *     connection,
+                                                      gpointer           user_data,
+                                                      GError **          error);
 
 NMVpnEditor *nm_vpn_plugin_utils_load_editor(const char *                  module_name,
                                              const char *                  factory_name,

@@ -109,10 +109,10 @@ nm_device_state_reason_check(NMDeviceStateReason reason)
  * NMDeviceOvsBridge and NMDeviceOvsPort. */
 #define NM_DEVICE_SLAVES "slaves" /* partially internal */
 
-#define NM_DEVICE_TYPE_DESC          "type-desc" /* Internal only */
-#define NM_DEVICE_RFKILL_TYPE        "rfkill-type" /* Internal only */
-#define NM_DEVICE_IFINDEX            "ifindex" /* Internal only */
-#define NM_DEVICE_MASTER             "master" /* Internal only */
+#define NM_DEVICE_TYPE_DESC          "type-desc"          /* Internal only */
+#define NM_DEVICE_RFKILL_TYPE        "rfkill-type"        /* Internal only */
+#define NM_DEVICE_IFINDEX            "ifindex"            /* Internal only */
+#define NM_DEVICE_MASTER             "master"             /* Internal only */
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */

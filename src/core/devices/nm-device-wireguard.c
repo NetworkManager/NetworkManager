@@ -66,7 +66,7 @@ G_STATIC_ASSERT(NM_WIREGUARD_SYMMETRIC_KEY_LEN == NMP_WIREGUARD_SYMMETRIC_KEY_LE
  * timestamp. */
 #define RETRY_IN_MSEC_ASAP ((gint64) G_MAXINT64)
 
-#define RETRY_IN_MSEC_MAX ((gint64)(30 * 60 * 1000))
+#define RETRY_IN_MSEC_MAX ((gint64) (30 * 60 * 1000))
 
 typedef enum {
     LINK_CONFIG_MODE_FULL,
@@ -669,7 +669,7 @@ _peers_resolve_retry_reschedule(NMDeviceWireGuard *self, gint64 new_next_try_at_
      * than expected. Also, rate-limit to 500 msec. */
     interval_ms = NM_CLAMP((new_next_try_at_nsec - now) / NM_UTILS_NSEC_PER_MSEC,
                            (gint64) 500,
-                           (gint64)(24 * 60 * 60 * 1000));
+                           (gint64) (24 * 60 * 60 * 1000));
 
     _LOGT(LOGD_DEVICE,
           "wireguard-peers: schedule rechecking peer endpoints in %u msec",

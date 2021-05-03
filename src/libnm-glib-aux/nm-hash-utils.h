@@ -88,7 +88,7 @@ nm_hash_complete(NMHashState *state)
     /* we don't ever want to return a zero hash.
      *
      * NMPObject requires that in _idx_obj_part(), and it's just a good idea. */
-    return (((guint)(h >> 32)) ^ ((guint) h)) ?: 1396707757u;
+    return (((guint) (h >> 32)) ^ ((guint) h)) ?: 1396707757u;
 }
 
 static inline void
@@ -122,33 +122,33 @@ nm_hash_update_bool(NMHashState *state, bool val)
     nm_hash_update(state, &val, sizeof(val));
 }
 
-#define _NM_HASH_COMBINE_BOOLS_x_1(t, y) ((y) ? ((t)(1ull << 0)) : ((t) 0ull))
+#define _NM_HASH_COMBINE_BOOLS_x_1(t, y) ((y) ? ((t) (1ull << 0)) : ((t) 0ull))
 #define _NM_HASH_COMBINE_BOOLS_x_2(t, y, ...) \
-    ((y) ? ((t)(1ull << 1)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_1(t, __VA_ARGS__)
+    ((y) ? ((t) (1ull << 1)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_1(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_x_3(t, y, ...) \
-    ((y) ? ((t)(1ull << 2)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_2(t, __VA_ARGS__)
+    ((y) ? ((t) (1ull << 2)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_2(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_x_4(t, y, ...) \
-    ((y) ? ((t)(1ull << 3)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_3(t, __VA_ARGS__)
+    ((y) ? ((t) (1ull << 3)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_3(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_x_5(t, y, ...) \
-    ((y) ? ((t)(1ull << 4)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_4(t, __VA_ARGS__)
+    ((y) ? ((t) (1ull << 4)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_4(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_x_6(t, y, ...) \
-    ((y) ? ((t)(1ull << 5)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_5(t, __VA_ARGS__)
+    ((y) ? ((t) (1ull << 5)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_5(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_x_7(t, y, ...) \
-    ((y) ? ((t)(1ull << 6)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_6(t, __VA_ARGS__)
+    ((y) ? ((t) (1ull << 6)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_6(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_x_8(t, y, ...) \
-    ((y) ? ((t)(1ull << 7)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_7(t, __VA_ARGS__)
+    ((y) ? ((t) (1ull << 7)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_7(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_x_9(t, y, ...) \
-    ((y) ? ((t)(1ull << 8)) : ((t) 0ull))     \
+    ((y) ? ((t) (1ull << 8)) : ((t) 0ull))    \
         | (G_STATIC_ASSERT_EXPR(sizeof(t) >= 2), (_NM_HASH_COMBINE_BOOLS_x_8(t, __VA_ARGS__)))
 #define _NM_HASH_COMBINE_BOOLS_x_10(t, y, ...) \
-    ((y) ? ((t)(1ull << 9)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_9(t, __VA_ARGS__)
+    ((y) ? ((t) (1ull << 9)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_9(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_x_11(t, y, ...) \
-    ((y) ? ((t)(1ull << 10)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_10(t, __VA_ARGS__)
+    ((y) ? ((t) (1ull << 10)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_10(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_n2(t, n, ...) _NM_HASH_COMBINE_BOOLS_x_##n(t, __VA_ARGS__)
 #define _NM_HASH_COMBINE_BOOLS_n(t, n, ...)  _NM_HASH_COMBINE_BOOLS_n2(t, n, __VA_ARGS__)
 
 #define NM_HASH_COMBINE_BOOLS(type, ...) \
-    ((type)(_NM_HASH_COMBINE_BOOLS_n(type, NM_NARG(__VA_ARGS__), __VA_ARGS__)))
+    ((type) (_NM_HASH_COMBINE_BOOLS_n(type, NM_NARG(__VA_ARGS__), __VA_ARGS__)))
 
 #define nm_hash_update_bools(state, ...) \
     nm_hash_update_val(state, NM_HASH_COMBINE_BOOLS(guint8, __VA_ARGS__))

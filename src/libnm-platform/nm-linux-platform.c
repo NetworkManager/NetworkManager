@@ -189,10 +189,10 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 #define WG_CMD_GET_DEVICE 0
 #define WG_CMD_SET_DEVICE 1
 
-#define WGDEVICE_F_REPLACE_PEERS ((guint32)(1U << 0))
+#define WGDEVICE_F_REPLACE_PEERS ((guint32) (1U << 0))
 
-#define WGPEER_F_REMOVE_ME          ((guint32)(1U << 0))
-#define WGPEER_F_REPLACE_ALLOWEDIPS ((guint32)(1U << 1))
+#define WGPEER_F_REMOVE_ME          ((guint32) (1U << 0))
+#define WGPEER_F_REPLACE_ALLOWEDIPS ((guint32) (1U << 1))
 
 #define WGDEVICE_A_UNSPEC      0
 #define WGDEVICE_A_IFINDEX     1

@@ -1398,7 +1398,7 @@ _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
     _LOGT(LOGD_DEVICE,
           "ipv%c.route-table = %u%s",
           nm_utils_addr_family_to_char(addr_family),
-          (guint)(route_table ?: RT_TABLE_MAIN),
+          (guint) (route_table ?: RT_TABLE_MAIN),
           route_table != 0u ? "" : " (policy routing not enabled)");
 
     return route_table;

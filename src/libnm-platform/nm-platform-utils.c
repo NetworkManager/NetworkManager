@@ -310,7 +310,7 @@ _ethtool_edata_to_string(gpointer edata, gsize edata_size, char *sbuf, gsize sbu
     #define ethtool_cmd_speed_set(pedata, speed) \
         G_STMT_START                             \
         {                                        \
-            (pedata)->speed = (guint16)(speed);  \
+            (pedata)->speed = (guint16) (speed); \
         }                                        \
         G_STMT_END
 #endif
@@ -545,7 +545,7 @@ _ASSERT_ethtool_feature_infos(void)
         found[_NM_ETHTOOL_ID_FEATURE_AS_IDX(inf->ethtool_id)] = TRUE;
 
         kstate.idx_kernel_name = inf->n_kernel_names - 1;
-        g_assert((guint) kstate.idx_kernel_name == (guint)(inf->n_kernel_names - 1));
+        g_assert((guint) kstate.idx_kernel_name == (guint) (inf->n_kernel_names - 1));
 
         n += inf->n_kernel_names;
         for (k = 0; k < inf->n_kernel_names; k++) {
@@ -613,7 +613,7 @@ ethtool_get_features(SocketHandle *shandle)
                     continue;
 
                 i_block = ((guint) i_feature) / 32u;
-                i_flag  = (guint32)(1u << (((guint) i_feature) % 32u));
+                i_flag  = (guint32) (1u << (((guint) i_feature) % 32u));
 
                 if (!states) {
                     states = g_malloc0(
@@ -824,7 +824,7 @@ nmp_utils_ethtool_set_features(
         gboolean                     is_requested;
 
         i_block = s->idx_ss_features / 32u;
-        i_flag  = (guint32)(1u << (s->idx_ss_features % 32u));
+        i_flag  = (guint32) (1u << (s->idx_ss_features % 32u));
 
         sfeatures->features[i_block].valid |= i_flag;
 
