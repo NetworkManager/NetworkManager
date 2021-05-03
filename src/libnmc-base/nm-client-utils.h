@@ -12,7 +12,10 @@
 
 const NMObject **nmc_objects_sort_by_path(const NMObject *const *objs, gssize len);
 
-const char *nmc_string_is_valid(const char *input, const char **allowed, GError **error);
+const char *_nmc_string_is_valid(const char *input, const char *const *allowed, GError **error);
+
+#define nmc_string_is_valid(input, allowed, error) \
+    _nmc_string_is_valid((input), NM_CAST_STRV_CC(allowed), (error))
 
 gboolean nmc_string_to_uint(const char *       str,
                             gboolean           range_check,

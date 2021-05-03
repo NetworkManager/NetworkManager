@@ -91,36 +91,39 @@ nmc_string_to_uint(const char *       str,
 gboolean
 nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
 {
-    const char *s_true[]  = {"true", "yes", "on", "1", NULL};
-    const char *s_false[] = {"false", "no", "off", "0", NULL};
+    gs_free char *str_to_free = NULL;
+    int           i;
 
-    g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
+    nm_assert(!error || !*error);
+    nm_assert(val_bool);
 
-    if (g_strcmp0(str, "o") == 0) {
-        g_set_error(error,
-                    1,
-                    0,
-                    /* TRANSLATORS: the first %s is the partial value entered by
-                     * the user, the second %s a list of compatible values.
-                     */
-                    _("'%s' is ambiguous (%s)"),
-                    str,
-                    "on x off");
+    str = nm_strstrip_avoid_copy_a(300, str, &str_to_free);
+
+    if (nm_streq0(str, "o")) {
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           /* TRANSLATORS: the first %s is the partial value entered by
+                            * the user, the second %s a list of compatible values.
+                            */
+                           _("'%s' is ambiguous (%s)"),
+                           str,
+                           "on, off");
         return FALSE;
     }
 
-    if (nmc_string_is_valid(str, s_true, NULL))
+    if (nmc_string_is_valid(str, NM_MAKE_STRV("true", "yes", "on"), NULL))
         *val_bool = TRUE;
-    else if (nmc_string_is_valid(str, s_false, NULL))
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("false", "no", "off"), NULL))
         *val_bool = FALSE;
-    else {
-        g_set_error(error,
-                    1,
-                    0,
-                    _("'%s' is not valid; use [%s] or [%s]"),
-                    str,
-                    "true, yes, on",
-                    "false, no, off");
+    else if ((i = _nm_utils_ascii_str_to_int64(str, 0, 0, 1, -1)) >= 0) {
+        *val_bool = !!i;
+    } else {
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("'%s' is not valid; use [%s] or [%s]"),
+                           str,
+                           "true, yes, on",
+                           "false, no, off");
         return FALSE;
     }
     return TRUE;
@@ -129,40 +132,42 @@ nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
 gboolean
 nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
 {
-    const char *s_true[]    = {"true", "yes", "on", NULL};
-    const char *s_false[]   = {"false", "no", "off", NULL};
-    const char *s_unknown[] = {"unknown", NULL};
+    gs_free char *str_to_free = NULL;
+    int           i;
 
-    g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
+    nm_assert(!error || !*error);
+    nm_assert(val);
 
-    if (g_strcmp0(str, "o") == 0) {
-        g_set_error(error,
-                    1,
-                    0,
-                    /* TRANSLATORS: the first %s is the partial value entered by
-                     * the user, the second %s a list of compatible values.
-                     */
-                    _("'%s' is ambiguous (%s)"),
-                    str,
-                    "on x off");
+    str = nm_strstrip_avoid_copy_a(300, str, &str_to_free);
+
+    if (nm_streq0(str, "o")) {
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           /* TRANSLATORS: the first %s is the partial value entered by
+                            * the user, the second %s a list of compatible values.
+                            */
+                           _("'%s' is ambiguous (%s)"),
+                           str,
+                           "on, off");
         return FALSE;
     }
 
-    if (nmc_string_is_valid(str, s_true, NULL))
+    if (nmc_string_is_valid(str, NM_MAKE_STRV("true", "yes", "on"), NULL))
         *val = NM_TERNARY_TRUE;
-    else if (nmc_string_is_valid(str, s_false, NULL))
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("false", "no", "off"), NULL))
         *val = NM_TERNARY_FALSE;
-    else if (nmc_string_is_valid(str, s_unknown, NULL))
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("unknown", "default"), NULL))
         *val = NM_TERNARY_DEFAULT;
+    else if ((i = _nm_utils_ascii_str_to_int64(str, 0, -1, 1, -2)) >= -1)
+        *val = (NMTernary) i;
     else {
-        g_set_error(error,
-                    1,
-                    0,
-                    _("'%s' is not valid; use [%s], [%s] or [%s]"),
-                    str,
-                    "true, yes, on",
-                    "false, no, off",
-                    "unknown");
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("'%s' is not valid; use [%s], [%s] or [%s]"),
+                           str,
+                           "true, yes, on",
+                           "false, no, off",
+                           "unknown");
         return FALSE;
     }
     return TRUE;
@@ -175,12 +180,12 @@ nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
  * On failure: error->code : 0 - string not found; 1 - string is ambiguous
  */
 const char *
-nmc_string_is_valid(const char *input, const char **allowed, GError **error)
+_nmc_string_is_valid(const char *input, const char *const *allowed, GError **error)
 {
-    const char **p;
-    size_t       input_ln, p_len;
-    const char * partial_match = NULL;
-    gboolean     ambiguous     = FALSE;
+    const char *const *p;
+    size_t             input_ln, p_len;
+    const char *       partial_match = NULL;
+    gboolean           ambiguous     = FALSE;
 
     g_return_val_if_fail(!error || !*error, NULL);
 
@@ -210,7 +215,11 @@ nmc_string_is_valid(const char *input, const char **allowed, GError **error)
                 g_string_append(candidates, *p);
             }
         }
-        g_set_error(error, 1, 1, _("'%s' is ambiguous: %s"), input, candidates->str);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_AMBIGUOUS,
+                           _("'%s' is ambiguous: %s"),
+                           input,
+                           candidates->str);
         g_string_free(candidates, TRUE);
         return NULL;
     }
@@ -219,9 +228,16 @@ finish:
         char *valid_vals = g_strjoinv(", ", (char **) allowed);
 
         if (!input || !*input)
-            g_set_error(error, 1, 0, _("missing name, try one of [%s]"), valid_vals);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_UNKNOWN,
+                               _("missing name, try one of [%s]"),
+                               valid_vals);
         else
-            g_set_error(error, 1, 0, _("'%s' not among [%s]"), input, valid_vals);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_UNKNOWN,
+                               _("'%s' not among [%s]"),
+                               input,
+                               valid_vals);
 
         g_free(valid_vals);
     }

@@ -1213,6 +1213,12 @@ class TestNmcli(NmTestBase):
 
     @nm_test
     def test_003(self):
+        con_gsm_list = [
+            ("con-gsm1", "xyz.con-gsm1"),
+            ("con-gsm2", ""),
+            ("con-gsm3", " "),
+        ]
+
         self.init_001()
 
         replace_uuids = []
@@ -1231,38 +1237,40 @@ class TestNmcli(NmTestBase):
 
         self.call_nmcli_l(["c", "s"], replace_stdout=replace_uuids)
 
-        replace_uuids.append(
-            (
-                Util.memoize_nullary(lambda: self.srv.findConnectionUuid("con-gsm1")),
-                "UUID-con-gsm1-REPLACED-REPLACED-REPL",
-            )
-        )
+        for con_name, apn in con_gsm_list:
 
-        self.call_nmcli(
-            [
-                "connection",
-                "add",
-                "type",
-                "gsm",
-                "autoconnect",
-                "no",
-                "con-name",
-                "con-gsm1",
-                "ifname",
-                "*",
-                "apn",
-                "xyz.con-gsm1",
-                "serial.baud",
-                "5",
-                "serial.send-delay",
-                "100",
-                "serial.pari",
-                "1",
-                "ipv4.dns-options",
-                " ",
-            ],
-            replace_stdout=replace_uuids,
-        )
+            replace_uuids.append(
+                (
+                    Util.memoize_nullary(lambda: self.srv.findConnectionUuid(con_name)),
+                    "UUID-" + con_name + "-REPLACED-REPLACED-REPL",
+                )
+            )
+
+            self.call_nmcli(
+                [
+                    "connection",
+                    "add",
+                    "type",
+                    "gsm",
+                    "autoconnect",
+                    "no",
+                    "con-name",
+                    con_name,
+                    "ifname",
+                    "*",
+                    "apn",
+                    apn,
+                    "serial.baud",
+                    "5",
+                    "serial.send-delay",
+                    "100",
+                    "serial.pari",
+                    "1",
+                    "ipv4.dns-options",
+                    " ",
+                ],
+                replace_stdout=replace_uuids,
+            )
 
         replace_uuids.append(
             (
@@ -1286,7 +1294,11 @@ class TestNmcli(NmTestBase):
             sort_lines_stdout=True,
         )
 
-        self.call_nmcli_l(["con", "s", "con-gsm1"], replace_stdout=replace_uuids)
+        for con_name, apn in con_gsm_list:
+            self.call_nmcli_l(["con", "s", con_name], replace_stdout=replace_uuids)
+            self.call_nmcli_l(
+                ["-g", "all", "con", "s", con_name], replace_stdout=replace_uuids
+            )
 
         # activate the same profile on multiple devices. Our stub-implmentation
         # is fine with that... although NetworkManager service would reject

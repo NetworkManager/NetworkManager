@@ -864,7 +864,7 @@ _get_fcn_gobject_impl(const NMMetaPropertyInfo *property_info,
              * signal them differently. */
             cstr = g_value_get_string(&val);
             nm_assert((!!is_default) == (cstr == NULL));
-            RETURN_STR_EMPTYUNSET(get_type, is_default, NULL);
+            RETURN_STR_EMPTYUNSET(get_type, is_default, cstr);
         }
     }
 
@@ -1258,7 +1258,12 @@ static gboolean _set_fcn_gobject_string(ARGS_SET_FCN)
     return TRUE;
 }
 
-static gboolean _set_fcn_gobject_bool(ARGS_SET_FCN)
+static gboolean
+_set_fcn_gobject_bool_impl(const NMMetaPropertyInfo *property_info,
+                           NMSetting *               setting,
+                           NMMetaAccessorModifier    modifier,
+                           const char *              value,
+                           GError **                 error)
 {
     gboolean val_bool;
 
@@ -1269,6 +1274,28 @@ static gboolean _set_fcn_gobject_bool(ARGS_SET_FCN)
         return FALSE;
 
     g_object_set(setting, property_info->property_name, val_bool, NULL);
+    return TRUE;
+}
+
+static gboolean _set_fcn_gobject_bool(ARGS_SET_FCN)
+{
+    return _set_fcn_gobject_bool_impl(property_info, setting, modifier, value, error);
+}
+
+static gboolean _set_fcn_gobject_ternary(ARGS_SET_FCN)
+{
+    NMTernary val;
+
+    nm_assert(_gobject_property_get_gtype(G_OBJECT(setting), property_info->property_name)
+              == NM_TYPE_TERNARY);
+
+    if (_SET_FCN_DO_RESET_DEFAULT(property_info, modifier, value))
+        return _gobject_property_reset_default(setting, property_info->property_name);
+
+    if (!nmc_string_to_ternary(value, &val, error))
+        return FALSE;
+
+    g_object_set(setting, property_info->property_name, (int) val, NULL);
     return TRUE;
 }
 
@@ -1692,6 +1719,28 @@ static const char *const *_complete_fcn_gobject_bool(ARGS_COMPLETE_FCN)
 
     if (!text || !text[0])
         return &v[6];
+    return v;
+}
+
+static const char *const *_complete_fcn_gobject_ternary(ARGS_COMPLETE_FCN)
+{
+    static const char *const v[] = {
+        "on",
+        "off",
+        "1",
+        "0",
+        "-1",
+        "yes",
+        "no",
+        "unknown",
+        "true",
+        "false",
+        "default",
+        NULL,
+    };
+
+    if (!text || !text[0])
+        return &v[8];
     return v;
 }
 
@@ -3049,6 +3098,28 @@ static gboolean _set_fcn_dcb_bool(ARGS_SET_FCN)
         (property_info->property_typ_data->subtype.dcb_bool.with_flow_control_flags
              ? NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS
              : NM_SETTING_DCB_PRIORITY_GROUP_FLAGS));
+    return TRUE;
+}
+
+static gboolean _set_fcn_gsm_auto_config(ARGS_SET_FCN)
+{
+    if (!_set_fcn_gobject_bool_impl(property_info, setting, modifier, value, error))
+        return FALSE;
+
+    if (nm_setting_gsm_get_auto_config(NM_SETTING_GSM(setting))) {
+        /* the auto-config flag gets normalized to FALSE, if any of
+         * APN, username or password is set. Thus, setting auto-config
+         * needs us to reset those flags too. */
+        g_object_set(setting,
+                     NM_SETTING_GSM_APN,
+                     NULL,
+                     NM_SETTING_GSM_USERNAME,
+                     NULL,
+                     NM_SETTING_GSM_PASSWORD,
+                     NULL,
+                     NULL);
+    }
+
     return TRUE;
 }
 
@@ -4416,6 +4487,12 @@ static const NMMetaPropertyType _pt_gobject_bool = {
     .complete_fcn =                 _complete_fcn_gobject_bool,
 };
 
+static const NMMetaPropertyType _pt_gobject_ternary = {
+    .get_fcn =                      _get_fcn_gobject_enum,
+    .set_fcn =                      _set_fcn_gobject_ternary,
+    .complete_fcn =                 _complete_fcn_gobject_ternary,
+};
+
 static const NMMetaPropertyType _pt_gobject_int = {
     .get_fcn =                      _get_fcn_gobject_int,
     .set_fcn =                      _set_fcn_gobject_int,
@@ -5585,7 +5662,11 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_GSM
 static const NMMetaPropertyInfo *const property_infos_GSM[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_AUTO_CONFIG,
-        .property_type =                &_pt_gobject_bool,
+        .property_type = DEFINE_PROPERTY_TYPE (
+            .get_fcn =                  _get_fcn_gobject,
+            .set_fcn =                  _set_fcn_gsm_auto_config,
+            .complete_fcn =             _complete_fcn_gobject_bool,
+        ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_NUMBER,
         .property_type =                &_pt_gobject_string,
@@ -5611,6 +5692,9 @@ static const NMMetaPropertyInfo *const property_infos_GSM[] = {
         .property_alias =               "apn",
         .prompt =                       N_("APN"),
         .property_type =                &_pt_gobject_string,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_string,
+            .handle_emptyunset =        TRUE,
+        ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_NETWORK_ID,
         .property_type =                &_pt_gobject_string,
@@ -5653,13 +5737,13 @@ static const NMMetaPropertyInfo *const property_infos_HOSTNAME[] = {
         .property_type =                &_pt_gobject_int,
     ),
     PROPERTY_INFO (NM_SETTING_HOSTNAME_FROM_DHCP, DESCRIBE_DOC_NM_SETTING_HOSTNAME_FROM_DHCP,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     PROPERTY_INFO (NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP, DESCRIBE_DOC_NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     PROPERTY_INFO (NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT, DESCRIBE_DOC_NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
@@ -6728,7 +6812,7 @@ static const NMMetaPropertyInfo *const property_infos_SRIOV[] = {
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
@@ -7456,7 +7540,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
         .property_type =                &_pt_gobject_mac,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
@@ -7487,10 +7571,10 @@ static const NMMetaPropertyInfo *const property_infos_WIREGUARD[] = {
         .property_type =                &_pt_gobject_mtu,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
@@ -7624,7 +7708,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_AP_ISOLATION,
-        .property_type =                &_pt_gobject_enum,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };
