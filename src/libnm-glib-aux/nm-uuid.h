@@ -33,6 +33,14 @@ gboolean nm_uuid_is_null(const NMUuid *uuid);
 
 /*****************************************************************************/
 
+static inline gboolean
+nm_uuid_is_valid(const char *str)
+{
+    return str && nm_uuid_parse_full(str, NULL, NULL);
+}
+
+/*****************************************************************************/
+
 gboolean nm_uuid_is_valid_nmlegacy(const char *str);
 
 /*****************************************************************************/
