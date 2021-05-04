@@ -1637,35 +1637,27 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
 
 /*****************************************************************************/
 
-typedef struct {
-    char *table;
-    char *rule;
-} ShareRule;
-
 struct _NMUtilsShareRules {
-    GArray *rules;
+    char *    ip_iface;
+    in_addr_t addr;
+    guint8    plen;
 };
 
-static void
-_share_rule_clear(gpointer data)
-{
-    ShareRule *rule = data;
-
-    g_free(rule->table);
-    g_free(rule->rule);
-}
-
 NMUtilsShareRules *
-nm_utils_share_rules_new(void)
+nm_utils_share_rules_new(const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     NMUtilsShareRules *self;
 
+    nm_assert(ip_iface);
+    nm_assert(addr != 0u);
+    nm_assert(plen <= 32);
+
     self  = g_slice_new(NMUtilsShareRules);
     *self = (NMUtilsShareRules){
-        .rules = g_array_sized_new(FALSE, FALSE, sizeof(ShareRule), 10),
+        .ip_iface = g_strdup(ip_iface),
+        .addr     = addr,
+        .plen     = plen,
     };
-
-    g_array_set_clear_func(self->rules, _share_rule_clear);
     return self;
 }
 
@@ -1675,62 +1667,220 @@ nm_utils_share_rules_free(NMUtilsShareRules *self)
     if (!self)
         return;
 
-    g_array_unref(self->rules);
+    g_free(self->ip_iface);
     nm_g_slice_free(self);
 }
 
-void
-nm_utils_share_rules_add_rule_take(NMUtilsShareRules *self, const char *table, char *rule_take)
+typedef struct {
+    const char **argv;
+} ShareRule;
+
+static void
+_share_rules_add_full(GArray *rules, const char *const *argv)
 {
     ShareRule *rule;
 
-    g_return_if_fail(self);
-    g_return_if_fail(table);
-    g_return_if_fail(rule_take);
+    nm_assert(rules);
+    nm_assert(argv);
+    nm_assert(argv[0]);
 
-    rule  = nm_g_array_append_new(self->rules, ShareRule);
+    rule  = nm_g_array_append_new(rules, ShareRule);
     *rule = (ShareRule){
-        .table = g_strdup(table),
-        .rule  = g_steal_pointer(&rule_take),
+        .argv = g_memdup(argv, sizeof(char *) * (1u + NM_PTRARRAY_LEN(argv))),
     };
+}
+
+#define shared_rules_add_iptables(rules, shared, table, ...)                 \
+    _share_rules_add_full((rules),                                           \
+                          NM_MAKE_STRV("" IPTABLES_PATH "",                  \
+                                       "--table",                            \
+                                       (table),                              \
+                                       ((shared) ? "--insert" : "--delete"), \
+                                       __VA_ARGS__))
+
+static GArray *
+_share_rules_create_iptables(const char *ip_iface,
+                             in_addr_t   addr,
+                             guint       plen,
+                             gboolean    shared,
+                             GPtrArray * gfree_keeper)
+{
+    gs_unref_array GArray *rules = NULL;
+    char                   buf_mask[NM_UTILS_INET_ADDRSTRLEN];
+    char                   buf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char                   buf_addrmask[NM_UTILS_INET_ADDRSTRLEN + NM_UTILS_INET_ADDRSTRLEN + 3];
+    in_addr_t              netmask;
+    const char *           addr_mask;
+
+    netmask = _nm_utils_ip4_prefix_to_netmask(plen);
+
+    nm_sprintf_buf(buf_addrmask,
+                   "%s/%s",
+                   _nm_utils_inet4_ntop(addr & netmask, buf_addr),
+                   _nm_utils_inet4_ntop(netmask, buf_mask));
+
+    addr_mask = g_strdup(buf_addrmask);
+    g_ptr_array_add(gfree_keeper, (char *) addr_mask);
+
+    ip_iface = g_strdup(ip_iface);
+    g_ptr_array_add(gfree_keeper, (char *) ip_iface);
+
+    rules = g_array_new(FALSE, FALSE, sizeof(ShareRule));
+    g_array_set_clear_func(rules, nm_indirect_g_free);
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "nat",
+                              "POSTROUTING",
+                              "--source",
+                              addr_mask,
+                              "!",
+                              "--destination",
+                              addr_mask,
+                              "--jump",
+                              "MASQUERADE");
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "filter",
+                              "FORWARD",
+                              "--destination",
+                              addr_mask,
+                              "--out-interface",
+                              ip_iface,
+                              "--match",
+                              "state",
+                              "--state",
+                              "ESTABLISHED,RELATED",
+                              "--jump",
+                              "ACCEPT");
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "filter",
+                              "FORWARD",
+                              "--source",
+                              addr_mask,
+                              "--in-interface",
+                              ip_iface,
+                              "--jump",
+                              "ACCEPT");
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "filter",
+                              "FORWARD",
+                              "--in-interface",
+                              ip_iface,
+                              "--out-interface",
+                              ip_iface,
+                              "--jump",
+                              "ACCEPT");
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "filter",
+                              "FORWARD",
+                              "--out-interface",
+                              ip_iface,
+                              "--jump",
+                              "REJECT");
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "filter",
+                              "FORWARD",
+                              "--in-interface",
+                              ip_iface,
+                              "--jump",
+                              "REJECT");
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "filter",
+                              "INPUT",
+                              "--in-interface",
+                              ip_iface,
+                              "--protocol",
+                              "udp",
+                              "--destination-port",
+                              "67",
+                              "--jump",
+                              "ACCEPT");
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "filter",
+                              "INPUT",
+                              "--in-interface",
+                              ip_iface,
+                              "--protocol",
+                              "tcp",
+                              "--destination-port",
+                              "67",
+                              "--jump",
+                              "ACCEPT");
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "filter",
+                              "INPUT",
+                              "--in-interface",
+                              ip_iface,
+                              "--protocol",
+                              "udp",
+                              "--destination-port",
+                              "53",
+                              "--jump",
+                              "ACCEPT");
+
+    shared_rules_add_iptables(rules,
+                              shared,
+                              "filter",
+                              "INPUT",
+                              "--in-interface",
+                              ip_iface,
+                              "--protocol",
+                              "tcp",
+                              "--destination-port",
+                              "53",
+                              "--jump",
+                              "ACCEPT");
+
+    return g_steal_pointer(&rules);
 }
 
 void
 nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared)
 {
-    guint i;
+    gs_unref_ptrarray GPtrArray *gfree_keeper = NULL;
+    gs_unref_array GArray *rules              = NULL;
+    guint                  i;
 
-    g_return_if_fail(self);
+    gfree_keeper = g_ptr_array_new_full(2, g_free);
 
-    if (self->rules->len == 0)
-        return;
+    rules =
+        _share_rules_create_iptables(self->ip_iface, self->addr, self->plen, shared, gfree_keeper);
 
     /* depending on whether we share or unshare, we add/remote the rules
      * in opposite order. */
     if (shared)
-        i = self->rules->len - 1;
+        i = rules->len - 1u;
     else
         i = 0;
 
     for (;;) {
-        gs_free_error GError *error = NULL;
-        ShareRule *           rule;
-        gs_free const char ** argv = NULL;
-        gs_free char *        cmd  = NULL;
+        const ShareRule *const rule    = &g_array_index(rules, ShareRule, i);
+        gs_free_error GError *error    = NULL;
+        gs_free char *        argv_str = NULL;
         int                   status;
 
-        rule = &g_array_index(self->rules, ShareRule, i);
+        nm_log_dbg(LOGD_SHARING,
+                   "Executing: %s",
+                   (argv_str = g_strjoinv(" ", (char **) rule->argv)));
 
-        cmd  = g_strdup_printf("%s --table %s %s %s",
-                              IPTABLES_PATH,
-                              rule->table,
-                              shared ? "--insert" : "--delete",
-                              rule->rule);
-        argv = nm_utils_strsplit_set(cmd, " ");
-
-        nm_log_dbg(LOGD_SHARING, "Executing: %s", cmd);
         if (!g_spawn_sync("/",
-                          (char **) argv,
+                          (char **) rule->argv,
                           (char **) NM_PTRARRAY_EMPTY(const char *),
                           G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
                           NULL,
@@ -1743,7 +1893,10 @@ nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared)
             goto next;
         }
         if (WEXITSTATUS(status)) {
-            nm_log_warn(LOGD_SHARING, "** Command returned exit status %d.", WEXITSTATUS(status));
+            nm_log_warn(LOGD_SHARING,
+                        "** Command %s returned exit status %d",
+                        rule->argv[0],
+                        WEXITSTATUS(status));
         }
 
 next:
@@ -1753,86 +1906,10 @@ next:
             i--;
         } else {
             i++;
-            if (i >= self->rules->len)
+            if (i >= rules->len)
                 break;
         }
     }
-}
-
-void
-nm_utils_share_rules_add_all_rules(NMUtilsShareRules *self,
-                                   const char *       ip_iface,
-                                   in_addr_t          addr,
-                                   guint              plen)
-{
-    in_addr_t netmask;
-    in_addr_t network;
-    char      str_mask[NM_UTILS_INET_ADDRSTRLEN];
-    char      str_addr[NM_UTILS_INET_ADDRSTRLEN];
-
-    nm_assert(self);
-
-    netmask = _nm_utils_ip4_prefix_to_netmask(plen);
-    _nm_utils_inet4_ntop(netmask, str_mask);
-
-    network = addr & netmask;
-    _nm_utils_inet4_ntop(network, str_addr);
-
-    nm_utils_share_rules_add_rule_v(
-        self,
-        "nat",
-        "POSTROUTING --source %s/%s ! --destination %s/%s --jump MASQUERADE",
-        str_addr,
-        str_mask,
-        str_addr,
-        str_mask);
-    nm_utils_share_rules_add_rule_v(
-        self,
-        "filter",
-        "FORWARD --destination %s/%s --out-interface %s --match state --state "
-        "ESTABLISHED,RELATED --jump ACCEPT",
-        str_addr,
-        str_mask,
-        ip_iface);
-    nm_utils_share_rules_add_rule_v(self,
-                                    "filter",
-                                    "FORWARD --source %s/%s --in-interface %s --jump ACCEPT",
-                                    str_addr,
-                                    str_mask,
-                                    ip_iface);
-    nm_utils_share_rules_add_rule_v(self,
-                                    "filter",
-                                    "FORWARD --in-interface %s --out-interface %s --jump ACCEPT",
-                                    ip_iface,
-                                    ip_iface);
-    nm_utils_share_rules_add_rule_v(self,
-                                    "filter",
-                                    "FORWARD --out-interface %s --jump REJECT",
-                                    ip_iface);
-    nm_utils_share_rules_add_rule_v(self,
-                                    "filter",
-                                    "FORWARD --in-interface %s --jump REJECT",
-                                    ip_iface);
-    nm_utils_share_rules_add_rule_v(
-        self,
-        "filter",
-        "INPUT --in-interface %s --protocol udp --destination-port 67 --jump ACCEPT",
-        ip_iface);
-    nm_utils_share_rules_add_rule_v(
-        self,
-        "filter",
-        "INPUT --in-interface %s --protocol tcp --destination-port 67 --jump ACCEPT",
-        ip_iface);
-    nm_utils_share_rules_add_rule_v(
-        self,
-        "filter",
-        "INPUT --in-interface %s --protocol udp --destination-port 53 --jump ACCEPT",
-        ip_iface);
-    nm_utils_share_rules_add_rule_v(
-        self,
-        "filter",
-        "INPUT --in-interface %s --protocol tcp --destination-port 53 --jump ACCEPT",
-        ip_iface);
 }
 
 /*****************************************************************************/
