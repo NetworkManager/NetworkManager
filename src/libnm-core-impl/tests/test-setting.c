@@ -3890,7 +3890,7 @@ test_parse_tc_handle(void)
 
 #define _parse_tc_handle_inval(str) _parse_tc_handle(str, TC_H_UNSPEC)
 #define _parse_tc_handle_valid(str, maj, min) \
-    _parse_tc_handle(str, TC_H_MAKE(((guint32)(maj)) << 16, ((guint16)(min))))
+    _parse_tc_handle(str, TC_H_MAKE(((guint32) (maj)) << 16, ((guint16) (min))))
 
     _parse_tc_handle_inval("");
     _parse_tc_handle_inval(" ");

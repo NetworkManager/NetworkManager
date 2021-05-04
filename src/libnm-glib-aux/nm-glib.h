@@ -55,7 +55,7 @@ __g_type_ensure(GType type)
             gpointer *_pp = (gpointer *) (pp);                     \
             gpointer  _p;                                          \
             /* This assignment is needed to avoid a gcc warning */ \
-            GDestroyNotify _destroy = (GDestroyNotify)(destroy);   \
+            GDestroyNotify _destroy = (GDestroyNotify) (destroy);  \
                                                                    \
             _p = *_pp;                                             \
             if (_p) {                                              \
@@ -413,8 +413,8 @@ _nm_g_hash_table_get_keys_as_array(GHashTable *hash_table, guint *length)
 
 #define g_steal_pointer(pp)                                \
     ({                                                     \
-        typeof(*(pp)) *const _pp                   = (pp); \
-        typeof(*_pp) _p                            = *_pp; \
+        typeof(*(pp)) *const         _pp           = (pp); \
+        typeof(*_pp)                 _p            = *_pp; \
         _nm_unused const void *const _p_type_check = _p;   \
                                                            \
         *_pp = NULL;                                       \
@@ -571,7 +571,7 @@ _nm_g_value_unset(GValue *value)
 
 /* G_SOURCE_FUNC was added in 2.57.2. */
 #undef G_SOURCE_FUNC
-#define G_SOURCE_FUNC(f) ((GSourceFunc)(void (*)(void))(f))
+#define G_SOURCE_FUNC(f) ((GSourceFunc) (void (*)(void)) (f))
 
 /*****************************************************************************/
 
@@ -609,8 +609,8 @@ _g_atomic_pointer_set(void **atomic, void *newval)
 #undef g_atomic_pointer_set
 #define g_atomic_pointer_set(atomic, newval)                        \
     ({                                                              \
-        typeof(*atomic) *const _atomic                 = (atomic);  \
-        typeof(*_atomic) const _newval                 = (newval);  \
+        typeof(*atomic) *const         _atomic         = (atomic);  \
+        typeof(*_atomic) const         _newval         = (newval);  \
         _nm_unused gconstpointer const _val_type_check = _newval;   \
                                                                     \
         (void) (0 ? (gpointer) * (_atomic) : NULL);                 \
@@ -633,9 +633,9 @@ _g_atomic_pointer_compare_and_exchange(void **atomic, void *oldval, void *newval
 #undef g_atomic_pointer_compare_and_exchange
 #define g_atomic_pointer_compare_and_exchange(atomic, oldval, newval) \
     ({                                                                \
-        typeof(*atomic) *const _atomic                 = (atomic);    \
-        typeof(*_atomic) const _oldval                 = (oldval);    \
-        typeof(*_atomic) const _newval                 = (newval);    \
+        typeof(*atomic) *const         _atomic         = (atomic);    \
+        typeof(*_atomic) const         _oldval         = (oldval);    \
+        typeof(*_atomic) const         _newval         = (newval);    \
         _nm_unused gconstpointer const _val_type_check = _oldval;     \
                                                                       \
         (void) (0 ? (gpointer) * (_atomic) : NULL);                   \

@@ -2965,7 +2965,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             if (eap_methods_table[i].v_func == NULL)
                 continue;
             if (!strcmp(eap_methods_table[i].method, method)) {
-                if (!(*eap_methods_table[i].v_func)(self, FALSE, error))
+                if (!(*eap_methods_table[i].v_func) (self, FALSE, error))
                     return FALSE;
                 break;
             }

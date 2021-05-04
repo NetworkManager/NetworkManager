@@ -454,7 +454,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     flags = priv->flags;
     if (NM_IN_SET(priv->mode, NM_IP_TUNNEL_MODE_IPIP6, NM_IP_TUNNEL_MODE_IP6IP6))
-        flags &= (guint32)(~_NM_IP_TUNNEL_FLAG_ALL_IP6TNL);
+        flags &= (guint32) (~_NM_IP_TUNNEL_FLAG_ALL_IP6TNL);
     if (flags) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,

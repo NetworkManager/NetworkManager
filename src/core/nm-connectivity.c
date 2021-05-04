@@ -572,7 +572,7 @@ easy_write_cb(void *buffer, size_t size, size_t nmemb, void *userdata)
          * Continue receiving... */
         cb_data->concheck.response_good_cnt += len;
 
-        if (cb_data->concheck.response_good_cnt > (gsize)(100 * 1024)) {
+        if (cb_data->concheck.response_good_cnt > (gsize) (100 * 1024)) {
             /* we expect an empty response. We accept either
              * 1) status code 204 and any response
              * 2) status code 200 and an empty response.
@@ -764,7 +764,7 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
 }
 #endif
 
-#define SD_RESOLVED_DNS ((guint64)(1LL << 0))
+#define SD_RESOLVED_DNS ((guint64) (1LL << 0))
 
 static NMConnectivityState
 check_platform_config(NMConnectivity *self,

@@ -223,7 +223,7 @@ _nmtst_crypto_encrypt(NMCryptoCipherType cipher,
     padded_buf.bin = g_malloc(padded_buf.len);
     memcpy(padded_buf.bin, data, data_len);
     for (i = 0; i < pad_len; i++)
-        padded_buf.bin[data_len + i] = (guint8)(pad_len & 0xFF);
+        padded_buf.bin[data_len + i] = (guint8) (pad_len & 0xFF);
 
     output.len = padded_buf.len;
     output.bin = g_malloc(output.len);

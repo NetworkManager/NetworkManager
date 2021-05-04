@@ -53,10 +53,10 @@ typedef gboolean (*NMPObjectPredicateFunc)(const NMPObject *obj, gpointer user_d
 /* Define of the IN6_ADDR_GEN_MODE_* values to workaround old kernel headers
  * that don't define it. */
 #define NM_IN6_ADDR_GEN_MODE_UNKNOWN        255 /* no corresponding value.  */
-#define NM_IN6_ADDR_GEN_MODE_EUI64          0 /* IN6_ADDR_GEN_MODE_EUI64 */
-#define NM_IN6_ADDR_GEN_MODE_NONE           1 /* IN6_ADDR_GEN_MODE_NONE */
-#define NM_IN6_ADDR_GEN_MODE_STABLE_PRIVACY 2 /* IN6_ADDR_GEN_MODE_STABLE_PRIVACY */
-#define NM_IN6_ADDR_GEN_MODE_RANDOM         3 /* IN6_ADDR_GEN_MODE_RANDOM */
+#define NM_IN6_ADDR_GEN_MODE_EUI64          0   /* IN6_ADDR_GEN_MODE_EUI64 */
+#define NM_IN6_ADDR_GEN_MODE_NONE           1   /* IN6_ADDR_GEN_MODE_NONE */
+#define NM_IN6_ADDR_GEN_MODE_STABLE_PRIVACY 2   /* IN6_ADDR_GEN_MODE_STABLE_PRIVACY */
+#define NM_IN6_ADDR_GEN_MODE_RANDOM         3   /* IN6_ADDR_GEN_MODE_RANDOM */
 
 #define NM_IFF_MULTI_QUEUE 0x0100 /* IFF_MULTI_QUEUE */
 

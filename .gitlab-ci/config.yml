@@ -24,6 +24,7 @@ distributions:
       - '31'
       - '32'
       - '33'
+      - '34'
       - 'rawhide'
     always:
       - '33'
@@ -64,4 +65,4 @@ distributions:
 # specifies which of the above distros is used as source for pages
 pages_build:
   name: fedora
-  version: '33'
+  version: '34'

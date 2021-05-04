@@ -24,7 +24,7 @@
 
 #define nmtstp_normalize_jiffies_time(requested_value, kernel_value)                             \
     ({                                                                                           \
-        typeof(kernel_value) _kernel_value     = (kernel_value);                                 \
+        typeof(kernel_value)  _kernel_value    = (kernel_value);                                 \
         typeof(_kernel_value) _requested_value = (requested_value);                              \
                                                                                                  \
         /* kernel stores some values (like bridge's forward_delay) in jiffies. When converting

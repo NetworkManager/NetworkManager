@@ -101,10 +101,10 @@
 
 /*****************************************************************************/
 
-#define NM_SETTING_SECRET_FLAG_ALL                                                           \
-    ((NMSettingSecretFlags)(NM_SETTING_SECRET_FLAG_NONE | NM_SETTING_SECRET_FLAG_AGENT_OWNED \
-                            | NM_SETTING_SECRET_FLAG_NOT_SAVED                               \
-                            | NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
+#define NM_SETTING_SECRET_FLAG_ALL                                                            \
+    ((NMSettingSecretFlags) (NM_SETTING_SECRET_FLAG_NONE | NM_SETTING_SECRET_FLAG_AGENT_OWNED \
+                             | NM_SETTING_SECRET_FLAG_NOT_SAVED                               \
+                             | NM_SETTING_SECRET_FLAG_NOT_REQUIRED))
 
 static inline gboolean
 _nm_setting_secret_flags_valid(NMSettingSecretFlags flags)

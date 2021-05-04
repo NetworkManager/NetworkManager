@@ -2589,7 +2589,7 @@ _host_id_read_timestamp(gboolean      use_secret_key_file,
     now = time(NULL);
     *out_timestamp_ns =
         NM_MAX((gint64) 1,
-               (now * NM_UTILS_NSEC_PER_SEC) - ((gint64)(v % ((guint64)(EPOCH_TWO_YEARS)))));
+               (now * NM_UTILS_NSEC_PER_SEC) - ((gint64) (v % ((guint64) (EPOCH_TWO_YEARS)))));
     return FALSE;
 }
 

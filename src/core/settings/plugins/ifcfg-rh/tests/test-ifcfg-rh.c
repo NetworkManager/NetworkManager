@@ -7295,8 +7295,8 @@ test_write_wifi_wpa_eap_tls(void)
     g_object_set(s_8021x, NM_SETTING_802_1X_IDENTITY, "Bill Smith", NULL);
     g_object_set(s_8021x,
                  NM_SETTING_802_1X_PHASE1_AUTH_FLAGS,
-                 (guint)(NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE
-                         | NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE),
+                 (guint) (NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE
+                          | NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE),
                  NULL);
 
     nm_setting_802_1x_add_eap_method(s_8021x, "tls");
