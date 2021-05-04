@@ -26,8 +26,8 @@ distributions:
       - '33'
       - '34'
       - 'rawhide'
-    always:
-      - '33'
+    # always:
+    #   - '33'
   - name: ubuntu
     tag: *default_tag
     base_type: debian

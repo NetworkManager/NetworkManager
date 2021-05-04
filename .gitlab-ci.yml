@@ -41,14 +41,17 @@ stages:
 variables:
   FDO_UPSTREAM_REPO: NetworkManager/NetworkManager
   GIT_DEPTH: 1
-  # these tags should be updated each time the list of packages is updated
+  # These tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular NM version
-  FEDORA_TAG:  '2021-01-28.0-bda9933006ae'
-  UBUNTU_TAG:  '2021-01-28.0-418bdf37a634'
-  DEBIAN_TAG:  '2021-01-28.0-418bdf37a634'
-  CENTOS_TAG:  '2021-01-28.0-bda9933006ae'
-  ALPINE_TAG:  '2021-01-28.0-50c3effca8f8'
+  #
+  # This is done by running `ci-fairy generate-template` and possibly bump
+  # ".default_tag".
+  FEDORA_TAG:  '2021-01-28.0-dd8fdd44b6a7'
+  UBUNTU_TAG:  '2021-01-28.0-b88d09982586'
+  DEBIAN_TAG:  '2021-01-28.0-b88d09982586'
+  CENTOS_TAG:  '2021-01-28.0-dd8fdd44b6a7'
+  ALPINE_TAG:  '2021-01-28.0-3913bcd6d86c'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -674,6 +677,7 @@ t_fedora:33:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:33@container-prep"
+  when: manual
 
 t_fedora:34:
   extends:
@@ -685,7 +689,6 @@ t_fedora:34:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:34@container-prep"
-  when: manual
 
 t_fedora:rawhide:
   extends:

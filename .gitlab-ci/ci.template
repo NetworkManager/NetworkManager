@@ -29,9 +29,12 @@ stages:
 variables:
   FDO_UPSTREAM_REPO: NetworkManager/NetworkManager
   GIT_DEPTH: 1
-  # these tags should be updated each time the list of packages is updated
+  # These tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular NM version
+  #
+  # This is done by running `ci-fairy generate-template` and possibly bump
+  # ".default_tag".
 {% for distro in distributions %}
   {{"%-13s"| format(distro.name.upper() + '_TAG:')}}'{{distro.tag}}-{{
     (ci_fairy.hashfiles('./.gitlab-ci/config.yml',
@@ -172,7 +175,7 @@ t_{{distro.name}}:{{version}}:
     {% endif %}
   needs:
     - "{{distro.name}}:{{version}}@container-prep"
-{% if not version in distro.always %}
+{% if not version in distro.always and (distro.name != pages_build.name or version != pages_build.version) %}
   when: manual
 {% endif %}
 {% endfor %}
