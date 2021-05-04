@@ -17,14 +17,6 @@ typedef enum {
     NM_DEVICE_STAGE_STATE_COMPLETED = 2,
 } NMDeviceStageState;
 
-typedef enum {
-    NM_DEVICE_IP_STATE_NONE,
-    NM_DEVICE_IP_STATE_WAIT,
-    NM_DEVICE_IP_STATE_CONF,
-    NM_DEVICE_IP_STATE_DONE,
-    NM_DEVICE_IP_STATE_FAIL,
-} NMDeviceIPState;
-
 enum NMActStageReturn {
     NM_ACT_STAGE_RETURN_FAILURE = 0, /* Hard failure of activation */
     NM_ACT_STAGE_RETURN_SUCCESS,     /* Activation stage done */

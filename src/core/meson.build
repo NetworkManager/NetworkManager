@@ -99,6 +99,7 @@ libNetworkManager = static_library(
     'devices/nm-device-bond.c',
     'devices/nm-device-bridge.c',
     'devices/nm-device.c',
+    'devices/nm-device-utils.c',
     'devices/nm-device-dummy.c',
     'devices/nm-device-ethernet.c',
     'devices/nm-device-ethernet-utils.c',
