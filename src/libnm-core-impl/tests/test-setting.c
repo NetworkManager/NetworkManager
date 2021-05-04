@@ -8,6 +8,7 @@
 #include <linux/pkt_sched.h>
 #include <net/if.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-base/nm-ethtool-utils-base.h"
 #include "libnm-core-intern/nm-core-internal.h"
@@ -228,6 +229,125 @@ test_private_key_import(const char *path, const char *password, NMSetting8021xCK
 
     g_object_unref(s_8021x);
 }
+
+/*****************************************************************************/
+
+static void
+_do_test_connection_uuid(NMConnection *con, const char *uuid, const char *expected_uuid)
+{
+    NMSettingConnection *s_con;
+    gs_free char *       uuid_old = NULL;
+    gboolean             success;
+    gboolean             is_normalized;
+    char                 uuid_normalized[37];
+
+    nmtst_assert_connection_verifies_without_normalization(con);
+
+    s_con = NM_SETTING_CONNECTION(nm_connection_get_setting(con, NM_TYPE_SETTING_CONNECTION));
+    g_assert(NM_IS_SETTING_CONNECTION(s_con));
+
+    g_assert(uuid);
+
+    uuid_old = g_strdup(nm_setting_connection_get_uuid(s_con));
+
+    g_assert(nm_utils_is_uuid(uuid_old));
+
+    g_object_set(s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
+
+    g_assert_cmpstr(uuid, ==, nm_setting_connection_get_uuid(s_con));
+
+    if (nm_streq0(uuid, expected_uuid)) {
+        nmtst_assert_connection_verifies_without_normalization(con);
+        g_assert(nm_utils_is_uuid(uuid));
+        g_assert(nm_uuid_is_valid(uuid));
+        g_assert(nm_uuid_is_valid_nm(uuid, &is_normalized, NULL));
+        g_assert(!is_normalized);
+    } else if (!expected_uuid) {
+        gs_free_error GError *error = NULL;
+
+        success = nm_connection_verify(con, &error);
+        nmtst_assert_no_success(success, error);
+        g_assert_error(error, NM_CONNECTION_ERROR, NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+        g_assert(!nm_utils_is_uuid(uuid));
+        g_assert(!nm_uuid_is_valid(uuid));
+        g_assert(!nm_uuid_is_valid_nmlegacy(uuid));
+        g_assert(!nm_uuid_is_valid_nm(uuid, NULL, NULL));
+    } else {
+        gs_free_error GError *error = NULL;
+
+        nmtst_assert_connection_verifies_and_normalizable(con);
+
+        success = nm_connection_verify(con, &error);
+        nmtst_assert_success(success, error);
+
+        if (!nmtst_connection_normalize(con))
+            g_assert_not_reached();
+
+        g_assert_cmpstr(expected_uuid, ==, nm_setting_connection_get_uuid(s_con));
+        g_assert(nm_uuid_is_valid(expected_uuid));
+
+        g_assert(nm_utils_is_uuid(uuid));
+        g_assert(nm_uuid_is_valid_nmlegacy(uuid));
+        g_assert(nm_uuid_is_valid_nm(uuid, &is_normalized, uuid_normalized));
+
+        g_assert_cmpstr(expected_uuid, ==, uuid_normalized);
+    }
+
+    g_object_set(s_con, NM_SETTING_CONNECTION_UUID, uuid_old, NULL);
+    nmtst_assert_connection_verifies_without_normalization(con);
+
+    if (expected_uuid && !nm_streq(expected_uuid, uuid))
+        _do_test_connection_uuid(con, expected_uuid, expected_uuid);
+}
+
+static void
+test_connection_uuid(void)
+{
+    gs_unref_object NMConnection *con = NULL;
+
+    con = nmtst_create_minimal_connection("test-uuid", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+
+    nmtst_connection_normalize(con);
+
+#define _do_test_connection_uuid_bad(con, uuid) _do_test_connection_uuid((con), "" uuid "", NULL)
+
+#define _do_test_connection_uuid_good(con, uuid) \
+    _do_test_connection_uuid((con), "" uuid "", "" uuid "")
+
+#define _do_test_connection_uuid_norm(con, uuid, expected_uuid) \
+    _do_test_connection_uuid((con), "" uuid "", "" expected_uuid "")
+
+    _do_test_connection_uuid_bad(con, "x1e775e3-a316-4eb2-b4d8-4b0f2bcaea53");
+    _do_test_connection_uuid_bad(con, "1e775e3aa3164eb2b4d84b0f2bcaea53abcdabc");
+    _do_test_connection_uuid_bad(con, "1e775e3aa3164eb2b4d84b0f2bcaea53abcdabcdd");
+
+    _do_test_connection_uuid_good(con, "a1e775e3-a316-4eb2-b4d8-4b0f2bcaea53");
+
+    _do_test_connection_uuid_norm(con,
+                                  "A1E775e3-a316-4eb2-b4d8-4b0f2bcaea53",
+                                  "a1e775e3-a316-4eb2-b4d8-4b0f2bcaea53");
+    _do_test_connection_uuid_norm(con,
+                                  "A1E775E3-A316-4EB2-B4D8-4B0F2BCAEA53",
+                                  "a1e775e3-a316-4eb2-b4d8-4b0f2bcaea53");
+    _do_test_connection_uuid_norm(con,
+                                  "-1e775e3aa316-4eb2-b4d8-4b0f2bcaea53",
+                                  "bdd73688-5c87-5454-917d-f5c3faed39c0");
+    _do_test_connection_uuid_norm(con,
+                                  "----1e775e3aa3164eb2b4d84b0f2bcaea53",
+                                  "8a232814-c6cf-54c9-9384-71a60011d0b2");
+    _do_test_connection_uuid_norm(con,
+                                  "1e775e3aa3164eb2b4d84b0f2bcaea53abcdabcd",
+                                  "ae35a4a8-4029-5770-9fa4-d79a672874c3");
+    _do_test_connection_uuid_norm(con,
+                                  "1e775e3Aa3164eb2b4d84b0f2bcaea53abcdabcd",
+                                  "ae35a4a8-4029-5770-9fa4-d79a672874c3");
+    _do_test_connection_uuid_norm(con,
+                                  "1E775E3AA3164EB2B4D84B0F2BCAEA53ABCDABCD",
+                                  "ae35a4a8-4029-5770-9fa4-d79a672874c3");
+}
+
+/*****************************************************************************/
 
 static void
 test_phase2_private_key_import(const char *           path,
@@ -2146,7 +2266,7 @@ test_sriov_setting(void)
                  NM_SETTING_CONNECTION_ID,
                  "Test SR-IOV connection",
                  NM_SETTING_CONNECTION_UUID,
-                 nm_utils_uuid_generate_a(),
+                 nm_uuid_generate_random_str_a(),
                  NM_SETTING_CONNECTION_AUTOCONNECT,
                  TRUE,
                  NM_SETTING_CONNECTION_INTERFACE_NAME,
@@ -4257,6 +4377,8 @@ int
 main(int argc, char **argv)
 {
     nmtst_init(&argc, &argv, TRUE);
+
+    g_test_add_func("/libnm/test_connection_uuid", test_connection_uuid);
 
     g_test_add_data_func("/libnm/setting-8021x/key-and-cert",
                          "test_key_and_cert.pem, test",

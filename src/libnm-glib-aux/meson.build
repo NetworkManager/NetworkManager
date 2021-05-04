@@ -17,6 +17,7 @@ libnm_glib_aux = static_library(
     'nm-secret-utils.c',
     'nm-shared-utils.c',
     'nm-time-utils.c',
+    'nm-uuid.c',
   ),
   include_directories: [
     src_inc,

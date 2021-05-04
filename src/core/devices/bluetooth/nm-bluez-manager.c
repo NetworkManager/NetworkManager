@@ -12,6 +12,7 @@
 #include <gmodule.h>
 #include <linux/if_ether.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-glib-aux/nm-c-list.h"
 #include "nm-dbus-manager.h"
@@ -1321,7 +1322,7 @@ _conn_create_panu_connection(NMBluezManager *self, BzDBusObj *bzobj)
     char                          uuid[37];
     gs_free_error GError *error = NULL;
 
-    nm_utils_uuid_generate_buf(uuid);
+    nm_uuid_generate_random_str_arr(uuid);
     id = g_strdup_printf(_("%s Network"), bzobj->d_device.name);
 
     connection = nm_simple_connection_new();

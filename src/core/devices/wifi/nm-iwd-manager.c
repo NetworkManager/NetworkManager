@@ -16,6 +16,7 @@
 #include "nm-manager.h"
 #include "nm-device-iwd.h"
 #include "nm-wifi-utils.h"
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-random-utils.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "settings/nm-settings.h"
@@ -774,7 +775,7 @@ mirror_connection(NMIwdManager *        self,
                            NM_SETTING_CONNECTION_ID,
                            id->name,
                            NM_SETTING_CONNECTION_UUID,
-                           nm_utils_uuid_generate_buf(uuid),
+                           nm_uuid_generate_random_str_arr(uuid),
                            NM_SETTING_CONNECTION_AUTOCONNECT,
                            autoconnectable,
                            NULL);

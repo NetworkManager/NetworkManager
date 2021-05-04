@@ -8,6 +8,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-initrd-generator.h"
@@ -141,7 +142,7 @@ reader_create_connection(Reader *                 reader,
                  NM_SETTING_CONNECTION_ID,
                  id,
                  NM_SETTING_CONNECTION_UUID,
-                 nm_utils_uuid_generate_a(),
+                 nm_uuid_generate_random_str_a(),
                  NM_SETTING_CONNECTION_INTERFACE_NAME,
                  ifname,
                  NM_SETTING_CONNECTION_TYPE,

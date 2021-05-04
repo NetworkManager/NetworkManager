@@ -6199,3 +6199,45 @@ NM_ASSERT_VALID_PATH_COMPONENT(const char *name)
             NM_PRINT_FMT_QUOTED(name, "\"", name, "\"", "(null)"));
     g_assert_not_reached();
 }
+
+/*****************************************************************************/
+
+void
+nm_crypto_md5_hash(const guint8 *salt,
+                   gsize         salt_len,
+                   const guint8 *password,
+                   gsize         password_len,
+                   guint8 *      buffer,
+                   gsize         buflen)
+{
+    nm_auto_free_checksum GChecksum *                 ctx = NULL;
+    nm_auto_clear_static_secret_ptr const NMSecretPtr digest =
+        NM_SECRET_PTR_STATIC(NM_UTILS_CHECKSUM_LENGTH_MD5);
+    gsize bufidx = 0;
+    int   i;
+
+    g_return_if_fail(password_len == 0 || password);
+    g_return_if_fail(buffer);
+    g_return_if_fail(buflen > 0);
+    g_return_if_fail(salt_len == 0 || salt);
+
+    ctx = g_checksum_new(G_CHECKSUM_MD5);
+
+    for (;;) {
+        if (password_len > 0)
+            g_checksum_update(ctx, (const guchar *) password, password_len);
+        if (salt_len > 0)
+            g_checksum_update(ctx, (const guchar *) salt, salt_len);
+
+        nm_utils_checksum_get_digest_len(ctx, digest.bin, NM_UTILS_CHECKSUM_LENGTH_MD5);
+
+        for (i = 0; i < NM_UTILS_CHECKSUM_LENGTH_MD5; i++) {
+            if (bufidx >= buflen)
+                return;
+            buffer[bufidx++] = digest.bin[i];
+        }
+
+        g_checksum_reset(ctx);
+        g_checksum_update(ctx, digest.ptr, NM_UTILS_CHECKSUM_LENGTH_MD5);
+    }
+}

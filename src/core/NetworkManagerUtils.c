@@ -14,6 +14,7 @@
 
 #include "libnm-glib-aux/nm-c-list.h"
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-base/nm-net-aux.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils.h"
@@ -254,7 +255,7 @@ nm_utils_complete_generic(NMPlatform *         platform,
 
         g_object_set(G_OBJECT(s_con),
                      NM_SETTING_CONNECTION_UUID,
-                     nm_utils_uuid_generate_buf(uuid),
+                     nm_uuid_generate_random_str_arr(uuid),
                      NULL);
     }
 

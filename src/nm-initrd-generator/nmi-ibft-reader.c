@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <linux/if_ether.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-platform/nm-platform-utils.h"
@@ -304,13 +305,13 @@ connection_setting_add(GHashTable *  nic,
                          s_index ? " " : "",
                          s_index ? s_index : "");
 
-    uuid = _nm_utils_uuid_generate_from_strings("ibft",
-                                                s_hwaddr,
-                                                s_vlanid ? "V" : "v",
-                                                s_vlanid ? s_vlanid : "",
-                                                s_ipaddr ? "A" : "DHCP",
-                                                s_ipaddr ? s_ipaddr : "",
-                                                NULL);
+    uuid = nm_uuid_generate_from_strings("ibft",
+                                         s_hwaddr,
+                                         s_vlanid ? "V" : "v",
+                                         s_vlanid ? s_vlanid : "",
+                                         s_ipaddr ? "A" : "DHCP",
+                                         s_ipaddr ? s_ipaddr : "",
+                                         NULL);
 
     s_con = (NMSetting *) nm_connection_get_setting_connection(connection);
     if (!s_con) {

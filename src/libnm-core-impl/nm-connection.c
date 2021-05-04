@@ -10,6 +10,7 @@
 
 #include <arpa/inet.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -703,14 +704,24 @@ static gboolean
 _normalize_connection_uuid(NMConnection *self)
 {
     NMSettingConnection *s_con = nm_connection_get_setting_connection(self);
-    char                 uuid[37];
+    char                 uuid_normalized[37];
+    const char *         uuid;
 
     nm_assert(s_con);
 
-    if (nm_setting_connection_get_uuid(s_con))
-        return FALSE;
+    uuid = nm_setting_connection_get_uuid(s_con);
 
-    g_object_set(s_con, NM_SETTING_CONNECTION_UUID, nm_utils_uuid_generate_buf(uuid), NULL);
+    if (uuid) {
+        gboolean uuid_is_normalized;
+
+        if (!nm_uuid_is_valid_nm(uuid, &uuid_is_normalized, uuid_normalized))
+            return nm_assert_unreachable_val(FALSE);
+        if (!uuid_is_normalized)
+            return FALSE;
+    } else
+        nm_uuid_generate_random_str_arr(uuid_normalized);
+
+    g_object_set(s_con, NM_SETTING_CONNECTION_UUID, uuid_normalized, NULL);
     return TRUE;
 }
 

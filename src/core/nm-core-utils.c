@@ -22,6 +22,7 @@
 #include <net/if_arp.h>
 #include <net/ethernet.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-platform/nmp-base.h"
 #include "libnm-std-aux/unaligned.h"
 #include "libnm-glib-aux/nm-random-utils.h"
@@ -2402,7 +2403,7 @@ _uuid_data_init(UuidData *uuid_data, gboolean packed, gboolean is_fake, const NM
         nm_utils_bin2hexstr_full(uuid, sizeof(*uuid), '\0', FALSE, uuid_data->str);
     } else {
         G_STATIC_ASSERT_EXPR(sizeof(uuid_data->str) >= 37);
-        _nm_utils_uuid_unparse(uuid, uuid_data->str);
+        nm_uuid_unparse(uuid, uuid_data->str);
     }
     return uuid_data;
 }
@@ -2455,7 +2456,7 @@ again:
                                          (guint8 *) &uuid,
                                          sizeof(uuid),
                                          NULL)) {
-                if (!nm_utils_uuid_is_null(&uuid)) {
+                if (!nm_uuid_is_null(&uuid)) {
                     /* an all-zero machine-id is not valid. */
                     is_fake = FALSE;
                 }
@@ -2500,11 +2501,11 @@ again:
 
             /* the fake machine-id is based on secret-key/boot-id, but we hash it
              * again, so that they are not literally the same. */
-            nm_utils_uuid_generate_from_string_bin(&uuid,
-                                                   (const char *) seed_bin,
-                                                   seed_len,
-                                                   NM_UTILS_UUID_TYPE_VERSION5,
-                                                   (gpointer) hash_seed);
+            nm_uuid_generate_from_string(&uuid,
+                                         (const char *) seed_bin,
+                                         seed_len,
+                                         NM_UUID_TYPE_VERSION5,
+                                         (gpointer) hash_seed);
         }
 
         if (!g_once_init_enter(&lock))
@@ -2854,10 +2855,10 @@ again:
                                    NULL,
                                    NULL,
                                    NULL);
-        if (!contents || !_nm_utils_uuid_parse(nm_strstrip(contents), &uuid)) {
+        if (!contents || !nm_uuid_parse(nm_strstrip(contents), &uuid)) {
             /* generate a random UUID instead. */
             is_fake = TRUE;
-            _nm_utils_uuid_generate_random(&uuid);
+            nm_uuid_generate_random(&uuid);
         }
 
         if (!g_once_init_enter(&lock))

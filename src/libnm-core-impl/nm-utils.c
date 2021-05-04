@@ -11,13 +11,13 @@
 #include <net/ethernet.h>
 #include <arpa/inet.h>
 #include <net/if_arp.h>
-#include <uuid/uuid.h>
 #include <libintl.h>
 #include <gmodule.h>
 #include <sys/stat.h>
 #include <linux/pkt_sched.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-enum-utils.h"
@@ -3044,72 +3044,6 @@ _nm_utils_sriov_vf_from_strparts(const char *index,
 
 /*****************************************************************************/
 
-NMUuid *
-_nm_utils_uuid_parse(const char *str, NMUuid *out_uuid)
-{
-    nm_assert(str);
-    nm_assert(out_uuid);
-
-    if (uuid_parse(str, out_uuid->uuid) != 0)
-        return NULL;
-    return out_uuid;
-}
-
-char *
-_nm_utils_uuid_unparse(const NMUuid *uuid, char *out_str /*[37]*/)
-{
-    nm_assert(uuid);
-
-    if (!out_str) {
-        /* for convenience, allow %NULL to indicate that a new
-         * string should be allocated. */
-        out_str = g_malloc(37);
-    }
-    uuid_unparse_lower(uuid->uuid, out_str);
-    return out_str;
-}
-
-NMUuid *
-_nm_utils_uuid_generate_random(NMUuid *out_uuid)
-{
-    nm_assert(out_uuid);
-
-    uuid_generate_random(out_uuid->uuid);
-    return out_uuid;
-}
-
-gboolean
-nm_utils_uuid_is_null(const NMUuid *uuid)
-{
-    int i;
-
-    if (!uuid)
-        return TRUE;
-
-    for (i = 0; i < (int) G_N_ELEMENTS(uuid->uuid); i++) {
-        if (uuid->uuid[i])
-            return FALSE;
-    }
-    return TRUE;
-}
-
-/**
- * nm_utils_uuid_generate_buf_:
- * @buf: input buffer, must contain at least 37 bytes
- *
- * Returns: generates a new random UUID, writes it to @buf and returns @buf.
- **/
-char *
-nm_utils_uuid_generate_buf_(char *buf)
-{
-    NMUuid uuid;
-
-    nm_assert(buf);
-
-    _nm_utils_uuid_generate_random(&uuid);
-    return _nm_utils_uuid_unparse(&uuid, buf);
-}
-
 /**
  * nm_utils_uuid_generate:
  *
@@ -3119,152 +3053,7 @@ nm_utils_uuid_generate_buf_(char *buf)
 char *
 nm_utils_uuid_generate(void)
 {
-    return nm_utils_uuid_generate_buf_(g_malloc(37));
-}
-
-/**
- * nm_utils_uuid_generate_from_string_bin:
- * @uuid: the UUID to update inplace. This function cannot
- *   fail to succeed.
- * @s: a string to use as the seed for the UUID
- * @slen: if negative, treat @s as zero terminated C string.
- *   Otherwise, assume the length as given (and allow @s to be
- *   non-null terminated or contain '\0').
- * @uuid_type: a type identifier which UUID format to generate.
- * @type_args: additional arguments, depending on the uuid_type
- *
- * For a given @s, this function will always return the same UUID.
- *
- * Returns: the input @uuid. This function cannot fail.
- **/
-NMUuid *
-nm_utils_uuid_generate_from_string_bin(NMUuid *    uuid,
-                                       const char *s,
-                                       gssize      slen,
-                                       int         uuid_type,
-                                       gpointer    type_args)
-{
-    g_return_val_if_fail(uuid, FALSE);
-    g_return_val_if_fail(slen == 0 || s, FALSE);
-
-    if (slen < 0)
-        slen = s ? strlen(s) : 0;
-
-    switch (uuid_type) {
-    case NM_UTILS_UUID_TYPE_LEGACY:
-        g_return_val_if_fail(!type_args, NULL);
-        nm_crypto_md5_hash(NULL, 0, (guint8 *) s, slen, (guint8 *) uuid, sizeof(*uuid));
-        break;
-    case NM_UTILS_UUID_TYPE_VERSION3:
-    case NM_UTILS_UUID_TYPE_VERSION5:
-    {
-        NMUuid ns_uuid = {};
-
-        if (type_args) {
-            /* type_args can be a name space UUID. Interpret it as (char *) */
-            if (!_nm_utils_uuid_parse(type_args, &ns_uuid))
-                g_return_val_if_reached(NULL);
-        }
-
-        if (uuid_type == NM_UTILS_UUID_TYPE_VERSION3) {
-            nm_crypto_md5_hash((guint8 *) s,
-                               slen,
-                               (guint8 *) &ns_uuid,
-                               sizeof(ns_uuid),
-                               (guint8 *) uuid,
-                               sizeof(*uuid));
-        } else {
-            nm_auto_free_checksum GChecksum *sum = NULL;
-            union {
-                guint8 sha1[NM_UTILS_CHECKSUM_LENGTH_SHA1];
-                NMUuid uuid;
-            } digest;
-
-            sum = g_checksum_new(G_CHECKSUM_SHA1);
-            g_checksum_update(sum, (guchar *) &ns_uuid, sizeof(ns_uuid));
-            g_checksum_update(sum, (guchar *) s, slen);
-            nm_utils_checksum_get_digest(sum, digest.sha1);
-
-            G_STATIC_ASSERT_EXPR(sizeof(digest.sha1) > sizeof(digest.uuid));
-            *uuid = digest.uuid;
-        }
-
-        uuid->uuid[6] = (uuid->uuid[6] & 0x0F) | (uuid_type << 4);
-        uuid->uuid[8] = (uuid->uuid[8] & 0x3F) | 0x80;
-        break;
-    }
-    default:
-        g_return_val_if_reached(NULL);
-    }
-
-    return uuid;
-}
-
-/**
- * nm_utils_uuid_generate_from_string:
- * @s: a string to use as the seed for the UUID
- * @slen: if negative, treat @s as zero terminated C string.
- *   Otherwise, assume the length as given (and allow @s to be
- *   non-null terminated or contain '\0').
- * @uuid_type: a type identifier which UUID format to generate.
- * @type_args: additional arguments, depending on the uuid_type
- *
- * For a given @s, this function will always return the same UUID.
- *
- * Returns: a newly allocated UUID suitable for use as the #NMSettingConnection
- * object's #NMSettingConnection:id: property
- **/
-char *
-nm_utils_uuid_generate_from_string(const char *s, gssize slen, int uuid_type, gpointer type_args)
-{
-    NMUuid uuid;
-
-    nm_utils_uuid_generate_from_string_bin(&uuid, s, slen, uuid_type, type_args);
-    return _nm_utils_uuid_unparse(&uuid, NULL);
-}
-
-/**
- * _nm_utils_uuid_generate_from_strings:
- * @string1: a variadic list of strings. Must be NULL terminated.
- *
- * Returns a variant3 UUID based on the concatenated C strings.
- * It does not simply concatenate them, but also includes the
- * terminating '\0' character. For example "a", "b", gives
- * "a\0b\0".
- *
- * This has the advantage, that the following invocations
- * all give different UUIDs: (NULL), (""), ("",""), ("","a"), ("a",""),
- * ("aa"), ("aa", ""), ("", "aa"), ...
- */
-char *
-_nm_utils_uuid_generate_from_strings(const char *string1, ...)
-{
-    if (!string1)
-        return nm_utils_uuid_generate_from_string(NULL,
-                                                  0,
-                                                  NM_UTILS_UUID_TYPE_VERSION3,
-                                                  NM_UTILS_UUID_NS);
-
-    {
-        nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
-        va_list                  args;
-        const char *             s;
-
-        nm_str_buf_append_len(&str, string1, strlen(string1) + 1u);
-
-        va_start(args, string1);
-        s = va_arg(args, const char *);
-        while (s) {
-            nm_str_buf_append_len(&str, s, strlen(s) + 1u);
-            s = va_arg(args, const char *);
-        }
-        va_end(args);
-
-        return nm_utils_uuid_generate_from_string(nm_str_buf_get_str_unsafe(&str),
-                                                  str.len,
-                                                  NM_UTILS_UUID_TYPE_VERSION3,
-                                                  NM_UTILS_UUID_NS);
-    }
+    return nm_uuid_generate_random_str_malloc();
 }
 
 /*****************************************************************************/
@@ -4649,28 +4438,7 @@ nm_utils_iface_valid_name(const char *name)
 gboolean
 nm_utils_is_uuid(const char *str)
 {
-    const char *p          = str;
-    int         num_dashes = 0;
-
-    if (!p)
-        return FALSE;
-
-    while (*p) {
-        if (*p == '-')
-            num_dashes++;
-        else if (!g_ascii_isxdigit(*p))
-            return FALSE;
-        p++;
-    }
-
-    if ((num_dashes == 4) && (p - str == 36))
-        return TRUE;
-
-    /* Backwards compat for older configurations */
-    if ((num_dashes == 0) && (p - str == 40))
-        return TRUE;
-
-    return FALSE;
+    return nm_uuid_is_valid_nmlegacy(str);
 }
 
 static _nm_thread_local char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
