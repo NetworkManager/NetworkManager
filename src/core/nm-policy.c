@@ -21,7 +21,7 @@
 #include "dns/nm-dns-manager.h"
 #include "vpn/nm-vpn-manager.h"
 #include "nm-auth-utils.h"
-#include "nm-firewall-manager.h"
+#include "nm-firewalld-manager.h"
 #include "nm-dispatcher.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"

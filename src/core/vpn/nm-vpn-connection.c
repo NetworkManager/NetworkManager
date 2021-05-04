@@ -29,7 +29,7 @@
 #include "settings/nm-agent-manager.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-pacrunner-manager.h"
-#include "nm-firewall-manager.h"
+#include "nm-firewalld-manager.h"
 #include "nm-config.h"
 #include "nm-vpn-plugin-info.h"
 #include "nm-vpn-manager.h"
