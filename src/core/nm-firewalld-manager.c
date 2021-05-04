@@ -5,7 +5,7 @@
 
 #include "src/core/nm-default-daemon.h"
 
-#include "nm-firewall-manager.h"
+#include "nm-firewalld-manager.h"
 
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "c-list/src/c-list.h"

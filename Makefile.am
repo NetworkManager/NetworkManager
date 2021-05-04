@@ -2567,8 +2567,8 @@ src_core_libNetworkManager_la_SOURCES = \
 	src/core/nm-dhcp-config.h \
 	src/core/nm-dispatcher.c \
 	src/core/nm-dispatcher.h \
-	src/core/nm-firewall-manager.c \
-	src/core/nm-firewall-manager.h \
+	src/core/nm-firewalld-manager.c \
+	src/core/nm-firewalld-manager.h \
 	src/core/nm-proxy-config.c \
 	src/core/nm-proxy-config.h \
 	src/core/nm-auth-manager.c \
