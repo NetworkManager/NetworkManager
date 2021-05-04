@@ -44,10 +44,10 @@ variables:
   # these tags should be updated each time the list of packages is updated
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular NM version
-  FEDORA_TAG:  '2021-01-28.0-204b637c4b94'
+  FEDORA_TAG:  '2021-01-28.0-936f8a196a26'
   UBUNTU_TAG:  '2021-01-28.0-397adbc67ac4'
   DEBIAN_TAG:  '2021-01-28.0-397adbc67ac4'
-  CENTOS_TAG:  '2021-01-28.0-204b637c4b94'
+  CENTOS_TAG:  '2021-01-28.0-936f8a196a26'
   ALPINE_TAG:  '2021-01-28.0-35b8aa24ed67'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
