@@ -11600,8 +11600,6 @@ start_sharing(NMDevice *self, NMIP4Config *config, GError **error)
 
     nm_utils_share_rules_add_all_rules(share_rules, ip_iface, ip4_addr->address, ip4_addr->plen);
 
-    nm_utils_share_rules_apply(share_rules, TRUE);
-
     nm_act_request_set_shared(req, share_rules);
 
     conn  = nm_act_request_get_applied_connection(req);
