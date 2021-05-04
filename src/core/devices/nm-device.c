@@ -593,9 +593,9 @@ typedef struct _NMDevicePrivate {
     gulong            dnsmasq_state_id;
 
     /* Firewall */
-    FirewallState            fw_state : 4;
-    NMFirewallManager *      fw_mgr;
-    NMFirewallManagerCallId *fw_call;
+    FirewallState             fw_state : 4;
+    NMFirewalldManager *      fw_mgr;
+    NMFirewalldManagerCallId *fw_call;
 
     /* IPv4LL stuff */
     sd_ipv4ll *ipv4ll;
@@ -11318,10 +11318,10 @@ activate_stage3_ip_config_start(NMDevice *self)
 }
 
 static void
-fw_change_zone_cb(NMFirewallManager *      firewall_manager,
-                  NMFirewallManagerCallId *call_id,
-                  GError *                 error,
-                  gpointer                 user_data)
+fw_change_zone_cb(NMFirewalldManager *      firewalld_manager,
+                  NMFirewalldManagerCallId *call_id,
+                  GError *                  error,
+                  gpointer                  user_data)
 {
     NMDevice *       self = user_data;
     NMDevicePrivate *priv;
@@ -11373,12 +11373,12 @@ fw_change_zone(NMDevice *self)
     nm_assert(s_con);
 
     if (priv->fw_call) {
-        nm_firewall_manager_cancel_call(priv->fw_call);
+        nm_firewalld_manager_cancel_call(priv->fw_call);
         nm_assert(!priv->fw_call);
     }
 
     if (G_UNLIKELY(!priv->fw_mgr))
-        priv->fw_mgr = g_object_ref(nm_firewall_manager_get());
+        priv->fw_mgr = g_object_ref(nm_firewalld_manager_get());
 
     zone = nm_setting_connection_get_zone(s_con);
 #if WITH_FIREWALLD_ZONE
@@ -11390,12 +11390,12 @@ fw_change_zone(NMDevice *self)
             zone = "nm-shared";
     }
 #endif
-    priv->fw_call = nm_firewall_manager_add_or_change_zone(priv->fw_mgr,
-                                                           nm_device_get_ip_iface(self),
-                                                           zone,
-                                                           FALSE, /* change zone */
-                                                           fw_change_zone_cb,
-                                                           self);
+    priv->fw_call = nm_firewalld_manager_add_or_change_zone(priv->fw_mgr,
+                                                            nm_device_get_ip_iface(self),
+                                                            zone,
+                                                            FALSE, /* change zone */
+                                                            fw_change_zone_cb,
+                                                            self);
 }
 
 /*
@@ -15650,7 +15650,7 @@ _cancel_activation(NMDevice *self)
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (priv->fw_call) {
-        nm_firewall_manager_cancel_call(priv->fw_call);
+        nm_firewalld_manager_cancel_call(priv->fw_call);
         nm_assert(!priv->fw_call);
         priv->fw_call  = NULL;
         priv->fw_state = FIREWALL_STATE_INITIALIZED;
@@ -15680,11 +15680,11 @@ _cleanup_generic_pre(NMDevice *self, CleanupType cleanup_type)
 
     if (cleanup_type == CLEANUP_TYPE_DECONFIGURE && priv->fw_state >= FIREWALL_STATE_INITIALIZED
         && priv->fw_mgr && !nm_device_sys_iface_state_is_external(self)) {
-        nm_firewall_manager_remove_from_zone(priv->fw_mgr,
-                                             nm_device_get_ip_iface(self),
-                                             NULL,
-                                             NULL,
-                                             NULL);
+        nm_firewalld_manager_remove_from_zone(priv->fw_mgr,
+                                              nm_device_get_ip_iface(self),
+                                              NULL,
+                                              NULL,
+                                              NULL);
     }
     priv->fw_state = FIREWALL_STATE_UNMANAGED;
     g_clear_object(&priv->fw_mgr);
