@@ -1728,7 +1728,7 @@ nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared)
                               rule->rule);
         argv = nm_utils_strsplit_set(cmd, " ");
 
-        nm_log_info(LOGD_SHARING, "Executing: %s", cmd);
+        nm_log_dbg(LOGD_SHARING, "Executing: %s", cmd);
         if (!g_spawn_sync("/",
                           (char **) argv,
                           (char **) NM_PTRARRAY_EMPTY(const char *),
