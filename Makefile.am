@@ -2427,6 +2427,8 @@ src_core_libNetworkManager_la_SOURCES = \
 	src/core/devices/nm-acd-manager.h \
 	src/core/devices/nm-lldp-listener.c \
 	src/core/devices/nm-lldp-listener.h \
+	src/core/devices/nm-device-utils.c \
+	src/core/devices/nm-device-utils.h \
 	src/core/devices/nm-device.c \
 	src/core/devices/nm-device.h \
 	src/core/devices/nm-device-ethernet-utils.c \
