@@ -96,7 +96,7 @@ typedef struct {
     NMVpnPluginInfo * plugin_info;
     char *            bus_name;
 
-    NMFirewallManagerCallId *fw_call;
+    NMFirewalldManagerCallId *fw_call;
 
     NMNetns *netns;
 
@@ -342,7 +342,7 @@ fw_call_cleanup(NMVpnConnection *self)
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     if (priv->fw_call) {
-        nm_firewall_manager_cancel_call(priv->fw_call);
+        nm_firewalld_manager_cancel_call(priv->fw_call);
         g_warn_if_fail(!priv->fw_call);
         priv->fw_call = NULL;
     }
@@ -381,11 +381,11 @@ vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
 
     /* Remove zone from firewall */
     if (priv->ip_iface) {
-        nm_firewall_manager_remove_from_zone(nm_firewall_manager_get(),
-                                             priv->ip_iface,
-                                             NULL,
-                                             NULL,
-                                             NULL);
+        nm_firewalld_manager_remove_from_zone(nm_firewalld_manager_get(),
+                                              priv->ip_iface,
+                                              NULL,
+                                              NULL,
+                                              NULL);
     }
     /* Cancel pending firewall call */
     fw_call_cleanup(self);
@@ -1205,10 +1205,10 @@ _cleanup_failed_config(NMVpnConnection *self)
 }
 
 static void
-fw_change_zone_cb(NMFirewallManager *      firewall_manager,
-                  NMFirewallManagerCallId *call_id,
-                  GError *                 error,
-                  gpointer                 user_data)
+fw_change_zone_cb(NMFirewalldManager *      firewalld_manager,
+                  NMFirewalldManagerCallId *call_id,
+                  GError *                  error,
+                  gpointer                  user_data)
 {
     NMVpnConnection *       self = user_data;
     NMVpnConnectionPrivate *priv;
@@ -1264,12 +1264,12 @@ nm_vpn_connection_config_maybe_complete(NMVpnConnection *self, gboolean success)
                   NM_PRINT_FMT_QUOTED(zone, "'", zone, "'", "(default)"),
                   priv->ip_iface);
             fw_call_cleanup(self);
-            priv->fw_call = nm_firewall_manager_add_or_change_zone(nm_firewall_manager_get(),
-                                                                   priv->ip_iface,
-                                                                   zone,
-                                                                   FALSE,
-                                                                   fw_change_zone_cb,
-                                                                   self);
+            priv->fw_call = nm_firewalld_manager_add_or_change_zone(nm_firewalld_manager_get(),
+                                                                    priv->ip_iface,
+                                                                    zone,
+                                                                    FALSE,
+                                                                    fw_change_zone_cb,
+                                                                    self);
             return;
         } else if (nm_vpn_connection_apply_config(self))
             return;

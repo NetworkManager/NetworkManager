@@ -45,10 +45,10 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMPolicy,
                              PROP_ACTIVATING_IP6_AC, );
 
 typedef struct {
-    NMManager *        manager;
-    NMNetns *          netns;
-    NMFirewallManager *firewall_manager;
-    CList              pending_activation_checks;
+    NMManager *         manager;
+    NMNetns *           netns;
+    NMFirewalldManager *firewalld_manager;
+    CList               pending_activation_checks;
 
     NMAgentManager *agent_mgr;
 
@@ -2518,7 +2518,7 @@ connection_added(NMSettings *settings, NMSettingsConnection *connection, gpointe
 }
 
 static void
-firewall_state_changed(NMFirewallManager *manager, gboolean initialized_now, gpointer user_data)
+firewall_state_changed(NMFirewalldManager *manager, gboolean initialized_now, gpointer user_data)
 {
     NMPolicy *       self = (NMPolicy *) user_data;
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
@@ -2532,7 +2532,7 @@ firewall_state_changed(NMFirewallManager *manager, gboolean initialized_now, gpo
         return;
     }
 
-    if (!nm_firewall_manager_get_running(manager))
+    if (!nm_firewalld_manager_get_running(manager))
         return;
 
     /* add interface of each device to correct zone */
@@ -2784,9 +2784,9 @@ constructed(GObject *object)
 
     priv->agent_mgr = g_object_ref(nm_agent_manager_get());
 
-    priv->firewall_manager = g_object_ref(nm_firewall_manager_get());
-    g_signal_connect(priv->firewall_manager,
-                     NM_FIREWALL_MANAGER_STATE_CHANGED,
+    priv->firewalld_manager = g_object_ref(nm_firewalld_manager_get());
+    g_signal_connect(priv->firewalld_manager,
+                     NM_FIREWALLD_MANAGER_STATE_CHANGED,
                      G_CALLBACK(firewall_state_changed),
                      self);
 
@@ -2889,9 +2889,9 @@ dispose(GObject *object)
     g_slist_free_full(priv->pending_secondaries, (GDestroyNotify) pending_secondary_data_free);
     priv->pending_secondaries = NULL;
 
-    if (priv->firewall_manager) {
-        g_signal_handlers_disconnect_by_func(priv->firewall_manager, firewall_state_changed, self);
-        g_clear_object(&priv->firewall_manager);
+    if (priv->firewalld_manager) {
+        g_signal_handlers_disconnect_by_func(priv->firewalld_manager, firewall_state_changed, self);
+        g_clear_object(&priv->firewalld_manager);
     }
 
     if (priv->agent_mgr) {
