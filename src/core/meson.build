@@ -163,6 +163,7 @@ libNetworkManager = static_library(
     'nm-dcb.c',
     'nm-dhcp-config.c',
     'nm-dispatcher.c',
+    'nm-firewall-utils.c',
     'nm-firewalld-manager.c',
     'nm-hostname-manager.c',
     'nm-keep-alive.c',
