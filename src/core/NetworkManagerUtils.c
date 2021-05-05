@@ -15,6 +15,7 @@
 #include "libnm-glib-aux/nm-c-list.h"
 
 #include "libnm-glib-aux/nm-uuid.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-base/nm-net-aux.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils.h"
@@ -1659,6 +1660,56 @@ _share_iptables_subnet_to_str(char      buf[static _SHARE_IPTABLES_SUBNET_TO_STR
     return buf;
 }
 
+static char *
+_share_iptables_get_name(gboolean is_comment, const char *prefix, const char *ip_iface)
+{
+    NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
+    gsize    ip_iface_len;
+
+    nm_assert(prefix);
+    nm_assert(ip_iface);
+
+    /* This function is used to generate iptables chain names and comments.
+     * Chain names must be shorter than 29 chars. Comments don't have this
+     * limitation.
+     *
+     * Below we sanitize the ip_iface. If it's all benign, we use
+     * - either "-$IP_IFACE" (at most 16 chars)
+     * - otherwise, we base64 encode the name as "$(base64 $IP_IFACE)", at
+     *   most 20 chars.
+     *
+     * Since for benign names we already add a '-', prefix probably should not
+     * contain a '-'. The '-' is necessary to distinguish between base64 encoding
+     * an plain name.
+     *
+     * That means, for chain names the prefix must be at most 8 chars long. */
+    nm_assert(is_comment || (strlen(prefix) <= 8));
+
+    nm_str_buf_append(&strbuf, prefix);
+
+    ip_iface_len = strlen(ip_iface);
+    G_STATIC_ASSERT_EXPR(NMP_IFNAMSIZ == 16);
+    if (ip_iface_len >= NMP_IFNAMSIZ) {
+        nm_assert_not_reached();
+        ip_iface_len = NMP_IFNAMSIZ - 1;
+    }
+
+    if (NM_STRCHAR_ALL(ip_iface,
+                       ch,
+                       (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z')
+                           || (ch >= 'A' && ch <= 'Z') || NM_IN_SET(ch, '.', '_', '-', '+'))) {
+        nm_str_buf_append_c(&strbuf, '-');
+        nm_str_buf_append(&strbuf, ip_iface);
+    } else {
+        gs_free char *s = NULL;
+
+        s = g_base64_encode((const guchar *) ip_iface, ip_iface_len);
+        nm_str_buf_append(&strbuf, s);
+    }
+
+    return nm_str_buf_finalize(&strbuf, NULL);
+}
+
 static gboolean
 _share_iptables_call_v(const char *const *argv)
 {
@@ -1695,10 +1746,36 @@ _share_iptables_call_v(const char *const *argv)
 
 #define _share_iptables_call(...) _share_iptables_call_v(NM_MAKE_STRV(__VA_ARGS__))
 
-static void
-_share_iptables_set_masquerade(gboolean add, in_addr_t addr, guint8 plen)
+static gboolean
+_share_iptables_chain_op(const char *table, const char *chain, const char *op)
 {
-    char str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
+    return _share_iptables_call("" IPTABLES_PATH "", "--table", table, op, chain);
+}
+
+static gboolean
+_share_iptables_chain_delete(const char *table, const char *chain)
+{
+    _share_iptables_chain_op(table, chain, "--flush");
+    return _share_iptables_chain_op(table, chain, "--delete-chain");
+}
+
+static gboolean
+_share_iptables_chain_add(const char *table, const char *chain)
+{
+    if (_share_iptables_chain_op(table, chain, "--new-chain"))
+        return TRUE;
+
+    _share_iptables_chain_delete(table, chain);
+    return _share_iptables_chain_op(table, chain, "--new-chain");
+}
+
+static void
+_share_iptables_set_masquerade(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
+{
+    char          str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
+    gs_free char *comment_name = NULL;
+
+    comment_name = _share_iptables_get_name(TRUE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
     _share_iptables_call("" IPTABLES_PATH "",
@@ -1712,7 +1789,167 @@ _share_iptables_set_masquerade(gboolean add, in_addr_t addr, guint8 plen)
                          "--destination",
                          str_subnet,
                          "--jump",
-                         "MASQUERADE");
+                         "MASQUERADE",
+                         "-m",
+                         "comment",
+                         "--comment",
+                         comment_name);
+}
+
+static void
+_share_iptables_set_shared_chains_add(const char *chain_input,
+                                      const char *chain_forward,
+                                      const char *ip_iface,
+                                      in_addr_t   addr,
+                                      guint       plen)
+{
+    const char *const input_params[][2] = {
+        {
+            "tcp",
+            "67",
+        },
+        {
+            "udp",
+            "67",
+        },
+        {
+            "tcp",
+            "53",
+        },
+        {
+            "udp",
+            "53",
+        },
+    };
+    char str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
+    int  i;
+
+    _share_iptables_subnet_to_str(str_subnet, addr, plen);
+
+    _share_iptables_chain_add("filter", chain_input);
+
+    for (i = 0; i < (int) G_N_ELEMENTS(input_params); i++) {
+        _share_iptables_call("" IPTABLES_PATH "",
+                             "--table",
+                             "filter",
+                             "--append",
+                             chain_input,
+                             "--protocol",
+                             input_params[i][0],
+                             "--destination-port",
+                             input_params[i][1],
+                             "--jump",
+                             "ACCEPT");
+    }
+
+    _share_iptables_chain_add("filter", chain_forward);
+
+    _share_iptables_call("" IPTABLES_PATH "",
+                         "--table",
+                         "filter",
+                         "--append",
+                         chain_forward,
+                         "--destination",
+                         str_subnet,
+                         "--out-interface",
+                         ip_iface,
+                         "--match",
+                         "state",
+                         "--state",
+                         "ESTABLISHED,RELATED",
+                         "--jump",
+                         "ACCEPT");
+    _share_iptables_call("" IPTABLES_PATH "",
+                         "--table",
+                         "filter",
+                         "--append",
+                         chain_forward,
+                         "--source",
+                         str_subnet,
+                         "--in-interface",
+                         ip_iface,
+                         "--jump",
+                         "ACCEPT");
+    _share_iptables_call("" IPTABLES_PATH "",
+                         "--table",
+                         "filter",
+                         "--append",
+                         chain_forward,
+                         "--in-interface",
+                         ip_iface,
+                         "--out-interface",
+                         ip_iface,
+                         "--jump",
+                         "ACCEPT");
+    _share_iptables_call("" IPTABLES_PATH "",
+                         "--table",
+                         "filter",
+                         "--append",
+                         chain_forward,
+                         "--out-interface",
+                         ip_iface,
+                         "--jump",
+                         "REJECT");
+    _share_iptables_call("" IPTABLES_PATH "",
+                         "--table",
+                         "filter",
+                         "--append",
+                         chain_forward,
+                         "--in-interface",
+                         ip_iface,
+                         "--jump",
+                         "REJECT");
+}
+
+static void
+_share_iptables_set_shared_chains_delete(const char *chain_input, const char *chain_forward)
+{
+    _share_iptables_chain_delete("filter", chain_input);
+    _share_iptables_chain_delete("filter", chain_forward);
+}
+
+_nm_unused static void
+_share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, guint plen)
+{
+    gs_free char *comment_name  = NULL;
+    gs_free char *chain_input   = NULL;
+    gs_free char *chain_forward = NULL;
+
+    comment_name  = _share_iptables_get_name(TRUE, "nm-shared", ip_iface);
+    chain_input   = _share_iptables_get_name(FALSE, "nm-sh-in", ip_iface);
+    chain_forward = _share_iptables_get_name(FALSE, "nm-sh-fw", ip_iface);
+
+    if (add)
+        _share_iptables_set_shared_chains_add(chain_input, chain_forward, ip_iface, addr, plen);
+
+    _share_iptables_call("" IPTABLES_PATH "",
+                         "--table",
+                         "filter",
+                         add ? "--insert" : "--delete",
+                         "INPUT",
+                         "--in-interface",
+                         ip_iface,
+                         "--jump",
+                         chain_input,
+                         "-m",
+                         "comment",
+                         "--comment",
+                         comment_name);
+
+    _share_iptables_call("" IPTABLES_PATH "",
+                         "--table",
+                         "filter",
+                         add ? "--insert" : "--delete",
+                         "FORWARD",
+                         "--jump",
+                         chain_forward,
+                         "-m",
+                         "comment",
+                         "--comment",
+                         comment_name);
+
+    if (!add)
+        _share_iptables_set_shared_chains_delete(chain_input, chain_forward);
 }
 
 struct _NMUtilsShareRules {
@@ -1749,203 +1986,11 @@ nm_utils_share_rules_free(NMUtilsShareRules *self)
     nm_g_slice_free(self);
 }
 
-typedef struct {
-    const char **argv;
-} ShareRule;
-
-static void
-_share_rules_add_full(GArray *rules, const char *const *argv)
-{
-    ShareRule *rule;
-
-    nm_assert(rules);
-    nm_assert(argv);
-    nm_assert(argv[0]);
-
-    rule  = nm_g_array_append_new(rules, ShareRule);
-    *rule = (ShareRule){
-        .argv = g_memdup(argv, sizeof(char *) * (1u + NM_PTRARRAY_LEN(argv))),
-    };
-}
-
-#define shared_rules_add_iptables(rules, shared, table, ...)                 \
-    _share_rules_add_full((rules),                                           \
-                          NM_MAKE_STRV("" IPTABLES_PATH "",                  \
-                                       "--table",                            \
-                                       (table),                              \
-                                       ((shared) ? "--insert" : "--delete"), \
-                                       __VA_ARGS__))
-
-static GArray *
-_share_rules_create_iptables(const char *ip_iface,
-                             in_addr_t   addr,
-                             guint       plen,
-                             gboolean    shared,
-                             GPtrArray * gfree_keeper)
-{
-    gs_unref_array GArray *rules = NULL;
-    char                   buf_addr_mask[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
-    const char *           addr_mask;
-
-    addr_mask = g_strdup(_share_iptables_subnet_to_str(buf_addr_mask, addr, plen));
-    g_ptr_array_add(gfree_keeper, (char *) addr_mask);
-
-    ip_iface = g_strdup(ip_iface);
-    g_ptr_array_add(gfree_keeper, (char *) ip_iface);
-
-    rules = g_array_new(FALSE, FALSE, sizeof(ShareRule));
-    g_array_set_clear_func(rules, nm_indirect_g_free);
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "filter",
-                              "FORWARD",
-                              "--destination",
-                              addr_mask,
-                              "--out-interface",
-                              ip_iface,
-                              "--match",
-                              "state",
-                              "--state",
-                              "ESTABLISHED,RELATED",
-                              "--jump",
-                              "ACCEPT");
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "filter",
-                              "FORWARD",
-                              "--source",
-                              addr_mask,
-                              "--in-interface",
-                              ip_iface,
-                              "--jump",
-                              "ACCEPT");
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "filter",
-                              "FORWARD",
-                              "--in-interface",
-                              ip_iface,
-                              "--out-interface",
-                              ip_iface,
-                              "--jump",
-                              "ACCEPT");
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "filter",
-                              "FORWARD",
-                              "--out-interface",
-                              ip_iface,
-                              "--jump",
-                              "REJECT");
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "filter",
-                              "FORWARD",
-                              "--in-interface",
-                              ip_iface,
-                              "--jump",
-                              "REJECT");
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "filter",
-                              "INPUT",
-                              "--in-interface",
-                              ip_iface,
-                              "--protocol",
-                              "udp",
-                              "--destination-port",
-                              "67",
-                              "--jump",
-                              "ACCEPT");
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "filter",
-                              "INPUT",
-                              "--in-interface",
-                              ip_iface,
-                              "--protocol",
-                              "tcp",
-                              "--destination-port",
-                              "67",
-                              "--jump",
-                              "ACCEPT");
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "filter",
-                              "INPUT",
-                              "--in-interface",
-                              ip_iface,
-                              "--protocol",
-                              "udp",
-                              "--destination-port",
-                              "53",
-                              "--jump",
-                              "ACCEPT");
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "filter",
-                              "INPUT",
-                              "--in-interface",
-                              ip_iface,
-                              "--protocol",
-                              "tcp",
-                              "--destination-port",
-                              "53",
-                              "--jump",
-                              "ACCEPT");
-
-    return g_steal_pointer(&rules);
-}
-
 void
 nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared)
 {
-    gs_unref_ptrarray GPtrArray *gfree_keeper = NULL;
-    gs_unref_array GArray *rules              = NULL;
-    guint                  i;
-
-    gfree_keeper = g_ptr_array_new_full(2, g_free);
-
-    rules =
-        _share_rules_create_iptables(self->ip_iface, self->addr, self->plen, shared, gfree_keeper);
-
-    if (!shared)
-        _share_iptables_set_masquerade(FALSE, self->addr, self->plen);
-
-    /* depending on whether we share or unshare, we add/remote the rules
-     * in opposite order. */
-    if (shared)
-        i = rules->len - 1u;
-    else
-        i = 0;
-
-    for (;;) {
-        const ShareRule *rule = &g_array_index(rules, ShareRule, i);
-
-        _share_iptables_call_v(rule->argv);
-
-        if (shared) {
-            if (i == 0)
-                break;
-            i--;
-        } else {
-            i++;
-            if (i >= rules->len)
-                break;
-        }
-    }
-
-    if (shared)
-        _share_iptables_set_masquerade(TRUE, self->addr, self->plen);
+    _share_iptables_set_masquerade(shared, self->ip_iface, self->addr, self->plen);
+    _share_iptables_set_shared(shared, self->ip_iface, self->addr, self->plen);
 }
 
 /*****************************************************************************/
