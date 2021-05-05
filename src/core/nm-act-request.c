@@ -13,13 +13,15 @@
 #include <unistd.h>
 
 #include "c-list/src/c-list.h"
+#include "libnm-core-aux-intern/nm-auth-subject.h"
 
-#include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
+#include "nm-setting-wireless-security.h"
+
 #include "devices/nm-device.h"
 #include "nm-active-connection.h"
+#include "nm-firewall-utils.h"
 #include "settings/nm-settings-connection.h"
-#include "libnm-core-aux-intern/nm-auth-subject.h"
 
 typedef struct {
     CList              call_ids_lst_head;

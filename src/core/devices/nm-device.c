@@ -52,6 +52,7 @@
 #include "dnsmasq/nm-dnsmasq-manager.h"
 #include "nm-dhcp-config.h"
 #include "nm-rfkill-manager.h"
+#include "nm-firewall-utils.h"
 #include "nm-firewalld-manager.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"

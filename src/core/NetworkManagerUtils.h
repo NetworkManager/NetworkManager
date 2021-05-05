@@ -224,16 +224,6 @@ NM_AUTO_DEFINE_FCN(NMDhcpLease *, _nm_auto_unref_dhcplease, nm_dhcp_lease_unref)
 
 /*****************************************************************************/
 
-typedef struct _NMUtilsShareRules NMUtilsShareRules;
-
-NMUtilsShareRules *nm_utils_share_rules_new(const char *ip_iface, in_addr_t addr, guint8 plen);
-
-void nm_utils_share_rules_free(NMUtilsShareRules *self);
-
-void nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared);
-
-/*****************************************************************************/
-
 void        nm_platform_setup(NMPlatform *instance);
 NMPlatform *nm_platform_get(void);
 
