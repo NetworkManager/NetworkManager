@@ -24,8 +24,8 @@
 #include "settings/nm-settings-connection.h"
 
 typedef struct {
-    CList              call_ids_lst_head;
-    NMUtilsShareRules *share_rules;
+    CList             call_ids_lst_head;
+    NMFirewallConfig *firewall_config;
 } NMActRequestPrivate;
 
 struct _NMActRequest {
@@ -250,31 +250,31 @@ nm_act_request_clear_secrets(NMActRequest *self)
 
 /*****************************************************************************/
 
-NMUtilsShareRules *
+NMFirewallConfig *
 nm_act_request_get_shared(NMActRequest *req)
 {
     g_return_val_if_fail(NM_IS_ACT_REQUEST(req), FALSE);
 
-    return NM_ACT_REQUEST_GET_PRIVATE(req)->share_rules;
+    return NM_ACT_REQUEST_GET_PRIVATE(req)->firewall_config;
 }
 
 void
-nm_act_request_set_shared(NMActRequest *req, NMUtilsShareRules *rules)
+nm_act_request_set_shared(NMActRequest *req, NMFirewallConfig *rules)
 {
     NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE(req);
 
     g_return_if_fail(NM_IS_ACT_REQUEST(req));
 
-    if (priv->share_rules == rules)
+    if (priv->firewall_config == rules)
         return;
 
-    if (priv->share_rules) {
-        nm_utils_share_rules_apply(priv->share_rules, FALSE);
-        priv->share_rules = NULL;
+    if (priv->firewall_config) {
+        nm_firewall_config_apply(priv->firewall_config, FALSE);
+        priv->firewall_config = NULL;
     }
     if (rules) {
-        priv->share_rules = rules;
-        nm_utils_share_rules_apply(priv->share_rules, TRUE);
+        priv->firewall_config = rules;
+        nm_firewall_config_apply(priv->firewall_config, TRUE);
     }
 }
 
@@ -508,9 +508,9 @@ dispose(GObject *object)
     c_list_for_each_entry_safe (call_id, call_id_safe, &priv->call_ids_lst_head, call_ids_lst)
         _do_cancel_secrets(self, call_id, TRUE);
 
-    if (priv->share_rules) {
-        nm_utils_share_rules_apply(priv->share_rules, FALSE);
-        nm_clear_pointer(&priv->share_rules, nm_utils_share_rules_free);
+    if (priv->firewall_config) {
+        nm_firewall_config_apply(priv->firewall_config, FALSE);
+        nm_clear_pointer(&priv->firewall_config, nm_firewall_config_free);
     }
 
     G_OBJECT_CLASS(nm_act_request_parent_class)->dispose(object);

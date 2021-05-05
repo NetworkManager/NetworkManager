@@ -327,23 +327,23 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
         _share_iptables_set_shared_chains_delete(chain_input, chain_forward);
 }
 
-struct _NMUtilsShareRules {
+struct _NMFirewallConfig {
     char *    ip_iface;
     in_addr_t addr;
     guint8    plen;
 };
 
-NMUtilsShareRules *
-nm_utils_share_rules_new(const char *ip_iface, in_addr_t addr, guint8 plen)
+NMFirewallConfig *
+nm_firewall_config_new(const char *ip_iface, in_addr_t addr, guint8 plen)
 {
-    NMUtilsShareRules *self;
+    NMFirewallConfig *self;
 
     nm_assert(ip_iface);
     nm_assert(addr != 0u);
     nm_assert(plen <= 32);
 
-    self  = g_slice_new(NMUtilsShareRules);
-    *self = (NMUtilsShareRules){
+    self  = g_slice_new(NMFirewallConfig);
+    *self = (NMFirewallConfig){
         .ip_iface = g_strdup(ip_iface),
         .addr     = addr,
         .plen     = plen,
@@ -352,7 +352,7 @@ nm_utils_share_rules_new(const char *ip_iface, in_addr_t addr, guint8 plen)
 }
 
 void
-nm_utils_share_rules_free(NMUtilsShareRules *self)
+nm_firewall_config_free(NMFirewallConfig *self)
 {
     if (!self)
         return;
@@ -362,7 +362,7 @@ nm_utils_share_rules_free(NMUtilsShareRules *self)
 }
 
 void
-nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared)
+nm_firewall_config_apply(NMFirewallConfig *self, gboolean shared)
 {
     _share_iptables_set_masquerade(shared, self->ip_iface, self->addr, self->plen);
     _share_iptables_set_shared(shared, self->ip_iface, self->addr, self->plen);
