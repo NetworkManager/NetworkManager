@@ -1637,14 +1637,13 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
 
 /*****************************************************************************/
 
-#define _SHARE_IPTABLES_SUBNET_TO_STR_LEN (INET_ADDRSTRLEN + 1 + INET_ADDRSTRLEN + 1)
+#define _SHARE_IPTABLES_SUBNET_TO_STR_LEN (INET_ADDRSTRLEN + 1 + 2 + 1)
 
 static const char *
 _share_iptables_subnet_to_str(char      buf[static _SHARE_IPTABLES_SUBNET_TO_STR_LEN],
                               in_addr_t addr,
                               guint8    plen)
 {
-    char      buf_mask[INET_ADDRSTRLEN];
     char      buf_addr[INET_ADDRSTRLEN];
     in_addr_t netmask;
     int       l;
@@ -1653,9 +1652,9 @@ _share_iptables_subnet_to_str(char      buf[static _SHARE_IPTABLES_SUBNET_TO_STR
 
     l = g_snprintf(buf,
                    _SHARE_IPTABLES_SUBNET_TO_STR_LEN,
-                   "%s/%s",
+                   "%s/%u",
                    _nm_utils_inet4_ntop(addr & netmask, buf_addr),
-                   _nm_utils_inet4_ntop(netmask, buf_mask));
+                   plen);
     nm_assert(l < _SHARE_IPTABLES_SUBNET_TO_STR_LEN);
     return buf;
 }
