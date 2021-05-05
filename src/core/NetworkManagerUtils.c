@@ -1693,6 +1693,28 @@ _share_iptables_call_v(const char *const *argv)
     return TRUE;
 }
 
+#define _share_iptables_call(...) _share_iptables_call_v(NM_MAKE_STRV(__VA_ARGS__))
+
+static void
+_share_iptables_set_masquerade(gboolean add, in_addr_t addr, guint8 plen)
+{
+    char str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
+
+    _share_iptables_subnet_to_str(str_subnet, addr, plen);
+    _share_iptables_call("" IPTABLES_PATH "",
+                         "--table",
+                         "nat",
+                         add ? "--insert" : "--delete",
+                         "POSTROUTING",
+                         "--source",
+                         str_subnet,
+                         "!",
+                         "--destination",
+                         str_subnet,
+                         "--jump",
+                         "MASQUERADE");
+}
+
 struct _NMUtilsShareRules {
     char *    ip_iface;
     in_addr_t addr;
@@ -1773,18 +1795,6 @@ _share_rules_create_iptables(const char *ip_iface,
 
     rules = g_array_new(FALSE, FALSE, sizeof(ShareRule));
     g_array_set_clear_func(rules, nm_indirect_g_free);
-
-    shared_rules_add_iptables(rules,
-                              shared,
-                              "nat",
-                              "POSTROUTING",
-                              "--source",
-                              addr_mask,
-                              "!",
-                              "--destination",
-                              addr_mask,
-                              "--jump",
-                              "MASQUERADE");
 
     shared_rules_add_iptables(rules,
                               shared,
@@ -1908,6 +1918,9 @@ nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared)
     rules =
         _share_rules_create_iptables(self->ip_iface, self->addr, self->plen, shared, gfree_keeper);
 
+    if (!shared)
+        _share_iptables_set_masquerade(FALSE, self->addr, self->plen);
+
     /* depending on whether we share or unshare, we add/remote the rules
      * in opposite order. */
     if (shared)
@@ -1930,6 +1943,9 @@ nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared)
                 break;
         }
     }
+
+    if (shared)
+        _share_iptables_set_masquerade(TRUE, self->addr, self->plen);
 }
 
 /*****************************************************************************/
