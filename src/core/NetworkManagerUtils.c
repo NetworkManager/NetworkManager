@@ -1637,7 +1637,30 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
 
 /*****************************************************************************/
 
-static void
+#define _SHARE_IPTABLES_SUBNET_TO_STR_LEN (INET_ADDRSTRLEN + 1 + INET_ADDRSTRLEN + 1)
+
+static const char *
+_share_iptables_subnet_to_str(char      buf[static _SHARE_IPTABLES_SUBNET_TO_STR_LEN],
+                              in_addr_t addr,
+                              guint8    plen)
+{
+    char      buf_mask[INET_ADDRSTRLEN];
+    char      buf_addr[INET_ADDRSTRLEN];
+    in_addr_t netmask;
+    int       l;
+
+    netmask = _nm_utils_ip4_prefix_to_netmask(plen);
+
+    l = g_snprintf(buf,
+                   _SHARE_IPTABLES_SUBNET_TO_STR_LEN,
+                   "%s/%s",
+                   _nm_utils_inet4_ntop(addr & netmask, buf_addr),
+                   _nm_utils_inet4_ntop(netmask, buf_mask));
+    nm_assert(l < _SHARE_IPTABLES_SUBNET_TO_STR_LEN);
+    return buf;
+}
+
+static gboolean
 _share_iptables_call_v(const char *const *argv)
 {
     gs_free_error GError *error    = NULL;
@@ -1740,20 +1763,10 @@ _share_rules_create_iptables(const char *ip_iface,
                              GPtrArray * gfree_keeper)
 {
     gs_unref_array GArray *rules = NULL;
-    char                   buf_mask[NM_UTILS_INET_ADDRSTRLEN];
-    char                   buf_addr[NM_UTILS_INET_ADDRSTRLEN];
-    char                   buf_addrmask[NM_UTILS_INET_ADDRSTRLEN + NM_UTILS_INET_ADDRSTRLEN + 3];
-    in_addr_t              netmask;
+    char                   buf_addr_mask[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
     const char *           addr_mask;
 
-    netmask = _nm_utils_ip4_prefix_to_netmask(plen);
-
-    nm_sprintf_buf(buf_addrmask,
-                   "%s/%s",
-                   _nm_utils_inet4_ntop(addr & netmask, buf_addr),
-                   _nm_utils_inet4_ntop(netmask, buf_mask));
-
-    addr_mask = g_strdup(buf_addrmask);
+    addr_mask = g_strdup(_share_iptables_subnet_to_str(buf_addr_mask, addr, plen));
     g_ptr_array_add(gfree_keeper, (char *) addr_mask);
 
     ip_iface = g_strdup(ip_iface);
