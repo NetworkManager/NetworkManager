@@ -1637,6 +1637,40 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
 
 /*****************************************************************************/
 
+static void
+_share_iptables_call_v(const char *const *argv)
+{
+    gs_free_error GError *error    = NULL;
+    gs_free char *        argv_str = NULL;
+    int                   status;
+
+    nm_log_dbg(LOGD_SHARING, "iptables: %s", (argv_str = g_strjoinv(" ", (char **) argv)));
+
+    if (!g_spawn_sync("/",
+                      (char **) argv,
+                      (char **) NM_PTRARRAY_EMPTY(const char *),
+                      G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
+                      NULL,
+                      NULL,
+                      NULL,
+                      NULL,
+                      &status,
+                      &error)) {
+        nm_log_warn(LOGD_SHARING,
+                    "iptables: error executing command %s: %s",
+                    argv[0],
+                    error->message);
+        return FALSE;
+    }
+
+    if (!g_spawn_check_exit_status(status, &error)) {
+        nm_log_warn(LOGD_SHARING, "iptables: command %s failed: %s", argv[0], error->message);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 struct _NMUtilsShareRules {
     char *    ip_iface;
     in_addr_t addr;
@@ -1870,36 +1904,10 @@ nm_utils_share_rules_apply(NMUtilsShareRules *self, gboolean shared)
         i = 0;
 
     for (;;) {
-        const ShareRule *const rule    = &g_array_index(rules, ShareRule, i);
-        gs_free_error GError *error    = NULL;
-        gs_free char *        argv_str = NULL;
-        int                   status;
+        const ShareRule *rule = &g_array_index(rules, ShareRule, i);
 
-        nm_log_dbg(LOGD_SHARING,
-                   "Executing: %s",
-                   (argv_str = g_strjoinv(" ", (char **) rule->argv)));
+        _share_iptables_call_v(rule->argv);
 
-        if (!g_spawn_sync("/",
-                          (char **) rule->argv,
-                          (char **) NM_PTRARRAY_EMPTY(const char *),
-                          G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
-                          NULL,
-                          NULL,
-                          NULL,
-                          NULL,
-                          &status,
-                          &error)) {
-            nm_log_warn(LOGD_SHARING, "Error executing command: %s", error->message);
-            goto next;
-        }
-        if (WEXITSTATUS(status)) {
-            nm_log_warn(LOGD_SHARING,
-                        "** Command %s returned exit status %d",
-                        rule->argv[0],
-                        WEXITSTATUS(status));
-        }
-
-next:
         if (shared) {
             if (i == 0)
                 break;
