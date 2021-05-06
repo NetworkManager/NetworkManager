@@ -256,9 +256,15 @@ nm_jansson_json_as_int64(const NMJsonVt *vt, const nm_json_t *elem, gint64 *out_
     if (!nm_json_is_integer(elem))
         return -EINVAL;
 
+    /* assert that this integer is signed. */
+    G_STATIC_ASSERT_EXPR(((nm_json_int_t) -1) < 0);
+
     v = vt->nm_json_integer_value(elem);
-    if (v < G_MININT64 || v > G_MAXINT64)
-        return -ERANGE;
+
+    if (sizeof(v) > sizeof(gint64)) {
+        if (v < G_MININT64 || v > G_MAXINT64)
+            return -ERANGE;
+    }
 
     NM_SET_OUT(out_val, v);
     return 1;
@@ -275,9 +281,17 @@ nm_jansson_json_as_uint64(const NMJsonVt *vt, const nm_json_t *elem, guint64 *ou
     if (!nm_json_is_integer(elem))
         return -EINVAL;
 
+    /* assert that this integer is signed. */
+    G_STATIC_ASSERT_EXPR(((nm_json_int_t) -1) < 0);
+
     v = vt->nm_json_integer_value(elem);
-    if (v < 0 || v > G_MAXUINT64)
+    if (v < 0)
         return -ERANGE;
+
+    if (sizeof(v) > sizeof(gint64)) {
+        if (v > G_MAXUINT64)
+            return -ERANGE;
+    }
 
     NM_SET_OUT(out_val, v);
     return 1;
