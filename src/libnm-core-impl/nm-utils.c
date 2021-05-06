@@ -2587,9 +2587,9 @@ nm_utils_tc_action_to_str(NMTCAction *action, GError **error)
 NMTCAction *
 nm_utils_tc_action_from_str(const char *str, GError **error)
 {
-    const char *       kind                      = NULL;
-    const char *       rest                      = NULL;
-    NMTCAction *       action                    = NULL;
+    const char *            kind                 = NULL;
+    const char *            rest                 = NULL;
+    nm_auto_unref_tc_action NMTCAction *action   = NULL;
     gs_unref_hashtable GHashTable *ht            = NULL;
     gs_unref_hashtable GHashTable *      options = NULL;
     GVariant *                           variant;
@@ -2631,23 +2631,20 @@ nm_utils_tc_action_from_str(const char *str, GError **error)
         gpointer       key, value;
 
         if (!attrs) {
-            nm_tc_action_unref(action);
             g_set_error(error, 1, 0, _("unsupported action option: '%s'."), rest);
             return NULL;
         }
 
         options = nm_utils_parse_variant_attributes(rest, ' ', ' ', FALSE, attrs, error);
-        if (!options) {
-            nm_tc_action_unref(action);
+        if (!options)
             return NULL;
-        }
 
         g_hash_table_iter_init(&iter, options);
         while (g_hash_table_iter_next(&iter, &key, &value))
             nm_tc_action_set_attribute(action, key, g_variant_ref_sink(value));
     }
 
-    return action;
+    return g_steal_pointer(&action);
 }
 
 /*****************************************************************************/
