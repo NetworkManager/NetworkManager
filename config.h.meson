@@ -67,7 +67,10 @@
 /* Define to path of iptables binary */
 #mesondefine IPTABLES_PATH
 
-/* Define to path to the Jansson shared library */
+/* Define to path of nft binary */
+#mesondefine NFT_PATH
+
+//* Define to path to the Jansson shared library */
 #mesondefine JANSSON_SONAME
 
 /* Define to path of the kernel firmware directory */

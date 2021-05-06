@@ -11,6 +11,26 @@
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-platform/nm-platform.h"
 
+#include "nm-config.h"
+
+/*****************************************************************************/
+
+static const struct {
+    const char *name;
+    const char *path;
+} FirewallBackends[] = {
+    [NM_FIREWALL_BACKEND_NFTABLES - 1] =
+        {
+            .name = "nftables",
+            .path = NFT_PATH,
+        },
+    [NM_FIREWALL_BACKEND_IPTABLES - 1] =
+        {
+            .name = "iptables",
+            .path = IPTABLES_PATH,
+        },
+};
+
 /*****************************************************************************/
 
 #define _SHARE_IPTABLES_SUBNET_TO_STR_LEN (INET_ADDRSTRLEN + 1 + 2 + 1)
@@ -327,6 +347,8 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
         _share_iptables_set_shared_chains_delete(chain_input, chain_forward);
 }
 
+/*****************************************************************************/
+
 struct _NMFirewallConfig {
     char *    ip_iface;
     in_addr_t addr;
@@ -366,4 +388,79 @@ nm_firewall_config_apply(NMFirewallConfig *self, gboolean shared)
 {
     _share_iptables_set_masquerade(shared, self->ip_iface, self->addr, self->plen);
     _share_iptables_set_shared(shared, self->ip_iface, self->addr, self->plen);
+}
+
+/*****************************************************************************/
+
+static NMFirewallBackend
+_firewall_backend_detect(void)
+{
+    if (g_file_test(NFT_PATH, G_FILE_TEST_IS_EXECUTABLE))
+        return NM_FIREWALL_BACKEND_NFTABLES;
+    if (g_file_test(IPTABLES_PATH, G_FILE_TEST_IS_EXECUTABLE))
+        return NM_FIREWALL_BACKEND_IPTABLES;
+
+    return NM_FIREWALL_BACKEND_NFTABLES;
+}
+
+NMFirewallBackend
+nm_firewall_utils_get_backend(void)
+{
+    static int backend = NM_FIREWALL_BACKEND_UNKNOWN;
+    int        b;
+
+again:
+    b = g_atomic_int_get(&backend);
+    if (b == NM_FIREWALL_BACKEND_UNKNOWN) {
+        gs_free char *conf_value = NULL;
+        gboolean      detect;
+        int           i;
+
+        conf_value =
+            nm_config_data_get_value(NM_CONFIG_GET_DATA_ORIG,
+                                     NM_CONFIG_KEYFILE_GROUP_MAIN,
+                                     NM_CONFIG_KEYFILE_KEY_MAIN_FIREWALL_BACKEND,
+                                     NM_CONFIG_GET_VALUE_STRIP | NM_CONFIG_GET_VALUE_NO_EMPTY);
+
+        if (conf_value) {
+            for (i = 0; i < (int) G_N_ELEMENTS(FirewallBackends); i++) {
+                if (!g_ascii_strcasecmp(conf_value, FirewallBackends[i].name)) {
+                    b = (i + 1);
+                    break;
+                }
+            }
+        }
+
+        detect = (b == NM_FIREWALL_BACKEND_UNKNOWN);
+        if (detect)
+            b = _firewall_backend_detect();
+
+        nm_assert(NM_IN_SET(b, NM_FIREWALL_BACKEND_IPTABLES, NM_FIREWALL_BACKEND_NFTABLES));
+
+        if (b == NM_FIREWALL_BACKEND_NFTABLES) {
+            if (!detect)
+                nm_log_warn(LOGD_SHARING,
+                            "firewall: backend \"nftables\" is not yet implemented. Fallback to "
+                            "\"iptables\"");
+            nm_clear_g_free(&conf_value);
+            b = NM_FIREWALL_BACKEND_IPTABLES;
+        }
+
+        if (!g_atomic_int_compare_and_exchange(&backend, NM_FIREWALL_BACKEND_UNKNOWN, b))
+            goto again;
+
+        nm_log_dbg(LOGD_SHARING,
+                   "firewall: use %s backend (%s)%s%s%s%s",
+                   FirewallBackends[b - 1].name,
+                   FirewallBackends[b - 1].path,
+                   detect ? " (detected)" : "",
+                   NM_PRINT_FMT_QUOTED(detect && conf_value,
+                                       " (invalid setting \"",
+                                       conf_value,
+                                       "\")",
+                                       ""));
+    }
+
+    nm_assert(NM_IN_SET(b, NM_FIREWALL_BACKEND_IPTABLES, NM_FIREWALL_BACKEND_NFTABLES));
+    return b;
 }

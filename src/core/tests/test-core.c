@@ -22,6 +22,25 @@
 
 #include "nm-test-utils-core.h"
 
+/*****************************************************************************/
+
+static void
+test_config_h(void)
+{
+#define ABSOLUTE_PATH(path)                  \
+    G_STMT_START                             \
+    {                                        \
+        g_assert_cmpstr("" path "", !=, ""); \
+        g_assert("" path ""[0] == '/');      \
+    }                                        \
+    G_STMT_END
+
+    ABSOLUTE_PATH(IPTABLES_PATH);
+    ABSOLUTE_PATH(NFT_PATH);
+}
+
+/*****************************************************************************/
+
 /* Reference implementation for nm_utils_ip6_address_clear_host_address.
  * Taken originally from set_address_masked(), src/ndisc/nm-lndp-ndisc.c
  **/
@@ -2569,6 +2588,8 @@ int
 main(int argc, char **argv)
 {
     nmtst_init_with_logging(&argc, &argv, NULL, "ALL");
+
+    g_test_add_func("/general/test_config_h", test_config_h);
 
     g_test_add_func("/general/test_logging_domains", test_logging_domains);
     g_test_add_func("/general/test_logging_error", test_logging_error);

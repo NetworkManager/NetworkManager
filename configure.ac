@@ -943,13 +943,12 @@ fi
 AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_RC_MANAGER, "$config_dns_rc_manager_default", [Default value for main.rc-manager setting (--with-config-dns-rc-manager-default)])
 AC_SUBST(NM_CONFIG_DEFAULT_MAIN_RC_MANAGER, $config_dns_rc_manager_default)
 
-# iptables path
 AC_ARG_WITH(iptables,
-            AS_HELP_STRING([--with-iptables=/path/to/iptables], [path to iptables]))
+            AS_HELP_STRING([--with-iptables=/usr/sbin/iptables], [path to iptables]))
 if test "x${with_iptables}" = x; then
 	AC_PATH_PROG(IPTABLES_PATH, iptables, [], $PATH:/sbin:/usr/sbin)
-	if ! test -x "$IPTABLES_PATH"; then
-		AC_MSG_ERROR(iptables was not installed.)
+	if test "x$IPTABLES_PATH" = x; then
+		IPTABLES_PATH='/usr/sbin/iptables'
 	fi
 else
 	IPTABLES_PATH="$with_iptables"
@@ -957,7 +956,19 @@ fi
 AC_DEFINE_UNQUOTED(IPTABLES_PATH, "$IPTABLES_PATH", [Define to path of iptables binary])
 AC_SUBST(IPTABLES_PATH)
 
-# dnsmasq path
+AC_ARG_WITH(nft,
+            AS_HELP_STRING([--with-nft=/usr/sbin/nft], [path to nft]))
+if test "x${with_nft}" = x; then
+	AC_PATH_PROG(NFT_PATH, nft, [], $PATH:/sbin:/usr/sbin)
+	if test "x$NFT_PATH" = x; then
+		NFT_PATH='/usr/sbin/nft'
+	fi
+else
+	NFT_PATH="$with_nft"
+fi
+AC_DEFINE_UNQUOTED(NFT_PATH, "$NFT_PATH", [Define to path of nft binary])
+AC_SUBST(NFT_PATH)
+
 AC_ARG_WITH(dnsmasq,
             AS_HELP_STRING([--with-dnsmasq=/path/to/dnsmasq], [path to dnsmasq]))
 if test "x${with_dnsmasq}" = x; then
@@ -1372,6 +1383,8 @@ echo "  nmtui: $build_nmtui"
 echo "  nm-cloud-setup: $with_nm_cloud_setup"
 echo "  iwd: $ac_with_iwd"
 echo "  jansson: $have_jansson${JANSSON_SONAME:+ (soname: $JANSSON_SONAME)}"
+echo "  iptables: $IPTABLES_PATH"
+echo "  nft: $NFT_PATH"
 echo
 
 echo "Configuration plugins (main.plugins=${config_plugins_default})"
