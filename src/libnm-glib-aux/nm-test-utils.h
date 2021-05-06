@@ -2813,7 +2813,7 @@ nmtst_keyfile_get_num_keys(GKeyFile *keyfile, const char *group_name)
 {
     gs_strfreev char **keys     = NULL;
     gs_free_error GError *error = NULL;
-    gsize                 l;
+    gsize                 l     = 0;
 
     g_assert(keyfile);
     g_assert(group_name);
