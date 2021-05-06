@@ -4595,7 +4595,7 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
     const char *               psk      = NULL;
     const char *               type     = NULL;
     GBytes *                   ssid_bytes;
-    char *                     ssid;
+    gs_free char *             ssid = NULL;
     GString *                  string;
 
     s_wireless = nm_connection_get_setting_wireless(connection);
