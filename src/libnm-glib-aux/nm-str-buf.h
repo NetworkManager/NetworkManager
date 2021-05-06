@@ -199,9 +199,6 @@ _nm_str_buf_append_c_1(NMStrBuf *strbuf, char ch)
 #define nm_str_buf_append_c(strbuf, ...) \
     _nm_str_buf_append_c_n1((strbuf), NM_NARG(__VA_ARGS__), __VA_ARGS__)
 
-#define nm_str_buf_append_c2(strbuf, ...) nm_str_buf_append_c(strbuf, __VA_ARGS__)
-#define nm_str_buf_append_c4(strbuf, ...) nm_str_buf_append_c(strbuf, __VA_ARGS__)
-
 static inline void
 nm_str_buf_append_c_hex(NMStrBuf *strbuf, char ch, gboolean upper_case)
 {

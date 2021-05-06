@@ -989,7 +989,7 @@ lease_option_print_label(NMStrBuf *sbuf, size_t n_label, const uint8_t **datap, 
             break;
         case '.':
         case '\\':
-            nm_str_buf_append_c2(sbuf, '\\', c);
+            nm_str_buf_append_c(sbuf, '\\', c);
             break;
         default:
             nm_str_buf_append_printf(sbuf, "\\%3d", c);

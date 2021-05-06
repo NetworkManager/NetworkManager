@@ -2708,11 +2708,11 @@ nm_g_type_find_implementing_class_for_property(GType gtype, const char *pname)
 static void
 _str_buf_append_c_escape_octal(NMStrBuf *strbuf, char ch)
 {
-    nm_str_buf_append_c4(strbuf,
-                         '\\',
-                         '0' + ((char) ((((guchar) ch) >> 6) & 07)),
-                         '0' + ((char) ((((guchar) ch) >> 3) & 07)),
-                         '0' + ((char) ((((guchar) ch)) & 07)));
+    nm_str_buf_append_c(strbuf,
+                        '\\',
+                        '0' + ((char) ((((guchar) ch) >> 6) & 07)),
+                        '0' + ((char) ((((guchar) ch) >> 3) & 07)),
+                        '0' + ((char) ((((guchar) ch)) & 07)));
 }
 
 /**
@@ -2962,7 +2962,7 @@ nm_utils_buf_utf8safe_escape(gconstpointer           buf,
 
             nm_assert(ch);
             if (ch == '\\')
-                nm_str_buf_append_c2(&strbuf, '\\', '\\');
+                nm_str_buf_append_c(&strbuf, '\\', '\\');
             else if ((NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL) && ch < ' ')
                      || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
                          && ((guchar) ch) >= 127))
