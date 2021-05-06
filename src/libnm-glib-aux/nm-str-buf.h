@@ -167,29 +167,40 @@ nm_str_buf_append_c_repeated(NMStrBuf *strbuf, char ch, guint len)
 }
 
 static inline void
-nm_str_buf_append_c(NMStrBuf *strbuf, char ch)
+_nm_str_buf_append_c_1(NMStrBuf *strbuf, char ch)
 {
-    nm_str_buf_maybe_expand(strbuf, 2, FALSE);
     strbuf->_priv_str[strbuf->_priv_len++] = ch;
 }
 
-static inline void
-nm_str_buf_append_c2(NMStrBuf *strbuf, char ch0, char ch1)
-{
-    nm_str_buf_maybe_expand(strbuf, 3, FALSE);
-    strbuf->_priv_str[strbuf->_priv_len++] = ch0;
-    strbuf->_priv_str[strbuf->_priv_len++] = ch1;
-}
+#define _nm_str_buf_append_c_2(strbuf, ch0, ch1) \
+    _nm_str_buf_append_c_1(strbuf, (ch0));       \
+    _nm_str_buf_append_c_1(strbuf, (ch1))
+#define _nm_str_buf_append_c_3(strbuf, ch0, ...) \
+    _nm_str_buf_append_c_1(strbuf, (ch0));       \
+    _nm_str_buf_append_c_2(strbuf, __VA_ARGS__)
+#define _nm_str_buf_append_c_4(strbuf, ch0, ...) \
+    _nm_str_buf_append_c_1(strbuf, (ch0));       \
+    _nm_str_buf_append_c_3(strbuf, __VA_ARGS__)
 
-static inline void
-nm_str_buf_append_c4(NMStrBuf *strbuf, char ch0, char ch1, char ch2, char ch3)
-{
-    nm_str_buf_maybe_expand(strbuf, 5, FALSE);
-    strbuf->_priv_str[strbuf->_priv_len++] = ch0;
-    strbuf->_priv_str[strbuf->_priv_len++] = ch1;
-    strbuf->_priv_str[strbuf->_priv_len++] = ch2;
-    strbuf->_priv_str[strbuf->_priv_len++] = ch3;
-}
+#define _nm_str_buf_append_c_n2(strbuf, n, ...)             \
+    G_STMT_START                                            \
+    {                                                       \
+        NMStrBuf *_strbuf = strbuf;                         \
+                                                            \
+        nm_str_buf_maybe_expand(_strbuf, (n) + 1, FALSE);   \
+        {                                                   \
+            _nm_str_buf_append_c_##n(_strbuf, __VA_ARGS__); \
+        };                                                  \
+    }                                                       \
+    G_STMT_END
+
+#define _nm_str_buf_append_c_n1(strbuf, n, ...) _nm_str_buf_append_c_n2(strbuf, n, __VA_ARGS__)
+
+#define nm_str_buf_append_c(strbuf, ...) \
+    _nm_str_buf_append_c_n1((strbuf), NM_NARG(__VA_ARGS__), __VA_ARGS__)
+
+#define nm_str_buf_append_c2(strbuf, ...) nm_str_buf_append_c(strbuf, __VA_ARGS__)
+#define nm_str_buf_append_c4(strbuf, ...) nm_str_buf_append_c(strbuf, __VA_ARGS__)
 
 static inline void
 nm_str_buf_append_c_hex(NMStrBuf *strbuf, char ch, gboolean upper_case)
