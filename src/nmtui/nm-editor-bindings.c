@@ -444,7 +444,7 @@ ip_route_transform_from_dest_string(GBinding *    binding,
             inet_pton(addr_family, addrstr, &v4);
             if (nm_utils_ip_is_site_local(AF_INET, &v4)) {
                 prefix = nm_utils_ip4_get_default_prefix(v4);
-                if (v4 & (~nm_utils_ip4_prefix_to_netmask(prefix)))
+                if (v4 & (~_nm_utils_ip4_prefix_to_netmask(prefix)))
                     prefix = 32;
             } else
                 prefix = 32;
