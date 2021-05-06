@@ -1572,8 +1572,11 @@ write_bridge_vlans(NMSetting * setting,
 
         vlan     = vlans->pdata[i];
         vlan_str = nm_bridge_vlan_to_str(vlan, error);
-        if (!vlan_str)
-            return FALSE;
+        if (!vlan_str) {
+            /* nm_bridge_vlan_to_str() cannot fail (for now). */
+            nm_assert_not_reached();
+            continue;
+        }
         if (strbuf.len > 0)
             nm_str_buf_append_c(&strbuf, ',');
         nm_str_buf_append(&strbuf, nm_utils_escaped_tokens_escape_unnecessary(vlan_str, ","));
