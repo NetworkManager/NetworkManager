@@ -108,7 +108,8 @@ nmt_newt_button_build_component(NmtNewtComponent *component, gboolean sensitive)
 {
     NmtNewtButtonPrivate *priv = NMT_NEWT_BUTTON_GET_PRIVATE(component);
     newtComponent         co;
-    char *                label = NULL, *label_lc;
+    gs_free char *        label = NULL;
+    char *                label_lc;
 
     if (sensitive) {
         label_lc = nmt_newt_locale_from_utf8(priv->label);
