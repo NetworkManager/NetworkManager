@@ -271,17 +271,21 @@ security_from_vardict(GVariant *security)
     nm_assert(g_variant_is_of_type(security, G_VARIANT_TYPE_VARDICT));
 
     if (g_variant_lookup(security, "KeyMgmt", "^a&s", &array)) {
-        if (g_strv_contains(array, "wpa-psk") || g_strv_contains(array, "wpa-ft-psk"))
+        if (g_strv_contains(array, "wpa-psk") || g_strv_contains(array, "wpa-psk-sha256")
+            || g_strv_contains(array, "wpa-ft-psk"))
             flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
-        if (g_strv_contains(array, "wpa-eap") || g_strv_contains(array, "wpa-ft-eap")
-            || g_strv_contains(array, "wpa-fils-sha256")
-            || g_strv_contains(array, "wpa-fils-sha384"))
+        if (g_strv_contains(array, "wpa-eap") || g_strv_contains(array, "wpa-eap-sha256")
+            || g_strv_contains(array, "wpa-ft-eap") || g_strv_contains(array, "wpa-fils-sha256")
+            || g_strv_contains(array, "wpa-fils-sha384")
+            || g_strv_contains(array, "wpa-fils-ft-sha256")
+            || g_strv_contains(array, "wpa-fils-ft-sha384"))
             flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
-        if (g_strv_contains(array, "sae"))
+        if (g_strv_contains(array, "sae") || g_strv_contains(array, "ft-sae"))
             flags |= NM_802_11_AP_SEC_KEY_MGMT_SAE;
         if (g_strv_contains(array, "owe"))
             flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
-        if (g_strv_contains(array, "wpa-eap-suite-b-192"))
+        if (g_strv_contains(array, "wpa-eap-suite-b-192")
+            || g_strv_contains(array, "wpa-ft-eap-sha384"))
             flags |= NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192;
         g_free(array);
     }

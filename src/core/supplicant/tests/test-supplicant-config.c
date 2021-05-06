@@ -394,7 +394,17 @@ test_wifi_wpa_psk(const char *                 detail,
     NMTST_EXPECT_NM_INFO("Config: added 'scan_ssid' value '1'*");
     NMTST_EXPECT_NM_INFO("Config: added 'bssid' value '11:22:33:44:55:66'*");
     NMTST_EXPECT_NM_INFO("Config: added 'freq_list' value *");
-    NMTST_EXPECT_NM_INFO("Config: added 'key_mgmt' value 'WPA-PSK WPA-PSK-SHA256'");
+    switch (pmf) {
+    case NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE:
+    case NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL:
+        NMTST_EXPECT_NM_INFO("Config: added 'key_mgmt' value 'WPA-PSK WPA-PSK-SHA256'");
+        break;
+    case NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED:
+        NMTST_EXPECT_NM_INFO("Config: added 'key_mgmt' value ' WPA-PSK-SHA256'");
+        break;
+    default:
+        break;
+    }
     NMTST_EXPECT_NM_INFO("Config: added 'psk' value *");
     NMTST_EXPECT_NM_INFO("Config: added 'proto' value 'WPA RSN'");
     NMTST_EXPECT_NM_INFO("Config: added 'pairwise' value 'TKIP CCMP'");
@@ -421,11 +431,22 @@ test_wifi_wpa_psk(const char *                 detail,
     validate_opt(detail, config_dict, "scan_ssid", NM_SUPPL_OPT_TYPE_INT, GINT_TO_POINTER(1));
     validate_opt(detail, config_dict, "ssid", NM_SUPPL_OPT_TYPE_BYTES, ssid);
     validate_opt(detail, config_dict, "bssid", NM_SUPPL_OPT_TYPE_KEYWORD, bssid_str);
-    validate_opt(detail,
-                 config_dict,
-                 "key_mgmt",
-                 NM_SUPPL_OPT_TYPE_KEYWORD,
-                 "WPA-PSK WPA-PSK-SHA256");
+    switch (pmf) {
+    case NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE:
+    case NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL:
+        validate_opt(detail,
+                     config_dict,
+                     "key_mgmt",
+                     NM_SUPPL_OPT_TYPE_KEYWORD,
+                     "WPA-PSK WPA-PSK-SHA256");
+        break;
+    case NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED:
+        validate_opt(detail, config_dict, "key_mgmt", NM_SUPPL_OPT_TYPE_KEYWORD, " WPA-PSK-SHA256");
+        break;
+    default:
+        break;
+    }
+
     validate_opt(detail, config_dict, "proto", NM_SUPPL_OPT_TYPE_KEYWORD, "WPA RSN");
     validate_opt(detail, config_dict, "pairwise", NM_SUPPL_OPT_TYPE_KEYWORD, "TKIP CCMP");
     validate_opt(detail, config_dict, "group", NM_SUPPL_OPT_TYPE_KEYWORD, "TKIP CCMP");
@@ -483,6 +504,7 @@ test_wifi_sae_psk(const char *psk)
     NMTST_EXPECT_NM_INFO("Config: added 'proto' value 'RSN'");
     NMTST_EXPECT_NM_INFO("Config: added 'pairwise' value 'TKIP CCMP'");
     NMTST_EXPECT_NM_INFO("Config: added 'group' value 'TKIP CCMP'");
+    NMTST_EXPECT_NM_INFO("Config: added 'ieee80211w' value '2'");
     config_dict =
         build_supplicant_config(connection,
                                 1500,

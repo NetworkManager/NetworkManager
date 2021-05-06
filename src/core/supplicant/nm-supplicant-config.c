@@ -834,55 +834,82 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
     }
 
     key_mgmt      = nm_setting_wireless_security_get_key_mgmt(setting);
-    key_mgmt_conf = g_string_new(key_mgmt);
-    if (nm_streq(key_mgmt, "wpa-psk")) {
-        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF))
-            g_string_append(key_mgmt_conf, " wpa-psk-sha256");
-        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
-            g_string_append(key_mgmt_conf, " ft-psk");
-        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SAE)) {
-            g_string_append(key_mgmt_conf, " sae");
-            if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
-                g_string_append(key_mgmt_conf, " ft-sae");
-        }
-    } else if (nm_streq(key_mgmt, "wpa-eap")) {
-        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF)) {
-            g_string_append(key_mgmt_conf, " wpa-eap-sha256");
+    key_mgmt_conf = g_string_new("");
 
+    if (nm_streq(key_mgmt, "none")) {
+        g_string_append(key_mgmt_conf, "NONE");
+
+    } else if (nm_streq(key_mgmt, "ieee8021x")) {
+        g_string_append(key_mgmt_conf, "IEEE8021X");
+
+    } else if (nm_streq(key_mgmt, "owe")) {
+        pmf = NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED;
+
+        g_string_append(key_mgmt_conf, "OWE");
+
+    } else if (nm_streq(key_mgmt, "wpa-psk")) {
+        if (pmf != NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)
+            g_string_append(key_mgmt_conf, "WPA-PSK");
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF))
+            g_string_append(key_mgmt_conf, " WPA-PSK-SHA256");
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
+            g_string_append(key_mgmt_conf, " FT-PSK");
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SAE)) {
+            g_string_append(key_mgmt_conf, " SAE");
+            if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
+                g_string_append(key_mgmt_conf, " FT-SAE");
+        }
+
+    } else if (nm_streq(key_mgmt, "sae")) {
+        pmf = NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED;
+
+        g_string_append(key_mgmt_conf, "SAE");
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
+            g_string_append(key_mgmt_conf, " FT-SAE");
+
+    } else if (nm_streq(key_mgmt, "wpa-eap")) {
+        if (pmf != NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)
+            g_string_append(key_mgmt_conf, "WPA-EAP");
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT)) {
+            g_string_append(key_mgmt_conf, " FT-EAP");
+            if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SHA384))
+                g_string_append(key_mgmt_conf, " FT-EAP-SHA384");
+        }
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF)) {
+            g_string_append(key_mgmt_conf, " WPA-EAP-SHA256");
             if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SUITEB192)
                 && pmf == NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED)
-                g_string_append(key_mgmt_conf, " wpa-eap-suite-b-192");
+                g_string_append(key_mgmt_conf, " WPA-EAP-SUITE-B-192");
         }
-        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
-            g_string_append(key_mgmt_conf, " ft-eap");
-        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT)
-            && _get_capability(priv, NM_SUPPL_CAP_TYPE_SHA384))
-            g_string_append(key_mgmt_conf, " ft-eap-sha384");
+
         switch (fils) {
         case NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED:
             g_string_truncate(key_mgmt_conf, 0);
             if (!_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF))
-                g_string_assign(key_mgmt_conf, "fils-sha256 fils-sha384");
+                g_string_assign(key_mgmt_conf, "FILS-SHA256 FILS-SHA384");
             /* fall-through */
         case NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL:
-            if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF))
-                g_string_append(key_mgmt_conf, " fils-sha256 fils-sha384");
-            if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF)
-                && _get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
-                g_string_append(key_mgmt_conf, " ft-fils-sha256");
-            if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF)
-                && _get_capability(priv, NM_SUPPL_CAP_TYPE_FT)
-                && _get_capability(priv, NM_SUPPL_CAP_TYPE_SHA384))
-                g_string_append(key_mgmt_conf, " ft-fils-sha384");
+            if (_get_capability(priv, NM_SUPPL_CAP_TYPE_PMF)) {
+                g_string_append(key_mgmt_conf, " FILS-SHA256 FILS-SHA384");
+                if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT)) {
+                    g_string_append(key_mgmt_conf, " FT-FILS-SHA256");
+                    if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SHA384))
+                        g_string_append(key_mgmt_conf, " FT-FILS-SHA384");
+                }
+            }
             break;
+
         default:
             break;
         }
-    } else if (nm_streq(key_mgmt, "sae")) {
-        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
-            g_string_append(key_mgmt_conf, " ft-sae");
+
     } else if (nm_streq(key_mgmt, "wpa-eap-suite-b-192")) {
         pmf = NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED;
+
+        g_string_append(key_mgmt_conf, "WPA-EAP-SUITE-B-192");
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT)
+            && _get_capability(priv, NM_SUPPL_CAP_TYPE_SHA384))
+            g_string_append(key_mgmt_conf, " FT-EAP-SHA384");
     }
 
     if (!add_string_val(self, key_mgmt_conf->str, "key_mgmt", TRUE, NULL, error))

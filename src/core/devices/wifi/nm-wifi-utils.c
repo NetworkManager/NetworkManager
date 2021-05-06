@@ -814,15 +814,24 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
          * setting.  Since there's so much configuration required for it, there's
          * no way it can be automatically completed.
          */
-    } else if ((key_mgmt && !strcmp(key_mgmt, "sae"))
-               || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
+    } else if (nm_streq0(key_mgmt, "wpa-psk")
+               || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE
+                   && (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK
+                       || ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK))) {
+        g_object_set(s_wsec,
+                     NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
+                     "wpa-psk",
+                     NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
+                     "open",
+                     NULL);
+    } else if (nm_streq0(key_mgmt, "sae") || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
         g_object_set(s_wsec,
                      NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
                      "sae",
                      NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
                      "open",
                      NULL);
-    } else if ((key_mgmt && !strcmp(key_mgmt, "owe"))
+    } else if (nm_streq0(key_mgmt, "owe")
                || NM_FLAGS_ANY(ap_rsn_flags,
                                NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
         g_object_set(s_wsec,
@@ -831,9 +840,8 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
                      NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
                      "open",
                      NULL);
-    } else if ((key_mgmt && !strcmp(key_mgmt, "wpa-psk"))
-               || (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-               || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)) {
+    } else if (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK
+               || ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
         g_object_set(s_wsec,
                      NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
                      "wpa-psk",
@@ -843,7 +851,7 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
         /* Leave proto/pairwise/group as client set them; if they are unset the
          * supplicant will figure out the best combination at connect time.
          */
-    } else if ((key_mgmt && !strcmp(key_mgmt, "wpa-eap-suite-b-192"))
+    } else if (nm_streq0(key_mgmt, "wpa-eap-suite-b-192")
                || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)) {
         g_object_set(s_wsec,
                      NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
