@@ -208,6 +208,17 @@ nm_str_buf_append_c_hex(NMStrBuf *strbuf, char ch, gboolean upper_case)
 }
 
 static inline void
+nm_str_buf_append_unichar(NMStrBuf *strbuf, gunichar wc)
+{
+    int l;
+
+    nm_str_buf_maybe_expand(strbuf, 6 + 1, FALSE);
+    l = g_unichar_to_utf8(wc, &strbuf->_priv_str[strbuf->_priv_len]);
+    nm_assert(l > 0 && l <= 6);
+    strbuf->_priv_len += (gsize) l;
+}
+
+static inline void
 nm_str_buf_append_len(NMStrBuf *strbuf, const char *str, gsize len)
 {
     _nm_str_buf_assert(strbuf);
