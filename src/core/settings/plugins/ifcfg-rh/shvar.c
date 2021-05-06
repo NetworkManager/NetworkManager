@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-core-utils.h"
 #include "libnm-glib-aux/nm-enum-utils.h"
@@ -318,14 +319,14 @@ _ch_hex_get(char ch)
 }
 
 static void
-_gstr_init(GString **str, const char *value, gsize i)
+_strbuf_init(NMStrBuf *str, const char *value, gsize i)
 {
     nm_assert(str);
     nm_assert(value);
 
-    if (!(*str)) {
-        /* if @str is not yet initialized, it allocates
-         * a new GString and copies @i characters from
+    if (str->allocated == 0) {
+        /* if @str is not yet initialized, it initializes
+         * a new NMStrBuf and copies @i characters from
          * @value over.
          *
          * Unescaping usually does not extend the length of a string,
@@ -335,20 +336,20 @@ _gstr_init(GString **str, const char *value, gsize i)
          * (FACTOR*strlen(value) + CONST), which is non trivial to get
          * right in all cases. Also, we would have to provision for the
          * very unlikely extreme case.
-         * Instead, use a GString buffer which can grow as needed. But for an
+         * Instead, use a NMStrBuf buffer which can grow as needed. But for an
          * initial guess, strlen(value) is a good start */
-        *str = g_string_new_len(NULL, strlen(value) + 3);
-        if (i)
-            g_string_append_len(*str, value, i);
+        nm_str_buf_maybe_expand(str, strlen(value) + 3u, FALSE);
+        nm_str_buf_append_len(str, value, i);
     }
 }
 
 const char *
 svUnescape(const char *value, char **to_free)
 {
-    gsize    i, j;
-    GString *str                      = NULL;
+    NMStrBuf str                      = NM_STR_BUF_INIT(0, FALSE);
     int      looks_like_old_svescaped = -1;
+    gsize    i;
+    gsize    j;
 
     /* we handle bash syntax here (note that ifup has #!/bin/bash.
      * Thus, see https://www.gnu.org/software/bash/manual/html_node/Quoting.html#Quoting */
@@ -395,20 +396,20 @@ svUnescape(const char *value, char **to_free)
 
         if (value[i] == '\\') {
             /* backslash escape */
-            _gstr_init(&str, value, i);
+            _strbuf_init(&str, value, i);
             i++;
             if (G_UNLIKELY(value[i] == '\0')) {
                 /* we don't support line continuation */
                 goto out_error;
             }
-            g_string_append_c(str, value[i]);
+            nm_str_buf_append_c(&str, value[i]);
             i++;
             goto loop1_next;
         }
 
         if (value[i] == '\'') {
             /* single quotes */
-            _gstr_init(&str, value, i);
+            _strbuf_init(&str, value, i);
             i++;
             j = i;
             while (TRUE) {
@@ -420,14 +421,14 @@ svUnescape(const char *value, char **to_free)
                     break;
                 j++;
             }
-            g_string_append_len(str, &value[i], j - i);
+            nm_str_buf_append_len(&str, &value[i], j - i);
             i = j + 1;
             goto loop1_next;
         }
 
         if (value[i] == '"') {
             /* double quotes */
-            _gstr_init(&str, value, i);
+            _strbuf_init(&str, value, i);
             i++;
             while (TRUE) {
                 if (value[i] == '"') {
@@ -466,11 +467,11 @@ svUnescape(const char *value, char **to_free)
                         if (looks_like_old_svescaped < 0)
                             looks_like_old_svescaped = _looks_like_old_svescaped(value);
                         if (!looks_like_old_svescaped)
-                            g_string_append_c(str, '\\');
+                            nm_str_buf_append_c(&str, '\\');
                     } else
-                        g_string_append_c(str, '\\');
+                        nm_str_buf_append_c(&str, '\\');
                 }
-                g_string_append_c(str, value[i]);
+                nm_str_buf_append_c(&str, value[i]);
                 i++;
             }
             goto loop1_next;
@@ -478,7 +479,7 @@ svUnescape(const char *value, char **to_free)
 
         if (value[i] == '$' && value[i + 1] == '\'') {
             /* ANSI-C Quoting */
-            _gstr_init(&str, value, i);
+            _strbuf_init(&str, value, i);
             i += 2;
             while (TRUE) {
                 char ch;
@@ -552,7 +553,7 @@ svUnescape(const char *value, char **to_free)
                                 }
                             }
                             /* like bash, we cut too large numbers off. E.g. A=$'\772' becomes 0xfa  */
-                            g_string_append_c(str, (guint8) v);
+                            nm_str_buf_append_c(&str, (guint8) v);
                         } else if (NM_IN_SET(value[i], 'x', 'u', 'U')) {
                             const char escape_type = value[i];
                             int max_digits = escape_type == 'x' ? 2 : escape_type == 'u' ? 4 : 8;
@@ -561,8 +562,7 @@ svUnescape(const char *value, char **to_free)
                             i++;
                             if (!_ch_hex_is(value[i])) {
                                 /* missing hex value after "\x" escape. This is treated like no escaping. */
-                                g_string_append_c(str, '\\');
-                                g_string_append_c(str, escape_type);
+                                nm_str_buf_append_c(&str, '\\', escape_type);
                             } else {
                                 v = _ch_hex_get(value[i]);
                                 i++;
@@ -574,22 +574,21 @@ svUnescape(const char *value, char **to_free)
                                     i++;
                                 }
                                 if (escape_type == 'x')
-                                    g_string_append_c(str, v);
+                                    nm_str_buf_append_c(&str, v);
                                 else {
                                     /* we treat the unicode escapes as utf-8 encoded values. */
-                                    g_string_append_unichar(str, v);
+                                    nm_str_buf_append_unichar(&str, v);
                                 }
                             }
                         } else {
-                            g_string_append_c(str, '\\');
-                            g_string_append_c(str, value[i]);
+                            nm_str_buf_append_c(&str, '\\', value[i]);
                             i++;
                         }
                         goto loop_ansic_next;
                     }
                 } else
                     ch = value[i];
-                g_string_append_c(str, ch);
+                nm_str_buf_append_c(&str, ch);
                 i++;
 loop_ansic_next:;
             }
@@ -603,8 +602,8 @@ loop_ansic_next:;
         }
 
         /* an unquoted, regular character. Just consume it directly. */
-        if (str)
-            g_string_append_c(str, value[i]);
+        if (str.allocated > 0)
+            nm_str_buf_append_c(&str, value[i]);
         i++;
 
 loop1_next:;
@@ -614,18 +613,19 @@ loop1_next:;
 
 out_value:
     if (i == 0) {
-        nm_assert(!str);
+        nm_assert(str.allocated == 0);
+        nm_assert(!str._priv_str);
         *to_free = NULL;
         return "";
     }
 
-    if (str) {
-        if (str->len == 0 || str->str[0] == '\0') {
-            g_string_free(str, TRUE);
+    if (str.allocated > 0) {
+        if (str.len == 0 || nm_str_buf_get_str_unsafe(&str)[0] == '\0') {
+            nm_str_buf_destroy(&str);
             *to_free = NULL;
             return "";
         } else {
-            *to_free = g_string_free(str, FALSE);
+            *to_free = nm_str_buf_finalize(&str, NULL);
             return *to_free;
         }
     }
@@ -639,8 +639,7 @@ out_value:
     return value;
 
 out_error:
-    if (str)
-        g_string_free(str, TRUE);
+    nm_str_buf_destroy(&str);
     *to_free = NULL;
     return NULL;
 }
