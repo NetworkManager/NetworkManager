@@ -509,6 +509,12 @@ gboolean _nm_setting_bond_option_supported(const char *option, NMBondMode mode);
 
 /*****************************************************************************/
 
+GPtrArray *_nm_setting_bridge_get_vlans(NMSettingBridge *setting);
+
+GPtrArray *_nm_setting_bridge_port_get_vlans(NMSettingBridgePort *setting);
+
+/*****************************************************************************/
+
 NMSettingBluetooth *_nm_connection_get_setting_bluetooth_for_nap(NMConnection *connection);
 
 /*****************************************************************************/
