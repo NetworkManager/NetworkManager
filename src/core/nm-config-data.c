@@ -445,7 +445,7 @@ static NMAuthPolkitMode
 _config_data_get_main_auth_polkit(const NMConfigData *self, gboolean *out_invalid_config)
 {
     NMAuthPolkitMode auth_polkit_mode;
-    const char *     str;
+    gs_free char *   str = NULL;
 
     str              = nm_config_data_get_value(self,
                                    NM_CONFIG_KEYFILE_GROUP_MAIN,
