@@ -267,34 +267,41 @@ security_from_vardict(GVariant *security)
     NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
     const char **          array;
     const char *           tmp;
+    gsize                  i;
+    const char *           v;
 
     nm_assert(g_variant_is_of_type(security, G_VARIANT_TYPE_VARDICT));
 
     if (g_variant_lookup(security, "KeyMgmt", "^a&s", &array)) {
-        if (g_strv_contains(array, "wpa-psk") || g_strv_contains(array, "wpa-psk-sha256")
-            || g_strv_contains(array, "wpa-ft-psk"))
-            flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
-        if (g_strv_contains(array, "wpa-eap") || g_strv_contains(array, "wpa-eap-sha256")
-            || g_strv_contains(array, "wpa-ft-eap") || g_strv_contains(array, "wpa-fils-sha256")
-            || g_strv_contains(array, "wpa-fils-sha384")
-            || g_strv_contains(array, "wpa-fils-ft-sha256")
-            || g_strv_contains(array, "wpa-fils-ft-sha384"))
-            flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
-        if (g_strv_contains(array, "sae") || g_strv_contains(array, "ft-sae"))
-            flags |= NM_802_11_AP_SEC_KEY_MGMT_SAE;
-        if (g_strv_contains(array, "owe"))
-            flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
-        if (g_strv_contains(array, "wpa-eap-suite-b-192")
-            || g_strv_contains(array, "wpa-ft-eap-sha384"))
-            flags |= NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192;
+        for (i = 0; (v = array[i]); i++) {
+            if (NM_IN_STRSET(v, "wpa-psk", "wpa-psk-sha256", "wpa-ft-psk"))
+                flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
+            else if (NM_IN_STRSET(v,
+                                  "wpa-eap",
+                                  "wpa-eap-sha256",
+                                  "wpa-ft-eap",
+                                  "wpa-fils-sha256",
+                                  "wpa-fils-sha384",
+                                  "wpa-fils-ft-sha256",
+                                  "wpa-fils-ft-sha384"))
+                flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
+            else if (NM_IN_STRSET(v, "sae", "ft-sae"))
+                flags |= NM_802_11_AP_SEC_KEY_MGMT_SAE;
+            else if (NM_IN_STRSET(v, "owe"))
+                flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
+            else if (NM_IN_STRSET(v, "wpa-eap-suite-b-192", "wpa-ft-eap-sha384"))
+                flags |= NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192;
+        }
         g_free(array);
     }
 
     if (g_variant_lookup(security, "Pairwise", "^a&s", &array)) {
-        if (g_strv_contains(array, "tkip"))
-            flags |= NM_802_11_AP_SEC_PAIR_TKIP;
-        if (g_strv_contains(array, "ccmp"))
-            flags |= NM_802_11_AP_SEC_PAIR_CCMP;
+        for (i = 0; (v = array[i]); i++) {
+            if (NM_IN_STRSET(v, "tkip"))
+                flags |= NM_802_11_AP_SEC_PAIR_TKIP;
+            else if (NM_IN_STRSET(v, "ccmp"))
+                flags |= NM_802_11_AP_SEC_PAIR_CCMP;
+        }
         g_free(array);
     }
 
