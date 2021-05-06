@@ -36,6 +36,9 @@ NM_AUTO_DEFINE_FCN0(NMTCQdisc *, _nm_auto_unref_tc_qdisc, nm_tc_qdisc_unref);
 #define nm_auto_unref_tc_tfilter nm_auto(_nm_auto_unref_tc_tfilter)
 NM_AUTO_DEFINE_FCN0(NMTCTfilter *, _nm_auto_unref_tc_tfilter, nm_tc_tfilter_unref);
 
+#define nm_auto_unref_tc_action nm_auto(_nm_auto_unref_tc_action)
+NM_AUTO_DEFINE_FCN0(NMTCAction *, _nm_auto_unref_tc_action, nm_tc_action_unref);
+
 #define nm_auto_unref_bridge_vlan nm_auto(_nm_auto_unref_bridge_vlan)
 NM_AUTO_DEFINE_FCN0(NMBridgeVlan *, _nm_auto_unref_bridge_vlan, nm_bridge_vlan_unref);
 
