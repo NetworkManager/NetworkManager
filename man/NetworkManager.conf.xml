@@ -476,6 +476,17 @@ no-auto-default=*
       </varlistentry>
 
       <varlistentry>
+        <term><varname>firewall-backend</varname></term>
+        <listitem>
+          <para>
+            The firewall backend for configuring masquerading.
+            Set to either <literal>iptables</literal> or <literal>nftables</literal>.
+            If unspecified, it will be auto detected.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
         <term><varname>iwd-config-path</varname></term>
         <listitem>
           <para>
