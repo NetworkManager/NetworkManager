@@ -95,7 +95,7 @@ def process_data(data):
 
 def write_data(outfile, parsed_data):
     outfile.write(
-        '<property name="{0}" variable="{1}" format="{2}" values="{3}" default="{4}" example="{5}" description="{6}"/>\n'.format(
+        '<property name="{0}" variable="{1}" format="{2}" values="{3}" default="{4}" example="{5}" description="{6}"></property>\n'.format(
             parsed_data["property"],
             parsed_data["variable"],
             parsed_data["format"],
