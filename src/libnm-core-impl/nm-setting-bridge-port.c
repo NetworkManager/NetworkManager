@@ -281,6 +281,14 @@ nm_setting_bridge_port_clear_vlans(NMSettingBridgePort *setting)
     }
 }
 
+GPtrArray *
+_nm_setting_bridge_port_get_vlans(NMSettingBridgePort *setting)
+{
+    nm_assert(NM_IS_SETTING_BRIDGE_PORT(setting));
+
+    return NM_SETTING_BRIDGE_PORT_GET_PRIVATE(setting)->vlans;
+}
+
 /*****************************************************************************/
 
 static gboolean

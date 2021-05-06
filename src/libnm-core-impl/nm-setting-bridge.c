@@ -910,6 +910,16 @@ nm_setting_bridge_clear_vlans(NMSettingBridge *setting)
     }
 }
 
+GPtrArray *
+_nm_setting_bridge_get_vlans(NMSettingBridge *setting)
+{
+    nm_assert(NM_IS_SETTING_BRIDGE(setting));
+
+    return NM_SETTING_BRIDGE_GET_PRIVATE(setting)->vlans;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_setting_bridge_get_group_address:
  * @setting: the #NMSettingBridge
