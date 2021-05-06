@@ -247,11 +247,11 @@ _test_unbase64mem_mem(const char *base64, const guint8 *expected_arr, gsize expe
 {
     gs_free char *expected_base64 = NULL;
     int           r;
-    gs_free guint8 *exp2_arr = NULL;
-    gs_free guint8 *exp3_arr = NULL;
-    gsize           exp2_len;
-    gsize           exp3_len;
-    gsize           i;
+    nm_auto_free guint8 *exp2_arr = NULL;
+    nm_auto_free guint8 *exp3_arr = NULL;
+    gsize                exp2_len;
+    gsize                exp3_len;
+    gsize                i;
 
     expected_base64 = g_base64_encode(expected_arr, expected_len);
 
