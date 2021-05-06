@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 import os, re, sys
+import xml.etree.ElementTree as ET
 
 
 def get_setting_name(one_file):
@@ -26,7 +27,7 @@ def get_setting_name(one_file):
     return setting_name
 
 
-def scan_doc_comments(plugin, outfile, file, start_tag, end_tag):
+def scan_doc_comments(plugin, setting_node, file, start_tag, end_tag):
     data = []
     push_flag = 0
     try:
@@ -43,7 +44,7 @@ def scan_doc_comments(plugin, outfile, file, start_tag, end_tag):
             push_flag = 0
             parsed_data = process_data(data)
             if parsed_data:
-                write_data(outfile, parsed_data)
+                write_data(setting_node, parsed_data)
             data = []
         elif push_flag == 1:
             data.append(line)
@@ -75,14 +76,14 @@ def process_data(data):
         if kwd_first_line_found:
             keyword = kwd_first_line_found.group(1)
             value = kwd_first_line_found.group(2) + " "
-            parsed_data[keyword] = escape_xml_char(value)
+            parsed_data[keyword] = value
         elif kwd_more_line_found:
             if not keyword:
                 print("Extra mess in a comment: %s" % (line))
                 exit(1)
             else:
                 value = kwd_more_line_found.group(1) + " "
-                parsed_data[keyword] += escape_xml_char(value)
+                parsed_data[keyword] += value
     for keyword in keywords:
         if keyword == "variable" and keyword not in parsed_data:
             parsed_data[keyword] = parsed_data["property"]
@@ -93,27 +94,30 @@ def process_data(data):
     return parsed_data
 
 
-def write_data(outfile, parsed_data):
-    outfile.write(
-        '<property name="{0}" variable="{1}" format="{2}" values="{3}" default="{4}" example="{5}" description="{6}" />\n'.format(
-            parsed_data["property"],
-            parsed_data["variable"],
-            parsed_data["format"],
-            parsed_data["values"],
-            parsed_data["default"],
-            parsed_data["example"],
-            parsed_data["description"],
-        )
-    )
+def write_data(setting_node, parsed_data):
+    property_node = ET.SubElement(setting_node, "property")
+    property_node.set("name", parsed_data["property"])
+    property_node.set("variable", parsed_data["variable"])
+    property_node.set("format", parsed_data["format"])
+    property_node.set("values", parsed_data["values"])
+    property_node.set("default", parsed_data["default"])
+    property_node.set("example", parsed_data["example"])
+    property_node.set("description", parsed_data["description"])
 
 
-def escape_xml_char(text):
-    text = text.replace("&", "&amp;")
-    text = text.replace("<", "&lt;")
-    text = text.replace(">", "&gt;")
-    text = text.replace('"', "&quot;")
-
-    return text
+def pretty_xml(element, newline, level=0):
+    if element:
+        if (element.text is None) or element.text.isspace():
+            element.text = newline
+        else:
+            element.text = newline + element.text.strip() + newline
+    temp = list(element)
+    for subelement in temp:
+        if temp.index(subelement) < (len(temp) - 1):
+            subelement.tail = newline
+        else:
+            subelement.tail = newline
+        pretty_xml(subelement, newline, level=level + 1)
 
 
 if len(sys.argv) < 4:
@@ -124,22 +128,16 @@ argv = list(sys.argv[1:])
 plugin, output, source_files = argv[0], argv[1], argv[2:]
 start_tag = "---" + plugin + "---"
 end_tag = "---end---"
-outfile = open(output, mode="w")
-
-# write XML header
-outfile.write("<nm-setting-docs>\n")
-outfile.write("  ")
+root_node = ET.Element("nm-setting-docs")
 
 for one_file in source_files:
     setting_name = get_setting_name(one_file)
     if setting_name:
-        outfile.write('<setting name="' + setting_name + '">\n')
-        scan_doc_comments(plugin, outfile, one_file, start_tag, end_tag)
-        outfile.write("</setting>\n")
+        setting_node = ET.SubElement(root_node, "setting", name=setting_name)
+        setting_node.text = "\n"
+        scan_doc_comments(plugin, setting_node, one_file, start_tag, end_tag)
 
+pretty_xml(root_node, "\n")
+root_node.text = "\n  "
 
-# write XML footer
-outfile.write("</nm-setting-docs>")
-
-# close output file
-outfile.close()
+ET.ElementTree(root_node).write(output)
