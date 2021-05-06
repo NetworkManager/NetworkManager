@@ -2738,14 +2738,14 @@ static const NMVariantAttributeSpec *const tc_tfilter_attribute_spec[] = {
 NMTCTfilter *
 nm_utils_tc_tfilter_from_str(const char *str, GError **error)
 {
-    guint32            handle         = TC_H_UNSPEC;
-    guint32            parent         = TC_H_UNSPEC;
-    gs_free char *     kind           = NULL;
-    gs_free char *     rest           = NULL;
-    NMTCAction *       action         = NULL;
-    const char *       extra_opts     = NULL;
-    NMTCTfilter *      tfilter        = NULL;
-    gs_unref_hashtable GHashTable *ht = NULL;
+    guint32                 handle                 = TC_H_UNSPEC;
+    guint32                 parent                 = TC_H_UNSPEC;
+    gs_free char *          kind                   = NULL;
+    gs_free char *          rest                   = NULL;
+    nm_auto_unref_tc_action NMTCAction *action     = NULL;
+    const char *                        extra_opts = NULL;
+    NMTCTfilter *                       tfilter    = NULL;
+    gs_unref_hashtable GHashTable *ht              = NULL;
     GVariant *                     variant;
 
     nm_assert(str);
@@ -2785,10 +2785,8 @@ nm_utils_tc_tfilter_from_str(const char *str, GError **error)
         return NULL;
 
     nm_tc_tfilter_set_handle(tfilter, handle);
-    if (action) {
+    if (action)
         nm_tc_tfilter_set_action(tfilter, action);
-        nm_tc_action_unref(action);
-    }
 
     return tfilter;
 }
