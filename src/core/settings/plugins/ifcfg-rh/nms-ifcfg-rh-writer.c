@@ -16,6 +16,7 @@
 #include <stdio.h>
 
 #include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "nm-manager.h"
 #include "nm-setting-connection.h"
@@ -1554,7 +1555,7 @@ write_bridge_vlans(NMSetting * setting,
 {
     gs_unref_ptrarray GPtrArray *vlans = NULL;
     NMBridgeVlan *               vlan;
-    GString *                    string;
+    nm_auto_str_buf NMStrBuf     strbuf = NM_STR_BUF_INIT(0, FALSE);
     guint                        i;
 
     g_object_get(setting, property_name, &vlans, NULL);
@@ -1562,7 +1563,6 @@ write_bridge_vlans(NMSetting * setting,
     if (!vlans || !vlans->len)
         return TRUE;
 
-    string = g_string_new("");
     for (i = 0; i < vlans->len; i++) {
         gs_free char *vlan_str = NULL;
 
@@ -1570,13 +1570,12 @@ write_bridge_vlans(NMSetting * setting,
         vlan_str = nm_bridge_vlan_to_str(vlan, error);
         if (!vlan_str)
             return FALSE;
-        if (string->len > 0)
-            g_string_append(string, ",");
-        nm_utils_escaped_tokens_escape_gstr_assert(vlan_str, ",", string);
+        if (strbuf.len > 0)
+            nm_str_buf_append_c(&strbuf, ',');
+        nm_str_buf_append(&strbuf, nm_utils_escaped_tokens_escape_unnecessary(vlan_str, ","));
     }
 
-    svSetValueStr(ifcfg, key, string->str);
-    g_string_free(string, TRUE);
+    svSetValueStr(ifcfg, key, nm_str_buf_get_str(&strbuf));
     return TRUE;
 }
 
