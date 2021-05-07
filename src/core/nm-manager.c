@@ -2632,28 +2632,41 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         }
     }
 
-    /* The core of the API is nm_device_generate_connection() function, based on
-     * update_connection() virtual method and the @connection_type_supported
-     * class attribute. Devices that support assuming existing connections must
-     * have update_connection() implemented, otherwise
-     * nm_device_generate_connection() returns NULL. */
-    connection = nm_device_generate_connection(device, master, &maybe_later, &gen_error);
-    if (!connection) {
-        if (maybe_later) {
-            /* The device can potentially assume connections, but at this
-             * time there are no addresses configured and we can't generate
-             * a connection. Allow the device to assume a connection indicated
-             * in the state file by UUID. */
-            only_by_uuid = TRUE;
-        } else {
-            /* The device can't assume connections */
-            nm_device_assume_state_reset(device);
-            _LOG2D(LOGD_DEVICE,
-                   device,
-                   "assume: cannot generate connection: %s",
-                   gen_error->message);
-            return NULL;
+    if (nm_config_data_get_device_config_boolean(NM_CONFIG_GET_DATA,
+                                                 NM_CONFIG_KEYFILE_KEY_DEVICE_KEEP_CONFIGURATION,
+                                                 device,
+                                                 TRUE,
+                                                 TRUE)) {
+        /* The core of the API is nm_device_generate_connection() function, based on
+         * update_connection() virtual method and the @connection_type_supported
+         * class attribute. Devices that support assuming existing connections must
+         * have update_connection() implemented, otherwise
+         * nm_device_generate_connection() returns NULL. */
+        connection = nm_device_generate_connection(device, master, &maybe_later, &gen_error);
+        if (!connection) {
+            if (maybe_later) {
+                /* The device can potentially assume connections, but at this
+                 * time we can't generate a connection because no address is
+                 * configured. Allow the device to assume a connection indicated
+                 * in the state file by UUID. */
+                only_by_uuid = TRUE;
+            } else {
+                nm_device_assume_state_reset(device);
+                _LOG2D(LOGD_DEVICE,
+                       device,
+                       "assume: cannot generate connection: %s",
+                       gen_error->message);
+                return NULL;
+            }
         }
+    } else {
+        connection   = NULL;
+        only_by_uuid = TRUE;
+        g_set_error(&gen_error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_FAILED,
+                    "device %s has 'keep-configuration=no'",
+                    nm_device_get_iface(device));
     }
 
     nm_device_assume_state_get(device, &assume_state_guess_assume, &assume_state_connection_uuid);
