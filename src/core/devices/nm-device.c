@@ -7239,6 +7239,16 @@ _get_maybe_ipv6_disabled(NMDevice *self)
     return (nm_platform_sysctl_get_int32(platform, NMP_SYSCTL_PATHID_ABSOLUTE(path), 0) == 0);
 }
 
+/*
+ * nm_device_generate_connection:
+ *
+ * Generates a connection from an existing interface.
+ *
+ * If the device doesn't have an IP configuration and it's not a port or a
+ * controller, then no connection gets generated and the function returns
+ * %NULL. In such case, @maybe_later is set to %TRUE if a connection can be
+ * generated later when an IP address is assigned to the interface.
+ */
 NMConnection *
 nm_device_generate_connection(NMDevice *self,
                               NMDevice *master,
