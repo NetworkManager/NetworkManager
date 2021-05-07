@@ -586,7 +586,7 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
         if (v_v) {
             if (g_variant_lookup(v_v, "Type", "&s", &v_s)) {
                 f = NM_802_11_AP_FLAGS_WPS;
-                if (nm_streq(v_s, "pcb"))
+                if (nm_streq(v_s, "pbc"))
                     f |= NM_802_11_AP_FLAGS_WPS_PBC;
                 else if (nm_streq(v_s, "pin"))
                     f |= NM_802_11_AP_FLAGS_WPS_PIN;
