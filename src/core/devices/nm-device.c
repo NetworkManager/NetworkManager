@@ -52,6 +52,7 @@
 #include "dnsmasq/nm-dnsmasq-manager.h"
 #include "nm-dhcp-config.h"
 #include "nm-rfkill-manager.h"
+#include "nm-firewall-utils.h"
 #include "nm-firewalld-manager.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
@@ -11571,7 +11572,7 @@ start_sharing(NMDevice *self, NMIP4Config *config, GError **error)
     NMConnection *              conn;
     NMSettingConnection *       s_con;
     gboolean                    announce_android_metered;
-    NMUtilsShareRules *         share_rules;
+    NMFirewallConfig *          firewall_config;
 
     g_return_val_if_fail(config, FALSE);
 
@@ -11596,13 +11597,9 @@ start_sharing(NMDevice *self, NMIP4Config *config, GError **error)
     req = nm_device_get_act_request(self);
     g_return_val_if_fail(req, FALSE);
 
-    share_rules = nm_utils_share_rules_new();
+    firewall_config = nm_firewall_config_new(ip_iface, ip4_addr->address, ip4_addr->plen);
 
-    nm_utils_share_rules_add_all_rules(share_rules, ip_iface, ip4_addr->address, ip4_addr->plen);
-
-    nm_utils_share_rules_apply(share_rules, TRUE);
-
-    nm_act_request_set_shared(req, share_rules);
+    nm_act_request_set_shared(req, firewall_config);
 
     conn  = nm_act_request_get_applied_connection(req);
     s_con = nm_connection_get_setting_connection(conn);
