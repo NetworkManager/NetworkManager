@@ -878,6 +878,7 @@ static const ConfigGroup config_groups[] = {
                              NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
+                             NM_CONFIG_KEYFILE_KEY_DEVICE_KEEP_CONFIGURATION,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_BACKEND,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_RAND_MAC_ADDRESS,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_GENERATE_MAC_ADDRESS_MASK,
