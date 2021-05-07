@@ -491,3 +491,76 @@ nm_utils_fd_read(int fd, NMStrBuf *out_string)
 
     return n_read;
 }
+
+/*****************************************************************************/
+
+typedef struct {
+    GSubprocess *subprocess;
+    GSource *    timeout_source;
+} SubprocessTerminateData;
+
+static void
+_subprocess_terminate_wait_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    SubprocessTerminateData *term_data = user_data;
+
+    g_subprocess_wait_finish(G_SUBPROCESS(source), result, NULL);
+
+    nm_clear_g_source_inst(&term_data->timeout_source);
+    g_object_unref(term_data->subprocess);
+    nm_g_slice_free(term_data);
+}
+
+static gboolean
+_subprocess_terminate_timeout_cb(gpointer user_data)
+{
+    SubprocessTerminateData *term_data = user_data;
+
+    nm_clear_g_source_inst(&term_data->timeout_source);
+    g_subprocess_send_signal(term_data->subprocess, SIGKILL);
+    return G_SOURCE_REMOVE;
+}
+
+void
+nm_g_subprocess_terminate_in_background(GSubprocess *subprocess, int timeout_msec_before_kill)
+{
+    SubprocessTerminateData *term_data;
+    GMainContext *           main_context;
+
+    nm_assert(timeout_msec_before_kill > 0);
+
+    /* The GSubprocess stays alive until the child is reaped (an internal reference is held).
+     *
+     * This function first sends SIGTERM to the process right away, and after a
+     * timeout "timeout_msec_before_kill" send a SIGKILL.
+     *
+     * Otherwise, it does nothing, it does not log, there is no notification when the process
+     * completes and there is no way to abort the thing.
+     *
+     * It honors the current g_main_context_get_thread_default(). */
+
+    if (!subprocess)
+        return;
+
+    g_return_if_fail(G_IS_SUBPROCESS(subprocess));
+
+    main_context = g_main_context_get_thread_default();
+
+    term_data  = g_slice_new(SubprocessTerminateData);
+    *term_data = (SubprocessTerminateData){
+        .subprocess     = g_object_ref(subprocess),
+        .timeout_source = NULL,
+    };
+
+    g_subprocess_send_signal(subprocess, SIGTERM);
+
+    g_subprocess_wait_async(subprocess, NULL, _subprocess_terminate_wait_cb, term_data);
+
+    term_data->timeout_source =
+        nm_g_source_attach(nm_g_timeout_source_new(timeout_msec_before_kill,
+                                                   G_PRIORITY_DEFAULT,
+                                                   _subprocess_terminate_timeout_cb,
+                                                   term_data,
+                                                   NULL),
+                           main_context);
+}
