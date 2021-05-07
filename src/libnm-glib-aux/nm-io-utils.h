@@ -56,4 +56,6 @@ struct stat;
 
 int nm_utils_file_stat(const char *filename, struct stat *out_st);
 
+void nm_g_subprocess_terminate_in_background(GSubprocess *subprocess, int timeout_msec_before_kill);
+
 #endif /* __NM_IO_UTILS_H__ */
