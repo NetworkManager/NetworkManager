@@ -1082,7 +1082,9 @@ write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
     NMSettingWired *   s_wired;
     const char *const *s390_subchannels;
-    guint32            mtu, num_opts, i;
+    guint32            mtu;
+    guint32            num_opts;
+    guint32            i;
     const char *const *macaddr_blacklist;
 
     s_wired = nm_connection_get_setting_wired(connection);
@@ -1182,33 +1184,31 @@ static gboolean
 write_wired_for_virtual(NMConnection *connection, shvarFile *ifcfg)
 {
     NMSettingWired *s_wired;
-    gboolean        has_wired = FALSE;
+    const char *    device_mac;
+    const char *    cloned_mac;
+    guint32         mtu;
 
     s_wired = nm_connection_get_setting_wired(connection);
-    if (s_wired) {
-        const char *device_mac, *cloned_mac;
-        guint32     mtu;
+    if (!s_wired)
+        return FALSE;
 
-        has_wired = TRUE;
+    device_mac = nm_setting_wired_get_mac_address(s_wired);
+    svSetValue(ifcfg, "HWADDR", device_mac ?: "");
 
-        device_mac = nm_setting_wired_get_mac_address(s_wired);
-        svSetValue(ifcfg, "HWADDR", device_mac ?: "");
+    cloned_mac = nm_setting_wired_get_cloned_mac_address(s_wired);
+    svSetValueStr(ifcfg, "MACADDR", cloned_mac);
 
-        cloned_mac = nm_setting_wired_get_cloned_mac_address(s_wired);
-        svSetValueStr(ifcfg, "MACADDR", cloned_mac);
+    svSetValueStr(ifcfg,
+                  "GENERATE_MAC_ADDRESS_MASK",
+                  nm_setting_wired_get_generate_mac_address_mask(s_wired));
 
-        svSetValueStr(ifcfg,
-                      "GENERATE_MAC_ADDRESS_MASK",
-                      nm_setting_wired_get_generate_mac_address_mask(s_wired));
+    svSetValueTernary(ifcfg,
+                      "ACCEPT_ALL_MAC_ADDRESSES",
+                      nm_setting_wired_get_accept_all_mac_addresses(s_wired));
 
-        svSetValueTernary(ifcfg,
-                          "ACCEPT_ALL_MAC_ADDRESSES",
-                          nm_setting_wired_get_accept_all_mac_addresses(s_wired));
-
-        mtu = nm_setting_wired_get_mtu(s_wired);
-        svSetValueInt64_cond(ifcfg, "MTU", mtu != 0, mtu);
-    }
-    return has_wired;
+    mtu = nm_setting_wired_get_mtu(s_wired);
+    svSetValueInt64_cond(ifcfg, "MTU", mtu != 0, mtu);
+    return TRUE;
 }
 
 static void
