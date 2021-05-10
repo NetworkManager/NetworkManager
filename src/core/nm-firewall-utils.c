@@ -36,7 +36,7 @@ _share_iptables_subnet_to_str(char      buf[static _SHARE_IPTABLES_SUBNET_TO_STR
 }
 
 static char *
-_share_iptables_get_name(gboolean is_comment, const char *prefix, const char *ip_iface)
+_share_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const char *ip_iface)
 {
     NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
     gsize    ip_iface_len;
@@ -58,7 +58,7 @@ _share_iptables_get_name(gboolean is_comment, const char *prefix, const char *ip
      * an plain name.
      *
      * That means, for chain names the prefix must be at most 8 chars long. */
-    nm_assert(is_comment || (strlen(prefix) <= 8));
+    nm_assert(!is_iptables_chain || (strlen(prefix) <= 8));
 
     nm_str_buf_append(&strbuf, prefix);
 
@@ -150,7 +150,7 @@ _share_iptables_set_masquerade(gboolean add, const char *ip_iface, in_addr_t add
     char          str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
     gs_free char *comment_name = NULL;
 
-    comment_name = _share_iptables_get_name(TRUE, "nm-shared", ip_iface);
+    comment_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
     _share_iptables_call("" IPTABLES_PATH "",
@@ -290,9 +290,9 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
     gs_free char *chain_input   = NULL;
     gs_free char *chain_forward = NULL;
 
-    comment_name  = _share_iptables_get_name(TRUE, "nm-shared", ip_iface);
-    chain_input   = _share_iptables_get_name(FALSE, "nm-sh-in", ip_iface);
-    chain_forward = _share_iptables_get_name(FALSE, "nm-sh-fw", ip_iface);
+    comment_name  = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
+    chain_input   = _share_iptables_get_name(TRUE, "nm-sh-in", ip_iface);
+    chain_forward = _share_iptables_get_name(TRUE, "nm-sh-fw", ip_iface);
 
     if (add)
         _share_iptables_set_shared_chains_add(chain_input, chain_forward, ip_iface, addr, plen);
