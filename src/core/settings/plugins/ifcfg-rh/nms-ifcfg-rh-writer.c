@@ -1096,78 +1096,70 @@ write_wired_setting_impl(NMSettingWired *s_wired, shvarFile *ifcfg, gboolean is_
                   "GENERATE_MAC_ADDRESS_MASK",
                   nm_setting_wired_get_generate_mac_address_mask(s_wired));
 
-    if (!is_virtual) {
-        macaddr_blacklist = nm_setting_wired_get_mac_address_blacklist(s_wired);
-        if (macaddr_blacklist[0]) {
-            gs_free char *blacklist_str = NULL;
+    macaddr_blacklist = nm_setting_wired_get_mac_address_blacklist(s_wired);
+    if (macaddr_blacklist[0]) {
+        gs_free char *blacklist_str = NULL;
 
-            blacklist_str = g_strjoinv(" ", (char **) macaddr_blacklist);
-            svSetValueStr(ifcfg, "HWADDR_BLACKLIST", blacklist_str);
-        }
+        blacklist_str = g_strjoinv(" ", (char **) macaddr_blacklist);
+        svSetValueStr(ifcfg, "HWADDR_BLACKLIST", blacklist_str);
     }
 
     mtu = nm_setting_wired_get_mtu(s_wired);
     svSetValueInt64_cond(ifcfg, "MTU", mtu != 0, mtu);
 
-    if (!is_virtual) {
-        s390_subchannels = nm_setting_wired_get_s390_subchannels(s_wired);
+    s390_subchannels = nm_setting_wired_get_s390_subchannels(s_wired);
 
-        {
-            gs_free char *tmp = NULL;
-            gsize         len = NM_PTRARRAY_LEN(s390_subchannels);
+    {
+        gs_free char *tmp = NULL;
+        gsize         len = NM_PTRARRAY_LEN(s390_subchannels);
 
-            if (len == 2) {
-                tmp = g_strdup_printf("%s,%s", s390_subchannels[0], s390_subchannels[1]);
-            } else if (len == 3) {
-                tmp = g_strdup_printf("%s,%s,%s",
-                                      s390_subchannels[0],
-                                      s390_subchannels[1],
-                                      s390_subchannels[2]);
-            }
-
-            svSetValueStr(ifcfg, "SUBCHANNELS", tmp);
+        if (len == 2) {
+            tmp = g_strdup_printf("%s,%s", s390_subchannels[0], s390_subchannels[1]);
+        } else if (len == 3) {
+            tmp = g_strdup_printf("%s,%s,%s",
+                                  s390_subchannels[0],
+                                  s390_subchannels[1],
+                                  s390_subchannels[2]);
         }
 
-        svSetValueStr(ifcfg, "NETTYPE", nm_setting_wired_get_s390_nettype(s_wired));
+        svSetValueStr(ifcfg, "SUBCHANNELS", tmp);
+    }
 
-        svSetValueStr(ifcfg,
-                      "PORTNAME",
-                      nm_setting_wired_get_s390_option_by_key(s_wired, "portname"));
+    svSetValueStr(ifcfg, "NETTYPE", nm_setting_wired_get_s390_nettype(s_wired));
 
-        svSetValueStr(ifcfg,
-                      "CTCPROT",
-                      nm_setting_wired_get_s390_option_by_key(s_wired, "ctcprot"));
+    svSetValueStr(ifcfg, "PORTNAME", nm_setting_wired_get_s390_option_by_key(s_wired, "portname"));
 
-        num_opts = nm_setting_wired_get_num_s390_options(s_wired);
-        if (s390_subchannels && num_opts) {
-            nm_auto_free_gstring GString *tmp = NULL;
+    svSetValueStr(ifcfg, "CTCPROT", nm_setting_wired_get_s390_option_by_key(s_wired, "ctcprot"));
 
-            for (i = 0; i < num_opts; i++) {
-                const char *s390_key, *s390_val;
+    num_opts = nm_setting_wired_get_num_s390_options(s_wired);
+    if (s390_subchannels && num_opts) {
+        nm_auto_free_gstring GString *tmp = NULL;
 
-                nm_setting_wired_get_s390_option(s_wired, i, &s390_key, &s390_val);
+        for (i = 0; i < num_opts; i++) {
+            const char *s390_key, *s390_val;
 
-                /* portname is handled separately */
-                if (NM_IN_STRSET(s390_key, "portname", "ctcprot"))
-                    continue;
+            nm_setting_wired_get_s390_option(s_wired, i, &s390_key, &s390_val);
 
-                if (strchr(s390_key, '=')) {
-                    /* this key cannot be expressed. But after all, it's not valid anyway
+            /* portname is handled separately */
+            if (NM_IN_STRSET(s390_key, "portname", "ctcprot"))
+                continue;
+
+            if (strchr(s390_key, '=')) {
+                /* this key cannot be expressed. But after all, it's not valid anyway
                  * and the connection shouldn't even verify. */
-                    continue;
-                }
-
-                if (!tmp)
-                    tmp = g_string_sized_new(30);
-                else
-                    g_string_append_c(tmp, ' ');
-                nm_utils_escaped_tokens_escape_gstr(s390_key, NM_ASCII_SPACES, tmp);
-                g_string_append_c(tmp, '=');
-                nm_utils_escaped_tokens_escape_gstr(s390_val, NM_ASCII_SPACES, tmp);
+                continue;
             }
-            if (tmp)
-                svSetValueStr(ifcfg, "OPTIONS", tmp->str);
+
+            if (!tmp)
+                tmp = g_string_sized_new(30);
+            else
+                g_string_append_c(tmp, ' ');
+            nm_utils_escaped_tokens_escape_gstr(s390_key, NM_ASCII_SPACES, tmp);
+            g_string_append_c(tmp, '=');
+            nm_utils_escaped_tokens_escape_gstr(s390_val, NM_ASCII_SPACES, tmp);
         }
+        if (tmp)
+            svSetValueStr(ifcfg, "OPTIONS", tmp->str);
     }
 
     if (!is_virtual)
