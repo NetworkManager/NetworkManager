@@ -1162,9 +1162,6 @@ write_wired_setting_impl(NMSettingWired *s_wired, shvarFile *ifcfg, gboolean is_
             svSetValueStr(ifcfg, "OPTIONS", tmp->str);
     }
 
-    if (!is_virtual)
-        svSetValueStr(ifcfg, "TYPE", TYPE_ETHERNET);
-
     svSetValueTernary(ifcfg,
                       "ACCEPT_ALL_MAC_ADDRESSES",
                       nm_setting_wired_get_accept_all_mac_addresses(s_wired));
@@ -1184,6 +1181,8 @@ write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
                     NM_SETTING_WIRED_SETTING_NAME);
         return FALSE;
     }
+
+    svSetValueStr(ifcfg, "TYPE", TYPE_ETHERNET);
 
     write_wired_setting_impl(s_wired, ifcfg, FALSE);
     return TRUE;
