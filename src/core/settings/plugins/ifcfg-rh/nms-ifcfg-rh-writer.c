@@ -1394,6 +1394,10 @@ write_wired_for_virtual(NMConnection *connection, shvarFile *ifcfg)
                       "GENERATE_MAC_ADDRESS_MASK",
                       nm_setting_wired_get_generate_mac_address_mask(s_wired));
 
+        svSetValueTernary(ifcfg,
+                          "ACCEPT_ALL_MAC_ADDRESSES",
+                          nm_setting_wired_get_accept_all_mac_addresses(s_wired));
+
         mtu = nm_setting_wired_get_mtu(s_wired);
         svSetValueInt64_cond(ifcfg, "MTU", mtu != 0, mtu);
     }
