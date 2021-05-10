@@ -1178,6 +1178,39 @@ write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
     return TRUE;
 }
 
+static gboolean
+write_wired_for_virtual(NMConnection *connection, shvarFile *ifcfg)
+{
+    NMSettingWired *s_wired;
+    gboolean        has_wired = FALSE;
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    if (s_wired) {
+        const char *device_mac, *cloned_mac;
+        guint32     mtu;
+
+        has_wired = TRUE;
+
+        device_mac = nm_setting_wired_get_mac_address(s_wired);
+        svSetValue(ifcfg, "HWADDR", device_mac ?: "");
+
+        cloned_mac = nm_setting_wired_get_cloned_mac_address(s_wired);
+        svSetValueStr(ifcfg, "MACADDR", cloned_mac);
+
+        svSetValueStr(ifcfg,
+                      "GENERATE_MAC_ADDRESS_MASK",
+                      nm_setting_wired_get_generate_mac_address_mask(s_wired));
+
+        svSetValueTernary(ifcfg,
+                          "ACCEPT_ALL_MAC_ADDRESSES",
+                          nm_setting_wired_get_accept_all_mac_addresses(s_wired));
+
+        mtu = nm_setting_wired_get_mtu(s_wired);
+        svSetValueInt64_cond(ifcfg, "MTU", mtu != 0, mtu);
+    }
+    return has_wired;
+}
+
 static void
 _ethtool_gstring_prepare(GString **str, gboolean *is_first, char cmdline_flag, const char *iface)
 {
@@ -1370,39 +1403,6 @@ vlan_priority_maplist_to_stringlist(NMSettingVlan *s_vlan, NMVlanPriorityMap map
     g_strfreev(strlist);
 
     return value;
-}
-
-static gboolean
-write_wired_for_virtual(NMConnection *connection, shvarFile *ifcfg)
-{
-    NMSettingWired *s_wired;
-    gboolean        has_wired = FALSE;
-
-    s_wired = nm_connection_get_setting_wired(connection);
-    if (s_wired) {
-        const char *device_mac, *cloned_mac;
-        guint32     mtu;
-
-        has_wired = TRUE;
-
-        device_mac = nm_setting_wired_get_mac_address(s_wired);
-        svSetValue(ifcfg, "HWADDR", device_mac ?: "");
-
-        cloned_mac = nm_setting_wired_get_cloned_mac_address(s_wired);
-        svSetValueStr(ifcfg, "MACADDR", cloned_mac);
-
-        svSetValueStr(ifcfg,
-                      "GENERATE_MAC_ADDRESS_MASK",
-                      nm_setting_wired_get_generate_mac_address_mask(s_wired));
-
-        svSetValueTernary(ifcfg,
-                          "ACCEPT_ALL_MAC_ADDRESSES",
-                          nm_setting_wired_get_accept_all_mac_addresses(s_wired));
-
-        mtu = nm_setting_wired_get_mtu(s_wired);
-        svSetValueInt64_cond(ifcfg, "MTU", mtu != 0, mtu);
-    }
-    return has_wired;
 }
 
 static gboolean
