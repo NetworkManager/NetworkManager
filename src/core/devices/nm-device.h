@@ -627,27 +627,28 @@ void nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device);
  *   setting the NM_UNMANAGED_IS_SLAVE to %TRUE makes no sense, this flag has only
  *   meaning to set a slave device as managed if the parent is managed too.
  */
-typedef enum { /*< skip >*/
-               NM_UNMANAGED_NONE = 0,
+typedef enum {
+    NM_UNMANAGED_NONE = 0,
 
-               /* these flags are authoritative. If one of them is set,
+    /* these flags are authoritative. If one of them is set,
      * the device cannot be managed. */
-               NM_UNMANAGED_SLEEPING      = (1LL << 0),
-               NM_UNMANAGED_QUITTING      = (1LL << 1),
-               NM_UNMANAGED_PARENT        = (1LL << 2),
-               NM_UNMANAGED_BY_TYPE       = (1LL << 3),
-               NM_UNMANAGED_PLATFORM_INIT = (1LL << 4),
-               NM_UNMANAGED_USER_EXPLICIT = (1LL << 5),
-               NM_UNMANAGED_USER_SETTINGS = (1LL << 6),
+    NM_UNMANAGED_SLEEPING      = (1LL << 0),
+    NM_UNMANAGED_QUITTING      = (1LL << 1),
+    NM_UNMANAGED_PARENT        = (1LL << 2),
+    NM_UNMANAGED_BY_TYPE       = (1LL << 3),
+    NM_UNMANAGED_PLATFORM_INIT = (1LL << 4),
+    NM_UNMANAGED_USER_EXPLICIT = (1LL << 5),
+    NM_UNMANAGED_USER_SETTINGS = (1LL << 6),
 
-               /* These flags can be non-effective and be overwritten
+    /* These flags can be non-effective and be overwritten
      * by other flags. */
-               NM_UNMANAGED_BY_DEFAULT    = (1LL << 8),
-               NM_UNMANAGED_USER_CONF     = (1LL << 9),
-               NM_UNMANAGED_USER_UDEV     = (1LL << 10),
-               NM_UNMANAGED_EXTERNAL_DOWN = (1LL << 11),
-               NM_UNMANAGED_IS_SLAVE      = (1LL << 12),
+    NM_UNMANAGED_BY_DEFAULT    = (1LL << 7),
+    NM_UNMANAGED_USER_CONF     = (1LL << 8),
+    NM_UNMANAGED_USER_UDEV     = (1LL << 9),
+    NM_UNMANAGED_EXTERNAL_DOWN = (1LL << 10),
+    NM_UNMANAGED_IS_SLAVE      = (1LL << 11),
 
+    NM_UNMANAGED_ALL = ((1LL << 12) - 1),
 } NMUnmanagedFlags;
 
 typedef enum {
