@@ -100,6 +100,10 @@ G_BEGIN_DECLS
 #define NM_ETHTOOL_OPTNAME_RING_RX_MINI  "ring-rx-mini"
 #define NM_ETHTOOL_OPTNAME_RING_TX       "ring-tx"
 
+#define NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG "pause-autoneg"
+#define NM_ETHTOOL_OPTNAME_PAUSE_RX      "pause-rx"
+#define NM_ETHTOOL_OPTNAME_PAUSE_TX      "pause-tx"
+
 /*****************************************************************************/
 
 G_END_DECLS

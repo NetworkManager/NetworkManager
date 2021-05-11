@@ -11359,6 +11359,7 @@ test_ethtool_names(void)
     } s_idxs[] = {
         {_NM_ETHTOOL_ID_FEATURE_FIRST, _NM_ETHTOOL_ID_FEATURE_LAST},
         {_NM_ETHTOOL_ID_COALESCE_FIRST, _NM_ETHTOOL_ID_COALESCE_LAST},
+        {_NM_ETHTOOL_ID_PAUSE_FIRST, _NM_ETHTOOL_ID_PAUSE_LAST},
         {_NM_ETHTOOL_ID_RING_FIRST, _NM_ETHTOOL_ID_RING_LAST},
     };
     const NMEthtoolData *data;

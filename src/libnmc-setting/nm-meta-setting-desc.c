@@ -4269,7 +4269,7 @@ static gconstpointer _get_fcn_ethtool(ARGS_GET_FCN)
         RETURN_STR_TO_FREE(nm_strdup_int(u32));
     }
 
-    nm_assert(nm_ethtool_id_is_feature(ethtool_id));
+    nm_assert(nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id));
 
     if (!nm_setting_option_get_boolean(setting, nm_ethtool_data[ethtool_id]->optname, &b)) {
         NM_SET_OUT(out_is_default, TRUE);
@@ -4309,7 +4309,7 @@ static gboolean _set_fcn_ethtool(ARGS_SET_FCN)
         return TRUE;
     }
 
-    nm_assert(nm_ethtool_id_is_feature(ethtool_id));
+    nm_assert(nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id));
 
     value = nm_strstrip_avoid_copy_a(300, value, &value_to_free);
     if (NM_IN_STRSET(value, "1", "yes", "true", "on"))
@@ -5651,6 +5651,30 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
     PROPERTY_INFO_ETHTOOL (COALESCE_TX_USECS_IRQ),
     PROPERTY_INFO_ETHTOOL (COALESCE_TX_USECS_HIGH),
     PROPERTY_INFO_ETHTOOL (COALESCE_TX_USECS_LOW),
+    PROPERTY_INFO (NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG,
+                   "Whether to automatically negotiate on pause frame of flow "
+                   "control mechanism defined by IEEE 802.3x standard.",
+                   .property_type = &_pt_ethtool,
+                   .property_typ_data =
+                   DEFINE_PROPERTY_TYP_DATA_SUBTYPE
+                      (ethtool, .ethtool_id = NM_ETHTOOL_ID_PAUSE_AUTONEG)
+                   ),
+    PROPERTY_INFO (NM_ETHTOOL_OPTNAME_PAUSE_RX,
+                   "Whether RX pause should be enabled. Only valid when "
+                   "automatic negotiation is disabled",
+                   .property_type = &_pt_ethtool,
+                   .property_typ_data =
+                   DEFINE_PROPERTY_TYP_DATA_SUBTYPE
+                      (ethtool, .ethtool_id = NM_ETHTOOL_ID_PAUSE_RX)
+                   ),
+    PROPERTY_INFO (NM_ETHTOOL_OPTNAME_PAUSE_TX,
+                   "Whether TX pause should be enabled. Only valid when "
+                   "automatic negotiation is disabled",
+                   .property_type = &_pt_ethtool,
+                   .property_typ_data =
+                   DEFINE_PROPERTY_TYP_DATA_SUBTYPE
+                      (ethtool, .ethtool_id = NM_ETHTOOL_ID_PAUSE_TX)
+                   ),
     PROPERTY_INFO_ETHTOOL (RING_RX),
     PROPERTY_INFO_ETHTOOL (RING_RX_JUMBO),
     PROPERTY_INFO_ETHTOOL (RING_RX_MINI),

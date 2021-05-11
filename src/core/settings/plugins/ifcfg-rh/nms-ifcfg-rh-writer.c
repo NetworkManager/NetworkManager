@@ -1340,6 +1340,19 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
             g_string_append(str, nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
             g_string_append_printf(str, " %" G_GUINT32_FORMAT, u32);
         }
+        for (ethtool_id = _NM_ETHTOOL_ID_PAUSE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_PAUSE_LAST;
+             ethtool_id++) {
+            nm_assert(nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
+            if (!nm_setting_option_get_boolean(NM_SETTING(s_ethtool),
+                                               nm_ethtool_data[ethtool_id]->optname,
+                                               &b))
+                continue;
+
+            _ethtool_gstring_prepare(&str, &is_first, 'A', iface);
+            g_string_append_c(str, ' ');
+            g_string_append(str, nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
+            g_string_append(str, b ? " on" : " off");
+        }
     }
 
     if (str) {

@@ -91,6 +91,12 @@ typedef struct {
     guint32 tx_pending;
 } NMEthtoolRingState;
 
+typedef struct {
+    bool autoneg : 1;
+    bool rx : 1;
+    bool tx : 1;
+} NMEthtoolPauseState;
+
 /*****************************************************************************/
 
 typedef struct _NMPNetns                 NMPNetns;
