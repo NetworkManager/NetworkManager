@@ -25,7 +25,7 @@
 static const GVariantType *
 get_variant_type_from_ethtool_id(NMEthtoolID ethtool_id)
 {
-    if (nm_ethtool_id_is_feature(ethtool_id))
+    if (nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id))
         return G_VARIANT_TYPE_BOOLEAN;
 
     if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id))
@@ -86,6 +86,22 @@ gboolean
 nm_ethtool_optname_is_ring(const char *optname)
 {
     return optname && nm_ethtool_id_is_ring(nm_ethtool_id_get_by_name(optname));
+}
+
+/**
+ * nm_ethtool_optname_is_pause:
+ * @optname: (allow-none): the option name to check
+ *
+ * Checks whether @optname is a valid option name for a pause setting.
+ *
+ * %Returns: %TRUE, if @optname is valid
+ *
+ * Since: 1.32
+ */
+gboolean
+nm_ethtool_optname_is_pause(const char *optname)
+{
+    return optname && nm_ethtool_id_is_pause(nm_ethtool_id_get_by_name(optname));
 }
 
 /*****************************************************************************/

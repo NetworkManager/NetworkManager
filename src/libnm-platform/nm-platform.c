@@ -3304,6 +3304,27 @@ nm_platform_ethtool_set_ring(NMPlatform *self, int ifindex, const NMEthtoolRingS
     return nmp_utils_ethtool_set_ring(ifindex, ring);
 }
 
+gboolean
+nm_platform_ethtool_get_link_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(pause, FALSE);
+
+    return nmp_utils_ethtool_get_pause(ifindex, pause);
+}
+
+gboolean
+nm_platform_ethtool_set_pause(NMPlatform *self, int ifindex, const NMEthtoolPauseState *pause)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    return nmp_utils_ethtool_set_pause(ifindex, pause);
+}
+
 /*****************************************************************************/
 
 const NMDedupMultiHeadEntry *

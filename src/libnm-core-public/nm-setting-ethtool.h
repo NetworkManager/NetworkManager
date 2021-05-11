@@ -23,6 +23,9 @@ gboolean nm_ethtool_optname_is_coalesce(const char *optname);
 NM_AVAILABLE_IN_1_26
 gboolean nm_ethtool_optname_is_ring(const char *optname);
 
+NM_AVAILABLE_IN_1_32
+gboolean nm_ethtool_optname_is_pause(const char *optname);
+
 /*****************************************************************************/
 
 #define NM_TYPE_SETTING_ETHTOOL (nm_setting_ethtool_get_type())

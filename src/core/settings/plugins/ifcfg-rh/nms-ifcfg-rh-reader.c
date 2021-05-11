@@ -4677,7 +4677,9 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"--coalesce", NM_ETHTOOL_TYPE_COALESCE},
     {"--features", NM_ETHTOOL_TYPE_FEATURE},
     {"--offload", NM_ETHTOOL_TYPE_FEATURE},
+    {"--pause", NM_ETHTOOL_TYPE_PAUSE},
     {"--set-ring", NM_ETHTOOL_TYPE_RING},
+    {"-A", NM_ETHTOOL_TYPE_PAUSE},
     {"-C", NM_ETHTOOL_TYPE_COALESCE},
     {"-G", NM_ETHTOOL_TYPE_RING},
     {"-K", NM_ETHTOOL_TYPE_FEATURE}, );
@@ -4717,7 +4719,7 @@ parse_ethtool_option(const char *             value,
         w_iter = &words[2];
 
         while (w_iter && *w_iter) {
-            if (ethtool_type == NM_ETHTOOL_TYPE_FEATURE) {
+            if (NM_IN_SET(ethtool_type, NM_ETHTOOL_TYPE_FEATURE, NM_ETHTOOL_TYPE_PAUSE)) {
                 w_iter = _next_ethtool_options_nmternary(w_iter, ethtool_type, &ifcfg_option);
 
                 if (ifcfg_option.has_value) {

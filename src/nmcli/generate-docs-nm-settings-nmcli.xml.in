@@ -532,6 +532,12 @@
         <property name="coalesce-tx-usecs-irq" />
         <property name="coalesce-tx-usecs-high" />
         <property name="coalesce-tx-usecs-low" />
+        <property name="pause-autoneg"
+                  description="Whether to automatically negotiate on pause frame of flow control mechanism defined by IEEE 802.3x standard." />
+        <property name="pause-rx"
+                  description="Whether RX pause should be enabled. Only valid when automatic negotiation is disabled" />
+        <property name="pause-tx"
+                  description="Whether TX pause should be enabled. Only valid when automatic negotiation is disabled" />
         <property name="ring-rx" />
         <property name="ring-rx-jumbo" />
         <property name="ring-rx-mini" />

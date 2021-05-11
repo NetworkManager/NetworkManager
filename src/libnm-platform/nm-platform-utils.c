@@ -280,6 +280,7 @@ static NM_UTILS_ENUM2STR_DEFINE(_ethtool_cmd_to_string,
                                 NM_UTILS_ENUM2STR(ETHTOOL_GLINKSETTINGS, "ETHTOOL_GLINKSETTINGS"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GPERMADDR, "ETHTOOL_GPERMADDR"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GRINGPARAM, "ETHTOOL_GRINGPARAM"),
+                                NM_UTILS_ENUM2STR(ETHTOOL_GPAUSEPARAM, "ETHTOOL_GPAUSEPARAM"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GSET, "ETHTOOL_GSET"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GSSET_INFO, "ETHTOOL_GSSET_INFO"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_GSTATS, "ETHTOOL_GSTATS"),
@@ -289,6 +290,7 @@ static NM_UTILS_ENUM2STR_DEFINE(_ethtool_cmd_to_string,
                                 NM_UTILS_ENUM2STR(ETHTOOL_SFEATURES, "ETHTOOL_SFEATURES"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SLINKSETTINGS, "ETHTOOL_SLINKSETTINGS"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SRINGPARAM, "ETHTOOL_SRINGPARAM"),
+                                NM_UTILS_ENUM2STR(ETHTOOL_SPAUSEPARAM, "ETHTOOL_SPAUSEPARAM"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SSET, "ETHTOOL_SSET"),
                                 NM_UTILS_ENUM2STR(ETHTOOL_SWOL, "ETHTOOL_SWOL"), );
 
@@ -1061,6 +1063,64 @@ nmp_utils_ethtool_set_ring(int ifindex, const NMEthtoolRingState *ring)
     }
 
     nm_log_trace(LOGD_PLATFORM, "ethtool[%d]: %s: set kernel ring settings", ifindex, "set-ring");
+    return TRUE;
+}
+
+gboolean
+nmp_utils_ethtool_get_pause(int ifindex, NMEthtoolPauseState *pause)
+{
+    struct ethtool_pauseparam          eth_data;
+    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(pause, FALSE);
+
+    eth_data.cmd = ETHTOOL_GPAUSEPARAM;
+    if (_ethtool_call_handle(&shandle, &eth_data, sizeof(struct ethtool_pauseparam)) != 0) {
+        nm_log_trace(LOGD_PLATFORM,
+                     "ethtool[%d]: %s: failure getting pause settings",
+                     ifindex,
+                     "get-pause");
+        return FALSE;
+    }
+
+    *pause = (NMEthtoolPauseState){
+        .autoneg = eth_data.autoneg == 1,
+        .rx      = eth_data.rx_pause == 1,
+        .tx      = eth_data.tx_pause == 1,
+    };
+
+    nm_log_trace(LOGD_PLATFORM,
+                 "ethtool[%d]: %s: retrieved kernel pause settings",
+                 ifindex,
+                 "get-pause");
+    return TRUE;
+}
+
+gboolean
+nmp_utils_ethtool_set_pause(int ifindex, const NMEthtoolPauseState *pause)
+{
+    struct ethtool_pauseparam          eth_data;
+    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(pause, FALSE);
+
+    eth_data = (struct ethtool_pauseparam){
+        .cmd      = ETHTOOL_SPAUSEPARAM,
+        .autoneg  = pause->autoneg ? 1 : 0,
+        .rx_pause = pause->rx ? 1 : 0,
+        .tx_pause = pause->tx ? 1 : 0,
+    };
+
+    if (_ethtool_call_handle(&shandle, &eth_data, sizeof(struct ethtool_pauseparam)) != 0) {
+        nm_log_trace(LOGD_PLATFORM,
+                     "ethtool[%d]: %s: failure setting pause settings",
+                     ifindex,
+                     "set-pause");
+        return FALSE;
+    }
+    nm_log_trace(LOGD_PLATFORM, "ethtool[%d]: %s: set kernel puase settings", ifindex, "set-pause");
     return TRUE;
 }
 

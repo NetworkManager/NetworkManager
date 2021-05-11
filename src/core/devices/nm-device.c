@@ -209,6 +209,7 @@ typedef struct {
     NMOptionBool            requested[_NM_ETHTOOL_ID_FEATURE_NUM];
     NMEthtoolCoalesceState *coalesce;
     NMEthtoolRingState *    ring;
+    NMEthtoolPauseState *   pause;
 } EthtoolState;
 
 typedef enum {
@@ -2143,6 +2144,97 @@ _ethtool_ring_set(NMDevice *        self,
 }
 
 static void
+_ethtool_pause_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool_state)
+{
+    gs_free NMEthtoolPauseState *pause = NULL;
+
+    nm_assert(NM_IS_DEVICE(self));
+    nm_assert(NM_IS_PLATFORM(platform));
+    nm_assert(ethtool_state);
+
+    pause = g_steal_pointer(&ethtool_state->pause);
+    if (!pause)
+        return;
+
+    if (!nm_platform_ethtool_set_pause(platform, ethtool_state->ifindex, pause))
+        _LOGW(LOGD_DEVICE, "ethtool: failure resetting one or more pause settings");
+    else
+        _LOGD(LOGD_DEVICE, "ethtool: pause settings successfully reset");
+}
+
+static void
+_ethtool_pause_set(NMDevice *        self,
+                   NMPlatform *      platform,
+                   EthtoolState *    ethtool_state,
+                   NMSettingEthtool *s_ethtool)
+{
+    NMEthtoolPauseState pause_old;
+    NMEthtoolPauseState pause_new;
+    GHashTable *        hash;
+    GHashTableIter      iter;
+    const char *        name;
+    GVariant *          variant;
+    gboolean            has_old = FALSE;
+
+    nm_assert(NM_IS_DEVICE(self));
+    nm_assert(NM_IS_PLATFORM(platform));
+    nm_assert(NM_IS_SETTING_ETHTOOL(s_ethtool));
+    nm_assert(ethtool_state);
+    nm_assert(!ethtool_state->pause);
+
+    hash = _nm_setting_option_hash(NM_SETTING(s_ethtool), FALSE);
+    if (!hash)
+        return;
+
+    g_hash_table_iter_init(&iter, hash);
+    while (g_hash_table_iter_next(&iter, (gpointer *) &name, (gpointer *) &variant)) {
+        NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name(name);
+
+        if (!nm_ethtool_id_is_pause(ethtool_id))
+            continue;
+
+        nm_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_BOOLEAN));
+
+        if (!has_old) {
+            if (!nm_platform_ethtool_get_link_pause(platform, ethtool_state->ifindex, &pause_old)) {
+                _LOGW(LOGD_DEVICE,
+                      "ethtool: failure setting pause options (cannot read "
+                      "existing setting)");
+                return;
+            }
+            has_old   = TRUE;
+            pause_new = pause_old;
+        }
+
+        switch (ethtool_id) {
+        case NM_ETHTOOL_ID_PAUSE_AUTONEG:
+            pause_new.autoneg = g_variant_get_boolean(variant);
+            break;
+        case NM_ETHTOOL_ID_PAUSE_RX:
+            pause_new.rx = g_variant_get_boolean(variant);
+            break;
+        case NM_ETHTOOL_ID_PAUSE_TX:
+            pause_new.tx = g_variant_get_boolean(variant);
+            break;
+        default:
+            nm_assert_not_reached();
+        }
+    }
+
+    if (!has_old)
+        return;
+
+    ethtool_state->pause = nm_memdup(&pause_old, sizeof(pause_old));
+
+    if (!nm_platform_ethtool_set_pause(platform, ethtool_state->ifindex, &pause_new)) {
+        _LOGW(LOGD_DEVICE, "ethtool: failure setting pause settings");
+        return;
+    }
+
+    _LOGD(LOGD_DEVICE, "ethtool: pause settings successfully set");
+}
+
+static void
 _ethtool_state_reset(NMDevice *self)
 {
     NMPlatform *     platform           = nm_device_get_platform(self);
@@ -2158,6 +2250,8 @@ _ethtool_state_reset(NMDevice *self)
         _ethtool_coalesce_reset(self, platform, ethtool_state);
     if (ethtool_state->ring)
         _ethtool_ring_reset(self, platform, ethtool_state);
+    if (ethtool_state->pause)
+        _ethtool_pause_reset(self, platform, ethtool_state);
 }
 
 static void
@@ -2191,8 +2285,10 @@ _ethtool_state_set(NMDevice *self)
     _ethtool_features_set(self, platform, ethtool_state, s_ethtool);
     _ethtool_coalesce_set(self, platform, ethtool_state, s_ethtool);
     _ethtool_ring_set(self, platform, ethtool_state, s_ethtool);
+    _ethtool_pause_set(self, platform, ethtool_state, s_ethtool);
 
-    if (ethtool_state->features || ethtool_state->coalesce || ethtool_state->ring)
+    if (ethtool_state->features || ethtool_state->coalesce || ethtool_state->ring
+        || ethtool_state->pause)
         priv->ethtool_state = g_steal_pointer(&ethtool_state);
 }
 
