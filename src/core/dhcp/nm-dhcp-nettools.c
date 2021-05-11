@@ -342,22 +342,27 @@ lease_parse_routes(NDhcp4ClientLease *lease,
     const guint8 *l_data;
     gsize         l_data_len;
     int           r;
+    guint         i;
 
-    r = _client_lease_query(lease,
-                            NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE,
-                            &l_data,
-                            &l_data_len);
-    if (r == 0) {
+    for (i = 0; i < 2; i++) {
+        const guint8 option_code = (i == 0) ? NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE
+                                            : NM_DHCP_OPTION_DHCP4_PRIVATE_CLASSLESS_STATIC_ROUTE;
+
+        if (_client_lease_query(lease, option_code, &l_data, &l_data_len) != 0)
+            continue;
+
         nm_str_buf_reset(sbuf);
-
-        has_classless = TRUE;
-
         while (lease_option_consume_route(&l_data, &l_data_len, TRUE, &dest, &plen, &gateway)) {
             _nm_utils_inet4_ntop(dest, dest_str);
             _nm_utils_inet4_ntop(gateway, gateway_str);
 
             nm_str_buf_append_required_delimiter(sbuf, ' ');
             nm_str_buf_append_printf(sbuf, "%s/%d %s", dest_str, (int) plen, gateway_str);
+
+            if (has_classless) {
+                /* Ignore private option if the standard one is present */
+                continue;
+            }
 
             if (plen == 0) {
                 /* if there are multiple default routes, we add them with differing
@@ -384,10 +389,8 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                 NULL);
         }
 
-        nm_dhcp_option_add_option(options,
-                                  AF_INET,
-                                  NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE,
-                                  nm_str_buf_get_str(sbuf));
+        has_classless = TRUE;
+        nm_dhcp_option_add_option(options, AF_INET, option_code, nm_str_buf_get_str(sbuf));
     }
 
     r = _client_lease_query(lease, NM_DHCP_OPTION_DHCP4_STATIC_ROUTE, &l_data, &l_data_len);
