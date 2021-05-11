@@ -78,6 +78,22 @@ some details of the style we use:
   - BAD:  `static const unsigned myConstant = 42;`
 
 
+Unit Tests
+----------
+
+We have plenty of unit tests. Run them with `make check` or
+`meson -C "$BUILD_DIR" test`.
+
+Note that some files in the source tree are both generated and commited
+to git. That means, certain changes to the code also affect these generated
+files. The unit test fail in that case, to indicate that the generated
+files no longer match what is commited to git.
+You can also automatically regenerate the files by running `NM_TEST_REGENERATE=1 make check`.
+Note that test-client requires working translation.
+See the [comment](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/eee4332e8facfa5ff5940fa1655575d76ca143ea/src/tests/client/test-client.py#L19)
+for how to configure it.
+
+
 Assertions in NetworkManager code
 ---------------------------------
 
