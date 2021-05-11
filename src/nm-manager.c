@@ -2825,7 +2825,6 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
 
     state = nm_device_get_state(device);
     if (state > NM_DEVICE_STATE_DISCONNECTED) {
-        nm_device_assume_state_reset(device);
         _LOG2D(LOGD_DEVICE,
                device,
                "assume: don't assume due to device state %s",
