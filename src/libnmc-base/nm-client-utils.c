@@ -130,7 +130,10 @@ nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
 }
 
 gboolean
-nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
+nmc_string_to_ternary_full(const char *            str,
+                           NMCStringToTernaryFlags flags,
+                           NMTernary *             val,
+                           GError **               error)
 {
     gs_free char *str_to_free = NULL;
     int           i;
@@ -156,9 +159,16 @@ nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
         *val = NM_TERNARY_TRUE;
     else if (nmc_string_is_valid(str, NM_MAKE_STRV("false", "no", "off"), NULL))
         *val = NM_TERNARY_FALSE;
-    else if (nmc_string_is_valid(str, NM_MAKE_STRV("unknown", "default"), NULL))
+    else if (nmc_string_is_valid(
+                 str,
+                 NM_MAKE_STRV("unknown",
+                              "default",
+                              NM_FLAGS_HAS(flags, NMC_STRING_TO_TERNARY_FLAGS_IGNORE_FOR_DEFAULT)
+                                  ? "ignore"
+                                  : NULL),
+                 NULL))
         *val = NM_TERNARY_DEFAULT;
-    else if ((i = _nm_utils_ascii_str_to_int64(str, 0, -1, 1, -2)) >= -1)
+    else if ((i = _nm_utils_ascii_str_to_int64(str, 0, -1, 1, -2)) != -2)
         *val = (NMTernary) i;
     else {
         nm_utils_error_set(error,
