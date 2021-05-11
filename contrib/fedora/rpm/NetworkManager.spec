@@ -515,7 +515,7 @@ Summary: NetworkManager dispatcher file for advanced routing rules
 Group: System Environment/Base
 BuildArch: noarch
 Provides: %{name}-config-routing-rules = %{epoch}:%{version}-%{release}
-Obsoletes: %{name}-config-routing-rules < %{epoch}:%{version}-%{release}
+Obsoletes: %{name}-config-routing-rules < 1:1.31.0
 
 %description dispatcher-routing-rules
 This adds a NetworkManager dispatcher file to support networking
