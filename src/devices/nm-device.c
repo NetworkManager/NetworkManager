@@ -5337,11 +5337,11 @@ device_link_changed(NMDevice *self)
                 /* Ensure the assume check is queued before any queued state changes
                  * from the transition to UNAVAILABLE.
                  */
-                nm_device_queue_recheck_assume(self);
                 reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
             }
         }
 
+        nm_device_queue_recheck_assume(self);
         nm_device_set_unmanaged_by_flags(self, NM_UNMANAGED_PLATFORM_INIT, FALSE, reason);
     }
 
