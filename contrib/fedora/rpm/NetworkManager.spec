@@ -447,7 +447,7 @@ This package contains NetworkManager support for PPP.
 %package libnm
 Summary: Libraries for adding NetworkManager support to applications.
 Group: Development/Libraries
-Conflicts: NetworkManager-glib < %{epoch}:%{version}-%{release}
+Conflicts: NetworkManager-glib < 1:1.31.0
 License: LGPLv2+
 
 %description libnm
