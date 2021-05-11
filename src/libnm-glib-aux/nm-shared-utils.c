@@ -5555,7 +5555,10 @@ nm_str_buf_append_printf(NMStrBuf *strbuf, const char *format, ...)
     nm_assert(available < G_MAXULONG);
 
     va_start(args, format);
-    l = g_vsnprintf(&strbuf->_priv_str[strbuf->_priv_len], available, format, args);
+    l = g_vsnprintf(strbuf->_priv_str ? &strbuf->_priv_str[strbuf->_priv_len] : NULL,
+                    available,
+                    format,
+                    args);
     va_end(args);
 
     nm_assert(l >= 0);
