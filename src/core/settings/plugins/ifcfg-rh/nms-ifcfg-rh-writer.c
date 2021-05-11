@@ -16,6 +16,7 @@
 #include <stdio.h>
 
 #include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "nm-manager.h"
 #include "nm-setting-connection.h"
@@ -1551,36 +1552,40 @@ write_team_setting(NMConnection *connection, shvarFile *ifcfg, gboolean *wired, 
 
 static gboolean
 write_bridge_vlans(NMSetting * setting,
-                   const char *property_name,
+                   gboolean    is_port,
                    shvarFile * ifcfg,
                    const char *key,
                    GError **   error)
 {
-    gs_unref_ptrarray GPtrArray *vlans = NULL;
-    NMBridgeVlan *               vlan;
-    GString *                    string;
-    guint                        i;
+    GPtrArray *              vlans;
+    NMBridgeVlan *           vlan;
+    nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(0, FALSE);
+    guint                    i;
 
-    g_object_get(setting, property_name, &vlans, NULL);
+    if (is_port)
+        vlans = _nm_setting_bridge_port_get_vlans(NM_SETTING_BRIDGE_PORT(setting));
+    else
+        vlans = _nm_setting_bridge_get_vlans(NM_SETTING_BRIDGE(setting));
 
     if (!vlans || !vlans->len)
         return TRUE;
 
-    string = g_string_new("");
     for (i = 0; i < vlans->len; i++) {
         gs_free char *vlan_str = NULL;
 
         vlan     = vlans->pdata[i];
         vlan_str = nm_bridge_vlan_to_str(vlan, error);
-        if (!vlan_str)
-            return FALSE;
-        if (string->len > 0)
-            g_string_append(string, ",");
-        nm_utils_escaped_tokens_escape_gstr_assert(vlan_str, ",", string);
+        if (!vlan_str) {
+            /* nm_bridge_vlan_to_str() cannot fail (for now). */
+            nm_assert_not_reached();
+            continue;
+        }
+        if (strbuf.len > 0)
+            nm_str_buf_append_c(&strbuf, ',');
+        nm_str_buf_append(&strbuf, nm_utils_escaped_tokens_escape_unnecessary(vlan_str, ","));
     }
 
-    svSetValueStr(ifcfg, key, string->str);
-    g_string_free(string, TRUE);
+    svSetValueStr(ifcfg, key, nm_str_buf_get_str(&strbuf));
     return TRUE;
 }
 
@@ -1816,11 +1821,7 @@ write_bridge_setting(NMConnection *connection, shvarFile *ifcfg, gboolean *wired
         svSetValueStr(ifcfg, "BRIDGING_OPTS", opts->str);
     g_string_free(opts, TRUE);
 
-    if (!write_bridge_vlans((NMSetting *) s_bridge,
-                            NM_SETTING_BRIDGE_VLANS,
-                            ifcfg,
-                            "BRIDGE_VLANS",
-                            error))
+    if (!write_bridge_vlans((NMSetting *) s_bridge, FALSE, ifcfg, "BRIDGE_VLANS", error))
         return FALSE;
 
     svSetValueStr(ifcfg, "TYPE", TYPE_BRIDGE);
@@ -1871,11 +1872,7 @@ write_bridge_port_setting(NMConnection *connection, shvarFile *ifcfg, GError **e
         svSetValueStr(ifcfg, "BRIDGING_OPTS", string->str);
     g_string_free(string, TRUE);
 
-    if (!write_bridge_vlans((NMSetting *) s_port,
-                            NM_SETTING_BRIDGE_PORT_VLANS,
-                            ifcfg,
-                            "BRIDGE_PORT_VLANS",
-                            error))
+    if (!write_bridge_vlans((NMSetting *) s_port, TRUE, ifcfg, "BRIDGE_PORT_VLANS", error))
         return FALSE;
 
     return TRUE;

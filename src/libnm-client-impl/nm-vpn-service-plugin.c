@@ -755,8 +755,9 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
     gs_unref_hashtable GHashTable *secrets = NULL;
     gboolean                       success = FALSE;
     GHashTable *                   hash    = NULL;
-    GString *                      key = NULL, *val = NULL;
-    nm_auto_free_gstring GString *line = NULL;
+    nm_auto_free_gstring GString *key      = NULL;
+    nm_auto_free_gstring GString *val      = NULL;
+    nm_auto_free_gstring GString *line     = NULL;
     char                          c;
 
     GString *str = NULL;

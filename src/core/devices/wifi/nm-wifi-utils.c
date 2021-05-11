@@ -1591,7 +1591,7 @@ ip4_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
     if (num) {
         NMIPAddress *addr    = nm_setting_ip_config_get_address(s_ip, 0);
         guint        prefix  = nm_ip_address_get_prefix(addr);
-        in_addr_t    netmask = htonl(0xffffffffu << (32 - prefix));
+        in_addr_t    netmask = _nm_utils_ip4_prefix_to_netmask(prefix);
         char         buf[INET_ADDRSTRLEN];
 
         nm_ip_address_get_address_binary(addr, &ip);

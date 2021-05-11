@@ -238,6 +238,34 @@ test_nm_ip4_addr_is_localhost(void)
 /*****************************************************************************/
 
 static void
+test_nm_utils_ip4_prefix_to_netmask(void)
+{
+    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(0), ==, nmtst_inet4_from_string("0.0.0.0"));
+    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(1), ==, nmtst_inet4_from_string("128.0.0.0"));
+    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(2), ==, nmtst_inet4_from_string("192.0.0.0"));
+    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(16),
+                    ==,
+                    nmtst_inet4_from_string("255.255.0.0"));
+    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(24),
+                    ==,
+                    nmtst_inet4_from_string("255.255.255.0"));
+    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(30),
+                    ==,
+                    nmtst_inet4_from_string("255.255.255.252"));
+    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(31),
+                    ==,
+                    nmtst_inet4_from_string("255.255.255.254"));
+    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(32),
+                    ==,
+                    nmtst_inet4_from_string("255.255.255.255"));
+    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(33),
+                    ==,
+                    nmtst_inet4_from_string("255.255.255.255"));
+}
+
+/*****************************************************************************/
+
+static void
 test_unaligned(void)
 {
     int shift;
@@ -1279,6 +1307,8 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_nm_strdup_int", test_nm_strdup_int);
     g_test_add_func("/general/test_nm_strndup_a", test_nm_strndup_a);
     g_test_add_func("/general/test_nm_ip4_addr_is_localhost", test_nm_ip4_addr_is_localhost);
+    g_test_add_func("/general/test_nm_utils_ip4_prefix_to_netmask",
+                    test_nm_utils_ip4_prefix_to_netmask);
     g_test_add_func("/general/test_unaligned", test_unaligned);
     g_test_add_func("/general/test_strv_cmp", test_strv_cmp);
     g_test_add_func("/general/test_strstrip_avoid_copy", test_strstrip_avoid_copy);

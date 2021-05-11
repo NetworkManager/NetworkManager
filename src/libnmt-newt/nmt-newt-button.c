@@ -108,17 +108,17 @@ nmt_newt_button_build_component(NmtNewtComponent *component, gboolean sensitive)
 {
     NmtNewtButtonPrivate *priv = NMT_NEWT_BUTTON_GET_PRIVATE(component);
     newtComponent         co;
-    char *                label = NULL, *label_lc;
+    gs_free char *        label_lc = NULL;
 
     if (sensitive) {
         label_lc = nmt_newt_locale_from_utf8(priv->label);
         co       = newtCompactButton(-1, -1, label_lc);
-        g_free(label_lc);
     } else {
+        gs_free char *label = NULL;
+
         label    = g_strdup_printf(" <%s>", priv->label);
         label_lc = nmt_newt_locale_from_utf8(label);
         co       = newtLabel(-1, -1, label_lc);
-        g_free(label_lc);
         newtLabelSetColors(co, NMT_NEWT_COLORSET_DISABLED_BUTTON);
     }
 

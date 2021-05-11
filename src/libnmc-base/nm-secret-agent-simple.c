@@ -867,7 +867,7 @@ request_secrets_from_ui(RequestData *request)
     if (nm_connection_is_type(request->connection, NM_SETTING_WIRELESS_SETTING_NAME)) {
         NMSettingWireless *s_wireless;
         GBytes *           ssid;
-        char *             ssid_utf8;
+        gs_free char *     ssid_utf8 = NULL;
 
         s_wireless = nm_connection_get_setting_wireless(request->connection);
         ssid       = nm_setting_wireless_get_ssid(s_wireless);
