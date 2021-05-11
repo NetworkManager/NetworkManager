@@ -977,6 +977,7 @@ fi
 %dir %{_sysconfdir}/%{name}/dnsmasq-shared.d
 %dir %{_sysconfdir}/%{name}/system-connections
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
+%ghost %{_sysconfdir}/%{name}/VPN
 %{_bindir}/nm-online
 %{_libexecdir}/nm-ifup
 %ghost %attr(755, root, root) %{_sbindir}/ifup
