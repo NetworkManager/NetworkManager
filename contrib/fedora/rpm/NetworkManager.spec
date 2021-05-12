@@ -447,7 +447,7 @@ This package contains NetworkManager support for PPP.
 %package libnm
 Summary: Libraries for adding NetworkManager support to applications.
 Group: Development/Libraries
-Conflicts: NetworkManager-glib < %{epoch}:%{version}-%{release}
+Conflicts: NetworkManager-glib < 1:1.31.0
 License: LGPLv2+
 
 %description libnm
@@ -515,7 +515,7 @@ Summary: NetworkManager dispatcher file for advanced routing rules
 Group: System Environment/Base
 BuildArch: noarch
 Provides: %{name}-config-routing-rules = %{epoch}:%{version}-%{release}
-Obsoletes: %{name}-config-routing-rules < %{epoch}:%{version}-%{release}
+Obsoletes: %{name}-config-routing-rules < 1:1.31.0
 
 %description dispatcher-routing-rules
 This adds a NetworkManager dispatcher file to support networking
@@ -977,6 +977,7 @@ fi
 %dir %{_sysconfdir}/%{name}/dnsmasq-shared.d
 %dir %{_sysconfdir}/%{name}/system-connections
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
+%ghost %{_sysconfdir}/%{name}/VPN
 %{_bindir}/nm-online
 %{_libexecdir}/nm-ifup
 %ghost %attr(755, root, root) %{_sbindir}/ifup
