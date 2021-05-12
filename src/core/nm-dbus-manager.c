@@ -1233,7 +1233,7 @@ _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec 
             priv->main_dbus_connection,
             NULL,
             obj->internal.path,
-            "org.freedesktop.DBus.Properties",
+            DBUS_INTERFACE_PROPERTIES,
             "PropertiesChanged",
             g_variant_new("(s@a{sv}as)", interface_info->parent.name, args, &invalidated_builder),
             NULL);
