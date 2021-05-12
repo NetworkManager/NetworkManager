@@ -21,6 +21,10 @@ static const struct {
     const char *name;
     const char *path;
 } FirewallBackends[] = {
+    [NM_FIREWALL_BACKEND_NONE - 1] =
+        {
+            .name = "none",
+        },
     [NM_FIREWALL_BACKEND_NFTABLES - 1] =
         {
             .name = "nftables",
@@ -721,6 +725,8 @@ nm_firewall_config_apply(NMFirewallConfig *self, gboolean shared)
     case NM_FIREWALL_BACKEND_NFTABLES:
         _fw_nft_set(shared, self->ip_iface, self->addr, self->plen);
         break;
+    case NM_FIREWALL_BACKEND_NONE:
+        break;
     default:
         nm_assert_not_reached();
         break;
@@ -772,15 +778,22 @@ again:
         if (detect)
             b = _firewall_backend_detect();
 
-        nm_assert(NM_IN_SET(b, NM_FIREWALL_BACKEND_IPTABLES, NM_FIREWALL_BACKEND_NFTABLES));
+        nm_assert(NM_IN_SET(b,
+                            NM_FIREWALL_BACKEND_NONE,
+                            NM_FIREWALL_BACKEND_IPTABLES,
+                            NM_FIREWALL_BACKEND_NFTABLES));
 
         if (!g_atomic_int_compare_and_exchange(&backend, NM_FIREWALL_BACKEND_UNKNOWN, b))
             goto again;
 
         nm_log_dbg(LOGD_SHARING,
-                   "firewall: use %s backend (%s)%s%s%s%s",
+                   "firewall: use %s backend%s%s%s%s%s%s%s",
                    FirewallBackends[b - 1].name,
-                   FirewallBackends[b - 1].path,
+                   NM_PRINT_FMT_QUOTED(FirewallBackends[b - 1].path,
+                                       " (",
+                                       FirewallBackends[b - 1].path,
+                                       ")",
+                                       ""),
                    detect ? " (detected)" : "",
                    NM_PRINT_FMT_QUOTED(detect && conf_value,
                                        " (invalid setting \"",
@@ -789,6 +802,9 @@ again:
                                        ""));
     }
 
-    nm_assert(NM_IN_SET(b, NM_FIREWALL_BACKEND_IPTABLES, NM_FIREWALL_BACKEND_NFTABLES));
+    nm_assert(NM_IN_SET(b,
+                        NM_FIREWALL_BACKEND_NONE,
+                        NM_FIREWALL_BACKEND_IPTABLES,
+                        NM_FIREWALL_BACKEND_NFTABLES));
     return b;
 }
