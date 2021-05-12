@@ -109,16 +109,6 @@
     <property name="LastScan" type="x" access="read"/>
 
     <!--
-        PropertiesChanged:
-        @properties: A dictionary containing the changed parameters.
-
-        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
-    -->
-    <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}"/>
-        </signal>
-
-    <!--
         AccessPointAdded:
         @access_point: The object path of the newly found access point.
 
@@ -126,7 +116,7 @@
     -->
     <signal name="AccessPointAdded">
         <arg name="access_point" type="o"/>
-        </signal>
+    </signal>
 
     <!--
         AccessPointRemoved:
@@ -137,5 +127,6 @@
     <signal name="AccessPointRemoved">
       <arg name="access_point" type="o"/>
     </signal>
+
   </interface>
 </node>

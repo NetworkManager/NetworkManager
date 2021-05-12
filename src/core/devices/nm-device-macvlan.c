@@ -502,17 +502,13 @@ dispose(GObject *object)
 static const NMDBusInterfaceInfoExtended interface_info_device_macvlan = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_DEVICE_MACVLAN,
-        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_property_changed_legacy, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Parent", "o", NM_DEVICE_PARENT),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Mode", "s", NM_DEVICE_MACVLAN_MODE),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("NoPromisc",
-                                                             "b",
-                                                             NM_DEVICE_MACVLAN_NO_PROMISC),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Tab",
-                                                             "b",
-                                                             NM_DEVICE_MACVLAN_TAP), ), ),
-    .legacy_property_changed = TRUE,
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Parent", "o", NM_DEVICE_PARENT),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Mode", "s", NM_DEVICE_MACVLAN_MODE),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("NoPromisc",
+                                                           "b",
+                                                           NM_DEVICE_MACVLAN_NO_PROMISC),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Tab", "b", NM_DEVICE_MACVLAN_TAP), ), ),
 };
 
 static void

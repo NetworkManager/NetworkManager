@@ -1149,7 +1149,6 @@ static const NMDBusInterfaceInfoExtended interface_info_device_wifi_p2p = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Peers",
                                                            "ao",
                                                            NM_DEVICE_WIFI_P2P_PEERS), ), ),
-    .legacy_property_changed = FALSE,
 };
 
 /*****************************************************************************/

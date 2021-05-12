@@ -608,7 +608,6 @@ static const NMDBusInterfaceInfoExtended interface_info_p2p_peer = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("LastSeen",
                                                            "i",
                                                            NM_WIFI_P2P_PEER_LAST_SEEN), ), ),
-    .legacy_property_changed = FALSE,
 };
 
 static void

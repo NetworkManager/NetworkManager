@@ -107,5 +107,6 @@
         Since: 1.16
     -->
     <property name="LastSeen" type="i" access="read"/>
+
   </interface>
 </node>

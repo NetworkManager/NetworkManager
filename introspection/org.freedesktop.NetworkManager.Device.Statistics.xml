@@ -31,14 +31,5 @@
     -->
     <property name="RxBytes" type="t" access="read"/>
 
-    <!--
-        PropertiesChanged:
-        @properties: A dictionary mapping property names to variant boxed values
-
-        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
-    -->
-    <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}"/>
-    </signal>
   </interface>
 </node>

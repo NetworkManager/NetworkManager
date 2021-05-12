@@ -444,22 +444,18 @@ nm_device_tun_init(NMDeviceTun *self)
 static const NMDBusInterfaceInfoExtended interface_info_device_tun = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_DEVICE_TUN,
-        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_property_changed_legacy, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Owner", "x", NM_DEVICE_TUN_OWNER),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Group", "x", NM_DEVICE_TUN_GROUP),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Mode", "s", NM_DEVICE_TUN_MODE),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("NoPi", "b", NM_DEVICE_TUN_NO_PI),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("VnetHdr",
-                                                             "b",
-                                                             NM_DEVICE_TUN_VNET_HDR),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("MultiQueue",
-                                                             "b",
-                                                             NM_DEVICE_TUN_MULTI_QUEUE),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("HwAddress",
-                                                             "s",
-                                                             NM_DEVICE_HW_ADDRESS), ), ),
-    .legacy_property_changed = TRUE,
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Owner", "x", NM_DEVICE_TUN_OWNER),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Group", "x", NM_DEVICE_TUN_GROUP),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Mode", "s", NM_DEVICE_TUN_MODE),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("NoPi", "b", NM_DEVICE_TUN_NO_PI),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("VnetHdr", "b", NM_DEVICE_TUN_VNET_HDR),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("MultiQueue",
+                                                           "b",
+                                                           NM_DEVICE_TUN_MULTI_QUEUE),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("HwAddress",
+                                                           "s",
+                                                           NM_DEVICE_HW_ADDRESS), ), ),
 };
 
 static void
