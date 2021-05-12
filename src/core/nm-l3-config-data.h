@@ -60,6 +60,8 @@ typedef enum {
  *   Note that if the respective NML3ConfigData has NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES
  *   set, this flag gets ignored during merge.
  * @NM_L3_CONFIG_MERGE_FLAGS_NO_DNS: don't merge DNS information
+ * @NM_L3_CONFIG_MERGE_FLAGS_CLONE: clone is also implemented via "merge".
+ *   In that case, it takes all settings.
  */
 typedef enum _nm_packed {
     NM_L3_CONFIG_MERGE_FLAGS_NONE              = 0,
@@ -67,6 +69,7 @@ typedef enum _nm_packed {
     NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES         = (1LL << 1),
     NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES = (1LL << 2),
     NM_L3_CONFIG_MERGE_FLAGS_NO_DNS            = (1LL << 3),
+    NM_L3_CONFIG_MERGE_FLAGS_CLONE             = (1LL << 4),
 } NML3ConfigMergeFlags;
 
 /*****************************************************************************/
@@ -191,7 +194,20 @@ NMDedupMultiIndex *nm_l3_config_data_get_multi_idx(const NML3ConfigData *self);
 
 /*****************************************************************************/
 
-int nm_l3_config_data_cmp(const NML3ConfigData *a, const NML3ConfigData *b);
+typedef enum {
+    NM_L3_CONFIG_CMP_FLAGS_NONE,
+    NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX = (1LL << 0),
+} NML3ConfigCmpFlags;
+
+int nm_l3_config_data_cmp_full(const NML3ConfigData *a,
+                               const NML3ConfigData *b,
+                               NML3ConfigCmpFlags    cmp_flags);
+
+static inline int
+nm_l3_config_data_cmp(const NML3ConfigData *a, const NML3ConfigData *b)
+{
+    return nm_l3_config_data_cmp_full(a, b, NM_L3_CONFIG_CMP_FLAGS_NONE);
+}
 
 static inline gboolean
 nm_l3_config_data_equal(const NML3ConfigData *a, const NML3ConfigData *b)
