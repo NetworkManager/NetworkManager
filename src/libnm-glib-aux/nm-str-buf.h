@@ -159,7 +159,7 @@ static inline void
 nm_str_buf_append_c_repeated(NMStrBuf *strbuf, char ch, guint len)
 {
     if (len > 0) {
-        nm_str_buf_maybe_expand(strbuf, len + 1, FALSE);
+        nm_str_buf_maybe_expand(strbuf, ((gsize) len) + 1u, FALSE);
         do {
             strbuf->_priv_str[strbuf->_priv_len++] = ch;
         } while (--len > 0);
@@ -202,9 +202,9 @@ _nm_str_buf_append_c_1(NMStrBuf *strbuf, char ch)
 static inline void
 nm_str_buf_append_c_hex(NMStrBuf *strbuf, char ch, gboolean upper_case)
 {
-    nm_str_buf_maybe_expand(strbuf, 3, FALSE);
-    strbuf->_priv_str[strbuf->_priv_len++] = nm_hexchar(((guchar) ch) >> 4, upper_case);
-    strbuf->_priv_str[strbuf->_priv_len++] = nm_hexchar((guchar) ch, upper_case);
+    nm_str_buf_append_c(strbuf,
+                        nm_hexchar(((guchar) ch) >> 4, upper_case),
+                        nm_hexchar((guchar) ch, upper_case));
 }
 
 static inline void
