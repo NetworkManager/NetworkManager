@@ -14,7 +14,7 @@
                   description="Channel on which the mesh network to join is located." />
         <property name="dhcp-anycast-address"
                   alias="dhcp-anycast"
-                  description="Anycast DHCP MAC address used when requesting an IP address via DHCP. The specific anycast address used determines which DHCP server class answers the request." />
+                  description="Anycast DHCP MAC address used when requesting an IP address via DHCP. The specific anycast address used determines which DHCP server class answers the request. This is currently only implemented by dhclient DHCP plugin." />
     </setting>
     <setting name="802-11-wireless"
              alias="wifi" >
