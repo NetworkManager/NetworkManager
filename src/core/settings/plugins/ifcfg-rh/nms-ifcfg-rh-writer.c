@@ -1077,25 +1077,18 @@ write_hostname_setting(NMConnection *connection, shvarFile *ifcfg)
     svSetValueInt64_cond(ifcfg, "HOSTNAME_ONLY_FROM_DEFAULT", t != NM_TERNARY_DEFAULT, t);
 }
 
-static gboolean
-write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
+static void
+write_wired_setting_impl(NMSettingWired *s_wired, shvarFile *ifcfg, gboolean is_virtual)
 {
-    NMSettingWired *   s_wired;
     const char *const *s390_subchannels;
-    guint32            mtu, num_opts, i;
+    guint32            mtu;
+    guint32            num_opts;
+    guint32            i;
     const char *const *macaddr_blacklist;
 
-    s_wired = nm_connection_get_setting_wired(connection);
-    if (!s_wired) {
-        g_set_error(error,
-                    NM_SETTINGS_ERROR,
-                    NM_SETTINGS_ERROR_FAILED,
-                    "Missing '%s' setting",
-                    NM_SETTING_WIRED_SETTING_NAME);
-        return FALSE;
-    }
-
-    svSetValueStr(ifcfg, "HWADDR", nm_setting_wired_get_mac_address(s_wired));
+    svSetValue(ifcfg,
+               "HWADDR",
+               nm_setting_wired_get_mac_address(s_wired) ?: (is_virtual ? "" : NULL));
 
     svSetValueStr(ifcfg, "MACADDR", nm_setting_wired_get_cloned_mac_address(s_wired));
 
@@ -1169,12 +1162,42 @@ write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
             svSetValueStr(ifcfg, "OPTIONS", tmp->str);
     }
 
-    svSetValueStr(ifcfg, "TYPE", TYPE_ETHERNET);
-
     svSetValueTernary(ifcfg,
                       "ACCEPT_ALL_MAC_ADDRESSES",
                       nm_setting_wired_get_accept_all_mac_addresses(s_wired));
+}
 
+static gboolean
+write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+    NMSettingWired *s_wired;
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    if (!s_wired) {
+        g_set_error(error,
+                    NM_SETTINGS_ERROR,
+                    NM_SETTINGS_ERROR_FAILED,
+                    "Missing '%s' setting",
+                    NM_SETTING_WIRED_SETTING_NAME);
+        return FALSE;
+    }
+
+    svSetValueStr(ifcfg, "TYPE", TYPE_ETHERNET);
+
+    write_wired_setting_impl(s_wired, ifcfg, FALSE);
+    return TRUE;
+}
+
+static gboolean
+write_wired_for_virtual(NMConnection *connection, shvarFile *ifcfg)
+{
+    NMSettingWired *s_wired;
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    if (!s_wired)
+        return FALSE;
+
+    write_wired_setting_impl(s_wired, ifcfg, TRUE);
     return TRUE;
 }
 
@@ -1370,39 +1393,6 @@ vlan_priority_maplist_to_stringlist(NMSettingVlan *s_vlan, NMVlanPriorityMap map
     g_strfreev(strlist);
 
     return value;
-}
-
-static gboolean
-write_wired_for_virtual(NMConnection *connection, shvarFile *ifcfg)
-{
-    NMSettingWired *s_wired;
-    gboolean        has_wired = FALSE;
-
-    s_wired = nm_connection_get_setting_wired(connection);
-    if (s_wired) {
-        const char *device_mac, *cloned_mac;
-        guint32     mtu;
-
-        has_wired = TRUE;
-
-        device_mac = nm_setting_wired_get_mac_address(s_wired);
-        svSetValue(ifcfg, "HWADDR", device_mac ?: "");
-
-        cloned_mac = nm_setting_wired_get_cloned_mac_address(s_wired);
-        svSetValueStr(ifcfg, "MACADDR", cloned_mac);
-
-        svSetValueStr(ifcfg,
-                      "GENERATE_MAC_ADDRESS_MASK",
-                      nm_setting_wired_get_generate_mac_address_mask(s_wired));
-
-        svSetValueTernary(ifcfg,
-                          "ACCEPT_ALL_MAC_ADDRESSES",
-                          nm_setting_wired_get_accept_all_mac_addresses(s_wired));
-
-        mtu = nm_setting_wired_get_mtu(s_wired);
-        svSetValueInt64_cond(ifcfg, "MTU", mtu != 0, mtu);
-    }
-    return has_wired;
 }
 
 static gboolean
