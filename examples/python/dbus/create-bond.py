@@ -40,8 +40,8 @@ def create_bond(bond_name):
             "autoconnect-slaves": 1,
         }
     )
-    s_ip4 = dbus.Dictionary({"method": "auto"})
-    s_ip6 = dbus.Dictionary({"method": "ignore"})
+    s_ip4 = dbus.Dictionary({"method": "disabled"})
+    s_ip6 = dbus.Dictionary({"method": "disabled"})
 
     con = dbus.Dictionary(
         {"bond": s_bond, "connection": s_con, "ipv4": s_ip4, "ipv6": s_ip6}
@@ -97,18 +97,22 @@ print("Activating bond: %s (%s)" % (bond_name, ac))
 loop = GLib.MainLoop()
 
 
-def properties_changed(props):
-    if "State" in props:
-        if props["State"] == 2:
+def properties_changed(interface_name, changed_properties, invalidated_properties):
+    if (
+        interface_name == "org.freedesktop.NetworkManager.Connection.Active"
+        and "State" in changed_properties
+    ):
+        state = changed_properties["State"]
+        if state == 2:
             print("Successfully connected")
             loop.quit()
-        if props["State"] == 3 or props["State"] == 4:
+        if state == 3 or state == 4:
             print("Bond activation failed")
             loop.quit()
 
 
 obj = bus.get_object("org.freedesktop.NetworkManager", ac)
-iface = dbus.Interface(obj, "org.freedesktop.NetworkManager.Connection.Active")
+iface = dbus.Interface(obj, "org.freedesktop.DBus.Properties")
 iface.connect_to_signal("PropertiesChanged", properties_changed)
 
 loop.run()
