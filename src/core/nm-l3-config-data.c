@@ -1780,13 +1780,16 @@ _dedup_multi_index_cmp(const NML3ConfigData *a, const NML3ConfigData *b, NMPObje
 }
 
 int
-nm_l3_config_data_cmp(const NML3ConfigData *a, const NML3ConfigData *b)
+nm_l3_config_data_cmp_full(const NML3ConfigData *a,
+                           const NML3ConfigData *b,
+                           NML3ConfigCmpFlags    cmp_flags)
 {
     int IS_IPv4;
 
     NM_CMP_SELF(a, b);
 
-    NM_CMP_DIRECT(a->ifindex, b->ifindex);
+    if (!NM_FLAGS_HAS(cmp_flags, NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX))
+        NM_CMP_DIRECT(a->ifindex, b->ifindex);
 
     NM_CMP_DIRECT(a->flags, b->flags);
 
@@ -2534,6 +2537,9 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
     nm_assert(default_route_table_x[1] != 0);
     nm_assert(default_route_metric_x[0] != 0); /* IPv6 route metric cannot be zero. */
 
+    nm_assert(!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)
+              || nm_utils_is_power_of_two(merge_flags));
+
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
         const int                addr_family = IS_IPv4 ? AF_INET : AF_INET6;
         const NML3ConfigDatFlags has_dns_priority_flag =
@@ -2588,28 +2594,31 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
     }                                                   \
     G_STMT_END
 
-                if (r_src->table_any) {
-                    _ensure_r();
-                    r.rx.table_any     = FALSE;
-                    r.rx.table_coerced = default_route_table_x[IS_IPv4];
-                }
-
-                if (r_src->metric_any) {
-                    _ensure_r();
-                    r.rx.metric_any = FALSE;
-                    r.rx.metric = nm_add_clamped_u32(r.rx.metric, default_route_metric_x[IS_IPv4]);
-                }
-
-                if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(r_src)) {
-                    if (NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES)
-                        && !NM_FLAGS_HAS(src->flags,
-                                         NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES))
-                        continue;
-                    if (default_route_penalty_x && default_route_penalty_x[IS_IPv4] > 0) {
+                if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)) {
+                    if (r_src->table_any) {
                         _ensure_r();
+                        r.rx.table_any     = FALSE;
+                        r.rx.table_coerced = default_route_table_x[IS_IPv4];
+                    }
+
+                    if (r_src->metric_any) {
+                        _ensure_r();
+                        r.rx.metric_any = FALSE;
                         r.rx.metric =
-                            nm_utils_ip_route_metric_penalize(r.rx.metric,
-                                                              default_route_penalty_x[IS_IPv4]);
+                            nm_add_clamped_u32(r.rx.metric, default_route_metric_x[IS_IPv4]);
+                    }
+
+                    if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(r_src)) {
+                        if (NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES)
+                            && !NM_FLAGS_HAS(src->flags,
+                                             NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES))
+                            continue;
+                        if (default_route_penalty_x && default_route_penalty_x[IS_IPv4] > 0) {
+                            _ensure_r();
+                            r.rx.metric =
+                                nm_utils_ip_route_metric_penalize(r.rx.metric,
+                                                                  default_route_penalty_x[IS_IPv4]);
+                        }
                     }
                 }
 
@@ -2689,8 +2698,16 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
     if (self->ip6_mtu == 0u)
         self->ip6_mtu = src->ip6_mtu;
 
-    /* self->source does not get merged. */
-    /* self->dhcp_lease_x does not get merged. */
+    if (NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)) {
+        _nm_unused nm_auto_unref_dhcplease NMDhcpLease *dhcp_lease_6 =
+            g_steal_pointer(&self->dhcp_lease_x[0]);
+        _nm_unused nm_auto_unref_dhcplease NMDhcpLease *dhcp_lease_4 =
+            g_steal_pointer(&self->dhcp_lease_x[1]);
+
+        self->source          = src->source;
+        self->dhcp_lease_x[0] = nm_dhcp_lease_ref(self->dhcp_lease_x[0]);
+        self->dhcp_lease_x[1] = nm_dhcp_lease_ref(self->dhcp_lease_x[1]);
+    }
 }
 
 NML3ConfigData *
@@ -2707,6 +2724,17 @@ nm_l3_config_data_new_clone(const NML3ConfigData *src, int ifindex)
         ifindex = src->ifindex;
 
     self = nm_l3_config_data_new(src->multi_idx, ifindex);
-    nm_l3_config_data_merge(self, src, NM_L3_CONFIG_MERGE_FLAGS_NONE, NULL, NULL, NULL, NULL, NULL);
+    nm_l3_config_data_merge(self,
+                            src,
+                            NM_L3_CONFIG_MERGE_FLAGS_CLONE,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL);
+
+    nm_assert(nm_l3_config_data_cmp_full(src, self, NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX) == 0);
+    nm_assert(nm_l3_config_data_get_ifindex(self) == ifindex);
+
     return self;
 }
