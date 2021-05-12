@@ -254,6 +254,8 @@ nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
      * Anycast DHCP MAC address used when requesting an IP address via DHCP.
      * The specific anycast address used determines which DHCP server class
      * answers the request.
+     *
+     * This is currently only implemented by dhclient DHCP plugin.
      **/
     obj_properties[PROP_DHCP_ANYCAST_ADDRESS] =
         g_param_spec_string(NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
