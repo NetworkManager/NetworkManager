@@ -291,7 +291,7 @@ char *
 nm_dhcp_dhclient_create_config(const char *        interface,
                                int                 addr_family,
                                GBytes *            client_id,
-                               const char *        anycast_addr,
+                               const char *        anycast_address,
                                const char *        hostname,
                                guint32             timeout,
                                gboolean            use_fqdn,
@@ -308,7 +308,8 @@ nm_dhcp_dhclient_create_config(const char *        interface,
     gboolean                     reset_reqlist = FALSE;
     int                          i;
 
-    g_return_val_if_fail(!anycast_addr || nm_utils_hwaddr_valid(anycast_addr, ETH_ALEN), NULL);
+    g_return_val_if_fail(!anycast_address || nm_utils_hwaddr_valid(anycast_address, ETH_ALEN),
+                         NULL);
     g_return_val_if_fail(NM_IN_SET(addr_family, AF_INET, AF_INET6), NULL);
     g_return_val_if_fail(!reject_servers || addr_family == AF_INET, NULL);
     nm_assert(!out_new_client_id || !*out_new_client_id);
@@ -508,14 +509,14 @@ nm_dhcp_dhclient_create_config(const char *        interface,
 
     g_string_append_c(new_contents, '\n');
 
-    if (anycast_addr) {
+    if (anycast_address) {
         g_string_append_printf(new_contents,
                                "interface \"%s\" {\n"
                                " initial-interval 1; \n"
                                " anycast-mac ethernet %s;\n"
                                "}\n",
                                interface,
-                               anycast_addr);
+                               anycast_address);
     }
 
     return g_string_free(g_steal_pointer(&new_contents), FALSE);

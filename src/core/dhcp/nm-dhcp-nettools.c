@@ -874,7 +874,7 @@ dhcp4_event_cb(int fd, GIOCondition condition, gpointer user_data)
 }
 
 static gboolean
-nettools_create(NMDhcpNettools *self, const char *dhcp_anycast_addr, GError **error)
+nettools_create(NMDhcpNettools *self, GError **error)
 {
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     nm_auto(n_dhcp4_client_config_freep) NDhcp4ClientConfig *config = NULL;
@@ -892,6 +892,8 @@ nettools_create(NMDhcpNettools *self, const char *dhcp_anycast_addr, GError **er
     int                    r, fd, arp_type, transport;
 
     g_return_val_if_fail(!priv->client, FALSE);
+
+    /* TODO: honor nm_dhcp_client_get_anycast_address() */
 
     hwaddr = nm_dhcp_client_get_hw_addr(NM_DHCP_CLIENT(self));
     if (!hwaddr || !(hwaddr_arr = g_bytes_get_data(hwaddr, &hwaddr_len))
@@ -1035,10 +1037,7 @@ fqdn_flags_to_wire(NMDhcpHostnameFlags flags)
 }
 
 static gboolean
-ip4_start(NMDhcpClient *client,
-          const char *  dhcp_anycast_addr,
-          const char *  last_ip4_address,
-          GError **     error)
+ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
 {
     nm_auto(n_dhcp4_client_probe_config_freep) NDhcp4ClientProbeConfig *config = NULL;
     NMDhcpNettools *       self       = NM_DHCP_NETTOOLS(client);
@@ -1052,7 +1051,7 @@ ip4_start(NMDhcpClient *client,
 
     g_return_val_if_fail(!priv->probe, FALSE);
 
-    if (!nettools_create(self, dhcp_anycast_addr, error))
+    if (!nettools_create(self, error))
         return FALSE;
 
     r = n_dhcp4_client_probe_config_new(&config);

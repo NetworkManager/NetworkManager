@@ -25,6 +25,7 @@
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_CLIENT, NMDhcpClientClass))
 
 #define NM_DHCP_CLIENT_ADDR_FAMILY             "addr-family"
+#define NM_DHCP_CLIENT_ANYCAST_ADDRESS         "anycast-address"
 #define NM_DHCP_CLIENT_FLAGS                   "flags"
 #define NM_DHCP_CLIENT_HWADDR                  "hwaddr"
 #define NM_DHCP_CLIENT_BROADCAST_HWADDR        "broadcast-hwaddr"
@@ -82,17 +83,13 @@ typedef enum _nm_packed {
 typedef struct {
     GObjectClass parent;
 
-    gboolean (*ip4_start)(NMDhcpClient *self,
-                          const char *  anycast_addr,
-                          const char *  last_ip4_address,
-                          GError **     error);
+    gboolean (*ip4_start)(NMDhcpClient *self, const char *last_ip4_address, GError **error);
 
     gboolean (*accept)(NMDhcpClient *self, GError **error);
 
     gboolean (*decline)(NMDhcpClient *self, const char *error_message, GError **error);
 
     gboolean (*ip6_start)(NMDhcpClient *            self,
-                          const char *              anycast_addr,
                           const struct in6_addr *   ll_addr,
                           NMSettingIP6ConfigPrivacy privacy,
                           guint                     needed_prefixes,
@@ -132,6 +129,8 @@ GBytes *nm_dhcp_client_get_hw_addr(NMDhcpClient *self);
 
 GBytes *nm_dhcp_client_get_broadcast_hw_addr(NMDhcpClient *self);
 
+const char *nm_dhcp_client_get_anycast_address(NMDhcpClient *self);
+
 guint32 nm_dhcp_client_get_route_table(NMDhcpClient *self);
 
 void nm_dhcp_client_set_route_table(NMDhcpClient *self, guint32 route_table);
@@ -160,14 +159,12 @@ GBytes *nm_dhcp_client_get_vendor_class_identifier(NMDhcpClient *self);
 
 gboolean nm_dhcp_client_start_ip4(NMDhcpClient *self,
                                   GBytes *      client_id,
-                                  const char *  dhcp_anycast_addr,
                                   const char *  last_ip4_address,
                                   GError **     error);
 
 gboolean nm_dhcp_client_start_ip6(NMDhcpClient *            self,
                                   GBytes *                  client_id,
                                   gboolean                  enforce_duid,
-                                  const char *              dhcp_anycast_addr,
                                   const struct in6_addr *   ll_addr,
                                   NMSettingIP6ConfigPrivacy privacy,
                                   guint                     needed_prefixes,

@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <linux/rtnetlink.h>
+#include <linux/if_ether.h>
 
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "libnm-glib-aux/nm-random-utils.h"
@@ -33,6 +34,7 @@ static guint signals[LAST_SIGNAL] = {0};
 
 NM_GOBJECT_PROPERTIES_DEFINE(NMDhcpClient,
                              PROP_ADDR_FAMILY,
+                             PROP_ANYCAST_ADDRESS,
                              PROP_FLAGS,
                              PROP_HWADDR,
                              PROP_BROADCAST_HWADDR,
@@ -61,6 +63,7 @@ typedef struct _NMDhcpClientPrivate {
     char *              hostname;
     const char **       reject_servers;
     char *              mud_url;
+    char *              anycast_address;
     GBytes *            vendor_class_identifier;
     pid_t               pid;
     guint               timeout_id;
@@ -278,6 +281,14 @@ nm_dhcp_client_set_client_id_bin(NMDhcpClient *self,
     memcpy(buf + 1, client_id, len);
     b = g_bytes_new_take(buf, len + 1);
     _set_client_id(self, b, TRUE);
+}
+
+const char *
+nm_dhcp_client_get_anycast_address(NMDhcpClient *self)
+{
+    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), NULL);
+
+    return NM_DHCP_CLIENT_GET_PRIVATE(self)->anycast_address;
 }
 
 const char *
@@ -574,7 +585,6 @@ nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid)
 gboolean
 nm_dhcp_client_start_ip4(NMDhcpClient *self,
                          GBytes *      client_id,
-                         const char *  dhcp_anycast_addr,
                          const char *  last_ip4_address,
                          GError **     error)
 {
@@ -594,10 +604,7 @@ nm_dhcp_client_start_ip4(NMDhcpClient *self,
 
     nm_dhcp_client_set_client_id(self, client_id);
 
-    return NM_DHCP_CLIENT_GET_CLASS(self)->ip4_start(self,
-                                                     dhcp_anycast_addr,
-                                                     last_ip4_address,
-                                                     error);
+    return NM_DHCP_CLIENT_GET_CLASS(self)->ip4_start(self, last_ip4_address, error);
 }
 
 gboolean
@@ -634,7 +641,6 @@ gboolean
 nm_dhcp_client_start_ip6(NMDhcpClient *            self,
                          GBytes *                  client_id,
                          gboolean                  enforce_duid,
-                         const char *              dhcp_anycast_addr,
                          const struct in6_addr *   ll_addr,
                          NMSettingIP6ConfigPrivacy privacy,
                          guint                     needed_prefixes,
@@ -663,8 +669,11 @@ nm_dhcp_client_start_ip6(NMDhcpClient *            self,
     else
         _LOGI("activation: beginning transaction (timeout in %u seconds)", (guint) priv->timeout);
 
-    return NM_DHCP_CLIENT_GET_CLASS(self)
-        ->ip6_start(self, dhcp_anycast_addr, ll_addr, privacy, needed_prefixes, error);
+    return NM_DHCP_CLIENT_GET_CLASS(self)->ip6_start(self,
+                                                     ll_addr,
+                                                     privacy,
+                                                     needed_prefixes,
+                                                     error);
 }
 
 void
@@ -1073,6 +1082,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         /* construct-only */
         priv->hwaddr = g_value_dup_boxed(value);
         break;
+    case PROP_ANYCAST_ADDRESS:
+        /* construct-only */
+        priv->anycast_address = g_value_dup_string(value);
+        break;
     case PROP_BROADCAST_HWADDR:
         /* construct-only */
         priv->bcast_hwaddr = g_value_dup_boxed(value);
@@ -1162,6 +1175,8 @@ constructed(GObject *object)
         nm_assert(!NM_FLAGS_ANY(priv->client_flags, NM_DHCP_CLIENT_FLAGS_REQUEST_BROADCAST));
     }
 
+    nm_assert(!priv->anycast_address || nm_utils_hwaddr_valid(priv->anycast_address, ETH_ALEN));
+
     G_OBJECT_CLASS(nm_dhcp_client_parent_class)->constructed(object);
 }
 #endif
@@ -1185,6 +1200,7 @@ dispose(GObject *object)
     nm_clear_g_free(&priv->iface);
     nm_clear_g_free(&priv->hostname);
     nm_clear_g_free(&priv->uuid);
+    nm_clear_g_free(&priv->anycast_address);
     nm_clear_g_free(&priv->mud_url);
     nm_clear_g_free(&priv->reject_servers);
     nm_clear_pointer(&priv->client_id, g_bytes_unref);
@@ -1258,6 +1274,13 @@ nm_dhcp_client_class_init(NMDhcpClientClass *client_class)
                          G_MAXINT,
                          AF_UNSPEC,
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_ANYCAST_ADDRESS] =
+        g_param_spec_string(NM_DHCP_CLIENT_ANYCAST_ADDRESS,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_UUID] =
         g_param_spec_string(NM_DHCP_CLIENT_UUID,
