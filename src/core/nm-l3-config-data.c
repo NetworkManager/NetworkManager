@@ -796,8 +796,8 @@ nm_l3_config_data_lookup_route(const NML3ConfigData *   self,
                                int                      addr_family,
                                const NMPlatformIPRoute *needle)
 {
-    const gboolean IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMPObject      obj_stack;
+    const int IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMPObject obj_stack;
 
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
     nm_assert_addr_family(addr_family);
@@ -895,7 +895,7 @@ nmtst_l3_config_data_get_obj_at(const NML3ConfigData *self, NMPObjectType obj_ty
 gboolean
 nm_l3_config_data_has_routes_with_type_local(const NML3ConfigData *self, int addr_family)
 {
-    const gboolean   IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
     NML3ConfigData * self_mutable;
     NMDedupMultiIter iter;
     const NMPObject *obj;
@@ -1230,7 +1230,7 @@ nm_l3_config_data_add_route_full(NML3ConfigData *         self,
                                  const NMPObject **       out_obj_new,
                                  gboolean *               out_changed_best_default_route)
 {
-    const gboolean       IS_IPv4            = NM_IS_IPv4(addr_family);
+    const int            IS_IPv4            = NM_IS_IPv4(addr_family);
     nm_auto_nmpobj const NMPObject *obj_old = NULL;
     const NMPObject *               obj_new_2;
     gboolean                        changed                    = FALSE;
@@ -1455,7 +1455,7 @@ nm_l3_config_data_add_dns_option(NML3ConfigData *self, int addr_family, const ch
 gboolean
 nm_l3_config_data_set_dns_priority(NML3ConfigData *self, int addr_family, int dns_priority)
 {
-    const gboolean           IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int                IS_IPv4 = NM_IS_IPv4(addr_family);
     const NML3ConfigDatFlags has_dns_priority_flag =
         NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY(IS_IPv4);
 
@@ -1509,7 +1509,7 @@ nm_l3_config_data_set_route_table_sync(NML3ConfigData *       self,
                                        int                    addr_family,
                                        NMIPRouteTableSyncMode route_table_sync)
 {
-    const gboolean IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int IS_IPv4 = NM_IS_IPv4(addr_family);
 
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
     nm_assert_addr_family(addr_family);
@@ -1863,7 +1863,7 @@ _data_get_direct_route_for_host(const NML3ConfigData *self,
                                 gconstpointer         host,
                                 guint32               route_table)
 {
-    const gboolean            IS_IPv4        = NM_IS_IPv4(addr_family);
+    const int                 IS_IPv4        = NM_IS_IPv4(addr_family);
     const NMPObject *         best_route_obj = NULL;
     const NMPlatformIPXRoute *best_route     = NULL;
     const NMPObject *         item_obj;
@@ -1998,7 +1998,7 @@ nm_l3_config_data_add_dependent_routes(NML3ConfigData *self,
                                        guint32         route_metric,
                                        gboolean        is_vrf)
 {
-    const gboolean    IS_IPv4                        = NM_IS_IPv4(addr_family);
+    const int         IS_IPv4                        = NM_IS_IPv4(addr_family);
     gs_unref_ptrarray GPtrArray *extra_onlink_routes = NULL;
     const NMPObject *            my_addr_obj;
     const NMPObject *            my_route_obj;
@@ -2209,7 +2209,7 @@ _init_from_connection_ip(NML3ConfigData *self,
                          guint32         route_table,
                          guint32         route_metric)
 {
-    const gboolean     IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int          IS_IPv4 = NM_IS_IPv4(addr_family);
     NMSettingIPConfig *s_ip;
     guint              naddresses;
     guint              nroutes;
@@ -2433,7 +2433,7 @@ _init_from_platform(NML3ConfigData *          self,
                     NMPlatform *              platform,
                     NMSettingIP6ConfigPrivacy ipv6_privacy_rfc4941)
 {
-    const gboolean               IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMDedupMultiHeadEntry *head_entry;
     const NMPObject *            plobj = NULL;
     NMDedupMultiIter             iter;
