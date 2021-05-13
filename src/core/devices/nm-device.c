@@ -8468,6 +8468,8 @@ activate_stage2_device_config(NMDevice *self)
 
     lldp_setup(self, NM_TERNARY_DEFAULT);
 
+    _commit_mtu(self, NULL);
+
     nm_device_activate_schedule_stage3_ip_config_start(self);
 }
 
