@@ -1139,10 +1139,6 @@ _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec 
     NMDBusManagerPrivate *priv;
     RegistrationData *    reg_data;
     guint                 i, p;
-    gboolean              any_legacy_signals    = FALSE;
-    gboolean              any_legacy_properties = FALSE;
-    GVariantBuilder       legacy_builder;
-    GVariant *            device_statistics_args = NULL;
 
     nm_assert(NM_IS_DBUS_OBJECT(obj));
     nm_assert(obj->internal.path);
@@ -1158,13 +1154,6 @@ _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec 
 
     if (G_UNLIKELY(!priv->started))
         return;
-
-    c_list_for_each_entry (reg_data, &obj->internal.registration_lst_head, registration_lst) {
-        if (_reg_data_get_interface_info(reg_data)->legacy_property_changed) {
-            any_legacy_signals = TRUE;
-            break;
-        }
-    }
 
     /* do a naive search for the matching NMDBusPropertyInfoExtended infos. Since the number of
      * (interfaces x properties) is static and possibly small, this naive search is effectively
@@ -1196,18 +1185,6 @@ _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec 
 
                 value = _obj_get_property(reg_data, i, TRUE);
 
-                if (property_info->include_in_legacy_property_changed && any_legacy_signals) {
-                    /* also track the value in the legacy_builder to emit legacy signals below. */
-                    if (!any_legacy_properties) {
-                        any_legacy_properties = TRUE;
-                        g_variant_builder_init(&legacy_builder, G_VARIANT_TYPE("a{sv}"));
-                    }
-                    g_variant_builder_add(&legacy_builder,
-                                          "{sv}",
-                                          property_info->parent.name,
-                                          value);
-                }
-
                 if (!has_properties) {
                     has_properties = TRUE;
                     g_variant_builder_init(&builder, G_VARIANT_TYPE("a{sv}"));
@@ -1221,73 +1198,15 @@ _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec 
 
         args = g_variant_builder_end(&builder);
 
-        if (G_UNLIKELY(interface_info == &nm_interface_info_device_statistics)) {
-            /* we treat the Device.Statistics signal special, because we need to
-             * emit a signal also for it (below). */
-            nm_assert(!device_statistics_args);
-            device_statistics_args = g_variant_ref_sink(args);
-        }
-
         g_variant_builder_init(&invalidated_builder, G_VARIANT_TYPE("as"));
         g_dbus_connection_emit_signal(
             priv->main_dbus_connection,
             NULL,
             obj->internal.path,
-            "org.freedesktop.DBus.Properties",
+            DBUS_INTERFACE_PROPERTIES,
             "PropertiesChanged",
             g_variant_new("(s@a{sv}as)", interface_info->parent.name, args, &invalidated_builder),
             NULL);
-    }
-
-    if (G_UNLIKELY(device_statistics_args)) {
-        /* this is a special interface: it has a legacy PropertiesChanged signal,
-         * however, contrary to other interfaces with ~regular~ legacy signals,
-         * we only notify about properties that actually belong to this interface. */
-        g_dbus_connection_emit_signal(priv->main_dbus_connection,
-                                      NULL,
-                                      obj->internal.path,
-                                      nm_interface_info_device_statistics.parent.name,
-                                      "PropertiesChanged",
-                                      g_variant_new("(@a{sv})", device_statistics_args),
-                                      NULL);
-        g_variant_unref(device_statistics_args);
-    }
-
-    if (any_legacy_properties) {
-        gs_unref_variant GVariant *args = NULL;
-
-        /* The legacy PropertyChanged signal on the NetworkManager D-Bus interface is
-         * deprecated for the standard signal on org.freedesktop.DBus.Properties. However,
-         * for backward compatibility, we still need to emit it.
-         *
-         * Due to a bug in dbus-glib in NetworkManager <= 1.0, the signal would
-         * not only notify about properties that were actually on the corresponding
-         * D-Bus interface. Instead, it would notify about all relevant properties
-         * on all interfaces that had such a signal.
-         *
-         * For example, "HwAddress" gets emitted both on "fdo.NM.Device.Ethernet"
-         * and "fdo.NM.Device.Veth" for veth interfaces, although only the former
-         * actually has such a property.
-         * Also note that "fdo.NM.Device" interface has no legacy signal. All notifications
-         * about its properties are instead emitted on the interfaces of the subtypes.
-         *
-         * See bgo#770629 and commit bef26a2e69f51259095fa080221db73de09fd38d.
-         */
-        args = g_variant_ref_sink(g_variant_new("(a{sv})", &legacy_builder));
-        c_list_for_each_entry (reg_data, &obj->internal.registration_lst_head, registration_lst) {
-            const NMDBusInterfaceInfoExtended *interface_info =
-                _reg_data_get_interface_info(reg_data);
-
-            if (interface_info->legacy_property_changed) {
-                g_dbus_connection_emit_signal(priv->main_dbus_connection,
-                                              NULL,
-                                              obj->internal.path,
-                                              interface_info->parent.name,
-                                              "PropertiesChanged",
-                                              args,
-                                              NULL);
-            }
-        }
     }
 }
 

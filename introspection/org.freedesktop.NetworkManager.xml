@@ -550,16 +550,6 @@
     <property name="GlobalDnsConfiguration" type="a{sv}" access="readwrite"/>
 
     <!--
-        PropertiesChanged:
-        @properties: The changed properties.
-
-        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
-    -->
-    <signal name="PropertiesChanged">
-      <arg name="properties" type="a{sv}"/>
-    </signal>
-
-    <!--
         DeviceAdded:
         @device_path: The object path of the newly added device.
 
@@ -578,5 +568,6 @@
     <signal name="DeviceRemoved">
       <arg name="device_path" type="o"/>
     </signal>
+
   </interface>
 </node>

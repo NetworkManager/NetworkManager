@@ -22,5 +22,6 @@
         The object path of the parent device.
     -->
     <property name="Parent" type="o" access="read"/>
+
   </interface>
 </node>

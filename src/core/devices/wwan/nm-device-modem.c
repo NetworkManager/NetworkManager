@@ -855,14 +855,13 @@ dispose(GObject *object)
 static const NMDBusInterfaceInfoExtended interface_info_device_modem = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_DEVICE_MODEM,
-        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_property_changed_legacy, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("ModemCapabilities",
-                                                             "u",
-                                                             NM_DEVICE_MODEM_CAPABILITIES),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("CurrentCapabilities",
-                                                             "u",
-                                                             NM_DEVICE_MODEM_CURRENT_CAPABILITIES),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("ModemCapabilities",
+                                                           "u",
+                                                           NM_DEVICE_MODEM_CAPABILITIES),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("CurrentCapabilities",
+                                                           "u",
+                                                           NM_DEVICE_MODEM_CURRENT_CAPABILITIES),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("DeviceId",
                                                            "s",
                                                            NM_DEVICE_MODEM_DEVICE_ID),
@@ -870,7 +869,6 @@ static const NMDBusInterfaceInfoExtended interface_info_device_modem = {
                                                            "s",
                                                            NM_DEVICE_MODEM_OPERATOR_CODE),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Apn", "s", NM_DEVICE_MODEM_APN), ), ),
-    .legacy_property_changed = TRUE,
 };
 
 static void

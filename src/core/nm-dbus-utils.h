@@ -14,11 +14,6 @@ struct _NMDBusMethodInfoExtended;
 struct _NMDBusPropertyInfoExtendedBase {
     GDBusPropertyInfo _parent;
     const char *      property_name;
-
-    /* Whether the properties needs to be notified on the legacy
-     * PropertyChanged signal. This is only to preserve API, new
-     * properties should not use this. */
-    bool include_in_legacy_property_changed;
 };
 
 struct _NMDBusPropertyInfoExtendedReadWritable {
@@ -43,93 +38,46 @@ typedef struct {
         struct {
             GDBusPropertyInfo parent;
             const char *      property_name;
-
-            /* Whether the properties needs to be notified on the legacy
-             * PropertyChanged signal. This is only to preserve API, new
-             * properties should not use this. */
-            bool include_in_legacy_property_changed;
         };
     };
 } NMDBusPropertyInfoExtended;
 
 G_STATIC_ASSERT(G_STRUCT_OFFSET(NMDBusPropertyInfoExtended, property_name)
                 == G_STRUCT_OFFSET(struct _NMDBusPropertyInfoExtendedBase, property_name));
-G_STATIC_ASSERT(G_STRUCT_OFFSET(NMDBusPropertyInfoExtended, include_in_legacy_property_changed)
-                == G_STRUCT_OFFSET(struct _NMDBusPropertyInfoExtendedBase,
-                                   include_in_legacy_property_changed));
-
-#define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_FULL(m_name,                               \
-                                                            m_signature,                          \
-                                                            m_property_name,                      \
-                                                            m_include_in_legacy_property_changed) \
-    ((GDBusPropertyInfo *) &((const struct _NMDBusPropertyInfoExtendedBase){                      \
-        ._parent =                                                                                \
-            {                                                                                     \
-                .ref_count = -1,                                                                  \
-                .name      = m_name,                                                              \
-                .signature = m_signature,                                                         \
-                .flags     = G_DBUS_PROPERTY_INFO_FLAGS_READABLE,                                 \
-            },                                                                                    \
-        .property_name                      = m_property_name,                                    \
-        .include_in_legacy_property_changed = m_include_in_legacy_property_changed,               \
-    }))
 
 #define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(m_name, m_signature, m_property_name) \
-    NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_FULL(m_name, m_signature, m_property_name, FALSE)
-
-/* define a legacy property. Do not use for new code. */
-#define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L(m_name, m_signature, m_property_name) \
-    NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_FULL(m_name, m_signature, m_property_name, TRUE)
-
-#define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE_FULL(                            \
-    m_name,                                                                                 \
-    m_signature,                                                                            \
-    m_property_name,                                                                        \
-    m_permission,                                                                           \
-    m_audit_op,                                                                             \
-    m_include_in_legacy_property_changed)                                                   \
-    ((GDBusPropertyInfo *) &((const struct _NMDBusPropertyInfoExtendedReadWritable){        \
-        ._base =                                                                            \
-            {                                                                               \
-                ._parent =                                                                  \
-                    {                                                                       \
-                        .ref_count = -1,                                                    \
-                        .name      = m_name,                                                \
-                        .signature = m_signature,                                           \
-                        .flags     = G_DBUS_PROPERTY_INFO_FLAGS_READABLE                    \
-                                 | G_DBUS_PROPERTY_INFO_FLAGS_WRITABLE,                     \
-                    },                                                                      \
-                .property_name                      = m_property_name,                      \
-                .include_in_legacy_property_changed = m_include_in_legacy_property_changed, \
-            },                                                                              \
-        .permission = m_permission,                                                         \
-        .audit_op   = m_audit_op,                                                           \
+    ((GDBusPropertyInfo *) &((const struct _NMDBusPropertyInfoExtendedBase){                 \
+        ._parent =                                                                           \
+            {                                                                                \
+                .ref_count = -1,                                                             \
+                .name      = m_name,                                                         \
+                .signature = m_signature,                                                    \
+                .flags     = G_DBUS_PROPERTY_INFO_FLAGS_READABLE,                            \
+            },                                                                               \
+        .property_name = m_property_name,                                                    \
     }))
 
-#define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE(m_name,           \
-                                                           m_signature,      \
-                                                           m_property_name,  \
-                                                           m_permission,     \
-                                                           m_audit_op)       \
-    NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE_FULL(m_name,          \
-                                                            m_signature,     \
-                                                            m_property_name, \
-                                                            m_permission,    \
-                                                            m_audit_op,      \
-                                                            FALSE)
-
-/* define a legacy property. Do not use for new code. */
-#define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE_L(m_name,          \
-                                                             m_signature,     \
-                                                             m_property_name, \
-                                                             m_permission,    \
-                                                             m_audit_op)      \
-    NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE_FULL(m_name,           \
-                                                            m_signature,      \
-                                                            m_property_name,  \
-                                                            m_permission,     \
-                                                            m_audit_op,       \
-                                                            TRUE)
+#define NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE(m_name,                   \
+                                                           m_signature,              \
+                                                           m_property_name,          \
+                                                           m_permission,             \
+                                                           m_audit_op)               \
+    ((GDBusPropertyInfo *) &((const struct _NMDBusPropertyInfoExtendedReadWritable){ \
+        ._base =                                                                     \
+            {                                                                        \
+                ._parent =                                                           \
+                    {                                                                \
+                        .ref_count = -1,                                             \
+                        .name      = m_name,                                         \
+                        .signature = m_signature,                                    \
+                        .flags     = G_DBUS_PROPERTY_INFO_FLAGS_READABLE             \
+                                 | G_DBUS_PROPERTY_INFO_FLAGS_WRITABLE,              \
+                    },                                                               \
+                .property_name = m_property_name,                                    \
+            },                                                                       \
+        .permission = m_permission,                                                  \
+        .audit_op   = m_audit_op,                                                    \
+    }))
 
 typedef struct _NMDBusMethodInfoExtended {
     GDBusMethodInfo parent;
@@ -148,13 +96,7 @@ typedef struct _NMDBusMethodInfoExtended {
 
 typedef struct _NMDBusInterfaceInfoExtended {
     GDBusInterfaceInfo parent;
-
-    /* Whether the interface has a legacy property changed signal (@nm_signal_info_property_changed_legacy).
-     * New interfaces should not use this. */
-    bool legacy_property_changed : 1;
 } NMDBusInterfaceInfoExtended;
-
-extern const GDBusSignalInfo nm_signal_info_property_changed_legacy;
 
 #define NM_DBUS_INTERFACE_INFOS(...)                                           \
     ({                                                                         \

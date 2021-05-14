@@ -13,5 +13,6 @@
         The routing table of the VRF.
     -->
     <property name="Table" type="u" access="read"/>
+
   </interface>
 </node>

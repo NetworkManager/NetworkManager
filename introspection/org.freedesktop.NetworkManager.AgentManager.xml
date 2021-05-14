@@ -38,5 +38,6 @@
         when they disconnect from D-Bus.
     -->
     <method name="Unregister"/>
+
   </interface>
 </node>

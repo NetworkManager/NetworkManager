@@ -45,17 +45,6 @@ typedef struct {
 
 /*****************************************************************************/
 
-/* "org.freedesktop.NetworkManager.Device.Statistics" is a special interface,
- * because although it has a legacy PropertiesChanged signal, it only notifies
- * about properties that actually exist on that interface. That is, because it
- * was added with 1.4.0 release, and thus didn't have the broken behavior like
- * other legacy interfaces. Those notify about *all* properties, even if they
- * are not part of that D-Bus interface. See also "include_in_legacy_property_changed"
- * and "legacy_property_changed". */
-extern const NMDBusInterfaceInfoExtended nm_interface_info_device_statistics;
-
-/*****************************************************************************/
-
 #define NM_TYPE_DBUS_OBJECT (nm_dbus_object_get_type())
 #define NM_DBUS_OBJECT(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DBUS_OBJECT, NMDBusObject))
 #define NM_DBUS_OBJECT_CLASS(klass) \

@@ -16,6 +16,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Enforce valid "connection.uuid" by normalizing the string to lower
   case. This changes the UUID of existing profiles that had an invalid,
   non-normalized value.
+* API BREAK: D-Bus: remove long deprecated PropertiesChanged signal from D-Bus
+  API. They are replaced by standard PropertiesChanged signal on the
+  "org.freedesktop.DBus.Properties" interface.
 
 =============================================
 NetworkManager-1.30

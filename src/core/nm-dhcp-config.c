@@ -194,12 +194,10 @@ nm_dhcp4_config_init(NMDhcp4Config *self)
 static const NMDBusInterfaceInfoExtended interface_info_dhcp4_config = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_DHCP4_CONFIG,
-        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_property_changed_legacy, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Options",
-                                                             "a{sv}",
-                                                             NM_DHCP_CONFIG_OPTIONS), ), ),
-    .legacy_property_changed = TRUE,
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Options",
+                                                           "a{sv}",
+                                                           NM_DHCP_CONFIG_OPTIONS), ), ),
 };
 
 static void
@@ -234,12 +232,10 @@ nm_dhcp6_config_init(NMDhcp6Config *self)
 static const NMDBusInterfaceInfoExtended interface_info_dhcp6_config = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_DHCP6_CONFIG,
-        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_property_changed_legacy, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Options",
-                                                             "a{sv}",
-                                                             NM_DHCP_CONFIG_OPTIONS), ), ),
-    .legacy_property_changed = TRUE,
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Options",
+                                                           "a{sv}",
+                                                           NM_DHCP_CONFIG_OPTIONS), ), ),
 };
 
 static void

@@ -739,16 +739,12 @@ dispose(GObject *object)
 static const NMDBusInterfaceInfoExtended interface_info_checkpoint = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_CHECKPOINT,
-        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_property_changed_legacy, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Devices",
-                                                             "ao",
-                                                             NM_CHECKPOINT_DEVICES),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Created", "x", NM_CHECKPOINT_CREATED),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("RollbackTimeout",
-                                                             "u",
-                                                             NM_CHECKPOINT_ROLLBACK_TIMEOUT), ), ),
-    .legacy_property_changed = TRUE,
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Devices", "ao", NM_CHECKPOINT_DEVICES),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Created", "x", NM_CHECKPOINT_CREATED),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("RollbackTimeout",
+                                                           "u",
+                                                           NM_CHECKPOINT_ROLLBACK_TIMEOUT), ), ),
 };
 
 static void

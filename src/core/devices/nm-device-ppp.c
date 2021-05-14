@@ -274,10 +274,7 @@ dispose(GObject *object)
 }
 
 static const NMDBusInterfaceInfoExtended interface_info_device_ppp = {
-    .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
-        NM_DBUS_INTERFACE_DEVICE_PPP,
-        .signals = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_property_changed_legacy, ), ),
-    .legacy_property_changed = TRUE,
+    .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(NM_DBUS_INTERFACE_DEVICE_PPP, ),
 };
 
 static void

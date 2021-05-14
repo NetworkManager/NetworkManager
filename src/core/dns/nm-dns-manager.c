@@ -2618,13 +2618,13 @@ static const NMDBusInterfaceInfoExtended interface_info_dns_manager = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_DNS_MANAGER,
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Mode", "s", NM_DNS_MANAGER_MODE),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("RcManager",
-                                                             "s",
-                                                             NM_DNS_MANAGER_RC_MANAGER),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Configuration",
-                                                             "aa{sv}",
-                                                             NM_DNS_MANAGER_CONFIGURATION), ), ),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Mode", "s", NM_DNS_MANAGER_MODE),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("RcManager",
+                                                           "s",
+                                                           NM_DNS_MANAGER_RC_MANAGER),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Configuration",
+                                                           "aa{sv}",
+                                                           NM_DNS_MANAGER_CONFIGURATION), ), ),
 };
 
 static void
