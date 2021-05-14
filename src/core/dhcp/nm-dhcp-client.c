@@ -83,6 +83,11 @@ G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+/* we use pid=-1 for invalid PIDs. Ensure that pid_t can hold negative values. */
+G_STATIC_ASSERT(!(((pid_t) -1) > 0));
+
+/*****************************************************************************/
+
 pid_t
 nm_dhcp_client_get_pid(NMDhcpClient *self)
 {
