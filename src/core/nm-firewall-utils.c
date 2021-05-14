@@ -738,12 +738,9 @@ nm_firewall_config_apply(NMFirewallConfig *self, gboolean shared)
 static NMFirewallBackend
 _firewall_backend_detect(void)
 {
-    if (g_file_test(NFT_PATH, G_FILE_TEST_IS_EXECUTABLE))
-        return NM_FIREWALL_BACKEND_NFTABLES;
-    if (g_file_test(IPTABLES_PATH, G_FILE_TEST_IS_EXECUTABLE))
-        return NM_FIREWALL_BACKEND_IPTABLES;
-
-    return NM_FIREWALL_BACKEND_NFTABLES;
+    /* For the moment, we still default to iptables. This should
+     * change once nftables is proven to work well. */
+    return NM_FIREWALL_BACKEND_IPTABLES;
 }
 
 NMFirewallBackend
