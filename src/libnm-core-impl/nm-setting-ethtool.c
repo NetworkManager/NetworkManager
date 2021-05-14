@@ -9,6 +9,7 @@
 
 #include "nm-setting-private.h"
 #include "libnm-base/nm-ethtool-base.h"
+#include "libnm-base/nm-ethtool-utils-base.h"
 
 /*****************************************************************************/
 
@@ -288,6 +289,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     GVariant *const *  variants;
     guint              len;
     guint              i;
+    NMTernary          pause_autoneg = NM_TERNARY_DEFAULT;
+    NMTernary          pause_tx      = NM_TERNARY_DEFAULT;
+    NMTernary          pause_rx      = NM_TERNARY_DEFAULT;
 
     len = _nm_setting_option_get_all(setting, &optnames, &variants);
 
@@ -329,6 +333,25 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                 g_prefix_error(error, "%s.%s: ", NM_SETTING_ETHTOOL_SETTING_NAME, optname);
                 return FALSE;
             }
+        } else if (NM_IN_SET(ethtool_id, NM_ETHTOOL_ID_PAUSE_AUTONEG))
+            pause_autoneg = g_variant_get_boolean(variant);
+        else if (NM_IN_SET(ethtool_id, NM_ETHTOOL_ID_PAUSE_RX))
+            pause_rx = g_variant_get_boolean(variant);
+        else if (NM_IN_SET(ethtool_id, NM_ETHTOOL_ID_PAUSE_TX))
+            pause_tx = g_variant_get_boolean(variant);
+    }
+
+    if (pause_rx != NM_TERNARY_DEFAULT || pause_tx != NM_TERNARY_DEFAULT) {
+        if (pause_autoneg == NM_TERNARY_TRUE) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("pause-autoneg cannot be enabled when setting rx/tx options"));
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_ETHTOOL_SETTING_NAME,
+                           NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG);
+            return FALSE;
         }
     }
 
