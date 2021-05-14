@@ -23,7 +23,22 @@ gboolean nmc_string_to_uint(const char *       str,
                             unsigned long int  max,
                             unsigned long int *value);
 gboolean nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error);
-gboolean nmc_string_to_ternary(const char *str, NMTernary *val, GError **error);
+
+typedef enum {
+    NMC_STRING_TO_TERNARY_FLAGS_NONE               = 0,
+    NMC_STRING_TO_TERNARY_FLAGS_IGNORE_FOR_DEFAULT = (1LL << 0),
+} NMCStringToTernaryFlags;
+
+gboolean nmc_string_to_ternary_full(const char *            str,
+                                    NMCStringToTernaryFlags flags,
+                                    NMTernary *             val,
+                                    GError **               error);
+
+static inline gboolean
+nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
+{
+    return nmc_string_to_ternary_full(str, NMC_STRING_TO_TERNARY_FLAGS_NONE, val, error);
+}
 
 gboolean matches(const char *cmd, const char *pattern);
 

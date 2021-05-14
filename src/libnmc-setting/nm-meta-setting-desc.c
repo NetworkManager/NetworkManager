@@ -4284,10 +4284,9 @@ static gconstpointer _get_fcn_ethtool(ARGS_GET_FCN)
 
 static gboolean _set_fcn_ethtool(ARGS_SET_FCN)
 {
-    NMEthtoolID   ethtool_id    = property_info->property_typ_data->subtype.ethtool.ethtool_id;
-    gs_free char *value_to_free = NULL;
-    gint64        i64;
-    gboolean      b;
+    NMEthtoolID ethtool_id = property_info->property_typ_data->subtype.ethtool.ethtool_id;
+    gint64      i64;
+    NMTernary   t;
 
     if (_SET_FCN_DO_RESET_DEFAULT(property_info, modifier, value))
         goto do_unset;
@@ -4311,14 +4310,10 @@ static gboolean _set_fcn_ethtool(ARGS_SET_FCN)
 
     nm_assert(nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id));
 
-    value = nm_strstrip_avoid_copy_a(300, value, &value_to_free);
-    if (NM_IN_STRSET(value, "1", "yes", "true", "on"))
-        b = TRUE;
-    else if (NM_IN_STRSET(value, "0", "no", "false", "off"))
-        b = FALSE;
-    else if (NM_IN_STRSET(value, "", "ignore", "default"))
-        goto do_unset;
-    else {
+    if (!nmc_string_to_ternary_full(value,
+                                    NMC_STRING_TO_TERNARY_FLAGS_IGNORE_FOR_DEFAULT,
+                                    &t,
+                                    error)) {
         g_set_error(error,
                     NM_UTILS_ERROR,
                     NM_UTILS_ERROR_INVALID_ARGUMENT,
@@ -4326,8 +4321,10 @@ static gboolean _set_fcn_ethtool(ARGS_SET_FCN)
                     value);
         return FALSE;
     }
+    if (t == NM_TERNARY_DEFAULT)
+        goto do_unset;
 
-    nm_setting_option_set_boolean(setting, nm_ethtool_data[ethtool_id]->optname, b);
+    nm_setting_option_set_boolean(setting, nm_ethtool_data[ethtool_id]->optname, !!t);
     return TRUE;
 
 do_unset:
