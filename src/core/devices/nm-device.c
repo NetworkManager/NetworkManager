@@ -2174,7 +2174,10 @@ _ethtool_pause_set(NMDevice *        self,
     GHashTableIter      iter;
     const char *        name;
     GVariant *          variant;
-    gboolean            has_old = FALSE;
+    gboolean            has_old       = FALSE;
+    NMTernary           pause_autoneg = NM_TERNARY_DEFAULT;
+    NMTernary           pause_rx      = NM_TERNARY_DEFAULT;
+    NMTernary           pause_tx      = NM_TERNARY_DEFAULT;
 
     nm_assert(NM_IS_DEVICE(self));
     nm_assert(NM_IS_PLATFORM(platform));
@@ -2202,19 +2205,18 @@ _ethtool_pause_set(NMDevice *        self,
                       "existing setting)");
                 return;
             }
-            has_old   = TRUE;
-            pause_new = pause_old;
+            has_old = TRUE;
         }
 
         switch (ethtool_id) {
         case NM_ETHTOOL_ID_PAUSE_AUTONEG:
-            pause_new.autoneg = g_variant_get_boolean(variant);
+            pause_autoneg = g_variant_get_boolean(variant);
             break;
         case NM_ETHTOOL_ID_PAUSE_RX:
-            pause_new.rx = g_variant_get_boolean(variant);
+            pause_rx = g_variant_get_boolean(variant);
             break;
         case NM_ETHTOOL_ID_PAUSE_TX:
-            pause_new.tx = g_variant_get_boolean(variant);
+            pause_tx = g_variant_get_boolean(variant);
             break;
         default:
             nm_assert_not_reached();
@@ -2223,6 +2225,20 @@ _ethtool_pause_set(NMDevice *        self,
 
     if (!has_old)
         return;
+
+    if (pause_rx != NM_TERNARY_DEFAULT || pause_tx != NM_TERNARY_DEFAULT) {
+        /* this implies to explicitly disable autoneg. */
+        nm_assert(pause_autoneg != NM_TERNARY_TRUE);
+        pause_autoneg = NM_TERNARY_FALSE;
+    }
+
+    pause_new = pause_old;
+    if (pause_autoneg != NM_TERNARY_DEFAULT)
+        pause_new.autoneg = !!pause_autoneg;
+    if (pause_rx != NM_TERNARY_DEFAULT)
+        pause_new.rx = !!pause_rx;
+    if (pause_tx != NM_TERNARY_DEFAULT)
+        pause_new.tx = !!pause_tx;
 
     ethtool_state->pause = nm_memdup(&pause_old, sizeof(pause_old));
 
