@@ -391,5 +391,6 @@
       <arg name="old_state" type="u"/>
       <arg name="reason" type="u"/>
     </signal>
+
   </interface>
 </node>

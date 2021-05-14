@@ -11,16 +11,6 @@
     <annotation name="org.gtk.GDBus.C.Name" value="VpnConnection"/>
 
     <!--
-        PropertiesChanged:
-        @properties: A dictionary mapping property names to variant boxed values
-
-        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
-    -->
-    <signal name="PropertiesChanged">
-      <arg name="properties" type="a{sv}"/>
-    </signal>
-
-    <!--
         VpnState:
 
         The VPN-specific state of the connection.
@@ -47,5 +37,6 @@
       <arg name="state" type="u"/>
       <arg name="reason" type="u"/>
     </signal>
+
   </interface>
 </node>

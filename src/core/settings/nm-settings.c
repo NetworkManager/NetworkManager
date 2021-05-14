@@ -4026,18 +4026,16 @@ static const NMDBusInterfaceInfoExtended interface_info_settings = {
                     .in_args =
                         NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("hostname", "s"), ), ),
                 .handle = impl_settings_save_hostname, ), ),
-        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_property_changed_legacy,
-                                                &signal_info_new_connection,
+        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&signal_info_new_connection,
                                                 &signal_info_connection_removed, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Connections",
-                                                             "ao",
-                                                             NM_SETTINGS_CONNECTIONS),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Hostname", "s", NM_SETTINGS_HOSTNAME),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("CanModify",
-                                                             "b",
-                                                             NM_SETTINGS_CAN_MODIFY), ), ),
-    .legacy_property_changed = TRUE,
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Connections",
+                                                           "ao",
+                                                           NM_SETTINGS_CONNECTIONS),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Hostname", "s", NM_SETTINGS_HOSTNAME),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("CanModify",
+                                                           "b",
+                                                           NM_SETTINGS_CAN_MODIFY), ), ),
 };
 
 static void

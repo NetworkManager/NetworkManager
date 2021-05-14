@@ -623,9 +623,7 @@ class NmUtil:
 
 class ExportedObj(dbus.service.Object):
 
-    DBusInterface = collections.namedtuple(
-        "DBusInterface", ["dbus_iface", "props", "legacy_prop_changed_func"]
-    )
+    DBusInterface = collections.namedtuple("DBusInterface", ["dbus_iface", "props"])
 
     @staticmethod
     def create_path(klass, path_prefix=None):
@@ -673,10 +671,8 @@ class ExportedObj(dbus.service.Object):
         gl.object_manager.remove_object(self)
         self.remove_from_connection()
 
-    def dbus_interface_add(self, dbus_iface, props, legacy_prop_changed_func=None):
-        self._dbus_ifaces[dbus_iface] = ExportedObj.DBusInterface(
-            dbus_iface, props, legacy_prop_changed_func
-        )
+    def dbus_interface_add(self, dbus_iface, props):
+        self._dbus_ifaces[dbus_iface] = ExportedObj.DBusInterface(dbus_iface, props)
 
     def _dbus_interface_get(self, dbus_iface):
         if dbus_iface not in self._dbus_ifaces:
@@ -772,15 +768,6 @@ class ExportedObj(dbus.service.Object):
         if propname is not None:
             prop = {propname: prop}
         ExportedObj.PropertiesChanged(self, dbus_iface, prop, [])
-
-        # the legacy_prop_changed_func signal is a legacy signal that got obsoleted by the standard
-        # PropertiesChanged signal. NetworkManager (and this stub) still emit it for backward
-        # compatibility reasons. Note that this stub server implementation gets this wrong,
-        # for example, it emits PropertiesChanged signal on org.freedesktop.NetworkManager.Device,
-        # which NetworkManager never did.
-        # See https://gitlab.freedesktop.org/NetworkManager/NetworkManager/blob/db80d5f62a1edf39c5970887ef7b9ec62dd4163f/src/nm-dbus-manager.c#L1274
-        if dbus_interface.legacy_prop_changed_func is not None:
-            dbus_interface.legacy_prop_changed_func(self, prop)
 
     @dbus.service.signal(dbus.PROPERTIES_IFACE, signature="sa{sv}as")
     def PropertiesChanged(self, iface, changed, invalidated):
@@ -996,7 +983,7 @@ class Device(ExportedObj):
             ),
         }
 
-        self.dbus_interface_add(IFACE_DEVICE, props, Device.PropertiesChanged)
+        self.dbus_interface_add(IFACE_DEVICE, props)
 
     def start(self):
         self.ip4_config = IP4Config()
@@ -1058,10 +1045,6 @@ class Device(ExportedObj):
 
     @dbus.service.signal(IFACE_DEVICE, signature="uuu")
     def StateChanged(self, new_state, old_state, reason):
-        pass
-
-    @dbus.service.signal(IFACE_DEVICE, signature="a{sv}")
-    def PropertiesChanged(self, changed):
         pass
 
     def set_state(self, state, reason):
@@ -1143,11 +1126,7 @@ class WiredDevice(Device):
             PRP_WIRED_S390_SUBCHANNELS: subchannels,
         }
 
-        self.dbus_interface_add(IFACE_WIRED, props, WiredDevice.PropertiesChanged)
-
-    @dbus.service.signal(IFACE_WIRED, signature="a{sv}")
-    def PropertiesChanged(self, changed):
-        pass
+        self.dbus_interface_add(IFACE_WIRED, props)
 
 
 ###############################################################################
@@ -1167,11 +1146,7 @@ class ModemDevice(Device):
             PM_MODEM_CAPABILITIES: dbus.UInt32(0),
         }
 
-        self.dbus_interface_add(IFACE_MODEM, props, ModemDevice.PropertiesChanged)
-
-    @dbus.service.signal(IFACE_MODEM, signature="a{sv}")
-    def PropertiesChanged(self, changed):
-        pass
+        self.dbus_interface_add(IFACE_MODEM, props)
 
 
 ###############################################################################
@@ -1191,11 +1166,7 @@ class VlanDevice(Device):
             PRP_VLAN_VLAN_ID: dbus.UInt32(1),
         }
 
-        self.dbus_interface_add(IFACE_VLAN, props, VlanDevice.PropertiesChanged)
-
-    @dbus.service.signal(IFACE_VLAN, signature="a{sv}")
-    def PropertiesChanged(self, changed):
-        pass
+        self.dbus_interface_add(IFACE_VLAN, props)
 
 
 ###############################################################################
@@ -1270,11 +1241,7 @@ class WifiAp(ExportedObj):
             PRP_WIFI_AP_LAST_SEEN: dbus.Int32(NM.utils_get_timestamp_msec() / 1000),
         }
 
-        self.dbus_interface_add(IFACE_WIFI_AP, props, WifiAp.PropertiesChanged)
-
-    @dbus.service.signal(IFACE_WIFI_AP, signature="a{sv}")
-    def PropertiesChanged(self, changed):
-        pass
+        self.dbus_interface_add(IFACE_WIFI_AP, props)
 
 
 ###############################################################################
@@ -1315,7 +1282,7 @@ class WifiDevice(Device):
             PRP_WIFI_LAST_SCAN: dbus.Int64(ts),
         }
 
-        self.dbus_interface_add(IFACE_WIFI, props, WifiDevice.PropertiesChanged)
+        self.dbus_interface_add(IFACE_WIFI, props)
 
     @dbus.service.method(dbus_interface=IFACE_WIFI, in_signature="", out_signature="ao")
     def GetAccessPoints(self):
@@ -1373,10 +1340,6 @@ class WifiDevice(Device):
 
     @dbus.service.signal(IFACE_WIFI, signature="o")
     def AccessPointRemoved(self, ap_path):
-        pass
-
-    @dbus.service.signal(IFACE_WIFI, signature="a{sv}")
-    def PropertiesChanged(self, changed):
         pass
 
     def remove_ap_by_path(self, path):
@@ -1446,9 +1409,7 @@ class ActiveConnection(ExportedObj):
             PRP_ACTIVE_CONNECTION_MASTER: ExportedObj.to_path(None),
         }
 
-        self.dbus_interface_add(
-            IFACE_ACTIVE_CONNECTION, props, ActiveConnection.PropertiesChanged
-        )
+        self.dbus_interface_add(IFACE_ACTIVE_CONNECTION, props)
 
         if self.is_vpn:
             props = {
@@ -1459,9 +1420,7 @@ class ActiveConnection(ExportedObj):
                 % (con_inst.get_id()),
             }
 
-            self.dbus_interface_add(
-                IFACE_VPN_CONNECTION, props, ActiveConnection.VpnPropertiesChanged
-            )
+            self.dbus_interface_add(IFACE_VPN_CONNECTION, props)
 
     def _set_state(self, state, reason):
         state = dbus.UInt32(state)
@@ -1543,16 +1502,6 @@ class ActiveConnection(ExportedObj):
         )
         self._deactivation_id = GLib.timeout_add(50, self._deactivation_step1)
 
-    @dbus.service.signal(IFACE_VPN_CONNECTION, signature="a{sv}")
-    def PropertiesChanged(self, changed):
-        pass
-
-    VpnPropertiesChanged = PropertiesChanged
-
-    @dbus.service.signal(IFACE_ACTIVE_CONNECTION, signature="a{sv}")
-    def PropertiesChanged(self, changed):
-        pass
-
     @dbus.service.signal(IFACE_ACTIVE_CONNECTION, signature="uu")
     def StateChanged(self, state, reason):
         pass
@@ -1609,7 +1558,7 @@ class NetworkManager(ExportedObj):
             PRP_NM_CONNECTIVITY: dbus.UInt32(NM.ConnectivityState.NONE),
         }
 
-        self.dbus_interface_add(IFACE_NM, props, NetworkManager.PropertiesChanged)
+        self.dbus_interface_add(IFACE_NM, props)
         self.export()
 
     @dbus.service.signal(IFACE_NM, signature="u")
@@ -1873,10 +1822,6 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.signal(IFACE_NM, signature="o")
     def DeviceRemoved(self, devpath):
-        pass
-
-    @dbus.service.signal(IFACE_NM, signature="a{sv}")
-    def PropertiesChanged(self, changed):
         pass
 
     @dbus.service.method(IFACE_TEST, in_signature="", out_signature="")
@@ -2177,7 +2122,7 @@ class Settings(ExportedObj):
             PRP_SETTINGS_CONNECTIONS: dbus.Array([], "o"),
         }
 
-        self.dbus_interface_add(IFACE_SETTINGS, props, Settings.PropertiesChanged)
+        self.dbus_interface_add(IFACE_SETTINGS, props)
         self.export()
 
     def auto_remove_next_connection(self):
@@ -2297,10 +2242,6 @@ class Settings(ExportedObj):
     def NewConnection(self, path):
         pass
 
-    @dbus.service.signal(IFACE_SETTINGS, signature="a{sv}")
-    def PropertiesChanged(self, path):
-        pass
-
     @dbus.service.method(IFACE_SETTINGS, in_signature="", out_signature="")
     def Quit(self):
         gl.mainloop.quit()
@@ -2333,7 +2274,7 @@ class IP4Config(ExportedObj):
             generate_seed = self.path
 
         props = self._props_generate(generate_seed)
-        self.dbus_interface_add(IFACE_IP4_CONFIG, props, IP4Config.PropertiesChanged)
+        self.dbus_interface_add(IFACE_IP4_CONFIG, props)
         self.export()
 
     def _props_generate(self, generate_seed):
@@ -2505,10 +2446,6 @@ class IP4Config(ExportedObj):
     def SetGateway(self, gateway):
         self._dbus_property_set(IFACE_IP4_CONFIG, PRP_IP4_CONFIG_GATEWAY, gateway)
 
-    @dbus.service.signal(IFACE_IP4_CONFIG, signature="a{sv}")
-    def PropertiesChanged(self, path):
-        pass
-
 
 ###############################################################################
 
@@ -2536,7 +2473,7 @@ class IP6Config(ExportedObj):
             generate_seed = self.path
 
         props = self._props_generate(generate_seed)
-        self.dbus_interface_add(IFACE_IP6_CONFIG, props, IP6Config.PropertiesChanged)
+        self.dbus_interface_add(IFACE_IP6_CONFIG, props)
         self.export()
 
     def _props_generate(self, generate_seed):
@@ -2692,10 +2629,6 @@ class IP6Config(ExportedObj):
         for k, v in props.items():
             self._dbus_property_set(IFACE_IP6_CONFIG, k, v)
 
-    @dbus.service.signal(IFACE_IP6_CONFIG, signature="a{sv}")
-    def PropertiesChanged(self, path):
-        pass
-
 
 ###############################################################################
 
@@ -2714,9 +2647,7 @@ class Dhcp4Config(ExportedObj):
             generate_seed = self.path
 
         props = self._props_generate(generate_seed)
-        self.dbus_interface_add(
-            IFACE_DHCP4_CONFIG, props, Dhcp4Config.PropertiesChanged
-        )
+        self.dbus_interface_add(IFACE_DHCP4_CONFIG, props)
         self.export()
 
     def _props_generate(self, generate_seed):
@@ -2739,10 +2670,6 @@ class Dhcp4Config(ExportedObj):
         for k, v in props.items():
             self._dbus_property_set(IFACE_DHCP4_CONFIG, k, v)
 
-    @dbus.service.signal(IFACE_DHCP4_CONFIG, signature="a{sv}")
-    def PropertiesChanged(self, path):
-        pass
-
 
 ###############################################################################
 
@@ -2761,9 +2688,7 @@ class Dhcp6Config(ExportedObj):
             generate_seed = self.path
 
         props = self._props_generate(generate_seed)
-        self.dbus_interface_add(
-            IFACE_DHCP6_CONFIG, props, Dhcp6Config.PropertiesChanged
-        )
+        self.dbus_interface_add(IFACE_DHCP6_CONFIG, props)
         self.export()
 
     def _props_generate(self, generate_seed):
@@ -2785,10 +2710,6 @@ class Dhcp6Config(ExportedObj):
         props = self.generate_props(generate_seed)
         for k, v in props.items():
             self._dbus_property_set(IFACE_DHCP6_CONFIG, k, v)
-
-    @dbus.service.signal(IFACE_DHCP6_CONFIG, signature="a{sv}")
-    def PropertiesChanged(self, path):
-        pass
 
 
 ###############################################################################

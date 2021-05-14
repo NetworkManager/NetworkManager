@@ -86,16 +86,6 @@
     <property name="ActiveNsp" type="o" access="read"/>
 
     <!--
-        PropertiesChanged:
-        @properties: A dictionary mapping property names to variant boxed values.
-
-        DEPRECATED. Use the standard "PropertiesChanged" signal from "org.freedesktop.DBus.Properties" instead which exists since version NetworkManager 1.2.0.
-    -->
-    <signal name="PropertiesChanged">
-        <arg name="properties" type="a{sv}"/>
-        </signal>
-
-    <!--
         NspAdded:
         @nsp: The object path of the newly found NSP.
 
@@ -114,5 +104,6 @@
     <signal name="NspRemoved">
       <arg name="nsp" type="o"/>
     </signal>
+
   </interface>
 </node>

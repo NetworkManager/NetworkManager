@@ -11,10 +11,6 @@
 
 /*****************************************************************************/
 
-const GDBusSignalInfo nm_signal_info_property_changed_legacy = NM_DEFINE_GDBUS_SIGNAL_INFO_INIT(
-    "PropertiesChanged",
-    .args = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("properties", "a{sv}"), ), );
-
 GDBusPropertyInfo *
 nm_dbus_utils_interface_info_lookup_property(const GDBusInterfaceInfo *interface_info,
                                              const char *              property_name,

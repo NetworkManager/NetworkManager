@@ -2906,16 +2906,14 @@ static const GDBusSignalInfo signal_info_vpn_state_changed = NM_DEFINE_GDBUS_SIG
 static const NMDBusInterfaceInfoExtended interface_info_vpn_connection = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_VPN_CONNECTION,
-        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&nm_signal_info_property_changed_legacy,
-                                                &signal_info_vpn_state_changed, ),
+        .signals    = NM_DEFINE_GDBUS_SIGNAL_INFOS(&signal_info_vpn_state_changed, ),
         .properties = NM_DEFINE_GDBUS_PROPERTY_INFOS(
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("VpnState",
-                                                             "u",
-                                                             NM_VPN_CONNECTION_VPN_STATE),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE_L("Banner",
-                                                             "s",
-                                                             NM_VPN_CONNECTION_BANNER), ), ),
-    .legacy_property_changed = TRUE,
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("VpnState",
+                                                           "u",
+                                                           NM_VPN_CONNECTION_VPN_STATE),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Banner",
+                                                           "s",
+                                                           NM_VPN_CONNECTION_BANNER), ), ),
 };
 
 static void

@@ -33,5 +33,6 @@
         See: ip-rule(8)
     -->
     <property name="FwMark" type="u" access="read"/>
+
   </interface>
 </node>
