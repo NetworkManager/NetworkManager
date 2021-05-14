@@ -5,6 +5,7 @@ option('udev_dir', type: 'string', value: '', description: 'Absolute path of the
 option('dbus_conf_dir', type: 'string', value: '', description: 'where D-Bus system.d directory is')
 option('kernel_firmware_dir', type: 'string', value: '/lib/firmware', description: 'where kernel firmware directory is (default is /lib/firmware)')
 option('iptables', type: 'string', value: '', description: 'path to iptables')
+option('nft', type: 'string', value: '', description: 'path to nft')
 option('dnsmasq', type: 'string', value: '', description: 'path to dnsmasq')
 option('dnssec_trigger', type: 'string', value: '', description: 'path to unbound dnssec-trigger-script')
 

@@ -522,6 +522,7 @@ gboolean nm_utils_memeqzero(gconstpointer data, gsize length);
 extern const void *const _NM_PTRARRAY_EMPTY[1];
 
 #define NM_PTRARRAY_EMPTY(type) ((type const *) _NM_PTRARRAY_EMPTY)
+#define NM_STRV_EMPTY()         ((char **) _NM_PTRARRAY_EMPTY)
 
 static inline void
 _nm_utils_strbuf_init(char *buf, gsize len, char **p_buf_ptr, gsize *p_buf_len)
@@ -1562,6 +1563,18 @@ NM_AUTO_DEFINE_FCN0(GSource *, _nm_auto_destroy_and_unref_gsource, nm_g_source_d
 
 NM_AUTO_DEFINE_FCN0(GMainContext *, _nm_auto_pop_gmaincontext, g_main_context_pop_thread_default);
 #define nm_auto_pop_gmaincontext nm_auto(_nm_auto_pop_gmaincontext)
+
+static inline void
+nm_g_main_context_pop_and_unref(GMainContext *context)
+{
+    g_main_context_pop_thread_default(context);
+    g_main_context_unref(context);
+}
+
+NM_AUTO_DEFINE_FCN0(GMainContext *,
+                    _nm_auto_pop_and_unref_gmaincontext,
+                    nm_g_main_context_pop_and_unref);
+#define nm_auto_pop_and_unref_gmaincontext nm_auto(_nm_auto_pop_and_unref_gmaincontext)
 
 static inline gboolean
 nm_source_func_unref_gobject(gpointer user_data)

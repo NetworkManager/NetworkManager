@@ -476,6 +476,24 @@ no-auto-default=*
       </varlistentry>
 
       <varlistentry>
+        <term><varname>firewall-backend</varname></term>
+        <listitem>
+          <para>
+            The firewall backend for configuring masquerading
+            with shared mode.
+            Set to either <literal>iptables</literal>, <literal>nftables</literal>
+            or <literal>none</literal>.
+            <literal>iptables</literal> and <literal>nftables</literal>
+            require <literal>iptables</literal> and <literal>nft</literal>
+            application, respectively.
+            <literal>none</literal> means to skip firewall configuration if
+            the users wish to manage firewall themselves.
+            If unspecified, it will be auto detected.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
         <term><varname>iwd-config-path</varname></term>
         <listitem>
           <para>

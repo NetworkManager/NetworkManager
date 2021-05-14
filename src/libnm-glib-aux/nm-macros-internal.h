@@ -1082,6 +1082,13 @@ nm_clear_error(GError **err)
     }
 }
 
+static inline void
+nm_g_error_free(GError *err)
+{
+    if (err)
+        g_error_free(err);
+}
+
 /* Patch g_clear_error() to use nm_clear_error(), which is inlineable
  * and visible to the compiler. For example gs_free_error attribute only
  * frees the error after checking that it's not %NULL. So, in many cases
