@@ -5022,6 +5022,7 @@ make_wired_setting(shvarFile *ifcfg, const char *file, NMSetting8021x **s_8021x,
     const char *                    cvalue;
     gs_free char *                  value = NULL;
     gboolean                        found = FALSE;
+    NMTernary                       accept_all_mac_addresses;
 
     s_wired = NM_SETTING_WIRED(nm_setting_wired_new());
 
@@ -5180,10 +5181,14 @@ make_wired_setting(shvarFile *ifcfg, const char *file, NMSetting8021x **s_8021x,
     }
     nm_clear_g_free(&value);
 
-    g_object_set(s_wired,
-                 NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
-                 svGetValueTernary(ifcfg, "ACCEPT_ALL_MAC_ADDRESSES"),
-                 NULL);
+    accept_all_mac_addresses = svGetValueTernary(ifcfg, "ACCEPT_ALL_MAC_ADDRESSES");
+    if (accept_all_mac_addresses != NM_TERNARY_DEFAULT) {
+        g_object_set(s_wired,
+                     NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
+                     accept_all_mac_addresses,
+                     NULL);
+        found = TRUE;
+    }
 
     if (!found) {
         g_set_error(error,
