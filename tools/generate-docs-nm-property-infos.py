@@ -74,14 +74,14 @@ def process_data(data):
         kwd_more_line_found = re.search(r"^\s*\**\s+(.*?)\s*$", line)
         if kwd_first_line_found:
             keyword = kwd_first_line_found.group(1)
-            value = kwd_first_line_found.group(2) + "\n"
+            value = kwd_first_line_found.group(2) + " "
             parsed_data[keyword] = escape_xml_char(value)
         elif kwd_more_line_found:
             if not keyword:
                 print("Extra mess in a comment: %s" % (line))
                 exit(1)
             else:
-                value = kwd_more_line_found.group(1) + "\n"
+                value = kwd_more_line_found.group(1) + " "
                 parsed_data[keyword] += escape_xml_char(value)
     for keyword in keywords:
         if keyword == "variable" and keyword not in parsed_data:
