@@ -112,7 +112,6 @@ def escape_xml_char(text):
     text = text.replace("<", "&lt;")
     text = text.replace(">", "&gt;")
     text = text.replace('"', "&quot;")
-    text = text.replace("'", "&apos;")
 
     return text
 
