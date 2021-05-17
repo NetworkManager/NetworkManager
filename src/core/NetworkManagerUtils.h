@@ -197,18 +197,20 @@ nm_dhcp_lease_get_options(NMDhcpLease *lease)
     return (GHashTable *) lease;
 }
 
-static inline void
+static inline NMDhcpLease *
 nm_dhcp_lease_ref(NMDhcpLease *lease)
 {
     if (lease)
         g_hash_table_ref((GHashTable *) lease);
+    return lease;
 }
 
-static inline void
+static inline NMDhcpLease *
 nm_dhcp_lease_unref(NMDhcpLease *lease)
 {
     if (lease)
         g_hash_table_unref((GHashTable *) lease);
+    return NULL;
 }
 
 static inline const char *
