@@ -252,6 +252,11 @@ nm_l3_config_data_lookup_routes(const NML3ConfigData *self, int addr_family)
     for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_objs((self), (type))); \
          nm_platform_dedup_multi_iter_next_obj((iter), (obj), (type));)
 
+#define nm_l3_config_data_iter_ip_address_for_each(iter, self, addr_family, address)          \
+    for (nm_dedup_multi_iter_init((iter),                                                     \
+                                  nm_l3_config_data_lookup_addresses((self), (addr_family))); \
+         nm_platform_dedup_multi_iter_next_ip_address((iter), (address));)
+
 #define nm_l3_config_data_iter_ip4_address_for_each(iter, self, address)                        \
     for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_addresses((self), AF_INET)); \
          nm_platform_dedup_multi_iter_next_ip4_address((iter), (address));)
@@ -259,6 +264,10 @@ nm_l3_config_data_lookup_routes(const NML3ConfigData *self, int addr_family)
 #define nm_l3_config_data_iter_ip6_address_for_each(iter, self, address)                         \
     for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_addresses((self), AF_INET6)); \
          nm_platform_dedup_multi_iter_next_ip6_address((iter), (address));)
+
+#define nm_l3_config_data_iter_ip_route_for_each(iter, self, addr_family, route)                   \
+    for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_routes((self), (addr_family))); \
+         nm_platform_dedup_multi_iter_next_ip_route((iter), (route));)
 
 #define nm_l3_config_data_iter_ip4_route_for_each(iter, self, route)                         \
     for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_routes((self), AF_INET)); \
