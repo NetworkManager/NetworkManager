@@ -173,6 +173,8 @@ struct _NMDedupMultiIndex *nm_netns_get_multi_idx(NMNetns *self);
 static inline struct _NMDedupMultiIndex *
 nm_l3cfg_get_multi_idx(const NML3Cfg *self)
 {
+    g_return_val_if_fail(NM_IS_L3CFG(self), NULL);
+
     return nm_netns_get_multi_idx(self->priv.netns);
 }
 
@@ -181,7 +183,7 @@ nm_l3cfg_get_multi_idx(const NML3Cfg *self)
 static inline int
 nm_l3cfg_get_ifindex(const NML3Cfg *self)
 {
-    nm_assert(NM_IS_L3CFG(self));
+    g_return_val_if_fail(NM_IS_L3CFG(self), 0);
 
     return self->priv.ifindex;
 }

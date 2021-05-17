@@ -1364,12 +1364,28 @@ nm_l3_config_data_add_wins(NML3ConfigData *self, in_addr_t wins)
     return _garray_inaddr_add(&self->wins, AF_INET, &wins);
 }
 
+const in_addr_t *
+nm_l3_config_data_get_nis_servers(const NML3ConfigData *self, guint *out_len)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return _garray_inaddr_get(self->nis_servers, out_len);
+}
+
 gboolean
 nm_l3_config_data_add_nis_server(NML3ConfigData *self, in_addr_t nis_server)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
 
     return _garray_inaddr_add(&self->nis_servers, AF_INET, &nis_server);
+}
+
+const char *
+nm_l3_config_data_get_nis_domain(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->nis_domain;
 }
 
 gboolean
@@ -1452,6 +1468,53 @@ nm_l3_config_data_add_dns_option(NML3ConfigData *self, int addr_family, const ch
     return TRUE;
 }
 
+const char *const *
+nm_l3_config_data_get_dns_options(const NML3ConfigData *self, int addr_family, guint *out_len)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+    nm_assert_addr_family(addr_family);
+    nm_assert(out_len);
+
+    return nm_strv_ptrarray_get_unsafe(self->dns_options_x[NM_IS_IPv4(addr_family)], out_len);
+}
+
+gboolean
+nm_l3_config_data_get_dns_priority(const NML3ConfigData *self, int addr_family, int *out_prio)
+{
+    switch (addr_family) {
+    case AF_UNSPEC:
+        if (NM_FLAGS_ANY(self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_4)) {
+            if (NM_FLAGS_ANY(self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6)) {
+                NM_SET_OUT(out_prio, MIN(self->dns_priority_4, self->dns_priority_6));
+                return TRUE;
+            }
+            NM_SET_OUT(out_prio, self->dns_priority_4);
+            return TRUE;
+        }
+        if (NM_FLAGS_ANY(self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6)) {
+            NM_SET_OUT(out_prio, self->dns_priority_6);
+            return TRUE;
+        }
+        break;
+    case AF_INET:
+        if (NM_FLAGS_ANY(self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_4)) {
+            NM_SET_OUT(out_prio, self->dns_priority_4);
+            return TRUE;
+        }
+        break;
+    case AF_INET6:
+        if (NM_FLAGS_ANY(self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6)) {
+            NM_SET_OUT(out_prio, self->dns_priority_6);
+            return TRUE;
+        }
+        break;
+    default:
+        nm_assert_not_reached();
+    }
+    NM_SET_OUT(out_prio, 0);
+    return FALSE;
+}
+
 gboolean
 nm_l3_config_data_set_dns_priority(NML3ConfigData *self, int addr_family, int dns_priority)
 {
@@ -1471,6 +1534,14 @@ nm_l3_config_data_set_dns_priority(NML3ConfigData *self, int addr_family, int dn
     return TRUE;
 }
 
+NMSettingConnectionMdns
+nm_l3_config_data_get_mdns(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->mdns;
+}
+
 gboolean
 nm_l3_config_data_set_mdns(NML3ConfigData *self, NMSettingConnectionMdns mdns)
 {
@@ -1481,6 +1552,14 @@ nm_l3_config_data_set_mdns(NML3ConfigData *self, NMSettingConnectionMdns mdns)
 
     self->mdns = mdns;
     return TRUE;
+}
+
+NMSettingConnectionLlmnr
+nm_l3_config_data_get_llmnr(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->llmnr;
 }
 
 gboolean

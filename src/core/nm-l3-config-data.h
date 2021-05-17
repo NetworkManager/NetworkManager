@@ -425,7 +425,11 @@ nm_l3_config_data_add_route_6(NML3ConfigData *self, const NMPlatformIP6Route *rt
 const NMPObject *nm_l3_config_data_get_best_default_route(const NML3ConfigData *self,
                                                           int                   addr_family);
 
+NMSettingConnectionMdns nm_l3_config_data_get_mdns(const NML3ConfigData *self);
+
 gboolean nm_l3_config_data_set_mdns(NML3ConfigData *self, NMSettingConnectionMdns mdns);
+
+NMSettingConnectionLlmnr nm_l3_config_data_get_llmnr(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_llmnr(NML3ConfigData *self, NMSettingConnectionLlmnr llmnr);
 
@@ -461,12 +465,16 @@ gboolean nm_l3_config_data_add_nameserver(NML3ConfigData *                      
 
 gboolean nm_l3_config_data_clear_nameservers(NML3ConfigData *self, int addr_family);
 
+const in_addr_t *nm_l3_config_data_get_nis_servers(const NML3ConfigData *self, guint *out_len);
+
 gboolean nm_l3_config_data_add_nis_server(NML3ConfigData *self, in_addr_t nis_server);
+
+const char *nm_l3_config_data_get_nis_domain(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_nis_domain(NML3ConfigData *self, const char *nis_domain);
 
 const char *const *
 nm_l3_config_data_get_domains(const NML3ConfigData *self, int addr_family, guint *out_len);
-
-gboolean nm_l3_config_data_set_nis_domain(NML3ConfigData *self, const char *nis_domain);
 
 gboolean nm_l3_config_data_add_domain(NML3ConfigData *self, int addr_family, const char *domain);
 
@@ -479,6 +487,12 @@ gboolean nm_l3_config_data_add_search(NML3ConfigData *self, int addr_family, con
 
 gboolean
 nm_l3_config_data_add_dns_option(NML3ConfigData *self, int addr_family, const char *dns_option);
+
+const char *const *
+nm_l3_config_data_get_dns_options(const NML3ConfigData *self, int addr_family, guint *out_len);
+
+gboolean
+nm_l3_config_data_get_dns_priority(const NML3ConfigData *self, int addr_family, int *out_prio);
 
 gboolean
 nm_l3_config_data_set_dns_priority(NML3ConfigData *self, int addr_family, int dns_priority);
