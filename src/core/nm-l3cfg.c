@@ -300,6 +300,7 @@ static NM_UTILS_ENUM2STR_DEFINE(_l3_cfg_commit_type_to_string,
 static NM_UTILS_ENUM2STR_DEFINE(
     _l3_config_notify_type_to_string,
     NML3ConfigNotifyType,
+    NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED, "l3cd-changed"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT, "acd-event"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT, "ipv4ll-event"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE, "platform-change"),
@@ -348,6 +349,7 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
 {
     char      sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
     char      sbuf100[100];
+    char      sbufobf[NM_HASH_OBFUSCATE_PTR_STR_BUF_SIZE];
     char *    s = sbuf;
     gsize     l = sbuf_size;
     in_addr_t addr4;
@@ -359,6 +361,19 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
     nm_utils_strbuf_seek_end(&s, &l);
 
     switch (notify_data->notify_type) {
+    case NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED:
+        nm_utils_strbuf_append(
+            &s,
+            &l,
+            ", l3cd-old=%s",
+            NM_HASH_OBFUSCATE_PTR_STR(notify_data->l3cd_changed.l3cd_old, sbufobf));
+        nm_utils_strbuf_append(
+            &s,
+            &l,
+            ", l3cd-new=%s",
+            NM_HASH_OBFUSCATE_PTR_STR(notify_data->l3cd_changed.l3cd_new, sbufobf));
+        nm_utils_strbuf_append(&s, &l, ", commited=%d", notify_data->l3cd_changed.commited);
+        break;
     case NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT:
         nm_utils_strbuf_append(&s,
                                &l,
@@ -421,6 +436,23 @@ _nm_l3cfg_emit_signal_notify_simple(NML3Cfg *self, NML3ConfigNotifyType notify_t
     NML3ConfigNotifyData notify_data;
 
     notify_data.notify_type = notify_type;
+    _nm_l3cfg_emit_signal_notify(self, &notify_data);
+}
+
+static void
+_nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg *             self,
+                                          const NML3ConfigData *l3cd_old,
+                                          const NML3ConfigData *l3cd_new,
+                                          gboolean              commited)
+{
+    NML3ConfigNotifyData notify_data;
+
+    notify_data.notify_type  = NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED;
+    notify_data.l3cd_changed = (typeof(notify_data.l3cd_changed)){
+        .l3cd_old = l3cd_old,
+        .l3cd_new = l3cd_new,
+        .commited = commited,
+    };
     _nm_l3cfg_emit_signal_notify(self, &notify_data);
 }
 
@@ -3009,6 +3041,12 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
     l3cd_old                           = g_steal_pointer(&self->priv.p->combined_l3cd_merged);
     self->priv.p->combined_l3cd_merged = nm_l3_config_data_seal(g_steal_pointer(&l3cd));
     merged_changed                     = TRUE;
+
+    _nm_l3cfg_emit_signal_notify_l3cd_changed(self,
+                                              l3cd_old,
+                                              self->priv.p->combined_l3cd_merged,
+                                              FALSE);
+
     if (!to_commit) {
         NM_SET_OUT(out_old, g_steal_pointer(&l3cd_old));
         NM_SET_OUT(out_changed_combined_l3cd, TRUE);
@@ -3020,6 +3058,12 @@ out:
         self->priv.p->combined_l3cd_commited =
             nm_l3_config_data_ref(self->priv.p->combined_l3cd_merged);
         commited_changed = TRUE;
+
+        _nm_l3cfg_emit_signal_notify_l3cd_changed(self,
+                                                  l3cd_commited_old,
+                                                  self->priv.p->combined_l3cd_commited,
+                                                  TRUE);
+
         NM_SET_OUT(out_old, g_steal_pointer(&l3cd_commited_old));
         NM_SET_OUT(out_changed_combined_l3cd, TRUE);
     }

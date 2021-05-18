@@ -187,6 +187,12 @@ _test_l3cfg_signal_notify(NML3Cfg *                   l3cfg,
             nm_assert(NM_IS_L3_CONFIG_DATA(ti->l3cd));
             nm_assert(ti->tag);
         }
+    } else if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED) {
+        g_assert(!notify_data->l3cd_changed.l3cd_old
+                 || NM_IS_L3_CONFIG_DATA(notify_data->l3cd_changed.l3cd_old));
+        g_assert(!notify_data->l3cd_changed.l3cd_new
+                 || NM_IS_L3_CONFIG_DATA(notify_data->l3cd_changed.l3cd_new));
+        return;
     }
 
     switch (tdata->notify_type) {
