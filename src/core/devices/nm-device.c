@@ -499,9 +499,6 @@ typedef struct _NMDevicePrivate {
 
     NMDeviceStageState stage1_sriov_state : 3;
 
-    /* Generic DHCP stuff */
-    char *dhcp_anycast_address;
-
     char *current_stable_id;
 
     /* Proxy Configuration */
@@ -8901,6 +8898,21 @@ ensure_con_ip_config(NMDevice *self, int addr_family)
 
 /*****************************************************************************/
 
+static const char *
+_device_get_dhcp_anycast_address(NMDevice *self)
+{
+    NMDeviceClass *klass;
+
+    nm_assert(NM_IS_DEVICE(self));
+
+    klass = NM_DEVICE_GET_CLASS(self);
+
+    if (klass->get_dhcp_anycast_address)
+        return klass->get_dhcp_anycast_address(self);
+
+    return NULL;
+}
+
 static void
 dhcp4_cleanup(NMDevice *self, CleanupType cleanup_type, gboolean release)
 {
@@ -9469,7 +9481,7 @@ dhcp4_start(NMDevice *self)
         _prop_get_connection_mud_url(self, s_con, &mud_url_free),
         client_id,
         _prop_get_ipvx_dhcp_timeout(self, AF_INET),
-        priv->dhcp_anycast_address,
+        _device_get_dhcp_anycast_address(self),
         NULL,
         vendor_class_identifier,
         reject_servers,
@@ -9922,7 +9934,7 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
         iaid,
         iaid_explicit,
         _prop_get_ipvx_dhcp_timeout(self, AF_INET6),
-        priv->dhcp_anycast_address,
+        _device_get_dhcp_anycast_address(self),
         nm_setting_ip6_config_get_ip6_privacy(NM_SETTING_IP6_CONFIG(s_ip6)),
         priv->dhcp6.needed_prefixes,
         &error);
@@ -15076,20 +15088,6 @@ nm_device_set_unmanaged_by_quitting(NMDevice *self)
 /*****************************************************************************/
 
 void
-nm_device_set_dhcp_anycast_address(NMDevice *self, const char *addr)
-{
-    NMDevicePrivate *priv;
-
-    g_return_if_fail(NM_IS_DEVICE(self));
-    g_return_if_fail(!addr || nm_utils_hwaddr_valid(addr, ETH_ALEN));
-
-    priv = NM_DEVICE_GET_PRIVATE(self);
-
-    g_free(priv->dhcp_anycast_address);
-    priv->dhcp_anycast_address = g_strdup(addr);
-}
-
-void
 nm_device_reapply_settings_immediately(NMDevice *self)
 {
     NMConnection *        applied_connection;
@@ -18448,7 +18446,6 @@ finalize(GObject *object)
     g_free(priv->driver_version);
     g_free(priv->firmware_version);
     g_free(priv->type_desc);
-    g_free(priv->dhcp_anycast_address);
     g_free(priv->current_stable_id);
 
     g_hash_table_unref(priv->ip6_saved_properties);

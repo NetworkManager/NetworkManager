@@ -290,6 +290,14 @@ nm_ip4_addr_is_localhost(in_addr_t addr4)
     return (addr4 & htonl(0xFF000000u)) == htonl(0x7F000000u);
 }
 
+static inline gconstpointer
+nm_ip_addr_from_packed_array(int addr_family, gconstpointer ipaddr_arr, gsize idx)
+{
+    return NM_IS_IPv4(addr_family)
+               ? ((gconstpointer) & (((const struct in_addr *) ipaddr_arr)[idx]))
+               : ((gconstpointer) & (((const struct in6_addr *) ipaddr_arr)[idx]));
+}
+
 /*****************************************************************************/
 
 struct ether_addr;

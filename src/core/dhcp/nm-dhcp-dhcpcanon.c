@@ -161,10 +161,7 @@ dhcpcanon_start(NMDhcpClient *client,
 }
 
 static gboolean
-ip4_start(NMDhcpClient *client,
-          const char *  dhcp_anycast_addr,
-          const char *  last_ip4_address,
-          GError **     error)
+ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
 {
     return dhcpcanon_start(client, NULL, NULL, FALSE, NULL, 0, error);
 }

@@ -109,8 +109,6 @@ nm_device_activate_ip6_state_done(NMDevice *self)
     return nm_device_activate_get_ip_state(self, AF_INET6) == NM_DEVICE_IP_STATE_DONE;
 }
 
-void nm_device_set_dhcp_anycast_address(NMDevice *device, const char *addr);
-
 gboolean nm_device_dhcp4_renew(NMDevice *device, gboolean release);
 gboolean nm_device_dhcp6_renew(NMDevice *device, gboolean release);
 

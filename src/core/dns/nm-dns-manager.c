@@ -87,9 +87,6 @@ typedef struct {
     CList     ip_config_lst_head;
     GVariant *config_variant;
 
-    NMDnsConfigIPData *best_ip_config_4;
-    NMDnsConfigIPData *best_ip_config_6;
-
     bool ip_config_lst_need_sort : 1;
 
     bool configs_lst_need_sort : 1;
@@ -1851,7 +1848,6 @@ nm_dns_manager_set_ip_config(NMDnsManager *    self,
     NMDnsConfigIPData *  ip_data;
     NMDnsConfigData *    data;
     int                  ifindex;
-    NMDnsConfigIPData ** p_best;
 
     g_return_val_if_fail(NM_IS_DNS_MANAGER(self), FALSE);
     g_return_val_if_fail(NM_IS_IP_CONFIG(ip_config), FALSE);
@@ -1870,10 +1866,6 @@ nm_dns_manager_set_ip_config(NMDnsManager *    self,
     if (ip_config_type == NM_DNS_IP_CONFIG_TYPE_REMOVED) {
         if (!ip_data)
             return FALSE;
-        if (priv->best_ip_config_4 == ip_data)
-            priv->best_ip_config_4 = NULL;
-        if (priv->best_ip_config_6 == ip_data)
-            priv->best_ip_config_6 = NULL;
         /* deleting a config doesn't invalidate the configs' sort order. */
         _dns_config_ip_data_free(ip_data);
         if (c_list_is_empty(&data->data_lst_head))
@@ -1905,20 +1897,6 @@ nm_dns_manager_set_ip_config(NMDnsManager *    self,
         ip_data->ip_config_type = ip_config_type;
 
     priv->ip_config_lst_need_sort = TRUE;
-
-    p_best = NM_IS_IP4_CONFIG(ip_config) ? &priv->best_ip_config_4 : &priv->best_ip_config_6;
-
-    if (ip_config_type == NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE) {
-        /* Only one best-device per IP version is allowed */
-        if (*p_best != ip_data) {
-            if (*p_best)
-                (*p_best)->ip_config_type = NM_DNS_IP_CONFIG_TYPE_DEFAULT;
-            *p_best = ip_data;
-        }
-    } else {
-        if (*p_best == ip_data)
-            *p_best = NULL;
-    }
 
 changed:
     if (!priv->updates_queue) {
@@ -2583,9 +2561,6 @@ dispose(GObject *object)
 
     g_clear_object(&priv->sd_resolve_plugin);
     _clear_plugin(self);
-
-    priv->best_ip_config_4 = NULL;
-    priv->best_ip_config_6 = NULL;
 
     c_list_for_each_entry_safe (ip_data, ip_data_safe, &priv->ip_config_lst_head, ip_config_lst)
         _dns_config_ip_data_free(ip_data);

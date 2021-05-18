@@ -60,6 +60,8 @@ typedef enum {
  *   Note that if the respective NML3ConfigData has NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES
  *   set, this flag gets ignored during merge.
  * @NM_L3_CONFIG_MERGE_FLAGS_NO_DNS: don't merge DNS information
+ * @NM_L3_CONFIG_MERGE_FLAGS_CLONE: clone is also implemented via "merge".
+ *   In that case, it takes all settings.
  */
 typedef enum _nm_packed {
     NM_L3_CONFIG_MERGE_FLAGS_NONE              = 0,
@@ -67,6 +69,7 @@ typedef enum _nm_packed {
     NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES         = (1LL << 1),
     NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES = (1LL << 2),
     NM_L3_CONFIG_MERGE_FLAGS_NO_DNS            = (1LL << 3),
+    NM_L3_CONFIG_MERGE_FLAGS_CLONE             = (1LL << 4),
 } NML3ConfigMergeFlags;
 
 /*****************************************************************************/
@@ -191,7 +194,20 @@ NMDedupMultiIndex *nm_l3_config_data_get_multi_idx(const NML3ConfigData *self);
 
 /*****************************************************************************/
 
-int nm_l3_config_data_cmp(const NML3ConfigData *a, const NML3ConfigData *b);
+typedef enum {
+    NM_L3_CONFIG_CMP_FLAGS_NONE,
+    NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX = (1LL << 0),
+} NML3ConfigCmpFlags;
+
+int nm_l3_config_data_cmp_full(const NML3ConfigData *a,
+                               const NML3ConfigData *b,
+                               NML3ConfigCmpFlags    cmp_flags);
+
+static inline int
+nm_l3_config_data_cmp(const NML3ConfigData *a, const NML3ConfigData *b)
+{
+    return nm_l3_config_data_cmp_full(a, b, NM_L3_CONFIG_CMP_FLAGS_NONE);
+}
 
 static inline gboolean
 nm_l3_config_data_equal(const NML3ConfigData *a, const NML3ConfigData *b)
@@ -236,6 +252,11 @@ nm_l3_config_data_lookup_routes(const NML3ConfigData *self, int addr_family)
     for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_objs((self), (type))); \
          nm_platform_dedup_multi_iter_next_obj((iter), (obj), (type));)
 
+#define nm_l3_config_data_iter_ip_address_for_each(iter, self, addr_family, address)          \
+    for (nm_dedup_multi_iter_init((iter),                                                     \
+                                  nm_l3_config_data_lookup_addresses((self), (addr_family))); \
+         nm_platform_dedup_multi_iter_next_ip_address((iter), (address));)
+
 #define nm_l3_config_data_iter_ip4_address_for_each(iter, self, address)                        \
     for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_addresses((self), AF_INET)); \
          nm_platform_dedup_multi_iter_next_ip4_address((iter), (address));)
@@ -243,6 +264,10 @@ nm_l3_config_data_lookup_routes(const NML3ConfigData *self, int addr_family)
 #define nm_l3_config_data_iter_ip6_address_for_each(iter, self, address)                         \
     for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_addresses((self), AF_INET6)); \
          nm_platform_dedup_multi_iter_next_ip6_address((iter), (address));)
+
+#define nm_l3_config_data_iter_ip_route_for_each(iter, self, addr_family, route)                   \
+    for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_routes((self), (addr_family))); \
+         nm_platform_dedup_multi_iter_next_ip_route((iter), (route));)
 
 #define nm_l3_config_data_iter_ip4_route_for_each(iter, self, route)                         \
     for (nm_dedup_multi_iter_init((iter), nm_l3_config_data_lookup_routes((self), AF_INET)); \
@@ -409,7 +434,11 @@ nm_l3_config_data_add_route_6(NML3ConfigData *self, const NMPlatformIP6Route *rt
 const NMPObject *nm_l3_config_data_get_best_default_route(const NML3ConfigData *self,
                                                           int                   addr_family);
 
+NMSettingConnectionMdns nm_l3_config_data_get_mdns(const NML3ConfigData *self);
+
 gboolean nm_l3_config_data_set_mdns(NML3ConfigData *self, NMSettingConnectionMdns mdns);
+
+NMSettingConnectionLlmnr nm_l3_config_data_get_llmnr(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_llmnr(NML3ConfigData *self, NMSettingConnectionLlmnr llmnr);
 
@@ -445,12 +474,16 @@ gboolean nm_l3_config_data_add_nameserver(NML3ConfigData *                      
 
 gboolean nm_l3_config_data_clear_nameservers(NML3ConfigData *self, int addr_family);
 
+const in_addr_t *nm_l3_config_data_get_nis_servers(const NML3ConfigData *self, guint *out_len);
+
 gboolean nm_l3_config_data_add_nis_server(NML3ConfigData *self, in_addr_t nis_server);
+
+const char *nm_l3_config_data_get_nis_domain(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_nis_domain(NML3ConfigData *self, const char *nis_domain);
 
 const char *const *
 nm_l3_config_data_get_domains(const NML3ConfigData *self, int addr_family, guint *out_len);
-
-gboolean nm_l3_config_data_set_nis_domain(NML3ConfigData *self, const char *nis_domain);
 
 gboolean nm_l3_config_data_add_domain(NML3ConfigData *self, int addr_family, const char *domain);
 
@@ -463,6 +496,12 @@ gboolean nm_l3_config_data_add_search(NML3ConfigData *self, int addr_family, con
 
 gboolean
 nm_l3_config_data_add_dns_option(NML3ConfigData *self, int addr_family, const char *dns_option);
+
+const char *const *
+nm_l3_config_data_get_dns_options(const NML3ConfigData *self, int addr_family, guint *out_len);
+
+gboolean
+nm_l3_config_data_get_dns_priority(const NML3ConfigData *self, int addr_family, int *out_prio);
 
 gboolean
 nm_l3_config_data_set_dns_priority(NML3ConfigData *self, int addr_family, int dns_priority);

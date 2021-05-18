@@ -543,10 +543,7 @@ dhcp_event_cb(sd_dhcp_client *client, int event, gpointer user_data)
 }
 
 static gboolean
-ip4_start(NMDhcpClient *client,
-          const char *  dhcp_anycast_addr,
-          const char *  last_ip4_address,
-          GError **     error)
+ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
 {
     nm_auto(sd_dhcp_client_unrefp) sd_dhcp_client *sd_client  = NULL;
     NMDhcpSystemd *                                self       = NM_DHCP_SYSTEMD(client);
@@ -571,6 +568,8 @@ ip4_start(NMDhcpClient *client,
 
     g_return_val_if_fail(!priv->client4, FALSE);
     g_return_val_if_fail(!priv->client6, FALSE);
+
+    /* TODO: honor nm_dhcp_client_get_anycast_address() */
 
     r = sd_dhcp_client_new(&sd_client, FALSE);
     if (r < 0) {
@@ -912,7 +911,6 @@ dhcp6_event_cb(sd_dhcp6_client *client, int event, gpointer user_data)
 
 static gboolean
 ip6_start(NMDhcpClient *            client,
-          const char *              dhcp_anycast_addr,
           const struct in6_addr *   ll_addr,
           NMSettingIP6ConfigPrivacy privacy,
           guint                     needed_prefixes,
@@ -930,6 +928,8 @@ ip6_start(NMDhcpClient *            client,
 
     g_return_val_if_fail(!priv->client4, FALSE);
     g_return_val_if_fail(!priv->client6, FALSE);
+
+    /* TODO: honor nm_dhcp_client_get_anycast_address() */
 
     if (!(duid = nm_dhcp_client_get_client_id(client))
         || !(duid_arr = g_bytes_get_data(duid, &duid_len)) || duid_len < 2) {
