@@ -35,6 +35,14 @@ output_conn(gpointer key, gpointer value, gpointer user_data)
     gs_free char *                  data  = NULL;
     gs_free_error GError *error           = NULL;
     gsize                 len;
+    NMSetting *           setting;
+
+    setting = nm_setting_user_new();
+    nm_connection_add_setting(connection, setting);
+    nm_setting_user_set_data(NM_SETTING_USER(setting),
+                             NM_USER_TAG_ORIGIN,
+                             "nm-initrd-generator",
+                             NULL);
 
     if (!nm_connection_normalize(connection, NULL, NULL, &error))
         goto err_out;
