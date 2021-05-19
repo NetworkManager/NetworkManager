@@ -4851,6 +4851,33 @@ nm_utils_parse_debug_string(const char *string, const GDebugKey *keys, guint nke
 
 /*****************************************************************************/
 
+GSource *_nm_g_source_sentinel[] = {
+    NULL,
+};
+
+GSource *
+_nm_g_source_sentinel_get_init(GSource **p_source)
+{
+    static const GSourceFuncs source_funcs = {
+        NULL,
+    };
+    GSource *source;
+
+again:
+    source = g_source_new((GSourceFuncs *) &source_funcs, sizeof(GSource));
+    g_source_set_priority(source, G_PRIORITY_DEFAULT_IDLE);
+    g_source_set_name(source, "nm_g_source_sentinel");
+
+    if (!g_atomic_pointer_compare_and_exchange(p_source, NULL, source)) {
+        g_source_unref(source);
+        goto again;
+    }
+
+    return source;
+}
+
+/*****************************************************************************/
+
 GSource *
 nm_g_idle_source_new(int            priority,
                      GSourceFunc    func,
