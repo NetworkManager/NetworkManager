@@ -1256,6 +1256,58 @@ again:
 
 /*****************************************************************************/
 
+static void
+test_nm_g_source_sentinel(void)
+{
+    GSource *s1;
+    GSource *s2;
+    int      n;
+    int      i;
+    int      refs;
+
+    s1 = nm_g_source_sentinel_get(0);
+    g_assert_nonnull(s1);
+    g_assert_cmpint(g_atomic_int_get(&s1->ref_count), ==, 1);
+
+    s2 = nm_g_source_sentinel_get(0);
+    g_assert_nonnull(s2);
+    g_assert(s2 == s1);
+    g_assert_cmpint(g_atomic_int_get(&s1->ref_count), ==, 1);
+
+    n = nmtst_get_rand_uint32() % 7;
+    for (refs = 0, i = 0; i < n; i++) {
+        if (nmtst_get_rand_bool()) {
+            refs++;
+            g_source_ref(s1);
+        }
+        if (nmtst_get_rand_bool())
+            g_source_destroy(s1);
+        if (refs > 0 && nmtst_get_rand_bool()) {
+            refs--;
+            g_source_unref(s1);
+        }
+
+        if (nmtst_get_rand_bool()) {
+            s2 = nm_g_source_sentinel_get(0);
+            g_assert(s2 == s1);
+            g_assert_cmpint(g_atomic_int_get(&s1->ref_count), >=, 1);
+        }
+    }
+
+    for (; refs > 0;) {
+        if (nmtst_get_rand_bool())
+            g_source_destroy(s1);
+        if (nmtst_get_rand_bool()) {
+            refs--;
+            g_source_unref(s1);
+        }
+    }
+
+    g_assert_cmpint(g_atomic_int_get(&s1->ref_count), ==, 1);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -1284,6 +1336,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_is_specific_hostname", test_is_specific_hostname);
     g_test_add_func("/general/test_strv_dup_packed", test_strv_dup_packed);
     g_test_add_func("/general/test_utils_hashtable_cmp", test_utils_hashtable_cmp);
+    g_test_add_func("/general/test_nm_g_source_sentinel", test_nm_g_source_sentinel);
 
     return g_test_run();
 }
