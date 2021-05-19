@@ -1399,7 +1399,7 @@ nm_l3_config_data_set_nis_domain(NML3ConfigData *self, const char *nis_domain)
 const char *const *
 nm_l3_config_data_get_domains(const NML3ConfigData *self, int addr_family, guint *out_len)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
     nm_assert_addr_family(addr_family);
     nm_assert(out_len);
 
