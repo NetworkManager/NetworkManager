@@ -363,6 +363,7 @@ static NMActiveConnection *active_connection_find(NMManager *             self,
                                                   NMSettingsConnection *  sett_conn,
                                                   const char *            uuid,
                                                   NMActiveConnectionState max_state,
+                                                  gboolean                also_waiting_auth,
                                                   GPtrArray **            out_all_matching);
 
 static NMConnectivity *concheck_get_mgr(NMManager *self);
@@ -833,6 +834,7 @@ _delete_volatile_connection_do(NMManager *self, NMSettingsConnection *connection
                                connection,
                                NULL,
                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+                               TRUE,
                                NULL))
         return;
 
@@ -978,6 +980,7 @@ active_connection_find(
     NMSettingsConnection *  sett_conn,
     const char *            uuid,
     NMActiveConnectionState max_state /* candidates in state @max_state will be found */,
+    gboolean                also_waiting_auth /* return also ACs waiting authorization */,
     GPtrArray **            out_all_matching)
 {
     NMManagerPrivate *  priv = NM_MANAGER_GET_PRIVATE(self);
@@ -1016,6 +1019,9 @@ active_connection_find(
 
     if (!best_ac) {
         AsyncOpData *async_op_data;
+
+        if (!also_waiting_auth)
+            return NULL;
 
         c_list_for_each_entry (async_op_data, &priv->async_op_lst_head, async_op_lst) {
             NMSettingsConnection *ac_conn;
@@ -1078,6 +1084,7 @@ active_connection_find_by_connection(NMManager *             self,
                                   sett_conn,
                                   sett_conn ? NULL : nm_connection_get_uuid(connection),
                                   max_state,
+                                  FALSE,
                                   out_all_matching);
 }
 
@@ -1112,6 +1119,7 @@ _get_activatable_connections_filter(NMSettings *          settings,
                                    sett_conn,
                                    NULL,
                                    NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+                                   FALSE,
                                    NULL);
 }
 
@@ -2245,6 +2253,7 @@ connection_flags_changed(NMSettings *settings, NMSettingsConnection *connection,
                                connection,
                                NULL,
                                NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+                               FALSE,
                                NULL)) {
         /* the connection still has an active-connection. It will be purged
          * when the active connection(s) get(s) removed. */
@@ -2564,6 +2573,7 @@ new_activation_allowed_for_connection(NMManager *self, NMSettingsConnection *con
                                    connection,
                                    NULL,
                                    NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+                                   FALSE,
                                    NULL);
 }
 
@@ -4180,6 +4190,7 @@ find_master(NMManager *            self,
                                                 master_connection,
                                                 NULL,
                                                 NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+                                                FALSE,
                                                 NULL);
     }
 
@@ -5031,6 +5042,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
                                     sett_conn,
                                     NULL,
                                     NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+                                    FALSE,
                                     &all_ac_arr);
         if (ac) {
             n_all = all_ac_arr ? all_ac_arr->len : ((guint) 1);
