@@ -251,7 +251,7 @@ _garray_inaddr_get(GArray *arr, guint *out_len)
 }
 
 static gconstpointer
-_garray_inaddr_at(GArray *arr, guint idx, gboolean IS_IPv4)
+_garray_inaddr_at(GArray *arr, gboolean IS_IPv4, guint idx)
 {
     nm_assert(arr);
     nm_assert(idx < arr->len);
