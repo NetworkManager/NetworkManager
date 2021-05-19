@@ -363,7 +363,8 @@ state_to_string(NMDhcpState state)
 static NMDhcpState
 reason_to_state(NMDhcpClient *self, const char *iface, const char *reason)
 {
-    if (g_ascii_strcasecmp(reason, "bound") == 0 || g_ascii_strcasecmp(reason, "bound6") == 0)
+    if (g_ascii_strcasecmp(reason, "bound") == 0 || g_ascii_strcasecmp(reason, "bound6") == 0
+        || g_ascii_strcasecmp(reason, "static") == 0)
         return NM_DHCP_STATE_BOUND;
     else if (g_ascii_strcasecmp(reason, "renew") == 0 || g_ascii_strcasecmp(reason, "renew6") == 0
              || g_ascii_strcasecmp(reason, "reboot") == 0
