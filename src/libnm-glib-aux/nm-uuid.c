@@ -181,22 +181,30 @@ nm_uuid_is_valid_nm(const char *str,
     NMUuid   uuid;
     gboolean is_normalized;
 
+    /* @out_normalized_str is only set, if normalization was necessary
+     * and possible. The caller cannot request @out_normalized_str, without
+     * also getting @out_normalized. */
+    nm_assert(!out_normalized_str || out_normalized);
+
     if (!str)
         return FALSE;
 
     if (nm_uuid_parse_full(str, &uuid, &is_normalized)) {
-        if (is_normalized) {
-            /* @str is a normalized (lower-case), valid UUID. Nothing to normalize,
-             * and return success. */
-            NM_SET_OUT(out_normalized, FALSE);
-            return TRUE;
+        /* Note that:
+         *   @is_normalized means that "str" contains a normalized UUID
+         *   @out_normalized: indicates whether str requires normalization
+         *     and whether @out_normalized_str was set to contain the normalized
+         *     UUID.
+         * With this, we get the slightly odd assignment: */
+        NM_SET_OUT(out_normalized, !is_normalized);
+
+        if (!is_normalized && out_normalized_str) {
+            /* we need to normalize the UUID */
+            nm_uuid_unparse(&uuid, out_normalized_str);
         }
 
-        /* @str is a valid UUID, but not normalized. That means that it's
-         * upper case. Normalize the UUID. */
-        NM_SET_OUT(out_normalized, TRUE);
-        if (out_normalized_str)
-            nm_uuid_unparse(&uuid, out_normalized_str);
+        /* regardless whether normalization was necessary, the UUID is
+         * essentially valid. */
         return TRUE;
     }
 
@@ -299,13 +307,14 @@ nm_uuid_generate_from_string(NMUuid *    uuid,
     case NM_UUID_TYPE_VERSION3:
     case NM_UUID_TYPE_VERSION5:
     {
-        NMUuid ns_uuid = {};
+        NMUuid ns_uuid;
 
         if (type_args) {
             /* type_args can be a name space UUID. Interpret it as (char *) */
             if (!nm_uuid_parse(type_args, &ns_uuid))
                 g_return_val_if_reached(NULL);
-        }
+        } else
+            ns_uuid = (NMUuid){};
 
         if (uuid_type == NM_UUID_TYPE_VERSION3) {
             nm_crypto_md5_hash((guint8 *) s,
