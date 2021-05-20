@@ -7,8 +7,7 @@
 #define __NETWORKMANAGER_PROXY_CONFIG_H__
 
 #include "nm-setting-proxy.h"
-
-typedef enum { NM_PROXY_CONFIG_METHOD_AUTO = 0, NM_PROXY_CONFIG_METHOD_NONE } NMProxyConfigMethod;
+#include "nm-l3-config-data.h"
 
 #define NM_TYPE_PROXY_CONFIG (nm_proxy_config_get_type())
 #define NM_PROXY_CONFIG(obj) \

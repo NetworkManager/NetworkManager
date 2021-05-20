@@ -53,6 +53,8 @@ struct _NML3ConfigData {
     GArray *nis_servers;
 
     char *nis_domain;
+    char *proxy_pac_url;
+    char *proxy_pac_script;
 
     union {
         struct {
@@ -129,6 +131,10 @@ struct _NML3ConfigData {
     guint32 ndisc_retrans_timer_msec_val;
 
     NMTernary metered : 3;
+
+    NMTernary proxy_browser_only : 3;
+
+    NMProxyConfigMethod proxy_method : 4;
 
     NMSettingIP6ConfigPrivacy ip6_privacy : 4;
 
@@ -556,10 +562,20 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                                            NULL)));
     }
 
-    if (self->metered != NM_TERNARY_DEFAULT) {
+    if (self->metered != NM_TERNARY_DEFAULT)
         _L("metered: %s", self->metered ? "yes" : "no");
-    }
 
+    if (self->proxy_browser_only != NM_TERNARY_DEFAULT)
+        _L("proxy-browser-only: %s", self->proxy_browser_only ? "yes" : "no");
+
+    if (self->proxy_method != NM_PROXY_CONFIG_METHOD_UNKNOWN)
+        _L("proxy-method: %s", self->proxy_method == NM_PROXY_CONFIG_METHOD_AUTO ? "auto" : "none");
+
+    if (self->proxy_pac_url)
+        _L("proxy-pac-url: %s", self->proxy_pac_url);
+
+    if (self->proxy_pac_script)
+        _L("proxy-pac-script: %s", self->proxy_pac_script);
 #undef _L
 }
 
@@ -642,6 +658,8 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex)
         .llmnr                         = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
         .flags                         = NM_L3_CONFIG_DAT_FLAGS_NONE,
         .metered                       = NM_TERNARY_DEFAULT,
+        .proxy_browser_only            = NM_TERNARY_DEFAULT,
+        .proxy_method                  = NM_PROXY_CONFIG_METHOD_UNKNOWN,
         .route_table_sync_4            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
         .route_table_sync_6            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
         .source                        = NM_IP_CONFIG_SOURCE_UNKNOWN,
@@ -743,6 +761,8 @@ nm_l3_config_data_unref(const NML3ConfigData *self)
     nm_dedup_multi_index_unref(mutable->multi_idx);
 
     g_free(mutable->nis_domain);
+    g_free(mutable->proxy_pac_url);
+    g_free(mutable->proxy_pac_script);
 
     nm_g_slice_free(mutable);
 }
@@ -1612,7 +1632,7 @@ gboolean
 nm_l3_config_data_set_metered(NML3ConfigData *self, NMTernary metered)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
-    nm_assert(NM_IN_SET(metered, NM_TERNARY_DEFAULT, NM_TERNARY_FALSE, NM_TERNARY_TRUE));
+    nm_assert_is_ternary(metered);
 
     if (self->metered == metered)
         return FALSE;
@@ -1696,6 +1716,83 @@ nm_l3_config_data_set_ip6_privacy(NML3ConfigData *self, NMSettingIP6ConfigPrivac
     self->ip6_privacy = ip6_privacy;
     nm_assert(self->ip6_privacy == ip6_privacy);
     return TRUE;
+}
+
+NMProxyConfigMethod
+nm_l3_config_data_get_proxy_method(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->proxy_method;
+}
+
+gboolean
+nm_l3_config_data_set_proxy_method(NML3ConfigData *self, NMProxyConfigMethod value)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert(NM_IN_SET(value,
+                        NM_PROXY_CONFIG_METHOD_UNKNOWN,
+                        NM_PROXY_CONFIG_METHOD_NONE,
+                        NM_PROXY_CONFIG_METHOD_AUTO));
+
+    if (self->proxy_method == value)
+        return FALSE;
+
+    self->proxy_method = value;
+    return TRUE;
+}
+
+NMTernary
+nm_l3_config_data_get_proxy_browser_only(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->proxy_browser_only;
+}
+
+gboolean
+nm_l3_config_data_set_proxy_browser_only(NML3ConfigData *self, NMTernary value)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert_is_ternary(value);
+
+    if (value == self->proxy_browser_only)
+        return FALSE;
+
+    self->proxy_browser_only = value;
+    return TRUE;
+}
+
+const char *
+nm_l3_config_data_get_proxy_pac_url(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->proxy_pac_url;
+}
+
+gboolean
+nm_l3_config_data_set_proxy_pac_url(NML3ConfigData *self, const char *value)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    return nm_utils_strdup_reset(&self->proxy_pac_url, value);
+}
+
+const char *
+nm_l3_config_data_get_proxy_pac_script(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->proxy_pac_script;
+}
+
+gboolean
+nm_l3_config_data_set_proxy_pac_script(NML3ConfigData *self, const char *value)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    return nm_utils_strdup_reset(&self->proxy_pac_script, value);
 }
 
 gboolean
@@ -1911,6 +2008,10 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
     NM_CMP_DIRECT(a->mtu, b->mtu);
     NM_CMP_DIRECT(a->ip6_mtu, b->ip6_mtu);
     NM_CMP_DIRECT_UNSAFE(a->metered, b->metered);
+    NM_CMP_DIRECT_UNSAFE(a->proxy_browser_only, b->proxy_browser_only);
+    NM_CMP_DIRECT_UNSAFE(a->proxy_method, b->proxy_method);
+    NM_CMP_FIELD_STR0(a, b, proxy_pac_url);
+    NM_CMP_FIELD_STR0(a, b, proxy_pac_script);
     NM_CMP_DIRECT_UNSAFE(a->ip6_privacy, b->ip6_privacy);
 
     NM_CMP_DIRECT_UNSAFE(a->ndisc_hop_limit_set, b->ndisc_hop_limit_set);
@@ -2470,11 +2571,28 @@ nm_l3_config_data_new_from_connection(NMDedupMultiIndex *multi_idx,
                                       guint32            route_metric_6)
 {
     NML3ConfigData *self;
+    NMSettingProxy *s_proxy;
 
     self = nm_l3_config_data_new(multi_idx, ifindex);
 
     _init_from_connection_ip(self, AF_INET, connection, route_table_4, route_metric_4);
     _init_from_connection_ip(self, AF_INET6, connection, route_table_6, route_metric_6);
+
+    s_proxy = _nm_connection_get_setting(connection, NM_TYPE_SETTING_PROXY);
+    if (s_proxy) {
+        switch (nm_setting_proxy_get_method(s_proxy)) {
+        case NM_SETTING_PROXY_METHOD_NONE:
+            self->proxy_method = NM_PROXY_CONFIG_METHOD_NONE;
+            break;
+        case NM_SETTING_PROXY_METHOD_AUTO:
+            self->proxy_method     = NM_PROXY_CONFIG_METHOD_AUTO;
+            self->proxy_pac_url    = nm_ref_string_new(nm_setting_proxy_get_pac_url(s_proxy));
+            self->proxy_pac_script = nm_ref_string_new(nm_setting_proxy_get_pac_script(s_proxy));
+            break;
+        }
+        self->proxy_browser_only = (!!nm_setting_proxy_get_browser_only(s_proxy));
+    }
+
     return self;
 }
 
@@ -2752,6 +2870,18 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
         self->llmnr = src->llmnr;
 
     self->metered = NM_MAX((NMTernary) self->metered, (NMTernary) src->metered);
+
+    if (self->proxy_method == NM_PROXY_CONFIG_METHOD_UNKNOWN)
+        self->proxy_method = src->proxy_method;
+
+    if (self->proxy_browser_only == NM_TERNARY_DEFAULT)
+        self->proxy_browser_only = src->proxy_browser_only;
+
+    if (!self->proxy_pac_url)
+        self->proxy_pac_url = g_strdup(src->proxy_pac_url);
+
+    if (!self->proxy_pac_script)
+        self->proxy_pac_script = g_strdup(src->proxy_pac_script);
 
     if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
         self->ip6_privacy = src->ip6_privacy;
