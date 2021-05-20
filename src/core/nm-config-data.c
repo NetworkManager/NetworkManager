@@ -1653,10 +1653,10 @@ nm_config_data_diff(NMConfigData *old_data, NMConfigData *new_data)
     priv_old = NM_CONFIG_DATA_GET_PRIVATE(old_data);
     priv_new = NM_CONFIG_DATA_GET_PRIVATE(new_data);
 
-    if (!_nm_keyfile_equals(priv_old->keyfile_user, priv_new->keyfile_user, TRUE))
+    if (!_nm_keyfile_equal(priv_old->keyfile_user, priv_new->keyfile_user, TRUE))
         changes |= NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_USER;
 
-    if (!_nm_keyfile_equals(priv_old->keyfile_intern, priv_new->keyfile_intern, TRUE))
+    if (!_nm_keyfile_equal(priv_old->keyfile_intern, priv_new->keyfile_intern, TRUE))
         changes |= NM_CONFIG_CHANGE_VALUES | NM_CONFIG_CHANGE_VALUES_INTERN;
 
     if (!nm_streq0(nm_config_data_get_config_main_file(old_data),
