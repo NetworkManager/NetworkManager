@@ -95,6 +95,26 @@ nm_ref_string_get_len(NMRefString *rstr)
 }
 
 static inline gboolean
+nm_ref_string_equal(NMRefString *a, NMRefString *b)
+{
+    return a == b;
+}
+
+static inline int
+nm_ref_string_cmp(NMRefString *a, NMRefString *b)
+{
+    NM_CMP_SELF(a, b);
+
+    /* It would be cheaper to first compare by length. But this
+     * way we get a nicer, ASCIIbethical sort order. */
+    NM_CMP_DIRECT_MEMCMP(a->str, b->str, NM_MIN(a->len, b->len));
+    NM_CMP_DIRECT(a->len, b->len);
+    return nm_assert_unreachable_val(0);
+}
+
+#define NM_CMP_DIRECT_REF_STRING(a, b) NM_CMP_RETURN_DIRECT(nm_ref_string_cmp((a), (b)))
+
+static inline gboolean
 nm_ref_string_equals_str(NMRefString *rstr, const char *str)
 {
     if (!str)
