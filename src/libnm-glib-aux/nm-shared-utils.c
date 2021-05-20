@@ -486,7 +486,7 @@ nm_g_bytes_new_from_str(const char *str)
 }
 
 /**
- * nm_utils_gbytes_equals:
+ * nm_utils_gbytes_equal_mem:
  * @bytes: (allow-none): a #GBytes array to compare. Note that
  *   %NULL is treated like an #GBytes array of length zero.
  * @mem_data: the data pointer with @mem_len bytes
