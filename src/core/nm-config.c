@@ -2110,7 +2110,7 @@ nm_config_set_values(NMConfig *self,
                                  "");
     }
 
-    if (!_nm_keyfile_equals(keyfile_intern_current, keyfile_new, TRUE))
+    if (!_nm_keyfile_equal(keyfile_intern_current, keyfile_new, TRUE))
         new_data = nm_config_data_new_update_keyfile_intern(priv->config_data, keyfile_new);
 
     _LOGD("set values(): %s", new_data ? "has changes" : "no changes");

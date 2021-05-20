@@ -417,7 +417,7 @@ _nm_keyfile_a_contains_all_in_b(GKeyFile *kf_a, GKeyFile *kf_b)
 }
 
 static gboolean
-_nm_keyfile_equals_ordered(GKeyFile *kf_a, GKeyFile *kf_b)
+_nm_keyfile_equal_ordered(GKeyFile *kf_a, GKeyFile *kf_b)
 {
     gs_strfreev char **groups   = NULL;
     gs_strfreev char **groups_b = NULL;
@@ -468,13 +468,13 @@ _nm_keyfile_equals_ordered(GKeyFile *kf_a, GKeyFile *kf_b)
 }
 
 gboolean
-_nm_keyfile_equals(GKeyFile *kf_a, GKeyFile *kf_b, gboolean consider_order)
+_nm_keyfile_equal(GKeyFile *kf_a, GKeyFile *kf_b, gboolean consider_order)
 {
     if (!consider_order) {
         return _nm_keyfile_a_contains_all_in_b(kf_a, kf_b)
                && _nm_keyfile_a_contains_all_in_b(kf_b, kf_a);
     } else {
-        return _nm_keyfile_equals_ordered(kf_a, kf_b);
+        return _nm_keyfile_equal_ordered(kf_a, kf_b);
     }
 }
 
