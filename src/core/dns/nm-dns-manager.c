@@ -2530,7 +2530,7 @@ nm_dns_manager_init(NMDnsManager *self)
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMDnsConfigData, ifindex) == 0);
     priv->configs_dict = g_hash_table_new_full(nm_pint_hash,
-                                               nm_pint_equals,
+                                               nm_pint_equal,
                                                (GDestroyNotify) _dns_config_data_free,
                                                NULL);
 
