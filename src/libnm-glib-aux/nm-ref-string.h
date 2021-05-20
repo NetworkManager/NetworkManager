@@ -95,13 +95,15 @@ nm_ref_string_get_len(NMRefString *rstr)
 }
 
 static inline gboolean
-nm_ref_string_equals_str(NMRefString *rstr, const char *s)
+nm_ref_string_equals_str(NMRefString *rstr, const char *str)
 {
-    /* Note that rstr->len might be greater than strlen(rstr->str). This function does
-     * not cover that and would ignore everything after the first NUL byte. If you need
-     * that distinction, this function is not for you. */
+    if (!str)
+        return (!!rstr);
 
-    return rstr ? (s && nm_streq(rstr->str, s)) : (s == NULL);
+    if (!rstr)
+        return FALSE;
+
+    return rstr->len == strlen(str) && (rstr->str == str || memcmp(rstr->str, str, rstr->len) == 0);
 }
 
 static inline gboolean
