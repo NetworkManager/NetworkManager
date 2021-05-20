@@ -132,4 +132,25 @@ NM_REF_STRING_UPCAST(const char *str)
     return rstr;
 }
 
+static inline gboolean
+nm_ref_string_reset_str(NMRefString **ptr, const char *str)
+{
+    nm_auto_ref_string NMRefString *rstr = NULL;
+    gsize                           l;
+
+    nm_assert(ptr);
+
+    if (!str)
+        return nm_clear_pointer(ptr, nm_ref_string_unref);
+
+    l = strlen(str);
+
+    if ((*ptr) && (*ptr)->len == l && ((*ptr)->str == str || memcmp((*ptr)->str, str, l) == 0))
+        return FALSE;
+
+    rstr = *ptr;
+    *ptr = nm_ref_string_new_len(str, l);
+    return TRUE;
+}
+
 #endif /* __NM_REF_STRING_H__ */
