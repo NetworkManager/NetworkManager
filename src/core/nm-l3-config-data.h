@@ -10,6 +10,12 @@
 #include "libnm-platform/nmp-object.h"
 
 typedef enum {
+    NM_PROXY_CONFIG_METHOD_UNKNOWN,
+    NM_PROXY_CONFIG_METHOD_NONE,
+    NM_PROXY_CONFIG_METHOD_AUTO,
+} NMProxyConfigMethod;
+
+typedef enum {
     NM_L3_CONFIG_DAT_FLAGS_NONE = 0,
 
     /* if set, then the merge flag NM_L3_CONFIG_MERGE_FLAGS_NO_DEFAULT_ROUTES gets
@@ -510,6 +516,22 @@ NMSettingIP6ConfigPrivacy nm_l3_config_data_get_ip6_privacy(const NML3ConfigData
 
 gboolean nm_l3_config_data_set_ip6_privacy(NML3ConfigData *          self,
                                            NMSettingIP6ConfigPrivacy ip6_privacy);
+
+NMProxyConfigMethod nm_l3_config_data_get_proxy_method(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_proxy_method(NML3ConfigData *self, NMProxyConfigMethod value);
+
+NMTernary nm_l3_config_data_get_proxy_browser_only(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_proxy_browser_only(NML3ConfigData *self, NMTernary value);
+
+const char *nm_l3_config_data_get_proxy_pac_url(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_proxy_pac_url(NML3ConfigData *self, const char *value);
+
+const char *nm_l3_config_data_get_proxy_pac_script(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_proxy_pac_script(NML3ConfigData *self, const char *value);
 
 gboolean nm_l3_config_data_get_ndisc_hop_limit(const NML3ConfigData *self, int *out_val);
 gboolean nm_l3_config_data_set_ndisc_hop_limit(NML3ConfigData *self, int val);

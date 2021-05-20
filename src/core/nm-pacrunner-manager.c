@@ -198,6 +198,7 @@ _make_request_create_proxy_configuration(NMProxyConfig *proxy_config,
             g_variant_builder_add(&builder, "{sv}", "Script", g_variant_new_string(pac_script));
         }
         break;
+    case NM_PROXY_CONFIG_METHOD_UNKNOWN:
     case NM_PROXY_CONFIG_METHOD_NONE:
         g_variant_builder_add(&builder, "{sv}", "Method", g_variant_new_string("direct"));
         break;
