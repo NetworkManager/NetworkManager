@@ -1479,7 +1479,7 @@ _l3_acd_data_add(NML3Cfg *             self,
     if (!acd_data) {
         if (G_UNLIKELY(!self->priv.p->acd_lst_hash)) {
             G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(AcdData, info.addr) == 0);
-            self->priv.p->acd_lst_hash = g_hash_table_new(nm_puint32_hash, nm_puint32_equals);
+            self->priv.p->acd_lst_hash = g_hash_table_new(nm_puint32_hash, nm_puint32_equal);
         }
 
         acd_data  = g_slice_new(AcdData);

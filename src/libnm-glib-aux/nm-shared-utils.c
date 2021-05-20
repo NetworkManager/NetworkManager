@@ -5348,7 +5348,7 @@ nm_utils_g_main_context_create_integrate_source(GMainContext *inner_context)
     g_source_set_name(&ctx_src->source, "ContextIntegrateSource");
 
     ctx_src->context  = g_main_context_ref(inner_context);
-    ctx_src->fds      = g_hash_table_new_full(nm_pint_hash, nm_pint_equals, _poll_data_free, NULL);
+    ctx_src->fds      = g_hash_table_new_full(nm_pint_hash, nm_pint_equal, _poll_data_free, NULL);
     ctx_src->fds_len  = 0;
     ctx_src->fds_arr  = NULL;
     ctx_src->acquired = TRUE;

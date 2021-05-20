@@ -354,11 +354,11 @@ gboolean nm_pstr_equal(gconstpointer a, gconstpointer b);
  * that is, "const int *" types. */
 
 guint    nm_pint_hash(gconstpointer p);
-gboolean nm_pint_equals(gconstpointer a, gconstpointer b);
+gboolean nm_pint_equal(gconstpointer a, gconstpointer b);
 
 G_STATIC_ASSERT(sizeof(int) == sizeof(guint32));
-#define nm_puint32_hash   nm_pint_hash
-#define nm_puint32_equals nm_pint_equals
+#define nm_puint32_hash  nm_pint_hash
+#define nm_puint32_equal nm_pint_equal
 
 /*****************************************************************************/
 
