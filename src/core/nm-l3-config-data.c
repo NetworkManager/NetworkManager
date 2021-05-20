@@ -8,10 +8,11 @@
 #include <linux/if_addr.h>
 #include <linux/rtnetlink.h>
 
-#include "libnm-glib-aux/nm-enum-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "libnm-platform/nm-platform.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-ref-string.h"
 #include "libnm-platform/nm-platform-utils.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-object.h"
 #include "NetworkManagerUtils.h"
 
@@ -52,9 +53,9 @@ struct _NML3ConfigData {
     GArray *wins;
     GArray *nis_servers;
 
-    char *nis_domain;
-    char *proxy_pac_url;
-    char *proxy_pac_script;
+    NMRefString *nis_domain;
+    NMRefString *proxy_pac_url;
+    NMRefString *proxy_pac_script;
 
     union {
         struct {
@@ -513,7 +514,7 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                    _nm_utils_inet4_ntop(g_array_index(self->nis_servers, in_addr_t, i), sbuf_addr));
             }
             if (self->nis_domain)
-                _L("nis-domain: %s", self->nis_domain);
+                _L("nis-domain: %s", self->nis_domain->str);
         }
 
         if (self->dhcp_lease_x[IS_IPv4]) {
@@ -572,10 +573,10 @@ nm_l3_config_data_log(const NML3ConfigData *self,
         _L("proxy-method: %s", self->proxy_method == NM_PROXY_CONFIG_METHOD_AUTO ? "auto" : "none");
 
     if (self->proxy_pac_url)
-        _L("proxy-pac-url: %s", self->proxy_pac_url);
+        _L("proxy-pac-url: %s", self->proxy_pac_url->str);
 
     if (self->proxy_pac_script)
-        _L("proxy-pac-script: %s", self->proxy_pac_script);
+        _L("proxy-pac-script: %s", self->proxy_pac_script->str);
 #undef _L
 }
 
@@ -760,9 +761,9 @@ nm_l3_config_data_unref(const NML3ConfigData *self)
 
     nm_dedup_multi_index_unref(mutable->multi_idx);
 
-    g_free(mutable->nis_domain);
-    g_free(mutable->proxy_pac_url);
-    g_free(mutable->proxy_pac_script);
+    nm_ref_string_unref(mutable->nis_domain);
+    nm_ref_string_unref(mutable->proxy_pac_url);
+    nm_ref_string_unref(mutable->proxy_pac_script);
 
     nm_g_slice_free(mutable);
 }
@@ -1405,7 +1406,7 @@ nm_l3_config_data_get_nis_domain(const NML3ConfigData *self)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
-    return self->nis_domain;
+    return nm_ref_string_get_str(self->nis_domain);
 }
 
 gboolean
@@ -1413,7 +1414,7 @@ nm_l3_config_data_set_nis_domain(NML3ConfigData *self, const char *nis_domain)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
 
-    return nm_utils_strdup_reset(&self->nis_domain, nis_domain);
+    return nm_ref_string_reset_str(&self->nis_domain, nis_domain);
 }
 
 const char *const *
@@ -1768,7 +1769,7 @@ nm_l3_config_data_get_proxy_pac_url(const NML3ConfigData *self)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
-    return self->proxy_pac_url;
+    return nm_ref_string_get_str(self->proxy_pac_url);
 }
 
 gboolean
@@ -1776,7 +1777,7 @@ nm_l3_config_data_set_proxy_pac_url(NML3ConfigData *self, const char *value)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
 
-    return nm_utils_strdup_reset(&self->proxy_pac_url, value);
+    return nm_ref_string_reset_str(&self->proxy_pac_url, value);
 }
 
 const char *
@@ -1784,7 +1785,7 @@ nm_l3_config_data_get_proxy_pac_script(const NML3ConfigData *self)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
-    return self->proxy_pac_script;
+    return nm_ref_string_get_str(self->proxy_pac_script);
 }
 
 gboolean
@@ -1792,7 +1793,7 @@ nm_l3_config_data_set_proxy_pac_script(NML3ConfigData *self, const char *value)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
 
-    return nm_utils_strdup_reset(&self->proxy_pac_script, value);
+    return nm_ref_string_reset_str(&self->proxy_pac_script, value);
 }
 
 gboolean
@@ -2002,7 +2003,7 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
 
     NM_CMP_RETURN(_garray_inaddr_cmp(a->wins, b->wins, AF_INET));
     NM_CMP_RETURN(_garray_inaddr_cmp(a->nis_servers, b->nis_servers, AF_INET));
-    NM_CMP_FIELD_STR0(a, b, nis_domain);
+    NM_CMP_DIRECT_REF_STRING(a->nis_domain, b->nis_domain);
     NM_CMP_DIRECT(a->mdns, b->mdns);
     NM_CMP_DIRECT(a->llmnr, b->llmnr);
     NM_CMP_DIRECT(a->mtu, b->mtu);
@@ -2010,8 +2011,8 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
     NM_CMP_DIRECT_UNSAFE(a->metered, b->metered);
     NM_CMP_DIRECT_UNSAFE(a->proxy_browser_only, b->proxy_browser_only);
     NM_CMP_DIRECT_UNSAFE(a->proxy_method, b->proxy_method);
-    NM_CMP_FIELD_STR0(a, b, proxy_pac_url);
-    NM_CMP_FIELD_STR0(a, b, proxy_pac_script);
+    NM_CMP_DIRECT_REF_STRING(a->proxy_pac_url, b->proxy_pac_url);
+    NM_CMP_DIRECT_REF_STRING(a->proxy_pac_script, b->proxy_pac_script);
     NM_CMP_DIRECT_UNSAFE(a->ip6_privacy, b->ip6_privacy);
 
     NM_CMP_DIRECT_UNSAFE(a->ndisc_hop_limit_set, b->ndisc_hop_limit_set);
@@ -2859,8 +2860,8 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
         _garray_inaddr_merge(&self->wins, src->wins, AF_INET);
         _garray_inaddr_merge(&self->nis_servers, src->nis_servers, AF_INET);
 
-        if (!self->nis_domain && src->nis_domain)
-            self->nis_domain = g_strdup(src->nis_domain);
+        if (!self->nis_domain)
+            self->nis_domain = nm_ref_string_ref(src->nis_domain);
     }
 
     if (self->mdns == NM_SETTING_CONNECTION_MDNS_DEFAULT)
@@ -2878,10 +2879,10 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
         self->proxy_browser_only = src->proxy_browser_only;
 
     if (!self->proxy_pac_url)
-        self->proxy_pac_url = g_strdup(src->proxy_pac_url);
+        self->proxy_pac_url = nm_ref_string_ref(src->proxy_pac_url);
 
     if (!self->proxy_pac_script)
-        self->proxy_pac_script = g_strdup(src->proxy_pac_script);
+        self->proxy_pac_script = nm_ref_string_ref(src->proxy_pac_script);
 
     if (self->ip6_privacy == NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN)
         self->ip6_privacy = src->ip6_privacy;
