@@ -115,7 +115,7 @@ nm_ref_string_cmp(NMRefString *a, NMRefString *b)
 #define NM_CMP_DIRECT_REF_STRING(a, b) NM_CMP_RETURN_DIRECT(nm_ref_string_cmp((a), (b)))
 
 static inline gboolean
-nm_ref_string_equals_str(NMRefString *rstr, const char *str)
+nm_ref_string_equal_str(NMRefString *rstr, const char *str)
 {
     if (!str)
         return (!!rstr);
