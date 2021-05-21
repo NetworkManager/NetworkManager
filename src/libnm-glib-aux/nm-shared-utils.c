@@ -2882,7 +2882,9 @@ nm_utils_buf_utf8safe_unescape(const char *            str,
  * nm_utils_buf_utf8safe_escape:
  * @buf: byte array, possibly in utf-8 encoding, may have NUL characters.
  * @buflen: the length of @buf in bytes, or -1 if @buf is a NUL terminated
- *   string.
+ *   string. Note that if @buflen is zero, then the function returns NULL.
+ *   If @buflen is negative, then the function returns NULL if @buf is NULL
+ *   and @buf if @buf is "".
  * @flags: #NMUtilsStrUtf8SafeFlags flags
  * @to_free: (out): return the pointer location of the string
  *   if a copying was necessary.
@@ -2908,6 +2910,9 @@ nm_utils_buf_utf8safe_unescape(const char *            str,
  *   is necessary, it returns the input @buf. Otherwise, an allocated
  *   string @to_free is returned which must be freed by the caller
  *   with g_free. The escaping can be reverted by g_strcompress().
+ *   There are cases where this function can return NULL:
+ *   - if @buflen is 0
+ *   - if @buflen is negative and @buf is NULL.
  **/
 const char *
 nm_utils_buf_utf8safe_escape(gconstpointer           buf,
