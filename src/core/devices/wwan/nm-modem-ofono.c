@@ -480,6 +480,27 @@ connman_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, g
 }
 
 static void
+connman_context_removed(GDBusProxy *proxy, const char *object_path, gpointer user_data)
+{
+    NMModemOfono *       self = NM_MODEM_OFONO(user_data);
+    NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
+    NMSettingsConnection *exported;
+
+    // generate the UUID for the object_path
+    char *        uuid, *idstr;
+    idstr = g_strconcat("/", priv->imsi, "/", object_path, NULL);
+    uuid  = nm_uuid_generate_from_string_str(idstr, -1, NM_UUID_TYPE_LEGACY, NULL);
+    g_free(idstr);
+
+    // look up the connction, and if we have connection disconnect and remove it
+    exported = g_hash_table_lookup(priv->connections, uuid);
+    if (exported) {
+        nm_settings_delete_connection(priv->settings, exported, FALSE);
+        g_hash_table_remove(priv->connections, uuid);
+    }
+}
+
+static void
 connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     NMModemOfono *       self;
@@ -713,6 +734,12 @@ _connman_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
                             "PropertyChanged",
                             G_VARIANT_TYPE("(sv)"),
                             G_CALLBACK(connman_property_changed),
+                            self);
+
+    _nm_dbus_signal_connect(priv->connman_proxy,
+                            "ContextRemoved",
+                            G_VARIANT_TYPE("(o)"),
+                            G_CALLBACK(connman_context_removed),
                             self);
 
     g_dbus_proxy_call(priv->connman_proxy,
