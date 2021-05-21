@@ -257,7 +257,6 @@ BuildRequires: gtk-doc
 BuildRequires: libudev-devel
 BuildRequires: libuuid-devel
 BuildRequires: /usr/bin/valac
-BuildRequires: iptables
 BuildRequires: libxslt
 %if %{with bluetooth}
 BuildRequires: bluez-libs-devel
@@ -574,6 +573,8 @@ This tool is still experimental.
 %if %{with test}
 	--werror \
 %endif
+	-Dnft=/usr/sbin/nft \
+	-Diptables=/usr/sbin/iptables \
 	-Ddhcpcanon=no \
 	-Ddhcpcd=no \
 	-Dconfig_dhcp_default=%{dhcp_default} \
@@ -702,6 +703,8 @@ intltoolize --automake --copy --force
 	--with-runstatedir=%{_rundir} \
 	--disable-silent-rules \
 	--disable-static \
+	--with-nft=/usr/sbin/nft \
+	--with-iptables=/usr/sbin/iptables \
 	--with-dhclient=yes \
 	--with-dhcpcd=no \
 	--with-dhcpcanon=no \
