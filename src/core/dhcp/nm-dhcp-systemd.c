@@ -429,18 +429,33 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     num = nm_sd_dhcp_lease_get_private_options(lease, &private_options);
     if (num > 0) {
         for (i = 0; i < num; i++) {
-            char *option_string;
+            guint8        code       = private_options[i].code;
+            const guint8 *l_data     = private_options[i].data;
+            gsize         l_data_len = private_options[i].data_len;
+            char *        option_string;
 
-            option_string = nm_utils_bin2hexstr_full(private_options[i].data,
-                                                     private_options[i].data_len,
-                                                     ':',
-                                                     FALSE,
-                                                     NULL);
-            if (!options) {
-                g_free(option_string);
+            if (code == NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY) {
+                if (nm_dhcp_lease_data_parse_cstr(l_data, l_data_len, &l_data_len)) {
+                    nm_dhcp_option_add_option_utf8safe_escape(
+                        options,
+                        AF_INET,
+                        NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY,
+                        l_data,
+                        l_data_len);
+                }
                 continue;
             }
-            nm_dhcp_option_take_option(options, AF_INET, private_options[i].code, option_string);
+            if (code == NM_DHCP_OPTION_DHCP4_PRIVATE_CLASSLESS_STATIC_ROUTE) {
+                /* nettools and dhclient parse option 249 (Microsoft Classless Static Route)
+                 * as fallback for routes and ignores them from private options.
+                 *
+                 * The systemd plugin does not, and for consistency with nettools we
+                 * also don't expose it as private option either. */
+                continue;
+            }
+
+            option_string = nm_utils_bin2hexstr_full(l_data, l_data_len, ':', FALSE, NULL);
+            nm_dhcp_option_take_option(options, AF_INET, code, option_string);
         }
     }
     NM_SET_OUT(out_options, g_steal_pointer(&options));
