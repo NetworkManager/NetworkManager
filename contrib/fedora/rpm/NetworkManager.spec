@@ -121,6 +121,14 @@
 %global dbus_sys_dir %{_sysconfdir}/dbus-1/system.d
 %endif
 
+# Older libndp versions use select() (rh#1933041). On well known distros,
+# choose a version that has the necessary fix.
+%if 0%{?rhel} && 0%{?rhel} == 8
+%global libndp_version 1.7-4
+%else
+%global libndp_version %{nil}
+%endif
+
 %if %{with bluetooth} || %{with wwan}
 %global with_modem_manager_1 1
 %else
@@ -197,6 +205,9 @@ Requires(postun): systemd
 Requires: dbus >= %{dbus_version}
 Requires: glib2 >= %{glib2_version}
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
+%if "%{libndp_version}" != ""
+Requires: libndp >= %{libndp_version}
+%endif
 Obsoletes: dhcdbd
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
