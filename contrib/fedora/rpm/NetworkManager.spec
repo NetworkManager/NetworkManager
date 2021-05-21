@@ -208,7 +208,6 @@ Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 %if "%{libndp_version}" != ""
 Requires: libndp >= %{libndp_version}
 %endif
-Obsoletes: dhcdbd
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 Obsoletes: NetworkManager-wimax < 1.2
