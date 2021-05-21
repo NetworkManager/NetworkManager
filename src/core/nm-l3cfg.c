@@ -2582,18 +2582,19 @@ _l3_commit_on_idle_cb(gpointer user_data)
     return G_SOURCE_REMOVE;
 }
 
-void
+gboolean
 nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self)
 {
     nm_assert(NM_IS_L3CFG(self));
 
     if (self->priv.p->commit_on_idle_source)
-        return;
+        return FALSE;
 
     _LOGT("commit on idle (scheduled)");
     self->priv.p->commit_on_idle_source =
         nm_g_idle_source_new(G_PRIORITY_DEFAULT, _l3_commit_on_idle_cb, self, NULL);
     g_source_attach(self->priv.p->commit_on_idle_source, NULL);
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -3693,6 +3694,23 @@ _nm_l3cfg_unregister_ipv4ll(NML3Cfg *self)
 
     nm_assert(self->priv.p->ipv4ll);
     self->priv.p->ipv4ll = NULL;
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_l3cfg_is_ready(NML3Cfg *self)
+{
+    g_return_val_if_fail(NM_IS_L3CFG(self), FALSE);
+
+    if (self->priv.p->changed_configs_configs)
+        return FALSE;
+    if (self->priv.p->changed_configs_acd_state)
+        return FALSE;
+    if (self->priv.p->commit_on_idle_source)
+        return FALSE;
+
+    return TRUE;
 }
 
 /*****************************************************************************/
