@@ -331,7 +331,6 @@ Summary: ADSL device plugin for NetworkManager
 Group: System Environment/Base
 Requires: %{name}%{?_isa} = %{epoch}:%{version}-%{release}
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
-Obsoletes: NetworkManager-atm
 
 %description adsl
 This package contains NetworkManager support for ADSL devices.
@@ -351,7 +350,6 @@ Requires: NetworkManager-wwan = %{epoch}:%{version}-%{release}
 Requires: bluez >= 4.101-5
 %endif
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
-Obsoletes: NetworkManager-bt
 
 %description bluetooth
 This package contains NetworkManager support for Bluetooth devices.
