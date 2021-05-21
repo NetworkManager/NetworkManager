@@ -131,7 +131,7 @@ _PRIV_TO_SELF(NMPolicyPrivate *priv)
 
 static void      update_system_hostname(NMPolicy *self, const char *msg);
 static void      schedule_activate_all(NMPolicy *self);
-static void      schedule_activate_check(NMPolicy *self, NMDevice *device);
+static void      schedule_activate_check(NMPolicy *self, NMDevice *device, uint delay);
 static NMDevice *get_default_device(NMPolicy *self, int addr_family);
 
 /*****************************************************************************/
@@ -1298,7 +1298,7 @@ pending_ac_state_changed(NMActiveConnection *ac, guint state, guint reason, NMPo
                 con,
                 NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
                 TRUE);
-            schedule_activate_check(self, nm_active_connection_get_device(ac));
+            schedule_activate_check(self, nm_active_connection_get_device(ac), 0);
         }
 
         /* Cleanup */
@@ -1397,7 +1397,7 @@ auto_activate_device(NMPolicy *self, NMDevice *device)
             best_connection,
             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
             TRUE);
-        schedule_activate_check(self, device);
+        schedule_activate_check(self, device, 0);
         return;
     }
 
@@ -1640,7 +1640,7 @@ sleeping_changed(NMManager *manager, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-schedule_activate_check(NMPolicy *self, NMDevice *device)
+schedule_activate_check(NMPolicy *self, NMDevice *device, uint delay)
 {
     NMPolicyPrivate *   priv = NM_POLICY_GET_PRIVATE(self);
     ActivateData *      data;
@@ -1663,10 +1663,15 @@ schedule_activate_check(NMPolicy *self, NMDevice *device)
 
     nm_device_add_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
 
-    data                  = g_slice_new0(ActivateData);
-    data->policy          = self;
-    data->device          = g_object_ref(device);
-    data->autoactivate_id = g_idle_add(auto_activate_device_cb, data);
+    data         = g_slice_new0(ActivateData);
+    data->policy = self;
+    data->device = g_object_ref(device);
+
+    if (delay)
+        data->autoactivate_id = g_timeout_add_seconds(delay, auto_activate_device_cb, data);
+    else
+        data->autoactivate_id = g_idle_add(auto_activate_device_cb, data);
+
     c_list_link_tail(&priv->pending_activation_checks, &data->pending_lst);
 }
 
@@ -1909,6 +1914,7 @@ device_state_changed(NMDevice *          device,
     NMIP4Config *         ip4_config;
     NMIP6Config *         ip6_config;
     NMSettingConnection * s_con = NULL;
+    guint                 delay = 0;
 
     switch (nm_device_state_reason_check(reason)) {
     case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
@@ -2079,7 +2085,11 @@ device_state_changed(NMDevice *          device,
             update_routing_and_dns(self, FALSE, device);
 
         /* Device is now available for auto-activation */
-        schedule_activate_check(self, device);
+        if (nm_device_get_device_type(device) == NM_DEVICE_TYPE_MODEM)
+            delay = 5;
+
+        schedule_activate_check(self, device, delay);
+
         break;
 
     case NM_DEVICE_STATE_PREPARE:
@@ -2195,7 +2205,7 @@ device_autoconnect_changed(NMDevice *device, GParamSpec *pspec, gpointer user_da
     NMPolicyPrivate *priv = user_data;
     NMPolicy *       self = _PRIV_TO_SELF(priv);
 
-    schedule_activate_check(self, device);
+    schedule_activate_check(self, device, 0);
 }
 
 static void
@@ -2204,7 +2214,7 @@ device_recheck_auto_activate(NMDevice *device, gpointer user_data)
     NMPolicyPrivate *priv = user_data;
     NMPolicy *       self = _PRIV_TO_SELF(priv);
 
-    schedule_activate_check(self, device);
+    schedule_activate_check(self, device, 0);
 }
 
 static void
@@ -2492,7 +2502,7 @@ schedule_activate_all_cb(gpointer user_data)
     priv->schedule_activate_all_id = 0;
 
     nm_manager_for_each_device (priv->manager, device, tmp_lst)
-        schedule_activate_check(self, device);
+        schedule_activate_check(self, device, 0);
 
     return G_SOURCE_REMOVE;
 }
