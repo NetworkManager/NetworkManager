@@ -98,7 +98,8 @@ typedef enum {
 
     NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT,
 
-    /* emitted at the end of nm_l3cfg_platform_commit(). */
+    /* emitted at the end of nm_l3cfg_platform_commit(). This signals also that
+     * nm_l3cfg_is_ready() might have switched to TRUE. */
     NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
 
     /* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
@@ -169,6 +170,8 @@ GType nm_l3cfg_get_type(void);
 NML3Cfg *nm_l3cfg_new(NMNetns *netns, int ifindex);
 
 /*****************************************************************************/
+
+gboolean nm_l3cfg_is_ready(NML3Cfg *self);
 
 void _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags);
 
@@ -328,7 +331,7 @@ typedef enum _nm_packed {
 
 void nm_l3cfg_commit(NML3Cfg *self, NML3CfgCommitType commit_type);
 
-void nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
+gboolean nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
 
 /*****************************************************************************/
 
