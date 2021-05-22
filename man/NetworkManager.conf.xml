@@ -497,17 +497,24 @@ no-auto-default=*
         <term><varname>iwd-config-path</varname></term>
         <listitem>
           <para>
-            If the value points to an existing directory, Network
-            Manager will attempt to write copies of new or modified
-            Wi-Fi connection profiles, converted into the IWD
-            format, into this directory thus making IWD connection
-            properties editable.  This will only happen if the IWD
-            backend is active meaning that at least one Wi-Fi device
-            must exist.
+            If the value is "auto" (the default), IWD is queried for its
+            current state directory when it appears on D-Bus -- the
+            directory where IWD keeps its network configuration files --
+            usually /var/lib/iwd.  NetworkManager will then attempt to
+            write copies of new or modified Wi-Fi connection profiles,
+            converted into the IWD format, into this directory thus making
+            IWD connection properties editable.  NM will overwrite existing
+            files without preserving their contents.
           </para>
           <para>
-            This allows editing connection profile settings such as
-            the 802.1x configuration using Network Manager clients.
+            The path can also be overriden by pointing to a specific
+            existing and writable directory.  On the other hand setting
+            this to an empty string or any other value disables the
+            profile conversion mechanism.
+          </para>
+          <para>
+            This mechanism allows editing connection profile settings such
+            as the 802.1x configuration using NetworkManager clients.
             Without it such changes have no effect in IWD.
           </para>
         </listitem>
