@@ -998,6 +998,7 @@ fi
 %{_libexecdir}/nm-dispatcher
 %{_libexecdir}/nm-iface-helper
 %{_libexecdir}/nm-initrd-generator
+%{_libexecdir}/nm-daemon-helper
 %dir %{_libdir}/%{name}
 %dir %{nmplugindir}
 %{nmplugindir}/libnm-settings-plugin*.so

@@ -4599,6 +4599,31 @@ EXTRA_DIST += \
 	$(NULL)
 
 ###############################################################################
+# src/nm-daemon-helper
+###############################################################################
+
+libexec_PROGRAMS += src/nm-daemon-helper/nm-daemon-helper
+
+src_nm_daemon_helper_nm_daemon_helper_CPPFLAGS = \
+	$(dflt_cppflags) \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	$(NULL)
+
+src_nm_daemon_helper_nm_daemon_helper_LDFLAGS = \
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
+src_nm_daemon_helper_nm_daemon_helper_LDADD = \
+	src/libnm-std-aux/libnm-std-aux.la \
+	$(NULL)
+
+EXTRA_DIST += \
+	src/nm-daemon-helper/meson.build \
+	$(NULL)
+
+###############################################################################
 # src/nm-online
 ###############################################################################
 
