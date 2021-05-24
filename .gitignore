@@ -427,6 +427,7 @@ test-*.trs
 /src/initrd/tests/test-ibft-reader
 /src/ndisc/tests/test-ndisc-fake
 /src/ndisc/tests/test-ndisc-linux
+/src/nm-daemon-helper/nm-daemon-helper
 /src/nm-iface-helper
 /src/platform/tests/dump
 /src/platform/tests/monitor

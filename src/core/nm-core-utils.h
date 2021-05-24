@@ -420,4 +420,13 @@ guint8 nm_wifi_utils_level_to_quality(int val);
 #define NM_UTILS_ERROR_MSG_REQ_UID_UKNOWN  "Unable to determine UID of the request"
 #define NM_UTILS_ERROR_MSG_INSUFF_PRIV     "Insufficient privileges"
 
+/*****************************************************************************/
+
+void nm_utils_spawn_helper(const char *const * args,
+                           GCancellable *      cancellable,
+                           GAsyncReadyCallback callback,
+                           gpointer            cb_data);
+
+char *nm_utils_spawn_helper_finish(GAsyncResult *result, GError **error);
+
 #endif /* __NM_CORE_UTILS_H__ */
