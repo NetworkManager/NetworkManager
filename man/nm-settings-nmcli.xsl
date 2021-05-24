@@ -150,12 +150,19 @@
             Alias: <xsl:value-of select="@alias"/>
           </para>
         </xsl:if>
-        <para>
-          <xsl:value-of select="@description"/>
-          <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
-           See <xref linkend="secrets-flags"/> for flag values.
-          </xsl:if>
-        </para>
+        <xsl:choose>
+          <xsl:when test="description-docbook">
+            <xsl:copy-of select="./description-docbook/*/."/>
+          </xsl:when>
+          <xsl:otherwise>
+            <para>
+              <xsl:value-of select="@description"/>
+              <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
+              See <xref linkend="secrets-flags"/> for flag values.
+              </xsl:if>
+            </para>
+          </xsl:otherwise>
+        </xsl:choose>
         <xsl:if test="@type">
           <para>
             Format: <xsl:value-of select="@type"/>
