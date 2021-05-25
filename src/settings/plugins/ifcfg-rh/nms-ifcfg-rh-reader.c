@@ -2539,7 +2539,8 @@ make_tc_setting (shvarFile *ifcfg)
 	}
 
 	if (   nm_setting_tc_config_get_num_qdiscs (s_tc) > 0
-	    || nm_setting_tc_config_get_num_tfilters (s_tc) > 0)
+	    || nm_setting_tc_config_get_num_tfilters (s_tc) > 0
+	    || svGetValueBoolean(ifcfg, "TC_COMMIT", FALSE))
 		return NM_SETTING (s_tc);
 
 	g_object_unref (s_tc);
