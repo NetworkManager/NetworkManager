@@ -4,6 +4,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <nss.h>
 
 #include "libnm-std-aux/nm-std-aux.h"
 
@@ -46,6 +49,51 @@ cmd_version(void)
     return RETURN_SUCCESS;
 }
 
+static int
+cmd_resolve_address(void)
+{
+    nm_auto_free char *address = NULL;
+    union {
+        struct sockaddr_in  in;
+        struct sockaddr_in6 in6;
+    } sockaddr;
+    socklen_t sockaddr_size;
+    char      name[NI_MAXHOST];
+
+    address = read_arg();
+    if (!address)
+        return RETURN_INVALID_ARGS;
+
+    if (more_args())
+        return RETURN_INVALID_ARGS;
+
+    memset(&sockaddr, 0, sizeof(sockaddr));
+    __nss_configure_lookup("hosts", "dns");
+
+    if (inet_pton(AF_INET, address, &sockaddr.in.sin_addr) == 1) {
+        sockaddr.in.sin_family = AF_INET;
+        sockaddr_size          = sizeof(struct sockaddr_in);
+    } else if (inet_pton(AF_INET6, address, &sockaddr.in6.sin6_addr) == 1) {
+        sockaddr.in6.sin6_family = AF_INET6;
+        sockaddr_size            = sizeof(struct sockaddr_in6);
+    } else
+        return RETURN_INVALID_ARGS;
+
+    if (getnameinfo((struct sockaddr *) &sockaddr,
+                    sockaddr_size,
+                    name,
+                    sizeof(name),
+                    NULL,
+                    0,
+                    NI_NAMEREQD)
+        != 0)
+        return RETURN_ERROR;
+
+    printf("%s", name);
+
+    return RETURN_SUCCESS;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -55,9 +103,10 @@ main(int argc, char **argv)
     if (!cmd)
         return RETURN_INVALID_CMD;
 
-    if (nm_streq(cmd, "version")) {
+    if (nm_streq(cmd, "version"))
         return cmd_version();
-    }
+    if (nm_streq(cmd, "resolve-address"))
+        return cmd_resolve_address();
 
     return RETURN_INVALID_CMD;
 }
