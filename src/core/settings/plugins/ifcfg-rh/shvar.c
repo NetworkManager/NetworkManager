@@ -242,7 +242,7 @@ _escape_ansic(const char *source)
 /*****************************************************************************/
 
 #define _char_req_escape(ch)     NM_IN_SET(ch, '"', '\\', '$', '`')
-#define _char_req_escape_old(ch) NM_IN_SET(ch, '"', '\\', '\'', '$', '`', '~')
+#define _char_req_escape_old(ch) NM_IN_SET(ch, '"', '\\', '$', '`', '\'', '~')
 #define _char_req_quotes(ch)     NM_IN_SET(ch, ' ', '\'', '~', '\t', '|', '&', ';', '(', ')', '<', '>')
 
 const char *
@@ -251,8 +251,10 @@ svEscape(const char *s, char **to_free)
     char *new;
     gsize    mangle          = 0;
     gboolean requires_quotes = FALSE;
-    int      newlen;
-    size_t   i, j, slen;
+    gsize    n_alloc;
+    gsize    slen;
+    gsize    i;
+    gsize    j;
 
     for (slen = 0; s[slen]; slen++) {
         if (_char_req_escape(s[slen]))
@@ -272,8 +274,8 @@ svEscape(const char *s, char **to_free)
         return s;
     }
 
-    newlen = slen + mangle + 3; /* 3 is extra ""\0 */
-    new    = g_malloc(newlen);
+    n_alloc = slen + mangle + 3; /* 3 is extra ""\0 */
+    new     = g_malloc(n_alloc);
 
     j        = 0;
     new[j++] = '"';
@@ -285,7 +287,7 @@ svEscape(const char *s, char **to_free)
     new[j++] = '"';
     new[j++] = '\0';
 
-    nm_assert(j == slen + mangle + 3);
+    nm_assert(j == n_alloc);
 
     *to_free = new;
     return new;
