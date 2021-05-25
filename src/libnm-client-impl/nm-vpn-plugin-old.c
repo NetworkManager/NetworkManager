@@ -420,12 +420,12 @@ _connect_generic(NMVpnPluginOld *       plugin,
                  GVariant *             properties,
                  GVariant *             details)
 {
-    NMVpnPluginOldPrivate *priv                     = NM_VPN_PLUGIN_OLD_GET_PRIVATE(plugin);
-    NMVpnPluginOldClass *  vpn_class                = NM_VPN_PLUGIN_OLD_GET_CLASS(plugin);
-    gs_unref_object NMConnection *connection        = NULL;
-    gboolean                      success           = FALSE;
-    GError *                      error             = NULL;
-    guint                         fail_stop_timeout = 0;
+    NMVpnPluginOldPrivate *priv              = NM_VPN_PLUGIN_OLD_GET_PRIVATE(plugin);
+    NMVpnPluginOldClass *  vpn_class         = NM_VPN_PLUGIN_OLD_GET_CLASS(plugin);
+    gs_unref_object NMConnection *connection = NULL;
+    gboolean                      success    = FALSE;
+    gs_free_error GError *error              = NULL;
+    guint                 fail_stop_timeout  = 0;
 
     if (priv->state != NM_VPN_SERVICE_STATE_STOPPED && priv->state != NM_VPN_SERVICE_STATE_INIT) {
         g_dbus_method_invocation_return_error(context,
@@ -444,7 +444,6 @@ _connect_generic(NMVpnPluginOld *       plugin,
                                               NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
                                               "Invalid connection: %s",
                                               error->message);
-        g_clear_error(&error);
         return;
     }
 
@@ -479,7 +478,7 @@ _connect_generic(NMVpnPluginOld *       plugin,
         /* Add a timer to make sure we do not wait indefinitely for the successful connect. */
         connect_timer_start(plugin);
     } else {
-        g_dbus_method_invocation_take_error(context, error);
+        g_dbus_method_invocation_take_error(context, g_steal_pointer(&error));
 
         /* Stop the plugin from an idle handler so that the Connect
          * method return gets sent before the STOP StateChanged signal.
