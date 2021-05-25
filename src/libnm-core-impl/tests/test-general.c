@@ -1262,7 +1262,7 @@ test_nm_utils_escaped_tokens(void)
                         num_options);
                 g_print(">>> combined =  \"%s\"\n", combined->str);
                 g_print(">>> %c   parsed[%5d].key = \"%s\"\n",
-                        nm_streq(key, expected_key) ? ' ' : 'X',
+                        nm_streq0(key, expected_key) ? ' ' : 'X',
                         i_option,
                         key);
                 g_print(">>> %c   parsed[%5d].val = %s%s%s\n",
