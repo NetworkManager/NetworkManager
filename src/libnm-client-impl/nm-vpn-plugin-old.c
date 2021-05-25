@@ -420,12 +420,12 @@ _connect_generic(NMVpnPluginOld *       plugin,
                  GVariant *             properties,
                  GVariant *             details)
 {
-    NMVpnPluginOldPrivate *priv      = NM_VPN_PLUGIN_OLD_GET_PRIVATE(plugin);
-    NMVpnPluginOldClass *  vpn_class = NM_VPN_PLUGIN_OLD_GET_CLASS(plugin);
-    NMConnection *         connection;
-    gboolean               success           = FALSE;
-    GError *               error             = NULL;
-    guint                  fail_stop_timeout = 0;
+    NMVpnPluginOldPrivate *priv                     = NM_VPN_PLUGIN_OLD_GET_PRIVATE(plugin);
+    NMVpnPluginOldClass *  vpn_class                = NM_VPN_PLUGIN_OLD_GET_CLASS(plugin);
+    gs_unref_object NMConnection *connection        = NULL;
+    gboolean                      success           = FALSE;
+    GError *                      error             = NULL;
+    guint                         fail_stop_timeout = 0;
 
     if (priv->state != NM_VPN_SERVICE_STATE_STOPPED && priv->state != NM_VPN_SERVICE_STATE_INIT) {
         g_dbus_method_invocation_return_error(context,
@@ -445,6 +445,7 @@ _connect_generic(NMVpnPluginOld *       plugin,
                                               "Invalid connection: %s",
                                               error->message);
         g_clear_error(&error);
+        return;
     }
 
     priv->interactive = FALSE;
@@ -485,8 +486,6 @@ _connect_generic(NMVpnPluginOld *       plugin,
          */
         schedule_fail_stop(plugin, fail_stop_timeout);
     }
-
-    g_object_unref(connection);
 }
 
 static void
