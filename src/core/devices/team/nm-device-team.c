@@ -829,12 +829,12 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
                           "enslaved team port %s config not changed, not connected to teamd",
                           slave_iface);
                 } else {
-                    int   err;
-                    char *sanitized_config;
+                    gs_free char *sanitized_config = NULL;
+                    int           err;
 
-                    sanitized_config = g_strdelimit(g_strdup(config), "\r\n", ' ');
+                    sanitized_config = g_strdup(config);
+                    g_strdelimit(sanitized_config, "\r\n", ' ');
                     err = teamdctl_port_config_update_raw(priv->tdc, slave_iface, sanitized_config);
-                    g_free(sanitized_config);
                     if (err != 0) {
                         _LOGE(LOGD_TEAM,
                               "failed to update config for port %s (err=%d)",
