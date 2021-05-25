@@ -687,7 +687,7 @@ test_bond_normalize(void)
                                 ((const char *[]){"mode", "active-backup", "miimon", "1", NULL}));
     test_bond_normalize_options(
         ((const char *[]){"mode", "balance-alb", "tlb_dynamic_lb", "1", NULL}),
-        ((const char *[]){"mode", "balance-alb", NULL}));
+        ((const char *[]){"mode", "balance-alb", "tlb_dynamic_lb", "1", NULL}));
     test_bond_normalize_options(
         ((const char *[]){"mode", "balance-tlb", "tlb_dynamic_lb", "1", NULL}),
         ((const char *[]){"mode", "balance-tlb", "tlb_dynamic_lb", "1", NULL}));
