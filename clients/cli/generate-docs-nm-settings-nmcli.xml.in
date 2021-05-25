@@ -914,9 +914,9 @@
     </setting>
     <setting name="tc" >
         <property name="qdiscs"
-                  description="Array of TC queueing disciplines." />
+                  description="Array of TC queueing disciplines. When the &quot;tc&quot; setting is present, qdiscs from this property are applied upon activation. If the property is empty, all qdiscs are removed and the device will only have the default qdisc assigned by kernel according to the &quot;net.core.default_qdisc&quot; sysctl. If the &quot;tc&quot; setting is not present, NetworkManager doesn&apos;t touch the qdiscs present on the interface." />
         <property name="tfilters"
-                  description="Array of TC traffic filters." />
+                  description="Array of TC traffic filters. When the &quot;tc&quot; setting is present, filters from this property are applied upon activation. If the property is empty, NetworkManager removes all the filters. If the &quot;tc&quot; setting is not present, NetworkManager doesn&apos;t touch the filters present on the interface." />
     </setting>
     <setting name="team" >
         <property name="config"
