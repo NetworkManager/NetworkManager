@@ -575,11 +575,12 @@ _bzobj_to_string(const BzDBusObj *bzobj, char *buf, gsize len)
 #define _LOG_bzobj(bzobj, context)                           \
     G_STMT_START                                             \
     {                                                        \
-        const BzDBusObj *const _bzobj = (bzobj);             \
+        const BzDBusObj *const _bzobj   = (bzobj);           \
+        const char *const      _context = (context);         \
         char                   _buf[500];                    \
                                                              \
         _LOGT("change %-21s %s : { %s }",                    \
-              (context),                                     \
+              _context,                                      \
               _bzobj->object_path,                           \
               _bzobj_to_string(_bzobj, _buf, sizeof(_buf))); \
     }                                                        \
