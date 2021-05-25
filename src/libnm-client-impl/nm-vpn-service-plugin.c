@@ -803,29 +803,29 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
             success = TRUE; /* Got at least one value */
         }
 
-        if (strcmp(line->str, "DONE") == 0) {
+        if (nm_streq(line->str, "DONE")) {
             /* finish marker */
             break;
-        } else if (strncmp(line->str, DATA_KEY_TAG, strlen(DATA_KEY_TAG)) == 0) {
+        } else if (NM_STR_HAS_PREFIX(line->str, DATA_KEY_TAG)) {
             if (nm_clear_g_string(&key))
                 g_warning("a value expected");
             key  = g_string_new(line->str + strlen(DATA_KEY_TAG));
             str  = key;
             hash = data;
-        } else if (strncmp(line->str, DATA_VAL_TAG, strlen(DATA_VAL_TAG)) == 0) {
+        } else if (NM_STR_HAS_PREFIX(line->str, DATA_VAL_TAG)) {
             if (val || !key || hash != data) {
                 g_warning("%s not preceded by %s", DATA_VAL_TAG, DATA_KEY_TAG);
                 break;
             }
             val = g_string_new(line->str + strlen(DATA_VAL_TAG));
             str = val;
-        } else if (strncmp(line->str, SECRET_KEY_TAG, strlen(SECRET_KEY_TAG)) == 0) {
+        } else if (NM_STR_HAS_PREFIX(line->str, SECRET_KEY_TAG)) {
             if (nm_clear_g_string(&key))
                 g_warning("a value expected");
             key  = g_string_new(line->str + strlen(SECRET_KEY_TAG));
             str  = key;
             hash = secrets;
-        } else if (strncmp(line->str, SECRET_VAL_TAG, strlen(SECRET_VAL_TAG)) == 0) {
+        } else if (NM_STR_HAS_PREFIX(line->str, SECRET_VAL_TAG)) {
             if (val || !key || hash != secrets) {
                 g_warning("%s not preceded by %s", SECRET_VAL_TAG, SECRET_KEY_TAG);
                 break;
