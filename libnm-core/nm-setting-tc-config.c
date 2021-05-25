@@ -1798,8 +1798,11 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: qdiscs
-	 * variable: QDISC1(+), QDISC2(+), ...
-	 * description: Queueing disciplines
+	 * variable: QDISC1(+), QDISC2(+), ..., TC_COMMIT(+)
+	 * description: Queueing disciplines to set on the interface. When no
+	 *  QDISC1, QDISC2, ..., FILTER1, FILTER2, ... keys are present,
+	 *  NetworkManager doesn't touch qdiscs and filters present on the
+	 *  interface, unless TC_COMMIT is set to 'yes'.
 	 * example: QDISC1=ingress, QDISC2="root handle 1234: fq_codel"
 	 * ---end---
 	 */
@@ -1831,8 +1834,11 @@ nm_setting_tc_config_class_init (NMSettingTCConfigClass *klass)
 	 **/
 	/* ---ifcfg-rh---
 	 * property: qdiscs
-	 * variable: FILTER1(+), FILTER2(+), ...
-	 * description: Traffic filters
+	 * variable: FILTER1(+), FILTER2(+), ..., TC_COMMIT(+)
+	 * description: Traffic filters to set on the interface. When no
+	 *  QDISC1, QDISC2, ..., FILTER1, FILTER2, ... keys are present,
+	 *  NetworkManager doesn't touch qdiscs and filters present on the
+	 *  interface, unless TC_COMMIT is set to 'yes'.
 	 * example: FILTER1="parent ffff: matchall action simple sdata Input", ...
 	 * ---end---
 	 */
