@@ -10,6 +10,7 @@
 
 #include <signal.h>
 #include <stdlib.h>
+#include <poll.h>
 
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
@@ -779,8 +780,18 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
         nr = read(fd, &c, 1);
         if (nr < 0) {
             if (errno == EAGAIN) {
-                g_usleep(100);
-                continue;
+                struct pollfd pfd;
+                int           r;
+
+                memset(&pfd, 0, sizeof(pfd));
+                pfd.fd     = fd;
+                pfd.events = POLLIN;
+
+                r = poll(&pfd, 1, -1);
+                if (r > 0)
+                    continue;
+
+                /* error or timeout. Fall through and break. */
             }
             break;
         }
