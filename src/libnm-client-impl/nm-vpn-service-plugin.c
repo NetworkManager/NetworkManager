@@ -829,9 +829,15 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
     /* Read stdin for data and secret items until we get a DONE */
     while (1) {
         gboolean eof;
-        char     c;
+        char     c = '\0';
 
         eof = !_read_fd_buf_c(&read_buf, &c);
+
+        if (!eof && c == '\0') {
+            /* On the first '\0' char, we also assume the data is finished. Abort. */
+            read_buf.eof = TRUE;
+            eof          = TRUE;
+        }
 
         if (!eof && c != '\n') {
             g_string_append_c(line, c);
@@ -846,7 +852,10 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
             /* continuation */
             g_string_append_c(str, '\n');
             g_string_append(str, line->str + 1);
-        } else if (key && val) {
+            goto next;
+        }
+
+        if (key && val) {
             /* done a line */
             g_return_val_if_fail(hash, FALSE);
             g_hash_table_insert(hash, g_string_free(key, FALSE), g_string_free(val, FALSE));
@@ -881,6 +890,7 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
             str = val;
         }
 
+next:
         g_string_truncate(line, 0);
 
         if (eof)
