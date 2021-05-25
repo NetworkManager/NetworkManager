@@ -729,6 +729,54 @@ nm_vpn_service_plugin_secrets_required(NMVpnServicePlugin *plugin,
 
 /*****************************************************************************/
 
+typedef struct {
+    char *buf;
+    gsize n_buf;
+    int   fd;
+    bool  eof : 1;
+    char  buf_full[1024];
+} ReadFdBuf;
+
+static inline gboolean
+_read_fd_buf_c(ReadFdBuf *read_buf, char *ch)
+{
+    gssize n_read;
+
+    if (read_buf->n_buf > 0)
+        goto out_data;
+    if (read_buf->eof)
+        return FALSE;
+
+again:
+    n_read = read(read_buf->fd, read_buf->buf_full, sizeof(read_buf->buf_full));
+    if (n_read <= 0) {
+        if (n_read < 0 && errno == EAGAIN) {
+            struct pollfd pfd;
+            int           r;
+
+            memset(&pfd, 0, sizeof(pfd));
+            pfd.fd     = read_buf->fd;
+            pfd.events = POLLIN;
+
+            r = poll(&pfd, 1, -1);
+            if (r > 0)
+                goto again;
+            /* error or timeout. Fall through and set EOF. */
+        }
+        read_buf->eof = TRUE;
+        return FALSE;
+    }
+
+    read_buf->buf   = read_buf->buf_full;
+    read_buf->n_buf = n_read;
+
+out_data:
+    read_buf->n_buf--;
+    *ch = read_buf->buf[0];
+    read_buf->buf++;
+    return TRUE;
+}
+
 #define DATA_KEY_TAG   "DATA_KEY="
 #define DATA_VAL_TAG   "DATA_VAL="
 #define SECRET_KEY_TAG "SECRET_KEY="
@@ -759,8 +807,8 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
     nm_auto_free_gstring GString *key      = NULL;
     nm_auto_free_gstring GString *val      = NULL;
     nm_auto_free_gstring GString *line     = NULL;
-    char                          c;
-    GString *                     str = NULL;
+    GString *                     str      = NULL;
+    ReadFdBuf                     read_buf;
 
     if (out_data)
         g_return_val_if_fail(*out_data == NULL, FALSE);
@@ -771,31 +819,21 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
     secrets =
         g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
 
+    read_buf.buf   = NULL;
+    read_buf.n_buf = 0;
+    read_buf.fd    = fd;
+    read_buf.eof   = FALSE;
+
     line = g_string_new(NULL);
 
     /* Read stdin for data and secret items until we get a DONE */
     while (1) {
-        ssize_t nr;
+        gboolean eof;
+        char     c;
 
-        nr = read(fd, &c, 1);
-        if (nr < 0) {
-            if (errno == EAGAIN) {
-                struct pollfd pfd;
-                int           r;
+        eof = !_read_fd_buf_c(&read_buf, &c);
 
-                memset(&pfd, 0, sizeof(pfd));
-                pfd.fd     = fd;
-                pfd.events = POLLIN;
-
-                r = poll(&pfd, 1, -1);
-                if (r > 0)
-                    continue;
-
-                /* error or timeout. Fall through and break. */
-            }
-            break;
-        }
-        if (nr > 0 && c != '\n') {
+        if (!eof && c != '\n') {
             g_string_append_c(line, c);
             continue;
         }
@@ -841,7 +879,7 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
 
         g_string_truncate(line, 0);
 
-        if (nr == 0)
+        if (eof)
             break;
     }
 
