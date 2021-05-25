@@ -1810,6 +1810,15 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
      *
      * Array of TC queueing disciplines.
+     *
+     * When the #NMSettingTCConfig setting is present, qdiscs from this
+     * property are applied upon activation. If the property is empty,
+     * all qdiscs are removed and the device will only
+     * have the default qdisc assigned by kernel according to the
+     * "net.core.default_qdisc" sysctl.
+     *
+     * If the #NMSettingTCConfig setting is not present, NetworkManager
+     * doesn't touch the qdiscs present on the interface.
      **/
     /* ---ifcfg-rh---
      * property: qdiscs
@@ -1834,6 +1843,13 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
      *
      * Array of TC traffic filters.
+     *
+     * When the #NMSettingTCConfig setting is present, filters from this
+     * property are applied upon activation. If the property is empty,
+     * NetworkManager removes all the filters.
+     *
+     * If the #NMSettingTCConfig setting is not present, NetworkManager
+     * doesn't touch the filters present on the interface.
      **/
     /* ---ifcfg-rh---
      * property: qdiscs
