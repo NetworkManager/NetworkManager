@@ -11,7 +11,7 @@ The release tarballs can be found at [download.gnome.org](https://download.gnome
 
 Our mailing list is networkmanager-list@gnome.org ([archive](https://mail.gnome.org/archives/networkmanager-list/)).
 
-Find us on IRC channel `#nm` on freenode.
+Find us on IRC channel `#nm` on Libera.Chat.
 
 Report issues and send patches via [gitlab.freedesktop.org](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/)
 or our mailing list.
