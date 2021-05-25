@@ -835,6 +835,10 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
 
         if (!eof && c != '\n') {
             g_string_append_c(line, c);
+            if (line->len > 512 * 1024) {
+                /* we are about to read a huge line. That is not right, abort. */
+                break;
+            }
             continue;
         }
 
