@@ -2462,8 +2462,7 @@ test_nm_vpn_service_plugin_read_vpn_details(void)
         "DONE\n"
         "",
         READ_VPN_DETAIL_DATA({"some-key", "string\ncontinued after a line break"}, ),
-        READ_VPN_DETAIL_DATA({"key names\ncan have\ncontinuations too", "value"}, ),
-        NMTST_EXPECT_LIBNM_WARNING("DATA_VAL= not preceded by DATA_KEY="));
+        READ_VPN_DETAIL_DATA({"key names\ncan have\ncontinuations too", "value"}, ), );
 
     _do_read_vpn_details(
         ""
