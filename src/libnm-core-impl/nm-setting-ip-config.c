@@ -3291,8 +3291,10 @@ nm_ip_routing_rule_from_string(const char *                 str,
     if (!_rr_string_validate(TRUE, to_string_flags, extra_args, error))
         return NULL;
 
-    /* NM_IP_ROUTING_RULE_TO_STRING_TYPE_IPROUTE gives a string representation that is
-     * partly compatibly with iproute2. That is, the part after `ip -[46] rule add $ARGS`.
+    /* nm_ip_routing_rule_from_string() / nm_ip_routing_rule_to_string() has a string representation
+     * for rules that is partly compatibly with iproute2. That is, the part after
+     * `ip -[46] rule add $ARGS`.
+     *
      * There are differences though:
      *
      * - trying to convert an invalid rule to string may not be possible. The reason is for
@@ -3301,9 +3303,9 @@ nm_ip_routing_rule_from_string(const char *                 str,
      *   rule to string, the operation may fail or the result may itself not be parsable.
      *   Of course, valid rules can be converted to string and read back the same (round-trip).
      *
-     * - iproute2 in may regards is flexible about the command lines. For example
+     * - iproute2 in many regards is flexible about the command lines. For example
      *   - for tables it accepts table names from /etc/iproute2/rt_tables. We only
-     *     accept the special aliases "main", "local", and "default".
+     *     accept numeric values and the special aliases "main", "local", and "default".
      *   - key names like "preference" can be abbreviated to "pref", we don't do that.
      *   - the "preference"/"priority" may be unspecified, in which kernel automatically
      *     chooses an unused priority (during `ip rule add`). We don't allow for that, the
@@ -3316,11 +3318,10 @@ nm_ip_routing_rule_from_string(const char *                 str,
      *   It also supports backslash escaping (e.g. to contain whitespace), but it does
      *   not support special escape sequences. Values are taken literally, meaning
      *   "\n\ \111" gives results in "n 111".
-     *   The strings really shouldn't contain any special characters that require escaping,
-     *   but that's the rule.
-     *   This also goes together with the @allow_escaping parameter of nm_utils_strsplit_set().
+     *   The strings really shouldn't contain any special characters that require escaping.
+     *   This also goes together with nm_utils_escaped_tokens_split().
      *   If you concatenate multiple rule expressions with a delimiter, the delimiter inside
-     *   each word can be backslash escaped, and nm_utils_strsplit_set(allow_escaping=TRUE) will
+     *   each word can be backslash escaped, and nm_utils_escaped_tokens_split() will
      *   properly split the words, preserving the backslashes, which then will be removed by
      *   nm_ip_routing_rule_from_string().
      */

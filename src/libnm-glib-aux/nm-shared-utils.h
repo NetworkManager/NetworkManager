@@ -663,7 +663,7 @@ typedef enum {
      * escape characters that
      *   - precede a delimiter.
      *   - precede a backslash.
-     *   - preceed a whitespace (with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
+     *   - precede a whitespace (only with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
      *
      *  Note that with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, it is only
      *  necessary to escape the very last whitespace (if the delimiters
@@ -675,7 +675,7 @@ typedef enum {
      *
      *    - "\\$DELIMITER" (escaped delimiter)
      *    - "\\\\" (escaped backslash)
-     *    - "\\$SPACE" (escaped space) (with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
+     *    - "\\$SPACE" (escaped space) (only with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
      *
      * Note that all other escapes like "\\n" or "\\001" are left alone.
      * That makes the escaping/unescaping rules simple. Also, for the most part
