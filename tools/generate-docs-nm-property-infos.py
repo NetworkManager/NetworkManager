@@ -138,6 +138,5 @@ for one_file in source_files:
         scan_doc_comments(plugin, setting_node, one_file, start_tag, end_tag)
 
 pretty_xml(root_node, "\n")
-root_node.text = "\n  "
 
 ET.ElementTree(root_node).write(output)
