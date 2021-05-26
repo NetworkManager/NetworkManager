@@ -254,7 +254,6 @@ BuildRequires: audit-libs-devel
 BuildRequires: gtk-doc
 %endif
 BuildRequires: libudev-devel
-BuildRequires: libuuid-devel
 BuildRequires: /usr/bin/valac
 BuildRequires: libxslt
 %if %{with bluetooth}

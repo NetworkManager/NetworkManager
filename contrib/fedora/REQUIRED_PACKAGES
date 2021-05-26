@@ -65,7 +65,6 @@ install \
     libndp-devel \
     libselinux-devel \
     libtool \
-    libuuid-devel \
     make \
     meson \
     mobile-broadband-provider-info-devel \
@@ -80,6 +79,7 @@ install \
     rpm-build \
     systemd-devel \
     teamd-devel \
+    util-linux \
     vala-devel \
     vala-tools \
     valgrind \
