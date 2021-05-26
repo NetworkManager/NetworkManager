@@ -54,6 +54,12 @@ for arg in sys.argv[2:]:
 checkpoint = manager.CheckpointCreate(devList, interval, 1)
 # DESTROY_ALL
 
+try:
+    # Workaround for Python2
+    input = raw_input
+except NameError:
+    pass
+
 choice = input("Do you want to rollback [y/n]? ").lower()
 if choice == "y":
     print("Rollback checkpoint")
