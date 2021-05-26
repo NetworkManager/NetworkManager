@@ -10,10 +10,6 @@
 # The uuid of the connection to activate
 CONNECTION_UUID = "c08142a4-00d9-45bd-a3b1-7610fe146374"
 
-# UID to use. Note that NM only allows the owner of the connection to activate it.
-# UID=1000
-UID = 0
-
 import sys, os, dbus
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
@@ -126,10 +122,6 @@ def activate_connection(connection_path, device_path):
         error_handler=error_handler,
     )
 
-
-# Change the UID first if required
-if UID != 0:
-    os.setuid(UID)
 
 # Are we configured?
 if not len(CONNECTION_UUID):
