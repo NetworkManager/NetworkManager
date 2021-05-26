@@ -13,6 +13,7 @@
 #define NM_IWD_BUS_TYPE G_BUS_TYPE_SYSTEM
 #define NM_IWD_SERVICE  "net.connman.iwd"
 
+#define NM_IWD_DAEMON_INTERFACE        "net.connman.iwd.Daemon"
 #define NM_IWD_AGENT_MANAGER_INTERFACE "net.connman.iwd.AgentManager"
 #define NM_IWD_WIPHY_INTERFACE         "net.connman.iwd.Adapter"
 #define NM_IWD_DEVICE_INTERFACE        "net.connman.iwd.Device"

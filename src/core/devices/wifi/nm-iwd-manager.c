@@ -47,6 +47,7 @@ typedef struct {
     char *              agent_path;
     GHashTable *        known_networks;
     NMDeviceIwd *       last_agent_call_device;
+    char *              last_state_dir;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -452,6 +453,21 @@ iwd_config_write(GKeyFile *             config,
     return nm_utils_file_set_contents(filepath, data, length, 0600, times, NULL, error);
 }
 
+static const char *
+get_config_path(NMIwdManager *self)
+{
+    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    const char *         path = nm_config_data_get_iwd_config_path(NM_CONFIG_GET_DATA);
+
+    if (!path || nm_streq0(path, "auto"))
+        return priv->last_state_dir;
+
+    if (path[0] != '\0' && g_file_test(path, G_FILE_TEST_IS_DIR))
+        return path;
+
+    return NULL;
+}
+
 static void
 sett_conn_changed(NMSettingsConnection *  sett_conn,
                   guint                   update_reason,
@@ -487,8 +503,8 @@ sett_conn_changed(NMSettingsConnection *  sett_conn,
     if (NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
         return;
 
-    iwd_dir = nm_config_data_get_iwd_config_path(NM_CONFIG_GET_DATA);
-    if (!iwd_dir || iwd_dir[0] == '\0' || !g_file_test(iwd_dir, G_FILE_TEST_IS_DIR)) {
+    iwd_dir = get_config_path(nm_iwd_manager_get());
+    if (!iwd_dir) {
         gboolean nm_autoconnectable  = nm_setting_connection_get_autoconnect(s_conn);
         gboolean iwd_autoconnectable = get_property_bool(data->known_network, "AutoConnect", TRUE);
 
@@ -1119,8 +1135,8 @@ try_delete_file:
     if (mirror_connection(self, &id, FALSE, NULL))
         return;
 
-    iwd_dir = nm_config_data_get_iwd_config_path(NM_CONFIG_GET_DATA);
-    if (!iwd_dir || iwd_dir[0] == '\0' || !g_file_test(iwd_dir, G_FILE_TEST_IS_DIR))
+    iwd_dir = get_config_path(self);
+    if (!iwd_dir)
         return;
 
     filename  = nm_wifi_utils_get_iwd_config_filename(id.name, ssid_len, id.security);
@@ -1147,8 +1163,8 @@ connection_added(NMSettings *settings, NMSettingsConnection *sett_conn, gpointer
     if (!nm_streq(nm_settings_connection_get_connection_type(sett_conn), "802-11-wireless"))
         return;
 
-    iwd_dir = nm_config_data_get_iwd_config_path(NM_CONFIG_GET_DATA);
-    if (!iwd_dir || iwd_dir[0] == '\0' || !g_file_test(iwd_dir, G_FILE_TEST_IS_DIR))
+    iwd_dir = get_config_path(self);
+    if (!iwd_dir)
         return;
 
     /* If this is a generated connection it may be ourselves creating it and
@@ -1393,6 +1409,56 @@ object_compare_interfaces(gconstpointer a, gconstpointer b)
 }
 
 static void
+get_daemon_info_cb(GObject *source, GAsyncResult *res, gpointer user_data)
+{
+    NMIwdManager *       self = user_data;
+    NMIwdManagerPrivate *priv;
+    gs_unref_variant GVariant *properties = NULL;
+    gs_free_error GError *error           = NULL;
+    GVariantIter *        properties_iter;
+    const char *          key;
+    GVariant *            value;
+
+    properties = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), res, &error);
+    if (!properties) {
+        if (nm_utils_error_is_cancelled(error))
+            return;
+
+        nm_log_warn(LOGD_WIFI, "iwd: Daemon.GetInfo() failed: %s", error->message);
+        return;
+    }
+
+    priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+
+    if (!g_variant_is_of_type(properties, G_VARIANT_TYPE("(a{sv})"))) {
+        _LOGE("Daemon.GetInfo returned type %s instead of (a{sv})",
+              g_variant_get_type_string(properties));
+        return;
+    }
+
+    g_variant_get(properties, "(a{sv})", &properties_iter);
+
+    while (g_variant_iter_next(properties_iter, "{&sv}", &key, &value)) {
+        if (nm_streq(key, "StateDirectory")) {
+            if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)) {
+                _LOGE("Daemon.GetInfo property %s is typed '%s' instead of 's'",
+                      key,
+                      g_variant_get_type_string(value));
+                goto next;
+            }
+
+            nm_clear_g_free(&priv->last_state_dir);
+            priv->last_state_dir = g_variant_dup_string(value, NULL);
+        }
+
+next:
+        g_variant_unref(value);
+    }
+
+    g_variant_iter_free(properties_iter);
+}
+
+static void
 got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
 {
     NMIwdManager *       self  = user_data;
@@ -1429,7 +1495,8 @@ got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
     }
 
     if (_om_has_name_owner(object_manager)) {
-        GList *objects, *iter;
+        GList *         objects, *iter;
+        gs_unref_object GDBusInterface *daemon = NULL;
 
         priv->running = true;
 
@@ -1455,6 +1522,19 @@ got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
 
         if (priv->agent_id)
             register_agent(self);
+
+        daemon = g_dbus_object_manager_get_interface(object_manager,
+                                                     "/net/connman/iwd", /* IWD 1.15+ */
+                                                     NM_IWD_DAEMON_INTERFACE);
+        if (daemon)
+            g_dbus_proxy_call(G_DBUS_PROXY(daemon),
+                              "GetInfo",
+                              g_variant_new("()"),
+                              G_DBUS_CALL_FLAGS_NONE,
+                              -1,
+                              priv->cancellable,
+                              get_daemon_info_cb,
+                              self);
     }
 }
 
@@ -1614,6 +1694,8 @@ dispose(GObject *object)
     }
 
     priv->last_agent_call_device = NULL;
+
+    nm_clear_g_free(&priv->last_state_dir);
 
     G_OBJECT_CLASS(nm_iwd_manager_parent_class)->dispose(object);
 }

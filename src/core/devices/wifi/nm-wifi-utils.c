@@ -1057,7 +1057,7 @@ eap_certs_to_iwd_config(GKeyFile *      file,
                : nm_setting_802_1x_get_ca_cert_scheme(s_8021x);
     NMSetting8021xCKScheme client_cert_scheme =
         phase2 ? nm_setting_802_1x_get_phase2_client_cert_scheme(s_8021x)
-               : nm_setting_802_1x_get_ca_cert_scheme(s_8021x);
+               : nm_setting_802_1x_get_client_cert_scheme(s_8021x);
     NMSetting8021xCKScheme key_scheme;
     NMSettingSecretFlags   key_password_flags;
     const char *           ca_path = phase2 ? nm_setting_802_1x_get_phase2_ca_path(s_8021x)
