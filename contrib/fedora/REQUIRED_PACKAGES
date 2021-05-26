@@ -65,6 +65,7 @@ install \
     libndp-devel \
     libselinux-devel \
     libtool \
+    libuuid-devel \
     make \
     meson \
     mobile-broadband-provider-info-devel \
