@@ -1,0 +1,57 @@
+# Configuration for https://lgtm.com
+
+extraction:
+  cpp:
+     prepare:
+        packages:
+          - autoconf
+          - automake
+          - autopoint
+          - clang
+          - dbus
+          - dbus-x11
+          - dnsmasq
+          - git
+          - gobject-introspection
+          - gtk-doc-tools
+          - intltool
+          - iproute2
+          - iptables
+          - libaudit-dev
+          - libcurl4-gnutls-dev
+          - libdbus-1-dev
+          - libgirepository1.0-dev
+          - libglib2.0-dev
+          - libglib2.0-doc
+          - libgnutls28-dev
+          - libiw-dev
+          - libjansson-dev
+          - libjansson4
+          - libmm-glib-dev
+          - libndp-dev
+          - libnewt-dev
+          - libnss3-dev
+          - libpolkit-gobject-1-dev
+          - libreadline-dev
+          - libsystemd-dev
+          - libteam-dev
+          - libtool
+          - libudev-dev
+          - locales
+          - make
+          - meson
+          - mobile-broadband-provider-info
+          - pkg-config
+          - ppp
+          - ppp-dev
+          - python-dbus
+          - python-gi
+          - python-setuptools
+          - python3-dbus
+          - python3-gi
+          - python3-pip
+          - python3-setuptools
+          - udev
+     configure:
+        command:
+        - ./autogen.sh
