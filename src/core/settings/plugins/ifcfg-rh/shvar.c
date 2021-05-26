@@ -153,17 +153,42 @@ _escape_ansic(const char *source)
     const char *p;
     char *      dest;
     char *      q;
+    gsize       n_alloc;
 
     nm_assert(source);
 
-    p = (const char *) source;
-    /* Each source byte needs maximally four destination chars (\777) */
-    q = dest = g_malloc(strlen(source) * 4 + 1 + 3);
+    n_alloc = 4;
+    for (p = source; p[0]; p++) {
+        switch (*p) {
+        case '\b':
+        case '\f':
+        case '\n':
+        case '\r':
+        case '\t':
+        case '\v':
+        case '\\':
+        case '"':
+        case '\'':
+            n_alloc += 2;
+            break;
+        default:
+            if ((*p < ' ') || (*p >= 0177))
+                n_alloc += 4;
+            else
+                n_alloc += 1;
+            break;
+        }
+    }
+
+    dest = g_malloc(n_alloc);
+
+    q = dest;
 
     *q++ = '$';
     *q++ = '\'';
 
-    while (*p) {
+    for (p = source; p[0]; p++) {
+        nm_assert(q < &dest[n_alloc]);
         switch (*p) {
         case '\b':
             *q++ = '\\';
@@ -205,12 +230,11 @@ _escape_ansic(const char *source)
                 *q++ = *p;
             break;
         }
-        p++;
     }
     *q++ = '\'';
     *q++ = '\0';
 
-    nm_assert(q - dest <= strlen(source) * 4 + 1 + 3);
+    nm_assert(q - dest == n_alloc);
 
     return dest;
 }
@@ -218,7 +242,7 @@ _escape_ansic(const char *source)
 /*****************************************************************************/
 
 #define _char_req_escape(ch)     NM_IN_SET(ch, '"', '\\', '$', '`')
-#define _char_req_escape_old(ch) NM_IN_SET(ch, '"', '\\', '\'', '$', '`', '~')
+#define _char_req_escape_old(ch) NM_IN_SET(ch, '"', '\\', '$', '`', '\'', '~')
 #define _char_req_quotes(ch)     NM_IN_SET(ch, ' ', '\'', '~', '\t', '|', '&', ';', '(', ')', '<', '>')
 
 const char *
@@ -227,8 +251,10 @@ svEscape(const char *s, char **to_free)
     char *new;
     gsize    mangle          = 0;
     gboolean requires_quotes = FALSE;
-    int      newlen;
-    size_t   i, j, slen;
+    gsize    n_alloc;
+    gsize    slen;
+    gsize    i;
+    gsize    j;
 
     for (slen = 0; s[slen]; slen++) {
         if (_char_req_escape(s[slen]))
@@ -248,8 +274,8 @@ svEscape(const char *s, char **to_free)
         return s;
     }
 
-    newlen = slen + mangle + 3; /* 3 is extra ""\0 */
-    new    = g_malloc(newlen);
+    n_alloc = slen + mangle + 3; /* 3 is extra ""\0 */
+    new     = g_malloc(n_alloc);
 
     j        = 0;
     new[j++] = '"';
@@ -261,7 +287,7 @@ svEscape(const char *s, char **to_free)
     new[j++] = '"';
     new[j++] = '\0';
 
-    nm_assert(j == slen + mangle + 3);
+    nm_assert(j == n_alloc);
 
     *to_free = new;
     return new;

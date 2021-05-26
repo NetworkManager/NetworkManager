@@ -1137,6 +1137,18 @@ nm_clear_g_variant(GVariant **variant)
 }
 
 static inline gboolean
+nm_clear_g_string(GString **ptr)
+{
+    GString *s;
+
+    if (ptr && (s = *ptr)) {
+        *ptr = NULL;
+        g_string_free(s, TRUE);
+    };
+    return FALSE;
+}
+
+static inline gboolean
 nm_clear_g_cancellable(GCancellable **cancellable)
 {
     GCancellable *v;

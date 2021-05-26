@@ -1262,7 +1262,7 @@ test_nm_utils_escaped_tokens(void)
                         num_options);
                 g_print(">>> combined =  \"%s\"\n", combined->str);
                 g_print(">>> %c   parsed[%5d].key = \"%s\"\n",
-                        nm_streq(key, expected_key) ? ' ' : 'X',
+                        nm_streq0(key, expected_key) ? ' ' : 'X',
                         i_option,
                         key);
                 g_print(">>> %c   parsed[%5d].val = %s%s%s\n",
@@ -9102,6 +9102,7 @@ _do_test_utils_str_utf8safe_unescape(const char *str, const char *expected, gsiz
         /* there are no embedded NULs. Check that nm_utils_str_utf8safe_unescape() yields the same result. */
         s = nm_utils_str_utf8safe_unescape(str, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &str_free_1);
         g_assert_cmpstr(s, ==, expected);
+        g_assert(str);
         if (strchr(str, '\\')) {
             g_assert(str_free_1 != str);
             g_assert(s == str_free_1);

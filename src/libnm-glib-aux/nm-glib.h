@@ -693,4 +693,18 @@ _nm_g_cancellable_reset(GCancellable *cancellable);
 
 /*****************************************************************************/
 
+/* Coverity gets confused by g_strstrip(g_strdup(foo)). Reimplement the macro
+ * in a way that hopefully works better to avoid the false positive. */
+#undef g_strstrip
+#define g_strstrip(str)           \
+    ({                            \
+        char *const _str = (str); \
+                                  \
+        g_strchug(_str);          \
+        g_strchomp(_str);         \
+        _str;                     \
+    })
+
+/*****************************************************************************/
+
 #endif /* __NM_GLIB_H__ */

@@ -10,6 +10,7 @@
 
 #include <signal.h>
 #include <stdlib.h>
+#include <poll.h>
 
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
@@ -728,6 +729,54 @@ nm_vpn_service_plugin_secrets_required(NMVpnServicePlugin *plugin,
 
 /*****************************************************************************/
 
+typedef struct {
+    char *buf;
+    gsize n_buf;
+    int   fd;
+    bool  eof : 1;
+    char  buf_full[1024];
+} ReadFdBuf;
+
+static inline gboolean
+_read_fd_buf_c(ReadFdBuf *read_buf, char *ch)
+{
+    gssize n_read;
+
+    if (read_buf->n_buf > 0)
+        goto out_data;
+    if (read_buf->eof)
+        return FALSE;
+
+again:
+    n_read = read(read_buf->fd, read_buf->buf_full, sizeof(read_buf->buf_full));
+    if (n_read <= 0) {
+        if (n_read < 0 && errno == EAGAIN) {
+            struct pollfd pfd;
+            int           r;
+
+            memset(&pfd, 0, sizeof(pfd));
+            pfd.fd     = read_buf->fd;
+            pfd.events = POLLIN;
+
+            r = poll(&pfd, 1, -1);
+            if (r > 0)
+                goto again;
+            /* error or timeout. Fall through and set EOF. */
+        }
+        read_buf->eof = TRUE;
+        return FALSE;
+    }
+
+    read_buf->buf   = read_buf->buf_full;
+    read_buf->n_buf = n_read;
+
+out_data:
+    read_buf->n_buf--;
+    *ch = read_buf->buf[0];
+    read_buf->buf++;
+    return TRUE;
+}
+
 #define DATA_KEY_TAG   "DATA_KEY="
 #define DATA_VAL_TAG   "DATA_VAL="
 #define SECRET_KEY_TAG "SECRET_KEY="
@@ -758,9 +807,8 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
     nm_auto_free_gstring GString *key      = NULL;
     nm_auto_free_gstring GString *val      = NULL;
     nm_auto_free_gstring GString *line     = NULL;
-    char                          c;
-
-    GString *str = NULL;
+    GString *                     str      = NULL;
+    ReadFdBuf                     read_buf;
 
     if (out_data)
         g_return_val_if_fail(*out_data == NULL, FALSE);
@@ -771,22 +819,32 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
     secrets =
         g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, (GDestroyNotify) nm_free_secret);
 
+    read_buf.buf   = NULL;
+    read_buf.n_buf = 0;
+    read_buf.fd    = fd;
+    read_buf.eof   = FALSE;
+
     line = g_string_new(NULL);
 
     /* Read stdin for data and secret items until we get a DONE */
     while (1) {
-        ssize_t nr;
+        gboolean eof;
+        char     c = '\0';
 
-        nr = read(fd, &c, 1);
-        if (nr < 0) {
-            if (errno == EAGAIN) {
-                g_usleep(100);
-                continue;
-            }
-            break;
+        eof = !_read_fd_buf_c(&read_buf, &c);
+
+        if (!eof && c == '\0') {
+            /* On the first '\0' char, we also assume the data is finished. Abort. */
+            read_buf.eof = TRUE;
+            eof          = TRUE;
         }
-        if (nr > 0 && c != '\n') {
+
+        if (!eof && c != '\n') {
             g_string_append_c(line, c);
+            if (line->len > 512 * 1024) {
+                /* we are about to read a huge line. That is not right, abort. */
+                break;
+            }
             continue;
         }
 
@@ -794,7 +852,10 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
             /* continuation */
             g_string_append_c(str, '\n');
             g_string_append(str, line->str + 1);
-        } else if (key && val) {
+            goto next;
+        }
+
+        if (key && val) {
             /* done a line */
             g_return_val_if_fail(hash, FALSE);
             g_hash_table_insert(hash, g_string_free(key, FALSE), g_string_free(val, FALSE));
@@ -804,48 +865,35 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
             success = TRUE; /* Got at least one value */
         }
 
-        if (strcmp(line->str, "DONE") == 0) {
+        if (nm_streq(line->str, "DONE")) {
             /* finish marker */
             break;
-        } else if (strncmp(line->str, DATA_KEY_TAG, strlen(DATA_KEY_TAG)) == 0) {
-            if (key != NULL) {
-                g_warning("a value expected");
-                g_string_free(key, TRUE);
-            }
+        } else if (NM_STR_HAS_PREFIX(line->str, DATA_KEY_TAG)) {
+            nm_clear_g_string(&key);
             key  = g_string_new(line->str + strlen(DATA_KEY_TAG));
             str  = key;
             hash = data;
-        } else if (strncmp(line->str, DATA_VAL_TAG, strlen(DATA_VAL_TAG)) == 0) {
-            if (val != NULL)
-                g_string_free(val, TRUE);
-            if (val || !key || hash != data) {
-                g_warning("%s not preceded by %s", DATA_VAL_TAG, DATA_KEY_TAG);
+        } else if (NM_STR_HAS_PREFIX(line->str, DATA_VAL_TAG)) {
+            if (val || !key || hash != data)
                 break;
-            }
             val = g_string_new(line->str + strlen(DATA_VAL_TAG));
             str = val;
-        } else if (strncmp(line->str, SECRET_KEY_TAG, strlen(SECRET_KEY_TAG)) == 0) {
-            if (key != NULL) {
-                g_warning("a value expected");
-                g_string_free(key, TRUE);
-            }
+        } else if (NM_STR_HAS_PREFIX(line->str, SECRET_KEY_TAG)) {
+            nm_clear_g_string(&key);
             key  = g_string_new(line->str + strlen(SECRET_KEY_TAG));
             str  = key;
             hash = secrets;
-        } else if (strncmp(line->str, SECRET_VAL_TAG, strlen(SECRET_VAL_TAG)) == 0) {
-            if (val != NULL)
-                g_string_free(val, TRUE);
-            if (val || !key || hash != secrets) {
-                g_warning("%s not preceded by %s", SECRET_VAL_TAG, SECRET_KEY_TAG);
+        } else if (NM_STR_HAS_PREFIX(line->str, SECRET_VAL_TAG)) {
+            if (val || !key || hash != secrets)
                 break;
-            }
             val = g_string_new(line->str + strlen(SECRET_VAL_TAG));
             str = val;
         }
 
+next:
         g_string_truncate(line, 0);
 
-        if (nr == 0)
+        if (eof)
             break;
     }
 
