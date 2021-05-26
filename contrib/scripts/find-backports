@@ -325,7 +325,6 @@ if __name__ == "__main__":
         if not is_back:
             extra2.append(c)
 
-    commits_good = list(fixing_commits)
     commits_good = extra2
 
     commits_good = git_commit_sorted(commits_good)
