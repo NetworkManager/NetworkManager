@@ -175,7 +175,7 @@ t_{{distro.name}}:{{version}}:
     {% endif %}
   needs:
     - "{{distro.name}}:{{version}}@container-prep"
-{% if not version in distro.always and (distro.name != pages_build.name or version != pages_build.version) %}
+{% if not version in distro.get('always', []) and (distro.name != pages_build.name or version != pages_build.version) %}
   when: manual
 {% endif %}
 {% endfor %}
