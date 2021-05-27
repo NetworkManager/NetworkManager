@@ -880,7 +880,7 @@ nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_l
         n_data--;
 
     if (n_data > 0) {
-        if (memchr(data, n_data, '\0')) {
+        if (memchr(data, '\0', n_data)) {
             /* we accept trailing NUL, but none in between.
              *
              * https://tools.ietf.org/html/rfc2132#section-2
