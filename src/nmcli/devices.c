@@ -1348,7 +1348,7 @@ fill_output_access_point(gpointer data, gpointer user_data)
     set_val_str(arr, 7, bitrate_str);
     set_val_str(arr, 8, strength_str);
     set_val_strc(arr, 9, sig_bars);
-    set_val_str(arr, 10, security_str->str);
+    set_val_str(arr, 10, g_string_free(security_str, FALSE));
     set_val_str(arr, 11, wpa_flags_str);
     set_val_str(arr, 12, rsn_flags_str);
     set_val_strc(arr, 13, info->device);
@@ -1363,8 +1363,6 @@ fill_output_access_point(gpointer data, gpointer user_data)
         arr[15].color = NM_META_COLOR_CONNECTION_ACTIVATED;
 
     g_ptr_array_add(info->output_data, arr);
-
-    g_string_free(security_str, FALSE);
 }
 
 static char *
@@ -1442,13 +1440,11 @@ print_bond_bridge_info(NMDevice *  device,
 
     arr = nmc_dup_fields_array(tmpl, NMC_OF_FLAG_SECTION_PREFIX);
     set_val_strc(arr, 0, group_prefix); /* i.e. BOND, TEAM, BRIDGE */
-    set_val_str(arr, 1, slaves_str->str);
+    set_val_str(arr, 1, g_string_free(slaves_str, FALSE));
     g_ptr_array_add(out.output_data, arr);
 
     print_data_prepare_width(out.output_data);
     print_data(&nmc->nmc_config, &nmc->pager_data, out_indices, NULL, 0, &out);
-
-    g_string_free(slaves_str, FALSE);
 
     return TRUE;
 }
@@ -1507,14 +1503,12 @@ print_team_info(NMDevice *device, NmCli *nmc, const char *group_prefix, const ch
 
     arr = nmc_dup_fields_array(tmpl, NMC_OF_FLAG_SECTION_PREFIX);
     set_val_strc(arr, 0, group_prefix); /* TEAM */
-    set_val_str(arr, 1, slaves_str->str);
+    set_val_str(arr, 1, g_string_free(slaves_str, FALSE));
     set_val_str(arr, 2, sanitize_team_config(nm_device_team_get_config(NM_DEVICE_TEAM(device))));
     g_ptr_array_add(out.output_data, arr);
 
     print_data_prepare_width(out.output_data);
     print_data(&nmc->nmc_config, &nmc->pager_data, out_indices, NULL, 0, &out);
-
-    g_string_free(slaves_str, FALSE);
 
     return TRUE;
 }
