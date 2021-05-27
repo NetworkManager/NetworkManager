@@ -614,7 +614,7 @@ def do_apply(nmc, device, ids_arg, do_test):
         die("FAILURE to get applied connection after reapply")
 
     _print()
-    connection_print(connection, MODE_APPLY, [], device.get_path(), prefix="AFTER: ")
+    connection_print(connection_after, MODE_APPLY, [], device.get_path(), prefix="AFTER: ")
     _print()
 
     ovs_print_external_ids("AFTER-OVS-VSCTL: ")
