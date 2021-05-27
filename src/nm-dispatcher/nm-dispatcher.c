@@ -361,8 +361,8 @@ complete_script(ScriptInfo *script)
 static void
 script_watch_cb(GPid pid, int status, gpointer user_data)
 {
-    ScriptInfo *script = user_data;
-    guint       err;
+    ScriptInfo *  script      = user_data;
+    gs_free char *status_desc = NULL;
 
     g_assert(pid == script->pid);
 
@@ -372,23 +372,11 @@ script_watch_cb(GPid pid, int status, gpointer user_data)
     if (!script->wait)
         script->request->num_scripts_nowait--;
 
-    if (WIFEXITED(status)) {
-        err = WEXITSTATUS(status);
-        if (err == 0)
-            script->result = DISPATCH_RESULT_SUCCESS;
-        else {
-            script->error =
-                g_strdup_printf("Script '%s' exited with error status %d.", script->script, err);
-        }
-    } else if (WIFSTOPPED(status)) {
-        script->error = g_strdup_printf("Script '%s' stopped unexpectedly with signal %d.",
-                                        script->script,
-                                        WSTOPSIG(status));
-    } else if (WIFSIGNALED(status)) {
-        script->error =
-            g_strdup_printf("Script '%s' died with signal %d", script->script, WTERMSIG(status));
+    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+        script->result = DISPATCH_RESULT_SUCCESS;
     } else {
-        script->error = g_strdup_printf("Script '%s' died from an unknown cause", script->script);
+        status_desc   = nm_utils_get_process_exit_status_desc(status);
+        script->error = g_strdup_printf("Script '%s' %s.", script->script, status_desc);
     }
 
     if (script->result == DISPATCH_RESULT_SUCCESS) {
