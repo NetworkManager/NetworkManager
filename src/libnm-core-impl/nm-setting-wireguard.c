@@ -1863,10 +1863,11 @@ clear_secrets(const NMSettInfoSetting *        sett_info,
                 gs_free char *name_free = NULL;
                 const char *  name;
 
-                /* only stack-allocate (alloca) a few times. */
-                if (j++ < 5)
+                if (j++ < 5) {
+                    /* we use alloca() inside a loop here, but it is guarded to happen at most
+                     * a few times. */
                     name = peers_psk_get_secret_name_a(peer->public_key, &name_free);
-                else {
+                } else {
                     name_free = peers_psk_get_secret_name_dup(peer->public_key);
                     name      = name_free;
                 }
