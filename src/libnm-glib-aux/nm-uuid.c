@@ -129,6 +129,18 @@ nm_uuid_generate_random(NMUuid *out_uuid)
 
 /*****************************************************************************/
 
+gboolean
+nm_uuid_is_valid_full(const char *str)
+{
+    /* The only reason why this exists is that nm_uuid_is_valid() is an inline function.
+     * If you need to forward declare the function, that won't work.
+     *
+     * Usually, you wouldn't use this variant! */
+    return nm_uuid_is_valid(str);
+}
+
+/*****************************************************************************/
+
 /**
  * nm_uuid_is_valid_nmlegacy()
  * @str: the string to check whether it's a valid UUID.
