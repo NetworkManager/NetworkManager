@@ -540,8 +540,7 @@ _vlan_xgress_qos_mappings_cpy(guint *                 dst_n_map,
                || _vlan_xgress_qos_mappings_cmp(src_n_map, *dst_map, src_map) != 0) {
         nm_clear_g_free(dst_map);
         *dst_n_map = src_n_map;
-        if (src_n_map > 0)
-            *dst_map = nm_memdup(src_map, sizeof(*src_map) * src_n_map);
+        *dst_map = nm_memdup(src_map, sizeof(*src_map) * src_n_map);
     }
 }
 
