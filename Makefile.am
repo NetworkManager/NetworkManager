@@ -2071,7 +2071,7 @@ libexec_PROGRAMS += \
 noinst_LTLIBRARIES += \
 	src/core/libNetworkManagerBase.la \
 	src/core/libNetworkManager.la \
-	src/core/libnm-systemd-core.la \
+	src/libnm-systemd-core/libnm-systemd-core.la \
 	$(NULL)
 
 check-config-options:
@@ -2250,102 +2250,98 @@ EXTRA_DIST += src/libnm-systemd-shared/meson.build
 
 ###############################################################################
 
-src_core_libnm_systemd_core_la_cppflags = \
+src_libnm_systemd_core_libnm_systemd_core_la_cppflags = \
 	$(libsystemd_cppflags) \
-	-I$(builddir)/src/libnm-core-public \
-	-I$(srcdir)/src/libnm-core-public \
-	-I$(srcdir)/src \
-	-I$(srcdir)/src/core \
-	-I$(srcdir)/src/core/systemd/sd-adapt-core \
-	-I$(srcdir)/src/core/systemd/src/systemd \
-	-I$(srcdir)/src/core/systemd/src/libsystemd-network \
-	-I$(srcdir)/src/core/systemd/src/libsystemd/sd-event \
+	-I$(srcdir)/src/libnm-systemd-core/sd-adapt-core \
+	-I$(srcdir)/src/libnm-systemd-core/src/systemd \
+	-I$(srcdir)/src/libnm-systemd-core/src/libsystemd-network \
+	-I$(srcdir)/src/libnm-systemd-core/src/libsystemd/sd-event \
 	$(NULL)
 
-src_core_libnm_systemd_core_la_libadd = \
+src_libnm_systemd_core_libnm_systemd_core_la_libadd = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
 
-src_core_libnm_systemd_core_la_SOURCES = \
-	src/core/systemd/nm-default-systemd.h \
-	src/core/systemd/nm-sd-utils-core.c \
-	src/core/systemd/nm-sd-utils-core.h \
-	src/core/systemd/nm-sd.c \
-	src/core/systemd/nm-sd.h \
-	src/core/systemd/nm-sd-utils-dhcp.h \
-	src/core/systemd/nm-sd-utils-dhcp.c \
-	src/core/systemd/sd-adapt-core/condition.h \
-	src/core/systemd/sd-adapt-core/conf-parser.h \
-	src/core/systemd/sd-adapt-core/device-util.h \
-	src/core/systemd/sd-adapt-core/khash.h \
-	src/core/systemd/sd-adapt-core/network-util.h \
-	src/core/systemd/sd-adapt-core/nm-sd-adapt-core.c \
-	src/core/systemd/sd-adapt-core/nm-sd-adapt-core.h \
-	src/core/systemd/sd-adapt-core/sd-daemon.h \
-	src/core/systemd/sd-adapt-core/sd-device.h \
-	src/core/systemd/sd-adapt-core/udev-util.h \
-	src/core/systemd/src/libsystemd-network/arp-util.c \
-	src/core/systemd/src/libsystemd-network/arp-util.h \
-	src/core/systemd/src/libsystemd-network/dhcp-identifier.c \
-	src/core/systemd/src/libsystemd-network/dhcp-identifier.h \
-	src/core/systemd/src/libsystemd-network/dhcp-internal.h \
-	src/core/systemd/src/libsystemd-network/dhcp-lease-internal.h \
-	src/core/systemd/src/libsystemd-network/dhcp-network.c \
-	src/core/systemd/src/libsystemd-network/dhcp-option.c \
-	src/core/systemd/src/libsystemd-network/dhcp-packet.c \
-	src/core/systemd/src/libsystemd-network/dhcp-protocol.h \
-	src/core/systemd/src/libsystemd-network/dhcp6-internal.h \
-	src/core/systemd/src/libsystemd-network/dhcp6-lease-internal.h \
-	src/core/systemd/src/libsystemd-network/dhcp6-network.c \
-	src/core/systemd/src/libsystemd-network/dhcp6-option.c \
-	src/core/systemd/src/libsystemd-network/dhcp6-protocol.h \
-	src/core/systemd/src/libsystemd-network/lldp-internal.h \
-	src/core/systemd/src/libsystemd-network/lldp-neighbor.c \
-	src/core/systemd/src/libsystemd-network/lldp-neighbor.h \
-	src/core/systemd/src/libsystemd-network/lldp-network.c \
-	src/core/systemd/src/libsystemd-network/lldp-network.h \
-	src/core/systemd/src/libsystemd-network/network-common.c \
-	src/core/systemd/src/libsystemd-network/network-common.h \
-	src/core/systemd/src/libsystemd-network/network-internal.c \
-	src/core/systemd/src/libsystemd-network/network-internal.h \
-	src/core/systemd/src/libsystemd-network/sd-dhcp-client.c \
-	src/core/systemd/src/libsystemd-network/sd-dhcp-lease.c \
-	src/core/systemd/src/libsystemd-network/sd-dhcp6-client.c \
-	src/core/systemd/src/libsystemd-network/sd-dhcp6-lease.c \
-	src/core/systemd/src/libsystemd-network/sd-ipv4acd.c \
-	src/core/systemd/src/libsystemd-network/sd-ipv4ll.c \
-	src/core/systemd/src/libsystemd-network/sd-lldp.c \
-	src/core/systemd/src/libsystemd/sd-event/event-source.h \
-	src/core/systemd/src/libsystemd/sd-event/event-util.c \
-	src/core/systemd/src/libsystemd/sd-event/event-util.h \
-	src/core/systemd/src/libsystemd/sd-event/sd-event.c \
-	src/core/systemd/src/libsystemd/sd-id128/id128-util.c \
-	src/core/systemd/src/libsystemd/sd-id128/id128-util.h \
-	src/core/systemd/src/libsystemd/sd-id128/sd-id128.c \
-	src/core/systemd/src/systemd/_sd-common.h \
-	src/core/systemd/src/systemd/sd-dhcp-client.h \
-	src/core/systemd/src/systemd/sd-dhcp-lease.h \
-	src/core/systemd/src/systemd/sd-dhcp-option.h \
-	src/core/systemd/src/systemd/sd-dhcp6-client.h \
-	src/core/systemd/src/systemd/sd-dhcp6-lease.h \
-	src/core/systemd/src/systemd/sd-dhcp6-option.h \
-	src/core/systemd/src/systemd/sd-event.h \
-	src/core/systemd/src/systemd/sd-id128.h \
-	src/core/systemd/src/systemd/sd-ipv4acd.h \
-	src/core/systemd/src/systemd/sd-ipv4ll.h \
-	src/core/systemd/src/systemd/sd-lldp.h \
-	src/core/systemd/src/systemd/sd-ndisc.h \
+src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
+	src/libnm-systemd-core/nm-default-systemd-core.h \
+	src/libnm-systemd-core/nm-sd-utils-core.c \
+	src/libnm-systemd-core/nm-sd-utils-core.h \
+	src/libnm-systemd-core/nm-sd.c \
+	src/libnm-systemd-core/nm-sd.h \
+	src/libnm-systemd-core/nm-sd-utils-dhcp.h \
+	src/libnm-systemd-core/nm-sd-utils-dhcp.c \
+	src/libnm-systemd-core/sd-adapt-core/condition.h \
+	src/libnm-systemd-core/sd-adapt-core/conf-parser.h \
+	src/libnm-systemd-core/sd-adapt-core/device-util.h \
+	src/libnm-systemd-core/sd-adapt-core/khash.h \
+	src/libnm-systemd-core/sd-adapt-core/network-util.h \
+	src/libnm-systemd-core/sd-adapt-core/nm-sd-adapt-core.c \
+	src/libnm-systemd-core/sd-adapt-core/nm-sd-adapt-core.h \
+	src/libnm-systemd-core/sd-adapt-core/sd-daemon.h \
+	src/libnm-systemd-core/sd-adapt-core/sd-device.h \
+	src/libnm-systemd-core/sd-adapt-core/udev-util.h \
+	src/libnm-systemd-core/src/libsystemd-network/arp-util.c \
+	src/libnm-systemd-core/src/libsystemd-network/arp-util.h \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp-identifier.c \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp-identifier.h \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp-internal.h \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp-lease-internal.h \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp-network.c \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp-option.c \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp-packet.c \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp-protocol.h \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp6-internal.h \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp6-lease-internal.h \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp6-network.c \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp6-option.c \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp6-protocol.h \
+	src/libnm-systemd-core/src/libsystemd-network/lldp-internal.h \
+	src/libnm-systemd-core/src/libsystemd-network/lldp-neighbor.c \
+	src/libnm-systemd-core/src/libsystemd-network/lldp-neighbor.h \
+	src/libnm-systemd-core/src/libsystemd-network/lldp-network.c \
+	src/libnm-systemd-core/src/libsystemd-network/lldp-network.h \
+	src/libnm-systemd-core/src/libsystemd-network/network-common.c \
+	src/libnm-systemd-core/src/libsystemd-network/network-common.h \
+	src/libnm-systemd-core/src/libsystemd-network/network-internal.c \
+	src/libnm-systemd-core/src/libsystemd-network/network-internal.h \
+	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp-client.c \
+	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp-lease.c \
+	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp6-client.c \
+	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp6-lease.c \
+	src/libnm-systemd-core/src/libsystemd-network/sd-ipv4acd.c \
+	src/libnm-systemd-core/src/libsystemd-network/sd-ipv4ll.c \
+	src/libnm-systemd-core/src/libsystemd-network/sd-lldp.c \
+	src/libnm-systemd-core/src/libsystemd/sd-event/event-source.h \
+	src/libnm-systemd-core/src/libsystemd/sd-event/event-util.c \
+	src/libnm-systemd-core/src/libsystemd/sd-event/event-util.h \
+	src/libnm-systemd-core/src/libsystemd/sd-event/sd-event.c \
+	src/libnm-systemd-core/src/libsystemd/sd-id128/id128-util.c \
+	src/libnm-systemd-core/src/libsystemd/sd-id128/id128-util.h \
+	src/libnm-systemd-core/src/libsystemd/sd-id128/sd-id128.c \
+	src/libnm-systemd-core/src/systemd/_sd-common.h \
+	src/libnm-systemd-core/src/systemd/sd-dhcp-client.h \
+	src/libnm-systemd-core/src/systemd/sd-dhcp-lease.h \
+	src/libnm-systemd-core/src/systemd/sd-dhcp-option.h \
+	src/libnm-systemd-core/src/systemd/sd-dhcp6-client.h \
+	src/libnm-systemd-core/src/systemd/sd-dhcp6-lease.h \
+	src/libnm-systemd-core/src/systemd/sd-dhcp6-option.h \
+	src/libnm-systemd-core/src/systemd/sd-event.h \
+	src/libnm-systemd-core/src/systemd/sd-id128.h \
+	src/libnm-systemd-core/src/systemd/sd-ipv4acd.h \
+	src/libnm-systemd-core/src/systemd/sd-ipv4ll.h \
+	src/libnm-systemd-core/src/systemd/sd-lldp.h \
+	src/libnm-systemd-core/src/systemd/sd-ndisc.h \
 	$(NULL)
 
-src_core_libnm_systemd_core_la_CPPFLAGS = $(src_core_libnm_systemd_core_la_cppflags)
-src_core_libnm_systemd_core_la_LIBADD = \
+src_libnm_systemd_core_libnm_systemd_core_la_CPPFLAGS = $(src_libnm_systemd_core_libnm_systemd_core_la_cppflags)
+src_libnm_systemd_core_libnm_systemd_core_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
 	$(NULL)
-$(src_core_libnm_systemd_core_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_libnm_systemd_core_libnm_systemd_core_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
 
-EXTRA_DIST += src/core/systemd/meson.build
+EXTRA_DIST += src/libnm-systemd-core/meson.build
 
 ###############################################################################
 
@@ -2609,7 +2605,7 @@ src_core_libNetworkManager_la_LIBADD = \
 	src/libnm-udev-aux/libnm-udev-aux.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	src/core/libnm-systemd-core.la \
+	src/libnm-systemd-core/libnm-systemd-core.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	src/n-acd/libn-acd.la \
 	src/n-dhcp4/libn-dhcp4.la \
@@ -2723,7 +2719,7 @@ src_core_nm_iface_helper_LDADD = \
 	src/libnm-udev-aux/libnm-udev-aux.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
-	src/core/libnm-systemd-core.la \
+	src/libnm-systemd-core/libnm-systemd-core.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
 	src/n-acd/libn-acd.la \
 	src/n-dhcp4/libn-dhcp4.la \
@@ -4423,7 +4419,7 @@ $(src_core_tests_test_utils_OBJECTS): $(src_libnm_core_public_mkenums_h)
 $(src_core_tests_test_wired_defname_OBJECTS): $(src_libnm_core_public_mkenums_h)
 
 src_core_tests_test_systemd_CPPFLAGS = \
-	$(src_core_libnm_systemd_core_la_cppflags) \
+	$(src_libnm_systemd_core_libnm_systemd_core_la_cppflags) \
 	$(NULL)
 
 src_core_tests_test_systemd_LDFLAGS = \
@@ -4431,8 +4427,9 @@ src_core_tests_test_systemd_LDFLAGS = \
 	$(NULL)
 
 src_core_tests_test_systemd_LDADD = \
-	src/core/libnm-systemd-core.la \
+	src/libnm-systemd-core/libnm-systemd-core.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \

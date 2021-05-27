@@ -1,12 +1,5 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-incs = include_directories(
-  'sd-adapt-core',
-  'src/libsystemd-network',
-  'src/libsystemd/sd-event',
-  'src/systemd',
-)
-
 libnm_systemd_core = static_library(
   'nm-systemd-core',
   sources: files(
@@ -38,28 +31,26 @@ libnm_systemd_core = static_library(
     'sd-adapt-core/nm-sd-adapt-core.c',
   ),
   include_directories: [
-    incs,
+    include_directories(
+      'sd-adapt-core',
+      'src/libsystemd-network',
+      'src/libsystemd/sd-event',
+      'src/systemd',
+    ),
     top_inc,
     src_inc,
-    src_core_inc,
   ],
   dependencies: [
-    libnm_core_public_dep,
     libnm_systemd_shared_dep_inc,
     glib_dep,
   ],
 )
 
-libnm_systemd_core_dep = declare_dependency(
-  include_directories: [
-    incs,
-  ],
-  dependencies: [
-    glib_dep,
-  ],
-  link_with: [
-    libnm_core_impl,
-    libnm_systemd_shared,
-    libnm_systemd_core,
-  ],
+libnm_systemd_core_dep_inc = declare_dependency(
+  include_directories: include_directories(
+    'sd-adapt-core',
+    'src/libsystemd-network',
+    'src/libsystemd/sd-event',
+    'src/systemd',
+  ),
 )

@@ -27,7 +27,7 @@
 #include "nm-dhcp-client-logging.h"
 #include "n-dhcp4/src/n-dhcp4.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
-#include "systemd/nm-sd-utils-dhcp.h"
+#include "libnm-systemd-core/nm-sd-utils-dhcp.h"
 
 /*****************************************************************************/
 
@@ -949,7 +949,7 @@ nettools_create(NMDhcpNettools *self, GError **error)
                      NM_DHCP_CLIENT_FLAGS_REQUEST_BROADCAST));
     r = n_dhcp4_client_config_set_client_id(config,
                                             client_id_arr,
-                                            NM_MIN(client_id_len, 1 + _NM_SD_MAX_CLIENT_ID_LEN));
+                                            NM_MIN(client_id_len, 1 + _NM_MAX_CLIENT_ID_LEN));
     if (r) {
         set_error_nettools(error, r, "failed to set client-id");
         return FALSE;

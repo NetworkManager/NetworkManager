@@ -6,7 +6,7 @@
 #ifndef __NM_SD_ADAPT_CORE_H__
 #define __NM_SD_ADAPT_CORE_H__
 
-#include "src/core/systemd/nm-default-systemd.h"
+#include "libnm-systemd-core/nm-default-systemd-core.h"
 
 #include <stdbool.h>
 #include <sys/resource.h>
@@ -56,6 +56,8 @@
             #error neither secure_getenv nor __secure_getenv is available
         #endif
     #endif
+
+    #include "libnm-base/nm-base.h"
 
 /*****************************************************************************/
 

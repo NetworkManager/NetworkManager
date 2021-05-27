@@ -34,7 +34,7 @@
 #include "nm-dbus-object.h"
 #include "nm-connectivity.h"
 #include "dns/nm-dns-manager.h"
-#include "systemd/nm-sd.h"
+#include "libnm-systemd-core/nm-sd.h"
 #include "nm-netns.h"
 
 #if !defined(NM_DIST_VERSION)

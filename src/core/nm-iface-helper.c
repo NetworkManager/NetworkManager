@@ -28,7 +28,7 @@
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-ip6-config.h"
-#include "systemd/nm-sd.h"
+#include "libnm-systemd-core/nm-sd.h"
 
 #if !defined(NM_DIST_VERSION)
     #define NM_DIST_VERSION VERSION

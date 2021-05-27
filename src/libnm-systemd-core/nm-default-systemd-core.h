@@ -8,7 +8,7 @@
 
 /*****************************************************************************/
 
-#include "nm-default-daemon.h"
+#include "libnm-glib-aux/nm-default-glib.h"
 
 #undef NETWORKMANAGER_COMPILATION
 #define NETWORKMANAGER_COMPILATION NM_NETWORKMANAGER_COMPILATION_SYSTEMD

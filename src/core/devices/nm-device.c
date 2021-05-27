@@ -68,7 +68,7 @@
 #include "dns/nm-dns-manager.h"
 #include "nm-acd-manager.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "systemd/nm-sd.h"
+#include "libnm-systemd-core/nm-sd.h"
 #include "nm-lldp-listener.h"
 #include "nm-audit-manager.h"
 #include "nm-connectivity.h"

@@ -3,68 +3,12 @@
  * Copyright (C) 2016 Red Hat, Inc.
  */
 
-#include "src/core/systemd/nm-default-systemd.h"
+#include "libnm-systemd-core/nm-default-systemd-core.h"
 
-#include "systemd/nm-sd.h"
+#include "libnm-systemd-core/nm-sd.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
-#include "nm-test-utils-core.h"
-
-/*****************************************************************************
- * Stub implementations of libNetworkManagerBase symbols
- *****************************************************************************/
-
-gboolean
-nm_utils_get_testing_initialized(void)
-{
-    return TRUE;
-}
-
-void
-_nm_utils_set_testing(NMUtilsTestFlags flags)
-{
-    g_assert_not_reached();
-}
-
-gint32
-nm_utils_get_monotonic_timestamp_sec(void)
-{
-    return 1;
-}
-
-NMLogDomain _nm_logging_enabled_state[_LOGL_N_REAL];
-
-gboolean
-_nm_log_enabled_impl(gboolean mt_require_locking, NMLogLevel level, NMLogDomain domain)
-{
-    return FALSE;
-}
-
-void
-_nm_log_impl(const char *file,
-             guint       line,
-             const char *func,
-             gboolean    mt_require_locking,
-             NMLogLevel  level,
-             NMLogDomain domain,
-             int         error,
-             const char *ifname,
-             const char *con_uuid,
-             const char *fmt,
-             ...)
-{}
-
-gboolean
-nm_logging_setup(const char *level, const char *domains, char **bad_domains, GError **error)
-{
-    return TRUE;
-}
-
-const char *
-nm_strerror_native(int errsv)
-{
-    return g_strerror(errsv);
-}
+#include "libnm-glib-aux/nm-test-utils.h"
 
 /*****************************************************************************/
 
@@ -327,7 +271,7 @@ NMTST_DEFINE();
 int
 main(int argc, char **argv)
 {
-    nmtst_init_assert_logging(&argc, &argv, "INFO", "ALL");
+    nmtst_init(&argc, &argv, TRUE);
 
     g_test_add_func("/systemd/dhcp/create", test_dhcp_create);
     g_test_add_func("/systemd/lldp/create", test_lldp_create);

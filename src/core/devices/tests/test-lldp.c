@@ -13,7 +13,7 @@
 #include <sys/types.h>
 
 #include "devices/nm-lldp-listener.h"
-#include "systemd/nm-sd.h"
+#include "libnm-systemd-core/nm-sd.h"
 
 #include "platform/tests/test-common.h"
 
