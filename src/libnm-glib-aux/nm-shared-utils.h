@@ -2932,4 +2932,8 @@ void nm_crypto_md5_hash(const guint8 *salt,
                         guint8 *      buffer,
                         gsize         buflen);
 
+/*****************************************************************************/
+
+char *nm_utils_get_process_exit_status_desc(int status);
+
 #endif /* __NM_SHARED_UTILS_H__ */
