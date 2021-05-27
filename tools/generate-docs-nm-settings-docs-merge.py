@@ -3,9 +3,8 @@
 
 from __future__ import print_function
 
-import os
-import sys
 import collections
+import sys
 import xml.etree.ElementTree as ET
 
 ###############################################################################

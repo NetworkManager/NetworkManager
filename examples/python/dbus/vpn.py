@@ -10,7 +10,8 @@
 # The uuid of the connection to activate
 CONNECTION_UUID = "c08142a4-00d9-45bd-a3b1-7610fe146374"
 
-import sys, os, dbus
+import dbus
+import sys
 from dbus.mainloop.glib import DBusGMainLoop
 from gi.repository import GLib
 
