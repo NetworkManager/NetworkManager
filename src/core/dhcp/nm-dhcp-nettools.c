@@ -696,8 +696,8 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 
         v_str = nm_utils_buf_utf8safe_escape((char *) l_data, l_data_len, 0, &to_free);
 
-        nm_dhcp_option_add_option(options, AF_INET, NM_DHCP_OPTION_DHCP4_NIS_DOMAIN, v_str);
-        nm_ip4_config_set_nis_domain(ip4_config, v_str);
+        nm_dhcp_option_add_option(options, AF_INET, NM_DHCP_OPTION_DHCP4_NIS_DOMAIN, v_str ?: "");
+        nm_ip4_config_set_nis_domain(ip4_config, v_str ?: "");
     }
 
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NIS_SERVERS, options, &sbuf);

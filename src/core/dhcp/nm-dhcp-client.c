@@ -341,24 +341,19 @@ nm_dhcp_client_get_reject_servers(NMDhcpClient *self)
 
 /*****************************************************************************/
 
-static const char *state_table[NM_DHCP_STATE_MAX + 1] = {
-    [NM_DHCP_STATE_UNKNOWN]    = "unknown",
-    [NM_DHCP_STATE_BOUND]      = "bound",
-    [NM_DHCP_STATE_EXTENDED]   = "extended",
-    [NM_DHCP_STATE_TIMEOUT]    = "timeout",
-    [NM_DHCP_STATE_EXPIRE]     = "expire",
-    [NM_DHCP_STATE_DONE]       = "done",
-    [NM_DHCP_STATE_FAIL]       = "fail",
-    [NM_DHCP_STATE_TERMINATED] = "terminated",
-};
-
-static const char *
-state_to_string(NMDhcpState state)
-{
-    if ((gsize) state < G_N_ELEMENTS(state_table))
-        return state_table[state];
-    return NULL;
-}
+NM_UTILS_LOOKUP_STR_DEFINE(nm_dhcp_state_to_string,
+                           NMDhcpState,
+                           NM_UTILS_LOOKUP_DEFAULT(NULL),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_BOUND, "bound"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_DONE, "done"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_EXPIRE, "expire"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_EXTENDED, "extended"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_FAIL, "fail"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_NOOP, "noop"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TERMINATED, "terminated"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TIMEOUT, "timeout"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_UNKNOWN, "unknown"),
+                           NM_UTILS_LOOKUP_ITEM_IGNORE(__NM_DHCP_STATE_MAX), );
 
 static NMDhcpState
 reason_to_state(NMDhcpClient *self, const char *iface, const char *reason)
@@ -496,8 +491,8 @@ nm_dhcp_client_set_state(NMDhcpClient *self,
         const char *addr = nm_g_hash_table_lookup(options, req_str);
 
         _LOGI("state changed %s -> %s%s%s%s",
-              state_to_string(priv->state),
-              state_to_string(new_state),
+              nm_dhcp_state_to_string(priv->state),
+              nm_dhcp_state_to_string(new_state),
               NM_PRINT_FMT_QUOTED(addr, ", address=", addr, "", ""));
     }
 
@@ -904,8 +899,8 @@ nm_dhcp_client_handle_event(gpointer      unused,
     old_state = priv->state;
     new_state = reason_to_state(self, priv->iface, reason);
     _LOGD("DHCP state '%s' -> '%s' (reason: '%s')",
-          state_to_string(old_state),
-          state_to_string(new_state),
+          nm_dhcp_state_to_string(old_state),
+          nm_dhcp_state_to_string(new_state),
           reason);
 
     if (new_state == NM_DHCP_STATE_NOOP)

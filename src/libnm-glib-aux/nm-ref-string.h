@@ -95,13 +95,35 @@ nm_ref_string_get_len(NMRefString *rstr)
 }
 
 static inline gboolean
-nm_ref_string_equals_str(NMRefString *rstr, const char *s)
+nm_ref_string_equal(NMRefString *a, NMRefString *b)
 {
-    /* Note that rstr->len might be greater than strlen(rstr->str). This function does
-     * not cover that and would ignore everything after the first NUL byte. If you need
-     * that distinction, this function is not for you. */
+    return a == b;
+}
 
-    return rstr ? (s && nm_streq(rstr->str, s)) : (s == NULL);
+static inline int
+nm_ref_string_cmp(NMRefString *a, NMRefString *b)
+{
+    NM_CMP_SELF(a, b);
+
+    /* It would be cheaper to first compare by length. But this
+     * way we get a nicer, ASCIIbethical sort order. */
+    NM_CMP_DIRECT_MEMCMP(a->str, b->str, NM_MIN(a->len, b->len));
+    NM_CMP_DIRECT(a->len, b->len);
+    return nm_assert_unreachable_val(0);
+}
+
+#define NM_CMP_DIRECT_REF_STRING(a, b) NM_CMP_RETURN_DIRECT(nm_ref_string_cmp((a), (b)))
+
+static inline gboolean
+nm_ref_string_equal_str(NMRefString *rstr, const char *str)
+{
+    if (!str)
+        return (!!rstr);
+
+    if (!rstr)
+        return FALSE;
+
+    return rstr->len == strlen(str) && (rstr->str == str || memcmp(rstr->str, str, rstr->len) == 0);
 }
 
 static inline gboolean
@@ -128,6 +150,27 @@ NM_REF_STRING_UPCAST(const char *str)
     rstr = (gpointer) (((char *) str) - G_STRUCT_OFFSET(NMRefString, str));
     nm_assert_nm_ref_string(rstr);
     return rstr;
+}
+
+static inline gboolean
+nm_ref_string_reset_str(NMRefString **ptr, const char *str)
+{
+    nm_auto_ref_string NMRefString *rstr = NULL;
+    gsize                           l;
+
+    nm_assert(ptr);
+
+    if (!str)
+        return nm_clear_pointer(ptr, nm_ref_string_unref);
+
+    l = strlen(str);
+
+    if ((*ptr) && (*ptr)->len == l && ((*ptr)->str == str || memcmp((*ptr)->str, str, l) == 0))
+        return FALSE;
+
+    rstr = *ptr;
+    *ptr = nm_ref_string_new_len(str, l);
+    return TRUE;
 }
 
 #endif /* __NM_REF_STRING_H__ */

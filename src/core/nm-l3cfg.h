@@ -88,11 +88,18 @@ nm_l3_acd_addr_info_find_track_info(const NML3AcdAddrInfo *addr_info,
 }
 
 typedef enum {
+    /* emitted when the merged/commited NML3ConfigData instance changes.
+     * Note that this gets emitted "under unsafe circumstances". That means,
+     * you should not perform complex operations inside this callback,
+     * and neither should you call into NML3Cfg again (reentrancy). */
+    NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED,
+
     NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
 
     NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT,
 
-    /* emitted at the end of nm_l3cfg_platform_commit(). */
+    /* emitted at the end of nm_l3cfg_platform_commit(). This signals also that
+     * nm_l3cfg_is_ready() might have switched to TRUE. */
     NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
 
     /* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
@@ -117,6 +124,12 @@ struct _NML3IPv4LL;
 typedef struct {
     NML3ConfigNotifyType notify_type;
     union {
+        struct {
+            const NML3ConfigData *l3cd_old;
+            const NML3ConfigData *l3cd_new;
+            bool                  commited;
+        } l3cd_changed;
+
         struct {
             NML3AcdAddrInfo info;
         } acd_event;
@@ -157,6 +170,8 @@ GType nm_l3cfg_get_type(void);
 NML3Cfg *nm_l3cfg_new(NMNetns *netns, int ifindex);
 
 /*****************************************************************************/
+
+gboolean nm_l3cfg_is_ready(NML3Cfg *self);
 
 void _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags);
 
@@ -316,7 +331,7 @@ typedef enum _nm_packed {
 
 void nm_l3cfg_commit(NML3Cfg *self, NML3CfgCommitType commit_type);
 
-void nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
+gboolean nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
 
 /*****************************************************************************/
 

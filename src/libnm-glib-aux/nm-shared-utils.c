@@ -486,7 +486,7 @@ nm_g_bytes_new_from_str(const char *str)
 }
 
 /**
- * nm_utils_gbytes_equals:
+ * nm_utils_gbytes_equal_mem:
  * @bytes: (allow-none): a #GBytes array to compare. Note that
  *   %NULL is treated like an #GBytes array of length zero.
  * @mem_data: the data pointer with @mem_len bytes
@@ -2882,7 +2882,9 @@ nm_utils_buf_utf8safe_unescape(const char *            str,
  * nm_utils_buf_utf8safe_escape:
  * @buf: byte array, possibly in utf-8 encoding, may have NUL characters.
  * @buflen: the length of @buf in bytes, or -1 if @buf is a NUL terminated
- *   string.
+ *   string. Note that if @buflen is zero, then the function returns NULL.
+ *   If @buflen is negative, then the function returns NULL if @buf is NULL
+ *   and @buf if @buf is "".
  * @flags: #NMUtilsStrUtf8SafeFlags flags
  * @to_free: (out): return the pointer location of the string
  *   if a copying was necessary.
@@ -2908,6 +2910,9 @@ nm_utils_buf_utf8safe_unescape(const char *            str,
  *   is necessary, it returns the input @buf. Otherwise, an allocated
  *   string @to_free is returned which must be freed by the caller
  *   with g_free. The escaping can be reverted by g_strcompress().
+ *   There are cases where this function can return NULL:
+ *   - if @buflen is 0
+ *   - if @buflen is negative and @buf is NULL.
  **/
 const char *
 nm_utils_buf_utf8safe_escape(gconstpointer           buf,
@@ -4851,6 +4856,33 @@ nm_utils_parse_debug_string(const char *string, const GDebugKey *keys, guint nke
 
 /*****************************************************************************/
 
+GSource *_nm_g_source_sentinel[] = {
+    NULL,
+};
+
+GSource *
+_nm_g_source_sentinel_get_init(GSource **p_source)
+{
+    static const GSourceFuncs source_funcs = {
+        NULL,
+    };
+    GSource *source;
+
+again:
+    source = g_source_new((GSourceFuncs *) &source_funcs, sizeof(GSource));
+    g_source_set_priority(source, G_PRIORITY_DEFAULT_IDLE);
+    g_source_set_name(source, "nm_g_source_sentinel");
+
+    if (!g_atomic_pointer_compare_and_exchange(p_source, NULL, source)) {
+        g_source_unref(source);
+        goto again;
+    }
+
+    return source;
+}
+
+/*****************************************************************************/
+
 GSource *
 nm_g_idle_source_new(int            priority,
                      GSourceFunc    func,
@@ -5321,7 +5353,7 @@ nm_utils_g_main_context_create_integrate_source(GMainContext *inner_context)
     g_source_set_name(&ctx_src->source, "ContextIntegrateSource");
 
     ctx_src->context  = g_main_context_ref(inner_context);
-    ctx_src->fds      = g_hash_table_new_full(nm_pint_hash, nm_pint_equals, _poll_data_free, NULL);
+    ctx_src->fds      = g_hash_table_new_full(nm_pint_hash, nm_pint_equal, _poll_data_free, NULL);
     ctx_src->fds_len  = 0;
     ctx_src->fds_arr  = NULL;
     ctx_src->acquired = TRUE;

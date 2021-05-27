@@ -194,7 +194,7 @@ nm_pint_hash(gconstpointer p)
 }
 
 gboolean
-nm_pint_equals(gconstpointer a, gconstpointer b)
+nm_pint_equal(gconstpointer a, gconstpointer b)
 {
     const int *s1 = a;
     const int *s2 = a;

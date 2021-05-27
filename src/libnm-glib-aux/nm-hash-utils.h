@@ -354,11 +354,11 @@ gboolean nm_pstr_equal(gconstpointer a, gconstpointer b);
  * that is, "const int *" types. */
 
 guint    nm_pint_hash(gconstpointer p);
-gboolean nm_pint_equals(gconstpointer a, gconstpointer b);
+gboolean nm_pint_equal(gconstpointer a, gconstpointer b);
 
 G_STATIC_ASSERT(sizeof(int) == sizeof(guint32));
-#define nm_puint32_hash   nm_pint_hash
-#define nm_puint32_equals nm_pint_equals
+#define nm_puint32_hash  nm_pint_hash
+#define nm_puint32_equal nm_pint_equal
 
 /*****************************************************************************/
 
@@ -415,6 +415,9 @@ nm_hash_obfuscate_ptr(guint static_seed, gconstpointer val)
  * macro uses a particular static seed that should be used by when comparing pointer
  * values in a global context. */
 #define NM_HASH_OBFUSCATE_PTR(ptr) (nm_hash_obfuscate_ptr(1678382159u, ptr))
+
+/* NM_HASH_OBFUSCATE_PTR_STR needs a buffer of at least this many bytes. */
+#define NM_HASH_OBFUSCATE_PTR_STR_BUF_SIZE 19
 
 #define NM_HASH_OBFUSCATE_PTR_STR(ptr, buf)                                                        \
     ({                                                                                             \

@@ -18,6 +18,8 @@ typedef enum _nm_packed {
     NM_OPTION_BOOL_TRUE    = 1,
 } NMOptionBool;
 
+#define nm_assert_is_ternary(value) nm_assert(NM_IN_SET((value), -1, 0, 1))
+
 /*****************************************************************************/
 
 static inline gboolean
@@ -1591,6 +1593,31 @@ nm_source_func_unref_gobject(gpointer user_data)
     g_object_unref(user_data);
     return G_SOURCE_REMOVE;
 }
+
+extern GSource *_nm_g_source_sentinel[1];
+
+GSource *_nm_g_source_sentinel_get_init(GSource **p_source);
+
+/* Get a GSource sentinel (dummy instance). This instance should never be
+ * attached to a GMainContext. The only currently known purpose is to use it
+ * as dummy value instead of an infinity timeout. That is, if we configurably
+ * want to schedule a timeout that might be infinity, we might set the GSource
+ * instance to nm_g_source_sentinel_get(). On this instance, we still may
+ * call g_source_ref(), g_source_unref() and g_source_destroy(). But nothing
+ * else. */
+#define nm_g_source_sentinel_get(idx)                                         \
+    ({                                                                        \
+        GSource *_s;                                                          \
+                                                                              \
+        G_STATIC_ASSERT((idx) >= 0);                                          \
+        G_STATIC_ASSERT((idx) < G_N_ELEMENTS(_nm_g_source_sentinel));         \
+                                                                              \
+        _s = g_atomic_pointer_get(&_nm_g_source_sentinel[idx]);               \
+        if (G_UNLIKELY(!_s))                                                  \
+            _s = _nm_g_source_sentinel_get_init(&_nm_g_source_sentinel[idx]); \
+                                                                              \
+        _s;                                                                   \
+    })
 
 GSource *nm_g_idle_source_new(int            priority,
                               GSourceFunc    func,

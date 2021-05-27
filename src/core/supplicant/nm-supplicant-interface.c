@@ -1911,7 +1911,7 @@ _properties_changed_main(NMSupplicantInterface *self, GVariant *properties)
 
     if (nm_g_variant_lookup(properties, "CurrentBSS", "&o", &v_s)) {
         v_s = nm_dbus_path_not_empty(v_s);
-        if (!nm_ref_string_equals_str(priv->current_bss, v_s)) {
+        if (!nm_ref_string_equal_str(priv->current_bss, v_s)) {
             nm_ref_string_unref(priv->current_bss);
             priv->current_bss     = nm_ref_string_new(v_s);
             do_notify_current_bss = TRUE;

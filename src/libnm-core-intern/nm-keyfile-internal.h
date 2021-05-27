@@ -95,7 +95,7 @@ int nm_key_file_get_boolean(GKeyFile *kf, const char *group, const char *key, in
 
 void     _nm_keyfile_copy(GKeyFile *dst, GKeyFile *src);
 gboolean _nm_keyfile_a_contains_all_in_b(GKeyFile *kf_a, GKeyFile *kf_b);
-gboolean _nm_keyfile_equals(GKeyFile *kf_a, GKeyFile *kf_b, gboolean consider_order);
+gboolean _nm_keyfile_equal(GKeyFile *kf_a, GKeyFile *kf_b, gboolean consider_order);
 gboolean _nm_keyfile_has_values(GKeyFile *keyfile);
 
 /*****************************************************************************/

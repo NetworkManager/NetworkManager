@@ -61,6 +61,8 @@ typedef enum {
     NM_DHCP_STATE_MAX = __NM_DHCP_STATE_MAX - 1,
 } NMDhcpState;
 
+const char *nm_dhcp_state_to_string(NMDhcpState state);
+
 struct _NMDhcpClientPrivate;
 
 typedef struct {
