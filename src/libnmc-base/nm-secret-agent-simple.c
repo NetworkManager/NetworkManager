@@ -743,7 +743,7 @@ try_spawn_vpn_auth_helper(RequestData *request, GPtrArray *secrets)
     GInputStream *               auth_dialog_out;
     GError *                     error = NULL;
     GString *                    auth_dialog_request;
-    char *                       auth_dialog_request_str;
+    gs_free char *               auth_dialog_request_str = NULL;
     gsize                        auth_dialog_request_len;
     AuthDialogData *             data;
     int                          i;
@@ -826,6 +826,9 @@ try_spawn_vpn_auth_helper(RequestData *request, GPtrArray *secrets)
                                 request->cancellable,
                                 _auth_dialog_write_done,
                                 auth_dialog_request_str);
+
+    /* Ownership of the pointer was passed on to g_output_stream_write_async(). */
+    g_steal_pointer(&auth_dialog_request_str);
 
     g_input_stream_read_async(auth_dialog_out,
                               data->read_buf,
