@@ -23,8 +23,8 @@
 #include "NetworkManagerUtils.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-dhcp-client-logging.h"
-#include "systemd/nm-sd.h"
-#include "systemd/nm-sd-utils-dhcp.h"
+#include "libnm-systemd-core/nm-sd.h"
+#include "libnm-systemd-core/nm-sd-utils-dhcp.h"
 
 /*****************************************************************************/
 
@@ -678,7 +678,7 @@ ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
     r = sd_dhcp_client_set_client_id(sd_client,
                                      client_id_arr[0],
                                      client_id_arr + 1,
-                                     NM_MIN(client_id_len - 1, _NM_SD_MAX_CLIENT_ID_LEN));
+                                     NM_MIN(client_id_len - 1, _NM_MAX_CLIENT_ID_LEN));
     if (r < 0) {
         nm_utils_error_set_errno(error, r, "failed to set IPv4 client-id: %s");
         return FALSE;

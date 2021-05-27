@@ -394,7 +394,7 @@ int sd_dhcp_client_set_client_id(
         assert_return(client, -EINVAL);
         assert_return(data, -EINVAL);
         assert_return(data_len > 0 && data_len <= MAX_CLIENT_ID_LEN, -EINVAL);
-        G_STATIC_ASSERT_EXPR (_NM_SD_MAX_CLIENT_ID_LEN == MAX_CLIENT_ID_LEN);
+        G_STATIC_ASSERT_EXPR (_NM_MAX_CLIENT_ID_LEN == MAX_CLIENT_ID_LEN);
 
         if (client->client_id_len == data_len + sizeof(client->client_id.type) &&
             client->client_id.type == type &&

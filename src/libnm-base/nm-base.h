@@ -11,6 +11,8 @@
 /* this must be the same as NM_UTILS_HWADDR_LEN_MAX from libnm. */
 #define _NM_UTILS_HWADDR_LEN_MAX 20
 
+#define _NM_MAX_CLIENT_ID_LEN (sizeof(guint32) + 128)
+
 /*****************************************************************************/
 
 typedef enum {

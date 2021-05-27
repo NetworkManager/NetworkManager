@@ -3,7 +3,7 @@
  * Copyright (C) 2014 - 2016 Red Hat, Inc.
  */
 
-#include "src/core/systemd/nm-default-systemd.h"
+#include "libnm-systemd-core/nm-default-systemd-core.h"
 
 #include "nm-sd.h"
 

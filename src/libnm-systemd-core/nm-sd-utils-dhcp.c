@@ -3,7 +3,7 @@
  * Copyright (C) 2019 Red Hat, Inc.
  */
 
-#include "src/core/systemd/nm-default-systemd.h"
+#include "libnm-systemd-core/nm-default-systemd-core.h"
 
 #include "nm-sd-utils-dhcp.h"
 

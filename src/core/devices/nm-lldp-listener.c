@@ -17,7 +17,7 @@
 #include "libnm-glib-aux/nm-c-list.h"
 #include "nm-utils.h"
 
-#include "systemd/nm-sd.h"
+#include "libnm-systemd-core/nm-sd.h"
 
 #define MAX_NEIGHBORS            128
 #define MIN_UPDATE_INTERVAL_NSEC (2 * NM_UTILS_NSEC_PER_SEC)

@@ -30,8 +30,6 @@ install_data(
   install_dir: dbus_conf_dir,
 )
 
-subdir('systemd')
-
 core_plugins = []
 
 libNetworkManagerBase = static_library(

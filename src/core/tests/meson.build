@@ -35,14 +35,16 @@ exe = executable(
   include_directories: [
     top_inc,
     src_inc,
-    src_core_inc,
   ],
   dependencies: [
-    libnm_core_public_dep,
-    libnm_systemd_core_dep,
+    libnm_systemd_shared_dep_inc,
+    libnm_systemd_core_dep_inc,
+    glib_dep,
   ],
   link_with: [
     libnm_systemd_shared,
+    libnm_systemd_core,
+    libnm_log_null,
     libc_siphash,
   ],
 )

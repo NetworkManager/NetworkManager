@@ -10,8 +10,6 @@
     #error Cannot use this header.
 #endif
 
-#define _NM_SD_MAX_CLIENT_ID_LEN (sizeof(guint32) + 128)
-
 /* core */
 typedef struct _NMDBusObject            NMDBusObject;
 typedef struct _NMActiveConnection      NMActiveConnection;
