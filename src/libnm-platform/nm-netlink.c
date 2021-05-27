@@ -1403,14 +1403,20 @@ nl_recv(struct nl_sock *    sk,
         struct ucred *      out_creds,
         gboolean *          out_creds_has)
 {
-    ssize_t       n;
-    int           flags = 0;
-    struct iovec  iov;
+    ssize_t      n;
+    int          flags = 0;
+    struct iovec iov;
+    union {
+        struct cmsghdr cmsghdr;
+        char           buf[CMSG_SPACE(sizeof(struct ucred))];
+    } msg_contol_buf;
     struct msghdr msg = {
-        .msg_name    = (void *) nla,
-        .msg_namelen = sizeof(struct sockaddr_nl),
-        .msg_iov     = &iov,
-        .msg_iovlen  = 1,
+        .msg_name       = (void *) nla,
+        .msg_namelen    = sizeof(struct sockaddr_nl),
+        .msg_iov        = &iov,
+        .msg_iovlen     = 1,
+        .msg_controllen = 0,
+        .msg_control    = NULL,
     };
     struct ucred tmpcreds;
     gboolean     tmpcreds_has = FALSE;
@@ -1429,8 +1435,8 @@ nl_recv(struct nl_sock *    sk,
     iov.iov_base = g_malloc(iov.iov_len);
 
     if (out_creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
-        msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
-        msg.msg_control    = g_malloc(msg.msg_controllen);
+        msg.msg_controllen = sizeof(msg_contol_buf);
+        msg.msg_control    = msg_contol_buf.buf;
     }
 
 retry:
@@ -1448,16 +1454,11 @@ retry:
         goto abort;
     }
 
-    if (msg.msg_flags & MSG_CTRUNC) {
-        if (msg.msg_controllen == 0) {
-            retval = -NME_NL_MSG_TRUNC;
-            goto abort;
-        }
-
-        msg.msg_controllen *= 2;
-        msg.msg_control = g_realloc(msg.msg_control, msg.msg_controllen);
-        goto retry;
-    }
+    /* We really don't expect truncation of ancillary data. We provided a large
+    * enough buffer, so this is likely a bug. In the worst case, we might lack
+    * the requested credentials and the caller likely will reject the message
+    * later. */
+    nm_assert(!(msg.msg_flags & MSG_CTRUNC));
 
     if (iov.iov_len < n || (msg.msg_flags & MSG_TRUNC)) {
         /* respond with error to an incomplete message */
@@ -1503,8 +1504,6 @@ retry:
     retval = n;
 
 abort:
-    g_free(msg.msg_control);
-
     if (retval <= 0) {
         g_free(iov.iov_base);
         return retval;
