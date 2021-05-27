@@ -334,10 +334,12 @@ static gconstpointer _metagen_device_detail_connections_get_fcn(NMC_META_GENERIC
     NMDevice *d                             = target;
     gs_free NMRemoteConnection **avail_cons = NULL;
     guint                        avail_cons_len;
-    guint                        i, j;
+    guint                        i;
+    guint                        j;
     char **                      arr = NULL;
     GString *                    str;
-    gboolean                     had_prefix, has_prefix;
+    gboolean                     had_prefix;
+    gboolean                     has_prefix;
 
     NMC_HANDLE_COLOR(NM_META_COLOR_NONE);
 
@@ -1261,12 +1263,18 @@ fill_output_access_point(gpointer data, gpointer user_data)
     GBytes *               ssid;
     const char *           bssid;
     NM80211Mode            mode;
-    char *channel_str, *freq_str, *ssid_str = NULL, *ssid_hex_str = NULL, *bitrate_str,
-                                  *strength_str, *wpa_flags_str, *rsn_flags_str;
-    GString *   security_str;
-    char *      ap_name;
-    const char *sig_bars;
-    NMMetaColor color;
+    char *                 channel_str;
+    char *                 freq_str;
+    char *                 ssid_str     = NULL;
+    char *                 ssid_hex_str = NULL;
+    char *                 bitrate_str;
+    char *                 strength_str;
+    char *                 wpa_flags_str;
+    char *                 rsn_flags_str;
+    GString *              security_str;
+    char *                 ap_name;
+    const char *           sig_bars;
+    NMMetaColor            color;
 
     if (info->active_bssid) {
         const char *current_bssid = nm_access_point_get_bssid(ap);
@@ -4593,8 +4601,8 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
     const char *               psk      = NULL;
     const char *               type     = NULL;
     GBytes *                   ssid_bytes;
-    gs_free char *             ssid = NULL;
-    GString *                  string;
+    gs_free char *             ssid      = NULL;
+    nm_auto_free_gstring GString *string = NULL;
 
     s_wireless = nm_connection_get_setting_wireless(connection);
     g_return_if_fail(s_wireless);
@@ -4642,7 +4650,6 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
     g_string_append_c(string, ';');
     if (nmc_config->use_colors)
         nmc_print_qrcode(string->str);
-    g_string_free(string, TRUE);
 
     g_print("\n");
 }
