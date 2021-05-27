@@ -68,7 +68,7 @@ def can_sudo():
             ).returncode
             == 0
         )
-    except:
+    except Exception:
         return False
 
 
