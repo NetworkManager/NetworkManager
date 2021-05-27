@@ -4429,6 +4429,10 @@ nm_utils_iface_valid_name(const char *name)
  *
  * In older versions, nm_utils_is_uuid() did not accept %NULL as @str
  * argument. Don't pass %NULL if you run against older versions of libnm.
+ *
+ * Deprecated: 1.32: older versions of NetworkManager had a wrong
+ *   understanding of what makes a valid UUID. This function can thus
+ *   accept some inputs as valid, which in fact are not valid UUIDs.
  */
 gboolean
 nm_utils_is_uuid(const char *str)
