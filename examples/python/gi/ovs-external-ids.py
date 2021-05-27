@@ -222,7 +222,6 @@ def die_usage(msg):
 
 
 def parse_args(argv):
-    had_dash_dash = False
     args = {
         "mode": MODE_GET,
         "select_arg": None,
