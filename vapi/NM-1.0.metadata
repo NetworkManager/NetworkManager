@@ -40,6 +40,7 @@ SETTING_VXLAN_*             parent="NM.SettingVxlan"                name="SETTIN
 SETTING_WIFI_P2P_*          parent="NM.SettingWifiP2P"              name="SETTING_WIFI_P2P_(.+)"
 SETTING_WIMAX_*             parent="NM.SettingWimax"                name="SETTING_WIMAX_(.+)"
 SETTING_WIRED_*             parent="NM.SettingWired"                name="SETTING_WIRED_(.+)"
+SETTING_WIREGUARD_*         parent="NM.SettingWireGuard"            name="SETTING_WIREGUARD_(.+)"
 SETTING_WIRELESS_*          parent="NM.SettingWireless"             name="SETTING_WIRELESS_(.+)"
 
 VPN_*                       parent="NM.Vpn"                         name="VPN_(.+)"
@@ -71,6 +72,7 @@ DEVICE_OLPC_MESH_*          parent="NM.DeviceOlpcMesh"              name="DEVICE
 DEVICE_VLAN_*               parent="NM.DeviceVlan"                  name="DEVICE_VLAN_(.+)"
 DEVICE_WIFI_*               parent="NM.DeviceWifi"                  name="DEVICE_WIFI_(.+)"
 DEVICE_WIMAX_*              parent="NM.DeviceWimax"                 name="DEVICE_WIMAX_(.+)"
+DEVICE_WIREGUARD_*          parent="NM.DeviceWireGuard"             name="DEVICE_WIREGUARD_(.+)"
 
 
 DHCP_CONFIG_OPTIONS         parent="NM.DhcpConfig"                  name="DHCP_CONFIG_(.+)"
