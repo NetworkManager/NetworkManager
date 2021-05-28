@@ -1,8 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 
 #include "src/core/nm-default-daemon.h"
+#include "src/core/dns/nm-dns-manager.h"
+#include "src/core/dns/nm-dns-systemd-resolved.h"
 
 #include "nm-device-utils.h"
+#include "nm-core-utils.h"
 
 /*****************************************************************************/
 
@@ -152,3 +155,202 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_device_ip_state_to_str,
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_CONF, "conf"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_DONE, "done"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_FAIL, "fail"), );
+
+/*****************************************************************************/
+
+#define SD_RESOLVED_DNS (1UL << 0)
+/* Don't answer request from locally synthesized records (which includes /etc/hosts) */
+#define SD_RESOLVED_NO_SYNTHESIZE (1UL << 11)
+
+typedef struct {
+    int                                addr_family;
+    NMIPAddr                           address;
+    gulong                             cancellable_id;
+    GTask *                            task;
+    NMDnsSystemdResolvedResolveHandle *resolved_handle;
+} ResolveAddrInfo;
+
+#define _NMLOG_PREFIX_NAME "resolve-addr"
+#define _NMLOG_DOMAIN      LOGD_CORE
+#define _NMLOG2(level, info, ...)                                                      \
+    G_STMT_START                                                                       \
+    {                                                                                  \
+        if (nm_logging_enabled((level), (_NMLOG_DOMAIN))) {                            \
+            ResolveAddrInfo *_info = (info);                                           \
+            char             _addr_str[NM_UTILS_INET_ADDRSTRLEN];                      \
+                                                                                       \
+            _nm_log((level),                                                           \
+                    (_NMLOG_DOMAIN),                                                   \
+                    0,                                                                 \
+                    NULL,                                                              \
+                    NULL,                                                              \
+                    _NMLOG_PREFIX_NAME "[" NM_HASH_OBFUSCATE_PTR_FMT                   \
+                                       ",%s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),    \
+                    NM_HASH_OBFUSCATE_PTR(_info),                                      \
+                    nm_utils_inet_ntop(_info->addr_family, &_info->address, _addr_str) \
+                        _NM_UTILS_MACRO_REST(__VA_ARGS__));                            \
+        }                                                                              \
+    }                                                                                  \
+    G_STMT_END
+
+static void
+resolve_addr_info_free(ResolveAddrInfo *info)
+{
+    nm_assert(info->cancellable_id == 0);
+    nm_assert(!info->resolved_handle);
+    g_object_unref(info->task);
+    g_free(info);
+}
+
+static void
+resolve_addr_complete(ResolveAddrInfo *info, char *hostname_take, GError *error_take)
+{
+    nm_assert(!!hostname_take != !!error_take);
+
+    nm_clear_g_cancellable_disconnect(g_task_get_cancellable(info->task), &info->cancellable_id);
+    if (error_take)
+        g_task_return_error(info->task, error_take);
+    else
+        g_task_return_pointer(info->task, hostname_take, g_free);
+
+    resolve_addr_info_free(info);
+}
+
+static void
+resolve_addr_helper_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    ResolveAddrInfo *info        = user_data;
+    gs_free_error GError *error  = NULL;
+    gs_free char *        output = NULL;
+
+    output = nm_utils_spawn_helper_finish(result, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    _LOG2D(info, "helper returned hostname '%s'", output);
+
+    resolve_addr_complete(info, g_steal_pointer(&output), g_steal_pointer(&error));
+}
+
+static void
+resolve_addr_spawn_helper(ResolveAddrInfo *info)
+{
+    char addr_str[NM_UTILS_INET_ADDRSTRLEN];
+
+    nm_utils_inet_ntop(info->addr_family, &info->address, addr_str);
+    _LOG2D(info, "start lookup via nm-daemon-helper");
+    nm_utils_spawn_helper(NM_MAKE_STRV("resolve-address", addr_str),
+                          g_task_get_cancellable(info->task),
+                          resolve_addr_helper_cb,
+                          info);
+}
+
+static void
+resolve_addr_resolved_cb(NMDnsSystemdResolved *                   resolved,
+                         NMDnsSystemdResolvedResolveHandle *      handle,
+                         const NMDnsSystemdResolvedAddressResult *names,
+                         guint                                    names_len,
+                         guint64                                  flags,
+                         GError *                                 error,
+                         gpointer                                 user_data)
+{
+    ResolveAddrInfo *info = user_data;
+
+    info->resolved_handle = NULL;
+
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    if (error) {
+        gs_free char *dbus_error = NULL;
+
+        _LOG2D(info, "error resolving via systemd-resolved: %s", error->message);
+
+        dbus_error = g_dbus_error_get_remote_error(error);
+        if (nm_streq0(dbus_error, "org.freedesktop.resolve1.DnsError.NXDOMAIN")) {
+            resolve_addr_complete(info, NULL, g_error_copy(error));
+            return;
+        }
+
+        resolve_addr_spawn_helper(info);
+        return;
+    }
+
+    if (names_len == 0) {
+        _LOG2D(info, "systemd-resolved returned no result");
+        resolve_addr_complete(info, g_strdup(""), NULL);
+        return;
+    }
+
+    _LOG2D(info, "systemd-resolved returned hostname '%s'", names[0].name);
+    resolve_addr_complete(info, g_strdup(names[0].name), NULL);
+}
+
+static void
+resolve_addr_cancelled(GObject *object, gpointer user_data)
+{
+    ResolveAddrInfo *info  = user_data;
+    GError *         error = NULL;
+
+    nm_clear_g_signal_handler(g_task_get_cancellable(info->task), &info->cancellable_id);
+    nm_clear_pointer(&info->resolved_handle, nm_dns_systemd_resolved_resolve_cancel);
+    nm_utils_error_set_cancelled(&error, FALSE, NULL);
+    resolve_addr_complete(info, NULL, error);
+}
+
+void
+nm_device_resolve_address(int                 addr_family,
+                          gconstpointer       address,
+                          GCancellable *      cancellable,
+                          GAsyncReadyCallback callback,
+                          gpointer            cb_data)
+{
+    ResolveAddrInfo *     info;
+    NMDnsSystemdResolved *resolved;
+
+    info  = g_new(ResolveAddrInfo, 1);
+    *info = (ResolveAddrInfo){
+        .task = nm_g_task_new(NULL, cancellable, nm_device_resolve_address, callback, cb_data),
+        .addr_family = addr_family,
+        .address     = nm_ip_addr_init(addr_family, address),
+    };
+
+    if (cancellable) {
+        gulong signal_id;
+
+        signal_id =
+            g_cancellable_connect(cancellable, G_CALLBACK(resolve_addr_cancelled), info, NULL);
+        if (signal_id == 0) {
+            /* the request is already cancelled. Return. */
+            return;
+        }
+        info->cancellable_id = signal_id;
+    }
+
+    resolved = (NMDnsSystemdResolved *) nm_dns_manager_get_systemd_resolved(nm_dns_manager_get());
+    if (resolved) {
+        _LOG2D(info, "start lookup via systemd-resolved");
+        info->resolved_handle =
+            nm_dns_systemd_resolved_resolve_address(resolved,
+                                                    0,
+                                                    addr_family,
+                                                    address,
+                                                    SD_RESOLVED_DNS | SD_RESOLVED_NO_SYNTHESIZE,
+                                                    20000,
+                                                    resolve_addr_resolved_cb,
+                                                    info);
+        return;
+    }
+
+    resolve_addr_spawn_helper(info);
+}
+
+char *
+nm_device_resolve_address_finish(GAsyncResult *result, GError **error)
+{
+    GTask *task = G_TASK(result);
+
+    nm_assert(nm_g_task_is_valid(result, NULL, nm_device_resolve_address));
+
+    return g_task_propagate_pointer(task, error);
+}
