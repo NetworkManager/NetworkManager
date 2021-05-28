@@ -8,6 +8,7 @@
 #define __NETWORKMANAGER_DNS_SYSTEMD_RESOLVED_H__
 
 #include "nm-dns-plugin.h"
+#include "nm-dns-manager.h"
 
 #define NM_TYPE_DNS_SYSTEMD_RESOLVED (nm_dns_systemd_resolved_get_type())
 #define NM_DNS_SYSTEMD_RESOLVED(obj) \
