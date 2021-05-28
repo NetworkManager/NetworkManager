@@ -11,6 +11,7 @@
 #include "nm-ip4-config.h"
 #include "nm-ip6-config.h"
 #include "nm-setting-connection.h"
+#include "nm-dns-plugin.h"
 
 typedef enum {
     NM_DNS_IP_CONFIG_TYPE_REMOVED = -1,
@@ -148,7 +149,7 @@ typedef enum {
 
 void nm_dns_manager_stop(NMDnsManager *self);
 
-gboolean nm_dns_manager_has_systemd_resolved(NMDnsManager *self);
+NMDnsPlugin *nm_dns_manager_get_systemd_resolved(NMDnsManager *self);
 
 /*****************************************************************************/
 
