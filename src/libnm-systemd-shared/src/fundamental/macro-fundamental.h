@@ -7,10 +7,16 @@
 
 #include "type.h"
 
+#define _align_(x) __attribute__((__aligned__(x)))
 #define _const_ __attribute__((__const__))
 #define _pure_ __attribute__((__pure__))
+#define _section_(x) __attribute__((__section__(x)))
+#define _used_ __attribute__((__used__))
 #define _unused_ __attribute__((__unused__))
 #define _cleanup_(x) __attribute__((__cleanup__(x)))
+
+#define XSTRINGIFY(x) #x
+#define STRINGIFY(x) XSTRINGIFY(x)
 
 #ifndef __COVERITY__
 #  define VOID_0 ((void)0)
@@ -43,6 +49,17 @@
 
 #define UNIQ_T(x, uniq) CONCATENATE(__unique_prefix_, CONCATENATE(x, uniq))
 #define UNIQ __COUNTER__
+
+/* Note that this works differently from pthread_once(): this macro does
+ * not synchronize code execution, i.e. code that is run conditionalized
+ * on this macro will run concurrently to all other code conditionalized
+ * the same way, there's no ordering or completion enforced. */
+#define ONCE __ONCE(UNIQ_T(_once_, UNIQ))
+#define __ONCE(o)                                                       \
+        ({                                                              \
+                static bool (o) = false;                                \
+                __sync_bool_compare_and_swap(&(o), false, true);        \
+        })
 
 #undef MAX
 #define MAX(a, b) __MAX(UNIQ, (a), UNIQ, (b))
