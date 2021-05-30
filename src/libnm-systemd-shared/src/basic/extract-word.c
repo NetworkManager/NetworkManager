@@ -21,7 +21,7 @@
 
 int extract_first_word(const char **p, char **ret, const char *separators, ExtractFlags flags) {
         _cleanup_free_ char *s = NULL;
-        size_t allocated = 0, sz = 0;
+        size_t sz = 0;
         char quote = 0;                 /* 0 or ' or " */
         bool backslash = false;         /* whether we've just seen a backslash */
         char c;
@@ -44,7 +44,7 @@ int extract_first_word(const char **p, char **ret, const char *separators, Extra
          * the pointer *p at the first invalid character. */
 
         if (flags & EXTRACT_DONT_COALESCE_SEPARATORS)
-                if (!GREEDY_REALLOC(s, allocated, sz+1))
+                if (!GREEDY_REALLOC(s, sz+1))
                         return -ENOMEM;
 
         for (;; (*p)++, c = **p) {
@@ -59,7 +59,7 @@ int extract_first_word(const char **p, char **ret, const char *separators, Extra
                         /* We found a non-blank character, so we will always
                          * want to return a string (even if it is empty),
                          * allocate it here. */
-                        if (!GREEDY_REALLOC(s, allocated, sz+1))
+                        if (!GREEDY_REALLOC(s, sz+1))
                                 return -ENOMEM;
                         break;
                 }
@@ -67,7 +67,7 @@ int extract_first_word(const char **p, char **ret, const char *separators, Extra
 
         for (;; (*p)++, c = **p) {
                 if (backslash) {
-                        if (!GREEDY_REALLOC(s, allocated, sz+7))
+                        if (!GREEDY_REALLOC(s, sz+7))
                                 return -ENOMEM;
 
                         if (c == 0) {
@@ -130,7 +130,7 @@ int extract_first_word(const char **p, char **ret, const char *separators, Extra
                                         backslash = true;
                                         break;
                                 } else {
-                                        if (!GREEDY_REALLOC(s, allocated, sz+2))
+                                        if (!GREEDY_REALLOC(s, sz+2))
                                                 return -ENOMEM;
 
                                         s[sz++] = c;
@@ -162,7 +162,7 @@ int extract_first_word(const char **p, char **ret, const char *separators, Extra
                                         goto finish;
 
                                 } else {
-                                        if (!GREEDY_REALLOC(s, allocated, sz+2))
+                                        if (!GREEDY_REALLOC(s, sz+2))
                                                 return -ENOMEM;
 
                                         s[sz++] = c;

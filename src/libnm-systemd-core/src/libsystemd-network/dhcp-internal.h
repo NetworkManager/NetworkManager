@@ -42,6 +42,8 @@ int dhcp_network_send_udp_socket(int s, be32_t address, uint16_t port,
 
 int dhcp_option_append(DHCPMessage *message, size_t size, size_t *offset, uint8_t overload,
                        uint8_t code, size_t optlen, const void *optval);
+int dhcp_option_find_option(uint8_t *options, size_t length, uint8_t wanted_code, size_t *ret_offset);
+int dhcp_option_remove_option(uint8_t *options, size_t buflen, uint8_t option_code);
 
 typedef int (*dhcp_option_callback_t)(uint8_t code, uint8_t len,
                                 const void *option, void *userdata);
@@ -66,15 +68,13 @@ int dhcp_packet_verify_headers(DHCPPacket *packet, size_t len, bool checksum, ui
 #define DHCP_CLIENT_DONT_DESTROY(client) \
         _cleanup_(sd_dhcp_client_unrefp) _unused_ sd_dhcp_client *_dont_destroy_##client = sd_dhcp_client_ref(client)
 
-#define log_dhcp_client_errno(client, error, fmt, ...)                  \
-        ({                                                              \
-                int _e = (error);                                       \
-                if (DEBUG_LOGGING)                                      \
-                        log_interface_full_errno(                       \
-                                sd_dhcp_client_get_ifname(client),      \
-                                LOG_DEBUG, _e, "DHCPv4 client: " fmt,   \
-                                ##__VA_ARGS__);                         \
-                -ERRNO_VALUE(_e);                                       \
-        })
+#define log_dhcp_client_errno(client, error, fmt, ...)          \
+        log_interface_prefix_full_errno(                        \
+                "DHCPv4 client: ",                              \
+                sd_dhcp_client_get_ifname(client),              \
+                error, fmt, ##__VA_ARGS__)
 #define log_dhcp_client(client, fmt, ...)                       \
-        log_dhcp_client_errno(client, 0, fmt, ##__VA_ARGS__)
+        log_interface_prefix_full_errno_zerook(                 \
+                "DHCPv4 client: ",                              \
+                sd_dhcp_client_get_ifname(client),              \
+                0, fmt, ##__VA_ARGS__)

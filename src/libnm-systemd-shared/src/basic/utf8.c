@@ -198,8 +198,7 @@ char *utf8_escape_invalid(const char *str) {
         }
 
         *s = '\0';
-        (void) str_realloc(&p);
-        return p;
+        return str_realloc(p);
 }
 
 #if 0 /* NM_IGNORED */
@@ -216,7 +215,7 @@ static int utf8_char_console_width(const char *str) {
         return unichar_iswide(c) ? 2 : 1;
 }
 
-char *utf8_escape_non_printable_full(const char *str, size_t console_width) {
+char *utf8_escape_non_printable_full(const char *str, size_t console_width, bool force_ellipsis) {
         char *p, *s, *prev_s;
         size_t n = 0; /* estimated print width */
 
@@ -233,8 +232,12 @@ char *utf8_escape_non_printable_full(const char *str, size_t console_width) {
                 int len;
                 char *saved_s = s;
 
-                if (!*str) /* done! */
-                        goto finish;
+                if (!*str) { /* done! */
+                        if (force_ellipsis)
+                                goto truncation;
+                        else
+                                goto finish;
+                }
 
                 len = utf8_encoded_valid_unichar(str, SIZE_MAX);
                 if (len > 0) {
@@ -278,15 +281,14 @@ char *utf8_escape_non_printable_full(const char *str, size_t console_width) {
 
  truncation:
         /* Try to go back one if we don't have enough space for the ellipsis */
-        if (n + 1 >= console_width)
+        if (n + 1 > console_width)
                 s = prev_s;
 
         s = mempcpy(s, "…", strlen("…"));
 
  finish:
         *s = '\0';
-        (void) str_realloc(&p);
-        return p;
+        return str_realloc(p);
 }
 #endif /* NM_IGNORED */
 

@@ -90,6 +90,7 @@ enum {
         SD_DHCP_OPTION_POP3_SERVER                 = 70,
         SD_DHCP_OPTION_USER_CLASS                  = 77,
         SD_DHCP_OPTION_FQDN                        = 81,
+        SD_DHCP_OPTION_RELAY_AGENT_INFORMATION     = 82,
         SD_DHCP_OPTION_NEW_POSIX_TIMEZONE          = 100,
         SD_DHCP_OPTION_NEW_TZDB_TIMEZONE           = 101,
         SD_DHCP_OPTION_DOMAIN_SEARCH_LIST          = 119,
@@ -103,6 +104,12 @@ enum {
         SD_DHCP_OPTION_PRIVATE_PROXY_AUTODISCOVERY = 252,
         SD_DHCP_OPTION_PRIVATE_LAST                = 254,
         SD_DHCP_OPTION_END                         = 255,
+};
+
+/* Suboptions for SD_DHCP_OPTION_RELAY_AGENT_INFORMATION option */
+enum {
+        SD_DHCP_RELAY_AGENT_CIRCUIT_ID             = 1,
+        SD_DHCP_RELAY_AGENT_REMOTE_ID              = 2,
 };
 
 typedef struct sd_dhcp_client sd_dhcp_client;
@@ -199,6 +206,7 @@ int sd_dhcp_client_set_fallback_lease_lifetime(
 int sd_dhcp_client_add_option(sd_dhcp_client *client, sd_dhcp_option *v);
 int sd_dhcp_client_add_vendor_option(sd_dhcp_client *client, sd_dhcp_option *v);
 
+int sd_dhcp_client_is_running(sd_dhcp_client *client);
 int sd_dhcp_client_stop(sd_dhcp_client *client);
 int sd_dhcp_client_start(sd_dhcp_client *client);
 int sd_dhcp_client_send_release(sd_dhcp_client *client);

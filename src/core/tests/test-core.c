@@ -2251,7 +2251,7 @@ test_utils_file_is_in_path(void)
     g_assert(!nm_utils_file_is_in_path("//b///a/", "/b//"));
     g_assert(!nm_utils_file_is_in_path("//b///a/", "/b/a/"));
     g_assert(!nm_utils_file_is_in_path("//b///a", "/b/a/"));
-    g_assert(nm_utils_file_is_in_path("//b///a/.", "/b/a/"));
+    g_assert(!nm_utils_file_is_in_path("//b///a/.", "/b/a/"));
     g_assert(nm_utils_file_is_in_path("//b///a/..", "/b/a/"));
 }
 

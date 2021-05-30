@@ -10,7 +10,7 @@
 
 gboolean nm_sd_utils_path_equal(const char *a, const char *b);
 
-char *nm_sd_utils_path_simplify(char *path, gboolean kill_dots);
+char *nm_sd_utils_path_simplify(char *path);
 
 const char *nm_sd_utils_path_startswith(const char *path, const char *prefix);
 
