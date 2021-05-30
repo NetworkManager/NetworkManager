@@ -122,46 +122,34 @@ test_sd_event(void)
 static void
 test_path_equal(void)
 {
-#define _path_equal_check1(path, kill_dots, expected)                                  \
-    G_STMT_START                                                                       \
-    {                                                                                  \
-        const gboolean _kill_dots = (kill_dots);                                       \
-        const char *   _path0     = (path);                                            \
-        const char *   _expected  = (expected);                                        \
-        gs_free char * _path      = g_strdup(_path0);                                  \
-        const char *   _path_result;                                                   \
-                                                                                       \
-        if (!_kill_dots && !nm_sd_utils_path_equal(_path0, _expected))                 \
-            g_error("Paths \"%s\" and \"%s\" don't compare equal", _path0, _expected); \
-                                                                                       \
-        _path_result = nm_sd_utils_path_simplify(_path, _kill_dots);                   \
-        g_assert(_path_result == _path);                                               \
-        g_assert_cmpstr(_path, ==, _expected);                                         \
-    }                                                                                  \
+#define _path_equal_check(path, expected)                \
+    G_STMT_START                                         \
+    {                                                    \
+        const char *  _path0    = (path);                \
+        const char *  _expected = (expected);            \
+        gs_free char *_path     = g_strdup(_path0);      \
+        const char *  _path_result;                      \
+                                                         \
+        _path_result = nm_sd_utils_path_simplify(_path); \
+        g_assert(_path_result == _path);                 \
+        g_assert_cmpstr(_path, ==, _expected);           \
+    }                                                    \
     G_STMT_END
 
-#define _path_equal_check(path, expected_no_kill_dots, expected_kill_dots)           \
-    G_STMT_START                                                                     \
-    {                                                                                \
-        _path_equal_check1(path, FALSE, expected_no_kill_dots);                      \
-        _path_equal_check1(path, TRUE, expected_kill_dots ?: expected_no_kill_dots); \
-    }                                                                                \
-    G_STMT_END
-
-    _path_equal_check("", "", NULL);
-    _path_equal_check(".", ".", NULL);
-    _path_equal_check("..", "..", NULL);
-    _path_equal_check("/..", "/..", NULL);
-    _path_equal_check("//..", "/..", NULL);
-    _path_equal_check("/.", "/.", "/");
-    _path_equal_check("./", ".", ".");
-    _path_equal_check("./.", "./.", ".");
-    _path_equal_check(".///.", "./.", ".");
-    _path_equal_check(".///./", "./.", ".");
-    _path_equal_check(".////", ".", ".");
-    _path_equal_check("//..//foo/", "/../foo", NULL);
-    _path_equal_check("///foo//./bar/.", "/foo/./bar/.", "/foo/bar");
-    _path_equal_check(".//./foo//./bar/.", "././foo/./bar/.", "foo/bar");
+    _path_equal_check("", "");
+    _path_equal_check(".", ".");
+    _path_equal_check("..", "..");
+    _path_equal_check("/..", "/..");
+    _path_equal_check("//..", "/..");
+    _path_equal_check("/.", "/");
+    _path_equal_check("./", ".");
+    _path_equal_check("./.", ".");
+    _path_equal_check(".///.", ".");
+    _path_equal_check(".///./", ".");
+    _path_equal_check(".////", ".");
+    _path_equal_check("//..//foo/", "/../foo");
+    _path_equal_check("///foo//./bar/.", "/foo/bar");
+    _path_equal_check(".//./foo//./bar/.", "foo/bar");
 }
 
 /*****************************************************************************/

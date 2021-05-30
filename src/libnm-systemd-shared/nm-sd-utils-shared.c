@@ -28,9 +28,9 @@ nm_sd_utils_path_equal(const char *a, const char *b)
 }
 
 char *
-nm_sd_utils_path_simplify(char *path, gboolean kill_dots)
+nm_sd_utils_path_simplify(char *path)
 {
-    return path_simplify(path, kill_dots);
+    return path_simplify(path);
 }
 
 const char *

@@ -1246,9 +1246,9 @@ nms_keyfile_plugin_init(NMSKeyfilePlugin *plugin)
     /* dirname_libs are a set of read-only directories with lower priority than /etc or /run.
      * There is nothing complicated about having multiple of such directories, so dirname_libs
      * is a list (which currently only has at most one directory). */
-    priv->dirname_libs[0] = nm_sd_utils_path_simplify(g_strdup(NM_KEYFILE_PATH_NAME_LIB), FALSE);
+    priv->dirname_libs[0] = nm_sd_utils_path_simplify(g_strdup(NM_KEYFILE_PATH_NAME_LIB));
     priv->dirname_libs[1] = NULL;
-    priv->dirname_run     = nm_sd_utils_path_simplify(g_strdup(NM_KEYFILE_PATH_NAME_RUN), FALSE);
+    priv->dirname_run     = nm_sd_utils_path_simplify(g_strdup(NM_KEYFILE_PATH_NAME_RUN));
     priv->dirname_etc     = nm_config_data_get_value(NM_CONFIG_GET_DATA_ORIG,
                                                  NM_CONFIG_KEYFILE_GROUP_KEYFILE,
                                                  NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH,
@@ -1261,10 +1261,9 @@ nms_keyfile_plugin_init(NMSKeyfilePlugin *plugin)
     } else if (!priv->dirname_etc || priv->dirname_etc[0] != '/') {
         /* either invalid path or unspecified. Use the default. */
         g_free(priv->dirname_etc);
-        priv->dirname_etc =
-            nm_sd_utils_path_simplify(g_strdup(NM_KEYFILE_PATH_NAME_ETC_DEFAULT), FALSE);
+        priv->dirname_etc = nm_sd_utils_path_simplify(g_strdup(NM_KEYFILE_PATH_NAME_ETC_DEFAULT));
     } else
-        nm_sd_utils_path_simplify(priv->dirname_etc, FALSE);
+        nm_sd_utils_path_simplify(priv->dirname_etc);
 
     /* no duplicates */
     if (NM_IN_STRSET(priv->dirname_libs[0], priv->dirname_etc, priv->dirname_run))

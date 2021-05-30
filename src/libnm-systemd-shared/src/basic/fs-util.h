@@ -34,7 +34,10 @@ int readlink_value(const char *p, char **ret);
 int readlink_and_make_absolute(const char *p, char **r);
 
 int chmod_and_chown(const char *path, mode_t mode, uid_t uid, gid_t gid);
-int fchmod_and_chown(int fd, mode_t mode, uid_t uid, gid_t gid);
+int fchmod_and_chown_with_fallback(int fd, const char *path, mode_t mode, uid_t uid, gid_t gid);
+static inline int fchmod_and_chown(int fd, mode_t mode, uid_t uid, gid_t gid) {
+        return fchmod_and_chown_with_fallback(fd, NULL, mode, uid, gid); /* no fallback */
+}
 
 int fchmod_umask(int fd, mode_t mode);
 int fchmod_opath(int fd, mode_t m);
@@ -146,3 +149,5 @@ int conservative_renameat(int olddirfd, const char *oldpath, int newdirfd, const
 static inline int conservative_rename(const char *oldpath, const char *newpath) {
         return conservative_renameat(AT_FDCWD, oldpath, AT_FDCWD, newpath);
 }
+
+int posix_fallocate_loop(int fd, uint64_t offset, uint64_t size);

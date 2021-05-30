@@ -67,7 +67,7 @@ int fopen_temporary(const char *path, FILE **ret_f, char **ret_temp_path) {
 
 /* This is much like mkostemp() but is subject to umask(). */
 int mkostemp_safe(char *pattern) {
-        int fd = -1; /* avoid false maybe-uninitialized warning */
+        int fd = -1;  /* avoid false maybe-uninitialized warning */
 
         assert(pattern);
 
@@ -127,13 +127,10 @@ int tempfn_xxxxxx(const char *p, const char *extra, char **ret) {
                 return -EINVAL;
 
         if (d)  {
-                char *j;
-
-                j = path_join(d, nf);
-                if (!j)
+                if (!path_extend(&d, nf))
                         return -ENOMEM;
 
-                *ret = path_simplify(j, false);
+                *ret = path_simplify(TAKE_PTR(d));
         } else
                 *ret = TAKE_PTR(nf);
 
@@ -173,13 +170,10 @@ int tempfn_random(const char *p, const char *extra, char **ret) {
                 return -EINVAL;
 
         if (d) {
-                char *j;
-
-                j = path_join(d, nf);
-                if (!j)
+                if (!path_extend(&d, nf))
                         return -ENOMEM;
 
-                *ret = path_simplify(j, false);
+                *ret = path_simplify(TAKE_PTR(d));
         } else
                 *ret = TAKE_PTR(nf);
 
@@ -224,7 +218,7 @@ int tempfn_random_child(const char *p, const char *extra, char **ret) {
 
         *x = 0;
 
-        *ret = path_simplify(t, false);
+        *ret = path_simplify(t);
         return 0;
 }
 

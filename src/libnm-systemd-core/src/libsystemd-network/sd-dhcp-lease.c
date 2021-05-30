@@ -442,14 +442,13 @@ static int lease_parse_sip_server(const uint8_t *option, size_t len, struct in_a
 
 static int lease_parse_routes(
                 const uint8_t *option, size_t len,
-                struct sd_dhcp_route **routes, size_t *routes_size, size_t *routes_allocated) {
+                struct sd_dhcp_route **routes, size_t *routes_size) {
 
         struct in_addr addr;
 
         assert(option || len <= 0);
         assert(routes);
         assert(routes_size);
-        assert(routes_allocated);
 
         if (len <= 0)
                 return 0;
@@ -457,7 +456,7 @@ static int lease_parse_routes(
         if (len % 8 != 0)
                 return -EINVAL;
 
-        if (!GREEDY_REALLOC(*routes, *routes_allocated, *routes_size + (len / 8)))
+        if (!GREEDY_REALLOC(*routes, *routes_size + (len / 8)))
                 return -ENOMEM;
 
         while (len >= 8) {
@@ -488,12 +487,11 @@ static int lease_parse_routes(
 /* parses RFC3442 Classless Static Route Option */
 static int lease_parse_classless_routes(
                 const uint8_t *option, size_t len,
-                struct sd_dhcp_route **routes, size_t *routes_size, size_t *routes_allocated) {
+                struct sd_dhcp_route **routes, size_t *routes_size) {
 
         assert(option || len <= 0);
         assert(routes);
         assert(routes_size);
-        assert(routes_allocated);
 
         if (len <= 0)
                 return 0;
@@ -504,7 +502,7 @@ static int lease_parse_classless_routes(
                 uint8_t dst_octets;
                 struct sd_dhcp_route *route;
 
-                if (!GREEDY_REALLOC(*routes, *routes_allocated, *routes_size + 1))
+                if (!GREEDY_REALLOC(*routes, *routes_size + 1))
                         return -ENOMEM;
 
                 route = *routes + *routes_size;
@@ -618,7 +616,7 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const void *option, void
                 break;
 
         case SD_DHCP_OPTION_STATIC_ROUTE:
-                r = lease_parse_routes(option, len, &lease->static_route, &lease->static_route_size, &lease->static_route_allocated);
+                r = lease_parse_routes(option, len, &lease->static_route, &lease->static_route_size);
                 if (r < 0)
                         log_debug_errno(r, "Failed to parse static routes, ignoring: %m");
                 break;
@@ -680,8 +678,7 @@ int dhcp_lease_parse_options(uint8_t code, uint8_t len, const void *option, void
                 r = lease_parse_classless_routes(
                                 option, len,
                                 &lease->static_route,
-                                &lease->static_route_size,
-                                &lease->static_route_allocated);
+                                &lease->static_route_size);
                 if (r < 0)
                         log_debug_errno(r, "Failed to parse classless routes, ignoring: %m");
                 break;
@@ -749,7 +746,7 @@ int dhcp_lease_parse_search_domains(const uint8_t *option, size_t len, char ***d
 
         while (pos < len) {
                 _cleanup_free_ char *name = NULL;
-                size_t n = 0, allocated = 0;
+                size_t n = 0;
                 size_t jump_barrier = pos, next_chunk = 0;
                 bool first = true;
 
@@ -769,7 +766,7 @@ int dhcp_lease_parse_search_domains(const uint8_t *option, size_t len, char ***d
                                 if (pos >= len)
                                         return -EBADMSG;
 
-                                if (!GREEDY_REALLOC(name, allocated, n + !first + DNS_LABEL_ESCAPED_MAX))
+                                if (!GREEDY_REALLOC(name, n + !first + DNS_LABEL_ESCAPED_MAX))
                                         return -ENOMEM;
 
                                 if (first)
@@ -808,7 +805,7 @@ int dhcp_lease_parse_search_domains(const uint8_t *option, size_t len, char ***d
                                 return -EBADMSG;
                 }
 
-                if (!GREEDY_REALLOC(name, allocated, n + 1))
+                if (!GREEDY_REALLOC(name, n + 1))
                         return -ENOMEM;
                 name[n] = 0;
 
@@ -1234,7 +1231,6 @@ int dhcp_lease_load(sd_dhcp_lease **ret, const char *lease_file) {
                 r = deserialize_dhcp_routes(
                                 &lease->static_route,
                                 &lease->static_route_size,
-                                &lease->static_route_allocated,
                                 routes);
                 if (r < 0)
                         log_debug_errno(r, "Failed to parse DHCP routes %s, ignoring: %m", routes);

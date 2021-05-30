@@ -270,7 +270,7 @@ int strv_split_newlines_full(char ***ret, const char *s, ExtractFlags flags) {
 
 int strv_split_full(char ***t, const char *s, const char *separators, ExtractFlags flags) {
         _cleanup_strv_free_ char **l = NULL;
-        size_t n = 0, allocated = 0;
+        size_t n = 0;
         int r;
 
         assert(t);
@@ -285,7 +285,7 @@ int strv_split_full(char ***t, const char *s, const char *separators, ExtractFla
                 if (r == 0)
                         break;
 
-                if (!GREEDY_REALLOC(l, allocated, n + 2))
+                if (!GREEDY_REALLOC(l, n + 2))
                         return -ENOMEM;
 
                 l[n++] = TAKE_PTR(word);
@@ -307,7 +307,7 @@ int strv_split_full(char ***t, const char *s, const char *separators, ExtractFla
 #if 0 /* NM_IGNORED */
 int strv_split_colon_pairs(char ***t, const char *s) {
         _cleanup_strv_free_ char **l = NULL;
-        size_t n = 0, allocated = 0;
+        size_t n = 0;
         int r;
 
         assert(t);
@@ -337,7 +337,7 @@ int strv_split_colon_pairs(char ***t, const char *s) {
                 if (!second_or_empty)
                         return -ENOMEM;
 
-                if (!GREEDY_REALLOC(l, allocated, n + 3))
+                if (!GREEDY_REALLOC(l, n + 3))
                         return -ENOMEM;
 
                 l[n++] = TAKE_PTR(first);
@@ -716,9 +716,9 @@ int strv_make_nulstr(char * const *l, char **ret, size_t *ret_size) {
          * is provided separately.
          */
 
-        size_t n_allocated = 0, n = 0;
         _cleanup_free_ char *m = NULL;
         char * const *i;
+        size_t n = 0;
 
         assert(ret);
         assert(ret_size);
@@ -728,7 +728,7 @@ int strv_make_nulstr(char * const *l, char **ret, size_t *ret_size) {
 
                 z = strlen(*i);
 
-                if (!GREEDY_REALLOC(m, n_allocated, n + z + 2))
+                if (!GREEDY_REALLOC(m, n + z + 2))
                         return -ENOMEM;
 
                 memcpy(m + n, *i, z + 1);
