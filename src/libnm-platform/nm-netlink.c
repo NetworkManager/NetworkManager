@@ -1403,13 +1403,20 @@ nl_recv(struct nl_sock *    sk,
         struct ucred *      out_creds,
         gboolean *          out_creds_has)
 {
-    ssize_t      n;
-    int          flags = 0;
-    struct iovec iov;
+    /* We really expect msg_contol_buf to be large enough and MSG_CTRUNC not
+     * happening. We nm_assert() against that. However, in release builds
+     * we don't assert, so add some extra safety space for the unexpected
+     * case where we might need more than CMSG_SPACE(sizeof(struct ucred)).
+     * It should not hurt and should not be necessary. It's just some
+     * extra defensive space. */
+#define _MSG_CONTROL_BUF_EXTRA_SPACE (NM_MORE_ASSERTS ? 512u : 0u)
     union {
         struct cmsghdr cmsghdr;
-        char           buf[CMSG_SPACE(sizeof(struct ucred))];
+        char           buf[CMSG_SPACE(sizeof(struct ucred)) + _MSG_CONTROL_BUF_EXTRA_SPACE];
     } msg_contol_buf;
+    ssize_t       n;
+    int           flags = 0;
+    struct iovec  iov;
     struct msghdr msg = {
         .msg_name       = (void *) nla,
         .msg_namelen    = sizeof(struct sockaddr_nl),
