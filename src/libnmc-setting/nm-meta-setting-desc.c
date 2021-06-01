@@ -123,7 +123,11 @@ _value_str_as_index_list(const char *value, gsize *out_len)
             if (!str_cloned) {
                 /* we use alloca() inside a loop here, but it is guarded to happen at most once. */
                 str_cloned = TRUE;
-                str        = nm_strndup_a(200, str, strlen(str), &str_clone_free);
+                str        = nm_strndup_a(/* lgtm [cpp/alloca-in-loop] */
+                                   200,
+                                   str,
+                                   strlen(str),
+                                   &str_clone_free);
             }
             s         = str;
             str[good] = '\0';
