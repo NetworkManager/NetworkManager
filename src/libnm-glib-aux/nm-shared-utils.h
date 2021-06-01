@@ -452,12 +452,13 @@ nm_utils_ip4_address_is_zeronet(in_addr_t network)
 
 #define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
 
+/* Forward declare function so we don't have to drag in <arpa/inet.h>. */
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+
 static inline const char *
 nm_utils_inet_ntop(int addr_family, gconstpointer addr, char *dst)
 {
     const char *s;
-
-    const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 
     nm_assert_addr_family(addr_family);
     nm_assert(addr);
