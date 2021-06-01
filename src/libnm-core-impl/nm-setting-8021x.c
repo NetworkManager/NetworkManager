@@ -2746,87 +2746,37 @@ verify_ttls(NMSetting8021x *self, gboolean phase2, GError **error)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
 
-    if ((!priv->identity || !strlen(priv->identity))
-        && (!priv->anonymous_identity || !strlen(priv->anonymous_identity))) {
+    if (!priv->identity || !strlen(priv->identity)) {
         if (!priv->identity) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_MISSING_PROPERTY,
                                 _("property is missing"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_IDENTITY);
-        } else if (!strlen(priv->identity)) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("property is empty"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_IDENTITY);
-        } else if (!priv->anonymous_identity) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                                _("property is missing"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
         } else {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
                                 _("property is empty"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
         }
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_802_1X_SETTING_NAME,
+                       NM_SETTING_802_1X_IDENTITY);
         return FALSE;
     }
 
-    if ((!priv->phase2_auth || !strlen(priv->phase2_auth))
-        && (!priv->phase2_autheap || !strlen(priv->phase2_autheap))) {
-        if (!priv->phase2_auth) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                                _("property is missing"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PHASE2_AUTH);
-        } else if (!strlen(priv->phase2_auth)) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("property is empty"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PHASE2_AUTH);
-        } else if (!priv->phase2_autheap) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                                _("property is missing"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PHASE2_AUTHEAP);
-        } else {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("property is empty"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PHASE2_AUTHEAP);
-        }
+    if ((!priv->phase2_auth && !priv->phase2_autheap)
+        || (priv->phase2_auth && priv->phase2_autheap)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("exactly one property must be set"));
+        g_prefix_error(error,
+                       "%s.%s, %s.%s: ",
+                       NM_SETTING_802_1X_SETTING_NAME,
+                       NM_SETTING_802_1X_PHASE2_AUTH,
+                       NM_SETTING_802_1X_SETTING_NAME,
+                       NM_SETTING_802_1X_PHASE2_AUTHEAP);
         return FALSE;
     }
 
