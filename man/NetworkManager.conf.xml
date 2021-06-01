@@ -319,10 +319,12 @@ no-auto-default=*
         <filename>/usr/lib/systemd/resolv.conf</filename>.
         In that case, <literal>systemd-resolved</literal> is chosen automatically.
         </para>
+
         <para><literal>default</literal>: NetworkManager will update
         <filename>/etc/resolv.conf</filename> to reflect the nameservers
         provided by currently active connections. The <literal>rc-manager</literal>
         setting (below) controls how this is done.</para>
+
         <para><literal>dnsmasq</literal>: NetworkManager will run
         dnsmasq as a local caching nameserver, using "Conditional Forwarding"
         if you are connected to a VPN, and then update
@@ -336,12 +338,17 @@ no-auto-default=*
         after some time. This behavior can be modified passing the
         'all-servers' or 'strict-order' options to dnsmasq (see the
         manual page for more details).</para>
+
         <para><literal>systemd-resolved</literal>: NetworkManager will
         push the DNS configuration to systemd-resolved</para>
+
         <para><literal>unbound</literal>: NetworkManager will talk
         to unbound and dnssec-triggerd, using "Conditional Forwarding"
         with DNSSEC support. <filename>/etc/resolv.conf</filename>
-        will be managed by dnssec-trigger daemon.</para>
+        will be managed by dnssec-trigger daemon. This option is
+        deprecated. Note that dnssec-trigger ships a NetworkManager dispatcher
+        script so this DNS plugin is not necessary.</para>
+
         <para><literal>none</literal>: NetworkManager will not
         modify resolv.conf. This implies
         <literal>rc-manager</literal>&nbsp;<literal>unmanaged</literal></para>
