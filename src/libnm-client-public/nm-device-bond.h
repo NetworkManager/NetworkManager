@@ -37,7 +37,12 @@ GType nm_device_bond_get_type(void);
 NM_DEPRECATED_IN_1_24_FOR(nm_device_get_hw_address)
 const char *nm_device_bond_get_hw_address(NMDeviceBond *device);
 
-gboolean         nm_device_bond_get_carrier(NMDeviceBond *device);
+gboolean nm_device_bond_get_carrier(NMDeviceBond *device);
+
+NM_AVAILABLE_IN_1_32
+const GPtrArray *nm_device_bond_get_ports(NMDeviceBond *device);
+
+NM_DEPRECATED_IN_1_32_FOR(nm_device_get_ports)
 const GPtrArray *nm_device_bond_get_slaves(NMDeviceBond *device);
 
 G_END_DECLS
