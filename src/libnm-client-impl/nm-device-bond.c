@@ -83,9 +83,29 @@ nm_device_bond_get_carrier(NMDeviceBond *device)
  * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
+ *
+ * Deprecated: 1.32: Use nm_device_bond_get_ports().
  **/
 const GPtrArray *
 nm_device_bond_get_slaves(NMDeviceBond *device)
+{
+    return nm_device_bond_get_ports(device);
+}
+
+/**
+ * nm_device_bond_get_ports:
+ * @device: a #NMDeviceBond
+ *
+ * Gets the devices currently set as port of @device.
+ *
+ * Returns: (element-type NMDevice): the #GPtrArray containing
+ * #NMDevices that are ports of @device. This is the internal
+ * copy used by the device, and must not be modified.
+ *
+ * Since: 1.32
+ **/
+const GPtrArray *
+nm_device_bond_get_ports(NMDeviceBond *device)
 {
     g_return_val_if_fail(NM_IS_DEVICE_BOND(device), FALSE);
 
