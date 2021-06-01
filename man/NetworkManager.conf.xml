@@ -86,6 +86,12 @@
     Certain settings from the configuration can be reloaded at runtime either by sending SIGHUP signal or via
     D-Bus' Reload call.
     </para>
+    <para>
+    NetworkManager does not require any configuration in <literal>NetworkManager.conf</literal>. Depending
+    on your use case, you may remove all files to restore the default configuration (factory reset). But
+    note that your distribution or other packages may drop configuration snippets for NetworkManager, such
+    that they are part of the factory default.
+    </para>
 
   </refsect1>
 
@@ -107,7 +113,7 @@
       below.
     </para>
     <para>
-      Minimal system settings configuration file looks like this:
+      A simple configuration file looks like this:
       <programlisting>
 [main]
 plugins=keyfile
