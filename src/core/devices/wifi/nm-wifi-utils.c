@@ -1342,6 +1342,27 @@ eap_optional_password_to_iwd_config(GKeyFile *      file,
     }
 }
 
+static void
+eap_phase1_identity_to_iwd_config(GKeyFile *file, const char *iwd_prefix, NMSetting8021x *s_8021x)
+{
+    const char *phase1_identity = nm_setting_802_1x_get_anonymous_identity(s_8021x);
+
+    if (!phase1_identity) {
+        phase1_identity = nm_setting_802_1x_get_identity(s_8021x);
+
+        if (phase1_identity) {
+            nm_log_info(LOGD_WIFI,
+                        "IWD network config will send the same EAP Identity string in "
+                        "plaintext in phase 1 as in phase 2 (encrypted) to mimic legacy "
+                        "behavior, set [%s].%s=anonymous to prevent exposing the value",
+                        NM_SETTING_802_1X_SETTING_NAME,
+                        NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
+        }
+    }
+
+    eap_optional_identity_to_iwd_config(file, iwd_prefix, phase1_identity);
+}
+
 static gboolean
 eap_method_config_to_iwd_config(GKeyFile *      file,
                                 NMSetting8021x *s_8021x,
@@ -1367,9 +1388,7 @@ eap_method_config_to_iwd_config(GKeyFile *      file,
         const char *noneap_method = nm_setting_802_1x_get_phase2_auth(s_8021x);
 
         eap_method_name_to_iwd_config(file, iwd_prefix, "TTLS");
-        eap_optional_identity_to_iwd_config(file,
-                                            iwd_prefix,
-                                            nm_setting_802_1x_get_anonymous_identity(s_8021x));
+        eap_phase1_identity_to_iwd_config(file, iwd_prefix, s_8021x);
 
         if (!eap_certs_to_iwd_config(file,
                                      s_8021x,
@@ -1423,9 +1442,7 @@ eap_method_config_to_iwd_config(GKeyFile *      file,
         return FALSE;
     } else if (nm_streq0(method, "peap") && !phase2) {
         eap_method_name_to_iwd_config(file, iwd_prefix, "PEAP");
-        eap_optional_identity_to_iwd_config(file,
-                                            iwd_prefix,
-                                            nm_setting_802_1x_get_anonymous_identity(s_8021x));
+        eap_phase1_identity_to_iwd_config(file, iwd_prefix, s_8021x);
 
         if (!eap_certs_to_iwd_config(file,
                                      s_8021x,
