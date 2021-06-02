@@ -2768,6 +2768,21 @@ nm_strvarray_get_strv_non_empty(GArray *arr, guint *length)
     return &g_array_index(arr, const char *, 0);
 }
 
+static inline char **
+nm_strvarray_get_strv_non_empty_dup(GArray *arr, guint *length)
+{
+    const char *const *strv;
+
+    if (!arr || arr->len == 0) {
+        NM_SET_OUT(length, 0);
+        return NULL;
+    }
+
+    NM_SET_OUT(length, arr->len);
+    strv = &g_array_index(arr, const char *, 0);
+    return nm_utils_strv_dup(strv, arr->len, TRUE);
+}
+
 static inline const char *const *
 nm_strvarray_get_strv(GArray **arr, guint *length)
 {
