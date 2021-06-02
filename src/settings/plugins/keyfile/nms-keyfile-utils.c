@@ -137,7 +137,11 @@ nms_keyfile_nmmeta_read(const char * dirname,
                                        NMMETA_KF_GROUP_NAME_NMMETA,
                                        NMMETA_KF_KEY_NAME_NMMETA_UUID,
                                        NULL);
-        if (!nm_streq0(v_uuid, uuid))
+        if (!v_uuid)
+            return FALSE;
+        if (strncmp(v_uuid, uuid, uuid_len) != 0)
+            return FALSE;
+        if (v_uuid[uuid_len] != '\0')
             return FALSE;
 
         loaded_path      = g_key_file_get_string(kf,
