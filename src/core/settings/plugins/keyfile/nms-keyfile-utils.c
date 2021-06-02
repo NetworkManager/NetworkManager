@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "nm-utils.h"
@@ -30,9 +31,9 @@
 const char *
 nms_keyfile_nmmeta_check_filename(const char *filename, guint *out_uuid_len)
 {
-    const char *uuid;
     const char *s;
     gsize       len;
+    char        uuid[37];
 
     s = strrchr(filename, '/');
     if (s)
@@ -50,17 +51,18 @@ nms_keyfile_nmmeta_check_filename(const char *filename, guint *out_uuid_len)
 
     len -= NM_STRLEN(NM_KEYFILE_PATH_SUFFIX_NMMETA);
 
-    if (!NM_IN_SET(len, 36, 40)) {
+    if (len != 36) {
         /* the remaining part of the filename has not the right length to
          * contain a UUID (according to nm_utils_is_uuid()). */
         return NULL;
     }
 
-    uuid = nm_strndup_a(100, filename, len, NULL);
-    if (!nm_utils_is_uuid(uuid))
+    memcpy(uuid, filename, 36);
+    uuid[36] = '\0';
+    if (!nm_uuid_is_normalized(uuid))
         return NULL;
 
-    NM_SET_OUT(out_uuid_len, len);
+    NM_SET_OUT(out_uuid_len, 36);
     return filename;
 }
 
