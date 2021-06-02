@@ -809,8 +809,7 @@ nm_setting_connection_add_secondary(NMSettingConnection *setting, const char *se
     GSList *                    iter;
 
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
-    g_return_val_if_fail(sec_uuid != NULL, FALSE);
-    g_return_val_if_fail(sec_uuid[0] != '\0', FALSE);
+    g_return_val_if_fail(sec_uuid, FALSE);
 
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
     for (iter = priv->secondaries; iter; iter = g_slist_next(iter)) {
@@ -863,8 +862,7 @@ nm_setting_connection_remove_secondary_by_value(NMSettingConnection *setting, co
     GSList *                    iter;
 
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
-    g_return_val_if_fail(sec_uuid != NULL, FALSE);
-    g_return_val_if_fail(sec_uuid[0] != '\0', FALSE);
+    g_return_val_if_fail(sec_uuid, FALSE);
 
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
     for (iter = priv->secondaries; iter; iter = g_slist_next(iter)) {
