@@ -1907,6 +1907,34 @@ const char **_nm_utils_strv_dup_packed(const char *const *strv, gssize len);
 
 #define nm_utils_strv_dup_packed(strv, len) _nm_utils_strv_dup_packed(NM_CAST_STRV_CC(strv), (len))
 
+#define nm_utils_strv_dup_shallow_maybe_a(alloca_maxlen, strv, len, to_free)       \
+    ({                                                                             \
+        const char *const *const _strv    = NM_CAST_STRV_CC(strv);                 \
+        const gssize             _len     = (len);                                 \
+        const char **            _result  = NULL;                                  \
+        const char ***const      _to_free = (to_free);                             \
+                                                                                   \
+        G_STATIC_ASSERT_EXPR((alloca_maxlen) <= 500u / sizeof(const char *));      \
+        G_STATIC_ASSERT_EXPR((alloca_maxlen) > 0u);                                \
+        nm_assert(_to_free && !*_to_free);                                         \
+                                                                                   \
+        if (_len >= 0 || _strv) {                                                  \
+            const gsize _l = (_len < 0) ? NM_PTRARRAY_LEN(_strv) : ((gsize) _len); \
+                                                                                   \
+            if (G_LIKELY(_l < (alloca_maxlen))) {                                  \
+                _result = g_newa(const char *, _l + 1);                            \
+            } else {                                                               \
+                _result   = g_new(const char *, _l + 1);                           \
+                *_to_free = _result;                                               \
+            }                                                                      \
+            if (_l > 0)                                                            \
+                memcpy(_result, _strv, _l * sizeof(const char *));                 \
+            _result[_l] = NULL;                                                    \
+        }                                                                          \
+                                                                                   \
+        _result;                                                                   \
+    })
+
 /*****************************************************************************/
 
 GSList *nm_utils_g_slist_find_str(const GSList *list, const char *needle);
