@@ -80,7 +80,7 @@ nm_setting_match_get_interface_name(NMSettingMatch *setting, int idx)
     g_return_val_if_fail(setting->interface_name && idx >= 0 && idx < setting->interface_name->len,
                          NULL);
 
-    return g_array_index(setting->interface_name, const char *, idx);
+    return nm_strvarray_get_idx(setting->interface_name, idx);
 }
 
 /**
@@ -225,7 +225,7 @@ nm_setting_match_get_kernel_command_line(NMSettingMatch *setting, guint idx)
     g_return_val_if_fail(setting->kernel_command_line && idx < setting->kernel_command_line->len,
                          NULL);
 
-    return g_array_index(setting->kernel_command_line, const char *, idx);
+    return nm_strvarray_get_idx(setting->kernel_command_line, idx);
 }
 
 /**
@@ -367,7 +367,7 @@ nm_setting_match_get_driver(NMSettingMatch *setting, guint idx)
 
     g_return_val_if_fail(setting->driver && idx < setting->driver->len, NULL);
 
-    return g_array_index(setting->driver, const char *, idx);
+    return nm_strvarray_get_idx(setting->driver, idx);
 }
 
 /**
@@ -508,7 +508,7 @@ nm_setting_match_get_path(NMSettingMatch *setting, guint idx)
 
     g_return_val_if_fail(setting->path && idx < setting->path->len, NULL);
 
-    return g_array_index(setting->path, const char *, idx);
+    return nm_strvarray_get_idx(setting->path, idx);
 }
 
 /**
@@ -707,7 +707,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (self->interface_name) {
         for (i = 0; i < self->interface_name->len; i++) {
-            if (nm_str_is_empty(g_array_index(self->interface_name, const char *, i))) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->interface_name, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -723,7 +723,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (self->kernel_command_line) {
         for (i = 0; i < self->kernel_command_line->len; i++) {
-            if (nm_str_is_empty(g_array_index(self->kernel_command_line, const char *, i))) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->kernel_command_line, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -739,7 +739,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (self->driver) {
         for (i = 0; i < self->driver->len; i++) {
-            if (nm_str_is_empty(g_array_index(self->driver, const char *, i))) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->driver, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -755,7 +755,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (self->path) {
         for (i = 0; i < self->path->len; i++) {
-            if (nm_str_is_empty(g_array_index(self->path, const char *, i))) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->path, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
