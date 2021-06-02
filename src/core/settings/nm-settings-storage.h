@@ -60,14 +60,14 @@ nm_settings_storage_get_plugin(const NMSettingsStorage *self)
     return self->_plugin;
 }
 
-gboolean nm_uuid_is_valid_full(const char *str);
+gboolean nm_uuid_is_normalized_full(const char *str);
 
 static inline const char *
 nm_settings_storage_get_uuid(const NMSettingsStorage *self)
 {
     g_return_val_if_fail(NM_IS_SETTINGS_STORAGE(self), NULL);
 
-    nm_assert(nm_uuid_is_valid_full(self->_uuid));
+    nm_assert(nm_uuid_is_normalized_full(self->_uuid));
     return self->_uuid;
 }
 
@@ -76,7 +76,7 @@ nm_settings_storage_get_uuid_opt(const NMSettingsStorage *self)
 {
     g_return_val_if_fail(NM_IS_SETTINGS_STORAGE(self), NULL);
 
-    nm_assert(!self->_uuid || nm_uuid_is_valid_full(self->_uuid));
+    nm_assert(!self->_uuid || nm_uuid_is_normalized_full(self->_uuid));
     return self->_uuid;
 }
 
