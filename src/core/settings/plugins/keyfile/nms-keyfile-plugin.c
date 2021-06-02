@@ -15,6 +15,7 @@
 
 #include "libnm-std-aux/c-list-util.h"
 #include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 
 #include "nm-connection.h"
@@ -233,7 +234,7 @@ _read_from_file(const char * full_filename,
 
     nm_assert(!connection
               || (_nm_connection_verify(connection, NULL) == NM_SETTING_VERIFY_SUCCESS));
-    nm_assert(!connection || nm_utils_is_uuid(nm_connection_get_uuid(connection)));
+    nm_assert(!connection || nm_uuid_is_normalized(nm_connection_get_uuid(connection)));
 
     return connection;
 }
@@ -260,7 +261,7 @@ _nm_assert_storage(gpointer plugin /* NMSKeyfilePlugin  */,
 
     uuid = nms_keyfile_storage_get_uuid(storage);
 
-    nm_assert(nm_utils_is_uuid(uuid));
+    nm_assert(nm_uuid_is_normalized(uuid));
 
     nm_assert(((NMSKeyfileStorage *) storage)->is_meta_data
               || !(((NMSKeyfileStorage *) storage)->u.conn_data.connection)
@@ -1106,7 +1107,7 @@ nms_keyfile_plugin_set_nmmeta_tombstone(NMSKeyfilePlugin *  self,
     const char *                       dirname;
 
     nm_assert(NMS_IS_KEYFILE_PLUGIN(self));
-    nm_assert(nm_utils_is_uuid(uuid));
+    nm_assert(nm_uuid_is_normalized(uuid));
     nm_assert(!out_storage || !*out_storage);
     nm_assert(!shadowed_storage || (set && in_memory));
 

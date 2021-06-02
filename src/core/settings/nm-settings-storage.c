@@ -7,6 +7,7 @@
 
 #include "nm-settings-storage.h"
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "nm-utils.h"
 #include "nm-settings-plugin.h"
 
@@ -72,7 +73,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_UUID:
         /* construct-only */
         self->_uuid = g_value_dup_string(value);
-        nm_assert(!self->_uuid || nm_utils_is_uuid(self->_uuid));
+        nm_assert(!self->_uuid || nm_uuid_is_normalized(self->_uuid));
         break;
     case PROP_FILENAME:
         /* construct-only */
@@ -97,7 +98,7 @@ NMSettingsStorage *
 nm_settings_storage_new(NMSettingsPlugin *plugin, const char *uuid, const char *filename)
 {
     nm_assert(NM_IS_SETTINGS_PLUGIN(plugin));
-    nm_assert(nm_utils_is_uuid(uuid));
+    nm_assert(nm_uuid_is_normalized(uuid));
 
     return g_object_new(NM_TYPE_SETTINGS_STORAGE,
                         NM_SETTINGS_STORAGE_PLUGIN,
