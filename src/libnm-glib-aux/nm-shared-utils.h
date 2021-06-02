@@ -2747,6 +2747,15 @@ nm_strvarray_add(GArray *array, const char *str)
     g_array_append_val(array, s);
 }
 
+static inline const char *
+nm_strvarray_get_idx(GArray *array, guint idx)
+{
+    nm_assert(array);
+    nm_assert(idx < array->len);
+
+    return g_array_index(array, const char *, idx);
+}
+
 static inline const char *const *
 nm_strvarray_get_strv_non_empty(GArray *arr, guint *length)
 {
