@@ -710,6 +710,8 @@ nm_utils_strsplit_set(const char *str, const char *delimiters)
 
 gssize nm_utils_strv_find_first(char **list, gssize len, const char *needle);
 
+gboolean nm_strv_has_duplicate(const char *const *list, gssize len, gboolean is_sorted);
+
 char **_nm_utils_strv_cleanup(char **  strv,
                               gboolean strip_whitespace,
                               gboolean skip_empty,

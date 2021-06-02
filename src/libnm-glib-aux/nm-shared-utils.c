@@ -2290,6 +2290,36 @@ nm_utils_strv_find_first(char **list, gssize len, const char *needle)
     return -1;
 }
 
+gboolean
+nm_strv_has_duplicate(const char *const *strv, gssize len, gboolean is_sorted)
+{
+    gsize l;
+    gsize i;
+    gsize j;
+
+    l = len < 0 ? NM_PTRARRAY_LEN(strv) : (gsize) len;
+
+    if (is_sorted) {
+#if NM_MORE_ASSERTS > 10
+        for (i = 1; i < l; i++)
+            nm_assert(nm_strcmp0(strv[i - 1], strv[i]) <= 0);
+#endif
+        for (i = 1; i < l; i++) {
+            if (nm_streq0(strv[i - 1], strv[i]))
+                return TRUE;
+        }
+    } else {
+        for (i = 1; i < l; i++) {
+            for (j = 0; j < i; j++) {
+                if (nm_streq0(strv[j], strv[i]))
+                    return TRUE;
+            }
+        }
+    }
+
+    return FALSE;
+}
+
 char **
 _nm_utils_strv_cleanup(char **  strv,
                        gboolean strip_whitespace,
