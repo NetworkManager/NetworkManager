@@ -53,7 +53,7 @@ nms_keyfile_nmmeta_check_filename(const char *filename, guint *out_uuid_len)
 
     if (len != 36) {
         /* the remaining part of the filename has not the right length to
-         * contain a UUID (according to nm_utils_is_uuid()). */
+         * contain a UUID (according to nm_uuid_is_normalized()). */
         return NULL;
     }
 
@@ -73,7 +73,7 @@ nms_keyfile_nmmeta_filename(const char *dirname, const char *uuid, gboolean temp
     char *s;
 
     nm_assert(dirname && dirname[0] == '/');
-    nm_assert(nm_utils_is_uuid(uuid) && !strchr(uuid, '/'));
+    nm_assert(nm_uuid_is_normalized(uuid) && !strchr(uuid, '/'));
 
     if (g_snprintf(filename,
                    sizeof(filename),
@@ -82,7 +82,7 @@ nms_keyfile_nmmeta_filename(const char *dirname, const char *uuid, gboolean temp
                    NM_KEYFILE_PATH_SUFFIX_NMMETA,
                    temporary ? "~" : "")
         >= sizeof(filename)) {
-        /* valid uuids are limited in length (nm_utils_is_uuid). The buffer should always
+        /* valid uuids are limited in length (nm_uuid_is_normalized). The buffer should always
          * be large enough. */
         nm_assert_not_reached();
     }
@@ -217,7 +217,7 @@ nms_keyfile_nmmeta_write(const char *dirname,
     int           errsv;
 
     nm_assert(dirname && dirname[0] == '/');
-    nm_assert(nm_utils_is_uuid(uuid) && !strchr(uuid, '/'));
+    nm_assert(nm_uuid_is_normalized(uuid) && !strchr(uuid, '/'));
     nm_assert(!loaded_path || loaded_path[0] == '/');
     nm_assert(!shadowed_storage || loaded_path);
 

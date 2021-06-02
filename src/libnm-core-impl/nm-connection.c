@@ -1740,7 +1740,7 @@ _nm_connection_ensure_normalized(NMConnection * connection,
 
     nm_assert(NM_IS_CONNECTION(connection));
     nm_assert(!out_connection_clone || !*out_connection_clone);
-    nm_assert(!expected_uuid || nm_utils_is_uuid(expected_uuid));
+    nm_assert(!expected_uuid || nm_uuid_is_normalized(expected_uuid));
 
     if (expected_uuid) {
         if (nm_streq0(expected_uuid, nm_connection_get_uuid(connection)))

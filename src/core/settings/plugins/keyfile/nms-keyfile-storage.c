@@ -7,6 +7,7 @@
 
 #include "nms-keyfile-storage.h"
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nms-keyfile-plugin.h"
@@ -108,7 +109,7 @@ _storage_new(NMSKeyfilePlugin *    plugin,
     NMSKeyfileStorage *self;
 
     nm_assert(NMS_IS_KEYFILE_PLUGIN(plugin));
-    nm_assert(nm_utils_is_uuid(uuid));
+    nm_assert(nm_uuid_is_normalized(uuid));
     nm_assert(filename && filename[0] == '/');
 
     self = g_object_new(NMS_TYPE_KEYFILE_STORAGE,
@@ -135,7 +136,7 @@ nms_keyfile_storage_new_tombstone(NMSKeyfilePlugin *    plugin,
 {
     NMSKeyfileStorage *self;
 
-    nm_assert(nm_utils_is_uuid(uuid));
+    nm_assert(nm_uuid_is_normalized(uuid));
     nm_assert(filename && filename[0] == '/');
     nm_assert(nms_keyfile_nmmeta_check_filename(filename, NULL));
     nm_assert(NM_IN_SET(storage_type, NMS_KEYFILE_STORAGE_TYPE_ETC, NMS_KEYFILE_STORAGE_TYPE_RUN));

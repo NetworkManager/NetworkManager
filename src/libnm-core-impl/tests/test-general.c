@@ -7788,7 +7788,7 @@ static void
 __test_uuid(const char *expected_uuid, const char *str, gssize slen, char *uuid_test)
 {
     g_assert(uuid_test);
-    g_assert(nm_utils_is_uuid(uuid_test));
+    g_assert(nm_uuid_is_normalized(uuid_test));
 
     if (strcmp(uuid_test, expected_uuid)) {
         g_error("UUID test failed (1): text=%s, len=%lld, expected=%s, uuid_test=%s",
