@@ -2795,8 +2795,8 @@ nm_strvarray_set_strv(GArray **array, const char *const *strv)
         nm_strvarray_add(*array, strv[0]);
 }
 
-static inline gboolean
-nm_strvarray_remove_first(GArray *strv, const char *needle)
+static inline gssize
+nm_strvarray_find_first(GArray *strv, const char *needle)
 {
     guint i;
 
@@ -2804,13 +2804,25 @@ nm_strvarray_remove_first(GArray *strv, const char *needle)
 
     if (strv) {
         for (i = 0; i < strv->len; i++) {
-            if (nm_streq(needle, g_array_index(strv, const char *, i))) {
-                g_array_remove_index(strv, i);
-                return TRUE;
-            }
+            if (nm_streq(needle, g_array_index(strv, const char *, i)))
+                return i;
         }
     }
-    return FALSE;
+    return -1;
+}
+
+static inline gboolean
+nm_strvarray_remove_first(GArray *strv, const char *needle)
+{
+    gssize idx;
+
+    nm_assert(needle);
+
+    idx = nm_strvarray_find_first(strv, needle);
+    if (idx < 0)
+        return FALSE;
+    g_array_remove_index(strv, idx);
+    return TRUE;
 }
 
 /*****************************************************************************/
