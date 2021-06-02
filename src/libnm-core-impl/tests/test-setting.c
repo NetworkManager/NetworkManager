@@ -4465,6 +4465,120 @@ test_setting_metadata(void)
 
 /*****************************************************************************/
 
+static void
+test_setting_connection_secondaries_verify(void)
+{
+    gs_unref_object NMConnection *con = NULL;
+    NMSettingConnection *         s_con;
+    guint                         i_run;
+    guint                         i_word;
+
+    con = nmtst_create_minimal_connection("test-sec", NULL, NM_SETTING_WIRED_SETTING_NAME, &s_con);
+    nmtst_connection_normalize(con);
+
+    for (i_run = 0; i_run < 100; i_run++) {
+        guint             word_len            = nmtst_get_rand_word_length(NULL);
+        gs_unref_ptrarray GPtrArray *arr      = NULL;
+        gs_unref_ptrarray GPtrArray *arr_norm = NULL;
+        gboolean                     was_normalized;
+        gboolean                     was_normalized2;
+
+        /* create a random list of invalid, normalizable and normalized UUIDs. */
+        arr = g_ptr_array_new();
+        for (i_word = 0; i_word < word_len; i_word++) {
+            g_ptr_array_add(arr,
+                            (char *) nmtst_rand_select((const char *) "",
+                                                       "52c3feb9-3aa2-46f6-a07b-1765918699eb",
+                                                       "52C3feb9-3aa2-46f6-a07b-1765918699eb",
+                                                       "52C3feb9-3aa2-46f6-a07b-1765918699eb",
+                                                       "f86dfb13df764894ab3836b7cdb9d82dde8b27c4",
+                                                       "52C3feb93-aa2-46f6-a07b-1765918699eb",
+                                                       "bogus"));
+        }
+        g_ptr_array_add(arr, NULL);
+
+        /* set the new list of secondaries, and assert that the result is as expected. */
+
+        nmtst_assert_connection_verifies_without_normalization(con);
+
+        g_object_set(s_con, NM_SETTING_CONNECTION_SECONDARIES, arr->pdata, NULL);
+
+#define _assert_secondaries(s_con, expected)                                                      \
+    G_STMT_START                                                                                  \
+    {                                                                                             \
+        NMSettingConnection *const _s_con    = (s_con);                                           \
+        const char *const *        _expected = (expected);                                        \
+        GArray *                   _secondaries;                                                  \
+        const guint                _expected_len = NM_PTRARRAY_LEN(_expected);                    \
+        gs_strfreev char **        _sec_strv     = NULL;                                          \
+        guint                      _i;                                                            \
+                                                                                                  \
+        g_assert(_expected);                                                                      \
+                                                                                                  \
+        if (nmtst_get_rand_bool()) {                                                              \
+            _secondaries = _nm_setting_connection_get_secondaries(_s_con);                        \
+            g_assert_cmpint(_expected_len, ==, nm_g_array_len(_secondaries));                     \
+            g_assert((_expected_len == 0) == (!_secondaries));                                    \
+            g_assert(nm_utils_strv_equal(_expected, nm_strvarray_get_strv(&_secondaries, NULL))); \
+        }                                                                                         \
+                                                                                                  \
+        if (nmtst_get_rand_bool()) {                                                              \
+            g_object_get(_s_con, NM_SETTING_CONNECTION_SECONDARIES, &_sec_strv, NULL);            \
+            g_assert_cmpint(_expected_len, ==, NM_PTRARRAY_LEN(_sec_strv));                       \
+            g_assert((_expected_len == 0) == (!_sec_strv));                                       \
+            g_assert(nm_utils_strv_equal(_expected, _sec_strv ?: NM_STRV_EMPTY()));               \
+        }                                                                                         \
+                                                                                                  \
+        g_assert_cmpint(nm_setting_connection_get_num_secondaries(_s_con), ==, _expected_len);    \
+        if (nmtst_get_rand_bool()) {                                                              \
+            for (_i = 0; _i < _expected_len; _i++) {                                              \
+                g_assert_cmpstr(nm_setting_connection_get_secondary(_s_con, _i),                  \
+                                ==,                                                               \
+                                _expected[_i]);                                                   \
+            }                                                                                     \
+        }                                                                                         \
+    }                                                                                             \
+    G_STMT_END
+
+        _assert_secondaries(s_con, (const char *const *) arr->pdata);
+
+        arr_norm = g_ptr_array_new_with_free_func(g_free);
+        for (i_word = 0; i_word < word_len; i_word++) {
+            const char *s = arr->pdata[i_word];
+            gboolean    is_normalized;
+            char        uuid_normalized[37];
+
+            if (!nm_uuid_is_valid_nm(s, &is_normalized, uuid_normalized))
+                continue;
+
+            if (is_normalized)
+                s = uuid_normalized;
+
+            if (nm_utils_strv_find_first((char **) arr_norm->pdata, arr_norm->len, s) >= 0)
+                continue;
+
+            g_ptr_array_add(arr_norm, g_strdup(s));
+        }
+        g_ptr_array_add(arr_norm, NULL);
+
+        was_normalized = !nm_utils_strv_equal((char **) arr->pdata, (char **) arr_norm->pdata);
+
+        if (was_normalized)
+            nmtst_assert_connection_verifies_and_normalizable(con);
+        else
+            nmtst_assert_connection_verifies_without_normalization(con);
+
+        if (was_normalized || nmtst_get_rand_bool()) {
+            was_normalized2 = nmtst_connection_normalize(con);
+            g_assert(was_normalized == was_normalized2);
+        }
+
+        _assert_secondaries(s_con, (const char *const *) arr_norm->pdata);
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -4482,6 +4596,9 @@ main(int argc, char **argv)
                          "pkcs8-enc-key.pem, 1234567890",
                          test_8021x);
     g_test_add_data_func("/libnm/setting-8021x/pkcs12", "test-cert.p12, test", test_8021x);
+
+    g_test_add_func("/libnm/settings/test_setting_connection_secondaries_verify",
+                    test_setting_connection_secondaries_verify);
 
     g_test_add_func("/libnm/settings/bond/verify", test_bond_verify);
     g_test_add_func("/libnm/settings/bond/compare", test_bond_compare);
