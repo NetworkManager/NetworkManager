@@ -3,7 +3,7 @@ NetworkManager-1.32
 Overview of changes since NetworkManager-1.30
 =============================================
 
-This is a snapshot of NetworkManager 1.30 development series.
+This is a snapshot of NetworkManager 1.32 development series.
 The API is subject to change and not guaranteed to be compatible
 with the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
@@ -19,6 +19,13 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * API BREAK: D-Bus: remove long deprecated PropertiesChanged signal from D-Bus
   API. They are replaced by standard PropertiesChanged signal on the
   "org.freedesktop.DBus.Properties" interface.
+* dhcp: honor ID_NET_DHCP_BROADCAST udev attribute to set the broadcast flag.
+* firewall: add nftables firewall backend for configuring IPv4 NAT with shared
+  mode.
+* ethtool: add support for pause settings.
+* wifi/iwd: mirror NetworkManager connection profiles to iwd config files.
+* Major restructuring of the source code.
+* Many bugfixes and minor improvements.
 
 =============================================
 NetworkManager-1.30
