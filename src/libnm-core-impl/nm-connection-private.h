@@ -27,6 +27,8 @@ gboolean _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
 
 const char *_nm_connection_detect_bluetooth_type(NMConnection *self);
 
+gboolean _nm_setting_connection_verify_secondaries(GArray *secondaries, GError **error);
+
 gboolean _nm_connection_verify_required_interface_name(NMConnection *connection, GError **error);
 
 int _nm_setting_ovs_interface_verify_interface_type(NMSettingOvsInterface *self,

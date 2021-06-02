@@ -741,6 +741,12 @@ nm_setting_connection_get_autoconnect_slaves(NMSettingConnection *setting)
     return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->autoconnect_slaves;
 }
 
+GArray *
+_nm_setting_connection_get_secondaries(NMSettingConnection *setting)
+{
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->secondaries;
+}
+
 /**
  * nm_setting_connection_get_num_secondaries:
  * @setting: the #NMSettingConnection
@@ -1474,6 +1480,9 @@ after_interface_name:
                        NM_SETTING_CONNECTION_UUID);
         return NM_SETTING_VERIFY_NORMALIZABLE;
     }
+
+    if (!_nm_setting_connection_verify_secondaries(priv->secondaries, error))
+        return NM_SETTING_VERIFY_NORMALIZABLE;
 
     return TRUE;
 }
