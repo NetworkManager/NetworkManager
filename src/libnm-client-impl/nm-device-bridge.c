@@ -82,29 +82,9 @@ nm_device_bridge_get_carrier(NMDeviceBridge *device)
  * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
- *
- * Deprecated: 1.32: Use nm_device_bridge_get_ports().
  **/
 const GPtrArray *
 nm_device_bridge_get_slaves(NMDeviceBridge *device)
-{
-    return nm_device_bridge_get_ports(device);
-}
-
-/**
- * nm_device_bridge_get_ports:
- * @device: a #NMDeviceBridge
- *
- * Gets the devices currently set as port of @device.
- *
- * Returns: (element-type NMDevice): the #GPtrArray containing
- * #NMDevices that are ports of @device. This is the internal
- * copy used by the device, and must not be modified.
- *
- * Since: 1.32
- **/
-const GPtrArray *
-nm_device_bridge_get_ports(NMDeviceBridge *device)
 {
     g_return_val_if_fail(NM_IS_DEVICE_BRIDGE(device), FALSE);
 

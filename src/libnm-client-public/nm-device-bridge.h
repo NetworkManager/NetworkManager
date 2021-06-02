@@ -38,12 +38,7 @@ GType nm_device_bridge_get_type(void);
 NM_DEPRECATED_IN_1_24_FOR(nm_device_get_hw_address)
 const char *nm_device_bridge_get_hw_address(NMDeviceBridge *device);
 
-gboolean nm_device_bridge_get_carrier(NMDeviceBridge *device);
-
-NM_AVAILABLE_IN_1_32
-const GPtrArray *nm_device_bridge_get_ports(NMDeviceBridge *device);
-
-NM_DEPRECATED_IN_1_32_FOR(nm_device_bridge_get_ports)
+gboolean         nm_device_bridge_get_carrier(NMDeviceBridge *device);
 const GPtrArray *nm_device_bridge_get_slaves(NMDeviceBridge *device);
 
 G_END_DECLS

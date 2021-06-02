@@ -1787,8 +1787,6 @@ global:
 
 libnm_1_32_0 {
 global:
-	nm_device_bond_get_ports;
-	nm_device_bridge_get_ports;
 	nm_ethtool_optname_is_pause;
 	nm_setting_match_new;
 	nm_setting_wired_get_accept_all_mac_addresses;
