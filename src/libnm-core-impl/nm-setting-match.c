@@ -624,16 +624,17 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
     switch (prop_id) {
     case PROP_INTERFACE_NAME:
-        g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(self->interface_name, NULL));
+        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->interface_name, NULL));
         break;
     case PROP_KERNEL_COMMAND_LINE:
-        g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(self->kernel_command_line, NULL));
+        g_value_take_boxed(value,
+                           nm_strvarray_get_strv_non_empty_dup(self->kernel_command_line, NULL));
         break;
     case PROP_DRIVER:
-        g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(self->driver, NULL));
+        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->driver, NULL));
         break;
     case PROP_PATH:
-        g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(self->path, NULL));
+        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->path, NULL));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
