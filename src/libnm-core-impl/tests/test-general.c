@@ -5060,7 +5060,7 @@ test_setting_connection_changed_signal(void)
     ASSERT_CHANGED(nm_setting_connection_add_secondary(s_con, uuid));
     ASSERT_CHANGED(nm_setting_connection_remove_secondary(s_con, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(elt != NULL));
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx < nm_g_array_len(priv->secondaries)));
     ASSERT_UNCHANGED(nm_setting_connection_remove_secondary(s_con, 1));
     g_test_assert_expected_messages();
 

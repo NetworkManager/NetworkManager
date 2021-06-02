@@ -70,26 +70,26 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_MUD_URL, );
 
 typedef struct {
-    GArray *permissions;
-    GSList *secondaries; /* secondary connections to activate with the base connection */
-    char *  id;
-    char *  uuid;
-    char *  stable_id;
-    char *  interface_name;
-    char *  type;
-    char *  master;
-    char *  slave_type;
-    char *  zone;
-    char *  mud_url;
-    guint64 timestamp;
-    int     autoconnect_priority;
-    int     autoconnect_retries;
-    int     multi_connect;
-    int     auth_retries;
-    int     mdns;
-    int     llmnr;
-    int     wait_device_timeout;
-    guint   gateway_ping_timeout;
+    GArray *                             permissions;
+    GArray *                             secondaries;
+    char *                               id;
+    char *                               uuid;
+    char *                               stable_id;
+    char *                               interface_name;
+    char *                               type;
+    char *                               master;
+    char *                               slave_type;
+    char *                               zone;
+    char *                               mud_url;
+    guint64                              timestamp;
+    int                                  autoconnect_priority;
+    int                                  autoconnect_retries;
+    int                                  multi_connect;
+    int                                  auth_retries;
+    int                                  mdns;
+    int                                  llmnr;
+    int                                  wait_device_timeout;
+    guint                                gateway_ping_timeout;
     NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
     NMMetered                            metered;
     NMSettingConnectionLldp              lldp;
@@ -752,27 +752,37 @@ nm_setting_connection_get_num_secondaries(NMSettingConnection *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), 0);
 
-    return g_slist_length(NM_SETTING_CONNECTION_GET_PRIVATE(setting)->secondaries);
+    return nm_g_array_len(NM_SETTING_CONNECTION_GET_PRIVATE(setting)->secondaries);
 }
 
 /**
  * nm_setting_connection_get_secondary:
  * @setting: the #NMSettingConnection
- * @idx: the zero-based index of the secondary connection UUID entry
+ * @idx: the zero-based index of the secondary connection UUID entry.
+ *   Access one past the length of secondaries is ok and will return
+ *   %NULL. Otherwise, it is a user error.
  *
- * Returns: the secondary connection UUID at index @idx
+ * Returns: the secondary connection UUID at index @idx or
+ *   %NULL if @idx is the number of secondaries.
  **/
 const char *
 nm_setting_connection_get_secondary(NMSettingConnection *setting, guint32 idx)
 {
     NMSettingConnectionPrivate *priv;
+    guint                       secondaries_len;
 
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NULL);
 
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
-    g_return_val_if_fail(idx <= g_slist_length(priv->secondaries), NULL);
 
-    return (const char *) g_slist_nth_data(priv->secondaries, idx);
+    secondaries_len = nm_g_array_len(priv->secondaries);
+    if (idx >= secondaries_len) {
+        /* access one past the length is OK. */
+        g_return_val_if_fail(idx == secondaries_len, NULL);
+        return NULL;
+    }
+
+    return nm_strvarray_get_idx(priv->secondaries, idx);
 }
 
 /**
@@ -806,18 +816,16 @@ gboolean
 nm_setting_connection_add_secondary(NMSettingConnection *setting, const char *sec_uuid)
 {
     NMSettingConnectionPrivate *priv;
-    GSList *                    iter;
 
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
     g_return_val_if_fail(sec_uuid, FALSE);
 
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
-    for (iter = priv->secondaries; iter; iter = g_slist_next(iter)) {
-        if (!strcmp(sec_uuid, (char *) iter->data))
-            return FALSE;
-    }
 
-    priv->secondaries = g_slist_append(priv->secondaries, g_strdup(sec_uuid));
+    if (nm_strvarray_find_first(priv->secondaries, sec_uuid) >= 0)
+        return FALSE;
+
+    nm_strvarray_add(nm_strvarray_ensure(&priv->secondaries), sec_uuid);
     _notify(setting, PROP_SECONDARIES);
     return TRUE;
 }
@@ -833,16 +841,14 @@ void
 nm_setting_connection_remove_secondary(NMSettingConnection *setting, guint32 idx)
 {
     NMSettingConnectionPrivate *priv;
-    GSList *                    elt;
 
     g_return_if_fail(NM_IS_SETTING_CONNECTION(setting));
 
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
-    elt  = g_slist_nth(priv->secondaries, idx);
-    g_return_if_fail(elt != NULL);
 
-    g_free(elt->data);
-    priv->secondaries = g_slist_delete_link(priv->secondaries, elt);
+    g_return_if_fail(idx < nm_g_array_len(priv->secondaries));
+
+    g_array_remove_index(priv->secondaries, idx);
     _notify(setting, PROP_SECONDARIES);
 }
 
@@ -859,18 +865,15 @@ gboolean
 nm_setting_connection_remove_secondary_by_value(NMSettingConnection *setting, const char *sec_uuid)
 {
     NMSettingConnectionPrivate *priv;
-    GSList *                    iter;
 
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
     g_return_val_if_fail(sec_uuid, FALSE);
 
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
-    for (iter = priv->secondaries; iter; iter = g_slist_next(iter)) {
-        if (!strcmp(sec_uuid, (char *) iter->data)) {
-            priv->secondaries = g_slist_delete_link(priv->secondaries, iter);
-            _notify(setting, PROP_SECONDARIES);
-            return TRUE;
-        }
+
+    if (nm_strvarray_remove_first(priv->secondaries, sec_uuid)) {
+        _notify(setting, PROP_SECONDARIES);
+        return TRUE;
     }
     return FALSE;
 }
@@ -1620,7 +1623,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_enum(value, nm_setting_connection_get_autoconnect_slaves(setting));
         break;
     case PROP_SECONDARIES:
-        g_value_take_boxed(value, _nm_utils_slist_to_strv(priv->secondaries, TRUE));
+        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(priv->secondaries, NULL));
         break;
     case PROP_GATEWAY_PING_TIMEOUT:
         g_value_set_uint(value, priv->gateway_ping_timeout);
@@ -1732,8 +1735,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         priv->autoconnect_slaves = g_value_get_enum(value);
         break;
     case PROP_SECONDARIES:
-        g_slist_free_full(priv->secondaries, g_free);
-        priv->secondaries = _nm_utils_strv_to_slist(g_value_get_boxed(value), TRUE);
+        nm_strvarray_set_strv(&priv->secondaries, g_value_get_boxed(value));
         break;
     case PROP_GATEWAY_PING_TIMEOUT:
         priv->gateway_ping_timeout = g_value_get_uint(value);
@@ -1812,7 +1814,7 @@ finalize(GObject *object)
     g_free(priv->slave_type);
     g_free(priv->mud_url);
     nm_clear_pointer(&priv->permissions, g_array_unref);
-    g_slist_free_full(priv->secondaries, g_free);
+    nm_clear_pointer(&priv->secondaries, g_array_unref);
 
     G_OBJECT_CLASS(nm_setting_connection_parent_class)->finalize(object);
 }
