@@ -1685,6 +1685,55 @@ interface-name:vboxnet*,except:interface-name:vboxnet2
 </programlisting>
       </para>
     </refsect2>
+
+    <refsect2 id="connection-spec">
+      <title>Connection List Format</title>
+      <para>
+          Connections can be specified using the following format:
+      </para>
+      <para>
+      <variablelist>
+        <varlistentry>
+          <term>*</term>
+          <listitem><para>Matches every connection.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>uuid:UUID</term>
+          <listitem><para>Match the connection by UUID, for example
+          <literal>"uuid:83037490-1d17-4986-a397-01f1db3a7fc2"</literal></para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>id=ID</term>
+          <listitem><para>Match the connection by name.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>origin:ORIGIN</term>
+          <listitem><para>Match the connection by origin, stored in the
+          <literal>org.freedesktop.NetworkManager.origin</literal> tag of the user setting. For example, use
+          <literal>"except:origin:nm-initrd-generator"</literal> to forbid activation of connections created by the
+          initrd generator.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>except:SPEC</term>
+          <listitem><para>Negative match of a connection. A negative match has higher priority then the positive
+          matches above.</para>
+          <para>If there is a list consisting only of negative matches, the behavior is the same as if there is also
+          match-all. That means, if none of all the negative matches is satisfied, the overall result is still a
+          positive match.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>SPEC[,;]SPEC</term>
+          <listitem><para>Multiple specs can be concatenated with commas or semicolons. The order does not matter as
+          matches are either inclusive or negative (<literal>except:</literal>), with negative matches having higher
+          priority.</para>
+          <para>Backslash is supported to escape the separators ';' and ',', and to express special characters such as
+          newline ('\n'), tabulator ('\t'), whitespace ('\s') and backslash ('\\'). Whitespace is not a separator but
+          will be trimmed between two specs (unless escaped as '\s').</para></listitem>
+        </varlistentry>
+      </variablelist>
+      </para>
+    </refsect2>
+
   </refsect1>
 
   <refsect1>
