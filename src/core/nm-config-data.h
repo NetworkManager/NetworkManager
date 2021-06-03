@@ -235,6 +235,10 @@ gboolean nm_config_data_get_device_config_boolean(const NMConfigData *self,
                                                   int                 val_no_match,
                                                   int                 val_invalid);
 
+const GSList *nm_config_data_get_device_allowed_connections_specs(const NMConfigData *self,
+                                                                  NMDevice *          device,
+                                                                  gboolean *          has_match);
+
 char **  nm_config_data_get_groups(const NMConfigData *self);
 char **  nm_config_data_get_keys(const NMConfigData *self, const char *group);
 gboolean nm_config_data_is_intern_atomic_group(const NMConfigData *self, const char *group);
