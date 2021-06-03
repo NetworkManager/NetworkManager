@@ -11142,6 +11142,85 @@ test_tc_read(void)
 }
 
 static void
+test_tc_write_empty(void)
+{
+    nmtst_auto_unlinkfile char *testfile     = NULL;
+    gs_unref_object NMConnection *connection = NULL;
+    gs_unref_object NMConnection *reread     = NULL;
+    NMSettingConnection *         s_con;
+    NMSettingIPConfig *           s_ip4;
+    NMSettingIPConfig *           s_ip6;
+    NMSettingWired *              s_wired;
+    NMSettingTCConfig *           s_tc;
+    NMIPAddress *                 addr;
+    GError *                      error = NULL;
+
+    connection = nm_simple_connection_new();
+
+    /* Connection setting */
+    s_con = (NMSettingConnection *) nm_setting_connection_new();
+    nm_connection_add_setting(connection, NM_SETTING(s_con));
+
+    g_object_set(s_con,
+                 NM_SETTING_CONNECTION_ID,
+                 "Test Write TC config",
+                 NM_SETTING_CONNECTION_UUID,
+                 nm_uuid_generate_random_str_a(),
+                 NM_SETTING_CONNECTION_AUTOCONNECT,
+                 TRUE,
+                 NM_SETTING_CONNECTION_INTERFACE_NAME,
+                 "eth0",
+                 NM_SETTING_CONNECTION_TYPE,
+                 NM_SETTING_WIRED_SETTING_NAME,
+                 NULL);
+
+    /* Wired setting */
+    s_wired = (NMSettingWired *) nm_setting_wired_new();
+    nm_connection_add_setting(connection, NM_SETTING(s_wired));
+
+    /* IP4 setting */
+    s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
+    nm_connection_add_setting(connection, NM_SETTING(s_ip4));
+
+    g_object_set(s_ip4,
+                 NM_SETTING_IP_CONFIG_METHOD,
+                 NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+                 NM_SETTING_IP_CONFIG_GATEWAY,
+                 "1.1.1.1",
+                 NM_SETTING_IP_CONFIG_MAY_FAIL,
+                 TRUE,
+                 NULL);
+
+    addr = nm_ip_address_new(AF_INET, "1.1.1.3", 24, &error);
+    g_assert_no_error(error);
+    nm_setting_ip_config_add_address(s_ip4, addr);
+    nm_ip_address_unref(addr);
+
+    /* IP6 setting */
+    s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
+    nm_connection_add_setting(connection, NM_SETTING(s_ip6));
+
+    g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+
+    /* TC setting */
+    s_tc = (NMSettingTCConfig *) nm_setting_tc_config_new();
+    nm_connection_add_setting(connection, NM_SETTING(s_tc));
+
+    nm_connection_add_setting(connection, nm_setting_proxy_new());
+
+    nmtst_assert_connection_verifies_without_normalization(connection);
+
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test-tc-write-empty.cexpected",
+                           &testfile);
+
+    reread = _connection_from_file(testfile, NULL, TYPE_BOND, NULL);
+
+    nmtst_assert_connection_equals(connection, FALSE, reread, FALSE);
+}
+
+static void
 test_tc_write(void)
 {
     nmtst_auto_unlinkfile char *testfile     = NULL;
@@ -11883,6 +11962,7 @@ main(int argc, char **argv)
 
     g_test_add_func(TPATH "tc/read", test_tc_read);
     g_test_add_func(TPATH "tc/write", test_tc_write);
+    g_test_add_func(TPATH "tc/write_empty", test_tc_write_empty);
     g_test_add_func(TPATH "utils/test_well_known_keys", test_well_known_keys);
     g_test_add_func(TPATH "utils/test_utils_has_route_file_new_syntax",
                     test_utils_has_route_file_new_syntax);

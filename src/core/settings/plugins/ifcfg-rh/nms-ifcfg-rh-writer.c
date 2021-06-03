@@ -2520,46 +2520,46 @@ write_sriov_setting(NMConnection *connection, shvarFile *ifcfg)
     }
 }
 
-static gboolean
-write_tc_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
+static void
+write_tc_setting(NMConnection *connection, shvarFile *ifcfg)
 {
     NMSettingTCConfig *s_tc;
-    guint              i, num, n;
+    guint              num_qdiscs;
+    guint              num_filters;
+    guint              i;
+    guint              n;
     char               tag[64];
 
     s_tc = nm_connection_get_setting_tc_config(connection);
     if (!s_tc)
-        return TRUE;
+        return;
 
-    num = nm_setting_tc_config_get_num_qdiscs(s_tc);
-    for (n = 1, i = 0; i < num; i++) {
+    num_qdiscs = nm_setting_tc_config_get_num_qdiscs(s_tc);
+    for (n = 1, i = 0; i < num_qdiscs; i++) {
         NMTCQdisc *   qdisc;
         gs_free char *str = NULL;
 
         qdisc = nm_setting_tc_config_get_qdisc(s_tc, i);
-        str   = nm_utils_tc_qdisc_to_str(qdisc, error);
-        if (!str)
-            return FALSE;
-
+        str   = nm_utils_tc_qdisc_to_str(qdisc, NULL);
+        nm_assert(str);
         svSetValueStr(ifcfg, numbered_tag(tag, "QDISC", n), str);
         n++;
     }
 
-    num = nm_setting_tc_config_get_num_tfilters(s_tc);
-    for (n = 1, i = 0; i < num; i++) {
+    num_filters = nm_setting_tc_config_get_num_tfilters(s_tc);
+    for (n = 1, i = 0; i < num_filters; i++) {
         NMTCTfilter * tfilter;
         gs_free char *str = NULL;
 
         tfilter = nm_setting_tc_config_get_tfilter(s_tc, i);
-        str     = nm_utils_tc_tfilter_to_str(tfilter, error);
-        if (!str)
-            return FALSE;
-
+        str     = nm_utils_tc_tfilter_to_str(tfilter, NULL);
+        nm_assert(str);
         svSetValueStr(ifcfg, numbered_tag(tag, "FILTER", n), str);
         n++;
     }
 
-    return TRUE;
+    if (num_qdiscs == 0 && num_filters == 0)
+        svSetValueBoolean(ifcfg, "TC_COMMIT", TRUE);
 }
 
 static void
@@ -3382,9 +3382,7 @@ do_write_construct(NMConnection *                  connection,
     write_match_setting(connection, ifcfg);
     write_hostname_setting(connection, ifcfg);
     write_sriov_setting(connection, ifcfg);
-
-    if (!write_tc_setting(connection, ifcfg, error))
-        return FALSE;
+    write_tc_setting(connection, ifcfg);
 
     route_path_is_svformat = utils_has_route_file_new_syntax(route_path);
 
