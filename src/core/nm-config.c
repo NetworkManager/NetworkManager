@@ -796,6 +796,7 @@ static gboolean
 _setting_is_device_spec(const char *group, const char *key)
 {
 #define _IS(group_v, key_v) (nm_streq(group, "" group_v "") && nm_streq(key, "" key_v ""))
+
     return _IS(NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_NO_AUTO_DEFAULT)
            || _IS(NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_IGNORE_CARRIER)
            || _IS(NM_CONFIG_KEYFILE_GROUP_MAIN, NM_CONFIG_KEYFILE_KEY_MAIN_ASSUME_IPV6LL_ONLY)
@@ -804,6 +805,13 @@ _setting_is_device_spec(const char *group, const char *key)
                && nm_streq(key, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE))
            || (NM_STR_HAS_PREFIX(group, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE)
                && nm_streq(key, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE));
+}
+
+static gboolean
+_setting_is_connection_spec(const char *group, const char *key)
+{
+    return NM_STR_HAS_PREFIX(group, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE)
+           && nm_streq(key, NM_CONFIG_KEYFILE_KEY_DEVICE_ALLOWED_CONNECTIONS);
 }
 
 static gboolean
@@ -879,6 +887,7 @@ static const ConfigGroup config_groups[] = {
                              NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_KEEP_CONFIGURATION,
+                             NM_CONFIG_KEYFILE_KEY_DEVICE_ALLOWED_CONNECTIONS,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_BACKEND,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_RAND_MAC_ADDRESS,
                              NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_GENERATE_MAC_ADDRESS_MASK,
@@ -1060,7 +1069,8 @@ read_config(GKeyFile *  keyfile,
 
                 is_string_list = _setting_is_string_list(group, base_key);
 
-                if (is_string_list || _setting_is_device_spec(group, base_key)) {
+                if (is_string_list || _setting_is_device_spec(group, base_key)
+                    || _setting_is_connection_spec(group, base_key)) {
                     gs_unref_ptrarray  GPtrArray *new = g_ptr_array_new_with_free_func(g_free);
                     char **            iter_val;
                     gs_strfreev char **old_val = NULL;
