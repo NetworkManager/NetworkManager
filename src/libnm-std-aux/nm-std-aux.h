@@ -622,50 +622,16 @@ nm_streq0(const char *s1, const char *s2)
 
 /*****************************************************************************/
 
-#define _NM_IN_SET_EVAL_1(op, _x, y)       (_x == (y))
-#define _NM_IN_SET_EVAL_2(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_1(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_3(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_2(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_4(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_3(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_5(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_4(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_6(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_5(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_7(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_6(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_8(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_7(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_9(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_8(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_10(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_9(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_11(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_10(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_12(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_11(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_13(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_12(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_14(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_13(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_15(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_14(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_16(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_15(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_17(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_16(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_18(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_17(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_19(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_18(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_20(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_19(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_21(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_20(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_22(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_21(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_23(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_22(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_24(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_23(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_25(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_24(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_26(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_25(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_27(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_26(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_28(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_27(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_29(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_28(op, _x, __VA_ARGS__)
-#define _NM_IN_SET_EVAL_30(op, _x, y, ...) (_x == (y)) op _NM_IN_SET_EVAL_29(op, _x, __VA_ARGS__)
-
-#define _NM_IN_SET_EVAL_N2(op, _x, n, ...) (_NM_IN_SET_EVAL_##n(op, _x, __VA_ARGS__))
-#define _NM_IN_SET_EVAL_N(op, type, x, n, ...)        \
-    ({                                                \
-        type _x = (x);                                \
-                                                      \
-        /* trigger a -Wenum-compare warning */        \
-        nm_assert(true || _x == (x));                 \
-                                                      \
-        !!_NM_IN_SET_EVAL_N2(op, _x, n, __VA_ARGS__); \
+#define _NM_IN_SET_OP(x, idx) (_x == (x))
+#define _NM_IN_SET(op, type, x, ...)                                \
+    ({                                                              \
+        type _x = (x);                                              \
+                                                                    \
+        /* trigger a -Wenum-compare warning */                      \
+        nm_assert(true || _x == (x));                               \
+                                                                    \
+        !!(NM_VA_ARGS_FOREACH(, , op, _NM_IN_SET_OP, __VA_ARGS__)); \
     })
-
-#define _NM_IN_SET(op, type, x, ...) \
-    _NM_IN_SET_EVAL_N(op, type, x, NM_NARG(__VA_ARGS__), __VA_ARGS__)
 
 /* Beware that this does short-circuit evaluation (use "||" instead of "|")
  * which has a possibly unexpected non-function-like behavior.
@@ -686,96 +652,31 @@ nm_streq0(const char *s1, const char *s2)
 
 /*****************************************************************************/
 
-#define _NM_IN_SETOP_EVAL_1(op, op_eq, _x, y) (op_eq(_x, y))
-#define _NM_IN_SETOP_EVAL_2(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_1(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_3(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_2(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_4(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_3(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_5(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_4(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_6(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_5(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_7(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_6(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_8(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_7(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_9(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_8(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_10(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_9(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_11(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_10(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_12(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_11(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_13(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_12(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_14(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_13(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_15(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_14(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_16(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_15(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_17(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_16(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_18(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_17(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_19(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_18(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_20(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_19(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_21(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_20(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_22(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_21(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_23(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_22(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_24(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_23(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_25(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_24(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_26(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_25(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_27(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_26(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_28(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_27(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_29(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_28(op, op_eq, _x, __VA_ARGS__)
-#define _NM_IN_SETOP_EVAL_30(op, op_eq, _x, y, ...) \
-    (op_eq(_x, y)) op _NM_IN_SETOP_EVAL_29(op, op_eq, _x, __VA_ARGS__)
-
-/*****************************************************************************/
-
-#define _NM_IN_STRSET_EVAL_N2(op, op_ed, _x, n, ...) \
-    (_NM_IN_SETOP_EVAL_##n(op, op_ed, _x, __VA_ARGS__))
-#define _NM_IN_STRSET_EVAL_N(op, op_ed, x, n, ...)                                       \
-    ({                                                                                   \
-        const char *_x = (x);                                                            \
-        (((_x == NULL) && _NM_IN_SET_EVAL_N2(op, ((const char *) NULL), n, __VA_ARGS__)) \
-         || ((_x != NULL) && _NM_IN_STRSET_EVAL_N2(op, op_ed, _x, n, __VA_ARGS__)));     \
-    })
-
-/*****************************************************************************/
-
 static inline int
-_NM_IN_STRSET_op_streq(const char *x, const char *s)
+_NM_IN_STRSET_EVAL_op_streq(const char *x1, const char *x)
 {
-    return s && strcmp(x, s) == 0;
+    return x && nm_streq(x1, x);
 }
+
+#define _NM_IN_STRSET_EVAL_OP_NULL(x, idx)  (((const char *) NULL) == (x))
+#define _NM_IN_STRSET_EVAL_OP_STREQ(x, idx) _NM_IN_STRSET_EVAL_op_streq(_x1, x)
+#define _NM_IN_STRSET_EVAL(op, eval_op, x1, ...)                                         \
+    ({                                                                                   \
+        const char *const _x1 = (x1);                                                    \
+                                                                                         \
+        !!(_x1 ? (NM_VA_ARGS_FOREACH(, , op, eval_op, __VA_ARGS__))                      \
+               : (NM_VA_ARGS_FOREACH(, , op, _NM_IN_STRSET_EVAL_OP_NULL, __VA_ARGS__))); \
+    })
 
 /* Beware that this does short-circuit evaluation (use "||" instead of "|")
  * which has a possibly unexpected non-function-like behavior.
  * Use NM_IN_STRSET_SE if you need all arguments to be evaluated. */
-#define NM_IN_STRSET(x, ...) \
-    _NM_IN_STRSET_EVAL_N(||, _NM_IN_STRSET_op_streq, x, NM_NARG(__VA_ARGS__), __VA_ARGS__)
+#define NM_IN_STRSET(x1, ...) _NM_IN_STRSET_EVAL(||, _NM_IN_STRSET_EVAL_OP_STREQ, x1, __VA_ARGS__)
 
 /* "SE" stands for "side-effect". Contrary to NM_IN_STRSET(), this does not do
  * short-circuit evaluation, which can make a difference if the arguments have
  * side-effects. */
-#define NM_IN_STRSET_SE(x, ...) \
-    _NM_IN_STRSET_EVAL_N(|, _NM_IN_STRSET_op_streq, x, NM_NARG(__VA_ARGS__), __VA_ARGS__)
+#define NM_IN_STRSET_SE(x1, ...) _NM_IN_STRSET_EVAL(|, _NM_IN_STRSET_EVAL_OP_STREQ, x1, __VA_ARGS__)
 
 /*****************************************************************************/
 
