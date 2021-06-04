@@ -28,6 +28,12 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Major restructuring of the source code.
 * vala: fix wrongly generated vapi for WireGuard API (this is an API break
   if you were using this API).
+* Support "prohibit"/"blackhole"/"unreachable" type routing rules.
+* Now NetworkManager preserves by default the existing traffic control
+  configuration (qdiscs and filters) when activating a connection.
+* wifi: fix parsing of Microsoft Network Cost information element.
+* dhcp: nettools: support option 249 (Microsoft Classless Static Route).
+* initrd: support the "rd.net.dhcp.retry" kernel argument
 * Many bugfixes and minor improvements.
 
 =============================================
