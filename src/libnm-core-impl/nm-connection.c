@@ -725,6 +725,113 @@ _normalize_connection_uuid(NMConnection *self)
     return TRUE;
 }
 
+gboolean
+_nm_setting_connection_verify_secondaries(GArray *secondaries, GError **error)
+{
+    const char *const *strv;
+    const guint        len              = nm_g_array_len(secondaries);
+    guint              has_normalizable = FALSE;
+    gboolean           has_invalid      = FALSE;
+    gboolean           has_duplicate    = FALSE;
+    guint              i;
+
+    if (len == 0)
+        return TRUE;
+
+    /* For historic reasons, the secondaries were not normalized/validated.
+     *
+     * Now, when we find any invalid/non-normalized values, we reject/normalize
+     * them. We also filter out duplicates. */
+
+    strv = nm_strvarray_get_strv_non_empty(secondaries, NULL);
+
+    for (i = 0; i < len; i++) {
+        const char *uuid = strv[i];
+        gboolean    normalized;
+
+        if (!nm_uuid_is_valid_nm(uuid, &normalized, NULL)) {
+            has_invalid = TRUE;
+            goto out;
+        }
+        if (normalized)
+            has_normalizable = TRUE;
+    }
+    if (has_normalizable)
+        goto out;
+
+    if (len > 1) {
+        gs_free const char **strv_to_free = NULL;
+        const char **        strv2;
+
+        strv2 = nm_utils_strv_dup_shallow_maybe_a(20, strv, len, &strv_to_free);
+        nm_utils_strv_sort(strv2, len);
+        has_duplicate = nm_strv_has_duplicate(strv2, len, TRUE);
+    }
+
+out:
+    if (has_invalid) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("has an invalid UUID"));
+    } else if (has_normalizable) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("has a UUID that requires normalization"));
+    } else if (has_duplicate) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("has duplicate UUIDs"));
+    } else
+        return TRUE;
+
+    g_prefix_error(error,
+                   "%s.%s: ",
+                   NM_SETTING_CONNECTION_SETTING_NAME,
+                   NM_SETTING_CONNECTION_SECONDARIES);
+    return FALSE;
+}
+
+static gboolean
+_normalize_connection_secondaries(NMConnection *self)
+{
+    NMSettingConnection *s_con = nm_connection_get_setting_connection(self);
+    GArray *             secondaries;
+    gs_strfreev char **  strv = NULL;
+    guint                i;
+    guint                j;
+
+    nm_assert(s_con);
+
+    secondaries = _nm_setting_connection_get_secondaries(s_con);
+    if (nm_g_array_len(secondaries) == 0)
+        return FALSE;
+
+    if (_nm_setting_connection_verify_secondaries(secondaries, NULL))
+        return FALSE;
+
+    strv = nm_strvarray_get_strv_non_empty_dup(secondaries, NULL);
+    for (i = 0, j = 0; strv[i]; i++) {
+        gs_free char *s = g_steal_pointer(&strv[i]);
+        char          uuid_normalized[37];
+        gboolean      uuid_is_normalized;
+
+        if (!nm_uuid_is_valid_nm(s, &uuid_is_normalized, uuid_normalized))
+            continue;
+
+        if (nm_utils_strv_find_first(strv, j, uuid_is_normalized ? uuid_normalized : s) >= 0)
+            continue;
+
+        strv[j++] = uuid_is_normalized ? g_strdup(uuid_normalized) : g_steal_pointer(&s);
+    }
+    strv[j] = NULL;
+
+    g_object_set(s_con, NM_SETTING_CONNECTION_SECONDARIES, strv, NULL);
+    return TRUE;
+}
+
 static gboolean
 _normalize_connection_type(NMConnection *self)
 {
@@ -1617,6 +1724,7 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_connection_uuid(connection);
     was_modified |= _normalize_connection_type(connection);
     was_modified |= _normalize_connection_slave_type(connection);
+    was_modified |= _normalize_connection_secondaries(connection);
     was_modified |= _normalize_required_settings(connection);
     was_modified |= _normalize_invalid_slave_port_settings(connection);
     was_modified |= _normalize_ip_config(connection, parameters);
@@ -1740,7 +1848,7 @@ _nm_connection_ensure_normalized(NMConnection * connection,
 
     nm_assert(NM_IS_CONNECTION(connection));
     nm_assert(!out_connection_clone || !*out_connection_clone);
-    nm_assert(!expected_uuid || nm_utils_is_uuid(expected_uuid));
+    nm_assert(!expected_uuid || nm_uuid_is_normalized(expected_uuid));
 
     if (expected_uuid) {
         if (nm_streq0(expected_uuid, nm_connection_get_uuid(connection)))

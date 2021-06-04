@@ -130,13 +130,13 @@ nm_uuid_generate_random(NMUuid *out_uuid)
 /*****************************************************************************/
 
 gboolean
-nm_uuid_is_valid_full(const char *str)
+nm_uuid_is_normalized_full(const char *str)
 {
-    /* The only reason why this exists is that nm_uuid_is_valid() is an inline function.
+    /* The only reason why this exists is that nm_uuid_is_normalized() is an inline function.
      * If you need to forward declare the function, that won't work.
      *
      * Usually, you wouldn't use this variant! */
-    return nm_uuid_is_valid(str);
+    return nm_uuid_is_normalized(str);
 }
 
 /*****************************************************************************/

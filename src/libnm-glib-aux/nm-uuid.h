@@ -33,12 +33,20 @@ gboolean nm_uuid_is_null(const NMUuid *uuid);
 
 /*****************************************************************************/
 
-gboolean nm_uuid_is_valid_full(const char *str);
-
 static inline gboolean
 nm_uuid_is_valid(const char *str)
 {
     return str && nm_uuid_parse_full(str, NULL, NULL);
+}
+
+gboolean nm_uuid_is_normalized_full(const char *str);
+
+static inline gboolean
+nm_uuid_is_normalized(const char *str)
+{
+    gboolean is_normalized;
+
+    return str && nm_uuid_parse_full(str, NULL, &is_normalized) && is_normalized;
 }
 
 /*****************************************************************************/

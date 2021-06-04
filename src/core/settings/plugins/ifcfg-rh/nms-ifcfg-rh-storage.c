@@ -7,6 +7,7 @@
 
 #include "nms-ifcfg-rh-storage.h"
 
+#include "libnm-glib-aux/nm-uuid.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-connection.h"
@@ -88,7 +89,7 @@ static NMSIfcfgRHStorage *
 _storage_new(NMSIfcfgRHPlugin *plugin, const char *uuid, const char *filename)
 {
     nm_assert(NMS_IS_IFCFG_RH_PLUGIN(plugin));
-    nm_assert(!uuid || nm_utils_is_uuid(uuid));
+    nm_assert(!uuid || nm_uuid_is_normalized(uuid));
     nm_assert(filename && filename[0] == '/');
 
     return g_object_new(NMS_TYPE_IFCFG_RH_STORAGE,

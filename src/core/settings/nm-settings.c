@@ -21,6 +21,7 @@
 #endif
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-keyfile-aux.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "nm-dbus-interface.h"
@@ -139,7 +140,7 @@ nm_assert_storage_data_lst(CList *head)
         u = nm_settings_storage_get_uuid(sd->storage);
         if (!uuid) {
             uuid = u;
-            nm_assert(nm_utils_is_uuid(uuid));
+            nm_assert(nm_uuid_is_normalized(uuid));
         } else
             nm_assert(nm_streq0(uuid, u));
     }
@@ -182,7 +183,7 @@ _sett_conn_entry_new(const char *uuid)
     SettConnEntry *sett_conn_entry;
     gsize          l_p_1;
 
-    nm_assert(nm_utils_is_uuid(uuid));
+    nm_assert(nm_uuid_is_normalized(uuid));
 
     l_p_1 = strlen(uuid) + 1;
 
@@ -1461,7 +1462,7 @@ _add_connection_to_first_plugin(NMSettings *                 self,
 
     uuid = nm_connection_get_uuid(new_connection);
 
-    nm_assert(nm_utils_is_uuid(uuid));
+    nm_assert(nm_uuid_is_normalized(uuid));
 
     for (iter = priv->plugins; iter; iter = iter->next) {
         NMSettingsPlugin *plugin                               = NM_SETTINGS_PLUGIN(iter->data);
@@ -2295,7 +2296,7 @@ nm_settings_delete_connection(NMSettings *          self,
     nm_assert(NM_IS_SETTINGS_STORAGE(cur_storage));
 
     uuid = nm_settings_storage_get_uuid(cur_storage);
-    nm_assert(nm_utils_is_uuid(uuid));
+    nm_assert(nm_uuid_is_normalized(uuid));
 
     sett_conn_entry = _sett_conn_entries_get(self, uuid);
 

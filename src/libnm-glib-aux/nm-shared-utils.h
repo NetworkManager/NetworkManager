@@ -710,6 +710,8 @@ nm_utils_strsplit_set(const char *str, const char *delimiters)
 
 gssize nm_utils_strv_find_first(char **list, gssize len, const char *needle);
 
+gboolean nm_strv_has_duplicate(const char *const *list, gssize len, gboolean is_sorted);
+
 char **_nm_utils_strv_cleanup(char **  strv,
                               gboolean strip_whitespace,
                               gboolean skip_empty,
@@ -1907,6 +1909,34 @@ const char **_nm_utils_strv_dup_packed(const char *const *strv, gssize len);
 
 #define nm_utils_strv_dup_packed(strv, len) _nm_utils_strv_dup_packed(NM_CAST_STRV_CC(strv), (len))
 
+#define nm_utils_strv_dup_shallow_maybe_a(alloca_maxlen, strv, len, to_free)       \
+    ({                                                                             \
+        const char *const *const _strv    = NM_CAST_STRV_CC(strv);                 \
+        const gssize             _len     = (len);                                 \
+        const char **            _result  = NULL;                                  \
+        const char ***const      _to_free = (to_free);                             \
+                                                                                   \
+        G_STATIC_ASSERT_EXPR((alloca_maxlen) <= 500u / sizeof(const char *));      \
+        G_STATIC_ASSERT_EXPR((alloca_maxlen) > 0u);                                \
+        nm_assert(_to_free && !*_to_free);                                         \
+                                                                                   \
+        if (_len >= 0 || _strv) {                                                  \
+            const gsize _l = (_len < 0) ? NM_PTRARRAY_LEN(_strv) : ((gsize) _len); \
+                                                                                   \
+            if (G_LIKELY(_l < (alloca_maxlen))) {                                  \
+                _result = g_newa(const char *, _l + 1);                            \
+            } else {                                                               \
+                _result   = g_new(const char *, _l + 1);                           \
+                *_to_free = _result;                                               \
+            }                                                                      \
+            if (_l > 0)                                                            \
+                memcpy(_result, _strv, _l * sizeof(const char *));                 \
+            _result[_l] = NULL;                                                    \
+        }                                                                          \
+                                                                                   \
+        _result;                                                                   \
+    })
+
 /*****************************************************************************/
 
 GSList *nm_utils_g_slist_find_str(const GSList *list, const char *needle);
@@ -2717,6 +2747,15 @@ nm_strvarray_add(GArray *array, const char *str)
     g_array_append_val(array, s);
 }
 
+static inline const char *
+nm_strvarray_get_idx(GArray *array, guint idx)
+{
+    nm_assert(array);
+    nm_assert(idx < array->len);
+
+    return g_array_index(array, const char *, idx);
+}
+
 static inline const char *const *
 nm_strvarray_get_strv_non_empty(GArray *arr, guint *length)
 {
@@ -2727,6 +2766,21 @@ nm_strvarray_get_strv_non_empty(GArray *arr, guint *length)
 
     NM_SET_OUT(length, arr->len);
     return &g_array_index(arr, const char *, 0);
+}
+
+static inline char **
+nm_strvarray_get_strv_non_empty_dup(GArray *arr, guint *length)
+{
+    const char *const *strv;
+
+    if (!arr || arr->len == 0) {
+        NM_SET_OUT(length, 0);
+        return NULL;
+    }
+
+    NM_SET_OUT(length, arr->len);
+    strv = &g_array_index(arr, const char *, 0);
+    return nm_utils_strv_dup(strv, arr->len, TRUE);
 }
 
 static inline const char *const *
@@ -2756,8 +2810,8 @@ nm_strvarray_set_strv(GArray **array, const char *const *strv)
         nm_strvarray_add(*array, strv[0]);
 }
 
-static inline gboolean
-nm_strvarray_remove_first(GArray *strv, const char *needle)
+static inline gssize
+nm_strvarray_find_first(GArray *strv, const char *needle)
 {
     guint i;
 
@@ -2765,13 +2819,25 @@ nm_strvarray_remove_first(GArray *strv, const char *needle)
 
     if (strv) {
         for (i = 0; i < strv->len; i++) {
-            if (nm_streq(needle, g_array_index(strv, const char *, i))) {
-                g_array_remove_index(strv, i);
-                return TRUE;
-            }
+            if (nm_streq(needle, g_array_index(strv, const char *, i)))
+                return i;
         }
     }
-    return FALSE;
+    return -1;
+}
+
+static inline gboolean
+nm_strvarray_remove_first(GArray *strv, const char *needle)
+{
+    gssize idx;
+
+    nm_assert(needle);
+
+    idx = nm_strvarray_find_first(strv, needle);
+    if (idx < 0)
+        return FALSE;
+    g_array_remove_index(strv, idx);
+    return TRUE;
 }
 
 /*****************************************************************************/

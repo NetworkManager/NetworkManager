@@ -80,7 +80,7 @@ nm_setting_match_get_interface_name(NMSettingMatch *setting, int idx)
     g_return_val_if_fail(setting->interface_name && idx >= 0 && idx < setting->interface_name->len,
                          NULL);
 
-    return g_array_index(setting->interface_name, const char *, idx);
+    return nm_strvarray_get_idx(setting->interface_name, idx);
 }
 
 /**
@@ -96,8 +96,7 @@ void
 nm_setting_match_add_interface_name(NMSettingMatch *setting, const char *interface_name)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
-    g_return_if_fail(interface_name != NULL);
-    g_return_if_fail(interface_name[0] != '\0');
+    g_return_if_fail(interface_name);
 
     nm_strvarray_add(nm_strvarray_ensure(&setting->interface_name), interface_name);
     _notify(setting, PROP_INTERFACE_NAME);
@@ -138,8 +137,7 @@ gboolean
 nm_setting_match_remove_interface_name_by_value(NMSettingMatch *setting, const char *interface_name)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
-    g_return_val_if_fail(interface_name != NULL, FALSE);
-    g_return_val_if_fail(interface_name[0] != '\0', FALSE);
+    g_return_val_if_fail(interface_name, FALSE);
 
     if (nm_strvarray_remove_first(setting->interface_name, interface_name)) {
         _notify(setting, PROP_INTERFACE_NAME);
@@ -225,7 +223,7 @@ nm_setting_match_get_kernel_command_line(NMSettingMatch *setting, guint idx)
     g_return_val_if_fail(setting->kernel_command_line && idx < setting->kernel_command_line->len,
                          NULL);
 
-    return g_array_index(setting->kernel_command_line, const char *, idx);
+    return nm_strvarray_get_idx(setting->kernel_command_line, idx);
 }
 
 /**
@@ -241,8 +239,7 @@ void
 nm_setting_match_add_kernel_command_line(NMSettingMatch *setting, const char *kernel_command_line)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
-    g_return_if_fail(kernel_command_line != NULL);
-    g_return_if_fail(kernel_command_line[0] != '\0');
+    g_return_if_fail(kernel_command_line);
 
     nm_strvarray_add(nm_strvarray_ensure(&setting->kernel_command_line), kernel_command_line);
     _notify(setting, PROP_KERNEL_COMMAND_LINE);
@@ -284,8 +281,7 @@ nm_setting_match_remove_kernel_command_line_by_value(NMSettingMatch *setting,
                                                      const char *    kernel_command_line)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
-    g_return_val_if_fail(kernel_command_line != NULL, FALSE);
-    g_return_val_if_fail(kernel_command_line[0] != '\0', FALSE);
+    g_return_val_if_fail(kernel_command_line, FALSE);
 
     if (nm_strvarray_remove_first(setting->kernel_command_line, kernel_command_line)) {
         _notify(setting, PROP_KERNEL_COMMAND_LINE);
@@ -367,7 +363,7 @@ nm_setting_match_get_driver(NMSettingMatch *setting, guint idx)
 
     g_return_val_if_fail(setting->driver && idx < setting->driver->len, NULL);
 
-    return g_array_index(setting->driver, const char *, idx);
+    return nm_strvarray_get_idx(setting->driver, idx);
 }
 
 /**
@@ -383,8 +379,7 @@ void
 nm_setting_match_add_driver(NMSettingMatch *setting, const char *driver)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
-    g_return_if_fail(driver != NULL);
-    g_return_if_fail(driver[0] != '\0');
+    g_return_if_fail(driver);
 
     nm_strvarray_add(nm_strvarray_ensure(&setting->driver), driver);
     _notify(setting, PROP_DRIVER);
@@ -425,8 +420,7 @@ gboolean
 nm_setting_match_remove_driver_by_value(NMSettingMatch *setting, const char *driver)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
-    g_return_val_if_fail(driver != NULL, FALSE);
-    g_return_val_if_fail(driver[0] != '\0', FALSE);
+    g_return_val_if_fail(driver, FALSE);
 
     if (nm_strvarray_remove_first(setting->driver, driver)) {
         _notify(setting, PROP_DRIVER);
@@ -508,7 +502,7 @@ nm_setting_match_get_path(NMSettingMatch *setting, guint idx)
 
     g_return_val_if_fail(setting->path && idx < setting->path->len, NULL);
 
-    return g_array_index(setting->path, const char *, idx);
+    return nm_strvarray_get_idx(setting->path, idx);
 }
 
 /**
@@ -524,8 +518,7 @@ void
 nm_setting_match_add_path(NMSettingMatch *setting, const char *path)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
-    g_return_if_fail(path != NULL);
-    g_return_if_fail(path[0] != '\0');
+    g_return_if_fail(path);
 
     nm_strvarray_add(nm_strvarray_ensure(&setting->path), path);
     _notify(setting, PROP_PATH);
@@ -566,8 +559,7 @@ gboolean
 nm_setting_match_remove_path_by_value(NMSettingMatch *setting, const char *path)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
-    g_return_val_if_fail(path != NULL, FALSE);
-    g_return_val_if_fail(path[0] != '\0', FALSE);
+    g_return_val_if_fail(path, FALSE);
 
     if (nm_strvarray_remove_first(setting->path, path)) {
         _notify(setting, PROP_PATH);
@@ -624,16 +616,17 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
     switch (prop_id) {
     case PROP_INTERFACE_NAME:
-        g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(self->interface_name, NULL));
+        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->interface_name, NULL));
         break;
     case PROP_KERNEL_COMMAND_LINE:
-        g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(self->kernel_command_line, NULL));
+        g_value_take_boxed(value,
+                           nm_strvarray_get_strv_non_empty_dup(self->kernel_command_line, NULL));
         break;
     case PROP_DRIVER:
-        g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(self->driver, NULL));
+        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->driver, NULL));
         break;
     case PROP_PATH:
-        g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(self->path, NULL));
+        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->path, NULL));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -707,7 +700,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (self->interface_name) {
         for (i = 0; i < self->interface_name->len; i++) {
-            if (nm_str_is_empty(g_array_index(self->interface_name, const char *, i))) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->interface_name, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -723,7 +716,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (self->kernel_command_line) {
         for (i = 0; i < self->kernel_command_line->len; i++) {
-            if (nm_str_is_empty(g_array_index(self->kernel_command_line, const char *, i))) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->kernel_command_line, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -739,7 +732,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (self->driver) {
         for (i = 0; i < self->driver->len; i++) {
-            if (nm_str_is_empty(g_array_index(self->driver, const char *, i))) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->driver, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -755,7 +748,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (self->path) {
         for (i = 0; i < self->path->len; i++) {
-            if (nm_str_is_empty(g_array_index(self->path, const char *, i))) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->path, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,

@@ -5060,7 +5060,7 @@ test_setting_connection_changed_signal(void)
     ASSERT_CHANGED(nm_setting_connection_add_secondary(s_con, uuid));
     ASSERT_CHANGED(nm_setting_connection_remove_secondary(s_con, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(elt != NULL));
+    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx < nm_g_array_len(priv->secondaries)));
     ASSERT_UNCHANGED(nm_setting_connection_remove_secondary(s_con, 1));
     g_test_assert_expected_messages();
 
@@ -7788,7 +7788,7 @@ static void
 __test_uuid(const char *expected_uuid, const char *str, gssize slen, char *uuid_test)
 {
     g_assert(uuid_test);
-    g_assert(nm_utils_is_uuid(uuid_test));
+    g_assert(nm_uuid_is_normalized(uuid_test));
 
     if (strcmp(uuid_test, expected_uuid)) {
         g_error("UUID test failed (1): text=%s, len=%lld, expected=%s, uuid_test=%s",
