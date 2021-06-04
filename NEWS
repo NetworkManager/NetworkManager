@@ -25,6 +25,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * ethtool: add support for pause settings.
 * wifi/iwd: mirror NetworkManager connection profiles to iwd config files.
 * Major restructuring of the source code.
+* vala: fix wrongly generated vapi for WireGuard API (this is an API break
+  if you were using this API).
 * Many bugfixes and minor improvements.
 
 =============================================
