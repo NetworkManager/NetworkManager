@@ -1205,17 +1205,15 @@ nm_strcmp_p(gconstpointer a, gconstpointer b)
 /*****************************************************************************/
 
 static inline int
-_NM_IN_STRSET_ASCII_CASE_op_streq(const char *x, const char *s)
+_NM_IN_STRSET_EVAL_op_streq_ascii_case(const char *x1, const char *x)
 {
-    return s && g_ascii_strcasecmp(x, s) == 0;
+    return x && g_ascii_strcasecmp(x1, x) == 0;
 }
 
-#define NM_IN_STRSET_ASCII_CASE(x, ...)                     \
-    _NM_IN_STRSET_EVAL_N(||,                                \
-                         _NM_IN_STRSET_ASCII_CASE_op_streq, \
-                         x,                                 \
-                         NM_NARG(__VA_ARGS__),              \
-                         __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_OP_STREQ_ASCII_CASE(x, idx) \
+    _NM_IN_STRSET_EVAL_op_streq_ascii_case(_x1, x)
+#define NM_IN_STRSET_ASCII_CASE(x1, ...) \
+    _NM_IN_STRSET_EVAL(||, _NM_IN_STRSET_EVAL_OP_STREQ_ASCII_CASE, x1, __VA_ARGS__)
 
 #define NM_STR_HAS_SUFFIX_ASCII_CASE(str, suffix)                                               \
     ({                                                                                          \
