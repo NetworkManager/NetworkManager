@@ -277,7 +277,29 @@ nm_ip_addr_set(int addr_family, gpointer dst, gconstpointer src)
     nm_assert(dst);
     nm_assert(src);
 
-    memcpy(dst, src, (addr_family != AF_INET6) ? sizeof(in_addr_t) : sizeof(struct in6_addr));
+    memcpy(dst, src, NM_IS_IPv4(addr_family) ? sizeof(in_addr_t) : sizeof(struct in6_addr));
+}
+
+static inline NMIPAddr
+nm_ip_addr_init(int addr_family, gconstpointer src)
+{
+    NMIPAddr a;
+
+    nm_assert_addr_family(addr_family);
+    nm_assert(src);
+
+    G_STATIC_ASSERT_EXPR(sizeof(NMIPAddr) == sizeof(struct in6_addr));
+
+    if (NM_IS_IPv4(addr_family)) {
+        memcpy(&a, src, sizeof(in_addr_t));
+
+        /* ensure all bytes of the union are initialized. If only to make
+         * valgrind happy. */
+        memset(&a.array[sizeof(in_addr_t)], 0, sizeof(a) - sizeof(in_addr_t));
+    } else
+        memcpy(&a, src, sizeof(struct in6_addr));
+
+    return a;
 }
 
 gboolean nm_ip_addr_set_from_untrusted(int           addr_family,
