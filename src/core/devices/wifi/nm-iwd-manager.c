@@ -48,7 +48,7 @@ typedef struct {
     GHashTable *        known_networks;
     NMDeviceIwd *       last_agent_call_device;
     char *              last_state_dir;
-    bool                warned_state_dir;
+    char *              warned_state_dir;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -457,23 +457,31 @@ iwd_config_write(GKeyFile *             config,
 static const char *
 get_config_path(NMIwdManager *self)
 {
-    NMIwdManagerPrivate *priv   = NM_IWD_MANAGER_GET_PRIVATE(self);
-    const char *         path   = nm_config_data_get_iwd_config_path(NM_CONFIG_GET_DATA);
-    bool                 warned = priv->warned_state_dir;
+    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    const char *         path;
 
-    priv->warned_state_dir = FALSE;
-
-    if (!path || nm_streq0(path, "auto"))
-        return priv->last_state_dir;
-
-    if (path[0] == '\0')
+    path = nm_config_data_get_iwd_config_path(NM_CONFIG_GET_DATA);
+    if (path && path[0] == '\0') {
+        nm_clear_g_free(&priv->warned_state_dir);
         return NULL;
+    }
 
-    if (path[0] != '/' || !g_file_test(path, G_FILE_TEST_IS_DIR)) {
-        if (!warned)
-            _LOGW("IWD StateDirectory '%s' not accessible", path);
+    if (!path || nm_streq(path, "auto")) {
+        path = priv->last_state_dir;
+        if (!path) {
+            nm_clear_g_free(&priv->warned_state_dir);
+            return NULL;
+        }
+    }
 
-        priv->warned_state_dir = TRUE;
+    if (priv->warned_state_dir && !nm_streq(priv->warned_state_dir, path))
+        nm_clear_g_free(&priv->warned_state_dir);
+
+    if (path && (path[0] != '/' || !g_file_test(path, G_FILE_TEST_IS_DIR))) {
+        if (!priv->warned_state_dir) {
+            priv->warned_state_dir = g_strdup(path);
+            _LOGW("IWD StateDirectory '%s' not accessible", priv->warned_state_dir);
+        }
         return NULL;
     }
 
@@ -1452,8 +1460,6 @@ get_daemon_info_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
     while (g_variant_iter_next(properties_iter, "{&sv}", &key, &value)) {
         if (nm_streq(key, "StateDirectory")) {
-            const char *path;
-
             if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)) {
                 _LOGE("Daemon.GetInfo property %s is typed '%s' instead of 's'",
                       key,
@@ -1462,12 +1468,7 @@ get_daemon_info_cb(GObject *source, GAsyncResult *res, gpointer user_data)
             }
 
             nm_clear_g_free(&priv->last_state_dir);
-
-            path = g_variant_get_string(value, NULL);
-            if (path[0] == '/' && g_file_test(path, G_FILE_TEST_IS_DIR))
-                priv->last_state_dir = g_strdup(path);
-            else
-                _LOGW("IWD StateDirectory '%s' not accessible", path);
+            priv->last_state_dir = g_variant_dup_string(value, NULL);
         }
 
 next:
@@ -1715,6 +1716,7 @@ dispose(GObject *object)
     priv->last_agent_call_device = NULL;
 
     nm_clear_g_free(&priv->last_state_dir);
+    nm_clear_g_free(&priv->warned_state_dir);
 
     G_OBJECT_CLASS(nm_iwd_manager_parent_class)->dispose(object);
 }
