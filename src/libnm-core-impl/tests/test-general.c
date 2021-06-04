@@ -9773,11 +9773,53 @@ test_nm_va_args_macros(void)
     g_assert_cmpint(7, ==, GET_NARG_1(x, x, x, x, x, x, x));
     g_assert_cmpint(8, ==, GET_NARG_1(x, x, x, x, x, x, x, x));
     g_assert_cmpint(9, ==, GET_NARG_1(x, x, x, x, x, x, x, x, x));
-    g_assert_cmpint(10, ==, GET_NARG_1(x, x, x, x, x, x, x, x, x, x));
+    g_assert_cmpint(10, ==, NM_NARG(x, x, x, x, x, x, x, x, x, x));
 
     G_STATIC_ASSERT_EXPR(0 == GET_NARG_1());
     G_STATIC_ASSERT_EXPR(1 == GET_NARG_1(x));
     G_STATIC_ASSERT_EXPR(2 == GET_NARG_1(x, x));
+
+    /* clang-format off */
+    G_STATIC_ASSERT_EXPR(NM_NARG(
+                                 1,2,3,4,5,6,7,8,9,10,
+                                 1,2,3,4,5,6,7,8,9,20,
+                                 1,2,3,4,5,6,7,8,9,30
+                                 ) == 30);
+    G_STATIC_ASSERT_EXPR(NM_NARG(
+                                 1,2,3,4,5,6,7,8,9,10,
+                                 1,2,3,4,5,6,7,8,9,20,
+                                 1,2,3,4,5,6,7,8,9,30,
+                                 1,2,3,4,5,6,7,8,9,40,
+                                 1,2,3,4,5,6,7,8,9,50,
+                                 1,2,3,4,5,6,7,8,9,60,
+                                 1,2,3,4,5,6,7,8,9,70,
+                                 1,2,3,4,5,6,7,8,9,80
+                                 ) == 80);
+    G_STATIC_ASSERT_EXPR(NM_NARG(
+                                 1,2,3,4,5,6,7,8,9,10,
+                                 1,2,3,4,5,6,7,8,9,20,
+                                 1,2,3,4,5,6,7,8,9,30,
+                                 1,2,3,4,5,6,7,8,9,40,
+                                 1,2,3,4,5,6,7,8,9,50,
+                                 1,2,3,4,5,6,7,8,9,60,
+                                 1,2,3,4,5,6,7,8,9,70,
+                                 1,2,3,4,5,6,7,8,9,80,
+                                 1,2,3,4,5,6,7,8,9,90,
+                                 1,2,3,4,5,6,7,8,9,100,
+                                 1,2,3,4,5,6,7,8,9,110,
+                                 1,2,3,4,5,6,7,8,9,120
+                                 ) == 120);
+    /* clang-format on */
+
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX1() == 0);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX1(1) == 1);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX1(1, 2) == 1);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX1(1, 2, 3) == 1);
+
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX2() == 0);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX2(1) == 1);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX2(1, 2) == 2);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX2(1, 2, 3) == 2);
 }
 
 /*****************************************************************************/
