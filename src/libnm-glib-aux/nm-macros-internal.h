@@ -979,27 +979,21 @@ nm_g_variant_take_ref(GVariant *v)
         return (v);                          \
     }
 #define NM_UTILS_LOOKUP_ITEM(v, n) \
-    (void) 0;                      \
 case v:                            \
-    return (n);                    \
-    (void) 0
+    return (n);
 #define NM_UTILS_LOOKUP_STR_ITEM(v, n) NM_UTILS_LOOKUP_ITEM(v, "" n "")
 #define NM_UTILS_LOOKUP_ITEM_IGNORE(v) \
-    (void) 0;                          \
 case v:                                \
-    break;                             \
-    (void) 0
+    break;
 #define NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER() \
-    (void) 0;                               \
 default:                                    \
-    break;                                  \
-    (void) 0
+    break;
 
 #define NM_UTILS_LOOKUP_DEFINE(fcn_name, lookup_type, result_type, unknown_val, ...) \
     result_type fcn_name(lookup_type val)                                            \
     {                                                                                \
         switch (val) {                                                               \
-            (void) 0, __VA_ARGS__(void) 0;                                           \
+            NM_VA_ARGS_JOIN(, __VA_ARGS__)                                           \
         };                                                                           \
         {                                                                            \
             unknown_val;                                                             \

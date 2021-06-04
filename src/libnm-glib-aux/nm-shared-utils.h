@@ -1046,16 +1046,12 @@ const char *nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
 /*****************************************************************************/
 
 #define NM_UTILS_ENUM2STR(v, n) \
-    (void) 0;                   \
 case v:                         \
     s = "" n "";                \
-    break;                      \
-    (void) 0
+    break;
 #define NM_UTILS_ENUM2STR_IGNORE(v) \
-    (void) 0;                       \
 case v:                             \
-    break;                          \
-    (void) 0
+    break;
 
 #define NM_UTILS_ENUM2STR_DEFINE_FULL(fcn_name, lookup_type, int_fmt, ...) \
     const char *fcn_name(lookup_type val, char *buf, gsize len)            \
@@ -1064,7 +1060,7 @@ case v:                             \
         if (len) {                                                         \
             const char *s = NULL;                                          \
             switch (val) {                                                 \
-                (void) 0, __VA_ARGS__(void) 0;                             \
+                NM_VA_ARGS_JOIN(, __VA_ARGS__)                             \
             };                                                             \
             if (s)                                                         \
                 g_strlcpy(buf, s, len);                                    \
