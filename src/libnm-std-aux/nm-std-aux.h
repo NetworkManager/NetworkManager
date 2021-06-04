@@ -618,6 +618,10 @@ nm_streq0(const char *s1, const char *s2)
 
 /*****************************************************************************/
 
+#define NM_VA_ARGS_JOIN(sep, ...) NM_VA_ARGS_FOREACH(, , sep, _NM_MACRO_SELECT_FIRST, __VA_ARGS__)
+
+/*****************************************************************************/
+
 #define _NM_IN_SET_EVAL_1(op, _x, y)       (_x == (y))
 #define _NM_IN_SET_EVAL_2(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_1(op, _x, __VA_ARGS__)
 #define _NM_IN_SET_EVAL_3(op, _x, y, ...)  (_x == (y)) op _NM_IN_SET_EVAL_2(op, _x, __VA_ARGS__)
