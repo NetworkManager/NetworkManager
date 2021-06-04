@@ -475,7 +475,13 @@ nm_streq0(const char *s1, const char *s2)
 
 /*****************************************************************************/
 
-#define _NM_MACRO_CALL(macro, ...) macro(__VA_ARGS__)
+#define _NM_MACRO_IDENTITY(...) __VA_ARGS__
+
+#define _NM_MACRO_SELECT_FIRST(...)             _NM_MACRO_SELECT_FIRST_IMPL(__VA_ARGS__, throwaway)
+#define _NM_MACRO_SELECT_FIRST_IMPL(first, ...) first
+
+#define _NM_MACRO_CALL(macro, ...)  macro(__VA_ARGS__)
+#define _NM_MACRO_CALL2(macro, ...) macro(__VA_ARGS__)
 
 /*****************************************************************************/
 
