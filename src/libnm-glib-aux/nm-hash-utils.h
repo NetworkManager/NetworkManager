@@ -122,33 +122,18 @@ nm_hash_update_bool(NMHashState *state, bool val)
     nm_hash_update(state, &val, sizeof(val));
 }
 
-#define _NM_HASH_COMBINE_BOOLS_x_1(t, y) ((y) ? ((t) (1ull << 0)) : ((t) 0ull))
-#define _NM_HASH_COMBINE_BOOLS_x_2(t, y, ...) \
-    ((y) ? ((t) (1ull << 1)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_1(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_x_3(t, y, ...) \
-    ((y) ? ((t) (1ull << 2)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_2(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_x_4(t, y, ...) \
-    ((y) ? ((t) (1ull << 3)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_3(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_x_5(t, y, ...) \
-    ((y) ? ((t) (1ull << 4)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_4(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_x_6(t, y, ...) \
-    ((y) ? ((t) (1ull << 5)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_5(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_x_7(t, y, ...) \
-    ((y) ? ((t) (1ull << 6)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_6(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_x_8(t, y, ...) \
-    ((y) ? ((t) (1ull << 7)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_7(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_x_9(t, y, ...) \
-    ((y) ? ((t) (1ull << 8)) : ((t) 0ull))    \
-        | (G_STATIC_ASSERT_EXPR(sizeof(t) >= 2), (_NM_HASH_COMBINE_BOOLS_x_8(t, __VA_ARGS__)))
-#define _NM_HASH_COMBINE_BOOLS_x_10(t, y, ...) \
-    ((y) ? ((t) (1ull << 9)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_9(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_x_11(t, y, ...) \
-    ((y) ? ((t) (1ull << 10)) : ((t) 0ull)) | _NM_HASH_COMBINE_BOOLS_x_10(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_n2(t, n, ...) _NM_HASH_COMBINE_BOOLS_x_##n(t, __VA_ARGS__)
-#define _NM_HASH_COMBINE_BOOLS_n(t, n, ...)  _NM_HASH_COMBINE_BOOLS_n2(t, n, __VA_ARGS__)
+#define _NM_HASH_COMBINE_BOOLS_OP(x, n) \
+    ((x) ? ((_nm_hash_combine_bools_type) NM_BIT((n))) : ((_nm_hash_combine_bools_type) 0))
 
-#define NM_HASH_COMBINE_BOOLS(type, ...) \
-    ((type) (_NM_HASH_COMBINE_BOOLS_n(type, NM_NARG(__VA_ARGS__), __VA_ARGS__)))
+#define NM_HASH_COMBINE_BOOLS(type, ...)                                                  \
+    ({                                                                                    \
+        typedef type _nm_hash_combine_bools_type;                                         \
+                                                                                          \
+        G_STATIC_ASSERT(NM_NARG(__VA_ARGS__) <= 8 * sizeof(_nm_hash_combine_bools_type)); \
+                                                                                          \
+        (_nm_hash_combine_bools_type)(                                                    \
+            NM_VA_ARGS_FOREACH(, , |, _NM_HASH_COMBINE_BOOLS_OP, __VA_ARGS__));           \
+    })
 
 #define nm_hash_update_bools(state, ...) \
     nm_hash_update_val(state, NM_HASH_COMBINE_BOOLS(guint8, __VA_ARGS__))

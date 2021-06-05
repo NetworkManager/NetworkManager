@@ -478,6 +478,34 @@ test_nm_hash(void)
     g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 0, 0, 1, 1, 0, 0, 0, 1), ==, 0x031);
     g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 0, 0, 0, 1, 1, 0, 0, 0, 1), ==, 0x031);
     g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 1, 0, 0, 1, 1, 0, 0, 0, 1), ==, 0x131);
+    g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1),
+                    ==,
+                    0x131);
+    g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1),
+                    ==,
+                    0x8131);
+    g_assert_cmpint(
+        NM_HASH_COMBINE_BOOLS(guint32, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1),
+        ==,
+        0x8131);
+    g_assert_cmpint(
+        NM_HASH_COMBINE_BOOLS(guint32, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1),
+        ==,
+        0x28131);
+
+    {
+        _nm_auto_type x = NM_HASH_COMBINE_BOOLS(guint8, 0, 0, 1, 1, 0, 0, 0, 1);
+
+        G_STATIC_ASSERT(sizeof(x) == 1);
+        g_assert(((typeof(x)) -1) > 0);
+    }
+
+    {
+        _nm_auto_type x = NM_HASH_COMBINE_BOOLS(guint16, 0, 0, 1, 1, 0, 0, 0, 1);
+
+        G_STATIC_ASSERT(sizeof(x) == 2);
+        g_assert(((typeof(x)) -1) > 0);
+    }
 }
 
 /*****************************************************************************/
