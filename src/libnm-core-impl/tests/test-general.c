@@ -7873,6 +7873,32 @@ test_nm_utils_uuid_generate_from_strings(void)
     _test_uuid("dd265bf7-c05a-3037-9939-b9629858a477", "a\0b\0", 4, "a", "b");
 }
 
+static void
+test_nm_uuid_init(void)
+{
+    char buf[37];
+
+    {
+        NMUuid u;
+
+        u = NM_UUID_INIT(47, c4, d7, f9, 2c, 81, 4f, 7b, be, ed, 63, 0a, 7f, 65, cc, 02);
+        g_assert_cmpstr("47c4d7f9-2c81-4f7b-beed-630a7f65cc02", ==, nm_uuid_unparse(&u, buf));
+    }
+    {
+        const NMUuid u =
+            NM_UUID_INIT(47, c4, d7, f9, 2c, 81, 4f, 7b, be, ed, 63, 0a, 7f, 65, cc, 02);
+
+        g_assert_cmpstr("47c4d7f9-2c81-4f7b-beed-630a7f65cc02", ==, nm_uuid_unparse(&u, buf));
+    }
+    {
+        const struct {
+            NMUuid u;
+        } u = {NM_UUID_INIT(47, c4, d7, f9, 2c, 81, 4f, 7b, be, ed, 63, 0a, 7f, 65, cc, 02)};
+
+        g_assert_cmpstr("47c4d7f9-2c81-4f7b-beed-630a7f65cc02", ==, nm_uuid_unparse(&u.u, buf));
+    }
+}
+
 /*****************************************************************************/
 
 static void
@@ -10866,6 +10892,7 @@ main(int argc, char **argv)
                     test_nm_utils_uuid_generate_from_string);
     g_test_add_func("/core/general/nm_uuid_generate_from_strings",
                     test_nm_utils_uuid_generate_from_strings);
+    g_test_add_func("/core/general/test_nm_uuid_init", test_nm_uuid_init);
 
     g_test_add_func("/core/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
     g_test_add_func("/core/general/nm_utils_is_power_of_two", test_nm_utils_is_power_of_two);

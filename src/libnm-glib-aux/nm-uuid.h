@@ -7,6 +7,28 @@ typedef struct _NMUuid {
     guint8 uuid[16];
 } NMUuid;
 
+#define NM_UUID_INIT_ZERO() ((NMUuid){.uuid = {0}})
+
+#define NM_UUID_INIT(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15) \
+    ((NMUuid){                                                                             \
+        .uuid = {(0x##a0),                                                                 \
+                 (0x##a1),                                                                 \
+                 (0x##a2),                                                                 \
+                 (0x##a3),                                                                 \
+                 (0x##a4),                                                                 \
+                 (0x##a5),                                                                 \
+                 (0x##a6),                                                                 \
+                 (0x##a7),                                                                 \
+                 (0x##a8),                                                                 \
+                 (0x##a9),                                                                 \
+                 (0x##a10),                                                                \
+                 (0x##a11),                                                                \
+                 (0x##a12),                                                                \
+                 (0x##a13),                                                                \
+                 (0x##a14),                                                                \
+                 (0x##a15)},                                                               \
+    })
+
 char *nm_uuid_unparse_case(const NMUuid *uuid, char out_str[static 37], gboolean upper_case);
 
 static inline char *
