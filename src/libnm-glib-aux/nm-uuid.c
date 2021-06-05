@@ -9,6 +9,13 @@
 
 /*****************************************************************************/
 
+const NMUuid nm_uuid_ns_zero =
+    NM_UUID_INIT(00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00);
+
+/* arbitrarily chosen namespace UUID for nm_uuid_generate_from_strings() */
+const NMUuid nm_uuid_ns_1 =
+    NM_UUID_INIT(b4, 25, e9, fb, 75, 98, 44, b4, 9e, 3b, 5a, 2e, 3a, aa, 49, 05);
+
 char *
 nm_uuid_unparse_case(const NMUuid *uuid, char out_str[static 37], gboolean upper_case)
 {
@@ -239,11 +246,12 @@ nm_uuid_is_valid_nm(const char *str,
                 str_lower[i] = g_ascii_tolower(str_lower[i]);
 
             /* The namespace UUID is chosen randomly. */
-            nm_uuid_generate_from_string(&uuid,
-                                         str_lower,
-                                         -1,
-                                         NM_UUID_TYPE_VERSION5,
-                                         "4e72f709-ca95-4405-9053-1f43294a618c");
+            nm_uuid_generate_from_string(
+                &uuid,
+                str_lower,
+                -1,
+                NM_UUID_TYPE_VERSION5,
+                &NM_UUID_INIT(4e, 72, f7, 09, ca, 95, 44, 05, 90, 53, 1f, 43, 29, 4a, 61, 8c));
             nm_uuid_unparse(&uuid, out_normalized_str);
         }
         return TRUE;
@@ -299,11 +307,11 @@ nm_uuid_generate_random_str(char buf[static 37])
  * Returns: the input @uuid. This function cannot fail.
  **/
 NMUuid *
-nm_uuid_generate_from_string(NMUuid *    uuid,
-                             const char *s,
-                             gssize      slen,
-                             NMUuidType  uuid_type,
-                             gpointer    type_args)
+nm_uuid_generate_from_string(NMUuid *      uuid,
+                             const char *  s,
+                             gssize        slen,
+                             NMUuidType    uuid_type,
+                             const NMUuid *type_args)
 {
     g_return_val_if_fail(uuid, FALSE);
     g_return_val_if_fail(slen == 0 || s, FALSE);
@@ -313,26 +321,20 @@ nm_uuid_generate_from_string(NMUuid *    uuid,
 
     switch (uuid_type) {
     case NM_UUID_TYPE_LEGACY:
-        g_return_val_if_fail(!type_args, NULL);
+        nm_assert(!type_args);
         nm_crypto_md5_hash(NULL, 0, (guint8 *) s, slen, (guint8 *) uuid, sizeof(*uuid));
         break;
     case NM_UUID_TYPE_VERSION3:
     case NM_UUID_TYPE_VERSION5:
     {
-        NMUuid ns_uuid;
-
-        if (type_args) {
-            /* type_args can be a name space UUID. Interpret it as (char *) */
-            if (!nm_uuid_parse(type_args, &ns_uuid))
-                g_return_val_if_reached(NULL);
-        } else
-            ns_uuid = (NMUuid){};
+        if (!type_args)
+            type_args = &nm_uuid_ns_zero;
 
         if (uuid_type == NM_UUID_TYPE_VERSION3) {
             nm_crypto_md5_hash((guint8 *) s,
                                slen,
-                               (guint8 *) &ns_uuid,
-                               sizeof(ns_uuid),
+                               (guint8 *) type_args,
+                               sizeof(*type_args),
                                (guint8 *) uuid,
                                sizeof(*uuid));
         } else {
@@ -343,7 +345,7 @@ nm_uuid_generate_from_string(NMUuid *    uuid,
             } digest;
 
             sum = g_checksum_new(G_CHECKSUM_SHA1);
-            g_checksum_update(sum, (guchar *) &ns_uuid, sizeof(ns_uuid));
+            g_checksum_update(sum, (guchar *) type_args, sizeof(*type_args));
             g_checksum_update(sum, (guchar *) s, slen);
             nm_utils_checksum_get_digest(sum, digest.sha1);
 
@@ -377,10 +379,10 @@ nm_uuid_generate_from_string(NMUuid *    uuid,
  * object's #NMSettingConnection:id: property
  **/
 char *
-nm_uuid_generate_from_string_str(const char *s,
-                                 gssize      slen,
-                                 NMUuidType  uuid_type,
-                                 gpointer    type_args)
+nm_uuid_generate_from_string_str(const char *  s,
+                                 gssize        slen,
+                                 NMUuidType    uuid_type,
+                                 const NMUuid *type_args)
 {
     NMUuid uuid;
 
@@ -405,7 +407,7 @@ char *
 nm_uuid_generate_from_strings(const char *string1, ...)
 {
     if (!string1)
-        return nm_uuid_generate_from_string_str(NULL, 0, NM_UUID_TYPE_VERSION3, NM_UUID_NS1);
+        return nm_uuid_generate_from_string_str(NULL, 0, NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1);
 
     {
         nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
@@ -425,6 +427,6 @@ nm_uuid_generate_from_strings(const char *string1, ...)
         return nm_uuid_generate_from_string_str(nm_str_buf_get_str_unsafe(&str),
                                                 str.len,
                                                 NM_UUID_TYPE_VERSION3,
-                                                NM_UUID_NS1);
+                                                &nm_uuid_ns_1);
     }
 }
