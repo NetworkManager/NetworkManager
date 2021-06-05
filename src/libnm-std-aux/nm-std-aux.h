@@ -81,6 +81,10 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 /*****************************************************************************/
 
+#define NM_BIT(n) (1ull << (n))
+
+/*****************************************************************************/
+
 #define NM_PASTE_ARGS(identifier1, identifier2) identifier1##identifier2
 #define NM_PASTE(identifier1, identifier2)      NM_PASTE_ARGS(identifier1, identifier2)
 
