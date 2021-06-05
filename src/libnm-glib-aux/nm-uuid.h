@@ -95,25 +95,30 @@ char *nm_uuid_generate_random_str(char buf[static 37]);
 
 /*****************************************************************************/
 
+extern const NMUuid nm_uuid_ns_zero;
+extern const NMUuid nm_uuid_ns_1;
+
+#define NM_UUID_NS_ZERO "00000000-0000-0000-0000-000000000000"
+#define NM_UUID_NS_1    "b425e9fb-7598-44b4-9e3b-5a2e3aaa4905"
+
+/*****************************************************************************/
+
 typedef enum {
     NM_UUID_TYPE_LEGACY   = 0,
     NM_UUID_TYPE_VERSION3 = 3,
     NM_UUID_TYPE_VERSION5 = 5,
 } NMUuidType;
 
-NMUuid *nm_uuid_generate_from_string(NMUuid *    uuid,
-                                     const char *s,
-                                     gssize      slen,
-                                     NMUuidType  uuid_type,
-                                     gpointer    type_args);
+NMUuid *nm_uuid_generate_from_string(NMUuid *      uuid,
+                                     const char *  s,
+                                     gssize        slen,
+                                     NMUuidType    uuid_type,
+                                     const NMUuid *type_args);
 
-char *nm_uuid_generate_from_string_str(const char *s,
-                                       gssize      slen,
-                                       NMUuidType  uuid_type,
-                                       gpointer    type_args);
-
-/* arbitrarily chosen namespace UUID for nm_uuid_generate_from_strings() */
-#define NM_UUID_NS1 "b425e9fb-7598-44b4-9e3b-5a2e3aaa4905"
+char *nm_uuid_generate_from_string_str(const char *  s,
+                                       gssize        slen,
+                                       NMUuidType    uuid_type,
+                                       const NMUuid *type_args);
 
 char *nm_uuid_generate_from_strings(const char *string1, ...) G_GNUC_NULL_TERMINATED;
 
