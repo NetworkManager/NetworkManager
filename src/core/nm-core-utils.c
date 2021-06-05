@@ -2377,8 +2377,6 @@ out:
 
 typedef struct {
     NMUuid bin;
-    char
-        _nul_sentinel; /* just for safety, if somebody accidentally uses the binary in a string context. */
 
     /* depending on whether the string is packed or not (with/without hyphens),
      * it's 32 or 36 characters long (plus the trailing NUL).
@@ -2396,9 +2394,8 @@ _uuid_data_init(UuidData *uuid_data, gboolean packed, gboolean is_fake, const NM
     nm_assert(uuid_data);
     nm_assert(uuid);
 
-    uuid_data->bin           = *uuid;
-    uuid_data->_nul_sentinel = '\0';
-    uuid_data->is_fake       = is_fake;
+    uuid_data->bin     = *uuid;
+    uuid_data->is_fake = is_fake;
     if (packed) {
         G_STATIC_ASSERT_EXPR(sizeof(uuid_data->str) >= (sizeof(*uuid) * 2 + 1));
         nm_utils_bin2hexstr_full(uuid, sizeof(*uuid), '\0', FALSE, uuid_data->str);
