@@ -153,107 +153,16 @@ nm_hash_update_bool(NMHashState *state, bool val)
 #define nm_hash_update_bools(state, ...) \
     nm_hash_update_val(state, NM_HASH_COMBINE_BOOLS(guint8, __VA_ARGS__))
 
-#define _NM_HASH_COMBINE_VALS_typ_x_1(y) typeof(y) _v1;
-#define _NM_HASH_COMBINE_VALS_typ_x_2(y, ...) \
-    typeof(y) _v2;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_1(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_3(y, ...) \
-    typeof(y) _v3;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_2(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_4(y, ...) \
-    typeof(y) _v4;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_3(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_5(y, ...) \
-    typeof(y) _v5;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_4(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_6(y, ...) \
-    typeof(y) _v6;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_5(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_7(y, ...) \
-    typeof(y) _v7;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_6(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_8(y, ...) \
-    typeof(y) _v8;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_7(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_9(y, ...) \
-    typeof(y) _v9;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_8(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_10(y, ...) \
-    typeof(y) _v10;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_9(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_11(y, ...) \
-    typeof(y) _v11;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_10(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_12(y, ...) \
-    typeof(y) _v12;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_11(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_13(y, ...) \
-    typeof(y) _v13;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_12(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_14(y, ...) \
-    typeof(y) _v14;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_13(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_15(y, ...) \
-    typeof(y) _v15;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_14(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_16(y, ...) \
-    typeof(y) _v16;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_15(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_17(y, ...) \
-    typeof(y) _v17;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_16(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_18(y, ...) \
-    typeof(y) _v18;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_17(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_19(y, ...) \
-    typeof(y) _v19;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_18(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_x_20(y, ...) \
-    typeof(y) _v20;                            \
-    _NM_HASH_COMBINE_VALS_typ_x_19(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_n2(n, ...) _NM_HASH_COMBINE_VALS_typ_x_##n(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_typ_n(n, ...)  _NM_HASH_COMBINE_VALS_typ_n2(n, __VA_ARGS__)
-
-#define _NM_HASH_COMBINE_VALS_val_x_1(y)      ._v1 = (y),
-#define _NM_HASH_COMBINE_VALS_val_x_2(y, ...) ._v2 = (y), _NM_HASH_COMBINE_VALS_val_x_1(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_3(y, ...) ._v3 = (y), _NM_HASH_COMBINE_VALS_val_x_2(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_4(y, ...) ._v4 = (y), _NM_HASH_COMBINE_VALS_val_x_3(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_5(y, ...) ._v5 = (y), _NM_HASH_COMBINE_VALS_val_x_4(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_6(y, ...) ._v6 = (y), _NM_HASH_COMBINE_VALS_val_x_5(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_7(y, ...) ._v7 = (y), _NM_HASH_COMBINE_VALS_val_x_6(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_8(y, ...) ._v8 = (y), _NM_HASH_COMBINE_VALS_val_x_7(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_9(y, ...) ._v9 = (y), _NM_HASH_COMBINE_VALS_val_x_8(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_10(y, ...) \
-    ._v10 = (y), _NM_HASH_COMBINE_VALS_val_x_9(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_11(y, ...) \
-    ._v11 = (y), _NM_HASH_COMBINE_VALS_val_x_10(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_12(y, ...) \
-    ._v12 = (y), _NM_HASH_COMBINE_VALS_val_x_11(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_13(y, ...) \
-    ._v13 = (y), _NM_HASH_COMBINE_VALS_val_x_12(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_14(y, ...) \
-    ._v14 = (y), _NM_HASH_COMBINE_VALS_val_x_13(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_15(y, ...) \
-    ._v15 = (y), _NM_HASH_COMBINE_VALS_val_x_14(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_16(y, ...) \
-    ._v16 = (y), _NM_HASH_COMBINE_VALS_val_x_15(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_17(y, ...) \
-    ._v17 = (y), _NM_HASH_COMBINE_VALS_val_x_16(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_18(y, ...) \
-    ._v18 = (y), _NM_HASH_COMBINE_VALS_val_x_17(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_19(y, ...) \
-    ._v19 = (y), _NM_HASH_COMBINE_VALS_val_x_18(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_x_20(y, ...) \
-    ._v20 = (y), _NM_HASH_COMBINE_VALS_val_x_19(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_n2(n, ...) _NM_HASH_COMBINE_VALS_val_x_##n(__VA_ARGS__)
-#define _NM_HASH_COMBINE_VALS_val_n(n, ...)  _NM_HASH_COMBINE_VALS_val_n2(n, __VA_ARGS__)
+#define _NM_HASH_COMBINE_VALS_TYPE_OP(x, idx) typeof(x) _v##idx;
+#define _NM_HASH_COMBINE_VALS_INIT_OP(x, idx) ._v##idx = (x),
 
 /* NM_HASH_COMBINE_VALS() is faster then nm_hash_update_val() as it combines multiple
  * calls to nm_hash_update() using a packed structure. */
-#define NM_HASH_COMBINE_VALS(var, ...)                                 \
-    const struct _nm_packed {                                          \
-        _NM_HASH_COMBINE_VALS_typ_n(NM_NARG(__VA_ARGS__), __VA_ARGS__) \
-    } var _nm_alignas(guint64) = {_NM_HASH_COMBINE_VALS_val_n(NM_NARG(__VA_ARGS__), __VA_ARGS__)}
+#define NM_HASH_COMBINE_VALS(var, ...)                                       \
+    const struct _nm_packed {                                                \
+        NM_VA_ARGS_FOREACH(, , , _NM_HASH_COMBINE_VALS_TYPE_OP, __VA_ARGS__) \
+    } var _nm_alignas(guint64) = {                                           \
+        NM_VA_ARGS_FOREACH(, , , _NM_HASH_COMBINE_VALS_INIT_OP, __VA_ARGS__)}
 
 /* nm_hash_update_vals() is faster then nm_hash_update_val() as it combines multiple
  * calls to nm_hash_update() using a packed structure. */
