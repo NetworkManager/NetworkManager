@@ -2595,6 +2595,12 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
 
     nm_device_capture_initial_config(device);
 
+    if (!nm_device_can_assume_connections(device)) {
+        nm_device_assume_state_reset(device);
+        _LOG2D(LOGD_DEVICE, device, "assume: device cannot assume connection");
+        return NULL;
+    }
+
     if (ifindex) {
         int master_ifindex = nm_platform_link_get_master(priv->platform, ifindex);
 
