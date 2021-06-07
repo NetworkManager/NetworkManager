@@ -230,3 +230,51 @@ source code and navigate it. These tools can integrate with editors like `Vim` a
 
 - http://cscope.sourceforge.net/cscope_vim_tutorial.html
 - https://www.emacswiki.org/emacs/CScopeAndEmacs
+
+
+Miscellaneous
+---------------------------
+
+### GObject Properties
+
+We use GObjects and GObject Properties in various cases. For example:
+
+1. In public API in libnm they are used and useful for providing a standard
+   GObject API. One advantage of GObject properties is that they work well
+   with introspection and bindings.
+
+1. `NMSetting` properties commonly are GObject properties. While we provide
+   C getters, they commonly don't have a setter. That is, settings can often
+   only set via `g_object_set()`.
+
+1. Our D-Bus API uses glue code. For the daemon, this is
+   [`nm-dbus-manager.[ch]`](src/core/nm-dbus-manager.c) and
+   [`nm-dbus-object.[ch]`](src/core/nm-dbus-object.c). For libnm's
+   `NMClient`, this is [`nm-object.c`](src/libnm-client-impl/nm-object.c).
+   These bindings rely on GObject properties.
+
+1. Sometimes it is convenient to use the functionality that GObject
+   properties provide. In particular, `notify::` property changed signals
+   or the ability to freeze/thaw the signals.
+
+1. Immutable objects are great, so there is a desire to have `G_PARAM_CONSTRUCT_ONLY`
+  properties. In that case, avoid adding a getter too, the property only needs to be
+  writable and you should access it via the C wrapper.
+
+In general, use GObject sparsely and avoid them (unless you need them for one of the
+reasons above).
+
+Almost always add a `#define` for the property name, and use for example
+`g_signal_connect(obj, "notify::"NM_TARGET_SOME_PROPERTY", ...)`. The goal is to
+be able to search the use of all properties.
+
+Almost always add C getter and setters and prefer them over `g_object_get()`
+and `g_object_set()`. This also stresses the point that you usually wouldn't use
+a GObject property aside the reasons above.
+
+When adding a GObject properties, do it for only one of the reasons above.
+For example, the property `NM_MANAGER_DEVICES` in the daemon is added to bind
+the property to D-Bus. Don't use that property otherwise and don't register
+a `notify::NM_MANAGER_DEVICES` for your own purpose. The reason is that GObject
+properties are harder to understand and they should be used sparsely and for
+one specific reason.
