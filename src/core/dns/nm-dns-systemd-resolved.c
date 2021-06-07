@@ -767,7 +767,7 @@ _resolve_handle_call_cb(GObject *source, GAsyncResult *result, gpointer user_dat
 
         n  = nm_g_array_append_new(v_names, NMDnsSystemdResolvedAddressResult);
         *n = (NMDnsSystemdResolvedAddressResult){
-            .name    = g_strdup(v_name),
+            .name    = g_steal_pointer(&v_name),
             .ifindex = v_ifindex,
         };
     }
