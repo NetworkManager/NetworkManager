@@ -10990,6 +10990,11 @@ addrconf6_start(NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
     guint32             ra_timeout;
     guint32             default_ra_timeout;
 
+    if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR)) {
+        _LOGI(LOGD_IP6, "addrconf6: kernel does not support IPv6");
+        return FALSE;
+    }
+
     connection = nm_device_get_applied_connection(self);
     g_assert(connection);
 
