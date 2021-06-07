@@ -187,6 +187,10 @@
         <para><literal>NM_CLOUD_SETUP_GCP</literal>: boolean, whether Google GCP support is enabled. Defaults
           to <literal>no</literal>.</para>
       </listitem>
+      <listitem>
+        <para><literal>NM_CLOUD_SETUP_ALIYUN</literal>: boolean, whether Alibaba Cloud (Aliyun) support is enabled. Defaults
+          to <literal>no</literal>.</para>
+      </listitem>
     </itemizedlist>
 
   </refsect1>
@@ -364,6 +368,62 @@ ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/syst
           <para>The effect is not unlike calling
           <command>nmcli device modify "$DEVICE" ipv4.addresses "$ADDR/$SUBNET [,...]" ipv4.routes "$ADDR/32 $GATEWAY 10 table=$TABLE" ipv4.routing-rules "priority $TABLE from $ADDR/32 table $TABLE"</command>
           for all relevant devices and all found addresses.</para>
+        </listitem>
+      </itemizedlist>
+    </refsect2>
+
+    <refsect2>
+      <title>Alibaba Cloud (Aliyun)</title>
+
+      <para>For Aliyun, the tools tries to fetch configuration from <literal>http://100.100.100.200/</literal>. Currently, it only
+      configures IPv4 and does nothing about IPv6. It will do the following.</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>First fetch <literal>http://100.100.100.200/2016-01-01/meta-data/</literal> to determine whether the
+          expected API is present. This determines whether Aliyun environment is detected and whether to proceed
+          to configure the host using Aliyun meta data.</para>
+        </listitem>
+        <listitem>
+          <para>Fetch <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/</literal> to get the list
+          of available interface. Interfaces are identified by their MAC address.</para>
+        </listitem>
+        <listitem>
+          <para>Then for each interface fetch <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/vpc-cidr-block</literal>
+          , <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/private-ipv4s</literal> and
+          <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/netmask</literal>.
+          Thereby we get a list of private IPv4 addresses, one CIDR subnet block and private IPv4 addresses prefix.</para>
+        </listitem>
+        <listitem>
+          <para>Then nm-cloud-setup iterates over all interfaces for which it could fetch IP configuration.
+          If no ethernet device for the respective MAC address is found, it is skipped.
+          Also, if the device is currently not activated in NetworkManager or if the currently
+          activated profile has a user-data <literal>org.freedesktop.nm-cloud-setup.skip=yes</literal>,
+          it is skipped.</para>
+          <para>Then, the tool will change the runtime configuration of the device.
+            <itemizedlist>
+              <listitem>
+                <para>Add static IPv4 addresses for all the configured addresses from <literal>private-ipv4s</literal> with
+                prefix length according to <literal>netmask</literal>. For example,
+                we might have here 2 IP addresses like <literal>"10.0.0.150/24,10.0.0.152/24"</literal>.</para>
+              </listitem>
+              <listitem>
+                  <para>Choose a route table 30400 + the index of the interface and
+                  add a default route <literal>0.0.0.0/0</literal>. The gateway
+                  is the first IP address in the CIDR subnet block. For
+                  example, we might get a route <literal>"0.0.0.0/0 10.0.0.1 10 table=30400"</literal>.</para>
+              </listitem>
+              <listitem>
+                  <para>Finally, add a policy routing rule for each address. For example
+                  <literal>"priority 30400 from 10.0.0.150/32 table 30400, priority 30400 from 10.0.0.152/32 table 30400"</literal>.</para>
+              </listitem>
+            </itemizedlist>
+            With above example, this roughly corresponds for interface <literal>eth0</literal> to
+            <command>nmcli device modify "eth0" ipv4.addresses "10.0.0.150/24,10.0.0.150/24" ipv4.routes "0.0.0.0/0 10.0.0.1 10 table=30400" ipv4.routing-rules "priority 30400 from 10.0.0.150/32 table 30400, priority 30400 from 10.0.0.152/32 table 30400"</command>.
+            Note that this replaces the previous addresses, routes and rules with the new information.
+            But also note that this only changes the run time configuration of the device. The
+            connection profile on disk is not affected.
+          </para>
         </listitem>
       </itemizedlist>
     </refsect2>
