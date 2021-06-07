@@ -7649,7 +7649,7 @@ nm_device_check_slave_connection_compatible(NMDevice *self, NMConnection *slave)
  *
  * Returns: %TRUE if the device is capable of assuming connections, %FALSE if not
  */
-static gboolean
+gboolean
 nm_device_can_assume_connections(NMDevice *self)
 {
     return !!NM_DEVICE_GET_CLASS(self)->update_connection;
