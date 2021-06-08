@@ -2215,6 +2215,40 @@ test_infiniband_mac(void)
 }
 
 static void
+test_infiniband_pkey(void)
+{
+    const char *const *const ARGV = NM_MAKE_STRV("ib.pkey=ib0.8004", "ip=ib0.8004:dhcp");
+    gs_unref_hashtable GHashTable *connections = NULL;
+    NMConnection *                 connection;
+    NMSettingInfiniband *          s_ib;
+    NMSettingIPConfig *            s_ip4;
+    NMSettingIPConfig *            s_ip6;
+
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 1);
+
+    connection = g_hash_table_lookup(connections, "ib0.8004");
+    g_assert_cmpstr(nm_connection_get_connection_type(connection),
+                    ==,
+                    NM_SETTING_INFINIBAND_SETTING_NAME);
+    g_assert_cmpstr(nm_connection_get_interface_name(connection), ==, "ib0.8004");
+
+    s_ib = nm_connection_get_setting_infiniband(connection);
+    g_assert(s_ib);
+    g_assert_cmpint(nm_setting_infiniband_get_p_key(s_ib), ==, 0x8004);
+
+    s_ip4 = nm_connection_get_setting_ip4_config(connection);
+    g_assert(s_ip4);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+    g_assert(!nm_setting_ip_config_get_may_fail(s_ip4));
+
+    s_ip6 = nm_connection_get_setting_ip6_config(connection);
+    g_assert(s_ip6);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+    g_assert(nm_setting_ip_config_get_may_fail(s_ip6));
+}
+
+static void
 test_carrier_timeout(void)
 {
     gs_unref_hashtable GHashTable *connections         = NULL;
@@ -2280,6 +2314,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/dhcp/vendor_class_id", test_dhcp_vendor_class_id);
     g_test_add_func("/initrd/cmdline/infiniband/iface", test_infiniband_iface);
     g_test_add_func("/initrd/cmdline/infiniband/mac", test_infiniband_mac);
+    g_test_add_func("/initrd/cmdline/infiniband/pkey", test_infiniband_pkey);
     g_test_add_func("/initrd/cmdline/carrier_timeout", test_carrier_timeout);
 
     return g_test_run();
