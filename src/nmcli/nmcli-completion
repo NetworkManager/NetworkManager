@@ -27,7 +27,7 @@ _nmcli_array_delete_at()
 
 _nmcli()
 {
-    local cur words cword i output
+    local cur prev words cword i output
     _init_completion || return
 
     # we don't care about any arguments after the current cursor position
