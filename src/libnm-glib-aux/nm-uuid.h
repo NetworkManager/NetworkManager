@@ -7,6 +7,28 @@ typedef struct _NMUuid {
     guint8 uuid[16];
 } NMUuid;
 
+#define NM_UUID_INIT_ZERO() ((NMUuid){.uuid = {0}})
+
+#define NM_UUID_INIT(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15) \
+    ((NMUuid){                                                                             \
+        .uuid = {(0x##a0),                                                                 \
+                 (0x##a1),                                                                 \
+                 (0x##a2),                                                                 \
+                 (0x##a3),                                                                 \
+                 (0x##a4),                                                                 \
+                 (0x##a5),                                                                 \
+                 (0x##a6),                                                                 \
+                 (0x##a7),                                                                 \
+                 (0x##a8),                                                                 \
+                 (0x##a9),                                                                 \
+                 (0x##a10),                                                                \
+                 (0x##a11),                                                                \
+                 (0x##a12),                                                                \
+                 (0x##a13),                                                                \
+                 (0x##a14),                                                                \
+                 (0x##a15)},                                                               \
+    })
+
 char *nm_uuid_unparse_case(const NMUuid *uuid, char out_str[static 37], gboolean upper_case);
 
 static inline char *
@@ -73,25 +95,30 @@ char *nm_uuid_generate_random_str(char buf[static 37]);
 
 /*****************************************************************************/
 
+extern const NMUuid nm_uuid_ns_zero;
+extern const NMUuid nm_uuid_ns_1;
+
+#define NM_UUID_NS_ZERO "00000000-0000-0000-0000-000000000000"
+#define NM_UUID_NS_1    "b425e9fb-7598-44b4-9e3b-5a2e3aaa4905"
+
+/*****************************************************************************/
+
 typedef enum {
     NM_UUID_TYPE_LEGACY   = 0,
     NM_UUID_TYPE_VERSION3 = 3,
     NM_UUID_TYPE_VERSION5 = 5,
 } NMUuidType;
 
-NMUuid *nm_uuid_generate_from_string(NMUuid *    uuid,
-                                     const char *s,
-                                     gssize      slen,
-                                     NMUuidType  uuid_type,
-                                     gpointer    type_args);
+NMUuid *nm_uuid_generate_from_string(NMUuid *      uuid,
+                                     const char *  s,
+                                     gssize        slen,
+                                     NMUuidType    uuid_type,
+                                     const NMUuid *type_args);
 
-char *nm_uuid_generate_from_string_str(const char *s,
-                                       gssize      slen,
-                                       NMUuidType  uuid_type,
-                                       gpointer    type_args);
-
-/* arbitrarily chosen namespace UUID for nm_uuid_generate_from_strings() */
-#define NM_UUID_NS1 "b425e9fb-7598-44b4-9e3b-5a2e3aaa4905"
+char *nm_uuid_generate_from_string_str(const char *  s,
+                                       gssize        slen,
+                                       NMUuidType    uuid_type,
+                                       const NMUuid *type_args);
 
 char *nm_uuid_generate_from_strings(const char *string1, ...) G_GNUC_NULL_TERMINATED;
 
