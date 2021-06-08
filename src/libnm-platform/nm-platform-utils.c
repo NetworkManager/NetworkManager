@@ -1893,7 +1893,9 @@ nmp_utils_sysctl_open_netdir(int ifindex, const char *ifname_guess, char *out_if
          * end of the @try_count. */
         if (nm_streq(ifname, ifname_buf_last_try))
             return -1;
-        strcpy(ifname_buf_last_try, ifname);
+
+        if (g_strlcpy(ifname_buf_last_try, ifname, IFNAMSIZ) >= IFNAMSIZ)
+            nm_assert_not_reached();
 
         fd_dir = open(sysdir, O_DIRECTORY | O_CLOEXEC);
         if (fd_dir < 0)
