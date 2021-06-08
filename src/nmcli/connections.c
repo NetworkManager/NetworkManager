@@ -3284,7 +3284,13 @@ do_connection_down(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
             g_clear_error(&error);
 
             if (info) {
+                /* coverity thinks that info might be freed already while we still iterate
+                 * the loop. But it cannot, because connection_cb_info_finish() only does some
+                 * kind of ref-counting that ensures info stays alive long enough. */
+
+                /* coverity[pass_freed_arg] */
                 g_signal_handlers_disconnect_by_func(active, down_active_connection_state_cb, info);
+
                 connection_cb_info_finish(info, active);
             }
         }
