@@ -1289,8 +1289,8 @@ test_nm_g_source_sentinel(void)
 
         if (nmtst_get_rand_bool()) {
             s2 = nm_g_source_sentinel_get(0);
+            g_assert_cmpint(g_atomic_int_get(&s2->ref_count), >=, 1);
             g_assert(s2 == s1);
-            g_assert_cmpint(g_atomic_int_get(&s1->ref_count), >=, 1);
         }
     }
 
