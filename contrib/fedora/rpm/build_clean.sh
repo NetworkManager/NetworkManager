@@ -203,6 +203,10 @@ if [[ $NO_DIST != 1 ]]; then
         --with-nm-cloud-setup=yes \
         --with-config-dhcp-default=internal \
         --with-config-dns-rc-manager-default=auto \
+        \
+        --with-iptables=/usr/sbin/iptables \
+        --with-nft=/usr/sbin/nft \
+        \
         || die "Error autogen.sh"
     if [[ $QUICK == 1 ]]; then
         make dist -j 7 || die "Error make dist"
