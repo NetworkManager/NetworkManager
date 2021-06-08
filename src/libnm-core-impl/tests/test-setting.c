@@ -4503,42 +4503,44 @@ test_setting_connection_secondaries_verify(void)
 
         g_object_set(s_con, NM_SETTING_CONNECTION_SECONDARIES, arr->pdata, NULL);
 
-#define _assert_secondaries(s_con, expected)                                                      \
-    G_STMT_START                                                                                  \
-    {                                                                                             \
-        NMSettingConnection *const _s_con    = (s_con);                                           \
-        const char *const *        _expected = (expected);                                        \
-        GArray *                   _secondaries;                                                  \
-        const guint                _expected_len = NM_PTRARRAY_LEN(_expected);                    \
-        gs_strfreev char **        _sec_strv     = NULL;                                          \
-        guint                      _i;                                                            \
-                                                                                                  \
-        g_assert(_expected);                                                                      \
-                                                                                                  \
-        if (nmtst_get_rand_bool()) {                                                              \
-            _secondaries = _nm_setting_connection_get_secondaries(_s_con);                        \
-            g_assert_cmpint(_expected_len, ==, nm_g_array_len(_secondaries));                     \
-            g_assert((_expected_len == 0) == (!_secondaries));                                    \
-            g_assert(nm_utils_strv_equal(_expected, nm_strvarray_get_strv(&_secondaries, NULL))); \
-        }                                                                                         \
-                                                                                                  \
-        if (nmtst_get_rand_bool()) {                                                              \
-            g_object_get(_s_con, NM_SETTING_CONNECTION_SECONDARIES, &_sec_strv, NULL);            \
-            g_assert_cmpint(_expected_len, ==, NM_PTRARRAY_LEN(_sec_strv));                       \
-            g_assert((_expected_len == 0) == (!_sec_strv));                                       \
-            g_assert(nm_utils_strv_equal(_expected, _sec_strv ?: NM_STRV_EMPTY()));               \
-        }                                                                                         \
-                                                                                                  \
-        g_assert_cmpint(nm_setting_connection_get_num_secondaries(_s_con), ==, _expected_len);    \
-        if (nmtst_get_rand_bool()) {                                                              \
-            for (_i = 0; _i < _expected_len; _i++) {                                              \
-                g_assert_cmpstr(nm_setting_connection_get_secondary(_s_con, _i),                  \
-                                ==,                                                               \
-                                _expected[_i]);                                                   \
-            }                                                                                     \
-            g_assert_null(nm_setting_connection_get_secondary(_s_con, _expected_len));            \
-        }                                                                                         \
-    }                                                                                             \
+#define _assert_secondaries(s_con, expected)                                                       \
+    G_STMT_START                                                                                   \
+    {                                                                                              \
+        NMSettingConnection *const _s_con    = (s_con);                                            \
+        const char *const *        _expected = (expected);                                         \
+        GArray *                   _secondaries;                                                   \
+        const guint                _expected_len = NM_PTRARRAY_LEN(_expected);                     \
+        gs_strfreev char **        _sec_strv     = NULL;                                           \
+        guint                      _i;                                                             \
+                                                                                                   \
+        g_assert(_expected);                                                                       \
+                                                                                                   \
+        if (nmtst_get_rand_bool()) {                                                               \
+            _secondaries = _nm_setting_connection_get_secondaries(_s_con);                         \
+            g_assert_cmpint(_expected_len, ==, nm_g_array_len(_secondaries));                      \
+            g_assert((_expected_len == 0) == (!_secondaries));                                     \
+            g_assert(nm_utils_strv_equal(_expected,                                                \
+                                         _secondaries ? nm_strvarray_get_strv(&_secondaries, NULL) \
+                                                      : NM_PTRARRAY_EMPTY(const char *)));         \
+        }                                                                                          \
+                                                                                                   \
+        if (nmtst_get_rand_bool()) {                                                               \
+            g_object_get(_s_con, NM_SETTING_CONNECTION_SECONDARIES, &_sec_strv, NULL);             \
+            g_assert_cmpint(_expected_len, ==, NM_PTRARRAY_LEN(_sec_strv));                        \
+            g_assert((_expected_len == 0) == (!_sec_strv));                                        \
+            g_assert(nm_utils_strv_equal(_expected, _sec_strv ?: NM_STRV_EMPTY()));                \
+        }                                                                                          \
+                                                                                                   \
+        g_assert_cmpint(nm_setting_connection_get_num_secondaries(_s_con), ==, _expected_len);     \
+        if (nmtst_get_rand_bool()) {                                                               \
+            for (_i = 0; _i < _expected_len; _i++) {                                               \
+                g_assert_cmpstr(nm_setting_connection_get_secondary(_s_con, _i),                   \
+                                ==,                                                                \
+                                _expected[_i]);                                                    \
+            }                                                                                      \
+            g_assert_null(nm_setting_connection_get_secondary(_s_con, _expected_len));             \
+        }                                                                                          \
+    }                                                                                              \
     G_STMT_END
 
         _assert_secondaries(s_con, (const char *const *) arr->pdata);
