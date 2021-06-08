@@ -917,6 +917,56 @@ reader_parse_vlan(Reader *reader, char *argument)
 }
 
 static void
+reader_parse_ib_pkey(Reader *reader, char *argument)
+{
+    NMConnection *       connection;
+    NMSettingInfiniband *s_ib;
+    char *               ifname;
+    gs_free char *       parent = NULL;
+    char *               pkey;
+    gint64               pkey_int;
+
+    /* At the moment we only support ib.pkey=<parent>.<pkey>;
+     * in the future we want to possibly support other options:
+     * ib.pkey=<parent>.<pkey>:<option>:...
+     */
+    ifname = get_word(&argument, ':');
+    if (!ifname) {
+        _LOGW(LOGD_CORE, "ib.pkey= without argument");
+        return;
+    }
+
+    parent = g_strdup(ifname);
+    pkey   = strchr(parent, '.');
+    if (!pkey) {
+        _LOGW(LOGD_CORE, "No pkey found for '%s'", ifname);
+        return;
+    }
+
+    *pkey = '\0';
+    pkey++;
+
+    pkey_int = _nm_utils_ascii_str_to_int64(pkey, 16, 0, 0xFFFF, -1);
+    if (pkey_int == -1) {
+        _LOGW(LOGD_CORE, "Invalid pkey '%s'", pkey);
+        return;
+    }
+
+    connection = reader_get_connection(reader, ifname, NM_SETTING_INFINIBAND_SETTING_NAME, TRUE);
+
+    s_ib = nm_connection_get_setting_infiniband(connection);
+    g_object_set(s_ib,
+                 NM_SETTING_INFINIBAND_PARENT,
+                 parent,
+                 NM_SETTING_INFINIBAND_P_KEY,
+                 (int) pkey_int,
+                 NULL);
+
+    if (argument && *argument)
+        _LOGW(LOGD_CORE, "Ignoring extra: '%s' for ib.pkey=", argument);
+}
+
+static void
 reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 {
     const char *    nettype;
@@ -1160,6 +1210,8 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
             reader_parse_master(reader, argument, NM_SETTING_TEAM_SETTING_NAME, NULL);
         else if (nm_streq(tag, "vlan"))
             reader_parse_vlan(reader, argument);
+        else if (nm_streq(tag, "ib.pkey"))
+            reader_parse_ib_pkey(reader, argument);
         else if (nm_streq(tag, "bootdev")) {
             g_free(bootdev);
             bootdev = g_strdup(argument);
