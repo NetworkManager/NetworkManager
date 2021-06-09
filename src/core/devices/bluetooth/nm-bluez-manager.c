@@ -2879,6 +2879,8 @@ dispose(GObject *object)
     g_clear_object(&priv->dbus_connection);
 
     nm_clear_pointer(&priv->bzobjs, g_hash_table_destroy);
+    nm_clear_pointer(&priv->conn_data_heads, g_hash_table_destroy);
+    nm_clear_pointer(&priv->conn_data_elems, g_hash_table_destroy);
 }
 
 static void
