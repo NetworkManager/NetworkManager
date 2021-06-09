@@ -1045,16 +1045,15 @@ complete_connection(NMDevice *           device,
     }
 
     ssid_utf8 = iwd_ssid_to_str(ssid);
-    nm_utils_complete_generic(
-        nm_device_get_platform(device),
-        connection,
-        NM_SETTING_WIRELESS_SETTING_NAME,
-        existing_connections,
-        ssid_utf8,
-        ssid_utf8,
-        NULL,
-        nm_setting_wireless_get_mac_address(s_wifi) ? NULL : nm_device_get_iface(device),
-        TRUE);
+    nm_utils_complete_generic(nm_device_get_platform(device),
+                              connection,
+                              NM_SETTING_WIRELESS_SETTING_NAME,
+                              existing_connections,
+                              ssid_utf8,
+                              ssid_utf8,
+                              NULL,
+                              NULL,
+                              TRUE);
 
     if (hidden)
         g_object_set(s_wifi, NM_SETTING_WIRELESS_HIDDEN, TRUE, NULL);
