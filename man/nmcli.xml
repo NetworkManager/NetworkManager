@@ -356,6 +356,7 @@
         <arg choice='plain'><command>hostname</command></arg>
         <arg choice='plain'><command>permissions</command></arg>
         <arg choice='plain'><command>logging</command></arg>
+        <arg choice='plain'><command>reload</command></arg>
       </group>
       <arg rep='repeat'><replaceable>ARGUMENTS</replaceable></arg>
     </cmdsynopsis>
@@ -417,6 +418,66 @@
           <option>domain</option> parameters. See
           <link linkend='NetworkManager.conf'><link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link></link>
           for available level and domain values.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <command>reload</command>
+          <arg rep='repeat'><replaceable>flags</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>
+            Reload NetworkManager's configuration and perform certain
+            updates, like flushing caches or rewriting external state to
+            disk. This is similar to sending SIGHUP to NetworkManager
+            but it allows for more fine-grained control over what to
+            reload through the flags argument. It also allows non-root
+            access via PolicyKit and contrary to signals it is
+            synchronous. Available flags are:
+          </para>
+          <variablelist>
+            <varlistentry>
+              <term><option>conf</option></term>
+              <listitem><para>
+                Reload the NetworkManager.conf configuration from
+                disk. Note that this does not include connections, which
+                can be reloaded through <command>nmcli connection
+                reload</command> instead.
+              </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>dns-rc</option></term>
+              <listitem><para>
+                Update DNS configuration, which usually involves writing
+                /etc/resolv.conf anew. This is equivalent to sending the
+                SIGUSR1 signal to the NetworkManager process.
+              </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+              <term><option>dns-full</option></term>
+              <listitem><para>
+                Restart the DNS plugin. This is for example useful when
+                using dnsmasq plugin, which uses additional
+                configuration in
+                <filename>/etc/NetworkManager/dnsmasq.d</filename>. If
+                you edit those files, you can restart the DNS
+                plugin. This action shortly interrupts name resolution.
+              </para></listitem>
+            </varlistentry>
+          </variablelist>
+          <para>
+            With no flags, everything that is supported is reloaded,
+            which is identical to sending a SIGHUP. See
+            <citerefentry>
+              <refentrytitle>NetworkManager</refentrytitle>
+              <manvolnum>8</manvolnum>
+            </citerefentry>
+            for more details about signals.
+          </para>
         </listitem>
       </varlistentry>
     </variablelist>

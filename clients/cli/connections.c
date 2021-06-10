@@ -19,6 +19,7 @@
 #include "nm-vpn-helpers.h"
 #include "nm-meta-setting-access.h"
 #include "nm-secret-agent-simple.h"
+#include "nm-glib-aux/nm-dbus-aux.h"
 
 #include "utils.h"
 #include "common.h"
@@ -9184,28 +9185,42 @@ do_connection_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 }
 
 static void
-do_connection_reload(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
+connection_reload_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    gs_unref_variant GVariant *result = NULL;
-    gs_free_error GError *error       = NULL;
+    NmCli *       nmc              = user_data;
+    gs_free_error GError *error    = NULL;
+    gs_unref_variant GVariant *ret = NULL;
 
-    next_arg(nmc, &argc, &argv, NULL);
-    if (nmc->complete)
-        return;
-
-    result = nmc_dbus_call_sync(nmc,
-                                "/org/freedesktop/NetworkManager/Settings",
-                                "org.freedesktop.NetworkManager.Settings",
-                                "ReloadConnections",
-                                g_variant_new("()"),
-                                G_VARIANT_TYPE("(b)"),
-                                &error);
+    ret = nm_dbus_call_finish(result, &error);
     if (error) {
         g_string_printf(nmc->return_text,
                         _("Error: failed to reload connections: %s."),
                         nmc_error_get_simple_message(error));
         nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
     }
+
+    quit();
+}
+
+static void
+do_connection_reload(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
+{
+    next_arg(nmc, &argc, &argv, NULL);
+    if (nmc->complete)
+        return;
+
+    nmc->should_wait++;
+    nm_dbus_call(G_BUS_TYPE_SYSTEM,
+                 NM_DBUS_SERVICE,
+                 NM_DBUS_PATH_SETTINGS,
+                 NM_DBUS_INTERFACE_SETTINGS,
+                 "ReloadConnections",
+                 g_variant_new("()"),
+                 G_VARIANT_TYPE("(b)"),
+                 NULL,
+                 (nmc->timeout == -1 ? 90 : nmc->timeout) * 1000,
+                 connection_reload_cb,
+                 nmc);
 }
 
 static void
