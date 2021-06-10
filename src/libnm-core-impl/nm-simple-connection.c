@@ -20,6 +20,20 @@
 
 /*****************************************************************************/
 
+/**
+ * NMSimpleConnection:
+ */
+struct _NMSimpleConnection {
+    GObject parent;
+};
+
+struct _NMSimpleConnectionClass {
+    GObjectClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 static void nm_simple_connection_interface_init(NMConnectionInterface *iface);
 
 G_DEFINE_TYPE_WITH_CODE(NMSimpleConnection,
