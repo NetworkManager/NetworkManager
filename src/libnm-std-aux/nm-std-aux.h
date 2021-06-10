@@ -13,17 +13,18 @@
 
 /*****************************************************************************/
 
-#define _nm_packed        __attribute__((__packed__))
-#define _nm_unused        __attribute__((__unused__))
-#define _nm_used          __attribute__((__used__))
-#define _nm_pure          __attribute__((__pure__))
-#define _nm_const         __attribute__((__const__))
-#define _nm_printf(a, b)  __attribute__((__format__(__printf__, a, b)))
-#define _nm_align(s)      __attribute__((__aligned__(s)))
-#define _nm_section(s)    __attribute__((__section__(s)))
-#define _nm_alignof(type) __alignof(type)
-#define _nm_alignas(type) _nm_align(_nm_alignof(type))
-#define nm_auto(fcn)      __attribute__((__cleanup__(fcn)))
+#define _nm_packed             __attribute__((__packed__))
+#define _nm_unused             __attribute__((__unused__))
+#define _nm_used               __attribute__((__used__))
+#define _nm_pure               __attribute__((__pure__))
+#define _nm_const              __attribute__((__const__))
+#define _nm_warn_unused_result __attribute__((__warn_unused_result__))
+#define _nm_printf(a, b)       __attribute__((__format__(__printf__, a, b)))
+#define _nm_align(s)           __attribute__((__aligned__(s)))
+#define _nm_section(s)         __attribute__((__section__(s)))
+#define _nm_alignof(type)      __alignof(type)
+#define _nm_alignas(type)      _nm_align(_nm_alignof(type))
+#define nm_auto(fcn)           __attribute__((__cleanup__(fcn)))
 
 /* This is required to make LTO working.
  *
