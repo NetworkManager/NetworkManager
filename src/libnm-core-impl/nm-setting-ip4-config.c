@@ -45,6 +45,22 @@ typedef struct {
     char *dhcp_vendor_class_identifier;
 } NMSettingIP4ConfigPrivate;
 
+/**
+ * NMSettingIP4Config:
+ *
+ * IPv4 Settings
+ */
+struct _NMSettingIP4Config {
+    NMSettingIPConfig parent;
+};
+
+struct _NMSettingIP4ConfigClass {
+    NMSettingIPConfigClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING_IP_CONFIG)
 
 #define NM_SETTING_IP4_CONFIG_GET_PRIVATE(o) \

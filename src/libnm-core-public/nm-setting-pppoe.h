@@ -33,21 +33,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_PPPOE_PASSWORD       "password"
 #define NM_SETTING_PPPOE_PASSWORD_FLAGS "password-flags"
 
-/**
- * NMSettingPppoe:
- *
- * PPP-over-Ethernet Settings
- */
-struct _NMSettingPppoe {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingPppoeClass;
+typedef struct _NMSettingPppoeClass NMSettingPppoeClass;
 
 GType nm_setting_pppoe_get_type(void);
 

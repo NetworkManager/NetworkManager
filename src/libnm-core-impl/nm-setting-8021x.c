@@ -180,6 +180,22 @@ typedef struct {
     bool                    system_ca_certs : 1;
 } NMSetting8021xPrivate;
 
+/**
+ * NMSetting8021x:
+ *
+ * IEEE 802.1x Authentication Settings
+ */
+struct _NMSetting8021x {
+    NMSetting parent;
+};
+
+struct _NMSetting8021xClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
 
 #define NM_SETTING_802_1X_GET_PRIVATE(o) \

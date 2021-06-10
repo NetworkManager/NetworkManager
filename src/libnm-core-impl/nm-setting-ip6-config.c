@@ -52,6 +52,22 @@ typedef struct {
     gint32                        ra_timeout;
 } NMSettingIP6ConfigPrivate;
 
+/**
+ * NMSettingIP6Config:
+ *
+ * IPv6 Settings
+ */
+struct _NMSettingIP6Config {
+    NMSettingIPConfig parent;
+};
+
+struct _NMSettingIP6ConfigClass {
+    NMSettingIPConfigClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG)
 
 #define NM_SETTING_IP6_CONFIG_GET_PRIVATE(o) \

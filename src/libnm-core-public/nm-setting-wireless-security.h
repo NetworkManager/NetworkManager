@@ -152,21 +152,7 @@ typedef enum {
 #define NM_SETTING_WIRELESS_SECURITY_WPS_METHOD          "wps-method"
 #define NM_SETTING_WIRELESS_SECURITY_FILS                "fils"
 
-/**
- * NMSettingWirelessSecurity:
- *
- * Wi-Fi Security Settings
- */
-struct _NMSettingWirelessSecurity {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingWirelessSecurityClass;
+typedef struct _NMSettingWirelessSecurityClass NMSettingWirelessSecurityClass;
 
 GType nm_setting_wireless_security_get_type(void);
 

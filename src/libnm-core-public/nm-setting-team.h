@@ -151,21 +151,7 @@ int nm_team_link_watcher_get_vlanid(const NMTeamLinkWatcher *watcher);
 #define NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_DEFAULT \
     NM_SETTING_TEAM_RUNNER_AGG_SELECT_POLICY_LACP_PRIO
 
-/**
- * NMSettingTeam:
- *
- * Teaming Settings
- */
-struct _NMSettingTeam {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingTeamClass;
+typedef struct _NMSettingTeamClass NMSettingTeamClass;
 
 GType nm_setting_team_get_type(void);
 

@@ -55,21 +55,7 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_BLUETOOTH_TYPE_NAP "nap"
 
-/**
- * NMSettingBluetooth:
- *
- * Bluetooth Settings
- */
-struct _NMSettingBluetooth {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingBluetoothClass;
+typedef struct _NMSettingBluetoothClass NMSettingBluetoothClass;
 
 GType nm_setting_bluetooth_get_type(void);
 

@@ -40,6 +40,22 @@ typedef struct {
     bool             multi_queue : 1;
 } NMSettingTunPrivate;
 
+/**
+ * NMSettingTun:
+ *
+ * Tunnel Settings
+ */
+struct _NMSettingTun {
+    NMSetting parent;
+};
+
+struct _NMSettingTunClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingTun, nm_setting_tun, NM_TYPE_SETTING)
 
 #define NM_SETTING_TUN_GET_PRIVATE(o) \

@@ -142,21 +142,7 @@ typedef enum {
     NM_SETTING_WIRELESS_POWERSAVE_LAST = _NM_SETTING_WIRELESS_POWERSAVE_NUM - 1, /*< skip >*/
 } NMSettingWirelessPowersave;
 
-/**
- * NMSettingWireless:
- *
- * Wi-Fi Settings
- */
-struct _NMSettingWireless {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingWirelessClass;
+typedef struct _NMSettingWirelessClass NMSettingWirelessClass;
 
 GType nm_setting_wireless_get_type(void);
 

@@ -127,21 +127,7 @@ typedef enum {
     NM_SETTING_CONNECTION_LLMNR_YES     = 2,
 } NMSettingConnectionLlmnr;
 
-/**
- * NMSettingConnection:
- *
- * General Connection Profile Settings
- */
-struct _NMSettingConnection {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingConnectionClass;
+typedef struct _NMSettingConnectionClass NMSettingConnectionClass;
 
 GType nm_setting_connection_get_type(void);
 

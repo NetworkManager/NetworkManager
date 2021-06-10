@@ -84,6 +84,22 @@ typedef struct {
     guint32                            wep_tx_keyidx;
 } NMSettingWirelessSecurityPrivate;
 
+/**
+ * NMSettingWirelessSecurity:
+ *
+ * Wi-Fi Security Settings
+ */
+struct _NMSettingWirelessSecurity {
+    NMSetting parent;
+};
+
+struct _NMSettingWirelessSecurityClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(o)                 \

@@ -7,6 +7,10 @@
 
 #include "nm-meta-setting-base.h"
 
+#if _NM_META_SETTING_BASE_IMPL_LIBNM
+    #include "libnm-core-impl/nm-default-libnm-core.h"
+#endif
+
 #include "nm-setting-6lowpan.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-adsl.h"
@@ -58,6 +62,10 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wpan.h"
+
+#if _NM_META_SETTING_BASE_IMPL_LIBNM
+    #include "nm-setting-private.h"
+#endif
 
 /*****************************************************************************/
 
