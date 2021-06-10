@@ -17799,13 +17799,36 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
         priv->hostname_resolver_x[IS_IPv4] = resolver;
     }
 
-    /* Determine the first address of the interface and
-     * whether it changed from the previous lookup */
+    /* Determine the most suitable address of the interface
+     * and whether it changed from the previous lookup */
     ip_config = priv->ip_config_x[IS_IPv4];
     if (ip_config) {
-        const NMPlatformIPAddress *addr;
+        const NMPlatformIPAddress *addr = NULL;
 
-        addr = nm_ip_config_get_first_address(ip_config);
+        if (IS_IPv4) {
+            addr = nm_ip_config_get_first_address(ip_config);
+        } else {
+            /* For IPv6 prefer, in order:
+             * - !link-local, !deprecated
+             * - !link-local, deprecated
+             * - link-local
+             */
+            addr = nm_ip_config_find_first_address(ip_config,
+                                                   NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL
+                                                       | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL);
+            if (!addr) {
+                addr = nm_ip_config_find_first_address(
+                    ip_config,
+                    NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL
+                        | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DEPRECATED);
+            }
+            if (!addr) {
+                addr = nm_ip_config_find_first_address(ip_config,
+                                                       NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+                                                           | NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY);
+            }
+        }
+
         if (addr) {
             new_address = g_inet_address_new_from_bytes(addr->address_ptr,
                                                         IS_IPv4 ? G_SOCKET_FAMILY_IPV4
