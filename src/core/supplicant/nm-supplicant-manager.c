@@ -382,7 +382,7 @@ _create_iface_complete(NMSupplMgrCreateIfaceHandle *handle,
     nm_clear_g_cancellable(&handle->cancellable);
     nm_ref_string_unref(handle->name_owner);
 
-    nm_g_slice_free_fcn(handle);
+    nm_g_slice_free(handle);
 }
 
 static void
