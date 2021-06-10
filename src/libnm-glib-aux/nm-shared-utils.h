@@ -1092,8 +1092,14 @@ _nm_g_slice_free_fcn_define(12);
 _nm_g_slice_free_fcn_define(16);
 _nm_g_slice_free_fcn_define(32);
 
+_nm_warn_unused_result static inline GDestroyNotify
+_nm_get_warn_unused_result_gdestroynotify(GDestroyNotify f)
+{
+    return f;
+}
+
 #define nm_g_slice_free_fcn1(mem_size)                                                        \
-    ({                                                                                        \
+    _nm_get_warn_unused_result_gdestroynotify(({                                              \
         void (*_fcn)(gpointer);                                                               \
                                                                                               \
         /* If mem_size is a compile time constant, the compiler
@@ -1132,8 +1138,9 @@ _nm_g_slice_free_fcn_define(32);
             _fcn = NULL;                                                                      \
             break;                                                                            \
         }                                                                                     \
+                                                                                              \
         _fcn;                                                                                 \
-    })
+    }))
 
 /**
  * nm_g_slice_free_fcn:
