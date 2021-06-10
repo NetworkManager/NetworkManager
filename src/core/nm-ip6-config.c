@@ -1644,7 +1644,7 @@ nm_ip6_config_find_first_address(const NMIP6Config *self, NMPlatformMatchFlags m
     nm_assert(NM_FLAGS_ANY(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY));
 
     nm_ip_config_iter_ip6_address_for_each (&iter, self, &addr) {
-        if (nm_platform_ip6_address_match(addr, match_flag))
+        if (nm_platform_ip_address_match(AF_INET6, (NMPlatformIPAddress *) addr, match_flag))
             return addr;
     }
     return NULL;
