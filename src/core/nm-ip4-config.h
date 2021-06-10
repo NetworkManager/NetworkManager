@@ -664,4 +664,7 @@ nm_ip_config_intersect_alloc(const NMIPConfig *a,
     }
 }
 
+gconstpointer nm_ip_config_find_first_address(const NMIPConfig *   self,
+                                              NMPlatformMatchFlags match_flag);
+
 #endif /* __NETWORKMANAGER_IP4_CONFIG_H__ */
