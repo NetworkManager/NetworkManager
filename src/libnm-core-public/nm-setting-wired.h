@@ -81,21 +81,7 @@ typedef enum {                                             /*< flags >*/
 #define NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD      "wake-on-lan-password"
 #define NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES  "accept-all-mac-addresses"
 
-/**
- * NMSettingWired:
- *
- * Wired Ethernet Settings
- */
-struct _NMSettingWired {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingWiredClass;
+typedef struct _NMSettingWiredClass NMSettingWiredClass;
 
 GType nm_setting_wired_get_type(void);
 

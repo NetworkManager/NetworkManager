@@ -33,6 +33,22 @@ typedef struct {
     guint32 channel;
 } NMSettingOlpcMeshPrivate;
 
+/**
+ * NMSettingOlpcMesh:
+ *
+ * OLPC Wireless Mesh Settings
+ */
+struct _NMSettingOlpcMesh {
+    NMSetting parent;
+};
+
+struct _NMSettingOlpcMeshClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING)
 
 #define NM_SETTING_OLPC_MESH_GET_PRIVATE(o) \

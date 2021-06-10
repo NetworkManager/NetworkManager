@@ -40,6 +40,22 @@ typedef struct {
     guint32              vci;
 } NMSettingAdslPrivate;
 
+/**
+ * NMSettingAdsl:
+ *
+ * ADSL Settings
+ */
+struct _NMSettingAdsl {
+    NMSetting parent;
+};
+
+struct _NMSettingAdslClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingAdsl, nm_setting_adsl, NM_TYPE_SETTING)
 
 #define NM_SETTING_ADSL_GET_PRIVATE(o) \

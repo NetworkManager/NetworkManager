@@ -40,6 +40,22 @@ typedef struct {
     guint32 mtu;
 } NMSettingInfinibandPrivate;
 
+/**
+ * NMSettingInfiniband:
+ *
+ * Infiniband Settings
+ */
+struct _NMSettingInfiniband {
+    NMSetting parent;
+};
+
+struct _NMSettingInfinibandClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingInfiniband, nm_setting_infiniband, NM_TYPE_SETTING)
 
 #define NM_SETTING_INFINIBAND_GET_PRIVATE(o) \

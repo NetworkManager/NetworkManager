@@ -43,21 +43,7 @@ G_BEGIN_DECLS
 /* Deprecated */
 #define NM_SETTING_GSM_NUMBER "number"
 
-/**
- * NMSettingGsm:
- *
- * GSM-based Mobile Broadband Settings
- */
-struct _NMSettingGsm {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingGsmClass;
+typedef struct _NMSettingGsmClass NMSettingGsmClass;
 
 GType nm_setting_gsm_get_type(void);
 

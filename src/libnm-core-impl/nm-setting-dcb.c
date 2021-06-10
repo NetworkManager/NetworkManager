@@ -65,6 +65,22 @@ typedef struct {
     NMSettingDcbFlags priority_group_flags;
 } NMSettingDcbPrivate;
 
+/**
+ * NMSettingDcb:
+ *
+ * Data Center Bridging Settings
+ */
+struct _NMSettingDcb {
+    NMSetting parent;
+};
+
+struct _NMSettingDcbClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingDcb, nm_setting_dcb, NM_TYPE_SETTING)
 
 #define NM_SETTING_DCB_GET_PRIVATE(o) \

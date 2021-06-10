@@ -35,6 +35,21 @@ typedef struct {
     bool  browser_only : 1;
 } NMSettingProxyPrivate;
 
+/**
+ * NMSettingProxy:
+ *
+ * WWW Proxy Settings
+ */
+struct _NMSettingProxy {
+    NMSetting parent;
+};
+
+struct _NMSettingProxyClass {
+    NMSettingClass parent;
+
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingProxy, nm_setting_proxy, NM_TYPE_SETTING)
 
 #define NM_SETTING_PROXY_GET_PRIVATE(o) \

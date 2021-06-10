@@ -37,6 +37,22 @@ typedef struct {
     NMSettingSecretFlags password_flags;
 } NMSettingPppoePrivate;
 
+/**
+ * NMSettingPppoe:
+ *
+ * PPP-over-Ethernet Settings
+ */
+struct _NMSettingPppoe {
+    NMSetting parent;
+};
+
+struct _NMSettingPppoeClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingPppoe, nm_setting_pppoe, NM_TYPE_SETTING)
 
 #define NM_SETTING_PPPOE_GET_PRIVATE(o) \

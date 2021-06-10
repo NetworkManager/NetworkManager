@@ -130,16 +130,6 @@ typedef enum {
 } NMSettingMacRandomization;
 
 /**
- * NMSetting:
- *
- * The NMSetting struct contains only private data.
- * It should only be accessed through the functions described below.
- */
-struct _NMSetting {
-    GObject parent;
-};
-
-/**
  * NMSettingClearSecretsWithFlagsFn:
  * @setting: The setting for which secrets are being iterated
  * @secret: The secret's name
@@ -175,87 +165,7 @@ typedef void (*NMSettingValueIterFn)(NMSetting *   setting,
 /*< private >*/
 typedef gboolean (*_NMConnectionForEachSecretFunc)(NMSettingSecretFlags flags, gpointer user_data);
 
-typedef struct {
-    GObjectClass parent;
-
-    /* Virtual functions */
-    int (*verify)(NMSetting *setting, NMConnection *connection, GError **error);
-
-    gboolean (*verify_secrets)(NMSetting *setting, NMConnection *connection, GError **error);
-
-    GPtrArray *(*need_secrets)(NMSetting *setting);
-
-    int (*update_one_secret)(NMSetting *setting, const char *key, GVariant *value, GError **error);
-
-    gboolean (*get_secret_flags)(NMSetting *           setting,
-                                 const char *          secret_name,
-                                 NMSettingSecretFlags *out_flags,
-                                 GError **             error);
-
-    gboolean (*set_secret_flags)(NMSetting *          setting,
-                                 const char *         secret_name,
-                                 NMSettingSecretFlags flags,
-                                 GError **            error);
-
-    /*< private >*/
-    gboolean (*clear_secrets)(const struct _NMSettInfoSetting *sett_info,
-                              guint                            property_idx,
-                              NMSetting *                      setting,
-                              NMSettingClearSecretsWithFlagsFn func,
-                              gpointer                         user_data);
-
-    /* compare_property() returns a ternary, where DEFAULT means that the property should not
-     * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
-     * equal/not-equal.
-     *
-     * @other may be %NULL, in which case the function only determines whether
-     * the setting should be compared (TRUE) or not (DEFAULT). */
-    /*< private >*/
-    NMTernary (*compare_property)(const struct _NMSettInfoSetting *sett_info,
-                                  guint                            property_idx,
-                                  NMConnection *                   con_a,
-                                  NMSetting *                      set_a,
-                                  NMConnection *                   con_b,
-                                  NMSetting *                      set_b,
-                                  NMSettingCompareFlags            flags);
-
-    /*< private >*/
-    void (*duplicate_copy_properties)(const struct _NMSettInfoSetting *sett_info,
-                                      NMSetting *                      src,
-                                      NMSetting *                      dst);
-
-    /*< private >*/
-    void (*enumerate_values)(const struct _NMSettInfoProperty *property_info,
-                             NMSetting *                       setting,
-                             NMSettingValueIterFn              func,
-                             gpointer                          user_data);
-
-    /*< private >*/
-    gboolean (*aggregate)(NMSetting *setting, int type_i, gpointer arg);
-
-    /*< private >*/
-    void (*for_each_secret)(NMSetting *                    setting,
-                            const char *                   secret_name,
-                            GVariant *                     val,
-                            gboolean                       remove_non_secrets,
-                            _NMConnectionForEachSecretFunc callback,
-                            gpointer                       callback_data,
-                            GVariantBuilder *              setting_builder);
-
-    /*< private >*/
-    gboolean (*init_from_dbus)(NMSetting *                     setting,
-                               GHashTable *                    keys,
-                               GVariant *                      setting_dict,
-                               GVariant *                      connection_dict,
-                               guint /* NMSettingParseFlags */ parse_flags,
-                               GError **                       error);
-
-    /*< private >*/
-    gpointer padding[1];
-
-    /*< private >*/
-    const struct _NMMetaSettingInfo *setting_info;
-} NMSettingClass;
+typedef struct _NMSettingClass NMSettingClass;
 
 GType nm_setting_get_type(void);
 
