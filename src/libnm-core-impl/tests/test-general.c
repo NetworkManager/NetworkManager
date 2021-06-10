@@ -493,6 +493,7 @@ test_nm_hash(void)
         ==,
         0x28131);
 
+#if _NM_CC_SUPPORT_AUTO_TYPE
     {
         _nm_auto_type x = NM_HASH_COMBINE_BOOLS(guint8, 0, 0, 1, 1, 0, 0, 0, 1);
 
@@ -506,6 +507,7 @@ test_nm_hash(void)
         G_STATIC_ASSERT(sizeof(x) == 2);
         g_assert(((typeof(x)) -1) > 0);
     }
+#endif
 }
 
 /*****************************************************************************/
