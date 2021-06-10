@@ -2380,7 +2380,8 @@ struct _NMDedupMultiIndex *nm_platform_get_multi_idx(NMPlatform *self);
 
 /*****************************************************************************/
 
-gboolean nm_platform_ip6_address_match(const NMPlatformIP6Address *addr,
-                                       NMPlatformMatchFlags        match_flag);
+gboolean nm_platform_ip_address_match(int                        addr_family,
+                                      const NMPlatformIPAddress *addr,
+                                      NMPlatformMatchFlags       match_flag);
 
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */
