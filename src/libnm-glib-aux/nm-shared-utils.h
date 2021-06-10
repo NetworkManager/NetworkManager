@@ -1080,11 +1080,17 @@ case v:                             \
     static inline void _nm_g_slice_free_fcn_##mem_size(gpointer mem_block) \
     {                                                                      \
         g_slice_free1(mem_size, mem_block);                                \
-    }
+    }                                                                      \
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
-_nm_g_slice_free_fcn_define(1) _nm_g_slice_free_fcn_define(2) _nm_g_slice_free_fcn_define(4)
-    _nm_g_slice_free_fcn_define(8) _nm_g_slice_free_fcn_define(10) _nm_g_slice_free_fcn_define(12)
-        _nm_g_slice_free_fcn_define(16) _nm_g_slice_free_fcn_define(32)
+_nm_g_slice_free_fcn_define(1);
+_nm_g_slice_free_fcn_define(2);
+_nm_g_slice_free_fcn_define(4);
+_nm_g_slice_free_fcn_define(8);
+_nm_g_slice_free_fcn_define(10);
+_nm_g_slice_free_fcn_define(12);
+_nm_g_slice_free_fcn_define(16);
+_nm_g_slice_free_fcn_define(32);
 
 #define nm_g_slice_free_fcn1(mem_size)                                                        \
     ({                                                                                        \
@@ -1158,7 +1164,8 @@ _nm_g_slice_free_fcn_define(1) _nm_g_slice_free_fcn_define(2) _nm_g_slice_free_f
         _error && _error->domain == (err_domain) && NM_IN_SET(_error->code, __VA_ARGS__); \
     })
 
-            static inline void nm_g_set_error_take(GError **error, GError *error_take)
+static inline void
+nm_g_set_error_take(GError **error, GError *error_take)
 {
     if (!error_take)
         g_return_if_reached();
