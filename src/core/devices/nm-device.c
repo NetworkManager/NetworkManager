@@ -9893,9 +9893,9 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
     nm_assert(s_con);
 
     if (priv->ext_ip6_config_captured) {
-        ll_addr = nm_ip6_config_find_first_address(priv->ext_ip6_config_captured,
-                                                   NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-                                                       | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL);
+        ll_addr = nm_ip_config_find_first_address(NM_IP_CONFIG(priv->ext_ip6_config_captured),
+                                                  NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+                                                      | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL);
     }
 
     if (!ll_addr) {
@@ -10134,9 +10134,9 @@ linklocal6_check_complete(NMDevice *self)
     }
 
     if (!priv->ext_ip6_config_captured
-        || !nm_ip6_config_find_first_address(priv->ext_ip6_config_captured,
-                                             NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-                                                 | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL)) {
+        || !nm_ip_config_find_first_address(NM_IP_CONFIG(priv->ext_ip6_config_captured),
+                                            NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+                                                | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL)) {
         /* we don't have a non-tentative link local address yet. Wait longer. */
         return;
     }
@@ -10182,10 +10182,10 @@ check_and_add_ipv6ll_addr(NMDevice *self)
         return;
 
     if (priv->ext_ip6_config_captured
-        && nm_ip6_config_find_first_address(priv->ext_ip6_config_captured,
-                                            NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-                                                | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
-                                                | NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE)) {
+        && nm_ip_config_find_first_address(NM_IP_CONFIG(priv->ext_ip6_config_captured),
+                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+                                               | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
+                                               | NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE)) {
         /* Already have an LL address, nothing to do */
         return;
     }
@@ -10255,9 +10255,9 @@ linklocal6_start(NMDevice *self)
     nm_clear_g_source(&priv->linklocal6_timeout_id);
 
     if (priv->ext_ip6_config_captured
-        && nm_ip6_config_find_first_address(priv->ext_ip6_config_captured,
-                                            NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
-                                                | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL))
+        && nm_ip_config_find_first_address(NM_IP_CONFIG(priv->ext_ip6_config_captured),
+                                           NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL
+                                               | NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL))
         return TRUE;
 
     _LOGD(LOGD_DEVICE,
@@ -10836,9 +10836,9 @@ ndisc_ra_timeout(NMNDisc *ndisc, NMDevice *self)
          *        addresses we find inside priv->ip_config_6.
          */
         if (priv->ip_config_6
-            && nm_ip6_config_find_first_address(priv->ip_config_6,
-                                                NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL
-                                                    | NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY))
+            && nm_ip_config_find_first_address(NM_IP_CONFIG(priv->ip_config_6),
+                                               NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL
+                                                   | NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY))
             nm_device_activate_schedule_ip_config_result(self, AF_INET6, NULL);
         else
             nm_device_activate_schedule_ip_config_timeout(self, AF_INET6);

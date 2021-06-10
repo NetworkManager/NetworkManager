@@ -1977,6 +1977,26 @@ nm_ip_config_dump(const NMIPConfig *self, const char *detail, NMLogLevel level, 
 
 /*****************************************************************************/
 
+gconstpointer
+nm_ip_config_find_first_address(const NMIPConfig *self, NMPlatformMatchFlags match_flag)
+{
+    NMDedupMultiIter           iter;
+    const NMPlatformIPAddress *address;
+
+    g_return_val_if_fail(NM_IS_IP_CONFIG(self), NULL);
+
+    nm_assert(!NM_FLAGS_ANY(
+        match_flag,
+        ~(NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY | NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY)));
+
+    nm_ip_config_iter_ip_address_for_each (&iter, self, &address) {
+        if (nm_platform_ip_address_match(nm_ip_config_get_addr_family(self), address, match_flag))
+            return address;
+    }
+
+    return NULL;
+}
+
 void
 nm_ip4_config_reset_addresses(NMIP4Config *self)
 {
