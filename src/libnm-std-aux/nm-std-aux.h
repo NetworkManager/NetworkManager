@@ -192,6 +192,12 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 #define NM_N_ELEMENTS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+/* This does a compile time check that "type" is a suitable C type. It either
+ * returns a compile time constant of 1 or it fails compilation. The point
+ * is only in macros to check that a macro parameter (what we might pass to
+ * sizeof() is really a type, and not a variable. */
+#define NM_ENSURE_IS_TYPE(type) (sizeof(void (*)(type[])) == sizeof(void (*)(void *)))
+
 /*****************************************************************************/
 
 static inline uint32_t
