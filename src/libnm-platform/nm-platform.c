@@ -3448,6 +3448,9 @@ nm_platform_ip_address_match(int                        addr_family,
                && !NM_FLAGS_HAS(address->n_ifa_flags, IFA_F_OPTIMISTIC)) {
         if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE))
             return FALSE;
+    } else if (NM_FLAGS_HAS(address->n_ifa_flags, IFA_F_DEPRECATED)) {
+        if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_DEPRECATED))
+            return FALSE;
     } else {
         if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL))
             return FALSE;
