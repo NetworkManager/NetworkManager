@@ -866,8 +866,9 @@ need_secrets(NMSetting *setting)
         goto no_secrets;
     }
 
-    g_assert_not_reached();
-    return secrets;
+    /* If we get here, we're an older libnm talking to a newer NetworkManager
+     * service (perhaps from a container or during an upgrade). Assume that
+     * unknown/future key management modes don't need any extra secrets. */
 
 no_secrets:
     if (secrets)
