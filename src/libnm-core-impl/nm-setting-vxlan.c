@@ -60,6 +60,22 @@ typedef struct {
     bool  l3_miss : 1;
 } NMSettingVxlanPrivate;
 
+/**
+ * NMSettingVxlan:
+ *
+ * VXLAN Settings
+ */
+struct _NMSettingVxlan {
+    NMSetting parent;
+};
+
+struct _NMSettingVxlanClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingVxlan, nm_setting_vxlan, NM_TYPE_SETTING)
 
 #define NM_SETTING_VXLAN_GET_PRIVATE(o) \

@@ -34,21 +34,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_INFINIBAND_P_KEY          "p-key"
 #define NM_SETTING_INFINIBAND_PARENT         "parent"
 
-/**
- * NMSettingInfiniband:
- *
- * Infiniband Settings
- */
-struct _NMSettingInfiniband {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingInfinibandClass;
+typedef struct _NMSettingInfinibandClass NMSettingInfinibandClass;
 
 GType nm_setting_infiniband_get_type(void);
 

@@ -55,6 +55,22 @@ typedef struct {
     bool                 home_only : 1;
 } NMSettingGsmPrivate;
 
+/**
+ * NMSettingGsm:
+ *
+ * GSM-based Mobile Broadband Settings
+ */
+struct _NMSettingGsm {
+    NMSetting parent;
+};
+
+struct _NMSettingGsmClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING)
 
 #define NM_SETTING_GSM_GET_PRIVATE(o) \

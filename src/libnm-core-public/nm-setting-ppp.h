@@ -45,21 +45,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_PPP_LCP_ECHO_FAILURE  "lcp-echo-failure"
 #define NM_SETTING_PPP_LCP_ECHO_INTERVAL "lcp-echo-interval"
 
-/**
- * NMSettingPpp:
- *
- * Point-to-Point Protocol Settings
- */
-struct _NMSettingPpp {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingPppClass;
+typedef struct _NMSettingPppClass NMSettingPppClass;
 
 GType nm_setting_ppp_get_type(void);
 

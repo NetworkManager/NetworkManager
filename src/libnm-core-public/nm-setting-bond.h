@@ -57,21 +57,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB    "tlb_dynamic_lb"
 #define NM_SETTING_BOND_OPTION_LP_INTERVAL       "lp_interval"
 
-/**
- * NMSettingBond:
- *
- * Bonding Settings
- */
-struct _NMSettingBond {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingBondClass;
+typedef struct _NMSettingBondClass NMSettingBondClass;
 
 GType nm_setting_bond_get_type(void);
 
