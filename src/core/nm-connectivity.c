@@ -904,7 +904,7 @@ nm_connectivity_check_start(NMConnectivity *            self,
          * This is relatively cumbersome to avoid, because we would have to go through
          * NMDnsSystemdResolved trying to asynchronously start the service, to ensure there
          * is only one attempt to start the service. */
-        has_systemd_resolved = nm_dns_manager_has_systemd_resolved(nm_dns_manager_get());
+        has_systemd_resolved = !!nm_dns_manager_get_systemd_resolved(nm_dns_manager_get());
 
         if (has_systemd_resolved) {
             GDBusConnection *dbus_connection;
