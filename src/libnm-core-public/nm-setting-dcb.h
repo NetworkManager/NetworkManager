@@ -77,21 +77,7 @@ typedef enum { /*< flags >*/
 #define NM_SETTING_DCB_PRIORITY_STRICT_BANDWIDTH "priority-strict-bandwidth"
 #define NM_SETTING_DCB_PRIORITY_TRAFFIC_CLASS    "priority-traffic-class"
 
-/**
- * NMSettingDcb:
- *
- * Data Center Bridging Settings
- */
-struct _NMSettingDcb {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingDcbClass;
+typedef struct _NMSettingDcbClass NMSettingDcbClass;
 
 GType nm_setting_dcb_get_type(void);
 

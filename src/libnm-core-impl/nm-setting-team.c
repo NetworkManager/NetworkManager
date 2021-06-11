@@ -735,6 +735,22 @@ typedef struct {
     NMTeamSetting *team_setting;
 } NMSettingTeamPrivate;
 
+/**
+ * NMSettingTeam:
+ *
+ * Teaming Settings
+ */
+struct _NMSettingTeam {
+    NMSetting parent;
+};
+
+struct _NMSettingTeamClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingTeam, nm_setting_team, NM_TYPE_SETTING)
 
 #define NM_SETTING_TEAM_GET_PRIVATE(o) \

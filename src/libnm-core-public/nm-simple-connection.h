@@ -25,19 +25,7 @@ G_BEGIN_DECLS
 #define NM_SIMPLE_CONNECTION_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_SIMPLE_CONNECTION, NMSimpleConnectionClass))
 
-/**
- * NMSimpleConnection:
- */
-struct _NMSimpleConnection {
-    GObject parent;
-};
-
-typedef struct {
-    GObjectClass parent_class;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSimpleConnectionClass;
+typedef struct _NMSimpleConnectionClass NMSimpleConnectionClass;
 
 GType nm_simple_connection_get_type(void);
 

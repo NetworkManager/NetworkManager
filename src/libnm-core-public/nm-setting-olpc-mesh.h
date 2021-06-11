@@ -33,21 +33,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_OLPC_MESH_CHANNEL              "channel"
 #define NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS "dhcp-anycast-address"
 
-/**
- * NMSettingOlpcMesh:
- *
- * OLPC Wireless Mesh Settings
- */
-struct _NMSettingOlpcMesh {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingOlpcMeshClass;
+typedef struct _NMSettingOlpcMeshClass NMSettingOlpcMeshClass;
 
 GType nm_setting_olpc_mesh_get_type(void);
 

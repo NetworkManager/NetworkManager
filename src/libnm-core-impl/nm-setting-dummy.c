@@ -21,6 +21,22 @@
 
 /*****************************************************************************/
 
+/**
+ * NMSettingDummy:
+ *
+ * Dummy Link Settings
+ */
+struct _NMSettingDummy {
+    NMSetting parent;
+};
+
+struct _NMSettingDummyClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingDummy, nm_setting_dummy, NM_TYPE_SETTING)
 
 /*****************************************************************************/

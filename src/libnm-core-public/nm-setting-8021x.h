@@ -164,21 +164,7 @@ typedef enum { /*< flags, underscore_name=nm_setting_802_1x_auth_flags >*/
  * properties to the paths to their respective objects.
  */
 
-/**
- * NMSetting8021x:
- *
- * IEEE 802.1x Authentication Settings
- */
-struct _NMSetting8021x {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSetting8021xClass;
+typedef struct _NMSetting8021xClass NMSetting8021xClass;
 
 GType nm_setting_802_1x_get_type(void);
 

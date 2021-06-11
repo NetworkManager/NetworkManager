@@ -97,6 +97,22 @@ typedef struct {
     bool                                 autoconnect : 1;
 } NMSettingConnectionPrivate;
 
+/**
+ * NMSettingConnection:
+ *
+ * General Connection Profile Settings
+ */
+struct _NMSettingConnection {
+    NMSetting parent;
+};
+
+struct _NMSettingConnectionClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)
 
 #define NM_SETTING_CONNECTION_GET_PRIVATE(o) \

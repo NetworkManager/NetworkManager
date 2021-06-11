@@ -45,20 +45,7 @@ typedef enum {
 #define NM_SETTING_PROXY_PAC_URL      "pac-url"
 #define NM_SETTING_PROXY_PAC_SCRIPT   "pac-script"
 
-/**
- * NMSettingProxy:
- *
- * WWW Proxy Settings
- */
-struct _NMSettingProxy {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    gpointer padding[4];
-} NMSettingProxyClass;
+typedef struct _NMSettingProxyClass NMSettingProxyClass;
 
 NM_AVAILABLE_IN_1_6
 GType nm_setting_proxy_get_type(void);

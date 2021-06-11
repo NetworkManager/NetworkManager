@@ -77,21 +77,7 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_IP4_CONFIG_METHOD_DISABLED "disabled"
 
-/**
- * NMSettingIP4Config:
- *
- * IPv4 Settings
- */
-struct _NMSettingIP4Config {
-    NMSettingIPConfig parent;
-};
-
-typedef struct {
-    NMSettingIPConfigClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingIP4ConfigClass;
+typedef struct _NMSettingIP4ConfigClass NMSettingIP4ConfigClass;
 
 GType nm_setting_ip4_config_get_type(void);
 

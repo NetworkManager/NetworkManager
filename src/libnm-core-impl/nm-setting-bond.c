@@ -38,6 +38,22 @@ typedef struct {
     NMUtilsNamedValue *options_idx_cache;
 } NMSettingBondPrivate;
 
+/**
+ * NMSettingBond:
+ *
+ * Bonding Settings
+ */
+struct _NMSettingBond {
+    NMSetting parent;
+};
+
+struct _NMSettingBondClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingBond, nm_setting_bond, NM_TYPE_SETTING)
 
 #define NM_SETTING_BOND_GET_PRIVATE(o) \

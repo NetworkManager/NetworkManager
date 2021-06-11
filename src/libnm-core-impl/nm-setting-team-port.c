@@ -35,6 +35,22 @@ typedef struct {
     NMTeamSetting *team_setting;
 } NMSettingTeamPortPrivate;
 
+/**
+ * NMSettingTeamPort:
+ *
+ * Team Port Settings
+ */
+struct _NMSettingTeamPort {
+    NMSetting parent;
+};
+
+struct _NMSettingTeamPortClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingTeamPort, nm_setting_team_port, NM_TYPE_SETTING)
 
 #define NM_SETTING_TEAM_PORT_GET_PRIVATE(o) \

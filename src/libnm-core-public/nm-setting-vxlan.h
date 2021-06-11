@@ -43,21 +43,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_VXLAN_L2_MISS          "l2-miss"
 #define NM_SETTING_VXLAN_L3_MISS          "l3-miss"
 
-/**
- * NMSettingVxlan:
- *
- * VXLAN Settings
- */
-struct _NMSettingVxlan {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingVxlanClass;
+typedef struct _NMSettingVxlanClass NMSettingVxlanClass;
 
 NM_AVAILABLE_IN_1_2
 GType nm_setting_vxlan_get_type(void);

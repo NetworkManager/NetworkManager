@@ -27,21 +27,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GENERIC_SETTING_NAME "generic"
 
-/**
- * NMSettingGeneric:
- *
- * Generic Link Settings
- */
-struct _NMSettingGeneric {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingGenericClass;
+typedef struct _NMSettingGenericClass NMSettingGenericClass;
 
 GType nm_setting_generic_get_type(void);
 

@@ -41,21 +41,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP_TUNNEL_MTU                 "mtu"
 #define NM_SETTING_IP_TUNNEL_FLAGS               "flags"
 
-/**
- * NMSettingIPTunnel:
- *
- * IP Tunneling Settings
- */
-struct _NMSettingIPTunnel {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingIPTunnelClass;
+typedef struct _NMSettingIPTunnelClass NMSettingIPTunnelClass;
 
 /*
  * NMIPTunnelFlags:

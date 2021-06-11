@@ -39,21 +39,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_TEAM_PORT_QUEUE_ID_DEFAULT  -1
 #define NM_SETTING_TEAM_PORT_LACP_PRIO_DEFAULT 255
 
-/**
- * NMSettingTeamPort:
- *
- * Team Port Settings
- */
-struct _NMSettingTeamPort {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingTeamPortClass;
+typedef struct _NMSettingTeamPortClass NMSettingTeamPortClass;
 
 GType nm_setting_team_port_get_type(void);
 

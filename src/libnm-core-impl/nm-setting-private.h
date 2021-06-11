@@ -19,6 +19,116 @@
 
 /*****************************************************************************/
 
+/**
+ * NMSetting:
+ *
+ * The NMSetting struct contains only private data.
+ * It should only be accessed through the functions described below.
+ */
+struct _NMSetting {
+    GObject parent;
+};
+
+struct _NMSettingClass {
+    GObjectClass parent;
+
+    /* Virtual functions */
+    int (*verify)(NMSetting *setting, NMConnection *connection, GError **error);
+
+    gboolean (*verify_secrets)(NMSetting *setting, NMConnection *connection, GError **error);
+
+    GPtrArray *(*need_secrets)(NMSetting *setting);
+
+    int (*update_one_secret)(NMSetting *setting, const char *key, GVariant *value, GError **error);
+
+    gboolean (*get_secret_flags)(NMSetting *           setting,
+                                 const char *          secret_name,
+                                 NMSettingSecretFlags *out_flags,
+                                 GError **             error);
+
+    gboolean (*set_secret_flags)(NMSetting *          setting,
+                                 const char *         secret_name,
+                                 NMSettingSecretFlags flags,
+                                 GError **            error);
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gboolean (*clear_secrets)(const struct _NMSettInfoSetting *sett_info,
+                              guint                            property_idx,
+                              NMSetting *                      setting,
+                              NMSettingClearSecretsWithFlagsFn func,
+                              gpointer                         user_data);
+
+    /* compare_property() returns a ternary, where DEFAULT means that the property should not
+     * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
+     * equal/not-equal.
+     *
+     * @other may be %NULL, in which case the function only determines whether
+     * the setting should be compared (TRUE) or not (DEFAULT). */
+    /* In the past, this struct was public API. Preserve ABI! */
+    NMTernary (*compare_property)(const struct _NMSettInfoSetting *sett_info,
+                                  guint                            property_idx,
+                                  NMConnection *                   con_a,
+                                  NMSetting *                      set_a,
+                                  NMConnection *                   con_b,
+                                  NMSetting *                      set_b,
+                                  NMSettingCompareFlags            flags);
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    void (*duplicate_copy_properties)(const struct _NMSettInfoSetting *sett_info,
+                                      NMSetting *                      src,
+                                      NMSetting *                      dst);
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    void (*enumerate_values)(const struct _NMSettInfoProperty *property_info,
+                             NMSetting *                       setting,
+                             NMSettingValueIterFn              func,
+                             gpointer                          user_data);
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gboolean (*aggregate)(NMSetting *setting, int type_i, gpointer arg);
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    void (*for_each_secret)(NMSetting *                    setting,
+                            const char *                   secret_name,
+                            GVariant *                     val,
+                            gboolean                       remove_non_secrets,
+                            _NMConnectionForEachSecretFunc callback,
+                            gpointer                       callback_data,
+                            GVariantBuilder *              setting_builder);
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gboolean (*init_from_dbus)(NMSetting *                     setting,
+                               GHashTable *                    keys,
+                               GVariant *                      setting_dict,
+                               GVariant *                      connection_dict,
+                               guint /* NMSettingParseFlags */ parse_flags,
+                               GError **                       error);
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[1];
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    const struct _NMMetaSettingInfo *setting_info;
+};
+
+/*****************************************************************************/
+
+/**
+ * NMSettingIPConfig:
+ */
+struct _NMSettingIPConfig {
+    NMSetting parent;
+};
+
+struct _NMSettingIPConfigClass {
+    NMSettingClass parent;
+
+    /* Padding for future expansion */
+    gpointer padding[8];
+};
+
+/*****************************************************************************/
+
 NMSettingPriority _nm_setting_get_base_type_priority(NMSetting *setting);
 int               _nm_setting_compare_priority(gconstpointer a, gconstpointer b);
 

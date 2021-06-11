@@ -74,6 +74,22 @@ typedef struct {
     guint32 timeout;
 } NMSettingVpnPrivate;
 
+/**
+ * NMSettingVpn:
+ *
+ * VPN Settings
+ */
+struct _NMSettingVpn {
+    NMSetting parent;
+};
+
+struct _NMSettingVpnClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING)
 
 #define NM_SETTING_VPN_GET_PRIVATE(o) \

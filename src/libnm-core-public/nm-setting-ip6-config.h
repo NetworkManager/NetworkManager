@@ -139,21 +139,7 @@ typedef enum {
     NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY = 1,
 } NMSettingIP6ConfigAddrGenMode;
 
-/**
- * NMSettingIP6Config:
- *
- * IPv6 Settings
- */
-struct _NMSettingIP6Config {
-    NMSettingIPConfig parent;
-};
-
-typedef struct {
-    NMSettingIPConfigClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingIP6ConfigClass;
+typedef struct _NMSettingIP6ConfigClass NMSettingIP6ConfigClass;
 
 GType nm_setting_ip6_config_get_type(void);
 

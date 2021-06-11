@@ -66,6 +66,22 @@ typedef struct {
     bool                      hidden : 1;
 } NMSettingWirelessPrivate;
 
+/**
+ * NMSettingWireless:
+ *
+ * Wi-Fi Settings
+ */
+struct _NMSettingWireless {
+    NMSetting parent;
+};
+
+struct _NMSettingWirelessClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIRELESS_GET_PRIVATE(o) \

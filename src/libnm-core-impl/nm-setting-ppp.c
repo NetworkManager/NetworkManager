@@ -62,6 +62,22 @@ typedef struct {
     bool    crtscts : 1;
 } NMSettingPppPrivate;
 
+/**
+ * NMSettingPpp:
+ *
+ * Point-to-Point Protocol Settings
+ */
+struct _NMSettingPpp {
+    NMSetting parent;
+};
+
+struct _NMSettingPppClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingPpp, nm_setting_ppp, NM_TYPE_SETTING)
 
 #define NM_SETTING_PPP_GET_PRIVATE(o) \

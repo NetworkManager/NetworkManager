@@ -36,21 +36,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_MACSEC_VALIDATION    "validation"
 #define NM_SETTING_MACSEC_SEND_SCI      "send-sci"
 
-/**
- * NMSettingMacsec:
- *
- * MACSec Settings
- */
-struct _NMSettingMacsec {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingMacsecClass;
+typedef struct _NMSettingMacsecClass NMSettingMacsecClass;
 
 /**
  * NMSettingMacsecMode:
