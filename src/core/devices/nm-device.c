@@ -17663,7 +17663,6 @@ hostname_dns_lookup_callback(GObject *source, GAsyncResult *result, gpointer use
 {
     HostnameResolver *resolver;
     NMDevice *        self;
-    gs_free char *    hostname  = NULL;
     gs_free char *    addr_str  = NULL;
     gs_free char *    output    = NULL;
     gs_free_error GError *error = NULL;
