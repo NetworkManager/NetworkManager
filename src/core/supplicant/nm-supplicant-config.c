@@ -666,8 +666,8 @@ add_string_val(NMSupplicantConfig *self,
                             display_value,                                                \
                             error)                                                        \
     ({                                                                                    \
-        typeof(*(setting)) *_setting = (setting);                                         \
-        gboolean            _success = TRUE;                                              \
+        typeof(setting) _setting = (setting);                                             \
+        gboolean        _success = TRUE;                                                  \
                                                                                           \
         if (nm_setting_##setting_name##_get_num_##field_plural(_setting)) {               \
             const char _separator = (separator);                                          \
