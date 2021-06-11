@@ -94,7 +94,7 @@ extern const NMSetting8021xSchemeVtable
 
 /*****************************************************************************/
 
-typedef enum {
+typedef enum _nm_packed {
     /* the enum (and their numeric values) are internal API. Do not assign
      * any meaning the numeric values, because they already have one:
      *
