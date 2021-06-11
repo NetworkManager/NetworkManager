@@ -222,6 +222,16 @@ _connection_get_setting(NMConnection *connection, GType setting_type)
 }
 
 static gpointer
+_connection_get_setting_by_meta_type(NMConnectionPrivate *priv, NMMetaSettingType meta_type)
+{
+    nm_assert(priv);
+    nm_assert(_NM_INT_NOT_NEGATIVE(meta_type));
+    nm_assert(meta_type < _NM_META_SETTING_TYPE_NUM);
+
+    return priv->settings[meta_type];
+}
+
+static gpointer
 _connection_get_setting_check(NMConnection *connection, GType setting_type)
 {
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
@@ -1587,18 +1597,20 @@ nm_connection_verify(NMConnection *connection, GError **error)
 NMSettingVerifyResult
 _nm_connection_verify(NMConnection *connection, GError **error)
 {
-    NMSettingIPConfig *s_ip4, *s_ip6;
-    NMSettingProxy *   s_proxy;
-    gs_free NMSetting **settings                  = NULL;
+    NMConnectionPrivate *priv;
+    NMSettingIPConfig *  s_ip4;
+    NMSettingIPConfig *  s_ip6;
+    NMSettingProxy *     s_proxy;
     gs_free_error GError *normalizable_error      = NULL;
     NMSettingVerifyResult normalizable_error_type = NM_SETTING_VERIFY_SUCCESS;
-    guint                 i;
+    int                   i;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NM_SETTING_VERIFY_ERROR);
     g_return_val_if_fail(!error || !*error, NM_SETTING_VERIFY_ERROR);
 
-    settings = nm_connection_get_settings(connection, NULL);
-    if (!settings || !NM_IS_SETTING_CONNECTION(settings[0])) {
+    priv = NM_CONNECTION_GET_PRIVATE(connection);
+
+    if (!_connection_get_setting_by_meta_type(priv, NM_META_SETTING_TYPE_CONNECTION)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_MISSING_SETTING,
@@ -1607,12 +1619,13 @@ _nm_connection_verify(NMConnection *connection, GError **error)
         return NM_SETTING_VERIFY_ERROR;
     }
 
-    for (i = 0; settings[i]; i++) {
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *           setting      = priv->settings[nm_meta_setting_types_by_priority[i]];
         GError *              verify_error = NULL;
         NMSettingVerifyResult verify_result;
 
-        nm_assert(NM_IS_SETTING(settings[i]));
-        nm_assert(NM_IS_SETTING_CONNECTION(settings[i]) == (i == 0));
+        if (!setting)
+            continue;
 
         /* verify all settings. We stop if we find the first non-normalizable
          * @NM_SETTING_VERIFY_ERROR. If we find normalizable errors we continue
@@ -1621,7 +1634,7 @@ _nm_connection_verify(NMConnection *connection, GError **error)
          * @NM_SETTING_VERIFY_NORMALIZABLE, so, if we encounter such an error type,
          * we remember it instead (to return it as output).
          **/
-        verify_result = _nm_setting_verify(settings[i], connection, &verify_error);
+        verify_result = _nm_setting_verify(setting, connection, &verify_error);
         if (verify_result == NM_SETTING_VERIFY_NORMALIZABLE
             || verify_result == NM_SETTING_VERIFY_NORMALIZABLE_ERROR) {
             if (verify_result == NM_SETTING_VERIFY_NORMALIZABLE_ERROR
@@ -1642,9 +1655,9 @@ _nm_connection_verify(NMConnection *connection, GError **error)
         g_clear_error(&verify_error);
     }
 
-    s_ip4   = nm_connection_get_setting_ip4_config(connection);
-    s_ip6   = nm_connection_get_setting_ip6_config(connection);
-    s_proxy = nm_connection_get_setting_proxy(connection);
+    s_ip4   = _connection_get_setting_by_meta_type(priv, NM_META_SETTING_TYPE_IP4_CONFIG);
+    s_ip6   = _connection_get_setting_by_meta_type(priv, NM_META_SETTING_TYPE_IP6_CONFIG);
+    s_proxy = _connection_get_setting_by_meta_type(priv, NM_META_SETTING_TYPE_PROXY);
 
     nm_assert(normalizable_error_type != NM_SETTING_VERIFY_ERROR);
     if (NM_IN_SET(normalizable_error_type,
