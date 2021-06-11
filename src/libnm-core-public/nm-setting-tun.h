@@ -46,21 +46,7 @@ typedef enum {
     NM_SETTING_TUN_MODE_TAP     = 2,
 } NMSettingTunMode;
 
-/**
- * NMSettingTun:
- *
- * Tunnel Settings
- */
-struct _NMSettingTun {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingTunClass;
+typedef struct _NMSettingTunClass NMSettingTunClass;
 
 NM_AVAILABLE_IN_1_2
 GType nm_setting_tun_get_type(void);

@@ -40,6 +40,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   internal DHCP plugin.
 * initrd: support the "rd.net.dhcp.retry" kernel argument for controlling retry
   and timeout to get a DHCP lease.
+* API CHANGE: hide definitions of structs for NMSetting and NMSimpleConnection from
+  public headers.
 * Major restructuring of the source code.
 * Many bugfixes and minor improvements.
 

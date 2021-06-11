@@ -41,21 +41,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_ADSL_ENCAPSULATION_VCMUX "vcmux"
 #define NM_SETTING_ADSL_ENCAPSULATION_LLC   "llc"
 
-/**
- * NMSettingAdsl:
- *
- * ADSL Settings
- */
-struct _NMSettingAdsl {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingAdslClass;
+typedef struct _NMSettingAdslClass NMSettingAdslClass;
 
 GType nm_setting_adsl_get_type(void);
 

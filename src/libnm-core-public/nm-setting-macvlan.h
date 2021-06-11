@@ -32,21 +32,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_MACVLAN_PROMISCUOUS "promiscuous"
 #define NM_SETTING_MACVLAN_TAP         "tap"
 
-/**
- * NMSettingMacvlan:
- *
- * MAC VLAN Settings
- */
-struct _NMSettingMacvlan {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingMacvlanClass;
+typedef struct _NMSettingMacvlanClass NMSettingMacvlanClass;
 
 /**
  * NMSettingMacvlanMode:

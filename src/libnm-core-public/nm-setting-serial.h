@@ -47,21 +47,7 @@ typedef enum {
 #define NM_SETTING_SERIAL_STOPBITS   "stopbits"
 #define NM_SETTING_SERIAL_SEND_DELAY "send-delay"
 
-/**
- * NMSettingSerial:
- *
- * Serial Link Settings
- */
-struct _NMSettingSerial {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingSerialClass;
+typedef struct _NMSettingSerialClass NMSettingSerialClass;
 
 GType nm_setting_serial_get_type(void);
 

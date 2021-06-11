@@ -47,6 +47,22 @@ typedef struct {
     bool           path_mtu_discovery : 1;
 } NMSettingIPTunnelPrivate;
 
+/**
+ * NMSettingIPTunnel:
+ *
+ * IP Tunneling Settings
+ */
+struct _NMSettingIPTunnel {
+    NMSetting parent;
+};
+
+struct _NMSettingIPTunnelClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingIPTunnel, nm_setting_ip_tunnel, NM_TYPE_SETTING)
 
 #define NM_SETTING_IP_TUNNEL_GET_PRIVATE(o) \

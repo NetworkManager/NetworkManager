@@ -39,10 +39,28 @@ typedef struct {
     bool       hairpin_mode : 1;
 } NMSettingBridgePortPrivate;
 
+/**
+ * NMSettingBridgePort:
+ *
+ * Bridge Port Settings
+ */
+struct _NMSettingBridgePort {
+    NMSetting parent;
+};
+
+struct _NMSettingBridgePortClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingBridgePort, nm_setting_bridge_port, NM_TYPE_SETTING)
 
 #define NM_SETTING_BRIDGE_PORT_GET_PRIVATE(o) \
     (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_BRIDGE_PORT, NMSettingBridgePortPrivate))
+
+/*****************************************************************************/
 
 static int
 vlan_ptr_cmp(gconstpointer a, gconstpointer b)

@@ -26,21 +26,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_DUMMY_SETTING_NAME "dummy"
 
-/**
- * NMSettingDummy:
- *
- * Dummy Link Settings
- */
-struct _NMSettingDummy {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingDummyClass;
+typedef struct _NMSettingDummyClass NMSettingDummyClass;
 
 NM_AVAILABLE_IN_1_8
 GType nm_setting_dummy_get_type(void);

@@ -35,6 +35,22 @@ typedef struct {
     char *mac_address;
 } NMSettingWimaxPrivate;
 
+/**
+ * NMSettingWimax:
+ *
+ * WiMax Settings
+ */
+struct _NMSettingWimax {
+    NMSetting parent;
+};
+
+struct _NMSettingWimaxClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIMAX_GET_PRIVATE(o) \

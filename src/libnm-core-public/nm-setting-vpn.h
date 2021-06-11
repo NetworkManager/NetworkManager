@@ -33,21 +33,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_VPN_SECRETS      "secrets"
 #define NM_SETTING_VPN_TIMEOUT      "timeout"
 
-/**
- * NMSettingVpn:
- *
- * VPN Settings
- */
-struct _NMSettingVpn {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingVpnClass;
+typedef struct _NMSettingVpnClass NMSettingVpnClass;
 
 /**
  * NMVpnIterFunc:

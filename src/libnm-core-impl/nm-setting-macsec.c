@@ -49,6 +49,22 @@ typedef struct {
     bool                      send_sci : 1;
 } NMSettingMacsecPrivate;
 
+/**
+ * NMSettingMacsec:
+ *
+ * MACSec Settings
+ */
+struct _NMSettingMacsec {
+    NMSetting parent;
+};
+
+struct _NMSettingMacsecClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingMacsec, nm_setting_macsec, NM_TYPE_SETTING)
 
 #define NM_SETTING_MACSEC_GET_PRIVATE(o) \

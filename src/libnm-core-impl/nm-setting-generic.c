@@ -27,6 +27,22 @@ typedef struct {
     int dummy;
 } NMSettingGenericPrivate;
 
+/**
+ * NMSettingGeneric:
+ *
+ * Generic Link Settings
+ */
+struct _NMSettingGeneric {
+    NMSetting parent;
+};
+
+struct _NMSettingGenericClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingGeneric, nm_setting_generic, NM_TYPE_SETTING)
 
 #define NM_SETTING_GENERIC_GET_PRIVATE(o) \

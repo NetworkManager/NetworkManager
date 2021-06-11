@@ -29,21 +29,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIMAX_NETWORK_NAME "network-name"
 #define NM_SETTING_WIMAX_MAC_ADDRESS  "mac-address"
 
-/**
- * NMSettingWimax:
- *
- * WiMax Settings
- */
-struct _NMSettingWimax {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingWimaxClass;
+typedef struct _NMSettingWimaxClass NMSettingWimaxClass;
 
 NM_DEPRECATED_IN_1_2
 GType nm_setting_wimax_get_type(void);

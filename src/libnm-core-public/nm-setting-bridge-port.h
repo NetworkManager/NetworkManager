@@ -34,21 +34,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE "hairpin-mode"
 #define NM_SETTING_BRIDGE_PORT_VLANS        "vlans"
 
-/**
- * NMSettingBridgePort:
- *
- * Bridge Port Settings
- */
-struct _NMSettingBridgePort {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingBridgePortClass;
+typedef struct _NMSettingBridgePortClass NMSettingBridgePortClass;
 
 GType nm_setting_bridge_port_get_type(void);
 

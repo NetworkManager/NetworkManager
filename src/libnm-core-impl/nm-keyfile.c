@@ -26,6 +26,7 @@
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-keyfile.h"
+#include "nm-setting-private.h"
 #include "nm-setting-user.h"
 #include "nm-setting-ovs-external-ids.h"
 

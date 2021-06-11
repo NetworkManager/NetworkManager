@@ -36,6 +36,22 @@ typedef struct {
     NMSettingSecretFlags password_flags;
 } NMSettingCdmaPrivate;
 
+/**
+ * NMSettingCdma:
+ *
+ * CDMA-based Mobile Broadband Settings
+ */
+struct _NMSettingCdma {
+    NMSetting parent;
+};
+
+struct _NMSettingCdmaClass {
+    NMSettingClass parent;
+
+    /* In the past, this struct was public API. Preserve ABI! */
+    gpointer padding[4];
+};
+
 G_DEFINE_TYPE(NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING)
 
 #define NM_SETTING_CDMA_GET_PRIVATE(o) \

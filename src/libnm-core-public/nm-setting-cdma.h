@@ -33,21 +33,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CDMA_PASSWORD_FLAGS "password-flags"
 #define NM_SETTING_CDMA_MTU            "mtu"
 
-/**
- * NMSettingCdma:
- *
- * CDMA-based Mobile Broadband Settings
- */
-struct _NMSettingCdma {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /*< private >*/
-    gpointer padding[4];
-} NMSettingCdmaClass;
+typedef struct _NMSettingCdmaClass NMSettingCdmaClass;
 
 GType nm_setting_cdma_get_type(void);
 

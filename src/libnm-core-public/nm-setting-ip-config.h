@@ -352,19 +352,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule *      self,
 #define NM_SETTING_DNS_OPTION_NO_RELOAD             "no-reload"
 #define NM_SETTING_DNS_OPTION_TRUST_AD              "trust-ad"
 
-/**
- * NMSettingIPConfig:
- */
-struct _NMSettingIPConfig {
-    NMSetting parent;
-};
-
-typedef struct {
-    NMSettingClass parent;
-
-    /* Padding for future expansion */
-    gpointer padding[8];
-} NMSettingIPConfigClass;
+typedef struct _NMSettingIPConfigClass NMSettingIPConfigClass;
 
 /**
  * NMDhcpHostnameFlags:
