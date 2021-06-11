@@ -6,7 +6,8 @@
 #ifndef __NM_DNS_PLUGIN_H__
 #define __NM_DNS_PLUGIN_H__
 
-#include "nm-dns-manager.h"
+#include "c-list/src/c-list.h"
+
 #include "nm-config-data.h"
 
 #define NM_TYPE_DNS_PLUGIN (nm_dns_plugin_get_type())

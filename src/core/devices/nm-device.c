@@ -73,6 +73,7 @@
 #include "nm-audit-manager.h"
 #include "nm-connectivity.h"
 #include "nm-dbus-interface.h"
+#include "nm-hostname-manager.h"
 
 #include "nm-device-generic.h"
 #include "nm-device-vlan.h"
@@ -220,7 +221,6 @@ typedef enum {
 
 typedef struct {
     ResolverState state;
-    GResolver *   resolver;
     GInetAddress *address;
     GCancellable *cancellable;
     char *        hostname;
@@ -777,7 +777,6 @@ _hostname_resolver_free(HostnameResolver *resolver)
 
     nm_clear_g_source(&resolver->timeout_id);
     nm_clear_g_cancellable(&resolver->cancellable);
-    nm_g_object_unref(resolver->resolver);
     nm_g_object_unref(resolver->address);
     g_free(resolver->hostname);
     nm_g_slice_free(resolver);
@@ -17666,21 +17665,37 @@ hostname_dns_lookup_callback(GObject *source, GAsyncResult *result, gpointer use
     NMDevice *        self;
     gs_free char *    hostname  = NULL;
     gs_free char *    addr_str  = NULL;
+    gs_free char *    output    = NULL;
     gs_free_error GError *error = NULL;
 
-    hostname = g_resolver_lookup_by_address_finish(G_RESOLVER(source), result, &error);
+    output = nm_device_resolve_address_finish(result, &error);
     if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
         return;
 
-    resolver           = user_data;
-    self               = resolver->device;
-    resolver->state    = RESOLVER_DONE;
-    resolver->hostname = g_strdup(hostname);
+    resolver        = user_data;
+    self            = resolver->device;
+    resolver->state = RESOLVER_DONE;
 
-    _LOGD(LOGD_DNS,
-          "hostname-from-dns: lookup done for %s, result %s%s%s",
-          (addr_str = g_inet_address_to_string(resolver->address)),
-          NM_PRINT_FMT_QUOTE_STRING(hostname));
+    if (error) {
+        _LOGD(LOGD_DNS,
+              "hostname-from-dns: lookup error for %s: %s",
+              (addr_str = g_inet_address_to_string(resolver->address)),
+              error->message);
+    } else {
+        gboolean valid;
+
+        resolver->hostname = g_steal_pointer(&output);
+        valid              = nm_hostname_manager_validate_hostname(resolver->hostname);
+
+        _LOGD(LOGD_DNS,
+              "hostname-from-dns: lookup done for %s, result %s%s%s%s",
+              (addr_str = g_inet_address_to_string(resolver->address)),
+              NM_PRINT_FMT_QUOTE_STRING(resolver->hostname),
+              valid ? "" : " (invalid)");
+
+        if (!valid)
+            g_clear_pointer(&resolver->hostname, g_free);
+    }
 
     nm_clear_g_cancellable(&resolver->cancellable);
     g_signal_emit(self, signals[DNS_LOOKUP_DONE], 0);
@@ -17778,7 +17793,6 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
     if (!resolver) {
         resolver  = g_slice_new(HostnameResolver);
         *resolver = (HostnameResolver){
-            .resolver    = g_resolver_get_default(),
             .device      = self,
             .addr_family = addr_family,
             .state       = RESOLVER_WAIT_ADDRESS,
@@ -17828,20 +17842,15 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
     }
 
     if (address_changed && new_address) {
-        gs_free char *str = NULL;
-
-        _LOGT(LOGD_DNS,
-              "hostname-from-dns: starting lookup for address %s",
-              (str = g_inet_address_to_string(new_address)));
-
         resolver->state       = RESOLVER_IN_PROGRESS;
         resolver->cancellable = g_cancellable_new();
         resolver->address     = g_steal_pointer(&new_address);
-        g_resolver_lookup_by_address_async(resolver->resolver,
-                                           resolver->address,
-                                           resolver->cancellable,
-                                           hostname_dns_lookup_callback,
-                                           resolver);
+
+        nm_device_resolve_address(addr_family,
+                                  g_inet_address_to_bytes(resolver->address),
+                                  resolver->cancellable,
+                                  hostname_dns_lookup_callback,
+                                  resolver);
         nm_clear_g_source(&resolver->timeout_id);
     }
 

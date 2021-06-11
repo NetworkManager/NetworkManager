@@ -517,20 +517,12 @@ daemon_watch_cb(GPid pid, int status, gpointer user_data)
 {
     NMDhcpClient *       self = NM_DHCP_CLIENT(user_data);
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    gs_free char *       desc = NULL;
 
     g_return_if_fail(priv->watch_id);
     priv->watch_id = 0;
 
-    if (WIFEXITED(status))
-        _LOGI("client pid %d exited with status %d", pid, WEXITSTATUS(status));
-    else if (WIFSIGNALED(status))
-        _LOGI("client pid %d killed by signal %d", pid, WTERMSIG(status));
-    else if (WIFSTOPPED(status))
-        _LOGI("client pid %d stopped by signal %d", pid, WSTOPSIG(status));
-    else if (WIFCONTINUED(status))
-        _LOGI("client pid %d resumed (by SIGCONT)", pid);
-    else
-        _LOGW("client died abnormally");
+    _LOGI("client pid %d %s", pid, (desc = nm_utils_get_process_exit_status_desc(status)));
 
     priv->pid = -1;
 
