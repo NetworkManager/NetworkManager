@@ -175,6 +175,8 @@ typedef struct _NMMetaSettingInfo_Alias NMMetaSettingInfo;
 
 extern const NMMetaSettingInfo nm_meta_setting_infos[_NM_META_SETTING_TYPE_NUM + 1];
 
+extern const NMMetaSettingType nm_meta_setting_types_by_priority[_NM_META_SETTING_TYPE_NUM];
+
 const NMMetaSettingInfo *nm_meta_setting_infos_by_name(const char *name);
 const NMMetaSettingInfo *nm_meta_setting_infos_by_gtype(GType gtype);
 
