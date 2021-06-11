@@ -37,14 +37,19 @@
 
 /*****************************************************************************/
 
-enum { SECRETS_UPDATED, SECRETS_CLEARED, CHANGED, LAST_SIGNAL };
+enum {
+    SECRETS_UPDATED,
+    SECRETS_CLEARED,
+    CHANGED,
+    LAST_SIGNAL,
+};
 
 static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
     NMConnection *self;
 
-    GHashTable *settings;
+    NMSetting *settings[_NM_META_SETTING_TYPE_NUM];
 
     /* D-Bus path of the connection, if any */
     char *path;
@@ -57,60 +62,86 @@ static NMConnectionPrivate *nm_connection_get_private(NMConnection *connection);
 
 /*****************************************************************************/
 
-static gpointer
-_gtype_to_hash_key(GType gtype)
-{
-#if NM_MORE_ASSERTS
-    _nm_unused const gsize *const test_gtype_typedef = &gtype;
-
-    nm_assert((GType) (GPOINTER_TO_SIZE(GSIZE_TO_POINTER(gtype))) == gtype);
-    G_STATIC_ASSERT_EXPR(sizeof(gpointer) >= sizeof(gsize));
-    G_STATIC_ASSERT_EXPR(sizeof(gsize) == sizeof(GType));
-#endif
-
-    return GSIZE_TO_POINTER(gtype);
-}
-
-/*****************************************************************************/
-
 static void
-setting_changed_cb(NMSetting *setting, GParamSpec *pspec, NMConnection *self)
+_signal_emit_changed(NMConnection *self)
 {
     g_signal_emit(self, signals[CHANGED], 0);
 }
 
 static void
-_setting_release(NMConnection *connection, NMSetting *setting)
+setting_changed_cb(NMSetting *setting, GParamSpec *pspec, NMConnection *self)
+{
+    _signal_emit_changed(self);
+}
+
+static void
+_setting_notify_connect(NMConnection *connection, NMSetting *setting)
+{
+    g_signal_connect(setting, "notify", (GCallback) setting_changed_cb, connection);
+}
+
+static void
+_setting_notify_disconnect(NMConnection *connection, NMSetting *setting)
 {
     g_signal_handlers_disconnect_by_func(setting, setting_changed_cb, connection);
 }
 
-static gboolean
-_setting_release_hfr(gpointer key, gpointer value, gpointer user_data)
+static void
+_setting_notify_block(NMConnection *connection, NMSetting *setting)
 {
-    _setting_release(user_data, value);
-    return TRUE;
+    g_signal_handlers_block_by_func(setting, (GCallback) setting_changed_cb, connection);
+}
+
+static void
+_setting_notify_unblock(NMConnection *connection, NMSetting *setting)
+{
+    g_signal_handlers_unblock_by_func(setting, (GCallback) setting_changed_cb, connection);
+}
+
+static gboolean
+_nm_connection_clear_settings(NMConnection *connection, NMConnectionPrivate *priv)
+{
+    gboolean changed = FALSE;
+    int      i;
+
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        if (priv->settings[i]) {
+            _setting_notify_disconnect(connection, priv->settings[i]);
+            g_clear_object(&priv->settings[i]);
+            changed = TRUE;
+        }
+    }
+    return changed;
 }
 
 static void
 _nm_connection_add_setting(NMConnection *connection, NMSetting *setting)
 {
-    NMConnectionPrivate *priv;
-    GType                setting_type;
-    NMSetting *          s_old;
+    const NMMetaSettingInfo *setting_info;
+    NMConnectionPrivate *    priv;
+    NMSetting *              s_old;
 
     nm_assert(NM_IS_CONNECTION(connection));
     nm_assert(NM_IS_SETTING(setting));
 
-    priv         = NM_CONNECTION_GET_PRIVATE(connection);
-    setting_type = G_OBJECT_TYPE(setting);
+    setting_info = _nm_meta_setting_info_from_class(NM_SETTING_GET_CLASS(setting));
+    if (!setting_info)
+        g_return_if_reached();
 
-    if ((s_old = g_hash_table_lookup(priv->settings, _gtype_to_hash_key(setting_type))))
-        _setting_release(connection, s_old);
+    priv = NM_CONNECTION_GET_PRIVATE(connection);
 
-    g_hash_table_insert(priv->settings, _gtype_to_hash_key(setting_type), setting);
+    s_old = priv->settings[setting_info->meta_type];
+    if (s_old == setting)
+        return;
 
-    g_signal_connect(setting, "notify", (GCallback) setting_changed_cb, connection);
+    priv->settings[setting_info->meta_type] = setting;
+
+    _setting_notify_connect(connection, setting);
+
+    if (s_old) {
+        _setting_notify_disconnect(connection, s_old);
+        g_object_unref(s_old);
+    }
 }
 
 /**
@@ -130,27 +161,31 @@ nm_connection_add_setting(NMConnection *connection, NMSetting *setting)
     g_return_if_fail(NM_IS_SETTING(setting));
 
     _nm_connection_add_setting(connection, setting);
-    g_signal_emit(connection, signals[CHANGED], 0);
+    _signal_emit_changed(connection);
 }
 
 gboolean
 _nm_connection_remove_setting(NMConnection *connection, GType setting_type)
 {
-    NMConnectionPrivate *priv;
-    NMSetting *          setting;
+    NMConnectionPrivate *    priv;
+    NMSetting *              setting;
+    const NMMetaSettingInfo *setting_info;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), FALSE);
-    g_return_val_if_fail(g_type_is_a(setting_type, NM_TYPE_SETTING), FALSE);
+
+    setting_info = _nm_meta_setting_info_from_gtype(setting_type);
+    if (!setting_info)
+        g_return_val_if_reached(FALSE);
 
     priv    = NM_CONNECTION_GET_PRIVATE(connection);
-    setting = g_hash_table_lookup(priv->settings, _gtype_to_hash_key(setting_type));
-    if (setting) {
-        g_signal_handlers_disconnect_by_func(setting, setting_changed_cb, connection);
-        g_hash_table_remove(priv->settings, _gtype_to_hash_key(setting_type));
-        g_signal_emit(connection, signals[CHANGED], 0);
-        return TRUE;
-    }
-    return FALSE;
+    setting = g_steal_pointer(&priv->settings[setting_info->meta_type]);
+    if (!setting)
+        return FALSE;
+
+    _setting_notify_disconnect(connection, setting);
+    _signal_emit_changed(connection);
+    g_object_unref(setting);
+    return TRUE;
 }
 
 /**
@@ -170,13 +205,18 @@ nm_connection_remove_setting(NMConnection *connection, GType setting_type)
 static gpointer
 _connection_get_setting(NMConnection *connection, GType setting_type)
 {
-    NMSetting *setting;
+    NMSetting *              setting;
+    const NMMetaSettingInfo *setting_info;
 
     nm_assert(NM_IS_CONNECTION(connection));
     nm_assert(g_type_is_a(setting_type, NM_TYPE_SETTING));
 
-    setting = g_hash_table_lookup(NM_CONNECTION_GET_PRIVATE(connection)->settings,
-                                  _gtype_to_hash_key(setting_type));
+    setting_info = _nm_meta_setting_info_from_gtype(setting_type);
+    if (!setting_info)
+        g_return_val_if_reached(NULL);
+
+    setting = NM_CONNECTION_GET_PRIVATE(connection)->settings[setting_info->meta_type];
+
     nm_assert(!setting || G_TYPE_CHECK_INSTANCE_TYPE(setting, setting_type));
     return setting;
 }
@@ -311,6 +351,20 @@ validate_permissions_type(GVariant *variant, GError **error)
     return valid;
 }
 
+static void
+_auto_settings(NMSetting ***p_settings)
+{
+    NMSetting **settings = *p_settings;
+    int         i;
+
+    if (settings) {
+        for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+            if (settings[i])
+                g_object_unref(settings[i]);
+        }
+    }
+}
+
 /**
  * _nm_connection_replace_settings:
  * @connection: a #NMConnection
@@ -334,12 +388,15 @@ _nm_connection_replace_settings(NMConnection *      connection,
                                 NMSettingParseFlags parse_flags,
                                 GError **           error)
 {
-    NMConnectionPrivate *priv;
-    GVariantIter         iter;
-    const char *         setting_name;
-    GVariant *           setting_dict;
-    GSList *             settings = NULL, *s;
-    gboolean             changed, success;
+    NMSetting *                         settings[_NM_META_SETTING_TYPE_NUM] = {};
+    nm_auto(_auto_settings) NMSetting **settings_cleanup                    = settings;
+    GVariantIter                        iter;
+    const char *                        setting_name;
+    GVariant *                          setting_dict;
+    gboolean                            changed;
+    gboolean                            success;
+    guint                               n_settings = 0;
+    int                                 i;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), FALSE);
     g_return_val_if_fail(g_variant_is_of_type(new_settings, NM_VARIANT_TYPE_CONNECTION), FALSE);
@@ -348,8 +405,6 @@ _nm_connection_replace_settings(NMConnection *      connection,
     nm_assert(!NM_FLAGS_ANY(parse_flags, ~NM_SETTING_PARSE_FLAGS_ALL));
     nm_assert(!NM_FLAGS_ALL(parse_flags,
                             NM_SETTING_PARSE_FLAGS_STRICT | NM_SETTING_PARSE_FLAGS_BEST_EFFORT));
-
-    priv = NM_CONNECTION_GET_PRIVATE(connection);
 
     if (!NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT)
         && !validate_permissions_type(new_settings, error))
@@ -360,12 +415,12 @@ _nm_connection_replace_settings(NMConnection *      connection,
         gs_unref_variant GVariant *setting_dict_free = NULL;
         GError *                   local             = NULL;
         NMSetting *                setting;
-        GType                      type;
+        const NMMetaSettingInfo *  setting_info;
 
         setting_dict_free = setting_dict;
 
-        type = nm_setting_lookup_type(setting_name);
-        if (type == G_TYPE_INVALID) {
+        setting_info = nm_meta_setting_infos_by_name(setting_name);
+        if (!setting_info) {
             if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT))
                 continue;
             g_set_error_literal(error,
@@ -373,54 +428,58 @@ _nm_connection_replace_settings(NMConnection *      connection,
                                 NM_CONNECTION_ERROR_INVALID_SETTING,
                                 _("unknown setting name"));
             g_prefix_error(error, "%s: ", setting_name);
-            g_slist_free_full(settings, g_object_unref);
             return FALSE;
         }
 
-        for (s = settings; s; s = s->next) {
-            if (G_OBJECT_TYPE(s->data) == type) {
-                if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
-                    g_set_error_literal(error,
-                                        NM_CONNECTION_ERROR,
-                                        NM_CONNECTION_ERROR_INVALID_SETTING,
-                                        _("duplicate setting name"));
-                    g_prefix_error(error, "%s: ", setting_name);
-                    g_slist_free_full(settings, g_object_unref);
-                    return FALSE;
-                }
-                /* last wins. */
-                g_object_unref(s->data);
-                settings = g_slist_delete_link(settings, s);
-                break;
+        _nm_assert_setting_info(setting_info, 0);
+
+        if (settings[setting_info->meta_type]) {
+            if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT)) {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_SETTING,
+                                    _("duplicate setting name"));
+                g_prefix_error(error, "%s: ", setting_name);
+                return FALSE;
             }
+            /* last wins. We remove the setting of this type, and will
+             * add the new one afterwards. */
+            g_clear_object(&settings[setting_info->meta_type]);
+            break;
         }
 
-        setting = _nm_setting_new_from_dbus(type, setting_dict, new_settings, parse_flags, &local);
+        setting = _nm_setting_new_from_dbus(setting_info->get_setting_gtype(),
+                                            setting_dict,
+                                            new_settings,
+                                            parse_flags,
+                                            &local);
 
         if (!setting) {
             if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT))
                 continue;
             g_propagate_error(error, local);
-            g_slist_free_full(settings, g_object_unref);
             return FALSE;
         }
 
-        settings = g_slist_prepend(settings, setting);
+        settings[setting_info->meta_type] = setting;
+        n_settings++;
     }
 
-    if (g_hash_table_size(priv->settings) > 0) {
-        g_hash_table_foreach_remove(priv->settings, _setting_release_hfr, connection);
+    if (_nm_connection_clear_settings(connection, NM_CONNECTION_GET_PRIVATE(connection)))
         changed = TRUE;
-    } else
-        changed = (settings != NULL);
+    else
+        changed = (n_settings > 0);
 
     /* Note: @settings might be empty in which case the connection
      * has no NMSetting instances... which is fine, just something
      * to be aware of. */
-    for (s = settings; s; s = s->next)
-        _nm_connection_add_setting(connection, s->data);
-
-    g_slist_free(settings);
+    if (n_settings > 0) {
+        for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+            if (settings[i])
+                _nm_connection_add_setting(connection, g_steal_pointer(&settings[i]));
+        }
+        settings_cleanup = NULL;
+    }
 
     /* If verification/normalization fails, the original connection
      * is already lost. From an API point of view, it would be nicer
@@ -435,7 +494,7 @@ _nm_connection_replace_settings(NMConnection *      connection,
         success = TRUE;
 
     if (changed)
-        g_signal_emit(connection, signals[CHANGED], 0);
+        _signal_emit_changed(connection);
     return success;
 }
 
@@ -473,10 +532,10 @@ void
 nm_connection_replace_settings_from_connection(NMConnection *connection,
                                                NMConnection *new_connection)
 {
-    NMConnectionPrivate *priv, *new_priv;
-    GHashTableIter       iter;
-    NMSetting *          setting;
+    NMConnectionPrivate *priv;
+    NMConnectionPrivate *new_priv;
     gboolean             changed;
+    int                  i;
 
     g_return_if_fail(NM_IS_CONNECTION(connection));
     g_return_if_fail(NM_IS_CONNECTION(new_connection));
@@ -494,18 +553,28 @@ nm_connection_replace_settings_from_connection(NMConnection *connection,
     priv     = NM_CONNECTION_GET_PRIVATE(connection);
     new_priv = NM_CONNECTION_GET_PRIVATE(new_connection);
 
-    if ((changed = g_hash_table_size(priv->settings) > 0))
-        g_hash_table_foreach_remove(priv->settings, _setting_release_hfr, connection);
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *s_old;
 
-    if (g_hash_table_size(new_priv->settings)) {
-        g_hash_table_iter_init(&iter, new_priv->settings);
-        while (g_hash_table_iter_next(&iter, NULL, (gpointer) &setting))
-            _nm_connection_add_setting(connection, nm_setting_duplicate(setting));
+        if (new_priv->settings[i] == priv->settings[i])
+            continue;
+
         changed = TRUE;
+
+        s_old = g_steal_pointer(&priv->settings[i]);
+
+        if (new_priv->settings[i]) {
+            priv->settings[i] = nm_setting_duplicate(new_priv->settings[i]);
+            _setting_notify_connect(connection, priv->settings[i]);
+        }
+        if (s_old) {
+            _setting_notify_disconnect(connection, s_old);
+            g_object_unref(s_old);
+        }
     }
 
     if (changed)
-        g_signal_emit(connection, signals[CHANGED], 0);
+        _signal_emit_changed(connection);
 }
 
 /**
@@ -517,16 +586,10 @@ nm_connection_replace_settings_from_connection(NMConnection *connection,
 void
 nm_connection_clear_settings(NMConnection *connection)
 {
-    NMConnectionPrivate *priv;
-
     g_return_if_fail(NM_IS_CONNECTION(connection));
 
-    priv = NM_CONNECTION_GET_PRIVATE(connection);
-
-    if (g_hash_table_size(priv->settings) > 0) {
-        g_hash_table_foreach_remove(priv->settings, _setting_release_hfr, connection);
-        g_signal_emit(connection, signals[CHANGED], 0);
-    }
+    if (_nm_connection_clear_settings(connection, NM_CONNECTION_GET_PRIVATE(connection)))
+        _signal_emit_changed(connection);
 }
 
 /**
@@ -544,28 +607,28 @@ nm_connection_clear_settings(NMConnection *connection)
 gboolean
 nm_connection_compare(NMConnection *a, NMConnection *b, NMSettingCompareFlags flags)
 {
-    GHashTableIter iter;
-    NMSetting *    src;
+    NMConnectionPrivate *a_priv;
+    NMConnectionPrivate *b_priv;
+    int                  i;
 
     if (a == b)
         return TRUE;
     if (!a || !b)
         return FALSE;
 
-    /* B / A: ensure settings in B that are not in A make the comparison fail */
-    if (g_hash_table_size(NM_CONNECTION_GET_PRIVATE(a)->settings)
-        != g_hash_table_size(NM_CONNECTION_GET_PRIVATE(b)->settings))
-        return FALSE;
+    a_priv = NM_CONNECTION_GET_PRIVATE(a);
+    b_priv = NM_CONNECTION_GET_PRIVATE(b);
 
-    /* A / B: ensure all settings in A match corresponding ones in B */
-    g_hash_table_iter_init(&iter, NM_CONNECTION_GET_PRIVATE(a)->settings);
-    while (g_hash_table_iter_next(&iter, NULL, (gpointer) &src)) {
-        NMSetting *cmp = nm_connection_get_setting(b, G_OBJECT_TYPE(src));
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        if (a_priv->settings[i] == b_priv->settings[i])
+            continue;
 
-        if (!cmp || !_nm_setting_compare(a, src, b, cmp, flags))
+        if (!a_priv->settings[i] || !b_priv->settings[i])
+            return FALSE;
+
+        if (!_nm_setting_compare(a, a_priv->settings[i], b, b_priv->settings[i], flags))
             return FALSE;
     }
-
     return TRUE;
 }
 
@@ -576,30 +639,30 @@ diff_one_connection(NMConnection *        a,
                     gboolean              invert_results,
                     GHashTable *          diffs)
 {
-    NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE(a);
-    GHashTableIter       iter;
-    NMSetting *          a_setting  = NULL;
+    NMConnectionPrivate *a_priv     = NM_CONNECTION_GET_PRIVATE(a);
+    NMConnectionPrivate *b_priv     = b ? NM_CONNECTION_GET_PRIVATE(b) : NULL;
     gboolean             diff_found = FALSE;
+    int                  i;
 
-    g_hash_table_iter_init(&iter, priv->settings);
-    while (g_hash_table_iter_next(&iter, NULL, (gpointer) &a_setting)) {
-        NMSetting * b_setting    = NULL;
-        const char *setting_name = nm_setting_get_name(a_setting);
-        GHashTable *results;
-        gboolean    new_results = TRUE;
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *a_setting = a_priv->settings[i];
 
-        if (b)
-            b_setting = nm_connection_get_setting(b, G_OBJECT_TYPE(a_setting));
+        if (a_setting) {
+            NMSetting * b_setting    = b ? b_priv->settings[i] : NULL;
+            const char *setting_name = nm_setting_get_name(a_setting);
+            GHashTable *results;
+            gboolean    new_results = TRUE;
 
-        results = g_hash_table_lookup(diffs, setting_name);
-        if (results)
-            new_results = FALSE;
+            results = g_hash_table_lookup(diffs, setting_name);
+            if (results)
+                new_results = FALSE;
 
-        if (!_nm_setting_diff(a, a_setting, b, b_setting, flags, invert_results, &results))
-            diff_found = TRUE;
+            if (!_nm_setting_diff(a, a_setting, b, b_setting, flags, invert_results, &results))
+                diff_found = TRUE;
 
-        if (new_results && results)
-            g_hash_table_insert(diffs, g_strdup(setting_name), results);
+            if (new_results && results)
+                g_hash_table_insert(diffs, g_strdup(setting_name), results);
+        }
     }
 
     return diff_found;
@@ -666,15 +729,18 @@ nm_connection_diff(NMConnection *        a,
 NMSetting *
 _nm_connection_find_base_type_setting(NMConnection *connection)
 {
-    NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE(connection);
-    GHashTableIter       iter;
-    NMSetting *          setting = NULL;
-    NMSetting *          s_iter;
+    NMConnectionPrivate *priv         = NM_CONNECTION_GET_PRIVATE(connection);
+    NMSetting *          setting      = NULL;
     NMSettingPriority    setting_prio = NM_SETTING_PRIORITY_USER;
-    NMSettingPriority    s_iter_prio;
+    int                  i;
 
-    g_hash_table_iter_init(&iter, priv->settings);
-    while (g_hash_table_iter_next(&iter, NULL, (gpointer *) &s_iter)) {
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *       s_iter = priv->settings[i];
+        NMSettingPriority s_iter_prio;
+
+        if (!s_iter)
+            continue;
+
         s_iter_prio = _nm_setting_get_base_type_priority(s_iter);
         if (s_iter_prio == NM_SETTING_PRIORITY_INVALID)
             continue;
@@ -884,25 +950,24 @@ _nm_connection_detect_bluetooth_type(NMConnection *self)
 const char *
 _nm_connection_detect_slave_type(NMConnection *connection, NMSetting **out_s_port)
 {
-    NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE(connection);
-    GHashTableIter       iter;
+    NMConnectionPrivate *priv       = NM_CONNECTION_GET_PRIVATE(connection);
     const char *         slave_type = NULL;
-    NMSetting *          s_port     = NULL, *s_iter;
+    NMSetting *          s_port     = NULL;
+    int                  i;
+    static const struct {
+        NMMetaSettingType meta_type;
+        const char *      controller_type_name;
+    } infos[] = {
+        {NM_META_SETTING_TYPE_BRIDGE_PORT, NM_SETTING_BRIDGE_SETTING_NAME},
+        {NM_META_SETTING_TYPE_TEAM_PORT, NM_SETTING_TEAM_SETTING_NAME},
+        {NM_META_SETTING_TYPE_OVS_PORT, NM_SETTING_OVS_BRIDGE_SETTING_NAME},
+        {NM_META_SETTING_TYPE_OVS_INTERFACE, NM_SETTING_OVS_PORT_SETTING_NAME},
+    };
 
-    g_hash_table_iter_init(&iter, priv->settings);
-    while (g_hash_table_iter_next(&iter, NULL, (gpointer *) &s_iter)) {
-        const char *name         = nm_setting_get_name(s_iter);
-        const char *i_slave_type = NULL;
+    for (i = 0; i < (int) G_N_ELEMENTS(infos); i++) {
+        NMSetting *setting = priv->settings[infos[i].meta_type];
 
-        if (!strcmp(name, NM_SETTING_BRIDGE_PORT_SETTING_NAME))
-            i_slave_type = NM_SETTING_BRIDGE_SETTING_NAME;
-        else if (!strcmp(name, NM_SETTING_TEAM_PORT_SETTING_NAME))
-            i_slave_type = NM_SETTING_TEAM_SETTING_NAME;
-        else if (!strcmp(name, NM_SETTING_OVS_PORT_SETTING_NAME))
-            i_slave_type = NM_SETTING_OVS_BRIDGE_SETTING_NAME;
-        else if (!strcmp(name, NM_SETTING_OVS_INTERFACE_SETTING_NAME))
-            i_slave_type = NM_SETTING_OVS_PORT_SETTING_NAME;
-        else
+        if (!setting)
             continue;
 
         if (slave_type) {
@@ -911,8 +976,8 @@ _nm_connection_detect_slave_type(NMConnection *connection, NMSetting **out_s_por
             s_port     = NULL;
             break;
         }
-        slave_type = i_slave_type;
-        s_port     = s_iter;
+        slave_type = infos[i].controller_type_name;
+        s_port     = setting;
     }
 
     if (out_s_port)
@@ -1684,15 +1749,18 @@ _nm_connection_verify(NMConnection *connection, GError **error)
 gboolean
 nm_connection_verify_secrets(NMConnection *connection, GError **error)
 {
-    GHashTableIter iter;
-    NMSetting *    setting;
+    NMConnectionPrivate *priv;
+    int                  i;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), FALSE);
     g_return_val_if_fail(!error || !*error, FALSE);
 
-    g_hash_table_iter_init(&iter, NM_CONNECTION_GET_PRIVATE(connection)->settings);
-    while (g_hash_table_iter_next(&iter, NULL, (gpointer) &setting)) {
-        if (!nm_setting_verify_secrets(setting, connection, error))
+    priv = NM_CONNECTION_GET_PRIVATE(connection);
+
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        if (!priv->settings[i])
+            continue;
+        if (!nm_setting_verify_secrets(priv->settings[i], connection, error))
             return FALSE;
     }
     return TRUE;
@@ -2025,9 +2093,9 @@ nm_connection_update_secrets(NMConnection *connection,
             }
         }
 
-        g_signal_handlers_block_by_func(setting, (GCallback) setting_changed_cb, connection);
+        _setting_notify_block(connection, setting);
         success_detail = _nm_setting_update_secrets(setting, setting_dict ?: secrets, error);
-        g_signal_handlers_unblock_by_func(setting, (GCallback) setting_changed_cb, connection);
+        _setting_notify_unblock(connection, setting);
 
         nm_clear_pointer(&setting_dict, g_variant_unref);
 
@@ -2059,10 +2127,10 @@ nm_connection_update_secrets(NMConnection *connection,
             /* Update the secrets for this setting */
             setting = nm_connection_get_setting_by_name(connection, key);
 
-            g_signal_handlers_block_by_func(setting, (GCallback) setting_changed_cb, connection);
+            _setting_notify_block(connection, setting);
             success_detail =
                 _nm_setting_update_secrets(setting, setting_dict, error ? &local : NULL);
-            g_signal_handlers_unblock_by_func(setting, (GCallback) setting_changed_cb, connection);
+            _setting_notify_unblock(connection, setting);
 
             g_variant_unref(setting_dict);
 
@@ -2111,12 +2179,9 @@ nm_connection_update_secrets(NMConnection *connection,
 const char *
 nm_connection_need_secrets(NMConnection *connection, GPtrArray **hints)
 {
+    NMSetting *          setting_before = NULL;
     NMConnectionPrivate *priv;
-    GHashTableIter       hiter;
-    GSList *             settings = NULL;
-    GSList *             iter;
-    const char *         name = NULL;
-    NMSetting *          setting;
+    int                  i;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
     if (hints)
@@ -2125,28 +2190,30 @@ nm_connection_need_secrets(NMConnection *connection, GPtrArray **hints)
     priv = NM_CONNECTION_GET_PRIVATE(connection);
 
     /* Get list of settings in priority order */
-    g_hash_table_iter_init(&hiter, priv->settings);
-    while (g_hash_table_iter_next(&hiter, NULL, (gpointer) &setting))
-        settings = g_slist_insert_sorted(settings, setting, _nm_setting_compare_priority);
-
-    for (iter = settings; iter; iter = g_slist_next(iter)) {
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *setting = priv->settings[nm_meta_setting_types_by_priority[i]];
         GPtrArray *secrets;
 
-        setting = NM_SETTING(iter->data);
-        secrets = _nm_setting_need_secrets(setting);
-        if (secrets) {
-            if (hints)
-                *hints = secrets;
-            else
-                g_ptr_array_free(secrets, TRUE);
+        if (!setting)
+            continue;
 
-            name = nm_setting_get_name(setting);
-            break;
-        }
+        nm_assert(!setting_before || _nmtst_nm_setting_sort(setting_before, setting) < 0);
+        nm_assert(!setting_before || _nm_setting_compare_priority(setting_before, setting) <= 0);
+        setting_before = setting;
+
+        secrets = _nm_setting_need_secrets(setting);
+        if (!secrets)
+            continue;
+
+        if (hints)
+            *hints = secrets;
+        else
+            g_ptr_array_free(secrets, TRUE);
+
+        return nm_setting_get_name(setting);
     }
 
-    g_slist_free(settings);
-    return name;
+    return NULL;
 }
 
 /**
@@ -2176,16 +2243,22 @@ nm_connection_clear_secrets_with_flags(NMConnection *                   connecti
                                        NMSettingClearSecretsWithFlagsFn func,
                                        gpointer                         user_data)
 {
-    GHashTableIter iter;
-    NMSetting *    setting;
+    NMConnectionPrivate *priv;
+    int                  i;
 
     g_return_if_fail(NM_IS_CONNECTION(connection));
 
-    g_hash_table_iter_init(&iter, NM_CONNECTION_GET_PRIVATE(connection)->settings);
-    while (g_hash_table_iter_next(&iter, NULL, (gpointer) &setting)) {
-        g_signal_handlers_block_by_func(setting, (GCallback) setting_changed_cb, connection);
+    priv = NM_CONNECTION_GET_PRIVATE(connection);
+
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *setting = priv->settings[i];
+
+        if (!setting)
+            continue;
+
+        _setting_notify_block(connection, setting);
         _nm_setting_clear_secrets(setting, func, user_data);
-        g_signal_handlers_unblock_by_func(setting, (GCallback) setting_changed_cb, connection);
+        _setting_notify_unblock(connection, setting);
     }
 
     g_signal_emit(connection, signals[SECRETS_CLEARED], 0);
@@ -2408,24 +2481,6 @@ nm_connection_is_type(NMConnection *connection, const char *type)
     return nm_streq0(type, nm_connection_get_connection_type(connection));
 }
 
-static int
-_get_settings_sort(gconstpointer p_a, gconstpointer p_b, gpointer unused)
-{
-    NMSetting *a = *((NMSetting **) p_a);
-    NMSetting *b = *((NMSetting **) p_b);
-
-    nm_assert(NM_IS_SETTING(a));
-    nm_assert(NM_IS_SETTING(b));
-    nm_assert(a != b);
-    nm_assert(G_OBJECT_TYPE(a) != G_OBJECT_TYPE(b));
-
-    NM_CMP_RETURN(_nm_setting_compare_priority(a, b));
-    NM_CMP_DIRECT_STRCMP(nm_setting_get_name(a), nm_setting_get_name(b));
-
-    nm_assert_not_reached();
-    return 0;
-}
-
 int
 _nmtst_nm_setting_sort(NMSetting *a, NMSetting *b)
 {
@@ -2460,13 +2515,39 @@ _nmtst_nm_setting_sort(NMSetting *a, NMSetting *b)
 NMSetting **
 nm_connection_get_settings(NMConnection *connection, guint *out_length)
 {
+    NMConnectionPrivate *priv;
+    NMSetting **         arr;
+    int                  len;
+    int                  i;
+    int                  j;
+
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
 
-    return (NMSetting **) nm_utils_hash_values_to_array(
-        NM_CONNECTION_GET_PRIVATE(connection)->settings,
-        _get_settings_sort,
-        NULL,
-        out_length);
+    priv = NM_CONNECTION_GET_PRIVATE(connection);
+
+    len = 0;
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        if (priv->settings[i])
+            len++;
+    }
+
+    NM_SET_OUT(out_length, len);
+
+    if (len == 0)
+        return NULL;
+
+    arr = g_new(NMSetting *, len + 1);
+    for (i = 0, j = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *setting = priv->settings[nm_meta_setting_types_by_priority[i]];
+
+        if (setting) {
+            nm_assert(j == 0 || _nmtst_nm_setting_sort(arr[j - 1], setting) < 0);
+            arr[j++] = setting;
+        }
+    }
+    arr[len] = NULL;
+
+    return arr;
 }
 
 /**
@@ -2514,11 +2595,10 @@ gboolean
 _nm_connection_aggregate(NMConnection *connection, NMConnectionAggregateType type, gpointer arg)
 {
     NMConnectionPrivate *priv;
-    GHashTableIter       iter;
-    NMSetting *          setting;
     gboolean             arg_boolean;
     gboolean             completed_early;
     gpointer             my_arg;
+    int                  i;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), FALSE);
 
@@ -2538,8 +2618,11 @@ good:
     priv = NM_CONNECTION_GET_PRIVATE(connection);
 
     completed_early = FALSE;
-    g_hash_table_iter_init(&iter, priv->settings);
-    while (g_hash_table_iter_next(&iter, NULL, (gpointer) &setting)) {
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *setting = priv->settings[i];
+
+        if (!setting)
+            continue;
         if (_nm_setting_aggregate(setting, type, my_arg)) {
             completed_early = TRUE;
             break;
@@ -2570,18 +2653,25 @@ good:
 void
 nm_connection_dump(NMConnection *connection)
 {
-    GHashTableIter iter;
-    NMSetting *    setting;
-    char *         str;
+    NMConnectionPrivate *priv;
+    int                  i;
 
     if (!connection)
         return;
 
-    g_hash_table_iter_init(&iter, NM_CONNECTION_GET_PRIVATE(connection)->settings);
-    while (g_hash_table_iter_next(&iter, NULL, (gpointer) &setting)) {
-        str = nm_setting_to_string(setting);
-        g_print("%s\n", str);
-        g_free(str);
+    g_return_if_fail(NM_IS_CONNECTION(connection));
+
+    priv = NM_CONNECTION_GET_PRIVATE(connection);
+
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *setting = priv->settings[nm_meta_setting_types_by_priority[i]];
+
+        if (setting) {
+            gs_free char *str = NULL;
+
+            str = nm_setting_to_string(setting);
+            g_print("%s\n", str);
+        }
     }
 }
 
@@ -3433,8 +3523,7 @@ nm_connection_private_free(NMConnectionPrivate *priv)
 {
     NMConnection *self = priv->self;
 
-    g_hash_table_foreach_remove(priv->settings, _setting_release_hfr, self);
-    g_hash_table_destroy(priv->settings);
+    _nm_connection_clear_settings(self, priv);
     g_free(priv->path);
 
     g_slice_free(NMConnectionPrivate, priv);
@@ -3458,8 +3547,7 @@ nm_connection_get_private(NMConnection *connection)
                                 priv,
                                 (GDestroyNotify) nm_connection_private_free);
 
-        priv->self     = connection;
-        priv->settings = g_hash_table_new_full(nm_direct_hash, NULL, NULL, g_object_unref);
+        priv->self = connection;
     }
 
     return priv;
