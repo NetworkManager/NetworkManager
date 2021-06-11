@@ -239,6 +239,14 @@ _connection_get_setting_check(NMConnection *connection, GType setting_type)
     return _connection_get_setting(connection, setting_type);
 }
 
+static gpointer
+_connection_get_setting_by_meta_type_check(NMConnection *connection, NMMetaSettingType meta_type)
+{
+    g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
+
+    return _connection_get_setting_by_meta_type(NM_CONNECTION_GET_PRIVATE(connection), meta_type);
+}
+
 /**
  * nm_connection_get_setting:
  * @connection: a #NMConnection
@@ -2963,7 +2971,7 @@ nm_connection_get_virtual_device_description(NMConnection *connection)
 NMSetting8021x *
 nm_connection_get_setting_802_1x(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_802_1X);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_802_1X);
 }
 
 /**
@@ -2977,7 +2985,7 @@ nm_connection_get_setting_802_1x(NMConnection *connection)
 NMSettingBluetooth *
 nm_connection_get_setting_bluetooth(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_BLUETOOTH);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_BLUETOOTH);
 }
 
 /**
@@ -2991,7 +2999,7 @@ nm_connection_get_setting_bluetooth(NMConnection *connection)
 NMSettingBond *
 nm_connection_get_setting_bond(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_BOND);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_BOND);
 }
 
 /**
@@ -3005,7 +3013,7 @@ nm_connection_get_setting_bond(NMConnection *connection)
 NMSettingTeam *
 nm_connection_get_setting_team(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_TEAM);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_TEAM);
 }
 
 /**
@@ -3019,7 +3027,7 @@ nm_connection_get_setting_team(NMConnection *connection)
 NMSettingTeamPort *
 nm_connection_get_setting_team_port(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_TEAM_PORT);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_TEAM_PORT);
 }
 
 /**
@@ -3033,7 +3041,7 @@ nm_connection_get_setting_team_port(NMConnection *connection)
 NMSettingBridge *
 nm_connection_get_setting_bridge(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_BRIDGE);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_BRIDGE);
 }
 
 /**
@@ -3047,7 +3055,7 @@ nm_connection_get_setting_bridge(NMConnection *connection)
 NMSettingCdma *
 nm_connection_get_setting_cdma(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_CDMA);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_CDMA);
 }
 
 /**
@@ -3061,7 +3069,7 @@ nm_connection_get_setting_cdma(NMConnection *connection)
 NMSettingConnection *
 nm_connection_get_setting_connection(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_CONNECTION);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_CONNECTION);
 }
 
 /**
@@ -3075,7 +3083,7 @@ nm_connection_get_setting_connection(NMConnection *connection)
 NMSettingDcb *
 nm_connection_get_setting_dcb(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_DCB);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_DCB);
 }
 
 /**
@@ -3091,7 +3099,7 @@ nm_connection_get_setting_dcb(NMConnection *connection)
 NMSettingDummy *
 nm_connection_get_setting_dummy(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_DUMMY);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_DUMMY);
 }
 
 /**
@@ -3105,7 +3113,7 @@ nm_connection_get_setting_dummy(NMConnection *connection)
 NMSettingGeneric *
 nm_connection_get_setting_generic(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_GENERIC);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_GENERIC);
 }
 
 /**
@@ -3119,7 +3127,7 @@ nm_connection_get_setting_generic(NMConnection *connection)
 NMSettingGsm *
 nm_connection_get_setting_gsm(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_GSM);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_GSM);
 }
 
 /**
@@ -3133,7 +3141,7 @@ nm_connection_get_setting_gsm(NMConnection *connection)
 NMSettingInfiniband *
 nm_connection_get_setting_infiniband(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_INFINIBAND);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_INFINIBAND);
 }
 
 /**
@@ -3152,7 +3160,7 @@ nm_connection_get_setting_infiniband(NMConnection *connection)
 NMSettingIPConfig *
 nm_connection_get_setting_ip4_config(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_IP4_CONFIG);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_IP4_CONFIG);
 }
 
 /**
@@ -3168,7 +3176,7 @@ nm_connection_get_setting_ip4_config(NMConnection *connection)
 NMSettingIPTunnel *
 nm_connection_get_setting_ip_tunnel(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_IP_TUNNEL);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_IP_TUNNEL);
 }
 
 /**
@@ -3187,7 +3195,7 @@ nm_connection_get_setting_ip_tunnel(NMConnection *connection)
 NMSettingIPConfig *
 nm_connection_get_setting_ip6_config(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_IP6_CONFIG);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_IP6_CONFIG);
 }
 
 /**
@@ -3203,7 +3211,7 @@ nm_connection_get_setting_ip6_config(NMConnection *connection)
 NMSettingMacsec *
 nm_connection_get_setting_macsec(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_MACSEC);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_MACSEC);
 }
 
 /**
@@ -3219,7 +3227,7 @@ nm_connection_get_setting_macsec(NMConnection *connection)
 NMSettingMacvlan *
 nm_connection_get_setting_macvlan(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_MACVLAN);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_MACVLAN);
 }
 
 /**
@@ -3233,7 +3241,7 @@ nm_connection_get_setting_macvlan(NMConnection *connection)
 NMSettingOlpcMesh *
 nm_connection_get_setting_olpc_mesh(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_OLPC_MESH);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_OLPC_MESH);
 }
 
 /**
@@ -3249,7 +3257,7 @@ nm_connection_get_setting_olpc_mesh(NMConnection *connection)
 NMSettingOvsBridge *
 nm_connection_get_setting_ovs_bridge(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_OVS_BRIDGE);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_OVS_BRIDGE);
 }
 
 /**
@@ -3265,7 +3273,8 @@ nm_connection_get_setting_ovs_bridge(NMConnection *connection)
 NMSettingOvsInterface *
 nm_connection_get_setting_ovs_interface(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_OVS_INTERFACE);
+    return _connection_get_setting_by_meta_type_check(connection,
+                                                      NM_META_SETTING_TYPE_OVS_INTERFACE);
 }
 
 /**
@@ -3281,7 +3290,7 @@ nm_connection_get_setting_ovs_interface(NMConnection *connection)
 NMSettingOvsPatch *
 nm_connection_get_setting_ovs_patch(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_OVS_PATCH);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_OVS_PATCH);
 }
 
 /**
@@ -3297,7 +3306,7 @@ nm_connection_get_setting_ovs_patch(NMConnection *connection)
 NMSettingOvsPort *
 nm_connection_get_setting_ovs_port(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_OVS_PORT);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_OVS_PORT);
 }
 
 /**
@@ -3311,7 +3320,7 @@ nm_connection_get_setting_ovs_port(NMConnection *connection)
 NMSettingPpp *
 nm_connection_get_setting_ppp(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_PPP);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_PPP);
 }
 
 /**
@@ -3325,7 +3334,7 @@ nm_connection_get_setting_ppp(NMConnection *connection)
 NMSettingPppoe *
 nm_connection_get_setting_pppoe(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_PPPOE);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_PPPOE);
 }
 
 /**
@@ -3341,7 +3350,7 @@ nm_connection_get_setting_pppoe(NMConnection *connection)
 NMSettingProxy *
 nm_connection_get_setting_proxy(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_PROXY);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_PROXY);
 }
 
 /**
@@ -3355,7 +3364,7 @@ nm_connection_get_setting_proxy(NMConnection *connection)
 NMSettingSerial *
 nm_connection_get_setting_serial(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_SERIAL);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_SERIAL);
 }
 
 /**
@@ -3371,7 +3380,7 @@ nm_connection_get_setting_serial(NMConnection *connection)
 NMSettingTCConfig *
 nm_connection_get_setting_tc_config(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_TC_CONFIG);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_TC_CONFIG);
 }
 
 /**
@@ -3387,7 +3396,7 @@ nm_connection_get_setting_tc_config(NMConnection *connection)
 NMSettingTun *
 nm_connection_get_setting_tun(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_TUN);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_TUN);
 }
 
 /**
@@ -3401,7 +3410,7 @@ nm_connection_get_setting_tun(NMConnection *connection)
 NMSettingVpn *
 nm_connection_get_setting_vpn(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_VPN);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_VPN);
 }
 
 /**
@@ -3417,7 +3426,7 @@ nm_connection_get_setting_vpn(NMConnection *connection)
 NMSettingVxlan *
 nm_connection_get_setting_vxlan(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_VXLAN);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_VXLAN);
 }
 
 /**
@@ -3431,7 +3440,7 @@ nm_connection_get_setting_vxlan(NMConnection *connection)
 NMSettingWimax *
 nm_connection_get_setting_wimax(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_WIMAX);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_WIMAX);
 }
 
 /**
@@ -3445,7 +3454,7 @@ nm_connection_get_setting_wimax(NMConnection *connection)
 NMSettingWired *
 nm_connection_get_setting_wired(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_WIRED);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_WIRED);
 }
 
 /**
@@ -3459,7 +3468,7 @@ nm_connection_get_setting_wired(NMConnection *connection)
 NMSettingAdsl *
 nm_connection_get_setting_adsl(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_ADSL);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_ADSL);
 }
 
 /**
@@ -3473,7 +3482,7 @@ nm_connection_get_setting_adsl(NMConnection *connection)
 NMSettingWireless *
 nm_connection_get_setting_wireless(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_WIRELESS);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_WIRELESS);
 }
 
 /**
@@ -3487,7 +3496,8 @@ nm_connection_get_setting_wireless(NMConnection *connection)
 NMSettingWirelessSecurity *
 nm_connection_get_setting_wireless_security(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+    return _connection_get_setting_by_meta_type_check(connection,
+                                                      NM_META_SETTING_TYPE_WIRELESS_SECURITY);
 }
 
 /**
@@ -3501,7 +3511,7 @@ nm_connection_get_setting_wireless_security(NMConnection *connection)
 NMSettingBridgePort *
 nm_connection_get_setting_bridge_port(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_BRIDGE_PORT);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_BRIDGE_PORT);
 }
 
 /**
@@ -3515,7 +3525,7 @@ nm_connection_get_setting_bridge_port(NMConnection *connection)
 NMSettingVlan *
 nm_connection_get_setting_vlan(NMConnection *connection)
 {
-    return _connection_get_setting_check(connection, NM_TYPE_SETTING_VLAN);
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_VLAN);
 }
 
 NMSettingBluetooth *
