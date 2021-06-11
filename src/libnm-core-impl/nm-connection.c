@@ -2453,18 +2453,21 @@ nm_connection_to_dbus_full(NMConnection *                          connection,
                            NMConnectionSerializationFlags          flags,
                            const NMConnectionSerializationOptions *options)
 {
-    GVariantBuilder builder;
-    gboolean        any              = FALSE;
-    gs_free NMSetting **settings     = NULL;
-    guint               settings_len = 0;
-    guint               i;
+    NMConnectionPrivate *priv;
+    GVariantBuilder      builder;
+    gboolean             any = FALSE;
+    int                  i;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
 
-    settings = nm_connection_get_settings(connection, &settings_len);
-    for (i = 0; i < settings_len; i++) {
-        NMSetting *setting = settings[i];
+    priv = NM_CONNECTION_GET_PRIVATE(connection);
+
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *setting = priv->settings[nm_meta_setting_types_by_priority[i]];
         GVariant * setting_dict;
+
+        if (!setting)
+            continue;
 
         setting_dict = _nm_setting_to_dbus(setting, connection, flags, options);
         if (!setting_dict)
