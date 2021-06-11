@@ -2426,6 +2426,21 @@ _get_settings_sort(gconstpointer p_a, gconstpointer p_b, gpointer unused)
     return 0;
 }
 
+int
+_nmtst_nm_setting_sort(NMSetting *a, NMSetting *b)
+{
+    g_assert(NM_IS_SETTING(a));
+    g_assert(NM_IS_SETTING(b));
+    g_assert(a != b);
+    g_assert(G_OBJECT_TYPE(a) != G_OBJECT_TYPE(b));
+
+    NM_CMP_RETURN(_nm_setting_compare_priority(a, b));
+    NM_CMP_DIRECT_STRCMP(nm_setting_get_name(a), nm_setting_get_name(b));
+
+    g_assert_not_reached();
+    return 0;
+}
+
 /**
  * nm_connection_get_settings:
  * @connection: the #NMConnection instance

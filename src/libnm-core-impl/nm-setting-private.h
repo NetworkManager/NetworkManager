@@ -132,6 +132,60 @@ struct _NMSettingIPConfigClass {
 NMSettingPriority _nm_setting_get_base_type_priority(NMSetting *setting);
 int               _nm_setting_compare_priority(gconstpointer a, gconstpointer b);
 
+int _nmtst_nm_setting_sort(NMSetting *a, NMSetting *b);
+
+/*****************************************************************************/
+
+#define _nm_assert_setting_info(setting_info, gtype)                         \
+    G_STMT_START                                                             \
+    {                                                                        \
+        const NMMetaSettingInfo *_setting_info = (setting_info);             \
+                                                                             \
+        if (NM_MORE_ASSERTS > 0) {                                           \
+            GType _gtype = (gtype);                                          \
+                                                                             \
+            nm_assert(_setting_info);                                        \
+            nm_assert(_NM_INT_NOT_NEGATIVE(_setting_info->meta_type));       \
+            nm_assert(_setting_info->meta_type < _NM_META_SETTING_TYPE_NUM); \
+            nm_assert(_setting_info->get_setting_gtype);                     \
+            if (_gtype != 0)                                                 \
+                nm_assert(_setting_info->get_setting_gtype() == _gtype);     \
+            else                                                             \
+                _gtype = _setting_info->get_setting_gtype();                 \
+            nm_assert(g_type_is_a(_gtype, NM_TYPE_SETTING));                 \
+        }                                                                    \
+    }                                                                        \
+    G_STMT_END
+
+static inline const NMMetaSettingInfo *
+_nm_meta_setting_info_from_class(NMSettingClass *klass)
+{
+    const NMMetaSettingInfo *setting_info;
+
+    if (!NM_IS_SETTING_CLASS(klass))
+        return NULL;
+
+    setting_info = klass->setting_info;
+    if (!setting_info)
+        return NULL;
+
+    _nm_assert_setting_info(setting_info, G_OBJECT_CLASS_TYPE(klass));
+    return setting_info;
+}
+
+static inline const NMMetaSettingInfo *
+_nm_meta_setting_info_from_gtype(GType gtype)
+{
+    const NMMetaSettingInfo *setting_info;
+
+    setting_info = nm_meta_setting_infos_by_gtype(gtype);
+    if (!setting_info)
+        return NULL;
+
+    _nm_assert_setting_info(setting_info, gtype);
+    return setting_info;
+}
+
 /*****************************************************************************/
 
 void _nm_setting_emit_property_changed(NMSetting *setting);
