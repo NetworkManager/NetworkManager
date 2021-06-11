@@ -29,6 +29,7 @@
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-connection.h"
@@ -4656,3 +4657,323 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_activation_type_to_string,
                            NM_UTILS_LOOKUP_STR_ITEM(NM_ACTIVATION_TYPE_MANAGED, "managed"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_ACTIVATION_TYPE_ASSUME, "assume"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_ACTIVATION_TYPE_EXTERNAL, "external"), );
+
+/*****************************************************************************/
+
+typedef struct {
+    GPid     pid;
+    GTask *  task;
+    gulong   cancellable_id;
+    GSource *child_watch_source;
+    GSource *timeout_source;
+
+    int      child_stdin;
+    int      child_stdout;
+    GSource *input_source;
+    GSource *output_source;
+
+    NMStrBuf in_buffer;
+    NMStrBuf out_buffer;
+    gsize    out_buffer_offset;
+} HelperInfo;
+
+#define _NMLOG_PREFIX_NAME "helper"
+#define _NMLOG_DOMAIN      LOGD_CORE
+#define _NMLOG2(level, info, ...)                                                   \
+    G_STMT_START                                                                    \
+    {                                                                               \
+        if (nm_logging_enabled((level), (_NMLOG_DOMAIN))) {                         \
+            HelperInfo *_info = (info);                                             \
+                                                                                    \
+            _nm_log((level),                                                        \
+                    (_NMLOG_DOMAIN),                                                \
+                    0,                                                              \
+                    NULL,                                                           \
+                    NULL,                                                           \
+                    _NMLOG_PREFIX_NAME "[" NM_HASH_OBFUSCATE_PTR_FMT                \
+                                       ",%d]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                    NM_HASH_OBFUSCATE_PTR(_info),                                   \
+                    _info->pid _NM_UTILS_MACRO_REST(__VA_ARGS__));                  \
+        }                                                                           \
+    }                                                                               \
+    G_STMT_END
+
+static void
+helper_info_free(gpointer data)
+{
+    HelperInfo *info = data;
+
+    nm_clear_g_source_inst(&info->child_watch_source);
+    nm_clear_g_source_inst(&info->timeout_source);
+    g_object_unref(info->task);
+
+    nm_str_buf_destroy(&info->in_buffer);
+    nm_str_buf_destroy(&info->out_buffer);
+    nm_clear_g_source_inst(&info->input_source);
+    nm_clear_g_source_inst(&info->output_source);
+
+    if (info->child_stdout != -1)
+        nm_close(info->child_stdout);
+    if (info->child_stdin != -1)
+        nm_close(info->child_stdin);
+
+    if (info->pid != -1) {
+        nm_assert(info->pid > 1);
+        nm_utils_kill_child_async(info->pid, SIGKILL, LOGD_CORE, _NMLOG_PREFIX_NAME, 0, NULL, NULL);
+    }
+
+    g_free(info);
+}
+
+static void
+helper_complete(HelperInfo *info, GError *error)
+{
+    if (error) {
+        nm_clear_g_cancellable_disconnect(g_task_get_cancellable(info->task),
+                                          &info->cancellable_id);
+        g_task_return_error(info->task, error);
+        helper_info_free(info);
+        return;
+    }
+
+    if (info->input_source || info->output_source || info->pid != -1) {
+        /* Wait that pipes are closed and process has terminated */
+        return;
+    }
+
+    nm_clear_g_cancellable_disconnect(g_task_get_cancellable(info->task), &info->cancellable_id);
+    g_task_return_pointer(info->task, nm_str_buf_finalize(&info->in_buffer, NULL), g_free);
+    helper_info_free(info);
+}
+
+static gboolean
+helper_can_write(int fd, GIOCondition condition, gpointer user_data)
+{
+    HelperInfo *info = user_data;
+    gssize      n_written;
+    int         errsv;
+
+    if (NM_FLAGS_HAS(condition, G_IO_ERR)) {
+        errsv = EIO;
+        goto out_error;
+    } else if (NM_FLAGS_HAS(condition, G_IO_HUP)) {
+        errsv = EPIPE;
+        goto out_error;
+    }
+
+    n_written = write(info->child_stdin,
+                      &((nm_str_buf_get_str_unsafe(&info->out_buffer))[info->out_buffer_offset]),
+                      info->out_buffer.len - info->out_buffer_offset);
+    errsv     = errno;
+
+    if (n_written < 0 && errsv != EAGAIN)
+        goto out_error;
+
+    if (n_written > 0) {
+        if ((gsize) n_written >= (info->out_buffer.len - info->out_buffer_offset)) {
+            nm_assert((gsize) n_written == (info->out_buffer.len - info->out_buffer_offset));
+            nm_clear_g_source_inst(&info->output_source);
+            nm_close(info->child_stdin);
+            info->child_stdin = -1;
+            return G_SOURCE_CONTINUE;
+        }
+        info->out_buffer_offset += (gsize) n_written;
+    }
+
+    return G_SOURCE_CONTINUE;
+
+out_error:
+    nm_clear_g_source_inst(&info->output_source);
+    helper_complete(info,
+                    g_error_new(NM_UTILS_ERROR,
+                                NM_UTILS_ERROR_UNKNOWN,
+                                "error writing to helper: %d (%s)",
+                                errsv,
+                                nm_strerror_native(errsv)));
+    return G_SOURCE_CONTINUE;
+}
+
+static gboolean
+helper_have_data(int fd, GIOCondition condition, gpointer user_data)
+{
+    HelperInfo *info = user_data;
+    gssize      n_read;
+    GError *    error = NULL;
+
+    n_read = nm_utils_fd_read(fd, &info->in_buffer);
+    _LOG2T(info, "read returns %ld", (long) n_read);
+
+    if (n_read > 0)
+        return G_SOURCE_CONTINUE;
+
+    nm_clear_g_source_inst(&info->input_source);
+    nm_close(info->child_stdout);
+    info->child_stdout = -1;
+
+    _LOG2T(info, "stdout closed");
+
+    if (n_read < 0) {
+        error = g_error_new(NM_UTILS_ERROR,
+                            NM_UTILS_ERROR_UNKNOWN,
+                            "read from process returned %d (%s)",
+                            (int) -n_read,
+                            nm_strerror_native((int) -n_read));
+    }
+
+    helper_complete(info, error);
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+helper_child_terminated(GPid pid, int status, gpointer user_data)
+{
+    HelperInfo *  info        = user_data;
+    GError *      error       = NULL;
+    gs_free char *status_desc = NULL;
+
+    _LOG2D(info, "process %s", (status_desc = nm_utils_get_process_exit_status_desc(status)));
+
+    info->pid = -1;
+    nm_clear_g_source_inst(&info->child_watch_source);
+
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        if (!status_desc)
+            status_desc = nm_utils_get_process_exit_status_desc(status);
+        error =
+            g_error_new(NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN, "helper process %s", status_desc);
+    }
+
+    helper_complete(info, error);
+}
+
+static gboolean
+helper_timeout(gpointer user_data)
+{
+    HelperInfo *info = user_data;
+
+    nm_clear_g_source_inst(&info->timeout_source);
+    helper_complete(info, g_error_new_literal(NM_UTILS_ERROR, NM_UTILS_ERROR_UNKNOWN, "timed out"));
+
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+helper_cancelled(GObject *object, gpointer user_data)
+{
+    HelperInfo *info  = user_data;
+    GError *    error = NULL;
+
+    nm_clear_g_signal_handler(g_task_get_cancellable(info->task), &info->cancellable_id);
+    nm_utils_error_set_cancelled(&error, FALSE, NULL);
+    helper_complete(info, error);
+}
+
+void
+nm_utils_spawn_helper(const char *const * args,
+                      GCancellable *      cancellable,
+                      GAsyncReadyCallback callback,
+                      gpointer            cb_data)
+{
+    gs_free_error GError *error    = NULL;
+    gs_free char *        commands = NULL;
+    HelperInfo *          info;
+    int                   fd_flags;
+    const char *const *   arg;
+
+    nm_assert(args && args[0]);
+
+    info  = g_new(HelperInfo, 1);
+    *info = (HelperInfo){
+        .task         = nm_g_task_new(NULL, cancellable, nm_utils_spawn_helper, callback, cb_data),
+        .child_stdin  = -1,
+        .child_stdout = -1,
+        .pid          = -1,
+    };
+
+    if (!g_spawn_async_with_pipes("/",
+                                  (char **) NM_MAKE_STRV(LIBEXECDIR "/nm-daemon-helper"),
+                                  (char **) NM_MAKE_STRV(),
+                                  G_SPAWN_DO_NOT_REAP_CHILD,
+                                  NULL,
+                                  NULL,
+                                  &info->pid,
+                                  &info->child_stdin,
+                                  &info->child_stdout,
+                                  NULL,
+                                  &error)) {
+        info->child_stdin  = -1;
+        info->child_stdout = -1;
+        info->pid          = -1;
+        g_task_return_error(info->task,
+                            g_error_new(NM_UTILS_ERROR,
+                                        NM_UTILS_ERROR_UNKNOWN,
+                                        "error spawning nm-helper: %s",
+                                        error->message));
+        helper_info_free(info);
+        return;
+    }
+
+    _LOG2D(info, "spawned process with args: %s", (commands = g_strjoinv(" ", (char **) args)));
+
+    info->child_watch_source = g_child_watch_source_new(info->pid);
+    g_source_set_callback(info->child_watch_source,
+                          G_SOURCE_FUNC(helper_child_terminated),
+                          info,
+                          NULL);
+    g_source_attach(info->child_watch_source, g_main_context_get_thread_default());
+
+    info->timeout_source =
+        nm_g_timeout_source_new_seconds(20, G_PRIORITY_DEFAULT, helper_timeout, info, NULL);
+    g_source_attach(info->timeout_source, g_main_context_get_thread_default());
+
+    /* Set file descriptors as non-blocking */
+    fd_flags = fcntl(info->child_stdin, F_GETFD, 0);
+    fcntl(info->child_stdin, F_SETFL, fd_flags | O_NONBLOCK);
+    fd_flags = fcntl(info->child_stdout, F_GETFD, 0);
+    fcntl(info->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
+
+    /* Watch process stdin */
+    nm_str_buf_init(&info->out_buffer, 32, TRUE);
+    for (arg = args; *arg; arg++) {
+        nm_str_buf_append(&info->out_buffer, *arg);
+        nm_str_buf_append_c(&info->out_buffer, '\0');
+    }
+    info->output_source = nm_g_unix_fd_source_new(info->child_stdin,
+                                                  G_IO_OUT | G_IO_ERR | G_IO_HUP,
+                                                  G_PRIORITY_DEFAULT,
+                                                  helper_can_write,
+                                                  info,
+                                                  NULL);
+    g_source_attach(info->output_source, g_main_context_get_thread_default());
+
+    /* Watch process stdout */
+    nm_str_buf_init(&info->in_buffer, NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    info->input_source = nm_g_unix_fd_source_new(info->child_stdout,
+                                                 G_IO_IN | G_IO_ERR | G_IO_HUP,
+                                                 G_PRIORITY_DEFAULT,
+                                                 helper_have_data,
+                                                 info,
+                                                 NULL);
+    g_source_attach(info->input_source, g_main_context_get_thread_default());
+
+    if (cancellable) {
+        gulong signal_id;
+
+        signal_id = g_cancellable_connect(cancellable, G_CALLBACK(helper_cancelled), info, NULL);
+        if (signal_id == 0) {
+            /* the request is already cancelled. Return. */
+            return;
+        }
+        info->cancellable_id = signal_id;
+    }
+}
+
+char *
+nm_utils_spawn_helper_finish(GAsyncResult *result, GError **error)
+{
+    GTask *task = G_TASK(result);
+
+    nm_assert(nm_g_task_is_valid(result, NULL, nm_utils_spawn_helper));
+
+    return g_task_propagate_pointer(task, error);
+}

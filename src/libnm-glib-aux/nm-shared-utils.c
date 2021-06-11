@@ -6306,3 +6306,20 @@ nm_crypto_md5_hash(const guint8 *salt,
         g_checksum_update(ctx, digest.ptr, NM_UTILS_CHECKSUM_LENGTH_MD5);
     }
 }
+
+/*****************************************************************************/
+
+char *
+nm_utils_get_process_exit_status_desc(int status)
+{
+    if (WIFEXITED(status))
+        return g_strdup_printf("exited with status %d", WEXITSTATUS(status));
+    else if (WIFSIGNALED(status))
+        return g_strdup_printf("killed by signal %d", WTERMSIG(status));
+    else if (WIFSTOPPED(status))
+        return g_strdup_printf("stopped by signal %d", WSTOPSIG(status));
+    else if (WIFCONTINUED(status))
+        return g_strdup("resumed by SIGCONT)");
+    else
+        return g_strdup_printf("exited with unknown status 0x%x", status);
+}

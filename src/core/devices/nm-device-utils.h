@@ -85,4 +85,14 @@ const char *nm_device_ip_state_to_str(NMDeviceIPState ip_state);
 
 /*****************************************************************************/
 
+/*****************************************************************************/
+
+void nm_device_resolve_address(int                 addr_family,
+                               gconstpointer       address,
+                               GCancellable *      cancellable,
+                               GAsyncReadyCallback callback,
+                               gpointer            cb_data);
+
+char *nm_device_resolve_address_finish(GAsyncResult *result, GError **error);
+
 #endif /* __DEVICES_NM_DEVICE_UTILS_H__ */
