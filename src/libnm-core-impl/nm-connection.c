@@ -2589,14 +2589,19 @@ nm_connection_for_each_setting_value(NMConnection *       connection,
                                      gpointer             user_data)
 {
     gs_free NMSetting **settings = NULL;
-    guint               i, length = 0;
+    guint               length   = 0;
+    guint               i;
 
     g_return_if_fail(NM_IS_CONNECTION(connection));
     g_return_if_fail(func);
 
     settings = nm_connection_get_settings(connection, &length);
+    for (i = 1; i < length; i++)
+        g_object_ref(settings[i]);
     for (i = 0; i < length; i++)
         nm_setting_enumerate_values(settings[i], func, user_data);
+    for (i = 1; i < length; i++)
+        g_object_unref(settings[i]);
 }
 
 /**
