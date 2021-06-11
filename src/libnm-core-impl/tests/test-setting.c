@@ -109,6 +109,61 @@ _connection_new_from_dbus_strict(GVariant *dict, gboolean normalize)
 
 /*****************************************************************************/
 
+static void
+test_nm_meta_setting_types_by_priority(void)
+{
+    gs_unref_ptrarray GPtrArray *arr = NULL;
+    int                          i;
+    int                          j;
+
+    G_STATIC_ASSERT_EXPR(_NM_META_SETTING_TYPE_NUM
+                         == G_N_ELEMENTS(nm_meta_setting_types_by_priority));
+
+    G_STATIC_ASSERT_EXPR(_NM_META_SETTING_TYPE_NUM == 51);
+
+    arr = g_ptr_array_new_with_free_func(g_object_unref);
+
+    for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+        const NMMetaSettingType  meta_type = nm_meta_setting_types_by_priority[i];
+        const NMMetaSettingInfo *setting_info;
+        NMSetting *              setting;
+
+        g_assert(_NM_INT_NOT_NEGATIVE(meta_type));
+        g_assert(meta_type < _NM_META_SETTING_TYPE_NUM);
+
+        setting_info = &nm_meta_setting_infos[meta_type];
+        g_assert(setting_info);
+        _nm_assert_setting_info(setting_info, 0);
+
+        for (j = 0; j < i; j++)
+            g_assert_cmpint(nm_meta_setting_types_by_priority[j], !=, meta_type);
+
+        setting = g_object_new(setting_info->get_setting_gtype(), NULL);
+        g_assert(NM_IS_SETTING(setting));
+
+        g_ptr_array_add(arr, setting);
+    }
+
+    for (i = 1; i < _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *setting = arr->pdata[i];
+
+        for (j = 0; j < i; j++) {
+            NMSetting *other = arr->pdata[j];
+
+            if (_nmtst_nm_setting_sort(other, setting) >= 0) {
+                g_error("sort order for nm_meta_setting_types_by_priority[%d vs %d] is wrong: %s "
+                        "should be before %s",
+                        j,
+                        i,
+                        nm_setting_get_name(setting),
+                        nm_setting_get_name(other));
+            }
+        }
+    }
+}
+
+/*****************************************************************************/
+
 static char *
 _create_random_ipaddr(int addr_family, gboolean as_service)
 {
@@ -4592,6 +4647,9 @@ main(int argc, char **argv)
     nmtst_init(&argc, &argv, TRUE);
 
     g_test_add_func("/libnm/test_connection_uuid", test_connection_uuid);
+
+    g_test_add_func("/libnm/settings/test_nm_meta_setting_types_by_priority",
+                    test_nm_meta_setting_types_by_priority);
 
     g_test_add_data_func("/libnm/setting-8021x/key-and-cert",
                          "test_key_and_cert.pem, test",
