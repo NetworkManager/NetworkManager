@@ -19,6 +19,22 @@
 
 /*****************************************************************************/
 
+typedef struct {
+    NMConnection *self;
+
+    NMSetting *settings[_NM_META_SETTING_TYPE_NUM];
+
+    /* D-Bus path of the connection, if any */
+    char *path;
+} NMConnectionPrivate;
+
+extern GTypeClass *_nm_simple_connection_class_instance;
+extern int         _nm_simple_connection_private_offset;
+
+void _nm_connection_private_clear(NMConnectionPrivate *priv);
+
+/*****************************************************************************/
+
 /**
  * NMSetting:
  *
