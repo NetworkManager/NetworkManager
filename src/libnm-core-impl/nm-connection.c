@@ -2520,6 +2520,14 @@ _nmtst_nm_setting_sort(NMSetting *a, NMSetting *b)
     return 0;
 }
 
+NMSetting **
+_nm_connection_get_settings_arr(NMConnection *connection)
+{
+    nm_assert(NM_IS_CONNECTION(connection));
+
+    return NM_CONNECTION_GET_PRIVATE(connection)->settings;
+}
+
 /**
  * nm_connection_get_settings:
  * @connection: the #NMConnection instance
