@@ -25,11 +25,11 @@
  */
 struct _NMSimpleConnection {
     GObject parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSimpleConnectionClass {
     GObjectClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

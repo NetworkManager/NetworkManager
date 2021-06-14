@@ -40,11 +40,11 @@ typedef struct {
  */
 struct _NMSettingOlpcMesh {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingOlpcMeshClass {
     NMSettingClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

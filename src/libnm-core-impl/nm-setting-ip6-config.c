@@ -59,11 +59,11 @@ typedef struct {
  */
 struct _NMSettingIP6Config {
     NMSettingIPConfig parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingIP6ConfigClass {
     NMSettingIPConfigClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

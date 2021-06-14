@@ -47,11 +47,11 @@ typedef struct {
  */
 struct _NMSettingInfiniband {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingInfinibandClass {
     NMSettingClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

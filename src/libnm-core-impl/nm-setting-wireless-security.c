@@ -91,11 +91,11 @@ typedef struct {
  */
 struct _NMSettingWirelessSecurity {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingWirelessSecurityClass {
     NMSettingClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };
