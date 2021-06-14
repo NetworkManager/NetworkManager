@@ -2084,7 +2084,9 @@ _cmp_last_resort(NMSettingsConnection *a, NMSettingsConnection *b)
 
     /* hm, same UUID. Use their pointer value to give them a stable
      * order. */
-    return (a > b) ? -1 : 1;
+    NM_CMP_DIRECT_PTR(a, b);
+
+    return nm_assert_unreachable_val(0);
 }
 
 /* sorting for "best" connections.
