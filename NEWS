@@ -27,7 +27,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   This allows to configure devices in udev for which DHCPOFFER messages are to be
   broadcast.
 * firewall: add nftables firewall backend for configuring IPv4 NAT with shared
-  mode.
+  mode. Now two backends are supported, "iptables" and "nftables". The default
+  gets detected based on whether /usr/sbin/nft or /usr/sbin/iptables is installed,
+  with nftables preferred.
 * ethtool: add support for pause settings.
 * Support "prohibit"/"blackhole"/"unreachable" type routing rules.
 * Now NetworkManager preserves by default the existing traffic control
