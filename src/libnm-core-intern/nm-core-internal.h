@@ -180,6 +180,8 @@ NM_TERNARY_TO_OPTION_BOOL(NMTernary v)
 
 /*****************************************************************************/
 
+NMSetting **_nm_connection_get_settings_arr(NMConnection *connection);
+
 typedef enum { /*< skip >*/
                NM_SETTING_PARSE_FLAGS_NONE        = 0,
                NM_SETTING_PARSE_FLAGS_STRICT      = 1LL << 0,
