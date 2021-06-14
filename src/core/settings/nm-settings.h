@@ -79,6 +79,9 @@ void nm_settings_add_connection_dbus(NMSettings *                    self,
 
 NMSettingsConnection *const *nm_settings_get_connections(NMSettings *settings, guint *out_len);
 
+NMSettingsConnection *const *
+nm_settings_get_connections_sorted_by_autoconnect_priority(NMSettings *self, guint *out_len);
+
 NMSettingsConnection **nm_settings_get_connections_clone(NMSettings *                   self,
                                                          guint *                        out_len,
                                                          NMSettingsConnectionFilterFunc func,
