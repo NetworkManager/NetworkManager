@@ -1999,16 +1999,16 @@ nm_manager_remove_device(NMManager *self, const char *ifname, NMDeviceType devic
 static NMDevice *
 system_create_virtual_device(NMManager *self, NMConnection *connection)
 {
-    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
-    NMDeviceFactory * factory;
-    gs_free NMSettingsConnection **connections = NULL;
-    guint                          i;
-    gs_free char *                 iface = NULL;
-    const char *                   parent_spec;
-    NMDevice *                     device = NULL, *parent = NULL;
-    NMDevice *                     dev_candidate;
-    GError *                       error = NULL;
-    NMLogLevel                     log_level;
+    NMManagerPrivate *           priv = NM_MANAGER_GET_PRIVATE(self);
+    NMDeviceFactory *            factory;
+    NMSettingsConnection *const *connections;
+    guint                        i;
+    gs_free char *               iface = NULL;
+    const char *                 parent_spec;
+    NMDevice *                   device = NULL, *parent = NULL;
+    NMDevice *                   dev_candidate;
+    GError *                     error = NULL;
+    NMLogLevel                   log_level;
 
     g_return_val_if_fail(NM_IS_MANAGER(self), NULL);
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
@@ -2091,13 +2091,7 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
     }
 
     /* Create backing resources if the device has any autoconnect connections */
-    connections = nm_settings_get_connections_clone(
-        priv->settings,
-        NULL,
-        NULL,
-        NULL,
-        nm_settings_connection_cmp_autoconnect_priority_p_with_data,
-        NULL);
+    connections = nm_settings_get_connections_sorted_by_autoconnect_priority(priv->settings, NULL);
     for (i = 0; connections[i]; i++) {
         NMConnection *       candidate = nm_settings_connection_get_connection(connections[i]);
         NMSettingConnection *s_con;
@@ -2136,19 +2130,13 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
 static void
 retry_connections_for_parent_device(NMManager *self, NMDevice *device)
 {
-    NMManagerPrivate *priv                     = NM_MANAGER_GET_PRIVATE(self);
-    gs_free NMSettingsConnection **connections = NULL;
-    guint                          i;
+    NMManagerPrivate *           priv = NM_MANAGER_GET_PRIVATE(self);
+    NMSettingsConnection *const *connections;
+    guint                        i;
 
     g_return_if_fail(device);
 
-    connections = nm_settings_get_connections_clone(
-        priv->settings,
-        NULL,
-        NULL,
-        NULL,
-        nm_settings_connection_cmp_autoconnect_priority_p_with_data,
-        NULL);
+    connections = nm_settings_get_connections_sorted_by_autoconnect_priority(priv->settings, NULL);
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *sett_conn  = connections[i];
         NMConnection *        connection = nm_settings_connection_get_connection(sett_conn);
@@ -4425,13 +4413,13 @@ find_slaves(NMManager *           manager,
             guint *               out_n_slaves,
             gboolean              for_user_request)
 {
-    NMManagerPrivate *priv                         = NM_MANAGER_GET_PRIVATE(manager);
-    gs_free NMSettingsConnection **all_connections = NULL;
-    guint                          n_all_connections;
-    guint                          i;
-    SlaveConnectionInfo *          slaves   = NULL;
-    guint                          n_slaves = 0;
-    NMSettingConnection *          s_con;
+    NMManagerPrivate *           priv            = NM_MANAGER_GET_PRIVATE(manager);
+    NMSettingsConnection *const *all_connections = NULL;
+    guint                        n_all_connections;
+    guint                        i;
+    SlaveConnectionInfo *        slaves   = NULL;
+    guint                        n_slaves = 0;
+    NMSettingConnection *        s_con;
     gs_unref_hashtable GHashTable *devices = NULL;
 
     nm_assert(out_n_slaves);
@@ -4445,13 +4433,9 @@ find_slaves(NMManager *           manager,
      * even if a slave was already active, it might be deactivated during
      * master reactivation.
      */
-    all_connections = nm_settings_get_connections_clone(
-        priv->settings,
-        &n_all_connections,
-        NULL,
-        NULL,
-        nm_settings_connection_cmp_autoconnect_priority_p_with_data,
-        NULL);
+    all_connections =
+        nm_settings_get_connections_sorted_by_autoconnect_priority(priv->settings,
+                                                                   &n_all_connections);
     for (i = 0; i < n_all_connections; i++) {
         NMSettingsConnection *master_connection = NULL;
         NMDevice *            master_device     = NULL, *slave_device;
@@ -6918,9 +6902,9 @@ devices_inited_cb(gpointer user_data)
 gboolean
 nm_manager_start(NMManager *self, GError **error)
 {
-    NMManagerPrivate *priv                     = NM_MANAGER_GET_PRIVATE(self);
-    gs_free NMSettingsConnection **connections = NULL;
-    guint                          i;
+    NMManagerPrivate *           priv = NM_MANAGER_GET_PRIVATE(self);
+    NMSettingsConnection *const *connections;
+    guint                        i;
 
     nm_device_factory_manager_load_factories(_register_device_factory, self);
 
@@ -6978,13 +6962,7 @@ nm_manager_start(NMManager *self, GError **error)
                      NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
                      G_CALLBACK(connection_updated_cb),
                      self);
-    connections = nm_settings_get_connections_clone(
-        priv->settings,
-        NULL,
-        NULL,
-        NULL,
-        nm_settings_connection_cmp_autoconnect_priority_p_with_data,
-        NULL);
+    connections = nm_settings_get_connections_sorted_by_autoconnect_priority(priv->settings, NULL);
     for (i = 0; connections[i]; i++)
         connection_changed(self, connections[i]);
 
