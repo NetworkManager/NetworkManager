@@ -46,19 +46,98 @@ enum {
 
 static guint signals[LAST_SIGNAL] = {0};
 
-typedef struct {
-    NMConnection *self;
-
-    NMSetting *settings[_NM_META_SETTING_TYPE_NUM];
-
-    /* D-Bus path of the connection, if any */
-    char *path;
-} NMConnectionPrivate;
-
 G_DEFINE_INTERFACE(NMConnection, nm_connection, G_TYPE_OBJECT)
 
-static NMConnectionPrivate *nm_connection_get_private(NMConnection *connection);
-#define NM_CONNECTION_GET_PRIVATE(o) (nm_connection_get_private((NMConnection *) o))
+/*****************************************************************************/
+
+static gboolean _nm_connection_clear_settings(NMConnection *connection, NMConnectionPrivate *priv);
+
+/*****************************************************************************/
+
+#undef NM_IS_SIMPLE_CONNECTION
+#define NM_IS_SIMPLE_CONNECTION(self)                                                           \
+    ({                                                                                          \
+        gconstpointer _self1 = (self);                                                          \
+        gboolean      _result;                                                                  \
+                                                                                                \
+        _result =                                                                               \
+            (_self1                                                                             \
+             && (((GTypeInstance *) _self1)->g_class == _nm_simple_connection_class_instance)); \
+                                                                                                \
+        nm_assert(_result == G_TYPE_CHECK_INSTANCE_TYPE(_self1, NM_TYPE_SIMPLE_CONNECTION));    \
+                                                                                                \
+        _result;                                                                                \
+    })
+
+#undef NM_IS_CONNECTION
+#define NM_IS_CONNECTION(self)                                            \
+    ({                                                                    \
+        gconstpointer _self0 = (self);                                    \
+                                                                          \
+        (_self0                                                           \
+         && (NM_IS_SIMPLE_CONNECTION(_self0)                              \
+             || G_TYPE_CHECK_INSTANCE_TYPE(_self0, NM_TYPE_CONNECTION))); \
+    })
+
+/*****************************************************************************/
+
+void
+_nm_connection_private_clear(NMConnectionPrivate *priv)
+{
+    if (priv->self) {
+        _nm_connection_clear_settings(priv->self, priv);
+        nm_clear_g_free(&priv->path);
+        priv->self = NULL;
+    }
+}
+
+static void
+_nm_connection_private_free(gpointer data)
+{
+    NMConnectionPrivate *priv = data;
+
+    _nm_connection_private_clear(priv);
+
+    nm_g_slice_free(priv);
+}
+
+static NMConnectionPrivate *
+_nm_connection_get_private_from_qdata(NMConnection *connection)
+{
+    GQuark               key;
+    NMConnectionPrivate *priv;
+
+    nm_assert(NM_IS_CONNECTION(connection));
+    nm_assert(!NM_IS_SIMPLE_CONNECTION(connection));
+
+    key = NM_CACHED_QUARK("NMConnectionPrivate");
+
+    priv = g_object_get_qdata((GObject *) connection, key);
+    if (G_UNLIKELY(!priv)) {
+        priv  = g_slice_new(NMConnectionPrivate);
+        *priv = (NMConnectionPrivate){
+            .self = connection,
+        };
+        g_object_set_qdata_full((GObject *) connection, key, priv, _nm_connection_private_free);
+    }
+
+    return priv;
+}
+
+#define NM_CONNECTION_GET_PRIVATE(connection)                                                     \
+    ({                                                                                            \
+        NMConnection *       _connection = (connection);                                          \
+        NMConnectionPrivate *_priv;                                                               \
+                                                                                                  \
+        if (G_LIKELY(NM_IS_SIMPLE_CONNECTION(_connection)))                                       \
+            _priv = (gpointer) (&(((char *) _connection)[_nm_simple_connection_private_offset])); \
+        else                                                                                      \
+            _priv = _nm_connection_get_private_from_qdata(_connection);                           \
+                                                                                                  \
+        nm_assert(_priv && _priv->self == _connection);                                           \
+                                                                                                  \
+        _priv;                                                                                    \
+    })
 
 /*****************************************************************************/
 
@@ -3556,41 +3635,6 @@ _nm_connection_get_setting_bluetooth_for_nap(NMConnection *connection)
 }
 
 /*****************************************************************************/
-
-static void
-nm_connection_private_free(NMConnectionPrivate *priv)
-{
-    NMConnection *self = priv->self;
-
-    _nm_connection_clear_settings(self, priv);
-    g_free(priv->path);
-
-    g_slice_free(NMConnectionPrivate, priv);
-}
-
-static NMConnectionPrivate *
-nm_connection_get_private(NMConnection *connection)
-{
-    GQuark               key;
-    NMConnectionPrivate *priv;
-
-    nm_assert(NM_IS_CONNECTION(connection));
-
-    key = NM_CACHED_QUARK("NMConnectionPrivate");
-
-    priv = g_object_get_qdata((GObject *) connection, key);
-    if (G_UNLIKELY(!priv)) {
-        priv = g_slice_new0(NMConnectionPrivate);
-        g_object_set_qdata_full((GObject *) connection,
-                                key,
-                                priv,
-                                (GDestroyNotify) nm_connection_private_free);
-
-        priv->self = connection;
-    }
-
-    return priv;
-}
 
 static void
 nm_connection_default_init(NMConnectionInterface *iface)
