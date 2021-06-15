@@ -2128,6 +2128,15 @@ nm_settings_connection_cmp_autoconnect_priority(NMSettingsConnection *a, NMSetti
 }
 
 int
+nm_settings_connection_cmp_autoconnect_priority_with_data(gconstpointer pa,
+                                                          gconstpointer pb,
+                                                          gpointer      user_data)
+{
+    return nm_settings_connection_cmp_autoconnect_priority((NMSettingsConnection *) pa,
+                                                           (NMSettingsConnection *) pb);
+}
+
+int
 nm_settings_connection_cmp_autoconnect_priority_p_with_data(gconstpointer pa,
                                                             gconstpointer pb,
                                                             gpointer      user_data)
