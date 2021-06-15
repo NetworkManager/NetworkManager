@@ -83,13 +83,15 @@ nm_device_bond_get_carrier(NMDeviceBond *device)
  * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
+ *
+ * Deprecated: 1.30 use nm_device_get_ports() instead.
  **/
 const GPtrArray *
 nm_device_bond_get_slaves(NMDeviceBond *device)
 {
     g_return_val_if_fail(NM_IS_DEVICE_BOND(device), FALSE);
 
-    return nml_dbus_property_ao_get_objs_as_ptrarray(&NM_DEVICE_BOND_GET_PRIVATE(device)->slaves);
+    return nm_device_get_ports(NM_DEVICE(device));
 }
 
 static gboolean

@@ -57,6 +57,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_DEVICE_IP6_CONNECTIVITY      "ip6-connectivity"
 #define NM_DEVICE_INTERFACE_FLAGS       "interface-flags"
 #define NM_DEVICE_HW_ADDRESS            "hw-address"
+#define NM_DEVICE_PORTS                 "ports"
 
 /**
  * NMDevice:
@@ -140,6 +141,9 @@ const char *         nm_device_get_type_description(NMDevice *device);
 const char *         nm_device_get_hw_address(NMDevice *device);
 NMDeviceCapabilities nm_device_get_capabilities(NMDevice *device);
 gboolean             nm_device_get_managed(NMDevice *device);
+
+NM_AVAILABLE_IN_1_30
+const GPtrArray *nm_device_get_ports(NMDevice *device);
 
 NM_AVAILABLE_IN_1_2
 NM_DEPRECATED_IN_1_22
