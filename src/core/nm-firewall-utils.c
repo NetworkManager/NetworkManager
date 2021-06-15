@@ -400,15 +400,21 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
                                          &error)) {
         /* on any error, the process might still be running. We need to abort it in
          * the background... */
-        if (nm_utils_error_is_cancelled(error)) {
-            nm_log_dbg(LOGD_SHARING,
-                       "firewall: ntf[%s]: communication cancelled. Kill process",
-                       call_data->identifier);
-        } else {
+        if (!nm_utils_error_is_cancelled(error)) {
             nm_log_dbg(LOGD_SHARING,
                        "firewall: nft[%s]: communication failed: %s. Kill process",
                        call_data->identifier,
                        error->message);
+        } else if (!call_data->timeout_source) {
+            nm_log_dbg(LOGD_SHARING,
+                       "firewall: ntf[%s]: communication timed out. Kill process",
+                       call_data->identifier);
+            nm_clear_error(&error);
+            nm_utils_error_set(&error, NM_UTILS_ERROR_UNKNOWN, "timeout communicating with nft");
+        } else {
+            nm_log_dbg(LOGD_SHARING,
+                       "firewall: ntf[%s]: communication cancelled. Kill process",
+                       call_data->identifier);
         }
 
         {
