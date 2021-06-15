@@ -323,6 +323,9 @@ int nm_settings_connection_cmp_timestamp_p_with_data(gconstpointer pa,
                                                      gpointer      user_data);
 int nm_settings_connection_cmp_autoconnect_priority(NMSettingsConnection *a,
                                                     NMSettingsConnection *b);
+int nm_settings_connection_cmp_autoconnect_priority_with_data(gconstpointer pa,
+                                                              gconstpointer pb,
+                                                              gpointer      user_data);
 int nm_settings_connection_cmp_autoconnect_priority_p_with_data(gconstpointer pa,
                                                                 gconstpointer pb,
                                                                 gpointer      user_data);
