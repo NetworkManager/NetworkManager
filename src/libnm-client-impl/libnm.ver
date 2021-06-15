@@ -1788,6 +1788,8 @@ global:
 libnm_1_32_0 {
 global:
 	nm_ethtool_optname_is_pause;
+	nm_ip_address_dup;
+	nm_ip_route_dup;
 	nm_setting_match_new;
 	nm_setting_wired_get_accept_all_mac_addresses;
 } libnm_1_30_0;

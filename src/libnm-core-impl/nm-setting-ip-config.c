@@ -364,6 +364,12 @@ nm_ip_address_equal(NMIPAddress *address, NMIPAddress *other)
  * Creates a copy of @address
  *
  * Returns: (transfer full): a copy of @address
+ *
+ * This API was part of public headers before 1.32.0 but
+ * was erroneously not exported in the ABI. It is thus only
+ * usable since 1.32.0.
+ *
+ * Since: 1.32
  **/
 NMIPAddress *
 nm_ip_address_dup(NMIPAddress *address)
@@ -821,6 +827,12 @@ nm_ip_route_equal(NMIPRoute *route, NMIPRoute *other)
  * Creates a copy of @route
  *
  * Returns: (transfer full): a copy of @route
+ *
+ * This API was part of public headers before 1.32.0 but
+ * was erroneously not exported in the ABI. It is thus only
+ * usable since 1.32.0.
+ *
+ * Since: 1.32
  **/
 NMIPRoute *
 nm_ip_route_dup(NMIPRoute *route)
