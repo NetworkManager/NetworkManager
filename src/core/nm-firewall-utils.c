@@ -419,7 +419,7 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
 
         {
             _nm_unused nm_auto_pop_gmaincontext GMainContext *main_context =
-                nm_g_main_context_push_thread_default(NULL);
+                nm_g_main_context_push_thread_default_if_necessary(NULL);
 
             nm_shutdown_wait_obj_register_object(call_data->subprocess, "nft-terminate");
             G_STATIC_ASSERT_EXPR(200 < NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG * 2 / 3);
