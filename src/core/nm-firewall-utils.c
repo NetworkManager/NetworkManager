@@ -372,7 +372,7 @@ _fw_nft_call_data_free(FwNftCallData *call_data, GError *error_take)
     nm_clear_g_source_inst(&call_data->timeout_source);
 
     if (error_take)
-        g_task_return_error(call_data->task, g_steal_pointer(&error_take));
+        g_task_return_error(call_data->task, error_take);
     else
         g_task_return_boolean(call_data->task, TRUE);
 
@@ -455,7 +455,7 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
                         ""));
     }
 
-    _fw_nft_call_data_free(call_data, error);
+    _fw_nft_call_data_free(call_data, g_steal_pointer(&error));
 }
 
 static void
