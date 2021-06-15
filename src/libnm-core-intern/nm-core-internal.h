@@ -207,9 +207,12 @@ typedef struct {
         bool    has;
     } timestamp;
 
-    const char **seen_bssids;
+    const char *const *seen_bssids;
 
 } NMConnectionSerializationOptions;
+
+gboolean nm_connection_serialization_options_equal(const NMConnectionSerializationOptions *a,
+                                                   const NMConnectionSerializationOptions *b);
 
 GVariant *nm_connection_to_dbus_full(NMConnection *                          connection,
                                      NMConnectionSerializationFlags          flags,
