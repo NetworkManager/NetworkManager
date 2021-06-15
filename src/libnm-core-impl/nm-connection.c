@@ -2527,6 +2527,38 @@ _nm_connection_find_secret(NMConnection *             self,
 
 /*****************************************************************************/
 
+static const NMConnectionSerializationOptions _connection_serialization_options_empty = {
+    .timestamp =
+        {
+            .has = FALSE,
+            .val = 0,
+        },
+    .seen_bssids = NULL,
+};
+
+gboolean
+nm_connection_serialization_options_equal(const NMConnectionSerializationOptions *a,
+                                          const NMConnectionSerializationOptions *b)
+{
+    if (!a)
+        a = &_connection_serialization_options_empty;
+    if (!b)
+        b = &_connection_serialization_options_empty;
+
+    if (a == b)
+        return TRUE;
+
+    if (a->timestamp.has != b->timestamp.has)
+        return FALSE;
+    if (a->timestamp.has && a->timestamp.val != b->timestamp.val)
+        return FALSE;
+    if (!nm_utils_strv_equal(a->seen_bssids ?: NM_STRV_EMPTY_CC(),
+                             b->seen_bssids ?: NM_STRV_EMPTY_CC()))
+        return FALSE;
+
+    return TRUE;
+}
+
 /**
  * nm_connection_to_dbus:
  * @connection: the #NMConnection
@@ -2558,6 +2590,9 @@ nm_connection_to_dbus_full(NMConnection *                          connection,
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
 
     priv = NM_CONNECTION_GET_PRIVATE(connection);
+
+    if (!options)
+        options = &_connection_serialization_options_empty;
 
     for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
         NMSetting *setting = priv->settings[nm_meta_setting_types_by_priority[i]];
