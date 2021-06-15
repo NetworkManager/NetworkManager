@@ -270,15 +270,18 @@ _nmc_mangle_connection(NMDevice *                            device,
                        const NMCSProviderGetConfigIfaceData *config_data,
                        gboolean *                            out_changed)
 {
-    NMSettingIPConfig *s_ip;
-    gsize              i;
-    in_addr_t          gateway;
-    gint64             rt_metric;
-    guint32            rt_table;
-    NMIPRoute *        route_entry;
-    gboolean           addrs_changed        = FALSE;
-    gboolean           rules_changed        = FALSE;
-    gboolean           routes_changed       = FALSE;
+    NMSettingIPConfig * s_ip;
+    NMActiveConnection *ac;
+    NMConnection *      remote_connection;
+    NMSettingIPConfig * remote_s_ip = NULL;
+    gsize               i;
+    in_addr_t           gateway;
+    gint64              rt_metric;
+    guint32             rt_table;
+    NMIPRoute *         route_entry;
+    gboolean            addrs_changed       = FALSE;
+    gboolean            rules_changed       = FALSE;
+    gboolean            routes_changed      = FALSE;
     gs_unref_ptrarray GPtrArray *addrs_new  = NULL;
     gs_unref_ptrarray GPtrArray *rules_new  = NULL;
     gs_unref_ptrarray GPtrArray *routes_new = NULL;
@@ -290,11 +293,39 @@ _nmc_mangle_connection(NMDevice *                            device,
     if (!s_ip)
         return FALSE;
 
+    if ((ac = nm_device_get_active_connection(device))
+        && (remote_connection = NM_CONNECTION(nm_active_connection_get_connection(ac))))
+        remote_s_ip = nm_connection_get_setting_ip4_config(remote_connection);
+
     addrs_new = g_ptr_array_new_full(config_data->ipv4s_len, (GDestroyNotify) nm_ip_address_unref);
     rules_new =
         g_ptr_array_new_full(config_data->ipv4s_len, (GDestroyNotify) nm_ip_routing_rule_unref);
     routes_new = g_ptr_array_new_full(config_data->iproutes_len + !!config_data->ipv4s_len,
                                       (GDestroyNotify) nm_ip_route_unref);
+
+    if (remote_s_ip) {
+        guint len;
+        guint j;
+
+        len = nm_setting_ip_config_get_num_addresses(remote_s_ip);
+        for (j = 0; j < len; j++) {
+            g_ptr_array_add(addrs_new,
+                            nm_ip_address_dup(nm_setting_ip_config_get_address(remote_s_ip, j)));
+        }
+
+        len = nm_setting_ip_config_get_num_routes(remote_s_ip);
+        for (j = 0; j < len; j++) {
+            g_ptr_array_add(routes_new,
+                            nm_ip_route_dup(nm_setting_ip_config_get_route(remote_s_ip, j)));
+        }
+
+        len = nm_setting_ip_config_get_num_routing_rules(remote_s_ip);
+        for (j = 0; j < len; j++) {
+            g_ptr_array_add(
+                rules_new,
+                nm_ip_routing_rule_ref(nm_setting_ip_config_get_routing_rule(remote_s_ip, j)));
+        }
+    }
 
     if (config_data->has_ipv4s && config_data->has_cidr) {
         for (i = 0; i < config_data->ipv4s_len; i++) {
