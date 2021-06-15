@@ -49,6 +49,8 @@ gboolean nm_ip_address_equal(NMIPAddress *address, NMIPAddress *other);
 NM_AVAILABLE_IN_1_22
 int
 nm_ip_address_cmp_full(const NMIPAddress *a, const NMIPAddress *b, NMIPAddressCmpFlags cmp_flags);
+
+NM_AVAILABLE_IN_1_32
 NMIPAddress *nm_ip_address_dup(NMIPAddress *address);
 
 int         nm_ip_address_get_family(NMIPAddress *address);
@@ -92,6 +94,7 @@ enum { /*< flags >*/
 NM_AVAILABLE_IN_1_10
 gboolean nm_ip_route_equal_full(NMIPRoute *route, NMIPRoute *other, guint cmp_flags);
 
+NM_AVAILABLE_IN_1_32
 NMIPRoute *nm_ip_route_dup(NMIPRoute *route);
 
 int         nm_ip_route_get_family(NMIPRoute *route);
