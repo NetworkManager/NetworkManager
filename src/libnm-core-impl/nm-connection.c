@@ -148,7 +148,21 @@ _signal_emit_changed(NMConnection *self)
 }
 
 static void
-setting_changed_cb(NMSetting *setting, GParamSpec *pspec, NMConnection *self)
+_signal_emit_secrets_updated(NMConnection *self, const char *setting_name)
+{
+    g_signal_emit(self, signals[SECRETS_UPDATED], 0, setting_name);
+}
+
+static void
+_signal_emit_secrets_cleared(NMConnection *self)
+{
+    g_signal_emit(self, signals[SECRETS_CLEARED], 0);
+}
+
+/*****************************************************************************/
+
+static void
+_setting_notify_changed_cb(NMSetting *setting, GParamSpec *pspec, NMConnection *self)
 {
     _signal_emit_changed(self);
 }
@@ -156,26 +170,30 @@ setting_changed_cb(NMSetting *setting, GParamSpec *pspec, NMConnection *self)
 static void
 _setting_notify_connect(NMConnection *connection, NMSetting *setting)
 {
-    g_signal_connect(setting, "notify", (GCallback) setting_changed_cb, connection);
+    g_signal_connect(setting, "notify", G_CALLBACK(_setting_notify_changed_cb), connection);
 }
 
 static void
 _setting_notify_disconnect(NMConnection *connection, NMSetting *setting)
 {
-    g_signal_handlers_disconnect_by_func(setting, setting_changed_cb, connection);
+    g_signal_handlers_disconnect_by_func(setting,
+                                         G_CALLBACK(_setting_notify_changed_cb),
+                                         connection);
 }
 
 static void
 _setting_notify_block(NMConnection *connection, NMSetting *setting)
 {
-    g_signal_handlers_block_by_func(setting, (GCallback) setting_changed_cb, connection);
+    g_signal_handlers_block_by_func(setting, G_CALLBACK(_setting_notify_changed_cb), connection);
 }
 
 static void
 _setting_notify_unblock(NMConnection *connection, NMSetting *setting)
 {
-    g_signal_handlers_unblock_by_func(setting, (GCallback) setting_changed_cb, connection);
+    g_signal_handlers_unblock_by_func(setting, G_CALLBACK(_setting_notify_changed_cb), connection);
 }
+
+/*****************************************************************************/
 
 static gboolean
 _nm_connection_clear_settings(NMConnection *connection, NMConnectionPrivate *priv)
@@ -2252,7 +2270,7 @@ nm_connection_update_secrets(NMConnection *connection,
     }
 
     if (updated)
-        g_signal_emit(connection, signals[SECRETS_UPDATED], 0, setting_name);
+        _signal_emit_secrets_updated(connection, setting_name);
 
     return success;
 }
@@ -2361,7 +2379,7 @@ nm_connection_clear_secrets_with_flags(NMConnection *                   connecti
         _setting_notify_unblock(connection, setting);
     }
 
-    g_signal_emit(connection, signals[SECRETS_CLEARED], 0);
+    _signal_emit_secrets_cleared(connection);
 }
 
 static gboolean
