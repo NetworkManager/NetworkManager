@@ -2133,6 +2133,12 @@ nm_g_hash_table_remove(GHashTable *hash, gconstpointer key)
 
 /*****************************************************************************/
 
+gboolean nm_utils_ptrarray_is_sorted(gconstpointer *  list,
+                                     gsize            len,
+                                     gboolean         require_strict,
+                                     GCompareDataFunc cmpfcn,
+                                     gpointer         user_data);
+
 gssize nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
                                             gsize            len,
                                             gconstpointer    needle,
