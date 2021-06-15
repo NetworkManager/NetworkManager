@@ -1051,6 +1051,12 @@ nm_shutdown_wait_obj_register_full(gpointer           watched_obj,
     if (G_UNLIKELY(!_shutdown_waitobj_lst_head.next))
         c_list_init(&_shutdown_waitobj_lst_head);
 
+    /* Beware: there are callers with g_main_context_get_thread_default()
+     * not being g_main_context_get_default(). For example _fw_nft_call().
+     *
+     * If you schedule any sources or async operations, you probably need to
+     * make sure to use the default context. */
+
     handle  = g_slice_new(NMShutdownWaitObjHandle);
     *handle = (NMShutdownWaitObjHandle){
         /* depending on @free_msg_reason, we take ownership of @msg_reason.
