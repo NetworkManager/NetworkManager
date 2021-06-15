@@ -1489,10 +1489,6 @@ class ActiveConnection(ExportedObj):
 
     def start_deactivation(self):
         assert self._deactivation_id is None
-        self._set_state(
-            NM.ActiveConnectionState.DEACTIVATING,
-            NM.ActiveConnectionStateReason.USER_DISCONNECTED,
-        )
         self.device.set_state(
             NM.DeviceState.DEACTIVATING, NM.DeviceStateReason.USER_REQUESTED
         )
