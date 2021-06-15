@@ -1787,5 +1787,7 @@ global:
 
 libnm_1_30_8 {
 global:
+	nm_ip_address_dup;
+	nm_ip_route_dup;
 	nm_setting_ip_config_get_required_timeout;
 } libnm_1_30_0;
