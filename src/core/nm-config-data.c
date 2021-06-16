@@ -359,9 +359,9 @@ nm_config_data_get_iwd_config_path(const NMConfigData *self)
 gboolean
 nm_config_data_get_ignore_carrier(const NMConfigData *self, NMDevice *device)
 {
-    gs_free char *value = NULL;
-    gboolean      has_match;
-    int           m;
+    const char *value;
+    gboolean    has_match;
+    int         m;
 
     g_return_val_if_fail(NM_IS_CONFIG_DATA(self), FALSE);
     g_return_val_if_fail(NM_IS_DEVICE(device), FALSE);
@@ -1397,7 +1397,7 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
                             NMDevice *              device,
                             const NMPlatformLink *  pllink,
                             const char *            match_device_type,
-                            char **                 out_value)
+                            const char **           out_value)
 {
     const char *match_dhcp_plugin;
 
@@ -1436,7 +1436,7 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
             match = TRUE;
 
         if (match) {
-            *out_value = g_strdup(value);
+            *out_value = value;
             return match_section_infos;
         }
     }
@@ -1446,7 +1446,7 @@ out:
     return NULL;
 }
 
-char *
+const char *
 nm_config_data_get_device_config(const NMConfigData *self,
                                  const char *        property,
                                  NMDevice *          device,
@@ -1454,7 +1454,7 @@ nm_config_data_get_device_config(const NMConfigData *self,
 {
     const NMConfigDataPrivate *priv;
     const MatchSectionInfo *   connection_info;
-    char *                     value = NULL;
+    const char *               value;
 
     NM_SET_OUT(has_match, FALSE);
 
@@ -1474,7 +1474,7 @@ nm_config_data_get_device_config(const NMConfigData *self,
     return value;
 }
 
-char *
+const char *
 nm_config_data_get_device_config_by_pllink(const NMConfigData *  self,
                                            const char *          property,
                                            const NMPlatformLink *pllink,
@@ -1483,7 +1483,7 @@ nm_config_data_get_device_config_by_pllink(const NMConfigData *  self,
 {
     const NMConfigDataPrivate *priv;
     const MatchSectionInfo *   connection_info;
-    char *                     value = NULL;
+    const char *               value;
 
     g_return_val_if_fail(self, NULL);
     g_return_val_if_fail(property && *property, NULL);
@@ -1508,8 +1508,8 @@ nm_config_data_get_device_config_boolean(const NMConfigData *self,
                                          int                 val_no_match,
                                          int                 val_invalid)
 {
-    gs_free char *value = NULL;
-    gboolean      has_match;
+    const char *value;
+    gboolean    has_match;
 
     value = nm_config_data_get_device_config(self, property, device, &has_match);
     if (!has_match)
@@ -1527,8 +1527,8 @@ nm_config_data_get_device_config_int64(const NMConfigData *self,
                                        gint64              val_no_match,
                                        gint64              val_invalid)
 {
-    gs_free char *value = NULL;
-    gboolean      has_match;
+    const char *value;
+    gboolean    has_match;
 
     value = nm_config_data_get_device_config(self, property, device, &has_match);
     if (!has_match) {
@@ -1538,13 +1538,13 @@ nm_config_data_get_device_config_int64(const NMConfigData *self,
     return _nm_utils_ascii_str_to_int64(value, base, min, max, val_invalid);
 }
 
-char *
+const char *
 nm_config_data_get_connection_default(const NMConfigData *self,
                                       const char *        property,
                                       NMDevice *          device)
 {
     const NMConfigDataPrivate *priv;
-    char *                     value = NULL;
+    const char *               value;
 
     g_return_val_if_fail(self, NULL);
     g_return_val_if_fail(property && *property, NULL);
@@ -1583,7 +1583,7 @@ nm_config_data_get_connection_default_int64(const NMConfigData *self,
                                             gint64              max,
                                             gint64              fallback)
 {
-    gs_free char *value = NULL;
+    const char *value;
 
     value = nm_config_data_get_connection_default(self, property, device);
     return _nm_utils_ascii_str_to_int64(value, 10, min, max, fallback);
