@@ -234,6 +234,14 @@ gboolean nm_config_data_get_device_config_boolean(const NMConfigData *self,
                                                   NMDevice *          device,
                                                   int                 val_no_match,
                                                   int                 val_invalid);
+gint64   nm_config_data_get_device_config_int64(const NMConfigData *self,
+                                                const char *        property,
+                                                NMDevice *          device,
+                                                int                 base,
+                                                gint64              min,
+                                                gint64              max,
+                                                gint64              val_no_match,
+                                                gint64              val_invalid);
 
 char **  nm_config_data_get_groups(const NMConfigData *self);
 char **  nm_config_data_get_keys(const NMConfigData *self, const char *group);
