@@ -26,6 +26,8 @@ typedef struct {
         gboolean has;
         GSList * spec;
     } match_device;
+    gsize                    lookup_len;
+    const NMUtilsNamedValue *lookup_idx;
 } MatchSectionInfo;
 
 struct _NMGlobalDnsDomain {
@@ -113,6 +115,11 @@ struct _NMConfigDataClass {
 G_DEFINE_TYPE(NMConfigData, nm_config_data, G_TYPE_OBJECT)
 
 #define NM_CONFIG_DATA_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMConfigData, NM_IS_CONFIG_DATA)
+
+/*****************************************************************************/
+
+static const char *
+_match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, const char *property);
 
 /*****************************************************************************/
 
@@ -1395,13 +1402,13 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
     const char *match_dhcp_plugin;
 
     if (!match_section_infos)
-        return NULL;
+        goto out;
 
     match_dhcp_plugin = nm_dhcp_manager_get_config(nm_dhcp_manager_get());
 
     for (; match_section_infos->group_name; match_section_infos++) {
-        char *   value = NULL;
-        gboolean match;
+        const char *value;
+        gboolean    match;
 
         /* FIXME: Here we use g_key_file_get_string(). This should be in sync with what keyfile-reader
          * does.
@@ -1410,7 +1417,7 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
          * string_to_value(keyfile_to_string(keyfile)) in one. Optimally, keyfile library would
          * expose both functions, and we would return here keyfile_to_string(keyfile).
          * The caller then could convert the string to the proper value via string_to_value(value). */
-        value = g_key_file_get_string(keyfile, match_section_infos->group_name, property, NULL);
+        value = _match_section_info_get_str(match_section_infos, keyfile, property);
         if (!value && !match_section_infos->stop_match)
             continue;
 
@@ -1429,11 +1436,13 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
             match = TRUE;
 
         if (match) {
-            *out_value = value;
+            *out_value = g_strdup(value);
             return match_section_infos;
         }
-        g_free(value);
     }
+
+out:
+    *out_value = NULL;
     return NULL;
 }
 
@@ -1580,9 +1589,35 @@ nm_config_data_get_connection_default_int64(const NMConfigData *self,
     return _nm_utils_ascii_str_to_int64(value, 10, min, max, fallback);
 }
 
-static void
-_get_connection_info_init(MatchSectionInfo *connection_info, GKeyFile *keyfile, char *group)
+static const char *
+_match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, const char *property)
 {
+    gssize      idx;
+    const char *value;
+
+    idx   = nm_utils_named_value_list_find(m->lookup_idx, m->lookup_len, property, TRUE);
+    value = idx >= 0 ? m->lookup_idx[idx].value_str : NULL;
+
+#if NM_MORE_ASSERTS > 10
+    {
+        gs_free char *value2 = g_key_file_get_string(keyfile, m->group_name, property, NULL);
+
+        nm_assert(nm_streq0(value2, value));
+    }
+#endif
+
+    return value;
+}
+
+static void
+_match_section_info_init(MatchSectionInfo *connection_info, GKeyFile *keyfile, char *group)
+{
+    char **            keys = NULL;
+    gsize              n_keys;
+    gsize              i;
+    gsize              j;
+    NMUtilsNamedValue *vals;
+
     /* pass ownership of @group on... */
     connection_info->group_name = group;
 
@@ -1593,18 +1628,66 @@ _get_connection_info_init(MatchSectionInfo *connection_info, GKeyFile *keyfile, 
                                  &connection_info->match_device.has);
     connection_info->stop_match =
         nm_config_keyfile_get_boolean(keyfile, group, NM_CONFIG_KEYFILE_KEY_STOP_MATCH, FALSE);
+
+    keys = g_key_file_get_keys(keyfile, group, &n_keys, NULL);
+    nm_utils_strv_sort(keys, n_keys);
+
+    vals = g_new(NMUtilsNamedValue, n_keys);
+
+    for (i = 0, j = 0; i < n_keys; i++) {
+        gs_free char *key = g_steal_pointer(&keys[i]);
+        char *        value;
+
+        if (NM_IN_STRSET(key, NM_CONFIG_KEYFILE_KEY_STOP_MATCH, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE))
+            continue;
+
+        if (j > 0 && nm_streq(vals[j - 1].name, key))
+            continue;
+
+        value = g_key_file_get_string(keyfile, group, key, NULL);
+        if (!value)
+            continue;
+
+        vals[j++] = (NMUtilsNamedValue){
+            .name      = g_steal_pointer(&key),
+            .value_str = value,
+        };
+    }
+
+    g_free(keys);
+
+    if (n_keys != j) {
+        gs_free NMUtilsNamedValue *vals2 = vals;
+
+        /* since this buffer will be kept around for a long time,
+         * get rid of the excess allocation. */
+        vals   = nm_memdup(vals2, sizeof(NMUtilsNamedValue) * j);
+        n_keys = j;
+    }
+
+    if (n_keys == 0)
+        nm_clear_g_free(&vals);
+
+    connection_info->lookup_idx = vals;
+    connection_info->lookup_len = n_keys;
 }
 
 static void
 _match_section_infos_free(MatchSectionInfo *match_section_infos)
 {
-    guint i;
+    MatchSectionInfo *m;
+    gsize             i;
 
     if (!match_section_infos)
         return;
-    for (i = 0; match_section_infos[i].group_name; i++) {
-        g_free(match_section_infos[i].group_name);
-        g_slist_free_full(match_section_infos[i].match_device.spec, g_free);
+    for (m = match_section_infos; m->group_name; m++) {
+        g_free(m->group_name);
+        g_slist_free_full(m->match_device.spec, g_free);
+        for (i = 0; i < m->lookup_len; i++) {
+            g_free(m->lookup_idx[i].name_mutable);
+            g_free(m->lookup_idx[i].value_str_mutable);
+        }
+        g_free((gpointer) m->lookup_idx);
     }
     g_free(match_section_infos);
 }
@@ -1649,11 +1732,11 @@ _match_section_infos_construct(GKeyFile *keyfile, const char *prefix)
     match_section_infos = g_new0(MatchSectionInfo, ngroups + 1 + (connection_tag ? 1 : 0));
     for (i = 0; i < ngroups; i++) {
         /* pass ownership of @group on... */
-        _get_connection_info_init(&match_section_infos[i], keyfile, groups[ngroups - i - 1]);
+        _match_section_info_init(&match_section_infos[i], keyfile, groups[ngroups - i - 1]);
     }
     if (connection_tag) {
         /* pass ownership of @connection_tag on... */
-        _get_connection_info_init(&match_section_infos[i], keyfile, connection_tag);
+        _match_section_info_init(&match_section_infos[i], keyfile, connection_tag);
     }
     g_free(groups);
 
