@@ -34,6 +34,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   mode. Now two backends are supported, "iptables" and "nftables". The default
   gets detected based on whether /usr/sbin/nft or /usr/sbin/iptables is installed,
   with nftables preferred.
+  Please note that SELinux might prevent NetworkManager from communicating with nft.
 * ethtool: add support for pause settings.
 * Support "prohibit"/"blackhole"/"unreachable" type routing rules.
 * Now NetworkManager preserves by default the existing traffic control
