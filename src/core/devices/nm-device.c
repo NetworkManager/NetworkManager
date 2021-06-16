@@ -5874,16 +5874,19 @@ sriov_op_queue(NMDevice *              self,
 static void
 device_init_static_sriov_num_vfs(NMDevice *self)
 {
-    NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
-    gs_free char *   value = NULL;
-    int              num_vfs;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (priv->ifindex > 0 && nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)) {
-        value   = nm_config_data_get_device_config(NM_CONFIG_GET_DATA,
-                                                 NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
-                                                 self,
-                                                 NULL);
-        num_vfs = _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXINT32, -1);
+        int num_vfs;
+
+        num_vfs = nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
+                                                         NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
+                                                         self,
+                                                         10,
+                                                         0,
+                                                         G_MAXINT32,
+                                                         -1,
+                                                         -1);
         if (num_vfs >= 0)
             sriov_op_queue(self, num_vfs, NM_OPTION_BOOL_DEFAULT, NULL, NULL);
     }
@@ -14043,13 +14046,14 @@ nm_device_is_up(NMDevice *self)
 static gint64
 _get_carrier_wait_ms(NMDevice *self)
 {
-    gs_free char *value = NULL;
-
-    value = nm_config_data_get_device_config(NM_CONFIG_GET_DATA,
-                                             NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
-                                             self,
-                                             NULL);
-    return _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXINT32, CARRIER_WAIT_TIME_MS);
+    return nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
+                                                  NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
+                                                  self,
+                                                  10,
+                                                  0,
+                                                  G_MAXINT32,
+                                                  CARRIER_WAIT_TIME_MS,
+                                                  CARRIER_WAIT_TIME_MS);
 }
 
 gboolean
