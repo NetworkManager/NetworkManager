@@ -3,11 +3,6 @@ NetworkManager-1.32
 Overview of changes since NetworkManager-1.30
 =============================================
 
-This is a snapshot of NetworkManager 1.32 development series.
-The API is subject to change and not guaranteed to be compatible
-with the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
-
 * Add an 'accept-all-mac-addresses' property to the ethernet setting
   to accept frames with any MAC address (also known as promiscuous
   mode).
