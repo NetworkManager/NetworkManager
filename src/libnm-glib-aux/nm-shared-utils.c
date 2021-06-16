@@ -3244,11 +3244,8 @@ void
 nm_utils_named_value_clear_with_g_free(NMUtilsNamedValue *val)
 {
     if (val) {
-        gs_free gpointer x_name  = NULL;
-        gs_free gpointer x_value = NULL;
-
-        x_name  = (gpointer) g_steal_pointer(&val->name);
-        x_value = g_steal_pointer(&val->value_ptr);
+        nm_clear_g_free(&val->name_mutable);
+        nm_clear_g_free(&val->value_ptr);
     }
 }
 
