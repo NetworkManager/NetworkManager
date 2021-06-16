@@ -23,6 +23,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   API. They are replaced by standard "PropertiesChanged" signal on the
   "org.freedesktop.DBus.Properties" interface. It is not expected that anybody
   is still using this API.
+* Now NetworkManager uses systemd-resolved API to lookup the system
+  hostname via reverse DNS. If systemd-resolved is not available, a
+  'nm-daemon-helper' binary is spawned to perform the lookup using
+  the 'dns' NSS module.
 * dhcp: honor "ID_NET_DHCP_BROADCAST" udev attribute to set the broadcast flag.
   This allows to configure devices in udev for which DHCPOFFER messages are to be
   broadcast.
