@@ -1068,16 +1068,12 @@ const char *nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
 /*****************************************************************************/
 
 #define NM_UTILS_ENUM2STR(v, n) \
-    (void) 0;                   \
 case v:                         \
     s = "" n "";                \
-    break;                      \
-    (void) 0
+    break;
 #define NM_UTILS_ENUM2STR_IGNORE(v) \
-    (void) 0;                       \
 case v:                             \
-    break;                          \
-    (void) 0
+    break;
 
 #define NM_UTILS_ENUM2STR_DEFINE_FULL(fcn_name, lookup_type, int_fmt, ...) \
     const char *fcn_name(lookup_type val, char *buf, gsize len)            \
@@ -1086,7 +1082,7 @@ case v:                             \
         if (len) {                                                         \
             const char *s = NULL;                                          \
             switch (val) {                                                 \
-                (void) 0, __VA_ARGS__(void) 0;                             \
+                NM_VA_ARGS_JOIN(, __VA_ARGS__)                             \
             };                                                             \
             if (s)                                                         \
                 g_strlcpy(buf, s, len);                                    \
@@ -1106,14 +1102,26 @@ case v:                             \
     static inline void _nm_g_slice_free_fcn_##mem_size(gpointer mem_block) \
     {                                                                      \
         g_slice_free1(mem_size, mem_block);                                \
-    }
+    }                                                                      \
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
-_nm_g_slice_free_fcn_define(1) _nm_g_slice_free_fcn_define(2) _nm_g_slice_free_fcn_define(4)
-    _nm_g_slice_free_fcn_define(8) _nm_g_slice_free_fcn_define(10) _nm_g_slice_free_fcn_define(12)
-        _nm_g_slice_free_fcn_define(16) _nm_g_slice_free_fcn_define(32)
+_nm_g_slice_free_fcn_define(1);
+_nm_g_slice_free_fcn_define(2);
+_nm_g_slice_free_fcn_define(4);
+_nm_g_slice_free_fcn_define(8);
+_nm_g_slice_free_fcn_define(10);
+_nm_g_slice_free_fcn_define(12);
+_nm_g_slice_free_fcn_define(16);
+_nm_g_slice_free_fcn_define(32);
+
+_nm_warn_unused_result static inline GDestroyNotify
+_nm_get_warn_unused_result_gdestroynotify(GDestroyNotify f)
+{
+    return f;
+}
 
 #define nm_g_slice_free_fcn1(mem_size)                                                        \
-    ({                                                                                        \
+    _nm_get_warn_unused_result_gdestroynotify(({                                              \
         void (*_fcn)(gpointer);                                                               \
                                                                                               \
         /* If mem_size is a compile time constant, the compiler
@@ -1152,8 +1160,9 @@ _nm_g_slice_free_fcn_define(1) _nm_g_slice_free_fcn_define(2) _nm_g_slice_free_f
             _fcn = NULL;                                                                      \
             break;                                                                            \
         }                                                                                     \
+                                                                                              \
         _fcn;                                                                                 \
-    })
+    }))
 
 /**
  * nm_g_slice_free_fcn:
@@ -1184,7 +1193,8 @@ _nm_g_slice_free_fcn_define(1) _nm_g_slice_free_fcn_define(2) _nm_g_slice_free_f
         _error && _error->domain == (err_domain) && NM_IN_SET(_error->code, __VA_ARGS__); \
     })
 
-            static inline void nm_g_set_error_take(GError **error, GError *error_take)
+static inline void
+nm_g_set_error_take(GError **error, GError *error_take)
 {
     if (!error_take)
         g_return_if_reached();

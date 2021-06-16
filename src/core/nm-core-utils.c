@@ -2378,8 +2378,6 @@ out:
 
 typedef struct {
     NMUuid bin;
-    char
-        _nul_sentinel; /* just for safety, if somebody accidentally uses the binary in a string context. */
 
     /* depending on whether the string is packed or not (with/without hyphens),
      * it's 32 or 36 characters long (plus the trailing NUL).
@@ -2397,9 +2395,8 @@ _uuid_data_init(UuidData *uuid_data, gboolean packed, gboolean is_fake, const NM
     nm_assert(uuid_data);
     nm_assert(uuid);
 
-    uuid_data->bin           = *uuid;
-    uuid_data->_nul_sentinel = '\0';
-    uuid_data->is_fake       = is_fake;
+    uuid_data->bin     = *uuid;
+    uuid_data->is_fake = is_fake;
     if (packed) {
         G_STATIC_ASSERT_EXPR(sizeof(uuid_data->str) >= (sizeof(*uuid) * 2 + 1));
         nm_utils_bin2hexstr_full(uuid, sizeof(*uuid), '\0', FALSE, uuid_data->str);
@@ -2467,7 +2464,7 @@ again:
 
         if (is_fake) {
             const guint8 *seed_bin;
-            const char *  hash_seed;
+            const NMUuid *hash_seed;
             gsize         seed_len;
 
             if (!allow_fake) {
@@ -2477,6 +2474,9 @@ again:
             }
 
             if (nm_utils_host_id_get(&seed_bin, &seed_len)) {
+                static const NMUuid u =
+                    NM_UUID_INIT(ab, 08, 5f, 06, b6, 29, 46, d1, a5, 53, 84, ee, ba, 56, 83, b6);
+
                 /* We have no valid machine-id but we have a valid secrey_key.
                  * Generate a fake machine ID by hashing the secret-key. The secret_key
                  * is commonly persisted, so it should be stable across reboots (despite
@@ -2489,8 +2489,11 @@ again:
                  * will call _machine_id_get(FALSE), so it won't allow accessing a fake
                  * machine-id, thus avoiding the problem. */
                 fake_type = "secret-key";
-                hash_seed = "ab085f06-b629-46d1-a553-84eeba5683b6";
+                hash_seed = &u;
             } else {
+                static const NMUuid u =
+                    NM_UUID_INIT(7f, f0, c8, f5, 53, 99, 49, 01, ab, 63, 61, bf, 59, 4a, be, 8b);
+
                 /* the secret-key is not valid/persistent either. That happens when we fail
                  * to read/write the secret-key to disk. Fallback to boot-id. The boot-id
                  * itself may be fake and randomly generated ad-hoc, but that is as best
@@ -2498,7 +2501,7 @@ again:
                 seed_bin  = (const guint8 *) nm_utils_boot_id_bin();
                 seed_len  = sizeof(NMUuid);
                 fake_type = "boot-id";
-                hash_seed = "7ff0c8f5-5399-4901-ab63-61bf594abe8b";
+                hash_seed = &u;
             }
 
             /* the fake machine-id is based on secret-key/boot-id, but we hash it
@@ -2507,7 +2510,7 @@ again:
                                          (const char *) seed_bin,
                                          seed_len,
                                          NM_UUID_TYPE_VERSION5,
-                                         (gpointer) hash_seed);
+                                         hash_seed);
         }
 
         if (!g_once_init_enter(&lock))

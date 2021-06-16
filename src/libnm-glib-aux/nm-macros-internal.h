@@ -163,280 +163,6 @@ _nm_auto_freev(gpointer ptr)
 
 /*****************************************************************************/
 
-#define _NM_MACRO_SELECT_ARG_64(_1,  \
-                                _2,  \
-                                _3,  \
-                                _4,  \
-                                _5,  \
-                                _6,  \
-                                _7,  \
-                                _8,  \
-                                _9,  \
-                                _10, \
-                                _11, \
-                                _12, \
-                                _13, \
-                                _14, \
-                                _15, \
-                                _16, \
-                                _17, \
-                                _18, \
-                                _19, \
-                                _20, \
-                                _21, \
-                                _22, \
-                                _23, \
-                                _24, \
-                                _25, \
-                                _26, \
-                                _27, \
-                                _28, \
-                                _29, \
-                                _30, \
-                                _31, \
-                                _32, \
-                                _33, \
-                                _34, \
-                                _35, \
-                                _36, \
-                                _37, \
-                                _38, \
-                                _39, \
-                                _40, \
-                                _41, \
-                                _42, \
-                                _43, \
-                                _44, \
-                                _45, \
-                                _46, \
-                                _47, \
-                                _48, \
-                                _49, \
-                                _50, \
-                                _51, \
-                                _52, \
-                                _53, \
-                                _54, \
-                                _55, \
-                                _56, \
-                                _57, \
-                                _58, \
-                                _59, \
-                                _60, \
-                                _61, \
-                                _62, \
-                                _63, \
-                                N,   \
-                                ...) \
-    N
-
-/* http://stackoverflow.com/a/2124385/354393
- * https://stackoverflow.com/questions/11317474/macro-to-count-number-of-arguments
- */
-
-#define NM_NARG(...)                       \
-    _NM_MACRO_SELECT_ARG_64(,              \
-                            ##__VA_ARGS__, \
-                            62,            \
-                            61,            \
-                            60,            \
-                            59,            \
-                            58,            \
-                            57,            \
-                            56,            \
-                            55,            \
-                            54,            \
-                            53,            \
-                            52,            \
-                            51,            \
-                            50,            \
-                            49,            \
-                            48,            \
-                            47,            \
-                            46,            \
-                            45,            \
-                            44,            \
-                            43,            \
-                            42,            \
-                            41,            \
-                            40,            \
-                            39,            \
-                            38,            \
-                            37,            \
-                            36,            \
-                            35,            \
-                            34,            \
-                            33,            \
-                            32,            \
-                            31,            \
-                            30,            \
-                            29,            \
-                            28,            \
-                            27,            \
-                            26,            \
-                            25,            \
-                            24,            \
-                            23,            \
-                            22,            \
-                            21,            \
-                            20,            \
-                            19,            \
-                            18,            \
-                            17,            \
-                            16,            \
-                            15,            \
-                            14,            \
-                            13,            \
-                            12,            \
-                            11,            \
-                            10,            \
-                            9,             \
-                            8,             \
-                            7,             \
-                            6,             \
-                            5,             \
-                            4,             \
-                            3,             \
-                            2,             \
-                            1,             \
-                            0)
-#define NM_NARG_MAX1(...)                  \
-    _NM_MACRO_SELECT_ARG_64(,              \
-                            ##__VA_ARGS__, \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            1,             \
-                            0)
-#define NM_NARG_MAX2(...)                  \
-    _NM_MACRO_SELECT_ARG_64(,              \
-                            ##__VA_ARGS__, \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            2,             \
-                            1,             \
-                            0)
-
-#define _NM_MACRO_CALL(macro, ...) macro(__VA_ARGS__)
-
-/*****************************************************************************/
-
 #define _NM_MACRO_COMMA_IF_ARGS(...) \
     _NM_MACRO_CALL(G_PASTE(__NM_MACRO_COMMA_IF_ARGS_, NM_NARG_MAX1(__VA_ARGS__)), __VA_ARGS__)
 #define __NM_MACRO_COMMA_IF_ARGS_0()
@@ -1253,27 +979,21 @@ nm_g_variant_take_ref(GVariant *v)
         return (v);                          \
     }
 #define NM_UTILS_LOOKUP_ITEM(v, n) \
-    (void) 0;                      \
 case v:                            \
-    return (n);                    \
-    (void) 0
+    return (n);
 #define NM_UTILS_LOOKUP_STR_ITEM(v, n) NM_UTILS_LOOKUP_ITEM(v, "" n "")
 #define NM_UTILS_LOOKUP_ITEM_IGNORE(v) \
-    (void) 0;                          \
 case v:                                \
-    break;                             \
-    (void) 0
+    break;
 #define NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER() \
-    (void) 0;                               \
 default:                                    \
-    break;                                  \
-    (void) 0
+    break;
 
 #define NM_UTILS_LOOKUP_DEFINE(fcn_name, lookup_type, result_type, unknown_val, ...) \
     result_type fcn_name(lookup_type val)                                            \
     {                                                                                \
         switch (val) {                                                               \
-            (void) 0, __VA_ARGS__(void) 0;                                           \
+            NM_VA_ARGS_JOIN(, __VA_ARGS__)                                           \
         };                                                                           \
         {                                                                            \
             unknown_val;                                                             \
@@ -1479,17 +1199,15 @@ nm_strcmp_p(gconstpointer a, gconstpointer b)
 /*****************************************************************************/
 
 static inline int
-_NM_IN_STRSET_ASCII_CASE_op_streq(const char *x, const char *s)
+_NM_IN_STRSET_EVAL_op_streq_ascii_case(const char *x1, const char *x)
 {
-    return s && g_ascii_strcasecmp(x, s) == 0;
+    return x && g_ascii_strcasecmp(x1, x) == 0;
 }
 
-#define NM_IN_STRSET_ASCII_CASE(x, ...)                     \
-    _NM_IN_STRSET_EVAL_N(||,                                \
-                         _NM_IN_STRSET_ASCII_CASE_op_streq, \
-                         x,                                 \
-                         NM_NARG(__VA_ARGS__),              \
-                         __VA_ARGS__)
+#define _NM_IN_STRSET_EVAL_OP_STREQ_ASCII_CASE(x, idx) \
+    _NM_IN_STRSET_EVAL_op_streq_ascii_case(_x1, x)
+#define NM_IN_STRSET_ASCII_CASE(x1, ...) \
+    _NM_IN_STRSET_EVAL(||, _NM_IN_STRSET_EVAL_OP_STREQ_ASCII_CASE, x1, __VA_ARGS__)
 
 #define NM_STR_HAS_SUFFIX_ASCII_CASE(str, suffix)                                               \
     ({                                                                                          \

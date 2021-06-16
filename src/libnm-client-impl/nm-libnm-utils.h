@@ -758,21 +758,29 @@ struct _NMObjectClass {
     }                                                                             \
     G_STMT_END
 
-#define _NM_OBJECT_CLASS_INIT_FIELD_INFO(_nm_object_class, _field_name, _offset, _num) \
-    G_STMT_START                                                                       \
-    {                                                                                  \
-        (_nm_object_class)->_field_name = ({                                           \
-            static _NMObjectClassFieldInfo _f;                                         \
-                                                                                       \
-            _f = (_NMObjectClassFieldInfo){                                            \
-                .parent = (_nm_object_class)->_field_name,                             \
-                .klass  = (_nm_object_class),                                          \
-                .offset = _offset,                                                     \
-                .num    = _num,                                                        \
-            };                                                                         \
-            &_f;                                                                       \
-        });                                                                            \
-    }                                                                                  \
+#define _NM_OBJECT_CLASS_INIT_FIELD_INFO(nm_object_class, field_name, _offset, _num) \
+    G_STMT_START                                                                     \
+    {                                                                                \
+        NMObjectClass *const _klass = (nm_object_class);                             \
+                                                                                     \
+        _klass->field_name = ({                                                      \
+            static _NMObjectClassFieldInfo _f;                                       \
+                                                                                     \
+            /* this code is called inside a _class_init() function, it thus
+             * is only executed once, so we are fine to initialize a static
+             * variable here. */          \
+            nm_assert(!_f.klass);                                                    \
+                                                                                     \
+            _f = (_NMObjectClassFieldInfo){                                          \
+                .parent = _klass->field_name,                                        \
+                .klass  = _klass,                                                    \
+                .offset = (_offset),                                                 \
+                .num    = (_num),                                                    \
+            };                                                                       \
+                                                                                     \
+            &_f;                                                                     \
+        });                                                                          \
+    }                                                                                \
     G_STMT_END
 
 #define _NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_1(nm_object_class, type_name, field_name) \

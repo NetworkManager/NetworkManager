@@ -478,6 +478,36 @@ test_nm_hash(void)
     g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 0, 0, 1, 1, 0, 0, 0, 1), ==, 0x031);
     g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 0, 0, 0, 1, 1, 0, 0, 0, 1), ==, 0x031);
     g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 1, 0, 0, 1, 1, 0, 0, 0, 1), ==, 0x131);
+    g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1),
+                    ==,
+                    0x131);
+    g_assert_cmpint(NM_HASH_COMBINE_BOOLS(guint16, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1),
+                    ==,
+                    0x8131);
+    g_assert_cmpint(
+        NM_HASH_COMBINE_BOOLS(guint32, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1),
+        ==,
+        0x8131);
+    g_assert_cmpint(
+        NM_HASH_COMBINE_BOOLS(guint32, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1),
+        ==,
+        0x28131);
+
+#if _NM_CC_SUPPORT_AUTO_TYPE
+    {
+        _nm_auto_type x = NM_HASH_COMBINE_BOOLS(guint8, 0, 0, 1, 1, 0, 0, 0, 1);
+
+        G_STATIC_ASSERT(sizeof(x) == 1);
+        g_assert(((typeof(x)) -1) > 0);
+    }
+
+    {
+        _nm_auto_type x = NM_HASH_COMBINE_BOOLS(guint16, 0, 0, 1, 1, 0, 0, 0, 1);
+
+        G_STATIC_ASSERT(sizeof(x) == 2);
+        g_assert(((typeof(x)) -1) > 0);
+    }
+#endif
 }
 
 /*****************************************************************************/
@@ -7208,11 +7238,10 @@ test_nm_strquote(void)
 
 /*****************************************************************************/
 
-#define UUID_NS_ZERO "00000000-0000-0000-0000-000000000000"
-#define UUID_NS_DNS  "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-#define UUID_NS_URL  "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
-#define UUID_NS_OID  "6ba7b812-9dad-11d1-80b4-00c04fd430c8"
-#define UUID_NS_X500 "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
+#define NM_UUID_NS_DNS  "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+#define NM_UUID_NS_URL  "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
+#define NM_UUID_NS_OID  "6ba7b812-9dad-11d1-80b4-00c04fd430c8"
+#define NM_UUID_NS_X500 "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
 
 static const NMUuid *
 _uuid(const char *str)
@@ -7229,11 +7258,18 @@ _test_uuid(int         uuid_type,
            const char *expected_uuid,
            const char *str,
            gssize      slen,
-           gpointer    type_args)
+           const char *type_args)
 {
-    gs_free char *uuid_test = NULL;
+    gs_free char *uuid_test   = NULL;
+    NMUuid        type_args_u = NM_UUID_INIT_ZERO();
 
-    uuid_test = nm_uuid_generate_from_string_str(str, slen, uuid_type, type_args);
+    if (type_args) {
+        if (!nm_uuid_parse(type_args, &type_args_u))
+            g_assert_not_reached();
+    }
+
+    uuid_test =
+        nm_uuid_generate_from_string_str(str, slen, uuid_type, type_args ? &type_args_u : NULL);
 
     g_assert(uuid_test);
     g_assert(nm_utils_is_uuid(uuid_test));
@@ -7244,7 +7280,7 @@ _test_uuid(int         uuid_type,
                 str,
                 (long long) slen,
                 NM_IN_SET(uuid_type, NM_UUID_TYPE_VERSION3, NM_UUID_TYPE_VERSION5)
-                    ? (((const char *) type_args) ?: "(all-zero)")
+                    ? (type_args ?: "(all-zero)")
                     : (type_args ? "(unknown)" : "(null)"),
                 uuid_test,
                 expected_uuid);
@@ -7259,8 +7295,8 @@ _test_uuid(int         uuid_type,
     }
 
     if (NM_IN_SET(uuid_type, NM_UUID_TYPE_VERSION3, NM_UUID_TYPE_VERSION5) && !type_args) {
-        /* For version3 and version5, a missing @type_args is equal to UUID_NS_ZERO */
-        _test_uuid(uuid_type, expected_uuid, str, slen, UUID_NS_ZERO);
+        /* For version3 and version5, a missing @type_args is equal to NM_UUID_NS_ZERO */
+        _test_uuid(uuid_type, expected_uuid, str, slen, NM_UUID_NS_ZERO);
     }
 }
 
@@ -7694,33 +7730,53 @@ test_nm_utils_uuid_generate_from_string(void)
     _test_uuid(NM_UUID_TYPE_VERSION3, "96e17d7a-ac89-38cf-95e1-bf5098da34e1", "test", -1, NULL);
     _test_uuid(NM_UUID_TYPE_VERSION3, "8156568e-4ae6-3f34-a93e-18e2c6cbbf78", "a\0b", 3, NULL);
 
-    _test_uuid(NM_UUID_TYPE_VERSION3, "c87ee674-4ddc-3efe-a74e-dfe25da5d7b3", "", -1, UUID_NS_DNS);
-    _test_uuid(NM_UUID_TYPE_VERSION3, "4c104dd0-4821-30d5-9ce3-0e7a1f8b7c0d", "a", -1, UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION3,
+               "c87ee674-4ddc-3efe-a74e-dfe25da5d7b3",
+               "",
+               -1,
+               NM_UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION3,
+               "4c104dd0-4821-30d5-9ce3-0e7a1f8b7c0d",
+               "a",
+               -1,
+               NM_UUID_NS_DNS);
     _test_uuid(NM_UUID_TYPE_VERSION3,
                "45a113ac-c7f2-30b0-90a5-a399ab912716",
                "test",
                -1,
-               UUID_NS_DNS);
+               NM_UUID_NS_DNS);
     _test_uuid(NM_UUID_TYPE_VERSION3,
                "002a0ada-f547-375a-bab5-896a11d1927e",
                "a\0b",
                3,
-               UUID_NS_DNS);
+               NM_UUID_NS_DNS);
     _test_uuid(NM_UUID_TYPE_VERSION3,
                "9a75f5f2-195e-31a9-9d07-8c18b5d3b285",
                "test123",
                -1,
-               UUID_NS_DNS);
-    _test_uuid(NM_UUID_TYPE_VERSION3, "ec794efe-a384-3b11-a0b6-ec8995bc6acc", "x", -1, UUID_NS_DNS);
+               NM_UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION3,
+               "ec794efe-a384-3b11-a0b6-ec8995bc6acc",
+               "x",
+               -1,
+               NM_UUID_NS_DNS);
 
     _test_uuid(NM_UUID_TYPE_VERSION5, "a7650b9f-f19f-5300-8a13-91160ea8de2c", "a\0b", 3, NULL);
-    _test_uuid(NM_UUID_TYPE_VERSION5, "4f3f2898-69e3-5a0d-820a-c4e87987dbce", "a", -1, UUID_NS_DNS);
-    _test_uuid(NM_UUID_TYPE_VERSION5, "05b16a01-46c6-56dd-bd6e-c6dfb4a1427a", "x", -1, UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION5,
+               "4f3f2898-69e3-5a0d-820a-c4e87987dbce",
+               "a",
+               -1,
+               NM_UUID_NS_DNS);
+    _test_uuid(NM_UUID_TYPE_VERSION5,
+               "05b16a01-46c6-56dd-bd6e-c6dfb4a1427a",
+               "x",
+               -1,
+               NM_UUID_NS_DNS);
     _test_uuid(NM_UUID_TYPE_VERSION5,
                "c9ed566a-6b79-5d3a-b2b7-96a936b48cf3",
                "test123",
                -1,
-               UUID_NS_DNS);
+               NM_UUID_NS_DNS);
 
     for (i = 0; i < G_N_ELEMENTS(zero_uuids); i++) {
         nm_sprintf_buf(i_str, "%u", i),
@@ -7729,8 +7785,8 @@ test_nm_utils_uuid_generate_from_string(void)
     }
     for (i = 0; i < G_N_ELEMENTS(dns_uuids); i++) {
         nm_sprintf_buf(i_str, "%u", i),
-            _test_uuid(NM_UUID_TYPE_VERSION3, dns_uuids[i].uuid3, i_str, -1, UUID_NS_DNS);
-        _test_uuid(NM_UUID_TYPE_VERSION5, dns_uuids[i].uuid5, i_str, -1, UUID_NS_DNS);
+            _test_uuid(NM_UUID_TYPE_VERSION3, dns_uuids[i].uuid3, i_str, -1, NM_UUID_NS_DNS);
+        _test_uuid(NM_UUID_TYPE_VERSION5, dns_uuids[i].uuid5, i_str, -1, NM_UUID_NS_DNS);
     }
 
     /* examples from cpython unit tests: */
@@ -7738,48 +7794,48 @@ test_nm_utils_uuid_generate_from_string(void)
                "6fa459ea-ee8a-3ca4-894e-db77e160355e",
                "python.org",
                -1,
-               UUID_NS_DNS);
+               NM_UUID_NS_DNS);
     _test_uuid(NM_UUID_TYPE_VERSION5,
                "886313e1-3b8a-5372-9b90-0c9aee199e5d",
                "python.org",
                -1,
-               UUID_NS_DNS);
+               NM_UUID_NS_DNS);
     _test_uuid(NM_UUID_TYPE_VERSION3,
                "9fe8e8c4-aaa8-32a9-a55c-4535a88b748d",
                "http://python.org/",
                -1,
-               UUID_NS_URL);
+               NM_UUID_NS_URL);
     _test_uuid(NM_UUID_TYPE_VERSION5,
                "4c565f0d-3f5a-5890-b41b-20cf47701c5e",
                "http://python.org/",
                -1,
-               UUID_NS_URL);
+               NM_UUID_NS_URL);
     _test_uuid(NM_UUID_TYPE_VERSION3,
                "dd1a1cef-13d5-368a-ad82-eca71acd4cd1",
                "1.3.6.1",
                -1,
-               UUID_NS_OID);
+               NM_UUID_NS_OID);
     _test_uuid(NM_UUID_TYPE_VERSION5,
                "1447fa61-5277-5fef-a9b3-fbc6e44f4af3",
                "1.3.6.1",
                -1,
-               UUID_NS_OID);
+               NM_UUID_NS_OID);
     _test_uuid(NM_UUID_TYPE_VERSION3,
                "658d3002-db6b-3040-a1d1-8ddd7d189a4d",
                "c=ca",
                -1,
-               UUID_NS_X500);
+               NM_UUID_NS_X500);
     _test_uuid(NM_UUID_TYPE_VERSION5,
                "cc957dd1-a972-5349-98cd-874190002798",
                "c=ca",
                -1,
-               UUID_NS_X500);
+               NM_UUID_NS_X500);
 
     _test_uuid(NM_UUID_TYPE_VERSION5,
                "74738ff5-5367-5958-9aee-98fffdcd1876",
                "www.example.org",
                -1,
-               UUID_NS_DNS);
+               NM_UUID_NS_DNS);
 }
 
 /*****************************************************************************/
@@ -7799,7 +7855,7 @@ __test_uuid(const char *expected_uuid, const char *str, gssize slen, char *uuid_
     }
     g_free(uuid_test);
 
-    uuid_test = nm_uuid_generate_from_string_str(str, slen, NM_UUID_TYPE_VERSION3, NM_UUID_NS1);
+    uuid_test = nm_uuid_generate_from_string_str(str, slen, NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1);
 
     g_assert(uuid_test);
     g_assert(nm_utils_is_uuid(uuid_test));
@@ -7820,14 +7876,22 @@ __test_uuid(const char *expected_uuid, const char *str, gssize slen, char *uuid_
 static void
 test_nm_utils_uuid_generate_from_strings(void)
 {
-    const NMUuid uuid0 = {};
+    const NMUuid uuid0 = NM_UUID_INIT_ZERO();
+    const NMUuid uuid1 = {};
+    char         buf[37];
 
     g_assert_cmpmem(&uuid0, sizeof(uuid0), _uuid("00000000-0000-0000-0000-000000000000"), 16);
 
+    g_assert_cmpmem(&uuid0, sizeof(NMUuid), &uuid1, sizeof(NMUuid));
+
     g_assert(nm_uuid_is_null(NULL));
     g_assert(nm_uuid_is_null(&uuid0));
+    g_assert(nm_uuid_is_null(&nm_uuid_ns_zero));
     g_assert(nm_uuid_is_null(_uuid("00000000-0000-0000-0000-000000000000")));
     g_assert(!nm_uuid_is_null(_uuid("10000000-0000-0000-0000-000000000000")));
+
+    g_assert_cmpstr(NM_UUID_NS_1, ==, nm_uuid_unparse(&nm_uuid_ns_1, buf));
+    g_assert_cmpstr(NM_UUID_NS_ZERO, ==, nm_uuid_unparse(&nm_uuid_ns_zero, buf));
 
     _test_uuid("b07c334a-399b-32de-8d50-58e4e08f98e3", "", 0, NULL);
     _test_uuid("b8a426cb-bcb5-30a3-bd8f-6786fea72df9", "\0", 1, "");
@@ -7843,6 +7907,32 @@ test_nm_utils_uuid_generate_from_strings(void)
     _test_uuid("2bdd3d46-eb83-3c53-a41b-a724d04b5544", "a\0aa\0", 5, "a", "aa");
     _test_uuid("13d4b780-07c1-3ba7-b449-81c4844ef039", "aa\0aa\0", 6, "aa", "aa");
     _test_uuid("dd265bf7-c05a-3037-9939-b9629858a477", "a\0b\0", 4, "a", "b");
+}
+
+static void
+test_nm_uuid_init(void)
+{
+    char buf[37];
+
+    {
+        NMUuid u;
+
+        u = NM_UUID_INIT(47, c4, d7, f9, 2c, 81, 4f, 7b, be, ed, 63, 0a, 7f, 65, cc, 02);
+        g_assert_cmpstr("47c4d7f9-2c81-4f7b-beed-630a7f65cc02", ==, nm_uuid_unparse(&u, buf));
+    }
+    {
+        const NMUuid u =
+            NM_UUID_INIT(47, c4, d7, f9, 2c, 81, 4f, 7b, be, ed, 63, 0a, 7f, 65, cc, 02);
+
+        g_assert_cmpstr("47c4d7f9-2c81-4f7b-beed-630a7f65cc02", ==, nm_uuid_unparse(&u, buf));
+    }
+    {
+        const struct {
+            NMUuid u;
+        } u = {NM_UUID_INIT(47, c4, d7, f9, 2c, 81, 4f, 7b, be, ed, 63, 0a, 7f, 65, cc, 02)};
+
+        g_assert_cmpstr("47c4d7f9-2c81-4f7b-beed-630a7f65cc02", ==, nm_uuid_unparse(&u.u, buf));
+    }
 }
 
 /*****************************************************************************/
@@ -9773,11 +9863,53 @@ test_nm_va_args_macros(void)
     g_assert_cmpint(7, ==, GET_NARG_1(x, x, x, x, x, x, x));
     g_assert_cmpint(8, ==, GET_NARG_1(x, x, x, x, x, x, x, x));
     g_assert_cmpint(9, ==, GET_NARG_1(x, x, x, x, x, x, x, x, x));
-    g_assert_cmpint(10, ==, GET_NARG_1(x, x, x, x, x, x, x, x, x, x));
+    g_assert_cmpint(10, ==, NM_NARG(x, x, x, x, x, x, x, x, x, x));
 
     G_STATIC_ASSERT_EXPR(0 == GET_NARG_1());
     G_STATIC_ASSERT_EXPR(1 == GET_NARG_1(x));
     G_STATIC_ASSERT_EXPR(2 == GET_NARG_1(x, x));
+
+    /* clang-format off */
+    G_STATIC_ASSERT_EXPR(NM_NARG(
+                                 1,2,3,4,5,6,7,8,9,10,
+                                 1,2,3,4,5,6,7,8,9,20,
+                                 1,2,3,4,5,6,7,8,9,30
+                                 ) == 30);
+    G_STATIC_ASSERT_EXPR(NM_NARG(
+                                 1,2,3,4,5,6,7,8,9,10,
+                                 1,2,3,4,5,6,7,8,9,20,
+                                 1,2,3,4,5,6,7,8,9,30,
+                                 1,2,3,4,5,6,7,8,9,40,
+                                 1,2,3,4,5,6,7,8,9,50,
+                                 1,2,3,4,5,6,7,8,9,60,
+                                 1,2,3,4,5,6,7,8,9,70,
+                                 1,2,3,4,5,6,7,8,9,80
+                                 ) == 80);
+    G_STATIC_ASSERT_EXPR(NM_NARG(
+                                 1,2,3,4,5,6,7,8,9,10,
+                                 1,2,3,4,5,6,7,8,9,20,
+                                 1,2,3,4,5,6,7,8,9,30,
+                                 1,2,3,4,5,6,7,8,9,40,
+                                 1,2,3,4,5,6,7,8,9,50,
+                                 1,2,3,4,5,6,7,8,9,60,
+                                 1,2,3,4,5,6,7,8,9,70,
+                                 1,2,3,4,5,6,7,8,9,80,
+                                 1,2,3,4,5,6,7,8,9,90,
+                                 1,2,3,4,5,6,7,8,9,100,
+                                 1,2,3,4,5,6,7,8,9,110,
+                                 1,2,3,4,5,6,7,8,9,120
+                                 ) == 120);
+    /* clang-format on */
+
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX1() == 0);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX1(1) == 1);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX1(1, 2) == 1);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX1(1, 2, 3) == 1);
+
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX2() == 0);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX2(1) == 1);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX2(1, 2) == 2);
+    G_STATIC_ASSERT_EXPR(NM_NARG_MAX2(1, 2, 3) == 2);
 }
 
 /*****************************************************************************/
@@ -10796,6 +10928,7 @@ main(int argc, char **argv)
                     test_nm_utils_uuid_generate_from_string);
     g_test_add_func("/core/general/nm_uuid_generate_from_strings",
                     test_nm_utils_uuid_generate_from_strings);
+    g_test_add_func("/core/general/test_nm_uuid_init", test_nm_uuid_init);
 
     g_test_add_func("/core/general/_nm_utils_ascii_str_to_int64", test_nm_utils_ascii_str_to_int64);
     g_test_add_func("/core/general/nm_utils_is_power_of_two", test_nm_utils_is_power_of_two);
