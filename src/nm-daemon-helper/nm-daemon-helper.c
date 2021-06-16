@@ -6,7 +6,9 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#if defined(__GLIBC__)
 #include <nss.h>
+#endif
 
 #include "libnm-std-aux/nm-std-aux.h"
 
@@ -68,7 +70,9 @@ cmd_resolve_address(void)
         return RETURN_INVALID_ARGS;
 
     memset(&sockaddr, 0, sizeof(sockaddr));
+#if defined(__GLIBC__)
     __nss_configure_lookup("hosts", "dns");
+#endif
 
     if (inet_pton(AF_INET, address, &sockaddr.in.sin_addr) == 1) {
         sockaddr.in.sin_family = AF_INET;
