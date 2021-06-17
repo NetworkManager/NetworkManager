@@ -1035,7 +1035,7 @@ int parse_time(const char *t, usec_t *usec, usec_t default_unit) {
 
                 s = extract_multiplier(p + strspn(p, WHITESPACE), &multiplier);
                 if (s == p && *s != '\0')
-                        /* Don't allow '12.34.56', but accept '12.34 .56' or '12.34s.56'*/
+                        /* Don't allow '12.34.56', but accept '12.34 .56' or '12.34s.56' */
                         return -EINVAL;
 
                 p = s;
@@ -1063,7 +1063,7 @@ int parse_time(const char *t, usec_t *usec, usec_t default_unit) {
                                 r += k;
                         }
 
-                        /* Don't allow "0.-0", "3.+1", "3. 1", "3.sec" or "3.hoge"*/
+                        /* Don't allow "0.-0", "3.+1", "3. 1", "3.sec" or "3.hoge" */
                         if (b == e + 1)
                                 return -EINVAL;
                 }
@@ -1210,7 +1210,7 @@ int parse_nsec(const char *t, nsec_t *nsec) {
 
                 s = extract_nsec_multiplier(p + strspn(p, WHITESPACE), &multiplier);
                 if (s == p && *s != '\0')
-                        /* Don't allow '12.34.56', but accept '12.34 .56' or '12.34s.56'*/
+                        /* Don't allow '12.34.56', but accept '12.34 .56' or '12.34s.56' */
                         return -EINVAL;
 
                 p = s;
@@ -1238,7 +1238,7 @@ int parse_nsec(const char *t, nsec_t *nsec) {
                                 r += k;
                         }
 
-                        /* Don't allow "0.-0", "3.+1", "3. 1", "3.sec" or "3.hoge"*/
+                        /* Don't allow "0.-0", "3.+1", "3. 1", "3.sec" or "3.hoge" */
                         if (b == e + 1)
                                 return -EINVAL;
                 }
@@ -1445,7 +1445,7 @@ int get_timezone(char **ret) {
 
         r = readlink_malloc("/etc/localtime", &t);
         if (r == -ENOENT) {
-                /* If the symlink does not exist, assume "UTC", like glibc does*/
+                /* If the symlink does not exist, assume "UTC", like glibc does */
                 z = strdup("UTC");
                 if (!z)
                         return -ENOMEM;
