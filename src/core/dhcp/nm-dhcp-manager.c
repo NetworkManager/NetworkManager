@@ -85,11 +85,10 @@ _client_factory_available(const NMDhcpClientFactory *client_factory)
 static GType
 _client_factory_get_gtype(const NMDhcpClientFactory *client_factory, int addr_family)
 {
-    GType                    gtype;
-    nm_auto_unref_gtypeclass NMDhcpClientClass *klass = NULL;
+    GType gtype;
+    GType (*get_type_fcn)(void);
 
     nm_assert(client_factory);
-    nm_assert_addr_family(addr_family);
 
     /* currently, the chosen DHCP plugin for IPv4 and IPv6 is configured in NetworkManager.conf
      * and cannot be reloaded. It would be nice to configure the plugin per address family
@@ -111,29 +110,22 @@ _client_factory_get_gtype(const NMDhcpClientFactory *client_factory, int addr_fa
      * to those plugins. But we don't intend to do so. The internal plugin is the way forward and
      * not extending other plugins. */
 
-    if (client_factory->get_type_per_addr_family)
-        gtype = client_factory->get_type_per_addr_family(addr_family);
+    if (NM_IS_IPv4(addr_family))
+        get_type_fcn = client_factory->get_type_4;
     else
-        gtype = client_factory->get_type();
+        get_type_fcn = client_factory->get_type_6;
 
-    if (client_factory == &_nm_dhcp_client_factory_internal) {
-        /* we are already using the internal plugin. Nothing to do. */
-        goto out;
+    if (!get_type_fcn) {
+        /* If the factory does not support the address family, we always
+         * fallback to the internal. */
+        if (NM_IS_IPv4(addr_family))
+            get_type_fcn = _nm_dhcp_client_factory_internal.get_type_4;
+        else
+            get_type_fcn = _nm_dhcp_client_factory_internal.get_type_6;
     }
 
-    klass = g_type_class_ref(gtype);
+    gtype = get_type_fcn();
 
-    nm_assert(NM_IS_DHCP_CLIENT_CLASS(klass));
-
-    if (addr_family == AF_INET6) {
-        if (!klass->ip6_start)
-            gtype = _client_factory_get_gtype(&_nm_dhcp_client_factory_internal, addr_family);
-    } else {
-        if (!klass->ip4_start)
-            gtype = _client_factory_get_gtype(&_nm_dhcp_client_factory_internal, addr_family);
-    }
-
-out:
     nm_assert(g_type_is_a(gtype, NM_TYPE_DHCP_CLIENT));
     nm_assert(({
         nm_auto_unref_gtypeclass NMDhcpClientClass *k = g_type_class_ref(gtype);

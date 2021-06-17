@@ -232,9 +232,9 @@ nm_dhcp_dhcpcanon_class_init(NMDhcpDhcpcanonClass *dhcpcanon_class)
 }
 
 const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcanon = {
-    .name     = "dhcpcanon",
-    .get_type = nm_dhcp_dhcpcanon_get_type,
-    .get_path = nm_dhcp_dhcpcanon_get_path,
+    .name       = "dhcpcanon",
+    .get_type_4 = nm_dhcp_dhcpcanon_get_type,
+    .get_path   = nm_dhcp_dhcpcanon_get_path,
 };
 
 #endif /* WITH_DHCPCANON */
