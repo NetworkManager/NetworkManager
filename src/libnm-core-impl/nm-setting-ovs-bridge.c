@@ -289,8 +289,9 @@ finalize(GObject *object)
 static void
 nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
@@ -319,12 +320,13 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
      *
      * Since: 1.10
      **/
-    obj_properties[PROP_MCAST_SNOOPING_ENABLE] =
-        g_param_spec_boolean(NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE,
+                                        PROP_MCAST_SNOOPING_ENABLE,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ovs_bridge_get_mcast_snooping_enable);
 
     /**
      * NMSettingOvsBridge:rstp-enable:
@@ -333,12 +335,13 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
      *
      * Since: 1.10
      **/
-    obj_properties[PROP_RSTP_ENABLE] =
-        g_param_spec_boolean(NM_SETTING_OVS_BRIDGE_RSTP_ENABLE,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_OVS_BRIDGE_RSTP_ENABLE,
+                                        PROP_RSTP_ENABLE,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ovs_bridge_get_rstp_enable);
 
     /**
      * NMSettingOvsBridge:stp-enable:
@@ -347,12 +350,13 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
      *
      * Since: 1.10
      **/
-    obj_properties[PROP_STP_ENABLE] =
-        g_param_spec_boolean(NM_SETTING_OVS_BRIDGE_STP_ENABLE,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_OVS_BRIDGE_STP_ENABLE,
+                                        PROP_STP_ENABLE,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ovs_bridge_get_stp_enable);
 
     /**
      * NMSettingOvsBridge:datapath-type:
@@ -370,5 +374,8 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_OVS_BRIDGE);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_OVS_BRIDGE,
+                                  NULL,
+                                  properties_override);
 }

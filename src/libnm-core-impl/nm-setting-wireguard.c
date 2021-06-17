@@ -2514,12 +2514,13 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_PEER_ROUTES] = g_param_spec_boolean(
-        NM_SETTING_WIREGUARD_PEER_ROUTES,
-        "",
-        "",
-        TRUE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_WIREGUARD_PEER_ROUTES,
+                                        PROP_PEER_ROUTES,
+                                        TRUE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_wireguard_get_peer_routes);
 
     /**
      * NMSettingWireGuard:mtu:

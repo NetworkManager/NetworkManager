@@ -534,8 +534,9 @@ nm_setting_ppp_new(void)
 static void
 nm_setting_ppp_class_init(NMSettingPppClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingPppPrivate));
 
@@ -551,107 +552,117 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
      * authenticate itself to the client.  If %FALSE, require authentication
      * from the remote side.  In almost all cases, this should be %TRUE.
      **/
-    obj_properties[PROP_NOAUTH] = g_param_spec_boolean(NM_SETTING_PPP_NOAUTH,
-                                                       "",
-                                                       "",
-                                                       TRUE,
-                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_NOAUTH,
+                                        PROP_NOAUTH,
+                                        TRUE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_noauth);
 
     /**
      * NMSettingPpp:refuse-eap:
      *
      * If %TRUE, the EAP authentication method will not be used.
      **/
-    obj_properties[PROP_REFUSE_EAP] =
-        g_param_spec_boolean(NM_SETTING_PPP_REFUSE_EAP,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_REFUSE_EAP,
+                                        PROP_REFUSE_EAP,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_refuse_eap);
 
     /**
      * NMSettingPpp:refuse-pap:
      *
      * If %TRUE, the PAP authentication method will not be used.
      **/
-    obj_properties[PROP_REFUSE_PAP] =
-        g_param_spec_boolean(NM_SETTING_PPP_REFUSE_PAP,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_REFUSE_PAP,
+                                        PROP_REFUSE_PAP,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_refuse_pap);
 
     /**
      * NMSettingPpp:refuse-chap:
      *
      * If %TRUE, the CHAP authentication method will not be used.
      **/
-    obj_properties[PROP_REFUSE_CHAP] =
-        g_param_spec_boolean(NM_SETTING_PPP_REFUSE_CHAP,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_REFUSE_CHAP,
+                                        PROP_REFUSE_CHAP,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_refuse_chap);
 
     /**
      * NMSettingPpp:refuse-mschap:
      *
      * If %TRUE, the MSCHAP authentication method will not be used.
      **/
-    obj_properties[PROP_REFUSE_MSCHAP] =
-        g_param_spec_boolean(NM_SETTING_PPP_REFUSE_MSCHAP,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_REFUSE_MSCHAP,
+                                        PROP_REFUSE_MSCHAP,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_refuse_mschap);
 
     /**
      * NMSettingPpp:refuse-mschapv2:
      *
      * If %TRUE, the MSCHAPv2 authentication method will not be used.
      **/
-    obj_properties[PROP_REFUSE_MSCHAPV2] =
-        g_param_spec_boolean(NM_SETTING_PPP_REFUSE_MSCHAPV2,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_REFUSE_MSCHAPV2,
+                                        PROP_REFUSE_MSCHAPV2,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_refuse_mschapv2);
 
     /**
      * NMSettingPpp:nobsdcomp:
      *
      * If %TRUE, BSD compression will not be requested.
      **/
-    obj_properties[PROP_NOBSDCOMP] = g_param_spec_boolean(
-        NM_SETTING_PPP_NOBSDCOMP,
-        "",
-        "",
-        FALSE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_NOBSDCOMP,
+                                        PROP_NOBSDCOMP,
+                                        FALSE,
+                                        NM_SETTING_PARAM_FUZZY_IGNORE,
+                                        nm_setting_ppp_get_nobsdcomp);
 
     /**
      * NMSettingPpp:nodeflate:
      *
      * If %TRUE, "deflate" compression will not be requested.
      **/
-    obj_properties[PROP_NODEFLATE] = g_param_spec_boolean(
-        NM_SETTING_PPP_NODEFLATE,
-        "",
-        "",
-        FALSE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_NODEFLATE,
+                                        PROP_NODEFLATE,
+                                        FALSE,
+                                        NM_SETTING_PARAM_FUZZY_IGNORE,
+                                        nm_setting_ppp_get_nodeflate);
 
     /**
      * NMSettingPpp:no-vj-comp:
      *
      * If %TRUE, Van Jacobsen TCP header compression will not be requested.
      **/
-    obj_properties[PROP_NO_VJ_COMP] = g_param_spec_boolean(
-        NM_SETTING_PPP_NO_VJ_COMP,
-        "",
-        "",
-        FALSE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_NO_VJ_COMP,
+                                        PROP_NO_VJ_COMP,
+                                        FALSE,
+                                        NM_SETTING_PARAM_FUZZY_IGNORE,
+                                        nm_setting_ppp_get_no_vj_comp);
 
     /**
      * NMSettingPpp:require-mppe:
@@ -661,12 +672,13 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
      * session will fail.  Note that MPPE is not used on mobile broadband
      * connections.
      **/
-    obj_properties[PROP_REQUIRE_MPPE] =
-        g_param_spec_boolean(NM_SETTING_PPP_REQUIRE_MPPE,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_REQUIRE_MPPE,
+                                        PROP_REQUIRE_MPPE,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_require_mppe);
 
     /**
      * NMSettingPpp:require-mppe-128:
@@ -675,12 +687,13 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
      * required for the PPP session, and the "require-mppe" property must also
      * be set to %TRUE.  If 128-bit MPPE is not available the session will fail.
      **/
-    obj_properties[PROP_REQUIRE_MPPE_128] =
-        g_param_spec_boolean(NM_SETTING_PPP_REQUIRE_MPPE_128,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_REQUIRE_MPPE_128,
+                                        PROP_REQUIRE_MPPE_128,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_require_mppe_128);
 
     /**
      * NMSettingPpp:mppe-stateful:
@@ -688,12 +701,13 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
      * If %TRUE, stateful MPPE is used.  See pppd documentation for more
      * information on stateful MPPE.
      **/
-    obj_properties[PROP_MPPE_STATEFUL] =
-        g_param_spec_boolean(NM_SETTING_PPP_MPPE_STATEFUL,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_MPPE_STATEFUL,
+                                        PROP_MPPE_STATEFUL,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_mppe_stateful);
 
     /**
      * NMSettingPpp:crtscts:
@@ -702,11 +716,13 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
      * flow control with RTS and CTS signals.  This value should normally be set
      * to %FALSE.
      **/
-    obj_properties[PROP_CRTSCTS] = g_param_spec_boolean(NM_SETTING_PPP_CRTSCTS,
-                                                        "",
-                                                        "",
-                                                        FALSE,
-                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PPP_CRTSCTS,
+                                        PROP_CRTSCTS,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_ppp_get_crtscts);
 
     /**
      * NMSettingPpp:baud:
@@ -790,5 +806,8 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_PPP);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_PPP,
+                                  NULL,
+                                  properties_override);
 }
