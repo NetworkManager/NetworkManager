@@ -654,8 +654,9 @@ finalize(GObject *object)
 static void
 nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingIPTunnelPrivate));
 
@@ -769,12 +770,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_PATH_MTU_DISCOVERY] = g_param_spec_boolean(
-        NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY,
-        "",
-        "",
-        TRUE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY,
+                                        PROP_PATH_MTU_DISCOVERY,
+                                        TRUE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_ip_tunnel_get_path_mtu_discovery);
 
     /**
      * NMSettingIPTunnel:input-key:
@@ -879,5 +881,8 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_IP_TUNNEL);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_IP_TUNNEL,
+                                  NULL,
+                                  properties_override);
 }

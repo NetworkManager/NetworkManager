@@ -1172,12 +1172,13 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
      * the VPN will attempt to stay connected across link changes and outages,
      * until explicitly disconnected.
      **/
-    obj_properties[PROP_PERSISTENT] =
-        g_param_spec_boolean(NM_SETTING_VPN_PERSISTENT,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_VPN_PERSISTENT,
+                                        PROP_PERSISTENT,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_vpn_get_persistent);
 
     /**
      * NMSettingVpn:data: (type GHashTable(utf8,utf8)):

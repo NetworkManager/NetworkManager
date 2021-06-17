@@ -5784,6 +5784,36 @@ _nm_sett_info_property_override_create_array_ip_config(void)
                                        .to_dbus_fcn   = _routing_rules_dbus_only_synth,
                                        .from_dbus_fcn = _routing_rules_dbus_only_set, ));
 
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_IGNORE_AUTO_ROUTES],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean = (gboolean(*)(
+                                     NMSetting *)) nm_setting_ip_config_get_ignore_auto_routes);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_IGNORE_AUTO_DNS],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean = (gboolean(*)(
+                                     NMSetting *)) nm_setting_ip_config_get_ignore_auto_dns);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_DHCP_SEND_HOSTNAME],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean = (gboolean(*)(
+                                     NMSetting *)) nm_setting_ip_config_get_dhcp_send_hostname);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_NEVER_DEFAULT],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean = (gboolean(*)(
+                                     NMSetting *)) nm_setting_ip_config_get_never_default);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_MAY_FAIL],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean =
+                                     (gboolean(*)(NMSetting *)) nm_setting_ip_config_get_may_fail);
+
     return properties_override;
 }
 

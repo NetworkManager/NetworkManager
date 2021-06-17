@@ -1791,11 +1791,13 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * description: Whether the network hides the SSID.
      * ---end---
      */
-    obj_properties[PROP_HIDDEN] = g_param_spec_boolean(NM_SETTING_WIRELESS_HIDDEN,
-                                                       "",
-                                                       "",
-                                                       FALSE,
-                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_WIRELESS_HIDDEN,
+                                        PROP_HIDDEN,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_wireless_get_hidden);
 
     /**
      * NMSettingWireless:powersave:

@@ -529,8 +529,9 @@ finalize(GObject *object)
 static void
 nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingMacsecPrivate));
 
@@ -582,11 +583,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_ENCRYPT] = g_param_spec_boolean(NM_SETTING_MACSEC_ENCRYPT,
-                                                        "",
-                                                        "",
-                                                        TRUE,
-                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_MACSEC_ENCRYPT,
+                                        PROP_ENCRYPT,
+                                        TRUE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_macsec_get_encrypt);
 
     /**
      * NMSettingMacsec:mka-cak:
@@ -673,14 +676,18 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.12
      **/
-    obj_properties[PROP_SEND_SCI] =
-        g_param_spec_boolean(NM_SETTING_MACSEC_SEND_SCI,
-                             "",
-                             "",
-                             TRUE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_MACSEC_SEND_SCI,
+                                        PROP_SEND_SCI,
+                                        TRUE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_macsec_get_send_sci);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_MACSEC);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_MACSEC,
+                                  NULL,
+                                  properties_override);
 }
