@@ -337,6 +337,7 @@ _nm_settings_connection_set_connection(NMSettingsConnection *           self,
         nmtst_connection_assert_unchanging(priv->connection);
 
         _getsettings_cached_clear(priv);
+        _nm_settings_notify_sorted_by_autoconnect_priority_maybe_changed(priv->settings);
 
         /* note that we only return @connection_old if the new connection actually differs from
          * before.
@@ -2253,6 +2254,8 @@ nm_settings_connection_update_timestamp(NMSettingsConnection *self, guint64 time
 
     if (!priv->kf_db_timestamps)
         return;
+
+    _nm_settings_notify_sorted_by_autoconnect_priority_maybe_changed(priv->settings);
 
     connection_uuid = nm_settings_connection_get_uuid(self);
     if (connection_uuid) {
