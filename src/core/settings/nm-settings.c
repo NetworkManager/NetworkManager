@@ -390,6 +390,12 @@ typedef struct {
 
     bool started : 1;
 
+    /* Whether NMSettingsConnections changed in a way that affects the comparison
+     * with nm_settings_connection_cmp_autoconnect_priority_with_data(). In that case,
+     * we may need to re-sort the connections_cached_list_sorted_by_autoconnect_priority
+     * list. */
+    bool sorted_by_autoconnect_priority_maybe_changed : 1;
+
 } NMSettingsPrivate;
 
 struct _NMSettings {
@@ -2871,6 +2877,14 @@ impl_settings_reload_connections(NMDBusObject *                     obj,
 
 /*****************************************************************************/
 
+void
+_nm_settings_notify_sorted_by_autoconnect_priority_maybe_changed(NMSettings *self)
+{
+    NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE(self);
+
+    priv->sorted_by_autoconnect_priority_maybe_changed = TRUE;
+}
+
 static void
 _clear_connections_cached_list(NMSettingsPrivate *priv)
 {
@@ -3067,19 +3081,29 @@ nm_settings_get_connections_sorted_by_autoconnect_priority(NMSettings *self, gui
         priv->connections_cached_list_sorted_by_autoconnect_priority =
             nm_memdup(list_cached, sizeof(NMSettingsConnection *) * (len + 1));
         needs_sort = (len > 1);
-    } else if (!nm_utils_ptrarray_is_sorted(
-                   (gconstpointer *) priv->connections_cached_list_sorted_by_autoconnect_priority,
-                   priv->connections_len,
-                   FALSE,
-                   nm_settings_connection_cmp_autoconnect_priority_with_data,
-                   NULL)) {
-        /* We cache the sorted list, but we don't monitor all entries whether they
-         * get modified to invalidate the sort order. So every time we have to check
-         * whether the sort order is still correct. The vast majority of the time it
-         * is, and this check is faster than sorting anew. */
-        needs_sort = TRUE;
+    } else if (priv->sorted_by_autoconnect_priority_maybe_changed) {
+        if (!nm_utils_ptrarray_is_sorted(
+                (gconstpointer *) priv->connections_cached_list_sorted_by_autoconnect_priority,
+                priv->connections_len,
+                FALSE,
+                nm_settings_connection_cmp_autoconnect_priority_with_data,
+                NULL)) {
+            /* We cache the sorted list, but we don't monitor all entries whether they
+             * get modified to invalidate the sort order. So every time we have to check
+             * whether the sort order is still correct. The vast majority of the time it
+             * is, and this check is faster than sorting anew. */
+            needs_sort = TRUE;
+        }
+    } else {
+        nm_assert(nm_utils_ptrarray_is_sorted(
+            (gconstpointer *) priv->connections_cached_list_sorted_by_autoconnect_priority,
+            priv->connections_len,
+            TRUE,
+            nm_settings_connection_cmp_autoconnect_priority_with_data,
+            NULL));
     }
 
+    priv->sorted_by_autoconnect_priority_maybe_changed = FALSE;
     if (needs_sort) {
         g_qsort_with_data(priv->connections_cached_list_sorted_by_autoconnect_priority,
                           priv->connections_len,
