@@ -5768,8 +5768,33 @@ _nm_sett_info_property_override_create_array_ip_config(void)
 
     _nm_properties_override_gobj(
         properties_override,
+        obj_properties[PROP_METHOD],
+        &nm_sett_info_propert_type_string,
+        .to_dbus_data.get_string =
+            (const char *(*) (NMSetting *) ) nm_setting_ip_config_get_method);
+
+    _nm_properties_override_gobj(
+        properties_override,
         obj_properties[PROP_GATEWAY],
-        NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_STRING, .from_dbus_fcn = ip_gateway_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_get_string,
+                                       .from_dbus_fcn = ip_gateway_set),
+        .to_dbus_data.get_string =
+            (const char *(*) (NMSetting *) ) nm_setting_ip_config_get_gateway);
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_HOSTNAME],
+        &nm_sett_info_propert_type_string,
+        .to_dbus_data.get_string =
+            (const char *(*) (NMSetting *) ) nm_setting_ip_config_get_dhcp_hostname);
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_IAID],
+        &nm_sett_info_propert_type_string,
+        .to_dbus_data.get_string =
+            (const char *(*) (NMSetting *) ) nm_setting_ip_config_get_dhcp_iaid);
 
     /* ---dbus---
      * property: routing-rules
