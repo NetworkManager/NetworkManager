@@ -130,4 +130,6 @@ const char *nm_settings_get_startup_complete_blocked_reason(NMSettings *self,
 
 void nm_settings_kf_db_write(NMSettings *settings);
 
+void _nm_settings_notify_sorted_by_autoconnect_priority_maybe_changed(NMSettings *self);
+
 #endif /* __NM_SETTINGS_H__ */
