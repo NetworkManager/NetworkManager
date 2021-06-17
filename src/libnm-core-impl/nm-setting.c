@@ -176,7 +176,7 @@ _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
 
         if (!prop_info->param_spec) {
             /* if we don't have a param_spec, we cannot have gprop_from_dbus_fcn. */
-            nm_assert(!property_type->gprop_from_dbus_fcn);
+            nm_assert(property_type->from_dbus_fcn || !property_type->gprop_from_dbus_fcn);
         }
     }
 #endif
@@ -530,6 +530,23 @@ _nm_setting_use_legacy_property(NMSetting * setting,
 }
 
 /*****************************************************************************/
+
+GVariant *
+_nm_setting_property_to_dbus_fcn_get_boolean(const NMSettInfoSetting *               sett_info,
+                                             guint                                   property_idx,
+                                             NMConnection *                          connection,
+                                             NMSetting *                             setting,
+                                             NMConnectionSerializationFlags          flags,
+                                             const NMConnectionSerializationOptions *options)
+{
+    const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
+    gboolean                  val;
+
+    val = !!property_info->to_dbus_data.get_boolean(setting);
+    if (val == NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec))
+        return NULL;
+    return g_variant_ref(nm_g_variant_singleton_b(val));
+}
 
 GVariant *
 _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               sett_info,
@@ -2355,6 +2372,10 @@ const NMSettInfoPropertType nm_sett_info_propert_type_plain_i =
 
 const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
     NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_UINT32);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_boolean = NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
+    G_VARIANT_TYPE_BOOLEAN,
+    .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_get_boolean);
 
 /*****************************************************************************/
 
