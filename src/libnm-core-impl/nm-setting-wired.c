@@ -1291,11 +1291,12 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * description: The property is not saved by the plugin.
      * ---end---
      */
-    obj_properties[PROP_PORT] = g_param_spec_string(NM_SETTING_WIRED_PORT,
-                                                    "",
-                                                    "",
-                                                    NULL,
-                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_PORT,
+                                       PROP_PORT,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_wired_get_port);
 
     /**
      * NMSettingWired:speed:
@@ -1352,11 +1353,12 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *    "duplex" parameter in the ETHOOL_OPTS variable.
      * ---end---
      */
-    obj_properties[PROP_DUPLEX] = g_param_spec_string(NM_SETTING_WIRED_DUPLEX,
-                                                      "",
-                                                      "",
-                                                      NULL,
-                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_DUPLEX,
+                                       PROP_DUPLEX,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_wired_get_duplex);
 
     /**
      * NMSettingWired:auto-negotiate:
@@ -1529,12 +1531,12 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *   cloned-mac-address.
      * ---end---
      */
-    obj_properties[PROP_GENERATE_MAC_ADDRESS_MASK] = g_param_spec_string(
-        NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK,
+                                       PROP_GENERATE_MAC_ADDRESS_MASK,
+                                       NM_SETTING_PARAM_FUZZY_IGNORE,
+                                       nm_setting_wired_get_generate_mac_address_mask);
 
     /**
      * NMSettingWired:mac-address-blacklist:
@@ -1625,12 +1627,12 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * example: NETTYPE=qeth
      * ---end---
      */
-    obj_properties[PROP_S390_NETTYPE] = g_param_spec_string(
-        NM_SETTING_WIRED_S390_NETTYPE,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_S390_NETTYPE,
+                                       PROP_S390_NETTYPE,
+                                       NM_SETTING_PARAM_INFERRABLE,
+                                       nm_setting_wired_get_s390_nettype);
 
     /**
      * NMSettingWired:s390-options: (type GHashTable(utf8,utf8)):
@@ -1706,12 +1708,13 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * example: ETHTOOL_OPTS="wol gs sopass 00:11:22:33:44:55"
      * ---end---
      */
-    obj_properties[PROP_WAKE_ON_LAN_PASSWORD] =
-        g_param_spec_string(NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD,
+                                       PROP_WAKE_ON_LAN_PASSWORD,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_wired_get_wake_on_lan_password);
+
     /**
      * NMSettingWired:accept-all-mac-addresses:
      *
