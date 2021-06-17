@@ -600,7 +600,7 @@ nm_dhcp_manager_init(NMDhcpManager *self)
                    "dhcp-init: enabled DHCP client '%s'%s%s",
                    f->name,
                    _client_factory_available(f) ? "" : " (not available)",
-                   f->experimental ? " (undocumented internal plugin)" : "");
+                   f->undocumented ? " (undocumented internal plugin)" : "");
     }
 
     /* Client-specific setup */

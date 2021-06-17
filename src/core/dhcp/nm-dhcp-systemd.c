@@ -1126,7 +1126,7 @@ const NMDhcpClientFactory _nm_dhcp_client_factory_systemd = {
     .name         = "systemd",
     .get_type_4   = nm_dhcp_systemd_get_type,
     .get_type_6   = nm_dhcp_systemd_get_type,
-    .experimental = TRUE,
+    .undocumented = TRUE,
 };
 
 /*****************************************************************************/

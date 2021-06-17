@@ -221,7 +221,9 @@ typedef struct {
     GType (*get_type_6)(void);
     const char *name;
     const char *(*get_path)(void);
-    bool experimental : 1;
+
+    /* whether this plugin is an undocumented, internal plugin. */
+    bool undocumented : 1;
 } NMDhcpClientFactory;
 
 GType nm_dhcp_nettools_get_type(void);
