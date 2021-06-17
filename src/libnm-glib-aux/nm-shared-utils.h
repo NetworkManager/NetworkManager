@@ -1503,6 +1503,7 @@ char *nm_utils_str_utf8safe_unescape_cp(const char *str, NMUtilsStrUtf8SafeFlags
 
 char *nm_utils_str_utf8safe_escape_take(char *str, NMUtilsStrUtf8SafeFlags flags);
 
+GVariant *nm_g_variant_singleton_b(gboolean value);
 GVariant *nm_g_variant_singleton_u_0(void);
 GVariant *nm_g_variant_singleton_aLsvI(void);
 GVariant *nm_g_variant_singleton_aLsaLsvII(void);
