@@ -178,33 +178,29 @@ _gprop_to_dbus_fcn_flags(const GValue *val)
 gboolean
 _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
 {
+#if NM_MORE_ASSERTS
     nm_assert(prop_info);
     nm_assert((!!prop_info->name) != (!!prop_info->param_spec));
     nm_assert(!prop_info->param_spec || !prop_info->name
               || nm_streq0(prop_info->name, prop_info->param_spec->name));
 
-#define _PROPERT_EXTRA(prop_info, member)                                    \
-    ({                                                                       \
-        const NMSettInfoProperty *_prop_info = (prop_info);                  \
-                                                                             \
-        (_prop_info->property_type ? _prop_info->property_type->member : 0); \
-    })
+    if (prop_info->property_type) {
+        const NMSettInfoPropertType *property_type = prop_info->property_type;
 
-    nm_assert(!_PROPERT_EXTRA(prop_info, gprop_from_dbus_fcn)
-              || _PROPERT_EXTRA(prop_info, dbus_type));
-    nm_assert(!_PROPERT_EXTRA(prop_info, from_dbus_fcn) || _PROPERT_EXTRA(prop_info, dbus_type));
-    nm_assert(!_PROPERT_EXTRA(prop_info, to_dbus_fcn) || _PROPERT_EXTRA(prop_info, dbus_type));
+        /* we always require a dbus_type. */
+        nm_assert(property_type->dbus_type);
 
-    nm_assert(!_PROPERT_EXTRA(prop_info, to_dbus_fcn)
-              || !_PROPERT_EXTRA(prop_info, gprop_to_dbus_fcn));
-    nm_assert(!_PROPERT_EXTRA(prop_info, from_dbus_fcn)
-              || !_PROPERT_EXTRA(prop_info, gprop_from_dbus_fcn));
+        /* {to,from}_dbus_fcn and gprop_{to,from}_dbus_fcn cannot both be set. */
+        nm_assert(!property_type->to_dbus_fcn || !property_type->gprop_to_dbus_fcn);
+        nm_assert(!property_type->from_dbus_fcn || !property_type->gprop_from_dbus_fcn);
 
-    nm_assert(!_PROPERT_EXTRA(prop_info, gprop_to_dbus_fcn) || prop_info->param_spec);
-    nm_assert(!_PROPERT_EXTRA(prop_info, gprop_from_dbus_fcn) || prop_info->param_spec);
-
-#undef _PROPERT_EXTRA
-
+        if (!prop_info->param_spec) {
+            /* if we don't have a param_spec, we cannot have gprop_{to,from}_dbus_fcn. */
+            nm_assert(!property_type->gprop_to_dbus_fcn);
+            nm_assert(!property_type->gprop_from_dbus_fcn);
+        }
+    }
+#endif
     return TRUE;
 }
 
