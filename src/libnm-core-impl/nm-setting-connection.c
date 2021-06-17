@@ -2075,12 +2075,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * description: Whether the connection should be autoconnected (not only while booting).
      * ---end---
      */
-    obj_properties[PROP_AUTOCONNECT] = g_param_spec_boolean(
-        NM_SETTING_CONNECTION_AUTOCONNECT,
-        "",
-        "",
-        TRUE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_CONNECTION_AUTOCONNECT,
+                                        PROP_AUTOCONNECT,
+                                        TRUE,
+                                        NM_SETTING_PARAM_FUZZY_IGNORE,
+                                        nm_setting_connection_get_autoconnect);
 
     /**
      * NMSettingConnection:autoconnect-priority:
