@@ -8276,26 +8276,23 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
 static gboolean
 tc_commit(NMDevice *self)
 {
-    NMConnection *    connection          = NULL;
     gs_unref_ptrarray GPtrArray *qdiscs   = NULL;
     gs_unref_ptrarray GPtrArray *tfilters = NULL;
-    NMSettingTCConfig *          s_tc     = NULL;
+    NMSettingTCConfig *          s_tc;
     NMPlatform *                 platform;
     int                          ip_ifindex;
 
-    platform   = nm_device_get_platform(self);
-    connection = nm_device_get_applied_connection(self);
-    if (connection)
-        s_tc = nm_connection_get_setting_tc_config(connection);
+    s_tc = nm_device_get_applied_setting(self, NM_TYPE_SETTING_TC_CONFIG);
+    if (!s_tc)
+        return TRUE;
 
     ip_ifindex = nm_device_get_ip_ifindex(self);
     if (!ip_ifindex)
-        return s_tc == NULL;
+        return FALSE;
 
-    if (s_tc) {
-        qdiscs   = nm_utils_qdiscs_from_tc_setting(platform, s_tc, ip_ifindex);
-        tfilters = nm_utils_tfilters_from_tc_setting(platform, s_tc, ip_ifindex);
-    }
+    platform = nm_device_get_platform(self);
+    qdiscs   = nm_utils_qdiscs_from_tc_setting(platform, s_tc, ip_ifindex);
+    tfilters = nm_utils_tfilters_from_tc_setting(platform, s_tc, ip_ifindex);
 
     if (!nm_platform_qdisc_sync(platform, ip_ifindex, qdiscs))
         return FALSE;
@@ -15898,9 +15895,12 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
 
             nm_platform_ip_route_flush(platform, AF_UNSPEC, ifindex);
             nm_platform_ip_address_flush(platform, AF_UNSPEC, ifindex);
-            nm_platform_tfilter_sync(platform, ifindex, NULL);
-            nm_platform_qdisc_sync(platform, ifindex, NULL);
             set_ipv6_token(self, iid, "::");
+
+            if (nm_device_get_applied_setting(self, NM_TYPE_SETTING_TC_CONFIG)) {
+                nm_platform_tfilter_sync(platform, ifindex, NULL);
+                nm_platform_qdisc_sync(platform, ifindex, NULL);
+            }
         }
     }
 

@@ -1810,11 +1810,23 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
      *
      * Array of TC queueing disciplines.
+     *
+     * When the #NMSettingTCConfig setting is present, qdiscs from this
+     * property are applied upon activation. If the property is empty,
+     * all qdiscs are removed and the device will only
+     * have the default qdisc assigned by kernel according to the
+     * "net.core.default_qdisc" sysctl.
+     *
+     * If the #NMSettingTCConfig setting is not present, NetworkManager
+     * doesn't touch the qdiscs present on the interface.
      **/
     /* ---ifcfg-rh---
      * property: qdiscs
-     * variable: QDISC1(+), QDISC2(+), ...
-     * description: Queueing disciplines
+     * variable: QDISC1(+), QDISC2(+), ..., TC_COMMIT(+)
+     * description: Queueing disciplines to set on the interface. When no
+     *  QDISC1, QDISC2, ..., FILTER1, FILTER2, ... keys are present,
+     *  NetworkManager doesn't touch qdiscs and filters present on the
+     *  interface, unless TC_COMMIT is set to 'yes'.
      * example: QDISC1=ingress, QDISC2="root handle 1234: fq_codel"
      * ---end---
      */
@@ -1834,11 +1846,21 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
      *
      * Array of TC traffic filters.
+     *
+     * When the #NMSettingTCConfig setting is present, filters from this
+     * property are applied upon activation. If the property is empty,
+     * NetworkManager removes all the filters.
+     *
+     * If the #NMSettingTCConfig setting is not present, NetworkManager
+     * doesn't touch the filters present on the interface.
      **/
     /* ---ifcfg-rh---
      * property: qdiscs
-     * variable: FILTER1(+), FILTER2(+), ...
-     * description: Traffic filters
+     * variable: FILTER1(+), FILTER2(+), ..., TC_COMMIT(+)
+     * description: Traffic filters to set on the interface. When no
+     *  QDISC1, QDISC2, ..., FILTER1, FILTER2, ... keys are present,
+     *  NetworkManager doesn't touch qdiscs and filters present on the
+     *  interface, unless TC_COMMIT is set to 'yes'.
      * example: FILTER1="parent ffff: matchall action simple sdata Input", ...
      * ---end---
      */
