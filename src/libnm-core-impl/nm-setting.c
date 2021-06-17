@@ -556,8 +556,7 @@ property_to_dbus(const NMSettInfoSetting *               sett_info,
                  NMSetting *                             setting,
                  NMConnectionSerializationFlags          flags,
                  const NMConnectionSerializationOptions *options,
-                 gboolean                                ignore_flags,
-                 gboolean                                ignore_default)
+                 gboolean                                ignore_flags)
 {
     const NMSettInfoProperty *property = &sett_info->property_infos[property_idx];
     GVariant *                variant;
@@ -611,7 +610,7 @@ property_to_dbus(const NMSettInfoSetting *               sett_info,
 
         g_object_get_property(G_OBJECT(setting), property->param_spec->name, &prop_value);
 
-        if (ignore_default && g_param_value_defaults(property->param_spec, &prop_value))
+        if (g_param_value_defaults(property->param_spec, &prop_value))
             return NULL;
 
         if (property->property_type->gprop_to_dbus_fcn) {
@@ -707,8 +706,7 @@ _nm_setting_to_dbus(NMSetting *                             setting,
     for (i = 0; i < sett_info->property_infos_len; i++) {
         gs_unref_variant GVariant *dbus_value = NULL;
 
-        dbus_value =
-            property_to_dbus(sett_info, i, connection, setting, flags, options, FALSE, TRUE);
+        dbus_value = property_to_dbus(sett_info, i, connection, setting, flags, options, FALSE);
         if (dbus_value) {
             g_variant_builder_add(&builder, "{sv}", sett_info->property_infos[i].name, dbus_value);
         }
@@ -1344,7 +1342,6 @@ compare_property(const NMSettInfoSetting *sett_info,
                                   set_a,
                                   NM_CONNECTION_SERIALIZE_ALL,
                                   NULL,
-                                  TRUE,
                                   TRUE);
         value2 = property_to_dbus(sett_info,
                                   property_idx,
@@ -1352,7 +1349,6 @@ compare_property(const NMSettInfoSetting *sett_info,
                                   set_b,
                                   NM_CONNECTION_SERIALIZE_ALL,
                                   NULL,
-                                  TRUE,
                                   TRUE);
         if (nm_property_compare(value1, value2) != 0)
             return NM_TERNARY_FALSE;
