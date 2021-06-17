@@ -233,9 +233,9 @@ nm_dhcp_dhcpcd_class_init(NMDhcpDhcpcdClass *dhcpcd_class)
 }
 
 const NMDhcpClientFactory _nm_dhcp_client_factory_dhcpcd = {
-    .name     = "dhcpcd",
-    .get_type = nm_dhcp_dhcpcd_get_type,
-    .get_path = nm_dhcp_dhcpcd_get_path,
+    .name       = "dhcpcd",
+    .get_type_4 = nm_dhcp_dhcpcd_get_type,
+    .get_path   = nm_dhcp_dhcpcd_get_path,
 };
 
 #endif /* WITH_DHCPCD */

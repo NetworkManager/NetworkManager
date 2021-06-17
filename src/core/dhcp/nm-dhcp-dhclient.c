@@ -731,9 +731,10 @@ nm_dhcp_dhclient_class_init(NMDhcpDhclientClass *dhclient_class)
 }
 
 const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient = {
-    .name     = "dhclient",
-    .get_type = nm_dhcp_dhclient_get_type,
-    .get_path = nm_dhcp_dhclient_get_path,
+    .name       = "dhclient",
+    .get_type_4 = nm_dhcp_dhclient_get_type,
+    .get_type_6 = nm_dhcp_dhclient_get_type,
+    .get_path   = nm_dhcp_dhclient_get_path,
 };
 
 #endif /* WITH_DHCLIENT */
