@@ -26,8 +26,9 @@
 /*****************************************************************************/
 
 const NMDhcpClientFactory *const _nm_dhcp_manager_factories[6] = {
+
 /* the order here matters, as we will try the plugins in this order to find
-     * the first available plugin. */
+ * the first available plugin. */
 
 #if WITH_DHCPCANON
     &_nm_dhcp_client_factory_dhcpcanon,

@@ -63,9 +63,9 @@ _client_factory_find_by_name(const char *name)
 {
     int i;
 
-    g_return_val_if_fail(name, NULL);
+    nm_assert(name);
 
-    for (i = 0; i < G_N_ELEMENTS(_nm_dhcp_manager_factories); i++) {
+    for (i = 0; i < (int) G_N_ELEMENTS(_nm_dhcp_manager_factories); i++) {
         const NMDhcpClientFactory *f = _nm_dhcp_manager_factories[i];
 
         if (f && nm_streq(f->name, name))
@@ -598,7 +598,7 @@ nm_dhcp_manager_init(NMDhcpManager *self)
 
     c_list_init(&priv->dhcp_client_lst_head);
 
-    for (i = 0; i < G_N_ELEMENTS(_nm_dhcp_manager_factories); i++) {
+    for (i = 0; i < (int) G_N_ELEMENTS(_nm_dhcp_manager_factories); i++) {
         const NMDhcpClientFactory *f = _nm_dhcp_manager_factories[i];
 
         if (!f)
@@ -644,7 +644,7 @@ nm_dhcp_manager_init(NMDhcpManager *self)
             }
         }
         if (!client_factory) {
-            for (i = 0; i < G_N_ELEMENTS(_nm_dhcp_manager_factories); i++) {
+            for (i = 0; i < (int) G_N_ELEMENTS(_nm_dhcp_manager_factories); i++) {
                 client_factory = _client_factory_available(_nm_dhcp_manager_factories[i]);
                 if (client_factory)
                     break;
