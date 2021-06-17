@@ -546,6 +546,27 @@ _nm_setting_property_to_dbus_fcn_get_boolean(const NMSettInfoSetting *          
 }
 
 GVariant *
+_nm_setting_property_to_dbus_fcn_get_string(const NMSettInfoSetting *               sett_info,
+                                            guint                                   property_idx,
+                                            NMConnection *                          connection,
+                                            NMSetting *                             setting,
+                                            NMConnectionSerializationFlags          flags,
+                                            const NMConnectionSerializationOptions *options)
+{
+    const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
+    const char *              val;
+
+    nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
+
+    val = property_info->to_dbus_data.get_string(setting);
+    if (!val)
+        return NULL;
+    if (!val[0])
+        return g_variant_ref(nm_g_variant_singleton_s_empty());
+    return g_variant_new_string(val);
+}
+
+GVariant *
 _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               sett_info,
                                        guint                                   property_idx,
                                        NMConnection *                          connection,
@@ -2373,6 +2394,10 @@ const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
 const NMSettInfoPropertType nm_sett_info_propert_type_boolean = NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
     G_VARIANT_TYPE_BOOLEAN,
     .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_get_boolean);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_string =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
+                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_get_string);
 
 /*****************************************************************************/
 

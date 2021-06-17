@@ -712,6 +712,7 @@ struct _NMSettInfoProperty {
             gpointer                     none;
             NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn;
             gboolean (*get_boolean)(NMSetting *);
+            const char *(*get_string)(NMSetting *);
         };
     } to_dbus_data;
 };

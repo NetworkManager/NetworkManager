@@ -4407,6 +4407,11 @@ check_done:;
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_BOOLEAN);
                 g_assert(sip->to_dbus_data.get_boolean);
+            } else if (sip->property_type->to_dbus_fcn
+                       == _nm_setting_property_to_dbus_fcn_get_string) {
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_STRING);
+                g_assert(sip->to_dbus_data.get_string);
             }
 
             g_assert(!sip->property_type->from_dbus_fcn
