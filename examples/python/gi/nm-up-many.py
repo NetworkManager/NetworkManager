@@ -10,12 +10,11 @@
 # the application is running (from the main function).
 
 import sys
-import os
 import gi
 import time
 
 gi.require_version("NM", "1.0")
-from gi.repository import NM, GLib, Gio
+from gi.repository import NM, GLib
 
 
 start_time = time.monotonic()
