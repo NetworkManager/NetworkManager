@@ -2257,6 +2257,8 @@ nm_settings_connection_update_timestamp(NMSettingsConnection *self, guint64 time
     if (!priv->kf_db_timestamps)
         return;
 
+    _nm_settings_notify_sorted_by_autoconnect_priority_maybe_changed(priv->settings);
+
     connection_uuid = nm_settings_connection_get_uuid(self);
     if (connection_uuid) {
         nm_key_file_db_set_value(priv->kf_db_timestamps,
