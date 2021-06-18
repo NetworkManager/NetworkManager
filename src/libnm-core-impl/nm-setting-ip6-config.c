@@ -1033,9 +1033,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("a(ayuay)"),
-                                  .to_dbus_fcn   = ip6_addresses_get,
-                                  .from_dbus_fcn = ip6_addresses_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuay)"),
+                                       .to_dbus_fcn   = ip6_addresses_get,
+                                       .from_dbus_fcn = ip6_addresses_set, ));
 
     /* ---dbus---
      * property: address-data
@@ -1049,9 +1049,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     _nm_properties_override_dbus(
         properties_override,
         "address-data",
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("aa{sv}"),
-                                  .to_dbus_fcn   = ip6_address_data_get,
-                                  .from_dbus_fcn = ip6_address_data_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = ip6_address_data_get,
+                                       .from_dbus_fcn = ip6_address_data_set, ));
 
     /* ---dbus---
      * property: routes
@@ -1070,9 +1070,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("a(ayuayu)"),
-                                  .to_dbus_fcn   = ip6_routes_get,
-                                  .from_dbus_fcn = ip6_routes_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuayu)"),
+                                       .to_dbus_fcn   = ip6_routes_get,
+                                       .from_dbus_fcn = ip6_routes_set, ));
 
     /* ---dbus---
      * property: route-data
@@ -1087,11 +1087,12 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *   also exist on some routes.
      * ---end---
      */
-    _nm_properties_override_dbus(properties_override,
-                                 "route-data",
-                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type = NM_G_VARIANT_TYPE("aa{sv}"),
-                                                           .to_dbus_fcn   = ip6_route_data_get,
-                                                           .from_dbus_fcn = ip6_route_data_set, ));
+    _nm_properties_override_dbus(
+        properties_override,
+        "route-data",
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = ip6_route_data_get,
+                                       .from_dbus_fcn = ip6_route_data_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

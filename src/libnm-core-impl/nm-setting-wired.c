@@ -1395,10 +1395,11 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                              "",
                              FALSE,
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_AUTO_NEGOTIATE],
-                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = G_VARIANT_TYPE_BOOLEAN,
-                                                           .to_dbus_fcn = _override_autoneg_get, ));
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_AUTO_NEGOTIATE],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_BOOLEAN,
+                                       .to_dbus_fcn = _override_autoneg_get, ));
 
     /**
      * NMSettingWired:mac-address:

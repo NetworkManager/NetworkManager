@@ -1325,9 +1325,9 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
                                                       | G_PARAM_STATIC_STRINGS);
     _nm_properties_override_gobj(properties_override,
                                  obj_properties[PROP_VFS],
-                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type = NM_G_VARIANT_TYPE("aa{sv}"),
-                                                           .to_dbus_fcn   = vfs_to_dbus,
-                                                           .from_dbus_fcn = vfs_from_dbus, ));
+                                 NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                                                .to_dbus_fcn   = vfs_to_dbus,
+                                                                .from_dbus_fcn = vfs_from_dbus, ));
 
     /**
      * NMSettingSriov:autoprobe-drivers

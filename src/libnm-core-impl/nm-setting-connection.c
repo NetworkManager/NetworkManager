@@ -2189,8 +2189,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_TIMESTAMP],
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = G_VARIANT_TYPE_UINT64,
-                                  .to_dbus_fcn = _to_dbus_fcn_timestamp, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_UINT64,
+                                       .to_dbus_fcn = _to_dbus_fcn_timestamp, ));
 
     /**
      * NMSettingConnection:read-only:
