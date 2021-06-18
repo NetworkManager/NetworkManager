@@ -3158,6 +3158,7 @@ EXTRA_DIST += \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-static-routes-legacy.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc-write.cexpected \
+	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-tc-write-empty.cexpected \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-1 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-2 \
 	src/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-team-master-invalid \
