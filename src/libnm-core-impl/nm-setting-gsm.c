@@ -62,11 +62,11 @@ typedef struct {
  */
 struct _NMSettingGsm {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingGsmClass {
     NMSettingClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

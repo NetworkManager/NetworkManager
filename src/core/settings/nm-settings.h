@@ -79,6 +79,9 @@ void nm_settings_add_connection_dbus(NMSettings *                    self,
 
 NMSettingsConnection *const *nm_settings_get_connections(NMSettings *settings, guint *out_len);
 
+NMSettingsConnection *const *
+nm_settings_get_connections_sorted_by_autoconnect_priority(NMSettings *self, guint *out_len);
+
 NMSettingsConnection **nm_settings_get_connections_clone(NMSettings *                   self,
                                                          guint *                        out_len,
                                                          NMSettingsConnectionFilterFunc func,
@@ -126,5 +129,7 @@ const char *nm_settings_get_startup_complete_blocked_reason(NMSettings *self,
                                                             gboolean    force_reload);
 
 void nm_settings_kf_db_write(NMSettings *settings);
+
+void _nm_settings_notify_sorted_by_autoconnect_priority_maybe_changed(NMSettings *self);
 
 #endif /* __NM_SETTINGS_H__ */

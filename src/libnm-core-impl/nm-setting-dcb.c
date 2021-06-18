@@ -72,11 +72,11 @@ typedef struct {
  */
 struct _NMSettingDcb {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingDcbClass {
     NMSettingClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

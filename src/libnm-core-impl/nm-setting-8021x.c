@@ -187,11 +187,11 @@ typedef struct {
  */
 struct _NMSetting8021x {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSetting8021xClass {
     NMSettingClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

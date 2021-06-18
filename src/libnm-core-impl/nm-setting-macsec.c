@@ -56,11 +56,11 @@ typedef struct {
  */
 struct _NMSettingMacsec {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingMacsecClass {
     NMSettingClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

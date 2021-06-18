@@ -180,6 +180,8 @@ NM_TERNARY_TO_OPTION_BOOL(NMTernary v)
 
 /*****************************************************************************/
 
+NMSetting **_nm_connection_get_settings_arr(NMConnection *connection);
+
 typedef enum { /*< skip >*/
                NM_SETTING_PARSE_FLAGS_NONE        = 0,
                NM_SETTING_PARSE_FLAGS_STRICT      = 1LL << 0,
@@ -205,9 +207,12 @@ typedef struct {
         bool    has;
     } timestamp;
 
-    const char **seen_bssids;
+    const char *const *seen_bssids;
 
 } NMConnectionSerializationOptions;
+
+gboolean nm_connection_serialization_options_equal(const NMConnectionSerializationOptions *a,
+                                                   const NMConnectionSerializationOptions *b);
 
 GVariant *nm_connection_to_dbus_full(NMConnection *                          connection,
                                      NMConnectionSerializationFlags          flags,

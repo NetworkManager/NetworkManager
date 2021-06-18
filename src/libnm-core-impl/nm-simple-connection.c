@@ -20,16 +20,21 @@
 
 /*****************************************************************************/
 
+GTypeClass *_nm_simple_connection_class_instance = NULL;
+int         _nm_simple_connection_private_offset;
+
+/*****************************************************************************/
+
 /**
  * NMSimpleConnection:
  */
 struct _NMSimpleConnection {
     GObject parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSimpleConnectionClass {
     GObjectClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };
@@ -42,11 +47,20 @@ G_DEFINE_TYPE_WITH_CODE(NMSimpleConnection,
                         G_IMPLEMENT_INTERFACE(NM_TYPE_CONNECTION,
                                               nm_simple_connection_interface_init);)
 
+#define _GET_PRIVATE(self) \
+    G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_SIMPLE_CONNECTION, NMConnectionPrivate)
+
 /*****************************************************************************/
 
 static void
 nm_simple_connection_init(NMSimpleConnection *self)
-{}
+{
+    NMConnectionPrivate *priv;
+
+    priv = _GET_PRIVATE(self);
+
+    priv->self = (NMConnection *) self;
+}
 
 /**
  * nm_simple_connection_new:
@@ -143,22 +157,31 @@ nm_simple_connection_new_clone(NMConnection *connection)
 static void
 dispose(GObject *object)
 {
+    NMConnection *connection = NM_CONNECTION(object);
+
 #if NM_MORE_ASSERTS
     g_signal_handlers_disconnect_by_data(object,
                                          (gpointer) &_nmtst_connection_unchanging_user_data);
 #endif
 
-    nm_connection_clear_secrets(NM_CONNECTION(object));
+    nm_connection_clear_secrets(connection);
+
+    _nm_connection_private_clear(_GET_PRIVATE(connection));
 
     G_OBJECT_CLASS(nm_simple_connection_parent_class)->dispose(object);
 }
 
 static void
-nm_simple_connection_class_init(NMSimpleConnectionClass *simple_class)
+nm_simple_connection_class_init(NMSimpleConnectionClass *klass)
 {
-    GObjectClass *object_class = G_OBJECT_CLASS(simple_class);
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+
+    g_type_class_add_private(klass, sizeof(NMConnectionPrivate));
 
     object_class->dispose = dispose;
+
+    _nm_simple_connection_private_offset = g_type_class_get_instance_private_offset(klass);
+    _nm_simple_connection_class_instance = (GTypeClass *) klass;
 }
 
 static void
