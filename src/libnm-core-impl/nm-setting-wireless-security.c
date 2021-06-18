@@ -1924,11 +1924,10 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                           NM_TYPE_WEP_KEY_TYPE,
                           NM_WEP_KEY_TYPE_UNKNOWN,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(
-        properties_override,
-        obj_properties[PROP_WEP_KEY_TYPE],
-        NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_UINT32,
-                                        .gprop_to_dbus_fcn = wep_key_type_to_dbus, ));
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_WEP_KEY_TYPE],
+                                 &nm_sett_info_propert_type_plain_u,
+                                 .to_dbus_data.gprop_to_dbus_fcn = wep_key_type_to_dbus, );
 
     /**
      * NMSettingWirelessSecurity:wps-method:

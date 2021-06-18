@@ -4372,7 +4372,7 @@ test_setting_metadata(void)
                 /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
                  * properties must not have a param_spec and no gprop_to_dbus_fcn. */
                 g_assert(!sip->param_spec);
-                g_assert(!sip->property_type->gprop_to_dbus_fcn);
+                g_assert(!sip->to_dbus_data.none);
             } else if (sip->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop) {
                 g_assert(sip->param_spec);
                 switch (sip->property_type->typdata_to_dbus.gprop_type) {
@@ -4399,6 +4399,9 @@ test_setting_metadata(void)
                 }
                 g_assert_not_reached();
 check_done:;
+                if (sip->property_type->typdata_to_dbus.gprop_type
+                    != NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT)
+                    g_assert(!sip->to_dbus_data.gprop_to_dbus_fcn);
             }
 
             g_assert(!sip->property_type->from_dbus_fcn
@@ -4518,7 +4521,6 @@ check_done:;
                     || pt->to_dbus_fcn != pt_2->to_dbus_fcn
                     || pt->from_dbus_fcn != pt_2->from_dbus_fcn
                     || pt->missing_from_dbus_fcn != pt_2->missing_from_dbus_fcn
-                    || pt->gprop_to_dbus_fcn != pt_2->gprop_to_dbus_fcn
                     || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn
                     || memcmp(&pt->typdata_to_dbus,
                               &pt_2->typdata_to_dbus,
@@ -4545,7 +4547,9 @@ check_done:;
 
                 /* the property-types with same content should all be shared. Here we have two that
                  * are the same content, but different instances. Bug. */
-                g_error("The identical property type for D-Bus type \"%s\" is used by: %s and %s",
+                g_error("The identical property type for D-Bus type \"%s\" is used by: %s and %s. "
+                        "If a NMSettInfoPropertType is identical, it should be shared by creating "
+                        "a common instance of the property type",
                         (const char *) pt->dbus_type,
                         _PROP_IDX_OWNER(h_property_types, pt),
                         _PROP_IDX_OWNER(h_property_types, pt_2));

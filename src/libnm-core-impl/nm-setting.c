@@ -171,15 +171,11 @@ _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
         /* we always require a dbus_type. */
         nm_assert(property_type->dbus_type);
 
-        if (!property_type->to_dbus_fcn)
-            nm_assert(!property_type->gprop_to_dbus_fcn);
-
-        /* {to,from}_dbus_fcn and gprop_{to,from}_dbus_fcn cannot both be set. */
+        /* from_dbus_fcn and gprop_from_dbus_fcn cannot both be set. */
         nm_assert(!property_type->from_dbus_fcn || !property_type->gprop_from_dbus_fcn);
 
         if (!prop_info->param_spec) {
-            /* if we don't have a param_spec, we cannot have gprop_{to,from}_dbus_fcn. */
-            nm_assert(!property_type->gprop_to_dbus_fcn);
+            /* if we don't have a param_spec, we cannot have gprop_from_dbus_fcn. */
             nm_assert(!property_type->gprop_from_dbus_fcn);
         }
     }
@@ -550,6 +546,10 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
     GArray *tmp_array;
 
     nm_assert(property->param_spec);
+    nm_assert(property->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop);
+    nm_assert(property->property_type->typdata_to_dbus.gprop_type
+                  == NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT
+              || !property->to_dbus_data.gprop_to_dbus_fcn);
 
     g_value_init(&prop_value, property->param_spec->value_type);
 
@@ -560,8 +560,8 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
 
     switch (property->property_type->typdata_to_dbus.gprop_type) {
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
-        if (property->property_type->gprop_to_dbus_fcn)
-            return property->property_type->gprop_to_dbus_fcn(&prop_value);
+        if (property->to_dbus_data.gprop_to_dbus_fcn)
+            return property->to_dbus_data.gprop_to_dbus_fcn(&prop_value);
 
         return g_dbus_gvalue_to_gvariant(&prop_value, property->property_type->dbus_type);
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
@@ -603,7 +603,7 @@ property_to_dbus(const NMSettInfoSetting *               sett_info,
 
     if (!property->property_type->to_dbus_fcn) {
         nm_assert(!property->param_spec);
-        nm_assert(!property->property_type->gprop_to_dbus_fcn);
+        nm_assert(!property->to_dbus_data.none);
         return NULL;
     }
 

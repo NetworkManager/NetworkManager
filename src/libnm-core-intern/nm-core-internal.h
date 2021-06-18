@@ -688,9 +688,8 @@ typedef struct {
     NMSettInfoPropFromDBusFcn        from_dbus_fcn;
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
 
-    /* Simpler variants of @to_dbus_fcn/@from_dbus_fcn that operate solely
+    /* Simpler variants of @from_dbus_fcn that operate solely
      * on the GValue value of the GObject property. */
-    NMSettInfoPropGPropToDBusFcn   gprop_to_dbus_fcn;
     NMSettInfoPropGPropFromDBusFcn gprop_from_dbus_fcn;
 
     struct {
@@ -707,6 +706,13 @@ struct _NMSettInfoProperty {
     GParamSpec *param_spec;
 
     const NMSettInfoPropertType *property_type;
+
+    struct {
+        union {
+            gpointer                     none;
+            NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn;
+        };
+    } to_dbus_data;
 };
 
 typedef struct {

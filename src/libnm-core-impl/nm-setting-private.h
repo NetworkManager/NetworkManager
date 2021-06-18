@@ -362,10 +362,12 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
     g_array_append_vals(properties_override, prop_info, 1);
 }
 
-#define _nm_properties_override_gobj(properties_override, p_param_spec, p_property_type) \
-    _nm_properties_override(                                                             \
-        (properties_override),                                                           \
-        NM_SETT_INFO_PROPERTY(.param_spec = (p_param_spec), .property_type = (p_property_type), ))
+#define _nm_properties_override_gobj(properties_override, p_param_spec, p_property_type, ...) \
+    _nm_properties_override((properties_override),                                            \
+                            NM_SETT_INFO_PROPERTY(.name          = NULL,                      \
+                                                  .param_spec    = (p_param_spec),            \
+                                                  .property_type = (p_property_type),         \
+                                                  __VA_ARGS__))
 
 #define _nm_properties_override_dbus(properties_override, p_name, p_property_type) \
     _nm_properties_override(                                                       \
