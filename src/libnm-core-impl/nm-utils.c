@@ -3994,8 +3994,8 @@ nm_utils_hwaddr_matches(gconstpointer hwaddr1,
 
 /*****************************************************************************/
 
-static GVariant *
-_nm_utils_hwaddr_to_dbus_impl(const char *str)
+GVariant *
+nm_utils_hwaddr_to_dbus(const char *str)
 {
     guint8 buf[NM_UTILS_HWADDR_LEN_MAX];
     gsize  len;
@@ -4021,7 +4021,7 @@ _nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
     nm_assert(nm_streq(sett_info->property_infos[property_idx].name, "cloned-mac-address"));
 
     g_object_get(setting, "cloned-mac-address", &addr, NULL);
-    return _nm_utils_hwaddr_to_dbus_impl(addr);
+    return nm_utils_hwaddr_to_dbus(addr);
 }
 
 static gboolean
@@ -4140,7 +4140,7 @@ const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address = {
 static GVariant *
 _nm_utils_hwaddr_to_dbus(const GValue *prop_value)
 {
-    return _nm_utils_hwaddr_to_dbus_impl(g_value_get_string(prop_value));
+    return nm_utils_hwaddr_to_dbus(g_value_get_string(prop_value));
 }
 
 static void
