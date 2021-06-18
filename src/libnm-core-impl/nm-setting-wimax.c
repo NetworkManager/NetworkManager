@@ -42,11 +42,11 @@ typedef struct {
  */
 struct _NMSettingWimax {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingWimaxClass {
     NMSettingClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

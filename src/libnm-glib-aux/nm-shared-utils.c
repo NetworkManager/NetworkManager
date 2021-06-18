@@ -3948,6 +3948,28 @@ nm_utils_ptrarray_find_first(gconstpointer *list, gssize len, gconstpointer need
 
 /*****************************************************************************/
 
+gboolean
+nm_utils_ptrarray_is_sorted(gconstpointer *  list,
+                            gsize            len,
+                            gboolean         require_strict,
+                            GCompareDataFunc cmpfcn,
+                            gpointer         user_data)
+{
+    gsize i;
+
+    for (i = 1; i < len; i++) {
+        int c;
+
+        c = cmpfcn(list[i - 1], list[i], user_data);
+        if (G_LIKELY(c < 0))
+            continue;
+
+        if (c > 0 || require_strict)
+            return FALSE;
+    }
+    return TRUE;
+}
+
 gssize
 nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
                                      gsize            len,

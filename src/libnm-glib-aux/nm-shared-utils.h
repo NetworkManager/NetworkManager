@@ -556,6 +556,7 @@ extern const void *const _NM_PTRARRAY_EMPTY[1];
 
 #define NM_PTRARRAY_EMPTY(type) ((type const *) _NM_PTRARRAY_EMPTY)
 #define NM_STRV_EMPTY()         ((char **) _NM_PTRARRAY_EMPTY)
+#define NM_STRV_EMPTY_CC()      NM_PTRARRAY_EMPTY(const char *)
 
 static inline void
 _nm_utils_strbuf_init(char *buf, gsize len, char **p_buf_ptr, gsize *p_buf_len)
@@ -2132,6 +2133,12 @@ nm_g_hash_table_remove(GHashTable *hash, gconstpointer key)
 }
 
 /*****************************************************************************/
+
+gboolean nm_utils_ptrarray_is_sorted(gconstpointer *  list,
+                                     gsize            len,
+                                     gboolean         require_strict,
+                                     GCompareDataFunc cmpfcn,
+                                     gpointer         user_data);
 
 gssize nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
                                             gsize            len,

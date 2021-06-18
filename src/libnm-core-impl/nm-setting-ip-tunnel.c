@@ -54,11 +54,11 @@ typedef struct {
  */
 struct _NMSettingIPTunnel {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingIPTunnelClass {
     NMSettingClass parent;
-
     /* In the past, this struct was public API. Preserve ABI! */
     gpointer padding[4];
 };

@@ -80,6 +80,11 @@ typedef struct _NMSettingsConnectionPrivate {
 
     NMConnection *connection;
 
+    struct {
+        NMConnectionSerializationOptions options;
+        GVariant *                       variant;
+    } getsettings_cached;
+
     NMSettingsStorage *storage;
 
     char *filename;
@@ -249,6 +254,57 @@ _seen_bssids_hash_new(void)
 
 /*****************************************************************************/
 
+static void
+_getsettings_cached_clear(NMSettingsConnectionPrivate *priv)
+{
+    if (nm_clear_pointer(&priv->getsettings_cached.variant, g_variant_unref)) {
+        priv->getsettings_cached.options.timestamp.has = FALSE;
+        priv->getsettings_cached.options.timestamp.val = 0;
+        nm_clear_g_free((gpointer *) &priv->getsettings_cached.options.seen_bssids);
+    }
+}
+
+static GVariant *
+_getsettings_cached_get(NMSettingsConnection *self, const NMConnectionSerializationOptions *options)
+{
+    NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+    GVariant *                   variant;
+
+    if (priv->getsettings_cached.variant) {
+        if (nm_connection_serialization_options_equal(&priv->getsettings_cached.options, options)) {
+#if NM_MORE_ASSERTS > 10
+            gs_unref_variant GVariant *variant2 = NULL;
+
+            variant = nm_connection_to_dbus_full(priv->connection,
+                                                 NM_CONNECTION_SERIALIZE_WITH_NON_SECRET,
+                                                 options);
+            nm_assert(variant);
+            variant2 = g_variant_new("(@a{sa{sv}})", variant);
+            nm_assert(g_variant_equal(priv->getsettings_cached.variant, variant2));
+#endif
+            return priv->getsettings_cached.variant;
+        }
+        _getsettings_cached_clear(priv);
+    }
+
+    nm_assert(!priv->getsettings_cached.options.seen_bssids);
+
+    variant = nm_connection_to_dbus_full(priv->connection,
+                                         NM_CONNECTION_SERIALIZE_WITH_NON_SECRET,
+                                         options);
+    nm_assert(variant);
+
+    priv->getsettings_cached.variant = g_variant_ref_sink(g_variant_new("(@a{sa{sv}})", variant));
+
+    priv->getsettings_cached.options = *options;
+    priv->getsettings_cached.options.seen_bssids =
+        nm_utils_strv_dup_packed(priv->getsettings_cached.options.seen_bssids, -1);
+
+    return priv->getsettings_cached.variant;
+}
+
+/*****************************************************************************/
+
 NMConnection *
 nm_settings_connection_get_connection(NMSettingsConnection *self)
 {
@@ -279,6 +335,9 @@ _nm_settings_connection_set_connection(NMSettingsConnection *           self,
         connection_old   = priv->connection;
         priv->connection = g_object_ref(new_connection);
         nmtst_connection_assert_unchanging(priv->connection);
+
+        _getsettings_cached_clear(priv);
+        _nm_settings_notify_sorted_by_autoconnect_priority_maybe_changed(priv->settings);
 
         /* note that we only return @connection_old if the new connection actually differs from
          * before.
@@ -1243,7 +1302,6 @@ get_settings_auth_cb(NMSettingsConnection * self,
 {
     gs_free const char **            seen_bssids = NULL;
     NMConnectionSerializationOptions options     = {};
-    GVariant *                       settings;
 
     if (error) {
         g_dbus_method_invocation_return_gerror(context, error);
@@ -1270,10 +1328,8 @@ get_settings_auth_cb(NMSettingsConnection * self,
      * get returned by the GetSecrets method which can be better
      * protected against leakage of secrets to unprivileged callers.
      */
-    settings = nm_connection_to_dbus_full(nm_settings_connection_get_connection(self),
-                                          NM_CONNECTION_SERIALIZE_WITH_NON_SECRET,
-                                          &options);
-    g_dbus_method_invocation_return_value(context, g_variant_new("(@a{sa{sv}})", settings));
+
+    g_dbus_method_invocation_return_value(context, _getsettings_cached_get(self, &options));
 }
 
 static void
@@ -2084,7 +2140,9 @@ _cmp_last_resort(NMSettingsConnection *a, NMSettingsConnection *b)
 
     /* hm, same UUID. Use their pointer value to give them a stable
      * order. */
-    return (a > b) ? -1 : 1;
+    NM_CMP_DIRECT_PTR(a, b);
+
+    return nm_assert_unreachable_val(0);
 }
 
 /* sorting for "best" connections.
@@ -2123,6 +2181,15 @@ nm_settings_connection_cmp_autoconnect_priority(NMSettingsConnection *a, NMSetti
                                                         nm_settings_connection_get_connection(b)));
     NM_CMP_RETURN(_cmp_timestamp(a, b));
     return _cmp_last_resort(a, b);
+}
+
+int
+nm_settings_connection_cmp_autoconnect_priority_with_data(gconstpointer pa,
+                                                          gconstpointer pb,
+                                                          gpointer      user_data)
+{
+    return nm_settings_connection_cmp_autoconnect_priority((NMSettingsConnection *) pa,
+                                                           (NMSettingsConnection *) pb);
 }
 
 int
@@ -2184,6 +2251,8 @@ nm_settings_connection_update_timestamp(NMSettingsConnection *self, guint64 time
     priv->timestamp_set = TRUE;
 
     _LOGT("timestamp: set timestamp %" G_GUINT64_FORMAT, timestamp);
+
+    _nm_settings_notify_sorted_by_autoconnect_priority_maybe_changed(priv->settings);
 
     if (!priv->kf_db_timestamps)
         return;
@@ -2608,6 +2677,8 @@ dispose(GObject *object)
     g_clear_object(&priv->agent_mgr);
 
     g_clear_object(&priv->connection);
+
+    _getsettings_cached_clear(priv);
 
     nm_clear_pointer(&priv->kf_db_timestamps, nm_key_file_db_unref);
     nm_clear_pointer(&priv->kf_db_seen_bssids, nm_key_file_db_unref);
