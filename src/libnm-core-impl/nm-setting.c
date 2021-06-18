@@ -580,6 +580,8 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT:
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_HASH_TABLE));
         return nm_utils_strdict_to_variant_ass(g_value_get_boxed(&prop_value));
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS:
+        return nm_utils_hwaddr_to_dbus(g_value_get_string(&prop_value));
     }
 
     return nm_assert_unreachable_val(NULL);
