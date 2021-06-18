@@ -564,6 +564,12 @@ nm_g_variant_singleton_b(gboolean value)
                  : _variant_singleton_get(g_variant_new_boolean(FALSE));
 }
 
+GVariant *
+nm_g_variant_singleton_s_empty(void)
+{
+    return _variant_singleton_get(g_variant_new_string(""));
+}
+
 static GVariant *
 _variant_singleton_get_array_init(GVariant **p_singleton, const char *variant_type)
 {
