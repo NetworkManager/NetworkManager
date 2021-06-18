@@ -642,6 +642,10 @@ GVariant *       nm_ip_routing_rule_to_dbus(const NMIPRoutingRule *self);
 
 /*****************************************************************************/
 
+GVariant *nm_utils_hwaddr_to_dbus(const char *str);
+
+/*****************************************************************************/
+
 typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
