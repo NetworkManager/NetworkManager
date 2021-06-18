@@ -4373,6 +4373,23 @@ test_setting_metadata(void)
                  * properties must not have a param_spec and no gprop_to_dbus_fcn. */
                 g_assert(!sip->param_spec);
                 g_assert(!sip->property_type->gprop_to_dbus_fcn);
+            } else if (sip->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop) {
+                g_assert(sip->param_spec);
+                switch (sip->property_type->typdata_to_dbus.gprop_type) {
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
+                    g_assert(sip->param_spec->value_type == G_TYPE_BYTES);
+                    goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM:
+                    g_assert(g_type_is_a (sip->param_spec->value_type, G_TYPE_ENUM));
+                    goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS:
+                    g_assert(g_type_is_a (sip->param_spec->value_type, G_TYPE_FLAGS));
+                    goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
+                    goto check_done;
+                }
+                g_assert_not_reached();
+check_done:;
             }
 
             g_assert(!sip->property_type->from_dbus_fcn
@@ -4493,7 +4510,11 @@ test_setting_metadata(void)
                     || pt->from_dbus_fcn != pt_2->from_dbus_fcn
                     || pt->missing_from_dbus_fcn != pt_2->missing_from_dbus_fcn
                     || pt->gprop_to_dbus_fcn != pt_2->gprop_to_dbus_fcn
-                    || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn)
+                    || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn
+                    || memcmp(&pt->typdata_to_dbus,
+                              &pt_2->typdata_to_dbus,
+                              sizeof(pt->typdata_to_dbus))
+                           != 0)
                     continue;
 
                 if ((pt == &nm_sett_info_propert_type_plain_i
