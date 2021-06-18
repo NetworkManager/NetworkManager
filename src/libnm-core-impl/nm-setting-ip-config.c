@@ -5766,10 +5766,10 @@ _nm_sett_info_property_override_create_array_ip_config(void)
 {
     GArray *properties_override = _nm_sett_info_property_override_create_array();
 
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_GATEWAY],
-                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = G_VARIANT_TYPE_STRING,
-                                                           .from_dbus_fcn = ip_gateway_set, ));
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_GATEWAY],
+        NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_STRING, .from_dbus_fcn = ip_gateway_set, ));
 
     /* ---dbus---
      * property: routing-rules

@@ -1995,9 +1995,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_INTERFACE_NAME],
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type = G_VARIANT_TYPE_STRING,
-                                  .missing_from_dbus_fcn =
-                                      nm_setting_connection_no_interface_name, ));
+        NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_STRING,
+                                        .missing_from_dbus_fcn =
+                                            nm_setting_connection_no_interface_name, ));
 
     /**
      * NMSettingConnection:type:
