@@ -2594,9 +2594,9 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
     _nm_properties_override_dbus(
         properties_override,
         NM_SETTING_WIREGUARD_PEERS,
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("aa{sv}"),
-                                  .to_dbus_fcn   = _peers_dbus_only_synth,
-                                  .from_dbus_fcn = _peers_dbus_only_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = _peers_dbus_only_synth,
+                                       .from_dbus_fcn = _peers_dbus_only_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

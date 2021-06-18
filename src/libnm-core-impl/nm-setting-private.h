@@ -324,10 +324,13 @@ _nm_setting_class_commit(NMSettingClass *setting_class, NMMetaSettingType meta_t
         &_g;                                                   \
     })
 
-#define NM_SETT_INFO_PROPERT_TYPE_GPROP(_dbus_type, ...)                             \
-    NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = _dbus_type,                             \
-                              .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop, \
-                              __VA_ARGS__)
+#define NM_SETT_INFO_PROPERT_TYPE_DBUS(_dbus_type, ...) \
+    NM_SETT_INFO_PROPERT_TYPE(.dbus_type = _dbus_type, __VA_ARGS__)
+
+#define NM_SETT_INFO_PROPERT_TYPE_GPROP(_dbus_type, ...)                                  \
+    NM_SETT_INFO_PROPERT_TYPE_DBUS(_dbus_type,                                            \
+                                   .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop, \
+                                   __VA_ARGS__)
 
 #define NM_SETT_INFO_PROPERTY(...) (&((const NMSettInfoProperty){__VA_ARGS__}))
 

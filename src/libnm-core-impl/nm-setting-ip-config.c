@@ -5774,9 +5774,9 @@ _nm_sett_info_property_override_create_array_ip_config(void)
     _nm_properties_override_dbus(
         properties_override,
         NM_SETTING_IP_CONFIG_ROUTING_RULES,
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("aa{sv}"),
-                                  .to_dbus_fcn   = _routing_rules_dbus_only_synth,
-                                  .from_dbus_fcn = _routing_rules_dbus_only_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = _routing_rules_dbus_only_synth,
+                                       .from_dbus_fcn = _routing_rules_dbus_only_set, ));
 
     return properties_override;
 }

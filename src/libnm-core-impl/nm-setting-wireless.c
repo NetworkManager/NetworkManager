@@ -1743,8 +1743,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_SEEN_BSSIDS],
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = G_VARIANT_TYPE_STRING_ARRAY,
-                                  .to_dbus_fcn = _to_dbus_fcn_seen_bssids, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
+                                       .to_dbus_fcn = _to_dbus_fcn_seen_bssids, ));
 
     /**
      * NMSettingWireless:mtu:
@@ -1871,8 +1871,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
     _nm_properties_override_dbus(
         properties_override,
         "security",
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = G_VARIANT_TYPE_STRING,
-                                  .to_dbus_fcn = nm_setting_wireless_get_security, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .to_dbus_fcn = nm_setting_wireless_get_security, ));
 
     /**
      * NMSettingWireless:wake-on-wlan:
