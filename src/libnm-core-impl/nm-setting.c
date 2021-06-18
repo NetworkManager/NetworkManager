@@ -543,7 +543,8 @@ _nm_setting_property_to_dbus_fcn_get_boolean(const NMSettInfoSetting *          
     gboolean                  val;
 
     val = !!property_info->to_dbus_data.get_boolean(setting);
-    if (val == NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec))
+    if (!property_info->to_dbus_data.including_default
+        && val == NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec))
         return NULL;
     return g_variant_ref(nm_g_variant_singleton_b(val));
 }
@@ -559,7 +560,13 @@ _nm_setting_property_to_dbus_fcn_get_string(const NMSettInfoSetting *           
     const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
     const char *              val;
 
+    /* For string properties that are implemented via this function, the default is always NULL.
+     * In general, having strings default to NULL is most advisable.
+     *
+     * Setting "including_default" for a string makes no sense because a
+     * GVariant of type "s" cannot express NULL. */
     nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
+    nm_assert(!property_info->to_dbus_data.including_default);
 
     val = property_info->to_dbus_data.get_string(setting);
     if (!val)
@@ -593,7 +600,8 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
 
     g_object_get_property(G_OBJECT(setting), property->param_spec->name, &prop_value);
 
-    if (g_param_value_defaults(property->param_spec, &prop_value))
+    if (!property->to_dbus_data.including_default
+        && g_param_value_defaults(property->param_spec, &prop_value))
         return NULL;
 
     switch (property->property_type->typdata_to_dbus.gprop_type) {

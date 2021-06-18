@@ -714,6 +714,12 @@ struct _NMSettInfoProperty {
             gboolean (*get_boolean)(NMSetting *);
             const char *(*get_string)(NMSetting *);
         };
+
+        /* Usually, properties that are set to the default value for the GParamSpec
+         * are not serialized to GVariant (and NULL is returned by to_dbus_data().
+         * Set this flag to force always converting the property even if the value
+         * is the default. */
+        bool including_default : 1;
     } to_dbus_data;
 };
 
