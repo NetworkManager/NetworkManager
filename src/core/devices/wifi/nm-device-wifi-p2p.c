@@ -560,13 +560,38 @@ act_stage3_ip_config_start(NMDevice *           device,
                            gpointer *           out_config,
                            NMDeviceStateReason *out_failure_reason)
 {
-    gboolean      indicate_addressing_running;
-    NMConnection *connection;
-    const char *  method;
+    NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(device);
+    gboolean                indicate_addressing_running;
+    NMConnection *          connection;
+    const char *            method;
 
     connection = nm_device_get_applied_connection(device);
 
     method = nm_utils_get_ip_config_method(connection, addr_family);
+
+    /* We may have an address assigned by the group owner */
+    if (NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) && priv->group_iface
+        && !nm_supplicant_interface_get_p2p_group_owner(priv->group_iface)) {
+        in_addr_t addr;
+        guint8    plen;
+
+        if (nm_supplicant_interface_get_p2p_assigned_addr(priv->group_iface, &addr, &plen)) {
+            NMPlatformIP4Address address = {
+                .addr_source = NM_IP_CONFIG_SOURCE_DHCP,
+            };
+            gs_unref_object NMIP4Config *ip4_config = NULL;
+
+            nm_platform_ip4_address_set_addr(&address, addr, plen);
+
+            ip4_config = nm_device_ip4_config_new(device);
+            nm_ip4_config_add_address(ip4_config, &address);
+
+            nm_device_set_dev2_ip_config(device, AF_INET, NM_IP_CONFIG(ip4_config));
+
+            /* This just disables the addressing indicator. */
+            method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+        }
+    }
 
     if (addr_family == AF_INET)
         indicate_addressing_running = NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
@@ -621,6 +646,11 @@ get_auto_ip_config_method(NMDevice *device, int addr_family)
 {
     NMDeviceWifiP2P *       self = NM_DEVICE_WIFI_P2P(device);
     NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(self);
+
+    if (addr_family == AF_INET && priv->group_iface
+        && !nm_supplicant_interface_get_p2p_group_owner(priv->group_iface)
+        && nm_supplicant_interface_get_p2p_assigned_addr(priv->group_iface, NULL, NULL))
+        return NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
 
     /* Override the AUTO method to mean shared if we are group owner. */
     if (priv->group_iface && nm_supplicant_interface_get_p2p_group_owner(priv->group_iface)) {
