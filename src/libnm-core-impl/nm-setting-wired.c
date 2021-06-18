@@ -995,17 +995,6 @@ compare_property(const NMSettInfoSetting *sett_info,
         ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
 }
 
-static GVariant *
-_override_autoneg_get(const NMSettInfoSetting *               sett_info,
-                      guint                                   property_idx,
-                      NMConnection *                          connection,
-                      NMSetting *                             setting,
-                      NMConnectionSerializationFlags          flags,
-                      const NMConnectionSerializationOptions *options)
-{
-    return g_variant_new_boolean(nm_setting_wired_get_auto_negotiate((NMSettingWired *) setting));
-}
-
 /*****************************************************************************/
 
 static void
@@ -1389,17 +1378,14 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *    "speed" and "duplex" parameters (skips link configuration).
      * ---end---
      */
-    obj_properties[PROP_AUTO_NEGOTIATE] =
-        g_param_spec_boolean(NM_SETTING_WIRED_AUTO_NEGOTIATE,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(
-        properties_override,
-        obj_properties[PROP_AUTO_NEGOTIATE],
-        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_BOOLEAN,
-                                       .to_dbus_fcn = _override_autoneg_get, ));
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_WIRED_AUTO_NEGOTIATE,
+                                        PROP_AUTO_NEGOTIATE,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_wired_get_auto_negotiate,
+                                        .to_dbus_data.including_default = TRUE);
 
     /**
      * NMSettingWired:mac-address:
