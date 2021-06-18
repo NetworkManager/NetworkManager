@@ -1013,8 +1013,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
         NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("aay"),
-                                        .gprop_to_dbus_fcn   = ip6_dns_to_dbus,
-                                        .gprop_from_dbus_fcn = ip6_dns_from_dbus, ));
+                                        .gprop_from_dbus_fcn = ip6_dns_from_dbus, ),
+        .to_dbus_data.gprop_to_dbus_fcn = ip6_dns_to_dbus);
 
     /* ---dbus---
      * property: addresses

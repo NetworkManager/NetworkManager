@@ -312,8 +312,8 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
         properties_override,
         obj_properties[PROP_PARITY],
         NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_BYTE,
-                                        .gprop_to_dbus_fcn   = parity_to_dbus,
-                                        .gprop_from_dbus_fcn = parity_from_dbus, ));
+                                        .gprop_from_dbus_fcn = parity_from_dbus, ),
+        .to_dbus_data.gprop_to_dbus_fcn = parity_to_dbus, );
 
     /**
      * NMSettingSerial:stopbits:
