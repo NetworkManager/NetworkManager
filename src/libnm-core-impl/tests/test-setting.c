@@ -4391,6 +4391,9 @@ test_setting_metadata(void)
                 case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT:
                     g_assert(sip->param_spec->value_type == G_TYPE_HASH_TABLE);
                     goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS:
+                    g_assert(sip->param_spec->value_type == G_TYPE_STRING);
+                    goto check_done;
                 case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
                     goto check_done;
                 }

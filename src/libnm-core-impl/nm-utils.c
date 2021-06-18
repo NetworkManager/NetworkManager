@@ -4085,7 +4085,7 @@ _nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_
     g_object_get(setting, "cloned-mac-address", &addr, NULL);
 
     /* Before introducing the extended "cloned-mac-address" (and its D-Bus
-     * field "assigned-mac-address"), libnm's _nm_utils_hwaddr_to_dbus()
+     * field "assigned-mac-address"), libnm's nm_utils_hwaddr_to_dbus()
      * would drop invalid values as it was unable to serialize them.
      *
      * Now, we would like to send invalid values as "assigned-mac-address"
@@ -4129,12 +4129,6 @@ const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address =
                                         .to_dbus_fcn   = _nm_utils_hwaddr_cloned_data_synth,
                                         .from_dbus_fcn = _nm_utils_hwaddr_cloned_data_set, );
 
-static GVariant *
-_nm_utils_hwaddr_to_dbus(const GValue *prop_value)
-{
-    return nm_utils_hwaddr_to_dbus(g_value_get_string(prop_value));
-}
-
 static void
 _nm_utils_hwaddr_from_dbus(GVariant *dbus_value, GValue *prop_value)
 {
@@ -4147,9 +4141,10 @@ _nm_utils_hwaddr_from_dbus(GVariant *dbus_value, GValue *prop_value)
 }
 
 const NMSettInfoPropertType nm_sett_info_propert_type_mac_address =
-    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_BYTESTRING,
-                                         .gprop_to_dbus_fcn   = _nm_utils_hwaddr_to_dbus,
-                                         .gprop_from_dbus_fcn = _nm_utils_hwaddr_from_dbus, );
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(
+        G_VARIANT_TYPE_BYTESTRING,
+        .gprop_from_dbus_fcn        = _nm_utils_hwaddr_from_dbus,
+        .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS);
 
 /*****************************************************************************/
 
