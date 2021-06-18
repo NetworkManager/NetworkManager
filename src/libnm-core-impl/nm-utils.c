@@ -758,12 +758,6 @@ _nm_utils_hash_values_to_slist(GHashTable *hash)
     return list;
 }
 
-static GVariant *
-_nm_utils_strdict_to_dbus(const GValue *prop_value)
-{
-    return nm_utils_strdict_to_variant_ass(g_value_get_boxed(prop_value));
-}
-
 void
 _nm_utils_strdict_from_dbus(GVariant *dbus_value, GValue *prop_value)
 {
@@ -781,8 +775,9 @@ _nm_utils_strdict_from_dbus(GVariant *dbus_value, GValue *prop_value)
 
 const NMSettInfoPropertType nm_sett_info_propert_type_strdict =
     NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(NM_G_VARIANT_TYPE("a{ss}"),
-                                         .gprop_to_dbus_fcn   = _nm_utils_strdict_to_dbus,
-                                         .gprop_from_dbus_fcn = _nm_utils_strdict_from_dbus, );
+                                         .gprop_from_dbus_fcn = _nm_utils_strdict_from_dbus,
+                                         .typdata_to_dbus.gprop_type =
+                                             NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT);
 
 GHashTable *
 _nm_utils_copy_strdict(GHashTable *strdict)
