@@ -762,12 +762,11 @@ _nm_setting_dcb_uint_array_from_dbus(GVariant *dbus_value, GValue *prop_value)
     set_gvalue_from_array(prop_value, (guint *) array, length);
 }
 
-static const NMSettInfoPropertType nm_sett_info_propert_type_dcb_au = {
-    .dbus_type           = NM_G_VARIANT_TYPE("au"),
-    .to_dbus_fcn         = _nm_setting_property_to_dbus_fcn_gprop,
-    .gprop_to_dbus_fcn   = _nm_setting_dcb_uint_array_to_dbus,
-    .gprop_from_dbus_fcn = _nm_setting_dcb_uint_array_from_dbus,
-};
+static const NMSettInfoPropertType nm_sett_info_propert_type_dcb_au =
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(NM_G_VARIANT_TYPE("au"),
+                                         .gprop_to_dbus_fcn = _nm_setting_dcb_uint_array_to_dbus,
+                                         .gprop_from_dbus_fcn =
+                                             _nm_setting_dcb_uint_array_from_dbus, );
 
 /*****************************************************************************/
 

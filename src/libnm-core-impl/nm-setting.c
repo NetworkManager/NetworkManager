@@ -2328,30 +2328,28 @@ _nm_setting_get_deprecated_virtual_interface_name(const NMSettInfoSetting *     
         return NULL;
 }
 
-const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name = {
-    .dbus_type   = G_VARIANT_TYPE_STRING,
-    .to_dbus_fcn = _nm_setting_get_deprecated_virtual_interface_name,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
+                                        .to_dbus_fcn =
+                                            _nm_setting_get_deprecated_virtual_interface_name, );
 
-const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i = {
-    .dbus_type = G_VARIANT_TYPE_INT32,
-    /* No functions set. This property type is to silently ignore the value on D-Bus. */
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
+        G_VARIANT_TYPE_INT32,
+        /* No functions set. This property type is to silently ignore the value on D-Bus. */
+    );
 
-const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u = {
-    .dbus_type = G_VARIANT_TYPE_UINT32,
-    /* No functions set. This property type is to silently ignore the value on D-Bus. */
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
+        G_VARIANT_TYPE_UINT32,
+        /* No functions set. This property type is to silently ignore the value on D-Bus. */
+    );
 
-const NMSettInfoPropertType nm_sett_info_propert_type_plain_i = {
-    .dbus_type   = G_VARIANT_TYPE_INT32,
-    .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_plain_i =
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_INT32);
 
-const NMSettInfoPropertType nm_sett_info_propert_type_plain_u = {
-    .dbus_type   = G_VARIANT_TYPE_UINT32,
-    .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_UINT32);
 
 /*****************************************************************************/
 
