@@ -156,25 +156,6 @@ _nm_sett_info_property_find_in_array(const NMSettInfoProperty *properties,
     return NULL;
 }
 
-static GVariant *
-_gprop_to_dbus_fcn_bytes(const GValue *val)
-{
-    nm_assert(G_VALUE_HOLDS(val, G_TYPE_BYTES));
-    return nm_utils_gbytes_to_variant_ay(g_value_get_boxed(val));
-}
-
-static GVariant *
-_gprop_to_dbus_fcn_enum(const GValue *val)
-{
-    return g_variant_new_int32(g_value_get_enum(val));
-}
-
-static GVariant *
-_gprop_to_dbus_fcn_flags(const GValue *val)
-{
-    return g_variant_new_uint32(g_value_get_flags(val));
-}
-
 gboolean
 _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
 {
@@ -398,17 +379,17 @@ _nm_setting_class_commit_full(NMSettingClass *            setting_class,
         else if (vtype == G_TYPE_STRV)
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_STRING_ARRAY);
         else if (vtype == G_TYPE_BYTES) {
-            p->property_type =
-                NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_BYTESTRING,
-                                                .gprop_to_dbus_fcn = _gprop_to_dbus_fcn_bytes);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
+                G_VARIANT_TYPE_BYTESTRING,
+                .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES);
         } else if (g_type_is_a(vtype, G_TYPE_ENUM)) {
-            p->property_type =
-                NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_INT32,
-                                                .gprop_to_dbus_fcn = _gprop_to_dbus_fcn_enum);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
+                G_VARIANT_TYPE_INT32,
+                .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM);
         } else if (g_type_is_a(vtype, G_TYPE_FLAGS)) {
-            p->property_type =
-                NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_UINT32,
-                                                .gprop_to_dbus_fcn = _gprop_to_dbus_fcn_flags);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
+                G_VARIANT_TYPE_UINT32,
+                .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS);
         } else
             nm_assert_not_reached();
 
@@ -576,10 +557,22 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
     if (g_param_value_defaults(property->param_spec, &prop_value))
         return NULL;
 
-    if (property->property_type->gprop_to_dbus_fcn)
-        return property->property_type->gprop_to_dbus_fcn(&prop_value);
+    switch (property->property_type->typdata_to_dbus.gprop_type) {
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
+        if (property->property_type->gprop_to_dbus_fcn)
+            return property->property_type->gprop_to_dbus_fcn(&prop_value);
 
-    return g_dbus_gvalue_to_gvariant(&prop_value, property->property_type->dbus_type);
+        return g_dbus_gvalue_to_gvariant(&prop_value, property->property_type->dbus_type);
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
+        nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_BYTES));
+        return nm_utils_gbytes_to_variant_ay(g_value_get_boxed(&prop_value));
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM:
+        return g_variant_new_int32(g_value_get_enum(&prop_value));
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS:
+        return g_variant_new_uint32(g_value_get_flags(&prop_value));
+    }
+
+    return nm_assert_unreachable_val(NULL);
 }
 
 static GVariant *

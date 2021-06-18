@@ -671,6 +671,13 @@ typedef void (*NMSettInfoPropGPropFromDBusFcn)(GVariant *from, GValue *to);
 
 const NMSettInfoSetting *nmtst_sett_info_settings(void);
 
+typedef enum _nm_packed {
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT = 0,
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES,
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM,
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS,
+} NMSettingPropertyToDBusFcnGPropType;
+
 typedef struct {
     const GVariantType *dbus_type;
 
@@ -682,6 +689,13 @@ typedef struct {
      * on the GValue value of the GObject property. */
     NMSettInfoPropGPropToDBusFcn   gprop_to_dbus_fcn;
     NMSettInfoPropGPropFromDBusFcn gprop_from_dbus_fcn;
+
+    struct {
+        union {
+            NMSettingPropertyToDBusFcnGPropType gprop_type;
+        };
+    } typdata_to_dbus;
+
 } NMSettInfoPropertType;
 
 struct _NMSettInfoProperty {
