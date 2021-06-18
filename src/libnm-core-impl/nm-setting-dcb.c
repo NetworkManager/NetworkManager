@@ -744,14 +744,6 @@ set_gvalue_from_array(GValue *v, uint *a, size_t len)
 
 #define SET_GVALUE_FROM_ARRAY(v, a) set_gvalue_from_array(v, a, G_N_ELEMENTS(a))
 
-static GVariant *
-_nm_setting_dcb_uint_array_to_dbus(const GValue *prop_value)
-{
-    GArray *src = g_value_get_boxed(prop_value);
-
-    return nm_g_variant_new_au((const guint32 *) src->data, src->len);
-}
-
 static void
 _nm_setting_dcb_uint_array_from_dbus(GVariant *dbus_value, GValue *prop_value)
 {
@@ -763,10 +755,10 @@ _nm_setting_dcb_uint_array_from_dbus(GVariant *dbus_value, GValue *prop_value)
 }
 
 static const NMSettInfoPropertType nm_sett_info_propert_type_dcb_au =
-    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(NM_G_VARIANT_TYPE("au"),
-                                         .gprop_to_dbus_fcn = _nm_setting_dcb_uint_array_to_dbus,
-                                         .gprop_from_dbus_fcn =
-                                             _nm_setting_dcb_uint_array_from_dbus, );
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(
+        NM_G_VARIANT_TYPE("au"),
+        .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_GARRAY_UINT,
+        .gprop_from_dbus_fcn        = _nm_setting_dcb_uint_array_from_dbus, );
 
 /*****************************************************************************/
 

@@ -547,6 +547,7 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
     nm_auto_unset_gvalue GValue     prop_value = {
         0,
     };
+    GArray *tmp_array;
 
     nm_assert(property->param_spec);
 
@@ -570,6 +571,12 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
         return g_variant_new_int32(g_value_get_enum(&prop_value));
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS:
         return g_variant_new_uint32(g_value_get_flags(&prop_value));
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_GARRAY_UINT:
+        G_STATIC_ASSERT_EXPR(sizeof(guint) == sizeof(guint32));
+        nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_ARRAY));
+        tmp_array = g_value_get_boxed(&prop_value);
+        nm_assert(tmp_array);
+        return nm_g_variant_new_au((const guint32 *) tmp_array->data, tmp_array->len);
     }
 
     return nm_assert_unreachable_val(NULL);
