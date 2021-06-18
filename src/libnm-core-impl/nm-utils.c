@@ -781,6 +781,7 @@ _nm_utils_strdict_from_dbus(GVariant *dbus_value, GValue *prop_value)
 
 const NMSettInfoPropertType nm_sett_info_propert_type_strdict = {
     .dbus_type           = NM_G_VARIANT_TYPE("a{ss}"),
+    .to_dbus_fcn         = _nm_setting_property_to_dbus_fcn_gprop,
     .gprop_to_dbus_fcn   = _nm_utils_strdict_to_dbus,
     .gprop_from_dbus_fcn = _nm_utils_strdict_from_dbus,
 };
@@ -4156,6 +4157,7 @@ _nm_utils_hwaddr_from_dbus(GVariant *dbus_value, GValue *prop_value)
 
 const NMSettInfoPropertType nm_sett_info_propert_type_mac_address = {
     .dbus_type           = G_VARIANT_TYPE_BYTESTRING,
+    .to_dbus_fcn         = _nm_setting_property_to_dbus_fcn_gprop,
     .gprop_to_dbus_fcn   = _nm_utils_hwaddr_to_dbus,
     .gprop_from_dbus_fcn = _nm_utils_hwaddr_from_dbus,
 };

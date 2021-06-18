@@ -4368,7 +4368,13 @@ test_setting_metadata(void)
             g_assert(sip->property_type->dbus_type);
             g_assert(g_variant_type_string_is_valid((const char *) sip->property_type->dbus_type));
 
-            g_assert(!sip->property_type->to_dbus_fcn || !sip->property_type->gprop_to_dbus_fcn);
+            if (!sip->property_type->to_dbus_fcn) {
+                /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
+                 * properties must not have a param_spec and no gprop_to_dbus_fcn. */
+                g_assert(!sip->param_spec);
+                g_assert(!sip->property_type->gprop_to_dbus_fcn);
+            }
+
             g_assert(!sip->property_type->from_dbus_fcn
                      || !sip->property_type->gprop_from_dbus_fcn);
 

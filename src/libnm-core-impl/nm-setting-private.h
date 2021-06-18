@@ -265,6 +265,13 @@ gboolean _nm_setting_aggregate(NMSetting *setting, NMConnectionAggregateType typ
 
 gboolean _nm_setting_slave_type_is_valid(const char *slave_type, const char **out_port_type);
 
+GVariant *_nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *      sett_info,
+                                                 guint                          property_idx,
+                                                 NMConnection *                 connection,
+                                                 NMSetting *                    setting,
+                                                 NMConnectionSerializationFlags flags,
+                                                 const NMConnectionSerializationOptions *options);
+
 GVariant *_nm_setting_to_dbus(NMSetting *                             setting,
                               NMConnection *                          connection,
                               NMConnectionSerializationFlags          flags,
@@ -316,6 +323,11 @@ _nm_setting_class_commit(NMSettingClass *setting_class, NMMetaSettingType meta_t
                                                                \
         &_g;                                                   \
     })
+
+#define NM_SETT_INFO_PROPERT_TYPE_GPROP(_dbus_type, ...)                             \
+    NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = _dbus_type,                             \
+                              .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop, \
+                              __VA_ARGS__)
 
 #define NM_SETT_INFO_PROPERTY(...) (&((const NMSettInfoProperty){__VA_ARGS__}))
 
