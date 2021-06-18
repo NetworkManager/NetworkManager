@@ -779,12 +779,10 @@ _nm_utils_strdict_from_dbus(GVariant *dbus_value, GValue *prop_value)
     g_value_take_boxed(prop_value, hash);
 }
 
-const NMSettInfoPropertType nm_sett_info_propert_type_strdict = {
-    .dbus_type           = NM_G_VARIANT_TYPE("a{ss}"),
-    .to_dbus_fcn         = _nm_setting_property_to_dbus_fcn_gprop,
-    .gprop_to_dbus_fcn   = _nm_utils_strdict_to_dbus,
-    .gprop_from_dbus_fcn = _nm_utils_strdict_from_dbus,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_strdict =
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(NM_G_VARIANT_TYPE("a{ss}"),
+                                         .gprop_to_dbus_fcn   = _nm_utils_strdict_to_dbus,
+                                         .gprop_from_dbus_fcn = _nm_utils_strdict_from_dbus, );
 
 GHashTable *
 _nm_utils_copy_strdict(GHashTable *strdict)
@@ -4068,12 +4066,11 @@ _nm_utils_hwaddr_cloned_not_set(NMSetting *         setting,
     return TRUE;
 }
 
-const NMSettInfoPropertType nm_sett_info_propert_type_cloned_mac_address = {
-    .dbus_type             = G_VARIANT_TYPE_BYTESTRING,
-    .to_dbus_fcn           = _nm_utils_hwaddr_cloned_get,
-    .from_dbus_fcn         = _nm_utils_hwaddr_cloned_set,
-    .missing_from_dbus_fcn = _nm_utils_hwaddr_cloned_not_set,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_cloned_mac_address =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BYTESTRING,
+                                        .to_dbus_fcn           = _nm_utils_hwaddr_cloned_get,
+                                        .from_dbus_fcn         = _nm_utils_hwaddr_cloned_set,
+                                        .missing_from_dbus_fcn = _nm_utils_hwaddr_cloned_not_set, );
 
 static GVariant *
 _nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_info,
@@ -4132,11 +4129,10 @@ _nm_utils_hwaddr_cloned_data_set(NMSetting *         setting,
     return TRUE;
 }
 
-const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address = {
-    .dbus_type     = G_VARIANT_TYPE_STRING,
-    .to_dbus_fcn   = _nm_utils_hwaddr_cloned_data_synth,
-    .from_dbus_fcn = _nm_utils_hwaddr_cloned_data_set,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
+                                        .to_dbus_fcn   = _nm_utils_hwaddr_cloned_data_synth,
+                                        .from_dbus_fcn = _nm_utils_hwaddr_cloned_data_set, );
 
 static GVariant *
 _nm_utils_hwaddr_to_dbus(const GValue *prop_value)
@@ -4155,12 +4151,10 @@ _nm_utils_hwaddr_from_dbus(GVariant *dbus_value, GValue *prop_value)
     g_value_take_string(prop_value, str);
 }
 
-const NMSettInfoPropertType nm_sett_info_propert_type_mac_address = {
-    .dbus_type           = G_VARIANT_TYPE_BYTESTRING,
-    .to_dbus_fcn         = _nm_setting_property_to_dbus_fcn_gprop,
-    .gprop_to_dbus_fcn   = _nm_utils_hwaddr_to_dbus,
-    .gprop_from_dbus_fcn = _nm_utils_hwaddr_from_dbus,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_mac_address =
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_BYTESTRING,
+                                         .gprop_to_dbus_fcn   = _nm_utils_hwaddr_to_dbus,
+                                         .gprop_from_dbus_fcn = _nm_utils_hwaddr_from_dbus, );
 
 /*****************************************************************************/
 
@@ -5560,11 +5554,10 @@ _nm_utils_bridge_vlans_from_dbus(NMSetting *         setting,
     return TRUE;
 }
 
-const NMSettInfoPropertType nm_sett_info_propert_type_bridge_vlans = {
-    .dbus_type     = NM_G_VARIANT_TYPE("aa{sv}"),
-    .to_dbus_fcn   = _nm_utils_bridge_vlans_to_dbus,
-    .from_dbus_fcn = _nm_utils_bridge_vlans_from_dbus,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_bridge_vlans =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(NM_G_VARIANT_TYPE("aa{sv}"),
+                                        .to_dbus_fcn   = _nm_utils_bridge_vlans_to_dbus,
+                                        .from_dbus_fcn = _nm_utils_bridge_vlans_from_dbus, );
 
 gboolean
 _nm_utils_bridge_vlan_verify_list(GPtrArray * vlans,

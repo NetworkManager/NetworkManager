@@ -317,20 +317,29 @@ _nm_setting_class_commit(NMSettingClass *setting_class, NMMetaSettingType meta_t
 
 #define NM_SETT_INFO_SETT_DETAIL(...) (&((const NMSettInfoSettDetail){__VA_ARGS__}))
 
-#define NM_SETT_INFO_PROPERT_TYPE(...)                         \
-    ({                                                         \
-        static const NMSettInfoPropertType _g = {__VA_ARGS__}; \
-                                                               \
-        &_g;                                                   \
+#define NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(_dbus_type, ...) \
+    {                                                        \
+        .dbus_type = _dbus_type, __VA_ARGS__                 \
+    }
+
+#define NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(_dbus_type, ...)                           \
+    {                                                                                   \
+        .dbus_type = _dbus_type, .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop, \
+        __VA_ARGS__                                                                     \
+    }
+
+#define NM_SETT_INFO_PROPERT_TYPE(init)               \
+    ({                                                \
+        static const NMSettInfoPropertType _g = init; \
+                                                      \
+        &_g;                                          \
     })
 
 #define NM_SETT_INFO_PROPERT_TYPE_DBUS(_dbus_type, ...) \
-    NM_SETT_INFO_PROPERT_TYPE(.dbus_type = _dbus_type, __VA_ARGS__)
+    NM_SETT_INFO_PROPERT_TYPE(NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(_dbus_type, __VA_ARGS__))
 
-#define NM_SETT_INFO_PROPERT_TYPE_GPROP(_dbus_type, ...)                                  \
-    NM_SETT_INFO_PROPERT_TYPE_DBUS(_dbus_type,                                            \
-                                   .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop, \
-                                   __VA_ARGS__)
+#define NM_SETT_INFO_PROPERT_TYPE_GPROP(_dbus_type, ...) \
+    NM_SETT_INFO_PROPERT_TYPE(NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(_dbus_type, __VA_ARGS__))
 
 #define NM_SETT_INFO_PROPERTY(...) (&((const NMSettInfoProperty){__VA_ARGS__}))
 
