@@ -248,11 +248,11 @@ NM_AVAILABLE_IN_1_20
 void nm_ip_routing_rule_set_suppress_prefixlength(NMIPRoutingRule *self,
                                                   gint32           suppress_prefixlength);
 
-NM_AVAILABLE_IN_1_32
+NM_AVAILABLE_IN_1_34
 gboolean nm_ip_routing_rule_get_uid_range(const NMIPRoutingRule *self,
                                           guint32 *              out_range_start,
                                           guint32 *              out_range_end);
-NM_AVAILABLE_IN_1_32
+NM_AVAILABLE_IN_1_34
 void nm_ip_routing_rule_set_uid_range(NMIPRoutingRule *self,
                                       guint32          uid_range_start,
                                       guint32          uid_range_end);

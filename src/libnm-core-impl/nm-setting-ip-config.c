@@ -2441,7 +2441,10 @@ nm_ip_routing_rule_set_suppress_prefixlength(NMIPRoutingRule *self, gint32 suppr
  *
  * Returns: %TRUE if a uid range is set.
  *
- * Since: 1.32
+ * Since: 1.34
+ *
+ * This API was wrongly introduced in the header files for 1.32, but the
+ * symbols were not exported. The API only works since 1.34 and newer.
  */
 gboolean
 nm_ip_routing_rule_get_uid_range(const NMIPRoutingRule *self,
@@ -2466,7 +2469,10 @@ nm_ip_routing_rule_get_uid_range(const NMIPRoutingRule *self,
  * For a valid range, start must be less or equal to end.
  * If set to an invalid range, the range gets unset.
  *
- * Since: 1.32
+ * Since: 1.34
+ *
+ * This API was wrongly introduced in the header files for 1.32, but the
+ * symbols were not exported. The API only works since 1.34 and newer.
  */
 void
 nm_ip_routing_rule_set_uid_range(NMIPRoutingRule *self,
