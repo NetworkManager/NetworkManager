@@ -207,9 +207,9 @@ extern const char *__stop_connection_defaults[];
         name;                                                                               \
     })
 
-char *nm_config_data_get_connection_default(const NMConfigData *self,
-                                            const char *        property,
-                                            NMDevice *          device);
+const char *nm_config_data_get_connection_default(const NMConfigData *self,
+                                                  const char *        property,
+                                                  NMDevice *          device);
 
 gint64 nm_config_data_get_connection_default_int64(const NMConfigData *self,
                                                    const char *        property,
@@ -218,22 +218,30 @@ gint64 nm_config_data_get_connection_default_int64(const NMConfigData *self,
                                                    gint64              max,
                                                    gint64              fallback);
 
-char *nm_config_data_get_device_config(const NMConfigData *self,
-                                       const char *        property,
-                                       NMDevice *          device,
-                                       gboolean *          has_match);
+const char *nm_config_data_get_device_config(const NMConfigData *self,
+                                             const char *        property,
+                                             NMDevice *          device,
+                                             gboolean *          has_match);
 
-char *nm_config_data_get_device_config_by_pllink(const NMConfigData *  self,
-                                                 const char *          property,
-                                                 const NMPlatformLink *pllink,
-                                                 const char *          match_device_type,
-                                                 gboolean *            has_match);
+const char *nm_config_data_get_device_config_by_pllink(const NMConfigData *  self,
+                                                       const char *          property,
+                                                       const NMPlatformLink *pllink,
+                                                       const char *          match_device_type,
+                                                       gboolean *            has_match);
 
 gboolean nm_config_data_get_device_config_boolean(const NMConfigData *self,
                                                   const char *        property,
                                                   NMDevice *          device,
                                                   int                 val_no_match,
                                                   int                 val_invalid);
+gint64   nm_config_data_get_device_config_int64(const NMConfigData *self,
+                                                const char *        property,
+                                                NMDevice *          device,
+                                                int                 base,
+                                                gint64              min,
+                                                gint64              max,
+                                                gint64              val_no_match,
+                                                gint64              val_invalid);
 
 char **  nm_config_data_get_groups(const NMConfigData *self);
 char **  nm_config_data_get_keys(const NMConfigData *self, const char *group);
