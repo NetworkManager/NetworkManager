@@ -652,6 +652,7 @@ device_hostname_info_compare(gconstpointer a, gconstpointer b)
 
     NM_CMP_FIELD(info1, info2, priority);
     NM_CMP_FIELD_UNSAFE(info2, info1, is_default);
+    NM_CMP_FIELD_UNSAFE(info2, info1, IS_IPv4);
 
     return 0;
 }
