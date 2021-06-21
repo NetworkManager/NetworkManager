@@ -125,8 +125,6 @@ void  _nmtst_ip6_config_del_address(NMIP6Config *self, guint i);
 guint nm_ip6_config_get_num_addresses(const NMIP6Config *self);
 const NMPlatformIP6Address *nm_ip6_config_get_first_address(const NMIP6Config *self);
 const NMPlatformIP6Address *_nmtst_ip6_config_get_address(const NMIP6Config *self, guint i);
-const NMPlatformIP6Address *nm_ip6_config_find_first_address(const NMIP6Config *  self,
-                                                             NMPlatformMatchFlags match_flag);
 gboolean nm_ip6_config_address_exists(const NMIP6Config *self, const NMPlatformIP6Address *address);
 const NMPlatformIP6Address *nm_ip6_config_lookup_address(const NMIP6Config *    self,
                                                          const struct in6_addr *addr);
