@@ -32,6 +32,7 @@ Overview of changes since NetworkManager-1.30
   Please note that SELinux might prevent NetworkManager from communicating with nft.
 * ethtool: add support for pause settings.
 * Support "prohibit"/"blackhole"/"unreachable" type routing rules.
+* Support uidrange attribute for policy routing rules.
 * Now NetworkManager preserves by default the existing traffic control
   configuration (qdiscs and filters) when activating a connection.
 * wifi/iwd: mirror NetworkManager connection profiles to iwd config files.
