@@ -176,12 +176,13 @@ typedef enum {
     NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY =
         NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL | NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL,
 
-    NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL    = (1LL << 2),
-    NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE = (1LL << 3),
-    NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED = (1LL << 4),
-    NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY      = NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL
-                                            | NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE
-                                            | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED,
+    NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL     = (1LL << 2),
+    NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE  = (1LL << 3),
+    NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED  = (1LL << 4),
+    NM_PLATFORM_MATCH_WITH_ADDRSTATE_DEPRECATED = (1LL << 5),
+    NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY =
+        NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL | NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE
+        | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED | NM_PLATFORM_MATCH_WITH_ADDRSTATE_DEPRECATED,
 } NMPlatformMatchFlags;
 
 #define NM_PLATFORM_LINK_OTHER_NETNS (-1)
@@ -2380,7 +2381,8 @@ struct _NMDedupMultiIndex *nm_platform_get_multi_idx(NMPlatform *self);
 
 /*****************************************************************************/
 
-gboolean nm_platform_ip6_address_match(const NMPlatformIP6Address *addr,
-                                       NMPlatformMatchFlags        match_flag);
+gboolean nm_platform_ip_address_match(int                        addr_family,
+                                      const NMPlatformIPAddress *addr,
+                                      NMPlatformMatchFlags       match_flag);
 
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */

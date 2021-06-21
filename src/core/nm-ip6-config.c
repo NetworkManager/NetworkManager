@@ -1628,28 +1628,6 @@ nm_ip6_config_lookup_address(const NMIP6Config *self, const struct in6_addr *add
     return entry ? NMP_OBJECT_CAST_IP6_ADDRESS(entry->obj) : NULL;
 }
 
-const NMPlatformIP6Address *
-nm_ip6_config_find_first_address(const NMIP6Config *self, NMPlatformMatchFlags match_flag)
-{
-    const NMPlatformIP6Address *addr;
-    NMDedupMultiIter            iter;
-
-    g_return_val_if_fail(NM_IS_IP6_CONFIG(self), NULL);
-
-    nm_assert(!NM_FLAGS_ANY(
-        match_flag,
-        ~(NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY | NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY)));
-
-    nm_assert(NM_FLAGS_ANY(match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY));
-    nm_assert(NM_FLAGS_ANY(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY));
-
-    nm_ip_config_iter_ip6_address_for_each (&iter, self, &addr) {
-        if (nm_platform_ip6_address_match(addr, match_flag))
-            return addr;
-    }
-    return NULL;
-}
-
 /**
  * nm_ip6_config_has_dad_pending_addresses
  * @self: configuration containing the addresses to check

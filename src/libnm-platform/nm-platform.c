@@ -3413,7 +3413,9 @@ nm_platform_ip6_address_get_peer(const NMPlatformIP6Address *addr)
 }
 
 gboolean
-nm_platform_ip6_address_match(const NMPlatformIP6Address *addr, NMPlatformMatchFlags match_flag)
+nm_platform_ip_address_match(int                        addr_family,
+                             const NMPlatformIPAddress *address,
+                             NMPlatformMatchFlags       match_flag)
 {
     nm_assert(!NM_FLAGS_ANY(
         match_flag,
@@ -3421,20 +3423,33 @@ nm_platform_ip6_address_match(const NMPlatformIP6Address *addr, NMPlatformMatchF
     nm_assert(NM_FLAGS_ANY(match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE__ANY));
     nm_assert(NM_FLAGS_ANY(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE__ANY));
 
-    if (IN6_IS_ADDR_LINKLOCAL(&addr->address)) {
-        if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL))
-            return FALSE;
+    if (addr_family == AF_INET) {
+        if (nm_utils_ip4_address_is_link_local(((NMPlatformIP4Address *) address)->address)) {
+            if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL))
+                return FALSE;
+        } else {
+            if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL))
+                return FALSE;
+        }
     } else {
-        if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL))
-            return FALSE;
+        if (IN6_IS_ADDR_LINKLOCAL(address->address_ptr)) {
+            if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_LINKLOCAL))
+                return FALSE;
+        } else {
+            if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRTYPE_NORMAL))
+                return FALSE;
+        }
     }
 
-    if (NM_FLAGS_HAS(addr->n_ifa_flags, IFA_F_DADFAILED)) {
+    if (NM_FLAGS_HAS(address->n_ifa_flags, IFA_F_DADFAILED)) {
         if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_DADFAILED))
             return FALSE;
-    } else if (NM_FLAGS_HAS(addr->n_ifa_flags, IFA_F_TENTATIVE)
-               && !NM_FLAGS_HAS(addr->n_ifa_flags, IFA_F_OPTIMISTIC)) {
+    } else if (NM_FLAGS_HAS(address->n_ifa_flags, IFA_F_TENTATIVE)
+               && !NM_FLAGS_HAS(address->n_ifa_flags, IFA_F_OPTIMISTIC)) {
         if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_TENTATIVE))
+            return FALSE;
+    } else if (NM_FLAGS_HAS(address->n_ifa_flags, IFA_F_DEPRECATED)) {
+        if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_DEPRECATED))
             return FALSE;
     } else {
         if (!NM_FLAGS_HAS(match_flag, NM_PLATFORM_MATCH_WITH_ADDRSTATE_NORMAL))
