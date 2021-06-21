@@ -1580,9 +1580,18 @@ static int client_handle_forcerenew(sd_dhcp_client *client, DHCPMessage *force, 
         if (r != DHCP_FORCERENEW)
                 return -ENOMSG;
 
+#if 0 /* NM_IGNORED */
         log_dhcp_client(client, "FORCERENEW");
 
         return 0;
+#else /* NM_IGNORED */
+        /* NM: patch out the handling of FORCERENEW. We don't implement rfc3118 (Authentication
+         * for DHCP Messages) nor rfc6704 (Forcerenew Nonce Authenticatio) so accepting unauthenticated
+         * FORCERENEW requests is a security issue (CVE-2020-13529)
+         * See: https://github.com/systemd/systemd/issues/16774 */
+        log_dhcp_client(client, "ignore FORCERENEW");
+        return -ENOMSG;
+#endif /* NM_IGNORED */
 }
 
 static bool lease_equal(const sd_dhcp_lease *a, const sd_dhcp_lease *b) {
