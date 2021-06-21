@@ -1382,8 +1382,8 @@ _hw_addr_set_scanning(NMDeviceWifi *self, gboolean do_reset)
     now = nm_utils_get_monotonic_timestamp_sec();
 
     if (now >= priv->hw_addr_scan_expire) {
-        gs_free char *generate_mac_address_mask = NULL;
-        gs_free char *hw_addr_scan              = NULL;
+        gs_free char *hw_addr_scan = NULL;
+        const char *  generate_mac_address_mask;
 
         /* the random MAC address for scanning expires after a while.
          *

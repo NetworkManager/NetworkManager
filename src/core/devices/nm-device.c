@@ -820,8 +820,7 @@ _prop_get_connection_stable_id(NMDevice *         self,
      * Especially with ${RANDOM} stable-id we want to generate *one* configuration
      * for each activation. */
     if (G_UNLIKELY(!priv->current_stable_id)) {
-        gs_free char *       default_id = NULL;
-        gs_free char *       generated  = NULL;
+        gs_free char *       generated = NULL;
         NMUtilsStableType    stable_type;
         NMSettingConnection *s_con;
         gboolean             hwaddr_is_fake;
@@ -834,11 +833,10 @@ _prop_get_connection_stable_id(NMDevice *         self,
         stable_id = nm_setting_connection_get_stable_id(s_con);
 
         if (!stable_id) {
-            default_id =
+            stable_id =
                 nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
                                                       NM_CON_DEFAULT("connection.stable-id"),
                                                       self);
-            stable_id = default_id;
         }
 
         uuid = nm_connection_get_uuid(connection);
@@ -897,7 +895,6 @@ _prop_get_ipv6_dhcp_duid(NMDevice *    self,
 {
     NMSettingIPConfig *s_ip6;
     const char *       duid;
-    gs_free char *     duid_default = NULL;
     const char *       duid_error;
     GBytes *           duid_out;
     gboolean           duid_enforce = TRUE;
@@ -910,10 +907,9 @@ _prop_get_ipv6_dhcp_duid(NMDevice *    self,
     duid  = nm_setting_ip6_config_get_dhcp_duid(NM_SETTING_IP6_CONFIG(s_ip6));
 
     if (!duid) {
-        duid_default = nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
-                                                             NM_CON_DEFAULT("ipv6.dhcp-duid"),
-                                                             self);
-        duid         = duid_default;
+        duid = nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
+                                                     NM_CON_DEFAULT("ipv6.dhcp-duid"),
+                                                     self);
         if (!duid)
             duid = "lease";
     }
@@ -1390,7 +1386,6 @@ _prop_get_ipvx_dhcp_iaid(NMDevice *    self,
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
     NMSettingIPConfig *s_ip;
     const char *       iaid_str;
-    gs_free char *     iaid_str_free = NULL;
     guint32            iaid;
     const char *       iface;
     const char *       fail_reason;
@@ -1399,11 +1394,10 @@ _prop_get_ipvx_dhcp_iaid(NMDevice *    self,
     s_ip     = nm_connection_get_setting_ip_config(connection, addr_family);
     iaid_str = nm_setting_ip_config_get_dhcp_iaid(s_ip);
     if (!iaid_str) {
-        iaid_str_free = nm_config_data_get_connection_default(
-            NM_CONFIG_GET_DATA,
-            IS_IPv4 ? NM_CON_DEFAULT("ipv4.dhcp-iaid") : NM_CON_DEFAULT("ipv6.dhcp-iaid"),
-            self);
-        iaid_str = iaid_str_free;
+        iaid_str = nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
+                                                         IS_IPv4 ? NM_CON_DEFAULT("ipv4.dhcp-iaid")
+                                                                 : NM_CON_DEFAULT("ipv6.dhcp-iaid"),
+                                                         self);
         if (!iaid_str) {
             iaid_str    = NM_IAID_IFNAME;
             is_explicit = FALSE;
@@ -1560,12 +1554,10 @@ _prop_get_ipvx_dhcp_hostname_flags(NMDevice *self, int addr_family)
 }
 
 static const char *
-_prop_get_connection_mud_url(NMDevice *self, NMSettingConnection *s_con, char **out_mud_url)
+_prop_get_connection_mud_url(NMDevice *self, NMSettingConnection *s_con)
 {
-    const char *  mud_url;
-    gs_free char *s = NULL;
-
-    nm_assert(out_mud_url && !*out_mud_url);
+    const char *mud_url;
+    const char *s;
 
     mud_url = nm_setting_connection_get_mud_url(s_con);
 
@@ -1582,7 +1574,7 @@ _prop_get_connection_mud_url(NMDevice *self, NMSettingConnection *s_con, char **
         if (nm_streq(s, NM_CONNECTION_MUD_URL_NONE))
             return NULL;
         if (nm_sd_http_url_is_valid_https(s))
-            return (*out_mud_url = g_steal_pointer(&s));
+            return s;
     }
 
     return NULL;
@@ -1593,7 +1585,6 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
 {
     NMSettingIPConfig *s_ip4;
     const char *       client_id;
-    gs_free char *     client_id_default = NULL;
     guint8 *           client_id_buf;
     const char *       fail_reason;
     guint8             hwaddr_bin_buf[_NM_UTILS_HWADDR_LEN_MAX];
@@ -1607,13 +1598,12 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
     client_id = nm_setting_ip4_config_get_dhcp_client_id(NM_SETTING_IP4_CONFIG(s_ip4));
 
     if (!client_id) {
-        client_id_default =
-            nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
-                                                  NM_CON_DEFAULT("ipv4.dhcp-client-id"),
-                                                  self);
-        if (client_id_default && client_id_default[0]) {
+        client_id = nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
+                                                          NM_CON_DEFAULT("ipv4.dhcp-client-id"),
+                                                          self);
+        if (client_id && !client_id[0]) {
             /* a non-empty client-id is always valid, see nm_dhcp_utils_client_id_string_to_bytes().  */
-            client_id = client_id_default;
+            client_id = NULL;
         }
     }
 
@@ -1745,8 +1735,7 @@ out_good:
 static GBytes *
 _prop_get_ipv4_dhcp_vendor_class_identifier(NMDevice *self, NMSettingIP4Config *s_ip4)
 {
-    gs_free char *config_data_prop = NULL;
-    gs_free char *to_free          = NULL;
+    gs_free char *to_free = NULL;
     const char *  conn_prop;
     GBytes *      bytes = NULL;
     const char *  bin;
@@ -1756,13 +1745,13 @@ _prop_get_ipv4_dhcp_vendor_class_identifier(NMDevice *self, NMSettingIP4Config *
 
     if (!conn_prop) {
         /* set in NetworkManager.conf ? */
-        config_data_prop = nm_config_data_get_connection_default(
+        conn_prop = nm_config_data_get_connection_default(
             NM_CONFIG_GET_DATA,
             NM_CON_DEFAULT("ipv4.dhcp-vendor-class-identifier"),
             self);
 
-        if (config_data_prop && nm_utils_validate_dhcp4_vendor_class_id(config_data_prop, NULL))
-            conn_prop = config_data_prop;
+        if (conn_prop && !nm_utils_validate_dhcp4_vendor_class_id(conn_prop, NULL))
+            conn_prop = NULL;
     }
 
     if (conn_prop) {
@@ -1828,15 +1817,10 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
 }
 
 static const char *
-_prop_get_x_cloned_mac_address(NMDevice *    self,
-                               NMConnection *connection,
-                               gboolean      is_wifi,
-                               char **       out_addr)
+_prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolean is_wifi)
 {
     NMSetting * setting;
     const char *addr = NULL;
-
-    nm_assert(out_addr && !*out_addr);
 
     setting = nm_connection_get_setting(connection,
                                         is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
@@ -1846,7 +1830,7 @@ _prop_get_x_cloned_mac_address(NMDevice *    self,
     }
 
     if (!addr) {
-        gs_free char *a = NULL;
+        const char *a;
 
         a = nm_config_data_get_connection_default(
             NM_CONFIG_GET_DATA,
@@ -1861,36 +1845,28 @@ _prop_get_x_cloned_mac_address(NMDevice *    self,
                 NMSettingMacRandomization v;
 
                 /* for backward compatibility, read the deprecated wifi.mac-address-randomization setting. */
-                a = nm_config_data_get_connection_default(
+                v = nm_config_data_get_connection_default_int64(
                     NM_CONFIG_GET_DATA,
                     NM_CON_DEFAULT("wifi.mac-address-randomization"),
-                    self);
-                v = _nm_utils_ascii_str_to_int64(a,
-                                                 10,
-                                                 NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
-                                                 NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
-                                                 NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
+                    self,
+                    NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
+                    NM_SETTING_MAC_RANDOMIZATION_ALWAYS,
+                    NM_SETTING_MAC_RANDOMIZATION_DEFAULT);
                 if (v == NM_SETTING_MAC_RANDOMIZATION_ALWAYS)
                     addr = NM_CLONED_MAC_RANDOM;
             }
         } else if (NM_CLONED_MAC_IS_SPECIAL(a) || nm_utils_hwaddr_valid(a, ETH_ALEN))
-            addr = *out_addr = g_steal_pointer(&a);
+            addr = a;
     }
 
     return addr;
 }
 
 static const char *
-_prop_get_x_generate_mac_address_mask(NMDevice *    self,
-                                      NMConnection *connection,
-                                      gboolean      is_wifi,
-                                      char **       out_value)
+_prop_get_x_generate_mac_address_mask(NMDevice *self, NMConnection *connection, gboolean is_wifi)
 {
     NMSetting * setting;
-    const char *value = NULL;
-    char *      a;
-
-    nm_assert(out_value && !*out_value);
+    const char *value;
 
     setting = nm_connection_get_setting(connection,
                                         is_wifi ? NM_TYPE_SETTING_WIRELESS : NM_TYPE_SETTING_WIRED);
@@ -1903,15 +1879,11 @@ _prop_get_x_generate_mac_address_mask(NMDevice *    self,
             return value;
     }
 
-    a = nm_config_data_get_connection_default(
+    return nm_config_data_get_connection_default(
         NM_CONFIG_GET_DATA,
         is_wifi ? NM_CON_DEFAULT("wifi.generate-mac-address-mask")
                 : NM_CON_DEFAULT("ethernet.generate-mac-address-mask"),
         self);
-    if (!a)
-        return NULL;
-    *out_value = a;
-    return a;
 }
 
 /*****************************************************************************/
@@ -5874,16 +5846,19 @@ sriov_op_queue(NMDevice *              self,
 static void
 device_init_static_sriov_num_vfs(NMDevice *self)
 {
-    NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
-    gs_free char *   value = NULL;
-    int              num_vfs;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (priv->ifindex > 0 && nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)) {
-        value   = nm_config_data_get_device_config(NM_CONFIG_GET_DATA,
-                                                 NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
-                                                 self,
-                                                 NULL);
-        num_vfs = _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXINT32, -1);
+        int num_vfs;
+
+        num_vfs = nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
+                                                         NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
+                                                         self,
+                                                         10,
+                                                         0,
+                                                         G_MAXINT32,
+                                                         -1,
+                                                         -1);
         if (num_vfs >= 0)
             sriov_op_queue(self, num_vfs, NM_OPTION_BOOL_DEFAULT, NULL, NULL);
     }
@@ -9414,7 +9389,6 @@ dhcp4_start(NMDevice *self)
     gs_unref_bytes GBytes *hwaddr                  = NULL;
     gs_unref_bytes GBytes *bcast_hwaddr            = NULL;
     gs_unref_bytes GBytes *client_id               = NULL;
-    gs_free char *         mud_url_free            = NULL;
     NMConnection *         connection;
     NMSettingConnection *  s_con;
     GError *               error = NULL;
@@ -9474,7 +9448,7 @@ dhcp4_start(NMDevice *self)
         nm_setting_ip_config_get_dhcp_hostname(s_ip4),
         nm_setting_ip4_config_get_dhcp_fqdn(NM_SETTING_IP4_CONFIG(s_ip4)),
         _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET),
-        _prop_get_connection_mud_url(self, s_con, &mud_url_free),
+        _prop_get_connection_mud_url(self, s_con),
         client_id,
         _prop_get_ipvx_dhcp_timeout(self, AF_INET),
         _device_get_dhcp_anycast_address(self),
@@ -9878,8 +9852,7 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
     gs_unref_bytes GBytes *     duid         = NULL;
     gboolean                    enforce_duid = FALSE;
     const NMPlatformLink *      pllink;
-    gs_free char *              mud_url_free = NULL;
-    GError *                    error        = NULL;
+    GError *                    error = NULL;
     guint32                     iaid;
     gboolean                    iaid_explicit;
     NMSettingConnection *       s_con;
@@ -9924,7 +9897,7 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
         nm_setting_ip_config_get_dhcp_send_hostname(s_ip6),
         nm_setting_ip_config_get_dhcp_hostname(s_ip6),
         _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET6),
-        _prop_get_connection_mud_url(self, s_con, &mud_url_free),
+        _prop_get_connection_mud_url(self, s_con),
         duid,
         enforce_duid,
         iaid,
@@ -14043,13 +14016,14 @@ nm_device_is_up(NMDevice *self)
 static gint64
 _get_carrier_wait_ms(NMDevice *self)
 {
-    gs_free char *value = NULL;
-
-    value = nm_config_data_get_device_config(NM_CONFIG_GET_DATA,
-                                             NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
-                                             self,
-                                             NULL);
-    return _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXINT32, CARRIER_WAIT_TIME_MS);
+    return nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
+                                                  NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
+                                                  self,
+                                                  10,
+                                                  0,
+                                                  G_MAXINT32,
+                                                  CARRIER_WAIT_TIME_MS,
+                                                  CARRIER_WAIT_TIME_MS);
 }
 
 gboolean
@@ -17273,14 +17247,13 @@ _hw_addr_get_cloned(NMDevice *    self,
                     gboolean *    preserve,
                     char **       hwaddr,
                     HwAddrType *  hwaddr_type,
-                    char **       hwaddr_detail,
+                    const char ** hwaddr_detail,
                     GError **     error)
 {
     NMDevicePrivate *priv;
-    gs_free char *   addr_setting_free             = NULL;
-    gs_free char *   hw_addr_generated             = NULL;
-    gs_free char *   generate_mac_address_mask_tmp = NULL;
-    const char *     addr, *addr_setting;
+    gs_free char *   hw_addr_generated = NULL;
+    const char *     addr;
+    const char *     addr_setting;
     char *           addr_out;
     HwAddrType       type_out;
 
@@ -17293,15 +17266,16 @@ _hw_addr_get_cloned(NMDevice *    self,
     if (!connection)
         g_return_val_if_reached(FALSE);
 
-    addr = addr_setting =
-        _prop_get_x_cloned_mac_address(self, connection, is_wifi, &addr_setting_free);
+    addr_setting = _prop_get_x_cloned_mac_address(self, connection, is_wifi);
+
+    addr = addr_setting;
 
     if (nm_streq(addr, NM_CLONED_MAC_PRESERVE)) {
         /* "preserve" means to reset the initial MAC address. */
         NM_SET_OUT(preserve, TRUE);
         NM_SET_OUT(hwaddr, NULL);
         NM_SET_OUT(hwaddr_type, HW_ADDR_TYPE_UNSET);
-        NM_SET_OUT(hwaddr_detail, g_steal_pointer(&addr_setting_free) ?: g_strdup(addr_setting));
+        NM_SET_OUT(hwaddr_detail, addr_setting);
         return TRUE;
     }
 
@@ -17314,8 +17288,7 @@ _hw_addr_get_cloned(NMDevice *    self,
             NM_SET_OUT(preserve, TRUE);
             NM_SET_OUT(hwaddr, NULL);
             NM_SET_OUT(hwaddr_type, HW_ADDR_TYPE_UNSET);
-            NM_SET_OUT(hwaddr_detail,
-                       g_steal_pointer(&addr_setting_free) ?: g_strdup(addr_setting));
+            NM_SET_OUT(hwaddr_detail, addr_setting);
             return TRUE;
         } else if (!addr) {
             g_set_error_literal(error,
@@ -17335,10 +17308,7 @@ _hw_addr_get_cloned(NMDevice *    self,
         }
         hw_addr_generated = nm_utils_hw_addr_gen_random_eth(
             nm_device_get_initial_hw_address(self),
-            _prop_get_x_generate_mac_address_mask(self,
-                                                  connection,
-                                                  is_wifi,
-                                                  &generate_mac_address_mask_tmp));
+            _prop_get_x_generate_mac_address_mask(self, connection, is_wifi));
         if (!hw_addr_generated) {
             g_set_error(error,
                         NM_DEVICE_ERROR,
@@ -17366,10 +17336,7 @@ _hw_addr_get_cloned(NMDevice *    self,
             stable_id,
             nm_device_get_ip_iface(self),
             nm_device_get_initial_hw_address(self),
-            _prop_get_x_generate_mac_address_mask(self,
-                                                  connection,
-                                                  is_wifi,
-                                                  &generate_mac_address_mask_tmp));
+            _prop_get_x_generate_mac_address_mask(self, connection, is_wifi));
         if (!hw_addr_generated) {
             g_set_error(error,
                         NM_DEVICE_ERROR,
@@ -17393,7 +17360,7 @@ _hw_addr_get_cloned(NMDevice *    self,
     NM_SET_OUT(preserve, FALSE);
     NM_SET_OUT(hwaddr, addr_out);
     NM_SET_OUT(hwaddr_type, type_out);
-    NM_SET_OUT(hwaddr_detail, g_steal_pointer(&addr_setting_free) ?: g_strdup(addr_setting));
+    NM_SET_OUT(hwaddr_detail, addr_setting);
     return TRUE;
 out_no_action:
     NM_SET_OUT(preserve, FALSE);
@@ -17423,7 +17390,7 @@ nm_device_hw_addr_set_cloned(NMDevice *self, NMConnection *connection, gboolean 
     NMDevicePrivate *priv;
     gboolean         preserve   = FALSE;
     gs_free char *   hwaddr     = NULL;
-    gs_free char *   detail     = NULL;
+    const char *     detail     = NULL;
     HwAddrType       type       = HW_ADDR_TYPE_UNSET;
     gs_free_error GError *error = NULL;
 
