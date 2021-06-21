@@ -296,7 +296,9 @@ _nm_setting_class_commit_full(NMSettingClass *            setting_class,
 {
     NMSettInfoSetting *sett_info;
     gs_free GParamSpec **property_specs = NULL;
-    guint                i, n_property_specs, override_len;
+    guint                n_property_specs;
+    guint                override_len;
+    guint                i;
 
     nm_assert(NM_IS_SETTING_CLASS(setting_class));
     nm_assert(!setting_class->setting_info);
@@ -309,25 +311,26 @@ _nm_setting_class_commit_full(NMSettingClass *            setting_class,
     nm_assert(!sett_info->property_infos_len);
     nm_assert(!sett_info->property_infos);
 
-    if (!properties_override) {
-        override_len        = 0;
-        properties_override = _nm_sett_info_property_override_create_array();
-    } else
-        override_len = properties_override->len;
-
     property_specs =
         g_object_class_list_properties(G_OBJECT_CLASS(setting_class), &n_property_specs);
 
-    for (i = 0; i < properties_override->len; i++) {
-        NMSettInfoProperty *p = &g_array_index(properties_override, NMSettInfoProperty, i);
+    if (!properties_override) {
+        override_len        = 0;
+        properties_override = _nm_sett_info_property_override_create_array_sized(n_property_specs);
+    } else {
+        override_len = properties_override->len;
 
-        nm_assert((!!p->name) != (!!p->param_spec));
+        for (i = 0; i < override_len; i++) {
+            NMSettInfoProperty *p = &g_array_index(properties_override, NMSettInfoProperty, i);
 
-        if (!p->name) {
-            nm_assert(p->param_spec);
-            p->name = p->param_spec->name;
-        } else
-            nm_assert(!p->param_spec);
+            nm_assert((!!p->name) != (!!p->param_spec));
+
+            if (!p->name) {
+                nm_assert(p->param_spec);
+                p->name = p->param_spec->name;
+            } else
+                nm_assert(!p->param_spec);
+        }
     }
 
 #if NM_MORE_ASSERTS > 10

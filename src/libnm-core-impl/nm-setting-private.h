@@ -279,9 +279,18 @@ gboolean _nm_setting_property_is_regular_secret_flags(NMSetting * setting,
 /*****************************************************************************/
 
 static inline GArray *
+_nm_sett_info_property_override_create_array_sized(guint reserved_size)
+{
+    return g_array_sized_new(FALSE, FALSE, sizeof(NMSettInfoProperty), reserved_size);
+}
+
+static inline GArray *
 _nm_sett_info_property_override_create_array(void)
 {
-    return g_array_new(FALSE, FALSE, sizeof(NMSettInfoProperty));
+    /* pre-allocate a relatively large buffer to avoid frequent re-allocations.
+     * Note that the buffer is only short-lived and will be destroyed by
+     * _nm_setting_class_commit_full(). */
+    return _nm_sett_info_property_override_create_array_sized(20);
 }
 
 GArray *_nm_sett_info_property_override_create_array_ip_config(void);
