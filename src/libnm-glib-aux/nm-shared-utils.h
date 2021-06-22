@@ -247,7 +247,6 @@ extern const NMIPAddr nm_ip_addr_zero;
 static inline int
 nm_ip_addr_cmp(int addr_family, gconstpointer a, gconstpointer b)
 {
-    nm_assert_addr_family(addr_family);
     nm_assert(a);
     nm_assert(b);
 
@@ -264,20 +263,27 @@ static inline gboolean
 nm_ip_addr_is_null(int addr_family, gconstpointer addr)
 {
     nm_assert(addr);
-    if (addr_family == AF_INET6)
-        return IN6_IS_ADDR_UNSPECIFIED((const struct in6_addr *) addr);
-    nm_assert(addr_family == AF_INET);
-    return ((const struct in_addr *) addr)->s_addr == 0;
+
+    if (NM_IS_IPv4(addr_family)) {
+        in_addr_t t;
+
+        /* also for in_addr_t type (AF_INET), we accept that the pointer might
+         * be unaligned. */
+        memcpy(&t, addr, sizeof(t));
+        return t == 0;
+    }
+
+    return IN6_IS_ADDR_UNSPECIFIED((const struct in6_addr *) addr);
 }
 
 static inline void
 nm_ip_addr_set(int addr_family, gpointer dst, gconstpointer src)
 {
-    nm_assert_addr_family(addr_family);
     nm_assert(dst);
     nm_assert(src);
 
-    memcpy(dst, src, NM_IS_IPv4(addr_family) ? sizeof(in_addr_t) : sizeof(struct in6_addr));
+    /* this MUST use memcpy() (or similar means) to support unaligned src/dst pointers. */
+    memcpy(dst, src, nm_utils_addr_family_to_size(addr_family));
 }
 
 static inline NMIPAddr
