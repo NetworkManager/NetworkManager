@@ -21,7 +21,7 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PATH, );
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PATH, PROP_CLIENT, );
 
 typedef struct _NMObjectPrivate {
     NMClient *     client;
@@ -215,6 +215,8 @@ unregister_client(NMObject *self, NMClient *client, NMLDBusObject *dbobj)
     nm_assert(priv->client == client);
     priv->client = NULL;
 
+    _nm_client_queue_notify_object(client, self, obj_properties[PROP_CLIENT]);
+
     clear_properties(self, client);
 }
 
@@ -228,6 +230,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     switch (prop_id) {
     case PROP_PATH:
         g_value_set_string(value, nm_object_get_path(self));
+        break;
+    case PROP_CLIENT:
+        g_value_set_object(value, nm_object_get_client(self));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -306,6 +311,24 @@ nm_object_class_init(NMObjectClass *klass)
                                                     "",
                                                     NULL,
                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMObject:client:
+     *
+     * The NMClient instance as returned by nm_object_get_client().
+     *
+     * When an NMObject gets removed from the NMClient cache,
+     * the NMObject:path property stays unchanged, but this client
+     * instance gets reset to %NULL. You can use this property to
+     * track removal of the object from the cache.
+     *
+     * Since: 1.34
+     **/
+    obj_properties[PROP_CLIENT] = g_param_spec_object(NM_OBJECT_CLIENT,
+                                                      "",
+                                                      "",
+                                                      NM_TYPE_CLIENT,
+                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

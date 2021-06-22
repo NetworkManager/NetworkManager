@@ -22,7 +22,8 @@ G_BEGIN_DECLS
 #define NM_IS_OBJECT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_OBJECT))
 #define NM_OBJECT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_OBJECT, NMObjectClass))
 
-#define NM_OBJECT_PATH "path"
+#define NM_OBJECT_PATH   "path"
+#define NM_OBJECT_CLIENT "client"
 
 /**
  * NMObject:
