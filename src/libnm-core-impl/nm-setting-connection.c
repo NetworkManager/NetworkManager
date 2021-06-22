@@ -2064,6 +2064,10 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * %TRUE to automatically activate the connection, %FALSE to require manual
      * intervention to activate the connection.
      *
+     * Autoconnect happens when the circumstances are suitable. That means for
+     * example that the device is currently managed and not active. Autoconnect
+     * thus never replaces or competes with an already active profile.
+     *
      * Note that autoconnect is not implemented for VPN profiles. See
      * #NMSettingConnection:secondaries as an alternative to automatically
      * connect VPN profiles.
@@ -2085,9 +2089,12 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     /**
      * NMSettingConnection:autoconnect-priority:
      *
-     * The autoconnect priority. If the connection is set to autoconnect,
-     * connections with higher priority will be preferred. Defaults to 0.
-     * The higher number means higher priority.
+     * The autoconnect priority in range -999 to 999. If the connection is set
+     * to autoconnect, connections with higher priority will be preferred.
+     * The higher number means higher priority. Defaults to 0.
+     * Note that this property only matters if there are more than one candidate
+     * profile to select for autoconnect. In case of equal priority, the profile
+     * used most recently is chosen.
      **/
     /* ---ifcfg-rh---
      * property: autoconnect-priority
