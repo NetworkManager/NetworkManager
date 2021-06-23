@@ -1323,9 +1323,11 @@
         <arg choice='plain'><command>status</command></arg>
         <arg choice='plain'><command>show</command></arg>
         <arg choice='plain'><command>set</command></arg>
+        <arg choice='plain'><command>up</command></arg>
         <arg choice='plain'><command>connect</command></arg>
         <arg choice='plain'><command>reapply</command></arg>
         <arg choice='plain'><command>modify</command></arg>
+        <arg choice='plain'><command>down</command></arg>
         <arg choice='plain'><command>disconnect</command></arg>
         <arg choice='plain'><command>delete</command></arg>
         <arg choice='plain'><command>monitor</command></arg>
@@ -1391,7 +1393,7 @@
 
       <varlistentry>
         <term>
-          <command>connect</command>
+          <command>up</command>
           <arg choice='plain'><replaceable>ifname</replaceable></arg>
         </term>
 
@@ -1407,6 +1409,18 @@
 
           <para>If <option>--wait</option> option is not specified, the default timeout will be 90
           seconds.</para>
+        </listitem>
+      </varlistentry>
+      
+      <varlistentry>
+        <term>
+          <command>connect</command>
+          <arg choice='plain'><replaceable>ifname</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para> Alias for command <command>up</command>
+          </para>
         </listitem>
       </varlistentry>
 
@@ -1448,7 +1462,7 @@
 
       <varlistentry>
         <term>
-          <command>disconnect</command>
+          <command>down</command>
           <arg choice='plain' rep='repeat'><replaceable>ifname</replaceable></arg>
         </term>
 
@@ -1461,7 +1475,18 @@
           will be 10 seconds.</para>
         </listitem>
       </varlistentry>
+     
+      <varlistentry>
+        <term>
+          <command>disconnect</command>
+          <arg choice='plain' rep='repeat'><replaceable>ifname</replaceable></arg>
+        </term>
 
+        <listitem>
+          <para> Alias for command <command>down</command>
+          </para>
+        </listitem>
+      </varlistentry>
 
       <varlistentry>
         <term>
