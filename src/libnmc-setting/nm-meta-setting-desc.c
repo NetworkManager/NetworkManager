@@ -6014,6 +6014,21 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_MAY_FAIL, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_MAY_FAIL,
         .property_type =                &_pt_gobject_bool,
     ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_REQUIRED_TIMEOUT,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.i64 = -1,
+                    .nick = "default",
+                },
+                {
+                    .value.i64 = G_MAXINT32,
+                    .nick = "infinity",
+                },
+            ),
+        ),
+    ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DAD_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DAD_TIMEOUT,
         .property_type =                &_pt_gobject_int,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
@@ -6216,6 +6231,21 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_MAY_FAIL, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_MAY_FAIL,
         .property_type =                &_pt_gobject_bool,
+    ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_REQUIRED_TIMEOUT,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.i64 = -1,
+                    .nick = "default",
+                },
+                {
+                    .value.i64 = G_MAXINT32,
+                    .nick = "infinity",
+                },
+            ),
+        ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
         .property_type =                &_pt_gobject_enum,
