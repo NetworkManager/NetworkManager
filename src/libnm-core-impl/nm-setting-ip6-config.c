@@ -914,12 +914,12 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: IPV6_TOKEN=::53
      * ---end---
      */
-    obj_properties[PROP_TOKEN] = g_param_spec_string(NM_SETTING_IP6_CONFIG_TOKEN,
-                                                     "",
-                                                     "",
-                                                     NULL,
-                                                     G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                         | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_IP6_CONFIG_TOKEN,
+                                       PROP_TOKEN,
+                                       NM_SETTING_PARAM_INFERRABLE,
+                                       nm_setting_ip6_config_get_token);
 
     /**
      * NMSettingIP6Config:ra-timeout:
@@ -994,12 +994,12 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: DHCPV6_DUID=LL; DHCPV6_DUID=0301deadbeef0001; DHCPV6_DUID=03:01:de:ad:be:ef:00:01
      * ---end---
      */
-    obj_properties[PROP_DHCP_DUID] =
-        g_param_spec_string(NM_SETTING_IP6_CONFIG_DHCP_DUID,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_IP6_CONFIG_DHCP_DUID,
+                                       PROP_DHCP_DUID,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_ip6_config_get_dhcp_duid);
 
     /* IP6-specific property overrides */
 
@@ -1012,9 +1012,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type           = NM_G_VARIANT_TYPE("aay"),
-                                  .gprop_to_dbus_fcn   = ip6_dns_to_dbus,
-                                  .gprop_from_dbus_fcn = ip6_dns_from_dbus, ));
+        NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("aay"),
+                                        .gprop_from_dbus_fcn = ip6_dns_from_dbus, ),
+        .to_dbus_data.gprop_to_dbus_fcn = ip6_dns_to_dbus);
 
     /* ---dbus---
      * property: addresses
@@ -1033,9 +1033,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("a(ayuay)"),
-                                  .to_dbus_fcn   = ip6_addresses_get,
-                                  .from_dbus_fcn = ip6_addresses_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuay)"),
+                                       .to_dbus_fcn   = ip6_addresses_get,
+                                       .from_dbus_fcn = ip6_addresses_set, ));
 
     /* ---dbus---
      * property: address-data
@@ -1049,9 +1049,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     _nm_properties_override_dbus(
         properties_override,
         "address-data",
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("aa{sv}"),
-                                  .to_dbus_fcn   = ip6_address_data_get,
-                                  .from_dbus_fcn = ip6_address_data_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = ip6_address_data_get,
+                                       .from_dbus_fcn = ip6_address_data_set, ));
 
     /* ---dbus---
      * property: routes
@@ -1070,9 +1070,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("a(ayuayu)"),
-                                  .to_dbus_fcn   = ip6_routes_get,
-                                  .from_dbus_fcn = ip6_routes_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuayu)"),
+                                       .to_dbus_fcn   = ip6_routes_get,
+                                       .from_dbus_fcn = ip6_routes_set, ));
 
     /* ---dbus---
      * property: route-data
@@ -1087,11 +1087,12 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *   also exist on some routes.
      * ---end---
      */
-    _nm_properties_override_dbus(properties_override,
-                                 "route-data",
-                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type = NM_G_VARIANT_TYPE("aa{sv}"),
-                                                           .to_dbus_fcn   = ip6_route_data_get,
-                                                           .from_dbus_fcn = ip6_route_data_set, ));
+    _nm_properties_override_dbus(
+        properties_override,
+        "route-data",
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = ip6_route_data_get,
+                                       .from_dbus_fcn = ip6_route_data_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

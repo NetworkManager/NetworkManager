@@ -642,6 +642,10 @@ GVariant *       nm_ip_routing_rule_to_dbus(const NMIPRoutingRule *self);
 
 /*****************************************************************************/
 
+GVariant *nm_utils_hwaddr_to_dbus(const char *str);
+
+/*****************************************************************************/
+
 typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
@@ -667,6 +671,16 @@ typedef void (*NMSettInfoPropGPropFromDBusFcn)(GVariant *from, GValue *to);
 
 const NMSettInfoSetting *nmtst_sett_info_settings(void);
 
+typedef enum _nm_packed {
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT = 0,
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES,
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM,
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS,
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_GARRAY_UINT,
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT,
+    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS,
+} NMSettingPropertyToDBusFcnGPropType;
+
 typedef struct {
     const GVariantType *dbus_type;
 
@@ -674,10 +688,16 @@ typedef struct {
     NMSettInfoPropFromDBusFcn        from_dbus_fcn;
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
 
-    /* Simpler variants of @to_dbus_fcn/@from_dbus_fcn that operate solely
+    /* Simpler variants of @from_dbus_fcn that operate solely
      * on the GValue value of the GObject property. */
-    NMSettInfoPropGPropToDBusFcn   gprop_to_dbus_fcn;
     NMSettInfoPropGPropFromDBusFcn gprop_from_dbus_fcn;
+
+    struct {
+        union {
+            NMSettingPropertyToDBusFcnGPropType gprop_type;
+        };
+    } typdata_to_dbus;
+
 } NMSettInfoPropertType;
 
 struct _NMSettInfoProperty {
@@ -686,6 +706,21 @@ struct _NMSettInfoProperty {
     GParamSpec *param_spec;
 
     const NMSettInfoPropertType *property_type;
+
+    struct {
+        union {
+            gpointer                     none;
+            NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn;
+            gboolean (*get_boolean)(NMSetting *);
+            const char *(*get_string)(NMSetting *);
+        };
+
+        /* Usually, properties that are set to the default value for the GParamSpec
+         * are not serialized to GVariant (and NULL is returned by to_dbus_data().
+         * Set this flag to force always converting the property even if the value
+         * is the default. */
+        bool including_default : 1;
+    } to_dbus_data;
 };
 
 typedef struct {
