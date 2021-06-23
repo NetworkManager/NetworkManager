@@ -300,8 +300,9 @@ finalize(GObject *object)
 static void
 nm_setting_tun_class_init(NMSettingTunClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingTunPrivate));
 
@@ -368,12 +369,13 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
      *
      * Since: 1.2
      */
-    obj_properties[PROP_PI] = g_param_spec_boolean(NM_SETTING_TUN_PI,
-                                                   "",
-                                                   "",
-                                                   FALSE,
-                                                   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                       | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_TUN_PI,
+                                        PROP_PI,
+                                        FALSE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_tun_get_pi);
 
     /**
      * NMSettingTun:vnet-hdr:
@@ -383,12 +385,13 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
      *
      * Since: 1.2
      */
-    obj_properties[PROP_VNET_HDR] = g_param_spec_boolean(
-        NM_SETTING_TUN_VNET_HDR,
-        "",
-        "",
-        FALSE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_TUN_VNET_HDR,
+                                        PROP_VNET_HDR,
+                                        FALSE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_tun_get_vnet_hdr);
 
     /**
      * NMSettingTun:multi-queue:
@@ -400,14 +403,18 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
      *
      * Since: 1.2
      */
-    obj_properties[PROP_MULTI_QUEUE] = g_param_spec_boolean(
-        NM_SETTING_TUN_MULTI_QUEUE,
-        "",
-        "",
-        FALSE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_TUN_MULTI_QUEUE,
+                                        PROP_MULTI_QUEUE,
+                                        FALSE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_tun_get_multi_queue);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_TUN);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_TUN,
+                                  NULL,
+                                  properties_override);
 }

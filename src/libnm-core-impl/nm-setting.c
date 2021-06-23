@@ -156,55 +156,30 @@ _nm_sett_info_property_find_in_array(const NMSettInfoProperty *properties,
     return NULL;
 }
 
-static GVariant *
-_gprop_to_dbus_fcn_bytes(const GValue *val)
-{
-    nm_assert(G_VALUE_HOLDS(val, G_TYPE_BYTES));
-    return nm_utils_gbytes_to_variant_ay(g_value_get_boxed(val));
-}
-
-static GVariant *
-_gprop_to_dbus_fcn_enum(const GValue *val)
-{
-    return g_variant_new_int32(g_value_get_enum(val));
-}
-
-static GVariant *
-_gprop_to_dbus_fcn_flags(const GValue *val)
-{
-    return g_variant_new_uint32(g_value_get_flags(val));
-}
-
 gboolean
 _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
 {
+#if NM_MORE_ASSERTS
     nm_assert(prop_info);
     nm_assert((!!prop_info->name) != (!!prop_info->param_spec));
     nm_assert(!prop_info->param_spec || !prop_info->name
               || nm_streq0(prop_info->name, prop_info->param_spec->name));
 
-#define _PROPERT_EXTRA(prop_info, member)                                    \
-    ({                                                                       \
-        const NMSettInfoProperty *_prop_info = (prop_info);                  \
-                                                                             \
-        (_prop_info->property_type ? _prop_info->property_type->member : 0); \
-    })
+    if (prop_info->property_type) {
+        const NMSettInfoPropertType *property_type = prop_info->property_type;
 
-    nm_assert(!_PROPERT_EXTRA(prop_info, gprop_from_dbus_fcn)
-              || _PROPERT_EXTRA(prop_info, dbus_type));
-    nm_assert(!_PROPERT_EXTRA(prop_info, from_dbus_fcn) || _PROPERT_EXTRA(prop_info, dbus_type));
-    nm_assert(!_PROPERT_EXTRA(prop_info, to_dbus_fcn) || _PROPERT_EXTRA(prop_info, dbus_type));
+        /* we always require a dbus_type. */
+        nm_assert(property_type->dbus_type);
 
-    nm_assert(!_PROPERT_EXTRA(prop_info, to_dbus_fcn)
-              || !_PROPERT_EXTRA(prop_info, gprop_to_dbus_fcn));
-    nm_assert(!_PROPERT_EXTRA(prop_info, from_dbus_fcn)
-              || !_PROPERT_EXTRA(prop_info, gprop_from_dbus_fcn));
+        /* from_dbus_fcn and gprop_from_dbus_fcn cannot both be set. */
+        nm_assert(!property_type->from_dbus_fcn || !property_type->gprop_from_dbus_fcn);
 
-    nm_assert(!_PROPERT_EXTRA(prop_info, gprop_to_dbus_fcn) || prop_info->param_spec);
-    nm_assert(!_PROPERT_EXTRA(prop_info, gprop_from_dbus_fcn) || prop_info->param_spec);
-
-#undef _PROPERT_EXTRA
-
+        if (!prop_info->param_spec) {
+            /* if we don't have a param_spec, we cannot have gprop_from_dbus_fcn. */
+            nm_assert(property_type->from_dbus_fcn || !property_type->gprop_from_dbus_fcn);
+        }
+    }
+#endif
     return TRUE;
 }
 
@@ -379,35 +354,35 @@ _nm_setting_class_commit_full(NMSettingClass *            setting_class,
 
         vtype = p->param_spec->value_type;
         if (vtype == G_TYPE_BOOLEAN)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE(.dbus_type = G_VARIANT_TYPE_BOOLEAN);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_BOOLEAN);
         else if (vtype == G_TYPE_UCHAR)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE(.dbus_type = G_VARIANT_TYPE_BYTE);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_BYTE);
         else if (vtype == G_TYPE_INT)
             p->property_type = &nm_sett_info_propert_type_plain_i;
         else if (vtype == G_TYPE_UINT)
             p->property_type = &nm_sett_info_propert_type_plain_u;
         else if (vtype == G_TYPE_INT64)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE(.dbus_type = G_VARIANT_TYPE_INT64);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_INT64);
         else if (vtype == G_TYPE_UINT64)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE(.dbus_type = G_VARIANT_TYPE_UINT64);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_UINT64);
         else if (vtype == G_TYPE_STRING)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE(.dbus_type = G_VARIANT_TYPE_STRING);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_STRING);
         else if (vtype == G_TYPE_DOUBLE)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE(.dbus_type = G_VARIANT_TYPE_DOUBLE);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_DOUBLE);
         else if (vtype == G_TYPE_STRV)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE(.dbus_type = G_VARIANT_TYPE_STRING_ARRAY);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_STRING_ARRAY);
         else if (vtype == G_TYPE_BYTES) {
-            p->property_type =
-                NM_SETT_INFO_PROPERT_TYPE(.dbus_type         = G_VARIANT_TYPE_BYTESTRING,
-                                          .gprop_to_dbus_fcn = _gprop_to_dbus_fcn_bytes);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
+                G_VARIANT_TYPE_BYTESTRING,
+                .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES);
         } else if (g_type_is_a(vtype, G_TYPE_ENUM)) {
-            p->property_type =
-                NM_SETT_INFO_PROPERT_TYPE(.dbus_type         = G_VARIANT_TYPE_INT32,
-                                          .gprop_to_dbus_fcn = _gprop_to_dbus_fcn_enum);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
+                G_VARIANT_TYPE_INT32,
+                .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM);
         } else if (g_type_is_a(vtype, G_TYPE_FLAGS)) {
-            p->property_type =
-                NM_SETT_INFO_PROPERT_TYPE(.dbus_type         = G_VARIANT_TYPE_UINT32,
-                                          .gprop_to_dbus_fcn = _gprop_to_dbus_fcn_flags);
+            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
+                G_VARIANT_TYPE_UINT32,
+                .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS);
         } else
             nm_assert_not_reached();
 
@@ -553,6 +528,108 @@ _nm_setting_use_legacy_property(NMSetting * setting,
 
 /*****************************************************************************/
 
+GVariant *
+_nm_setting_property_to_dbus_fcn_get_boolean(const NMSettInfoSetting *               sett_info,
+                                             guint                                   property_idx,
+                                             NMConnection *                          connection,
+                                             NMSetting *                             setting,
+                                             NMConnectionSerializationFlags          flags,
+                                             const NMConnectionSerializationOptions *options)
+{
+    const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
+    gboolean                  val;
+
+    val = !!property_info->to_dbus_data.get_boolean(setting);
+    if (!property_info->to_dbus_data.including_default
+        && val == NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec))
+        return NULL;
+    return g_variant_ref(nm_g_variant_singleton_b(val));
+}
+
+GVariant *
+_nm_setting_property_to_dbus_fcn_get_string(const NMSettInfoSetting *               sett_info,
+                                            guint                                   property_idx,
+                                            NMConnection *                          connection,
+                                            NMSetting *                             setting,
+                                            NMConnectionSerializationFlags          flags,
+                                            const NMConnectionSerializationOptions *options)
+{
+    const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
+    const char *              val;
+
+    /* For string properties that are implemented via this function, the default is always NULL.
+     * In general, having strings default to NULL is most advisable.
+     *
+     * Setting "including_default" for a string makes no sense because a
+     * GVariant of type "s" cannot express NULL. */
+    nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
+    nm_assert(!property_info->to_dbus_data.including_default);
+
+    val = property_info->to_dbus_data.get_string(setting);
+    if (!val)
+        return NULL;
+    if (!val[0])
+        return g_variant_ref(nm_g_variant_singleton_s_empty());
+    return g_variant_new_string(val);
+}
+
+GVariant *
+_nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               sett_info,
+                                       guint                                   property_idx,
+                                       NMConnection *                          connection,
+                                       NMSetting *                             setting,
+                                       NMConnectionSerializationFlags          flags,
+                                       const NMConnectionSerializationOptions *options)
+{
+    const NMSettInfoProperty *const property   = &sett_info->property_infos[property_idx];
+    nm_auto_unset_gvalue GValue     prop_value = {
+        0,
+    };
+    GArray *tmp_array;
+
+    nm_assert(property->param_spec);
+    nm_assert(property->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop);
+    nm_assert(property->property_type->typdata_to_dbus.gprop_type
+                  == NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT
+              || !property->to_dbus_data.gprop_to_dbus_fcn);
+
+    g_value_init(&prop_value, property->param_spec->value_type);
+
+    g_object_get_property(G_OBJECT(setting), property->param_spec->name, &prop_value);
+
+    if (!property->to_dbus_data.including_default
+        && g_param_value_defaults(property->param_spec, &prop_value))
+        return NULL;
+
+    switch (property->property_type->typdata_to_dbus.gprop_type) {
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
+        if (property->to_dbus_data.gprop_to_dbus_fcn)
+            return property->to_dbus_data.gprop_to_dbus_fcn(&prop_value);
+
+        return g_dbus_gvalue_to_gvariant(&prop_value, property->property_type->dbus_type);
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
+        nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_BYTES));
+        return nm_utils_gbytes_to_variant_ay(g_value_get_boxed(&prop_value));
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM:
+        return g_variant_new_int32(g_value_get_enum(&prop_value));
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS:
+        return g_variant_new_uint32(g_value_get_flags(&prop_value));
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_GARRAY_UINT:
+        G_STATIC_ASSERT_EXPR(sizeof(guint) == sizeof(guint32));
+        nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_ARRAY));
+        tmp_array = g_value_get_boxed(&prop_value);
+        nm_assert(tmp_array);
+        return nm_g_variant_new_au((const guint32 *) tmp_array->data, tmp_array->len);
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT:
+        nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_HASH_TABLE));
+        return nm_utils_strdict_to_variant_ass(g_value_get_boxed(&prop_value));
+    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS:
+        return nm_utils_hwaddr_to_dbus(g_value_get_string(&prop_value));
+    }
+
+    return nm_assert_unreachable_val(NULL);
+}
+
 static GVariant *
 property_to_dbus(const NMSettInfoSetting *               sett_info,
                  guint                                   property_idx,
@@ -560,20 +637,22 @@ property_to_dbus(const NMSettInfoSetting *               sett_info,
                  NMSetting *                             setting,
                  NMConnectionSerializationFlags          flags,
                  const NMConnectionSerializationOptions *options,
-                 gboolean                                ignore_flags,
-                 gboolean                                ignore_default)
+                 gboolean                                ignore_flags)
 {
     const NMSettInfoProperty *property = &sett_info->property_infos[property_idx];
     GVariant *                variant;
 
     nm_assert(property->property_type->dbus_type);
 
-    if (!property->param_spec) {
-        if (!property->property_type->to_dbus_fcn)
-            return NULL;
-    } else if (!ignore_flags
-               && !NM_FLAGS_HAS(property->param_spec->flags,
-                                NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS)) {
+    if (!property->property_type->to_dbus_fcn) {
+        nm_assert(!property->param_spec);
+        nm_assert(!property->to_dbus_data.none);
+        return NULL;
+    }
+
+    if (property->param_spec
+        && (!ignore_flags
+            && !NM_FLAGS_HAS(property->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS))) {
         if (!NM_FLAGS_HAS(property->param_spec->flags, G_PARAM_WRITABLE))
             return NULL;
 
@@ -600,32 +679,10 @@ property_to_dbus(const NMSettInfoSetting *               sett_info,
         }
     }
 
-    if (property->property_type->to_dbus_fcn) {
-        variant = property->property_type
-                      ->to_dbus_fcn(sett_info, property_idx, connection, setting, flags, options);
-        nm_g_variant_take_ref(variant);
-    } else {
-        nm_auto_unset_gvalue GValue prop_value = {
-            0,
-        };
+    variant = property->property_type
+                  ->to_dbus_fcn(sett_info, property_idx, connection, setting, flags, options);
+    nm_g_variant_take_ref(variant);
 
-        nm_assert(property->param_spec);
-
-        g_value_init(&prop_value, property->param_spec->value_type);
-
-        g_object_get_property(G_OBJECT(setting), property->param_spec->name, &prop_value);
-
-        if (ignore_default && g_param_value_defaults(property->param_spec, &prop_value))
-            return NULL;
-
-        if (property->property_type->gprop_to_dbus_fcn) {
-            variant = property->property_type->gprop_to_dbus_fcn(&prop_value);
-            nm_g_variant_take_ref(variant);
-        } else
-            variant = g_dbus_gvalue_to_gvariant(&prop_value, property->property_type->dbus_type);
-    }
-
-    nm_assert(!variant || !g_variant_is_floating(variant));
     nm_assert(!variant || g_variant_is_of_type(variant, property->property_type->dbus_type));
 
     return variant;
@@ -711,8 +768,7 @@ _nm_setting_to_dbus(NMSetting *                             setting,
     for (i = 0; i < sett_info->property_infos_len; i++) {
         gs_unref_variant GVariant *dbus_value = NULL;
 
-        dbus_value =
-            property_to_dbus(sett_info, i, connection, setting, flags, options, FALSE, TRUE);
+        dbus_value = property_to_dbus(sett_info, i, connection, setting, flags, options, FALSE);
         if (dbus_value) {
             g_variant_builder_add(&builder, "{sv}", sett_info->property_infos[i].name, dbus_value);
         }
@@ -1348,7 +1404,6 @@ compare_property(const NMSettInfoSetting *sett_info,
                                   set_a,
                                   NM_CONNECTION_SERIALIZE_ALL,
                                   NULL,
-                                  TRUE,
                                   TRUE);
         value2 = property_to_dbus(sett_info,
                                   property_idx,
@@ -1356,7 +1411,6 @@ compare_property(const NMSettInfoSetting *sett_info,
                                   set_b,
                                   NM_CONNECTION_SERIALIZE_ALL,
                                   NULL,
-                                  TRUE,
                                   TRUE);
         if (nm_property_compare(value1, value2) != 0)
             return NM_TERNARY_FALSE;
@@ -2322,28 +2376,36 @@ _nm_setting_get_deprecated_virtual_interface_name(const NMSettInfoSetting *     
         return NULL;
 }
 
-const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name = {
-    .dbus_type   = G_VARIANT_TYPE_STRING,
-    .to_dbus_fcn = _nm_setting_get_deprecated_virtual_interface_name,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
+                                        .to_dbus_fcn =
+                                            _nm_setting_get_deprecated_virtual_interface_name, );
 
-const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i = {
-    .dbus_type = G_VARIANT_TYPE_INT32,
-    /* No functions set. This property type is to silently ignore the value on D-Bus. */
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
+        G_VARIANT_TYPE_INT32,
+        /* No functions set. This property type is to silently ignore the value on D-Bus. */
+    );
 
-const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u = {
-    .dbus_type = G_VARIANT_TYPE_UINT32,
-    /* No functions set. This property type is to silently ignore the value on D-Bus. */
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
+        G_VARIANT_TYPE_UINT32,
+        /* No functions set. This property type is to silently ignore the value on D-Bus. */
+    );
 
-const NMSettInfoPropertType nm_sett_info_propert_type_plain_i = {
-    .dbus_type = G_VARIANT_TYPE_INT32,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_plain_i =
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_INT32);
 
-const NMSettInfoPropertType nm_sett_info_propert_type_plain_u = {
-    .dbus_type = G_VARIANT_TYPE_UINT32,
-};
+const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_UINT32);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_boolean = NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
+    G_VARIANT_TYPE_BOOLEAN,
+    .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_get_boolean);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_string =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
+                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_get_string);
 
 /*****************************************************************************/
 

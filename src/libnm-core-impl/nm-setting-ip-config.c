@@ -5760,10 +5760,35 @@ _nm_sett_info_property_override_create_array_ip_config(void)
 {
     GArray *properties_override = _nm_sett_info_property_override_create_array();
 
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_GATEWAY],
-                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = G_VARIANT_TYPE_STRING,
-                                                           .from_dbus_fcn = ip_gateway_set, ));
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_METHOD],
+        &nm_sett_info_propert_type_string,
+        .to_dbus_data.get_string =
+            (const char *(*) (NMSetting *) ) nm_setting_ip_config_get_method);
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_GATEWAY],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_get_string,
+                                       .from_dbus_fcn = ip_gateway_set),
+        .to_dbus_data.get_string =
+            (const char *(*) (NMSetting *) ) nm_setting_ip_config_get_gateway);
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_HOSTNAME],
+        &nm_sett_info_propert_type_string,
+        .to_dbus_data.get_string =
+            (const char *(*) (NMSetting *) ) nm_setting_ip_config_get_dhcp_hostname);
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_IAID],
+        &nm_sett_info_propert_type_string,
+        .to_dbus_data.get_string =
+            (const char *(*) (NMSetting *) ) nm_setting_ip_config_get_dhcp_iaid);
 
     /* ---dbus---
      * property: routing-rules
@@ -5774,9 +5799,39 @@ _nm_sett_info_property_override_create_array_ip_config(void)
     _nm_properties_override_dbus(
         properties_override,
         NM_SETTING_IP_CONFIG_ROUTING_RULES,
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("aa{sv}"),
-                                  .to_dbus_fcn   = _routing_rules_dbus_only_synth,
-                                  .from_dbus_fcn = _routing_rules_dbus_only_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = _routing_rules_dbus_only_synth,
+                                       .from_dbus_fcn = _routing_rules_dbus_only_set, ));
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_IGNORE_AUTO_ROUTES],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean = (gboolean(*)(
+                                     NMSetting *)) nm_setting_ip_config_get_ignore_auto_routes);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_IGNORE_AUTO_DNS],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean = (gboolean(*)(
+                                     NMSetting *)) nm_setting_ip_config_get_ignore_auto_dns);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_DHCP_SEND_HOSTNAME],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean = (gboolean(*)(
+                                     NMSetting *)) nm_setting_ip_config_get_dhcp_send_hostname);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_NEVER_DEFAULT],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean = (gboolean(*)(
+                                     NMSetting *)) nm_setting_ip_config_get_never_default);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_MAY_FAIL],
+                                 &nm_sett_info_propert_type_boolean,
+                                 .to_dbus_data.get_boolean =
+                                     (gboolean(*)(NMSetting *)) nm_setting_ip_config_get_may_fail);
 
     return properties_override;
 }

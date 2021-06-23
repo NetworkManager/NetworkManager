@@ -196,8 +196,9 @@ finalize(GObject *object)
 static void
 nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSetting6LowpanPrivate));
 
@@ -215,14 +216,17 @@ nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
      *
      * Since: 1.14
      **/
-    obj_properties[PROP_PARENT] = g_param_spec_string(
-        NM_SETTING_6LOWPAN_PARENT,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_6LOWPAN_PARENT,
+                                       PROP_PARENT,
+                                       NM_SETTING_PARAM_INFERRABLE,
+                                       nm_setting_6lowpan_get_parent);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_6LOWPAN);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_6LOWPAN,
+                                  NULL,
+                                  properties_override);
 }
