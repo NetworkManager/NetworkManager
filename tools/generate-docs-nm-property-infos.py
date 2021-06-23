@@ -66,6 +66,7 @@ def process_data(data):
         "default",
         "example",
         "description",
+        "description-docbook",
     ]
     kwd_pat = "|".join(keywords)
     keyword = ""
@@ -76,14 +77,20 @@ def process_data(data):
         kwd_more_line_found = re.search(r"^\s*\**\s+(.*?)\s*$", line)
         if kwd_first_line_found:
             keyword = kwd_first_line_found.group(1)
-            value = kwd_first_line_found.group(2) + " "
+            if keyword == "description-docbook":
+                value = kwd_first_line_found.group(2) + "\n"
+            else:
+                value = kwd_first_line_found.group(2) + " "
             parsed_data[keyword] = value
         elif kwd_more_line_found:
             if not keyword:
                 print("Extra mess in a comment: %s" % (line))
                 exit(1)
             else:
-                value = kwd_more_line_found.group(1) + " "
+                if keyword == "description-docbook":
+                    value = kwd_more_line_found.group(1) + "\n"
+                else:
+                    value = kwd_more_line_found.group(1) + " "
                 parsed_data[keyword] += value
     for keyword in keywords:
         if keyword == "variable" and keyword not in parsed_data:
@@ -104,6 +111,13 @@ def write_data(setting_node, parsed_data):
     property_node.set("default", parsed_data["default"])
     property_node.set("example", parsed_data["example"])
     property_node.set("description", parsed_data["description"])
+    if parsed_data["description-docbook"]:
+        des = ET.fromstring(
+            "<description-docbook>"
+            + parsed_data["description-docbook"]
+            + "</description-docbook>"
+        )
+        property_node.append(des)
 
 
 def pretty_xml(element, newline, level=0):
