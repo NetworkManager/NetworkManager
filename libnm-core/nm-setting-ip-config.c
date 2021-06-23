@@ -3679,6 +3679,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingIPConfig,
                              PROP_MAY_FAIL,
                              PROP_DAD_TIMEOUT,
                              PROP_DHCP_TIMEOUT,
+                             PROP_REQUIRED_TIMEOUT,
                              PROP_DHCP_IAID,
                              PROP_DHCP_REJECT_SERVERS, );
 
@@ -3699,6 +3700,7 @@ typedef struct {
     int        dns_priority;
     int        dad_timeout;
     int        dhcp_timeout;
+    int        required_timeout;
     guint32    route_table;
     bool       ignore_auto_routes : 1;
     bool       ignore_auto_dns : 1;
@@ -4980,6 +4982,25 @@ nm_setting_ip_config_get_dhcp_timeout(NMSettingIPConfig *setting)
 }
 
 /**
+ * nm_setting_ip_config_get_required_timeout:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns the value contained in the #NMSettingIPConfig:required-timeout
+ * property.
+ *
+ * Returns: the required timeout for the address family
+ *
+ * Since: 1.34, 1.32.4, 1.30.8
+ **/
+int
+nm_setting_ip_config_get_required_timeout(NMSettingIPConfig *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), -1);
+
+    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->required_timeout;
+}
+
+/**
  * nm_setting_ip_config_get_dhcp_iaid:
  * @setting: the #NMSettingIPConfig
  *
@@ -5627,6 +5648,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_DHCP_TIMEOUT:
         g_value_set_int(value, nm_setting_ip_config_get_dhcp_timeout(setting));
         break;
+    case PROP_REQUIRED_TIMEOUT:
+        g_value_set_int(value, nm_setting_ip_config_get_required_timeout(setting));
+        break;
     case PROP_DHCP_IAID:
         g_value_set_string(value, nm_setting_ip_config_get_dhcp_iaid(setting));
         break;
@@ -5737,6 +5761,9 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_DHCP_TIMEOUT:
         priv->dhcp_timeout = g_value_get_int(value);
         break;
+    case PROP_REQUIRED_TIMEOUT:
+        priv->required_timeout = g_value_get_int(value);
+        break;
     case PROP_DHCP_IAID:
         g_free(priv->dhcp_iaid);
         priv->dhcp_iaid = g_value_dup_string(value);
@@ -5768,6 +5795,7 @@ nm_setting_ip_config_init(NMSettingIPConfig *setting)
     priv->dhcp_send_hostname = TRUE;
     priv->may_fail           = TRUE;
     priv->dad_timeout        = -1;
+    priv->required_timeout   = -1;
 }
 
 static void
@@ -6200,6 +6228,38 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
         0,
         G_MAXINT32,
         0,
+        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMSettingIPConfig:required-timeout:
+     *
+     * The minimum time interval in milliseconds for which dynamic IP configuration
+     * should be tried before the connection succeeds.
+     *
+     * This property is useful for example if both IPv4 and IPv6 are enabled and
+     * are allowed to fail. Normally the connection succeeds as soon as one of
+     * the two address families completes; by setting a required timeout for
+     * e.g. IPv4, one can ensure that even if IP6 succeeds earlier than IPv4,
+     * NetworkManager waits some time for IPv4 before the connection becomes
+     * active.
+     *
+     * Note that if #NMSettingIPConfig:may-fail is FALSE for the same address
+     * family, this property has no effect as NetworkManager needs to wait for
+     * the full DHCP timeout.
+     *
+     * A zero value means that no required timeout is present, -1 means the
+     * default value (either configuration ipvx.required-timeout override or
+     * zero).
+     *
+     * Since: 1.34, 1.32.4, 1.30.8
+     **/
+    obj_properties[PROP_REQUIRED_TIMEOUT] = g_param_spec_int(
+        NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
+        "",
+        "",
+        -1,
+        G_MAXINT32,
+        -1,
         G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
 
     /**
