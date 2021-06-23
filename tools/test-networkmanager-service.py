@@ -1489,10 +1489,6 @@ class ActiveConnection(ExportedObj):
 
     def start_deactivation(self):
         assert self._deactivation_id is None
-        self._set_state(
-            NM.ActiveConnectionState.DEACTIVATING,
-            NM.ActiveConnectionStateReason.USER_DISCONNECTED,
-        )
         self.device.set_state(
             NM.DeviceState.DEACTIVATING, NM.DeviceStateReason.USER_REQUESTED
         )
@@ -1566,8 +1562,8 @@ class NetworkManager(ExportedObj):
         pass
 
     def set_state(self, new_state):
-        self._dbus_property_set(IFACE_NM, PRP_NM_STATE, state)
-        self.StateChanged(dbus.UInt32(self.state))
+        self._dbus_property_set(IFACE_NM, PRP_NM_STATE, new_state)
+        self.StateChanged(dbus.UInt32(new_state))
 
     @dbus.service.method(dbus_interface=IFACE_NM, in_signature="", out_signature="ao")
     def GetDevices(self):
