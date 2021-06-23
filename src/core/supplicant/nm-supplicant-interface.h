@@ -164,6 +164,10 @@ const char *nm_supplicant_interface_get_p2p_group_path(NMSupplicantInterface *se
 
 gboolean nm_supplicant_interface_get_p2p_group_owner(NMSupplicantInterface *self);
 
+gboolean nm_supplicant_interface_get_p2p_assigned_addr(NMSupplicantInterface *self,
+                                                       in_addr_t *            assigned_addr,
+                                                       guint8 *               plen);
+
 void nm_supplicant_interface_p2p_start_find(NMSupplicantInterface *self, guint timeout);
 void nm_supplicant_interface_p2p_stop_find(NMSupplicantInterface *self);
 

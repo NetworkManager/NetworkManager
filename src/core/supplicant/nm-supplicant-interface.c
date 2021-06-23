@@ -115,6 +115,9 @@ typedef struct _NMSupplicantInterfacePrivate {
     CList       peer_lst_head;
     CList       peer_initializing_lst_head;
 
+    in_addr_t p2p_assigned_addr;
+    guint8    p2p_assigned_plen;
+
     gint64 last_scan_msec;
 
     NMSupplicantAuthState auth_state;
@@ -2905,6 +2908,15 @@ _get_all_p2p_device_cb(GVariant *result, GError *error, gpointer user_data)
 }
 
 static void
+_set_p2p_assigned_addr(NMSupplicantInterface *self, gconstpointer addr, guint8 plen)
+{
+    NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self);
+
+    nm_ip_addr_set(AF_INET, &priv->p2p_assigned_addr, addr);
+    priv->p2p_assigned_plen = plen;
+}
+
+static void
 _signal_handle(NMSupplicantInterface *self,
                const char *           signal_interface_name,
                const char *           signal_name,
@@ -2998,6 +3010,7 @@ _signal_handle(NMSupplicantInterface *self,
                 gs_unref_object NMSupplicantInterface *iface = NULL;
                 const char *                           group_path;
                 const char *                           iface_path;
+                GVariant *                             v_v = NULL;
 
                 g_variant_get(parameters, "(@a{sv})", &args);
                 if (!g_variant_lookup(args, "group_object", "&o", &group_path))
@@ -3016,6 +3029,34 @@ _signal_handle(NMSupplicantInterface *self,
                         _LOGW("P2P: Group interface already exists in GroupStarted handler, "
                               "aborting further processing.");
                         return;
+                    }
+                }
+
+                v_v = g_variant_lookup_value(args, "IpAddr", G_VARIANT_TYPE_BYTESTRING);
+                if (v_v) {
+                    const guint8 *addr_data;
+                    gsize         addr_len  = 0;
+                    const guint8 *mask_data = NULL;
+                    gsize         mask_len  = 0;
+
+                    /* The address is passed in network-byte-order */
+                    addr_data = g_variant_get_fixed_array(v_v, &addr_len, 1);
+
+                    /* TODO: Should we expose IpAddrGo? If yes, maybe as gateway? */
+                    v_v = g_variant_lookup_value(args, "IpAddrMask", G_VARIANT_TYPE_BYTESTRING);
+                    if (v_v)
+                        mask_data = g_variant_get_fixed_array(v_v, &mask_len, 1);
+
+                    if (addr_len == NM_AF_INET_SIZE && mask_len == NM_AF_INET_SIZE) {
+                        guint32 netmask;
+
+                        memcpy(&netmask, mask_data, NM_AF_INET_SIZE);
+
+                        _set_p2p_assigned_addr(iface,
+                                               addr_data,
+                                               nm_utils_ip4_netmask_to_prefix(netmask));
+                    } else {
+                        _LOGW("P2P: GroupStarted signaled invalid IP Address information");
                     }
                 }
 
@@ -3097,6 +3138,24 @@ gboolean
 nm_supplicant_interface_get_p2p_group_owner(NMSupplicantInterface *self)
 {
     return NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self)->p2p_group_owner_cached;
+}
+
+gboolean
+nm_supplicant_interface_get_p2p_assigned_addr(NMSupplicantInterface *self,
+                                              in_addr_t *            addr,
+                                              guint8 *               plen)
+{
+    NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self);
+
+    if (nm_ip_addr_is_null(AF_INET, &priv->p2p_assigned_addr))
+        return FALSE;
+
+    if (addr)
+        nm_ip_addr_set(AF_INET, addr, &priv->p2p_assigned_addr);
+    if (plen)
+        *plen = priv->p2p_assigned_plen;
+
+    return TRUE;
 }
 
 /*****************************************************************************/
