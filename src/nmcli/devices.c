@@ -5032,6 +5032,8 @@ nmc_command_func_device(const NMCCommand *cmd, NmCli *nmc, int argc, const char 
         {"lldp", do_device_lldp, usage_device_lldp, FALSE, FALSE},
         {"modify", do_device_modify, usage_device_modify, TRUE, TRUE},
         {NULL, do_devices_status, usage, TRUE, TRUE},
+        {"up", do_device_connect, usage_device_connect, TRUE, TRUE},
+        {"down", do_devices_disconnect, usage_device_disconnect, TRUE, TRUE},
     };
 
     next_arg(nmc, &argc, &argv, NULL);
