@@ -8,6 +8,11 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* wireguard: importing wg-quick configuration files with nmcli
+  no longer sets a negative, exclusive "dns-priority". This plays
+  better with common split DNS setups that use systemd-resolved.
+  Adjust the "dns-priority" to your liking after import yourself.
+
 =============================================
 NetworkManager-1.32
 Overview of changes since NetworkManager-1.30
