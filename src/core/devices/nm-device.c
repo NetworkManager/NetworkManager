@@ -499,7 +499,17 @@ typedef struct _NMDevicePrivate {
 
     NMDeviceStageState stage1_sriov_state : 3;
 
+    bool ip_config_started : 1;
+
     char *current_stable_id;
+
+    union {
+        struct {
+            GSource *ip_req_timeout_source_6;
+            GSource *ip_req_timeout_source_4;
+        };
+        GSource *ip_req_timeout_source_x[2];
+    };
 
     /* Proxy Configuration */
     NMProxyConfig *    proxy_config;
@@ -766,6 +776,7 @@ static void sriov_op_cb(GError *error, gpointer user_data);
 
 static void device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice *self);
 static gboolean device_link_changed(NMDevice *self);
+static void     check_ip_state(NMDevice *self, gboolean may_fail, gboolean full_state_update);
 
 /*****************************************************************************/
 
@@ -1362,6 +1373,40 @@ out:
     nm_assert(timeout > 0);
     nm_assert(timeout <= G_MAXINT32);
     return timeout;
+}
+
+static guint32
+_prop_get_ipvx_required_timeout(NMDevice *self, int addr_family)
+{
+    NMConnection *     connection;
+    NMSettingIPConfig *s_ip;
+    int                timeout;
+
+    nm_assert(NM_IS_DEVICE(self));
+    nm_assert_addr_family(addr_family);
+
+    connection = nm_device_get_applied_connection(self);
+    if (!connection)
+        return 0;
+
+    s_ip = nm_connection_get_setting_ip_config(connection, addr_family);
+    if (!s_ip)
+        return 0;
+
+    timeout = nm_setting_ip_config_get_required_timeout(s_ip);
+    nm_assert(timeout >= -1);
+
+    if (timeout > -1)
+        return (guint32) timeout;
+
+    return nm_config_data_get_connection_default_int64(
+        NM_CONFIG_GET_DATA,
+        NM_IS_IPv4(addr_family) ? NM_CON_DEFAULT("ipv4.required-timeout")
+                                : NM_CON_DEFAULT("ipv6.required-timeout"),
+        self,
+        0,
+        G_MAXINT32,
+        0);
 }
 
 /**
@@ -2787,13 +2832,71 @@ _add_capabilities(NMDevice *self, NMDeviceCapabilities capabilities)
 
 /*****************************************************************************/
 
+static gboolean
+ip_required_timeout_x(NMDevice *self, int addr_family)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    _LOGD(LOGD_CORE,
+          "required-timeout expired for IPv%c",
+          nm_utils_addr_family_to_char(addr_family));
+    nm_clear_g_source_inst(&priv->ip_req_timeout_source_x[NM_IS_IPv4(addr_family)]);
+    check_ip_state(self, FALSE, TRUE);
+    return G_SOURCE_CONTINUE;
+}
+
+static gboolean
+ip_required_timeout_4(gpointer data)
+{
+    return ip_required_timeout_x(data, AF_INET);
+}
+
+static gboolean
+ip_required_timeout_6(gpointer data)
+{
+    return ip_required_timeout_x(data, AF_INET6);
+}
+
 static void
 _set_ip_state(NMDevice *self, int addr_family, NMDeviceIPState new_state)
 {
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     const int        IS_IPv4 = NM_IS_IPv4(addr_family);
+    guint            timeout_msec;
+    int              v4;
 
     nm_assert_addr_family(addr_family);
+
+    if (new_state == NM_DEVICE_IP_STATE_CONF && !priv->ip_config_started) {
+        /* Start the required-timeout timers when one of IPv4/IPv6
+         * enters the CONF state. This means that if there is no carrier and
+         * ipv4.method=auto,ipv6.method=manual, the timeout for IPv4 will
+         * start as soon as connection is activated, even if DHCPv4 did not
+         * start yet.
+         */
+        priv->ip_config_started = TRUE;
+
+        for (v4 = 1; v4 >= 0; v4--) {
+            char buf[32];
+
+            nm_assert(!priv->ip_req_timeout_source_x[v4]);
+            if ((timeout_msec = _prop_get_ipvx_required_timeout(self, v4 ? AF_INET : AF_INET6))) {
+                _LOGD(LOGD_CORE,
+                      "required-timeout in %s msec for IPv%c",
+                      timeout_msec == G_MAXINT32 ? "∞" : nm_sprintf_buf(buf, "%u", timeout_msec),
+                      v4 ? '4' : '6');
+
+                if (timeout_msec == G_MAXINT32) {
+                    priv->ip_req_timeout_source_x[v4] = g_source_ref(nm_g_source_sentinel_get(0));
+                } else {
+                    priv->ip_req_timeout_source_x[v4] =
+                        nm_g_timeout_add_source(timeout_msec,
+                                                v4 ? ip_required_timeout_4 : ip_required_timeout_6,
+                                                self);
+                }
+            }
+        }
+    }
 
     if (priv->ip_state_x[IS_IPv4] == new_state)
         return;
@@ -6576,6 +6679,7 @@ check_ip_state(NMDevice *self, gboolean may_fail, gboolean full_state_update)
     gboolean           ip4_disabled = FALSE, ip6_disabled = FALSE;
     NMSettingIPConfig *s_ip4, *s_ip6;
     NMDeviceState      state;
+    int                IS_IPv4;
 
     if (full_state_update && nm_device_get_state(self) != NM_DEVICE_STATE_IP_CONFIG)
         return;
@@ -6603,6 +6707,13 @@ check_ip_state(NMDevice *self, gboolean may_fail, gboolean full_state_update)
         /* Both method completed (or disabled), proceed with activation */
         nm_device_state_changed(self, NM_DEVICE_STATE_IP_CHECK, NM_DEVICE_STATE_REASON_NONE);
         return;
+    }
+
+    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        if (priv->ip_state_x[IS_IPv4] == NM_DEVICE_IP_STATE_CONF
+            && priv->ip_req_timeout_source_x[IS_IPv4]) {
+            return;
+        }
     }
 
     if ((priv->ip_state_4 == NM_DEVICE_IP_STATE_FAIL
@@ -11810,6 +11921,8 @@ activate_stage5_ip_config_result_x(NMDevice *self, int addr_family)
     req = nm_device_get_act_request(self);
     g_assert(req);
 
+    nm_clear_g_source_inst(&priv->ip_req_timeout_source_x[IS_IPv4]);
+
     /* Interface must be IFF_UP before IP config can be applied */
     ip_ifindex = nm_device_get_ip_ifindex(self);
     g_return_if_fail(ip_ifindex);
@@ -15777,6 +15890,10 @@ _cleanup_generic_pre(NMDevice *self, CleanupType cleanup_type)
 
     _cleanup_ip_pre(self, AF_INET, cleanup_type);
     _cleanup_ip_pre(self, AF_INET6, cleanup_type);
+
+    priv->ip_config_started = FALSE;
+    nm_clear_g_source_inst(&priv->ip_req_timeout_source_4);
+    nm_clear_g_source_inst(&priv->ip_req_timeout_source_6);
 }
 
 static void
