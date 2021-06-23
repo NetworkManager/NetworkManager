@@ -508,6 +508,8 @@ test_nm_hash(void)
         g_assert(((typeof(x)) -1) > 0);
     }
 #endif
+
+    NM_STATIC_ASSERT_EXPR_VOID(NM_HASH_COMBINE_BOOLS(int, 1, 0, 1) == 5);
 }
 
 /*****************************************************************************/

@@ -182,11 +182,10 @@ typedef uint64_t _nm_bitwise nm_be64_t;
     })
 
 #define NM_STATIC_ASSERT(cond) static_assert(cond, "")
-#define NM_STATIC_ASSERT_EXPR(cond) \
-    ({                              \
-        NM_STATIC_ASSERT(cond);     \
-        1;                          \
-    })
+#define NM_STATIC_ASSERT_EXPR_1(cond) \
+    (sizeof(struct { char __static_assert_expr_1[(cond) ? 1 : -1]; }) == 1)
+#define NM_STATIC_ASSERT_EXPR_VOID(cond) \
+    ((void) (sizeof(struct { char __static_assert_expr_void[(cond) ? 1 : -1]; }) == 1))
 
 /*****************************************************************************/
 

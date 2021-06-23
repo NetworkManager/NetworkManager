@@ -31,6 +31,31 @@ G_STATIC_ASSERT(4 == _nm_alignof(NMIPAddr));
 /*****************************************************************************/
 
 static void
+test_nm_static_assert(void)
+{
+    int                                v1[NM_STATIC_ASSERT_EXPR_1(1)];
+    typeof(NM_STATIC_ASSERT_EXPR_1(1)) v_int;
+    int *                              p_int;
+
+    G_STATIC_ASSERT(sizeof(v1) == sizeof(int));
+    G_STATIC_ASSERT(NM_STATIC_ASSERT_EXPR_1(1) == 1);
+    G_STATIC_ASSERT(NM_STATIC_ASSERT_EXPR_1(NM_STATIC_ASSERT_EXPR_1(1)) == 1);
+    G_STATIC_ASSERT(NM_STATIC_ASSERT_EXPR_1(NM_STATIC_ASSERT_EXPR_1(NM_STATIC_ASSERT_EXPR_1(1)))
+                    == 1);
+
+    g_assert(NM_STATIC_ASSERT_EXPR_1(2) == 1);
+
+    p_int = &v_int;
+    g_assert(&v_int == p_int);
+
+    (void) NM_STATIC_ASSERT_EXPR_1(2 > 1);
+
+    NM_STATIC_ASSERT_EXPR_VOID(2 > 1);
+}
+
+/*****************************************************************************/
+
+static void
 test_gpid(void)
 {
     const int *int_ptr;
@@ -1352,6 +1377,7 @@ main(int argc, char **argv)
 {
     nmtst_init(&argc, &argv, TRUE);
 
+    g_test_add_func("/general/test_nm_static_assert", test_nm_static_assert);
     g_test_add_func("/general/test_gpid", test_gpid);
     g_test_add_func("/general/test_monotonic_timestamp", test_monotonic_timestamp);
     g_test_add_func("/general/test_nmhash", test_nmhash);

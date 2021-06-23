@@ -122,18 +122,12 @@ nm_hash_update_bool(NMHashState *state, bool val)
     nm_hash_update(state, &val, sizeof(val));
 }
 
-#define _NM_HASH_COMBINE_BOOLS_OP(x, n) \
-    ((x) ? ((_nm_hash_combine_bools_type) NM_BIT((n))) : ((_nm_hash_combine_bools_type) 0))
+#define _NM_HASH_COMBINE_BOOLS_OP(x, n) ((x) ? NM_BIT((n)) : 0u)
 
-#define NM_HASH_COMBINE_BOOLS(type, ...)                                                  \
-    ({                                                                                    \
-        typedef type _nm_hash_combine_bools_type;                                         \
-                                                                                          \
-        G_STATIC_ASSERT(NM_NARG(__VA_ARGS__) <= 8 * sizeof(_nm_hash_combine_bools_type)); \
-                                                                                          \
-        (_nm_hash_combine_bools_type)(                                                    \
-            NM_VA_ARGS_FOREACH(, , |, _NM_HASH_COMBINE_BOOLS_OP, __VA_ARGS__));           \
-    })
+#define NM_HASH_COMBINE_BOOLS(type, ...)                                               \
+    ((type) (NM_STATIC_ASSERT_EXPR_1(NM_NARG(__VA_ARGS__) <= 8 * sizeof(type))         \
+                 ? (NM_VA_ARGS_FOREACH(, , |, _NM_HASH_COMBINE_BOOLS_OP, __VA_ARGS__)) \
+                 : 0))
 
 #define nm_hash_update_bools(state, ...) \
     nm_hash_update_val(state, NM_HASH_COMBINE_BOOLS(guint8, __VA_ARGS__))
