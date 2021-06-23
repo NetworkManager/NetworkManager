@@ -1820,6 +1820,282 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      * If the #NMSettingTCConfig setting is not present, NetworkManager
      * doesn't touch the qdiscs present on the interface.
      **/
+    /* ---nmcli---
+     * property: qdiscs
+     * format: GPtrArray(NMTCQdisc)
+     * description-docbook:
+     *  <para>
+     *  Array of TC queueing disciplines. qdisc is a basic block in the
+     *  Linux traffic control subsystem
+     *  </para>
+     *  <para>
+     *   Each qdisc can be specified by the following attributes:
+     *  </para>
+     *  <variablelist>
+     *    <varlistentry>
+     *      <term><varname>handle HANDLE</varname></term>
+     *      <listitem>
+     *        <para>
+     *          specifies the qdisc handle. A qdisc, which potentially can have children, gets
+     *          assigned a major number, called a 'handle', leaving the minor number namespace
+     *          available for classes. The handle is expressed as '10:'. It is customary to
+     *          explicitly assign a handle to qdiscs expected to have children.
+     *        </para>
+     *      </listitem>
+     *  </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>parent HANDLE</varname></term>
+     *      <listitem>
+     *        <para>
+     *          specifies the handle of the parent qdisc the current qdisc must be
+     *          attached to.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>root</varname></term>
+     *      <listitem>
+     *        <para>
+     *          specifies that the qdisc is attached to the root of device.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>KIND</varname></term>
+     *      <listitem>
+     *        <para>
+     *          this is the qdisc kind. NetworkManager currently supports the
+     *          following kinds: fq_codel, sfq, tbf. Each qdisc kind has a
+     *          different set of parameters, described below. There are also some
+     *          kinds like pfifo, pfifo_fast, prio supported by NetworkManager
+     *          but their parameters are not supported by NetworkManager.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *  </variablelist>
+     *  <para>
+     *   Parameters for 'fq_codel':
+     *  </para>
+     *  <variablelist>
+     *    <varlistentry>
+     *      <term><varname>limit U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *          the hard limit on the real queue size.  When this limit is
+     *          reached, incoming packets are dropped. Default is 10240 packets.
+     *        </para>
+     *      </listitem>
+     *  </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>memory_limit U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *          sets a limit on the total number of bytes that can be queued in
+     *          this FQ-CoDel instance. The lower of the packet limit of the
+     *          limit parameter and the memory limit will be enforced. Default is
+     *          32 MB.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>flows U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     the number of flows into which the incoming packets are
+     *     classified. Due to the stochastic nature of hashing, multiple
+     *     flows may end up being hashed into the same slot. Newer flows
+     *     have priority over older ones. This parameter can be set only at
+     *     load time since memory has to be allocated for the hash table.
+     *     Default value is 1024.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>target U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     the acceptable minimum standing/persistent queue delay. This minimum
+     *     delay is identified by tracking the local minimum queue delay that packets
+     *     experience. The unit of measurement is microsecond(us). Default value is 5ms.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>interval U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     used to ensure that the measured minimum delay does not become too stale.
+     *     The minimum delay must be experienced in the last epoch of length .B
+     *     interval.  It should be set on the order of the worst-case RTT
+     *     through the bottleneck to give endpoints sufficient time to
+     *     react. Default value is 100ms.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>quantum U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     the number of bytes used as 'deficit' in the fair queuing
+     *     algorithm. Default is set to 1514 bytes which corresponds to the
+     *     Ethernet MTU plus the hardware header length of 14 bytes.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>ecn BOOL</varname></term>
+     *      <listitem>
+     *        <para>
+     *     can be used to mark packets instead of dropping them. ecn is turned
+     *     on by default.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>ce_threshold U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     sets a threshold above which all packets are marked with ECN
+     *     Congestion Experienced. This is useful for DCTCP-style congestion
+     *     control algorithms that require marking at very shallow queueing
+     *     thresholds.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *  </variablelist>
+     *  <para>
+     *   Parameters for 'sfq':
+     *  </para>
+     *  <variablelist>
+     *    <varlistentry>
+     *      <term><varname>divisor U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     can be used to set a different hash table size, available
+     *     from kernel 2.6.39 onwards.  The specified divisor must be
+     *     a power of two and cannot be larger than 65536.  Default
+     *     value: 1024.
+     *        </para>
+     *      </listitem>
+     *  </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>limit U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Upper limit of the SFQ. Can be used to reduce the default
+     *     length of 127 packets.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>depth U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Limit of packets per flow. Default to
+     *     127 and can be lowered.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>perturb_period U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Interval in seconds for queue algorithm perturbation.
+     *     Defaults to 0, which means that no perturbation occurs. Do
+     *     not set too low for each perturbation may cause some
+     *     packet reordering or losses. Advised value: 60 This value
+     *     has no effect when external flow classification is used.
+     *     Its better to increase divisor value to lower risk of hash
+     *     collisions.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>quantum U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Amount of bytes a flow is allowed to dequeue during a
+     *     round of the round robin process.  Defaults to the MTU of
+     *     the interface which is also the advised value and the
+     *     minimum value.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>flows U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Default value is 127.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *  </variablelist>
+     *  <para>
+     *   Parameters for 'tbf':
+     *  </para>
+     *  <variablelist>
+     *    <varlistentry>
+     *      <term><varname>rate U64</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Bandwidth or rate.  These parameters accept a floating
+     *     point number, possibly followed by either a unit (both SI
+     *     and IEC units supported), or a float followed by a percent
+     *     character to specify the rate as a percentage of the
+     *     device's speed.
+     *        </para>
+     *      </listitem>
+     *  </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>burst U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Also known as buffer or maxburst.  Size of the bucket, in
+     *     bytes. This is the maximum amount of bytes that tokens can
+     *     be available for instantaneously.  In general, larger
+     *     shaping rates require a larger buffer. For 10mbit/s on
+     *     Intel, you need at least 10kbyte buffer if you want to
+     *     reach your configured rate!
+     *        </para>
+     *        <para>
+     *     If your buffer is too small, packets may be dropped
+     *     because more tokens arrive per timer tick than fit in your
+     *     bucket.  The minimum buffer size can be calculated by
+     *     dividing the rate by HZ.
+     *        </para>
+     *        <para>
+     *     Token usage calculations are performed using a table which
+     *     by default has a resolution of 8 packets.  This resolution
+     *     can be changed by specifying the cell size with the burst.
+     *     For example, to specify a 6000 byte buffer with a 16 byte
+     *     cell size, set a burst of 6000/16. You will probably never
+     *     have to set this. Must be an integral power of 2.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>limit U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Limit is the number of bytes that can be queued waiting
+     *     for tokens to become available.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>latency U32</varname></term>
+     *      <listitem>
+     *        <para>
+     *     specifies the maximum amount of time a packet can
+     *     sit in the TBF. The latency calculation takes into account
+     *     the size of the bucket, the rate and possibly the peakrate
+     *     (if set). The latency and limit are mutually exclusive.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *  </variablelist>
+     * ---end---
+     **/
     /* ---ifcfg-rh---
      * property: qdiscs
      * variable: QDISC1(+), QDISC2(+), ..., TC_COMMIT(+)
@@ -1853,6 +2129,109 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      *
      * If the #NMSettingTCConfig setting is not present, NetworkManager
      * doesn't touch the filters present on the interface.
+     **/
+    /* ---nmcli---
+     * property: tfilters
+     * format: GPtrArray(NMTCTfilter)
+     * description-docbook:
+     *  <para>
+     * Array of TC traffic filters. Traffic control can manage the packet content during
+     * classification by using filters.
+     *  </para>
+     *  <para>
+     *   Each tfilters can be specified by the following attributes:
+     *  </para>
+     *  <variablelist>
+     *    <varlistentry>
+     *      <term><varname>handle HANDLE</varname></term>
+     *      <listitem>
+     *        <para>
+     *          specifies the tfilters handle. A filter is used by a classful qdisc to determine in which class
+     *          a packet will be enqueued. It is important to notice that filters reside within qdiscs. Therefore,
+     *          see qdiscs handle for detailed information.
+     *        </para>
+     *      </listitem>
+     *  </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>parent HANDLE</varname></term>
+     *      <listitem>
+     *        <para>
+     *          specifies the handle of the parent qdisc the current qdisc must be
+     *          attached to.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>root</varname></term>
+     *      <listitem>
+     *        <para>
+     *          specifies that the qdisc is attached to the root of device.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>KIND</varname></term>
+     *      <listitem>
+     *        <para>
+     *          this is the tfilters kind. NetworkManager currently supports
+     *          following kinds: mirred, simple. Each filter kind has a
+     *          different set of actions, described below. There are also some
+     *          other kinds like matchall, basic, u32 supported by NetworkManager.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *  </variablelist>
+     *  <para>
+     *   Actions for 'mirred':
+     *  </para>
+     *  <variablelist>
+     *    <varlistentry>
+     *      <term><varname>egress bool</varname></term>
+     *      <listitem>
+     *        <para>
+     *          Define whether the packet should exit from the interface.
+     *        </para>
+     *      </listitem>
+     *  </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>ingress bool</varname></term>
+     *      <listitem>
+     *        <para>
+     *          Define whether the packet should come into the interface.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>mirror bool</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Define whether the packet should be copied to the destination space.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *      <varlistentry>
+     *      <term><varname>redirect bool</varname></term>
+     *      <listitem>
+     *        <para>
+     *     Define whether the packet should be moved to the destination space.
+     *        </para>
+     *      </listitem>
+     *    </varlistentry>
+     *  </variablelist>
+     *  <para>
+     *   Action for 'simple':
+     *  </para>
+     *  <variablelist>
+     *    <varlistentry>
+     *      <term><varname>sdata char[32]</varname></term>
+     *      <listitem>
+     *        <para>
+     *      The actual string to print.
+     *        </para>
+     *      </listitem>
+     *  </varlistentry>
+     *  </variablelist>
+     * ---end---
      **/
     /* ---ifcfg-rh---
      * property: qdiscs
