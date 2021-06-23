@@ -4358,6 +4358,7 @@ test_setting_metadata(void)
             const NMSettInfoProperty *sip = &sis->property_infos[prop_idx];
             GArray *                  property_types_data;
             guint                     prop_idx_val;
+            gboolean                  can_set_including_default = FALSE;
 
             g_assert(sip->name);
 
@@ -4368,7 +4369,57 @@ test_setting_metadata(void)
             g_assert(sip->property_type->dbus_type);
             g_assert(g_variant_type_string_is_valid((const char *) sip->property_type->dbus_type));
 
-            g_assert(!sip->property_type->to_dbus_fcn || !sip->property_type->gprop_to_dbus_fcn);
+            if (!sip->property_type->to_dbus_fcn) {
+                /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
+                 * properties must not have a param_spec and no gprop_to_dbus_fcn. */
+                g_assert(!sip->param_spec);
+                g_assert(!sip->to_dbus_data.none);
+            } else if (sip->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop) {
+                g_assert(sip->param_spec);
+                switch (sip->property_type->typdata_to_dbus.gprop_type) {
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
+                    g_assert(sip->param_spec->value_type == G_TYPE_BYTES);
+                    goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM:
+                    g_assert(g_type_is_a (sip->param_spec->value_type, G_TYPE_ENUM));
+                    goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS:
+                    g_assert(g_type_is_a (sip->param_spec->value_type, G_TYPE_FLAGS));
+                    goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_GARRAY_UINT:
+                    g_assert(sip->param_spec->value_type == G_TYPE_ARRAY);
+                    goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT:
+                    g_assert(sip->param_spec->value_type == G_TYPE_HASH_TABLE);
+                    goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS:
+                    g_assert(sip->param_spec->value_type == G_TYPE_STRING);
+                    goto check_done;
+                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
+                    goto check_done;
+                }
+                g_assert_not_reached();
+check_done:;
+                if (sip->property_type->typdata_to_dbus.gprop_type
+                    != NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT)
+                    g_assert(!sip->to_dbus_data.gprop_to_dbus_fcn);
+                can_set_including_default = TRUE;
+            } else if (sip->property_type->to_dbus_fcn
+                       == _nm_setting_property_to_dbus_fcn_get_boolean) {
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_BOOLEAN);
+                g_assert(sip->to_dbus_data.get_boolean);
+                can_set_including_default = TRUE;
+            } else if (sip->property_type->to_dbus_fcn
+                       == _nm_setting_property_to_dbus_fcn_get_string) {
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_STRING);
+                g_assert(sip->to_dbus_data.get_string);
+            }
+
+            if (!can_set_including_default)
+                g_assert(!sip->to_dbus_data.including_default);
+
             g_assert(!sip->property_type->from_dbus_fcn
                      || !sip->property_type->gprop_from_dbus_fcn);
 
@@ -4486,8 +4537,11 @@ test_setting_metadata(void)
                     || pt->to_dbus_fcn != pt_2->to_dbus_fcn
                     || pt->from_dbus_fcn != pt_2->from_dbus_fcn
                     || pt->missing_from_dbus_fcn != pt_2->missing_from_dbus_fcn
-                    || pt->gprop_to_dbus_fcn != pt_2->gprop_to_dbus_fcn
-                    || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn)
+                    || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn
+                    || memcmp(&pt->typdata_to_dbus,
+                              &pt_2->typdata_to_dbus,
+                              sizeof(pt->typdata_to_dbus))
+                           != 0)
                     continue;
 
                 if ((pt == &nm_sett_info_propert_type_plain_i
@@ -4509,7 +4563,9 @@ test_setting_metadata(void)
 
                 /* the property-types with same content should all be shared. Here we have two that
                  * are the same content, but different instances. Bug. */
-                g_error("The identical property type for D-Bus type \"%s\" is used by: %s and %s",
+                g_error("The identical property type for D-Bus type \"%s\" is used by: %s and %s. "
+                        "If a NMSettInfoPropertType is identical, it should be shared by creating "
+                        "a common instance of the property type",
                         (const char *) pt->dbus_type,
                         _PROP_IDX_OWNER(h_property_types, pt),
                         _PROP_IDX_OWNER(h_property_types, pt_2));

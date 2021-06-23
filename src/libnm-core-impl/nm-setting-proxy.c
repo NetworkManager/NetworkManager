@@ -295,8 +295,9 @@ finalize(GObject *object)
 static void
 nm_setting_proxy_class_init(NMSettingProxyClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingProxyPrivate));
 
@@ -344,12 +345,13 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
      * description: Whether the proxy configuration is for browser only.
      * ---end---
      */
-    obj_properties[PROP_BROWSER_ONLY] =
-        g_param_spec_boolean(NM_SETTING_PROXY_BROWSER_ONLY,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_PROXY_BROWSER_ONLY,
+                                        PROP_BROWSER_ONLY,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_proxy_get_browser_only);
 
     /**
      * NMSettingProxy:pac-url:
@@ -394,5 +396,8 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_PROXY);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_PROXY,
+                                  NULL,
+                                  properties_override);
 }

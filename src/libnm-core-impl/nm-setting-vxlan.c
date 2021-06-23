@@ -570,8 +570,9 @@ finalize(GObject *object)
 static void
 nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingVxlanPrivate));
 
@@ -764,12 +765,13 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_PROXY] = g_param_spec_boolean(
-        NM_SETTING_VXLAN_PROXY,
-        "",
-        "",
-        FALSE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_VXLAN_PROXY,
+                                        PROP_PROXY,
+                                        FALSE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_vxlan_get_proxy);
 
     /**
      * NMSettingVxlan:learning:
@@ -779,12 +781,14 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_LEARNING] = g_param_spec_boolean(
-        NM_SETTING_VXLAN_LEARNING,
-        "",
-        "",
-        TRUE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_VXLAN_LEARNING,
+                                        PROP_LEARNING,
+                                        TRUE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_vxlan_get_learning);
+
     /**
      * NMSettingVxlan:rsc:
      *
@@ -792,12 +796,14 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_RSC] = g_param_spec_boolean(NM_SETTING_VXLAN_RSC,
-                                                    "",
-                                                    "",
-                                                    FALSE,
-                                                    G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                        | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_VXLAN_RSC,
+                                        PROP_RSC,
+                                        FALSE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_vxlan_get_rsc);
+
     /**
      * NMSettingVxlan:l2-miss:
      *
@@ -805,12 +811,13 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_L2_MISS] = g_param_spec_boolean(
-        NM_SETTING_VXLAN_L2_MISS,
-        "",
-        "",
-        FALSE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_VXLAN_L2_MISS,
+                                        PROP_L2_MISS,
+                                        FALSE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_vxlan_get_l2_miss);
 
     /**
      * NMSettingVxlan:l3-miss:
@@ -819,14 +826,18 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_L3_MISS] = g_param_spec_boolean(
-        NM_SETTING_VXLAN_L3_MISS,
-        "",
-        "",
-        FALSE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_VXLAN_L3_MISS,
+                                        PROP_L3_MISS,
+                                        FALSE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_vxlan_get_l3_miss);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_VXLAN);
+    _nm_setting_class_commit_full(setting_class,
+                                  NM_META_SETTING_TYPE_VXLAN,
+                                  NULL,
+                                  properties_override);
 }

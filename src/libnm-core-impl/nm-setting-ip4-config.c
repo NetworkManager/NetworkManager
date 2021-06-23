@@ -847,12 +847,12 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: DHCP_CLIENT_ID=ax-srv-1; DHCP_CLIENT_ID=01:44:44:44:44:44:44
      * ---end---
      */
-    obj_properties[PROP_DHCP_CLIENT_ID] =
-        g_param_spec_string(NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
+                                       PROP_DHCP_CLIENT_ID,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_ip4_config_get_dhcp_client_id);
 
     /* ---ifcfg-rh---
      * property: dad-timeout
@@ -898,12 +898,12 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: DHCP_FQDN=foo.bar.com
      * ---end---
      */
-    obj_properties[PROP_DHCP_FQDN] =
-        g_param_spec_string(NM_SETTING_IP4_CONFIG_DHCP_FQDN,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_IP4_CONFIG_DHCP_FQDN,
+                                       PROP_DHCP_FQDN,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_ip4_config_get_dhcp_fqdn);
 
     /**
      * NMSettingIP4Config:dhcp-vendor-class-identifier:
@@ -924,12 +924,12 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: DHCP_VENDOR_CLASS_IDENTIFIER=foo
      * ---end---
      */
-    obj_properties[PROP_DHCP_VENDOR_CLASS_IDENTIFIER] =
-        g_param_spec_string(NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
+                                       PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_ip4_config_get_dhcp_vendor_class_identifier);
 
     /* IP4-specific property overrides */
 
@@ -943,9 +943,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type           = NM_G_VARIANT_TYPE("au"),
-                                  .gprop_to_dbus_fcn   = ip4_dns_to_dbus,
-                                  .gprop_from_dbus_fcn = ip4_dns_from_dbus, ));
+        NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("au"),
+                                        .gprop_from_dbus_fcn = ip4_dns_from_dbus, ),
+        .to_dbus_data.gprop_to_dbus_fcn = ip4_dns_to_dbus);
 
     /* ---dbus---
      * property: addresses
@@ -972,14 +972,14 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("aau"),
-                                  .to_dbus_fcn   = ip4_addresses_get,
-                                  .from_dbus_fcn = ip4_addresses_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
+                                       .to_dbus_fcn   = ip4_addresses_get,
+                                       .from_dbus_fcn = ip4_addresses_set, ));
     _nm_properties_override_dbus(
         properties_override,
         "address-labels",
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = G_VARIANT_TYPE_STRING_ARRAY,
-                                  .to_dbus_fcn = ip4_address_labels_get, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
+                                       .to_dbus_fcn = ip4_address_labels_get, ));
 
     /* ---dbus---
      * property: address-data
@@ -993,9 +993,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     _nm_properties_override_dbus(
         properties_override,
         "address-data",
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("aa{sv}"),
-                                  .to_dbus_fcn   = ip4_address_data_get,
-                                  .from_dbus_fcn = ip4_address_data_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = ip4_address_data_get,
+                                       .from_dbus_fcn = ip4_address_data_set, ));
 
     /* ---dbus---
      * property: routes
@@ -1026,9 +1026,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type     = NM_G_VARIANT_TYPE("aau"),
-                                  .to_dbus_fcn   = ip4_routes_get,
-                                  .from_dbus_fcn = ip4_routes_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
+                                       .to_dbus_fcn   = ip4_routes_get,
+                                       .from_dbus_fcn = ip4_routes_set, ));
 
     /* ---dbus---
      * property: route-data
@@ -1043,11 +1043,12 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *   also exist on some routes.
      * ---end---
      */
-    _nm_properties_override_dbus(properties_override,
-                                 "route-data",
-                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type = NM_G_VARIANT_TYPE("aa{sv}"),
-                                                           .to_dbus_fcn   = ip4_route_data_get,
-                                                           .from_dbus_fcn = ip4_route_data_set, ));
+    _nm_properties_override_dbus(
+        properties_override,
+        "route-data",
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = ip4_route_data_get,
+                                       .from_dbus_fcn = ip4_route_data_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

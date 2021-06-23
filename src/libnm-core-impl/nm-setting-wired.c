@@ -995,17 +995,6 @@ compare_property(const NMSettInfoSetting *sett_info,
         ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
 }
 
-static GVariant *
-_override_autoneg_get(const NMSettInfoSetting *               sett_info,
-                      guint                                   property_idx,
-                      NMConnection *                          connection,
-                      NMSetting *                             setting,
-                      NMConnectionSerializationFlags          flags,
-                      const NMConnectionSerializationOptions *options)
-{
-    return g_variant_new_boolean(nm_setting_wired_get_auto_negotiate((NMSettingWired *) setting));
-}
-
 /*****************************************************************************/
 
 static void
@@ -1302,11 +1291,12 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * description: The property is not saved by the plugin.
      * ---end---
      */
-    obj_properties[PROP_PORT] = g_param_spec_string(NM_SETTING_WIRED_PORT,
-                                                    "",
-                                                    "",
-                                                    NULL,
-                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_PORT,
+                                       PROP_PORT,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_wired_get_port);
 
     /**
      * NMSettingWired:speed:
@@ -1363,11 +1353,12 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *    "duplex" parameter in the ETHOOL_OPTS variable.
      * ---end---
      */
-    obj_properties[PROP_DUPLEX] = g_param_spec_string(NM_SETTING_WIRED_DUPLEX,
-                                                      "",
-                                                      "",
-                                                      NULL,
-                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_DUPLEX,
+                                       PROP_DUPLEX,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_wired_get_duplex);
 
     /**
      * NMSettingWired:auto-negotiate:
@@ -1389,16 +1380,14 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *    "speed" and "duplex" parameters (skips link configuration).
      * ---end---
      */
-    obj_properties[PROP_AUTO_NEGOTIATE] =
-        g_param_spec_boolean(NM_SETTING_WIRED_AUTO_NEGOTIATE,
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_AUTO_NEGOTIATE],
-                                 NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = G_VARIANT_TYPE_BOOLEAN,
-                                                           .to_dbus_fcn = _override_autoneg_get, ));
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_WIRED_AUTO_NEGOTIATE,
+                                        PROP_AUTO_NEGOTIATE,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_wired_get_auto_negotiate,
+                                        .to_dbus_data.including_default = TRUE);
 
     /**
      * NMSettingWired:mac-address:
@@ -1542,12 +1531,12 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *   cloned-mac-address.
      * ---end---
      */
-    obj_properties[PROP_GENERATE_MAC_ADDRESS_MASK] = g_param_spec_string(
-        NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK,
+                                       PROP_GENERATE_MAC_ADDRESS_MASK,
+                                       NM_SETTING_PARAM_FUZZY_IGNORE,
+                                       nm_setting_wired_get_generate_mac_address_mask);
 
     /**
      * NMSettingWired:mac-address-blacklist:
@@ -1638,12 +1627,12 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * example: NETTYPE=qeth
      * ---end---
      */
-    obj_properties[PROP_S390_NETTYPE] = g_param_spec_string(
-        NM_SETTING_WIRED_S390_NETTYPE,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_S390_NETTYPE,
+                                       PROP_S390_NETTYPE,
+                                       NM_SETTING_PARAM_INFERRABLE,
+                                       nm_setting_wired_get_s390_nettype);
 
     /**
      * NMSettingWired:s390-options: (type GHashTable(utf8,utf8)):
@@ -1719,12 +1708,13 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * example: ETHTOOL_OPTS="wol gs sopass 00:11:22:33:44:55"
      * ---end---
      */
-    obj_properties[PROP_WAKE_ON_LAN_PASSWORD] =
-        g_param_spec_string(NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_string(properties_override,
+                                       obj_properties,
+                                       NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD,
+                                       PROP_WAKE_ON_LAN_PASSWORD,
+                                       NM_SETTING_PARAM_NONE,
+                                       nm_setting_wired_get_wake_on_lan_password);
+
     /**
      * NMSettingWired:accept-all-mac-addresses:
      *

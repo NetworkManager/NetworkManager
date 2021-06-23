@@ -1743,8 +1743,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_SEEN_BSSIDS],
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = G_VARIANT_TYPE_STRING_ARRAY,
-                                  .to_dbus_fcn = _to_dbus_fcn_seen_bssids, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
+                                       .to_dbus_fcn = _to_dbus_fcn_seen_bssids, ));
 
     /**
      * NMSettingWireless:mtu:
@@ -1791,11 +1791,13 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * description: Whether the network hides the SSID.
      * ---end---
      */
-    obj_properties[PROP_HIDDEN] = g_param_spec_boolean(NM_SETTING_WIRELESS_HIDDEN,
-                                                       "",
-                                                       "",
-                                                       FALSE,
-                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_WIRELESS_HIDDEN,
+                                        PROP_HIDDEN,
+                                        FALSE,
+                                        NM_SETTING_PARAM_NONE,
+                                        nm_setting_wireless_get_hidden);
 
     /**
      * NMSettingWireless:powersave:
@@ -1871,8 +1873,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
     _nm_properties_override_dbus(
         properties_override,
         "security",
-        NM_SETT_INFO_PROPERT_TYPE(.dbus_type   = G_VARIANT_TYPE_STRING,
-                                  .to_dbus_fcn = nm_setting_wireless_get_security, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .to_dbus_fcn = nm_setting_wireless_get_security, ));
 
     /**
      * NMSettingWireless:wake-on-wlan:

@@ -1441,6 +1441,8 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_UINT, GParamSpecUInt)
 #define NM_G_PARAM_SPEC_CAST_UINT64(param_spec) \
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_UINT64, GParamSpecUInt64)
+#define NM_G_PARAM_SPEC_CAST_STRING(param_spec) \
+    _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_STRING, GParamSpecString)
 
 #define NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(param_spec) \
     (NM_G_PARAM_SPEC_CAST_BOOLEAN(NM_ENSURE_NOT_NULL(param_spec))->default_value)
@@ -1448,6 +1450,8 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
     (NM_G_PARAM_SPEC_CAST_UINT(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 #define NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(param_spec) \
     (NM_G_PARAM_SPEC_CAST_UINT64(NM_ENSURE_NOT_NULL(param_spec))->default_value)
+#define NM_G_PARAM_SPEC_GET_DEFAULT_STRING(param_spec) \
+    (NM_G_PARAM_SPEC_CAST_STRING(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 
 /*****************************************************************************/
 
@@ -1503,7 +1507,9 @@ char *nm_utils_str_utf8safe_unescape_cp(const char *str, NMUtilsStrUtf8SafeFlags
 
 char *nm_utils_str_utf8safe_escape_take(char *str, NMUtilsStrUtf8SafeFlags flags);
 
+GVariant *nm_g_variant_singleton_b(gboolean value);
 GVariant *nm_g_variant_singleton_u_0(void);
+GVariant *nm_g_variant_singleton_s_empty(void);
 GVariant *nm_g_variant_singleton_aLsvI(void);
 GVariant *nm_g_variant_singleton_aLsaLsvII(void);
 GVariant *nm_g_variant_singleton_aaLsvI(void);

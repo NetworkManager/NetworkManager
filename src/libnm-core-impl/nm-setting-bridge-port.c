@@ -564,12 +564,13 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
      * description: Hairpin mode of the bridge port.
      * ---end---
      */
-    obj_properties[PROP_HAIRPIN_MODE] = g_param_spec_boolean(
-        NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
-        "",
-        "",
-        FALSE,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_boolean(properties_override,
+                                        obj_properties,
+                                        NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
+                                        PROP_HAIRPIN_MODE,
+                                        FALSE,
+                                        NM_SETTING_PARAM_INFERRABLE,
+                                        nm_setting_bridge_port_get_hairpin_mode);
 
     /**
      * NMSettingBridgePort:vlans: (type GPtrArray(NMBridgeVlan))
