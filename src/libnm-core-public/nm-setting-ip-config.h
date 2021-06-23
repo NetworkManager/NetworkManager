@@ -331,6 +331,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule *      self,
 #define NM_SETTING_IP_CONFIG_MAY_FAIL            "may-fail"
 #define NM_SETTING_IP_CONFIG_DAD_TIMEOUT         "dad-timeout"
 #define NM_SETTING_IP_CONFIG_DHCP_TIMEOUT        "dhcp-timeout"
+#define NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT    "required-timeout"
 #define NM_SETTING_IP_CONFIG_DHCP_IAID           "dhcp-iaid"
 #define NM_SETTING_IP_CONFIG_DHCP_REJECT_SERVERS "dhcp-reject-servers"
 
@@ -473,6 +474,8 @@ NM_AVAILABLE_IN_1_2
 int nm_setting_ip_config_get_dad_timeout(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_2
 int nm_setting_ip_config_get_dhcp_timeout(NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_34
+int nm_setting_ip_config_get_required_timeout(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_22
 const char *nm_setting_ip_config_get_dhcp_iaid(NMSettingIPConfig *setting);
 
