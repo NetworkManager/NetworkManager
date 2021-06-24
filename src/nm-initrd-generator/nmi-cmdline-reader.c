@@ -119,6 +119,8 @@ reader_create_connection(Reader *                 reader,
                  reader->dhcp_timeout,
                  NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
                  reader->dhcp4_vci,
+                 NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
+                 NMI_IP_REQUIRED_TIMEOUT_MSEC,
                  NULL);
 
     setting = nm_setting_ip6_config_new();
@@ -401,18 +403,19 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
     gs_unref_hashtable GHashTable *ibft = NULL;
     const char *                   tmp;
     const char *                   tmp2;
-    const char *                   kind             = NULL;
-    const char *                   client_ip        = NULL;
-    const char *                   peer             = NULL;
-    const char *                   gateway_ip       = NULL;
-    const char *                   netmask          = NULL;
-    const char *                   client_hostname  = NULL;
-    const char *                   iface_spec       = NULL;
-    const char *                   mtu              = NULL;
-    const char *                   macaddr          = NULL;
-    int                            client_ip_family = AF_UNSPEC;
-    int                            client_ip_prefix = -1;
-    const char *                   dns[2]           = {
+    const char *                   kind                       = NULL;
+    const char *                   client_ip                  = NULL;
+    const char *                   peer                       = NULL;
+    const char *                   gateway_ip                 = NULL;
+    const char *                   netmask                    = NULL;
+    const char *                   client_hostname            = NULL;
+    const char *                   iface_spec                 = NULL;
+    const char *                   mtu                        = NULL;
+    const char *                   macaddr                    = NULL;
+    int                            client_ip_family           = AF_UNSPEC;
+    int                            client_ip_prefix           = -1;
+    gboolean                       clear_ip4_required_timeout = TRUE;
+    const char *                   dns[2]                     = {
         NULL,
         NULL,
     };
@@ -679,7 +682,12 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                 g_clear_error(&error);
             }
         }
+    } else {
+        clear_ip4_required_timeout = FALSE;
     }
+
+    if (clear_ip4_required_timeout)
+        g_object_set(s_ip4, NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT, -1, NULL);
 
     if (peer && *peer)
         _LOGW(LOGD_CORE, "Ignoring peer: %s (not implemented)\n", peer);
