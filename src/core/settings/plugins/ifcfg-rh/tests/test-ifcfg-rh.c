@@ -3969,7 +3969,8 @@ test_roundtrip_ethtool(void)
                                                  NULL,
                                                  NM_SETTING_WIRED_SETTING_NAME,
                                                  NULL);
-    /* TODO: add empty NMSettingEthtool, which currently would break the test. */
+    s_ethtool  = nm_setting_ethtool_new();
+    nm_connection_add_setting(connection, s_ethtool);
     _writer_new_connec_exp(connection,
                            TEST_SCRATCH_DIR,
                            TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-2.cexpected",
