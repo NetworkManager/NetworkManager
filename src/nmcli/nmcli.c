@@ -14,7 +14,6 @@
 #include <termios.h>
 #include <unistd.h>
 #include <locale.h>
-#include <glib-unix.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 

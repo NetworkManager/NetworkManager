@@ -13,7 +13,6 @@
     #include <curl/curl.h>
 #endif
 #include <linux/rtnetlink.h>
-#include <glib-unix.h>
 
 #include "c-list/src/c-list.h"
 #include "libnm-core-intern/nm-core-internal.h"
