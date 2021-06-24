@@ -3949,6 +3949,75 @@ test_read_wired_unknown_ethtool_opt(void)
 }
 
 static void
+test_roundtrip_ethtool(void)
+{
+    gs_unref_object NMConnection *connection = NULL;
+    NMSetting *                   s_ethtool;
+    NMSetting *                   s_wired;
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-1.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    /* TODO: add empty NMSettingEthtool, which currently would break the test. */
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-2.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_wired    = nm_connection_get_setting(connection, NM_TYPE_SETTING_WIRED);
+    g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE, NULL);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-3.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_ethtool  = nm_setting_ethtool_new();
+    nm_connection_add_setting(connection, s_ethtool);
+    nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_RX, TRUE);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-4.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_wired    = nm_connection_get_setting(connection, NM_TYPE_SETTING_WIRED);
+    g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE, NULL);
+    s_ethtool = nm_setting_ethtool_new();
+    nm_connection_add_setting(connection, s_ethtool);
+    nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_RX, TRUE);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-5.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+}
+
+static void
 test_read_wifi_hidden(void)
 {
     NMConnection *       connection;
@@ -11647,6 +11716,8 @@ main(int argc, char **argv)
     g_test_add_func(TPATH "802-1x/ttls-eapgtc", test_read_802_1x_ttls_eapgtc);
     g_test_add_func(TPATH "802-1x/password_raw", test_read_write_802_1x_password_raw);
     g_test_add_func(TPATH "802-1x/tls-p12-no-client-cert", test_read_802_1x_tls_p12_no_client_cert);
+
+    g_test_add_func(TPATH "wired/roundtrip/ethtool", test_roundtrip_ethtool);
 
     g_test_add_data_func(TPATH "wired/read/aliases/good/0",
                          GINT_TO_POINTER(0),
