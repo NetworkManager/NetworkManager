@@ -2321,30 +2321,6 @@ _nm_settings_connection_register_kf_dbs(NMSettingsConnection *self,
             for (i = len; i > 0;)
                 g_hash_table_add(priv->seen_bssids, g_steal_pointer(&tmp_strv[--i]));
             nm_clear_g_free(&tmp_strv);
-        } else {
-            NMSettingWireless *s_wifi;
-
-            _LOGT("no seen-bssids from keyfile database \"%s\"",
-                  nm_key_file_db_get_filename(priv->kf_db_seen_bssids));
-
-            /* If this connection didn't have an entry in the seen-bssids database,
-             * maybe this is the first time we've read it in, so populate the
-             * seen-bssids list from the deprecated seen-bssids property of the
-             * wifi setting.
-             */
-            s_wifi =
-                nm_connection_get_setting_wireless(nm_settings_connection_get_connection(self));
-            if (s_wifi) {
-                len = nm_setting_wireless_get_num_seen_bssids(s_wifi);
-                if (len > 0) {
-                    priv->seen_bssids = _seen_bssids_hash_new();
-                    for (i = 0; i < len; i++) {
-                        const char *bssid = nm_setting_wireless_get_seen_bssid(s_wifi, i);
-
-                        g_hash_table_add(priv->seen_bssids, g_strdup(bssid));
-                    }
-                }
-            }
         }
     }
 }
