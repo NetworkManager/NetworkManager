@@ -1770,6 +1770,20 @@ nm_g_timeout_add_source_approx(guint       timeout_msec,
     return nm_g_source_attach(source, NULL);
 }
 
+static inline GSource *
+nm_g_unix_fd_add_source(int               fd,
+                        GIOCondition      condition,
+                        GUnixFDSourceFunc function,
+                        gpointer          user_data)
+{
+    /* A convenience function to attach a new unix-fd source to the default GMainContext.
+     * In that sense it's very similar to g_unix_fd_add() except that it returns a
+     * reference to the new source.  */
+    return nm_g_source_attach(
+        nm_g_unix_fd_source_new(fd, condition, G_PRIORITY_DEFAULT, function, user_data, NULL),
+        NULL);
+}
+
 NM_AUTO_DEFINE_FCN0(GMainContext *, _nm_auto_unref_gmaincontext, g_main_context_unref);
 #define nm_auto_unref_gmaincontext nm_auto(_nm_auto_unref_gmaincontext)
 
