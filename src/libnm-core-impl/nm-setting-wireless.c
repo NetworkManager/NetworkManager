@@ -750,19 +750,54 @@ _to_dbus_fcn_seen_bssids(const NMSettInfoSetting *               sett_info,
                          NMConnectionSerializationFlags          flags,
                          const NMConnectionSerializationOptions *options)
 {
-    NMSettingWirelessPrivate *priv;
-
-    if (options && options->seen_bssids) {
+    if (options && options->seen_bssids)
         return options->seen_bssids[0] ? g_variant_new_strv(options->seen_bssids, -1) : NULL;
+
+    /* The seen-bssid property is special. It cannot be converted to D-Bus
+     * like regular properties, only via the "options".
+     *
+     * This basically means, that only the daemon can provide seen-bssids as GVariant,
+     * while when a client converts the property to GVariant, it gets lost.
+     *
+     * This has the odd effect, that when the client converts the setting to GVariant
+     * and back, the seen-bssids gets lost. That is kinda desired here, because the to_dbus_fcn()
+     * and from_dbus_fcn() have the meaning of how a setting gets transferred via D-Bus,
+     * and not necessarily a loss-less conversion into another format and back. And when
+     * transferring via D-Bus, then the option makes only sense when sending it from
+     * the daemon to the client, not otherwise. */
+    return NULL;
+}
+
+static gboolean
+_from_dbus_fcn_seen_bssids(NMSetting *         setting,
+                           GVariant *          connection_dict,
+                           const char *        property,
+                           GVariant *          value,
+                           NMSettingParseFlags parse_flags,
+                           GError **           error)
+{
+    NMSettingWirelessPrivate *priv;
+    gs_free const char **     s = NULL;
+    gsize                     len;
+    gsize                     i;
+
+    if (_nm_utils_is_manager_process) {
+        /* in the manager process, we don't accept seen-bssid from the client.
+         * Do nothing.  */
+        return TRUE;
     }
 
     priv = NM_SETTING_WIRELESS_GET_PRIVATE(setting);
 
-    if (!priv->seen_bssids || priv->seen_bssids->len == 0)
-        return NULL;
+    nm_clear_pointer(&priv->seen_bssids, g_ptr_array_unref);
 
-    return g_variant_new_strv((const char *const *) priv->seen_bssids->pdata,
-                              priv->seen_bssids->len);
+    s = g_variant_get_strv(value, &len);
+    if (len > 0) {
+        priv->seen_bssids = g_ptr_array_new_full(len, g_free);
+        for (i = 0; i < len; i++)
+            g_ptr_array_add(priv->seen_bssids, g_strdup(s[i]));
+    }
+    return TRUE;
 }
 
 /**
@@ -1075,11 +1110,17 @@ compare_property(const NMSettInfoSetting *sett_info,
                  NMSetting *              set_b,
                  NMSettingCompareFlags    flags)
 {
-    if (nm_streq(sett_info->property_infos[property_idx].name,
-                 NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS)) {
+    if (sett_info->property_infos[property_idx].param_spec
+        == obj_properties[PROP_CLONED_MAC_ADDRESS]) {
         return !set_b
                || nm_streq0(NM_SETTING_WIRELESS_GET_PRIVATE(set_a)->cloned_mac_address,
                             NM_SETTING_WIRELESS_GET_PRIVATE(set_b)->cloned_mac_address);
+    }
+    if (sett_info->property_infos[property_idx].param_spec == obj_properties[PROP_SEEN_BSSIDS]) {
+        return !set_b
+               || (nm_strv_ptrarray_cmp(NM_SETTING_WIRELESS_GET_PRIVATE(set_a)->seen_bssids,
+                                        NM_SETTING_WIRELESS_GET_PRIVATE(set_b)->seen_bssids)
+                   == 0);
     }
 
     return NM_SETTING_CLASS(nm_setting_wireless_parent_class)
@@ -1744,7 +1785,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
         properties_override,
         obj_properties[PROP_SEEN_BSSIDS],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
-                                       .to_dbus_fcn = _to_dbus_fcn_seen_bssids, ));
+                                       .to_dbus_fcn   = _to_dbus_fcn_seen_bssids,
+                                       .from_dbus_fcn = _from_dbus_fcn_seen_bssids, ));
 
     /**
      * NMSettingWireless:mtu:
