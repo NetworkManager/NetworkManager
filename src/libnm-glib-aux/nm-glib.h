@@ -684,11 +684,21 @@ g_hash_table_steal_extended(GHashTable *  hash_table,
 
 /*****************************************************************************/
 
-_nm_deprecated("Don't use g_cancellable_reset(). Create a new cancellable "
-               "instead.") void _nm_g_cancellable_reset(GCancellable *cancellable);
+_nm_deprecated("Don't use this API") void _nm_forbidden_glib_api_0(void);
+_nm_deprecated("Don't use this API") void _nm_forbidden_glib_api_n(gconstpointer arg0, ...);
 
 #undef g_cancellable_reset
-#define g_cancellable_reset(cancellable) _nm_g_cancellable_reset(cancellable)
+#define g_cancellable_reset(cancellable) _nm_forbidden_glib_api_n(cancellable)
+
+#undef g_idle_remove_by_data
+#define g_idle_remove_by_data(data) _nm_forbidden_glib_api_n(data)
+
+#undef g_source_remove_by_funcs_user_data
+#define g_source_remove_by_funcs_user_data(funcs, user_data) \
+    _nm_forbidden_glib_api_n(funcs, user_data)
+
+#undef g_source_remove_by_user_data
+#define g_source_remove_by_user_data(user_data) _nm_forbidden_glib_api_n(user_data)
 
 /*****************************************************************************/
 
