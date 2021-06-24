@@ -86,6 +86,19 @@ NM_DEFINE_SINGLETON_GETTER(NMHostnameManager, nm_hostname_manager_get, NM_TYPE_H
 
 /*****************************************************************************/
 
+static inline GFileMonitor *
+_file_monitor_new(const char *path)
+{
+    gs_unref_object GFile *file = NULL;
+
+    nm_assert(path);
+
+    file = g_file_new_for_path(path);
+    return g_file_monitor_file(file, G_FILE_MONITOR_NONE, NULL, NULL);
+}
+
+/*****************************************************************************/
+
 #if defined(HOSTNAME_PERSIST_GENTOO)
 static char *
 read_hostname_gentoo(const char *path)
@@ -389,16 +402,6 @@ nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname
     return TRUE;
 }
 
-static void
-hostname_file_changed_cb(GFileMonitor *    monitor,
-                         GFile *           file,
-                         GFile *           other_file,
-                         GFileMonitorEvent event_type,
-                         gpointer          user_data)
-{
-    _set_hostname_read_file(user_data);
-}
-
 /*****************************************************************************/
 
 static void
@@ -416,15 +419,46 @@ hostnamed_properties_changed(GDBusProxy *proxy,
         _set_hostname(self, g_variant_get_string(variant, NULL));
 }
 
+/*****************************************************************************/
+
 static void
-setup_hostname_file_monitors(NMHostnameManager *self)
+_file_monitors_file_changed_cb(GFileMonitor *    monitor,
+                               GFile *           file,
+                               GFile *           other_file,
+                               GFileMonitorEvent event_type,
+                               gpointer          user_data)
+{
+    _set_hostname_read_file(user_data);
+}
+
+static void
+_file_monitors_clear(NMHostnameManager *self)
+{
+    NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+
+    if (priv->monitor) {
+        nm_clear_g_signal_handler(priv->monitor, &priv->monitor_id);
+        g_file_monitor_cancel(priv->monitor);
+        g_clear_object(&priv->monitor);
+    }
+
+    if (priv->dhcp_monitor) {
+        nm_clear_g_signal_handler(priv->dhcp_monitor, &priv->dhcp_monitor_id);
+        g_file_monitor_cancel(priv->dhcp_monitor);
+        g_clear_object(&priv->dhcp_monitor);
+    }
+}
+
+static void
+_file_monitors_setup(NMHostnameManager *self)
 {
     NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
     GFileMonitor *            monitor;
     const char *              path      = HOSTNAME_FILE;
-    char *                    link_path = NULL;
+    gs_free char *            link_path = NULL;
     struct stat               file_stat;
-    GFile *                   file;
+
+    _file_monitors_clear(self);
 
     /* resolve the path to the hostname file if it is a symbolic link */
     if (lstat(path, &file_stat) == 0 && S_ISLNK(file_stat.st_mode)
@@ -437,24 +471,19 @@ setup_hostname_file_monitors(NMHostnameManager *self)
     }
 
     /* monitor changes to hostname file */
-    file    = g_file_new_for_path(path);
-    monitor = g_file_monitor_file(file, G_FILE_MONITOR_NONE, NULL, NULL);
-    g_object_unref(file);
-    g_free(link_path);
+    monitor = _file_monitor_new(path);
     if (monitor) {
         priv->monitor_id =
-            g_signal_connect(monitor, "changed", G_CALLBACK(hostname_file_changed_cb), self);
+            g_signal_connect(monitor, "changed", G_CALLBACK(_file_monitors_file_changed_cb), self);
         priv->monitor = monitor;
     }
 
 #if defined(HOSTNAME_PERSIST_SUSE)
     /* monitor changes to dhcp file to know whether the hostname is valid */
-    file    = g_file_new_for_path(CONF_DHCP);
-    monitor = g_file_monitor_file(file, G_FILE_MONITOR_NONE, NULL, NULL);
-    g_object_unref(file);
+    monitor = _file_monitor_new(CONF_DHCP);
     if (monitor) {
         priv->dhcp_monitor_id =
-            g_signal_connect(monitor, "changed", G_CALLBACK(hostname_file_changed_cb), self);
+            g_signal_connect(monitor, "changed", G_CALLBACK(_file_monitors_file_changed_cb), self);
         priv->dhcp_monitor = monitor;
     }
 #endif
@@ -523,7 +552,7 @@ constructed(GObject *object)
     }
 
     if (!priv->hostnamed_proxy)
-        setup_hostname_file_monitors(self);
+        _file_monitors_setup(self);
 
     G_OBJECT_CLASS(nm_hostname_manager_parent_class)->constructed(object);
 }
@@ -541,21 +570,7 @@ dispose(GObject *object)
         g_clear_object(&priv->hostnamed_proxy);
     }
 
-    if (priv->monitor) {
-        if (priv->monitor_id)
-            g_signal_handler_disconnect(priv->monitor, priv->monitor_id);
-
-        g_file_monitor_cancel(priv->monitor);
-        g_clear_object(&priv->monitor);
-    }
-
-    if (priv->dhcp_monitor) {
-        if (priv->dhcp_monitor_id)
-            g_signal_handler_disconnect(priv->dhcp_monitor, priv->dhcp_monitor_id);
-
-        g_file_monitor_cancel(priv->dhcp_monitor);
-        g_clear_object(&priv->dhcp_monitor);
-    }
+    _file_monitors_clear(self);
 
     nm_clear_g_free(&priv->current_hostname);
 
