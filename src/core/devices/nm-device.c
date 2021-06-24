@@ -686,10 +686,10 @@ typedef struct _NMDevicePrivate {
     guint sriov_reset_pending;
 
     struct {
-        guint   timeout_id;
-        guint   refresh_rate_ms;
-        guint64 tx_bytes;
-        guint64 rx_bytes;
+        GSource *timeout_source;
+        guint    refresh_rate_ms;
+        guint64  tx_bytes;
+        guint64  rx_bytes;
     } stats;
 
     bool mtu_force_set_done : 1;
@@ -3341,7 +3341,7 @@ _stats_set_refresh_rate(NMDevice *self, guint refresh_rate_ms)
     if (_stats_refresh_rate_real(old_rate) == refresh_rate_ms)
         return;
 
-    nm_clear_g_source(&priv->stats.timeout_id);
+    nm_clear_g_source_inst(&priv->stats.timeout_source);
 
     if (!refresh_rate_ms)
         return;
@@ -3353,7 +3353,7 @@ _stats_set_refresh_rate(NMDevice *self, guint refresh_rate_ms)
     if (ifindex > 0)
         nm_platform_link_refresh(nm_device_get_platform(self), ifindex);
 
-    priv->stats.timeout_id = g_timeout_add(refresh_rate_ms, _stats_timeout_cb, self);
+    priv->stats.timeout_source = nm_g_timeout_add_source(refresh_rate_ms, _stats_timeout_cb, self);
 }
 
 /*****************************************************************************/
@@ -5920,7 +5920,7 @@ realize_start_setup(NMDevice *            self,
     NMPlatform *         platform;
     NMDeviceCapabilities capabilities = 0;
     NMConfig *           config;
-    guint                real_rate;
+    guint                refresh_rate_ms;
     gboolean             unmanaged;
 
     /* plink is a NMPlatformLink type, however, we require it to come from the platform
@@ -6028,10 +6028,12 @@ realize_start_setup(NMDevice *            self,
 
     nm_device_set_carrier_from_platform(self);
 
-    nm_assert(!priv->stats.timeout_id);
-    real_rate = _stats_refresh_rate_real(priv->stats.refresh_rate_ms);
-    if (real_rate)
-        priv->stats.timeout_id = g_timeout_add(real_rate, _stats_timeout_cb, self);
+    nm_assert(!priv->stats.timeout_source);
+    refresh_rate_ms = _stats_refresh_rate_real(priv->stats.refresh_rate_ms);
+    if (refresh_rate_ms > 0) {
+        priv->stats.timeout_source =
+            nm_g_timeout_add_source(refresh_rate_ms, _stats_timeout_cb, self);
+    }
 
     klass->realize_start_notify(self, plink);
 
@@ -6217,7 +6219,7 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
         _notify(self, PROP_PHYSICAL_PORT_ID);
     }
 
-    nm_clear_g_source(&priv->stats.timeout_id);
+    nm_clear_g_source_inst(&priv->stats.timeout_source);
     _stats_update_counters(self, 0, 0);
 
     priv->hw_addr_len_ = 0;
@@ -18378,7 +18380,7 @@ dispose(GObject *object)
 
     nm_clear_g_source(&priv->check_delete_unrealized_id);
 
-    nm_clear_g_source(&priv->stats.timeout_id);
+    nm_clear_g_source_inst(&priv->stats.timeout_source);
 
     carrier_disconnected_action_cancel(self);
 
