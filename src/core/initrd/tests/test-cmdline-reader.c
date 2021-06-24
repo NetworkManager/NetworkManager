@@ -276,6 +276,7 @@ test_dhcp_timeout(void)
                         ==,
                         NM_SETTING_IP4_CONFIG_METHOD_AUTO);
         g_assert_cmpint(nm_setting_ip_config_get_dhcp_timeout(s_ip4), ==, data[i].timeout);
+        g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip4), ==, -1);
 
         s_ip6 = nm_connection_get_setting_ip6_config(connection);
         g_assert(s_ip6);
@@ -283,6 +284,7 @@ test_dhcp_timeout(void)
                         ==,
                         NM_SETTING_IP6_CONFIG_METHOD_AUTO);
         g_assert_cmpint(nm_setting_ip_config_get_dhcp_timeout(s_ip6), ==, data[i].timeout);
+        g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip6), ==, -1);
     }
 }
 
@@ -421,6 +423,7 @@ test_if_ip4_manual(void)
     g_assert_cmpint(nm_ip_address_get_prefix(ip_addr), ==, 24);
     g_assert_cmpstr(nm_setting_ip_config_get_gateway(s_ip4), ==, "192.0.2.1");
     g_assert_cmpstr(nm_setting_ip_config_get_dhcp_hostname(s_ip4), ==, "hostname0.example.com");
+    g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip4), ==, -1);
 
     s_ip6 = nm_connection_get_setting_ip6_config(connection);
     g_assert(s_ip6);
@@ -428,6 +431,7 @@ test_if_ip4_manual(void)
                     ==,
                     NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
     g_assert(nm_setting_ip_config_get_may_fail(s_ip6));
+    g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip6), ==, -1);
 
     connection = g_hash_table_lookup(connections, "eth4");
     nmtst_assert_connection_verifies_without_normalization(connection);
@@ -1154,6 +1158,9 @@ test_bridge(void)
     g_assert_cmpint(nm_ip_route_get_metric(ip_route), ==, -1);
     g_assert(!nm_ip_route_get_next_hop(ip_route));
     g_assert_cmpint(nm_ip_route_get_prefix(ip_route), ==, 32);
+    g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip4),
+                    ==,
+                    NMI_IP_REQUIRED_TIMEOUT_MSEC);
 
     s_ip6 = nm_connection_get_setting_ip6_config(connection);
     g_assert(s_ip6);
@@ -1163,6 +1170,7 @@ test_bridge(void)
     g_assert(!nm_setting_ip_config_get_gateway(s_ip6));
     g_assert_cmpint(nm_setting_ip_config_get_num_routes(s_ip6), ==, 0);
     g_assert_cmpint(nm_setting_ip_config_get_dhcp_timeout(s_ip6), ==, 10);
+    g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip6), ==, -1);
 
     s_bridge = nm_connection_get_setting_bridge(connection);
     g_assert(s_bridge);
@@ -1903,7 +1911,38 @@ test_bootif_ip(void)
 }
 
 static void
-test_neednet(void)
+test_neednet_no_args(void)
+{
+    const char *const *ARGV                  = NM_MAKE_STRV("rd.neednet");
+    gs_unref_object NMConnection *connection = NULL;
+    NMSettingWired *              s_wired;
+    NMSettingIPConfig *           s_ip4;
+    NMSettingIPConfig *           s_ip6;
+
+    connection = _parse_con(ARGV, "default_connection");
+
+    g_assert_cmpstr(nm_connection_get_id(connection), ==, "Wired Connection");
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    g_assert(s_wired);
+
+    s_ip4 = nm_connection_get_setting_ip4_config(connection);
+    g_assert(s_ip4);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+    g_assert(nm_setting_ip_config_get_may_fail(s_ip4));
+    g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip4),
+                    ==,
+                    NMI_IP_REQUIRED_TIMEOUT_MSEC);
+
+    s_ip6 = nm_connection_get_setting_ip6_config(connection);
+    g_assert(s_ip6);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
+    g_assert(nm_setting_ip_config_get_may_fail(s_ip6));
+    g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip6), ==, -1);
+}
+
+static void
+test_neednet_args(void)
 {
     gs_unref_hashtable GHashTable *connections = NULL;
     const char *const *            ARGV        = NM_MAKE_STRV("rd.neednet",
@@ -2237,7 +2276,8 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/bootif/no_ip", test_bootif_no_ip);
     g_test_add_func("/initrd/cmdline/bootif/hwtype", test_bootif_hwtype);
     g_test_add_func("/initrd/cmdline/bootif/off", test_bootif_off);
-    g_test_add_func("/initrd/cmdline/neednet", test_neednet);
+    g_test_add_func("/initrd/cmdline/neednet/no_args", test_neednet_no_args);
+    g_test_add_func("/initrd/cmdline/neednet/args", test_neednet_args);
     g_test_add_func("/initrd/cmdline/dhcp/vendor_class_id", test_dhcp_vendor_class_id);
     g_test_add_func("/initrd/cmdline/infiniband/iface", test_infiniband_iface);
     g_test_add_func("/initrd/cmdline/infiniband/mac", test_infiniband_mac);
