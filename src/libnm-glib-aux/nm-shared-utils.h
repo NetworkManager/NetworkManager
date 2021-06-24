@@ -1707,7 +1707,7 @@ nm_g_source_attach(GSource *source, GMainContext *context)
 static inline GSource *
 nm_g_idle_add_source(GSourceFunc func, gpointer user_data)
 {
-    /* G convenience function to attach a new timeout source to the default GMainContext.
+    /* A convenience function to attach a new timeout source to the default GMainContext.
      * In that sense it's very similar to g_idle_add() except that it returns a
      * reference to the new source.  */
     return nm_g_source_attach(nm_g_idle_source_new(G_PRIORITY_DEFAULT, func, user_data, NULL),
@@ -1717,7 +1717,7 @@ nm_g_idle_add_source(GSourceFunc func, gpointer user_data)
 static inline GSource *
 nm_g_timeout_add_source(guint timeout_msec, GSourceFunc func, gpointer user_data)
 {
-    /* G convenience function to attach a new timeout source to the default GMainContext.
+    /* A convenience function to attach a new timeout source to the default GMainContext.
      * In that sense it's very similar to g_timeout_add() except that it returns a
      * reference to the new source.  */
     return nm_g_source_attach(
@@ -1728,7 +1728,7 @@ nm_g_timeout_add_source(guint timeout_msec, GSourceFunc func, gpointer user_data
 static inline GSource *
 nm_g_timeout_add_source_seconds(guint timeout_sec, GSourceFunc func, gpointer user_data)
 {
-    /* G convenience function to attach a new timeout source to the default GMainContext.
+    /* A convenience function to attach a new timeout source to the default GMainContext.
      * In that sense it's very similar to g_timeout_add_seconds() except that it returns a
      * reference to the new source.  */
     return nm_g_source_attach(
