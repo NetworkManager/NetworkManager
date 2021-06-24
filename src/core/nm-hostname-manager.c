@@ -223,30 +223,27 @@ _set_hostname_read_file(NMHostnameManager *self)
 
 /*****************************************************************************/
 
-typedef struct {
-    char *                         hostname;
-    NMHostnameManagerSetHostnameCb cb;
-    gpointer                       user_data;
-} SetHostnameInfo;
-
 static void
 set_transient_hostname_done(GObject *object, GAsyncResult *res, gpointer user_data)
 {
-    GDBusProxy *proxy                 = G_DBUS_PROXY(object);
-    gs_free SetHostnameInfo *info     = user_data;
-    gs_unref_variant GVariant *result = NULL;
-    gs_free_error GError *error       = NULL;
+    GDBusProxy *     proxy                  = G_DBUS_PROXY(object);
+    gs_unref_variant GVariant *result       = NULL;
+    gs_free_error GError *         error    = NULL;
+    gs_free char *                 hostname = NULL;
+    NMHostnameManagerSetHostnameCb cb;
+    gpointer                       cb_user_data;
+
+    nm_utils_user_data_unpack(user_data, &hostname, &cb, &cb_user_data);
 
     result = g_dbus_proxy_call_finish(proxy, res, &error);
 
     if (error) {
         _LOGW("couldn't set the system hostname to '%s' using hostnamed: %s",
-              info->hostname,
+              hostname,
               error->message);
     }
 
-    info->cb(info->hostname, !error, info->user_data);
-    g_free(info->hostname);
+    cb(hostname, !error, cb_user_data);
 }
 
 void
@@ -256,7 +253,6 @@ nm_hostname_manager_set_transient_hostname(NMHostnameManager *            self,
                                            gpointer                       user_data)
 {
     NMHostnameManagerPrivate *priv;
-    SetHostnameInfo *         info;
 
     g_return_if_fail(NM_IS_HOSTNAME_MANAGER(self));
 
@@ -267,11 +263,6 @@ nm_hostname_manager_set_transient_hostname(NMHostnameManager *            self,
         return;
     }
 
-    info            = g_new0(SetHostnameInfo, 1);
-    info->hostname  = g_strdup(hostname);
-    info->cb        = cb;
-    info->user_data = user_data;
-
     g_dbus_proxy_call(priv->hostnamed_proxy,
                       "SetHostname",
                       g_variant_new("(sb)", hostname, FALSE),
@@ -279,7 +270,7 @@ nm_hostname_manager_set_transient_hostname(NMHostnameManager *            self,
                       -1,
                       NULL,
                       set_transient_hostname_done,
-                      info);
+                      nm_utils_user_data_pack(g_strdup(hostname), cb, user_data));
 }
 
 gboolean
