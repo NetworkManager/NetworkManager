@@ -182,25 +182,18 @@ _connect_open_tty(NMBluez5DunContext *context)
                   nm_strerror_native(errsv),
                   errsv);
             context->cdat->connect_open_tty_started_at = nm_utils_get_monotonic_timestamp_nsec();
-            context->cdat->source                      = nm_g_timeout_source_new(100,
-                                                            G_PRIORITY_DEFAULT,
-                                                            _connect_open_tty_retry_cb,
-                                                            context,
-                                                            NULL);
-            g_source_attach(context->cdat->source, NULL);
+            context->cdat->source =
+                nm_g_timeout_add_source(100, _connect_open_tty_retry_cb, context);
         }
         return -errsv;
     }
 
     context->rfcomm_tty_fd = fd;
 
-    context->rfcomm_tty_poll_source = nm_g_unix_fd_source_new(context->rfcomm_tty_fd,
+    context->rfcomm_tty_poll_source = nm_g_unix_fd_add_source(context->rfcomm_tty_fd,
                                                               G_IO_ERR | G_IO_HUP,
-                                                              G_PRIORITY_DEFAULT,
                                                               _rfcomm_tty_poll_cb,
-                                                              context,
-                                                              NULL);
-    g_source_attach(context->rfcomm_tty_poll_source, NULL);
+                                                              context);
 
     _context_invoke_callback_success(context);
     return 0;
@@ -369,13 +362,10 @@ _connect_socket_connect(NMBluez5DunContext *context)
               context->dst_str,
               context->rfcomm_channel);
 
-        context->cdat->source = nm_g_unix_fd_source_new(context->rfcomm_sock_fd,
+        context->cdat->source = nm_g_unix_fd_add_source(context->rfcomm_sock_fd,
                                                         G_IO_OUT,
-                                                        G_PRIORITY_DEFAULT,
                                                         _connect_socket_connect_cb,
-                                                        context,
-                                                        NULL);
-        g_source_attach(context->cdat->source, NULL);
+                                                        context);
         return;
     }
 
@@ -567,12 +557,8 @@ _connect_sdp_io_cb(int fd, GIOCondition condition, gpointer user_data)
                   nm_strerror_native(errsv),
                   errsv);
             nm_clear_g_source_inst(&context->cdat->source);
-            context->cdat->source = nm_g_timeout_source_new(1000,
-                                                            G_PRIORITY_DEFAULT,
-                                                            _connect_sdp_session_start_on_idle_cb,
-                                                            context,
-                                                            NULL);
-            g_source_attach(context->cdat->source, NULL);
+            context->cdat->source =
+                nm_g_timeout_add_source(1000, _connect_sdp_session_start_on_idle_cb, context);
             return G_SOURCE_REMOVE;
         }
 
@@ -616,13 +602,10 @@ _connect_sdp_io_cb(int fd, GIOCondition condition, gpointer user_data)
     }
 
     /* Set callback responsible for update the internal SDP transaction */
-    context->cdat->source = nm_g_unix_fd_source_new(fd,
+    context->cdat->source = nm_g_unix_fd_add_source(fd,
                                                     G_IO_IN | G_IO_HUP | G_IO_ERR | G_IO_NVAL,
-                                                    G_PRIORITY_DEFAULT,
                                                     _connect_sdp_search_io_cb,
-                                                    context,
-                                                    NULL);
-    g_source_attach(context->cdat->source, NULL);
+                                                    context);
 
 done:
     if (error)
@@ -664,13 +647,10 @@ _connect_sdp_session_start(NMBluez5DunContext *context, GError **error)
         return FALSE;
     }
 
-    context->cdat->source = nm_g_unix_fd_source_new(sdp_get_socket(context->cdat->sdp_session),
+    context->cdat->source = nm_g_unix_fd_add_source(sdp_get_socket(context->cdat->sdp_session),
                                                     G_IO_OUT | G_IO_HUP | G_IO_ERR | G_IO_NVAL,
-                                                    G_PRIORITY_DEFAULT,
                                                     _connect_sdp_io_cb,
-                                                    context,
-                                                    NULL);
-    g_source_attach(context->cdat->source, NULL);
+                                                    context);
     return TRUE;
 }
 

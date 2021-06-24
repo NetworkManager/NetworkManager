@@ -124,12 +124,8 @@ _cancellable_idle_cb(gpointer user_data)
 static void
 _cancellable_on_idle(NMAuthChain *self)
 {
-    if (self->cancellable_idle_source)
-        return;
-
-    self->cancellable_idle_source =
-        nm_g_idle_source_new(G_PRIORITY_DEFAULT, _cancellable_idle_cb, self, NULL);
-    g_source_attach(self->cancellable_idle_source, NULL);
+    if (!self->cancellable_idle_source)
+        self->cancellable_idle_source = nm_g_idle_add_source(_cancellable_idle_cb, self);
 }
 
 GCancellable *

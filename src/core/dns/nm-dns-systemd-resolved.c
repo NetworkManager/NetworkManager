@@ -422,12 +422,7 @@ ensure_resolved_running(NMDnsSystemdResolved *self)
         priv->try_start_blocked = TRUE;
 
         priv->try_start_timeout_source =
-            nm_g_source_attach(nm_g_timeout_source_new(4000,
-                                                       G_PRIORITY_DEFAULT,
-                                                       _ensure_resolved_running_timeout,
-                                                       self,
-                                                       NULL),
-                               NULL);
+            nm_g_timeout_add_source(4000, _ensure_resolved_running_timeout, self);
 
         nm_dbus_connection_call_start_service_by_name(priv->dbus_connection,
                                                       SYSTEMD_RESOLVED_DBUS_SERVICE,
@@ -821,19 +816,13 @@ _resolve_start(NMDnsSystemdResolved *self, NMDnsSystemdResolvedResolveHandle *ha
         _LOG2T(handle, "systemd-resolved not running. Failing on idle...");
         nm_assert(!handle->timeout_source);
         handle->is_failing_on_idle = TRUE;
-        handle->timeout_source     = nm_g_source_attach(
-            nm_g_idle_source_new(G_PRIORITY_DEFAULT, _resolve_failing_on_idle, handle, NULL),
-            NULL);
+        handle->timeout_source     = nm_g_idle_add_source(_resolve_failing_on_idle, handle);
         return;
     }
 
     if (!handle->timeout_source) {
-        handle->timeout_source = nm_g_source_attach(nm_g_timeout_source_new(handle->timeout_msec,
-                                                                            G_PRIORITY_DEFAULT,
-                                                                            _resolve_handle_timeout,
-                                                                            handle,
-                                                                            NULL),
-                                                    NULL);
+        handle->timeout_source =
+            nm_g_timeout_add_source(handle->timeout_msec, _resolve_handle_timeout, handle);
     }
 
     if (is_running == NM_TERNARY_DEFAULT) {
