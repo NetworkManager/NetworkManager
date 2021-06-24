@@ -1610,6 +1610,19 @@ nm_g_variant_builder_add_sv_str(GVariantBuilder *builder, const char *key, const
 static inline void
 nm_g_source_destroy_and_unref(GSource *source)
 {
+    /* Note that calling g_source_destroy() on a currently attached source,
+     * will destroy the user-data of the callback right away (and not only
+     * during the last g_source_unref()).
+     *
+     * It also means, that if the user data itself has the reference to the
+     * source, then this will lead to crash:
+     *
+     *     g_source_destroy(user_data->my_source);
+     *     // ups, user_data was destroyed (if source was attached).
+     *     g_source_unref(user_data->my_source);
+     *
+     *  nm_g_source_destroy_and_unref() and nm_clear_g_source_inst() does not
+     *  suffer from this problem. */
     g_source_destroy(source);
     g_source_unref(source);
 }
