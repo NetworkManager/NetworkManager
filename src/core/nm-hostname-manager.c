@@ -15,12 +15,14 @@
 #endif
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-dbus-interface.h"
 #include "nm-connection.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
 #include "NetworkManagerUtils.h"
+#include "nm-dbus-manager.h"
 
 /*****************************************************************************/
 
@@ -55,12 +57,23 @@
 NM_GOBJECT_PROPERTIES_DEFINE(NMHostnameManager, PROP_STATIC_HOSTNAME, );
 
 typedef struct {
-    char         *static_hostname;
+    char *static_hostname;
+
     GFileMonitor *monitor;
     GFileMonitor *dhcp_monitor;
     gulong        monitor_id;
     gulong        dhcp_monitor_id;
-    GDBusProxy   *hostnamed_proxy;
+
+    GCancellable    *cancellable;
+    guint            name_owner_changed_id;
+    guint            dbus_properties_changed_id;
+    GDBusConnection *dbus_connection;
+    char            *name_owner;
+
+    bool dbus_initied : 1;
+    bool try_start_blocked : 1;
+    bool try_start_in_progress : 1;
+    bool has_file_monitors : 1;
 } NMHostnameManagerPrivate;
 
 struct _NMHostnameManager {
@@ -83,6 +96,10 @@ NM_DEFINE_SINGLETON_GETTER(NMHostnameManager, nm_hostname_manager_get, NM_TYPE_H
 
 #define _NMLOG_DOMAIN      LOGD_CORE
 #define _NMLOG(level, ...) __NMLOG_DEFAULT(level, _NMLOG_DOMAIN, "hostname", __VA_ARGS__)
+
+/*****************************************************************************/
+
+static void _dbus_hostnamed_ready_or_not(NMHostnameManager *self);
 
 /*****************************************************************************/
 
@@ -223,17 +240,15 @@ _set_hostname(NMHostnameManager *self, const char *hostname)
 static void
 _set_hostname_read_file(NMHostnameManager *self)
 {
-    NMHostnameManagerPrivate *priv     = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
-    gs_free char             *hostname = NULL;
-
-    if (priv->hostnamed_proxy) {
-        /* read-hostname returns the current hostname with hostnamed. */
-        return;
-    }
+    gs_free char *hostname = NULL;
 
 #if defined(HOSTNAME_PERSIST_SUSE)
-    if (priv->dhcp_monitor_id && hostname_is_dynamic())
-        return;
+    {
+        NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+
+        if (priv->dhcp_monitor_id && hostname_is_dynamic())
+            return;
+    }
 #endif
 
 #if defined(HOSTNAME_PERSIST_GENTOO)
@@ -481,23 +496,6 @@ nm_hostname_manager_write_hostname_finish(NMHostnameManager *self,
 /*****************************************************************************/
 
 static void
-hostnamed_properties_changed(GDBusProxy *proxy,
-                             GVariant   *changed_properties,
-                             char      **invalidated_properties,
-                             gpointer    user_data)
-{
-    NMHostnameManager         *self    = user_data;
-    NMHostnameManagerPrivate  *priv    = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
-    gs_unref_variant GVariant *variant = NULL;
-
-    variant = g_dbus_proxy_get_cached_property(priv->hostnamed_proxy, "StaticHostname");
-    if (variant && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING))
-        _set_hostname(self, g_variant_get_string(variant, NULL));
-}
-
-/*****************************************************************************/
-
-static void
 _file_monitors_file_changed_cb(GFileMonitor     *monitor,
                                GFile            *file,
                                GFile            *other_file,
@@ -523,10 +521,12 @@ _file_monitors_clear(NMHostnameManager *self)
         g_file_monitor_cancel(priv->dhcp_monitor);
         g_clear_object(&priv->dhcp_monitor);
     }
+
+    priv->has_file_monitors = FALSE;
 }
 
 static void
-_file_monitors_setup(NMHostnameManager *self)
+_file_monitors_setup(NMHostnameManager *self, gboolean force_restart)
 {
     NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
     GFileMonitor             *monitor;
@@ -534,7 +534,14 @@ _file_monitors_setup(NMHostnameManager *self)
     gs_free char             *link_path = NULL;
     struct stat               file_stat;
 
+    if (priv->has_file_monitors && !force_restart)
+        return;
+
     _file_monitors_clear(self);
+
+    priv->has_file_monitors = TRUE;
+
+    _LOGT("setup file monitors for %s", path);
 
     /* resolve the path to the hostname file if it is a symbolic link */
     if (lstat(path, &file_stat) == 0 && S_ISLNK(file_stat.st_mode)
@@ -570,6 +577,170 @@ _file_monitors_setup(NMHostnameManager *self)
 /*****************************************************************************/
 
 static void
+_dbus_get_static_hostname_cb(GVariant *result, GError *error, gpointer user_data)
+{
+    const char *hostname = NULL;
+
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    if (result)
+        g_variant_get(result, "(&s)", &hostname);
+
+    _set_hostname(user_data, hostname);
+}
+
+static void
+_dbus_properties_changed_cb(GDBusConnection *connection,
+                            const char      *sender_name,
+                            const char      *object_path,
+                            const char      *signal_interface_name,
+                            const char      *signal_name,
+                            GVariant        *parameters,
+                            gpointer         user_data)
+{
+    gs_unref_variant GVariant *changed_properties = NULL;
+    gs_unref_variant GVariant *var                = NULL;
+
+    if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sa{sv}as)")))
+        return;
+
+    g_variant_get(parameters, "(&s@a{sv}^a&s)", NULL, &changed_properties, NULL);
+    var = g_variant_lookup_value(changed_properties, "StaticHostname", G_VARIANT_TYPE_STRING);
+    if (var)
+        _set_hostname(user_data, g_variant_get_string(var, NULL));
+}
+
+static void
+_dbus_start_service_by_name_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    NMHostnameManager         *self;
+    NMHostnameManagerPrivate  *priv;
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
+
+    res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    self                        = user_data;
+    priv                        = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+    priv->try_start_in_progress = FALSE;
+    _dbus_hostnamed_ready_or_not(self);
+}
+
+static void
+_dbus_hostnamed_ready_or_not(NMHostnameManager *self)
+{
+    NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+
+    if (!priv->name_owner) {
+        nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->dbus_properties_changed_id);
+
+        if (!priv->try_start_blocked) {
+            priv->try_start_blocked     = TRUE;
+            priv->try_start_in_progress = TRUE;
+            nm_dbus_connection_call_start_service_by_name(priv->dbus_connection,
+                                                          HOSTNAMED_SERVICE_NAME,
+                                                          500,
+                                                          priv->cancellable,
+                                                          _dbus_start_service_by_name_cb,
+                                                          self);
+            return;
+        }
+        if (priv->try_start_in_progress)
+            return;
+
+        _file_monitors_setup(self, FALSE);
+        return;
+    }
+
+    _file_monitors_clear(self);
+
+    if (!priv->dbus_properties_changed_id) {
+        priv->dbus_properties_changed_id =
+            nm_dbus_connection_signal_subscribe_properties_changed(priv->dbus_connection,
+                                                                   priv->name_owner,
+                                                                   HOSTNAMED_SERVICE_PATH,
+                                                                   HOSTNAMED_SERVICE_INTERFACE,
+                                                                   _dbus_properties_changed_cb,
+                                                                   self,
+                                                                   NULL);
+        nm_dbus_connection_call_get(priv->dbus_connection,
+                                    priv->name_owner,
+                                    HOSTNAMED_SERVICE_PATH,
+                                    HOSTNAMED_SERVICE_INTERFACE,
+                                    "StaticHostname",
+                                    500,
+                                    priv->cancellable,
+                                    _dbus_get_static_hostname_cb,
+                                    self);
+    }
+}
+
+static void
+_dbus_name_owner_changed(NMHostnameManager *self, const char *owner)
+{
+    NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+
+    owner = nm_str_not_empty(owner);
+
+    if (!owner)
+        _LOGT("D-Bus name for systemd-hostnamed has no owner");
+    else
+        _LOGT("D-Bus name for systemd-hostnamed has owner %s", owner);
+
+    nm_utils_strdup_reset(&priv->name_owner, owner);
+
+    _dbus_hostnamed_ready_or_not(self);
+}
+
+static void
+_dbus_name_owner_changed_cb(GDBusConnection *connection,
+                            const char      *sender_name,
+                            const char      *object_path,
+                            const char      *interface_name,
+                            const char      *signal_name,
+                            GVariant        *parameters,
+                            gpointer         user_data)
+{
+    NMHostnameManager        *self = user_data;
+    NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+    const char               *new_owner;
+
+    if (!priv->dbus_initied)
+        return;
+
+    if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sss)")))
+        return;
+
+    g_variant_get(parameters, "(&s&s&s)", NULL, NULL, &new_owner);
+    _dbus_name_owner_changed(self, new_owner);
+}
+
+static void
+_dbus_get_name_owner_cb(const char *name_owner, GError *error, gpointer user_data)
+{
+    NMHostnameManager        *self;
+    NMHostnameManagerPrivate *priv;
+
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    self = user_data;
+    priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+
+    g_clear_object(&priv->cancellable);
+
+    priv->dbus_initied = TRUE;
+    _LOGT("D-Bus connection is ready");
+
+    _dbus_name_owner_changed(self, name_owner);
+}
+
+/*****************************************************************************/
+
+static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
     NMHostnameManager *self = NM_HOSTNAME_MANAGER(object);
@@ -588,49 +759,30 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
 static void
 nm_hostname_manager_init(NMHostnameManager *self)
-{}
-
-static void
-constructed(GObject *object)
 {
-    NMHostnameManager        *self = NM_HOSTNAME_MANAGER(object);
     NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
-    GDBusProxy               *proxy;
-    GVariant                 *variant;
-    gs_free_error GError     *error = NULL;
 
-    proxy = g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
-                                          0,
-                                          NULL,
-                                          HOSTNAMED_SERVICE_NAME,
-                                          HOSTNAMED_SERVICE_PATH,
-                                          HOSTNAMED_SERVICE_INTERFACE,
-                                          NULL,
-                                          &error);
-    if (proxy) {
-        variant = g_dbus_proxy_get_cached_property(proxy, "StaticHostname");
-        if (variant) {
-            _LOGI("hostname: using hostnamed");
-            priv->hostnamed_proxy = proxy;
-            g_signal_connect(proxy,
-                             "g-properties-changed",
-                             G_CALLBACK(hostnamed_properties_changed),
-                             self);
-            hostnamed_properties_changed(proxy, NULL, NULL, self);
-            g_variant_unref(variant);
-        } else {
-            _LOGI("hostname: couldn't get property from hostnamed");
-            g_object_unref(proxy);
-        }
-    } else {
-        _LOGI("hostname: hostnamed not used as proxy creation failed with: %s", error->message);
-        g_clear_error(&error);
+    priv->cancellable = g_cancellable_new();
+
+    priv->dbus_connection = nm_g_object_ref(NM_MAIN_DBUS_CONNECTION_GET);
+    if (!priv->dbus_connection) {
+        _LOGD("no D-Bus connection");
+        _file_monitors_setup(self, FALSE);
+        return;
     }
 
-    if (!priv->hostnamed_proxy)
-        _file_monitors_setup(self);
-
-    G_OBJECT_CLASS(nm_hostname_manager_parent_class)->constructed(object);
+    priv->name_owner_changed_id =
+        nm_dbus_connection_signal_subscribe_name_owner_changed(priv->dbus_connection,
+                                                               HOSTNAMED_SERVICE_NAME,
+                                                               _dbus_name_owner_changed_cb,
+                                                               self,
+                                                               NULL);
+    nm_dbus_connection_call_get_name_owner(priv->dbus_connection,
+                                           HOSTNAMED_SERVICE_NAME,
+                                           -1,
+                                           priv->cancellable,
+                                           _dbus_get_name_owner_cb,
+                                           self);
 }
 
 static void
@@ -639,16 +791,16 @@ dispose(GObject *object)
     NMHostnameManager        *self = NM_HOSTNAME_MANAGER(object);
     NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
 
-    if (priv->hostnamed_proxy) {
-        g_signal_handlers_disconnect_by_func(priv->hostnamed_proxy,
-                                             G_CALLBACK(hostnamed_properties_changed),
-                                             self);
-        g_clear_object(&priv->hostnamed_proxy);
-    }
+    nm_clear_g_cancellable(&priv->cancellable);
+
+    nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
+    nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->dbus_properties_changed_id);
 
     _file_monitors_clear(self);
 
     nm_clear_g_free(&priv->static_hostname);
+    g_clear_object(&priv->dbus_connection);
+    nm_clear_g_free(&priv->name_owner);
 
     G_OBJECT_CLASS(nm_hostname_manager_parent_class)->dispose(object);
 }
@@ -658,7 +810,6 @@ nm_hostname_manager_class_init(NMHostnameManagerClass *class)
 {
     GObjectClass *object_class = G_OBJECT_CLASS(class);
 
-    object_class->constructed  = constructed;
     object_class->get_property = get_property;
     object_class->dispose      = dispose;
 
