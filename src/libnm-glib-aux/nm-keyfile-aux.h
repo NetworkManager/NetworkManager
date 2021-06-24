@@ -50,6 +50,10 @@ void nm_key_file_db_set_string_list(NMKeyFileDB *      self,
 
 void nm_key_file_db_to_file(NMKeyFileDB *self, gboolean force);
 
+void nm_key_file_db_prune(NMKeyFileDB *self,
+                          gboolean (*predicate)(const char *key, gpointer user_data),
+                          gpointer user_data);
+
 /*****************************************************************************/
 
 #endif /* __NM_KEYFILE_AUX_H__ */
