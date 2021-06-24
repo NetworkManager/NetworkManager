@@ -304,13 +304,13 @@ main(int argc, char *argv[])
     const char *const *     warnings;
     int                     errsv;
 
+    _nm_utils_is_manager_process = TRUE;
+
     /* Known to cause a possible deadlock upon GDBus initialization:
      * https://bugzilla.gnome.org/show_bug.cgi?id=674885 */
     g_type_ensure(G_TYPE_SOCKET);
     g_type_ensure(G_TYPE_DBUS_CONNECTION);
     g_type_ensure(NM_TYPE_DBUS_MANAGER);
-
-    _nm_utils_is_manager_process = TRUE;
 
     main_loop = g_main_loop_new(NULL, FALSE);
 
