@@ -373,8 +373,10 @@ _writer_new_connection_reread(NMConnection * connection,
 
     if (out_filename)
         *out_filename = filename;
-    else
+    else {
+        nmtst_file_unlink(filename);
         g_free(filename);
+    }
 }
 
 static void
