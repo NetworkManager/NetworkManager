@@ -5,7 +5,6 @@
 
 #include "src/core/nm-default-daemon.h"
 
-#include <glib-unix.h>
 #include <getopt.h>
 #include <locale.h>
 #include <stdlib.h>

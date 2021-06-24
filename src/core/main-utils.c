@@ -14,7 +14,6 @@
 #include <locale.h>
 
 #include <glib/gstdio.h>
-#include <glib-unix.h>
 
 #include "main-utils.h"
 #include "NetworkManagerUtils.h"
