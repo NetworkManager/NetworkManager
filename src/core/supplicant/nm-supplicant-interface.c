@@ -370,8 +370,12 @@ _dbus_connection_call_simple_cb(GObject *source, GAsyncResult *result, gpointer 
     gs_free_error GError *error    = NULL;
     const char *          log_reason;
     gs_free char *        remote_error = NULL;
+    gpointer              p_suppress_warning;
+    gboolean              suppress_warning;
 
-    nm_utils_user_data_unpack(user_data, &self, &log_reason);
+    nm_utils_user_data_unpack(user_data, &self, &log_reason, &p_suppress_warning);
+
+    suppress_warning = GPOINTER_TO_INT(p_suppress_warning);
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -382,37 +386,70 @@ _dbus_connection_call_simple_cb(GObject *source, GAsyncResult *result, gpointer 
         return;
     }
 
-    remote_error = g_dbus_error_get_remote_error(error);
-    if (!nm_streq0(remote_error, "fi.w1.wpa_supplicant1.NotConnected")) {
-        g_dbus_error_strip_remote_error(error);
-        _LOGW("call-%s: failed with %s", log_reason, error->message);
-        return;
+    if (!suppress_warning) {
+        remote_error = g_dbus_error_get_remote_error(error);
+        if (!nm_streq0(remote_error, "fi.w1.wpa_supplicant1.NotConnected")) {
+            g_dbus_error_strip_remote_error(error);
+            _LOGW("call-%s: failed with %s", log_reason, error->message);
+            return;
+        }
     }
 
     _LOGT("call-%s: failed with %s", log_reason, error->message);
 }
 
 static void
-_dbus_connection_call_simple(NMSupplicantInterface *self,
-                             const char *           interface_name,
-                             const char *           method_name,
-                             GVariant *             parameters,
-                             const GVariantType *   reply_type,
-                             const char *           log_reason)
+_dbus_connection_call_simple_full_impl(NMSupplicantInterface *self,
+                                       const char *           interface_name,
+                                       const char *           method_name,
+                                       GVariant *             parameters,
+                                       const GVariantType *   reply_type,
+                                       const char *           log_reason,
+                                       gboolean               suppress_warning)
 {
     NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self);
 
-    _dbus_connection_call(self,
-                          interface_name,
-                          method_name,
-                          parameters,
-                          reply_type,
-                          G_DBUS_CALL_FLAGS_NONE,
-                          DBUS_TIMEOUT_MSEC,
-                          priv->main_cancellable,
-                          _dbus_connection_call_simple_cb,
-                          nm_utils_user_data_pack(self, log_reason));
+    _dbus_connection_call(
+        self,
+        interface_name,
+        method_name,
+        parameters,
+        reply_type,
+        G_DBUS_CALL_FLAGS_NONE,
+        DBUS_TIMEOUT_MSEC,
+        priv->main_cancellable,
+        _dbus_connection_call_simple_cb,
+        nm_utils_user_data_pack(self, log_reason, GINT_TO_POINTER(suppress_warning)));
 }
+
+#define _dbus_connection_call_simple_full(self,              \
+                                          interface_name,    \
+                                          method_name,       \
+                                          parameters,        \
+                                          reply_type,        \
+                                          log_reason,        \
+                                          suppress_warning)  \
+    _dbus_connection_call_simple_full_impl((self),           \
+                                           (interface_name), \
+                                           (method_name),    \
+                                           (parameters),     \
+                                           (reply_type),     \
+                                           "" log_reason "", \
+                                           (suppress_warning))
+
+#define _dbus_connection_call_simple(self,                   \
+                                     interface_name,         \
+                                     method_name,            \
+                                     parameters,             \
+                                     reply_type,             \
+                                     log_reason)             \
+    _dbus_connection_call_simple_full_impl((self),           \
+                                           (interface_name), \
+                                           (method_name),    \
+                                           (parameters),     \
+                                           (reply_type),     \
+                                           "" log_reason "", \
+                                           FALSE)
 
 /*****************************************************************************/
 
@@ -2731,12 +2768,13 @@ nm_supplicant_interface_p2p_cancel_connect(NMSupplicantInterface *self)
 {
     g_return_if_fail(NM_IS_SUPPLICANT_INTERFACE(self));
 
-    _dbus_connection_call_simple(self,
-                                 NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
-                                 "Cancel",
-                                 NULL,
-                                 G_VARIANT_TYPE("()"),
-                                 "p2p-cancel");
+    _dbus_connection_call_simple_full(self,
+                                      NM_WPAS_DBUS_IFACE_INTERFACE_P2P_DEVICE,
+                                      "Cancel",
+                                      NULL,
+                                      G_VARIANT_TYPE("()"),
+                                      "p2p-cancel",
+                                      TRUE);
 }
 
 void
