@@ -181,8 +181,20 @@ _assert_expected_content(NMConnection *connection, const char *filename, const c
     }
 
     if (len_expectd != len_written || memcmp(content_expectd, content_written, len_expectd) != 0) {
-        if (g_getenv("NMTST_IFCFG_RH_UPDATE_EXPECTED")
-            || nm_streq0(g_getenv("NM_TEST_REGENERATE"), "1")) {
+        static int rewrite_static = 0;
+        int        rewrite;
+
+        rewrite = g_atomic_int_get(&rewrite_static);
+        if (G_UNLIKELY(rewrite == 0)) {
+            rewrite = (g_getenv("NMTST_IFCFG_RH_UPDATE_EXPECTED")
+                       || nm_streq0(g_getenv("NM_TEST_REGENERATE"), "1"))
+                          ? -1
+                          : 1;
+            if (!g_atomic_int_compare_and_exchange(&rewrite_static, 0, rewrite))
+                g_assert_not_reached();
+        }
+
+        if (rewrite > 0) {
             if (uuid) {
                 gs_free char *search = g_strdup_printf("UUID=%s\n", uuid);
                 const char *  s;
@@ -210,15 +222,16 @@ _assert_expected_content(NMConnection *connection, const char *filename, const c
             success = g_file_set_contents(expected, content_written, len_written, &error);
             nmtst_assert_success(success, error);
         } else {
-            g_error("The content of \"%s\" (%zu) differs from \"%s\" (%zu). Set "
-                    "NMTST_IFCFG_RH_UPDATE_EXPECTED=yes to update the files "
-                    "inplace\n\n>>>%s<<<\n\n>>>%s<<<\n",
-                    filename,
-                    len_written,
-                    expected,
-                    len_expectd,
-                    content_written,
-                    content_expectd);
+            g_error(
+                "The content of \"%s\" (%zu) differs from \"%s\" (%zu). Set "
+                "NMTST_IFCFG_RH_UPDATE_EXPECTED=yes (or NM_TEST_REGENERATE=1) to update the files "
+                "inplace\n\n>>>%s<<<\n\n>>>%s<<<\n",
+                filename,
+                len_written,
+                expected,
+                len_expectd,
+                content_written,
+                content_expectd);
         }
     }
 }
