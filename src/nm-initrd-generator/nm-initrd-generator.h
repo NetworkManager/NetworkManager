@@ -10,6 +10,7 @@
 #include "nm-utils.h"
 
 #define NMI_WAIT_DEVICE_TIMEOUT_MSEC 60000
+#define NMI_IP_REQUIRED_TIMEOUT_MSEC 20000
 
 static inline int
 get_ip_address_family(const char *str, gboolean with_prefix)
