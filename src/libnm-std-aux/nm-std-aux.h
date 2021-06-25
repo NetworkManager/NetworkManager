@@ -695,6 +695,14 @@ nm_close(int fd)
 NM_AUTO_DEFINE_FCN_VOID0(void *, _nm_auto_free_impl, free);
 #define nm_auto_free nm_auto(_nm_auto_free_impl)
 
+static inline void
+_nm_auto_protect_errno(const int *p_saved_errno)
+{
+    errno = *p_saved_errno;
+}
+#define NM_AUTO_PROTECT_ERRNO(errsv_saved) \
+    nm_auto(_nm_auto_protect_errno) _nm_unused const int errsv_saved = (errno)
+
 /*****************************************************************************/
 
 static inline void
