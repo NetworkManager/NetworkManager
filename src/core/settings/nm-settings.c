@@ -3713,6 +3713,10 @@ _kf_db_to_file(NMSettings *self, gboolean is_timestamps, gboolean force_write)
          * add/remove of an connection will lead to a direct update. */
         *p_kf_db_pruned = TRUE;
         nm_key_file_db_prune(kf_db, _kf_db_prune_predicate, self);
+
+        /* once we also go over the directory, and see whether we
+         * have any left over temporary files to delete. */
+        nm_key_file_db_prune_tmp_files(kf_db);
     }
 
     nm_key_file_db_to_file(kf_db, force_write);
