@@ -122,14 +122,6 @@ _nm_auto_free_gstring(GString **str)
 }
 #define nm_auto_free_gstring nm_auto(_nm_auto_free_gstring)
 
-static inline void
-_nm_auto_protect_errno(const int *p_saved_errno)
-{
-    errno = *p_saved_errno;
-}
-#define NM_AUTO_PROTECT_ERRNO(errsv_saved) \
-    nm_auto(_nm_auto_protect_errno) _nm_unused const int errsv_saved = (errno)
-
 NM_AUTO_DEFINE_FCN0(GSource *, _nm_auto_unref_gsource, g_source_unref);
 #define nm_auto_unref_gsource nm_auto(_nm_auto_unref_gsource)
 
