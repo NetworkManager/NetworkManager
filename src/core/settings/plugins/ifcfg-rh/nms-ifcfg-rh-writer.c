@@ -1137,7 +1137,7 @@ write_wired_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
     svSetValueStr(ifcfg, "CTCPROT", nm_setting_wired_get_s390_option_by_key(s_wired, "ctcprot"));
 
     num_opts = nm_setting_wired_get_num_s390_options(s_wired);
-    if (s390_subchannels && num_opts) {
+    if (num_opts > 0) {
         nm_auto_free_gstring GString *tmp = NULL;
 
         for (i = 0; i < num_opts; i++) {
