@@ -709,10 +709,8 @@ static inline void
 _nm_auto_close(int *pfd)
 {
     if (*pfd >= 0) {
-        int errsv = errno;
-
+        NM_AUTO_PROTECT_ERRNO(errsv);
         (void) nm_close(*pfd);
-        errno = errsv;
     }
 }
 #define nm_auto_close nm_auto(_nm_auto_close)
@@ -721,10 +719,8 @@ static inline void
 _nm_auto_fclose(FILE **pfd)
 {
     if (*pfd) {
-        int errsv = errno;
-
+        NM_AUTO_PROTECT_ERRNO(errsv);
         (void) fclose(*pfd);
-        errno = errsv;
     }
 }
 #define nm_auto_fclose nm_auto(_nm_auto_fclose)
