@@ -386,6 +386,46 @@ nm_key_file_db_to_file(NMKeyFileDB *self, gboolean force)
 /*****************************************************************************/
 
 void
+nm_key_file_db_prune_tmp_files(NMKeyFileDB *self)
+{
+    gs_free char *     n_file   = NULL;
+    gs_free char *     n_dir    = NULL;
+    gs_strfreev char **tmpfiles = NULL;
+    gsize              i;
+
+    n_file = g_path_get_basename(self->filename);
+    n_dir  = g_path_get_dirname(self->filename);
+
+    tmpfiles = nm_utils_find_mkstemp_files(n_dir, n_file);
+    if (!tmpfiles)
+        return;
+
+    for (i = 0; tmpfiles[i]; i++) {
+        const char *  tmpfile   = tmpfiles[i];
+        gs_free char *full_file = NULL;
+        int           r;
+
+        full_file = g_strdup_printf("%s/%s", n_dir, tmpfile);
+
+        r = unlink(full_file);
+        if (r != 0) {
+            int errsv = errno;
+
+            if (errsv != ENOENT) {
+                _LOGD("prune left over temp file %s failed: %s",
+                      full_file,
+                      nm_strerror_native(errsv));
+            }
+            continue;
+        }
+
+        _LOGD("prune left over temp file %s", full_file);
+    }
+}
+
+/*****************************************************************************/
+
+void
 nm_key_file_db_prune(NMKeyFileDB *self,
                      gboolean (*predicate)(const char *key, gpointer user_data),
                      gpointer user_data)
