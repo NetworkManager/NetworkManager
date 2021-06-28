@@ -718,11 +718,20 @@ struct _NMSettInfoProperty {
      * the direct location. */
     guint16 direct_offset;
 
+    /* Currently, properties that set property_type->direct_type only have to_dbus_fcn()
+     * implemented "the direct way". For the property setter, they still call g_object_set().
+     * In the future, also other operations, like from_dbus_fcn() should be implemented
+     * by direct access (thereby, bypassing g_object_set()).
+     *
+     * A "direct_has_special_setter" property does something unusual, that will require special attention
+     * in the future, when we implement more functionality regarding the setter. It has no effect,
+     * except of marking those properties and serve as a reminder that special care needs to be taken. */
+    bool direct_has_special_setter : 1;
+
     struct {
         union {
             gpointer                     none;
             NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn;
-            const char *(*get_string)(NMSetting *);
         };
 
         /* Usually, properties that are set to the default value for the GParamSpec

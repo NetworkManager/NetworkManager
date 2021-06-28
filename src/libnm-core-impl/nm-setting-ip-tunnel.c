@@ -675,12 +675,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP_TUNNEL_PARENT,
-                                       PROP_PARENT,
-                                       NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_ip_tunnel_get_parent);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_PARENT,
+                                              PROP_PARENT,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              parent);
 
     /**
      * NMSettingIPTunnel:mode:
@@ -707,12 +708,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP_TUNNEL_LOCAL,
-                                       PROP_LOCAL,
-                                       NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_ip_tunnel_get_local);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_LOCAL,
+                                              PROP_LOCAL,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              local);
 
     /**
      * NMSettingIPTunnel:remote:
@@ -722,12 +724,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP_TUNNEL_REMOTE,
-                                       PROP_REMOTE,
-                                       NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_ip_tunnel_get_remote);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_REMOTE,
+                                              PROP_REMOTE,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              remote);
 
     /**
      * NMSettingIPTunnel:ttl
@@ -787,12 +790,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP_TUNNEL_INPUT_KEY,
-                                       PROP_INPUT_KEY,
-                                       NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_ip_tunnel_get_input_key);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_INPUT_KEY,
+                                              PROP_INPUT_KEY,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              input_key);
 
     /**
      * NMSettingIPTunnel:output-key:
@@ -802,12 +806,13 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP_TUNNEL_OUTPUT_KEY,
-                                       PROP_OUTPUT_KEY,
-                                       NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_ip_tunnel_get_output_key);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_OUTPUT_KEY,
+                                              PROP_OUTPUT_KEY,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              output_key);
 
     /**
      * NMSettingIPTunnel:encapsulation-limit:

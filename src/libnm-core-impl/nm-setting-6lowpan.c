@@ -216,12 +216,13 @@ nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
      *
      * Since: 1.14
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_6LOWPAN_PARENT,
-                                       PROP_PARENT,
-                                       NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_6lowpan_get_parent);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_6LOWPAN_PARENT,
+                                              PROP_PARENT,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSetting6LowpanPrivate,
+                                              parent);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
