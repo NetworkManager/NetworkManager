@@ -4443,6 +4443,12 @@ test_setting_metadata(void)
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_BOOLEAN);
                 can_set_including_default = TRUE;
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_STRING) {
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_STRING);
             } else
                 g_assert_not_reached();
 
