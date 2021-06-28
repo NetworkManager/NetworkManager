@@ -6356,3 +6356,32 @@ nm_utils_get_process_exit_status_desc(int status)
     else
         return g_strdup_printf("exited with unknown status 0x%x", status);
 }
+
+/*****************************************************************************/
+
+gboolean
+nm_utils_validate_hostname(const char *hostname)
+{
+    const char *p;
+    gboolean    dot = TRUE;
+
+    if (!hostname || !hostname[0])
+        return FALSE;
+
+    for (p = hostname; *p; p++) {
+        if (*p == '.') {
+            if (dot)
+                return FALSE;
+            dot = TRUE;
+        } else {
+            if (!g_ascii_isalnum(*p) && (*p != '-') && (*p != '_'))
+                return FALSE;
+            dot = FALSE;
+        }
+    }
+
+    if (dot)
+        return FALSE;
+
+    return (p - hostname <= HOST_NAME_MAX);
+}

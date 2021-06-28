@@ -2992,4 +2992,6 @@ void nm_crypto_md5_hash(const guint8 *salt,
 
 char *nm_utils_get_process_exit_status_desc(int status);
 
+gboolean nm_utils_validate_hostname(const char *hostname);
+
 #endif /* __NM_SHARED_UTILS_H__ */
