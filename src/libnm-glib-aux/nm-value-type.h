@@ -7,6 +7,7 @@
 #define __NM_VALUE_TYPE_H__
 
 typedef enum _nm_packed {
+    NM_VALUE_TYPE_NONE   = 0,
     NM_VALUE_TYPE_UNSPEC = 1,
     NM_VALUE_TYPE_BOOL   = 2,
     NM_VALUE_TYPE_INT32  = 3,
@@ -90,6 +91,7 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
         return 0;
     case NM_VALUE_TYPE_STRING:
         return nm_strcmp0(*((const char *const *) p_a), *((const char *const *) p_b));
+    case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
     }
@@ -129,6 +131,7 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
             *((char **) dst) = g_strdup(*((const char *const *) src));
         }
         return;
+    case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
     }
@@ -169,6 +172,7 @@ nm_value_type_get_from_variant(NMValueType value_type,
          * clear how many bits we would need. */
 
         /* fall-through */
+    case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
     }
@@ -198,6 +202,7 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
          * clear how many bits we would need. */
 
         /* fall-through */
+    case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
     }
@@ -225,6 +230,7 @@ nm_value_type_get_variant_type(NMValueType value_type)
          * clear how many bits we would need. */
 
         /* fall-through */
+    case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
     }
