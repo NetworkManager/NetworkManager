@@ -45,8 +45,8 @@ typedef struct {
     NMSettingMacsecMode       mode;
     NMSettingSecretFlags      mka_cak_flags;
     NMSettingMacsecValidation validation;
-    bool                      encrypt : 1;
-    bool                      send_sci : 1;
+    bool                      encrypt;
+    bool                      send_sci;
 } NMSettingMacsecPrivate;
 
 /**
@@ -583,13 +583,14 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_MACSEC_ENCRYPT,
-                                        PROP_ENCRYPT,
-                                        TRUE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_macsec_get_encrypt);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_MACSEC_ENCRYPT,
+                                               PROP_ENCRYPT,
+                                               TRUE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingMacsecPrivate,
+                                               encrypt);
 
     /**
      * NMSettingMacsec:mka-cak:
@@ -676,13 +677,14 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.12
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_MACSEC_SEND_SCI,
-                                        PROP_SEND_SCI,
-                                        TRUE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_macsec_get_send_sci);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_MACSEC_SEND_SCI,
+                                               PROP_SEND_SCI,
+                                               TRUE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingMacsecPrivate,
+                                               send_sci);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

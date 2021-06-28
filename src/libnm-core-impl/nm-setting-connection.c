@@ -94,7 +94,7 @@ typedef struct {
     NMMetered                            metered;
     NMSettingConnectionLldp              lldp;
     bool                                 autoconnect;
-    bool                                 read_only : 1;
+    bool                                 read_only;
 } NMSettingConnectionPrivate;
 
 /**
@@ -2200,13 +2200,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * service's D-Bus interface with the right privileges, or %TRUE if the
      * connection is read-only and cannot be modified.
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_CONNECTION_READ_ONLY,
-                                        PROP_READ_ONLY,
-                                        FALSE,
-                                        NM_SETTING_PARAM_FUZZY_IGNORE,
-                                        nm_setting_connection_get_read_only);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_CONNECTION_READ_ONLY,
+                                               PROP_READ_ONLY,
+                                               FALSE,
+                                               NM_SETTING_PARAM_FUZZY_IGNORE,
+                                               NMSettingConnectionPrivate,
+                                               read_only);
 
     /**
      * NMSettingConnection:zone:

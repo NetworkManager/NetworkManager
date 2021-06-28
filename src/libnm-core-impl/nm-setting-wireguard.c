@@ -902,8 +902,8 @@ typedef struct {
     guint32              fwmark;
     guint32              mtu;
     guint16              listen_port;
+    bool                 peer_routes;
     bool                 private_key_valid : 1;
-    bool                 peer_routes : 1;
 } NMSettingWireGuardPrivate;
 
 /**
@@ -2514,13 +2514,14 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_WIREGUARD_PEER_ROUTES,
-                                        PROP_PEER_ROUTES,
-                                        TRUE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_wireguard_get_peer_routes);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_WIREGUARD_PEER_ROUTES,
+                                               PROP_PEER_ROUTES,
+                                               TRUE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingWireGuardPrivate,
+                                               peer_routes);
 
     /**
      * NMSettingWireGuard:mtu:

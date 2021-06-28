@@ -4482,12 +4482,6 @@ check_done:;
                     g_assert(!sip->to_dbus_data.gprop_to_dbus_fcn);
                 can_set_including_default = TRUE;
             } else if (sip->property_type->to_dbus_fcn
-                       == _nm_setting_property_to_dbus_fcn_get_boolean) {
-                g_assert(sip->param_spec);
-                g_assert(sip->param_spec->value_type == G_TYPE_BOOLEAN);
-                g_assert(sip->to_dbus_data.get_boolean);
-                can_set_including_default = TRUE;
-            } else if (sip->property_type->to_dbus_fcn
                        == _nm_setting_property_to_dbus_fcn_get_string) {
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_STRING);
