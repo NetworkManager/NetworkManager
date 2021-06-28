@@ -291,7 +291,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule *      self,
 #define NM_SETTING_IP_CONFIG(obj) \
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfig))
 #define NM_SETTING_IP_CONFIG_CLASS(klass) \
-    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SETTING_IPCONFIG, NMSettingIPConfigClass))
+    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfigClass))
 #define NM_IS_SETTING_IP_CONFIG(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SETTING_IP_CONFIG))
 #define NM_IS_SETTING_IP_CONFIG_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_SETTING_IP_CONFIG))
