@@ -115,7 +115,20 @@ struct _NMSettingClass {
                                guint /* NMSettingParseFlags */ parse_flags,
                                GError **                       error);
 
-    gpointer padding[1];
+    union {
+        gpointer padding[1];
+        struct {
+            /* Whether NMSetting.finalize() calls _nm_setting_property_finalize_direct(). Subclasses
+             * need to be aware of that, and currently this is opt-in.
+             *
+             * The only reason because subclasses need to be aware of this, is that they
+             * otherwise might clear the properties already and leave dangling pointers.
+             *
+             * Eventually all setting classes should stop touching their direct properties
+             * during finalize, and always let NMSetting.finalize() handle them. */
+            bool finalize_direct : 1;
+        };
+    };
 
     const struct _NMMetaSettingInfo *setting_info;
 };
@@ -483,47 +496,47 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
 
 /*****************************************************************************/
 
-#define _nm_setting_property_define_direct_string_full(properties_override,                      \
-                                                       obj_properties,                           \
-                                                       prop_name,                                \
-                                                       prop_id,                                  \
-                                                       param_flags,                              \
-                                                       property_type,                            \
-                                                       private_struct_type,                      \
-                                                       private_struct_field,                     \
-                                                       ...)                                      \
-    G_STMT_START                                                                                 \
-    {                                                                                            \
-        GParamSpec *                 _param_spec;                                                \
-        const NMSettInfoPropertType *_property_type = (property_type);                           \
-                                                                                                 \
-        G_STATIC_ASSERT(!NM_FLAGS_ANY((param_flags),                                             \
-                                      ~(NM_SETTING_PARAM_SECRET | NM_SETTING_PARAM_FUZZY_IGNORE  \
-                                        | NM_SETTING_PARAM_INFERRABLE                            \
-                                        | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY)));               \
-                                                                                                 \
-        nm_assert(_property_type);                                                               \
-        nm_assert(g_variant_type_equal(_property_type->dbus_type, "s"));                         \
-        nm_assert(_property_type->direct_type == NM_VALUE_TYPE_STRING);                          \
-        nm_assert(_property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_direct);       \
-                                                                                                 \
-        _param_spec =                                                                            \
-            g_param_spec_string("" prop_name "",                                                 \
-                                "",                                                              \
-                                "",                                                              \
-                                NULL,                                                            \
-                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));     \
-                                                                                                 \
-        (obj_properties)[(prop_id)] = _param_spec;                                               \
-                                                                                                 \
-        _nm_properties_override_gobj(                                                            \
-            (properties_override),                                                               \
-            _param_spec,                                                                         \
-            _property_type,                                                                      \
-            .direct_offset =                                                                     \
-                NM_STRUCT_OFFSET_ENSURE_TYPE(char *, private_struct_type, private_struct_field), \
-            __VA_ARGS__);                                                                        \
-    }                                                                                            \
+#define _nm_setting_property_define_direct_string_full(properties_override,                       \
+                                                       obj_properties,                            \
+                                                       prop_name,                                 \
+                                                       prop_id,                                   \
+                                                       param_flags,                               \
+                                                       property_type,                             \
+                                                       private_struct_type,                       \
+                                                       private_struct_field,                      \
+                                                       ... /* extra NMSettInfoProperty fields */) \
+    G_STMT_START                                                                                  \
+    {                                                                                             \
+        GParamSpec *                 _param_spec;                                                 \
+        const NMSettInfoPropertType *_property_type = (property_type);                            \
+                                                                                                  \
+        G_STATIC_ASSERT(!NM_FLAGS_ANY((param_flags),                                              \
+                                      ~(NM_SETTING_PARAM_SECRET | NM_SETTING_PARAM_FUZZY_IGNORE   \
+                                        | NM_SETTING_PARAM_INFERRABLE                             \
+                                        | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY)));                \
+                                                                                                  \
+        nm_assert(_property_type);                                                                \
+        nm_assert(g_variant_type_equal(_property_type->dbus_type, "s"));                          \
+        nm_assert(_property_type->direct_type == NM_VALUE_TYPE_STRING);                           \
+        nm_assert(_property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_direct);        \
+                                                                                                  \
+        _param_spec =                                                                             \
+            g_param_spec_string("" prop_name "",                                                  \
+                                "",                                                               \
+                                "",                                                               \
+                                NULL,                                                             \
+                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));      \
+                                                                                                  \
+        (obj_properties)[(prop_id)] = _param_spec;                                                \
+                                                                                                  \
+        _nm_properties_override_gobj(                                                             \
+            (properties_override),                                                                \
+            _param_spec,                                                                          \
+            _property_type,                                                                       \
+            .direct_offset =                                                                      \
+                NM_STRUCT_OFFSET_ENSURE_TYPE(char *, private_struct_type, private_struct_field),  \
+            __VA_ARGS__);                                                                         \
+    }                                                                                             \
     G_STMT_END
 
 #define _nm_setting_property_define_direct_string(properties_override,                       \
@@ -533,7 +546,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                   param_flags,                               \
                                                   private_struct_type,                       \
                                                   private_struct_field,                      \
-                                                  ...)                                       \
+                                                  ... /* extra NMSettInfoProperty fields */) \
     _nm_setting_property_define_direct_string_full((properties_override),                    \
                                                    (obj_properties),                         \
                                                    prop_name,                                \

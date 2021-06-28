@@ -148,17 +148,6 @@ nm_setting_6lowpan_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSetting6Lowpan *       setting = NM_SETTING_6LOWPAN(object);
-    NMSetting6LowpanPrivate *priv    = NM_SETTING_6LOWPAN_GET_PRIVATE(setting);
-
-    g_free(priv->parent);
-
-    G_OBJECT_CLASS(nm_setting_6lowpan_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
 {
     GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
@@ -169,9 +158,9 @@ nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
 
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
-    object_class->finalize     = finalize;
 
-    setting_class->verify = verify;
+    setting_class->verify          = verify;
+    setting_class->finalize_direct = TRUE;
 
     /**
      * NMSetting6Lowpan:parent:

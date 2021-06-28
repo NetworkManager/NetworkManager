@@ -730,6 +730,46 @@ out_fail:
 
 /*****************************************************************************/
 
+static void
+_finalize_direct(NMSetting *setting)
+{
+    const NMSettInfoSetting *sett_info;
+    guint                    i;
+
+    sett_info = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
+    nm_assert(sett_info);
+
+    for (i = 0; i < sett_info->property_infos_len; i++) {
+        const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
+
+        /* We only:
+         *
+         * - reset fields where there is something to free. E.g. boolean
+         *   properties are not reset to their default.
+         * - clear/free properties, without emitting g_object_notify_by_pspec(),
+         *   because this is called only during finalization. */
+
+        switch (property_info->property_type->direct_type) {
+        case NM_VALUE_TYPE_NONE:
+        case NM_VALUE_TYPE_BOOL:
+            break;
+        case NM_VALUE_TYPE_STRING:
+        {
+            char **p_val =
+                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+
+            nm_clear_g_free(p_val);
+            break;
+        }
+        default:
+            nm_assert_not_reached();
+            break;
+        }
+    }
+}
+
+/*****************************************************************************/
+
 GVariant *
 _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               sett_info,
                                         guint                                   property_idx,
@@ -3052,7 +3092,9 @@ nm_setting_init(NMSetting *setting)
 static void
 finalize(GObject *object)
 {
-    NMSettingPrivate *priv = NM_SETTING_GET_PRIVATE(object);
+    NMSetting *       self  = NM_SETTING(object);
+    NMSettingPrivate *priv  = NM_SETTING_GET_PRIVATE(self);
+    NMSettingClass *  klass = NM_SETTING_GET_CLASS(self);
 
     if (priv->gendata) {
         g_free(priv->gendata->names);
@@ -3062,6 +3104,9 @@ finalize(GObject *object)
     }
 
     G_OBJECT_CLASS(nm_setting_parent_class)->finalize(object);
+
+    if (klass->finalize_direct)
+        _finalize_direct(self);
 }
 
 static void
