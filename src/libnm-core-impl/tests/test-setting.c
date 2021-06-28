@@ -4433,6 +4433,19 @@ test_setting_metadata(void)
             g_assert(sip->property_type->dbus_type);
             g_assert(g_variant_type_string_is_valid((const char *) sip->property_type->dbus_type));
 
+            if (sip->property_type->direct_type == NM_VALUE_TYPE_NONE) {
+                g_assert_cmpint(sip->direct_offset, ==, 0);
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_BOOL) {
+                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_boolean);
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "b"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_BOOLEAN);
+                can_set_including_default = TRUE;
+            } else
+                g_assert_not_reached();
+
             if (!sip->property_type->to_dbus_fcn) {
                 /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
                  * properties must not have a param_spec and no gprop_to_dbus_fcn. */
@@ -4598,7 +4611,7 @@ check_done:;
                 const NMSettInfoPropertType *pt_2 = a_property_types[prop_idx_2];
 
                 if (!g_variant_type_equal(pt->dbus_type, pt_2->dbus_type)
-                    || pt->to_dbus_fcn != pt_2->to_dbus_fcn
+                    || pt->direct_type != pt_2->direct_type || pt->to_dbus_fcn != pt_2->to_dbus_fcn
                     || pt->from_dbus_fcn != pt_2->from_dbus_fcn
                     || pt->missing_from_dbus_fcn != pt_2->missing_from_dbus_fcn
                     || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn

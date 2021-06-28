@@ -78,6 +78,7 @@
 #include "nm-vpn-dbus-interface.h"
 #include "nm-vpn-editor-plugin.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
+#include "libnm-glib-aux/nm-value-type.h"
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
@@ -684,6 +685,11 @@ typedef enum _nm_packed {
 typedef struct {
     const GVariantType *dbus_type;
 
+    /* if this is not NM_VALUE_TYPE_UNSPEC, then this is a "direct" property,
+     * meaning that _nm_setting_get_private() at NMSettInfoProperty.direct_offset
+     * gives direct access to the field. */
+    NMValueType direct_type;
+
     NMSettInfoPropToDBusFcn          to_dbus_fcn;
     NMSettInfoPropFromDBusFcn        from_dbus_fcn;
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
@@ -706,6 +712,11 @@ struct _NMSettInfoProperty {
     GParamSpec *param_spec;
 
     const NMSettInfoPropertType *property_type;
+
+    /* this only has meaning if property_type->direct_type != NM_VALUE_TYPE_UNSPEC.
+     * In that case, this is the offset where _nm_setting_get_private() can find
+     * the direct location. */
+    guint16 direct_offset;
 
     struct {
         union {

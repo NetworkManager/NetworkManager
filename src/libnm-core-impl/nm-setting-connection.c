@@ -93,8 +93,8 @@ typedef struct {
     NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
     NMMetered                            metered;
     NMSettingConnectionLldp              lldp;
+    bool                                 autoconnect;
     bool                                 read_only : 1;
-    bool                                 autoconnect : 1;
 } NMSettingConnectionPrivate;
 
 /**
@@ -2078,13 +2078,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * description: Whether the connection should be autoconnected (not only while booting).
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_CONNECTION_AUTOCONNECT,
-                                        PROP_AUTOCONNECT,
-                                        TRUE,
-                                        NM_SETTING_PARAM_FUZZY_IGNORE,
-                                        nm_setting_connection_get_autoconnect);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_CONNECTION_AUTOCONNECT,
+                                               PROP_AUTOCONNECT,
+                                               TRUE,
+                                               NM_SETTING_PARAM_FUZZY_IGNORE,
+                                               NMSettingConnectionPrivate,
+                                               autoconnect);
 
     /**
      * NMSettingConnection:autoconnect-priority:
