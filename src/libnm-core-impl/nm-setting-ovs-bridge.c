@@ -37,9 +37,9 @@ struct _NMSettingOvsBridge {
 
     char *fail_mode;
     char *datapath_type;
-    bool  mcast_snooping_enable : 1;
-    bool  rstp_enable : 1;
-    bool  stp_enable : 1;
+    bool  mcast_snooping_enable;
+    bool  rstp_enable;
+    bool  stp_enable;
 };
 
 struct _NMSettingOvsBridgeClass {
@@ -320,13 +320,14 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
      *
      * Since: 1.10
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE,
-                                        PROP_MCAST_SNOOPING_ENABLE,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_ovs_bridge_get_mcast_snooping_enable);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_OVS_BRIDGE_MCAST_SNOOPING_ENABLE,
+                                               PROP_MCAST_SNOOPING_ENABLE,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingOvsBridge,
+                                               mcast_snooping_enable);
 
     /**
      * NMSettingOvsBridge:rstp-enable:
@@ -335,13 +336,14 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
      *
      * Since: 1.10
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_OVS_BRIDGE_RSTP_ENABLE,
-                                        PROP_RSTP_ENABLE,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_ovs_bridge_get_rstp_enable);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_OVS_BRIDGE_RSTP_ENABLE,
+                                               PROP_RSTP_ENABLE,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingOvsBridge,
+                                               rstp_enable);
 
     /**
      * NMSettingOvsBridge:stp-enable:
@@ -350,13 +352,14 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
      *
      * Since: 1.10
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_OVS_BRIDGE_STP_ENABLE,
-                                        PROP_STP_ENABLE,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_ovs_bridge_get_stp_enable);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_OVS_BRIDGE_STP_ENABLE,
+                                               PROP_STP_ENABLE,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingOvsBridge,
+                                               stp_enable);
 
     /**
      * NMSettingOvsBridge:datapath-type:

@@ -32,7 +32,7 @@ typedef struct {
     char *pac_url;
     char *pac_script;
     int   method;
-    bool  browser_only : 1;
+    bool  browser_only;
 } NMSettingProxyPrivate;
 
 /**
@@ -345,13 +345,14 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
      * description: Whether the proxy configuration is for browser only.
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_PROXY_BROWSER_ONLY,
-                                        PROP_BROWSER_ONLY,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_proxy_get_browser_only);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_PROXY_BROWSER_ONLY,
+                                               PROP_BROWSER_ONLY,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingProxyPrivate,
+                                               browser_only);
 
     /**
      * NMSettingProxy:pac-url:

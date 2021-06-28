@@ -571,24 +571,6 @@ _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               
 }
 
 GVariant *
-_nm_setting_property_to_dbus_fcn_get_boolean(const NMSettInfoSetting *               sett_info,
-                                             guint                                   property_idx,
-                                             NMConnection *                          connection,
-                                             NMSetting *                             setting,
-                                             NMConnectionSerializationFlags          flags,
-                                             const NMConnectionSerializationOptions *options)
-{
-    const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
-    gboolean                  val;
-
-    val = !!property_info->to_dbus_data.get_boolean(setting);
-    if (!property_info->to_dbus_data.including_default
-        && val == NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec))
-        return NULL;
-    return g_variant_ref(nm_g_variant_singleton_b(val));
-}
-
-GVariant *
 _nm_setting_property_to_dbus_fcn_get_string(const NMSettInfoSetting *               sett_info,
                                             guint                                   property_idx,
                                             NMConnection *                          connection,
@@ -2445,10 +2427,6 @@ const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,
                                         .direct_type = NM_VALUE_TYPE_BOOL,
                                         .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct);
-
-const NMSettInfoPropertType nm_sett_info_propert_type_boolean = NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
-    G_VARIANT_TYPE_BOOLEAN,
-    .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_get_boolean);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_string =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,

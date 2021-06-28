@@ -63,7 +63,7 @@ typedef struct {
     guint32                   mtu;
     guint32                   powersave;
     guint32                   wowl;
-    bool                      hidden : 1;
+    bool                      hidden;
 } NMSettingWirelessPrivate;
 
 /**
@@ -1833,13 +1833,14 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * description: Whether the network hides the SSID.
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_WIRELESS_HIDDEN,
-                                        PROP_HIDDEN,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_wireless_get_hidden);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_WIRELESS_HIDDEN,
+                                               PROP_HIDDEN,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingWirelessPrivate,
+                                               hidden);
 
     /**
      * NMSettingWireless:powersave:

@@ -44,7 +44,7 @@ typedef struct {
     NMIPTunnelMode mode;
     guint32        mtu;
     guint32        flags;
-    bool           path_mtu_discovery : 1;
+    bool           path_mtu_discovery;
 } NMSettingIPTunnelPrivate;
 
 /**
@@ -770,13 +770,14 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY,
-                                        PROP_PATH_MTU_DISCOVERY,
-                                        TRUE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_ip_tunnel_get_path_mtu_discovery);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_IP_TUNNEL_PATH_MTU_DISCOVERY,
+                                               PROP_PATH_MTU_DISCOVERY,
+                                               TRUE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingIPTunnelPrivate,
+                                               path_mtu_discovery);
 
     /**
      * NMSettingIPTunnel:input-key:

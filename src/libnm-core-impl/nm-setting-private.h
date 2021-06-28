@@ -160,11 +160,11 @@ typedef struct {
     int        dhcp_timeout;
     int        required_timeout;
     guint32    route_table;
-    bool       ignore_auto_routes : 1;
-    bool       ignore_auto_dns : 1;
-    bool       dhcp_send_hostname : 1;
-    bool       never_default : 1;
-    bool       may_fail : 1;
+    bool       ignore_auto_routes;
+    bool       ignore_auto_dns;
+    bool       dhcp_send_hostname;
+    bool       never_default;
+    bool       may_fail;
 } NMSettingIPConfigPrivate;
 
 void _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv);
@@ -288,7 +288,6 @@ extern const NMSettInfoPropertType nm_sett_info_propert_type_plain_u;
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean;
 
-extern const NMSettInfoPropertType nm_sett_info_propert_type_boolean;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_string;
 
 NMSettingVerifyResult
@@ -316,14 +315,6 @@ GVariant *_nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *     
                                                   NMSetting *                    setting,
                                                   NMConnectionSerializationFlags flags,
                                                   const NMConnectionSerializationOptions *options);
-
-GVariant *
-_nm_setting_property_to_dbus_fcn_get_boolean(const NMSettInfoSetting *               sett_info,
-                                             guint                                   property_idx,
-                                             NMConnection *                          connection,
-                                             NMSetting *                             setting,
-                                             NMConnectionSerializationFlags          flags,
-                                             const NMConnectionSerializationOptions *options);
 
 GVariant *
 _nm_setting_property_to_dbus_fcn_get_string(const NMSettInfoSetting *               sett_info,
@@ -474,69 +465,6 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
             __VA_ARGS__);                                                                      \
     }                                                                                          \
     G_STMT_END
-
-/*****************************************************************************/
-
-#define _nm_setting_property_define_boolean_full(properties_override,                           \
-                                                 obj_properties,                                \
-                                                 prop_name,                                     \
-                                                 prop_id,                                       \
-                                                 default_value,                                 \
-                                                 param_flags,                                   \
-                                                 property_type,                                 \
-                                                 get_fcn,                                       \
-                                                 ...)                                           \
-    G_STMT_START                                                                                \
-    {                                                                                           \
-        const gboolean                     _default_value = (default_value);                    \
-        GParamSpec *                       _param_spec;                                         \
-        const NMSettInfoPropertType *const _property_type = (property_type);                    \
-                                                                                                \
-        G_STATIC_ASSERT(                                                                        \
-            !NM_FLAGS_ANY((param_flags),                                                        \
-                          ~(NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE         \
-                            | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY)));                          \
-                                                                                                \
-        nm_assert(_property_type);                                                              \
-        nm_assert(_property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_get_boolean); \
-                                                                                                \
-        nm_assert(NM_IN_SET(_default_value, 0, 1));                                             \
-                                                                                                \
-        _param_spec =                                                                           \
-            g_param_spec_boolean("" prop_name "",                                               \
-                                 "",                                                            \
-                                 "",                                                            \
-                                 _default_value,                                                \
-                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));   \
-                                                                                                \
-        (obj_properties)[(prop_id)] = _param_spec;                                              \
-                                                                                                \
-        _nm_properties_override_gobj((properties_override),                                     \
-                                     _param_spec,                                               \
-                                     _property_type,                                            \
-                                     .to_dbus_data.get_boolean =                                \
-                                         (gboolean(*)(NMSetting *)) (get_fcn),                  \
-                                     __VA_ARGS__);                                              \
-    }                                                                                           \
-    G_STMT_END
-
-#define _nm_setting_property_define_boolean(properties_override,                 \
-                                            obj_properties,                      \
-                                            prop_name,                           \
-                                            prop_id,                             \
-                                            default_value,                       \
-                                            param_flags,                         \
-                                            get_fcn,                             \
-                                            ...)                                 \
-    _nm_setting_property_define_boolean_full((properties_override),              \
-                                             (obj_properties),                   \
-                                             prop_name,                          \
-                                             (prop_id),                          \
-                                             (default_value),                    \
-                                             (param_flags),                      \
-                                             &nm_sett_info_propert_type_boolean, \
-                                             (get_fcn),                          \
-                                             __VA_ARGS__)
 
 /*****************************************************************************/
 

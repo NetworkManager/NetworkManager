@@ -66,7 +66,7 @@ typedef struct {
     NMTernary               accept_all_mac_addresses;
     guint32                 speed;
     guint32                 mtu;
-    bool                    auto_negotiate : 1;
+    bool                    auto_negotiate;
 } NMSettingWiredPrivate;
 
 /**
@@ -1380,14 +1380,15 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *    "speed" and "duplex" parameters (skips link configuration).
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_WIRED_AUTO_NEGOTIATE,
-                                        PROP_AUTO_NEGOTIATE,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_wired_get_auto_negotiate,
-                                        .to_dbus_data.including_default = TRUE);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_WIRED_AUTO_NEGOTIATE,
+                                               PROP_AUTO_NEGOTIATE,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingWiredPrivate,
+                                               auto_negotiate,
+                                               .to_dbus_data.including_default = TRUE);
 
     /**
      * NMSettingWired:mac-address:
