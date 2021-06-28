@@ -181,8 +181,20 @@ _assert_expected_content(NMConnection *connection, const char *filename, const c
     }
 
     if (len_expectd != len_written || memcmp(content_expectd, content_written, len_expectd) != 0) {
-        if (g_getenv("NMTST_IFCFG_RH_UPDATE_EXPECTED")
-            || nm_streq0(g_getenv("NM_TEST_REGENERATE"), "1")) {
+        static int rewrite_static = 0;
+        int        rewrite;
+
+        rewrite = g_atomic_int_get(&rewrite_static);
+        if (G_UNLIKELY(rewrite == 0)) {
+            rewrite = (g_getenv("NMTST_IFCFG_RH_UPDATE_EXPECTED")
+                       || nm_streq0(g_getenv("NM_TEST_REGENERATE"), "1"))
+                          ? -1
+                          : 1;
+            if (!g_atomic_int_compare_and_exchange(&rewrite_static, 0, rewrite))
+                g_assert_not_reached();
+        }
+
+        if (rewrite > 0) {
             if (uuid) {
                 gs_free char *search = g_strdup_printf("UUID=%s\n", uuid);
                 const char *  s;
@@ -210,15 +222,16 @@ _assert_expected_content(NMConnection *connection, const char *filename, const c
             success = g_file_set_contents(expected, content_written, len_written, &error);
             nmtst_assert_success(success, error);
         } else {
-            g_error("The content of \"%s\" (%zu) differs from \"%s\" (%zu). Set "
-                    "NMTST_IFCFG_RH_UPDATE_EXPECTED=yes to update the files "
-                    "inplace\n\n>>>%s<<<\n\n>>>%s<<<\n",
-                    filename,
-                    len_written,
-                    expected,
-                    len_expectd,
-                    content_written,
-                    content_expectd);
+            g_error(
+                "The content of \"%s\" (%zu) differs from \"%s\" (%zu). Set "
+                "NMTST_IFCFG_RH_UPDATE_EXPECTED=yes (or NM_TEST_REGENERATE=1) to update the files "
+                "inplace\n\n>>>%s<<<\n\n>>>%s<<<\n",
+                filename,
+                len_written,
+                expected,
+                len_expectd,
+                content_written,
+                content_expectd);
         }
     }
 }
@@ -360,8 +373,10 @@ _writer_new_connection_reread(NMConnection * connection,
 
     if (out_filename)
         *out_filename = filename;
-    else
+    else {
+        nmtst_file_unlink(filename);
         g_free(filename);
+    }
 }
 
 static void
@@ -3931,6 +3946,76 @@ test_read_wired_unknown_ethtool_opt(void)
                     NM_SETTING_WIRED_WAKE_ON_LAN_ARP | NM_SETTING_WIRED_WAKE_ON_LAN_PHY
                         | NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC);
     g_assert_cmpstr(nm_setting_wired_get_wake_on_lan_password(s_wired), ==, "00:11:22:33:44:55");
+}
+
+static void
+test_roundtrip_ethtool(void)
+{
+    gs_unref_object NMConnection *connection = NULL;
+    NMSetting *                   s_ethtool;
+    NMSetting *                   s_wired;
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-1.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_ethtool  = nm_setting_ethtool_new();
+    nm_connection_add_setting(connection, s_ethtool);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-2.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_wired    = nm_connection_get_setting(connection, NM_TYPE_SETTING_WIRED);
+    g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE, NULL);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-3.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_ethtool  = nm_setting_ethtool_new();
+    nm_connection_add_setting(connection, s_ethtool);
+    nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_RX, TRUE);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-4.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_wired    = nm_connection_get_setting(connection, NM_TYPE_SETTING_WIRED);
+    g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE, NULL);
+    s_ethtool = nm_setting_ethtool_new();
+    nm_connection_add_setting(connection, s_ethtool);
+    nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_FEATURE_RX, TRUE);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-5.cexpected",
+                           NULL);
+    g_clear_object(&connection);
 }
 
 static void
@@ -11632,6 +11717,8 @@ main(int argc, char **argv)
     g_test_add_func(TPATH "802-1x/ttls-eapgtc", test_read_802_1x_ttls_eapgtc);
     g_test_add_func(TPATH "802-1x/password_raw", test_read_write_802_1x_password_raw);
     g_test_add_func(TPATH "802-1x/tls-p12-no-client-cert", test_read_802_1x_tls_p12_no_client_cert);
+
+    g_test_add_func(TPATH "wired/roundtrip/ethtool", test_roundtrip_ethtool);
 
     g_test_add_data_func(TPATH "wired/read/aliases/good/0",
                          GINT_TO_POINTER(0),
