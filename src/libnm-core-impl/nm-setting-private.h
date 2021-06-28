@@ -127,14 +127,47 @@ struct _NMSettingClass {
  */
 struct _NMSettingIPConfig {
     NMSetting parent;
+    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingIPConfigClass {
     NMSettingClass parent;
 
-    /* Padding for future expansion */
-    gpointer padding[8];
+    /* In the past, this struct was public API. Preserve ABI! */
+    union {
+        gpointer _dummy;
+        int      private_offset;
+    };
+    gpointer padding[7];
 };
+
+typedef struct {
+    GPtrArray *dns;         /* array of IP address strings */
+    GPtrArray *dns_search;  /* array of domain name strings */
+    GPtrArray *dns_options; /* array of DNS options */
+    GPtrArray *addresses;   /* array of NMIPAddress */
+    GPtrArray *routes;      /* array of NMIPRoute */
+    GPtrArray *routing_rules;
+    GArray *   dhcp_reject_servers;
+    char *     method;
+    char *     gateway;
+    char *     dhcp_hostname;
+    char *     dhcp_iaid;
+    gint64     route_metric;
+    guint      dhcp_hostname_flags;
+    int        dns_priority;
+    int        dad_timeout;
+    int        dhcp_timeout;
+    int        required_timeout;
+    guint32    route_table;
+    bool       ignore_auto_routes : 1;
+    bool       ignore_auto_dns : 1;
+    bool       dhcp_send_hostname : 1;
+    bool       never_default : 1;
+    bool       may_fail : 1;
+} NMSettingIPConfigPrivate;
+
+void _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv);
 
 /*****************************************************************************/
 
