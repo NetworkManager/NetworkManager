@@ -545,6 +545,32 @@ _nm_setting_use_legacy_property(NMSetting * setting,
 /*****************************************************************************/
 
 GVariant *
+_nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               sett_info,
+                                        guint                                   property_idx,
+                                        NMConnection *                          connection,
+                                        NMSetting *                             setting,
+                                        NMConnectionSerializationFlags          flags,
+                                        const NMConnectionSerializationOptions *options)
+{
+    const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
+
+    switch (property_info->property_type->direct_type) {
+    case NM_VALUE_TYPE_BOOL:
+    {
+        gboolean val;
+
+        val = *((bool *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
+        if (!property_info->to_dbus_data.including_default
+            && val == NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec))
+            return NULL;
+        return g_variant_ref(nm_g_variant_singleton_b(val));
+    }
+    default:
+        return nm_assert_unreachable_val(NULL);
+    }
+}
+
+GVariant *
 _nm_setting_property_to_dbus_fcn_get_boolean(const NMSettInfoSetting *               sett_info,
                                              guint                                   property_idx,
                                              NMConnection *                          connection,
@@ -2414,6 +2440,11 @@ const NMSettInfoPropertType nm_sett_info_propert_type_plain_i =
 
 const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
     NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_UINT32);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,
+                                        .direct_type = NM_VALUE_TYPE_BOOL,
+                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_boolean = NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
     G_VARIANT_TYPE_BOOLEAN,
