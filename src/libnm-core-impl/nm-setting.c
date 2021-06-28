@@ -565,6 +565,27 @@ _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               
             return NULL;
         return g_variant_ref(nm_g_variant_singleton_b(val));
     }
+    case NM_VALUE_TYPE_STRING:
+    {
+        const char *val;
+
+        /* For string properties that are implemented via this function, the default is always NULL.
+         * In general, having strings default to NULL is most advisable.
+         *
+         * Setting "including_default" for a string makes no sense because a
+         * GVariant of type "s" cannot express NULL. */
+        nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
+        nm_assert(!property_info->to_dbus_data.including_default);
+
+        val = *((const char *const *) _nm_setting_get_private(setting,
+                                                              sett_info,
+                                                              property_info->direct_offset));
+        if (!val)
+            return NULL;
+        if (!val[0])
+            return g_variant_ref(nm_g_variant_singleton_s_empty());
+        return g_variant_new_string(val);
+    }
     default:
         return nm_assert_unreachable_val(NULL);
     }
@@ -2426,6 +2447,11 @@ const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,
                                         .direct_type = NM_VALUE_TYPE_BOOL,
+                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_direct_string =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
+                                        .direct_type = NM_VALUE_TYPE_STRING,
                                         .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_string =

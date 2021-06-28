@@ -1956,12 +1956,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * description: Token to generate stable IDs.
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_CONNECTION_STABLE_ID,
-                                       PROP_STABLE_ID,
-                                       NM_SETTING_PARAM_FUZZY_IGNORE,
-                                       nm_setting_connection_get_stable_id);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_STABLE_ID,
+                                              PROP_STABLE_ID,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingConnectionPrivate,
+                                              stable_id);
 
     /**
      * NMSettingConnection:interface-name:
