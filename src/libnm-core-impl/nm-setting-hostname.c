@@ -335,5 +335,5 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_HOSTNAME);
+    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_HOSTNAME, NULL, NULL, 0);
 }

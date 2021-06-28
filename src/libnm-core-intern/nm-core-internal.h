@@ -762,9 +762,25 @@ struct _NMSettInfoSetting {
      */
     const NMSettInfoProperty *const *property_infos_sorted;
 
-    guint                property_infos_len;
+    guint property_infos_len;
+
+    /* the offset in bytes to get the private data from the @self pointer. */
+    gint16 private_offset;
+
     NMSettInfoSettDetail detail;
 };
+
+#define NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS ((gint16) G_MININT16)
+
+static inline gpointer
+_nm_setting_get_private(NMSetting *self, const NMSettInfoSetting *sett_info, guint16 offset)
+{
+    nm_assert(NM_IS_SETTING(self));
+    nm_assert(sett_info);
+    nm_assert(NM_SETTING_GET_CLASS(self) == sett_info->setting_class);
+
+    return ((((char *) ((gpointer) self)) + sett_info->private_offset) + offset);
+}
 
 static inline const NMSettInfoProperty *
 _nm_sett_info_property_info_get_sorted(const NMSettInfoSetting *sett_info, guint idx)

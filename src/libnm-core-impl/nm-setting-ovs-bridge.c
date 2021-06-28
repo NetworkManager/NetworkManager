@@ -374,8 +374,9 @@ nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_OVS_BRIDGE,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_OVS_BRIDGE,
+                             NULL,
+                             properties_override,
+                             0);
 }

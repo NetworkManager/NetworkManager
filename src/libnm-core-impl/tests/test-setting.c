@@ -4404,6 +4404,18 @@ test_setting_metadata(void)
         g_assert_cmpint(sis->property_infos_len, >, 0);
         g_assert(sis->property_infos);
 
+        {
+            int offset;
+
+            if (sis->private_offset < 0) {
+                offset = g_type_class_get_instance_private_offset(sis->setting_class);
+                g_assert_cmpint(sis->private_offset, ==, offset);
+            } else {
+                /* it would be nice to assert that this class has no private data.
+                 * But we cannot. */
+            }
+        }
+
         h_properties = g_hash_table_new(nm_str_hash, g_str_equal);
 
         for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {

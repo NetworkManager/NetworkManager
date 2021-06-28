@@ -300,5 +300,5 @@ nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_WIFI_P2P);
+    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_WIFI_P2P, NULL, NULL, 0);
 }

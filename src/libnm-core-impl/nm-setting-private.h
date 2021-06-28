@@ -319,22 +319,17 @@ _nm_sett_info_property_override_create_array(void)
 {
     /* pre-allocate a relatively large buffer to avoid frequent re-allocations.
      * Note that the buffer is only short-lived and will be destroyed by
-     * _nm_setting_class_commit_full(). */
+     * _nm_setting_class_commit(). */
     return _nm_sett_info_property_override_create_array_sized(20);
 }
 
 GArray *_nm_sett_info_property_override_create_array_ip_config(void);
 
-void _nm_setting_class_commit_full(NMSettingClass *            setting_class,
-                                   NMMetaSettingType           meta_type,
-                                   const NMSettInfoSettDetail *detail,
-                                   GArray *                    properties_override);
-
-static inline void
-_nm_setting_class_commit(NMSettingClass *setting_class, NMMetaSettingType meta_type)
-{
-    _nm_setting_class_commit_full(setting_class, meta_type, NULL, NULL);
-}
+void _nm_setting_class_commit(NMSettingClass *            setting_class,
+                              NMMetaSettingType           meta_type,
+                              const NMSettInfoSettDetail *detail,
+                              GArray *                    properties_override,
+                              gint16                      private_offset);
 
 #define NM_SETT_INFO_SETT_GENDATA(...)                         \
     ({                                                         \

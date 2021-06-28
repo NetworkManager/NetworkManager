@@ -264,10 +264,11 @@ _property_infos_sort(const NMSettInfoProperty *property_infos,
 }
 
 void
-_nm_setting_class_commit_full(NMSettingClass *            setting_class,
-                              NMMetaSettingType           meta_type,
-                              const NMSettInfoSettDetail *detail,
-                              GArray *                    properties_override)
+_nm_setting_class_commit(NMSettingClass *            setting_class,
+                         NMMetaSettingType           meta_type,
+                         const NMSettInfoSettDetail *detail,
+                         GArray *                    properties_override,
+                         gint16                      private_offset)
 {
     NMSettInfoSetting *sett_info;
     gs_free GParamSpec **property_specs = NULL;
@@ -400,6 +401,18 @@ has_property_type:
 
     setting_class->setting_info = &nm_meta_setting_infos[meta_type];
     sett_info->setting_class    = setting_class;
+
+    if (private_offset == NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS) {
+        int o;
+
+        o = g_type_class_get_instance_private_offset(setting_class);
+        nm_assert(o != NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+        nm_assert(o > G_MININT16);
+        nm_assert(o < 0);
+        private_offset = o;
+    }
+    sett_info->private_offset = private_offset;
+
     if (detail)
         sett_info->detail = *detail;
     nm_assert(properties_override->len > 0);
