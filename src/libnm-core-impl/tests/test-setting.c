@@ -4747,6 +4747,38 @@ test_setting_connection_secondaries_verify(void)
 
 /*****************************************************************************/
 
+static void
+test_6lowpan_1(void)
+{
+    gs_unref_object NMConnection *con = NULL;
+    NMSetting6Lowpan *            s_6low;
+    gs_free char *                value = NULL;
+
+    con = nmtst_create_minimal_connection("test-sec", NULL, NM_SETTING_6LOWPAN_SETTING_NAME, NULL);
+
+    s_6low = NM_SETTING_6LOWPAN(nm_connection_get_setting(con, NM_TYPE_SETTING_6LOWPAN));
+    g_assert(s_6low);
+
+    g_assert_cmpstr(nm_setting_6lowpan_get_parent(s_6low), ==, NULL);
+    g_object_get(s_6low, NM_SETTING_6LOWPAN_PARENT, &value, NULL);
+    g_assert_cmpstr(value, ==, NULL);
+    nm_clear_g_free(&value);
+
+    g_object_set(s_6low, NM_SETTING_6LOWPAN_PARENT, "hello", NULL);
+    g_assert_cmpstr(nm_setting_6lowpan_get_parent(s_6low), ==, "hello");
+    g_object_get(s_6low, NM_SETTING_6LOWPAN_PARENT, &value, NULL);
+    g_assert_cmpstr(value, ==, "hello");
+    nm_clear_g_free(&value);
+
+    g_object_set(s_6low, NM_SETTING_6LOWPAN_PARENT, "world", NULL);
+    g_assert_cmpstr(nm_setting_6lowpan_get_parent(s_6low), ==, "world");
+    g_object_get(s_6low, NM_SETTING_6LOWPAN_PARENT, &value, NULL);
+    g_assert_cmpstr(value, ==, "world");
+    nm_clear_g_free(&value);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -4787,6 +4819,8 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/settings/ethtool/coalesce", test_ethtool_coalesce);
     g_test_add_func("/libnm/settings/ethtool/ring", test_ethtool_ring);
     g_test_add_func("/libnm/settings/ethtool/pause", test_ethtool_pause);
+
+    g_test_add_func("/libnm/settings/6lowpan/1", test_6lowpan_1);
 
     g_test_add_func("/libnm/settings/sriov/vf", test_sriov_vf);
     g_test_add_func("/libnm/settings/sriov/vf-dup", test_sriov_vf_dup);
