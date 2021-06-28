@@ -1376,6 +1376,13 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
             g_string_append(str, nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
             g_string_append(str, b ? " on" : " off");
         }
+
+        if (!str) {
+            /* Write an empty dummy "-A" option without arguments. This is to
+             * ensure that the reader will create an (all default) NMSettingEthtool.
+             * Also, it seems that `ethtool -A "$IFACE"` is silently accepted. */
+            _ethtool_gstring_prepare(&str, &is_first, 'A', iface);
+        }
     }
 
     if (str) {
