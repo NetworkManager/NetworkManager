@@ -746,6 +746,15 @@ struct _NMSettInfoProperty {
 };
 
 typedef struct {
+    /* we want to do binary search by "GParamSpec *", but unrelated pointers
+     * are not directly comparable in C. No problem, we convert them to
+     * uintptr_t for the search, that is guaranteed to work. */
+    uintptr_t param_spec_as_uint;
+
+    const NMSettInfoProperty *property_info;
+} NMSettInfoPropertLookupByParamSpec;
+
+typedef struct {
     const GVariantType *(*get_variant_type)(const struct _NMSettInfoSetting *sett_info,
                                             const char *                     name,
                                             GError **                        error);
@@ -784,7 +793,11 @@ struct _NMSettInfoSetting {
      */
     const NMSettInfoProperty *const *property_infos_sorted;
 
+    const NMSettInfoPropertLookupByParamSpec *property_lookup_by_param_spec;
+
     guint property_infos_len;
+
+    guint16 property_lookup_by_param_spec_len;
 
     /* the offset in bytes to get the private data from the @self pointer. */
     gint16 private_offset;
