@@ -301,6 +301,16 @@ gboolean _nm_setting_aggregate(NMSetting *setting, NMConnectionAggregateType typ
 
 gboolean _nm_setting_slave_type_is_valid(const char *slave_type, const char **out_port_type);
 
+void _nm_setting_property_get_property_direct(GObject *   object,
+                                              guint       prop_id,
+                                              GValue *    value,
+                                              GParamSpec *pspec);
+
+void _nm_setting_property_set_property_direct(GObject *     object,
+                                              guint         prop_id,
+                                              const GValue *value,
+                                              GParamSpec *  pspec);
+
 GVariant *_nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *      sett_info,
                                                  guint                          property_idx,
                                                  NMConnection *                 connection,

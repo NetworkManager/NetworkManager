@@ -129,41 +129,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSetting6Lowpan *       setting = NM_SETTING_6LOWPAN(object);
-    NMSetting6LowpanPrivate *priv    = NM_SETTING_6LOWPAN_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_value_set_string(value, priv->parent);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSetting6Lowpan *       setting = NM_SETTING_6LOWPAN(object);
-    NMSetting6LowpanPrivate *priv    = NM_SETTING_6LOWPAN_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_free(priv->parent);
-        priv->parent = g_value_dup_string(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_6lowpan_init(NMSetting6Lowpan *setting)
 {}
 
@@ -202,8 +167,8 @@ nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSetting6LowpanPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
     object_class->finalize     = finalize;
 
     setting_class->verify = verify;
