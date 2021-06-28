@@ -623,6 +623,113 @@ _nm_setting_use_legacy_property(NMSetting * setting,
 
 /*****************************************************************************/
 
+void
+_nm_setting_property_get_property_direct(GObject *   object,
+                                         guint       prop_id,
+                                         GValue *    value,
+                                         GParamSpec *pspec)
+{
+    NMSetting *               setting = NM_SETTING(object);
+    const NMSettInfoSetting * sett_info;
+    const NMSettInfoProperty *property_info;
+
+    sett_info = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
+    nm_assert(sett_info);
+
+    property_info = _nm_sett_info_property_lookup_by_param_spec(sett_info, pspec);
+    if (!property_info)
+        goto out_fail;
+
+    nm_assert(property_info->param_spec == pspec);
+
+    switch (property_info->property_type->direct_type) {
+    case NM_VALUE_TYPE_BOOL:
+    {
+        const bool *p_val =
+            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+
+        g_value_set_boolean(value, *p_val);
+        return;
+    }
+    case NM_VALUE_TYPE_STRING:
+    {
+        const char *const *p_val =
+            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+
+        g_value_set_string(value, *p_val);
+        return;
+    }
+    default:
+        goto out_fail;
+    }
+
+    return;
+
+out_fail:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+}
+
+void
+_nm_setting_property_set_property_direct(GObject *     object,
+                                         guint         prop_id,
+                                         const GValue *value,
+                                         GParamSpec *  pspec)
+{
+    NMSetting *               setting = NM_SETTING(object);
+    const NMSettInfoSetting * sett_info;
+    const NMSettInfoProperty *property_info;
+
+    sett_info = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
+    nm_assert(sett_info);
+
+    property_info = _nm_sett_info_property_lookup_by_param_spec(sett_info, pspec);
+    if (!property_info)
+        goto out_fail;
+
+    nm_assert(property_info->param_spec == pspec);
+
+    /* properties with special setters are not yet implemented! */
+    nm_assert(!property_info->direct_has_special_setter);
+
+    switch (property_info->property_type->direct_type) {
+    case NM_VALUE_TYPE_BOOL:
+    {
+        bool *   p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        gboolean v;
+
+        v = g_value_get_boolean(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+        goto out_notify;
+    }
+    case NM_VALUE_TYPE_STRING:
+    {
+        char **p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+
+        if (!nm_utils_strdup_reset(p_val, g_value_get_string(value)))
+            return;
+        goto out_notify;
+    }
+    default:
+        goto out_fail;
+    }
+
+    return;
+
+out_notify:
+    /* If explicit-notify would be set, we would need to emit g_object_notify_by_pspec().
+     *
+     * Currently we never set that, also because we still support glib 2.40. */
+    nm_assert(!NM_FLAGS_HAS(pspec->flags, 1 << 30 /* G_PARAM_EXPLICIT_NOTIFY */));
+    return;
+
+out_fail:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+}
+
+/*****************************************************************************/
+
 GVariant *
 _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               sett_info,
                                         guint                                   property_idx,
