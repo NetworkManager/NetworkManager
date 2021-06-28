@@ -856,12 +856,13 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: DHCP_CLIENT_ID=ax-srv-1; DHCP_CLIENT_ID=01:44:44:44:44:44:44
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
-                                       PROP_DHCP_CLIENT_ID,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_ip4_config_get_dhcp_client_id);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
+                                              PROP_DHCP_CLIENT_ID,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingIP4ConfigPrivate,
+                                              dhcp_client_id);
 
     /* ---ifcfg-rh---
      * property: dad-timeout
@@ -907,12 +908,13 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: DHCP_FQDN=foo.bar.com
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP4_CONFIG_DHCP_FQDN,
-                                       PROP_DHCP_FQDN,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_ip4_config_get_dhcp_fqdn);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP4_CONFIG_DHCP_FQDN,
+                                              PROP_DHCP_FQDN,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingIP4ConfigPrivate,
+                                              dhcp_fqdn);
 
     /**
      * NMSettingIP4Config:dhcp-vendor-class-identifier:
@@ -933,12 +935,13 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: DHCP_VENDOR_CLASS_IDENTIFIER=foo
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
-                                       PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_ip4_config_get_dhcp_vendor_class_identifier);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
+                                              PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingIP4ConfigPrivate,
+                                              dhcp_vendor_class_identifier);
 
     /* IP4-specific property overrides */
 

@@ -921,12 +921,13 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: IPV6_TOKEN=::53
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP6_CONFIG_TOKEN,
-                                       PROP_TOKEN,
-                                       NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_ip6_config_get_token);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP6_CONFIG_TOKEN,
+                                              PROP_TOKEN,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIP6ConfigPrivate,
+                                              token);
 
     /**
      * NMSettingIP6Config:ra-timeout:
@@ -1001,12 +1002,13 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: DHCPV6_DUID=LL; DHCPV6_DUID=0301deadbeef0001; DHCPV6_DUID=03:01:de:ad:be:ef:00:01
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP6_CONFIG_DHCP_DUID,
-                                       PROP_DHCP_DUID,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_ip6_config_get_dhcp_duid);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP6_CONFIG_DHCP_DUID,
+                                              PROP_DHCP_DUID,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingIP6ConfigPrivate,
+                                              dhcp_duid);
 
     /* IP6-specific property overrides */
 
