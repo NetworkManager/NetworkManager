@@ -2,8 +2,6 @@
 
 #include "src/core/nm-default-daemon.h"
 
-#include <glib-unix.h>
-
 #include "devices/bluetooth/nm-bluez5-dun.h"
 
 #include "nm-test-utils-core.h"

@@ -1610,6 +1610,19 @@ nm_g_variant_builder_add_sv_str(GVariantBuilder *builder, const char *key, const
 static inline void
 nm_g_source_destroy_and_unref(GSource *source)
 {
+    /* Note that calling g_source_destroy() on a currently attached source,
+     * will destroy the user-data of the callback right away (and not only
+     * during the last g_source_unref()).
+     *
+     * It also means, that if the user data itself has the reference to the
+     * source, then this will lead to crash:
+     *
+     *     g_source_destroy(user_data->my_source);
+     *     // ups, user_data was destroyed (if source was attached).
+     *     g_source_unref(user_data->my_source);
+     *
+     *  nm_g_source_destroy_and_unref() and nm_clear_g_source_inst() does not
+     *  suffer from this problem. */
     g_source_destroy(source);
     g_source_unref(source);
 }
@@ -1707,7 +1720,7 @@ nm_g_source_attach(GSource *source, GMainContext *context)
 static inline GSource *
 nm_g_idle_add_source(GSourceFunc func, gpointer user_data)
 {
-    /* G convenience function to attach a new timeout source to the default GMainContext.
+    /* A convenience function to attach a new timeout source to the default GMainContext.
      * In that sense it's very similar to g_idle_add() except that it returns a
      * reference to the new source.  */
     return nm_g_source_attach(nm_g_idle_source_new(G_PRIORITY_DEFAULT, func, user_data, NULL),
@@ -1717,7 +1730,7 @@ nm_g_idle_add_source(GSourceFunc func, gpointer user_data)
 static inline GSource *
 nm_g_timeout_add_source(guint timeout_msec, GSourceFunc func, gpointer user_data)
 {
-    /* G convenience function to attach a new timeout source to the default GMainContext.
+    /* A convenience function to attach a new timeout source to the default GMainContext.
      * In that sense it's very similar to g_timeout_add() except that it returns a
      * reference to the new source.  */
     return nm_g_source_attach(
@@ -1728,7 +1741,7 @@ nm_g_timeout_add_source(guint timeout_msec, GSourceFunc func, gpointer user_data
 static inline GSource *
 nm_g_timeout_add_source_seconds(guint timeout_sec, GSourceFunc func, gpointer user_data)
 {
-    /* G convenience function to attach a new timeout source to the default GMainContext.
+    /* A convenience function to attach a new timeout source to the default GMainContext.
      * In that sense it's very similar to g_timeout_add_seconds() except that it returns a
      * reference to the new source.  */
     return nm_g_source_attach(
@@ -1755,6 +1768,20 @@ nm_g_timeout_add_source_approx(guint       timeout_msec,
     else
         source = nm_g_timeout_source_new(timeout_msec, G_PRIORITY_DEFAULT, func, user_data, NULL);
     return nm_g_source_attach(source, NULL);
+}
+
+static inline GSource *
+nm_g_unix_fd_add_source(int               fd,
+                        GIOCondition      condition,
+                        GUnixFDSourceFunc function,
+                        gpointer          user_data)
+{
+    /* A convenience function to attach a new unix-fd source to the default GMainContext.
+     * In that sense it's very similar to g_unix_fd_add() except that it returns a
+     * reference to the new source.  */
+    return nm_g_source_attach(
+        nm_g_unix_fd_source_new(fd, condition, G_PRIORITY_DEFAULT, function, user_data, NULL),
+        NULL);
 }
 
 NM_AUTO_DEFINE_FCN0(GMainContext *, _nm_auto_unref_gmaincontext, g_main_context_unref);

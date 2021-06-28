@@ -1673,12 +1673,7 @@ _scan_supplicant_request_scan_cb(NMSupplicantInterface *supp_iface,
      * Artificially keep the scanning state on, for another SCAN_EXTRA_DELAY_MSEC msec. */
     nm_clear_g_source_inst(&priv->scan_request_delay_source);
     priv->scan_request_delay_source =
-        nm_g_source_attach(nm_g_timeout_source_new(SCAN_EXTRA_DELAY_MSEC,
-                                                   G_PRIORITY_DEFAULT,
-                                                   _scan_request_delay_cb,
-                                                   self,
-                                                   NULL),
-                           NULL);
+        nm_g_timeout_add_source(SCAN_EXTRA_DELAY_MSEC, _scan_request_delay_cb, self);
 
     g_clear_object(&priv->scan_request_cancellable);
     _scan_notify_is_scanning(self);

@@ -16,7 +16,6 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <arpa/inet.h>
-#include <glib-unix.h>
 
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "nm-dispatcher-utils.h"

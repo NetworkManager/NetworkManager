@@ -599,9 +599,7 @@ start(NMNDisc *ndisc)
 
     fd = ndp_get_eventfd(priv->ndp);
 
-    priv->event_source =
-        nm_g_unix_fd_source_new(fd, G_IO_IN, G_PRIORITY_DEFAULT, event_ready, ndisc, NULL);
-    g_source_attach(priv->event_source, NULL);
+    priv->event_source = nm_g_unix_fd_add_source(fd, G_IO_IN, event_ready, ndisc);
 
     /* Flush any pending messages to avoid using obsolete information */
     event_ready(fd, 0, ndisc);

@@ -347,9 +347,7 @@ nm_acd_manager_start_probe(NMAcdManager *self, guint timeout)
 
     nm_assert(!self->event_source);
     n_acd_get_fd(self->acd, &fd);
-    self->event_source =
-        nm_g_unix_fd_source_new(fd, G_IO_IN, G_PRIORITY_DEFAULT, acd_event, self, NULL);
-    g_source_attach(self->event_source, NULL);
+    self->event_source = nm_g_unix_fd_add_source(fd, G_IO_IN, acd_event, self);
 
     return success ? 0 : -NME_UNSPEC;
 }
@@ -434,9 +432,7 @@ nm_acd_manager_announce_addresses(NMAcdManager *self)
 
     if (!self->event_source) {
         n_acd_get_fd(self->acd, &fd);
-        self->event_source =
-            nm_g_unix_fd_source_new(fd, G_IO_IN, G_PRIORITY_DEFAULT, acd_event, self, NULL);
-        g_source_attach(self->event_source, NULL);
+        self->event_source = nm_g_unix_fd_add_source(fd, G_IO_IN, acd_event, self);
     }
 
     return success ? 0 : -NME_UNSPEC;

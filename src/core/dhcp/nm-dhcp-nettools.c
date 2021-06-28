@@ -969,9 +969,7 @@ nettools_create(NMDhcpNettools *self, GError **error)
 
     n_dhcp4_client_get_fd(priv->client, &fd);
 
-    priv->event_source =
-        nm_g_unix_fd_source_new(fd, G_IO_IN, G_PRIORITY_DEFAULT, dhcp4_event_cb, self, NULL);
-    g_source_attach(priv->event_source, NULL);
+    priv->event_source = nm_g_unix_fd_add_source(fd, G_IO_IN, dhcp4_event_cb, self);
 
     return TRUE;
 }

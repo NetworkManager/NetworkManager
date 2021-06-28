@@ -12,7 +12,6 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
-#include <glib-unix.h>
 #include <net/if.h>
 #include <net/ethernet.h>
 
