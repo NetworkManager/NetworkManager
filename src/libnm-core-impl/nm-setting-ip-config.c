@@ -3911,36 +3911,25 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingIPConfig,
                              PROP_DHCP_IAID,
                              PROP_DHCP_REJECT_SERVERS, );
 
-typedef struct {
-    GPtrArray *dns;         /* array of IP address strings */
-    GPtrArray *dns_search;  /* array of domain name strings */
-    GPtrArray *dns_options; /* array of DNS options */
-    GPtrArray *addresses;   /* array of NMIPAddress */
-    GPtrArray *routes;      /* array of NMIPRoute */
-    GPtrArray *routing_rules;
-    GArray *   dhcp_reject_servers;
-    char *     method;
-    char *     gateway;
-    char *     dhcp_hostname;
-    char *     dhcp_iaid;
-    gint64     route_metric;
-    guint      dhcp_hostname_flags;
-    int        dns_priority;
-    int        dad_timeout;
-    int        dhcp_timeout;
-    int        required_timeout;
-    guint32    route_table;
-    bool       ignore_auto_routes : 1;
-    bool       ignore_auto_dns : 1;
-    bool       dhcp_send_hostname : 1;
-    bool       never_default : 1;
-    bool       may_fail : 1;
-} NMSettingIPConfigPrivate;
-
 G_DEFINE_ABSTRACT_TYPE(NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
 
-#define NM_SETTING_IP_CONFIG_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_IP_CONFIG, NMSettingIPConfigPrivate))
+static inline NMSettingIPConfigPrivate *
+_NM_SETTING_IP_CONFIG_GET_PRIVATE(NMSettingIPConfig *self)
+{
+    NMSettingIPConfigClass *klass;
+
+    nm_assert(NM_IS_SETTING_IP_CONFIG(self));
+
+    klass = NM_SETTING_IP_CONFIG_GET_CLASS(self);
+
+    nm_assert(klass->private_offset < 0);
+
+    return (gpointer) (((char *) ((gpointer) self)) + klass->private_offset);
+}
+
+#define NM_SETTING_IP_CONFIG_GET_PRIVATE(self) \
+    _NM_SETTING_IP_CONFIG_GET_PRIVATE(         \
+        NM_GOBJECT_CAST_NON_NULL(NMSettingIPConfig, self, NM_IS_SETTING_IP_CONFIG, NMSetting))
 
 /*****************************************************************************/
 
@@ -6065,10 +6054,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 /*****************************************************************************/
 
-static void
-nm_setting_ip_config_init(NMSettingIPConfig *setting)
+void
+_nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv)
 {
-    NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
+    nm_assert(NM_IS_SETTING_IP_CONFIG(self));
 
     priv->dns                = g_ptr_array_new_with_free_func(g_free);
     priv->dns_search         = g_ptr_array_new_with_free_func(g_free);
@@ -6079,6 +6068,12 @@ nm_setting_ip_config_init(NMSettingIPConfig *setting)
     priv->may_fail           = TRUE;
     priv->dad_timeout        = -1;
     priv->required_timeout   = -1;
+}
+
+static void
+nm_setting_ip_config_init(NMSettingIPConfig *setting)
+{
+    /* cannot yet access NM_SETTING_IP_CONFIG_GET_PRIVATE(). */
 }
 
 static void
@@ -6110,8 +6105,6 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
 {
     GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
-
-    g_type_class_add_private(klass, sizeof(NMSettingIPConfigPrivate));
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;

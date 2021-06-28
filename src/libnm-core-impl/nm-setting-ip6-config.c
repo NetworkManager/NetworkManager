@@ -45,6 +45,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_IP6_PRIVACY,
                                   PROP_RA_TIMEOUT, );
 
 typedef struct {
+    NMSettingIPConfigPrivate parent;
+
     char *                        token;
     char *                        dhcp_duid;
     NMSettingIP6ConfigPrivacy     ip6_privacy;
@@ -594,6 +596,8 @@ nm_setting_ip6_config_init(NMSettingIP6Config *setting)
 {
     NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting);
 
+    _nm_setting_ip_config_private_init(setting, &priv->parent);
+
     priv->ip6_privacy   = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
     priv->addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY;
 }
@@ -626,9 +630,10 @@ finalize(GObject *object)
 static void
 nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array_ip_config();
+    GObjectClass *          object_class            = G_OBJECT_CLASS(klass);
+    NMSettingClass *        setting_class           = NM_SETTING_CLASS(klass);
+    NMSettingIPConfigClass *setting_ip_config_class = NM_SETTING_IP_CONFIG_CLASS(klass);
+    GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config();
 
     g_type_class_add_private(klass, sizeof(NMSettingIP6ConfigPrivate));
 
@@ -637,6 +642,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     object_class->finalize     = finalize;
 
     setting_class->verify = verify;
+
+    setting_ip_config_class->private_offset = g_type_class_get_instance_private_offset(klass);
 
     /* ---ifcfg-rh---
      * property: method
@@ -1100,5 +1107,5 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                              NM_META_SETTING_TYPE_IP6_CONFIG,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             setting_ip_config_class->private_offset);
 }
