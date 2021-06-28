@@ -4388,6 +4388,9 @@ test_setting_metadata(void)
         guint                      prop_idx;
         gs_free GParamSpec **property_specs = NULL;
         guint                n_property_specs;
+        guint                n_param_spec;
+        guint                i;
+        guint                j;
 
         g_assert(sis);
 
@@ -4418,6 +4421,8 @@ test_setting_metadata(void)
 
         h_properties = g_hash_table_new(nm_str_hash, g_str_equal);
 
+        n_param_spec = 0;
+
         for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
             const NMSettInfoProperty *sip = &sis->property_infos[prop_idx];
             GArray *                  property_types_data;
@@ -4425,6 +4430,9 @@ test_setting_metadata(void)
             gboolean                  can_set_including_default = FALSE;
 
             g_assert(sip->name);
+
+            if (sip->param_spec)
+                n_param_spec++;
 
             if (prop_idx > 0)
                 g_assert_cmpint(strcmp(sis->property_infos[prop_idx - 1].name, sip->name), <, 0);
@@ -4587,6 +4595,44 @@ check_done:;
             g_assert_cmpstr(sis->property_infos[0].name, ==, NM_SETTING_NAME);
         } else
             g_assert_cmpint(meta_type, !=, NM_META_SETTING_TYPE_ETHTOOL);
+
+        g_assert_cmpint(n_param_spec, >, 0);
+        g_assert_cmpint(n_param_spec, ==, sis->property_lookup_by_param_spec_len);
+        g_assert(sis->property_lookup_by_param_spec);
+        for (i = 0; i < sis->property_lookup_by_param_spec_len; i++) {
+            const NMSettInfoPropertLookupByParamSpec *p = &sis->property_lookup_by_param_spec[i];
+            guint                                     n_found;
+
+            if (i > 0) {
+                g_assert_cmpint(sis->property_lookup_by_param_spec[i - 1].param_spec_as_uint,
+                                <,
+                                p->param_spec_as_uint);
+            }
+            g_assert(p->property_info);
+            g_assert(p->property_info >= sis->property_infos);
+            g_assert(p->property_info < &sis->property_infos[sis->property_infos_len]);
+            g_assert(p->property_info
+                     == &sis->property_infos[p->property_info - sis->property_infos]);
+
+            g_assert(p->property_info->param_spec);
+            g_assert(p->param_spec_as_uint
+                     == ((uintptr_t) ((gpointer) p->property_info->param_spec)));
+
+            g_assert(_nm_sett_info_property_lookup_by_param_spec(sis, p->property_info->param_spec)
+                     == p->property_info);
+
+            n_found = 0;
+            for (j = 0; j < sis->property_infos_len; j++) {
+                const NMSettInfoProperty *pip2 = &sis->property_infos[j];
+
+                if (pip2->param_spec
+                    && p->param_spec_as_uint == ((uintptr_t) ((gpointer) pip2->param_spec))) {
+                    g_assert(pip2 == p->property_info);
+                    n_found++;
+                }
+            }
+            g_assert(n_found == 1);
+        }
     }
 
     {

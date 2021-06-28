@@ -263,6 +263,16 @@ _property_infos_sort(const NMSettInfoProperty *property_infos,
     return arr;
 }
 
+static int
+_property_lookup_by_param_spec_sort(gconstpointer p_a, gconstpointer p_b, gpointer user_data)
+{
+    const NMSettInfoPropertLookupByParamSpec *a = p_a;
+    const NMSettInfoPropertLookupByParamSpec *b = p_b;
+
+    NM_CMP_DIRECT(a->param_spec_as_uint, b->param_spec_as_uint);
+    return 0;
+}
+
 void
 _nm_setting_class_commit(NMSettingClass *            setting_class,
                          NMMetaSettingType           meta_type,
@@ -271,10 +281,11 @@ _nm_setting_class_commit(NMSettingClass *            setting_class,
                          gint16                      private_offset)
 {
     NMSettInfoSetting *sett_info;
-    gs_free GParamSpec **property_specs = NULL;
-    guint                n_property_specs;
-    guint                override_len;
-    guint                i;
+    gs_free GParamSpec **               property_specs = NULL;
+    guint                               n_property_specs;
+    NMSettInfoPropertLookupByParamSpec *lookup_by_iter;
+    guint                               override_len;
+    guint                               i;
 
     nm_assert(NM_IS_SETTING_CLASS(setting_class));
     nm_assert(!setting_class->setting_info);
@@ -424,6 +435,33 @@ has_property_type:
                                                             sett_info->property_infos_len,
                                                             setting_class);
 
+    nm_assert(sett_info->property_infos_len < G_MAXUINT16);
+    sett_info->property_lookup_by_param_spec_len = 0;
+    for (i = 0; i < sett_info->property_infos_len; i++) {
+        if (sett_info->property_infos[i].param_spec) {
+            sett_info->property_lookup_by_param_spec_len++;
+        }
+    }
+    sett_info->property_lookup_by_param_spec =
+        g_new(NMSettInfoPropertLookupByParamSpec, sett_info->property_lookup_by_param_spec_len);
+    lookup_by_iter =
+        (NMSettInfoPropertLookupByParamSpec *) sett_info->property_lookup_by_param_spec;
+    for (i = 0; i < sett_info->property_infos_len; i++) {
+        const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
+
+        if (property_info->param_spec) {
+            *(lookup_by_iter++) = (NMSettInfoPropertLookupByParamSpec){
+                .param_spec_as_uint = (uintptr_t) ((gpointer) property_info->param_spec),
+                .property_info      = property_info,
+            };
+        }
+    }
+    g_qsort_with_data(sett_info->property_lookup_by_param_spec,
+                      sett_info->property_lookup_by_param_spec_len,
+                      sizeof(NMSettInfoPropertLookupByParamSpec),
+                      _property_lookup_by_param_spec_sort,
+                      NULL);
+
     g_array_free(properties_override, TRUE);
 }
 
@@ -471,6 +509,47 @@ _nm_setting_class_get_sett_info(NMSettingClass *setting_class)
     sett_info = &_sett_info_settings[setting_class->setting_info->meta_type];
     nm_assert(sett_info->setting_class == setting_class);
     return sett_info;
+}
+
+const NMSettInfoProperty *
+_nm_sett_info_property_lookup_by_param_spec(const NMSettInfoSetting *sett_info,
+                                            const GParamSpec *       param_spec)
+{
+    NMSettInfoPropertLookupByParamSpec needle;
+    int                                imin;
+    int                                imax;
+    int                                imid;
+    int                                cmp;
+
+    nm_assert(sett_info);
+    nm_assert(param_spec);
+
+    /* ensure that "int" is large enough to contain the index variables. */
+    G_STATIC_ASSERT_EXPR(sizeof(int) > sizeof(sett_info->property_lookup_by_param_spec_len));
+
+    if (sett_info->property_lookup_by_param_spec_len == 0)
+        return NULL;
+
+    needle.param_spec_as_uint = (uintptr_t) ((gpointer) param_spec);
+
+    imin = 0;
+    imax = sett_info->property_lookup_by_param_spec_len - 1;
+    while (imin <= imax) {
+        imid = imin + (imax - imin) / 2;
+
+        cmp = _property_lookup_by_param_spec_sort(&sett_info->property_lookup_by_param_spec[imid],
+                                                  &needle,
+                                                  NULL);
+        if (cmp == 0)
+            return sett_info->property_lookup_by_param_spec[imid].property_info;
+
+        if (cmp < 0)
+            imin = imid + 1;
+        else
+            imax = imid - 1;
+    }
+
+    return NULL;
 }
 
 /*****************************************************************************/

@@ -332,6 +332,10 @@ gboolean _nm_setting_property_is_regular_secret_flags(NMSetting * setting,
 
 /*****************************************************************************/
 
+const NMSettInfoProperty *
+_nm_sett_info_property_lookup_by_param_spec(const NMSettInfoSetting *sett_info,
+                                            const GParamSpec *       param_spec);
+
 static inline GArray *
 _nm_sett_info_property_override_create_array_sized(guint reserved_size)
 {
