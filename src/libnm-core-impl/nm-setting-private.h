@@ -644,12 +644,13 @@ gboolean _nm_setting_should_compare_secret_property(NMSetting *           settin
 NMBridgeVlan *_nm_bridge_vlan_dup(const NMBridgeVlan *vlan);
 NMBridgeVlan *_nm_bridge_vlan_dup_and_seal(const NMBridgeVlan *vlan);
 
-gboolean _nm_utils_bridge_vlans_from_dbus(NMSetting *         setting,
-                                          GVariant *          connection_dict,
-                                          const char *        property,
-                                          GVariant *          value,
-                                          NMSettingParseFlags parse_flags,
-                                          GError **           error);
+gboolean _nm_utils_bridge_vlans_from_dbus(const NMSettInfoSetting * sett_info,
+                                          const NMSettInfoProperty *property_info,
+                                          NMSetting *               setting,
+                                          GVariant *                connection_dict,
+                                          GVariant *                value,
+                                          NMSettingParseFlags       parse_flags,
+                                          GError **                 error);
 
 GVariant *_nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info,
                                          const NMSettInfoProperty *              property_info,
@@ -687,12 +688,13 @@ GVariant *_nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               se
                                       NMConnectionSerializationFlags          flags,
                                       const NMConnectionSerializationOptions *options);
 
-gboolean _nm_utils_hwaddr_cloned_set(NMSetting *         setting,
-                                     GVariant *          connection_dict,
-                                     const char *        property,
-                                     GVariant *          value,
-                                     NMSettingParseFlags parse_flags,
-                                     GError **           error);
+gboolean _nm_utils_hwaddr_cloned_set(const NMSettInfoSetting * sett_info,
+                                     const NMSettInfoProperty *property_info,
+                                     NMSetting *               setting,
+                                     GVariant *                connection_dict,
+                                     GVariant *                value,
+                                     NMSettingParseFlags       parse_flags,
+                                     GError **                 error);
 
 /*****************************************************************************/
 

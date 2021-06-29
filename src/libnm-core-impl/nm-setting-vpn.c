@@ -909,12 +909,13 @@ clear_secrets(const NMSettInfoSetting *        sett_info,
 }
 
 static gboolean
-vpn_secrets_from_dbus(NMSetting *         setting,
-                      GVariant *          connection_dict,
-                      const char *        property,
-                      GVariant *          value,
-                      NMSettingParseFlags parse_flags,
-                      GError **           error)
+vpn_secrets_from_dbus(const NMSettInfoSetting * sett_info,
+                      const NMSettInfoProperty *property_info,
+                      NMSetting *               setting,
+                      GVariant *                connection_dict,
+                      GVariant *                value,
+                      NMSettingParseFlags       parse_flags,
+                      GError **                 error)
 {
     NMSettingVpn *       self                = NM_SETTING_VPN(setting);
     NMSettingVpnPrivate *priv                = NM_SETTING_VPN_GET_PRIVATE(self);

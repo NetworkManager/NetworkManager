@@ -1501,12 +1501,13 @@ tc_qdiscs_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-tc_qdiscs_set(NMSetting *         setting,
-              GVariant *          connection_dict,
-              const char *        property,
-              GVariant *          value,
-              NMSettingParseFlags parse_flags,
-              GError **           error)
+tc_qdiscs_set(const NMSettInfoSetting * sett_info,
+              const NMSettInfoProperty *property_info,
+              NMSetting *               setting,
+              GVariant *                connection_dict,
+              GVariant *                value,
+              NMSettingParseFlags       parse_flags,
+              GError **                 error)
 {
     GPtrArray *qdiscs;
 
@@ -1699,12 +1700,13 @@ tc_tfilters_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-tc_tfilters_set(NMSetting *         setting,
-                GVariant *          connection_dict,
-                const char *        property,
-                GVariant *          value,
-                NMSettingParseFlags parse_flags,
-                GError **           error)
+tc_tfilters_set(const NMSettInfoSetting * sett_info,
+                const NMSettInfoProperty *property_info,
+                NMSetting *               setting,
+                GVariant *                connection_dict,
+                GVariant *                value,
+                NMSettingParseFlags       parse_flags,
+                GError **                 error)
 {
     gs_unref_ptrarray GPtrArray *tfilters = NULL;
 

@@ -4985,12 +4985,13 @@ _routing_rules_dbus_only_synth(const NMSettInfoSetting *               sett_info
 }
 
 static gboolean
-_routing_rules_dbus_only_set(NMSetting *         setting,
-                             GVariant *          connection_dict,
-                             const char *        property,
-                             GVariant *          value,
-                             NMSettingParseFlags parse_flags,
-                             GError **           error)
+_routing_rules_dbus_only_set(const NMSettInfoSetting * sett_info,
+                             const NMSettInfoProperty *property_info,
+                             NMSetting *               setting,
+                             GVariant *                connection_dict,
+                             GVariant *                value,
+                             NMSettingParseFlags       parse_flags,
+                             GError **                 error)
 {
     GVariantIter iter_rules;
     GVariant *   rule_var;
@@ -5775,12 +5776,13 @@ enumerate_values(const NMSettInfoProperty *property_info,
 /*****************************************************************************/
 
 static gboolean
-ip_gateway_set(NMSetting *         setting,
-               GVariant *          connection_dict,
-               const char *        property,
-               GVariant *          value,
-               NMSettingParseFlags parse_flags,
-               GError **           error)
+ip_gateway_set(const NMSettInfoSetting * sett_info,
+               const NMSettInfoProperty *property_info,
+               NMSetting *               setting,
+               GVariant *                connection_dict,
+               GVariant *                value,
+               NMSettingParseFlags       parse_flags,
+               GError **                 error)
 {
     /* FIXME: properly handle errors */
 
@@ -5788,7 +5790,7 @@ ip_gateway_set(NMSetting *         setting,
     if (_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "gateway"))
         return TRUE;
 
-    g_object_set(setting, property, g_variant_get_string(value, NULL), NULL);
+    g_object_set(setting, property_info->name, g_variant_get_string(value, NULL), NULL);
     return TRUE;
 }
 

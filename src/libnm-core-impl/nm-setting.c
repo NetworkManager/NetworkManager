@@ -1347,9 +1347,10 @@ init_from_dbus(NMSetting *                     setting,
                 return FALSE;
             }
 
-            if (!property_info->property_type->from_dbus_fcn(setting,
+            if (!property_info->property_type->from_dbus_fcn(sett_info,
+                                                             property_info,
+                                                             setting,
                                                              connection_dict,
-                                                             property_info->name,
                                                              value,
                                                              parse_flags,
                                                              &local)) {
