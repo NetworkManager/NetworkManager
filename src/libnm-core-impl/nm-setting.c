@@ -1291,10 +1291,30 @@ init_from_dbus(NMSetting *                     setting,
 
         value = g_variant_lookup_value(setting_dict, property_info->name, NULL);
 
-        if (value && keys)
+        if (!value) {
+            if (property_info->property_type->missing_from_dbus_fcn
+                && !property_info->property_type->missing_from_dbus_fcn(setting,
+                                                                        connection_dict,
+                                                                        property_info->name,
+                                                                        parse_flags,
+                                                                        &local)) {
+                if (!NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
+                    continue;
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("failed to set property: %s"),
+                            local->message);
+                g_prefix_error(error, "%s.%s: ", nm_setting_get_name(setting), property_info->name);
+                return FALSE;
+            }
+            continue;
+        }
+
+        if (keys)
             g_hash_table_remove(keys, property_info->name);
 
-        if (value && property_info->property_type->from_dbus_fcn) {
+        if (property_info->property_type->from_dbus_fcn) {
             if (!g_variant_type_equal(g_variant_get_type(value),
                                       property_info->property_type->dbus_type)) {
                 /* for backward behavior, fail unless best-effort is chosen. */
@@ -1330,23 +1350,10 @@ init_from_dbus(NMSetting *                     setting,
                 g_prefix_error(error, "%s.%s: ", nm_setting_get_name(setting), property_info->name);
                 return FALSE;
             }
-        } else if (!value && property_info->property_type->missing_from_dbus_fcn) {
-            if (!property_info->property_type->missing_from_dbus_fcn(setting,
-                                                                     connection_dict,
-                                                                     property_info->name,
-                                                                     parse_flags,
-                                                                     &local)) {
-                if (!NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
-                    continue;
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("failed to set property: %s"),
-                            local->message);
-                g_prefix_error(error, "%s.%s: ", nm_setting_get_name(setting), property_info->name);
-                return FALSE;
-            }
-        } else if (value && property_info->param_spec) {
+            continue;
+        }
+
+        if (property_info->param_spec) {
             nm_auto_unset_gvalue GValue object_value = G_VALUE_INIT;
 
             g_value_init(&object_value, property_info->param_spec->value_type);
