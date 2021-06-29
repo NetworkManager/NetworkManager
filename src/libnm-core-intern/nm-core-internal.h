@@ -667,7 +667,6 @@ typedef gboolean (*NMSettInfoPropMissingFromDBusFcn)(NMSetting *         setting
                                                      const char *        property,
                                                      NMSettingParseFlags parse_flags,
                                                      GError **           error);
-typedef GVariant *(*NMSettInfoPropGPropToDBusFcn)(const GValue *from);
 typedef void (*NMSettInfoPropGPropFromDBusFcn)(GVariant *from, GValue *to);
 
 const NMSettInfoSetting *nmtst_sett_info_settings(void);
@@ -746,11 +745,6 @@ struct _NMSettInfoProperty {
     bool direct_has_special_setter : 1;
 
     struct {
-        union {
-            gpointer                     none;
-            NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn;
-        };
-
         /* Usually, properties that are set to the default value for the GParamSpec
          * are not serialized to GVariant (and NULL is returned by to_dbus_data().
          * Set this flag to force always converting the property even if the value

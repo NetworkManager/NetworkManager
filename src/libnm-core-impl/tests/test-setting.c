@@ -4480,9 +4480,8 @@ test_setting_metadata(void)
 
             if (!sip->property_type->to_dbus_fcn) {
                 /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
-                 * properties must not have a param_spec and no gprop_to_dbus_fcn. */
+                 * properties must not have a param_spec. */
                 g_assert(!sip->param_spec);
-                g_assert(!sip->to_dbus_data.none);
             } else if (sip->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop) {
                 g_assert(sip->param_spec);
                 switch (sip->property_type->typdata_to_dbus.gprop_type) {
@@ -4509,9 +4508,6 @@ test_setting_metadata(void)
                 }
                 g_assert_not_reached();
 check_done:;
-                if (sip->property_type->typdata_to_dbus.gprop_type
-                    != NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT)
-                    g_assert(!sip->to_dbus_data.gprop_to_dbus_fcn);
                 can_set_including_default = TRUE;
             }
 
