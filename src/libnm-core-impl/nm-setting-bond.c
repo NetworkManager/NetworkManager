@@ -208,11 +208,9 @@ static NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE(
     {NM_SETTING_BOND_OPTION_NUM_GRAT_ARP, {"1", NM_BOND_OPTION_TYPE_INT, 0, 255}},
     {NM_SETTING_BOND_OPTION_NUM_UNSOL_NA, {"1", NM_BOND_OPTION_TYPE_INT, 0, 255}},
     {NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, {"1", NM_BOND_OPTION_TYPE_INT, 0, 65535}},
-    /* Although there is not an explicit list structure here  - due to
-	 * performance purposes it is checked in other function - the
-	 * NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY value, the last parameter, need
-	 * to be a multiple of the link monitoring interval, either in arp or miimon
-	 * mode. */
+    /* peer_notif_delay does not have a list in the end of the possible values
+     * it could get, but it can only be a multiple of miimon (as asserted in other
+     * functions). */
     {NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY, {"0", NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT}},
     {NM_SETTING_BOND_OPTION_PRIMARY, {"", NM_BOND_OPTION_TYPE_IFNAME}},
     {NM_SETTING_BOND_OPTION_PRIMARY_RESELECT,
@@ -877,7 +875,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     miimon       = _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_MIIMON));
     arp_interval = _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_ARP_INTERVAL));
     peer_notif_delay =
-        atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY));
+       _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY));
     num_grat_arp = _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP));
     num_unsol_na = _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA));
 
@@ -973,7 +971,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    if (!miimon) {
+    if (miimon == 0) {
         /* updelay and downdelay need miimon to be enabled to be valid */
         if (_atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_UPDELAY))) {
             g_set_error(error,
@@ -999,9 +997,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (peer_notif_delay) {
-        /* Kernel documentation currently only accepts peer_notif_delay != 0 only
-    	 * if miimon is enabled: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/net/bonding/bond_options.c?h=v5.12#n920
-    	 * that is called by: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/net/bonding/bond_options.c?h=v5.12#n965 */
+        /* Kernel code currently only accepts peer_notif_delay != 0 only if
+    	 * miimon is enabled */
         if (!miimon) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
@@ -1014,7 +1011,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
 
         /* Kernel bonding driver only allows peer_notif_delay values that are
-    	 * multiples of the MIImon monitor interval (miimon variable): https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/net/bonding/bond_options.c?h=v5.12#n920 */
+    	 * multiples of the MIImon monitor interval (miimon variable). */
         if ((peer_notif_delay % miimon) && (!arp_interval)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
