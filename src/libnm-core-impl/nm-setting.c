@@ -886,7 +886,7 @@ _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               
         gboolean val;
 
         val = *((bool *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
-        if (!property_info->to_dbus_data.including_default
+        if (!property_info->to_dbus_including_default
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec))
             return NULL;
         return g_variant_ref(nm_g_variant_singleton_b(val));
@@ -897,7 +897,7 @@ _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               
 
         val = *(
             (guint32 *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
-        if (!property_info->to_dbus_data.including_default
+        if (!property_info->to_dbus_including_default
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_UINT(property_info->param_spec))
             return NULL;
         return g_variant_new_uint32(val);
@@ -912,7 +912,7 @@ _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               
          * Setting "including_default" for a string makes no sense because a
          * GVariant of type "s" cannot express NULL. */
         nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
-        nm_assert(!property_info->to_dbus_data.including_default);
+        nm_assert(!property_info->to_dbus_including_default);
 
         val = *((const char *const *) _nm_setting_get_private(setting,
                                                               sett_info,
@@ -948,7 +948,7 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
 
     g_object_get_property(G_OBJECT(setting), property_info->param_spec->name, &prop_value);
 
-    if (!property_info->to_dbus_data.including_default
+    if (!property_info->to_dbus_including_default
         && g_param_value_defaults(property_info->param_spec, &prop_value))
         return NULL;
 

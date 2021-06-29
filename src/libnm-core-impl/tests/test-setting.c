@@ -4512,7 +4512,7 @@ check_done:;
             }
 
             if (!can_set_including_default)
-                g_assert(!sip->to_dbus_data.including_default);
+                g_assert(!sip->to_dbus_including_default);
 
             g_assert(!sip->property_type->from_dbus_fcn
                      || !sip->property_type->gprop_from_dbus_fcn);

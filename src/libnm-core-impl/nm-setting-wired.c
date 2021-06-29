@@ -1383,7 +1383,7 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                                                NM_SETTING_PARAM_NONE,
                                                NMSettingWiredPrivate,
                                                auto_negotiate,
-                                               .to_dbus_data.including_default = TRUE);
+                                               .to_dbus_including_default = TRUE);
 
     /**
      * NMSettingWired:mac-address:
