@@ -1720,6 +1720,35 @@ _nm_setting_should_compare_secret_property(NMSetting *           setting,
 
 /*****************************************************************************/
 
+gboolean
+_nm_setting_compare_flags_check(const GParamSpec *    param_spec,
+                                NMSettingCompareFlags flags,
+                                NMSetting *           set_a,
+                                NMSetting *           set_b)
+{
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_FUZZY)
+        && NM_FLAGS_ANY(param_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
+        return FALSE;
+
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
+        && !NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_INFERRABLE))
+        return FALSE;
+
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY)
+        && NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
+        return FALSE;
+
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
+        && NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_SECRET))
+        return FALSE;
+
+    if (NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_SECRET)
+        && !_nm_setting_should_compare_secret_property(set_a, set_b, param_spec->name, flags))
+        return FALSE;
+
+    return TRUE;
+}
+
 NMTernary
 _nm_setting_property_compare_fcn_ignore(const NMSettInfoSetting * sett_info,
                                         const NMSettInfoProperty *property_info,
@@ -1746,24 +1775,7 @@ _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
     if (!param_spec)
         return nm_assert_unreachable_val(NM_TERNARY_DEFAULT);
 
-    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_FUZZY)
-        && NM_FLAGS_ANY(param_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
-        return NM_TERNARY_DEFAULT;
-
-    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
-        && !NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_INFERRABLE))
-        return NM_TERNARY_DEFAULT;
-
-    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_REAPPLY_IMMEDIATELY)
-        && NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_REAPPLY_IMMEDIATELY))
-        return NM_TERNARY_DEFAULT;
-
-    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
-        && NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_SECRET))
-        return NM_TERNARY_DEFAULT;
-
-    if (NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_SECRET)
-        && !_nm_setting_should_compare_secret_property(set_a, set_b, param_spec->name, flags))
+    if (!_nm_setting_compare_flags_check(param_spec, flags, set_a, set_b))
         return NM_TERNARY_DEFAULT;
 
     if (set_b) {
