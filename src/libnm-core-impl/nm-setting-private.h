@@ -627,6 +627,56 @@ gboolean _nm_setting_should_compare_secret_property(NMSetting *           settin
 NMBridgeVlan *_nm_bridge_vlan_dup(const NMBridgeVlan *vlan);
 NMBridgeVlan *_nm_bridge_vlan_dup_and_seal(const NMBridgeVlan *vlan);
 
+gboolean _nm_utils_bridge_vlans_from_dbus(NMSetting *         setting,
+                                          GVariant *          connection_dict,
+                                          const char *        property,
+                                          GVariant *          value,
+                                          NMSettingParseFlags parse_flags,
+                                          GError **           error);
+
+GVariant *_nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info,
+                                         const NMSettInfoProperty *              property_info,
+                                         NMConnection *                          connection,
+                                         NMSetting *                             setting,
+                                         NMConnectionSerializationFlags          flags,
+                                         const NMConnectionSerializationOptions *options);
+
+NMTernary _nm_setting_ip_config_compare_fcn_addresses(const NMSettInfoSetting * sett_info,
+                                                      const NMSettInfoProperty *property_info,
+                                                      NMConnection *            con_a,
+                                                      NMSetting *               set_a,
+                                                      NMConnection *            con_b,
+                                                      NMSetting *               set_b,
+                                                      NMSettingCompareFlags     flags);
+
+NMTernary _nm_setting_ip_config_compare_fcn_routes(const NMSettInfoSetting * sett_info,
+                                                   const NMSettInfoProperty *property_info,
+                                                   NMConnection *            con_a,
+                                                   NMSetting *               set_a,
+                                                   NMConnection *            con_b,
+                                                   NMSetting *               set_b,
+                                                   NMSettingCompareFlags     flags);
+
+gboolean _nm_utils_hwaddr_cloned_not_set(NMSetting *         setting,
+                                         GVariant *          connection_dict,
+                                         const char *        property,
+                                         NMSettingParseFlags parse_flags,
+                                         GError **           error);
+
+GVariant *_nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
+                                      const NMSettInfoProperty *              property_info,
+                                      NMConnection *                          connection,
+                                      NMSetting *                             setting,
+                                      NMConnectionSerializationFlags          flags,
+                                      const NMConnectionSerializationOptions *options);
+
+gboolean _nm_utils_hwaddr_cloned_set(NMSetting *         setting,
+                                     GVariant *          connection_dict,
+                                     const char *        property,
+                                     GVariant *          value,
+                                     NMSettingParseFlags parse_flags,
+                                     GError **           error);
+
 /*****************************************************************************/
 
 #endif /* NM_SETTING_PRIVATE_H */

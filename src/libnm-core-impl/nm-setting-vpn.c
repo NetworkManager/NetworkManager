@@ -851,22 +851,17 @@ compare_property_secrets(NMSettingVpn *a, NMSettingVpn *b, NMSettingCompareFlags
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting * sett_info,
-                 const NMSettInfoProperty *property_info,
-                 NMConnection *            con_a,
-                 NMSetting *               set_a,
-                 NMConnection *            con_b,
-                 NMSetting *               set_b,
-                 NMSettingCompareFlags     flags)
+compare_fcn_secrets(const NMSettInfoSetting * sett_info,
+                    const NMSettInfoProperty *property_info,
+                    NMConnection *            con_a,
+                    NMSetting *               set_a,
+                    NMConnection *            con_b,
+                    NMSetting *               set_b,
+                    NMSettingCompareFlags     flags)
 {
-    if (property_info->param_spec == obj_properties[PROP_SECRETS]) {
-        if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
-            return NM_TERNARY_DEFAULT;
-        return compare_property_secrets(NM_SETTING_VPN(set_a), NM_SETTING_VPN(set_b), flags);
-    }
-
-    return NM_SETTING_CLASS(nm_setting_vpn_parent_class)
-        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
+        return NM_TERNARY_DEFAULT;
+    return compare_property_secrets(NM_SETTING_VPN(set_a), NM_SETTING_VPN(set_b), flags);
 }
 
 static gboolean
@@ -1131,7 +1126,6 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
     setting_class->get_secret_flags  = get_secret_flags;
     setting_class->set_secret_flags  = set_secret_flags;
     setting_class->need_secrets      = need_secrets;
-    setting_class->compare_property  = compare_property;
     setting_class->clear_secrets     = clear_secrets;
     setting_class->aggregate         = aggregate;
 
@@ -1231,7 +1225,7 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
         obj_properties[PROP_SECRETS],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a{ss}"),
                                        .to_dbus_fcn   = vpn_secrets_to_dbus,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .compare_fcn   = compare_fcn_secrets,
                                        .from_dbus_fcn = vpn_secrets_from_dbus, ));
 
     /**

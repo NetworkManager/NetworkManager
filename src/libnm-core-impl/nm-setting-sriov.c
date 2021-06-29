@@ -1119,35 +1119,30 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting * sett_info,
-                 const NMSettInfoProperty *property_info,
-                 NMConnection *            con_a,
-                 NMSetting *               set_a,
-                 NMConnection *            con_b,
-                 NMSetting *               set_b,
-                 NMSettingCompareFlags     flags)
+compare_fcn_vfs(const NMSettInfoSetting * sett_info,
+                const NMSettInfoProperty *property_info,
+                NMConnection *            con_a,
+                NMSetting *               set_a,
+                NMConnection *            con_b,
+                NMSetting *               set_b,
+                NMSettingCompareFlags     flags)
 {
     NMSettingSriov *a;
     NMSettingSriov *b;
     guint           i;
 
-    if (property_info->param_spec == obj_properties[PROP_VFS]) {
-        if (set_b) {
-            a = NM_SETTING_SRIOV(set_a);
-            b = NM_SETTING_SRIOV(set_b);
+    if (set_b) {
+        a = NM_SETTING_SRIOV(set_a);
+        b = NM_SETTING_SRIOV(set_b);
 
-            if (a->vfs->len != b->vfs->len)
+        if (a->vfs->len != b->vfs->len)
+            return FALSE;
+        for (i = 0; i < a->vfs->len; i++) {
+            if (!nm_sriov_vf_equal(a->vfs->pdata[i], b->vfs->pdata[i]))
                 return FALSE;
-            for (i = 0; i < a->vfs->len; i++) {
-                if (!nm_sriov_vf_equal(a->vfs->pdata[i], b->vfs->pdata[i]))
-                    return FALSE;
-            }
         }
-        return TRUE;
     }
-
-    return NM_SETTING_CLASS(nm_setting_sriov_parent_class)
-        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -1246,8 +1241,7 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    setting_class->compare_property = compare_property;
-    setting_class->verify           = verify;
+    setting_class->verify = verify;
 
     /**
      * NMSettingSriov:total-vfs
@@ -1323,13 +1317,12 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
                                                   G_TYPE_PTR_ARRAY,
                                                   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
                                                       | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(
-        properties_override,
-        obj_properties[PROP_VFS],
-        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                       .to_dbus_fcn   = vfs_to_dbus,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
-                                       .from_dbus_fcn = vfs_from_dbus, ));
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_VFS],
+                                 NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                                                .to_dbus_fcn   = vfs_to_dbus,
+                                                                .compare_fcn   = compare_fcn_vfs,
+                                                                .from_dbus_fcn = vfs_from_dbus, ));
 
     /**
      * NMSettingSriov:autoprobe-drivers

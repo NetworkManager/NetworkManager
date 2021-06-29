@@ -1997,43 +1997,38 @@ update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError *
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting * sett_info,
-                 const NMSettInfoProperty *property_info,
-                 NMConnection *            con_a,
-                 NMSetting *               set_a,
-                 NMConnection *            con_b,
-                 NMSetting *               set_b,
-                 NMSettingCompareFlags     flags)
+compare_fcn_peers(const NMSettInfoSetting * sett_info,
+                  const NMSettInfoProperty *property_info,
+                  NMConnection *            con_a,
+                  NMSetting *               set_a,
+                  NMConnection *            con_b,
+                  NMSetting *               set_b,
+                  NMSettingCompareFlags     flags)
 {
     NMSettingWireGuardPrivate *a_priv;
     NMSettingWireGuardPrivate *b_priv;
     guint                      i;
 
-    if (nm_streq(property_info->name, NM_SETTING_WIREGUARD_PEERS)) {
-        if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
-            return NM_TERNARY_DEFAULT;
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
+        return NM_TERNARY_DEFAULT;
 
-        if (!set_b)
-            return TRUE;
-
-        a_priv = NM_SETTING_WIREGUARD_GET_PRIVATE(set_a);
-        b_priv = NM_SETTING_WIREGUARD_GET_PRIVATE(set_b);
-
-        if (a_priv->peers_arr->len != b_priv->peers_arr->len)
-            return FALSE;
-        for (i = 0; i < a_priv->peers_arr->len; i++) {
-            NMWireGuardPeer *a_peer = _peers_get(a_priv, i)->peer;
-            NMWireGuardPeer *b_peer = _peers_get(b_priv, i)->peer;
-
-            if (nm_wireguard_peer_cmp(a_peer, b_peer, flags) != 0)
-                return FALSE;
-        }
-
+    if (!set_b)
         return TRUE;
+
+    a_priv = NM_SETTING_WIREGUARD_GET_PRIVATE(set_a);
+    b_priv = NM_SETTING_WIREGUARD_GET_PRIVATE(set_b);
+
+    if (a_priv->peers_arr->len != b_priv->peers_arr->len)
+        return FALSE;
+    for (i = 0; i < a_priv->peers_arr->len; i++) {
+        NMWireGuardPeer *a_peer = _peers_get(a_priv, i)->peer;
+        NMWireGuardPeer *b_peer = _peers_get(b_priv, i)->peer;
+
+        if (nm_wireguard_peer_cmp(a_peer, b_peer, flags) != 0)
+            return FALSE;
     }
 
-    return NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
-        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
+    return TRUE;
 }
 
 static void
@@ -2421,7 +2416,6 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
     setting_class->need_secrets              = need_secrets;
     setting_class->clear_secrets             = clear_secrets;
     setting_class->update_one_secret         = update_one_secret;
-    setting_class->compare_property          = compare_property;
     setting_class->duplicate_copy_properties = duplicate_copy_properties;
     setting_class->enumerate_values          = enumerate_values;
     setting_class->aggregate                 = aggregate;
@@ -2597,7 +2591,7 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
         NM_SETTING_WIREGUARD_PEERS,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = _peers_dbus_only_synth,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .compare_fcn   = compare_fcn_peers,
                                        .from_dbus_fcn = _peers_dbus_only_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
