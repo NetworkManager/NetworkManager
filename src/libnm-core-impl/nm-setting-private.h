@@ -303,6 +303,14 @@ gboolean _nm_setting_aggregate(NMSetting *setting, NMConnectionAggregateType typ
 
 gboolean _nm_setting_slave_type_is_valid(const char *slave_type, const char **out_port_type);
 
+NMTernary _nm_setting_property_compare_fcn_ignore(const NMSettInfoSetting * sett_info,
+                                                  const NMSettInfoProperty *property_info,
+                                                  NMConnection *            con_a,
+                                                  NMSetting *               set_a,
+                                                  NMConnection *            con_b,
+                                                  NMSetting *               set_b,
+                                                  NMSettingCompareFlags     flags);
+
 NMTernary _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
                                                    const NMSettInfoProperty *property_info,
                                                    NMConnection *            con_a,

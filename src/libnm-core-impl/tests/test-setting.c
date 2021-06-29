@@ -4525,7 +4525,19 @@ check_done:;
                 g_assert_not_reached();
 
             if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_default) {
-                /* pass */
+                g_assert(sip->param_spec);
+            } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_ignore) {
+                if (NM_IN_SET(sip->property_type,
+                              &nm_sett_info_propert_type_deprecated_ignore_i,
+                              &nm_sett_info_propert_type_deprecated_ignore_u,
+                              &nm_sett_info_propert_type_assigned_mac_address)) {
+                    /* pass */
+                } else if (!sip->param_spec) {
+                    /* pass */
+                } else {
+                    /* ignoring a property for comparison make only sense in very specific cases. */
+                    g_assert_not_reached();
+                }
             } else if (sip->property_type->compare_fcn) {
                 /* pass */
             } else {
