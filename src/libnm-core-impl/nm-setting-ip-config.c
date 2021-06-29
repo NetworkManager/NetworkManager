@@ -6019,6 +6019,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         priv->dhcp_timeout = g_value_get_int(value);
         break;
     case PROP_DHCP_IAID:
+        g_free(priv->dhcp_iaid);
         priv->dhcp_iaid = g_value_dup_string(value);
         break;
     case PROP_DHCP_HOSTNAME_FLAGS:
