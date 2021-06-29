@@ -744,13 +744,11 @@ struct _NMSettInfoProperty {
      * except of marking those properties and serve as a reminder that special care needs to be taken. */
     bool direct_has_special_setter : 1;
 
-    struct {
-        /* Usually, properties that are set to the default value for the GParamSpec
-         * are not serialized to GVariant (and NULL is returned by to_dbus_data().
-         * Set this flag to force always converting the property even if the value
-         * is the default. */
-        bool including_default : 1;
-    } to_dbus_data;
+    /* Usually, properties that are set to the default value for the GParamSpec
+     * are not serialized to GVariant (and NULL is returned by to_dbus_data().
+     * Set this flag to force always converting the property even if the value
+     * is the default. */
+    bool to_dbus_including_default : 1;
 };
 
 typedef struct {
