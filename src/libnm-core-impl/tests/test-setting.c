@@ -4514,8 +4514,18 @@ check_done:;
             if (!can_set_including_default)
                 g_assert(!sip->to_dbus_including_default);
 
-            g_assert(!sip->property_type->from_dbus_fcn
-                     || !sip->property_type->gprop_from_dbus_fcn);
+            g_assert(sip->property_type->from_dbus_fcn || !sip->param_spec);
+            if (sip->property_type->typdata_from_dbus.gprop_fcn) {
+                g_assert(sip->property_type->from_dbus_fcn
+                         == _nm_setting_property_from_dbus_fcn_gprop);
+            }
+            if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_gprop)
+                g_assert(sip->param_spec);
+
+            g_assert(sip->property_type->from_dbus_is_full
+                     == NM_IN_SET(sip->property_type->from_dbus_fcn,
+                                  _nm_setting_property_from_dbus_fcn_gprop,
+                                  _nm_setting_property_from_dbus_fcn_ignore));
 
             if (!g_hash_table_insert(h_properties, (char *) sip->name, sip->param_spec))
                 g_assert_not_reached();
@@ -4708,7 +4718,10 @@ check_done:;
                     || pt->from_dbus_fcn != pt_2->from_dbus_fcn
                     || pt->compare_fcn != pt_2->compare_fcn
                     || pt->missing_from_dbus_fcn != pt_2->missing_from_dbus_fcn
-                    || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn
+                    || memcmp(&pt->typdata_from_dbus,
+                              &pt_2->typdata_from_dbus,
+                              sizeof(pt->typdata_from_dbus))
+                           != 0
                     || memcmp(&pt->typdata_to_dbus,
                               &pt_2->typdata_to_dbus,
                               sizeof(pt->typdata_to_dbus))

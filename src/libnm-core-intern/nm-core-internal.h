@@ -693,6 +693,15 @@ typedef struct {
      * to the property value. */
     NMValueType direct_type;
 
+    /* Whether from_dbus_fcn() has special capabilities
+     *
+     * - whether the from_dbus_fcn expects to handle differences between
+     *   the D-Bus types and can convert between them. Otherwise, the caller
+     *   will already pre-validate that the D-Bus types match.
+     * - by default, with NM_SETTING_PARSE_FLAGS_BEST_EFFORT all errors from
+     *   from_dbus_fcn() are ignored. If true, then error are propagated. */
+    bool from_dbus_is_full : 1;
+
     /* compare_fcn() returns a ternary, where DEFAULT means that the property should not
      * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
      * equal/not-equal.
@@ -711,9 +720,14 @@ typedef struct {
     NMSettInfoPropFromDBusFcn        from_dbus_fcn;
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
 
-    /* Simpler variants of @from_dbus_fcn that operate solely
-     * on the GValue value of the GObject property. */
-    NMSettInfoPropGPropFromDBusFcn gprop_from_dbus_fcn;
+    struct {
+        union {
+            /* If from_dbus_fcn is set to _nm_setting_property_from_dbus_fcn_gprop,
+             * then this is an optional handler for converting between GVariant and
+             * GValue. */
+            NMSettInfoPropGPropFromDBusFcn gprop_fcn;
+        };
+    } typdata_from_dbus;
 
     struct {
         union {

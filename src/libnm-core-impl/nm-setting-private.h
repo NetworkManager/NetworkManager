@@ -364,6 +364,22 @@ GVariant *_nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *     
                                                   NMConnectionSerializationFlags flags,
                                                   const NMConnectionSerializationOptions *options);
 
+gboolean _nm_setting_property_from_dbus_fcn_ignore(const NMSettInfoSetting * sett_info,
+                                                   const NMSettInfoProperty *property_info,
+                                                   NMSetting *               setting,
+                                                   GVariant *                connection_dict,
+                                                   GVariant *                value,
+                                                   NMSettingParseFlags       parse_flags,
+                                                   GError **                 error);
+
+gboolean _nm_setting_property_from_dbus_fcn_gprop(const NMSettInfoSetting * sett_info,
+                                                  const NMSettInfoProperty *property_info,
+                                                  NMSetting *               setting,
+                                                  GVariant *                connection_dict,
+                                                  GVariant *                value,
+                                                  NMSettingParseFlags       parse_flags,
+                                                  GError **                 error);
+
 GVariant *_nm_setting_to_dbus(NMSetting *                             setting,
                               NMConnection *                          connection,
                               NMConnectionSerializationFlags          flags,

@@ -929,7 +929,9 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_UINT32,
                                        .to_dbus_fcn = _override_flags_get,
                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
-                                       .missing_from_dbus_fcn = _override_flags_not_set, ));
+                                       .missing_from_dbus_fcn = _override_flags_not_set,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /**
      * NMSettingVlan:ingress-priority-map:

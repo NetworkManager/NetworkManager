@@ -1898,9 +1898,11 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
         PROP_ID,
         NM_SETTING_PARAM_FUZZY_IGNORE,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
-                                       .direct_type = NM_VALUE_TYPE_STRING,
-                                       .compare_fcn = compare_fcn_id,
-                                       .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct),
+                                       .direct_type   = NM_VALUE_TYPE_STRING,
+                                       .compare_fcn   = compare_fcn_id,
+                                       .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE),
 
         NMSettingConnectionPrivate,
         id);
@@ -2025,7 +2027,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                        .compare_fcn = _nm_setting_property_compare_fcn_direct,
                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
                                        .missing_from_dbus_fcn =
-                                           nm_setting_connection_no_interface_name),
+                                           nm_setting_connection_no_interface_name,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE),
         NMSettingConnectionPrivate,
         interface_name);
 
@@ -2223,8 +2227,10 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
         properties_override,
         obj_properties[PROP_TIMESTAMP],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_UINT64,
-                                       .compare_fcn = compare_fcn_timestamp,
-                                       .to_dbus_fcn = _to_dbus_fcn_timestamp, ));
+                                       .compare_fcn   = compare_fcn_timestamp,
+                                       .to_dbus_fcn   = _to_dbus_fcn_timestamp,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /**
      * NMSettingConnection:read-only:

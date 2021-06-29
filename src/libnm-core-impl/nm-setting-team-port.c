@@ -578,8 +578,10 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
         properties_override,
         obj_properties[NM_TEAM_ATTRIBUTE_CONFIG],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
-                                       .compare_fcn = compare_fcn_config,
-                                       .to_dbus_fcn = _nm_team_settings_property_to_dbus, ));
+                                       .compare_fcn   = compare_fcn_config,
+                                       .to_dbus_fcn   = _nm_team_settings_property_to_dbus,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /**
      * NMSettingTeamPort:queue-id:
@@ -701,8 +703,10 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .compare_fcn = compare_fcn_link_watchers,
                                        .to_dbus_fcn = _nm_team_settings_property_to_dbus,
-                                       .gprop_from_dbus_fcn =
-                                           _nm_team_settings_property_from_dbus_link_watchers, ));
+                                       .typdata_from_dbus.gprop_fcn =
+                                           _nm_team_settings_property_from_dbus_link_watchers,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     g_object_class_install_properties(object_class, G_N_ELEMENTS(obj_properties), obj_properties);
 

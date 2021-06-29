@@ -1041,7 +1041,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aay"),
                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
                                        .to_dbus_fcn = ip6_dns_to_dbus,
-                                       .gprop_from_dbus_fcn = ip6_dns_from_dbus, ));
+                                       .typdata_from_dbus.gprop_fcn = ip6_dns_from_dbus,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /* ---dbus---
      * property: addresses
