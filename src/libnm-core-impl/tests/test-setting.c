@@ -4527,6 +4527,11 @@ check_done:;
             if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_default) {
                 g_assert(sip->param_spec);
                 g_assert_cmpstr(sip->name, !=, NM_SETTING_NAME);
+            } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_direct) {
+                g_assert(sip->param_spec);
+                g_assert(sip->property_type->direct_type != NM_VALUE_TYPE_NONE);
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
             } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_ignore) {
                 if (NM_IN_SET(sip->property_type,
                               &nm_sett_info_propert_type_deprecated_ignore_i,
@@ -4546,6 +4551,8 @@ check_done:;
             } else {
                 g_assert_not_reached();
             }
+            g_assert((sip->property_type->compare_fcn != _nm_setting_property_compare_fcn_direct)
+                     || (sip->property_type->direct_type != NM_VALUE_TYPE_NONE));
 
             property_types_data = g_hash_table_lookup(h_property_types, sip->property_type);
             if (!property_types_data) {
