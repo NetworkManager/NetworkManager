@@ -4566,6 +4566,11 @@ check_done:;
 
                 g_assert_cmpstr(sip->name, ==, sip->param_spec->name);
 
+                g_assert(NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_WRITABLE)
+                         != nm_streq(sip->name, NM_SETTING_NAME));
+                g_assert((sip->property_type == &nm_sett_info_propert_type_setting_name)
+                         == nm_streq(sip->name, NM_SETTING_NAME));
+
                 g_value_init(&val, sip->param_spec->value_type);
                 g_object_get_property(G_OBJECT(setting), sip->name, &val);
 
