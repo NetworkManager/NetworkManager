@@ -876,7 +876,7 @@ _nm_setting_sriov_sort_vfs(NMSettingSriov *setting)
 
 static GVariant *
 vfs_to_dbus(const NMSettInfoSetting *               sett_info,
-            guint                                   property_idx,
+            const NMSettInfoProperty *              property_info,
             NMConnection *                          connection,
             NMSetting *                             setting,
             NMConnectionSerializationFlags          flags,
@@ -1119,19 +1119,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_property(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
     NMSettingSriov *a;
     NMSettingSriov *b;
     guint           i;
 
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_SRIOV_VFS)) {
+    if (property_info->param_spec == obj_properties[PROP_VFS]) {
         if (set_b) {
             a = NM_SETTING_SRIOV(set_a);
             b = NM_SETTING_SRIOV(set_b);
@@ -1147,7 +1147,7 @@ compare_property(const NMSettInfoSetting *sett_info,
     }
 
     return NM_SETTING_CLASS(nm_setting_sriov_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
 }
 
 /*****************************************************************************/

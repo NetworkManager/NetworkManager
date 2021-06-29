@@ -1315,19 +1315,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_property(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
     NMSettingBridgePrivate *priv_a;
     NMSettingBridgePrivate *priv_b;
     guint                   i;
 
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_BRIDGE_VLANS)) {
+    if (property_info->param_spec == obj_properties[PROP_VLANS]) {
         if (set_b) {
             priv_a = NM_SETTING_BRIDGE_GET_PRIVATE(set_a);
             priv_b = NM_SETTING_BRIDGE_GET_PRIVATE(set_b);
@@ -1343,7 +1343,7 @@ compare_property(const NMSettInfoSetting *sett_info,
     }
 
     return NM_SETTING_CLASS(nm_setting_bridge_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
 }
 
 /*****************************************************************************/

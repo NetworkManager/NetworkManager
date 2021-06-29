@@ -375,7 +375,7 @@ ip6_dns_from_dbus(GVariant *dbus_value, GValue *prop_value)
 
 static GVariant *
 ip6_addresses_get(const NMSettInfoSetting *               sett_info,
-                  guint                                   property_idx,
+                  const NMSettInfoProperty *              property_info,
                   NMConnection *                          connection,
                   NMSetting *                             setting,
                   NMConnectionSerializationFlags          flags,
@@ -420,7 +420,7 @@ ip6_addresses_set(NMSetting *         setting,
 
 static GVariant *
 ip6_address_data_get(const NMSettInfoSetting *               sett_info,
-                     guint                                   property_idx,
+                     const NMSettInfoProperty *              property_info,
                      NMConnection *                          connection,
                      NMSetting *                             setting,
                      NMConnectionSerializationFlags          flags,
@@ -459,7 +459,7 @@ ip6_address_data_set(NMSetting *         setting,
 
 static GVariant *
 ip6_routes_get(const NMSettInfoSetting *               sett_info,
-               guint                                   property_idx,
+               const NMSettInfoProperty *              property_info,
                NMConnection *                          connection,
                NMSetting *                             setting,
                NMConnectionSerializationFlags          flags,
@@ -494,7 +494,7 @@ ip6_routes_set(NMSetting *         setting,
 
 static GVariant *
 ip6_route_data_get(const NMSettInfoSetting *               sett_info,
-                   guint                                   property_idx,
+                   const NMSettInfoProperty *              property_info,
                    NMConnection *                          connection,
                    NMSetting *                             setting,
                    NMConnectionSerializationFlags          flags,

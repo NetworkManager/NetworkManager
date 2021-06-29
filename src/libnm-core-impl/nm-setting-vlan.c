@@ -677,7 +677,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
 static GVariant *
 _override_flags_get(const NMSettInfoSetting *               sett_info,
-                    guint                                   property_idx,
+                    const NMSettInfoProperty *              property_info,
                     NMConnection *                          connection,
                     NMSetting *                             setting,
                     NMConnectionSerializationFlags          flags,

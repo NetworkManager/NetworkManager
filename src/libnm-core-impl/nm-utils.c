@@ -4004,7 +4004,7 @@ nm_utils_hwaddr_to_dbus(const char *str)
 
 static GVariant *
 _nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
-                            guint                                   property_idx,
+                            const NMSettInfoProperty *              property_info,
                             NMConnection *                          connection,
                             NMSetting *                             setting,
                             NMConnectionSerializationFlags          flags,
@@ -4012,7 +4012,7 @@ _nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
 {
     gs_free char *addr = NULL;
 
-    nm_assert(nm_streq(sett_info->property_infos[property_idx].name, "cloned-mac-address"));
+    nm_assert(nm_streq(property_info->name, "cloned-mac-address"));
 
     g_object_get(setting, "cloned-mac-address", &addr, NULL);
     return nm_utils_hwaddr_to_dbus(addr);
@@ -4069,7 +4069,7 @@ const NMSettInfoPropertType nm_sett_info_propert_type_cloned_mac_address =
 
 static GVariant *
 _nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_info,
-                                   guint                                   property_idx,
+                                   const NMSettInfoProperty *              property_info,
                                    NMConnection *                          connection,
                                    NMSetting *                             setting,
                                    NMConnectionSerializationFlags          flags,
@@ -4080,7 +4080,7 @@ _nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_
     if (!_nm_connection_serialize_non_secret(flags))
         return NULL;
 
-    nm_assert(nm_streq0(sett_info->property_infos[property_idx].name, "assigned-mac-address"));
+    nm_assert(nm_streq0(property_info->name, "assigned-mac-address"));
 
     g_object_get(setting, "cloned-mac-address", &addr, NULL);
 
@@ -5447,7 +5447,7 @@ nm_utils_base64secret_normalize(const char *base64_key,
 
 static GVariant *
 _nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info,
-                               guint                                   property_idx,
+                               const NMSettInfoProperty *              property_info,
                                NMConnection *                          connection,
                                NMSetting *                             setting,
                                NMConnectionSerializationFlags          flags,
@@ -5456,7 +5456,7 @@ _nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info
     gs_unref_ptrarray GPtrArray *vlans = NULL;
     GVariantBuilder              builder;
     guint                        i;
-    const char *                 property_name = sett_info->property_infos[property_idx].name;
+    const char *                 property_name = property_info->name;
 
     nm_assert(property_name);
 

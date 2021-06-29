@@ -651,7 +651,7 @@ typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
 typedef GVariant *(*NMSettInfoPropToDBusFcn)(const NMSettInfoSetting *               sett_info,
-                                             guint                                   property_idx,
+                                             const NMSettInfoProperty *              property_info,
                                              NMConnection *                          connection,
                                              NMSetting *                             setting,
                                              NMConnectionSerializationFlags          flags,

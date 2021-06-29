@@ -1461,7 +1461,7 @@ nm_setting_wireguard_clear_peers(NMSettingWireGuard *self)
 
 static GVariant *
 _peers_dbus_only_synth(const NMSettInfoSetting *               sett_info,
-                       guint                                   property_idx,
+                       const NMSettInfoProperty *              property_info,
                        NMConnection *                          connection,
                        NMSetting *                             setting,
                        NMConnectionSerializationFlags          flags,
@@ -1842,12 +1842,12 @@ need_secrets(NMSetting *setting)
 
 static gboolean
 clear_secrets(const NMSettInfoSetting *        sett_info,
-              guint                            property_idx,
+              const NMSettInfoProperty *       property_info,
               NMSetting *                      setting,
               NMSettingClearSecretsWithFlagsFn func,
               gpointer                         user_data)
 {
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_WIREGUARD_PEERS)) {
+    if (nm_streq(property_info->name, NM_SETTING_WIREGUARD_PEERS)) {
         NMSettingWireGuardPrivate *priv          = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
         gboolean                   peers_changed = FALSE;
         guint                      i, j;
@@ -1894,7 +1894,7 @@ clear_secrets(const NMSettInfoSetting *        sett_info,
     }
 
     return NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
-        ->clear_secrets(sett_info, property_idx, setting, func, user_data);
+        ->clear_secrets(sett_info, property_info, setting, func, user_data);
 }
 
 static int
@@ -1997,19 +1997,19 @@ update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError *
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_property(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
     NMSettingWireGuardPrivate *a_priv;
     NMSettingWireGuardPrivate *b_priv;
     guint                      i;
 
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_WIREGUARD_PEERS)) {
+    if (nm_streq(property_info->name, NM_SETTING_WIREGUARD_PEERS)) {
         if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
             return NM_TERNARY_DEFAULT;
 
@@ -2033,7 +2033,7 @@ compare_property(const NMSettInfoSetting *sett_info,
     }
 
     return NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
 }
 
 static void

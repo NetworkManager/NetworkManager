@@ -622,7 +622,7 @@ nm_setting_connection_get_timestamp(NMSettingConnection *setting)
 
 static GVariant *
 _to_dbus_fcn_timestamp(const NMSettInfoSetting *               sett_info,
-                       guint                                   property_idx,
+                       const NMSettInfoProperty *              property_info,
                        NMConnection *                          connection,
                        NMSetting *                             setting,
                        NMConnectionSerializationFlags          flags,
@@ -1558,24 +1558,24 @@ nm_setting_connection_no_interface_name(NMSetting *         setting,
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_property(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
-    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID)
-        && nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_CONNECTION_ID))
-        return NM_TERNARY_DEFAULT;
-
-    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP)
-        && nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_CONNECTION_TIMESTAMP))
-        return NM_TERNARY_DEFAULT;
+    if (property_info->param_spec == obj_properties[PROP_ID]) {
+        if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID))
+            return NM_TERNARY_DEFAULT;
+    } else if (property_info->param_spec == obj_properties[PROP_TIMESTAMP]) {
+        if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP))
+            return NM_TERNARY_DEFAULT;
+    }
 
     return NM_SETTING_CLASS(nm_setting_connection_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
 }
 
 /*****************************************************************************/

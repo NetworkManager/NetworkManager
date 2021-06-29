@@ -471,7 +471,7 @@ const NMSettInfoProperty *
 _nm_sett_info_setting_get_property_info(const NMSettInfoSetting *sett_info,
                                         const char *             property_name)
 {
-    const NMSettInfoProperty *property;
+    const NMSettInfoProperty *property_info;
     gssize                    idx;
 
     nm_assert(property_name);
@@ -490,13 +490,13 @@ _nm_sett_info_setting_get_property_info(const NMSettInfoSetting *sett_info,
     if (idx < 0)
         return NULL;
 
-    property = &sett_info->property_infos[idx];
+    property_info = &sett_info->property_infos[idx];
 
-    nm_assert(idx == 0 || strcmp(property[-1].name, property[0].name) < 0);
+    nm_assert(idx == 0 || strcmp(property_info[-1].name, property_info[0].name) < 0);
     nm_assert(idx == sett_info->property_infos_len - 1
-              || strcmp(property[0].name, property[1].name) < 0);
+              || strcmp(property_info[0].name, property_info[1].name) < 0);
 
-    return property;
+    return property_info;
 }
 
 const NMSettInfoSetting *
@@ -851,14 +851,12 @@ _finalize_direct(NMSetting *setting)
 
 GVariant *
 _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               sett_info,
-                                        guint                                   property_idx,
+                                        const NMSettInfoProperty *              property_info,
                                         NMConnection *                          connection,
                                         NMSetting *                             setting,
                                         NMConnectionSerializationFlags          flags,
                                         const NMConnectionSerializationOptions *options)
 {
-    const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
-
     switch (property_info->property_type->direct_type) {
     case NM_VALUE_TYPE_BOOL:
     {
@@ -909,38 +907,37 @@ _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               
 
 GVariant *
 _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               sett_info,
-                                       guint                                   property_idx,
+                                       const NMSettInfoProperty *              property_info,
                                        NMConnection *                          connection,
                                        NMSetting *                             setting,
                                        NMConnectionSerializationFlags          flags,
                                        const NMConnectionSerializationOptions *options)
 {
-    const NMSettInfoProperty *const property   = &sett_info->property_infos[property_idx];
-    nm_auto_unset_gvalue GValue     prop_value = {
+    nm_auto_unset_gvalue GValue prop_value = {
         0,
     };
     GArray *tmp_array;
 
-    nm_assert(property->param_spec);
-    nm_assert(property->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop);
-    nm_assert(property->property_type->typdata_to_dbus.gprop_type
+    nm_assert(property_info->param_spec);
+    nm_assert(property_info->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop);
+    nm_assert(property_info->property_type->typdata_to_dbus.gprop_type
                   == NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT
-              || !property->to_dbus_data.gprop_to_dbus_fcn);
+              || !property_info->to_dbus_data.gprop_to_dbus_fcn);
 
-    g_value_init(&prop_value, property->param_spec->value_type);
+    g_value_init(&prop_value, property_info->param_spec->value_type);
 
-    g_object_get_property(G_OBJECT(setting), property->param_spec->name, &prop_value);
+    g_object_get_property(G_OBJECT(setting), property_info->param_spec->name, &prop_value);
 
-    if (!property->to_dbus_data.including_default
-        && g_param_value_defaults(property->param_spec, &prop_value))
+    if (!property_info->to_dbus_data.including_default
+        && g_param_value_defaults(property_info->param_spec, &prop_value))
         return NULL;
 
-    switch (property->property_type->typdata_to_dbus.gprop_type) {
+    switch (property_info->property_type->typdata_to_dbus.gprop_type) {
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
-        if (property->to_dbus_data.gprop_to_dbus_fcn)
-            return property->to_dbus_data.gprop_to_dbus_fcn(&prop_value);
+        if (property_info->to_dbus_data.gprop_to_dbus_fcn)
+            return property_info->to_dbus_data.gprop_to_dbus_fcn(&prop_value);
 
-        return g_dbus_gvalue_to_gvariant(&prop_value, property->property_type->dbus_type);
+        return g_dbus_gvalue_to_gvariant(&prop_value, property_info->property_type->dbus_type);
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_BYTES));
         return nm_utils_gbytes_to_variant_ay(g_value_get_boxed(&prop_value));
@@ -966,42 +963,45 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
 
 static GVariant *
 property_to_dbus(const NMSettInfoSetting *               sett_info,
-                 guint                                   property_idx,
+                 const NMSettInfoProperty *              property_info,
                  NMConnection *                          connection,
                  NMSetting *                             setting,
                  NMConnectionSerializationFlags          flags,
                  const NMConnectionSerializationOptions *options,
                  gboolean                                ignore_flags)
 {
-    const NMSettInfoProperty *property = &sett_info->property_infos[property_idx];
-    GVariant *                variant;
+    GVariant *variant;
 
-    nm_assert(property->property_type->dbus_type);
+    nm_assert(property_info->property_type->dbus_type);
 
-    if (!property->property_type->to_dbus_fcn) {
-        nm_assert(!property->param_spec);
-        nm_assert(!property->to_dbus_data.none);
+    if (!property_info->property_type->to_dbus_fcn) {
+        nm_assert(!property_info->param_spec);
+        nm_assert(!property_info->to_dbus_data.none);
         return NULL;
     }
 
-    if (property->param_spec
+    if (property_info->param_spec
         && (!ignore_flags
-            && !NM_FLAGS_HAS(property->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS))) {
-        if (!NM_FLAGS_HAS(property->param_spec->flags, G_PARAM_WRITABLE))
+            && !NM_FLAGS_HAS(property_info->param_spec->flags,
+                             NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS))) {
+        if (!NM_FLAGS_HAS(property_info->param_spec->flags, G_PARAM_WRITABLE))
             return NULL;
 
-        if (NM_FLAGS_HAS(property->param_spec->flags, NM_SETTING_PARAM_LEGACY)
+        if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_LEGACY)
             && !_nm_utils_is_manager_process)
             return NULL;
 
-        if (NM_FLAGS_HAS(property->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
+        if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
             NMSettingSecretFlags f = NM_SETTING_SECRET_FLAG_NONE;
 
             if (NM_FLAGS_ANY(flags,
                              NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED
                                  | NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED
                                  | NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED)) {
-                if (!nm_setting_get_secret_flags(setting, property->param_spec->name, &f, NULL))
+                if (!nm_setting_get_secret_flags(setting,
+                                                 property_info->param_spec->name,
+                                                 &f,
+                                                 NULL))
                     return NULL;
             }
 
@@ -1013,26 +1013,28 @@ property_to_dbus(const NMSettInfoSetting *               sett_info,
         }
     }
 
-    variant = property->property_type
-                  ->to_dbus_fcn(sett_info, property_idx, connection, setting, flags, options);
+    variant = property_info->property_type
+                  ->to_dbus_fcn(sett_info, property_info, connection, setting, flags, options);
     nm_g_variant_take_ref(variant);
 
-    nm_assert(!variant || g_variant_is_of_type(variant, property->property_type->dbus_type));
+    nm_assert(!variant || g_variant_is_of_type(variant, property_info->property_type->dbus_type));
 
     return variant;
 }
 
 static gboolean
-set_property_from_dbus(const NMSettInfoProperty *property, GVariant *src_value, GValue *dst_value)
+set_property_from_dbus(const NMSettInfoProperty *property_info,
+                       GVariant *                src_value,
+                       GValue *                  dst_value)
 {
-    nm_assert(property->param_spec);
-    nm_assert(property->property_type->dbus_type);
+    nm_assert(property_info->param_spec);
+    nm_assert(property_info->property_type->dbus_type);
 
-    if (property->property_type->gprop_from_dbus_fcn) {
+    if (property_info->property_type->gprop_from_dbus_fcn) {
         if (!g_variant_type_equal(g_variant_get_type(src_value),
-                                  property->property_type->dbus_type))
+                                  property_info->property_type->dbus_type))
             return FALSE;
-        property->property_type->gprop_from_dbus_fcn(src_value, dst_value);
+        property_info->property_type->gprop_from_dbus_fcn(src_value, dst_value);
     } else if (dst_value->g_type == G_TYPE_BYTES) {
         if (!g_variant_is_of_type(src_value, G_VARIANT_TYPE_BYTESTRING))
             return FALSE;
@@ -1102,11 +1104,13 @@ _nm_setting_to_dbus(NMSetting *                             setting,
 
     sett_info = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
     for (j = 0; j < sett_info->property_infos_len; j++) {
-        gs_unref_variant GVariant *dbus_value = NULL;
+        const NMSettInfoProperty *property_info = &sett_info->property_infos[j];
+        gs_unref_variant GVariant *dbus_value   = NULL;
 
-        dbus_value = property_to_dbus(sett_info, j, connection, setting, flags, options, FALSE);
+        dbus_value =
+            property_to_dbus(sett_info, property_info, connection, setting, flags, options, FALSE);
         if (dbus_value) {
-            g_variant_builder_add(&builder, "{sv}", sett_info->property_infos[j].name, dbus_value);
+            g_variant_builder_add(&builder, "{sv}", property_info->name, dbus_value);
         }
     }
 
@@ -1382,19 +1386,21 @@ init_from_dbus(NMSetting *                     setting,
 const GVariantType *
 nm_setting_get_dbus_property_type(NMSetting *setting, const char *property_name)
 {
-    const NMSettInfoProperty *property;
+    const NMSettInfoProperty *property_info;
 
     g_return_val_if_fail(NM_IS_SETTING(setting), NULL);
     g_return_val_if_fail(property_name != NULL, NULL);
 
-    property = _nm_setting_class_get_property_info(NM_SETTING_GET_CLASS(setting), property_name);
+    property_info =
+        _nm_setting_class_get_property_info(NM_SETTING_GET_CLASS(setting), property_name);
 
-    g_return_val_if_fail(property != NULL, NULL);
+    g_return_val_if_fail(property_info != NULL, NULL);
 
-    nm_assert(property->property_type);
-    nm_assert(g_variant_type_string_is_valid((const char *) property->property_type->dbus_type));
+    nm_assert(property_info->property_type);
+    nm_assert(
+        g_variant_type_string_is_valid((const char *) property_info->property_type->dbus_type));
 
-    return property->property_type->dbus_type;
+    return property_info->property_type->dbus_type;
 }
 
 gboolean
@@ -1690,16 +1696,15 @@ _nm_setting_should_compare_secret_property(NMSetting *           setting,
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_property(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
-    const NMSettInfoProperty *property_info = &sett_info->property_infos[property_idx];
-    const GParamSpec *        param_spec    = property_info->param_spec;
+    const GParamSpec *param_spec = property_info->param_spec;
 
     if (!param_spec)
         return NM_TERNARY_DEFAULT;
@@ -1732,14 +1737,14 @@ compare_property(const NMSettInfoSetting *sett_info,
         gs_unref_variant GVariant *value2 = NULL;
 
         value1 = property_to_dbus(sett_info,
-                                  property_idx,
+                                  property_info,
                                   con_a,
                                   set_a,
                                   NM_CONNECTION_SERIALIZE_ALL,
                                   NULL,
                                   TRUE);
         value2 = property_to_dbus(sett_info,
-                                  property_idx,
+                                  property_info,
                                   con_b,
                                   set_b,
                                   NM_CONNECTION_SERIALIZE_ALL,
@@ -1753,33 +1758,31 @@ compare_property(const NMSettInfoSetting *sett_info,
 }
 
 static NMTernary
-_compare_property(const NMSettInfoSetting *sett_info,
-                  guint                    property_idx,
-                  NMConnection *           con_a,
-                  NMSetting *              set_a,
-                  NMConnection *           con_b,
-                  NMSetting *              set_b,
-                  NMSettingCompareFlags    flags)
+_compare_property(const NMSettInfoSetting * sett_info,
+                  const NMSettInfoProperty *property_info,
+                  NMConnection *            con_a,
+                  NMSetting *               set_a,
+                  NMConnection *            con_b,
+                  NMSetting *               set_b,
+                  NMSettingCompareFlags     flags)
 {
     NMTernary compare_result;
 
     nm_assert(sett_info);
     nm_assert(NM_IS_SETTING_CLASS(sett_info->setting_class));
-    nm_assert(property_idx < sett_info->property_infos_len);
+    nm_assert(property_info);
     nm_assert(NM_SETTING_GET_CLASS(set_a) == sett_info->setting_class);
     nm_assert(!set_b || NM_SETTING_GET_CLASS(set_b) == sett_info->setting_class);
 
     compare_result =
         NM_SETTING_GET_CLASS(set_a)
-            ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+            ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
 
     nm_assert(NM_IN_SET(compare_result, NM_TERNARY_DEFAULT, NM_TERNARY_FALSE, NM_TERNARY_TRUE));
 
     /* check that the inferable flag and the GObject property flag corresponds. */
-    nm_assert(!NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)
-              || !sett_info->property_infos[property_idx].param_spec
-              || NM_FLAGS_HAS(sett_info->property_infos[property_idx].param_spec->flags,
-                              NM_SETTING_PARAM_INFERRABLE)
+    nm_assert(!NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE) || !property_info->param_spec
+              || NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_INFERRABLE)
               || compare_result == NM_TERNARY_DEFAULT);
 
 #if NM_MORE_ASSERTS > 10
@@ -1787,7 +1790,7 @@ _compare_property(const NMSettInfoSetting *sett_info,
     nm_assert(!set_b
               || compare_result
                      == NM_SETTING_GET_CLASS(set_a)->compare_property(sett_info,
-                                                                      property_idx,
+                                                                      property_info,
                                                                       con_b,
                                                                       set_b,
                                                                       con_a,
@@ -1849,7 +1852,8 @@ _nm_setting_compare(NMConnection *        con_a,
     }
 
     for (i = 0; i < sett_info->property_infos_len; i++) {
-        if (_compare_property(sett_info, i, con_a, a, con_b, b, flags) == NM_TERNARY_FALSE)
+        if (_compare_property(sett_info, &sett_info->property_infos[i], con_a, a, con_b, b, flags)
+            == NM_TERNARY_FALSE)
             return FALSE;
     }
 
@@ -2005,12 +2009,12 @@ _nm_setting_diff(NMConnection *        con_a,
         }
     } else {
         for (i = 0; i < sett_info->property_infos_len; i++) {
-            NMSettingDiffResult       r = NM_SETTING_DIFF_RESULT_UNKNOWN;
-            const NMSettInfoProperty *property_info;
+            NMSettingDiffResult       r             = NM_SETTING_DIFF_RESULT_UNKNOWN;
+            const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
             NMTernary                 compare_result;
             GParamSpec *              prop_spec;
 
-            compare_result = _compare_property(sett_info, i, con_a, a, con_b, b, flags);
+            compare_result = _compare_property(sett_info, property_info, con_a, a, con_b, b, flags);
             if (compare_result == NM_TERNARY_DEFAULT)
                 continue;
 
@@ -2031,15 +2035,14 @@ _nm_setting_diff(NMConnection *        con_a,
                  *
                  * We need to double-check whether the property should be ignored by
                  * looking at @a alone. */
-                if (_compare_property(sett_info, i, con_a, a, NULL, NULL, flags)
+                if (_compare_property(sett_info, property_info, con_a, a, NULL, NULL, flags)
                     == NM_TERNARY_DEFAULT)
                     continue;
             }
 
             compared_any = TRUE;
 
-            property_info = &sett_info->property_infos[i];
-            prop_spec     = property_info->param_spec;
+            prop_spec = property_info->param_spec;
 
             if (b) {
                 if (compare_result == NM_TERNARY_FALSE) {
@@ -2287,13 +2290,13 @@ _nm_setting_aggregate(NMSetting *setting, NMConnectionAggregateType type, gpoint
 
 static gboolean
 clear_secrets(const NMSettInfoSetting *        sett_info,
-              guint                            property_idx,
+              const NMSettInfoProperty *       property_info,
               NMSetting *                      setting,
               NMSettingClearSecretsWithFlagsFn func,
               gpointer                         user_data)
 {
     NMSettingSecretFlags flags      = NM_SETTING_SECRET_FLAG_NONE;
-    GParamSpec *         param_spec = sett_info->property_infos[property_idx].param_spec;
+    GParamSpec *         param_spec = property_info->param_spec;
 
     if (!param_spec)
         return FALSE;
@@ -2344,7 +2347,7 @@ _nm_setting_clear_secrets(NMSetting *                      setting,
     gboolean                 changed = FALSE;
     guint16                  i;
     gboolean (*my_clear_secrets)(const struct _NMSettInfoSetting *sett_info,
-                                 guint                            property_idx,
+                                 const NMSettInfoProperty *       property_info,
                                  NMSetting *                      setting,
                                  NMSettingClearSecretsWithFlagsFn func,
                                  gpointer                         user_data);
@@ -2355,7 +2358,8 @@ _nm_setting_clear_secrets(NMSetting *                      setting,
 
     sett_info = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
     for (i = 0; i < sett_info->property_infos_len; i++) {
-        changed |= my_clear_secrets(sett_info, i, setting, func, user_data);
+        changed |=
+            my_clear_secrets(sett_info, &sett_info->property_infos[i], setting, func, user_data);
     }
     return changed;
 }
@@ -2689,7 +2693,7 @@ nm_setting_to_string(NMSetting *setting)
 
 static GVariant *
 _nm_setting_get_deprecated_virtual_interface_name(const NMSettInfoSetting *      sett_info,
-                                                  guint                          property_idx,
+                                                  const NMSettInfoProperty *     property_info,
                                                   NMConnection *                 connection,
                                                   NMSetting *                    setting,
                                                   NMConnectionSerializationFlags flags,

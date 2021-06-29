@@ -1090,20 +1090,19 @@ options_equal(NMSettingBond *s_bond, NMSettingBond *s_bond2, NMSettingCompareFla
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_property(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_BOND_OPTIONS)) {
+    if (property_info->param_spec == obj_properties[PROP_OPTIONS])
         return (!set_b || options_equal(NM_SETTING_BOND(set_a), NM_SETTING_BOND(set_b), flags));
-    }
 
     return NM_SETTING_CLASS(nm_setting_bond_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
 }
 
 /*****************************************************************************/

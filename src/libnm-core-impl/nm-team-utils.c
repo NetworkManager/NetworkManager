@@ -2731,7 +2731,7 @@ _nm_setting_get_team_setting(struct _NMSetting *setting)
 
 static GVariant *
 _nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_info,
-                                   guint                                   property_idx,
+                                   const NMSettInfoProperty *              property_info,
                                    NMConnection *                          connection,
                                    NMSetting *                             setting,
                                    NMConnectionSerializationFlags          flags,
@@ -2739,8 +2739,7 @@ _nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_
 {
     NMTeamSetting *     self = _nm_setting_get_team_setting(setting);
     const TeamAttrData *attr_data =
-        _team_attr_data_get(self->d.is_port,
-                            sett_info->property_infos[property_idx].param_spec->param_id);
+        _team_attr_data_get(self->d.is_port, property_info->param_spec->param_id);
 
     if (attr_data->team_attr == NM_TEAM_ATTRIBUTE_CONFIG) {
         const char *config;
