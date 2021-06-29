@@ -1211,10 +1211,12 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
         properties_override,
         obj_properties[PROP_OPTIONS],
         NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("a{ss}"),
-                                        .gprop_from_dbus_fcn = _nm_utils_strdict_from_dbus,
+                                        .typdata_from_dbus.gprop_fcn = _nm_utils_strdict_from_dbus,
                                         .typdata_to_dbus.gprop_type =
                                             NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT,
-                                        .compare_fcn = compare_fcn_options));
+                                        .compare_fcn   = compare_fcn_options,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                        .from_dbus_is_full = TRUE));
 
     /* ---dbus---
      * property: interface-name

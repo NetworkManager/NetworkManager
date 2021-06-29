@@ -321,7 +321,9 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_BYTE,
                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
                                        .to_dbus_fcn = parity_to_dbus_fcn,
-                                       .gprop_from_dbus_fcn = parity_from_dbus, ));
+                                       .typdata_from_dbus.gprop_fcn = parity_from_dbus,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /**
      * NMSettingSerial:stopbits:

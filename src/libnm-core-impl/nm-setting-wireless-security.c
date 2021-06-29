@@ -1939,8 +1939,10 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
         properties_override,
         obj_properties[PROP_WEP_KEY_TYPE],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_UINT32,
-                                       .to_dbus_fcn = wep_key_type_to_dbus,
-                                       .compare_fcn = _nm_setting_property_compare_fcn_default));
+                                       .to_dbus_fcn   = wep_key_type_to_dbus,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /**
      * NMSettingWirelessSecurity:wps-method:

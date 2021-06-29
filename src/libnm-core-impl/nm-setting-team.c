@@ -1540,8 +1540,10 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
         properties_override,
         obj_properties[NM_TEAM_ATTRIBUTE_CONFIG],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
-                                       .compare_fcn = compare_fcn_config,
-                                       .to_dbus_fcn = _nm_team_settings_property_to_dbus, ));
+                                       .compare_fcn   = compare_fcn_config,
+                                       .to_dbus_fcn   = _nm_team_settings_property_to_dbus,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /**
      * NMSettingTeam:notify-peers-count:
@@ -1824,8 +1826,10 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .compare_fcn = compare_fcn_link_watchers,
                                        .to_dbus_fcn = _nm_team_settings_property_to_dbus,
-                                       .gprop_from_dbus_fcn =
-                                           _nm_team_settings_property_from_dbus_link_watchers, ));
+                                       .typdata_from_dbus.gprop_fcn =
+                                           _nm_team_settings_property_from_dbus_link_watchers,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /* ---dbus---
      * property: interface-name
