@@ -65,4 +65,6 @@ GVariant *_nm_team_settings_property_to_dbus(const NMSettInfoSetting *          
 
 void _nm_team_settings_property_from_dbus_link_watchers(GVariant *dbus_value, GValue *prop_value);
 
+GVariant *_nm_utils_ip6_dns_to_variant(const char *const *dns, gssize len);
+
 #endif

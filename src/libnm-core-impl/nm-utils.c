@@ -1593,18 +1593,28 @@ nm_utils_ip4_get_default_prefix(guint32 ip)
 GVariant *
 nm_utils_ip6_dns_to_variant(char **dns)
 {
+    return _nm_utils_ip6_dns_to_variant(NM_CAST_STRV_CC(dns), -1);
+}
+
+GVariant *
+_nm_utils_ip6_dns_to_variant(const char *const *dns, gssize len)
+{
     GVariantBuilder builder;
     gsize           i;
+    gsize           l;
+
+    if (len < 0)
+        l = NM_PTRARRAY_LEN(dns);
+    else
+        l = len;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("aay"));
-    if (dns) {
-        for (i = 0; dns[i]; i++) {
-            struct in6_addr ip;
+    for (i = 0; i < l; i++) {
+        struct in6_addr ip;
 
-            if (inet_pton(AF_INET6, dns[i], &ip) != 1)
-                continue;
-            g_variant_builder_add(&builder, "@ay", nm_g_variant_new_ay_in6addr(&ip));
-        }
+        if (inet_pton(AF_INET6, dns[i], &ip) != 1)
+            continue;
+        g_variant_builder_add(&builder, "@ay", nm_g_variant_new_ay_in6addr(&ip));
     }
     return g_variant_builder_end(&builder);
 }
