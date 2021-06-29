@@ -966,4 +966,6 @@ _nm_variant_attribute_spec_find_binary_search(const NMVariantAttributeSpec *cons
 
 gboolean _nm_ip_tunnel_mode_is_layer2(NMIPTunnelMode mode);
 
+GPtrArray *_nm_setting_ip_config_get_dns_array(NMSettingIPConfig *setting);
+
 #endif

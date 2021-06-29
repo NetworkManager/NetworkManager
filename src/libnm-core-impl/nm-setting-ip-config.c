@@ -4101,6 +4101,12 @@ nm_setting_ip_config_clear_dns(NMSettingIPConfig *setting)
     }
 }
 
+GPtrArray *
+_nm_setting_ip_config_get_dns_array(NMSettingIPConfig *setting)
+{
+    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns;
+}
+
 /**
  * nm_setting_ip_config_get_num_dns_searches:
  * @setting: the #NMSettingIPConfig
