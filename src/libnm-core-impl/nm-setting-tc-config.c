@@ -2112,11 +2112,13 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
                                                      G_TYPE_PTR_ARRAY,
                                                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
                                                          | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_QDISCS],
-                                 NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                                                .to_dbus_fcn   = tc_qdiscs_get,
-                                                                .from_dbus_fcn = tc_qdiscs_set, ));
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_QDISCS],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = tc_qdiscs_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .from_dbus_fcn = tc_qdiscs_set, ));
 
     /**
      * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
@@ -2254,6 +2256,7 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
         obj_properties[PROP_TFILTERS],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = tc_tfilters_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
                                        .from_dbus_fcn = tc_tfilters_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);

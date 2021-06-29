@@ -1231,6 +1231,7 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
         obj_properties[PROP_SECRETS],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a{ss}"),
                                        .to_dbus_fcn   = vpn_secrets_to_dbus,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
                                        .from_dbus_fcn = vpn_secrets_from_dbus, ));
 
     /**

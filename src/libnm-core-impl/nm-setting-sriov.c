@@ -1323,11 +1323,13 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
                                                   G_TYPE_PTR_ARRAY,
                                                   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
                                                       | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_VFS],
-                                 NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                                                .to_dbus_fcn   = vfs_to_dbus,
-                                                                .from_dbus_fcn = vfs_from_dbus, ));
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_VFS],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = vfs_to_dbus,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .from_dbus_fcn = vfs_from_dbus, ));
 
     /**
      * NMSettingSriov:autoprobe-drivers

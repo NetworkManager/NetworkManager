@@ -693,6 +693,20 @@ typedef struct {
      * to the property value. */
     NMValueType direct_type;
 
+    /* compare_fcn() returns a ternary, where DEFAULT means that the property should not
+     * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
+     * equal/not-equal.
+     *
+     * The "b" setting may be %NULL, in which case the function only determines whether
+     * the setting should be compared (TRUE) or not (DEFAULT). */
+    NMTernary (*compare_fcn)(const NMSettInfoSetting * sett_info,
+                             const NMSettInfoProperty *property_info,
+                             NMConnection *            con_a,
+                             NMSetting *               set_a,
+                             NMConnection *            con_b,
+                             NMSetting *               set_b,
+                             NMSettingCompareFlags     flags);
+
     NMSettInfoPropToDBusFcn          to_dbus_fcn;
     NMSettInfoPropFromDBusFcn        from_dbus_fcn;
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;

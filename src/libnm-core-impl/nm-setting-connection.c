@@ -1996,6 +1996,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
         NM_SETTING_PARAM_INFERRABLE,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
                                        .direct_type = NM_VALUE_TYPE_STRING,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_default,
                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
                                        .missing_from_dbus_fcn =
                                            nm_setting_connection_no_interface_name),
@@ -2196,6 +2197,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
         properties_override,
         obj_properties[PROP_TIMESTAMP],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_UINT64,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_default,
                                        .to_dbus_fcn = _to_dbus_fcn_timestamp, ));
 
     /**
