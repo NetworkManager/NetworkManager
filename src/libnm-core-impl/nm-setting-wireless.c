@@ -1926,7 +1926,7 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
         "security",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
                                        .to_dbus_fcn = nm_setting_wireless_get_security,
-                                       .compare_fcn = _nm_setting_property_compare_fcn_default, ));
+                                       .compare_fcn = _nm_setting_property_compare_fcn_ignore, ));
 
     /**
      * NMSettingWireless:wake-on-wlan:

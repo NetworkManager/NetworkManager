@@ -1715,6 +1715,18 @@ _nm_setting_should_compare_secret_property(NMSetting *           setting,
 /*****************************************************************************/
 
 NMTernary
+_nm_setting_property_compare_fcn_ignore(const NMSettInfoSetting * sett_info,
+                                        const NMSettInfoProperty *property_info,
+                                        NMConnection *            con_a,
+                                        NMSetting *               set_a,
+                                        NMConnection *            con_b,
+                                        NMSetting *               set_b,
+                                        NMSettingCompareFlags     flags)
+{
+    return NM_TERNARY_DEFAULT;
+}
+
+NMTernary
 _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
                                          const NMSettInfoProperty *property_info,
                                          NMConnection *            con_a,
@@ -1726,7 +1738,7 @@ _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
     const GParamSpec *param_spec = property_info->param_spec;
 
     if (!param_spec)
-        return NM_TERNARY_DEFAULT;
+        return nm_assert_unreachable_val(NM_TERNARY_DEFAULT);
 
     if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_FUZZY)
         && NM_FLAGS_ANY(param_spec->flags, NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET))
@@ -2730,7 +2742,7 @@ _nm_setting_get_deprecated_virtual_interface_name(const NMSettInfoSetting *     
 
 const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
-                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                        .compare_fcn = _nm_setting_property_compare_fcn_ignore,
                                         .to_dbus_fcn =
                                             _nm_setting_get_deprecated_virtual_interface_name, );
 
@@ -2738,13 +2750,13 @@ const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
         G_VARIANT_TYPE_INT32,
         /* No functions set. This property type is to silently ignore the value on D-Bus. */
-        .compare_fcn = _nm_setting_property_compare_fcn_default, );
+        .compare_fcn = _nm_setting_property_compare_fcn_ignore);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
         G_VARIANT_TYPE_UINT32,
         /* No functions set. This property type is to silently ignore the value on D-Bus. */
-        .compare_fcn = _nm_setting_property_compare_fcn_default, );
+        .compare_fcn = _nm_setting_property_compare_fcn_ignore);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_plain_i =
     NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_INT32,

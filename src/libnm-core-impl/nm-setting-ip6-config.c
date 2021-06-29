@@ -1062,7 +1062,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         "address-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = ip6_address_data_get,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                        .from_dbus_fcn = ip6_address_data_set, ));
 
     /* ---dbus---
@@ -1105,7 +1105,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         "route-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = ip6_route_data_get,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                        .from_dbus_fcn = ip6_route_data_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);

@@ -4121,7 +4121,7 @@ _nm_utils_hwaddr_cloned_data_set(NMSetting *         setting,
 
 const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
-                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                         .to_dbus_fcn   = _nm_utils_hwaddr_cloned_data_synth,
                                         .from_dbus_fcn = _nm_utils_hwaddr_cloned_data_set, );
 
