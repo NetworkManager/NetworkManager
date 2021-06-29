@@ -5802,7 +5802,7 @@ _nm_sett_info_property_override_create_array_ip_config(void)
         obj_properties[PROP_GATEWAY],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
                                        .direct_type   = NM_VALUE_TYPE_STRING,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_direct,
                                        .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
                                        .from_dbus_fcn = ip_gateway_set),
         .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, gateway),

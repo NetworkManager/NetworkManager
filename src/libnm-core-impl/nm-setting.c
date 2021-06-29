@@ -1762,6 +1762,44 @@ _nm_setting_property_compare_fcn_ignore(const NMSettInfoSetting * sett_info,
 }
 
 NMTernary
+_nm_setting_property_compare_fcn_direct(const NMSettInfoSetting * sett_info,
+                                        const NMSettInfoProperty *property_info,
+                                        NMConnection *            con_a,
+                                        NMSetting *               set_a,
+                                        NMConnection *            con_b,
+                                        NMSetting *               set_b,
+                                        NMSettingCompareFlags     flags)
+{
+    gconstpointer p_a;
+    gconstpointer p_b;
+
+    nm_assert(property_info->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_direct);
+
+    if (!property_info->param_spec)
+        return nm_assert_unreachable_val(NM_TERNARY_DEFAULT);
+
+    if (!_nm_setting_compare_flags_check(property_info->param_spec, flags, set_a, set_b))
+        return NM_TERNARY_DEFAULT;
+
+    if (!set_b)
+        return TRUE;
+
+    p_a = _nm_setting_get_private(set_a, sett_info, property_info->direct_offset);
+    p_b = _nm_setting_get_private(set_b, sett_info, property_info->direct_offset);
+
+    switch (property_info->property_type->direct_type) {
+    case NM_VALUE_TYPE_BOOL:
+        return *((const bool *) p_a) == *((const bool *) p_b);
+    case NM_VALUE_TYPE_UINT32:
+        return *((const guint32 *) p_a) == *((const guint32 *) p_b);
+    case NM_VALUE_TYPE_STRING:
+        return nm_streq0(*((const char *const *) p_a), *((const char *const *) p_b));
+    default:
+        return nm_assert_unreachable_val(TRUE);
+    }
+}
+
+NMTernary
 _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
                                          const NMSettInfoProperty *property_info,
                                          NMConnection *            con_a,
@@ -1770,15 +1808,18 @@ _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
                                          NMSetting *               set_b,
                                          NMSettingCompareFlags     flags)
 {
-    const GParamSpec *param_spec = property_info->param_spec;
+    nm_assert(property_info->property_type->direct_type == NM_VALUE_TYPE_NONE);
 
-    if (!param_spec)
+    if (!property_info->param_spec)
         return nm_assert_unreachable_val(NM_TERNARY_DEFAULT);
 
-    if (!_nm_setting_compare_flags_check(param_spec, flags, set_a, set_b))
+    if (!_nm_setting_compare_flags_check(property_info->param_spec, flags, set_a, set_b))
         return NM_TERNARY_DEFAULT;
 
-    if (set_b) {
+    if (!set_b)
+        return TRUE;
+
+    {
         gs_unref_variant GVariant *value1 = NULL;
         gs_unref_variant GVariant *value2 = NULL;
 
@@ -1796,11 +1837,8 @@ _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
                                   NM_CONNECTION_SERIALIZE_ALL,
                                   NULL,
                                   TRUE);
-        if (nm_property_compare(value1, value2) != 0)
-            return NM_TERNARY_FALSE;
+        return nm_property_compare(value1, value2) == 0;
     }
-
-    return NM_TERNARY_TRUE;
 }
 
 static NMTernary
@@ -2784,19 +2822,19 @@ const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,
                                         .direct_type = NM_VALUE_TYPE_BOOL,
-                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                        .compare_fcn = _nm_setting_property_compare_fcn_direct,
                                         .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_uint32 =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_UINT32,
                                         .direct_type = NM_VALUE_TYPE_UINT32,
-                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                        .compare_fcn = _nm_setting_property_compare_fcn_direct,
                                         .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_string =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
                                         .direct_type = NM_VALUE_TYPE_STRING,
-                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                        .compare_fcn = _nm_setting_property_compare_fcn_direct,
                                         .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct);
 
 /*****************************************************************************/

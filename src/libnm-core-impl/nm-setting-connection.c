@@ -1569,13 +1569,13 @@ compare_fcn_id(const NMSettInfoSetting * sett_info,
     if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID))
         return NM_TERNARY_DEFAULT;
 
-    return _nm_setting_property_compare_fcn_default(sett_info,
-                                                    property_info,
-                                                    con_a,
-                                                    set_a,
-                                                    con_b,
-                                                    set_b,
-                                                    flags);
+    return _nm_setting_property_compare_fcn_direct(sett_info,
+                                                   property_info,
+                                                   con_a,
+                                                   set_a,
+                                                   con_b,
+                                                   set_b,
+                                                   flags);
 }
 
 static NMTernary
@@ -2022,7 +2022,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
         NM_SETTING_PARAM_INFERRABLE,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
                                        .direct_type = NM_VALUE_TYPE_STRING,
-                                       .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_direct,
                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
                                        .missing_from_dbus_fcn =
                                            nm_setting_connection_no_interface_name),
