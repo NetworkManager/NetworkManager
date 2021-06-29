@@ -2787,22 +2787,27 @@ _nm_team_settings_property_from_dbus_link_watchers(GVariant *dbus_value, GValue 
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_b =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,
+                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
                                         .to_dbus_fcn = _nm_team_settings_property_to_dbus, );
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_i =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_INT32,
+                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
                                         .to_dbus_fcn = _nm_team_settings_property_to_dbus, );
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_s =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
+                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
                                         .to_dbus_fcn = _nm_team_settings_property_to_dbus, );
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_as =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(NM_G_VARIANT_TYPE("as"),
+                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
                                         .to_dbus_fcn = _nm_team_settings_property_to_dbus, );
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_link_watchers =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(NM_G_VARIANT_TYPE("aa{sv}"),
+                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
                                         .to_dbus_fcn = _nm_team_settings_property_to_dbus,
                                         .gprop_from_dbus_fcn =
                                             _nm_team_settings_property_from_dbus_link_watchers, );

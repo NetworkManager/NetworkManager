@@ -777,7 +777,8 @@ const NMSettInfoPropertType nm_sett_info_propert_type_strdict =
     NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(NM_G_VARIANT_TYPE("a{ss}"),
                                          .gprop_from_dbus_fcn = _nm_utils_strdict_from_dbus,
                                          .typdata_to_dbus.gprop_type =
-                                             NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT);
+                                             NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT,
+                                         .compare_fcn = _nm_setting_property_compare_fcn_default);
 
 GHashTable *
 _nm_utils_copy_strdict(GHashTable *strdict)
@@ -4063,8 +4064,9 @@ _nm_utils_hwaddr_cloned_not_set(NMSetting *         setting,
 
 const NMSettInfoPropertType nm_sett_info_propert_type_cloned_mac_address =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BYTESTRING,
-                                        .to_dbus_fcn           = _nm_utils_hwaddr_cloned_get,
-                                        .from_dbus_fcn         = _nm_utils_hwaddr_cloned_set,
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                        .to_dbus_fcn   = _nm_utils_hwaddr_cloned_get,
+                                        .from_dbus_fcn = _nm_utils_hwaddr_cloned_set,
                                         .missing_from_dbus_fcn = _nm_utils_hwaddr_cloned_not_set, );
 
 static GVariant *
@@ -4126,6 +4128,7 @@ _nm_utils_hwaddr_cloned_data_set(NMSetting *         setting,
 
 const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
                                         .to_dbus_fcn   = _nm_utils_hwaddr_cloned_data_synth,
                                         .from_dbus_fcn = _nm_utils_hwaddr_cloned_data_set, );
 
@@ -4141,10 +4144,11 @@ _nm_utils_hwaddr_from_dbus(GVariant *dbus_value, GValue *prop_value)
 }
 
 const NMSettInfoPropertType nm_sett_info_propert_type_mac_address =
-    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(
-        G_VARIANT_TYPE_BYTESTRING,
-        .gprop_from_dbus_fcn        = _nm_utils_hwaddr_from_dbus,
-        .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS);
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_BYTESTRING,
+                                         .gprop_from_dbus_fcn = _nm_utils_hwaddr_from_dbus,
+                                         .typdata_to_dbus.gprop_type =
+                                             NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS,
+                                         .compare_fcn = _nm_setting_property_compare_fcn_default);
 
 /*****************************************************************************/
 
@@ -5546,6 +5550,7 @@ _nm_utils_bridge_vlans_from_dbus(NMSetting *         setting,
 
 const NMSettInfoPropertType nm_sett_info_propert_type_bridge_vlans =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(NM_G_VARIANT_TYPE("aa{sv}"),
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
                                         .to_dbus_fcn   = _nm_utils_bridge_vlans_to_dbus,
                                         .from_dbus_fcn = _nm_utils_bridge_vlans_from_dbus, );
 

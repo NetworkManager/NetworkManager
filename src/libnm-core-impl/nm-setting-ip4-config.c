@@ -956,6 +956,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
         NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("au"),
+                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
                                         .gprop_from_dbus_fcn = ip4_dns_from_dbus, ),
         .to_dbus_data.gprop_to_dbus_fcn = ip4_dns_to_dbus);
 
@@ -986,12 +987,14 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
                                        .to_dbus_fcn   = ip4_addresses_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
                                        .from_dbus_fcn = ip4_addresses_set, ));
     _nm_properties_override_dbus(
         properties_override,
         "address-labels",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
-                                       .to_dbus_fcn = ip4_address_labels_get, ));
+                                       .to_dbus_fcn = ip4_address_labels_get,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_default, ));
 
     /* ---dbus---
      * property: address-data
@@ -1007,6 +1010,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         "address-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = ip4_address_data_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
                                        .from_dbus_fcn = ip4_address_data_set, ));
 
     /* ---dbus---
@@ -1040,6 +1044,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
                                        .to_dbus_fcn   = ip4_routes_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
                                        .from_dbus_fcn = ip4_routes_set, ));
 
     /* ---dbus---
@@ -1060,6 +1065,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         "route-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = ip4_route_data_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
                                        .from_dbus_fcn = ip4_route_data_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);

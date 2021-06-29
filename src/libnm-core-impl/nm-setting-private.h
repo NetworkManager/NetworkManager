@@ -315,6 +315,14 @@ gboolean _nm_setting_aggregate(NMSetting *setting, NMConnectionAggregateType typ
 
 gboolean _nm_setting_slave_type_is_valid(const char *slave_type, const char **out_port_type);
 
+NMTernary _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
+                                                   const NMSettInfoProperty *property_info,
+                                                   NMConnection *            con_a,
+                                                   NMSetting *               set_a,
+                                                   NMConnection *            con_b,
+                                                   NMSetting *               set_b,
+                                                   NMSettingCompareFlags     flags);
+
 void _nm_setting_property_get_property_direct(GObject *   object,
                                               guint       prop_id,
                                               GValue *    value,
@@ -397,11 +405,10 @@ void _nm_setting_class_commit(NMSettingClass *            setting_class,
         .dbus_type = _dbus_type, __VA_ARGS__                 \
     }
 
-#define NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(_dbus_type, ...)                           \
-    {                                                                                   \
-        .dbus_type = _dbus_type, .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop, \
-        __VA_ARGS__                                                                     \
-    }
+#define NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(_dbus_type, ...)                                  \
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(_dbus_type,                                            \
+                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop, \
+                                        __VA_ARGS__)
 
 #define NM_SETT_INFO_PROPERT_TYPE(init)               \
     ({                                                \

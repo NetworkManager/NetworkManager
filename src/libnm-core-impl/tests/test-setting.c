@@ -4524,6 +4524,11 @@ check_done:;
             if (!g_hash_table_insert(h_properties, (char *) sip->name, sip->param_spec))
                 g_assert_not_reached();
 
+            if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_default) {
+                /* for the moment, all types have this implementation. This will change. */
+            } else
+                g_assert_not_reached();
+
             property_types_data = g_hash_table_lookup(h_property_types, sip->property_type);
             if (!property_types_data) {
                 property_types_data = g_array_new(FALSE, FALSE, sizeof(guint));
@@ -4675,6 +4680,7 @@ check_done:;
                 if (!g_variant_type_equal(pt->dbus_type, pt_2->dbus_type)
                     || pt->direct_type != pt_2->direct_type || pt->to_dbus_fcn != pt_2->to_dbus_fcn
                     || pt->from_dbus_fcn != pt_2->from_dbus_fcn
+                    || pt->compare_fcn != pt_2->compare_fcn
                     || pt->missing_from_dbus_fcn != pt_2->missing_from_dbus_fcn
                     || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn
                     || memcmp(&pt->typdata_to_dbus,
