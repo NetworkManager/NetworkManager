@@ -13,8 +13,10 @@ typedef enum _nm_packed {
     NM_VALUE_TYPE_INT32  = 3,
     NM_VALUE_TYPE_INT    = 4,
     NM_VALUE_TYPE_INT64  = 5,
-    NM_VALUE_TYPE_UINT64 = 6,
-    NM_VALUE_TYPE_STRING = 7,
+    NM_VALUE_TYPE_UINT32 = 6,
+    NM_VALUE_TYPE_UINT   = 7,
+    NM_VALUE_TYPE_UINT64 = 8,
+    NM_VALUE_TYPE_STRING = 9,
 } NMValueType;
 
 /*****************************************************************************/
@@ -86,6 +88,12 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
     case NM_VALUE_TYPE_INT64:
         NM_CMP_DIRECT(*((const gint64 *) p_a), *((const gint64 *) p_b));
         return 0;
+    case NM_VALUE_TYPE_UINT32:
+        NM_CMP_DIRECT(*((const guint32 *) p_a), *((const guint32 *) p_b));
+        return 0;
+    case NM_VALUE_TYPE_UINT:
+        NM_CMP_DIRECT(*((const guint *) p_a), *((const guint *) p_b));
+        return 0;
     case NM_VALUE_TYPE_UINT64:
         NM_CMP_DIRECT(*((const guint64 *) p_a), *((const guint64 *) p_b));
         return 0;
@@ -121,6 +129,12 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
     case NM_VALUE_TYPE_INT64:
         (*((gint64 *) dst) = *((const gint64 *) src));
         return;
+    case NM_VALUE_TYPE_UINT32:
+        (*((guint32 *) dst) = *((const guint32 *) src));
+        return;
+    case NM_VALUE_TYPE_UINT:
+        (*((guint *) dst) = *((const guint *) src));
+        return;
     case NM_VALUE_TYPE_UINT64:
         (*((guint64 *) dst) = *((const guint64 *) src));
         return;
@@ -154,6 +168,9 @@ nm_value_type_get_from_variant(NMValueType value_type,
     case NM_VALUE_TYPE_INT64:
         *((gint64 *) dst) = g_variant_get_int64(variant);
         return;
+    case NM_VALUE_TYPE_UINT32:
+        *((guint32 *) dst) = g_variant_get_uint32(variant);
+        return;
     case NM_VALUE_TYPE_UINT64:
         *((guint64 *) dst) = g_variant_get_uint64(variant);
         return;
@@ -168,7 +185,8 @@ nm_value_type_get_from_variant(NMValueType value_type,
         return;
 
     case NM_VALUE_TYPE_INT:
-        /* "int" also does not have a define variant type, because it's not
+    case NM_VALUE_TYPE_UINT:
+        /* "int" and "uint" also does not have a defined variant type, because it's not
          * clear how many bits we would need. */
 
         /* fall-through */
@@ -191,6 +209,8 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
         return g_variant_new_int32(*((const gint32 *) src));
     case NM_VALUE_TYPE_INT64:
         return g_variant_new_int64(*((const gint64 *) src));
+    case NM_VALUE_TYPE_UINT32:
+        return g_variant_new_uint32(*((const guint32 *) src));
     case NM_VALUE_TYPE_UINT64:
         return g_variant_new_uint64(*((const guint64 *) src));
     case NM_VALUE_TYPE_STRING:
@@ -198,7 +218,8 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
         return v_string ? g_variant_new_string(v_string) : NULL;
 
     case NM_VALUE_TYPE_INT:
-        /* "int" also does not have a define variant type, because it's not
+    case NM_VALUE_TYPE_UINT:
+        /* "int" and "uint" also does not have a defined variant type, because it's not
          * clear how many bits we would need. */
 
         /* fall-through */
@@ -220,13 +241,16 @@ nm_value_type_get_variant_type(NMValueType value_type)
         return G_VARIANT_TYPE_INT32;
     case NM_VALUE_TYPE_INT64:
         return G_VARIANT_TYPE_INT64;
+    case NM_VALUE_TYPE_UINT32:
+        return G_VARIANT_TYPE_UINT32;
     case NM_VALUE_TYPE_UINT64:
         return G_VARIANT_TYPE_UINT64;
     case NM_VALUE_TYPE_STRING:
         return G_VARIANT_TYPE_STRING;
 
     case NM_VALUE_TYPE_INT:
-        /* "int" also does not have a define variant type, because it's not
+    case NM_VALUE_TYPE_UINT:
+        /* "int" and "uint" also does not have a defined variant type, because it's not
          * clear how many bits we would need. */
 
         /* fall-through */
