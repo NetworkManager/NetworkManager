@@ -4526,6 +4526,7 @@ check_done:;
 
             if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_default) {
                 g_assert(sip->param_spec);
+                g_assert_cmpstr(sip->name, !=, NM_SETTING_NAME);
             } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_ignore) {
                 if (NM_IN_SET(sip->property_type,
                               &nm_sett_info_propert_type_deprecated_ignore_i,
@@ -4533,6 +4534,8 @@ check_done:;
                               &nm_sett_info_propert_type_assigned_mac_address)) {
                     /* pass */
                 } else if (!sip->param_spec) {
+                    /* pass */
+                } else if (nm_streq(sip->name, NM_SETTING_NAME)) {
                     /* pass */
                 } else {
                     /* ignoring a property for comparison make only sense in very specific cases. */

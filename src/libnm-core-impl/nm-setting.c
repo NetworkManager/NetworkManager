@@ -389,11 +389,17 @@ _nm_setting_class_commit(NMSettingClass *            setting_class,
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
                 G_VARIANT_TYPE_UINT64,
                 .compare_fcn = _nm_setting_property_compare_fcn_default);
-        else if (vtype == G_TYPE_STRING)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_STRING,
-                .compare_fcn = _nm_setting_property_compare_fcn_default);
-        else if (vtype == G_TYPE_DOUBLE)
+        else if (vtype == G_TYPE_STRING) {
+            if (nm_streq(p->name, NM_SETTING_NAME)) {
+                p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
+                    G_VARIANT_TYPE_STRING,
+                    .compare_fcn = _nm_setting_property_compare_fcn_ignore);
+            } else {
+                p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
+                    G_VARIANT_TYPE_STRING,
+                    .compare_fcn = _nm_setting_property_compare_fcn_default);
+            }
+        } else if (vtype == G_TYPE_DOUBLE)
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
                 G_VARIANT_TYPE_DOUBLE,
                 .compare_fcn = _nm_setting_property_compare_fcn_default);
@@ -1754,9 +1760,6 @@ _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
 
     if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS)
         && NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_SECRET))
-        return NM_TERNARY_DEFAULT;
-
-    if (nm_streq(param_spec->name, NM_SETTING_NAME))
         return NM_TERNARY_DEFAULT;
 
     if (NM_FLAGS_HAS(param_spec->flags, NM_SETTING_PARAM_SECRET)
