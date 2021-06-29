@@ -536,7 +536,6 @@ nm_setting_vxlan_init(NMSettingVxlan *self)
 
     priv->destination_port = DST_PORT_DEFAULT;
     priv->ageing           = 300;
-    priv->learning         = TRUE;
 }
 
 /**

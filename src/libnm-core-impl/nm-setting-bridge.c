@@ -1564,19 +1564,13 @@ nm_setting_bridge_init(NMSettingBridge *setting)
     priv->multicast_last_member_interval    = NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF;
     priv->multicast_membership_interval     = NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF;
     priv->multicast_hash_max                = NM_BRIDGE_MULTICAST_HASH_MAX_DEF;
-    priv->multicast_snooping                = NM_BRIDGE_MULTICAST_SNOOPING_DEF;
     priv->priority                          = NM_BRIDGE_PRIORITY_DEF;
-    priv->stp                               = NM_BRIDGE_STP_DEF;
     priv->vlan_default_pvid                 = NM_BRIDGE_VLAN_DEFAULT_PVID_DEF;
     priv->multicast_query_interval          = NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF;
     priv->multicast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF;
     priv->multicast_querier_interval        = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF;
     priv->multicast_startup_query_count     = NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF;
     priv->multicast_startup_query_interval  = NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF;
-
-    nm_assert(priv->multicast_querier == NM_BRIDGE_MULTICAST_QUERIER_DEF);
-    nm_assert(priv->multicast_query_use_ifaddr == NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF);
-    nm_assert(priv->vlan_stats_enabled == NM_BRIDGE_VLAN_STATS_ENABLED_DEF);
 }
 
 /**

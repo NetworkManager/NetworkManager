@@ -1801,7 +1801,6 @@ nm_setting_connection_init(NMSettingConnection *setting)
     NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
 
     priv->auth_retries         = -1;
-    priv->autoconnect          = TRUE;
     priv->autoconnect_priority = NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT;
     priv->autoconnect_retries  = -1;
     priv->autoconnect_slaves   = NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT;

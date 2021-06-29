@@ -6063,15 +6063,13 @@ _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv
 {
     nm_assert(NM_IS_SETTING_IP_CONFIG(self));
 
-    priv->dns                = g_ptr_array_new_with_free_func(g_free);
-    priv->dns_search         = g_ptr_array_new_with_free_func(g_free);
-    priv->addresses          = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
-    priv->routes             = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
-    priv->route_metric       = -1;
-    priv->dhcp_send_hostname = TRUE;
-    priv->may_fail           = TRUE;
-    priv->dad_timeout        = -1;
-    priv->required_timeout   = -1;
+    priv->dns              = g_ptr_array_new_with_free_func(g_free);
+    priv->dns_search       = g_ptr_array_new_with_free_func(g_free);
+    priv->addresses        = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    priv->routes           = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
+    priv->route_metric     = -1;
+    priv->dad_timeout      = -1;
+    priv->required_timeout = -1;
 }
 
 static void

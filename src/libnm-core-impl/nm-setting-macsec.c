@@ -492,9 +492,7 @@ nm_setting_macsec_init(NMSettingMacsec *self)
     NMSettingMacsecPrivate *priv = NM_SETTING_MACSEC_GET_PRIVATE(self);
 
     nm_assert(priv->mode == NM_SETTING_MACSEC_MODE_PSK);
-    priv->encrypt    = TRUE;
     priv->port       = 1;
-    priv->send_sci   = TRUE;
     priv->validation = NM_SETTING_MACSEC_VALIDATION_STRICT;
 }
 

@@ -615,11 +615,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_ip_tunnel_init(NMSettingIPTunnel *self)
-{
-    NMSettingIPTunnelPrivate *priv = NM_SETTING_IP_TUNNEL_GET_PRIVATE(self);
-
-    priv->path_mtu_discovery = TRUE;
-}
+{}
 
 /**
  * nm_setting_ip_tunnel_new:

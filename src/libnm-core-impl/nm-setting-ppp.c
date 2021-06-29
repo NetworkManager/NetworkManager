@@ -512,11 +512,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_ppp_init(NMSettingPpp *self)
-{
-    NMSettingPppPrivate *priv = NM_SETTING_PPP_GET_PRIVATE(self);
-
-    priv->noauth = TRUE;
-}
+{}
 
 /**
  * nm_setting_ppp_new:
