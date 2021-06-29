@@ -280,6 +280,7 @@ gboolean _nm_setting_clear_secrets(NMSetting *                      setting,
  */
 #define NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS (1 << (7 + G_PARAM_USER_SHIFT))
 
+extern const NMSettInfoPropertType nm_sett_info_propert_type_setting_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u;
@@ -341,6 +342,13 @@ void _nm_setting_property_set_property_direct(GObject *     object,
                                               guint         prop_id,
                                               const GValue *value,
                                               GParamSpec *  pspec);
+
+GVariant *_nm_setting_property_to_dbus_fcn_ignore(const NMSettInfoSetting *      sett_info,
+                                                  const NMSettInfoProperty *     property_info,
+                                                  NMConnection *                 connection,
+                                                  NMSetting *                    setting,
+                                                  NMConnectionSerializationFlags flags,
+                                                  const NMConnectionSerializationOptions *options);
 
 GVariant *_nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *      sett_info,
                                                  const NMSettInfoProperty *     property_info,
