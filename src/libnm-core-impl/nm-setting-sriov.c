@@ -956,12 +956,13 @@ vfs_to_dbus(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-vfs_from_dbus(NMSetting *         setting,
-              GVariant *          connection_dict,
-              const char *        property,
-              GVariant *          value,
-              NMSettingParseFlags parse_flags,
-              GError **           error)
+vfs_from_dbus(const NMSettInfoSetting * sett_info,
+              const NMSettInfoProperty *property_info,
+              NMSetting *               setting,
+              GVariant *                connection_dict,
+              GVariant *                value,
+              NMSettingParseFlags       parse_flags,
+              GError **                 error)
 {
     GPtrArray *  vfs;
     GVariantIter vf_iter;

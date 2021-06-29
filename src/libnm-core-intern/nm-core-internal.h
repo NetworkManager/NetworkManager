@@ -656,12 +656,13 @@ typedef GVariant *(*NMSettInfoPropToDBusFcn)(const NMSettInfoSetting *          
                                              NMSetting *                             setting,
                                              NMConnectionSerializationFlags          flags,
                                              const NMConnectionSerializationOptions *options);
-typedef gboolean (*NMSettInfoPropFromDBusFcn)(NMSetting *         setting,
-                                              GVariant *          connection_dict,
-                                              const char *        property,
-                                              GVariant *          value,
-                                              NMSettingParseFlags parse_flags,
-                                              GError **           error);
+typedef gboolean (*NMSettInfoPropFromDBusFcn)(const NMSettInfoSetting * sett_info,
+                                              const NMSettInfoProperty *property_info,
+                                              NMSetting *               setting,
+                                              GVariant *                connection_dict,
+                                              GVariant *                value,
+                                              NMSettingParseFlags       parse_flags,
+                                              GError **                 error);
 typedef gboolean (*NMSettInfoPropMissingFromDBusFcn)(NMSetting *         setting,
                                                      GVariant *          connection_dict,
                                                      const char *        property,

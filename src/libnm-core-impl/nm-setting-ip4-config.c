@@ -362,12 +362,13 @@ ip4_addresses_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip4_addresses_set(NMSetting *         setting,
-                  GVariant *          connection_dict,
-                  const char *        property,
-                  GVariant *          value,
-                  NMSettingParseFlags parse_flags,
-                  GError **           error)
+ip4_addresses_set(const NMSettInfoSetting * sett_info,
+                  const NMSettInfoProperty *property_info,
+                  NMSetting *               setting,
+                  GVariant *                connection_dict,
+                  GVariant *                value,
+                  NMSettingParseFlags       parse_flags,
+                  GError **                 error)
 {
     GPtrArray *addrs;
     GVariant * s_ip4;
@@ -467,12 +468,13 @@ ip4_address_data_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip4_address_data_set(NMSetting *         setting,
-                     GVariant *          connection_dict,
-                     const char *        property,
-                     GVariant *          value,
-                     NMSettingParseFlags parse_flags,
-                     GError **           error)
+ip4_address_data_set(const NMSettInfoSetting * sett_info,
+                     const NMSettInfoProperty *property_info,
+                     NMSetting *               setting,
+                     GVariant *                connection_dict,
+                     GVariant *                value,
+                     NMSettingParseFlags       parse_flags,
+                     GError **                 error)
 {
     GPtrArray *addrs;
 
@@ -503,12 +505,13 @@ ip4_routes_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip4_routes_set(NMSetting *         setting,
-               GVariant *          connection_dict,
-               const char *        property,
-               GVariant *          value,
-               NMSettingParseFlags parse_flags,
-               GError **           error)
+ip4_routes_set(const NMSettInfoSetting * sett_info,
+               const NMSettInfoProperty *property_info,
+               NMSetting *               setting,
+               GVariant *                connection_dict,
+               GVariant *                value,
+               NMSettingParseFlags       parse_flags,
+               GError **                 error)
 {
     GPtrArray *routes;
 
@@ -518,7 +521,7 @@ ip4_routes_set(NMSetting *         setting,
         return TRUE;
 
     routes = nm_utils_ip4_routes_from_variant(value);
-    g_object_set(setting, property, routes, NULL);
+    g_object_set(setting, property_info->name, routes, NULL);
     g_ptr_array_unref(routes);
     return TRUE;
 }
@@ -541,12 +544,13 @@ ip4_route_data_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip4_route_data_set(NMSetting *         setting,
-                   GVariant *          connection_dict,
-                   const char *        property,
-                   GVariant *          value,
-                   NMSettingParseFlags parse_flags,
-                   GError **           error)
+ip4_route_data_set(const NMSettInfoSetting * sett_info,
+                   const NMSettInfoProperty *property_info,
+                   NMSetting *               setting,
+                   GVariant *                connection_dict,
+                   GVariant *                value,
+                   NMSettingParseFlags       parse_flags,
+                   GError **                 error)
 {
     GPtrArray *routes;
 

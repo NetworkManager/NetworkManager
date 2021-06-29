@@ -769,12 +769,13 @@ _to_dbus_fcn_seen_bssids(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-_from_dbus_fcn_seen_bssids(NMSetting *         setting,
-                           GVariant *          connection_dict,
-                           const char *        property,
-                           GVariant *          value,
-                           NMSettingParseFlags parse_flags,
-                           GError **           error)
+_from_dbus_fcn_seen_bssids(const NMSettInfoSetting * sett_info,
+                           const NMSettInfoProperty *property_info,
+                           NMSetting *               setting,
+                           GVariant *                connection_dict,
+                           GVariant *                value,
+                           NMSettingParseFlags       parse_flags,
+                           GError **                 error)
 {
     NMSettingWirelessPrivate *priv;
     gs_free const char **     s = NULL;

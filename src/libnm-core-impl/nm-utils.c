@@ -4040,18 +4040,19 @@ _nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
 }
 
 gboolean
-_nm_utils_hwaddr_cloned_set(NMSetting *         setting,
-                            GVariant *          connection_dict,
-                            const char *        property,
-                            GVariant *          value,
-                            NMSettingParseFlags parse_flags,
-                            GError **           error)
+_nm_utils_hwaddr_cloned_set(const NMSettInfoSetting * sett_info,
+                            const NMSettInfoProperty *property_info,
+                            NMSetting *               setting,
+                            GVariant *                connection_dict,
+                            GVariant *                value,
+                            NMSettingParseFlags       parse_flags,
+                            GError **                 error)
 {
     gsize         length;
     const guint8 *array;
     char *        str;
 
-    nm_assert(nm_streq0(property, "cloned-mac-address"));
+    nm_assert(nm_streq0(property_info->name, "cloned-mac-address"));
 
     if (!_nm_setting_use_legacy_property(setting,
                                          connection_dict,
@@ -4117,14 +4118,15 @@ _nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_
 }
 
 static gboolean
-_nm_utils_hwaddr_cloned_data_set(NMSetting *         setting,
-                                 GVariant *          connection_dict,
-                                 const char *        property,
-                                 GVariant *          value,
-                                 NMSettingParseFlags parse_flags,
-                                 GError **           error)
+_nm_utils_hwaddr_cloned_data_set(const NMSettInfoSetting * sett_info,
+                                 const NMSettInfoProperty *property_info,
+                                 NMSetting *               setting,
+                                 GVariant *                connection_dict,
+                                 GVariant *                value,
+                                 NMSettingParseFlags       parse_flags,
+                                 GError **                 error)
 {
-    nm_assert(nm_streq0(property, "assigned-mac-address"));
+    nm_assert(nm_streq0(property_info->name, "assigned-mac-address"));
 
     if (_nm_setting_use_legacy_property(setting,
                                         connection_dict,
@@ -5510,12 +5512,13 @@ _nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info
 }
 
 gboolean
-_nm_utils_bridge_vlans_from_dbus(NMSetting *         setting,
-                                 GVariant *          connection_dict,
-                                 const char *        property,
-                                 GVariant *          value,
-                                 NMSettingParseFlags parse_flags,
-                                 GError **           error)
+_nm_utils_bridge_vlans_from_dbus(const NMSettInfoSetting * sett_info,
+                                 const NMSettInfoProperty *property_info,
+                                 NMSetting *               setting,
+                                 GVariant *                connection_dict,
+                                 GVariant *                value,
+                                 NMSettingParseFlags       parse_flags,
+                                 GError **                 error)
 {
     gs_unref_ptrarray GPtrArray *vlans = NULL;
     GVariantIter                 vlan_iter;
@@ -5556,7 +5559,7 @@ _nm_utils_bridge_vlans_from_dbus(NMSetting *         setting,
         g_ptr_array_add(vlans, vlan);
     }
 
-    g_object_set(setting, property, vlans, NULL);
+    g_object_set(setting, property_info->name, vlans, NULL);
 
     return TRUE;
 }
