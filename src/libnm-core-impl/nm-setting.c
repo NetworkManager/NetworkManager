@@ -1723,21 +1723,6 @@ _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
                                          NMSetting *               set_b,
                                          NMSettingCompareFlags     flags)
 {
-    /* For the moment, the default implementation delegates to NMSettingClass.compare_property().
-     * That will change. */
-    return NM_SETTING_GET_CLASS(set_a)
-        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
-}
-
-static NMTernary
-compare_property(const NMSettInfoSetting * sett_info,
-                 const NMSettInfoProperty *property_info,
-                 NMConnection *            con_a,
-                 NMSetting *               set_a,
-                 NMConnection *            con_b,
-                 NMSetting *               set_b,
-                 NMSettingCompareFlags     flags)
-{
     const GParamSpec *param_spec = property_info->param_spec;
 
     if (!param_spec)
@@ -3283,7 +3268,6 @@ nm_setting_class_init(NMSettingClass *setting_class)
     setting_class->update_one_secret         = update_one_secret;
     setting_class->get_secret_flags          = get_secret_flags;
     setting_class->set_secret_flags          = set_secret_flags;
-    setting_class->compare_property          = compare_property;
     setting_class->clear_secrets             = clear_secrets;
     setting_class->for_each_secret           = for_each_secret;
     setting_class->duplicate_copy_properties = duplicate_copy_properties;
