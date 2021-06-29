@@ -795,7 +795,7 @@ struct _NMSettInfoSetting {
 
     const NMSettInfoPropertLookupByParamSpec *property_lookup_by_param_spec;
 
-    guint property_infos_len;
+    guint16 property_infos_len;
 
     guint16 property_lookup_by_param_spec_len;
 
@@ -818,7 +818,7 @@ _nm_setting_get_private(NMSetting *self, const NMSettInfoSetting *sett_info, gui
 }
 
 static inline const NMSettInfoProperty *
-_nm_sett_info_property_info_get_sorted(const NMSettInfoSetting *sett_info, guint idx)
+_nm_sett_info_property_info_get_sorted(const NMSettInfoSetting *sett_info, guint16 idx)
 {
     nm_assert(sett_info);
     nm_assert(idx < sett_info->property_infos_len);
