@@ -130,16 +130,23 @@ nm_setting_serial_get_send_delay(NMSettingSerial *setting)
 }
 
 static GVariant *
-parity_to_dbus(const GValue *from)
+parity_to_dbus_fcn(const NMSettInfoSetting *               sett_info,
+                   const NMSettInfoProperty *              property_info,
+                   NMConnection *                          connection,
+                   NMSetting *                             setting,
+                   NMConnectionSerializationFlags          flags,
+                   const NMConnectionSerializationOptions *options)
 {
-    switch (g_value_get_enum(from)) {
+    switch (nm_setting_serial_get_parity(NM_SETTING_SERIAL(setting))) {
     case NM_SETTING_SERIAL_PARITY_EVEN:
         return g_variant_new_byte('E');
     case NM_SETTING_SERIAL_PARITY_ODD:
         return g_variant_new_byte('o');
     case NM_SETTING_SERIAL_PARITY_NONE:
+        /* the default, serializes to NULL. */
+        return NULL;
     default:
-        return g_variant_new_byte('n');
+        return NULL;
     }
 }
 
@@ -311,10 +318,10 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_PARITY],
-        NM_SETT_INFO_PROPERT_TYPE_GPROP(G_VARIANT_TYPE_BYTE,
-                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
-                                        .gprop_from_dbus_fcn = parity_from_dbus, ),
-        .to_dbus_data.gprop_to_dbus_fcn = parity_to_dbus, );
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_BYTE,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                       .to_dbus_fcn = parity_to_dbus_fcn,
+                                       .gprop_from_dbus_fcn = parity_from_dbus, ));
 
     /**
      * NMSettingSerial:stopbits:
