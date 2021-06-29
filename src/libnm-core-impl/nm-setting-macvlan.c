@@ -234,11 +234,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_macvlan_init(NMSettingMacvlan *self)
-{
-    NMSettingMacvlanPrivate *priv = NM_SETTING_MACVLAN_GET_PRIVATE(self);
-
-    priv->promiscuous = TRUE;
-}
+{}
 
 /**
  * nm_setting_macvlan_new:

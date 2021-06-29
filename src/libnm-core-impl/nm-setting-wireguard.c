@@ -2372,7 +2372,6 @@ nm_setting_wireguard_init(NMSettingWireGuard *setting)
 
     priv->peers_arr              = g_ptr_array_new();
     priv->peers_hash             = g_hash_table_new(nm_pstr_hash, nm_pstr_equal);
-    priv->peer_routes            = TRUE;
     priv->ip4_auto_default_route = NM_TERNARY_DEFAULT;
     priv->ip6_auto_default_route = NM_TERNARY_DEFAULT;
 }

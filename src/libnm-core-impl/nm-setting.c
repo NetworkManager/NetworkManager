@@ -754,6 +754,59 @@ out_fail:
 /*****************************************************************************/
 
 static void
+_init_direct(NMSetting *setting)
+{
+    const NMSettInfoSetting *sett_info;
+    guint                    i;
+
+    sett_info = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
+    nm_assert(sett_info);
+
+    for (i = 0; i < sett_info->property_infos_len; i++) {
+        const NMSettInfoProperty *property_info = &sett_info->property_infos[i];
+
+        /* We don't emit any g_object_notify_by_pspec(), because this is
+         * only supposed to be called during initialization of the GObject
+         * instance. */
+
+        switch (property_info->property_type->direct_type) {
+        case NM_VALUE_TYPE_NONE:
+            break;
+        case NM_VALUE_TYPE_BOOL:
+        {
+            bool *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+            gboolean def_val;
+
+            def_val = NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec);
+            nm_assert(*p_val == FALSE);
+            *p_val = def_val;
+            break;
+        }
+        case NM_VALUE_TYPE_UINT32:
+        {
+            guint32 *p_val =
+                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+            guint def_val;
+
+            def_val = NM_G_PARAM_SPEC_GET_DEFAULT_UINT(property_info->param_spec);
+            nm_assert(*p_val == 0);
+            *p_val = def_val;
+            break;
+        }
+        case NM_VALUE_TYPE_STRING:
+            nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
+            nm_assert(!(
+                *((const char *const *)
+                      _nm_setting_get_private(setting, sett_info, property_info->direct_offset))));
+            break;
+        default:
+            nm_assert_not_reached();
+            break;
+        }
+    }
+}
+
+static void
 _finalize_direct(NMSetting *setting)
 {
     const NMSettInfoSetting *sett_info;
@@ -3130,6 +3183,32 @@ nm_setting_init(NMSetting *setting)
 {}
 
 static void
+constructed(GObject *object)
+{
+    NMSetting *     self  = NM_SETTING(object);
+    NMSettingClass *klass = NM_SETTING_GET_CLASS(self);
+
+    /* we don't support that NMSetting subclasses override constructed.
+     * They all must have no G_PARAM_CONSTRUCT/G_PARAM_CONSTRUCT_ONLY
+     * properties, otherwise the automatism of _init_direct() needs
+     * careful adjustment. */
+    nm_assert(G_OBJECT_CLASS(klass)->constructed == constructed);
+
+    /* we always initialize the defaults of the (direct) properties. Note that:
+     *
+     * - we don't use CONSTRUCT properties, because they have an overhead during
+     *   each object creation. Via _init_direct() we can do it more efficiently.
+     *
+     * - we always call this, because we want to get all default values right.
+     *   We even call this for NMSetting subclasses that (historically) are not
+     *   yet aware of this happening.
+     */
+    _init_direct(self);
+
+    G_OBJECT_CLASS(nm_setting_parent_class)->constructed(object);
+}
+
+static void
 finalize(GObject *object)
 {
     NMSetting *       self  = NM_SETTING(object);
@@ -3156,6 +3235,7 @@ nm_setting_class_init(NMSettingClass *setting_class)
 
     g_type_class_add_private(setting_class, sizeof(NMSettingPrivate));
 
+    object_class->constructed  = constructed;
     object_class->get_property = get_property;
     object_class->finalize     = finalize;
 
