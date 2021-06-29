@@ -334,7 +334,7 @@ ip4_dns_from_dbus(GVariant *dbus_value, GValue *prop_value)
 
 static GVariant *
 ip4_addresses_get(const NMSettInfoSetting *               sett_info,
-                  guint                                   property_idx,
+                  const NMSettInfoProperty *              property_info,
                   NMConnection *                          connection,
                   NMSetting *                             setting,
                   NMConnectionSerializationFlags          flags,
@@ -394,7 +394,7 @@ ip4_addresses_set(NMSetting *         setting,
 
 static GVariant *
 ip4_address_labels_get(const NMSettInfoSetting *               sett_info,
-                       guint                                   property_idx,
+                       const NMSettInfoProperty *              property_info,
                        NMConnection *                          connection,
                        NMSetting *                             setting,
                        NMConnectionSerializationFlags          flags,
@@ -438,7 +438,7 @@ ip4_address_labels_get(const NMSettInfoSetting *               sett_info,
 
 static GVariant *
 ip4_address_data_get(const NMSettInfoSetting *               sett_info,
-                     guint                                   property_idx,
+                     const NMSettInfoProperty *              property_info,
                      NMConnection *                          connection,
                      NMSetting *                             setting,
                      NMConnectionSerializationFlags          flags,
@@ -477,7 +477,7 @@ ip4_address_data_set(NMSetting *         setting,
 
 static GVariant *
 ip4_routes_get(const NMSettInfoSetting *               sett_info,
-               guint                                   property_idx,
+               const NMSettInfoProperty *              property_info,
                NMConnection *                          connection,
                NMSetting *                             setting,
                NMConnectionSerializationFlags          flags,
@@ -512,7 +512,7 @@ ip4_routes_set(NMSetting *         setting,
 
 static GVariant *
 ip4_route_data_get(const NMSettInfoSetting *               sett_info,
-                   guint                                   property_idx,
+                   const NMSettInfoProperty *              property_info,
                    NMConnection *                          connection,
                    NMSetting *                             setting,
                    NMConnectionSerializationFlags          flags,

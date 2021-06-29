@@ -851,41 +851,41 @@ compare_property_secrets(NMSettingVpn *a, NMSettingVpn *b, NMSettingCompareFlags
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_property(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_VPN_SECRETS)) {
+    if (property_info->param_spec == obj_properties[PROP_SECRETS]) {
         if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
             return NM_TERNARY_DEFAULT;
         return compare_property_secrets(NM_SETTING_VPN(set_a), NM_SETTING_VPN(set_b), flags);
     }
 
     return NM_SETTING_CLASS(nm_setting_vpn_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
 }
 
 static gboolean
 clear_secrets(const NMSettInfoSetting *        sett_info,
-              guint                            property_idx,
+              const NMSettInfoProperty *       property_info,
               NMSetting *                      setting,
               NMSettingClearSecretsWithFlagsFn func,
               gpointer                         user_data)
 {
-    NMSettingVpnPrivate *priv      = NM_SETTING_VPN_GET_PRIVATE(setting);
-    GParamSpec *         prop_spec = sett_info->property_infos[property_idx].param_spec;
+    NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
     GHashTableIter       iter;
     const char *         secret;
     gboolean             changed = TRUE;
 
-    if (!prop_spec || !NM_FLAGS_HAS(prop_spec->flags, NM_SETTING_PARAM_SECRET))
+    if (!property_info->param_spec
+        || !NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
         return FALSE;
 
-    nm_assert(nm_streq(prop_spec->name, NM_SETTING_VPN_SECRETS));
+    nm_assert(nm_streq(property_info->param_spec->name, NM_SETTING_VPN_SECRETS));
 
     if (!priv->secrets)
         return FALSE;
@@ -943,7 +943,7 @@ vpn_secrets_from_dbus(NMSetting *         setting,
 
 static GVariant *
 vpn_secrets_to_dbus(const NMSettInfoSetting *               sett_info,
-                    guint                                   property_idx,
+                    const NMSettInfoProperty *              property_info,
                     NMConnection *                          connection,
                     NMSetting *                             setting,
                     NMConnectionSerializationFlags          flags,

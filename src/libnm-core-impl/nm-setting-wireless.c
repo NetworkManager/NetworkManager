@@ -744,7 +744,7 @@ nm_setting_wireless_get_seen_bssid(NMSettingWireless *setting, guint32 i)
 
 static GVariant *
 _to_dbus_fcn_seen_bssids(const NMSettInfoSetting *               sett_info,
-                         guint                                   property_idx,
+                         const NMSettInfoProperty *              property_info,
                          NMConnection *                          connection,
                          NMSetting *                             setting,
                          NMConnectionSerializationFlags          flags,
@@ -1102,21 +1102,20 @@ mac_addr_rand_ok:
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_property(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
-    if (sett_info->property_infos[property_idx].param_spec
-        == obj_properties[PROP_CLONED_MAC_ADDRESS]) {
+    if (property_info->param_spec == obj_properties[PROP_CLONED_MAC_ADDRESS]) {
         return !set_b
                || nm_streq0(NM_SETTING_WIRELESS_GET_PRIVATE(set_a)->cloned_mac_address,
                             NM_SETTING_WIRELESS_GET_PRIVATE(set_b)->cloned_mac_address);
     }
-    if (sett_info->property_infos[property_idx].param_spec == obj_properties[PROP_SEEN_BSSIDS]) {
+    if (property_info->param_spec == obj_properties[PROP_SEEN_BSSIDS]) {
         return !set_b
                || (nm_strv_ptrarray_cmp(NM_SETTING_WIRELESS_GET_PRIVATE(set_a)->seen_bssids,
                                         NM_SETTING_WIRELESS_GET_PRIVATE(set_b)->seen_bssids)
@@ -1124,14 +1123,14 @@ compare_property(const NMSettInfoSetting *sett_info,
     }
 
     return NM_SETTING_CLASS(nm_setting_wireless_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
 }
 
 /*****************************************************************************/
 
 static GVariant *
 nm_setting_wireless_get_security(const NMSettInfoSetting *               sett_info,
-                                 guint                                   property_idx,
+                                 const NMSettInfoProperty *              property_info,
                                  NMConnection *                          connection,
                                  NMSetting *                             setting,
                                  NMConnectionSerializationFlags          flags,

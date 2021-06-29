@@ -1314,19 +1314,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_property(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
     NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG(set_a);
     NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG(set_b);
     guint              i;
 
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_QDISCS)) {
+    if (property_info->param_spec == obj_properties[PROP_QDISCS]) {
         if (set_b) {
             if (a_tc_config->qdiscs->len != b_tc_config->qdiscs->len)
                 return FALSE;
@@ -1339,7 +1339,7 @@ compare_property(const NMSettInfoSetting *sett_info,
         return TRUE;
     }
 
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_TC_CONFIG_TFILTERS)) {
+    if (property_info->param_spec == obj_properties[PROP_TFILTERS]) {
         if (set_b) {
             if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
                 return FALSE;
@@ -1353,7 +1353,7 @@ compare_property(const NMSettInfoSetting *sett_info,
     }
 
     return NM_SETTING_CLASS(nm_setting_tc_config_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
 }
 
 /**
@@ -1482,7 +1482,7 @@ next:
 
 static GVariant *
 tc_qdiscs_get(const NMSettInfoSetting *               sett_info,
-              guint                                   property_idx,
+              const NMSettInfoProperty *              property_info,
               NMConnection *                          connection,
               NMSetting *                             setting,
               NMConnectionSerializationFlags          flags,
@@ -1680,7 +1680,7 @@ next:
 
 static GVariant *
 tc_tfilters_get(const NMSettInfoSetting *               sett_info,
-                guint                                   property_idx,
+                const NMSettInfoProperty *              property_info,
                 NMConnection *                          connection,
                 NMSetting *                             setting,
                 NMConnectionSerializationFlags          flags,

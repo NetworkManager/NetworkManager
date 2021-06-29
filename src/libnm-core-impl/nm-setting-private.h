@@ -70,7 +70,7 @@ struct _NMSettingClass {
                                  GError **            error);
 
     gboolean (*clear_secrets)(const struct _NMSettInfoSetting *sett_info,
-                              guint                            property_idx,
+                              const NMSettInfoProperty *       property_info,
                               NMSetting *                      setting,
                               NMSettingClearSecretsWithFlagsFn func,
                               gpointer                         user_data);
@@ -82,7 +82,7 @@ struct _NMSettingClass {
      * @other may be %NULL, in which case the function only determines whether
      * the setting should be compared (TRUE) or not (DEFAULT). */
     NMTernary (*compare_property)(const struct _NMSettInfoSetting *sett_info,
-                                  guint                            property_idx,
+                                  const NMSettInfoProperty *       property_info,
                                   NMConnection *                   con_a,
                                   NMSetting *                      set_a,
                                   NMConnection *                   con_b,
@@ -326,14 +326,14 @@ void _nm_setting_property_set_property_direct(GObject *     object,
                                               GParamSpec *  pspec);
 
 GVariant *_nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *      sett_info,
-                                                 guint                          property_idx,
+                                                 const NMSettInfoProperty *     property_info,
                                                  NMConnection *                 connection,
                                                  NMSetting *                    setting,
                                                  NMConnectionSerializationFlags flags,
                                                  const NMConnectionSerializationOptions *options);
 
 GVariant *_nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *      sett_info,
-                                                  guint                          property_idx,
+                                                  const NMSettInfoProperty *     property_info,
                                                   NMConnection *                 connection,
                                                   NMSetting *                    setting,
                                                   NMConnectionSerializationFlags flags,
