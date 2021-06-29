@@ -8,6 +8,7 @@
 #include "nm-setting-ip4-config.h"
 
 #include "nm-setting-private.h"
+#include "nm-utils-private.h"
 
 /**
  * SECTION:nm-setting-ip4-config
@@ -321,9 +322,21 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GVariant *
-ip4_dns_to_dbus(const GValue *prop_value)
+ip4_dns_to_dbus(const NMSettInfoSetting *               sett_info,
+                const NMSettInfoProperty *              property_info,
+                NMConnection *                          connection,
+                NMSetting *                             setting,
+                NMConnectionSerializationFlags          flags,
+                const NMConnectionSerializationOptions *options)
 {
-    return nm_utils_ip4_dns_to_variant(g_value_get_boxed(prop_value));
+    GPtrArray *dns;
+
+    dns = _nm_setting_ip_config_get_dns_array(NM_SETTING_IP_CONFIG(setting));
+
+    if (nm_g_ptr_array_len(dns) == 0)
+        return NULL;
+
+    return _nm_utils_ip4_dns_to_variant((const char *const *) dns->pdata, dns->len);
 }
 
 static void
@@ -955,10 +968,10 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
-        NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("au"),
-                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
-                                        .gprop_from_dbus_fcn = ip4_dns_from_dbus, ),
-        .to_dbus_data.gprop_to_dbus_fcn = ip4_dns_to_dbus);
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("au"),
+                                       .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                       .to_dbus_fcn = ip4_dns_to_dbus,
+                                       .gprop_from_dbus_fcn = ip4_dns_from_dbus, ), );
 
     /* ---dbus---
      * property: addresses

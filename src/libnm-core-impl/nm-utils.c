@@ -1284,18 +1284,28 @@ nm_utils_wpa_psk_valid(const char *psk)
 GVariant *
 nm_utils_ip4_dns_to_variant(char **dns)
 {
+    return _nm_utils_ip4_dns_to_variant(NM_CAST_STRV_CC(dns), -1);
+}
+
+GVariant *
+_nm_utils_ip4_dns_to_variant(const char *const *dns, gssize len)
+{
     GVariantBuilder builder;
+    gsize           l;
     gsize           i;
+
+    if (len < 0)
+        l = NM_PTRARRAY_LEN(dns);
+    else
+        l = len;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("au"));
 
-    if (dns) {
-        for (i = 0; dns[i]; i++) {
-            guint32 ip = 0;
+    for (i = 0; i < l; i++) {
+        in_addr_t ip;
 
-            inet_pton(AF_INET, dns[i], &ip);
+        if (inet_pton(AF_INET, dns[i], &ip) == 1)
             g_variant_builder_add(&builder, "u", ip);
-        }
     }
 
     return g_variant_builder_end(&builder);
