@@ -1314,46 +1314,52 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting * sett_info,
-                 const NMSettInfoProperty *property_info,
-                 NMConnection *            con_a,
-                 NMSetting *               set_a,
-                 NMConnection *            con_b,
-                 NMSetting *               set_b,
-                 NMSettingCompareFlags     flags)
+compare_fcn_qdiscs(const NMSettInfoSetting * sett_info,
+                   const NMSettInfoProperty *property_info,
+                   NMConnection *            con_a,
+                   NMSetting *               set_a,
+                   NMConnection *            con_b,
+                   NMSetting *               set_b,
+                   NMSettingCompareFlags     flags)
 {
     NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG(set_a);
     NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG(set_b);
     guint              i;
 
-    if (property_info->param_spec == obj_properties[PROP_QDISCS]) {
-        if (set_b) {
-            if (a_tc_config->qdiscs->len != b_tc_config->qdiscs->len)
+    if (set_b) {
+        if (a_tc_config->qdiscs->len != b_tc_config->qdiscs->len)
+            return FALSE;
+        for (i = 0; i < a_tc_config->qdiscs->len; i++) {
+            if (!nm_tc_qdisc_equal(a_tc_config->qdiscs->pdata[i], b_tc_config->qdiscs->pdata[i]))
                 return FALSE;
-            for (i = 0; i < a_tc_config->qdiscs->len; i++) {
-                if (!nm_tc_qdisc_equal(a_tc_config->qdiscs->pdata[i],
-                                       b_tc_config->qdiscs->pdata[i]))
-                    return FALSE;
-            }
         }
-        return TRUE;
     }
+    return TRUE;
+}
 
-    if (property_info->param_spec == obj_properties[PROP_TFILTERS]) {
-        if (set_b) {
-            if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
+static NMTernary
+compare_fcn_tfilter(const NMSettInfoSetting * sett_info,
+                    const NMSettInfoProperty *property_info,
+                    NMConnection *            con_a,
+                    NMSetting *               set_a,
+                    NMConnection *            con_b,
+                    NMSetting *               set_b,
+                    NMSettingCompareFlags     flags)
+{
+    NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG(set_a);
+    NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG(set_b);
+    guint              i;
+
+    if (set_b) {
+        if (a_tc_config->tfilters->len != b_tc_config->tfilters->len)
+            return FALSE;
+        for (i = 0; i < a_tc_config->tfilters->len; i++) {
+            if (!nm_tc_tfilter_equal(a_tc_config->tfilters->pdata[i],
+                                     b_tc_config->tfilters->pdata[i]))
                 return FALSE;
-            for (i = 0; i < a_tc_config->tfilters->len; i++) {
-                if (!nm_tc_tfilter_equal(a_tc_config->tfilters->pdata[i],
-                                         b_tc_config->tfilters->pdata[i]))
-                    return FALSE;
-            }
         }
-        return TRUE;
     }
-
-    return NM_SETTING_CLASS(nm_setting_tc_config_parent_class)
-        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
+    return TRUE;
 }
 
 /**
@@ -1803,8 +1809,7 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    setting_class->compare_property = compare_property;
-    setting_class->verify           = verify;
+    setting_class->verify = verify;
 
     /**
      * NMSettingTCConfig:qdiscs: (type GPtrArray(NMTCQdisc))
@@ -2112,13 +2117,12 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
                                                      G_TYPE_PTR_ARRAY,
                                                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
                                                          | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(
-        properties_override,
-        obj_properties[PROP_QDISCS],
-        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                       .to_dbus_fcn   = tc_qdiscs_get,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
-                                       .from_dbus_fcn = tc_qdiscs_set, ));
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_QDISCS],
+                                 NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                                                .to_dbus_fcn   = tc_qdiscs_get,
+                                                                .compare_fcn   = compare_fcn_qdiscs,
+                                                                .from_dbus_fcn = tc_qdiscs_set, ));
 
     /**
      * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
@@ -2256,7 +2260,7 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
         obj_properties[PROP_TFILTERS],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = tc_tfilters_get,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .compare_fcn   = compare_fcn_tfilter,
                                        .from_dbus_fcn = tc_tfilters_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);

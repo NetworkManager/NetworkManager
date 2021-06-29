@@ -4525,9 +4525,12 @@ check_done:;
                 g_assert_not_reached();
 
             if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_default) {
-                /* for the moment, all types have this implementation. This will change. */
-            } else
+                /* pass */
+            } else if (sip->property_type->compare_fcn) {
+                /* pass */
+            } else {
                 g_assert_not_reached();
+            }
 
             property_types_data = g_hash_table_lookup(h_property_types, sip->property_type);
             if (!property_types_data) {

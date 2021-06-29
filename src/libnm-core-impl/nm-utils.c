@@ -4003,7 +4003,7 @@ nm_utils_hwaddr_to_dbus(const char *str)
     return nm_g_variant_new_ay(buf, len);
 }
 
-static GVariant *
+GVariant *
 _nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
                             const NMSettInfoProperty *              property_info,
                             NMConnection *                          connection,
@@ -4019,7 +4019,7 @@ _nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
     return nm_utils_hwaddr_to_dbus(addr);
 }
 
-static gboolean
+gboolean
 _nm_utils_hwaddr_cloned_set(NMSetting *         setting,
                             GVariant *          connection_dict,
                             const char *        property,
@@ -4051,7 +4051,7 @@ _nm_utils_hwaddr_cloned_set(NMSetting *         setting,
     return TRUE;
 }
 
-static gboolean
+gboolean
 _nm_utils_hwaddr_cloned_not_set(NMSetting *         setting,
                                 GVariant *          connection_dict,
                                 const char *        property,
@@ -4061,13 +4061,6 @@ _nm_utils_hwaddr_cloned_not_set(NMSetting *         setting,
     nm_assert(nm_streq0(property, "cloned-mac-address"));
     return TRUE;
 }
-
-const NMSettInfoPropertType nm_sett_info_propert_type_cloned_mac_address =
-    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BYTESTRING,
-                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
-                                        .to_dbus_fcn   = _nm_utils_hwaddr_cloned_get,
-                                        .from_dbus_fcn = _nm_utils_hwaddr_cloned_set,
-                                        .missing_from_dbus_fcn = _nm_utils_hwaddr_cloned_not_set, );
 
 static GVariant *
 _nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_info,
@@ -5449,7 +5442,7 @@ nm_utils_base64secret_normalize(const char *base64_key,
     return TRUE;
 }
 
-static GVariant *
+GVariant *
 _nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info,
                                const NMSettInfoProperty *              property_info,
                                NMConnection *                          connection,
@@ -5496,7 +5489,7 @@ _nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info
     return g_variant_builder_end(&builder);
 }
 
-static gboolean
+gboolean
 _nm_utils_bridge_vlans_from_dbus(NMSetting *         setting,
                                  GVariant *          connection_dict,
                                  const char *        property,
@@ -5548,11 +5541,20 @@ _nm_utils_bridge_vlans_from_dbus(NMSetting *         setting,
     return TRUE;
 }
 
-const NMSettInfoPropertType nm_sett_info_propert_type_bridge_vlans =
-    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(NM_G_VARIANT_TYPE("aa{sv}"),
-                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
-                                        .to_dbus_fcn   = _nm_utils_bridge_vlans_to_dbus,
-                                        .from_dbus_fcn = _nm_utils_bridge_vlans_from_dbus, );
+NMTernary
+_nm_utils_bridge_compare_vlans(GPtrArray *vlans_a, GPtrArray *vlans_b)
+{
+    guint l = nm_g_ptr_array_len(vlans_a);
+    guint i;
+
+    if (l != nm_g_ptr_array_len(vlans_b))
+        return FALSE;
+    for (i = 0; i < l; i++) {
+        if (nm_bridge_vlan_cmp(vlans_a->pdata[i], vlans_b->pdata[i]))
+            return FALSE;
+    }
+    return TRUE;
+}
 
 gboolean
 _nm_utils_bridge_vlan_verify_list(GPtrArray * vlans,

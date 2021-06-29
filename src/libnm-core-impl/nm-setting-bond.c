@@ -1090,19 +1090,15 @@ options_equal(NMSettingBond *s_bond, NMSettingBond *s_bond2, NMSettingCompareFla
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting * sett_info,
-                 const NMSettInfoProperty *property_info,
-                 NMConnection *            con_a,
-                 NMSetting *               set_a,
-                 NMConnection *            con_b,
-                 NMSetting *               set_b,
-                 NMSettingCompareFlags     flags)
+compare_fcn_options(const NMSettInfoSetting * sett_info,
+                    const NMSettInfoProperty *property_info,
+                    NMConnection *            con_a,
+                    NMSetting *               set_a,
+                    NMConnection *            con_b,
+                    NMSetting *               set_b,
+                    NMSettingCompareFlags     flags)
 {
-    if (property_info->param_spec == obj_properties[PROP_OPTIONS])
-        return (!set_b || options_equal(NM_SETTING_BOND(set_a), NM_SETTING_BOND(set_b), flags));
-
-    return NM_SETTING_CLASS(nm_setting_bond_parent_class)
-        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
+    return (!set_b || options_equal(NM_SETTING_BOND(set_a), NM_SETTING_BOND(set_b), flags));
 }
 
 /*****************************************************************************/
@@ -1189,8 +1185,7 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    setting_class->verify           = verify;
-    setting_class->compare_property = compare_property;
+    setting_class->verify = verify;
 
     /**
      * NMSettingBond:options: (type GHashTable(utf8,utf8)):
@@ -1212,9 +1207,14 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
         "",
         G_TYPE_HASH_TABLE,
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_OPTIONS],
-                                 &nm_sett_info_propert_type_strdict);
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_OPTIONS],
+        NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("a{ss}"),
+                                        .gprop_from_dbus_fcn = _nm_utils_strdict_from_dbus,
+                                        .typdata_to_dbus.gprop_type =
+                                            NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT,
+                                        .compare_fcn = compare_fcn_options));
 
     /* ---dbus---
      * property: interface-name

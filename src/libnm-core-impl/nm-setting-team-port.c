@@ -350,51 +350,57 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting * sett_info,
-                 const NMSettInfoProperty *property_info,
-                 NMConnection *            con_a,
-                 NMSetting *               set_a,
-                 NMConnection *            con_b,
-                 NMSetting *               set_b,
-                 NMSettingCompareFlags     flags)
+compare_fcn_link_watchers(const NMSettInfoSetting * sett_info,
+                          const NMSettInfoProperty *property_info,
+                          NMConnection *            con_a,
+                          NMSetting *               set_a,
+                          NMConnection *            con_b,
+                          NMSetting *               set_b,
+                          NMSettingCompareFlags     flags)
 {
     NMSettingTeamPortPrivate *a_priv;
     NMSettingTeamPortPrivate *b_priv;
 
-    if (property_info->param_spec == obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS]) {
-        if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
-            return NM_TERNARY_DEFAULT;
-        if (!set_b)
-            return TRUE;
-        a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE(set_a);
-        b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE(set_b);
-        return nm_team_link_watchers_equal(a_priv->team_setting->d.link_watchers,
-                                           b_priv->team_setting->d.link_watchers,
-                                           TRUE);
-    }
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
+        return NM_TERNARY_DEFAULT;
+    if (!set_b)
+        return TRUE;
+    a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE(set_a);
+    b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE(set_b);
+    return nm_team_link_watchers_equal(a_priv->team_setting->d.link_watchers,
+                                       b_priv->team_setting->d.link_watchers,
+                                       TRUE);
+}
 
-    if (property_info->param_spec == obj_properties[NM_TEAM_ATTRIBUTE_CONFIG]) {
-        if (set_b) {
-            if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
-                /* If we are trying to match a connection in order to assume it (and thus
+static NMTernary
+compare_fcn_config(const NMSettInfoSetting * sett_info,
+                   const NMSettInfoProperty *property_info,
+                   NMConnection *            con_a,
+                   NMSetting *               set_a,
+                   NMConnection *            con_b,
+                   NMSetting *               set_b,
+                   NMSettingCompareFlags     flags)
+{
+    NMSettingTeamPortPrivate *a_priv;
+    NMSettingTeamPortPrivate *b_priv;
+
+    if (set_b) {
+        if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE)) {
+            /* If we are trying to match a connection in order to assume it (and thus
                  * @flags contains INFERRABLE), use the "relaxed" matching for team
                  * configuration. Otherwise, for all other purposes (including connection
                  * comparison before an update), resort to the default string comparison. */
-                return TRUE;
-            }
-
-            a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE(set_a);
-            b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE(set_b);
-
-            return nm_streq0(nm_team_setting_config_get(a_priv->team_setting),
-                             nm_team_setting_config_get(b_priv->team_setting));
+            return TRUE;
         }
 
-        return TRUE;
+        a_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE(set_a);
+        b_priv = NM_SETTING_TEAM_PORT_GET_PRIVATE(set_b);
+
+        return nm_streq0(nm_team_setting_config_get(a_priv->team_setting),
+                         nm_team_setting_config_get(b_priv->team_setting));
     }
 
-    return NM_SETTING_CLASS(nm_setting_team_port_parent_class)
-        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
+    return TRUE;
 }
 
 static void
@@ -544,7 +550,6 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    setting_class->compare_property          = compare_property;
     setting_class->verify                    = verify;
     setting_class->duplicate_copy_properties = duplicate_copy_properties;
     setting_class->init_from_dbus            = init_from_dbus;
@@ -569,9 +574,12 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
         "",
         NULL,
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[NM_TEAM_ATTRIBUTE_CONFIG],
-                                 &nm_sett_info_propert_type_team_s);
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[NM_TEAM_ATTRIBUTE_CONFIG],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .compare_fcn = compare_fcn_config,
+                                       .to_dbus_fcn = _nm_team_settings_property_to_dbus, ));
 
     /**
      * NMSettingTeamPort:queue-id:
@@ -687,9 +695,14 @@ nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
                            "",
                            G_TYPE_PTR_ARRAY,
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS],
-                                 &nm_sett_info_propert_type_team_link_watchers);
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[NM_TEAM_ATTRIBUTE_LINK_WATCHERS],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .compare_fcn = compare_fcn_link_watchers,
+                                       .to_dbus_fcn = _nm_team_settings_property_to_dbus,
+                                       .gprop_from_dbus_fcn =
+                                           _nm_team_settings_property_from_dbus_link_watchers, ));
 
     g_object_class_install_properties(object_class, G_N_ELEMENTS(obj_properties), obj_properties);
 

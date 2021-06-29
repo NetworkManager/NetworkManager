@@ -976,22 +976,17 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting * sett_info,
-                 const NMSettInfoProperty *property_info,
-                 NMConnection *            con_a,
-                 NMSetting *               set_a,
-                 NMConnection *            con_b,
-                 NMSetting *               set_b,
-                 NMSettingCompareFlags     flags)
+compare_fcn_cloned_mac_address(const NMSettInfoSetting * sett_info,
+                               const NMSettInfoProperty *property_info,
+                               NMConnection *            con_a,
+                               NMSetting *               set_a,
+                               NMConnection *            con_b,
+                               NMSetting *               set_b,
+                               NMSettingCompareFlags     flags)
 {
-    if (property_info->param_spec == obj_properties[PROP_CLONED_MAC_ADDRESS]) {
-        return !set_b
-               || nm_streq0(NM_SETTING_WIRED_GET_PRIVATE(set_a)->cloned_mac_address,
-                            NM_SETTING_WIRED_GET_PRIVATE(set_b)->cloned_mac_address);
-    }
-
-    return NM_SETTING_CLASS(nm_setting_wired_parent_class)
-        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
+    return !set_b
+           || nm_streq0(NM_SETTING_WIRED_GET_PRIVATE(set_a)->cloned_mac_address,
+                        NM_SETTING_WIRED_GET_PRIVATE(set_b)->cloned_mac_address);
 }
 
 /*****************************************************************************/
@@ -1273,8 +1268,7 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    setting_class->verify           = verify;
-    setting_class->compare_property = compare_property;
+    setting_class->verify = verify;
 
     /**
      * NMSettingWired:port:
@@ -1474,9 +1468,14 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
         "",
         NULL,
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_CLONED_MAC_ADDRESS],
-                                 &nm_sett_info_propert_type_cloned_mac_address);
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_CLONED_MAC_ADDRESS],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_BYTESTRING,
+                                       .compare_fcn           = compare_fcn_cloned_mac_address,
+                                       .to_dbus_fcn           = _nm_utils_hwaddr_cloned_get,
+                                       .from_dbus_fcn         = _nm_utils_hwaddr_cloned_set,
+                                       .missing_from_dbus_fcn = _nm_utils_hwaddr_cloned_not_set, ));
 
     /* ---dbus---
      * property: assigned-mac-address

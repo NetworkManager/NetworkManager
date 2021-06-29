@@ -2729,7 +2729,7 @@ _nm_setting_get_team_setting(struct _NMSetting *setting)
     return _nm_setting_team_port_get_team_setting(NM_SETTING_TEAM_PORT(setting));
 }
 
-static GVariant *
+GVariant *
 _nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_info,
                                    const NMSettInfoProperty *              property_info,
                                    NMConnection *                          connection,
@@ -2778,7 +2778,7 @@ _nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_
     return NULL;
 }
 
-static void
+void
 _nm_team_settings_property_from_dbus_link_watchers(GVariant *dbus_value, GValue *prop_value)
 {
     g_value_take_boxed(prop_value,
@@ -2804,13 +2804,6 @@ const NMSettInfoPropertType nm_sett_info_propert_type_team_as =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(NM_G_VARIANT_TYPE("as"),
                                         .compare_fcn = _nm_setting_property_compare_fcn_default,
                                         .to_dbus_fcn = _nm_team_settings_property_to_dbus, );
-
-const NMSettInfoPropertType nm_sett_info_propert_type_team_link_watchers =
-    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(NM_G_VARIANT_TYPE("aa{sv}"),
-                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
-                                        .to_dbus_fcn = _nm_team_settings_property_to_dbus,
-                                        .gprop_from_dbus_fcn =
-                                            _nm_team_settings_property_from_dbus_link_watchers, );
 
 /*****************************************************************************/
 

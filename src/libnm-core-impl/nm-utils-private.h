@@ -36,11 +36,7 @@ extern const NMSettInfoPropertType nm_sett_info_propert_type_strdict;
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_mac_address;
 
-extern const NMSettInfoPropertType nm_sett_info_propert_type_cloned_mac_address;
-
 extern const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address;
-
-extern const NMSettInfoPropertType nm_sett_info_propert_type_bridge_vlans;
 
 void _nm_utils_strdict_from_dbus(GVariant *dbus_value, GValue *prop_value);
 
@@ -57,5 +53,16 @@ gboolean _nm_utils_bridge_vlan_verify_list(GPtrArray * vlans,
                                            GError **   error,
                                            const char *setting,
                                            const char *property);
+
+NMTernary _nm_utils_bridge_compare_vlans(GPtrArray *vlans_a, GPtrArray *vlans_b);
+
+GVariant *_nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_info,
+                                             const NMSettInfoProperty *              property_info,
+                                             NMConnection *                          connection,
+                                             NMSetting *                             setting,
+                                             NMConnectionSerializationFlags          flags,
+                                             const NMConnectionSerializationOptions *options);
+
+void _nm_team_settings_property_from_dbus_link_watchers(GVariant *dbus_value, GValue *prop_value);
 
 #endif

@@ -5619,76 +5619,95 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     return TRUE;
 }
 
-static NMTernary
-compare_property(const NMSettInfoSetting * sett_info,
-                 const NMSettInfoProperty *property_info,
-                 NMConnection *            con_a,
-                 NMSetting *               set_a,
-                 NMConnection *            con_b,
-                 NMSetting *               set_b,
-                 NMSettingCompareFlags     flags)
+NMTernary
+_nm_setting_ip_config_compare_fcn_addresses(const NMSettInfoSetting * sett_info,
+                                            const NMSettInfoProperty *property_info,
+                                            NMConnection *            con_a,
+                                            NMSetting *               set_a,
+                                            NMConnection *            con_b,
+                                            NMSetting *               set_b,
+                                            NMSettingCompareFlags     flags)
 {
     NMSettingIPConfigPrivate *a_priv;
     NMSettingIPConfigPrivate *b_priv;
     guint                     i;
 
-    if (property_info->param_spec == obj_properties[PROP_ADDRESSES]) {
-        if (set_b) {
-            a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_a);
-            b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_b);
+    if (set_b) {
+        a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_a);
+        b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_b);
 
-            if (a_priv->addresses->len != b_priv->addresses->len)
+        if (a_priv->addresses->len != b_priv->addresses->len)
+            return FALSE;
+        for (i = 0; i < a_priv->addresses->len; i++) {
+            if (nm_ip_address_cmp_full(a_priv->addresses->pdata[i],
+                                       b_priv->addresses->pdata[i],
+                                       NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS)
+                != 0)
                 return FALSE;
-            for (i = 0; i < a_priv->addresses->len; i++) {
-                if (nm_ip_address_cmp_full(a_priv->addresses->pdata[i],
-                                           b_priv->addresses->pdata[i],
-                                           NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS)
-                    != 0)
-                    return FALSE;
-            }
         }
-        return TRUE;
     }
+    return TRUE;
+}
 
-    if (property_info->param_spec == obj_properties[PROP_ROUTES]) {
-        if (set_b) {
-            a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_a);
-            b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_b);
+NMTernary
+_nm_setting_ip_config_compare_fcn_routes(const NMSettInfoSetting * sett_info,
+                                         const NMSettInfoProperty *property_info,
+                                         NMConnection *            con_a,
+                                         NMSetting *               set_a,
+                                         NMConnection *            con_b,
+                                         NMSetting *               set_b,
+                                         NMSettingCompareFlags     flags)
+{
+    NMSettingIPConfigPrivate *a_priv;
+    NMSettingIPConfigPrivate *b_priv;
+    guint                     i;
 
-            if (a_priv->routes->len != b_priv->routes->len)
+    if (set_b) {
+        a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_a);
+        b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_b);
+
+        if (a_priv->routes->len != b_priv->routes->len)
+            return FALSE;
+        for (i = 0; i < a_priv->routes->len; i++) {
+            if (!nm_ip_route_equal_full(a_priv->routes->pdata[i],
+                                        b_priv->routes->pdata[i],
+                                        NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS))
                 return FALSE;
-            for (i = 0; i < a_priv->routes->len; i++) {
-                if (!nm_ip_route_equal_full(a_priv->routes->pdata[i],
-                                            b_priv->routes->pdata[i],
-                                            NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS))
-                    return FALSE;
-            }
         }
-        return TRUE;
     }
+    return TRUE;
+}
 
-    if (nm_streq(property_info->name, NM_SETTING_IP_CONFIG_ROUTING_RULES)) {
-        if (set_b) {
-            guint n;
+static NMTernary
+compare_fcn_routing_rules(const NMSettInfoSetting * sett_info,
+                          const NMSettInfoProperty *property_info,
+                          NMConnection *            con_a,
+                          NMSetting *               set_a,
+                          NMConnection *            con_b,
+                          NMSetting *               set_b,
+                          NMSettingCompareFlags     flags)
+{
+    NMSettingIPConfigPrivate *a_priv;
+    NMSettingIPConfigPrivate *b_priv;
+    guint                     i;
 
-            a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_a);
-            b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_b);
+    if (set_b) {
+        guint n;
 
-            n = (a_priv->routing_rules) ? a_priv->routing_rules->len : 0u;
-            if (n != (b_priv->routing_rules ? b_priv->routing_rules->len : 0u))
+        a_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_a);
+        b_priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(set_b);
+
+        n = (a_priv->routing_rules) ? a_priv->routing_rules->len : 0u;
+        if (n != (b_priv->routing_rules ? b_priv->routing_rules->len : 0u))
+            return FALSE;
+        for (i = 0; i < n; i++) {
+            if (nm_ip_routing_rule_cmp(a_priv->routing_rules->pdata[i],
+                                       b_priv->routing_rules->pdata[i])
+                != 0)
                 return FALSE;
-            for (i = 0; i < n; i++) {
-                if (nm_ip_routing_rule_cmp(a_priv->routing_rules->pdata[i],
-                                           b_priv->routing_rules->pdata[i])
-                    != 0)
-                    return FALSE;
-            }
         }
-        return TRUE;
     }
-
-    return NM_SETTING_CLASS(nm_setting_ip_config_parent_class)
-        ->compare_property(sett_info, property_info, con_a, set_a, con_b, set_b, flags);
+    return TRUE;
 }
 
 static void
@@ -5814,7 +5833,7 @@ _nm_sett_info_property_override_create_array_ip_config(void)
         NM_SETTING_IP_CONFIG_ROUTING_RULES,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = _routing_rules_dbus_only_synth,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .compare_fcn   = compare_fcn_routing_rules,
                                        .from_dbus_fcn = _routing_rules_dbus_only_set, ));
 
     _nm_properties_override_gobj(
@@ -6114,7 +6133,6 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     object_class->finalize     = finalize;
 
     setting_class->verify                    = verify;
-    setting_class->compare_property          = compare_property;
     setting_class->duplicate_copy_properties = duplicate_copy_properties;
     setting_class->enumerate_values          = enumerate_values;
 
