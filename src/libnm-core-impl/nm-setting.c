@@ -943,9 +943,6 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
 
     nm_assert(property_info->param_spec);
     nm_assert(property_info->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop);
-    nm_assert(property_info->property_type->typdata_to_dbus.gprop_type
-                  == NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT
-              || !property_info->to_dbus_data.gprop_to_dbus_fcn);
 
     g_value_init(&prop_value, property_info->param_spec->value_type);
 
@@ -957,9 +954,6 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
 
     switch (property_info->property_type->typdata_to_dbus.gprop_type) {
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
-        if (property_info->to_dbus_data.gprop_to_dbus_fcn)
-            return property_info->to_dbus_data.gprop_to_dbus_fcn(&prop_value);
-
         return g_dbus_gvalue_to_gvariant(&prop_value, property_info->property_type->dbus_type);
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_BYTES));
@@ -999,7 +993,6 @@ property_to_dbus(const NMSettInfoSetting *               sett_info,
 
     if (!property_info->property_type->to_dbus_fcn) {
         nm_assert(!property_info->param_spec);
-        nm_assert(!property_info->to_dbus_data.none);
         return NULL;
     }
 
