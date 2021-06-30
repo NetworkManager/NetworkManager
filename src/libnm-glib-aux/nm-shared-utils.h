@@ -2949,4 +2949,8 @@ void nm_crypto_md5_hash(const guint8 *salt,
 
 char *nm_utils_get_process_exit_status_desc(int status);
 
+/*****************************************************************************/
+
+void nm_utils_thread_local_register_destroy(gpointer tls_data, GDestroyNotify destroy_notify);
+
 #endif /* __NM_SHARED_UTILS_H__ */
