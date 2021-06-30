@@ -3528,14 +3528,11 @@ nm_ip_routing_rule_from_string(const char *                 str,
         }
 
         if (i_action < 0) {
-            i_action = nm_net_aux_rtnl_rtntype_a2n(word1);
+            i_action = nm_net_aux_rtnl_rtntype_a2n(word0);
             if (i_action >= 0)
                 goto next_words_consumed;
         }
 
-        /* also the action is still unsupported. For the moment, we only support
-         * FR_ACT_TO_TBL, which is the default (by not expressing it on the command
-         * line). */
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_FAILED,

@@ -4048,6 +4048,7 @@ test_routing_rule(gconstpointer test_data)
     nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr1 = NULL;
     gboolean                                       success;
     char                                           ifname_buf[16];
+    gs_free_error GError *error = NULL;
 
     _rr_from_str("priority 5 from 0.0.0.0 table 1", "  from 0.0.0.0  priority  5 lookup 1 ");
     _rr_from_str("priority 5 from 0.0.0.0/0 table 4");
@@ -4077,6 +4078,7 @@ test_routing_rule(gconstpointer test_data)
                  "priority 5 to 0.0.0.0 not dport 10-133 not table 6",
                  "priority 5 to 0.0.0.0 not dport 10-\\ 133 not table 6");
     _rr_from_str("priority 5 to 0.0.0.0 ipproto 10 sport 10 table 6");
+    _rr_from_str("priority 5 to 0.0.0.0 type blackhole", "priority 5 to 0.0.0.0 blackhole");
 
     rr1 = _rr_from_str_get("priority 5 from :: iif aab table 25");
     g_assert_cmpstr(nm_ip_routing_rule_get_iifname(rr1), ==, "aab");
@@ -4125,6 +4127,22 @@ test_routing_rule(gconstpointer test_data)
     g_assert_cmpstr(ifname_buf, ==, "a\303\261,x;b");
     g_assert(success);
     nm_clear_pointer(&rr1, nm_ip_routing_rule_unref);
+
+    rr1 = nm_ip_routing_rule_from_string("priority   6 blackhole",
+                                         NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET,
+                                         NULL,
+                                         &error);
+    nmtst_assert_success(rr1, error);
+    nm_clear_pointer(&rr1, nm_ip_routing_rule_unref);
+    nm_clear_error(&error);
+
+    rr1 = nm_ip_routing_rule_from_string("priority   6 bogus",
+                                         NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET,
+                                         NULL,
+                                         &error);
+    nmtst_assert_no_success(rr1, error);
+    nm_clear_pointer(&rr1, nm_ip_routing_rule_unref);
+    nm_clear_error(&error);
 }
 
 /*****************************************************************************/
