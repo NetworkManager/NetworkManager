@@ -1,4 +1,18 @@
 =============================================
+NetworkManager-1.32.2
+Overview of changes since NetworkManager-1.32
+=============================================
+
+* hostname: prefer IPv4 addresses for reverse DNS lookup.
+* dhcp: ignore unauthenticated FORCERENEW messages with
+  internal, systemd-based DHCPv4 plugin (CVE-2020-13529).
+  This plugin is not used, unless the undocumented dhcp=systemd
+  option was set.
+* cloud-setup: preserve IP addresses, routes and rules from
+  currently active connection profile.
+* Various bugfixes and performance improvements.
+
+=============================================
 NetworkManager-1.32
 Overview of changes since NetworkManager-1.30
 =============================================
