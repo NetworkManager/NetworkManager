@@ -377,7 +377,7 @@ fi
 
 if [ $CHECK_GITLAB = 1 ]; then
     if ! check_gitlab_pipeline "$CUR_BRANCH" "$CUR_HEAD" ; then
-        echo "Check the pipelines for branch \"$CUR_BRANCH\" at https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines/"
+        echo "Check the pipelines for branch \"$CUR_BRANCH\" at https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines?ref=$CUR_BRANCH"
         die "It seems not all gitlab-ci jobs were running/succeeding. Skip this check with --no-check-gitlab"
     fi
 fi
