@@ -6,7 +6,7 @@ set -exv
 # supported environment variables to tweak the build
 #
 BUILD_DIR="${BUILD_DIR:-$HOME/nm-build}"
-BUILD_ID="${BUILD_ID:-master}"
+BUILD_ID="${BUILD_ID:-main}"
 BUILD_REPO="${BUILD_REPO}"
 BUILD_SNAPSHOT="${BUILD_SNAPSHOT:-}"
 ARCH="${ARCH:-$(arch)}"
