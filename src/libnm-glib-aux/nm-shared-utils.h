@@ -2994,4 +2994,8 @@ char *nm_utils_get_process_exit_status_desc(int status);
 
 gboolean nm_utils_validate_hostname(const char *hostname);
 
+/*****************************************************************************/
+
+void nm_utils_thread_local_register_destroy(gpointer tls_data, GDestroyNotify destroy_notify);
+
 #endif /* __NM_SHARED_UTILS_H__ */

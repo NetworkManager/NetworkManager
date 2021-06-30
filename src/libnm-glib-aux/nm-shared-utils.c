@@ -14,7 +14,9 @@
 #include <sys/syscall.h>
 #include <net/if.h>
 #include <net/ethernet.h>
+#include <pthread.h>
 
+#include "c-list/src/c-list.h"
 #include "nm-errno.h"
 #include "nm-str-buf.h"
 
@@ -6384,4 +6386,81 @@ nm_utils_validate_hostname(const char *hostname)
         return FALSE;
 
     return (p - hostname <= HOST_NAME_MAX);
+}
+
+/*****************************************************************************/
+
+typedef struct {
+    CList          lst;
+    gpointer       tls_data;
+    GDestroyNotify destroy_notify;
+} TlsRegData;
+
+static pthread_key_t _tls_reg_key;
+
+static void
+_tls_reg_destroy(gpointer data)
+{
+    CList *     lst_head = data;
+    TlsRegData *entry;
+
+    if (!lst_head)
+        return;
+
+    /* For no strong reason are we destroying the elements in reverse
+     * order than they were added. It seems a bit more sensible (but shouldn't
+     * matter nor should you rely on that). */
+    while ((entry = c_list_last_entry(lst_head, TlsRegData, lst))) {
+        c_list_unlink_stale(&entry->lst);
+        entry->destroy_notify(entry->tls_data);
+        nm_g_slice_free(entry);
+    }
+
+    nm_g_slice_free(lst_head);
+}
+
+static void
+_tls_reg_make_key(void)
+{
+    if (pthread_key_create(&_tls_reg_key, _tls_reg_destroy) != 0)
+        g_return_if_reached();
+}
+
+/**
+ * nm_utils_thread_local_register_destroy:
+ * @tls_data: the thread local storage data that should be destroyed when the thread
+ *   exits. This pointer will be "owned" by the current thread. There is no way
+ *   to un-register the destruction.
+ * @destroy_notify: the free function that will be called when the thread exits.
+ *
+ * If _nm_tread_local storage is heap allocated it requires freeing the pointer
+ * when the thread exits. Use this function to register the pointer to be
+ * released.
+ *
+ * This function does not change errno.
+ */
+void
+nm_utils_thread_local_register_destroy(gpointer tls_data, GDestroyNotify destroy_notify)
+{
+    NM_AUTO_PROTECT_ERRNO(errsv);
+    static pthread_once_t key_once = PTHREAD_ONCE_INIT;
+    CList *               lst_head;
+    TlsRegData *          entry;
+
+    nm_assert(destroy_notify);
+
+    if (pthread_once(&key_once, _tls_reg_make_key) != 0)
+        g_return_if_reached();
+
+    if ((lst_head = pthread_getspecific(_tls_reg_key)) == NULL) {
+        lst_head = g_slice_new(CList);
+        c_list_init(lst_head);
+        if (pthread_setspecific(_tls_reg_key, lst_head) != 0)
+            g_return_if_reached();
+    }
+
+    entry                 = g_slice_new(TlsRegData);
+    entry->tls_data       = tls_data;
+    entry->destroy_notify = destroy_notify;
+    c_list_link_tail(lst_head, &entry->lst);
 }
