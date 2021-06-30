@@ -189,7 +189,8 @@ fd_open:
     }
 
     if (!urandom_success) {
-        static _nm_thread_local GRand *rand = NULL;
+        static _nm_thread_local GRand *rand_tls = NULL;
+        GRand *                        rand;
         gsize                          i;
         int                            j;
 
@@ -200,8 +201,10 @@ fd_open:
          */
         has_high_quality = FALSE;
 
+        rand = rand_tls;
         if (G_UNLIKELY(!rand)) {
-            rand = _rand_create_thread_local();
+            rand     = _rand_create_thread_local();
+            rand_tls = rand;
             nm_utils_thread_local_register_destroy(rand, (GDestroyNotify) g_rand_free);
         }
 
