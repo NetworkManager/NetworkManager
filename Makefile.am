@@ -803,6 +803,7 @@ src_libnm_client_aux_extern_tests_test_libnm_client_aux_LDADD = \
 	src/libnm-core-aux-extern/libnm-core-aux-extern.la \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	src/libnm-client-impl/libnm.la \
@@ -4584,6 +4585,7 @@ src_nm_dispatcher_tests_test_dispatcher_envp_LDFLAGS = \
 src_nm_dispatcher_tests_test_dispatcher_envp_LDADD = \
 	src/nm-dispatcher/libnm-dispatcher-core.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	src/libnm-client-impl/libnm.la \
@@ -4778,6 +4780,7 @@ src_libnmc_setting_tests_test_libnmc_setting_LDADD = \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	src/libnm-client-impl/libnm.la \

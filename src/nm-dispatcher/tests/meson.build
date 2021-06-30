@@ -13,6 +13,7 @@ exe = executable(
   c_args: introspection_extra_cflags,
   link_with: [
     libnm_dispatcher_core,
+    libnm_log_null,
     libnm_glib_aux,
     libnm_std_aux,
     libc_siphash,

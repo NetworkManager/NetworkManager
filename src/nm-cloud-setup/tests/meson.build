@@ -11,6 +11,7 @@ exe = executable(
   link_with: [
     libnm_cloud_setup_core,
     libnmc_base,
+    libnm_log_null,
     libnm_glib_aux,
     libnm_std_aux,
     libc_siphash,
