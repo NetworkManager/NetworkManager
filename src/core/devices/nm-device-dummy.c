@@ -57,16 +57,13 @@ complete_connection(NMDevice *           device,
                               NULL,
                               _("Dummy connection"),
                               NULL,
-                              NULL,
+                              nm_device_get_ip_iface(device),
                               TRUE);
 
     s_dummy = nm_connection_get_setting_dummy(connection);
     if (!s_dummy) {
-        g_set_error_literal(error,
-                            NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_INVALID_CONNECTION,
-                            "A 'dummy' setting is required.");
-        return FALSE;
+        s_dummy = NM_SETTING_DUMMY(nm_setting_dummy_new());
+        nm_connection_add_setting(connection, NM_SETTING(s_dummy));
     }
 
     return TRUE;
