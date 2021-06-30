@@ -11,7 +11,6 @@
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <pthread.h>
 
 #include "libnm-log-core/nm-logging.h"
 
@@ -151,20 +150,13 @@ _netns_stack_get_impl(void)
 {
     gs_unref_object NMPNetns *netns = NULL;
     gs_free_error GError *error     = NULL;
-    pthread_key_t         key;
     GArray *              s;
 
     s = g_array_new(FALSE, FALSE, sizeof(NetnsInfo));
     g_array_set_clear_func(s, _netns_stack_clear_cb);
     _netns_stack = s;
 
-    /* register a destructor function to cleanup the array. If we fail
-     * to do so, we will leak NMPNetns instances (and their file descriptor) when the
-     * thread exits. */
-    if (pthread_key_create(&key, (void (*)(void *)) g_array_unref) != 0)
-        _LOGE(NULL, "failure to initialize thread-local storage");
-    else if (pthread_setspecific(key, s) != 0)
-        _LOGE(NULL, "failure to set thread-local storage");
+    nm_utils_thread_local_register_destroy(s, (GDestroyNotify) g_array_unref);
 
     /* at the bottom of the stack we must try to create a netns instance
      * that we never pop. It's the base to which we need to return. */
