@@ -53,8 +53,7 @@ usage_agent_all(void)
 
 /* for pre-filling a string to readline prompt */
 static char *pre_input_deftext;
-static int
-set_deftext(void)
+static int   set_deftext(_NMC_RL_STARTUPHOOK_ARGS)
 {
     if (pre_input_deftext && rl_startup_hook) {
         rl_insert_text(pre_input_deftext);
