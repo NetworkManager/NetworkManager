@@ -5755,6 +5755,9 @@ finish:
 /*****************************************************************************/
 /* Functions for readline TAB completion in editor */
 
+#if HAVE_EDITLINE_READLINE
+#define uuid_display_hook ((void (*)(void)) NULL)
+#else
 static void
 uuid_display_hook(char **array, int len, int max_len)
 {
@@ -5778,6 +5781,7 @@ uuid_display_hook(char **array, int len, int max_len)
     rl_display_match_list(array, len, max_len + max + 3);
     rl_forced_update_display();
 }
+#endif
 
 static char *
 gen_nmcli_cmds_menu(const char *text, int state)
