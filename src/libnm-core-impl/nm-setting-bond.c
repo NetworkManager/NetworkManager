@@ -90,6 +90,7 @@ static const char *const valid_options_lst[] = {
     NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE,
     NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,
     NM_SETTING_BOND_OPTION_LP_INTERVAL,
+    NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY,
     NULL,
 };
 
@@ -207,6 +208,10 @@ static NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE(
     {NM_SETTING_BOND_OPTION_NUM_GRAT_ARP, {"1", NM_BOND_OPTION_TYPE_INT, 0, 255}},
     {NM_SETTING_BOND_OPTION_NUM_UNSOL_NA, {"1", NM_BOND_OPTION_TYPE_INT, 0, 255}},
     {NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, {"1", NM_BOND_OPTION_TYPE_INT, 0, 65535}},
+    /* peer_notif_delay does not have a list in the end of the possible values
+     * it could get, but it can only be a multiple of miimon (as asserted in other
+     * functions). */
+    {NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY, {"0", NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT}},
     {NM_SETTING_BOND_OPTION_PRIMARY, {"", NM_BOND_OPTION_TYPE_IFNAME}},
     {NM_SETTING_BOND_OPTION_PRIMARY_RESELECT,
      {"always", NM_BOND_OPTION_TYPE_BOTH, 0, 2, _option_default_strv_primary_reselect}},
@@ -342,6 +347,35 @@ _bond_get_option_normalized(NMSettingBond *self, const char *option, gboolean ge
             value = _bond_get_option(self, NM_SETTING_BOND_OPTION_PRIMARY);
             if (!value)
                 value = _bond_get_option(self, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
+        } else if (NM_IN_STRSET(option, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY)) {
+            int miimon, peer_notif_delay;
+            miimon = _nm_utils_ascii_str_to_int64(
+                _bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_MIIMON),
+                10,
+                0,
+                G_MAXINT,
+                0);
+            peer_notif_delay = _nm_utils_ascii_str_to_int64(
+                _bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY),
+                10,
+                0,
+                G_MAXINT,
+                0);
+
+            /* Behavior in Kernel Bonding Driver Code */
+            if (!peer_notif_delay) {
+                return _bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_MIIMON);
+            } else {
+                if (!miimon) {
+                    return NULL;
+                } else {
+                    if (peer_notif_delay % miimon)
+                        return NULL;
+                    else
+                        return _bond_get_option(self, option);
+                }
+            }
+
         } else
             value = _bond_get_option(self, option);
 
@@ -355,6 +389,37 @@ _bond_get_option_normalized(NMSettingBond *self, const char *option, gboolean ge
         if (mode == NM_BOND_MODE_8023AD)
             return NM_BOND_AD_ACTOR_SYSTEM_DEFAULT;
         return "";
+    }
+
+    if (NM_IN_STRSET(option, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY)) {
+        int miimon, peer_notif_delay;
+
+        miimon = _nm_utils_ascii_str_to_int64(
+            _bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_MIIMON),
+            10,
+            0,
+            G_MAXINT,
+            0);
+
+        peer_notif_delay = _nm_utils_ascii_str_to_int64(
+            _bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY),
+            10,
+            0,
+            G_MAXINT,
+            0);
+
+        if (!peer_notif_delay) {
+            return _bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_MIIMON);
+        } else {
+            if (!miimon) {
+                return NULL;
+            } else {
+                if (peer_notif_delay % miimon)
+                    return NULL;
+                else
+                    return _bond_get_option(self, option);
+            }
+        }
     }
 
     return _bond_get_option_or_default(self, option);
@@ -780,6 +845,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     NMSettingBondPrivate *   priv = NM_SETTING_BOND_GET_PRIVATE(setting);
     int                      miimon;
     int                      arp_interval;
+    int                      peer_notif_delay;
     int                      num_grat_arp;
     int                      num_unsol_na;
     const char *             mode_str;
@@ -808,6 +874,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     miimon       = _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_MIIMON));
     arp_interval = _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_ARP_INTERVAL));
+    peer_notif_delay =
+        _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY));
     num_grat_arp = _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP));
     num_unsol_na = _atoi(_bond_get_option_or_default(self, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA));
 
@@ -818,6 +886,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
      * arp_validate does not work with [ BOND_MODE_8023AD, BOND_MODE_TLB, BOND_MODE_ALB ]
      * downdelay needs miimon
      * updelay needs miimon
+     * peer_notif_delay needs miimon enabled to be set
+     * peer_notif_delay must be a multiple of miimon interval
      * primary needs [ active-backup, tlb, alb ]
      */
 
@@ -920,6 +990,34 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
                         _("'%s' option requires '%s' option to be enabled"),
                         NM_SETTING_BOND_OPTION_DOWNDELAY,
+                        NM_SETTING_BOND_OPTION_MIIMON);
+            g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+            return FALSE;
+        }
+    }
+
+    if (peer_notif_delay) {
+        /* Kernel code currently only accepts peer_notif_delay != 0 only if
+    	 * miimon is enabled */
+        if (!miimon) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("'%s' can only be set if '%s' is set"),
+                        NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY,
+                        NM_SETTING_BOND_OPTION_MIIMON);
+            g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+            return FALSE;
+        }
+
+        /* Kernel bonding driver only allows peer_notif_delay values that are
+    	 * multiples of the MIImon monitor interval (miimon variable). */
+        if ((peer_notif_delay % miimon) && (!arp_interval)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("'%s' must be a multiple of the '%s' value"),
+                        NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY,
                         NM_SETTING_BOND_OPTION_MIIMON);
             g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
             return FALSE;
