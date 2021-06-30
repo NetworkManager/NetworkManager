@@ -17653,7 +17653,7 @@ hostname_dns_lookup_callback(GObject *source, GAsyncResult *result, gpointer use
         gboolean valid;
 
         resolver->hostname = g_steal_pointer(&output);
-        valid              = nm_hostname_manager_validate_hostname(resolver->hostname);
+        valid              = nm_utils_validate_hostname(resolver->hostname);
 
         _LOGD(LOGD_DNS,
               "hostname-from-dns: lookup done for %s, result %s%s%s%s",

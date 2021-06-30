@@ -3441,7 +3441,7 @@ impl_settings_save_hostname(NMDBusObject *                     obj,
     g_variant_get(parameters, "(&s)", &hostname);
 
     /* Minimal validation of the hostname */
-    if (!nm_hostname_manager_validate_hostname(hostname)) {
+    if (!nm_utils_validate_hostname(hostname)) {
         error_code   = NM_SETTINGS_ERROR_INVALID_HOSTNAME;
         error_reason = "The hostname was too long or contained invalid characters";
         goto err;

@@ -36,8 +36,6 @@ NMHostnameManager *nm_hostname_manager_get(void);
 
 const char *nm_hostname_manager_get_hostname(NMHostnameManager *self);
 
-char *nm_hostname_manager_read_hostname(NMHostnameManager *self);
-
 gboolean nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname);
 
 void nm_hostname_manager_set_transient_hostname(NMHostnameManager *            self,
@@ -46,7 +44,5 @@ void nm_hostname_manager_set_transient_hostname(NMHostnameManager *            s
                                                 gpointer                       user_data);
 
 gboolean nm_hostname_manager_get_transient_hostname(NMHostnameManager *self, char **hostname);
-
-gboolean nm_hostname_manager_validate_hostname(const char *hostname);
 
 #endif /* __NM_HOSTNAME_MANAGER_H__ */
