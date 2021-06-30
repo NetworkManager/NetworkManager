@@ -8,6 +8,7 @@
 #include "nm-random-utils.h"
 
 #include <fcntl.h>
+#include <sys/auxv.h>
 
 #if USE_SYS_RANDOM_H
     #include <sys/random.h>
@@ -16,8 +17,99 @@
 #endif
 
 #include "nm-shared-utils.h"
+#include "nm-time-utils.h"
 
 /*****************************************************************************/
+
+#define SEED_ARRAY_SIZE (16 + 2 + 4 + 2 + 3)
+
+static guint32
+_pid_hash(pid_t id)
+{
+    if (sizeof(pid_t) > sizeof(guint32))
+        return (((guint64) id) >> 32) ^ ((guint64) id);
+    return id;
+}
+
+static void
+_rand_init_seed(guint32 seed_array[static SEED_ARRAY_SIZE], GRand *rand)
+{
+    int           seed_idx;
+    const guint8 *p_at_random;
+    guint64       now_nsec;
+
+    /* Get some seed material from the provided GRand. */
+    for (seed_idx = 0; seed_idx < 16; seed_idx++)
+        seed_array[seed_idx] = g_rand_int(rand);
+
+    /* Add an address from the heap. */
+    seed_array[seed_idx++] = ((guint64) ((uintptr_t) ((gpointer) rand))) >> 32;
+    seed_array[seed_idx++] = ((guint64) ((uintptr_t) ((gpointer) rand)));
+
+    /* Add the per-process, random number. */
+    p_at_random = ((gpointer) getauxval(AT_RANDOM));
+    if (p_at_random) {
+        memcpy(&seed_array[seed_idx], p_at_random, 16);
+    } else
+        memset(&seed_array[seed_idx], 0, 16);
+    G_STATIC_ASSERT_EXPR(sizeof(guint32) == 4);
+    seed_idx += 4;
+
+    /* Add the current timestamp, the pid and ppid. */
+    now_nsec               = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
+    seed_array[seed_idx++] = ((guint64) now_nsec) >> 32;
+    seed_array[seed_idx++] = ((guint64) now_nsec);
+    seed_array[seed_idx++] = _pid_hash(getpid());
+    seed_array[seed_idx++] = _pid_hash(getppid());
+    seed_array[seed_idx++] = _pid_hash(gettid());
+
+    nm_assert(seed_idx == SEED_ARRAY_SIZE);
+}
+
+static GRand *
+_rand_create_thread_local(void)
+{
+    G_LOCK_DEFINE_STATIC(global_rand);
+    static GRand *global_rand = NULL;
+    guint32       seed_array[SEED_ARRAY_SIZE];
+
+    /* We use thread-local instances of GRand to create a series of
+     * "random" numbers. We use thread-local instances, so that we don't
+     * require additional locking except the first time.
+     *
+     * We trust that once seeded, a GRand gives us a good enough stream of
+     * random numbers. If that wouldn't be the case, then maybe GRand should
+     * be fixed.
+     * Also, we tell our callers that the numbers from GRand are not good.
+     * But that isn't gonna help, because callers have no other way to get
+     * better random numbers, so usually the just ignore the failure and make
+     * the best of it.
+     *
+     * That means, the remaining problem is to seed the instance well.
+     * Note that we are already in a situation where getrandom() failed
+     * to give us good random numbers. So we can not do much to get reliably
+     * good entropy for the seed. */
+
+    G_LOCK(global_rand);
+
+    if (G_UNLIKELY(!global_rand)) {
+        GRand *rand1;
+
+        /* g_rand_new() reads /dev/urandom, but we already noticed that
+         * /dev/urandom fails to give us good randomness (which is why
+         * we hit this code path). So this may not be as good as we wish,
+         * but let's add it to the mix. */
+        rand1 = g_rand_new();
+        _rand_init_seed(seed_array, rand1);
+        global_rand = g_rand_new_with_seed_array(seed_array, SEED_ARRAY_SIZE);
+        g_rand_free(rand1);
+    }
+
+    _rand_init_seed(seed_array, global_rand);
+    G_UNLOCK(global_rand);
+
+    return g_rand_new_with_seed_array(seed_array, SEED_ARRAY_SIZE);
+}
 
 /**
  * nm_utils_random_bytes:
@@ -123,7 +215,7 @@ fd_open:
         has_high_quality = FALSE;
 
         if (G_UNLIKELY(!rand)) {
-            rand = g_rand_new();
+            rand = _rand_create_thread_local();
             nm_utils_thread_local_register_destroy(rand, (GDestroyNotify) g_rand_free);
         }
 
