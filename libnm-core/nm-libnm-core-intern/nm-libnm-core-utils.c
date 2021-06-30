@@ -25,6 +25,7 @@ _nm_setting_bond_remove_options_miimon(NMSettingBond *s_bond)
     nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_MIIMON);
     nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_UPDELAY);
     nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY);
+    nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY);
 }
 
 void
