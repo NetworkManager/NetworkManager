@@ -1148,7 +1148,7 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
         _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *message = NULL;
         char serv_addr[INET_ADDRSTRLEN];
         char client_addr[INET_ADDRSTRLEN];
-        uint8_t type;
+        uint8_t type = 0;
         int r;
 
         switch (connection->state) {
