@@ -122,8 +122,10 @@ fd_open:
          */
         has_high_quality = FALSE;
 
-        if (G_UNLIKELY(!rand))
+        if (G_UNLIKELY(!rand)) {
             rand = g_rand_new();
+            nm_utils_thread_local_register_destroy(rand, (GDestroyNotify) g_rand_free);
+        }
 
         nm_assert(n > 0);
         i = 0;
