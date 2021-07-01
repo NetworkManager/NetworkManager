@@ -1,3 +1,11 @@
+===============================================
+NetworkManager-1.32.4
+Overview of changes since NetworkManager-1.32.2
+===============================================
+
+* core: remove stale entries from "seen-bssids" and "timestamp"
+  files in "/var/lib/NetworkManager".
+
 =============================================
 NetworkManager-1.32.2
 Overview of changes since NetworkManager-1.32
