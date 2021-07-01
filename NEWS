@@ -12,6 +12,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   no longer sets a negative, exclusive "dns-priority". This plays
   better with common split DNS setups that use systemd-resolved.
   Adjust the "dns-priority" to your liking after import yourself.
+* core: remove stale entries from "seen-bssids" and "timestamp"
+  files in "/var/lib/NetworkManager".
 
 =============================================
 NetworkManager-1.32
