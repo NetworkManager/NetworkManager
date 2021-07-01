@@ -340,8 +340,6 @@ gboolean nm_settings_connection_get_timestamp(NMSettingsConnection *self, guint6
 
 void nm_settings_connection_update_timestamp(NMSettingsConnection *self, guint64 timestamp);
 
-const char **nm_settings_connection_get_seen_bssids(NMSettingsConnection *self);
-
 gboolean nm_settings_connection_has_seen_bssid(NMSettingsConnection *self, const char *bssid);
 
 void nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const char *seen_bssid);

@@ -27,6 +27,8 @@ struct _NMKeyFileDB {
     bool dirty : 1;
     bool destroyed : 1;
 
+    bool groups_pruned : 1;
+
     char filename[];
 };
 
@@ -62,6 +64,16 @@ _IS_KEY_FILE_DB(NMKeyFileDB *self, gboolean require_is_started, gboolean allow_d
     return TRUE;
 }
 
+static GKeyFile *
+_key_file_new(void)
+{
+    GKeyFile *kf;
+
+    kf = g_key_file_new();
+    g_key_file_set_list_separator(kf, ',');
+    return kf;
+}
+
 /*****************************************************************************/
 
 NMKeyFileDB *
@@ -86,8 +98,7 @@ nm_key_file_db_new(const char *           filename,
     self->log_fcn       = log_fcn;
     self->got_dirty_fcn = got_dirty_fcn;
     self->user_data     = user_data;
-    self->kf            = g_key_file_new();
-    g_key_file_set_list_separator(self->kf, ',');
+    self->kf            = _key_file_new();
     memcpy(self->filename, filename, l_filename + 1);
     self->group_name = &self->filename[l_filename + 1];
     memcpy((char *) self->group_name, group_name, l_group + 1);
@@ -370,4 +381,107 @@ nm_key_file_db_to_file(NMKeyFileDB *self, gboolean force)
         _LOGD("failure to write keyfile \"%s\": %s", self->filename, error->message);
     } else
         _LOGD("write keyfile: \"%s\"", self->filename);
+}
+
+/*****************************************************************************/
+
+void
+nm_key_file_db_prune_tmp_files(NMKeyFileDB *self)
+{
+    gs_free char *     n_file   = NULL;
+    gs_free char *     n_dir    = NULL;
+    gs_strfreev char **tmpfiles = NULL;
+    gsize              i;
+
+    n_file = g_path_get_basename(self->filename);
+    n_dir  = g_path_get_dirname(self->filename);
+
+    tmpfiles = nm_utils_find_mkstemp_files(n_dir, n_file);
+    if (!tmpfiles)
+        return;
+
+    for (i = 0; tmpfiles[i]; i++) {
+        const char *  tmpfile   = tmpfiles[i];
+        gs_free char *full_file = NULL;
+        int           r;
+
+        full_file = g_strdup_printf("%s/%s", n_dir, tmpfile);
+
+        r = unlink(full_file);
+        if (r != 0) {
+            int errsv = errno;
+
+            if (errsv != ENOENT) {
+                _LOGD("prune left over temp file %s failed: %s",
+                      full_file,
+                      nm_strerror_native(errsv));
+            }
+            continue;
+        }
+
+        _LOGD("prune left over temp file %s", full_file);
+    }
+}
+
+/*****************************************************************************/
+
+void
+nm_key_file_db_prune(NMKeyFileDB *self,
+                     gboolean (*predicate)(const char *key, gpointer user_data),
+                     gpointer user_data)
+{
+    gs_strfreev char **   keys                 = NULL;
+    nm_auto_unref_keyfile GKeyFile *kf_to_free = NULL;
+    GKeyFile *                      kf_src     = NULL;
+    GKeyFile *                      kf_dst     = NULL;
+    guint                           k;
+
+    g_return_if_fail(_IS_KEY_FILE_DB(self, TRUE, FALSE));
+    nm_assert(predicate);
+
+    _LOGD("prune keyfile of old entries: \"%s\"", self->filename);
+
+    if (!self->groups_pruned) {
+        /* When we prune the first time, we swap the GKeyfile instance.
+         * The instance loaded from disk might have unrelated groups and
+         * comments. Let's get rid of them by creating a new instance.
+         *
+         * Otherwise, we know that self->kf only contains good keys,
+         * and at most we need to remove some of them. */
+        kf_to_free          = g_steal_pointer(&self->kf);
+        self->kf            = _key_file_new();
+        kf_src              = kf_to_free;
+        self->groups_pruned = TRUE;
+        self->dirty         = TRUE;
+    } else
+        kf_src = self->kf;
+    kf_dst = self->kf;
+
+    keys = g_key_file_get_keys(kf_src, self->group_name, NULL, NULL);
+    if (keys) {
+        for (k = 0; keys[k]; k++) {
+            const char *key = keys[k];
+            gboolean    keep;
+
+            keep = predicate(key, user_data);
+
+            if (!keep) {
+                if (kf_dst == kf_src) {
+                    g_key_file_remove_key(kf_dst, self->group_name, key, NULL);
+                    self->dirty = TRUE;
+                }
+                continue;
+            }
+
+            if (kf_dst != kf_src) {
+                gs_free char *value = NULL;
+
+                value = g_key_file_get_value(kf_src, self->group_name, key, NULL);
+                if (value)
+                    g_key_file_set_value(kf_dst, self->group_name, key, value);
+                else
+                    self->dirty = TRUE;
+            }
+        }
+    }
 }
