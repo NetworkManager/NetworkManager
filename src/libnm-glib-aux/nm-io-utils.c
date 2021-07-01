@@ -564,3 +564,67 @@ nm_g_subprocess_terminate_in_background(GSubprocess *subprocess, int timeout_mse
                                                    NULL),
                            main_context);
 }
+
+/*****************************************************************************/
+
+char **
+nm_utils_find_mkstemp_files(const char *dirname, const char *filename)
+{
+    static const char letters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    DIR *             dir;
+    struct dirent *   entry;
+    GPtrArray *       arr = NULL;
+    gsize             l;
+
+    /* We write files with g_file_set_contents() and nm_utils_file_set_contents().
+     * These create temporary files using g_mkstemp_full(), with a random .XXXXXX suffix.
+     *
+     * If NetworkManager crashes while writing the file, then those temporary files are
+     * left over. We might want to find and delete such files.
+     *
+     * Beware: only delete such files if you are in full control about which files are
+     * supposed to be in the directory. For example, NetworkManager controls
+     * /var/lib/NetworkManager/timestamps files, and it thus takes the right to delete
+     * all files /var/lib/NetworkManager/timestamps.XXXXXX. That may not be appropriate
+     * in other cases! */
+
+    if (!dirname || !filename || !filename[0])
+        return NULL;
+
+    dir = opendir(dirname);
+    if (!dir)
+        return NULL;
+
+    l = strlen(filename);
+
+    while ((entry = readdir(dir))) {
+        const char *f = entry->d_name;
+        guint       i;
+
+        if (strncmp(f, filename, l) != 0)
+            goto next;
+        if (f[l] != '.')
+            goto next;
+        for (i = 1; i <= 6; i++) {
+            /* @letters is also what g_mkstemp_full() does! */
+            if (!memchr(letters, f[l + i], G_N_ELEMENTS(letters)))
+                goto next;
+        }
+        if (f[l + 7] != '\0')
+            goto next;
+
+        if (!arr)
+            arr = g_ptr_array_new();
+
+        g_ptr_array_add(arr, g_strdup(f));
+next:;
+    }
+
+    closedir(dir);
+
+    if (!arr)
+        return NULL;
+
+    g_ptr_array_add(arr, NULL);
+    return (char **) g_ptr_array_free(arr, FALSE);
+}
