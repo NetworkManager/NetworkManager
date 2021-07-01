@@ -99,7 +99,8 @@ AC_DEFUN([AX_LIB_READLINE], [
     AC_CACHE_CHECK([whether readline supports history],
                    ax_cv_lib_readline_history, [
       ax_cv_lib_readline_history="no"
-      AC_LINK_IFELSE([AC_LANG_CALL([], [add_history])], [ax_cv_lib_readline_history="yes"])
+      AC_LINK_IFELSE([AC_LANG_CALL([], [history_set_history_state])],
+              [ax_cv_lib_readline_history="yes"])
     ])
     LIBS=$ORIG_LIBS
 
