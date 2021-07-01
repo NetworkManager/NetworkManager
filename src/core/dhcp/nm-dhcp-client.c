@@ -20,6 +20,7 @@
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-dhcp-manager.h"
 #include "nm-dhcp-utils.h"
 #include "nm-dhcp-options.h"
 #include "libnm-platform/nm-platform.h"
@@ -443,17 +444,18 @@ nm_dhcp_client_set_state(NMDhcpClient *self,
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
+    /* Timeout state of dhclient may contain valid ip config from lease. */
     if (NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
         g_return_if_fail(NM_IS_IP_CONFIG_ADDR_FAMILY(ip_config, priv->addr_family));
         g_return_if_fail(options);
-    } else {
+    } else if (!NM_IN_SET (new_state, NM_DHCP_STATE_TIMEOUT)) {
         g_return_if_fail(!ip_config);
         g_return_if_fail(!options);
     }
 
     if (new_state >= NM_DHCP_STATE_BOUND)
         timeout_cleanup(self);
-    if (new_state >= NM_DHCP_STATE_TIMEOUT)
+    if (new_state >= NM_DHCP_STATE_TIMEOUT && !ip_config)
         watch_cleanup(self);
 
     /* The client may send same-state transitions for RENEW/REBIND events and
@@ -551,8 +553,6 @@ nm_dhcp_client_watch_child(NMDhcpClient *self, pid_t pid)
 
     g_return_if_fail(priv->pid == -1);
     priv->pid = pid;
-
-    nm_dhcp_client_start_timeout(self);
 
     g_return_if_fail(priv->watch_id == 0);
     priv->watch_id = g_child_watch_add(pid, daemon_watch_cb, self);
@@ -898,7 +898,10 @@ nm_dhcp_client_handle_event(gpointer      unused,
     if (new_state == NM_DHCP_STATE_NOOP)
         return TRUE;
 
-    if (NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
+    /* Timeout state of dhclient may contain valid ip config from lease. */
+    if (NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)
+        || (NM_IN_SET (new_state, NM_DHCP_STATE_TIMEOUT)
+            && g_strcmp0 (nm_dhcp_manager_get_config (nm_dhcp_manager_get ()), "dhclient") == 0)) {
         GVariantIter iter;
         const char * name;
         GVariant *   value;
