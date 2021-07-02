@@ -2488,8 +2488,9 @@ find_device_for_connection(NmCli *       nmc,
         }
     } else {
         /* Other connections */
-        NMDevice *       found_device = NULL;
-        const GPtrArray *devices      = nm_client_get_devices(nmc->client);
+        NMDevice *       found_device           = NULL;
+        const GPtrArray *devices                = nm_client_get_devices(nmc->client);
+        gboolean         found_device_with_name = FALSE;
 
         for (i = 0; i < devices->len && !found_device; i++) {
             NMDevice *dev = g_ptr_array_index(devices, i);
@@ -2499,6 +2500,7 @@ find_device_for_connection(NmCli *       nmc,
                 if (!nm_streq0(dev_iface, iface))
                     continue;
 
+                found_device_with_name = TRUE;
                 if (!nm_device_connection_compatible(dev, connection, error)) {
                     g_prefix_error(error,
                                    _("device '%s' not compatible with connection '%s': "),
@@ -2535,12 +2537,21 @@ find_device_for_connection(NmCli *       nmc,
 
         if (!found_device) {
             if (iface) {
-                g_set_error(error,
-                            NMCLI_ERROR,
-                            0,
-                            _("device '%s' not compatible with connection '%s'"),
-                            iface,
-                            nm_setting_connection_get_id(s_con));
+                if (found_device_with_name) {
+                    g_set_error(error,
+                                NMCLI_ERROR,
+                                0,
+                                _("device '%s' not compatible with connection '%s'"),
+                                iface,
+                                nm_setting_connection_get_id(s_con));
+                } else {
+                    g_set_error(error,
+                                NMCLI_ERROR,
+                                0,
+                                _("device '%s' not found for connection '%s'"),
+                                iface,
+                                nm_setting_connection_get_id(s_con));
+                }
             } else {
                 g_set_error(error,
                             NMCLI_ERROR,
