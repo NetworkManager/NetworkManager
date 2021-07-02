@@ -84,11 +84,16 @@ if [[ "x$(ls -1d ./*.spec 2>/dev/null)" == x || ! -f "./sources" ]]; then
 fi
 
 if [[ "$FEDPKG" == "" ]]; then
-    REMOTES="$(git remote -v 2>/dev/null)" || die "not inside dist-git repository? >>$PWD<<"
-    if echo "$REMOTES" | grep -q -F 'pkgs.devel.redhat.com' ; then
+    REMOTE="$(git config --get "branch.$(git branch --show-current).remote" 2>/dev/null)"
+    URL="$(git config --get "remote.$REMOTE.url")"
+    if [[ "$URL" = *'pkgs.devel.redhat.com'* ]]; then
         FEDPKG=rhpkg
-    else
+    elif [[ "$URL" = *'gitlab.com:redhat/centos-stream'* ]]; then
+        FEDPKG=centpkg
+    elif [[ "$URL" = *'pkgs.fedoraproject.org/'* ]]; then
         FEDPKG=fedpkg
+    else
+        die "not inside dist-git repository? Check out a branch that has the dist-git remote tracking branch >>$PWD<<"
     fi
 fi
 
