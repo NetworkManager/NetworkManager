@@ -1641,6 +1641,10 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * and values must be strings.  Allowed keys include "portno", "layer2",
      * "portname", "protocol", among others.  Key names must contain only
      * alphanumeric characters (ie, [a-zA-Z0-9]).
+     *
+     * Currently, NetworkManager itself does nothing with this information.
+     * However, s390utils ships a udev rule which parses this information
+     * and applies it to the interface.
      **/
     /* ---ifcfg-rh---
      * property: s390-options
