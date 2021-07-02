@@ -50,15 +50,14 @@ complete_connection(NMDevice *           device,
 {
     NMSettingDummy *s_dummy;
 
-    nm_utils_complete_generic(nm_device_get_platform(device),
-                              connection,
-                              NM_SETTING_DUMMY_SETTING_NAME,
-                              existing_connections,
-                              NULL,
-                              _("Dummy connection"),
-                              NULL,
-                              nm_device_get_ip_iface(device),
-                              TRUE);
+    nm_utils_complete_generic_with_params(nm_device_get_platform(device),
+                                          connection,
+                                          NM_SETTING_DUMMY_SETTING_NAME,
+                                          existing_connections,
+                                          NULL,
+                                          _("Dummy connection"),
+                                          NULL,
+                                          nm_device_get_ip_iface(device));
 
     s_dummy = nm_connection_get_setting_dummy(connection);
     if (!s_dummy) {
