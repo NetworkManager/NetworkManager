@@ -1189,7 +1189,7 @@ msgstr "La connexion n'était pas valide : %s"
 
 #: ../src/libnm-client-impl/nm-device.c:2773
 #, c-format
-msgid "The interface names of the device and the connection didn't match."
+msgid "The interface names of the device and the connection didn't match"
 msgstr ""
 "Les noms d'interface du périphérique et de la connexion ne correspondaient "
 "pas."

@@ -1133,7 +1133,7 @@ msgstr "연결이 유효하지 않았음: %s"
 
 #: ../src/libnm-client-impl/nm-device.c:2773
 #, c-format
-msgid "The interface names of the device and the connection didn't match."
+msgid "The interface names of the device and the connection didn't match"
 msgstr "장치와 연결의 인터페이스 이름이 일치하지 않습니다."
 
 #: ../src/libnm-client-impl/nm-secret-agent-old.c:1384

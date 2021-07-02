@@ -2770,7 +2770,7 @@ connection_compatible(NMDevice *device, NMConnection *connection, GError **error
         g_set_error(error,
                     NM_DEVICE_ERROR,
                     NM_DEVICE_ERROR_INCOMPATIBLE_CONNECTION,
-                    _("The interface names of the device and the connection didn't match."));
+                    _("The interface names of the device and the connection didn't match"));
         return FALSE;
     }
 
