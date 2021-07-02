@@ -227,19 +227,23 @@ out:
 /*****************************************************************************/
 
 void
-nm_utils_complete_generic(NMPlatform *         platform,
-                          NMConnection *       connection,
-                          const char *         ctype,
-                          NMConnection *const *existing_connections,
-                          const char *         preferred_id,
-                          const char *         fallback_id_prefix,
-                          const char *         ifname_prefix,
-                          const char *         ifname,
-                          gboolean             default_enable_ipv6)
+_nm_utils_complete_generic_with_params(NMPlatform *         platform,
+                                       NMConnection *       connection,
+                                       const char *         ctype,
+                                       NMConnection *const *existing_connections,
+                                       const char *         preferred_id,
+                                       const char *         fallback_id_prefix,
+                                       const char *         ifname_prefix,
+                                       const char *         ifname,
+                                       ...)
 {
     NMSettingConnection *s_con;
-    char *               id, *generated_ifname;
-    GHashTable *         parameters;
+    char *               id;
+    char *               generated_ifname;
+    gs_unref_hashtable GHashTable *parameters = NULL;
+    va_list                        ap;
+    const char *                   p_val;
+    const char *                   p_key;
 
     g_assert(fallback_id_prefix);
     g_return_if_fail(ifname_prefix == NULL || ifname == NULL);
@@ -279,13 +283,20 @@ nm_utils_complete_generic(NMPlatform *         platform,
     }
 
     /* Normalize */
-    parameters = g_hash_table_new(nm_str_hash, g_str_equal);
-    g_hash_table_insert(parameters,
-                        NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD,
-                        default_enable_ipv6 ? NM_SETTING_IP6_CONFIG_METHOD_AUTO
-                                            : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+    va_start(ap, ifname);
+    while ((p_key = va_arg(ap, const char *))) {
+        p_val = va_arg(ap, const char *);
+        if (!p_val) {
+            if (parameters)
+                g_hash_table_remove(parameters, p_key);
+            continue;
+        }
+        if (!parameters)
+            parameters = g_hash_table_new(nm_str_hash, g_str_equal);
+        g_hash_table_insert(parameters, (char *) p_key, (char *) p_val);
+    }
+    va_end(ap);
     nm_connection_normalize(connection, parameters, NULL, NULL);
-    g_hash_table_destroy(parameters);
 }
 
 /*****************************************************************************/
