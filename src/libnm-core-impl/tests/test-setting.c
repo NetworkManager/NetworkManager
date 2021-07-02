@@ -3651,7 +3651,7 @@ test_roundtrip_conversion(gconstpointer test_data)
         g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip.s_4), ==, "disabled");
 
         s_ip.s_6 = NM_SETTING_IP_CONFIG(nm_connection_get_setting(con, NM_TYPE_SETTING_IP6_CONFIG));
-        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip.s_6), ==, "ignore");
+        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip.s_6), ==, "disabled");
 
         g_ptr_array_add(kf_data_arr,
                         g_strdup_printf("[connection]\n"
@@ -3670,7 +3670,7 @@ test_roundtrip_conversion(gconstpointer test_data)
                                         "[ipv6]\n"
                                         "addr-gen-mode=stable-privacy\n"
                                         "dns-search=\n"
-                                        "method=ignore\n"
+                                        "method=disabled\n"
                                         "\n"
                                         "[proxy]\n"
                                         "",
@@ -3727,7 +3727,7 @@ test_roundtrip_conversion(gconstpointer test_data)
                 "[ipv6]\n"
                 "addr-gen-mode=stable-privacy\n"
                 "dns-search=\n"
-                "method=ignore\n"
+                "method=disabled\n"
                 "\n"
                 "[proxy]\n"
                 "",
