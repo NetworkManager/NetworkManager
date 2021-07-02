@@ -1216,7 +1216,11 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
                                         NM_CONNECTION_NORMALIZE_PARAM_IP4_CONFIG_METHOD);
             }
             if (!default_ip4_method) {
-                if (nm_connection_is_type(self, NM_SETTING_WIREGUARD_SETTING_NAME))
+                const char *type = nm_connection_get_connection_type(self);
+
+                if (NM_IN_STRSET(type,
+                                 NM_SETTING_WIREGUARD_SETTING_NAME,
+                                 NM_SETTING_DUMMY_SETTING_NAME))
                     default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
                 else
                     default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
@@ -1270,7 +1274,11 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
                                         NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);
             }
             if (!default_ip6_method) {
-                if (nm_connection_is_type(self, NM_SETTING_WIREGUARD_SETTING_NAME))
+                const char *type = nm_connection_get_connection_type(self);
+
+                if (NM_IN_STRSET(type,
+                                 NM_SETTING_WIREGUARD_SETTING_NAME,
+                                 NM_SETTING_DUMMY_SETTING_NAME))
                     default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
                 else
                     default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
