@@ -2844,8 +2844,7 @@ nmc_activate_connection(NmCli *             nmc,
                                                   &spec_object,
                                                   &local);
 
-        /* Virtual connection may not have their interfaces created yet */
-        if (!device_found && !nm_connection_is_virtual(connection)) {
+        if (!device_found) {
             g_set_error(error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION, "%s", local->message);
             return FALSE;
         }
