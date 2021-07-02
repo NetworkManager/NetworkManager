@@ -1279,7 +1279,7 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
                 if (NM_IN_STRSET(type,
                                  NM_SETTING_WIREGUARD_SETTING_NAME,
                                  NM_SETTING_DUMMY_SETTING_NAME))
-                    default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+                    default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
                 else
                     default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
             }
