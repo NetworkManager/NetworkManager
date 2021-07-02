@@ -7,9 +7,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#if HAVE_EDITLINE_READLINE
+#include <editline/readline.h>
+#else
 #include <readline/readline.h>
 #include <readline/history.h>
-
+#endif
 #include "common.h"
 #include "utils.h"
 #include "libnmc-base/nm-secret-agent-simple.h"

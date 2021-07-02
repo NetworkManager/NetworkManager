@@ -14,8 +14,12 @@
 #include <termios.h>
 #include <unistd.h>
 #include <locale.h>
+#if HAVE_EDITLINE_READLINE
+#include <editline/readline.h>
+#else
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif
 
 #include "libnmc-base/nm-client-utils.h"
 
