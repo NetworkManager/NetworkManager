@@ -19,15 +19,60 @@ const char *nm_utils_get_ip_config_method(NMConnection *connection, int addr_fam
 
 const char *nm_utils_get_shared_wifi_permission(NMConnection *connection);
 
-void nm_utils_complete_generic(NMPlatform *         platform,
-                               NMConnection *       connection,
-                               const char *         ctype,
-                               NMConnection *const *existing_connections,
-                               const char *         preferred_id,
-                               const char *         fallback_id_prefix,
-                               const char *         ifname_prefix,
-                               const char *         ifname,
-                               gboolean             default_enable_ipv6);
+void _nm_utils_complete_generic_with_params(NMPlatform *         platform,
+                                            NMConnection *       connection,
+                                            const char *         ctype,
+                                            NMConnection *const *existing_connections,
+                                            const char *         preferred_id,
+                                            const char *         fallback_id_prefix,
+                                            const char *         ifname_prefix,
+                                            const char *         ifname,
+                                            ...) G_GNUC_NULL_TERMINATED;
+
+#define nm_utils_complete_generic_with_params(platform,             \
+                                              connection,           \
+                                              ctype,                \
+                                              existing_connections, \
+                                              preferred_id,         \
+                                              fallback_id_prefix,   \
+                                              ifname_prefix,        \
+                                              ifname,               \
+                                              ...)                  \
+    _nm_utils_complete_generic_with_params(platform,                \
+                                           connection,              \
+                                           ctype,                   \
+                                           existing_connections,    \
+                                           preferred_id,            \
+                                           fallback_id_prefix,      \
+                                           ifname_prefix,           \
+                                           ifname,                  \
+                                           ##__VA_ARGS__,           \
+                                           NULL)
+
+static inline void
+nm_utils_complete_generic(NMPlatform *         platform,
+                          NMConnection *       connection,
+                          const char *         ctype,
+                          NMConnection *const *existing_connections,
+                          const char *         preferred_id,
+                          const char *         fallback_id_prefix,
+                          const char *         ifname_prefix,
+                          const char *         ifname,
+                          gboolean             default_enable_ipv6)
+{
+    nm_utils_complete_generic_with_params(platform,
+                                          connection,
+                                          ctype,
+                                          existing_connections,
+                                          preferred_id,
+                                          fallback_id_prefix,
+                                          ifname_prefix,
+                                          ifname,
+                                          NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD,
+                                          default_enable_ipv6
+                                              ? NM_SETTING_IP6_CONFIG_METHOD_AUTO
+                                              : NM_SETTING_IP6_CONFIG_METHOD_IGNORE);
+}
 
 typedef gboolean(NMUtilsMatchFilterFunc)(NMConnection *connection, gpointer user_data);
 
