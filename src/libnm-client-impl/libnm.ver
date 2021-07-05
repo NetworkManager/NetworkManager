@@ -1794,8 +1794,13 @@ global:
 	nm_setting_wired_get_accept_all_mac_addresses;
 } libnm_1_30_0;
 
-libnm_1_34_0 {
-	nm_ip_routing_rule_get_uid_range;
-	nm_ip_routing_rule_set_uid_range;
+libnm_1_32_4 {
+global:
 	nm_setting_ip_config_get_required_timeout;
 } libnm_1_32_0;
+
+libnm_1_34_0 {
+global:
+	nm_ip_routing_rule_get_uid_range;
+	nm_ip_routing_rule_set_uid_range;
+} libnm_1_32_4;
