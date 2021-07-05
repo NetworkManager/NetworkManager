@@ -702,7 +702,7 @@ test_multiple_bootdev(void)
     g_assert(s_con);
     g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con),
                     ==,
-                    NMI_WAIT_DEVICE_TIMEOUT_MS);
+                    NMI_WAIT_DEVICE_TIMEOUT_MSEC);
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     g_assert(s_ip4);
     g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
@@ -744,7 +744,7 @@ test_bootdev(void)
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "ens3");
     g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con),
                     ==,
-                    NMI_WAIT_DEVICE_TIMEOUT_MS);
+                    NMI_WAIT_DEVICE_TIMEOUT_MSEC);
 
     connection = g_hash_table_lookup(connections, "vlan2");
     nmtst_assert_connection_verifies_without_normalization(connection);
@@ -1922,7 +1922,7 @@ test_neednet(void)
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "eno1");
     g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con),
                     ==,
-                    NMI_WAIT_DEVICE_TIMEOUT_MS);
+                    NMI_WAIT_DEVICE_TIMEOUT_MSEC);
 
     connection = g_hash_table_lookup(connections, "eno2");
     nmtst_assert_connection_verifies_without_normalization(connection);
@@ -1931,7 +1931,7 @@ test_neednet(void)
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "eno2");
     g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con),
                     ==,
-                    NMI_WAIT_DEVICE_TIMEOUT_MS);
+                    NMI_WAIT_DEVICE_TIMEOUT_MSEC);
 
     connection = g_hash_table_lookup(connections, "eno3");
     nmtst_assert_connection_verifies_without_normalization(connection);
@@ -1940,7 +1940,7 @@ test_neednet(void)
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "eno3");
     g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con),
                     ==,
-                    NMI_WAIT_DEVICE_TIMEOUT_MS);
+                    NMI_WAIT_DEVICE_TIMEOUT_MSEC);
 
     connection = g_hash_table_lookup(connections, "br0");
     nmtst_assert_connection_verifies_without_normalization(connection);
