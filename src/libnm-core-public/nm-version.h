@@ -285,6 +285,12 @@
     #define NM_AVAILABLE_IN_1_32
 #endif
 
+#if NM_VERSION_MAX_ALLOWED < NM_VERSION_1_32_4
+    #define NM_AVAILABLE_IN_1_32_4 G_UNAVAILABLE(1, 32.4)
+#else
+    #define NM_AVAILABLE_IN_1_32_4
+#endif
+
 /*
  * Synchronous API for calling D-Bus in libnm is deprecated. See
  * https://developer.gnome.org/libnm/stable/usage.html#sync-api
