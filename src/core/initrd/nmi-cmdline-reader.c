@@ -1052,7 +1052,7 @@ connection_set_needed(NMConnection *connection)
 
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT,
-                 (int) NMI_WAIT_DEVICE_TIMEOUT_MS,
+                 (int) NMI_WAIT_DEVICE_TIMEOUT_MSEC,
                  NULL);
 }
 
