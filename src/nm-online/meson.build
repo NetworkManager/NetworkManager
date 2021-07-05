@@ -9,6 +9,7 @@ executable(
   ],
   link_with: [
     libnm_client_aux_extern,
+    libnm_log_null,
     libnm_glib_aux,
     libnm_std_aux,
     libc_siphash,

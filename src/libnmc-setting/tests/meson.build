@@ -13,6 +13,7 @@ exe = executable(
     libnm_core_aux_extern,
     libnm_core_aux_intern,
     libnm_base,
+    libnm_log_null,
     libnm_glib_aux,
     libnm_std_aux,
     libc_siphash,
