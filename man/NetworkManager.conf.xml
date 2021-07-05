@@ -869,6 +869,9 @@ ipv6.ip6-privacy=0
            and 100 for other profiles.</para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv4.required-timeout</varname></term>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv4.route-metric</varname></term>
         </varlistentry>
         <varlistentry>
@@ -909,6 +912,9 @@ ipv6.ip6-privacy=0
           <listitem><para>If <literal>ipv6.ip6-privacy</literal> is unset, use the content of
             "/proc/sys/net/ipv6/conf/default/use_tempaddr" as last fallback.
           </para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><varname>ipv6.required-timeout</varname></term>
         </varlistentry>
         <varlistentry>
           <term><varname>ipv6.route-metric</varname></term>

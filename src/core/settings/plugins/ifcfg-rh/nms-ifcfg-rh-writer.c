@@ -2840,6 +2840,9 @@ write_ip4_setting(NMConnection *connection,
     timeout = nm_setting_ip_config_get_dhcp_timeout(s_ip4);
     svSetValueInt64_cond(ifcfg, "IPV4_DHCP_TIMEOUT", timeout != 0, timeout);
 
+    timeout = nm_setting_ip_config_get_required_timeout(s_ip4);
+    svSetValueInt64_cond(ifcfg, "IPV4_REQUIRED_TIMEOUT", timeout != -1, timeout);
+
     svSetValueBoolean(ifcfg, "IPV4_FAILURE_FATAL", !nm_setting_ip_config_get_may_fail(s_ip4));
 
     route_metric = nm_setting_ip_config_get_route_metric(s_ip4);
@@ -3036,6 +3039,9 @@ write_ip6_setting(NMConnection *connection,
 
     timeout = nm_setting_ip_config_get_dhcp_timeout(s_ip6);
     svSetValueInt64_cond(ifcfg, "IPV6_DHCP_TIMEOUT", timeout != 0, timeout);
+
+    timeout = nm_setting_ip_config_get_required_timeout(s_ip6);
+    svSetValueInt64_cond(ifcfg, "IPV6_REQUIRED_TIMEOUT", timeout != -1, timeout);
 
     flags = nm_setting_ip_config_get_dhcp_hostname_flags(s_ip6);
     svSetValueInt64_cond(ifcfg,
