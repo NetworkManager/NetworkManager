@@ -1427,6 +1427,10 @@ nmtstp_link_bridge_normalize_jiffies_time(const NMPlatformLnkBridge *requested,
                                           const NMPlatformLnkBridge *kernel,
                                           NMPlatformLnkBridge *      dst)
 {
+    g_assert(requested);
+    g_assert(dst);
+    g_assert(kernel);
+
     if (dst != requested)
         *dst = *requested;
 
