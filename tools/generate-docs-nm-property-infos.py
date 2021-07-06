@@ -114,10 +114,7 @@ def pretty_xml(element, newline, level=0):
             element.text = newline + element.text.strip() + newline
     temp = list(element)
     for subelement in temp:
-        if temp.index(subelement) < (len(temp) - 1):
-            subelement.tail = newline
-        else:
-            subelement.tail = newline
+        subelement.tail = newline
         pretty_xml(subelement, newline, level=level + 1)
 
 
