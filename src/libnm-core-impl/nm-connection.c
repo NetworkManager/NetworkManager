@@ -649,7 +649,7 @@ nm_connection_replace_settings_from_connection(NMConnection *connection,
 {
     NMConnectionPrivate *priv;
     NMConnectionPrivate *new_priv;
-    gboolean             changed;
+    gboolean             changed = FALSE;
     int                  i;
 
     g_return_if_fail(NM_IS_CONNECTION(connection));
