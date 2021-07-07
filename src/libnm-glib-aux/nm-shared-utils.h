@@ -30,6 +30,16 @@ nm_is_ascii(char ch)
 
 /*****************************************************************************/
 
+#include <sys/syscall.h>
+static inline pid_t
+_nm_gettid(void)
+{
+    return (pid_t) syscall(SYS_gettid);
+}
+#define gettid() _nm_gettid()
+
+/*****************************************************************************/
+
 pid_t nm_utils_gettid(void);
 
 gboolean _nm_assert_on_main_thread(void);
