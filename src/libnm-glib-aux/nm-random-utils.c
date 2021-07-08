@@ -61,7 +61,7 @@ _rand_init_seed(guint32 seed_array[static SEED_ARRAY_SIZE], GRand *rand)
     seed_array[seed_idx++] = ((guint64) now_nsec);
     seed_array[seed_idx++] = _pid_hash(getpid());
     seed_array[seed_idx++] = _pid_hash(getppid());
-    seed_array[seed_idx++] = _pid_hash(gettid());
+    seed_array[seed_idx++] = _pid_hash(nm_utils_gettid());
 
     nm_assert(seed_idx == SEED_ARRAY_SIZE);
 }
