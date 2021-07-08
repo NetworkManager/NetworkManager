@@ -75,7 +75,7 @@ raw_getpid(void)
     #endif
 }
 
-#define gettid() nm_utils_gettid()
+    #define gettid() nm_utils_gettid()
 
     /* we build with C11 and thus <uchar.h> provides char32_t,char16_t. */
     #define HAVE_CHAR32_T 1
