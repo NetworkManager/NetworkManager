@@ -50,23 +50,19 @@ complete_connection(NMDevice *           device,
 {
     NMSettingDummy *s_dummy;
 
-    nm_utils_complete_generic(nm_device_get_platform(device),
-                              connection,
-                              NM_SETTING_DUMMY_SETTING_NAME,
-                              existing_connections,
-                              NULL,
-                              _("Dummy connection"),
-                              NULL,
-                              NULL,
-                              TRUE);
+    nm_utils_complete_generic_with_params(nm_device_get_platform(device),
+                                          connection,
+                                          NM_SETTING_DUMMY_SETTING_NAME,
+                                          existing_connections,
+                                          NULL,
+                                          _("Dummy connection"),
+                                          NULL,
+                                          nm_device_get_ip_iface(device));
 
     s_dummy = nm_connection_get_setting_dummy(connection);
     if (!s_dummy) {
-        g_set_error_literal(error,
-                            NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_INVALID_CONNECTION,
-                            "A 'dummy' setting is required.");
-        return FALSE;
+        s_dummy = NM_SETTING_DUMMY(nm_setting_dummy_new());
+        nm_connection_add_setting(connection, NM_SETTING(s_dummy));
     }
 
     return TRUE;

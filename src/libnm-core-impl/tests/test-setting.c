@@ -874,6 +874,34 @@ test_bond_normalize(void)
 
 /*****************************************************************************/
 
+static void
+test_dummy_normalize(void)
+{
+    gs_unref_object NMConnection *connection = NULL;
+    NMSettingConnection *         s_con;
+
+    connection = nm_simple_connection_new();
+    s_con      = NM_SETTING_CONNECTION(nm_setting_connection_new());
+    nm_connection_add_setting(connection, NM_SETTING(s_con));
+
+    g_object_set(s_con,
+                 NM_SETTING_CONNECTION_ID,
+                 "dummy-test",
+                 NM_SETTING_CONNECTION_UUID,
+                 nm_uuid_generate_random_str_a(),
+                 NM_SETTING_CONNECTION_TYPE,
+                 NM_SETTING_DUMMY_SETTING_NAME,
+                 NULL);
+
+    nmtst_assert_connection_unnormalizable(connection, 0, 0);
+
+    g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "dummy1", NULL);
+
+    nmtst_connection_normalize(connection);
+}
+
+/*****************************************************************************/
+
 #define DCB_FLAGS_ALL \
     (NM_SETTING_DCB_FLAG_ENABLE | NM_SETTING_DCB_FLAG_ADVERTISE | NM_SETTING_DCB_FLAG_WILLING)
 
@@ -3619,6 +3647,12 @@ test_roundtrip_conversion(gconstpointer test_data)
 
         s_wg = NM_SETTING_WIREGUARD(nm_connection_get_setting(con, NM_TYPE_SETTING_WIREGUARD));
 
+        s_ip.s_4 = NM_SETTING_IP_CONFIG(nm_connection_get_setting(con, NM_TYPE_SETTING_IP4_CONFIG));
+        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip.s_4), ==, "disabled");
+
+        s_ip.s_6 = NM_SETTING_IP_CONFIG(nm_connection_get_setting(con, NM_TYPE_SETTING_IP6_CONFIG));
+        g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip.s_6), ==, "disabled");
+
         g_ptr_array_add(kf_data_arr,
                         g_strdup_printf("[connection]\n"
                                         "id=%s\n"
@@ -3636,7 +3670,7 @@ test_roundtrip_conversion(gconstpointer test_data)
                                         "[ipv6]\n"
                                         "addr-gen-mode=stable-privacy\n"
                                         "dns-search=\n"
-                                        "method=ignore\n"
+                                        "method=disabled\n"
                                         "\n"
                                         "[proxy]\n"
                                         "",
@@ -3693,7 +3727,7 @@ test_roundtrip_conversion(gconstpointer test_data)
                 "[ipv6]\n"
                 "addr-gen-mode=stable-privacy\n"
                 "dns-search=\n"
-                "method=ignore\n"
+                "method=disabled\n"
                 "\n"
                 "[proxy]\n"
                 "",
@@ -4740,6 +4774,8 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/settings/bond/verify", test_bond_verify);
     g_test_add_func("/libnm/settings/bond/compare", test_bond_compare);
     g_test_add_func("/libnm/settings/bond/normalize", test_bond_normalize);
+
+    g_test_add_func("/libnm/settings/dummy/normalize", test_dummy_normalize);
 
     g_test_add_func("/libnm/settings/dcb/flags-valid", test_dcb_flags_valid);
     g_test_add_func("/libnm/settings/dcb/flags-invalid", test_dcb_flags_invalid);

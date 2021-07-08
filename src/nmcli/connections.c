@@ -201,24 +201,24 @@ nmc_active_connection_cmp(NMActiveConnection *ac_a, NMActiveConnection *ac_b)
     conn = nm_active_connection_get_connection(ac_a);
     s_ip = conn ? nm_connection_get_setting_ip6_config(NM_CONNECTION(conn)) : NULL;
     if (s_ip
-        && strcmp(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0)
+        && nm_streq(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED))
         cmp++;
     conn = nm_active_connection_get_connection(ac_b);
     s_ip = conn ? nm_connection_get_setting_ip6_config(NM_CONNECTION(conn)) : NULL;
     if (s_ip
-        && strcmp(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED) == 0)
+        && nm_streq(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED))
         cmp--;
     NM_CMP_RETURN(cmp);
 
     conn = nm_active_connection_get_connection(ac_a);
     s_ip = conn ? nm_connection_get_setting_ip4_config(NM_CONNECTION(conn)) : NULL;
     if (s_ip
-        && strcmp(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+        && nm_streq(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED))
         cmp++;
     conn = nm_active_connection_get_connection(ac_b);
     s_ip = conn ? nm_connection_get_setting_ip4_config(NM_CONNECTION(conn)) : NULL;
     if (s_ip
-        && strcmp(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+        && nm_streq(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED))
         cmp--;
     NM_CMP_RETURN(cmp);
 
@@ -2463,7 +2463,7 @@ find_device_for_connection(NmCli *       nmc,
     g_assert(s_con);
     con_type = nm_setting_connection_get_connection_type(s_con);
 
-    if (strcmp(con_type, NM_SETTING_VPN_SETTING_NAME) == 0) {
+    if (nm_streq(con_type, NM_SETTING_VPN_SETTING_NAME)) {
         /* VPN connections */
         NMActiveConnection *active = NULL;
         if (iface) {
@@ -2488,8 +2488,9 @@ find_device_for_connection(NmCli *       nmc,
         }
     } else {
         /* Other connections */
-        NMDevice *       found_device = NULL;
-        const GPtrArray *devices      = nm_client_get_devices(nmc->client);
+        NMDevice *       found_device           = NULL;
+        const GPtrArray *devices                = nm_client_get_devices(nmc->client);
+        gboolean         found_device_with_name = FALSE;
 
         for (i = 0; i < devices->len && !found_device; i++) {
             NMDevice *dev = g_ptr_array_index(devices, i);
@@ -2499,6 +2500,7 @@ find_device_for_connection(NmCli *       nmc,
                 if (!nm_streq0(dev_iface, iface))
                     continue;
 
+                found_device_with_name = TRUE;
                 if (!nm_device_connection_compatible(dev, connection, error)) {
                     g_prefix_error(error,
                                    _("device '%s' not compatible with connection '%s': "),
@@ -2535,12 +2537,21 @@ find_device_for_connection(NmCli *       nmc,
 
         if (!found_device) {
             if (iface) {
-                g_set_error(error,
-                            NMCLI_ERROR,
-                            0,
-                            _("device '%s' not compatible with connection '%s'"),
-                            iface,
-                            nm_setting_connection_get_id(s_con));
+                if (found_device_with_name) {
+                    g_set_error(error,
+                                NMCLI_ERROR,
+                                0,
+                                _("device '%s' not compatible with connection '%s'"),
+                                iface,
+                                nm_setting_connection_get_id(s_con));
+                } else {
+                    g_set_error(error,
+                                NMCLI_ERROR,
+                                0,
+                                _("device '%s' not found for connection '%s'"),
+                                iface,
+                                nm_setting_connection_get_id(s_con));
+                }
             } else {
                 g_set_error(error,
                             NMCLI_ERROR,
@@ -2833,8 +2844,7 @@ nmc_activate_connection(NmCli *             nmc,
                                                   &spec_object,
                                                   &local);
 
-        /* Virtual connection may not have their interfaces created yet */
-        if (!device_found && !nm_connection_is_virtual(connection)) {
+        if (!device_found) {
             g_set_error(error, NMCLI_ERROR, NMC_RESULT_ERROR_CON_ACTIVATION, "%s", local->message);
             return FALSE;
         }
@@ -2947,7 +2957,7 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
         argc_ptr = &arg_num;
     }
 
-    if (argc > 0 && strcmp(*argv, "ifname") != 0) {
+    if (argc > 0 && !nm_streq(*argv, "ifname")) {
         connection = get_connection(nmc, argc_ptr, argv_ptr, NULL, NULL, NULL, &error);
         if (!connection) {
             g_string_printf(nmc->return_text, _("Error: %s."), error->message);
@@ -2960,7 +2970,7 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
         if (argc == 1 && nmc->complete)
             nmc_complete_strings(*argv, "ifname", "ap", "passwd-file");
 
-        if (strcmp(*argv, "ifname") == 0) {
+        if (nm_streq(*argv, "ifname")) {
             argc--;
             argv++;
             if (!argc) {
@@ -2972,7 +2982,7 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
             ifname = *argv;
             if (argc == 1 && nmc->complete)
                 nmc_complete_device(nmc->client, ifname, ap != NULL);
-        } else if (strcmp(*argv, "ap") == 0) {
+        } else if (nm_streq(*argv, "ap")) {
             argc--;
             argv++;
             if (!argc) {
@@ -2984,7 +2994,7 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
             ap = *argv;
             if (argc == 1 && nmc->complete)
                 nmc_complete_bssid(nmc->client, ifname, ap);
-        } else if (strcmp(*argv, "passwd-file") == 0) {
+        } else if (nm_streq(*argv, "passwd-file")) {
             argc--;
             argv++;
             if (!argc) {
@@ -3652,7 +3662,7 @@ is_setting_mandatory(NMConnection *connection, NMSetting *setting)
         else
             item = nm_meta_setting_info_valid_parts_for_slave_type(s_type, NULL);
         for (; item && *item; item++) {
-            if (!strcmp(name, (*item)->setting_info->general->setting_name))
+            if (nm_streq(name, (*item)->setting_info->general->setting_name))
                 return (*item)->mandatory;
         }
     }
@@ -3721,11 +3731,11 @@ normalized_master_for_slave(const GPtrArray *connections,
         s_con      = nm_connection_get_setting_connection(connection);
         g_assert(s_con);
         con_type = nm_setting_connection_get_connection_type(s_con);
-        if (type && g_strcmp0(con_type, type) != 0)
+        if (type && !nm_streq0(con_type, type))
             continue;
         if (func) {
             /* There was a prefix; only compare to that type. */
-            if (g_strcmp0(master, func(connection)) == 0) {
+            if (nm_streq0(master, func(connection))) {
                 if (out_type)
                     *out_type = con_type;
                 if (func == nm_connection_get_id)
@@ -3738,13 +3748,13 @@ normalized_master_for_slave(const GPtrArray *connections,
             id     = nm_connection_get_id(connection);
             uuid   = nm_connection_get_uuid(connection);
             ifname = nm_connection_get_interface_name(connection);
-            if (g_strcmp0(master, uuid) == 0 || g_strcmp0(master, ifname) == 0) {
+            if (NM_IN_STRSET(master, uuid, ifname)) {
                 out_master = master;
                 if (out_type)
                     *out_type = con_type;
                 break;
             }
-            if (!found_by_id && g_strcmp0(master, id) == 0) {
+            if (!found_by_id && nm_streq0(master, id)) {
                 out_type_by_id = con_type;
                 found_by_id    = uuid;
             }
@@ -4352,10 +4362,11 @@ set_connection_type(NmCli *           nmc,
     }
 
     /* ifname is mandatory for all connection types except virtual ones (bond, team, bridge, vlan) */
-    if ((strcmp(value, NM_SETTING_BOND_SETTING_NAME) == 0)
-        || (strcmp(value, NM_SETTING_TEAM_SETTING_NAME) == 0)
-        || (strcmp(value, NM_SETTING_BRIDGE_SETTING_NAME) == 0)
-        || (strcmp(value, NM_SETTING_VLAN_SETTING_NAME) == 0)) {
+    if (NM_IN_STRSET(value,
+                     NM_SETTING_BOND_SETTING_NAME,
+                     NM_SETTING_TEAM_SETTING_NAME,
+                     NM_SETTING_BRIDGE_SETTING_NAME,
+                     NM_SETTING_VLAN_SETTING_NAME)) {
         disable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
     }
 
@@ -4386,7 +4397,7 @@ set_connection_iface(NmCli *           nmc,
 {
     if (value) {
         /* Special value of '*' means no specific interface name */
-        if (strcmp(value, "*") == 0)
+        if (nm_streq(value, "*"))
             value = NULL;
     }
 
@@ -4541,19 +4552,17 @@ set_bluetooth_type(NmCli *           nmc,
         return TRUE;
 
     /* 'dun' type requires adding 'gsm' or 'cdma' setting */
-    if (!strcmp(value, NM_SETTING_BLUETOOTH_TYPE_DUN)
-        || !strcmp(value, NM_SETTING_BLUETOOTH_TYPE_DUN "-gsm")) {
+    if (NM_IN_STRSET(value, NM_SETTING_BLUETOOTH_TYPE_DUN, NM_SETTING_BLUETOOTH_TYPE_DUN "-gsm")) {
         value   = NM_SETTING_BLUETOOTH_TYPE_DUN;
         setting = nm_meta_setting_info_editor_new_setting(
             &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_GSM],
             NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
         nm_connection_add_setting(con, setting);
-    } else if (!strcmp(value, NM_SETTING_BLUETOOTH_TYPE_DUN "-cdma")) {
+    } else if (NM_IN_STRSET(value, NM_SETTING_BLUETOOTH_TYPE_DUN "-cdma")) {
         value   = NM_SETTING_BLUETOOTH_TYPE_DUN;
         setting = nm_setting_cdma_new();
         nm_connection_add_setting(con, setting);
-    } else if (!strcmp(value, NM_SETTING_BLUETOOTH_TYPE_PANU)
-               || !strcmp(value, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+    } else if (NM_IN_STRSET(value, NM_SETTING_BLUETOOTH_TYPE_PANU, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
         /* no op */
     } else {
         g_set_error(error,
@@ -5605,13 +5614,13 @@ read_properties:
     g_clear_error(&error);
     /* Get the arguments from the command line if any */
     if (argc && !nmc_process_connection_properties(nmc, connection, &argc, &argv, FALSE, &error)) {
-        if (g_strcmp0(*argv, "--") == 0 && !seen_dash_dash) {
+        if (nm_streq0(*argv, "--") && !seen_dash_dash) {
             /* This is for compatibility with older nmcli that required
              * options and properties to be separated with "--" */
             seen_dash_dash = TRUE;
             next_arg(nmc, &argc, &argv, NULL);
             goto read_properties;
-        } else if (g_strcmp0(*argv, "save") == 0) {
+        } else if (nm_streq0(*argv, "save")) {
             /* It would be better if "save" was a separate argument and not
              * mixed with properties, but there's not much we can do about it now. */
             argc--;
@@ -6071,7 +6080,7 @@ _create_vpn_array(const GPtrArray *connections, gboolean uuid)
         NMConnection *connection = NM_CONNECTION(connections->pdata[c]);
         const char *  type       = nm_connection_get_connection_type(connection);
 
-        if (g_strcmp0(type, NM_SETTING_VPN_SETTING_NAME) == 0)
+        if (nm_streq0(type, NM_SETTING_VPN_SETTING_NAME))
             array[idx++] =
                 uuid ? nm_connection_get_uuid(connection) : nm_connection_get_id(connection);
     }
@@ -6479,11 +6488,11 @@ nmcli_editor_tab_completion(const char *text, int start, int end)
     n1 = strspn(line, " \t");
 
     /* Choose the right generator function */
-    if (strcmp(prompt_tmp, EDITOR_PROMPT_CON_TYPE) == 0)
+    if (nm_streq(prompt_tmp, EDITOR_PROMPT_CON_TYPE))
         generator_func = gen_connection_types(text);
-    else if (strcmp(prompt_tmp, EDITOR_PROMPT_SETTING) == 0)
+    else if (nm_streq(prompt_tmp, EDITOR_PROMPT_SETTING))
         generator_func = gen_setting_names;
-    else if (strcmp(prompt_tmp, EDITOR_PROMPT_PROPERTY) == 0)
+    else if (nm_streq(prompt_tmp, EDITOR_PROMPT_PROPERTY))
         generator_func = gen_property_names;
     else if (g_str_has_suffix(rl_prompt, prompt_yes_no(TRUE, NULL))
              || g_str_has_suffix(rl_prompt, prompt_yes_no(FALSE, NULL)))
@@ -6759,7 +6768,7 @@ parse_editor_main_cmd(const char *cmd, char **cmd_arg)
         editor_cmd = NMC_EDITOR_MAIN_CMD_ACTIVATE;
     else if (matches(cmd_arg0, "back"))
         editor_cmd = NMC_EDITOR_MAIN_CMD_BACK;
-    else if (matches(cmd_arg0, "help") || strcmp(cmd_arg0, "?") == 0)
+    else if (matches(cmd_arg0, "help") || nm_streq(cmd_arg0, "?"))
         editor_cmd = NMC_EDITOR_MAIN_CMD_HELP;
     else if (matches(cmd_arg0, "quit"))
         editor_cmd = NMC_EDITOR_MAIN_CMD_QUIT;
@@ -6946,7 +6955,7 @@ parse_editor_sub_cmd(const char *cmd, char **cmd_arg)
         editor_cmd = NMC_EDITOR_SUB_CMD_PRINT;
     else if (matches(cmd_arg0, "back"))
         editor_cmd = NMC_EDITOR_SUB_CMD_BACK;
-    else if (matches(cmd_arg0, "help") || strcmp(cmd_arg0, "?") == 0)
+    else if (matches(cmd_arg0, "help") || nm_streq(cmd_arg0, "?"))
         editor_cmd = NMC_EDITOR_SUB_CMD_HELP;
     else if (matches(cmd_arg0, "quit"))
         editor_cmd = NMC_EDITOR_SUB_CMD_QUIT;
@@ -8161,12 +8170,12 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
 
         case NMC_EDITOR_MAIN_CMD_VERIFY:
             /* Verify current setting or the whole connection */
-            if (cmd_arg && strcmp(cmd_arg, "all") && strcmp(cmd_arg, "fix")) {
+            if (cmd_arg && !nm_streq(cmd_arg, "all") && !nm_streq(cmd_arg, "fix")) {
                 g_print(_("Invalid verify option: %s\n"), cmd_arg);
                 break;
             }
 
-            if (menu_ctx.curr_setting && (!cmd_arg || strcmp(cmd_arg, "all") != 0)) {
+            if (menu_ctx.curr_setting && (!cmd_arg || !nm_streq(cmd_arg, "all"))) {
                 gs_free_error GError *tmp_err = NULL;
 
                 nm_setting_verify(menu_ctx.curr_setting, NULL, &tmp_err);
@@ -8524,7 +8533,7 @@ editor_init_new_connection(NmCli *nmc, NMConnection *connection, const char *sla
         set_default_interface_name(nmc, s_con);
 
         /* Set sensible initial VLAN values */
-        if (g_strcmp0(con_type, NM_SETTING_VLAN_SETTING_NAME) == 0) {
+        if (nm_streq0(con_type, NM_SETTING_VLAN_SETTING_NAME)) {
             const char *dev_ifname = get_ethernet_device_name(nmc);
 
             g_object_set(NM_SETTING_VLAN(base_setting),
@@ -9311,7 +9320,7 @@ do_connection_import(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
             nmc_complete_strings(*argv, type ? NULL : "type", filename ? NULL : "file");
         }
 
-        if (strcmp(*argv, "type") == 0) {
+        if (nm_streq(*argv, "type")) {
             argc--;
             argv++;
             if (!argc) {
@@ -9333,7 +9342,7 @@ do_connection_import(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
             else
                 g_printerr(_("Warning: 'type' already specified, ignoring extra one.\n"));
 
-        } else if (strcmp(*argv, "file") == 0) {
+        } else if (nm_streq(*argv, "file")) {
             argc--;
             argv++;
             if (!argc) {
@@ -9465,7 +9474,7 @@ do_connection_export(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
     }
 
     type = nm_connection_get_connection_type(connection);
-    if (g_strcmp0(type, NM_SETTING_VPN_SETTING_NAME) != 0) {
+    if (!nm_streq0(type, NM_SETTING_VPN_SETTING_NAME)) {
         g_string_printf(nmc->return_text, _("Error: the connection is not VPN."));
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
         goto finish;
@@ -9587,7 +9596,7 @@ nmcli_con_tab_completion(const char *text, int start, int end)
     /* Disable readline's default filename completion */
     rl_attempted_completion_over = 1;
 
-    if (g_strcmp0(rl_prompt, PROMPT_CONNECTION) == 0) {
+    if (nm_streq0(rl_prompt, PROMPT_CONNECTION)) {
         /* Disable appending space after completion */
         rl_completion_append_character = '\0';
 
@@ -9595,18 +9604,18 @@ nmcli_con_tab_completion(const char *text, int start, int end)
             return NULL;
 
         generator_func = gen_func_connection_names;
-    } else if (g_strcmp0(rl_prompt, PROMPT_CONNECTIONS) == 0) {
+    } else if (nm_streq0(rl_prompt, PROMPT_CONNECTIONS)) {
         generator_func = gen_func_connection_names;
-    } else if (g_strcmp0(rl_prompt, PROMPT_ACTIVE_CONNECTIONS) == 0) {
+    } else if (nm_streq0(rl_prompt, PROMPT_ACTIVE_CONNECTIONS)) {
         generator_func = gen_func_active_connection_names;
     } else if (rl_prompt && g_str_has_prefix(rl_prompt, NM_META_TEXT_PROMPT_VPN_TYPE)) {
         info = (const NMMetaAbstractInfo *) nm_meta_property_info_vpn_service_type;
         nmc_tab_completion.words = _meta_abstract_complete(info, text);
         generator_func           = _meta_abstract_generator;
-    } else if (g_strcmp0(rl_prompt, PROMPT_IMPORT_FILE) == 0) {
+    } else if (nm_streq0(rl_prompt, PROMPT_IMPORT_FILE)) {
         rl_attempted_completion_over     = 0;
         rl_complete_with_tilde_expansion = 1;
-    } else if (g_strcmp0(rl_prompt, PROMPT_VPN_CONNECTION) == 0) {
+    } else if (nm_streq0(rl_prompt, PROMPT_VPN_CONNECTION)) {
         generator_func = gen_vpn_ids;
     }
 
