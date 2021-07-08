@@ -4436,7 +4436,9 @@ src_core_tests_test_systemd_LDFLAGS = \
 src_core_tests_test_systemd_LDADD = \
 	src/libnm-systemd-core/libnm-systemd-core.la \
 	src/libnm-systemd-shared/libnm-systemd-shared.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-log-null/libnm-log-null.la \
+	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
 	$(CODE_COVERAGE_LDFLAGS) \
