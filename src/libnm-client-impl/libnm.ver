@@ -1787,6 +1787,7 @@ global:
 
 libnm_1_32_0 {
 global:
+	nm_device_get_ports;
 	nm_ethtool_optname_is_pause;
 	nm_ip_address_dup;
 	nm_ip_route_dup;
