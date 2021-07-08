@@ -1138,7 +1138,7 @@ msgstr "Chan eil rèiteachadh an IP dligheach tuilleadh"
 
 #: ../src/libnm-client-impl/nm-device.c:2773
 #, c-format
-msgid "The interface names of the device and the connection didn't match."
+msgid "The interface names of the device and the connection didn't match"
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-secret-agent-old.c:1384

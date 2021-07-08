@@ -1208,10 +1208,23 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
 
     if (_supports_addr_family(self, AF_INET)) {
         if (!s_ip4) {
-            const char *default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+            const char *default_ip4_method = NULL;
 
-            if (nm_connection_is_type(self, NM_SETTING_WIREGUARD_SETTING_NAME))
-                default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+            if (parameters) {
+                default_ip4_method =
+                    g_hash_table_lookup(parameters,
+                                        NM_CONNECTION_NORMALIZE_PARAM_IP4_CONFIG_METHOD);
+            }
+            if (!default_ip4_method) {
+                const char *type = nm_connection_get_connection_type(self);
+
+                if (NM_IN_STRSET(type,
+                                 NM_SETTING_WIREGUARD_SETTING_NAME,
+                                 NM_SETTING_DUMMY_SETTING_NAME))
+                    default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+                else
+                    default_ip4_method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+            }
 
             /* But if no IP4 setting was specified, assume the caller was just
              * being lazy and use the default method.
@@ -1255,13 +1268,18 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
         if (!s_ip6) {
             const char *default_ip6_method = NULL;
 
-            if (parameters)
+            if (parameters) {
                 default_ip6_method =
                     g_hash_table_lookup(parameters,
                                         NM_CONNECTION_NORMALIZE_PARAM_IP6_CONFIG_METHOD);
+            }
             if (!default_ip6_method) {
-                if (nm_connection_is_type(self, NM_SETTING_WIREGUARD_SETTING_NAME))
-                    default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+                const char *type = nm_connection_get_connection_type(self);
+
+                if (NM_IN_STRSET(type,
+                                 NM_SETTING_WIREGUARD_SETTING_NAME,
+                                 NM_SETTING_DUMMY_SETTING_NAME))
+                    default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
                 else
                     default_ip6_method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
             }
