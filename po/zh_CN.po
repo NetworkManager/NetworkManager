@@ -12456,7 +12456,7 @@ msgstr "错误：超时时间 %d 秒已到。"
 #: ../src/nmcli/devices.c:2076
 #, c-format
 msgid "Device '%s' successfully activated with '%s'.\n"
-msgstr "成功用 \"%s%s\" 激活了设备 \"\"。\n"
+msgstr "设备 \"%s\" 成功以 \"%s\" 激活。\n"
 
 #: ../src/nmcli/devices.c:2082
 #, c-format
