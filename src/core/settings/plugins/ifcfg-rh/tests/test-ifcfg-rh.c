@@ -10476,7 +10476,7 @@ _svUnescape(const char *str, char **to_free)
         str = (str_free = g_strdup(str));
     }
 
-    s = svUnescape(str, to_free);
+    s = svUnescape_full(str, to_free, FALSE);
     if (*to_free) {
         g_assert(s == *to_free);
         g_assert(s[0]);
@@ -10484,6 +10484,37 @@ _svUnescape(const char *str, char **to_free)
         g_assert(s == NULL || (!s[0] && (s < str || s > strchr(str, '\0')))
                  || (s[0] && s >= str && s <= strchr(str, '\0')));
     }
+
+    {
+        const char *  s2;
+        gs_free char *to_free2 = NULL;
+
+        gboolean is_utf8 = s && g_utf8_validate(s, -1, NULL);
+
+        s2 = svUnescape_full(str, &to_free2, TRUE);
+        if (NM_IN_STRSET(str, "$'\\U0x'", "$'\\x0'", "$'\\008'", "$'\\08'")) {
+            g_assert_cmpstr(s2, ==, NULL);
+            g_assert(!to_free2);
+            g_assert_cmpstr(s, ==, "");
+            g_assert(!*to_free);
+        } else if (NM_IN_STRSET(str, "$'x\\U0'")) {
+            g_assert_cmpstr(s2, ==, NULL);
+            g_assert(!to_free2);
+            g_assert_cmpstr(s, ==, "x");
+            g_assert(*to_free == s);
+        } else if (!is_utf8) {
+            g_assert(!s2);
+            g_assert(!to_free2);
+        } else if (!to_free2) {
+            g_assert_cmpstr(s, ==, s2);
+            g_assert(s == s2);
+        } else {
+            g_assert_cmpstr(s, ==, s2);
+            g_assert(s != s2);
+            g_assert(s2 == to_free2);
+        }
+    }
+
     return s;
 }
 
@@ -10665,6 +10696,9 @@ test_svUnescape(void)
         V1("\"\\'\"''", "\\'"),
         V0("\"b\\~b\" ", "b\\~b"),
         V1("\"b\\~b\"x", "b\\~bx"),
+
+        V0("$'x\\U0'", "x"),
+        V0("$'\\U0x'", ""),
     };
     const UnescapeTestData data_ansi[] = {
         /* strings inside $''. They cannot be compared directly, but must
@@ -10851,7 +10885,7 @@ test_write_unknown(gconstpointer test_data)
         _svGetValue_check(sv, "METRIC", NULL);
         _svGetValue_check(sv, "METRIC1", "");
         _svGetValue_check(sv, "METRIC2", "");
-        _svGetValue_check(sv, "METRIC3", "x");
+        _svGetValue_check(sv, "METRIC3", "");
 
         _svGetValue_check(sv, "IPADDR", "set-by-test1");
         _svGetValue_check(sv, "IPADDR2", "set-by-test2");
