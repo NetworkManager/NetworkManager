@@ -30,7 +30,7 @@
 #include "libnm-systemd-core/nm-sd.h"
 
 #if !defined(NM_DIST_VERSION)
-    #define NM_DIST_VERSION VERSION
+#define NM_DIST_VERSION VERSION
 #endif
 
 #define NMIH_PID_FILE_FMT NMRUNDIR "/nm-iface-helper-%d.pid"

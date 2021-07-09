@@ -14,7 +14,7 @@
 
 /* Hacks necessary to #include wireless.h; yay for WEXT */
 #ifndef __user
-    #define __user
+#define __user
 #endif
 #include <sys/types.h>
 #include <linux/types.h>

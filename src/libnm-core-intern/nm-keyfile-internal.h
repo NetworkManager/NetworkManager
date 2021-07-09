@@ -8,7 +8,7 @@
 #define __NM_KEYFILE_INTERNAL_H__
 
 #if !((NETWORKMANAGER_COMPILATION) &NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL)
-    #error Cannot use this header.
+#error Cannot use this header.
 #endif
 
 #include <sys/types.h>

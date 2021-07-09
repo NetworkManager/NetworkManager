@@ -33,25 +33,25 @@
  *     https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48200#c28
  */
 #ifndef __clang__
-    #define _nm_externally_visible __attribute__((__externally_visible__))
+#define _nm_externally_visible __attribute__((__externally_visible__))
 #else
-    #define _nm_externally_visible
+#define _nm_externally_visible
 #endif
 
 #if __GNUC__ >= 7
-    #define _nm_fallthrough __attribute__((__fallthrough__))
+#define _nm_fallthrough __attribute__((__fallthrough__))
 #else
-    #define _nm_fallthrough
+#define _nm_fallthrough
 #endif
 
 /*****************************************************************************/
 
 #ifdef __CHECKER__
-    #define _nm_bitwise __attribute__((__bitwise__))
-    #define _nm_force   __attribute__((__force__))
+#define _nm_bitwise __attribute__((__bitwise__))
+#define _nm_force   __attribute__((__force__))
 #else
-    #define _nm_bitwise
-    #define _nm_force
+#define _nm_bitwise
+#define _nm_force
 #endif
 
 typedef uint16_t _nm_bitwise nm_le16_t;
@@ -64,7 +64,7 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 /*****************************************************************************/
 
 #ifdef thread_local
-    #define _nm_thread_local thread_local
+#define _nm_thread_local thread_local
 /*
  * Don't break on glibc < 2.16 that doesn't define __STDC_NO_THREADS__
  * see http://gcc.gnu.org/bugzilla/show_bug.cgi?id=53769
@@ -72,9 +72,9 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 #elif __STDC_VERSION__ >= 201112L     \
     && !(defined(__STDC_NO_THREADS__) \
          || (defined(__GNU_LIBRARY__) && __GLIBC__ == 2 && __GLIBC_MINOR__ < 16))
-    #define _nm_thread_local _Thread_local
+#define _nm_thread_local _Thread_local
 #else
-    #define _nm_thread_local __thread
+#define _nm_thread_local __thread
 #endif
 
 /*****************************************************************************/
@@ -110,11 +110,11 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 #define NM_BOOLEAN_EXPR(expr) _NM_BOOLEAN_EXPR_IMPL(NM_UNIQ, expr)
 
 #if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
-    #define NM_LIKELY(expr)   (__builtin_expect(NM_BOOLEAN_EXPR(expr), 1))
-    #define NM_UNLIKELY(expr) (__builtin_expect(NM_BOOLEAN_EXPR(expr), 0))
+#define NM_LIKELY(expr)   (__builtin_expect(NM_BOOLEAN_EXPR(expr), 1))
+#define NM_UNLIKELY(expr) (__builtin_expect(NM_BOOLEAN_EXPR(expr), 0))
 #else
-    #define NM_LIKELY(expr)   NM_BOOLEAN_EXPR(expr)
-    #define NM_UNLIKELY(expr) NM_BOOLEAN_EXPR(expr)
+#define NM_LIKELY(expr)   NM_BOOLEAN_EXPR(expr)
+#define NM_UNLIKELY(expr) NM_BOOLEAN_EXPR(expr)
 #endif
 
 /*****************************************************************************/
@@ -132,48 +132,48 @@ typedef uint64_t _nm_bitwise nm_be64_t;
  * depend less on runtime conditions (that is, are generally expected to be true). */
 
 #ifndef NM_MORE_ASSERTS
-    #define NM_MORE_ASSERTS 0
+#define NM_MORE_ASSERTS 0
 #endif
 
 #ifndef _nm_assert_call
-    #define _nm_assert_call(cond)         assert(cond)
-    #define _nm_assert_call_not_reached() assert(0)
+#define _nm_assert_call(cond)         assert(cond)
+#define _nm_assert_call_not_reached() assert(0)
 #endif
 
 #if NM_MORE_ASSERTS
-    #define nm_assert(cond)        \
-        do {                       \
-            _nm_assert_call(cond); \
-        } while (0)
-    #define nm_assert_se(cond)                \
-        do {                                  \
-            if (NM_LIKELY(cond)) {            \
-                ;                             \
-            } else {                          \
-                _nm_assert_call(0 && (cond)); \
-            }                                 \
-        } while (0)
-    #define nm_assert_not_reached()        \
-        do {                               \
-            _nm_assert_call_not_reached(); \
-        } while (0)
+#define nm_assert(cond)        \
+    do {                       \
+        _nm_assert_call(cond); \
+    } while (0)
+#define nm_assert_se(cond)                \
+    do {                                  \
+        if (NM_LIKELY(cond)) {            \
+            ;                             \
+        } else {                          \
+            _nm_assert_call(0 && (cond)); \
+        }                                 \
+    } while (0)
+#define nm_assert_not_reached()        \
+    do {                               \
+        _nm_assert_call_not_reached(); \
+    } while (0)
 #else
-    #define nm_assert(cond)  \
-        do {                 \
-            if (0) {         \
-                if (cond) {} \
-            }                \
-        } while (0)
-    #define nm_assert_se(cond)     \
-        do {                       \
-            if (NM_LIKELY(cond)) { \
-                ;                  \
-            }                      \
-        } while (0)
-    #define nm_assert_not_reached() \
-        do {                        \
-            ;                       \
-        } while (0)
+#define nm_assert(cond)  \
+    do {                 \
+        if (0) {         \
+            if (cond) {} \
+        }                \
+    } while (0)
+#define nm_assert_se(cond)     \
+    do {                       \
+        if (NM_LIKELY(cond)) { \
+            ;                  \
+        }                      \
+    } while (0)
+#define nm_assert_not_reached() \
+    do {                        \
+        ;                       \
+    } while (0)
 #endif
 
 #define nm_assert_unreachable_val(val) \

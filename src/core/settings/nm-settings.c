@@ -17,7 +17,7 @@
 #include <pwd.h>
 
 #if HAVE_SELINUX
-    #include <selinux/selinux.h>
+#include <selinux/selinux.h>
 #endif
 
 #include "libnm-core-aux-intern/nm-common-macros.h"

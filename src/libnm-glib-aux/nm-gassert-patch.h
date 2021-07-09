@@ -25,50 +25,50 @@ _nm_g_return_if_fail_warning(const char *log_domain, const char *file, int line)
     g_return_if_fail_warning(log_domain, file_buf, "<dropped>");
 }
 
-    #define g_return_if_fail_warning(log_domain, pretty_function, expression) \
-        _nm_g_return_if_fail_warning(log_domain, __FILE__, __LINE__)
+#define g_return_if_fail_warning(log_domain, pretty_function, expression) \
+    _nm_g_return_if_fail_warning(log_domain, __FILE__, __LINE__)
 
-    #define g_assertion_message_expr(domain, file, line, func, expr) \
-        g_assertion_message_expr(domain, file, line, "<unknown-fcn>", (expr) ? "<dropped>" : NULL)
+#define g_assertion_message_expr(domain, file, line, func, expr) \
+    g_assertion_message_expr(domain, file, line, "<unknown-fcn>", (expr) ? "<dropped>" : NULL)
 
-    #undef g_return_val_if_reached
-    #define g_return_val_if_reached(val)                          \
-        G_STMT_START                                              \
-        {                                                         \
-            g_log(G_LOG_DOMAIN,                                   \
-                  G_LOG_LEVEL_CRITICAL,                           \
-                  "file %s: line %d (%s): should not be reached", \
-                  __FILE__,                                       \
-                  __LINE__,                                       \
-                  "<dropped>");                                   \
-            return (val);                                         \
-        }                                                         \
-        G_STMT_END
+#undef g_return_val_if_reached
+#define g_return_val_if_reached(val)                          \
+    G_STMT_START                                              \
+    {                                                         \
+        g_log(G_LOG_DOMAIN,                                   \
+              G_LOG_LEVEL_CRITICAL,                           \
+              "file %s: line %d (%s): should not be reached", \
+              __FILE__,                                       \
+              __LINE__,                                       \
+              "<dropped>");                                   \
+        return (val);                                         \
+    }                                                         \
+    G_STMT_END
 
-    #undef g_return_if_reached
-    #define g_return_if_reached()                                 \
-        G_STMT_START                                              \
-        {                                                         \
-            g_log(G_LOG_DOMAIN,                                   \
-                  G_LOG_LEVEL_CRITICAL,                           \
-                  "file %s: line %d (%s): should not be reached", \
-                  __FILE__,                                       \
-                  __LINE__,                                       \
-                  "<dropped>");                                   \
-            return;                                               \
-        }                                                         \
-        G_STMT_END
+#undef g_return_if_reached
+#define g_return_if_reached()                                 \
+    G_STMT_START                                              \
+    {                                                         \
+        g_log(G_LOG_DOMAIN,                                   \
+              G_LOG_LEVEL_CRITICAL,                           \
+              "file %s: line %d (%s): should not be reached", \
+              __FILE__,                                       \
+              __LINE__,                                       \
+              "<dropped>");                                   \
+        return;                                               \
+    }                                                         \
+    G_STMT_END
 #endif
 
 /*****************************************************************************/
 
 #if NM_MORE_ASSERTS == 0
-    #define NM_ASSERT_G_RETURN_EXPR(expr) "<dropped>"
-    #define NM_ASSERT_NO_MSG              1
+#define NM_ASSERT_G_RETURN_EXPR(expr) "<dropped>"
+#define NM_ASSERT_NO_MSG              1
 
 #else
-    #define NM_ASSERT_G_RETURN_EXPR(expr) "" expr ""
-    #define NM_ASSERT_NO_MSG              0
+#define NM_ASSERT_G_RETURN_EXPR(expr) "" expr ""
+#define NM_ASSERT_NO_MSG              0
 #endif
 
 /*****************************************************************************/

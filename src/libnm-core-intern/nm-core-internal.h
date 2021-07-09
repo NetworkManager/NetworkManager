@@ -17,7 +17,7 @@
  * and some test programs.
  **/
 #if !((NETWORKMANAGER_COMPILATION) &NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_CORE_INTERNAL)
-    #error Cannot use this header.
+#error Cannot use this header.
 #endif
 
 #include "libnm-base/nm-base.h"

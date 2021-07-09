@@ -10,7 +10,7 @@
 #include "nm-connectivity.h"
 
 #if WITH_CONCHECK
-    #include <curl/curl.h>
+#include <curl/curl.h>
 #endif
 #include <linux/rtnetlink.h>
 

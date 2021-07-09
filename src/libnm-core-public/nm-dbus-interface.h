@@ -15,8 +15,8 @@
 /* This header must not include glib or libnm. */
 
 #ifndef NM_VERSION_H
-    #define NM_AVAILABLE_IN_1_2
-    #define NM_AVAILABLE_IN_1_8
+#define NM_AVAILABLE_IN_1_2
+#define NM_AVAILABLE_IN_1_8
 #endif
 
 /*
@@ -860,8 +860,8 @@ typedef enum /*< flags >*/ {
 } NMSecretAgentCapabilities;
 
 #ifndef NM_VERSION_H
-    #undef NM_AVAILABLE_IN_1_2
-    #undef NM_AVAILABLE_IN_1_8
+#undef NM_AVAILABLE_IN_1_2
+#undef NM_AVAILABLE_IN_1_8
 #endif
 
 #define NM_LLDP_ATTR_RAW                  "raw"

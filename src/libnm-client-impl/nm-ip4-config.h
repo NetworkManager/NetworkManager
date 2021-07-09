@@ -8,7 +8,7 @@
 #define __NM_IP4_CONFIG_H__
 
 #if !((NETWORKMANAGER_COMPILATION) &NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE)
-    #error Cannot use this header.
+#error Cannot use this header.
 #endif
 
 #include "nm-ip-config.h"

@@ -189,15 +189,15 @@ nm_hash_update_str(NMHashState *state, const char *str)
 }
 
 #if _NM_CC_SUPPORT_GENERIC
-    /* Like nm_hash_update_str(), but restricted to arrays only. nm_hash_update_str() only works
+/* Like nm_hash_update_str(), but restricted to arrays only. nm_hash_update_str() only works
  * with a @str argument that cannot be NULL. If you have a string pointer, that is never NULL, use
  * nm_hash_update() instead. */
-    #define nm_hash_update_strarr(state, str)                                \
-        (_Generic(&(str), const char(*)[sizeof(str)]                         \
-                  : nm_hash_update_str((state), (str)), char(*)[sizeof(str)] \
-                  : nm_hash_update_str((state), (str))))
+#define nm_hash_update_strarr(state, str)                                \
+    (_Generic(&(str), const char(*)[sizeof(str)]                         \
+              : nm_hash_update_str((state), (str)), char(*)[sizeof(str)] \
+              : nm_hash_update_str((state), (str))))
 #else
-    #define nm_hash_update_strarr(state, str) nm_hash_update_str((state), (str))
+#define nm_hash_update_strarr(state, str) nm_hash_update_str((state), (str))
 #endif
 
 guint nm_hash_ptr(gconstpointer ptr);

@@ -42,10 +42,10 @@ typedef gboolean (*NMPObjectPredicateFunc)(const NMPObject *obj, gpointer user_d
 
 /* workaround for older libnl version, that does not define these flags. */
 #ifndef IFA_F_MANAGETEMPADDR
-    #define IFA_F_MANAGETEMPADDR 0x100
+#define IFA_F_MANAGETEMPADDR 0x100
 #endif
 #ifndef IFA_F_NOPREFIXROUTE
-    #define IFA_F_NOPREFIXROUTE 0x200
+#define IFA_F_NOPREFIXROUTE 0x200
 #endif
 
 #define NM_RT_SCOPE_LINK 253 /* RT_SCOPE_LINK */

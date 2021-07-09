@@ -41,7 +41,7 @@ void _nm_log_impl_cs(NMLogLevel level, const char *fmt, ...) _nm_printf(2, 3);
 /*****************************************************************************/
 
 #ifndef NM_DIST_VERSION
-    #define NM_DIST_VERSION VERSION
+#define NM_DIST_VERSION VERSION
 #endif
 
 /*****************************************************************************/

@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #if defined(__GLIBC__)
-    #include <nss.h>
+#include <nss.h>
 #endif
 
 #include "libnm-std-aux/nm-std-aux.h"

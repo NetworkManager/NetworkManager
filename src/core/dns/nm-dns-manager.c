@@ -19,7 +19,7 @@
 #include <linux/fs.h>
 
 #if WITH_LIBPSL
-    #include <libpsl.h>
+#include <libpsl.h>
 #endif
 
 #include "libnm-glib-aux/nm-str-buf.h"
@@ -42,17 +42,17 @@
 #define HASH_LEN NM_UTILS_CHECKSUM_LENGTH_SHA1
 
 #ifndef RESOLVCONF_PATH
-    #define RESOLVCONF_PATH "/sbin/resolvconf"
-    #define HAS_RESOLVCONF  0
+#define RESOLVCONF_PATH "/sbin/resolvconf"
+#define HAS_RESOLVCONF  0
 #else
-    #define HAS_RESOLVCONF 1
+#define HAS_RESOLVCONF 1
 #endif
 
 #ifndef NETCONFIG_PATH
-    #define NETCONFIG_PATH "/sbin/netconfig"
-    #define HAS_NETCONFIG  0
+#define NETCONFIG_PATH "/sbin/netconfig"
+#define HAS_NETCONFIG  0
 #else
-    #define HAS_NETCONFIG 1
+#define HAS_NETCONFIG 1
 #endif
 
 /*****************************************************************************/

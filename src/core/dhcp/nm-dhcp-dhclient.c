@@ -14,21 +14,21 @@
 
 #if WITH_DHCLIENT
 
-    #include <stdlib.h>
-    #include <unistd.h>
-    #include <stdio.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <ctype.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <ctype.h>
 
-    #include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 
-    #include "nm-utils.h"
-    #include "nm-dhcp-dhclient-utils.h"
-    #include "nm-dhcp-manager.h"
-    #include "NetworkManagerUtils.h"
-    #include "nm-dhcp-listener.h"
-    #include "nm-dhcp-client-logging.h"
+#include "nm-utils.h"
+#include "nm-dhcp-dhclient-utils.h"
+#include "nm-dhcp-manager.h"
+#include "NetworkManagerUtils.h"
+#include "nm-dhcp-listener.h"
+#include "nm-dhcp-client-logging.h"
 
 /*****************************************************************************/
 
@@ -41,16 +41,15 @@ _addr_family_to_path_part(int addr_family)
 
 /*****************************************************************************/
 
-    #define NM_TYPE_DHCP_DHCLIENT (nm_dhcp_dhclient_get_type())
-    #define NM_DHCP_DHCLIENT(obj) \
-        (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclient))
-    #define NM_DHCP_DHCLIENT_CLASS(klass) \
-        (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
-    #define NM_IS_DHCP_DHCLIENT(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_DHCLIENT))
-    #define NM_IS_DHCP_DHCLIENT_CLASS(klass) \
-        (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_DHCP_DHCLIENT))
-    #define NM_DHCP_DHCLIENT_GET_CLASS(obj) \
-        (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
+#define NM_TYPE_DHCP_DHCLIENT (nm_dhcp_dhclient_get_type())
+#define NM_DHCP_DHCLIENT(obj) \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclient))
+#define NM_DHCP_DHCLIENT_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
+#define NM_IS_DHCP_DHCLIENT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_DHCLIENT))
+#define NM_IS_DHCP_DHCLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_DHCP_DHCLIENT))
+#define NM_DHCP_DHCLIENT_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
 
 typedef struct _NMDhcpDhclient      NMDhcpDhclient;
 typedef struct _NMDhcpDhclientClass NMDhcpDhclientClass;
@@ -78,8 +77,8 @@ struct _NMDhcpDhclientClass {
 
 G_DEFINE_TYPE(NMDhcpDhclient, nm_dhcp_dhclient, NM_TYPE_DHCP_CLIENT)
 
-    #define NM_DHCP_DHCLIENT_GET_PRIVATE(self) \
-        _NM_GET_PRIVATE(self, NMDhcpDhclient, NM_IS_DHCP_DHCLIENT)
+#define NM_DHCP_DHCLIENT_GET_PRIVATE(self) \
+    _NM_GET_PRIVATE(self, NMDhcpDhclient, NM_IS_DHCP_DHCLIENT)
 
 /*****************************************************************************/
 

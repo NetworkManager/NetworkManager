@@ -222,7 +222,7 @@ nmtst_platform_ip4_routes_equal(const NMPlatformIP4Route *a,
     }
 }
 
-    #ifdef __NMP_OBJECT_H__
+#ifdef __NMP_OBJECT_H__
 
 static inline void
 nmtst_platform_ip4_routes_equal_aptr(const NMPObject *const *  a,
@@ -242,7 +242,7 @@ nmtst_platform_ip4_routes_equal_aptr(const NMPObject *const *  a,
     nmtst_platform_ip4_routes_equal(c_a, b, len, ignore_order);
 }
 
-    #endif
+#endif
 
 static inline int
 _nmtst_platform_ip6_routes_equal_sort(gconstpointer a, gconstpointer b, gpointer user_data)
@@ -291,7 +291,7 @@ nmtst_platform_ip6_routes_equal(const NMPlatformIP6Route *a,
     }
 }
 
-    #ifdef __NMP_OBJECT_H__
+#ifdef __NMP_OBJECT_H__
 
 static inline void
 nmtst_platform_ip6_routes_equal_aptr(const NMPObject *const *  a,
@@ -311,13 +311,13 @@ nmtst_platform_ip6_routes_equal_aptr(const NMPObject *const *  a,
     nmtst_platform_ip6_routes_equal(c_a, b, len, ignore_order);
 }
 
-    #endif
+#endif
 
 #endif
 
 #ifdef __NETWORKMANAGER_IP4_CONFIG_H__
 
-    #include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 
 static inline NMIP4Config *
 nmtst_ip4_config_new(int ifindex)
@@ -331,7 +331,7 @@ nmtst_ip4_config_new(int ifindex)
 
 #ifdef __NETWORKMANAGER_IP6_CONFIG_H__
 
-    #include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
 
 static inline NMIP6Config *
 nmtst_ip6_config_new(int ifindex)

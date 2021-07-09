@@ -15,7 +15,7 @@
 #include "nm-wifi-utils-private.h"
 #include "nm-wifi-utils-nl80211.h"
 #if HAVE_WEXT
-    #include "nm-wifi-utils-wext.h"
+#include "nm-wifi-utils-wext.h"
 #endif
 #include "libnm-platform/nm-platform-utils.h"
 

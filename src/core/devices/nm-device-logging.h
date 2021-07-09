@@ -9,15 +9,13 @@
 #include "nm-device.h"
 
 #if !_NM_CC_SUPPORT_GENERIC
-    #define _NM_DEVICE_CAST(self) ((NMDevice *) (self))
+#define _NM_DEVICE_CAST(self) ((NMDevice *) (self))
 #elif !defined(_NMLOG_DEVICE_TYPE)
-    #define _NM_DEVICE_CAST(self)                         \
-        _Generic((self), NMDevice *                       \
-                 : ((NMDevice *) (self)), NMDevice *const \
-                 : ((NMDevice *) (self)))
+#define _NM_DEVICE_CAST(self) \
+    _Generic((self), NMDevice * : ((NMDevice *) (self)), NMDevice *const : ((NMDevice *) (self)))
 #else
-    #define _NM_DEVICE_CAST(self) \
-        _Generic((self), \
+#define _NM_DEVICE_CAST(self) \
+    _Generic((self), \
                  _NMLOG_DEVICE_TYPE *      : ((NMDevice *) (self)), \
                  _NMLOG_DEVICE_TYPE * const: ((NMDevice *) (self)), \
                  NMDevice *                : ((NMDevice *) (self)), \

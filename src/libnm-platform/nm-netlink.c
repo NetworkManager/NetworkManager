@@ -13,7 +13,7 @@
 /*****************************************************************************/
 
 #ifndef SOL_NETLINK
-    #define SOL_NETLINK 270
+#define SOL_NETLINK 270
 #endif
 
 /*****************************************************************************/
@@ -24,7 +24,7 @@
 #define NL_NO_AUTO_ACK       (1 << 5)
 
 #ifndef NETLINK_EXT_ACK
-    #define NETLINK_EXT_ACK 11
+#define NETLINK_EXT_ACK 11
 #endif
 
 struct nl_msg {

@@ -15,7 +15,7 @@
 #include "nm-dbus-interface.h"
 
 #ifndef NM_VERSION_H
-    #define NM_DEPRECATED_IN_1_8_FOR(n)
+#define NM_DEPRECATED_IN_1_8_FOR(n)
 #endif
 
 /*
@@ -171,7 +171,7 @@ typedef enum {
 } NMVpnPluginFailure;
 
 #ifndef NM_VERSION_H
-    #undef NM_DEPRECATED_IN_1_8_FOR
+#undef NM_DEPRECATED_IN_1_8_FOR
 #endif
 
 /*** Generic config ***/

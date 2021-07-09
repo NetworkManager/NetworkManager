@@ -13,7 +13,7 @@
 #include "nm-dbus-manager.h"
 
 #if WITH_IWD
-    #include "nm-device-iwd.h"
+#include "nm-device-iwd.h"
 #endif
 
 /*****************************************************************************/

@@ -35,19 +35,19 @@ pid_t nm_utils_gettid(void);
 gboolean _nm_assert_on_main_thread(void);
 
 #if NM_MORE_ASSERTS > 5
-    #define NM_ASSERT_ON_MAIN_THREAD()              \
-        G_STMT_START                                \
-        {                                           \
-            nm_assert(_nm_assert_on_main_thread()); \
-        }                                           \
-        G_STMT_END
+#define NM_ASSERT_ON_MAIN_THREAD()              \
+    G_STMT_START                                \
+    {                                           \
+        nm_assert(_nm_assert_on_main_thread()); \
+    }                                           \
+    G_STMT_END
 #else
-    #define NM_ASSERT_ON_MAIN_THREAD() \
-        G_STMT_START                   \
-        {                              \
-            ;                          \
-        }                              \
-        G_STMT_END
+#define NM_ASSERT_ON_MAIN_THREAD() \
+    G_STMT_START                   \
+    {                              \
+        ;                          \
+    }                              \
+    G_STMT_END
 #endif
 
 /*****************************************************************************/
@@ -79,20 +79,20 @@ _NM_INT_NOT_NEGATIVE(gssize val)
  * Together with the G_STATIC_ASSERT(), we make sure that this is always satisfied. */
 G_STATIC_ASSERT(sizeof(int) == sizeof(gint32));
 #if _NM_CC_SUPPORT_GENERIC
-    #define _NM_INT_LE_MAXINT32(value)                 \
-        ({                                             \
-            _nm_unused typeof(value) _value = (value); \
-                                                       \
-            _Generic((value), int : TRUE);             \
-        })
+#define _NM_INT_LE_MAXINT32(value)                 \
+    ({                                             \
+        _nm_unused typeof(value) _value = (value); \
+                                                   \
+        _Generic((value), int : TRUE);             \
+    })
 #else
-    #define _NM_INT_LE_MAXINT32(value)                   \
-        ({                                               \
-            _nm_unused typeof(value) _value   = (value); \
-            _nm_unused const int *   _p_value = &_value; \
-                                                         \
-            TRUE;                                        \
-        })
+#define _NM_INT_LE_MAXINT32(value)                   \
+    ({                                               \
+        _nm_unused typeof(value) _value   = (value); \
+        _nm_unused const int *   _p_value = &_value; \
+                                                     \
+        TRUE;                                        \
+    })
 #endif
 
 /*****************************************************************************/
@@ -1075,12 +1075,12 @@ const char *nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
 /*****************************************************************************/
 
 #define NM_UTILS_ENUM2STR(v, n) \
-case v:                         \
-    s = "" n "";                \
-    break;
+    case v:                     \
+        s = "" n "";            \
+        break;
 #define NM_UTILS_ENUM2STR_IGNORE(v) \
-case v:                             \
-    break;
+    case v:                         \
+        break;
 
 #define NM_UTILS_ENUM2STR_DEFINE_FULL(fcn_name, lookup_type, int_fmt, ...) \
     const char *fcn_name(lookup_type val, char *buf, gsize len)            \
@@ -2129,17 +2129,17 @@ GPtrArray *_nm_g_ptr_array_copy(GPtrArray *    array,
  * Note that the @element_free_func MUST correspond to free function set in @array.
  */
 #if GLIB_CHECK_VERSION(2, 62, 0)
-    #define nm_g_ptr_array_copy(array, func, user_data, element_free_func)            \
-        ({                                                                            \
-            _nm_unused GDestroyNotify const _element_free_func = (element_free_func); \
-                                                                                      \
-            G_GNUC_BEGIN_IGNORE_DEPRECATIONS;                                         \
-            g_ptr_array_copy((array), (func), (user_data));                           \
-            G_GNUC_END_IGNORE_DEPRECATIONS;                                           \
-        })
+#define nm_g_ptr_array_copy(array, func, user_data, element_free_func)            \
+    ({                                                                            \
+        _nm_unused GDestroyNotify const _element_free_func = (element_free_func); \
+                                                                                  \
+        G_GNUC_BEGIN_IGNORE_DEPRECATIONS;                                         \
+        g_ptr_array_copy((array), (func), (user_data));                           \
+        G_GNUC_END_IGNORE_DEPRECATIONS;                                           \
+    })
 #else
-    #define nm_g_ptr_array_copy(array, func, user_data, element_free_func) \
-        _nm_g_ptr_array_copy((array), (func), (user_data), (element_free_func))
+#define nm_g_ptr_array_copy(array, func, user_data, element_free_func) \
+    _nm_g_ptr_array_copy((array), (func), (user_data), (element_free_func))
 #endif
 
 /*****************************************************************************/

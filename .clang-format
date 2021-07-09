@@ -44,7 +44,7 @@ BreakStringLiterals: true
 IncludeBlocks: Preserve
 IndentCaseLabels: false
 IndentGotoLabels: false
-IndentPPDirectives: BeforeHash
+IndentPPDirectives: None
 IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 1

@@ -16,7 +16,7 @@
 
 #include "nm-editor-utils.h"
 #if 0
-    #include "libnmc-base/nm-vpn-helpers.h"
+#include "libnmc-base/nm-vpn-helpers.h"
 
 static GSList *vpn_plugins;
 

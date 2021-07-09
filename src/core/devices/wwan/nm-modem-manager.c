@@ -12,9 +12,9 @@
 #include <libmm-glib.h>
 
 #if HAVE_LIBSYSTEMD
-    #include <systemd/sd-daemon.h>
+#include <systemd/sd-daemon.h>
 #else
-    #define sd_booted() FALSE
+#define sd_booted() FALSE
 #endif
 
 #include "libnm-std-aux/nm-dbus-compat.h"
@@ -22,7 +22,7 @@
 #include "nm-modem-broadband.h"
 
 #if WITH_OFONO
-    #include "nm-modem-ofono.h"
+#include "nm-modem-ofono.h"
 #endif
 
 #define MODEM_POKE_INTERVAL 120

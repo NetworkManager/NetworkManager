@@ -7,7 +7,7 @@
 #define __NM_REMOTE_CONNECTION_PRIVATE_H__
 
 #if !((NETWORKMANAGER_COMPILATION) &NM_NETWORKMANAGER_COMPILATION_WITH_LIBNM_PRIVATE)
-    #error Cannot use this header.
+#error Cannot use this header.
 #endif
 
 #define NM_REMOTE_CONNECTION_INIT_RESULT "init-result"

@@ -14,17 +14,17 @@
 #include <sys/stat.h>
 
 #if SESSION_TRACKING_SYSTEMD && SESSION_TRACKING_ELOGIND
-    #error Cannot build both systemd-logind and elogind support
+#error Cannot build both systemd-logind and elogind support
 #endif
 
 #if SESSION_TRACKING_SYSTEMD
-    #include <systemd/sd-login.h>
-    #define LOGIND_NAME "systemd-logind"
+#include <systemd/sd-login.h>
+#define LOGIND_NAME "systemd-logind"
 #endif
 
 #if SESSION_TRACKING_ELOGIND
-    #include <elogind/sd-login.h>
-    #define LOGIND_NAME "elogind"
+#include <elogind/sd-login.h>
+#define LOGIND_NAME "elogind"
 #endif
 
 #include "NetworkManagerUtils.h"

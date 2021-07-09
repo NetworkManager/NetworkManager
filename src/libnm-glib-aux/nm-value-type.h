@@ -35,37 +35,37 @@ typedef union {
 
 } NMValueTypUnion;
 
-    /* Set the NMValueTypUnion. You can also assign the member directly.
+/* Set the NMValueTypUnion. You can also assign the member directly.
  * The only purpose of this is that it also returns a pointer to the
  * union. So, you can do
  *
  *   ptr = NM_VALUE_TYP_UNION_SET (&value_typ_union_storage, v_bool, TRUE);
  */
-    #define NM_VALUE_TYP_UNION_SET(_arg, _type, _val) \
-        ({                                            \
-            NMValueTypUnion *const _arg2 = (_arg);    \
-                                                      \
-            *_arg2 = (NMValueTypUnion){               \
-                ._type = (_val),                      \
-            };                                        \
-            _arg2;                                    \
-        })
+#define NM_VALUE_TYP_UNION_SET(_arg, _type, _val) \
+    ({                                            \
+        NMValueTypUnion *const _arg2 = (_arg);    \
+                                                  \
+        *_arg2 = (NMValueTypUnion){               \
+            ._type = (_val),                      \
+        };                                        \
+        _arg2;                                    \
+    })
 
 typedef struct {
     bool            has;
     NMValueTypUnion val;
 } NMValueTypUnioMaybe;
 
-    #define NM_VALUE_TYP_UNIO_MAYBE_SET(_arg, _type, _val) \
-        ({                                                 \
-            NMValueTypUnioMaybe *const _arg2 = (_arg);     \
-                                                           \
-            *_arg2 = (NMValueTypUnioMaybe){                \
-                .has       = TRUE,                         \
-                .val._type = (_val),                       \
-            };                                             \
-            _arg2;                                         \
-        })
+#define NM_VALUE_TYP_UNIO_MAYBE_SET(_arg, _type, _val) \
+    ({                                                 \
+        NMValueTypUnioMaybe *const _arg2 = (_arg);     \
+                                                       \
+        *_arg2 = (NMValueTypUnioMaybe){                \
+            .has       = TRUE,                         \
+            .val._type = (_val),                       \
+        };                                             \
+        _arg2;                                         \
+    })
 
 /*****************************************************************************/
 
@@ -232,7 +232,7 @@ nm_value_type_get_variant_type(NMValueType value_type)
     return NULL;
 }
 
-    /*****************************************************************************/
+/*****************************************************************************/
 
 #endif /* NM_VALUE_TYPE_DEFINE_FUNCTIONS */
 

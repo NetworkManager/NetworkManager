@@ -27,9 +27,9 @@
 #include "settings.h"
 
 #if defined(NM_DIST_VERSION)
-    #define NMCLI_VERSION NM_DIST_VERSION
+#define NMCLI_VERSION NM_DIST_VERSION
 #else
-    #define NMCLI_VERSION VERSION
+#define NMCLI_VERSION VERSION
 #endif
 
 #define _NMC_COLOR_PALETTE_INIT()                              \

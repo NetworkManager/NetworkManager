@@ -18,8 +18,8 @@
 #include <strings.h>
 
 #if SYSTEMD_JOURNAL
-    #define SD_JOURNAL_SUPPRESS_LOCATION
-    #include <systemd/sd-journal.h>
+#define SD_JOURNAL_SUPPRESS_LOCATION
+#include <systemd/sd-journal.h>
 #endif
 
 #include "libnm-glib-aux/nm-logging-base.h"
@@ -600,7 +600,7 @@ _iovec_set_string(struct iovec *iov, const char *str)
     _iovec_set(iov, str, strlen(str));
 }
 
-    #define _iovec_set_string_literal(iov, str) _iovec_set((iov), "" str "", NM_STRLEN(str))
+#define _iovec_set_string_literal(iov, str) _iovec_set((iov), "" str "", NM_STRLEN(str))
 
 _nm_printf(3, 4) static void _iovec_set_format(struct iovec *iov,
                                                char **       iov_free,
@@ -618,34 +618,34 @@ _nm_printf(3, 4) static void _iovec_set_format(struct iovec *iov,
     *iov_free = str;
 }
 
-    #define _iovec_set_format_a(iov, reserve_extra, format, ...)                   \
-        G_STMT_START                                                               \
-        {                                                                          \
-            const gsize _size = (reserve_extra) + (NM_STRLEN(format) + 3);         \
-            char *const _buf  = g_alloca(_size);                                   \
-            int         _len;                                                      \
-                                                                                   \
-            G_STATIC_ASSERT_EXPR((reserve_extra) + (NM_STRLEN(format) + 3) <= 96); \
-                                                                                   \
-            _len = g_snprintf(_buf, _size, "" format "", ##__VA_ARGS__);           \
-                                                                                   \
-            nm_assert(_len >= 0);                                                  \
-            nm_assert(_len < _size);                                               \
-            nm_assert(_len == strlen(_buf));                                       \
-                                                                                   \
-            _iovec_set((iov), _buf, _len);                                         \
-        }                                                                          \
-        G_STMT_END
+#define _iovec_set_format_a(iov, reserve_extra, format, ...)                   \
+    G_STMT_START                                                               \
+    {                                                                          \
+        const gsize _size = (reserve_extra) + (NM_STRLEN(format) + 3);         \
+        char *const _buf  = g_alloca(_size);                                   \
+        int         _len;                                                      \
+                                                                               \
+        G_STATIC_ASSERT_EXPR((reserve_extra) + (NM_STRLEN(format) + 3) <= 96); \
+                                                                               \
+        _len = g_snprintf(_buf, _size, "" format "", ##__VA_ARGS__);           \
+                                                                               \
+        nm_assert(_len >= 0);                                                  \
+        nm_assert(_len < _size);                                               \
+        nm_assert(_len == strlen(_buf));                                       \
+                                                                               \
+        _iovec_set((iov), _buf, _len);                                         \
+    }                                                                          \
+    G_STMT_END
 
-    #define _iovec_set_format_str_a(iov, max_str_len, format, str_arg)  \
-        G_STMT_START                                                    \
-        {                                                               \
-            const char *_str_arg = (str_arg);                           \
-                                                                        \
-            nm_assert(_str_arg &&strlen(_str_arg) < (max_str_len));     \
-            _iovec_set_format_a((iov), (max_str_len), format, str_arg); \
-        }                                                               \
-        G_STMT_END
+#define _iovec_set_format_str_a(iov, max_str_len, format, str_arg)  \
+    G_STMT_START                                                    \
+    {                                                               \
+        const char *_str_arg = (str_arg);                           \
+                                                                    \
+        nm_assert(_str_arg &&strlen(_str_arg) < (max_str_len));     \
+        _iovec_set_format_a((iov), (max_str_len), format, str_arg); \
+    }                                                               \
+    G_STMT_END
 
 #endif
 

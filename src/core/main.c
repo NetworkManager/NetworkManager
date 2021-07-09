@@ -38,7 +38,7 @@
 #include "nm-netns.h"
 
 #if !defined(NM_DIST_VERSION)
-    #define NM_DIST_VERSION VERSION
+#define NM_DIST_VERSION VERSION
 #endif
 
 #define NM_DEFAULT_PID_FILE NMRUNDIR "/NetworkManager.pid"

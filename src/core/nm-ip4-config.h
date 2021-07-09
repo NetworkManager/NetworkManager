@@ -275,7 +275,7 @@ NM_IS_IP_CONFIG_ADDR_FAMILY(gconstpointer config, int addr_family)
 }
 
 #if _NM_CC_SUPPORT_GENERIC
-    /* _NM_IS_IP_CONFIG() is a bit unusual. If _Generic() is supported,
+/* _NM_IS_IP_CONFIG() is a bit unusual. If _Generic() is supported,
  * it checks whether @config is either NM_IS_IP4_CONFIG() or NM_IS_IP6_CONFIG(),
  * depending on the pointer type of @config.
  *
@@ -286,10 +286,10 @@ NM_IS_IP_CONFIG_ADDR_FAMILY(gconstpointer config, int addr_family)
  *    NMIP4Config *ptr = nm_ip4_config_new(...);
  *    g_assert (_NM_IS_IP_CONFIG (ptr, ptr));
  */
-    #define _NM_IS_IP_CONFIG(typeexpr, config)    \
-        ({                                        \
-            const void *const _config = (config); \
-            _Generic ((typeexpr), \
+#define _NM_IS_IP_CONFIG(typeexpr, config)    \
+    ({                                        \
+        const void *const _config = (config); \
+        _Generic ((typeexpr), \
                   const void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
                   const void        *     : (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
                         void        *const: (NM_IS_IP4_CONFIG (_config) || NM_IS_IP6_CONFIG (_config)), \
@@ -306,9 +306,9 @@ NM_IS_IP_CONFIG_ADDR_FAMILY(gconstpointer config, int addr_family)
                   const NMIP6Config *     : (NM_IS_IP6_CONFIG (_config)), \
                         NMIP6Config *const: (NM_IS_IP6_CONFIG (_config)), \
                         NMIP6Config *     : (NM_IS_IP6_CONFIG (_config)));               \
-        })
+    })
 #else
-    #define _NM_IS_IP_CONFIG(typeexpr, config) NM_IS_IP_CONFIG(config)
+#define _NM_IS_IP_CONFIG(typeexpr, config) NM_IS_IP_CONFIG(config)
 #endif
 
 #define NM_IP_CONFIG_CAST(config)                                                    \

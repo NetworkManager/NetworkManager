@@ -18,7 +18,7 @@
 #define NETWORKMANAGER_COMPILATION NM_NETWORKMANAGER_COMPILATION_SYSTEMD
 
 #ifndef HAVE_SYS_AUXV_H
-    #define HAVE_SYS_AUXV_H 0
+#define HAVE_SYS_AUXV_H 0
 #endif
 
 /*****************************************************************************
@@ -28,36 +28,36 @@
 
 #if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD
 
-    #include <netinet/in.h>
-    #include <string.h>
-    #include <stdio.h>
-    #include <errno.h>
-    #include <elf.h>
-    #ifdef HAVE_SYS_AUXV_H
-        #include <sys/auxv.h>
-    #endif
-    #include <unistd.h>
-    #include <sys/syscall.h>
-    #include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+#include <elf.h>
+#ifdef HAVE_SYS_AUXV_H
+#include <sys/auxv.h>
+#endif
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <sys/ioctl.h>
 
-    /* Missing in Linux 3.2.0, in Ubuntu 12.04 */
-    #ifndef BPF_XOR
-        #define BPF_XOR 0xa0
-    #endif
+/* Missing in Linux 3.2.0, in Ubuntu 12.04 */
+#ifndef BPF_XOR
+#define BPF_XOR 0xa0
+#endif
 
-    #ifndef ETHERTYPE_LLDP
-        #define ETHERTYPE_LLDP 0x88cc
-    #endif
+#ifndef ETHERTYPE_LLDP
+#define ETHERTYPE_LLDP 0x88cc
+#endif
 
-    #ifndef HAVE_SECURE_GETENV
-        #ifdef HAVE___SECURE_GETENV
-            #define secure_getenv __secure_getenv
-        #else
-            #error neither secure_getenv nor __secure_getenv is available
-        #endif
-    #endif
+#ifndef HAVE_SECURE_GETENV
+#ifdef HAVE___SECURE_GETENV
+#define secure_getenv __secure_getenv
+#else
+#error neither secure_getenv nor __secure_getenv is available
+#endif
+#endif
 
-    #include "libnm-base/nm-base.h"
+#include "libnm-base/nm-base.h"
 
 /*****************************************************************************/
 
@@ -67,23 +67,23 @@ sd_notify(int unset_environment, const char *state)
     return 0;
 }
 
-    /* Can't include both net/if.h and linux/if.h; so have to define this here */
-    #ifndef IF_NAMESIZE
-        #define IF_NAMESIZE 16
-    #endif
+/* Can't include both net/if.h and linux/if.h; so have to define this here */
+#ifndef IF_NAMESIZE
+#define IF_NAMESIZE 16
+#endif
 
-    #ifndef IFNAMSIZ
-        #define IFNAMSIZ IF_NAMESIZE
-    #endif
+#ifndef IFNAMSIZ
+#define IFNAMSIZ IF_NAMESIZE
+#endif
 
-    #ifndef MAX_HANDLE_SZ
-        #define MAX_HANDLE_SZ 128
-    #endif
+#ifndef MAX_HANDLE_SZ
+#define MAX_HANDLE_SZ 128
+#endif
 
-    #include "sd-id128.h"
-    #include "sparse-endian.h"
-    #include "async.h"
-    #include "util.h"
+#include "sd-id128.h"
+#include "sparse-endian.h"
+#include "async.h"
+#include "util.h"
 
 #endif /* (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD */
 

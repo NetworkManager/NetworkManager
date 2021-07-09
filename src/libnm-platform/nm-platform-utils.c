@@ -307,14 +307,14 @@ _ethtool_edata_to_string(gpointer edata, gsize edata_size, char *sbuf, gsize sbu
 /*****************************************************************************/
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 27)
-    #define ethtool_cmd_speed(pedata) ((pedata)->speed)
+#define ethtool_cmd_speed(pedata) ((pedata)->speed)
 
-    #define ethtool_cmd_speed_set(pedata, speed) \
-        G_STMT_START                             \
-        {                                        \
-            (pedata)->speed = (guint16) (speed); \
-        }                                        \
-        G_STMT_END
+#define ethtool_cmd_speed_set(pedata, speed) \
+    G_STMT_START                             \
+    {                                        \
+        (pedata)->speed = (guint16) (speed); \
+    }                                        \
+    G_STMT_END
 #endif
 
 static int

@@ -9,11 +9,11 @@
 #include "nm-networkmanager-compilation.h"
 
 #ifdef NETWORKMANAGER_COMPILATION
-    #error Dont define NETWORKMANAGER_COMPILATION
+#error Dont define NETWORKMANAGER_COMPILATION
 #endif
 
 #ifndef G_LOG_DOMAIN
-    #define G_LOG_DOMAIN "nm"
+#define G_LOG_DOMAIN "nm"
 #endif
 
 /*****************************************************************************/
@@ -25,8 +25,8 @@
 /* always include these headers for our internal source files. */
 
 #ifndef ___CONFIG_H__
-    #define ___CONFIG_H__
-    #include <config.h>
+#define ___CONFIG_H__
+#include <config.h>
 #endif
 
 #include "config-extra.h"
@@ -37,11 +37,11 @@
 #define NM_VERSION_MIN_REQUIRED NM_VERSION_0_9_8
 
 #ifndef NM_MORE_ASSERTS
-    #define NM_MORE_ASSERTS 0
+#define NM_MORE_ASSERTS 0
 #endif
 
 #if NM_MORE_ASSERTS == 0
-    /* The cast macros like NM_TYPE() are implemented via G_TYPE_CHECK_INSTANCE_CAST()
+/* The cast macros like NM_TYPE() are implemented via G_TYPE_CHECK_INSTANCE_CAST()
      * and _G_TYPE_CIC(). The latter, by default performs runtime checks of the type
      * by calling g_type_check_instance_cast().
      * This check has a certain overhead without being helpful.
@@ -88,9 +88,9 @@
      * Example 3 is how it should be done. Type checks in NM_TYPE() are pointless.
      * Disable them for our production builds.
      */
-    #ifndef G_DISABLE_CAST_CHECKS
-        #define G_DISABLE_CAST_CHECKS
-    #endif
+#ifndef G_DISABLE_CAST_CHECKS
+#define G_DISABLE_CAST_CHECKS
+#endif
 #endif
 
 /*****************************************************************************/

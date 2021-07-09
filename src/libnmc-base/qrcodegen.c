@@ -28,9 +28,9 @@
 #include "qrcodegen.h"
 
 #ifndef QRCODEGEN_TEST
-    #define testable static  // Keep functions private
+#define testable static  // Keep functions private
 #else
-    #define testable  // Expose private functions
+#define testable  // Expose private functions
 #endif
 
 /*---- Forward declarations for private functions ----*/

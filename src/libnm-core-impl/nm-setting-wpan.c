@@ -22,15 +22,15 @@
 
 /* Ideally we'll be able to get these from a public header. */
 #ifndef IEEE802154_ADDR_LEN
-    #define IEEE802154_ADDR_LEN 8
+#define IEEE802154_ADDR_LEN 8
 #endif
 
 #ifndef IEEE802154_MAX_PAGE
-    #define IEEE802154_MAX_PAGE 31
+#define IEEE802154_MAX_PAGE 31
 #endif
 
 #ifndef IEEE802154_MAX_CHANNEL
-    #define IEEE802154_MAX_CHANNEL 26
+#define IEEE802154_MAX_CHANNEL 26
 #endif
 
 /*****************************************************************************/

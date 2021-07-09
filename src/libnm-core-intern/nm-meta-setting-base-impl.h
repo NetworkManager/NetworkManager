@@ -159,9 +159,9 @@ typedef enum _nm_packed {
 } NMMetaSettingType;
 
 #if _NM_META_SETTING_BASE_IMPL_LIBNM
-    #define _NMMetaSettingInfo_Alias _NMMetaSettingInfo
+#define _NMMetaSettingInfo_Alias _NMMetaSettingInfo
 #else
-    #define _NMMetaSettingInfo_Alias _NMMetaSettingInfoCli
+#define _NMMetaSettingInfo_Alias _NMMetaSettingInfoCli
 #endif
 
 struct _NMMetaSettingInfo_Alias {

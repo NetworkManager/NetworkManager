@@ -15,23 +15,23 @@ const char **_nm_setting_vpn_get_data_keys(NMSettingVpn *setting, guint *out_len
 const char **_nm_setting_vpn_get_secret_keys(NMSettingVpn *setting, guint *out_length);
 
 #if NM_CHECK_VERSION(1, 11, 0)
-    #define nm_setting_vpn_get_data_keys(setting, out_length)  \
-        ({                                                     \
-            G_GNUC_BEGIN_IGNORE_DEPRECATIONS                   \
-            nm_setting_vpn_get_data_keys(setting, out_length); \
-            G_GNUC_END_IGNORE_DEPRECATIONS                     \
-        })
-    #define nm_setting_vpn_get_secret_keys(setting, out_length)  \
-        ({                                                       \
-            G_GNUC_BEGIN_IGNORE_DEPRECATIONS                     \
-            nm_setting_vpn_get_secret_keys(setting, out_length); \
-            G_GNUC_END_IGNORE_DEPRECATIONS                       \
-        })
+#define nm_setting_vpn_get_data_keys(setting, out_length)  \
+    ({                                                     \
+        G_GNUC_BEGIN_IGNORE_DEPRECATIONS                   \
+        nm_setting_vpn_get_data_keys(setting, out_length); \
+        G_GNUC_END_IGNORE_DEPRECATIONS                     \
+    })
+#define nm_setting_vpn_get_secret_keys(setting, out_length)  \
+    ({                                                       \
+        G_GNUC_BEGIN_IGNORE_DEPRECATIONS                     \
+        nm_setting_vpn_get_secret_keys(setting, out_length); \
+        G_GNUC_END_IGNORE_DEPRECATIONS                       \
+    })
 #else
-    #define nm_setting_vpn_get_data_keys(setting, out_length) \
-        _nm_setting_vpn_get_data_keys(setting, out_length)
-    #define nm_setting_vpn_get_secret_keys(setting, out_length) \
-        _nm_setting_vpn_get_secret_keys(setting, out_length)
+#define nm_setting_vpn_get_data_keys(setting, out_length) \
+    _nm_setting_vpn_get_data_keys(setting, out_length)
+#define nm_setting_vpn_get_secret_keys(setting, out_length) \
+    _nm_setting_vpn_get_secret_keys(setting, out_length)
 #endif
 
 /*****************************************************************************/
@@ -39,15 +39,15 @@ const char **_nm_setting_vpn_get_secret_keys(NMSettingVpn *setting, guint *out_l
 /* possibly missing defines from newer libnm API. */
 
 #ifndef NM_VPN_PLUGIN_CONFIG_PROXY_PAC
-    #define NM_VPN_PLUGIN_CONFIG_PROXY_PAC "pac"
+#define NM_VPN_PLUGIN_CONFIG_PROXY_PAC "pac"
 #endif
 
 #ifndef NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES
-    #define NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES "preserve-routes"
+#define NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES "preserve-routes"
 #endif
 
 #ifndef NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES
-    #define NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES "preserve-routes"
+#define NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES "preserve-routes"
 #endif
 
 /*****************************************************************************/

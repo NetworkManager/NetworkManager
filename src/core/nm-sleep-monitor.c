@@ -16,23 +16,23 @@
 
 #if defined(SUSPEND_RESUME_UPOWER)
 
-    #define SUSPEND_DBUS_NAME      "org.freedesktop.UPower"
-    #define SUSPEND_DBUS_PATH      "/org/freedesktop/UPower"
-    #define SUSPEND_DBUS_INTERFACE "org.freedesktop.UPower"
-    #define USE_UPOWER             1
-    #define _NMLOG_PREFIX_NAME     "sleep-monitor-up"
+#define SUSPEND_DBUS_NAME      "org.freedesktop.UPower"
+#define SUSPEND_DBUS_PATH      "/org/freedesktop/UPower"
+#define SUSPEND_DBUS_INTERFACE "org.freedesktop.UPower"
+#define USE_UPOWER             1
+#define _NMLOG_PREFIX_NAME     "sleep-monitor-up"
 
 #elif defined(SUSPEND_RESUME_SYSTEMD) || defined(SUSPEND_RESUME_ELOGIND)
 
-    #define SUSPEND_DBUS_NAME      "org.freedesktop.login1"
-    #define SUSPEND_DBUS_PATH      "/org/freedesktop/login1"
-    #define SUSPEND_DBUS_INTERFACE "org.freedesktop.login1.Manager"
-    #define USE_UPOWER             0
-    #if defined(SUSPEND_RESUME_SYSTEMD)
-        #define _NMLOG_PREFIX_NAME "sleep-monitor-sd"
-    #else
-        #define _NMLOG_PREFIX_NAME "sleep-monitor-el"
-    #endif
+#define SUSPEND_DBUS_NAME      "org.freedesktop.login1"
+#define SUSPEND_DBUS_PATH      "/org/freedesktop/login1"
+#define SUSPEND_DBUS_INTERFACE "org.freedesktop.login1.Manager"
+#define USE_UPOWER             0
+#if defined(SUSPEND_RESUME_SYSTEMD)
+#define _NMLOG_PREFIX_NAME "sleep-monitor-sd"
+#else
+#define _NMLOG_PREFIX_NAME "sleep-monitor-el"
+#endif
 
 #elif defined(SUSPEND_RESUME_CONSOLEKIT)
 
@@ -40,15 +40,15 @@
  * uses. http://consolekit2.github.io/ConsoleKit2/#Manager.Inhibit
  */
 
-    #define SUSPEND_DBUS_NAME      "org.freedesktop.ConsoleKit"
-    #define SUSPEND_DBUS_PATH      "/org/freedesktop/ConsoleKit/Manager"
-    #define SUSPEND_DBUS_INTERFACE "org.freedesktop.ConsoleKit.Manager"
-    #define USE_UPOWER             0
-    #define _NMLOG_PREFIX_NAME     "sleep-monitor-ck"
+#define SUSPEND_DBUS_NAME      "org.freedesktop.ConsoleKit"
+#define SUSPEND_DBUS_PATH      "/org/freedesktop/ConsoleKit/Manager"
+#define SUSPEND_DBUS_INTERFACE "org.freedesktop.ConsoleKit.Manager"
+#define USE_UPOWER             0
+#define _NMLOG_PREFIX_NAME     "sleep-monitor-ck"
 
 #else
 
-    #error define one of SUSPEND_RESUME_SYSTEMD, SUSPEND_RESUME_ELOGIND, SUSPEND_RESUME_CONSOLEKIT, or SUSPEND_RESUME_UPOWER
+#error define one of SUSPEND_RESUME_SYSTEMD, SUSPEND_RESUME_ELOGIND, SUSPEND_RESUME_CONSOLEKIT, or SUSPEND_RESUME_UPOWER
 
 #endif
 

@@ -8,7 +8,7 @@
 #include "nm-audit-manager.h"
 
 #if HAVE_LIBAUDIT
-    #include <libaudit.h>
+#include <libaudit.h>
 #endif
 
 #define NM_VALUE_TYPE_DEFINE_FUNCTIONS

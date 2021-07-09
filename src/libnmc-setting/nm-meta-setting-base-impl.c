@@ -8,7 +8,7 @@
 #include "nm-meta-setting-base.h"
 
 #if _NM_META_SETTING_BASE_IMPL_LIBNM
-    #include "libnm-core-impl/nm-default-libnm-core.h"
+#include "libnm-core-impl/nm-default-libnm-core.h"
 #endif
 
 #include "nm-setting-6lowpan.h"
@@ -64,7 +64,7 @@
 #include "nm-setting-wpan.h"
 
 #if _NM_META_SETTING_BASE_IMPL_LIBNM
-    #include "nm-setting-private.h"
+#include "nm-setting-private.h"
 #endif
 
 /*****************************************************************************/

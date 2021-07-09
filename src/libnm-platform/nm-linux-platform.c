@@ -80,7 +80,7 @@ enum { TCA_DEF_UNSPEC, TCA_DEF_TM, TCA_DEF_PARMS, TCA_DEF_DATA, TCA_DEF_PAD, __T
 /*****************************************************************************/
 
 #ifndef IFLA_PROMISCUITY
-    #define IFLA_PROMISCUITY 30
+#define IFLA_PROMISCUITY 30
 #endif
 #define IFLA_NUM_TX_QUEUES 31
 #define IFLA_NUM_RX_QUEUES 32
@@ -114,7 +114,7 @@ enum { TCA_DEF_UNSPEC, TCA_DEF_TM, TCA_DEF_PARMS, TCA_DEF_DATA, TCA_DEF_PAD, __T
 #define IFLA_IPTUN_PMTUDISC    10
 #define __IFLA_IPTUN_MAX       19
 #ifndef IFLA_IPTUN_MAX
-    #define IFLA_IPTUN_MAX (__IFLA_IPTUN_MAX - 1)
+#define IFLA_IPTUN_MAX (__IFLA_IPTUN_MAX - 1)
 #endif
 
 #define IFLA_TUN_UNSPEC              0
@@ -136,7 +136,7 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 #define RTA_MAX (MAX((__RTA_MAX - 1), RTA_PREF))
 
 #ifndef MACVLAN_FLAG_NOPROMISC
-    #define MACVLAN_FLAG_NOPROMISC 1
+#define MACVLAN_FLAG_NOPROMISC 1
 #endif
 
 #define IP6_FLOWINFO_TCLASS_MASK    0x0FF00000
@@ -149,7 +149,7 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 /* Appeared in the kernel prior to 3.13 dated 19 January, 2014 */
 #ifndef ARPHRD_6LOWPAN
-    #define ARPHRD_6LOWPAN 825
+#define ARPHRD_6LOWPAN 825
 #endif
 
 /*****************************************************************************/
@@ -267,8 +267,8 @@ struct _ifla_vf_vlan_info {
 
 /* Appeared in the kernel 4.0 dated April 12, 2015 */
 #ifndef BRIDGE_VLAN_INFO_RANGE_BEGIN
-    #define BRIDGE_VLAN_INFO_RANGE_BEGIN (1 << 3) /* VLAN is start of vlan range */
-    #define BRIDGE_VLAN_INFO_RANGE_END   (1 << 4) /* VLAN is end of vlan range */
+#define BRIDGE_VLAN_INFO_RANGE_BEGIN (1 << 3) /* VLAN is start of vlan range */
+#define BRIDGE_VLAN_INFO_RANGE_END   (1 << 4) /* VLAN is end of vlan range */
 #endif
 
 /*****************************************************************************/

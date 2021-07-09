@@ -10,8 +10,8 @@
 #include <sys/stat.h>
 
 #if HAVE_SELINUX
-    #include <selinux/selinux.h>
-    #include <selinux/label.h>
+#include <selinux/selinux.h>
+#include <selinux/label.h>
 #endif
 
 #include "libnm-core-aux-intern/nm-common-macros.h"
@@ -37,17 +37,17 @@
 #if (defined(HOSTNAME_PERSIST_SUSE) + defined(HOSTNAME_PERSIST_SLACKWARE) \
      + defined(HOSTNAME_PERSIST_GENTOO))                                  \
     > 1
-    #error "Can only define one of HOSTNAME_PERSIST_*"
+#error "Can only define one of HOSTNAME_PERSIST_*"
 #endif
 
 #if defined(HOSTNAME_PERSIST_SUSE)
-    #define HOSTNAME_FILE HOSTNAME_FILE_UCASE_HOSTNAME
+#define HOSTNAME_FILE HOSTNAME_FILE_UCASE_HOSTNAME
 #elif defined(HOSTNAME_PERSIST_SLACKWARE)
-    #define HOSTNAME_FILE HOSTNAME_FILE_UCASE_HOSTNAME
+#define HOSTNAME_FILE HOSTNAME_FILE_UCASE_HOSTNAME
 #elif defined(HOSTNAME_PERSIST_GENTOO)
-    #define HOSTNAME_FILE HOSTNAME_FILE_GENTOO
+#define HOSTNAME_FILE HOSTNAME_FILE_GENTOO
 #else
-    #define HOSTNAME_FILE HOSTNAME_FILE_DEFAULT
+#define HOSTNAME_FILE HOSTNAME_FILE_DEFAULT
 #endif
 
 /*****************************************************************************/

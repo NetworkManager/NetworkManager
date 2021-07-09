@@ -182,28 +182,28 @@ extern void _nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
 /* _LOGT() and _LOGt() both log with level TRACE, but the latter is disabled by default,
  * unless building with --with-more-logging. */
 #if NM_MORE_LOGGING
-    #define _LOGt_ENABLED(...)    _NMLOG_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
-    #define _LOGt(...)            _NMLOG(_LOGL_TRACE, __VA_ARGS__)
-    #define _LOGt_err(errsv, ...) _NMLOG_err(errsv, _LOGL_TRACE, __VA_ARGS__)
+#define _LOGt_ENABLED(...)    _NMLOG_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
+#define _LOGt(...)            _NMLOG(_LOGL_TRACE, __VA_ARGS__)
+#define _LOGt_err(errsv, ...) _NMLOG_err(errsv, _LOGL_TRACE, __VA_ARGS__)
 #else
-    /* still call the logging macros to get compile time checks, but they will be optimized out. */
-    #define _LOGt_ENABLED(...) (FALSE && (_NMLOG_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)))
-    #define _LOGt(...)                            \
-        G_STMT_START                              \
-        {                                         \
-            if (FALSE) {                          \
-                _NMLOG(_LOGL_TRACE, __VA_ARGS__); \
-            }                                     \
-        }                                         \
-        G_STMT_END
-    #define _LOGt_err(errsv, ...)                            \
-        G_STMT_START                                         \
-        {                                                    \
-            if (FALSE) {                                     \
-                _NMLOG_err(errsv, _LOGL_TRACE, __VA_ARGS__); \
-            }                                                \
-        }                                                    \
-        G_STMT_END
+/* still call the logging macros to get compile time checks, but they will be optimized out. */
+#define _LOGt_ENABLED(...) (FALSE && (_NMLOG_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)))
+#define _LOGt(...)                            \
+    G_STMT_START                              \
+    {                                         \
+        if (FALSE) {                          \
+            _NMLOG(_LOGL_TRACE, __VA_ARGS__); \
+        }                                     \
+    }                                         \
+    G_STMT_END
+#define _LOGt_err(errsv, ...)                            \
+    G_STMT_START                                         \
+    {                                                    \
+        if (FALSE) {                                     \
+            _NMLOG_err(errsv, _LOGL_TRACE, __VA_ARGS__); \
+        }                                                \
+    }                                                    \
+    G_STMT_END
 #endif
 
 /*****************************************************************************/
@@ -236,28 +236,28 @@ extern void _nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
 #define _LOG2E_err(errsv, ...) _NMLOG2_err(errsv, _LOGL_ERR, __VA_ARGS__)
 
 #if NM_MORE_LOGGING
-    #define _LOG2t_ENABLED(...)    _NMLOG2_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
-    #define _LOG2t(...)            _NMLOG2(_LOGL_TRACE, __VA_ARGS__)
-    #define _LOG2t_err(errsv, ...) _NMLOG2_err(errsv, _LOGL_TRACE, __VA_ARGS__)
+#define _LOG2t_ENABLED(...)    _NMLOG2_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
+#define _LOG2t(...)            _NMLOG2(_LOGL_TRACE, __VA_ARGS__)
+#define _LOG2t_err(errsv, ...) _NMLOG2_err(errsv, _LOGL_TRACE, __VA_ARGS__)
 #else
-    /* still call the logging macros to get compile time checks, but they will be optimized out. */
-    #define _LOG2t_ENABLED(...) (FALSE && (_NMLOG2_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)))
-    #define _LOG2t(...)                            \
-        G_STMT_START                               \
-        {                                          \
-            if (FALSE) {                           \
-                _NMLOG2(_LOGL_TRACE, __VA_ARGS__); \
-            }                                      \
-        }                                          \
-        G_STMT_END
-    #define _LOG2t_err(errsv, ...)                            \
-        G_STMT_START                                          \
-        {                                                     \
-            if (FALSE) {                                      \
-                _NMLOG2_err(errsv, _LOGL_TRACE, __VA_ARGS__); \
-            }                                                 \
-        }                                                     \
-        G_STMT_END
+/* still call the logging macros to get compile time checks, but they will be optimized out. */
+#define _LOG2t_ENABLED(...) (FALSE && (_NMLOG2_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)))
+#define _LOG2t(...)                            \
+    G_STMT_START                               \
+    {                                          \
+        if (FALSE) {                           \
+            _NMLOG2(_LOGL_TRACE, __VA_ARGS__); \
+        }                                      \
+    }                                          \
+    G_STMT_END
+#define _LOG2t_err(errsv, ...)                            \
+    G_STMT_START                                          \
+    {                                                     \
+        if (FALSE) {                                      \
+            _NMLOG2_err(errsv, _LOGL_TRACE, __VA_ARGS__); \
+        }                                                 \
+    }                                                     \
+    G_STMT_END
 #endif
 
 #define _NMLOG3_ENABLED(level) (nm_logging_enabled((level), (_NMLOG3_DOMAIN)))
@@ -281,28 +281,28 @@ extern void _nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
 #define _LOG3E_err(errsv, ...) _NMLOG3_err(errsv, _LOGL_ERR, __VA_ARGS__)
 
 #if NM_MORE_LOGGING
-    #define _LOG3t_ENABLED(...)    _NMLOG3_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
-    #define _LOG3t(...)            _NMLOG3(_LOGL_TRACE, __VA_ARGS__)
-    #define _LOG3t_err(errsv, ...) _NMLOG3_err(errsv, _LOGL_TRACE, __VA_ARGS__)
+#define _LOG3t_ENABLED(...)    _NMLOG3_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
+#define _LOG3t(...)            _NMLOG3(_LOGL_TRACE, __VA_ARGS__)
+#define _LOG3t_err(errsv, ...) _NMLOG3_err(errsv, _LOGL_TRACE, __VA_ARGS__)
 #else
-    /* still call the logging macros to get compile time checks, but they will be optimized out. */
-    #define _LOG3t_ENABLED(...) (FALSE && (_NMLOG3_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)))
-    #define _LOG3t(...)                            \
-        G_STMT_START                               \
-        {                                          \
-            if (FALSE) {                           \
-                _NMLOG3(_LOGL_TRACE, __VA_ARGS__); \
-            }                                      \
-        }                                          \
-        G_STMT_END
-    #define _LOG3t_err(errsv, ...)                            \
-        G_STMT_START                                          \
-        {                                                     \
-            if (FALSE) {                                      \
-                _NMLOG3_err(errsv, _LOGL_TRACE, __VA_ARGS__); \
-            }                                                 \
-        }                                                     \
-        G_STMT_END
+/* still call the logging macros to get compile time checks, but they will be optimized out. */
+#define _LOG3t_ENABLED(...) (FALSE && (_NMLOG3_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)))
+#define _LOG3t(...)                            \
+    G_STMT_START                               \
+    {                                          \
+        if (FALSE) {                           \
+            _NMLOG3(_LOGL_TRACE, __VA_ARGS__); \
+        }                                      \
+    }                                          \
+    G_STMT_END
+#define _LOG3t_err(errsv, ...)                            \
+    G_STMT_START                                          \
+    {                                                     \
+        if (FALSE) {                                      \
+            _NMLOG3_err(errsv, _LOGL_TRACE, __VA_ARGS__); \
+        }                                                 \
+    }                                                     \
+    G_STMT_END
 #endif
 
 /*****************************************************************************/

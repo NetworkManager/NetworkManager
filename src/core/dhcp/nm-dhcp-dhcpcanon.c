@@ -7,25 +7,24 @@
 
 #if WITH_DHCPCANON
 
-    #include <stdlib.h>
-    #include <unistd.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-    #include "nm-utils.h"
-    #include "nm-dhcp-manager.h"
-    #include "NetworkManagerUtils.h"
-    #include "nm-dhcp-listener.h"
-    #include "nm-dhcp-client-logging.h"
+#include "nm-utils.h"
+#include "nm-dhcp-manager.h"
+#include "NetworkManagerUtils.h"
+#include "nm-dhcp-listener.h"
+#include "nm-dhcp-client-logging.h"
 
-    #define NM_TYPE_DHCP_DHCPCANON (nm_dhcp_dhcpcanon_get_type())
-    #define NM_DHCP_DHCPCANON(obj) \
-        (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCPCANON, NMDhcpDhcpcanon))
-    #define NM_DHCP_DHCPCANON_CLASS(klass) \
-        (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_DHCPCANON, NMDhcpDhcpcanonClass))
-    #define NM_IS_DHCP_DHCPCANON(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_DHCPCANON))
-    #define NM_IS_DHCP_DHCPCANON_CLASS(klass) \
-        (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_DHCP_DHCPCANON))
-    #define NM_DHCP_DHCPCANON_GET_CLASS(obj) \
-        (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_DHCPCANON, NMDhcpDhcpcanonClass))
+#define NM_TYPE_DHCP_DHCPCANON (nm_dhcp_dhcpcanon_get_type())
+#define NM_DHCP_DHCPCANON(obj) \
+    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCPCANON, NMDhcpDhcpcanon))
+#define NM_DHCP_DHCPCANON_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_DHCPCANON, NMDhcpDhcpcanonClass))
+#define NM_IS_DHCP_DHCPCANON(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_DHCPCANON))
+#define NM_IS_DHCP_DHCPCANON_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_DHCP_DHCPCANON))
+#define NM_DHCP_DHCPCANON_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_DHCPCANON, NMDhcpDhcpcanonClass))
 
 typedef struct _NMDhcpDhcpcanon      NMDhcpDhcpcanon;
 typedef struct _NMDhcpDhcpcanonClass NMDhcpDhcpcanonClass;
@@ -53,8 +52,8 @@ struct _NMDhcpDhcpcanonClass {
 
 G_DEFINE_TYPE(NMDhcpDhcpcanon, nm_dhcp_dhcpcanon, NM_TYPE_DHCP_CLIENT)
 
-    #define NM_DHCP_DHCPCANON_GET_PRIVATE(self) \
-        _NM_GET_PRIVATE(self, NMDhcpDhcpcanon, NM_IS_DHCP_DHCPCANON)
+#define NM_DHCP_DHCPCANON_GET_PRIVATE(self) \
+    _NM_GET_PRIVATE(self, NMDhcpDhcpcanon, NM_IS_DHCP_DHCPCANON)
 
 /*****************************************************************************/
 

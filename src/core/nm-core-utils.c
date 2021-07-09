@@ -39,8 +39,8 @@
 #include "nm-setting-wireless-security.h"
 
 #ifdef __NM_SD_UTILS_H__
-    #error \
-        "nm-core-utils.c should stay independent of systemd utils. Are you looking for NetworkMangerUtils.c? "
+#error \
+    "nm-core-utils.c should stay independent of systemd utils. Are you looking for NetworkMangerUtils.c? "
 #endif
 
 G_STATIC_ASSERT(sizeof(NMUtilsTestFlags) <= sizeof(int));

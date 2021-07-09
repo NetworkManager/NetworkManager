@@ -18,21 +18,21 @@
 #include <glib.h>
 
 #if defined(_NETWORKMANAGER_COMPILATION_GLIB_I18N_PROG)
-    #if defined(_NETWORKMANAGER_COMPILATION_GLIB_I18N_LIB)
-        #error Cannot define _NETWORKMANAGER_COMPILATION_GLIB_I18N_LIB and _NETWORKMANAGER_COMPILATION_GLIB_I18N_PROG together
-    #endif
-    #undef _NETWORKMANAGER_COMPILATION_GLIB_I18N_PROG
-    #include <glib/gi18n.h>
+#if defined(_NETWORKMANAGER_COMPILATION_GLIB_I18N_LIB)
+#error Cannot define _NETWORKMANAGER_COMPILATION_GLIB_I18N_LIB and _NETWORKMANAGER_COMPILATION_GLIB_I18N_PROG together
+#endif
+#undef _NETWORKMANAGER_COMPILATION_GLIB_I18N_PROG
+#include <glib/gi18n.h>
 #elif defined(_NETWORKMANAGER_COMPILATION_GLIB_I18N_LIB)
-    #undef _NETWORKMANAGER_COMPILATION_GLIB_I18N_LIB
-    #include <glib/gi18n-lib.h>
+#undef _NETWORKMANAGER_COMPILATION_GLIB_I18N_LIB
+#include <glib/gi18n-lib.h>
 #endif
 
 /*****************************************************************************/
 
 #if NM_MORE_ASSERTS == 0
-    #ifndef G_DISABLE_CAST_CHECKS
-        /* Unless compiling with G_DISABLE_CAST_CHECKS, glib performs type checking
+#ifndef G_DISABLE_CAST_CHECKS
+/* Unless compiling with G_DISABLE_CAST_CHECKS, glib performs type checking
          * during G_VARIANT_TYPE() via g_variant_type_checked_(). This is not necessary
          * because commonly this cast is needed during something like
          *
@@ -54,9 +54,9 @@
          *
          * Just patch G_VARIANT_TYPE() to perform no check.
          */
-        #undef G_VARIANT_TYPE
-        #define G_VARIANT_TYPE(type_string) ((const GVariantType *) (type_string))
-    #endif
+#undef G_VARIANT_TYPE
+#define G_VARIANT_TYPE(type_string) ((const GVariantType *) (type_string))
+#endif
 #endif
 
 /*****************************************************************************/

@@ -40,7 +40,7 @@ void _nm_singleton_instance_register_destruction(GObject *instance);
 /* By default, the getter will assert that the singleton will be created only once. You can
  * change this by redefining NM_DEFINE_SINGLETON_ALLOW_MULTIPLE. */
 #ifndef NM_DEFINE_SINGLETON_ALLOW_MULTIPLE
-    #define NM_DEFINE_SINGLETON_ALLOW_MULTIPLE FALSE
+#define NM_DEFINE_SINGLETON_ALLOW_MULTIPLE FALSE
 #endif
 
 #define NM_DEFINE_SINGLETON_GETTER(TYPE, GETTER, GTYPE, ...)                                \

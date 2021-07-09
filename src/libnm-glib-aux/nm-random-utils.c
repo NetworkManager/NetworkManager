@@ -11,9 +11,9 @@
 #include <sys/auxv.h>
 
 #if USE_SYS_RANDOM_H
-    #include <sys/random.h>
+#include <sys/random.h>
 #else
-    #include <linux/random.h>
+#include <linux/random.h>
 #endif
 
 #include "nm-shared-utils.h"

@@ -21,7 +21,7 @@
 
 #include <linux/ppp_defs.h>
 #ifndef aligned_u64
-    #define aligned_u64 unsigned long long __attribute__((aligned(8)))
+#define aligned_u64 unsigned long long __attribute__((aligned(8)))
 #endif
 #include <linux/if.h>
 #include <linux/if_ppp.h>
@@ -761,7 +761,7 @@ create_pppd_cmd_line(NMPPPManager *  self,
     g_return_val_if_fail(setting != NULL, NULL);
 
 #ifndef PPPD_PATH
-    #define PPPD_PATH NULL
+#define PPPD_PATH NULL
 #endif
 
     pppd_binary = nm_utils_find_helper("pppd", PPPD_PATH, err);

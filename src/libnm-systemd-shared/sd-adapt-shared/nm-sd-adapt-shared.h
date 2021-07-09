@@ -29,7 +29,7 @@
 /*****************************************************************************/
 
 #ifndef VALGRIND
-    #define VALGRIND 0
+#define VALGRIND 0
 #endif
 
 #define ENABLE_DEBUG_HASHMAP 0
@@ -41,17 +41,17 @@
 
 #if (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD
 
-    #include <sys/syscall.h>
-    #include <sys/ioctl.h>
-    #include <pthread.h>
+#include <sys/syscall.h>
+#include <sys/ioctl.h>
+#include <pthread.h>
 
-    #define ENABLE_GSHADOW FALSE
+#define ENABLE_GSHADOW FALSE
 
-    #define HAVE_SECCOMP 0
+#define HAVE_SECCOMP 0
 
-    #define LOG_TRACE 0
+#define LOG_TRACE 0
 
-    #define BUILD_MODE_DEVELOPER (NM_MORE_ASSERTS > 0)
+#define BUILD_MODE_DEVELOPER (NM_MORE_ASSERTS > 0)
 
 /*****************************************************************************/
 
@@ -68,63 +68,63 @@ struct statx;
 static inline pid_t
 raw_getpid(void)
 {
-    #if defined(__alpha__)
+#if defined(__alpha__)
     return (pid_t) syscall(__NR_getxpid);
-    #else
+#else
     return (pid_t) syscall(__NR_getpid);
-    #endif
+#endif
 }
 
-    #define gettid() nm_utils_gettid()
+#define gettid() nm_utils_gettid()
 
-    /* we build with C11 and thus <uchar.h> provides char32_t,char16_t. */
-    #define HAVE_CHAR32_T 1
-    #define HAVE_CHAR16_T 1
+/* we build with C11 and thus <uchar.h> provides char32_t,char16_t. */
+#define HAVE_CHAR32_T 1
+#define HAVE_CHAR16_T 1
 
-    #if defined(HAVE_DECL_REALLOCARRAY) && HAVE_DECL_REALLOCARRAY == 1
-        #define HAVE_REALLOCARRAY 1
-    #else
-        #define HAVE_REALLOCARRAY 0
-    #endif
+#if defined(HAVE_DECL_REALLOCARRAY) && HAVE_DECL_REALLOCARRAY == 1
+#define HAVE_REALLOCARRAY 1
+#else
+#define HAVE_REALLOCARRAY 0
+#endif
 
-    #if defined(HAVE_DECL_EXPLICIT_BZERO) && HAVE_DECL_EXPLICIT_BZERO == 1
-        #define HAVE_EXPLICIT_BZERO 1
-    #else
-        #define HAVE_EXPLICIT_BZERO 0
-    #endif
+#if defined(HAVE_DECL_EXPLICIT_BZERO) && HAVE_DECL_EXPLICIT_BZERO == 1
+#define HAVE_EXPLICIT_BZERO 1
+#else
+#define HAVE_EXPLICIT_BZERO 0
+#endif
 
-    #if defined(HAVE_DECL_PIDFD_OPEN) && HAVE_DECL_PIDFD_OPEN == 1
-        #define HAVE_PIDFD_OPEN 1
-    #else
-        #define HAVE_PIDFD_OPEN 0
-    #endif
+#if defined(HAVE_DECL_PIDFD_OPEN) && HAVE_DECL_PIDFD_OPEN == 1
+#define HAVE_PIDFD_OPEN 1
+#else
+#define HAVE_PIDFD_OPEN 0
+#endif
 
-    #if defined(HAVE_DECL_PIDFD_SEND_SIGNAL) && HAVE_DECL_PIDFD_SEND_SIGNAL == 1
-        #define HAVE_PIDFD_SEND_SIGNAL 1
-    #else
-        #define HAVE_PIDFD_SEND_SIGNAL 0
-    #endif
+#if defined(HAVE_DECL_PIDFD_SEND_SIGNAL) && HAVE_DECL_PIDFD_SEND_SIGNAL == 1
+#define HAVE_PIDFD_SEND_SIGNAL 1
+#else
+#define HAVE_PIDFD_SEND_SIGNAL 0
+#endif
 
-    #if defined(HAVE_DECL_RT_SIGQUEUEINFO) && HAVE_DECL_RT_SIGQUEUEINFO == 1
-        #define HAVE_RT_SIGQUEUEINFO 1
-    #else
-        #define HAVE_RT_SIGQUEUEINFO 0
-    #endif
+#if defined(HAVE_DECL_RT_SIGQUEUEINFO) && HAVE_DECL_RT_SIGQUEUEINFO == 1
+#define HAVE_RT_SIGQUEUEINFO 1
+#else
+#define HAVE_RT_SIGQUEUEINFO 0
+#endif
 
-    #ifndef ALTIFNAMSIZ
-        #define ALTIFNAMSIZ 128
-    #endif
+#ifndef ALTIFNAMSIZ
+#define ALTIFNAMSIZ 128
+#endif
 
-    #define HAVE_LINUX_TIME_TYPES_H 0
+#define HAVE_LINUX_TIME_TYPES_H 0
 
-    #ifndef __COMPAR_FN_T
-        #define __COMPAR_FN_T
+#ifndef __COMPAR_FN_T
+#define __COMPAR_FN_T
 typedef int (*__compar_fn_t)(const void *, const void *);
 typedef __compar_fn_t comparison_fn_t;
 typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
-    #endif
+#endif
 
-    #ifndef __GLIBC__
+#ifndef __GLIBC__
 static inline int
 __register_atfork(void (*prepare)(void),
                   void (*parent)(void),
@@ -133,7 +133,7 @@ __register_atfork(void (*prepare)(void),
 {
     return pthread_atfork(prepare, parent, child);
 }
-    #endif
+#endif
 
 #endif /* (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD */
 

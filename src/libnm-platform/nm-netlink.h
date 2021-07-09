@@ -21,7 +21,7 @@
 #define NLMSGERR_ATTR_MAX    3
 
 #ifndef NLM_F_ACK_TLVS
-    #define NLM_F_ACK_TLVS 0x200
+#define NLM_F_ACK_TLVS 0x200
 #endif
 
 /*****************************************************************************/

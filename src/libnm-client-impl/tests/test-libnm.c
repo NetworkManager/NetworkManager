@@ -6,7 +6,7 @@
 #include "libnm-client-impl/nm-default-libnm.h"
 
 #if defined(HAVE_DECL_MEMFD_CREATE) && HAVE_DECL_MEMFD_CREATE
-    #include <linux/memfd.h>
+#include <linux/memfd.h>
 #endif
 
 #include <sys/mman.h>

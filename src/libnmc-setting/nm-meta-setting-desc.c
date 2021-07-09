@@ -1494,7 +1494,7 @@ static gboolean _set_fcn_gobject_mtu(ARGS_SET_FCN)
 
 /* Ideally we'll be able to get this from a public header. */
 #ifndef IEEE802154_ADDR_LEN
-    #define IEEE802154_ADDR_LEN 8
+#define IEEE802154_ADDR_LEN 8
 #endif
 
 static gboolean _set_fcn_gobject_mac(ARGS_SET_FCN)

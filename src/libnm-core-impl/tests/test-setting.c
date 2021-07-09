@@ -1211,7 +1211,7 @@ test_nm_json(void)
 #endif
 
 #if WITH_JANSSON != defined(JANSSON_SONAME)
-    #error "WITH_JANSON and JANSSON_SONAME are defined inconsistently."
+#error "WITH_JANSON and JANSSON_SONAME are defined inconsistently."
 #endif
 }
 

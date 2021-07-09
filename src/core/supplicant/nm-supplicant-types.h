@@ -14,9 +14,9 @@
 #define NM_WPAS_DBUS_INTERFACE "fi.w1.wpa_supplicant1"
 
 #if HAVE_WEXT
-    #define NM_WPAS_DEFAULT_WIFI_DRIVER "nl80211,wext"
+#define NM_WPAS_DEFAULT_WIFI_DRIVER "nl80211,wext"
 #else
-    #define NM_WPAS_DEFAULT_WIFI_DRIVER "nl80211"
+#define NM_WPAS_DEFAULT_WIFI_DRIVER "nl80211"
 #endif
 
 #define NM_WPAS_DBUS_IFACE_INTERFACE            NM_WPAS_DBUS_INTERFACE ".Interface"

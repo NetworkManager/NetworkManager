@@ -8,29 +8,28 @@
 
 #if WITH_DHCPCD
 
-    #include <stdlib.h>
-    #include <unistd.h>
-    #include <stdio.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
-    #include "nm-dhcp-manager.h"
-    #include "nm-utils.h"
-    #include "NetworkManagerUtils.h"
-    #include "nm-dhcp-listener.h"
-    #include "nm-dhcp-client-logging.h"
+#include "nm-dhcp-manager.h"
+#include "nm-utils.h"
+#include "NetworkManagerUtils.h"
+#include "nm-dhcp-listener.h"
+#include "nm-dhcp-client-logging.h"
 
 /*****************************************************************************/
 
-    #define NM_TYPE_DHCP_DHCPCD (nm_dhcp_dhcpcd_get_type())
-    #define NM_DHCP_DHCPCD(obj) \
-        (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcd))
-    #define NM_DHCP_DHCPCD_CLASS(klass) \
-        (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdClass))
-    #define NM_IS_DHCP_DHCPCD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_DHCPCD))
-    #define NM_IS_DHCP_DHCPCD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_DHCP_DHCPCD))
-    #define NM_DHCP_DHCPCD_GET_CLASS(obj) \
-        (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdClass))
+#define NM_TYPE_DHCP_DHCPCD (nm_dhcp_dhcpcd_get_type())
+#define NM_DHCP_DHCPCD(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcd))
+#define NM_DHCP_DHCPCD_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdClass))
+#define NM_IS_DHCP_DHCPCD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_DHCPCD))
+#define NM_IS_DHCP_DHCPCD_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_DHCP_DHCPCD))
+#define NM_DHCP_DHCPCD_GET_CLASS(obj) \
+    (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdClass))
 
 typedef struct _NMDhcpDhcpcd      NMDhcpDhcpcd;
 typedef struct _NMDhcpDhcpcdClass NMDhcpDhcpcdClass;
@@ -54,7 +53,7 @@ struct _NMDhcpDhcpcdClass {
 
 G_DEFINE_TYPE(NMDhcpDhcpcd, nm_dhcp_dhcpcd, NM_TYPE_DHCP_CLIENT)
 
-    #define NM_DHCP_DHCPCD_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDhcpDhcpcd, NM_IS_DHCP_DHCPCD)
+#define NM_DHCP_DHCPCD_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDhcpDhcpcd, NM_IS_DHCP_DHCPCD)
 
 /*****************************************************************************/
 
