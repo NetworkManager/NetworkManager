@@ -255,20 +255,36 @@ svEscape(const char *s, char **to_free)
     gsize    slen;
     gsize    i;
     gsize    j;
+    gboolean all_ascii = TRUE;
 
     for (slen = 0; s[slen]; slen++) {
         if (_char_req_escape(s[slen]))
             mangle++;
         else if (_char_req_quotes(s[slen]))
             requires_quotes = TRUE;
-        else if (s[slen] < ' ') {
+        else if (((guchar) s[slen]) < ' ') {
             /* if the string contains newline we can only express it using ANSI C quotation
              * (as we don't support line continuation).
              * Additionally, ANSI control characters look odd with regular quotation, so handle
              * them too. */
             return (*to_free = _escape_ansic(s));
+        } else if (((guchar) s[slen]) >= 0177) {
+            all_ascii       = FALSE;
+            requires_quotes = TRUE;
         }
     }
+
+    if (!all_ascii && !g_utf8_validate(s, -1, NULL)) {
+        /* The string is not valid ASCII/UTF-8. We can escape that via
+         * _escape_ansic(), however the reader might have a problem to
+         * do something sensible with the blob later.
+         *
+         * This is really a bug of the caller, which should not present us with
+         * non-text in the first place. But at this place, we cannot handle the
+         * error better, so just escape it. */
+        return (*to_free = _escape_ansic(s));
+    }
+
     if (!mangle && !requires_quotes) {
         *to_free = NULL;
         return s;
