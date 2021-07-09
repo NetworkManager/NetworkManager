@@ -388,6 +388,12 @@ _strbuf_init(NMStrBuf *str, const char *value, gsize i)
 const char *
 svUnescape(const char *value, char **to_free)
 {
+    return svUnescape_full(value, to_free, TRUE);
+}
+
+const char *
+svUnescape_full(const char *value, char **to_free, gboolean check_utf8)
+{
     NMStrBuf str                      = NM_STR_BUF_INIT(0, FALSE);
     int      looks_like_old_svescaped = -1;
     gsize    i;
@@ -662,6 +668,8 @@ out_value:
     }
 
     if (str.allocated > 0) {
+        if (check_utf8 && !nm_str_buf_utf8_validate(&str))
+            goto out_error;
         if (str.len == 0 || nm_str_buf_get_str_unsafe(&str)[0] == '\0') {
             nm_str_buf_destroy(&str);
             *to_free = NULL;
@@ -670,6 +678,11 @@ out_value:
             *to_free = nm_str_buf_finalize(&str, NULL);
             return *to_free;
         }
+    }
+
+    if (check_utf8 && !g_utf8_validate(value, i, NULL)) {
+        *to_free = NULL;
+        return NULL;
     }
 
     if (value[i] != '\0') {
@@ -1136,9 +1149,8 @@ _svGetValue(shvarFile *s, const char *key, char **to_free)
     if (line && line->line) {
         v = svUnescape(line->line, to_free);
         if (!v) {
-            /* a wrongly quoted value is treated like the empty string.
-             * See also svWriteFile(), which handles unparsable values
-             * that way. */
+            /* a wrongly quoted value or non-UTF-8 is treated like the empty string.
+             * See also svWriteFile(), which handles unparsable values that way. */
             nm_assert(!*to_free);
             return "";
         }
