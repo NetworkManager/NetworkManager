@@ -140,6 +140,11 @@ static gconstpointer _metagen_ip4_config_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_A
             return NULL;
         arrc = nm_ip_config_get_domains(cfg4);
         goto arrc_out;
+    case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_SEARCHES:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        arrc = nm_ip_config_get_searches(cfg4);
+        goto arrc_out;
     case NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS:
         if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
             return NULL;
@@ -171,6 +176,7 @@ const NmcMetaGenericInfo *const metagen_ip4_config[_NMC_GENERIC_INFO_TYPE_IP4_CO
     _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_ROUTE, "ROUTE"),
     _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DNS, "DNS"),
     _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_DOMAIN, "DOMAIN"),
+    _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_SEARCHES, "SEARCHES"),
     _METAGEN_IP4_CONFIG(NMC_GENERIC_INFO_TYPE_IP4_CONFIG_WINS, "WINS"),
 };
 
@@ -227,6 +233,11 @@ static gconstpointer _metagen_ip6_config_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_A
             return NULL;
         arrc = nm_ip_config_get_domains(cfg6);
         goto arrc_out;
+    case NMC_GENERIC_INFO_TYPE_IP6_CONFIG_SEARCHES:
+        if (!NM_FLAGS_HAS(get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+            return NULL;
+        arrc = nm_ip_config_get_searches(cfg6);
+        goto arrc_out;
     default:
         break;
     }
@@ -253,6 +264,7 @@ const NmcMetaGenericInfo *const metagen_ip6_config[_NMC_GENERIC_INFO_TYPE_IP6_CO
     _METAGEN_IP6_CONFIG(NMC_GENERIC_INFO_TYPE_IP6_CONFIG_ROUTE, "ROUTE"),
     _METAGEN_IP6_CONFIG(NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DNS, "DNS"),
     _METAGEN_IP6_CONFIG(NMC_GENERIC_INFO_TYPE_IP6_CONFIG_DOMAIN, "DOMAIN"),
+    _METAGEN_IP6_CONFIG(NMC_GENERIC_INFO_TYPE_IP6_CONFIG_SEARCHES, "SEARCHES"),
 };
 
 /*****************************************************************************/
