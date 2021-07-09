@@ -5020,19 +5020,19 @@ void
 nmc_command_func_device(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
     static const NMCCommand cmds[] = {
-        {"status", do_devices_status, usage_device_status, TRUE, TRUE},
-        {"show", do_device_show, usage_device_show, TRUE, TRUE},
         {"connect", do_device_connect, usage_device_connect, TRUE, TRUE},
-        {"reapply", do_device_reapply, usage_device_reapply, TRUE, TRUE},
         {"disconnect", do_devices_disconnect, usage_device_disconnect, TRUE, TRUE},
         {"delete", do_devices_delete, usage_device_delete, TRUE, TRUE},
-        {"set", do_device_set, usage_device_set, TRUE, TRUE},
-        {"monitor", do_devices_monitor, usage_device_monitor, TRUE, TRUE},
-        {"wifi", do_device_wifi, usage_device_wifi, FALSE, FALSE},
-        {"lldp", do_device_lldp, usage_device_lldp, FALSE, FALSE},
-        {"modify", do_device_modify, usage_device_modify, TRUE, TRUE},
-        {"up", do_device_connect, usage_device_connect, TRUE, TRUE},
         {"down", do_devices_disconnect, usage_device_disconnect, TRUE, TRUE},
+        {"lldp", do_device_lldp, usage_device_lldp, FALSE, FALSE},
+        {"monitor", do_devices_monitor, usage_device_monitor, TRUE, TRUE},
+        {"modify", do_device_modify, usage_device_modify, TRUE, TRUE},
+        {"reapply", do_device_reapply, usage_device_reapply, TRUE, TRUE},
+        {"status", do_devices_status, usage_device_status, TRUE, TRUE},
+        {"show", do_device_show, usage_device_show, TRUE, TRUE},
+        {"set", do_device_set, usage_device_set, TRUE, TRUE},
+        {"up", do_device_connect, usage_device_connect, TRUE, TRUE},
+        {"wifi", do_device_wifi, usage_device_wifi, FALSE, FALSE},
         {NULL, do_devices_status, usage, TRUE, TRUE},
     };
 
