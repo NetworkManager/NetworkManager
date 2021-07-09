@@ -902,7 +902,7 @@
           until reboot or until the user performs an action that unblocks autoconnect,
           like modifying the profile or explicitly activating it.</para>
 
-          <para>In most cases you may want to use <command>device disconnect</command>
+          <para>In most cases you may want to use <command>device down</command>
           command instead.</para>
 
           <para>The connection is identified by its name, UUID or D-Bus path. If
@@ -910,7 +910,7 @@
           <option>uuid</option>, <option>path</option> or
           <option>apath</option> can be used.</para>
 
-          <para> See <command>connection show</command> above for the description of
+          <para>See <command>connection show</command> above for the description of
           the <replaceable>ID</replaceable>-specifying keywords.</para>
 
           <para>If <option>--wait</option> option is not specified, the default timeout
@@ -1323,9 +1323,11 @@
         <arg choice='plain'><command>status</command></arg>
         <arg choice='plain'><command>show</command></arg>
         <arg choice='plain'><command>set</command></arg>
+        <arg choice='plain'><command>up</command></arg>
         <arg choice='plain'><command>connect</command></arg>
         <arg choice='plain'><command>reapply</command></arg>
         <arg choice='plain'><command>modify</command></arg>
+        <arg choice='plain'><command>down</command></arg>
         <arg choice='plain'><command>disconnect</command></arg>
         <arg choice='plain'><command>delete</command></arg>
         <arg choice='plain'><command>monitor</command></arg>
@@ -1391,7 +1393,7 @@
 
       <varlistentry>
         <term>
-          <command>connect</command>
+          <command>up</command>
           <arg choice='plain'><replaceable>ifname</replaceable></arg>
         </term>
 
@@ -1403,10 +1405,22 @@
           <para>If no compatible connection exists, a new profile with default
           settings will be created and activated. This differentiates
           <command>nmcli connection up ifname "$DEVICE"</command> from
-          <command>nmcli device connect "$DEVICE"</command></para>
+          <command>nmcli device up "$DEVICE"</command></para>
 
           <para>If <option>--wait</option> option is not specified, the default timeout will be 90
           seconds.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <command>connect</command>
+          <arg choice='plain'><replaceable>ifname</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Alias for command <command>up</command>. Before version 1.34.0 <command>up</command>
+                was not supported.</para>
         </listitem>
       </varlistentry>
 
@@ -1448,7 +1462,7 @@
 
       <varlistentry>
         <term>
-          <command>disconnect</command>
+          <command>down</command>
           <arg choice='plain' rep='repeat'><replaceable>ifname</replaceable></arg>
         </term>
 
@@ -1462,6 +1476,17 @@
         </listitem>
       </varlistentry>
 
+      <varlistentry>
+        <term>
+          <command>disconnect</command>
+          <arg choice='plain' rep='repeat'><replaceable>ifname</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Alias for command <command>down</command>. Before version 1.34.0 <command>down</command>
+                was not supported.</para>
+        </listitem>
+      </varlistentry>
 
       <varlistentry>
         <term>
@@ -1647,7 +1672,7 @@
           according to Wi-Fi device capabilities and activates it on the device. The
           hotspot is secured with WPA if device/driver supports that, otherwise WEP is
           used. Use <command>connection down</command> or <command>device
-          disconnect</command> to stop the hotspot.</para>
+          down</command> to stop the hotspot.</para>
 
           <para>Parameters of the hotspot can be influenced by the optional
           parameters:</para>
@@ -2331,7 +2356,7 @@
       </varlistentry>
 
       <varlistentry>
-        <term><userinput>nmcli dev disconnect em2</userinput></term>
+        <term><userinput>nmcli dev down em2</userinput></term>
         <listitem>
           <para>disconnects a connection on interface em2 and marks the device as
           unavailable for auto-connecting. As a result, no connection will automatically
