@@ -902,7 +902,7 @@
           until reboot or until the user performs an action that unblocks autoconnect,
           like modifying the profile or explicitly activating it.</para>
 
-          <para>In most cases you may want to use <command>device disconnect</command>
+          <para>In most cases you may want to use <command>device down</command>
           command instead.</para>
 
           <para>The connection is identified by its name, UUID or D-Bus path. If
@@ -1405,7 +1405,7 @@
           <para>If no compatible connection exists, a new profile with default
           settings will be created and activated. This differentiates
           <command>nmcli connection up ifname "$DEVICE"</command> from
-          <command>nmcli device connect "$DEVICE"</command></para>
+          <command>nmcli device up "$DEVICE"</command></para>
 
           <para>If <option>--wait</option> option is not specified, the default timeout will be 90
           seconds.</para>
@@ -1672,7 +1672,7 @@
           according to Wi-Fi device capabilities and activates it on the device. The
           hotspot is secured with WPA if device/driver supports that, otherwise WEP is
           used. Use <command>connection down</command> or <command>device
-          disconnect</command> to stop the hotspot.</para>
+          down</command> to stop the hotspot.</para>
 
           <para>Parameters of the hotspot can be influenced by the optional
           parameters:</para>
@@ -2356,7 +2356,7 @@
       </varlistentry>
 
       <varlistentry>
-        <term><userinput>nmcli dev disconnect em2</userinput></term>
+        <term><userinput>nmcli dev down em2</userinput></term>
         <listitem>
           <para>disconnects a connection on interface em2 and marks the device as
           unavailable for auto-connecting. As a result, no connection will automatically
