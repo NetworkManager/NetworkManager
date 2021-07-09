@@ -1523,6 +1523,91 @@ svUnsetValue(shvarFile *s, const char *key)
 
 /*****************************************************************************/
 
+void
+svWarnInvalid(shvarFile *s, const char *file_type, NMLogDomain log_domain)
+{
+    shvarLine *line;
+    gsize      n;
+
+    if (!nm_logging_enabled(LOGL_WARN, log_domain))
+        return;
+
+    n = 0;
+    c_list_for_each_entry (line, &s->lst_head, lst) {
+        gs_free char *s_tmp = NULL;
+
+        n++;
+
+        if (!line->key) {
+            const char *str;
+
+            nm_assert(line->line);
+            str = nm_str_skip_leading_spaces(line->line);
+            if (!NM_IN_SET(str[0], '\0', '#')) {
+                nm_log_warn(log_domain,
+                            "ifcfg-rh: %s,%s:%zu: invalid line ignored",
+                            file_type,
+                            s->fileName,
+                            n);
+            }
+            continue;
+        }
+
+        if (g_hash_table_lookup(s->lst_idx, line) != line) {
+            nm_log_warn(
+                log_domain,
+                "ifcfg-rh: %s,%s:%zu: key %s is duplicated and the early occurrence ignored",
+                file_type,
+                s->fileName,
+                n,
+                line->key);
+            continue;
+        }
+
+        if (!line->line) {
+            /* the line is deleted via svUnsetValue(). Ignore. */
+            continue;
+        }
+
+        if (!svUnescape(line->line, &s_tmp)) {
+            if (!svUnescape_full(line->line, &s_tmp, FALSE)) {
+                nm_log_warn(log_domain,
+                            "ifcfg-rh: %s,%s:%zu: key %s is badly quoted and is treated as \"\"",
+                            file_type,
+                            s->fileName,
+                            n,
+                            line->key);
+            } else {
+                nm_log_warn(log_domain,
+                            "ifcfg-rh: %s,%s:%zu: key %s does not contain valid UTF-8 and is "
+                            "treated as \"\"",
+                            file_type,
+                            s->fileName,
+                            n,
+                            line->key);
+            }
+            continue;
+        }
+
+        /* TODO: we read different shell scripts, and whether a key is recognized
+         * depends on the type. For example, alias files only accept a subset of
+         * known keys.
+         *
+         * Basically, depending on the @file_type, different keys are valid. */
+        if (!nms_ifcfg_rh_utils_is_well_known_key(line->key)) {
+            nm_log_dbg(log_domain,
+                       "ifcfg-rh: %s,%s:%zu: key %s is unknown and ignored",
+                       file_type,
+                       s->fileName,
+                       n,
+                       line->key);
+            continue;
+        }
+    }
+}
+
+/*****************************************************************************/
+
 /* Write the current contents iff modified.  Returns FALSE on error
  * and TRUE on success.  Do not write if no values have been modified.
  * The mode argument is only used if creating the file, not if
