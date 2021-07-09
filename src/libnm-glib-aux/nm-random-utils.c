@@ -9,6 +9,7 @@
 
 #include <fcntl.h>
 #include <sys/auxv.h>
+#include <sys/syscall.h>
 
 #if USE_SYS_RANDOM_H
     #include <sys/random.h>
@@ -18,6 +19,26 @@
 
 #include "nm-shared-utils.h"
 #include "nm-time-utils.h"
+
+/*****************************************************************************/
+
+#if !defined(SYS_getrandom) && defined(__NR_getrandom)
+    #define SYS_getrandom __NR_getrandom
+#endif
+
+#ifndef GRND_NONBLOCK
+    #define GRND_NONBLOCK 0x01
+#endif
+
+#if !HAVE_GETRANDOM && defined(SYS_getrandom)
+static int
+getrandom(void *buf, size_t buflen, unsigned flags)
+{
+    return syscall(SYS_getrandom, buf, buflen, flags);
+}
+    #undef HAVE_GETRANDOM
+    #define HAVE_GETRANDOM 1
+#endif
 
 /*****************************************************************************/
 
