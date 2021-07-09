@@ -190,9 +190,7 @@ nm_utils_random_bytes(void *p, size_t n)
     int      fd;
     int      r;
     gboolean has_high_quality = TRUE;
-    gboolean urandom_success;
-    guint8 * buf           = p;
-    gboolean avoid_urandom = FALSE;
+    guint8 * buf              = p;
 
     g_return_val_if_fail(p, FALSE);
     g_return_val_if_fail(n > 0, FALSE);
@@ -213,7 +211,6 @@ nm_utils_random_bytes(void *p, size_t n)
                 nm_assert(r < n);
                 buf += r;
                 n -= r;
-                has_high_quality = FALSE;
 
                 /* At this point, we don't want to read /dev/urandom, because
                  * the entropy pool is low (early boot?), and asking for more
@@ -223,47 +220,39 @@ nm_utils_random_bytes(void *p, size_t n)
                  * itself with g_rand_new(). That also will read /dev/urandom, but as
                  * we do that only once, we don't care. But in general, we are here in
                  * a situation where we want to avoid reading /dev/urandom too much. */
-                avoid_urandom = TRUE;
+                goto out_bad_random;
+            }
+            if (errno == ENOSYS) {
+                /* no support for getrandom(). We don't know whether
+                 * we urandom will give us good quality. Assume yes. */
+                have_syscall = FALSE;
             } else {
-                if (errno == ENOSYS) {
-                    /* no support for getrandom(). We don't know whether
-                     * we urandom will give us good quality. Assume yes. */
-                    have_syscall = FALSE;
-                } else {
-                    /* unknown error. We'll read urandom below, but we don't have
-                     * high-quality randomness. */
-                    has_high_quality = FALSE;
-                }
+                /* unknown error. We'll read urandom below, but we don't have
+                 * high-quality randomness. */
+                has_high_quality = FALSE;
             }
         }
     }
 #endif
 
-    urandom_success = FALSE;
-    if (!avoid_urandom) {
 fd_open:
-        fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC | O_NOCTTY);
-        if (fd < 0) {
-            r = errno;
-            if (r == EINTR)
-                goto fd_open;
-        } else {
-            r = nm_utils_fd_read_loop_exact(fd, buf, n, TRUE);
-            nm_close(fd);
-            if (r >= 0)
-                urandom_success = TRUE;
-        }
+    fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC | O_NOCTTY);
+    if (fd < 0) {
+        if (errno == EINTR)
+            goto fd_open;
+        goto out_bad_random;
     }
+    r = nm_utils_fd_read_loop_exact(fd, buf, n, TRUE);
+    nm_close(fd);
+    if (r >= 0)
+        return has_high_quality;
 
-    if (!urandom_success) {
-        /* we failed to fill the bytes reading from urandom.
-         * Fill the bits using our pseudo random numbers.
-         *
-         * We don't have good quality.
-         */
-        has_high_quality = FALSE;
-        _bad_random_bytes(buf, n);
-    }
-
-    return has_high_quality;
+out_bad_random:
+    /* we failed to fill the bytes reading from urandom.
+     * Fill the bits using our pseudo random numbers.
+     *
+     * We don't have good quality.
+     */
+    _bad_random_bytes(buf, n);
+    return FALSE;
 }
