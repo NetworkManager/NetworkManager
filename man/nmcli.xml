@@ -910,7 +910,7 @@
           <option>uuid</option>, <option>path</option> or
           <option>apath</option> can be used.</para>
 
-          <para> See <command>connection show</command> above for the description of
+          <para>See <command>connection show</command> above for the description of
           the <replaceable>ID</replaceable>-specifying keywords.</para>
 
           <para>If <option>--wait</option> option is not specified, the default timeout
@@ -1411,7 +1411,7 @@
           seconds.</para>
         </listitem>
       </varlistentry>
-      
+
       <varlistentry>
         <term>
           <command>connect</command>
@@ -1419,8 +1419,8 @@
         </term>
 
         <listitem>
-          <para> Alias for command <command>up</command>
-          </para>
+          <para>Alias for command <command>up</command>. Before version 1.34.0 <command>up</command>
+                was not supported.</para>
         </listitem>
       </varlistentry>
 
@@ -1475,7 +1475,7 @@
           will be 10 seconds.</para>
         </listitem>
       </varlistentry>
-     
+
       <varlistentry>
         <term>
           <command>disconnect</command>
@@ -1483,8 +1483,8 @@
         </term>
 
         <listitem>
-          <para> Alias for command <command>down</command>
-          </para>
+          <para>Alias for command <command>down</command>. Before version 1.34.0 <command>down</command>
+                was not supported.</para>
         </listitem>
       </varlistentry>
 
