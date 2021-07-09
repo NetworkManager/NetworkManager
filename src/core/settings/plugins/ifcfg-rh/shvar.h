@@ -121,4 +121,6 @@ _nm_auto_shvar_file_close(shvarFile **p_s)
 }
 #define nm_auto_shvar_file_close nm_auto(_nm_auto_shvar_file_close)
 
+void svWarnInvalid(shvarFile *s, const char *file_type, NMLogDomain log_domain);
+
 #endif /* _SHVAR_H */
