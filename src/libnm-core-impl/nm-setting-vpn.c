@@ -47,11 +47,6 @@ typedef struct {
      */
     char *user_name;
 
-    /* Whether the VPN stays up across link changes, until the user
-     * explicitly disconnects it.
-     */
-    gboolean persistent;
-
     /* The hash table is created at setting object
      * init time and should not be replaced.  It is
      * a char * -> char * mapping, and both the key
@@ -72,6 +67,12 @@ typedef struct {
 
     /* Timeout for the VPN service to establish the connection */
     guint32 timeout;
+
+    /* Whether the VPN stays up across link changes, until the user
+     * explicitly disconnects it.
+     */
+    bool persistent;
+
 } NMSettingVpnPrivate;
 
 /**
@@ -1172,13 +1173,14 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
      * the VPN will attempt to stay connected across link changes and outages,
      * until explicitly disconnected.
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_VPN_PERSISTENT,
-                                        PROP_PERSISTENT,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_vpn_get_persistent);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_VPN_PERSISTENT,
+                                               PROP_PERSISTENT,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingVpnPrivate,
+                                               persistent);
 
     /**
      * NMSettingVpn:data: (type GHashTable(utf8,utf8)):
@@ -1252,8 +1254,9 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_VPN,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_VPN,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

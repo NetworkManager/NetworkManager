@@ -53,11 +53,11 @@ typedef struct {
     guint ttl;
     guint ageing;
     guint limit;
-    bool  learning : 1;
-    bool  proxy : 1;
-    bool  rsc : 1;
-    bool  l2_miss : 1;
-    bool  l3_miss : 1;
+    bool  proxy;
+    bool  learning;
+    bool  rsc;
+    bool  l2_miss;
+    bool  l3_miss;
 } NMSettingVxlanPrivate;
 
 /**
@@ -536,7 +536,6 @@ nm_setting_vxlan_init(NMSettingVxlan *self)
 
     priv->destination_port = DST_PORT_DEFAULT;
     priv->ageing           = 300;
-    priv->learning         = TRUE;
 }
 
 /**
@@ -595,6 +594,7 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
         "",
         NULL,
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+
     /**
      * NMSettingVxlan:id:
      *
@@ -765,13 +765,14 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_VXLAN_PROXY,
-                                        PROP_PROXY,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_vxlan_get_proxy);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_VXLAN_PROXY,
+                                               PROP_PROXY,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingVxlanPrivate,
+                                               proxy);
 
     /**
      * NMSettingVxlan:learning:
@@ -781,13 +782,14 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_VXLAN_LEARNING,
-                                        PROP_LEARNING,
-                                        TRUE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_vxlan_get_learning);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_VXLAN_LEARNING,
+                                               PROP_LEARNING,
+                                               TRUE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingVxlanPrivate,
+                                               learning);
 
     /**
      * NMSettingVxlan:rsc:
@@ -796,13 +798,14 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_VXLAN_RSC,
-                                        PROP_RSC,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_vxlan_get_rsc);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_VXLAN_RSC,
+                                               PROP_RSC,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingVxlanPrivate,
+                                               rsc);
 
     /**
      * NMSettingVxlan:l2-miss:
@@ -811,13 +814,14 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_VXLAN_L2_MISS,
-                                        PROP_L2_MISS,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_vxlan_get_l2_miss);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_VXLAN_L2_MISS,
+                                               PROP_L2_MISS,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingVxlanPrivate,
+                                               l2_miss);
 
     /**
      * NMSettingVxlan:l3-miss:
@@ -826,18 +830,20 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_VXLAN_L3_MISS,
-                                        PROP_L3_MISS,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_vxlan_get_l3_miss);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_VXLAN_L3_MISS,
+                                               PROP_L3_MISS,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingVxlanPrivate,
+                                               l3_miss);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_VXLAN,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_VXLAN,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

@@ -40,6 +40,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DHCP_CLIENT_ID,
                                   PROP_DHCP_VENDOR_CLASS_IDENTIFIER, );
 
 typedef struct {
+    NMSettingIPConfigPrivate parent;
+
     char *dhcp_client_id;
     char *dhcp_fqdn;
     char *dhcp_vendor_class_identifier;
@@ -598,7 +600,11 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_ip4_config_init(NMSettingIP4Config *setting)
-{}
+{
+    NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting);
+
+    _nm_setting_ip_config_private_init(setting, &priv->parent);
+}
 
 /**
  * nm_setting_ip4_config_new:
@@ -628,17 +634,20 @@ finalize(GObject *object)
 static void
 nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array_ip_config();
+    GObjectClass *          object_class            = G_OBJECT_CLASS(klass);
+    NMSettingClass *        setting_class           = NM_SETTING_CLASS(klass);
+    NMSettingIPConfigClass *setting_ip_config_class = NM_SETTING_IP_CONFIG_CLASS(klass);
+    GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config();
 
-    g_type_class_add_private(setting_class, sizeof(NMSettingIP4ConfigPrivate));
+    g_type_class_add_private(klass, sizeof(NMSettingIP4ConfigPrivate));
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
     setting_class->verify = verify;
+
+    setting_ip_config_class->private_offset = g_type_class_get_instance_private_offset(klass);
 
     /* ---ifcfg-rh---
      * property: method
@@ -847,12 +856,13 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: DHCP_CLIENT_ID=ax-srv-1; DHCP_CLIENT_ID=01:44:44:44:44:44:44
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
-                                       PROP_DHCP_CLIENT_ID,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_ip4_config_get_dhcp_client_id);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
+                                              PROP_DHCP_CLIENT_ID,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingIP4ConfigPrivate,
+                                              dhcp_client_id);
 
     /* ---ifcfg-rh---
      * property: dad-timeout
@@ -898,12 +908,13 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: DHCP_FQDN=foo.bar.com
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP4_CONFIG_DHCP_FQDN,
-                                       PROP_DHCP_FQDN,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_ip4_config_get_dhcp_fqdn);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP4_CONFIG_DHCP_FQDN,
+                                              PROP_DHCP_FQDN,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingIP4ConfigPrivate,
+                                              dhcp_fqdn);
 
     /**
      * NMSettingIP4Config:dhcp-vendor-class-identifier:
@@ -924,12 +935,13 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: DHCP_VENDOR_CLASS_IDENTIFIER=foo
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
-                                       PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_ip4_config_get_dhcp_vendor_class_identifier);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
+                                              PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingIP4ConfigPrivate,
+                                              dhcp_vendor_class_identifier);
 
     /* IP4-specific property overrides */
 
@@ -1052,8 +1064,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_IP4_CONFIG,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_IP4_CONFIG,
+                             NULL,
+                             properties_override,
+                             setting_ip_config_class->private_offset);
 }

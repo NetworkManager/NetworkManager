@@ -78,5 +78,5 @@ nm_setting_dummy_class_init(NMSettingDummyClass *klass)
 
     setting_class->verify = verify;
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_DUMMY);
+    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_DUMMY, NULL, NULL, 0);
 }

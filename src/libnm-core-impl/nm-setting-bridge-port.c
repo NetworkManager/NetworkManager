@@ -36,7 +36,7 @@ typedef struct {
     GPtrArray *vlans;
     guint16    priority;
     guint16    path_cost;
-    bool       hairpin_mode : 1;
+    bool       hairpin_mode;
 } NMSettingBridgePortPrivate;
 
 /**
@@ -564,13 +564,14 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
      * description: Hairpin mode of the bridge port.
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
-                                        PROP_HAIRPIN_MODE,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_bridge_port_get_hairpin_mode);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
+                                               PROP_HAIRPIN_MODE,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingBridgePortPrivate,
+                                               hairpin_mode);
 
     /**
      * NMSettingBridgePort:vlans: (type GPtrArray(NMBridgeVlan))
@@ -609,8 +610,9 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_BRIDGE_PORT,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_BRIDGE_PORT,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

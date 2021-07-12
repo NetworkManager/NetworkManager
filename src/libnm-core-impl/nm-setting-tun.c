@@ -35,9 +35,9 @@ typedef struct {
     char *           owner;
     char *           group;
     NMSettingTunMode mode;
-    bool             pi : 1;
-    bool             vnet_hdr : 1;
-    bool             multi_queue : 1;
+    bool             pi;
+    bool             vnet_hdr;
+    bool             multi_queue;
 } NMSettingTunPrivate;
 
 /**
@@ -369,13 +369,14 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
      *
      * Since: 1.2
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_TUN_PI,
-                                        PROP_PI,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_tun_get_pi);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_TUN_PI,
+                                               PROP_PI,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingTunPrivate,
+                                               pi);
 
     /**
      * NMSettingTun:vnet-hdr:
@@ -385,13 +386,14 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
      *
      * Since: 1.2
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_TUN_VNET_HDR,
-                                        PROP_VNET_HDR,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_tun_get_vnet_hdr);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_TUN_VNET_HDR,
+                                               PROP_VNET_HDR,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingTunPrivate,
+                                               vnet_hdr);
 
     /**
      * NMSettingTun:multi-queue:
@@ -403,18 +405,20 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
      *
      * Since: 1.2
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_TUN_MULTI_QUEUE,
-                                        PROP_MULTI_QUEUE,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_tun_get_multi_queue);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_TUN_MULTI_QUEUE,
+                                               PROP_MULTI_QUEUE,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingTunPrivate,
+                                               multi_queue);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_TUN,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_TUN,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

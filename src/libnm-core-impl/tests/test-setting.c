@@ -4388,6 +4388,9 @@ test_setting_metadata(void)
         guint                      prop_idx;
         gs_free GParamSpec **property_specs = NULL;
         guint                n_property_specs;
+        guint                n_param_spec;
+        guint                i;
+        guint                j;
 
         g_assert(sis);
 
@@ -4404,7 +4407,21 @@ test_setting_metadata(void)
         g_assert_cmpint(sis->property_infos_len, >, 0);
         g_assert(sis->property_infos);
 
+        {
+            int offset;
+
+            if (sis->private_offset < 0) {
+                offset = g_type_class_get_instance_private_offset(sis->setting_class);
+                g_assert_cmpint(sis->private_offset, ==, offset);
+            } else {
+                /* it would be nice to assert that this class has no private data.
+                 * But we cannot. */
+            }
+        }
+
         h_properties = g_hash_table_new(nm_str_hash, g_str_equal);
+
+        n_param_spec = 0;
 
         for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
             const NMSettInfoProperty *sip = &sis->property_infos[prop_idx];
@@ -4414,12 +4431,52 @@ test_setting_metadata(void)
 
             g_assert(sip->name);
 
+            if (sip->param_spec)
+                n_param_spec++;
+
             if (prop_idx > 0)
                 g_assert_cmpint(strcmp(sis->property_infos[prop_idx - 1].name, sip->name), <, 0);
 
             g_assert(sip->property_type);
             g_assert(sip->property_type->dbus_type);
             g_assert(g_variant_type_string_is_valid((const char *) sip->property_type->dbus_type));
+
+            if (sip->property_type->direct_type == NM_VALUE_TYPE_NONE) {
+                g_assert_cmpint(sip->direct_offset, ==, 0);
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_BOOL) {
+                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_boolean);
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "b"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_BOOLEAN);
+                can_set_including_default = TRUE;
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_UINT32) {
+                const GParamSpecUInt *pspec;
+
+                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_uint32);
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "u"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_UINT);
+
+                pspec = NM_G_PARAM_SPEC_CAST_UINT(sip->param_spec);
+                g_assert_cmpint(pspec->minimum, <=, pspec->maximum);
+                g_assert_cmpint(pspec->default_value, >=, pspec->minimum);
+                g_assert_cmpint(pspec->default_value, <=, pspec->maximum);
+
+                g_assert_cmpint(pspec->maximum, <=, (guint64) G_MAXUINT32);
+
+                can_set_including_default = TRUE;
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_STRING) {
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_STRING);
+            } else
+                g_assert_not_reached();
 
             if (!sip->property_type->to_dbus_fcn) {
                 /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
@@ -4456,17 +4513,6 @@ check_done:;
                     != NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT)
                     g_assert(!sip->to_dbus_data.gprop_to_dbus_fcn);
                 can_set_including_default = TRUE;
-            } else if (sip->property_type->to_dbus_fcn
-                       == _nm_setting_property_to_dbus_fcn_get_boolean) {
-                g_assert(sip->param_spec);
-                g_assert(sip->param_spec->value_type == G_TYPE_BOOLEAN);
-                g_assert(sip->to_dbus_data.get_boolean);
-                can_set_including_default = TRUE;
-            } else if (sip->property_type->to_dbus_fcn
-                       == _nm_setting_property_to_dbus_fcn_get_string) {
-                g_assert(sip->param_spec);
-                g_assert(sip->param_spec->value_type == G_TYPE_STRING);
-                g_assert(sip->to_dbus_data.get_string);
             }
 
             if (!can_set_including_default)
@@ -4520,6 +4566,9 @@ check_done:;
 
                 if (NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS))
                     g_assert(sip->property_type->to_dbus_fcn);
+
+                g_assert(!NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_CONSTRUCT));
+                g_assert(!NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_CONSTRUCT_ONLY));
             }
         }
 
@@ -4567,6 +4616,44 @@ check_done:;
             g_assert_cmpstr(sis->property_infos[0].name, ==, NM_SETTING_NAME);
         } else
             g_assert_cmpint(meta_type, !=, NM_META_SETTING_TYPE_ETHTOOL);
+
+        g_assert_cmpint(n_param_spec, >, 0);
+        g_assert_cmpint(n_param_spec, ==, sis->property_lookup_by_param_spec_len);
+        g_assert(sis->property_lookup_by_param_spec);
+        for (i = 0; i < sis->property_lookup_by_param_spec_len; i++) {
+            const NMSettInfoPropertLookupByParamSpec *p = &sis->property_lookup_by_param_spec[i];
+            guint                                     n_found;
+
+            if (i > 0) {
+                g_assert_cmpint(sis->property_lookup_by_param_spec[i - 1].param_spec_as_uint,
+                                <,
+                                p->param_spec_as_uint);
+            }
+            g_assert(p->property_info);
+            g_assert(p->property_info >= sis->property_infos);
+            g_assert(p->property_info < &sis->property_infos[sis->property_infos_len]);
+            g_assert(p->property_info
+                     == &sis->property_infos[p->property_info - sis->property_infos]);
+
+            g_assert(p->property_info->param_spec);
+            g_assert(p->param_spec_as_uint
+                     == ((uintptr_t) ((gpointer) p->property_info->param_spec)));
+
+            g_assert(_nm_sett_info_property_lookup_by_param_spec(sis, p->property_info->param_spec)
+                     == p->property_info);
+
+            n_found = 0;
+            for (j = 0; j < sis->property_infos_len; j++) {
+                const NMSettInfoProperty *pip2 = &sis->property_infos[j];
+
+                if (pip2->param_spec
+                    && p->param_spec_as_uint == ((uintptr_t) ((gpointer) pip2->param_spec))) {
+                    g_assert(pip2 == p->property_info);
+                    n_found++;
+                }
+            }
+            g_assert(n_found == 1);
+        }
     }
 
     {
@@ -4586,7 +4673,7 @@ check_done:;
                 const NMSettInfoPropertType *pt_2 = a_property_types[prop_idx_2];
 
                 if (!g_variant_type_equal(pt->dbus_type, pt_2->dbus_type)
-                    || pt->to_dbus_fcn != pt_2->to_dbus_fcn
+                    || pt->direct_type != pt_2->direct_type || pt->to_dbus_fcn != pt_2->to_dbus_fcn
                     || pt->from_dbus_fcn != pt_2->from_dbus_fcn
                     || pt->missing_from_dbus_fcn != pt_2->missing_from_dbus_fcn
                     || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn
@@ -4747,6 +4834,38 @@ test_setting_connection_secondaries_verify(void)
 
 /*****************************************************************************/
 
+static void
+test_6lowpan_1(void)
+{
+    gs_unref_object NMConnection *con = NULL;
+    NMSetting6Lowpan *            s_6low;
+    gs_free char *                value = NULL;
+
+    con = nmtst_create_minimal_connection("test-sec", NULL, NM_SETTING_6LOWPAN_SETTING_NAME, NULL);
+
+    s_6low = NM_SETTING_6LOWPAN(nm_connection_get_setting(con, NM_TYPE_SETTING_6LOWPAN));
+    g_assert(s_6low);
+
+    g_assert_cmpstr(nm_setting_6lowpan_get_parent(s_6low), ==, NULL);
+    g_object_get(s_6low, NM_SETTING_6LOWPAN_PARENT, &value, NULL);
+    g_assert_cmpstr(value, ==, NULL);
+    nm_clear_g_free(&value);
+
+    g_object_set(s_6low, NM_SETTING_6LOWPAN_PARENT, "hello", NULL);
+    g_assert_cmpstr(nm_setting_6lowpan_get_parent(s_6low), ==, "hello");
+    g_object_get(s_6low, NM_SETTING_6LOWPAN_PARENT, &value, NULL);
+    g_assert_cmpstr(value, ==, "hello");
+    nm_clear_g_free(&value);
+
+    g_object_set(s_6low, NM_SETTING_6LOWPAN_PARENT, "world", NULL);
+    g_assert_cmpstr(nm_setting_6lowpan_get_parent(s_6low), ==, "world");
+    g_object_get(s_6low, NM_SETTING_6LOWPAN_PARENT, &value, NULL);
+    g_assert_cmpstr(value, ==, "world");
+    nm_clear_g_free(&value);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -4787,6 +4906,8 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/settings/ethtool/coalesce", test_ethtool_coalesce);
     g_test_add_func("/libnm/settings/ethtool/ring", test_ethtool_ring);
     g_test_add_func("/libnm/settings/ethtool/pause", test_ethtool_pause);
+
+    g_test_add_func("/libnm/settings/6lowpan/1", test_6lowpan_1);
 
     g_test_add_func("/libnm/settings/sriov/vf", test_sriov_vf);
     g_test_add_func("/libnm/settings/sriov/vf-dup", test_sriov_vf_dup);

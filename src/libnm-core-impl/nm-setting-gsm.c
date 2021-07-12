@@ -51,8 +51,8 @@ typedef struct {
     NMSettingSecretFlags password_flags;
     NMSettingSecretFlags pin_flags;
     guint32              mtu;
-    bool                 auto_config : 1;
-    bool                 home_only : 1;
+    bool                 auto_config;
+    bool                 home_only;
 } NMSettingGsmPrivate;
 
 /**
@@ -667,13 +667,14 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
      *
      * Since: 1.22
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_GSM_AUTO_CONFIG,
-                                        PROP_AUTO_CONFIG,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_gsm_get_auto_config);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_GSM_AUTO_CONFIG,
+                                               PROP_AUTO_CONFIG,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingGsmPrivate,
+                                               auto_config);
 
     /**
      * NMSettingGsm:number:
@@ -794,13 +795,14 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
      * When %TRUE, only connections to the home network will be allowed.
      * Connections to roaming networks will not be made.
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_GSM_HOME_ONLY,
-                                        PROP_HOME_ONLY,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_gsm_get_home_only);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_GSM_HOME_ONLY,
+                                               PROP_HOME_ONLY,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingGsmPrivate,
+                                               home_only);
 
     /**
      * NMSettingGsm:device-id:
@@ -879,8 +881,9 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_GSM,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_GSM,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

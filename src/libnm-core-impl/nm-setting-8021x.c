@@ -176,8 +176,8 @@ typedef struct {
     NMSettingSecretFlags    pin_flags;
     NMSettingSecretFlags    private_key_password_flags;
     NMSettingSecretFlags    phase2_private_key_password_flags;
-    bool                    optional : 1;
-    bool                    system_ca_certs : 1;
+    bool                    optional;
+    bool                    system_ca_certs;
 } NMSetting8021xPrivate;
 
 /**
@@ -4588,13 +4588,14 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      * description: a boolean value.
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_802_1X_SYSTEM_CA_CERTS,
-                                        PROP_SYSTEM_CA_CERTS,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_802_1x_get_system_ca_certs);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_802_1X_SYSTEM_CA_CERTS,
+                                               PROP_SYSTEM_CA_CERTS,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSetting8021xPrivate,
+                                               system_ca_certs);
 
     /**
      * NMSetting8021x:auth-timeout:
@@ -4638,18 +4639,20 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      * description: whether the 802.1X authentication is optional
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_802_1X_OPTIONAL,
-                                        PROP_OPTIONAL,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_802_1x_get_optional);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_802_1X_OPTIONAL,
+                                               PROP_OPTIONAL,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSetting8021xPrivate,
+                                               optional);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_802_1X,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_802_1X,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

@@ -30,8 +30,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT, PROP_MODE, PROP_PROMISCUOUS, PROP
 typedef struct {
     char *               parent;
     NMSettingMacvlanMode mode;
-    bool                 promiscuous : 1;
-    bool                 tap : 1;
+    bool                 promiscuous;
+    bool                 tap;
 } NMSettingMacvlanPrivate;
 
 /**
@@ -234,11 +234,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_macvlan_init(NMSettingMacvlan *self)
-{
-    NMSettingMacvlanPrivate *priv = NM_SETTING_MACVLAN_GET_PRIVATE(self);
-
-    priv->promiscuous = TRUE;
-}
+{}
 
 /**
  * nm_setting_macvlan_new:
@@ -322,13 +318,14 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_MACVLAN_PROMISCUOUS,
-                                        PROP_PROMISCUOUS,
-                                        TRUE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_macvlan_get_promiscuous);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_MACVLAN_PROMISCUOUS,
+                                               PROP_PROMISCUOUS,
+                                               TRUE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingMacvlanPrivate,
+                                               promiscuous);
 
     /**
      * NMSettingMacvlan:tap:
@@ -337,18 +334,20 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
      *
      * Since: 1.2
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_MACVLAN_TAP,
-                                        PROP_TAP,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_macvlan_get_tap);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_MACVLAN_TAP,
+                                               PROP_TAP,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingMacvlanPrivate,
+                                               tap);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_MACVLAN,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_MACVLAN,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }
