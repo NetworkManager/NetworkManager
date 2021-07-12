@@ -41,10 +41,8 @@ _detect_get_meta_data_done_cb(GObject *source, GAsyncResult *result, gpointer us
     gs_unref_object GTask *task     = user_data;
     gs_free_error GError *get_error = NULL;
     gs_free_error GError *error     = NULL;
-    gboolean              success;
 
-    success =
-        nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
+    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
 
     if (nm_utils_error_is_cancelled(get_error)) {
         g_task_return_error(task, g_steal_pointer(&get_error));
@@ -56,12 +54,6 @@ _detect_get_meta_data_done_cb(GObject *source, GAsyncResult *result, gpointer us
                            NM_UTILS_ERROR_UNKNOWN,
                            "failure to get Azure metadata: %s",
                            get_error->message);
-        g_task_return_error(task, g_steal_pointer(&error));
-        return;
-    }
-
-    if (!success) {
-        nm_utils_error_set(&error, NM_UTILS_ERROR_UNKNOWN, "failure to detect azure metadata");
         g_task_return_error(task, g_steal_pointer(&error));
         return;
     }
