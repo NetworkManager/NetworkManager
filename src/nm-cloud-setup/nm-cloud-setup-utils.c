@@ -665,6 +665,20 @@ nmcs_utils_uri_build_concat_v(const char *base, const char **components, gsize n
     return nm_str_buf_finalize(&strbuf, NULL);
 }
 
+const char *
+nmcs_utils_uri_complete_interned(const char *uri)
+{
+    gs_free char *s = NULL;
+
+    if (nm_str_is_empty(uri))
+        return NULL;
+    if (NM_STR_HAS_PREFIX(uri, "http://") || NM_STR_HAS_PREFIX(uri, "https://") || strchr(uri, '/'))
+        return g_intern_string(uri);
+
+    s = g_strconcat("http://", uri, NULL);
+    return g_intern_string(s);
+}
+
 /*****************************************************************************/
 
 gboolean

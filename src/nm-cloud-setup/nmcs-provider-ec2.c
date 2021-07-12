@@ -29,22 +29,7 @@ again:
          * This is mainly for testing, it's not usually supposed to be configured.
          * Consider this private API! */
         base = g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_EC2_HOST"));
-
-        if (!nm_str_is_empty(base)) {
-            if (NM_STR_HAS_PREFIX(base, "http://") || NM_STR_HAS_PREFIX(base, "https://")
-                || strchr(base, '/'))
-                base = g_intern_string(base);
-            else {
-                gs_free char *s = NULL;
-
-                s    = g_strconcat("http://", base, NULL);
-                base = g_intern_string(s);
-            }
-        }
-        if (nm_str_is_empty(base))
-            base = NM_EC2_BASE;
-
-        nm_assert(!NM_STR_HAS_SUFFIX(base, "/"));
+        base = nmcs_utils_uri_complete_interned(base) ?: ("" NM_EC2_BASE);
 
         if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))
             goto again;
