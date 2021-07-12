@@ -193,15 +193,20 @@ modem_ip4_config_result(NMModem *modem, NMIP4Config *config, GError *error, gpoi
     NMDeviceModem *self   = NM_DEVICE_MODEM(user_data);
     NMDevice *     device = NM_DEVICE(self);
 
-    g_return_if_fail(nm_device_activate_ip4_state_in_conf(device) == TRUE);
+    if (!nm_device_activate_ip4_state_in_conf(device)) {
+        _LOGD(LOGD_MB | LOGD_IP4,
+              "retrieving IPv4 configuration while no longer in state IPv4 conf");
+        return;
+    }
 
     if (error) {
         _LOGW(LOGD_MB | LOGD_IP4, "retrieving IPv4 configuration failed: %s", error->message);
         nm_device_ip_method_failed(device, AF_INET, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-    } else {
-        nm_device_set_dev2_ip_config(device, AF_INET, NM_IP_CONFIG_CAST(config));
-        nm_device_activate_schedule_ip_config_result(device, AF_INET, NULL);
+        return;
     }
+
+    nm_device_set_dev2_ip_config(device, AF_INET, NM_IP_CONFIG_CAST(config));
+    nm_device_activate_schedule_ip_config_result(device, AF_INET, NULL);
 }
 
 static void
@@ -218,7 +223,11 @@ modem_ip6_config_result(NMModem *    modem,
     gs_unref_object NMIP6Config *ignored    = NULL;
     gboolean                     got_config = !!config;
 
-    g_return_if_fail(nm_device_activate_ip6_state_in_conf(device) == TRUE);
+    if (!nm_device_activate_ip6_state_in_conf(device)) {
+        _LOGD(LOGD_MB | LOGD_IP6,
+              "retrieving IPv6 configuration while no longer in state IPv6 conf");
+        return;
+    }
 
     if (error) {
         _LOGW(LOGD_MB | LOGD_IP6, "retrieving IPv6 configuration failed: %s", error->message);
