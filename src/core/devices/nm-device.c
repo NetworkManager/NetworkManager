@@ -10108,7 +10108,9 @@ nm_device_request_ip6_prefixes(NMDevice *self, int needed_prefixes)
         _LOGD(LOGD_IP6, "ipv6-pd: asking DHCPv6 for %d prefixes", needed_prefixes);
         nm_device_dhcp6_renew(self, FALSE);
     } else {
-        _LOGI(LOGD_IP6, "ipv6-pd: device doesn't use DHCPv6, can't request prefixes");
+        priv->dhcp6.mode = NM_NDISC_DHCP_LEVEL_OTHERCONF;
+        _LOGD(LOGD_DEVICE | LOGD_DHCP6, "ipv6-pd: starting DHCPv6 to request a prefix");
+        dhcp6_start(self, FALSE);
     }
 }
 
