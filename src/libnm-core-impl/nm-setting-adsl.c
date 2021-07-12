@@ -370,24 +370,26 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
      *
      * Username used to authenticate with the ADSL service.
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_ADSL_USERNAME,
-                                       PROP_USERNAME,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_adsl_get_username);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_ADSL_USERNAME,
+                                              PROP_USERNAME,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingAdslPrivate,
+                                              username);
 
     /**
      * NMSettingAdsl:password:
      *
      * Password used to authenticate with the ADSL service.
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_ADSL_PASSWORD,
-                                       PROP_PASSWORD,
-                                       NM_SETTING_PARAM_SECRET,
-                                       nm_setting_adsl_get_password);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_ADSL_PASSWORD,
+                                              PROP_PASSWORD,
+                                              NM_SETTING_PARAM_SECRET,
+                                              NMSettingAdslPrivate,
+                                              password);
 
     /**
      * NMSettingAdsl:password-flags:
@@ -407,24 +409,34 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
      *
      * ADSL connection protocol.  Can be "pppoa", "pppoe" or "ipoatm".
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_ADSL_PROTOCOL,
-                                       PROP_PROTOCOL,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_adsl_get_protocol);
+    _nm_setting_property_define_direct_string(
+        properties_override,
+        obj_properties,
+        NM_SETTING_ADSL_PROTOCOL,
+        PROP_PROTOCOL,
+        NM_SETTING_PARAM_NONE,
+        NMSettingAdslPrivate,
+        protocol,
+        /* it's special, because set_property() calls g_ascii_strdown() on
+         * the string! */
+        .direct_has_special_setter = TRUE);
 
     /**
      * NMSettingAdsl:encapsulation:
      *
      * Encapsulation of ADSL connection.  Can be "vcmux" or "llc".
      **/
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_ADSL_ENCAPSULATION,
-                                       PROP_ENCAPSULATION,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_adsl_get_encapsulation);
+    _nm_setting_property_define_direct_string(
+        properties_override,
+        obj_properties,
+        NM_SETTING_ADSL_ENCAPSULATION,
+        PROP_ENCAPSULATION,
+        NM_SETTING_PARAM_NONE,
+        NMSettingAdslPrivate,
+        encapsulation,
+        /* it's special, because set_property() calls g_ascii_strdown() on
+         * the string! */
+        .direct_has_special_setter = TRUE);
 
     /**
      * NMSettingAdsl:vpi:
@@ -454,8 +466,9 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_ADSL,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_ADSL,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

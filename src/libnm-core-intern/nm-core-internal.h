@@ -78,6 +78,7 @@
 #include "nm-vpn-dbus-interface.h"
 #include "nm-vpn-editor-plugin.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
+#include "libnm-glib-aux/nm-value-type.h"
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only
@@ -684,6 +685,14 @@ typedef enum _nm_packed {
 typedef struct {
     const GVariantType *dbus_type;
 
+    /* If this is not NM_VALUE_TYPE_UNSPEC, then this is a "direct" property,
+     * meaning that _nm_setting_get_private() at NMSettInfoProperty.direct_offset
+     * gives direct access to the field.
+     *
+     * Direct properties can use this information to generically implement access
+     * to the property value. */
+    NMValueType direct_type;
+
     NMSettInfoPropToDBusFcn          to_dbus_fcn;
     NMSettInfoPropFromDBusFcn        from_dbus_fcn;
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
@@ -707,12 +716,25 @@ struct _NMSettInfoProperty {
 
     const NMSettInfoPropertType *property_type;
 
+    /* This only has meaning for direct properties (property_type->direct_type != NM_VALUE_TYPE_UNSPEC).
+     * In that case, this is the offset where _nm_setting_get_private() can find
+     * the direct location. */
+    guint16 direct_offset;
+
+    /* Currently, properties that set property_type->direct_type only have to_dbus_fcn()
+     * implemented "the direct way". For the property setter, they still call g_object_set().
+     * In the future, also other operations, like from_dbus_fcn() should be implemented
+     * by direct access (thereby, bypassing g_object_set()).
+     *
+     * A "direct_has_special_setter" property does something unusual, that will require special attention
+     * in the future, when we implement more functionality regarding the setter. It has no effect,
+     * except of marking those properties and serve as a reminder that special care needs to be taken. */
+    bool direct_has_special_setter : 1;
+
     struct {
         union {
             gpointer                     none;
             NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn;
-            gboolean (*get_boolean)(NMSetting *);
-            const char *(*get_string)(NMSetting *);
         };
 
         /* Usually, properties that are set to the default value for the GParamSpec
@@ -722,6 +744,15 @@ struct _NMSettInfoProperty {
         bool including_default : 1;
     } to_dbus_data;
 };
+
+typedef struct {
+    /* we want to do binary search by "GParamSpec *", but unrelated pointers
+     * are not directly comparable in C. No problem, we convert them to
+     * uintptr_t for the search, that is guaranteed to work. */
+    uintptr_t param_spec_as_uint;
+
+    const NMSettInfoProperty *property_info;
+} NMSettInfoPropertLookupByParamSpec;
 
 typedef struct {
     const GVariantType *(*get_variant_type)(const struct _NMSettInfoSetting *sett_info,
@@ -762,12 +793,32 @@ struct _NMSettInfoSetting {
      */
     const NMSettInfoProperty *const *property_infos_sorted;
 
-    guint                property_infos_len;
+    const NMSettInfoPropertLookupByParamSpec *property_lookup_by_param_spec;
+
+    guint16 property_infos_len;
+
+    guint16 property_lookup_by_param_spec_len;
+
+    /* the offset in bytes to get the private data from the @self pointer. */
+    gint16 private_offset;
+
     NMSettInfoSettDetail detail;
 };
 
+#define NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS ((gint16) G_MININT16)
+
+static inline gpointer
+_nm_setting_get_private(NMSetting *self, const NMSettInfoSetting *sett_info, guint16 offset)
+{
+    nm_assert(NM_IS_SETTING(self));
+    nm_assert(sett_info);
+    nm_assert(NM_SETTING_GET_CLASS(self) == sett_info->setting_class);
+
+    return ((((char *) ((gpointer) self)) + sett_info->private_offset) + offset);
+}
+
 static inline const NMSettInfoProperty *
-_nm_sett_info_property_info_get_sorted(const NMSettInfoSetting *sett_info, guint idx)
+_nm_sett_info_property_info_get_sorted(const NMSettInfoSetting *sett_info, guint16 idx)
 {
     nm_assert(sett_info);
     nm_assert(idx < sett_info->property_infos_len);

@@ -81,38 +81,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingVrf *self = NM_SETTING_VRF(object);
-
-    switch (prop_id) {
-    case PROP_TABLE:
-        g_value_set_uint(value, self->table);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingVrf *self = NM_SETTING_VRF(object);
-
-    switch (prop_id) {
-    case PROP_TABLE:
-        self->table = g_value_get_uint(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_vrf_init(NMSettingVrf *setting)
 {}
 
@@ -134,13 +102,15 @@ nm_setting_vrf_new(void)
 static void
 nm_setting_vrf_class_init(NMSettingVrfClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
-    setting_class->verify = verify;
+    setting_class->verify          = verify;
+    setting_class->finalize_direct = TRUE;
 
     /**
      * NMSettingVrf:table:
@@ -149,16 +119,18 @@ nm_setting_vrf_class_init(NMSettingVrfClass *klass)
      *
      * Since: 1.24
      **/
-    obj_properties[PROP_TABLE] =
-        g_param_spec_uint(NM_SETTING_VRF_TABLE,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT32,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VRF_TABLE,
+                                              PROP_TABLE,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingVrf,
+                                              table);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_VRF);
+    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_VRF, NULL, properties_override, 0);
 }

@@ -3351,7 +3351,7 @@ _read_setting(KeyfileReaderInfo *info)
     gs_unref_object NMSetting *setting = NULL;
     const char *               alias;
     GType                      type;
-    guint                      i;
+    guint16                    i;
 
     alias = nm_keyfile_plugin_get_setting_name_for_alias(info->group);
     if (!alias)
@@ -4088,7 +4088,7 @@ nm_keyfile_write(NMConnection *        connection,
     KeyfileWriterInfo               info;
     NMSetting **                    settings;
     int                             i;
-    guint                           j;
+    guint16                         j;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
     g_return_val_if_fail(!error || !*error, NULL);

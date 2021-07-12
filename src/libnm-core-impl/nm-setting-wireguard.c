@@ -902,8 +902,8 @@ typedef struct {
     guint32              fwmark;
     guint32              mtu;
     guint16              listen_port;
+    bool                 peer_routes;
     bool                 private_key_valid : 1;
-    bool                 peer_routes : 1;
 } NMSettingWireGuardPrivate;
 
 /**
@@ -2372,7 +2372,6 @@ nm_setting_wireguard_init(NMSettingWireGuard *setting)
 
     priv->peers_arr              = g_ptr_array_new();
     priv->peers_hash             = g_hash_table_new(nm_pstr_hash, nm_pstr_equal);
-    priv->peer_routes            = TRUE;
     priv->ip4_auto_default_route = NM_TERNARY_DEFAULT;
     priv->ip6_auto_default_route = NM_TERNARY_DEFAULT;
 }
@@ -2514,13 +2513,14 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_WIREGUARD_PEER_ROUTES,
-                                        PROP_PEER_ROUTES,
-                                        TRUE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_wireguard_get_peer_routes);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_WIREGUARD_PEER_ROUTES,
+                                               PROP_PEER_ROUTES,
+                                               TRUE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingWireGuardPrivate,
+                                               peer_routes);
 
     /**
      * NMSettingWireGuard:mtu:
@@ -2601,8 +2601,9 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_WIREGUARD,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_WIREGUARD,
+                             NULL,
+                             properties_override,
+                             G_STRUCT_OFFSET(NMSettingWireGuard, _priv));
 }

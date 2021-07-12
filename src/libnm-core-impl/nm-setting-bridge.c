@@ -77,12 +77,12 @@ typedef struct {
     guint16    max_age;
     guint16    vlan_default_pvid;
     guint16    group_forward_mask;
-    bool       multicast_snooping : 1;
-    bool       vlan_filtering : 1;
-    bool       stp : 1;
-    bool       vlan_stats_enabled : 1;
-    bool       multicast_query_use_ifaddr : 1;
-    bool       multicast_querier : 1;
+    bool       stp;
+    bool       multicast_snooping;
+    bool       vlan_filtering;
+    bool       vlan_stats_enabled;
+    bool       multicast_query_use_ifaddr;
+    bool       multicast_querier;
 } NMSettingBridgePrivate;
 
 /**
@@ -1564,19 +1564,13 @@ nm_setting_bridge_init(NMSettingBridge *setting)
     priv->multicast_last_member_interval    = NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF;
     priv->multicast_membership_interval     = NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF;
     priv->multicast_hash_max                = NM_BRIDGE_MULTICAST_HASH_MAX_DEF;
-    priv->multicast_snooping                = NM_BRIDGE_MULTICAST_SNOOPING_DEF;
     priv->priority                          = NM_BRIDGE_PRIORITY_DEF;
-    priv->stp                               = NM_BRIDGE_STP_DEF;
     priv->vlan_default_pvid                 = NM_BRIDGE_VLAN_DEFAULT_PVID_DEF;
     priv->multicast_query_interval          = NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF;
     priv->multicast_query_response_interval = NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF;
     priv->multicast_querier_interval        = NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF;
     priv->multicast_startup_query_count     = NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF;
     priv->multicast_startup_query_interval  = NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF;
-
-    nm_assert(priv->multicast_querier == NM_BRIDGE_MULTICAST_QUERIER_DEF);
-    nm_assert(priv->multicast_query_use_ifaddr == NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF);
-    nm_assert(priv->vlan_stats_enabled == NM_BRIDGE_VLAN_STATS_ENABLED_DEF);
 }
 
 /**
@@ -1672,13 +1666,14 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      * description: Span tree protocol participation.
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_BRIDGE_STP,
-                                        PROP_STP,
-                                        NM_BRIDGE_STP_DEF,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_bridge_get_stp);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_BRIDGE_STP,
+                                               PROP_STP,
+                                               NM_BRIDGE_STP_DEF,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingBridgePrivate,
+                                               stp);
 
     /**
      * NMSettingBridge:priority:
@@ -1831,13 +1826,14 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      * description: IGMP snooping support.
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
-                                        PROP_MULTICAST_SNOOPING,
-                                        NM_BRIDGE_MULTICAST_SNOOPING_DEF,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_bridge_get_multicast_snooping);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
+                                               PROP_MULTICAST_SNOOPING,
+                                               NM_BRIDGE_MULTICAST_SNOOPING_DEF,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingBridgePrivate,
+                                               multicast_snooping);
 
     /**
      * NMSettingBridge:vlan-filtering:
@@ -1854,13 +1850,14 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      * description: VLAN filtering support.
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_BRIDGE_VLAN_FILTERING,
-                                        PROP_VLAN_FILTERING,
-                                        FALSE,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_bridge_get_vlan_filtering);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_BRIDGE_VLAN_FILTERING,
+                                               PROP_VLAN_FILTERING,
+                                               FALSE,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingBridgePrivate,
+                                               vlan_filtering);
 
     /**
      * NMSettingBridge:vlan-default-pvid:
@@ -2001,13 +1998,14 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      *
      * Since: 1.24
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,
-                                        PROP_VLAN_STATS_ENABLED,
-                                        NM_BRIDGE_VLAN_STATS_ENABLED_DEF,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_bridge_get_vlan_stats_enabled);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,
+                                               PROP_VLAN_STATS_ENABLED,
+                                               NM_BRIDGE_VLAN_STATS_ENABLED_DEF,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingBridgePrivate,
+                                               vlan_stats_enabled);
 
     /**
      * NMSettingBridge:multicast-router:
@@ -2052,13 +2050,14 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      *
      * Since: 1.24
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,
-                                        PROP_MULTICAST_QUERY_USE_IFADDR,
-                                        NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_bridge_get_multicast_query_use_ifaddr);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,
+                                               PROP_MULTICAST_QUERY_USE_IFADDR,
+                                               NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingBridgePrivate,
+                                               multicast_query_use_ifaddr);
 
     /**
      * NMSettingBridge:multicast-querier:
@@ -2075,13 +2074,14 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      *
      * Since: 1.24
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_BRIDGE_MULTICAST_QUERIER,
-                                        PROP_MULTICAST_QUERIER,
-                                        NM_BRIDGE_MULTICAST_QUERIER_DEF,
-                                        NM_SETTING_PARAM_INFERRABLE,
-                                        nm_setting_bridge_get_multicast_querier);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_BRIDGE_MULTICAST_QUERIER,
+                                               PROP_MULTICAST_QUERIER,
+                                               NM_BRIDGE_MULTICAST_QUERIER_DEF,
+                                               NM_SETTING_PARAM_INFERRABLE,
+                                               NMSettingBridgePrivate,
+                                               multicast_querier);
 
     /**
      * NMSettingBridge:multicast-hash-max:
@@ -2301,8 +2301,9 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_BRIDGE,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_BRIDGE,
+                             NULL,
+                             properties_override,
+                             G_STRUCT_OFFSET(NMSettingBridge, _priv));
 }

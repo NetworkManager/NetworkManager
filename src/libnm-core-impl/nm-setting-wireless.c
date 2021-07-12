@@ -63,7 +63,7 @@ typedef struct {
     guint32                   mtu;
     guint32                   powersave;
     guint32                   wowl;
-    bool                      hidden : 1;
+    bool                      hidden;
 } NMSettingWirelessPrivate;
 
 /**
@@ -1833,13 +1833,14 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * description: Whether the network hides the SSID.
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_WIRELESS_HIDDEN,
-                                        PROP_HIDDEN,
-                                        FALSE,
-                                        NM_SETTING_PARAM_NONE,
-                                        nm_setting_wireless_get_hidden);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_WIRELESS_HIDDEN,
+                                               PROP_HIDDEN,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingWirelessPrivate,
+                                               hidden);
 
     /**
      * NMSettingWireless:powersave:
@@ -1985,8 +1986,9 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_WIRELESS,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_WIRELESS,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

@@ -148,5 +148,5 @@ nm_setting_ovs_dpdk_class_init(NMSettingOvsDpdkClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_OVS_DPDK);
+    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_OVS_DPDK, NULL, NULL, 0);
 }

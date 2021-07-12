@@ -45,6 +45,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_IP6_PRIVACY,
                                   PROP_RA_TIMEOUT, );
 
 typedef struct {
+    NMSettingIPConfigPrivate parent;
+
     char *                        token;
     char *                        dhcp_duid;
     NMSettingIP6ConfigPrivacy     ip6_privacy;
@@ -594,6 +596,8 @@ nm_setting_ip6_config_init(NMSettingIP6Config *setting)
 {
     NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting);
 
+    _nm_setting_ip_config_private_init(setting, &priv->parent);
+
     priv->ip6_privacy   = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
     priv->addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY;
 }
@@ -626,9 +630,10 @@ finalize(GObject *object)
 static void
 nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array_ip_config();
+    GObjectClass *          object_class            = G_OBJECT_CLASS(klass);
+    NMSettingClass *        setting_class           = NM_SETTING_CLASS(klass);
+    NMSettingIPConfigClass *setting_ip_config_class = NM_SETTING_IP_CONFIG_CLASS(klass);
+    GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config();
 
     g_type_class_add_private(klass, sizeof(NMSettingIP6ConfigPrivate));
 
@@ -637,6 +642,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     object_class->finalize     = finalize;
 
     setting_class->verify = verify;
+
+    setting_ip_config_class->private_offset = g_type_class_get_instance_private_offset(klass);
 
     /* ---ifcfg-rh---
      * property: method
@@ -914,12 +921,13 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: IPV6_TOKEN=::53
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP6_CONFIG_TOKEN,
-                                       PROP_TOKEN,
-                                       NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_ip6_config_get_token);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP6_CONFIG_TOKEN,
+                                              PROP_TOKEN,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIP6ConfigPrivate,
+                                              token);
 
     /**
      * NMSettingIP6Config:ra-timeout:
@@ -994,12 +1002,13 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: DHCPV6_DUID=LL; DHCPV6_DUID=0301deadbeef0001; DHCPV6_DUID=03:01:de:ad:be:ef:00:01
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_IP6_CONFIG_DHCP_DUID,
-                                       PROP_DHCP_DUID,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_ip6_config_get_dhcp_duid);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP6_CONFIG_DHCP_DUID,
+                                              PROP_DHCP_DUID,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingIP6ConfigPrivate,
+                                              dhcp_duid);
 
     /* IP6-specific property overrides */
 
@@ -1096,8 +1105,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_IP6_CONFIG,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_IP6_CONFIG,
+                             NULL,
+                             properties_override,
+                             setting_ip_config_class->private_offset);
 }

@@ -407,11 +407,12 @@ nm_setting_ethtool_class_init(NMSettingEthtoolClass *klass)
 
     setting_class->verify = verify;
 
-    _nm_setting_class_commit_full(
+    _nm_setting_class_commit(
         setting_class,
         NM_META_SETTING_TYPE_ETHTOOL,
         NM_SETT_INFO_SETT_DETAIL(.gendata_info =
                                      NM_SETT_INFO_SETT_GENDATA(.get_variant_type =
                                                                    get_variant_type, ), ),
-        NULL);
+        NULL,
+        0);
 }

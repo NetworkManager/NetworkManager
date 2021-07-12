@@ -93,8 +93,8 @@ typedef struct {
     NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
     NMMetered                            metered;
     NMSettingConnectionLldp              lldp;
-    bool                                 read_only : 1;
-    bool                                 autoconnect : 1;
+    bool                                 autoconnect;
+    bool                                 read_only;
 } NMSettingConnectionPrivate;
 
 /**
@@ -1801,7 +1801,6 @@ nm_setting_connection_init(NMSettingConnection *setting)
     NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
 
     priv->auth_retries         = -1;
-    priv->autoconnect          = TRUE;
     priv->autoconnect_priority = NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT;
     priv->autoconnect_retries  = -1;
     priv->autoconnect_slaves   = NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT;
@@ -1872,12 +1871,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * description: User friendly name for the connection profile.
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_CONNECTION_ID,
-                                       PROP_ID,
-                                       NM_SETTING_PARAM_FUZZY_IGNORE,
-                                       nm_setting_connection_get_id);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_ID,
+                                              PROP_ID,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingConnectionPrivate,
+                                              id);
 
     /**
      * NMSettingConnection:uuid:
@@ -1902,12 +1902,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   creates the UUID itself (by hashing the filename).
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_CONNECTION_UUID,
-                                       PROP_UUID,
-                                       NM_SETTING_PARAM_FUZZY_IGNORE,
-                                       nm_setting_connection_get_uuid);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_UUID,
+                                              PROP_UUID,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingConnectionPrivate,
+                                              uuid);
 
     /**
      * NMSettingConnection:stable-id:
@@ -1956,12 +1957,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * description: Token to generate stable IDs.
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_CONNECTION_STABLE_ID,
-                                       PROP_STABLE_ID,
-                                       NM_SETTING_PARAM_FUZZY_IGNORE,
-                                       nm_setting_connection_get_stable_id);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_STABLE_ID,
+                                              PROP_STABLE_ID,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingConnectionPrivate,
+                                              stable_id);
 
     /**
      * NMSettingConnection:interface-name:
@@ -1986,17 +1988,19 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   can be required for some connection types.
      * ---end---
      */
-    _nm_setting_property_define_string_full(
+    _nm_setting_property_define_direct_string_full(
         properties_override,
         obj_properties,
         NM_SETTING_CONNECTION_INTERFACE_NAME,
         PROP_INTERFACE_NAME,
         NM_SETTING_PARAM_INFERRABLE,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
-                                       .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_get_string,
+                                       .direct_type = NM_VALUE_TYPE_STRING,
+                                       .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
                                        .missing_from_dbus_fcn =
                                            nm_setting_connection_no_interface_name),
-        nm_setting_connection_get_interface_name);
+        NMSettingConnectionPrivate,
+        interface_name);
 
     /**
      * NMSettingConnection:type:
@@ -2016,12 +2020,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: TYPE=Ethernet; TYPE=Bond; TYPE=Bridge; DEVICETYPE=TeamPort
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_CONNECTION_TYPE,
-                                       PROP_TYPE,
-                                       NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_connection_get_connection_type);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_TYPE,
+                                              PROP_TYPE,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingConnectionPrivate,
+                                              type);
 
     /**
      * NMSettingConnection:permissions:
@@ -2078,13 +2083,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * description: Whether the connection should be autoconnected (not only while booting).
      * ---end---
      */
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_CONNECTION_AUTOCONNECT,
-                                        PROP_AUTOCONNECT,
-                                        TRUE,
-                                        NM_SETTING_PARAM_FUZZY_IGNORE,
-                                        nm_setting_connection_get_autoconnect);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_CONNECTION_AUTOCONNECT,
+                                               PROP_AUTOCONNECT,
+                                               TRUE,
+                                               NM_SETTING_PARAM_FUZZY_IGNORE,
+                                               NMSettingConnectionPrivate,
+                                               autoconnect);
 
     /**
      * NMSettingConnection:autoconnect-priority:
@@ -2199,13 +2205,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * service's D-Bus interface with the right privileges, or %TRUE if the
      * connection is read-only and cannot be modified.
      **/
-    _nm_setting_property_define_boolean(properties_override,
-                                        obj_properties,
-                                        NM_SETTING_CONNECTION_READ_ONLY,
-                                        PROP_READ_ONLY,
-                                        FALSE,
-                                        NM_SETTING_PARAM_FUZZY_IGNORE,
-                                        nm_setting_connection_get_read_only);
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_CONNECTION_READ_ONLY,
+                                               PROP_READ_ONLY,
+                                               FALSE,
+                                               NM_SETTING_PARAM_FUZZY_IGNORE,
+                                               NMSettingConnectionPrivate,
+                                               read_only);
 
     /**
      * NMSettingConnection:zone:
@@ -2226,13 +2233,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: ZONE=Work
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_CONNECTION_ZONE,
-                                       PROP_ZONE,
-                                       NM_SETTING_PARAM_FUZZY_IGNORE
-                                           | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY,
-                                       nm_setting_connection_get_zone);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_ZONE,
+                                              PROP_ZONE,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE
+                                                  | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY,
+                                              NMSettingConnectionPrivate,
+                                              zone);
 
     /**
      * NMSettingConnection:master:
@@ -2248,12 +2256,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   for compatibility with legacy tooling.
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_CONNECTION_MASTER,
-                                       PROP_MASTER,
-                                       NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_connection_get_master);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_MASTER,
+                                              PROP_MASTER,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE
+                                                  | NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingConnectionPrivate,
+                                              master);
 
     /**
      * NMSettingConnection:slave-type:
@@ -2272,12 +2282,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   and BRIDGE_UUID for bridging.
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_CONNECTION_SLAVE_TYPE,
-                                       PROP_SLAVE_TYPE,
-                                       NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE,
-                                       nm_setting_connection_get_slave_type);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_SLAVE_TYPE,
+                                              PROP_SLAVE_TYPE,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE
+                                                  | NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingConnectionPrivate,
+                                              slave_type);
 
     /**
      * NMSettingConnection:autoconnect-slaves:
@@ -2559,17 +2571,19 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: https://yourdevice.example.com/model.json
      * ---end---
      */
-    _nm_setting_property_define_string(properties_override,
-                                       obj_properties,
-                                       NM_SETTING_CONNECTION_MUD_URL,
-                                       PROP_MUD_URL,
-                                       NM_SETTING_PARAM_NONE,
-                                       nm_setting_connection_get_mud_url);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_MUD_URL,
+                                              PROP_MUD_URL,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingConnectionPrivate,
+                                              mud_url);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit_full(setting_class,
-                                  NM_META_SETTING_TYPE_CONNECTION,
-                                  NULL,
-                                  properties_override);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_CONNECTION,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }
