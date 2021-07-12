@@ -30,8 +30,9 @@ again:
          * Consider this private API! */
         base = g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_EC2_HOST"));
 
-        if (base && base[0] && !strchr(base, '/')) {
-            if (NM_STR_HAS_PREFIX(base, "http://") || NM_STR_HAS_PREFIX(base, "https://"))
+        if (!nm_str_is_empty(base)) {
+            if (NM_STR_HAS_PREFIX(base, "http://") || NM_STR_HAS_PREFIX(base, "https://")
+                || strchr(base, '/'))
                 base = g_intern_string(base);
             else {
                 gs_free char *s = NULL;
@@ -40,7 +41,7 @@ again:
                 base = g_intern_string(s);
             }
         }
-        if (!base)
+        if (nm_str_is_empty(base))
             base = NM_EC2_BASE;
 
         nm_assert(!NM_STR_HAS_SUFFIX(base, "/"));
