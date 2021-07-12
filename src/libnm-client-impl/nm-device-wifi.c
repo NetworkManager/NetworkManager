@@ -242,7 +242,7 @@ nm_device_wifi_get_access_point_by_path(NMDeviceWifi *device, const char *path)
  * Use nm_utils_get_timestamp_msec() to obtain current time value suitable for
  * comparing to this value.
  *
- * Returns: the last scan time in seconds
+ * Returns: the last scan time in milliseconds (in clock_gettime(CLOCK_BOOTTIME) scale).
  *
  * Since: 1.12
  **/
