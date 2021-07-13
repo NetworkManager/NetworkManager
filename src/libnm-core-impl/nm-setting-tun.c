@@ -32,12 +32,12 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_MODE,
                                   PROP_MULTI_QUEUE, );
 
 typedef struct {
-    char *           owner;
-    char *           group;
-    NMSettingTunMode mode;
-    bool             pi;
-    bool             vnet_hdr;
-    bool             multi_queue;
+    char *  owner;
+    char *  group;
+    guint32 mode;
+    bool    pi;
+    bool    vnet_hdr;
+    bool    multi_queue;
 } NMSettingTunPrivate;
 
 /**
@@ -198,77 +198,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingTun *       setting = NM_SETTING_TUN(object);
-    NMSettingTunPrivate *priv    = NM_SETTING_TUN_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_MODE:
-        g_value_set_uint(value, priv->mode);
-        break;
-    case PROP_OWNER:
-        g_value_set_string(value, priv->owner);
-        break;
-    case PROP_GROUP:
-        g_value_set_string(value, priv->group);
-        break;
-    case PROP_PI:
-        g_value_set_boolean(value, priv->pi);
-        break;
-    case PROP_VNET_HDR:
-        g_value_set_boolean(value, priv->vnet_hdr);
-        break;
-    case PROP_MULTI_QUEUE:
-        g_value_set_boolean(value, priv->multi_queue);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingTun *       setting = NM_SETTING_TUN(object);
-    NMSettingTunPrivate *priv    = NM_SETTING_TUN_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_MODE:
-        priv->mode = g_value_get_uint(value);
-        break;
-    case PROP_OWNER:
-        g_free(priv->owner);
-        priv->owner = g_value_dup_string(value);
-        break;
-    case PROP_GROUP:
-        g_free(priv->group);
-        priv->group = g_value_dup_string(value);
-        break;
-    case PROP_PI:
-        priv->pi = g_value_get_boolean(value);
-        break;
-    case PROP_VNET_HDR:
-        priv->vnet_hdr = g_value_get_boolean(value);
-        break;
-    case PROP_MULTI_QUEUE:
-        priv->multi_queue = g_value_get_boolean(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-/*****************************************************************************/
-
-static void
 nm_setting_tun_init(NMSettingTun *self)
-{
-    NMSettingTunPrivate *priv = NM_SETTING_TUN_GET_PRIVATE(self);
-
-    priv->mode = NM_SETTING_TUN_MODE_TUN;
-}
+{}
 
 /**
  * nm_setting_tun_new:
@@ -286,18 +217,6 @@ nm_setting_tun_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingTun *       setting = NM_SETTING_TUN(object);
-    NMSettingTunPrivate *priv    = NM_SETTING_TUN_GET_PRIVATE(setting);
-
-    g_free(priv->owner);
-    g_free(priv->group);
-
-    G_OBJECT_CLASS(nm_setting_tun_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_tun_class_init(NMSettingTunClass *klass)
 {
     GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
@@ -306,11 +225,11 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingTunPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
-    setting_class->verify = verify;
+    setting_class->verify          = verify;
+    setting_class->finalize_direct = TRUE;
 
     /**
      * NMSettingTun:mode:
@@ -322,14 +241,16 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
      *
      * Since: 1.2
      */
-    obj_properties[PROP_MODE] =
-        g_param_spec_uint(NM_SETTING_TUN_MODE,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT,
-                          NM_SETTING_TUN_MODE_TUN,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_TUN_MODE,
+                                              PROP_MODE,
+                                              0,
+                                              G_MAXUINT32,
+                                              NM_SETTING_TUN_MODE_TUN,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingTunPrivate,
+                                              mode);
 
     /**
      * NMSettingTun:owner:
@@ -339,12 +260,13 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
      *
      * Since: 1.2
      */
-    obj_properties[PROP_OWNER] = g_param_spec_string(NM_SETTING_TUN_OWNER,
-                                                     "",
-                                                     "",
-                                                     NULL,
-                                                     G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                         | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_TUN_OWNER,
+                                              PROP_OWNER,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingTunPrivate,
+                                              owner);
 
     /**
      * NMSettingTun:group:
@@ -354,12 +276,13 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
      *
      * Since: 1.2
      */
-    obj_properties[PROP_GROUP] = g_param_spec_string(NM_SETTING_TUN_GROUP,
-                                                     "",
-                                                     "",
-                                                     NULL,
-                                                     G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                         | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_TUN_GROUP,
+                                              PROP_GROUP,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingTunPrivate,
+                                              group);
 
     /**
      * NMSettingTun:pi:
