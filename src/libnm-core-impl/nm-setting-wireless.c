@@ -1277,7 +1277,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_BSSID:
         g_free(priv->bssid);
-        priv->bssid = g_value_dup_string(value);
+        priv->bssid = _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
         break;
     case PROP_RATE:
         priv->rate = g_value_get_uint(value);

@@ -254,7 +254,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     switch (prop_id) {
     case PROP_BDADDR:
         g_free(priv->bdaddr);
-        priv->bdaddr = g_value_dup_string(value);
+        priv->bdaddr = _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
         break;
     case PROP_TYPE:
         g_free(priv->type);
