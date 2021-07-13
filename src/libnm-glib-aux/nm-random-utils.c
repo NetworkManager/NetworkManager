@@ -9,6 +9,7 @@
 
 #include <fcntl.h>
 #include <sys/auxv.h>
+#include <sys/syscall.h>
 
 #if USE_SYS_RANDOM_H
     #include <sys/random.h>
@@ -21,94 +22,166 @@
 
 /*****************************************************************************/
 
-#define SEED_ARRAY_SIZE (16 + 2 + 4 + 2 + 3)
+#if !defined(SYS_getrandom) && defined(__NR_getrandom)
+    #define SYS_getrandom __NR_getrandom
+#endif
 
-static guint32
-_pid_hash(pid_t id)
+#ifndef GRND_NONBLOCK
+    #define GRND_NONBLOCK 0x01
+#endif
+
+#if !HAVE_GETRANDOM && defined(SYS_getrandom)
+static int
+getrandom(void *buf, size_t buflen, unsigned flags)
 {
-    if (sizeof(pid_t) > sizeof(guint32))
-        return (((guint64) id) >> 32) ^ ((guint64) id);
-    return id;
+    return syscall(SYS_getrandom, buf, buflen, flags);
 }
+    #undef HAVE_GETRANDOM
+    #define HAVE_GETRANDOM 1
+#endif
+
+/*****************************************************************************/
+
+#define STATIC_SALT "l6z5vMBldDlCD6na"
+
+typedef struct _nm_packed {
+    uintptr_t heap_ptr;
+    uintptr_t stack_ptr;
+    gint64    now_bootime;
+    gint64    now_real;
+    pid_t     pid;
+    pid_t     ppid;
+    pid_t     tid;
+    guint32   grand[16];
+    guint8    auxval[16];
+    char      static_salt[NM_STRLEN(STATIC_SALT)];
+} BadRandSeed;
+
+typedef struct _nm_packed {
+    guint64 counter;
+    union {
+        guint8 full[NM_UTILS_CHECKSUM_LENGTH_SHA256];
+        struct {
+            guint8 half_1[NM_UTILS_CHECKSUM_LENGTH_SHA256 / 2];
+            guint8 half_2[NM_UTILS_CHECKSUM_LENGTH_SHA256 / 2];
+        };
+    } sha_digest;
+    union {
+        guint8  u8[NM_UTILS_CHECKSUM_LENGTH_SHA256 / 2];
+        guint32 u32[((NM_UTILS_CHECKSUM_LENGTH_SHA256 / 2) + 3) / 4];
+    } rand_vals;
+    GRand *rand;
+} BadRandState;
 
 static void
-_rand_init_seed(guint32 seed_array[static SEED_ARRAY_SIZE], GRand *rand)
+_bad_random_init_seed(BadRandSeed *seed)
 {
-    int           seed_idx;
     const guint8 *p_at_random;
-    guint64       now_nsec;
+    int           seed_idx;
+    GRand *       rand;
 
-    /* Get some seed material from the provided GRand. */
-    for (seed_idx = 0; seed_idx < 16; seed_idx++)
-        seed_array[seed_idx] = g_rand_int(rand);
+    memcpy(seed->static_salt, STATIC_SALT, NM_STRLEN(STATIC_SALT));
 
-    /* Add an address from the heap. */
-    seed_array[seed_idx++] = ((guint64) ((uintptr_t) ((gpointer) rand))) >> 32;
-    seed_array[seed_idx++] = ((guint64) ((uintptr_t) ((gpointer) rand)));
+    /* g_rand_new() reads /dev/urandom, but we already noticed that
+     * /dev/urandom fails to give us good randomness (which is why
+     * we hit the "bad randomness" code path). So this may not be as
+     * good as we wish, but let's hope that it it does something smart
+     * to give some extra entropy... */
+    rand = g_rand_new();
+
+    /* Get some seed material from a GRand. */
+    for (seed_idx = 0; seed_idx < (int) G_N_ELEMENTS(seed->grand); seed_idx++)
+        seed->grand[seed_idx] = g_rand_int(rand);
+
+    /* Add an address from the heap and stack, maybe ASLR helps a bit? */
+    seed->heap_ptr  = (uintptr_t) ((gpointer) rand);
+    seed->stack_ptr = (uintptr_t) ((gpointer) &rand);
+
+    g_rand_free(rand);
 
     /* Add the per-process, random number. */
     p_at_random = ((gpointer) getauxval(AT_RANDOM));
     if (p_at_random) {
-        memcpy(&seed_array[seed_idx], p_at_random, 16);
-    } else
-        memset(&seed_array[seed_idx], 0, 16);
-    G_STATIC_ASSERT_EXPR(sizeof(guint32) == 4);
-    seed_idx += 4;
-
-    /* Add the current timestamp, the pid and ppid. */
-    now_nsec               = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
-    seed_array[seed_idx++] = ((guint64) now_nsec) >> 32;
-    seed_array[seed_idx++] = ((guint64) now_nsec);
-    seed_array[seed_idx++] = _pid_hash(getpid());
-    seed_array[seed_idx++] = _pid_hash(getppid());
-    seed_array[seed_idx++] = _pid_hash(nm_utils_gettid());
-
-    nm_assert(seed_idx == SEED_ARRAY_SIZE);
-}
-
-static GRand *
-_rand_create_thread_local(void)
-{
-    G_LOCK_DEFINE_STATIC(global_rand);
-    static GRand *global_rand = NULL;
-    guint32       seed_array[SEED_ARRAY_SIZE];
-
-    /* We use thread-local instances of GRand to create a series of
-     * "random" numbers. We use thread-local instances, so that we don't
-     * require additional locking except the first time.
-     *
-     * We trust that once seeded, a GRand gives us a good enough stream of
-     * random numbers. If that wouldn't be the case, then maybe GRand should
-     * be fixed.
-     * Also, we tell our callers that the numbers from GRand are not good.
-     * But that isn't gonna help, because callers have no other way to get
-     * better random numbers, so usually the just ignore the failure and make
-     * the best of it.
-     *
-     * That means, the remaining problem is to seed the instance well.
-     * Note that we are already in a situation where getrandom() failed
-     * to give us good random numbers. So we can not do much to get reliably
-     * good entropy for the seed. */
-
-    G_LOCK(global_rand);
-
-    if (G_UNLIKELY(!global_rand)) {
-        GRand *rand1;
-
-        /* g_rand_new() reads /dev/urandom, but we already noticed that
-         * /dev/urandom fails to give us good randomness (which is why
-         * we hit this code path). So this may not be as good as we wish,
-         * but let's add it to the mix. */
-        rand1 = g_rand_new();
-        _rand_init_seed(seed_array, rand1);
-        global_rand = g_rand_new_with_seed_array(seed_array, SEED_ARRAY_SIZE);
-        g_rand_free(rand1);
+        G_STATIC_ASSERT(sizeof(seed->auxval) == 16);
+        memcpy(&seed->auxval, p_at_random, 16);
     }
 
-    _rand_init_seed(seed_array, global_rand);
-    G_UNLOCK(global_rand);
+    seed->now_bootime = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
+    seed->now_real    = g_get_real_time();
+    seed->pid         = getpid();
+    seed->ppid        = getppid();
+    seed->tid         = nm_utils_gettid();
+}
 
-    return g_rand_new_with_seed_array(seed_array, SEED_ARRAY_SIZE);
+static void
+_bad_random_bytes(guint8 *buf, gsize n)
+{
+    nm_auto_free_checksum GChecksum *sum = g_checksum_new(G_CHECKSUM_SHA256);
+
+    nm_assert(n > 0);
+
+    /* We are in the fallback code path, where getrandom() (and /dev/urandom) failed
+     * to give us good randomness. Try our best.
+     *
+     * Our ability to get entropy for the CPRNG is very limited and thus the overall
+     * result will not be good randomness. See _bad_random_init_seed().
+     *
+     * Once we have some seed material, we combine GRand (which is not a cryptographically
+     * secure PRNG) with some iterative sha256 hashing. It would be nice if we had
+     * easy access to chacha20, but it's probably more cumbersome to fork those
+     * implementations than hack a bad CPRNG by using sha256 hashing. After all, this
+     * is fallback code to get *some* randomness. And with the inability to get a good
+     * seed, the CPRNG is not going to give us truly good randomness. */
+
+    {
+        static BadRandState gl_state;
+        static GRand *      gl_rand;
+        static GMutex       gl_mutex;
+        NM_G_MUTEX_LOCKED(&gl_mutex);
+
+        if (G_UNLIKELY(!gl_rand)) {
+            union {
+                BadRandSeed d_seed;
+                guint32     d_u32[(sizeof(BadRandSeed) + 3) / 4];
+            } data = {
+                .d_u32 = {0},
+            };
+
+            _bad_random_init_seed(&data.d_seed);
+
+            gl_rand = g_rand_new_with_seed_array(data.d_u32, G_N_ELEMENTS(data.d_u32));
+
+            g_checksum_update(sum, (const guchar *) &data, sizeof(data));
+            nm_utils_checksum_get_digest(sum, gl_state.sha_digest.full);
+        }
+
+        while (TRUE) {
+            int i;
+
+            gl_state.counter++;
+            for (i = 0; i < G_N_ELEMENTS(gl_state.rand_vals.u32); i++)
+                gl_state.rand_vals.u32[i] = g_rand_int(gl_rand);
+            g_checksum_reset(sum);
+            g_checksum_update(sum, (const guchar *) &gl_state, sizeof(gl_state));
+            nm_utils_checksum_get_digest(sum, gl_state.sha_digest.full);
+
+            /* gl_state.sha_digest.full and gl_state.rand_vals contain now our
+             * random values, but they are also the state for the next iteration.
+             * We must not directly expose that state to the caller, so XOR the values.
+             *
+             * That means, per iteration we can generate 16 bytes of randomness. That
+             * is for example required to generate a random UUID. */
+            for (i = 0; i < (int) (NM_UTILS_CHECKSUM_LENGTH_SHA256 / 2); i++) {
+                nm_assert(n > 0);
+                buf[0] = gl_state.sha_digest.half_1[i] ^ gl_state.sha_digest.half_2[i]
+                         ^ gl_state.rand_vals.u8[i];
+                buf++;
+                n--;
+                if (n == 0)
+                    return;
+            }
+        }
+    }
 }
 
 /**
@@ -138,9 +211,7 @@ nm_utils_random_bytes(void *p, size_t n)
     int      fd;
     int      r;
     gboolean has_high_quality = TRUE;
-    gboolean urandom_success;
-    guint8 * buf           = p;
-    gboolean avoid_urandom = FALSE;
+    guint8 * buf              = p;
 
     g_return_val_if_fail(p, FALSE);
     g_return_val_if_fail(n > 0, FALSE);
@@ -156,90 +227,53 @@ nm_utils_random_bytes(void *p, size_t n)
                     return TRUE;
 
                 /* no or partial read. There is not enough entropy.
-                 * Fill the rest reading from urandom, and remember that
-                 * some bits are not high quality. */
+                 * Fill the rest reading with the fallback code and remember
+                 * that some bits are not high quality. */
                 nm_assert(r < n);
                 buf += r;
                 n -= r;
-                has_high_quality = FALSE;
 
                 /* At this point, we don't want to read /dev/urandom, because
                  * the entropy pool is low (early boot?), and asking for more
                  * entropy causes kernel messages to be logged.
                  *
-                 * We use our fallback via GRand. Note that g_rand_new() also
-                 * tries to seed itself with data from /dev/urandom, but since
-                 * we reuse the instance, it shouldn't matter. */
-                avoid_urandom = TRUE;
+                 * Note that we fall back to _bad_random_bytes(), which (among others) seeds
+                 * itself with g_rand_new(). That also will read /dev/urandom, but as
+                 * we do that only once, we don't care. But in general, we are here in
+                 * a situation where we want to avoid reading /dev/urandom too much. */
+                goto out_bad_random;
+            }
+            if (errno == ENOSYS) {
+                /* no support for getrandom(). We don't know whether
+                 * we urandom will give us good quality. Assume yes. */
+                have_syscall = FALSE;
             } else {
-                if (errno == ENOSYS) {
-                    /* no support for getrandom(). We don't know whether
-                     * we urandom will give us good quality. Assume yes. */
-                    have_syscall = FALSE;
-                } else {
-                    /* unknown error. We'll read urandom below, but we don't have
-                     * high-quality randomness. */
-                    has_high_quality = FALSE;
-                }
+                /* unknown error. We'll read urandom below, but we don't have
+                 * high-quality randomness. */
+                has_high_quality = FALSE;
             }
         }
     }
 #endif
 
-    urandom_success = FALSE;
-    if (!avoid_urandom) {
 fd_open:
-        fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC | O_NOCTTY);
-        if (fd < 0) {
-            r = errno;
-            if (r == EINTR)
-                goto fd_open;
-        } else {
-            r = nm_utils_fd_read_loop_exact(fd, buf, n, TRUE);
-            nm_close(fd);
-            if (r >= 0)
-                urandom_success = TRUE;
-        }
+    fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC | O_NOCTTY);
+    if (fd < 0) {
+        if (errno == EINTR)
+            goto fd_open;
+        goto out_bad_random;
     }
+    r = nm_utils_fd_read_loop_exact(fd, buf, n, TRUE);
+    nm_close(fd);
+    if (r >= 0)
+        return has_high_quality;
 
-    if (!urandom_success) {
-        static _nm_thread_local GRand *rand_tls = NULL;
-        GRand *                        rand;
-        gsize                          i;
-        int                            j;
-
-        /* we failed to fill the bytes reading from urandom.
-         * Fill the bits using GRand pseudo random numbers.
-         *
-         * We don't have good quality.
-         */
-        has_high_quality = FALSE;
-
-        rand = rand_tls;
-        if (G_UNLIKELY(!rand)) {
-            rand     = _rand_create_thread_local();
-            rand_tls = rand;
-            nm_utils_thread_local_register_destroy(rand, (GDestroyNotify) g_rand_free);
-        }
-
-        nm_assert(n > 0);
-        i = 0;
-        for (;;) {
-            const union {
-                guint32 v32;
-                guint8  v8[4];
-            } v = {
-                .v32 = g_rand_int(rand),
-            };
-
-            for (j = 0; j < 4;) {
-                buf[i++] = v.v8[j++];
-                if (i >= n)
-                    goto done;
-            }
-        }
-done:;
-    }
-
-    return has_high_quality;
+out_bad_random:
+    /* we failed to fill the bytes reading from urandom.
+     * Fill the bits using our pseudo random numbers.
+     *
+     * We don't have good quality.
+     */
+    _bad_random_bytes(buf, n);
+    return FALSE;
 }
