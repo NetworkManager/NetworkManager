@@ -4451,6 +4451,25 @@ test_setting_metadata(void)
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_BOOLEAN);
                 can_set_including_default = TRUE;
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_INT32) {
+                const GParamSpecInt *pspec;
+
+                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_int32);
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "i"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_INT);
+
+                pspec = NM_G_PARAM_SPEC_CAST_INT(sip->param_spec);
+                g_assert_cmpint(pspec->minimum, <=, pspec->maximum);
+                g_assert_cmpint(pspec->default_value, >=, pspec->minimum);
+                g_assert_cmpint(pspec->default_value, <=, pspec->maximum);
+
+                g_assert_cmpint(pspec->minimum, >=, (gint64) G_MININT32);
+                g_assert_cmpint(pspec->maximum, <=, (gint64) G_MAXINT32);
+
+                can_set_including_default = TRUE;
             } else if (sip->property_type->direct_type == NM_VALUE_TYPE_UINT32) {
                 const GParamSpecUInt *pspec;
 

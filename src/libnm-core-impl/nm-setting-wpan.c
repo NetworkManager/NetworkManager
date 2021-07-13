@@ -45,7 +45,7 @@ typedef struct {
     char *  mac_address;
     guint16 pan_id;
     guint16 short_address;
-    gint16  page;
+    gint32  page;
     gint16  channel;
 } NMSettingWpanPrivate;
 
@@ -265,7 +265,6 @@ nm_setting_wpan_init(NMSettingWpan *setting)
 
     priv->pan_id        = G_MAXUINT16;
     priv->short_address = G_MAXUINT16;
-    priv->page          = NM_SETTING_WPAN_PAGE_DEFAULT;
     priv->channel       = NM_SETTING_WPAN_CHANNEL_DEFAULT;
 }
 
@@ -297,8 +296,9 @@ finalize(GObject *object)
 static void
 nm_setting_wpan_class_init(NMSettingWpanClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(setting_class, sizeof(NMSettingWpanPrivate));
 
@@ -363,13 +363,16 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_PAGE] = g_param_spec_int(NM_SETTING_WPAN_PAGE,
-                                                 "",
-                                                 "",
-                                                 G_MININT16,
-                                                 G_MAXINT16,
-                                                 NM_SETTING_WPAN_PAGE_DEFAULT,
-                                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_WPAN_PAGE,
+                                             PROP_PAGE,
+                                             G_MININT16,
+                                             G_MAXINT16,
+                                             NM_SETTING_WPAN_PAGE_DEFAULT,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingWpanPrivate,
+                                             page);
 
     /**
      * NMSettingWpan:channel:
@@ -389,5 +392,9 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_WPAN, NULL, NULL, 0);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_WPAN,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }
