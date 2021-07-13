@@ -229,17 +229,20 @@ nm_utils_random_bytes(void *p, size_t n)
         static gboolean have_syscall = TRUE;
 
         if (have_syscall) {
-            r = getrandom(buf, n, GRND_NONBLOCK);
-            if (r > 0) {
-                if ((size_t) r == n)
+            ssize_t r2;
+            int     errsv;
+
+            r2 = getrandom(buf, n, GRND_NONBLOCK);
+            if (r2 >= 0) {
+                if ((size_t) r2 == n)
                     return TRUE;
 
                 /* no or partial read. There is not enough entropy.
                  * Fill the rest reading with the fallback code and remember
                  * that some bits are not high quality. */
-                nm_assert(r < n);
-                buf += r;
-                n -= r;
+                nm_assert((size_t) r2 < n);
+                buf += r2;
+                n -= r2;
 
                 /* At this point, we don't want to read /dev/urandom, because
                  * the entropy pool is low (early boot?), and asking for more
@@ -251,13 +254,17 @@ nm_utils_random_bytes(void *p, size_t n)
                  * a situation where we want to avoid reading /dev/urandom too much. */
                 goto out_bad_random;
             }
-            if (errno == ENOSYS) {
+            errsv = errno;
+            if (errsv == ENOSYS) {
                 /* no support for getrandom(). We don't know whether
-                 * we urandom will give us good quality. Assume yes. */
+                 * we /dev/urandom will give us good quality. Assume yes. */
                 have_syscall = FALSE;
+            } else if (errsv == EAGAIN) {
+                /* No entropy. We avoid reading /dev/urandom. */
+                goto out_bad_random;
             } else {
-                /* unknown error. We'll read urandom below, but we don't have
-                 * high-quality randomness. */
+                /* Unknown error, likely no entropy. We'll read /dev/urandom below, but we don't
+                 * have high-quality randomness. */
                 has_high_quality = FALSE;
             }
         }
@@ -277,7 +284,7 @@ fd_open:
         return has_high_quality;
 
 out_bad_random:
-    /* we failed to fill the bytes reading from urandom.
+    /* we failed to fill the bytes reading from /dev/urandom.
      * Fill the bits using our pseudo random numbers.
      *
      * We don't have good quality.
