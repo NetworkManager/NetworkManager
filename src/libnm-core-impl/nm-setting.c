@@ -702,6 +702,14 @@ _nm_setting_property_get_property_direct(GObject *   object,
         g_value_set_boolean(value, *p_val);
         return;
     }
+    case NM_VALUE_TYPE_INT32:
+    {
+        const gint32 *p_val =
+            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+
+        g_value_set_int(value, *p_val);
+        return;
+    }
     case NM_VALUE_TYPE_UINT32:
     {
         const guint32 *p_val =
@@ -760,6 +768,21 @@ _nm_setting_property_set_property_direct(GObject *     object,
         if (*p_val == v)
             return;
         *p_val = v;
+        goto out_notify;
+    }
+    case NM_VALUE_TYPE_INT32:
+    {
+        gint32 *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        int     v;
+
+        v = g_value_get_int(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+
+        /* truncation cannot happen, because the param_spec is supposed to have suitable
+         * minimum/maximum values so that we are in range for int32. */
+        nm_assert(*p_val == v);
         goto out_notify;
     }
     case NM_VALUE_TYPE_UINT32:
@@ -833,6 +856,17 @@ _init_direct(NMSetting *setting)
             *p_val = def_val;
             break;
         }
+        case NM_VALUE_TYPE_INT32:
+        {
+            gint32 *p_val =
+                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+            int def_val;
+
+            def_val = NM_G_PARAM_SPEC_GET_DEFAULT_INT(property_info->param_spec);
+            nm_assert(*p_val == 0);
+            *p_val = def_val;
+            break;
+        }
         case NM_VALUE_TYPE_UINT32:
         {
             guint32 *p_val =
@@ -879,6 +913,7 @@ _finalize_direct(NMSetting *setting)
         switch (property_info->property_type->direct_type) {
         case NM_VALUE_TYPE_NONE:
         case NM_VALUE_TYPE_BOOL:
+        case NM_VALUE_TYPE_INT32:
         case NM_VALUE_TYPE_UINT32:
             break;
         case NM_VALUE_TYPE_STRING:
@@ -916,6 +951,17 @@ _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec))
             return NULL;
         return g_variant_ref(nm_g_variant_singleton_b(val));
+    }
+    case NM_VALUE_TYPE_INT32:
+    {
+        gint32 val;
+
+        val =
+            *((gint32 *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
+        if (!property_info->to_dbus_including_default
+            && val == NM_G_PARAM_SPEC_GET_DEFAULT_INT(property_info->param_spec))
+            return NULL;
+        return g_variant_new_int32(val);
     }
     case NM_VALUE_TYPE_UINT32:
     {
@@ -1885,6 +1931,8 @@ _nm_setting_property_compare_fcn_direct(const NMSettInfoSetting * sett_info,
     switch (property_info->property_type->direct_type) {
     case NM_VALUE_TYPE_BOOL:
         return *((const bool *) p_a) == *((const bool *) p_b);
+    case NM_VALUE_TYPE_INT32:
+        return *((const gint32 *) p_a) == *((const gint32 *) p_b);
     case NM_VALUE_TYPE_UINT32:
         return *((const guint32 *) p_a) == *((const guint32 *) p_b);
     case NM_VALUE_TYPE_STRING:
@@ -2939,6 +2987,14 @@ const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,
                                         .direct_type   = NM_VALUE_TYPE_BOOL,
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+                                        .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                        .from_dbus_is_full = TRUE);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_direct_int32 =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_INT32,
+                                        .direct_type   = NM_VALUE_TYPE_INT32,
                                         .compare_fcn   = _nm_setting_property_compare_fcn_direct,
                                         .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
