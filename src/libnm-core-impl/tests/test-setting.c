@@ -4470,9 +4470,16 @@ test_setting_metadata(void)
 
                 can_set_including_default = TRUE;
             } else if (sip->property_type->direct_type == NM_VALUE_TYPE_STRING) {
-                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
-                g_assert(sip->property_type->to_dbus_fcn
-                         == _nm_setting_property_to_dbus_fcn_direct);
+                if (sip->property_type == &nm_sett_info_propert_type_direct_mac_address) {
+                    g_assert(g_variant_type_equal(sip->property_type->dbus_type, "ay"));
+                    g_assert(sip->property_type->to_dbus_fcn
+                             == _nm_setting_property_to_dbus_fcn_direct_mac_address);
+                    g_assert(sip->direct_has_special_setter);
+                } else {
+                    g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
+                    g_assert(sip->property_type->to_dbus_fcn
+                             == _nm_setting_property_to_dbus_fcn_direct);
+                }
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_STRING);
             } else
@@ -4499,9 +4506,6 @@ test_setting_metadata(void)
                     goto check_done;
                 case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT:
                     g_assert(sip->param_spec->value_type == G_TYPE_HASH_TABLE);
-                    goto check_done;
-                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS:
-                    g_assert(sip->param_spec->value_type == G_TYPE_STRING);
                     goto check_done;
                 case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
                     goto check_done;
@@ -4536,8 +4540,9 @@ check_done:;
             } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_direct) {
                 g_assert(sip->param_spec);
                 g_assert(sip->property_type->direct_type != NM_VALUE_TYPE_NONE);
-                g_assert(sip->property_type->to_dbus_fcn
-                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(NM_IN_SET(sip->property_type->to_dbus_fcn,
+                                   _nm_setting_property_to_dbus_fcn_direct,
+                                   _nm_setting_property_to_dbus_fcn_direct_mac_address));
             } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_ignore) {
                 if (NM_IN_SET(sip->property_type,
                               &nm_sett_info_propert_type_deprecated_ignore_i,
