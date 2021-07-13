@@ -184,7 +184,9 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_DHCP_ANYCAST_ADDRESS:
         g_free(priv->dhcp_anycast_addr);
-        priv->dhcp_anycast_addr = g_value_dup_string(value);
+        priv->dhcp_anycast_addr =
+            _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
+
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
