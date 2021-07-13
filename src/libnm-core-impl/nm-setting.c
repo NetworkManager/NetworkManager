@@ -1855,38 +1855,6 @@ _nm_setting_property_compare_fcn_ignore(const NMSettInfoSetting * sett_info,
 }
 
 NMTernary
-_nm_setting_property_compare_fcn_direct_mac_address(const NMSettInfoSetting * sett_info,
-                                                    const NMSettInfoProperty *property_info,
-                                                    NMConnection *            con_a,
-                                                    NMSetting *               set_a,
-                                                    NMConnection *            con_b,
-                                                    NMSetting *               set_b,
-                                                    NMSettingCompareFlags     flags)
-{
-    const char *a;
-    const char *b;
-
-    nm_assert(property_info->property_type == &nm_sett_info_propert_type_direct_mac_address);
-    nm_assert(property_info->param_spec);
-    nm_assert(property_info->property_type->direct_type);
-
-    if (!_nm_setting_compare_flags_check(property_info->param_spec, flags, set_a, set_b))
-        return NM_TERNARY_DEFAULT;
-
-    if (!set_b)
-        return TRUE;
-
-    a = *((const char *const *) _nm_setting_get_private(set_a,
-                                                        sett_info,
-                                                        property_info->direct_offset));
-    b = *((const char *const *) _nm_setting_get_private(set_b,
-                                                        sett_info,
-                                                        property_info->direct_offset));
-
-    return nm_streq0(a, b) || nm_utils_hwaddr_matches(a, -1, b, -1);
-}
-
-NMTernary
 _nm_setting_property_compare_fcn_direct(const NMSettInfoSetting * sett_info,
                                         const NMSettInfoProperty *property_info,
                                         NMConnection *            con_a,
@@ -2996,7 +2964,7 @@ const NMSettInfoPropertType nm_sett_info_propert_type_direct_mac_address =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(
         G_VARIANT_TYPE_BYTESTRING,
         .direct_type                 = NM_VALUE_TYPE_STRING,
-        .compare_fcn                 = _nm_setting_property_compare_fcn_direct_mac_address,
+        .compare_fcn                 = _nm_setting_property_compare_fcn_direct,
         .to_dbus_fcn                 = _nm_setting_property_to_dbus_fcn_direct_mac_address,
         .from_dbus_fcn               = _nm_setting_property_from_dbus_fcn_gprop,
         .from_dbus_is_full           = TRUE,

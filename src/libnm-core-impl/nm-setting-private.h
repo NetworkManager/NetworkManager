@@ -326,15 +326,6 @@ NMTernary _nm_setting_property_compare_fcn_direct(const NMSettInfoSetting * sett
                                                   NMSetting *               set_b,
                                                   NMSettingCompareFlags     flags);
 
-NMTernary
-_nm_setting_property_compare_fcn_direct_mac_address(const NMSettInfoSetting * sett_info,
-                                                    const NMSettInfoProperty *property_info,
-                                                    NMConnection *            con_a,
-                                                    NMSetting *               set_a,
-                                                    NMConnection *            con_b,
-                                                    NMSetting *               set_b,
-                                                    NMSettingCompareFlags     flags);
-
 NMTernary _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
                                                    const NMSettInfoProperty *property_info,
                                                    NMConnection *            con_a,
