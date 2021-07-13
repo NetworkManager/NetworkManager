@@ -4774,10 +4774,6 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
      */
     nm_device_update_hw_address(self);
 
-    /* Send ARP announcements if did not yet and have addresses. */
-    if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE && !priv->acd.announcing)
-        nm_device_arp_announce(self);
-
     /* Restart IP configuration if we're waiting for slaves.  Do this
      * after updating the hardware address as IP config may need the
      * new address.
@@ -5106,6 +5102,10 @@ nm_device_set_carrier(NMDevice *self, gboolean carrier)
             nm_device_remove_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
             _carrier_wait_check_queued_act_request(self);
         }
+
+        /* Send ARP announcements if did not yet and have carrier. */
+        if (priv->ip_state_4 == NM_DEVICE_IP_STATE_DONE && !priv->acd.announcing)
+            nm_device_arp_announce(self);
     } else {
         if (priv->carrier_wait_id)
             nm_device_add_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
@@ -11916,7 +11916,6 @@ activate_stage5_ip_config_result_x(NMDevice *self, int addr_family)
     const char *     method;
     int              ip_ifindex;
     int              errsv;
-    gboolean         do_announce = FALSE;
 
     req = nm_device_get_act_request(self);
     g_assert(req);
@@ -12044,31 +12043,13 @@ activate_stage5_ip_config_result_x(NMDevice *self, int addr_family)
         }
     }
 
-    if (IS_IPv4) {
-        /* Send ARP announcements */
-
-        if (nm_device_is_master(self)) {
-            CList *    iter;
-            SlaveInfo *info;
-
-            /* Skip announcement if there are no device enslaved, for two reasons:
-             * 1) the master has a temporary MAC address until the first slave comes
-             * 2) announcements are going to be dropped anyway without slaves
-             */
-            do_announce = FALSE;
-
-            c_list_for_each (iter, &priv->slaves) {
-                info = c_list_entry(iter, SlaveInfo, lst_slave);
-                if (info->slave_is_enslaved) {
-                    do_announce = TRUE;
-                    break;
-                }
-            }
-        } else
-            do_announce = TRUE;
-
-        if (do_announce)
-            nm_device_arp_announce(self);
+    if (IS_IPv4 && priv->carrier) {
+        /* We send ARP announcements only when the link gets carrier,
+         * otherwise the announcements would be lost. Furthermore, for
+         * controllers having carrier implies that there is at least one
+         * port and therefore the MAC address is the correct one.
+         */
+        nm_device_arp_announce(self);
     }
 
     if (IS_IPv4) {
