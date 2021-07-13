@@ -30,6 +30,10 @@
     #define GRND_NONBLOCK 0x01
 #endif
 
+#ifndef GRND_INSECURE
+    #define GRND_INSECURE 0x04
+#endif
+
 #if !HAVE_GETRANDOM && defined(SYS_getrandom)
 static int
 getrandom(void *buf, size_t buflen, unsigned flags)
@@ -42,8 +46,6 @@ getrandom(void *buf, size_t buflen, unsigned flags)
 
 /*****************************************************************************/
 
-#define STATIC_SALT "l6z5vMBldDlCD6na"
-
 typedef struct _nm_packed {
     uintptr_t heap_ptr;
     uintptr_t stack_ptr;
@@ -54,7 +56,7 @@ typedef struct _nm_packed {
     pid_t     tid;
     guint32   grand[16];
     guint8    auxval[16];
-    char      static_salt[NM_STRLEN(STATIC_SALT)];
+    guint8    getrandom_buf[20];
 } BadRandSeed;
 
 typedef struct _nm_packed {
@@ -80,8 +82,6 @@ _bad_random_init_seed(BadRandSeed *seed)
     int           seed_idx;
     GRand *       rand;
 
-    memcpy(seed->static_salt, STATIC_SALT, NM_STRLEN(STATIC_SALT));
-
     /* g_rand_new() reads /dev/urandom, but we already noticed that
      * /dev/urandom fails to give us good randomness (which is why
      * we hit the "bad randomness" code path). So this may not be as
@@ -105,6 +105,14 @@ _bad_random_init_seed(BadRandSeed *seed)
         G_STATIC_ASSERT(sizeof(seed->auxval) == 16);
         memcpy(&seed->auxval, p_at_random, 16);
     }
+
+#if HAVE_GETRANDOM
+    /* This is likely to fail, because we already failed a moment earlier. Still, give
+     * it a try. */
+    (void) getrandom(seed->getrandom_buf,
+                     sizeof(seed->getrandom_buf),
+                     GRND_INSECURE | GRND_NONBLOCK);
+#endif
 
     seed->now_bootime = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
     seed->now_real    = g_get_real_time();
