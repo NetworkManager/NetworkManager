@@ -316,15 +316,16 @@ nm_setting_bluetooth_class_init(NMSettingBluetoothClass *klass)
      *
      * The Bluetooth address of the device.
      **/
-    obj_properties[PROP_BDADDR] = g_param_spec_string(
+    _nm_setting_property_define_direct_mac_address(
+        properties_override,
+        obj_properties,
         NM_SETTING_BLUETOOTH_BDADDR,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_BDADDR],
-                                 &nm_sett_info_propert_type_mac_address);
+        PROP_BDADDR,
+        NM_SETTING_PARAM_INFERRABLE,
+        NMSettingBluetoothPrivate,
+        bdaddr,
+        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
+        .direct_has_special_setter = TRUE);
 
     /**
      * NMSettingBluetooth:type:

@@ -252,15 +252,16 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
      *
      * Deprecated: 1.2: WiMAX is no longer supported.
      **/
-    obj_properties[PROP_MAC_ADDRESS] =
-        g_param_spec_string(NM_SETTING_WIMAX_MAC_ADDRESS,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_MAC_ADDRESS],
-                                 &nm_sett_info_propert_type_mac_address);
+    _nm_setting_property_define_direct_mac_address(
+        properties_override,
+        obj_properties,
+        NM_SETTING_WIMAX_MAC_ADDRESS,
+        PROP_MAC_ADDRESS,
+        NM_SETTING_PARAM_NONE,
+        NMSettingWimaxPrivate,
+        mac_address,
+        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
+        .direct_has_special_setter = TRUE);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

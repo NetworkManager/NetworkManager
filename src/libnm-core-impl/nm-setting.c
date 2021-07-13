@@ -955,6 +955,27 @@ _nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *               
 }
 
 GVariant *
+_nm_setting_property_to_dbus_fcn_direct_mac_address(const NMSettInfoSetting *      sett_info,
+                                                    const NMSettInfoProperty *     property_info,
+                                                    NMConnection *                 connection,
+                                                    NMSetting *                    setting,
+                                                    NMConnectionSerializationFlags flags,
+                                                    const NMConnectionSerializationOptions *options)
+{
+    const char *val;
+
+    nm_assert(property_info->property_type == &nm_sett_info_propert_type_direct_mac_address);
+    nm_assert(property_info->property_type->direct_type == NM_VALUE_TYPE_STRING);
+    nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
+    nm_assert(!property_info->to_dbus_including_default);
+
+    val = *((const char *const *) _nm_setting_get_private(setting,
+                                                          sett_info,
+                                                          property_info->direct_offset));
+    return nm_utils_hwaddr_to_dbus(val);
+}
+
+GVariant *
 _nm_setting_property_to_dbus_fcn_ignore(const NMSettInfoSetting *               sett_info,
                                         const NMSettInfoProperty *              property_info,
                                         NMConnection *                          connection,
@@ -1008,8 +1029,6 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT:
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_HASH_TABLE));
         return nm_utils_strdict_to_variant_ass(g_value_get_boxed(&prop_value));
-    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS:
-        return nm_utils_hwaddr_to_dbus(g_value_get_string(&prop_value));
     }
 
     return nm_assert_unreachable_val(NULL);
@@ -1847,7 +1866,9 @@ _nm_setting_property_compare_fcn_direct(const NMSettInfoSetting * sett_info,
     gconstpointer p_a;
     gconstpointer p_b;
 
-    nm_assert(property_info->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_direct);
+    nm_assert(NM_IN_SET(property_info->property_type->to_dbus_fcn,
+                        _nm_setting_property_to_dbus_fcn_direct,
+                        _nm_setting_property_to_dbus_fcn_direct_mac_address));
 
     if (!property_info->param_spec)
         return nm_assert_unreachable_val(NM_TERNARY_DEFAULT);
@@ -2867,6 +2888,17 @@ _nm_setting_get_deprecated_virtual_interface_name(const NMSettInfoSetting *     
         return NULL;
 }
 
+static void
+_nm_utils_hwaddr_from_dbus(GVariant *dbus_value, GValue *prop_value)
+{
+    gsize         length = 0;
+    const guint8 *array  = g_variant_get_fixed_array(dbus_value, &length, 1);
+    char *        str;
+
+    str = length ? nm_utils_hwaddr_ntoa(array, length) : NULL;
+    g_value_take_string(prop_value, str);
+}
+
 const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
                                         .compare_fcn = _nm_setting_property_compare_fcn_ignore,
@@ -2927,6 +2959,16 @@ const NMSettInfoPropertType nm_sett_info_propert_type_direct_string =
                                         .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
                                         .from_dbus_is_full = TRUE);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_direct_mac_address =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BYTESTRING,
+                                        .direct_type = NM_VALUE_TYPE_STRING,
+                                        .compare_fcn = _nm_setting_property_compare_fcn_direct,
+                                        .to_dbus_fcn =
+                                            _nm_setting_property_to_dbus_fcn_direct_mac_address,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                        .from_dbus_is_full           = TRUE,
+                                        .typdata_from_dbus.gprop_fcn = _nm_utils_hwaddr_from_dbus);
 
 /*****************************************************************************/
 

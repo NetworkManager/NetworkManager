@@ -1533,14 +1533,16 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * example: BSSID=00:1E:BD:64:83:21
      * ---end---
      */
-    obj_properties[PROP_BSSID] = g_param_spec_string(NM_SETTING_WIRELESS_BSSID,
-                                                     "",
-                                                     "",
-                                                     NULL,
-                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_BSSID],
-                                 &nm_sett_info_propert_type_mac_address);
+    _nm_setting_property_define_direct_mac_address(
+        properties_override,
+        obj_properties,
+        NM_SETTING_WIRELESS_BSSID,
+        PROP_BSSID,
+        NM_SETTING_PARAM_NONE,
+        NMSettingWirelessPrivate,
+        bssid,
+        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
+        .direct_has_special_setter = TRUE);
 
     /**
      * NMSettingWireless:rate:
@@ -1611,15 +1613,16 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      *    permanent MAC address exists, the MAC address initially configured on the device.
      * ---end---
      */
-    obj_properties[PROP_MAC_ADDRESS] =
-        g_param_spec_string(NM_SETTING_WIRELESS_MAC_ADDRESS,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_MAC_ADDRESS],
-                                 &nm_sett_info_propert_type_mac_address);
+    _nm_setting_property_define_direct_mac_address(
+        properties_override,
+        obj_properties,
+        NM_SETTING_WIRELESS_MAC_ADDRESS,
+        PROP_MAC_ADDRESS,
+        NM_SETTING_PARAM_NONE,
+        NMSettingWirelessPrivate,
+        device_mac_address,
+        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
+        .direct_has_special_setter = TRUE);
 
     /**
      * NMSettingWireless:cloned-mac-address:

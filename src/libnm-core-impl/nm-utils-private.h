@@ -34,8 +34,6 @@ gboolean _nm_utils_wps_method_validate(NMSettingWirelessSecurityWpsMethod wps_me
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_strdict;
 
-extern const NMSettInfoPropertType nm_sett_info_propert_type_mac_address;
-
 extern const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address;
 
 void _nm_utils_strdict_from_dbus(GVariant *dbus_value, GValue *prop_value);
