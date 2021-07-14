@@ -7,6 +7,8 @@
 
 #include <linux/pkt_sched.h>
 #include <net/if.h>
+#include <linux/if_ether.h>
+#include <linux/if_infiniband.h>
 
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-json-aux.h"
@@ -4493,7 +4495,10 @@ test_setting_metadata(void)
                     g_assert(g_variant_type_equal(sip->property_type->dbus_type, "ay"));
                     g_assert(sip->property_type->to_dbus_fcn
                              == _nm_setting_property_to_dbus_fcn_direct_mac_address);
-                    g_assert(sip->direct_has_special_setter);
+                    g_assert(NM_IN_SET((guint) sip->direct_set_string_mac_address_len,
+                                       ETH_ALEN,
+                                       8,
+                                       INFINIBAND_ALEN));
                 } else {
                     g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
                     g_assert(sip->property_type->to_dbus_fcn
@@ -4506,6 +4511,17 @@ test_setting_metadata(void)
 
             if (sip->direct_set_string_ascii_strdown)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+
+            if (sip->direct_set_string_mac_address_len != 0) {
+                g_assert(NM_IN_SET(sip->property_type,
+                                   &nm_sett_info_propert_type_direct_string,
+                                   &nm_sett_info_propert_type_direct_mac_address));
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+            }
+
+            g_assert(((sip->direct_set_string_mac_address_len != 0)
+                      + (!!sip->direct_set_string_ascii_strdown))
+                     <= 1);
 
             if (!sip->property_type->to_dbus_fcn) {
                 /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such

@@ -679,6 +679,12 @@ _property_direct_set_string(const NMSettInfoProperty *property_info, char **dst,
 {
     if (property_info->direct_set_string_ascii_strdown)
         return nm_utils_strdup_reset_take(dst, src ? g_ascii_strdown(src, -1) : NULL);
+    if (property_info->direct_set_string_mac_address_len > 0) {
+        return nm_utils_strdup_reset_take(dst,
+                                          _nm_utils_hwaddr_canonical_or_invalid(
+                                              src,
+                                              property_info->direct_set_string_mac_address_len));
+    }
     return nm_utils_strdup_reset(dst, src);
 }
 

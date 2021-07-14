@@ -1627,16 +1627,14 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      *   BRIDGE_MACADDR for bridges is an NM extension.
      * ---end---
      */
-    _nm_setting_property_define_direct_mac_address(
-        properties_override,
-        obj_properties,
-        NM_SETTING_BRIDGE_MAC_ADDRESS,
-        PROP_MAC_ADDRESS,
-        NM_SETTING_PARAM_INFERRABLE,
-        NMSettingBridgePrivate,
-        mac_address,
-        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
-        .direct_has_special_setter = TRUE);
+    _nm_setting_property_define_direct_mac_address(properties_override,
+                                                   obj_properties,
+                                                   NM_SETTING_BRIDGE_MAC_ADDRESS,
+                                                   PROP_MAC_ADDRESS,
+                                                   NM_SETTING_PARAM_INFERRABLE,
+                                                   NMSettingBridgePrivate,
+                                                   mac_address,
+                                                   .direct_set_string_mac_address_len = ETH_ALEN);
 
     /**
      * NMSettingBridge:stp:
@@ -1936,16 +1934,14 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      * example: BRIDGING_OPTS="group_address=01:80:C2:00:00:0A"
      * ---end---
      */
-    _nm_setting_property_define_direct_mac_address(
-        properties_override,
-        obj_properties,
-        NM_SETTING_BRIDGE_GROUP_ADDRESS,
-        PROP_GROUP_ADDRESS,
-        NM_SETTING_PARAM_INFERRABLE,
-        NMSettingBridgePrivate,
-        group_address,
-        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
-        .direct_has_special_setter = TRUE);
+    _nm_setting_property_define_direct_mac_address(properties_override,
+                                                   obj_properties,
+                                                   NM_SETTING_BRIDGE_GROUP_ADDRESS,
+                                                   PROP_GROUP_ADDRESS,
+                                                   NM_SETTING_PARAM_INFERRABLE,
+                                                   NMSettingBridgePrivate,
+                                                   group_address,
+                                                   .direct_set_string_mac_address_len = ETH_ALEN);
 
     /**
      * NMSettingBridge:vlan-protocol:

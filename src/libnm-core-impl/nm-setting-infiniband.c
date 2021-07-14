@@ -426,16 +426,15 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * example: HWADDR=01:02:03:04:05:06:07:08:09:0A:01:02:03:04:05:06:07:08:09:11
      * ---end---
      */
-    _nm_setting_property_define_direct_mac_address(
-        properties_override,
-        obj_properties,
-        NM_SETTING_INFINIBAND_MAC_ADDRESS,
-        PROP_MAC_ADDRESS,
-        NM_SETTING_PARAM_INFERRABLE,
-        NMSettingInfinibandPrivate,
-        mac_address,
-        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
-        .direct_has_special_setter = TRUE);
+    _nm_setting_property_define_direct_mac_address(properties_override,
+                                                   obj_properties,
+                                                   NM_SETTING_INFINIBAND_MAC_ADDRESS,
+                                                   PROP_MAC_ADDRESS,
+                                                   NM_SETTING_PARAM_INFERRABLE,
+                                                   NMSettingInfinibandPrivate,
+                                                   mac_address,
+                                                   .direct_set_string_mac_address_len =
+                                                       INFINIBAND_ALEN);
 
     /**
      * NMSettingInfiniband:mtu:
