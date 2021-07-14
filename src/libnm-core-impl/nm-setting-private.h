@@ -426,7 +426,7 @@ _nm_sett_info_property_override_create_array(void)
     return _nm_sett_info_property_override_create_array_sized(20);
 }
 
-GArray *_nm_sett_info_property_override_create_array_ip_config(void);
+GArray *_nm_sett_info_property_override_create_array_ip_config(int addr_family);
 
 void _nm_setting_class_commit(NMSettingClass *            setting_class,
                               NMMetaSettingType           meta_type,

@@ -5795,9 +5795,11 @@ ip_gateway_set(const NMSettInfoSetting * sett_info,
 }
 
 GArray *
-_nm_sett_info_property_override_create_array_ip_config(void)
+_nm_sett_info_property_override_create_array_ip_config(int addr_family)
 {
     GArray *properties_override = _nm_sett_info_property_override_create_array();
+
+    nm_assert_addr_family(addr_family);
 
     _nm_properties_override_gobj(
         properties_override,
@@ -5814,8 +5816,7 @@ _nm_sett_info_property_override_create_array_ip_config(void)
                                        .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
                                        .from_dbus_fcn = ip_gateway_set),
         .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, gateway),
-        /* The property setter for the gateway performs some normalization and is special! */
-        .direct_has_special_setter = TRUE);
+        .direct_set_string_ip_address_addr_family = addr_family);
 
     _nm_properties_override_gobj(
         properties_override,
@@ -5975,7 +5976,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 {
     NMSettingIPConfig *       setting = NM_SETTING_IP_CONFIG(object);
     NMSettingIPConfigPrivate *priv    = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    const char *              gateway;
     char **                   strv;
     guint                     i;
 
@@ -6021,12 +6021,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                                (GDestroyNotify) nm_ip_address_unref);
         break;
     case PROP_GATEWAY:
-        gateway = g_value_get_string(value);
-        g_return_if_fail(
-            !gateway
-            || nm_utils_ipaddr_is_valid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting), gateway));
         g_free(priv->gateway);
-        priv->gateway = canonicalize_ip(NM_SETTING_IP_CONFIG_GET_FAMILY(setting), gateway, TRUE);
+        priv->gateway =
+            _nm_utils_ipaddr_canonical_or_invalid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
+                                                  g_value_get_string(value));
         break;
     case PROP_ROUTES:
         g_ptr_array_unref(priv->routes);
