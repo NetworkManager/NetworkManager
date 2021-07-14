@@ -4504,6 +4504,9 @@ test_setting_metadata(void)
             } else
                 g_assert_not_reached();
 
+            if (sip->direct_set_string_ascii_strdown)
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+
             if (!sip->property_type->to_dbus_fcn) {
                 /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
                  * properties must not have a param_spec. */
