@@ -4562,11 +4562,21 @@ check_done:;
                 g_assert(sip->property_type->from_dbus_fcn
                          == _nm_setting_property_from_dbus_fcn_gprop);
             }
+            if (sip->property_type->from_dbus_direct_allow_transform) {
+                g_assert(sip->property_type->from_dbus_fcn
+                         == _nm_setting_property_from_dbus_fcn_direct);
+            }
+            if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_direct) {
+                /* for the moment, all direct properties allow transformation. */
+                g_assert(sip->property_type->from_dbus_direct_allow_transform);
+            }
+
             if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_gprop)
                 g_assert(sip->param_spec);
 
             g_assert(sip->property_type->from_dbus_is_full
                      == NM_IN_SET(sip->property_type->from_dbus_fcn,
+                                  _nm_setting_property_from_dbus_fcn_direct,
                                   _nm_setting_property_from_dbus_fcn_gprop,
                                   _nm_setting_property_from_dbus_fcn_ignore));
 
