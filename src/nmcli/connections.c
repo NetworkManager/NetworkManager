@@ -11,8 +11,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#if HAVE_EDITLINE_READLINE
+#include <editline/readline.h>
+#else
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif
 #include <fcntl.h>
 
 #include "libnm-glib-aux/nm-dbus-aux.h"
@@ -5755,6 +5759,9 @@ finish:
 /*****************************************************************************/
 /* Functions for readline TAB completion in editor */
 
+#if HAVE_EDITLINE_READLINE
+#define uuid_display_hook ((void (*)(void)) NULL)
+#else
 static void
 uuid_display_hook(char **array, int len, int max_len)
 {
@@ -5778,6 +5785,7 @@ uuid_display_hook(char **array, int len, int max_len)
     rl_display_match_list(array, len, max_len + max + 3);
     rl_forced_update_display();
 }
+#endif
 
 static char *
 gen_nmcli_cmds_menu(const char *text, int state)
@@ -6449,8 +6457,10 @@ gen_property_values(const char *text, int state)
     return nmc_rl_gen_func_basic(text, state, avals);
 }
 
+#if !HAVE_EDITLINE_READLINE
 /* from readline */
 extern int rl_complete_with_tilde_expansion;
+#endif
 
 /*
  * Attempt to complete on the contents of TEXT.  START and END show the
@@ -6478,8 +6488,10 @@ nmcli_editor_tab_completion(const char *text, int start, int end)
     /* Disable default filename completion */
     rl_attempted_completion_over = 1;
 
+#if !HAVE_EDITLINE_READLINE
     /* Enable tilde expansion when filenames are completed */
     rl_complete_with_tilde_expansion = 1;
+#endif
 
     /* Filter out possible ANSI color escape sequences */
     prompt_tmp = nmc_filter_out_colors((const char *) rl_prompt);
@@ -9613,8 +9625,10 @@ nmcli_con_tab_completion(const char *text, int start, int end)
         nmc_tab_completion.words = _meta_abstract_complete(info, text);
         generator_func           = _meta_abstract_generator;
     } else if (nm_streq0(rl_prompt, PROMPT_IMPORT_FILE)) {
-        rl_attempted_completion_over     = 0;
+        rl_attempted_completion_over = 0;
+#if !HAVE_EDITLINE_READLINE
         rl_complete_with_tilde_expansion = 1;
+#endif
     } else if (nm_streq0(rl_prompt, PROMPT_VPN_CONNECTION)) {
         generator_func = gen_vpn_ids;
     }

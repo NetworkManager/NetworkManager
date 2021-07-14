@@ -65,7 +65,16 @@ AC_DEFUN([AX_LIB_READLINE], [
   AC_CACHE_CHECK([for a readline compatible library],
                  ax_cv_lib_readline, [
     ORIG_LIBS="$LIBS"
-    for readline_lib in readline edit editline; do
+
+    search_readlines="readline edit"
+    if test "$with_readline" = "libreadline"; then
+      search_readlines="readline"
+    fi
+    if test "$with_readline" = "libedit"; then
+      search_readlines="edit"
+    fi
+    for readline_lib in $search_readlines; do
+      # prefer ncurses since we use it for nmtui too
       for termcap_lib in "" termcap curses ncurses; do
         if test -z "$termcap_lib"; then
           TRY_LIB="-l$readline_lib"
@@ -93,16 +102,33 @@ AC_DEFUN([AX_LIB_READLINE], [
     AC_SUBST(READLINE_LIBS)
     AC_DEFINE(HAVE_LIBREADLINE, 1,
               [Define if you have a readline compatible library])
-    AC_CHECK_HEADERS(readline.h readline/readline.h)
+
+    if test "$with_readline" = "libedit"; then
+      AC_DEFINE(HAVE_EDITLINE_READLINE, 1,
+              [Explicitly set to 1 when libedit shall be used])
+    else
+      AC_DEFINE(HAVE_EDITLINE_READLINE, 0,
+              [By default the libreadline is used as readline library])
+
+    fi
+
+    ORIG_LIBS="$LIBS"
+    LIBS="$ORIG_LIBS $ax_cv_lib_readline"
     AC_CACHE_CHECK([whether readline supports history],
                    ax_cv_lib_readline_history, [
       ax_cv_lib_readline_history="no"
-      AC_LINK_IFELSE([AC_LANG_CALL([], [add_history])], [ax_cv_lib_readline_history="yes"])
+      AC_LINK_IFELSE([AC_LANG_CALL([], [history_set_history_state])],
+              [ax_cv_lib_readline_history="yes"])
     ])
+    LIBS=$ORIG_LIBS
+
     if test "$ax_cv_lib_readline_history" = "yes"; then
       AC_DEFINE(HAVE_READLINE_HISTORY, 1,
-                [Define if your readline library has \`add_history'])
-      AC_CHECK_HEADERS(history.h readline/history.h)
+        [Define if your readline library has \`history_set_history_state'])
+      AC_CHECK_HEADERS(readline/history.h histedit.h)
+    else
+      AC_DEFINE(HAVE_READLINE_HISTORY, 0,
+        [Explicitly set to 0 when libreadline shall not be used])
     fi
   fi
 ])dnl

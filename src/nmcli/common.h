@@ -50,9 +50,17 @@ char *           nmc_rl_gen_func_ifnames(const char *text, int state);
 gboolean         nmc_get_in_readline(void);
 void             nmc_set_in_readline(gboolean in_readline);
 
+#if HAVE_EDITLINE_READLINE
+/* libedit has different signature for rl_startup_hook function */
+#define _NMC_RL_STARTUPHOOK_ARGS const char *c, int i
+#else
+/* By default the libreadline shall be used */
+#define _NMC_RL_STARTUPHOOK_ARGS void
+#endif
+
 /* for pre-filling a string to readline prompt */
 extern char *nmc_rl_pre_input_deftext;
-int          nmc_rl_set_deftext(void);
+int          nmc_rl_set_deftext(_NMC_RL_STARTUPHOOK_ARGS);
 
 char *nmc_parse_lldp_capabilities(guint value);
 
