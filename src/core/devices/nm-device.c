@@ -9968,6 +9968,7 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
     gboolean                    iaid_explicit;
     NMSettingConnection *       s_con;
     const NMPlatformIP6Address *ll_addr = NULL;
+    int                         ip_ifindex;
 
     g_return_val_if_fail(connection, FALSE);
 
@@ -9987,7 +9988,13 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
         return FALSE;
     }
 
-    pllink = nm_platform_link_get(nm_device_get_platform(self), nm_device_get_ip_ifindex(self));
+    ip_ifindex = nm_device_get_ip_ifindex(self);
+    if (ip_ifindex <= 0) {
+        _LOGD(LOGD_DHCP6, "can't start DHCPv6: interface is gone");
+        return FALSE;
+    }
+
+    pllink = nm_platform_link_get(nm_device_get_platform(self), ip_ifindex);
     if (pllink)
         hwaddr = nmp_link_address_get_as_bytes(&pllink->l_address);
 
@@ -9998,7 +10005,7 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
         nm_dhcp_manager_get(),
         nm_device_get_multi_index(self),
         nm_device_get_ip_iface(self),
-        nm_device_get_ip_ifindex(self),
+        ip_ifindex,
         &ll_addr->address,
         nm_connection_get_uuid(connection),
         nm_device_get_route_table(self, AF_INET6),
