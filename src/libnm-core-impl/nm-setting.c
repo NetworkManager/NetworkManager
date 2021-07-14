@@ -674,6 +674,14 @@ _nm_setting_use_legacy_property(NMSetting * setting,
 
 /*****************************************************************************/
 
+static gboolean
+_property_direct_set_string(const NMSettInfoProperty *property_info, char **dst, const char *src)
+{
+    if (property_info->direct_set_string_ascii_strdown)
+        return nm_utils_strdup_reset_take(dst, src ? g_ascii_strdown(src, -1) : NULL);
+    return nm_utils_strdup_reset(dst, src);
+}
+
 void
 _nm_setting_property_get_property_direct(GObject *   object,
                                          guint       prop_id,
@@ -755,9 +763,6 @@ _nm_setting_property_set_property_direct(GObject *     object,
 
     nm_assert(property_info->param_spec == pspec);
 
-    /* properties with special setters are not yet implemented! */
-    nm_assert(!property_info->direct_has_special_setter);
-
     switch (property_info->property_type->direct_type) {
     case NM_VALUE_TYPE_BOOL:
     {
@@ -801,13 +806,12 @@ _nm_setting_property_set_property_direct(GObject *     object,
         goto out_notify;
     }
     case NM_VALUE_TYPE_STRING:
-    {
-        char **p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
-
-        if (!nm_utils_strdup_reset(p_val, g_value_get_string(value)))
+        if (!_property_direct_set_string(
+                property_info,
+                _nm_setting_get_private(setting, sett_info, property_info->direct_offset),
+                g_value_get_string(value)))
             return;
         goto out_notify;
-    }
     default:
         goto out_fail;
     }

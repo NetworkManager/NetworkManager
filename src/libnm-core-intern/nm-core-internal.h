@@ -748,6 +748,10 @@ struct _NMSettInfoProperty {
      * the direct location. */
     guint16 direct_offset;
 
+    /* If TRUE, this is a NM_VALUE_TYPE_STRING direct property, and the setter will
+     * normalize the string via g_ascii_strdown(). */
+    bool direct_set_string_ascii_strdown : 1;
+
     /* Currently, properties that set property_type->direct_type only have to_dbus_fcn()
      * implemented "the direct way". For the property setter, they still call g_object_set().
      * In the future, also other operations, like from_dbus_fcn() should be implemented
