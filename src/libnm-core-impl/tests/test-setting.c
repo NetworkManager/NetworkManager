@@ -4573,6 +4573,14 @@ check_done:;
 
             if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_gprop)
                 g_assert(sip->param_spec);
+            if (sip->property_type->from_dbus_fcn) {
+                if (sip->property_type->direct_type != NM_VALUE_TYPE_NONE) {
+                    g_assert(NM_IN_SET(sip->property_type->from_dbus_fcn,
+                                       _nm_setting_property_from_dbus_fcn_direct_ip_config_gateway,
+                                       _nm_setting_property_from_dbus_fcn_direct_mac_address,
+                                       _nm_setting_property_from_dbus_fcn_direct));
+                }
+            }
 
             g_assert(sip->property_type->from_dbus_is_full
                      == NM_IN_SET(sip->property_type->from_dbus_fcn,
