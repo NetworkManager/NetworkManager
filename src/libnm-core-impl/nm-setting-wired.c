@@ -1409,16 +1409,14 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *    permanent MAC address exists, the MAC address initially configured on the device.
      * ---end---
      */
-    _nm_setting_property_define_direct_mac_address(
-        properties_override,
-        obj_properties,
-        NM_SETTING_WIRED_MAC_ADDRESS,
-        PROP_MAC_ADDRESS,
-        NM_SETTING_PARAM_INFERRABLE,
-        NMSettingWiredPrivate,
-        device_mac_address,
-        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
-        .direct_has_special_setter = TRUE);
+    _nm_setting_property_define_direct_mac_address(properties_override,
+                                                   obj_properties,
+                                                   NM_SETTING_WIRED_MAC_ADDRESS,
+                                                   PROP_MAC_ADDRESS,
+                                                   NM_SETTING_PARAM_INFERRABLE,
+                                                   NMSettingWiredPrivate,
+                                                   device_mac_address,
+                                                   .direct_set_string_mac_address_len = ETH_ALEN);
 
     /**
      * NMSettingWired:cloned-mac-address:

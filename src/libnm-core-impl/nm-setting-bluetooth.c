@@ -231,28 +231,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE(object);
-
-    switch (prop_id) {
-    case PROP_BDADDR:
-        g_free(priv->bdaddr);
-        priv->bdaddr = _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
-        break;
-    case PROP_TYPE:
-        g_free(priv->type);
-        priv->type = g_value_dup_string(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_bluetooth_init(NMSettingBluetooth *setting)
 {}
 
@@ -279,7 +257,7 @@ nm_setting_bluetooth_class_init(NMSettingBluetoothClass *klass)
     g_type_class_add_private(klass, sizeof(NMSettingBluetoothPrivate));
 
     object_class->get_property = _nm_setting_property_get_property_direct;
-    object_class->set_property = set_property;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify          = verify;
     setting_class->finalize_direct = TRUE;
@@ -289,16 +267,14 @@ nm_setting_bluetooth_class_init(NMSettingBluetoothClass *klass)
      *
      * The Bluetooth address of the device.
      **/
-    _nm_setting_property_define_direct_mac_address(
-        properties_override,
-        obj_properties,
-        NM_SETTING_BLUETOOTH_BDADDR,
-        PROP_BDADDR,
-        NM_SETTING_PARAM_INFERRABLE,
-        NMSettingBluetoothPrivate,
-        bdaddr,
-        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
-        .direct_has_special_setter = TRUE);
+    _nm_setting_property_define_direct_mac_address(properties_override,
+                                                   obj_properties,
+                                                   NM_SETTING_BLUETOOTH_BDADDR,
+                                                   PROP_BDADDR,
+                                                   NM_SETTING_PARAM_INFERRABLE,
+                                                   NMSettingBluetoothPrivate,
+                                                   bdaddr,
+                                                   .direct_set_string_mac_address_len = ETH_ALEN);
 
     /**
      * NMSettingBluetooth:type:

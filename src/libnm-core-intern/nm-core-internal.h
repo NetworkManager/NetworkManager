@@ -752,6 +752,12 @@ struct _NMSettInfoProperty {
      * normalize the string via g_ascii_strdown(). */
     bool direct_set_string_ascii_strdown : 1;
 
+    /* If non-zero, this is a NM_VALUE_TYPE_STRING direct property. Actually, it is
+     * a _nm_setting_property_define_direct_mac_address(), and the setter will
+     * call _nm_utils_hwaddr_canonical_or_invalid() on the string, with the specified
+     * MAC address length. */
+    guint8 direct_set_string_mac_address_len : 5;
+
     /* Currently, properties that set property_type->direct_type only have to_dbus_fcn()
      * implemented "the direct way". For the property setter, they still call g_object_set().
      * In the future, also other operations, like from_dbus_fcn() should be implemented

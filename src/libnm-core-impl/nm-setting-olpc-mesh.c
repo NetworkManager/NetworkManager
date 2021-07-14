@@ -275,16 +275,14 @@ nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
      *
      * This is currently only implemented by dhclient DHCP plugin.
      **/
-    _nm_setting_property_define_direct_mac_address(
-        properties_override,
-        obj_properties,
-        NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
-        PROP_DHCP_ANYCAST_ADDRESS,
-        NM_SETTING_PARAM_NONE,
-        NMSettingOlpcMeshPrivate,
-        dhcp_anycast_addr,
-        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
-        .direct_has_special_setter = TRUE);
+    _nm_setting_property_define_direct_mac_address(properties_override,
+                                                   obj_properties,
+                                                   NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
+                                                   PROP_DHCP_ANYCAST_ADDRESS,
+                                                   NM_SETTING_PARAM_NONE,
+                                                   NMSettingOlpcMeshPrivate,
+                                                   dhcp_anycast_addr,
+                                                   .direct_set_string_mac_address_len = ETH_ALEN);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

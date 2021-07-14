@@ -201,37 +201,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingWpanPrivate *priv = NM_SETTING_WPAN_GET_PRIVATE(object);
-
-    switch (prop_id) {
-    case PROP_MAC_ADDRESS:
-        g_free(priv->mac_address);
-        priv->mac_address =
-            _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), IEEE802154_ADDR_LEN);
-        break;
-    case PROP_PAN_ID:
-        priv->pan_id = g_value_get_uint(value);
-        break;
-    case PROP_SHORT_ADDRESS:
-        priv->short_address = g_value_get_uint(value);
-        break;
-    case PROP_PAGE:
-        priv->page = g_value_get_int(value);
-        break;
-    case PROP_CHANNEL:
-        priv->channel = g_value_get_int(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_wpan_init(NMSettingWpan *setting)
 {}
 
@@ -260,7 +229,7 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
     g_type_class_add_private(setting_class, sizeof(NMSettingWpanPrivate));
 
     object_class->get_property = _nm_setting_property_get_property_direct;
-    object_class->set_property = set_property;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify          = verify;
     setting_class->finalize_direct = TRUE;
@@ -278,16 +247,15 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
      *   (e.g. 76:d8:9b:87:66:60:84:ee).
      * ---end---
      */
-    _nm_setting_property_define_direct_string(
-        properties_override,
-        obj_properties,
-        NM_SETTING_WPAN_MAC_ADDRESS,
-        PROP_MAC_ADDRESS,
-        NM_SETTING_PARAM_NONE,
-        NMSettingWpanPrivate,
-        mac_address,
-        /* it's special, because it uses _nm_utils_hwaddr_canonical_or_invalid(). */
-        .direct_has_special_setter = TRUE);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WPAN_MAC_ADDRESS,
+                                              PROP_MAC_ADDRESS,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingWpanPrivate,
+                                              mac_address,
+                                              .direct_set_string_mac_address_len =
+                                                  IEEE802154_ADDR_LEN);
 
     /**
      * NMSettingWpan:pan-id:
