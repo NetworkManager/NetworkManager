@@ -107,11 +107,16 @@ _bad_random_init_seed(BadRandSeed *seed)
     }
 
 #if HAVE_GETRANDOM
-    /* This is likely to fail, because we already failed a moment earlier. Still, give
-     * it a try. */
-    (void) getrandom(seed->getrandom_buf,
-                     sizeof(seed->getrandom_buf),
-                     GRND_INSECURE | GRND_NONBLOCK);
+    {
+        ssize_t r;
+
+        /* This is likely to fail, because we already failed a moment earlier. Still, give
+         * it a try. */
+        r = getrandom(seed->getrandom_buf,
+                      sizeof(seed->getrandom_buf),
+                      GRND_INSECURE | GRND_NONBLOCK);
+        (void) r;
+    }
 #endif
 
     seed->now_bootime = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
