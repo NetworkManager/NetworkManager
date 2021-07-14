@@ -382,6 +382,15 @@ gboolean _nm_setting_property_from_dbus_fcn_ignore(const NMSettInfoSetting * set
                                                    NMSettingParseFlags       parse_flags,
                                                    GError **                 error);
 
+gboolean
+_nm_setting_property_from_dbus_fcn_direct_mac_address(const NMSettInfoSetting * sett_info,
+                                                      const NMSettInfoProperty *property_info,
+                                                      NMSetting *               setting,
+                                                      GVariant *                connection_dict,
+                                                      GVariant *                value,
+                                                      NMSettingParseFlags       parse_flags,
+                                                      GError **                 error);
+
 gboolean _nm_setting_property_from_dbus_fcn_gprop(const NMSettInfoSetting * sett_info,
                                                   const NMSettInfoProperty *property_info,
                                                   NMSetting *               setting,
