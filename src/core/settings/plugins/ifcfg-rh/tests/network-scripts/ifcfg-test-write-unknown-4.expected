@@ -13,8 +13,10 @@
 #L2
 
 METRIC1=''
-METRIC2=$'\U0x'
-METRIC3=$'x\U0'
+METRIC2=
+#NM: METRIC2=$'\U0x'
+METRIC3=
+#NM: METRIC3=$'x\U0'
 
 #L4
 IPADDR=set-by-test1
