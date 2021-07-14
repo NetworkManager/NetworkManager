@@ -1315,35 +1315,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_fcn_vlans(const NMSettInfoSetting * sett_info,
+                  const NMSettInfoProperty *property_info,
+                  NMConnection *            con_a,
+                  NMSetting *               set_a,
+                  NMConnection *            con_b,
+                  NMSetting *               set_b,
+                  NMSettingCompareFlags     flags)
 {
-    NMSettingBridgePrivate *priv_a;
-    NMSettingBridgePrivate *priv_b;
-    guint                   i;
-
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_BRIDGE_VLANS)) {
-        if (set_b) {
-            priv_a = NM_SETTING_BRIDGE_GET_PRIVATE(set_a);
-            priv_b = NM_SETTING_BRIDGE_GET_PRIVATE(set_b);
-
-            if (priv_a->vlans->len != priv_b->vlans->len)
-                return FALSE;
-            for (i = 0; i < priv_a->vlans->len; i++) {
-                if (nm_bridge_vlan_cmp(priv_a->vlans->pdata[i], priv_b->vlans->pdata[i]))
-                    return FALSE;
-            }
-        }
-        return TRUE;
+    if (set_b) {
+        return _nm_utils_bridge_compare_vlans(NM_SETTING_BRIDGE_GET_PRIVATE(set_a)->vlans,
+                                              NM_SETTING_BRIDGE_GET_PRIVATE(set_b)->vlans);
     }
-
-    return NM_SETTING_CLASS(nm_setting_bridge_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -1611,8 +1595,7 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    setting_class->compare_property = compare_property;
-    setting_class->verify           = verify;
+    setting_class->verify = verify;
 
     /**
      * NMSettingBridge:mac-address:
@@ -1914,9 +1897,13 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                     G_TYPE_PTR_ARRAY,
                                                     G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
                                                         | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_VLANS],
-                                 &nm_sett_info_propert_type_bridge_vlans);
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_VLANS],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = _nm_utils_bridge_vlans_to_dbus,
+                                       .compare_fcn   = compare_fcn_vlans,
+                                       .from_dbus_fcn = _nm_utils_bridge_vlans_from_dbus, ));
 
     /* ---dbus---
      * property: interface-name

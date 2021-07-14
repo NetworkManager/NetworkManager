@@ -3094,8 +3094,7 @@ test_setting_new_from_dbus_bad(void)
                                                        "i",
                                                        10););
     conn = _connection_new_from_dbus(dict, &error);
-    g_assert(conn);
-    g_assert_no_error(error);
+    nmtst_assert_success(conn, error);
     setting = nm_connection_get_setting(conn, NM_TYPE_SETTING_WIRELESS);
     g_assert(setting);
     g_assert_cmpint(nm_setting_wireless_get_rate(NM_SETTING_WIRELESS(setting)), ==, 10);

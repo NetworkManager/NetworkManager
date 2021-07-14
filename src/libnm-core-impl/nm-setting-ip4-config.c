@@ -8,6 +8,7 @@
 #include "nm-setting-ip4-config.h"
 
 #include "nm-setting-private.h"
+#include "nm-utils-private.h"
 
 /**
  * SECTION:nm-setting-ip4-config
@@ -321,9 +322,21 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GVariant *
-ip4_dns_to_dbus(const GValue *prop_value)
+ip4_dns_to_dbus(const NMSettInfoSetting *               sett_info,
+                const NMSettInfoProperty *              property_info,
+                NMConnection *                          connection,
+                NMSetting *                             setting,
+                NMConnectionSerializationFlags          flags,
+                const NMConnectionSerializationOptions *options)
 {
-    return nm_utils_ip4_dns_to_variant(g_value_get_boxed(prop_value));
+    GPtrArray *dns;
+
+    dns = _nm_setting_ip_config_get_dns_array(NM_SETTING_IP_CONFIG(setting));
+
+    if (nm_g_ptr_array_len(dns) == 0)
+        return NULL;
+
+    return _nm_utils_ip4_dns_to_variant((const char *const *) dns->pdata, dns->len);
 }
 
 static void
@@ -334,7 +347,7 @@ ip4_dns_from_dbus(GVariant *dbus_value, GValue *prop_value)
 
 static GVariant *
 ip4_addresses_get(const NMSettInfoSetting *               sett_info,
-                  guint                                   property_idx,
+                  const NMSettInfoProperty *              property_info,
                   NMConnection *                          connection,
                   NMSetting *                             setting,
                   NMConnectionSerializationFlags          flags,
@@ -349,12 +362,13 @@ ip4_addresses_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip4_addresses_set(NMSetting *         setting,
-                  GVariant *          connection_dict,
-                  const char *        property,
-                  GVariant *          value,
-                  NMSettingParseFlags parse_flags,
-                  GError **           error)
+ip4_addresses_set(const NMSettInfoSetting * sett_info,
+                  const NMSettInfoProperty *property_info,
+                  NMSetting *               setting,
+                  GVariant *                connection_dict,
+                  GVariant *                value,
+                  NMSettingParseFlags       parse_flags,
+                  GError **                 error)
 {
     GPtrArray *addrs;
     GVariant * s_ip4;
@@ -394,7 +408,7 @@ ip4_addresses_set(NMSetting *         setting,
 
 static GVariant *
 ip4_address_labels_get(const NMSettInfoSetting *               sett_info,
-                       guint                                   property_idx,
+                       const NMSettInfoProperty *              property_info,
                        NMConnection *                          connection,
                        NMSetting *                             setting,
                        NMConnectionSerializationFlags          flags,
@@ -438,7 +452,7 @@ ip4_address_labels_get(const NMSettInfoSetting *               sett_info,
 
 static GVariant *
 ip4_address_data_get(const NMSettInfoSetting *               sett_info,
-                     guint                                   property_idx,
+                     const NMSettInfoProperty *              property_info,
                      NMConnection *                          connection,
                      NMSetting *                             setting,
                      NMConnectionSerializationFlags          flags,
@@ -454,12 +468,13 @@ ip4_address_data_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip4_address_data_set(NMSetting *         setting,
-                     GVariant *          connection_dict,
-                     const char *        property,
-                     GVariant *          value,
-                     NMSettingParseFlags parse_flags,
-                     GError **           error)
+ip4_address_data_set(const NMSettInfoSetting * sett_info,
+                     const NMSettInfoProperty *property_info,
+                     NMSetting *               setting,
+                     GVariant *                connection_dict,
+                     GVariant *                value,
+                     NMSettingParseFlags       parse_flags,
+                     GError **                 error)
 {
     GPtrArray *addrs;
 
@@ -477,7 +492,7 @@ ip4_address_data_set(NMSetting *         setting,
 
 static GVariant *
 ip4_routes_get(const NMSettInfoSetting *               sett_info,
-               guint                                   property_idx,
+               const NMSettInfoProperty *              property_info,
                NMConnection *                          connection,
                NMSetting *                             setting,
                NMConnectionSerializationFlags          flags,
@@ -490,12 +505,13 @@ ip4_routes_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip4_routes_set(NMSetting *         setting,
-               GVariant *          connection_dict,
-               const char *        property,
-               GVariant *          value,
-               NMSettingParseFlags parse_flags,
-               GError **           error)
+ip4_routes_set(const NMSettInfoSetting * sett_info,
+               const NMSettInfoProperty *property_info,
+               NMSetting *               setting,
+               GVariant *                connection_dict,
+               GVariant *                value,
+               NMSettingParseFlags       parse_flags,
+               GError **                 error)
 {
     GPtrArray *routes;
 
@@ -505,14 +521,14 @@ ip4_routes_set(NMSetting *         setting,
         return TRUE;
 
     routes = nm_utils_ip4_routes_from_variant(value);
-    g_object_set(setting, property, routes, NULL);
+    g_object_set(setting, property_info->name, routes, NULL);
     g_ptr_array_unref(routes);
     return TRUE;
 }
 
 static GVariant *
 ip4_route_data_get(const NMSettInfoSetting *               sett_info,
-                   guint                                   property_idx,
+                   const NMSettInfoProperty *              property_info,
                    NMConnection *                          connection,
                    NMSetting *                             setting,
                    NMConnectionSerializationFlags          flags,
@@ -528,12 +544,13 @@ ip4_route_data_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip4_route_data_set(NMSetting *         setting,
-                   GVariant *          connection_dict,
-                   const char *        property,
-                   GVariant *          value,
-                   NMSettingParseFlags parse_flags,
-                   GError **           error)
+ip4_route_data_set(const NMSettInfoSetting * sett_info,
+                   const NMSettInfoProperty *property_info,
+                   NMSetting *               setting,
+                   GVariant *                connection_dict,
+                   GVariant *                value,
+                   NMSettingParseFlags       parse_flags,
+                   GError **                 error)
 {
     GPtrArray *routes;
 
@@ -955,9 +972,12 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
-        NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("au"),
-                                        .gprop_from_dbus_fcn = ip4_dns_from_dbus, ),
-        .to_dbus_data.gprop_to_dbus_fcn = ip4_dns_to_dbus);
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("au"),
+                                       .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                       .to_dbus_fcn = ip4_dns_to_dbus,
+                                       .typdata_from_dbus.gprop_fcn = ip4_dns_from_dbus,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE), );
 
     /* ---dbus---
      * property: addresses
@@ -986,12 +1006,14 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
                                        .to_dbus_fcn   = ip4_addresses_get,
+                                       .compare_fcn   = _nm_setting_ip_config_compare_fcn_addresses,
                                        .from_dbus_fcn = ip4_addresses_set, ));
     _nm_properties_override_dbus(
         properties_override,
         "address-labels",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
-                                       .to_dbus_fcn = ip4_address_labels_get, ));
+                                       .to_dbus_fcn = ip4_address_labels_get,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_ignore, ));
 
     /* ---dbus---
      * property: address-data
@@ -1007,6 +1029,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         "address-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = ip4_address_data_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                        .from_dbus_fcn = ip4_address_data_set, ));
 
     /* ---dbus---
@@ -1040,6 +1063,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
                                        .to_dbus_fcn   = ip4_routes_get,
+                                       .compare_fcn   = _nm_setting_ip_config_compare_fcn_routes,
                                        .from_dbus_fcn = ip4_routes_set, ));
 
     /* ---dbus---
@@ -1060,6 +1084,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         "route-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = ip4_route_data_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                        .from_dbus_fcn = ip4_route_data_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);

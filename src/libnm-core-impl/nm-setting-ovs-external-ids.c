@@ -387,31 +387,26 @@ connection_type_is_good:
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_fcn_data(const NMSettInfoSetting * sett_info,
+                 const NMSettInfoProperty *property_info,
+                 NMConnection *            con_a,
+                 NMSetting *               set_a,
+                 NMConnection *            con_b,
+                 NMSetting *               set_b,
+                 NMSettingCompareFlags     flags)
 {
     NMSettingOvsExternalIDsPrivate *priv;
     NMSettingOvsExternalIDsPrivate *pri2;
 
-    if (nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_OVS_EXTERNAL_IDS_DATA)) {
-        if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
-            return NM_TERNARY_DEFAULT;
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
+        return NM_TERNARY_DEFAULT;
 
-        if (!set_b)
-            return TRUE;
+    if (!set_b)
+        return TRUE;
 
-        priv = NM_SETTING_OVS_EXTERNAL_IDS_GET_PRIVATE(NM_SETTING_OVS_EXTERNAL_IDS(set_a));
-        pri2 = NM_SETTING_OVS_EXTERNAL_IDS_GET_PRIVATE(NM_SETTING_OVS_EXTERNAL_IDS(set_b));
-        return nm_utils_hashtable_equal(priv->data, pri2->data, TRUE, g_str_equal);
-    }
-
-    return NM_SETTING_CLASS(nm_setting_ovs_external_ids_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+    priv = NM_SETTING_OVS_EXTERNAL_IDS_GET_PRIVATE(NM_SETTING_OVS_EXTERNAL_IDS(set_a));
+    pri2 = NM_SETTING_OVS_EXTERNAL_IDS_GET_PRIVATE(NM_SETTING_OVS_EXTERNAL_IDS(set_b));
+    return nm_utils_hashtable_equal(priv->data, pri2->data, TRUE, g_str_equal);
 }
 
 /*****************************************************************************/
@@ -523,8 +518,7 @@ nm_setting_ovs_external_ids_class_init(NMSettingOvsExternalIDsClass *klass)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    setting_class->compare_property = compare_property;
-    setting_class->verify           = verify;
+    setting_class->verify = verify;
 
     /**
      * NMSettingOvsExternalIDs:data: (type GHashTable(utf8,utf8))
@@ -538,9 +532,16 @@ nm_setting_ovs_external_ids_class_init(NMSettingOvsExternalIDsClass *klass)
                                                    "",
                                                    G_TYPE_HASH_TABLE,
                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_DATA],
-                                 &nm_sett_info_propert_type_strdict);
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DATA],
+        NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("a{ss}"),
+                                        .typdata_from_dbus.gprop_fcn = _nm_utils_strdict_from_dbus,
+                                        .typdata_to_dbus.gprop_type =
+                                            NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT,
+                                        .compare_fcn   = compare_fcn_data,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                        .from_dbus_is_full = TRUE));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

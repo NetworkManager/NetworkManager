@@ -622,7 +622,7 @@ nm_setting_connection_get_timestamp(NMSettingConnection *setting)
 
 static GVariant *
 _to_dbus_fcn_timestamp(const NMSettInfoSetting *               sett_info,
-                       guint                                   property_idx,
+                       const NMSettInfoProperty *              property_info,
                        NMConnection *                          connection,
                        NMSetting *                             setting,
                        NMConnectionSerializationFlags          flags,
@@ -1558,24 +1558,45 @@ nm_setting_connection_no_interface_name(NMSetting *         setting,
 }
 
 static NMTernary
-compare_property(const NMSettInfoSetting *sett_info,
-                 guint                    property_idx,
-                 NMConnection *           con_a,
-                 NMSetting *              set_a,
-                 NMConnection *           con_b,
-                 NMSetting *              set_b,
-                 NMSettingCompareFlags    flags)
+compare_fcn_id(const NMSettInfoSetting * sett_info,
+               const NMSettInfoProperty *property_info,
+               NMConnection *            con_a,
+               NMSetting *               set_a,
+               NMConnection *            con_b,
+               NMSetting *               set_b,
+               NMSettingCompareFlags     flags)
 {
-    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID)
-        && nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_CONNECTION_ID))
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID))
         return NM_TERNARY_DEFAULT;
 
-    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP)
-        && nm_streq(sett_info->property_infos[property_idx].name, NM_SETTING_CONNECTION_TIMESTAMP))
+    return _nm_setting_property_compare_fcn_direct(sett_info,
+                                                   property_info,
+                                                   con_a,
+                                                   set_a,
+                                                   con_b,
+                                                   set_b,
+                                                   flags);
+}
+
+static NMTernary
+compare_fcn_timestamp(const NMSettInfoSetting * sett_info,
+                      const NMSettInfoProperty *property_info,
+                      NMConnection *            con_a,
+                      NMSetting *               set_a,
+                      NMConnection *            con_b,
+                      NMSetting *               set_b,
+                      NMSettingCompareFlags     flags)
+{
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP))
         return NM_TERNARY_DEFAULT;
 
-    return NM_SETTING_CLASS(nm_setting_connection_parent_class)
-        ->compare_property(sett_info, property_idx, con_a, set_a, con_b, set_b, flags);
+    return _nm_setting_property_compare_fcn_default(sett_info,
+                                                    property_info,
+                                                    con_a,
+                                                    set_a,
+                                                    con_b,
+                                                    set_b,
+                                                    flags);
 }
 
 /*****************************************************************************/
@@ -1856,8 +1877,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    setting_class->verify           = verify;
-    setting_class->compare_property = compare_property;
+    setting_class->verify = verify;
 
     /**
      * NMSettingConnection:id:
@@ -1871,13 +1891,21 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * description: User friendly name for the connection profile.
      * ---end---
      */
-    _nm_setting_property_define_direct_string(properties_override,
-                                              obj_properties,
-                                              NM_SETTING_CONNECTION_ID,
-                                              PROP_ID,
-                                              NM_SETTING_PARAM_FUZZY_IGNORE,
-                                              NMSettingConnectionPrivate,
-                                              id);
+    _nm_setting_property_define_direct_string_full(
+        properties_override,
+        obj_properties,
+        NM_SETTING_CONNECTION_ID,
+        PROP_ID,
+        NM_SETTING_PARAM_FUZZY_IGNORE,
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
+                                       .direct_type   = NM_VALUE_TYPE_STRING,
+                                       .compare_fcn   = compare_fcn_id,
+                                       .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE),
+
+        NMSettingConnectionPrivate,
+        id);
 
     /**
      * NMSettingConnection:uuid:
@@ -1996,9 +2024,12 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
         NM_SETTING_PARAM_INFERRABLE,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
                                        .direct_type = NM_VALUE_TYPE_STRING,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_direct,
                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
                                        .missing_from_dbus_fcn =
-                                           nm_setting_connection_no_interface_name),
+                                           nm_setting_connection_no_interface_name,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE),
         NMSettingConnectionPrivate,
         interface_name);
 
@@ -2196,7 +2227,10 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
         properties_override,
         obj_properties[PROP_TIMESTAMP],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_UINT64,
-                                       .to_dbus_fcn = _to_dbus_fcn_timestamp, ));
+                                       .compare_fcn   = compare_fcn_timestamp,
+                                       .to_dbus_fcn   = _to_dbus_fcn_timestamp,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /**
      * NMSettingConnection:read-only:

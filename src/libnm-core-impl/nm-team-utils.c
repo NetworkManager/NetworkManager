@@ -2729,9 +2729,9 @@ _nm_setting_get_team_setting(struct _NMSetting *setting)
     return _nm_setting_team_port_get_team_setting(NM_SETTING_TEAM_PORT(setting));
 }
 
-static GVariant *
+GVariant *
 _nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_info,
-                                   guint                                   property_idx,
+                                   const NMSettInfoProperty *              property_info,
                                    NMConnection *                          connection,
                                    NMSetting *                             setting,
                                    NMConnectionSerializationFlags          flags,
@@ -2739,8 +2739,7 @@ _nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_
 {
     NMTeamSetting *     self = _nm_setting_get_team_setting(setting);
     const TeamAttrData *attr_data =
-        _team_attr_data_get(self->d.is_port,
-                            sett_info->property_infos[property_idx].param_spec->param_id);
+        _team_attr_data_get(self->d.is_port, property_info->param_spec->param_id);
 
     if (attr_data->team_attr == NM_TEAM_ATTRIBUTE_CONFIG) {
         const char *config;
@@ -2779,7 +2778,7 @@ _nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_
     return NULL;
 }
 
-static void
+void
 _nm_team_settings_property_from_dbus_link_watchers(GVariant *dbus_value, GValue *prop_value)
 {
     g_value_take_boxed(prop_value,
@@ -2788,25 +2787,31 @@ _nm_team_settings_property_from_dbus_link_watchers(GVariant *dbus_value, GValue 
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_b =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,
-                                        .to_dbus_fcn = _nm_team_settings_property_to_dbus, );
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                        .to_dbus_fcn   = _nm_team_settings_property_to_dbus,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                        .from_dbus_is_full = TRUE);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_i =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_INT32,
-                                        .to_dbus_fcn = _nm_team_settings_property_to_dbus, );
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                        .to_dbus_fcn   = _nm_team_settings_property_to_dbus,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                        .from_dbus_is_full = TRUE);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_s =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
-                                        .to_dbus_fcn = _nm_team_settings_property_to_dbus, );
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                        .to_dbus_fcn   = _nm_team_settings_property_to_dbus,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                        .from_dbus_is_full = TRUE);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_as =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(NM_G_VARIANT_TYPE("as"),
-                                        .to_dbus_fcn = _nm_team_settings_property_to_dbus, );
-
-const NMSettInfoPropertType nm_sett_info_propert_type_team_link_watchers =
-    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(NM_G_VARIANT_TYPE("aa{sv}"),
-                                        .to_dbus_fcn = _nm_team_settings_property_to_dbus,
-                                        .gprop_from_dbus_fcn =
-                                            _nm_team_settings_property_from_dbus_link_watchers, );
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                        .to_dbus_fcn   = _nm_team_settings_property_to_dbus,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                        .from_dbus_is_full = TRUE);
 
 /*****************************************************************************/
 
