@@ -3648,6 +3648,23 @@ nm_utils_wifi_strength_bars(guint8 strength)
         return "    ";
 }
 
+gboolean
+_nm_property_variant_to_gvalue(GVariant *src_value, GValue *dst_value)
+{
+    GValue   tmp = G_VALUE_INIT;
+    gboolean success;
+
+    g_dbus_gvariant_to_gvalue(src_value, &tmp);
+    if (G_VALUE_TYPE(&tmp) == G_VALUE_TYPE(dst_value)) {
+        *dst_value = tmp;
+        return TRUE;
+    }
+
+    success = g_value_transform(&tmp, dst_value);
+    g_value_unset(&tmp);
+    return success;
+}
+
 /**
  * nm_utils_hwaddr_len:
  * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or

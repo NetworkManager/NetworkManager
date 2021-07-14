@@ -1232,28 +1232,18 @@ set_property_from_dbus(const NMSettInfoProperty *property_info,
                                   property_info->property_type->dbus_type))
             return FALSE;
         property_info->property_type->typdata_from_dbus.gprop_fcn(src_value, dst_value);
-    } else if (dst_value->g_type == G_TYPE_BYTES) {
+        return TRUE;
+    }
+
+    if (dst_value->g_type == G_TYPE_BYTES) {
         if (!g_variant_is_of_type(src_value, G_VARIANT_TYPE_BYTESTRING))
             return FALSE;
 
         _nm_utils_bytes_from_dbus(src_value, dst_value);
-    } else {
-        GValue tmp = G_VALUE_INIT;
-
-        g_dbus_gvariant_to_gvalue(src_value, &tmp);
-        if (G_VALUE_TYPE(&tmp) == G_VALUE_TYPE(dst_value))
-            *dst_value = tmp;
-        else {
-            gboolean success;
-
-            success = g_value_transform(&tmp, dst_value);
-            g_value_unset(&tmp);
-            if (!success)
-                return FALSE;
-        }
+        return TRUE;
     }
 
-    return TRUE;
+    return _nm_property_variant_to_gvalue(src_value, dst_value);
 }
 
 /**
