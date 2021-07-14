@@ -172,6 +172,7 @@ void n_dhcp4_client_lease_get_basetime(NDhcp4ClientLease *lease, uint64_t *ns_ba
 void n_dhcp4_client_lease_get_lifetime(NDhcp4ClientLease *lease, uint64_t *ns_lifetimep);
 int n_dhcp4_client_lease_query(NDhcp4ClientLease *lease, uint8_t option, uint8_t **datap, size_t *n_datap);
 int n_dhcp4_client_lease_get_server_identifier(NDhcp4ClientLease *lease, struct in_addr *addr);
+int n_dhcp4_client_lease_get_file(NDhcp4ClientLease *lease, const char **file);
 
 int n_dhcp4_client_lease_select(NDhcp4ClientLease *lease);
 int n_dhcp4_client_lease_accept(NDhcp4ClientLease *lease);
