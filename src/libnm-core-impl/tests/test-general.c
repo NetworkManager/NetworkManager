@@ -10558,6 +10558,60 @@ test_strsplit_quoted(void)
 /*****************************************************************************/
 
 static void
+test_nm_property_variant_to_gvalue(void)
+{
+#define _test_variant_to_gvalue_bad(variant, gtype)                                     \
+    G_STMT_START                                                                        \
+    {                                                                                   \
+        gs_unref_variant GVariant * _variant = (variant);                               \
+        GType                       _gtype   = (gtype);                                 \
+        nm_auto_unset_gvalue GValue _gvalue  = G_VALUE_INIT;                            \
+                                                                                        \
+        g_value_init(&_gvalue, _gtype);                                                 \
+        g_assert_cmpint(_nm_property_variant_to_gvalue(_variant, &_gvalue), ==, FALSE); \
+    }                                                                                   \
+    G_STMT_END
+
+#define _test_variant_to_gvalue(variant, gtype, check)                                 \
+    G_STMT_START                                                                       \
+    {                                                                                  \
+        gs_unref_variant GVariant * _variant = (variant);                              \
+        GType                       _gtype   = (gtype);                                \
+        nm_auto_unset_gvalue GValue _gvalue  = G_VALUE_INIT;                           \
+        _nm_unused GValue *const gg          = &_gvalue;                               \
+                                                                                       \
+        g_value_init(&_gvalue, _gtype);                                                \
+        g_assert_cmpint(_nm_property_variant_to_gvalue(_variant, &_gvalue), ==, TRUE); \
+        check;                                                                         \
+    }                                                                                  \
+    G_STMT_END
+
+#define _test_variant_to_gvalue_int(variant, gtype, gvalue_get, expected) \
+    _test_variant_to_gvalue((variant), (gtype), g_assert_cmpint(gvalue_get(gg), ==, (expected)))
+
+    _test_variant_to_gvalue_bad(g_variant_new_string(""), G_TYPE_BOOLEAN);
+    _test_variant_to_gvalue(g_variant_new_string(""),
+                            G_TYPE_STRING,
+                            g_assert_cmpstr(g_value_get_string(gg), ==, ""));
+    _test_variant_to_gvalue_int(g_variant_new_boolean(FALSE),
+                                G_TYPE_BOOLEAN,
+                                g_value_get_boolean,
+                                FALSE);
+    _test_variant_to_gvalue_int(g_variant_new_boolean(TRUE),
+                                G_TYPE_BOOLEAN,
+                                g_value_get_boolean,
+                                TRUE);
+    _test_variant_to_gvalue_int(g_variant_new_int32(0), G_TYPE_BOOLEAN, g_value_get_boolean, FALSE);
+    _test_variant_to_gvalue_int(g_variant_new_int32(1), G_TYPE_BOOLEAN, g_value_get_boolean, 1);
+    _test_variant_to_gvalue_int(g_variant_new_int32(2), G_TYPE_BOOLEAN, g_value_get_boolean, 1);
+    _test_variant_to_gvalue_int(g_variant_new_byte(0), G_TYPE_BOOLEAN, g_value_get_boolean, 0);
+    _test_variant_to_gvalue_int(g_variant_new_byte(1), G_TYPE_BOOLEAN, g_value_get_boolean, 1);
+    _test_variant_to_gvalue_int(g_variant_new_byte(2), G_TYPE_BOOLEAN, g_value_get_boolean, 1);
+}
+
+/*****************************************************************************/
+
+static void
 _do_wifi_ghz_freqs(const guint *freqs, const char *band)
 {
     int len;
@@ -10875,6 +10929,9 @@ main(int argc, char **argv)
                     test_setting_connection_permissions_helpers);
     g_test_add_func("/core/general/test_setting_connection_permissions_property",
                     test_setting_connection_permissions_property);
+
+    g_test_add_func("/core/general/test_nm_property_variant_to_gvalue",
+                    test_nm_property_variant_to_gvalue);
 
     g_test_add_func("/core/general/test_connection_compare_same", test_connection_compare_same);
     g_test_add_func("/core/general/test_connection_compare_key_only_in_a",
