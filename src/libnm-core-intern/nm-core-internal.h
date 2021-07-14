@@ -701,6 +701,13 @@ typedef struct {
      *   from_dbus_fcn() are ignored. If true, then error are propagated. */
     bool from_dbus_is_full : 1;
 
+    /* Only if from_dbus_fcn is set to _nm_setting_property_from_dbus_fcn_direct.
+     * Historically, libnm used g_dbus_gvariant_to_gvalue() and g_value_transform() to
+     * convert from D-Bus to the GObject property. Thereby, various transformations are
+     * allowed and supported. If this is TRUE, then such transformations are still
+     * allowed for backward compatibility. */
+    bool from_dbus_direct_allow_transform : 1;
+
     /* compare_fcn() returns a ternary, where DEFAULT means that the property should not
      * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
      * equal/not-equal.
@@ -720,12 +727,10 @@ typedef struct {
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
 
     struct {
-        union {
-            /* If from_dbus_fcn is set to _nm_setting_property_from_dbus_fcn_gprop,
-             * then this is an optional handler for converting between GVariant and
-             * GValue. */
-            NMSettInfoPropGPropFromDBusFcn gprop_fcn;
-        };
+        /* Only if from_dbus_fcn is set to _nm_setting_property_from_dbus_fcn_gprop.
+         * This is an optional handler for converting between GVariant and
+         * GValue. */
+        NMSettInfoPropGPropFromDBusFcn gprop_fcn;
     } typdata_from_dbus;
 
     struct {

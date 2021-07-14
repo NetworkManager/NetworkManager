@@ -1894,9 +1894,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                        .direct_type   = NM_VALUE_TYPE_STRING,
                                        .compare_fcn   = compare_fcn_id,
                                        .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
-                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
-                                       .from_dbus_is_full = TRUE),
-
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,
+                                       .from_dbus_is_full                = TRUE,
+                                       .from_dbus_direct_allow_transform = TRUE),
         NMSettingConnectionPrivate,
         id);
 
@@ -2021,8 +2021,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
                                        .missing_from_dbus_fcn =
                                            nm_setting_connection_no_interface_name,
-                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
-                                       .from_dbus_is_full = TRUE),
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,
+                                       .from_dbus_is_full                = TRUE,
+                                       .from_dbus_direct_allow_transform = TRUE),
         NMSettingConnectionPrivate,
         interface_name);
 
