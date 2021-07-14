@@ -270,6 +270,42 @@ _c_public_ int n_dhcp4_client_lease_get_server_identifier(NDhcp4ClientLease *lea
 }
 
 /**
+ * n_dhcp4_client_lease_get_file() - query the lease for the boot file name
+ * @lease:                      the lease to operate on
+ * @file:                       return argument for the file name
+ *
+ * Query the lease for the boot file name from the DHCP header. The file name
+ * is returned as a NULL-terminated string.
+ *
+ * Return: 0 on success,
+ *         N_DHCP4_E_UNSET if the lease does not contain a file name, or
+ *         N_DCHP4_E_INTERNAL if the file name is invalid.
+ */
+_c_public_ int n_dhcp4_client_lease_get_file(NDhcp4ClientLease *lease, const char **file) {
+        NDhcp4Message *message;
+
+        if (lease->message->options[N_DHCP4_OPTION_OVERLOAD].size > 0
+            && ((*lease->message->options[N_DHCP4_OPTION_OVERLOAD].value) & N_DHCP4_OVERLOAD_FILE)) {
+            /* The field is overloaded to contain other options */
+            return N_DHCP4_E_UNSET;
+        }
+
+        message = &lease->message->message;
+
+        if (message->file[0] == '\0')
+            return N_DHCP4_E_UNSET;
+
+        if (!memchr(message->file, '\0', sizeof(message->file))) {
+            /* The field is NULL-terminated (RFC 2131 section 2) */
+            return N_DHCP4_E_INTERNAL;
+        }
+
+        *file = (const char *) message->file;
+
+        return 0;
+}
+
+/**
  * n_dhcp4_client_lease_query() - query the lease for an option
  * @lease:                      the lease to operate on
  * @option:                     the DHCP4 option code
