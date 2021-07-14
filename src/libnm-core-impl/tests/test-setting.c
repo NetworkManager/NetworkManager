@@ -4520,7 +4520,8 @@ test_setting_metadata(void)
             }
 
             g_assert(((sip->direct_set_string_mac_address_len != 0)
-                      + (!!sip->direct_set_string_ascii_strdown))
+                      + (!!sip->direct_set_string_ascii_strdown)
+                      + (sip->direct_set_string_ip_address_addr_family != 0))
                      <= 1);
 
             if (!sip->property_type->to_dbus_fcn) {

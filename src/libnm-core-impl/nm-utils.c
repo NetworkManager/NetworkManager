@@ -3880,6 +3880,25 @@ _nm_utils_hwaddr_canonical_or_invalid(const char *mac, gssize length)
         return g_strdup(mac);
 }
 
+char *
+_nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip)
+{
+    NMIPAddr addr_bin;
+
+    nm_assert_addr_family(addr_family);
+
+    if (!ip)
+        return NULL;
+
+    if (!nm_utils_parse_inaddr_bin(addr_family, ip, NULL, &addr_bin))
+        return g_strdup(ip);
+
+    if (nm_ip_addr_is_null(addr_family, &addr_bin))
+        return NULL;
+
+    return nm_utils_inet_ntop_dup(addr_family, &addr_bin);
+}
+
 /*
  * Determine if given Ethernet address is link-local
  *

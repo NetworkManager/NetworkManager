@@ -5589,7 +5589,7 @@ test_write_wired_static_ip6_only_gw(gconstpointer user_data)
 
     /* assert that the gateway was written and reloaded as expected */
     if (!gateway6 || !strcmp(gateway6, "::")) {
-        g_assert(nm_setting_ip_config_get_gateway(s_ip6) == NULL);
+        g_assert_cmpstr(nm_setting_ip_config_get_gateway(s_ip6), ==, NULL);
         g_assert(written_ifcfg_gateway == NULL);
     } else {
         g_assert(nm_setting_ip_config_get_gateway(s_ip6) != NULL);

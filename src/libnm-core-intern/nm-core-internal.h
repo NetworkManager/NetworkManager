@@ -758,15 +758,9 @@ struct _NMSettInfoProperty {
      * MAC address length. */
     guint8 direct_set_string_mac_address_len : 5;
 
-    /* Currently, properties that set property_type->direct_type only have to_dbus_fcn()
-     * implemented "the direct way". For the property setter, they still call g_object_set().
-     * In the future, also other operations, like from_dbus_fcn() should be implemented
-     * by direct access (thereby, bypassing g_object_set()).
-     *
-     * A "direct_has_special_setter" property does something unusual, that will require special attention
-     * in the future, when we implement more functionality regarding the setter. It has no effect,
-     * except of marking those properties and serve as a reminder that special care needs to be taken. */
-    bool direct_has_special_setter : 1;
+    /* If non-zero, this is the addr-family (AF_INET/AF_INET6) for normalizing an IP
+     * address. */
+    guint8 direct_set_string_ip_address_addr_family : 5;
 
     /* Usually, properties that are set to the default value for the GParamSpec
      * are not serialized to GVariant (and NULL is returned by to_dbus_data().
