@@ -5775,23 +5775,26 @@ enumerate_values(const NMSettInfoProperty *property_info,
 
 /*****************************************************************************/
 
-static gboolean
-ip_gateway_set(const NMSettInfoSetting * sett_info,
-               const NMSettInfoProperty *property_info,
-               NMSetting *               setting,
-               GVariant *                connection_dict,
-               GVariant *                value,
-               NMSettingParseFlags       parse_flags,
-               GError **                 error)
+gboolean
+_nm_setting_property_from_dbus_fcn_direct_ip_config_gateway(const NMSettInfoSetting * sett_info,
+                                                            const NMSettInfoProperty *property_info,
+                                                            NMSetting *               setting,
+                                                            GVariant *          connection_dict,
+                                                            GVariant *          value,
+                                                            NMSettingParseFlags parse_flags,
+                                                            GError **           error)
 {
-    /* FIXME: properly handle errors */
-
     /* Don't set from 'gateway' if we're going to use the gateway in 'addresses' */
     if (_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "gateway"))
         return TRUE;
 
-    g_object_set(setting, property_info->name, g_variant_get_string(value, NULL), NULL);
-    return TRUE;
+    return _nm_setting_property_from_dbus_fcn_direct(sett_info,
+                                                     property_info,
+                                                     setting,
+                                                     connection_dict,
+                                                     value,
+                                                     parse_flags,
+                                                     error);
 }
 
 GArray *
@@ -5810,11 +5813,12 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_GATEWAY],
-        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
-                                       .direct_type   = NM_VALUE_TYPE_STRING,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_direct,
-                                       .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
-                                       .from_dbus_fcn = ip_gateway_set),
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(
+            G_VARIANT_TYPE_STRING,
+            .direct_type   = NM_VALUE_TYPE_STRING,
+            .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+            .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
+            .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct_ip_config_gateway),
         .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, gateway),
         .direct_set_string_ip_address_addr_family = addr_family);
 
