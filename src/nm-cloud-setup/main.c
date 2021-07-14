@@ -8,6 +8,7 @@
 #include "nmcs-provider-ec2.h"
 #include "nmcs-provider-gcp.h"
 #include "nmcs-provider-azure.h"
+#include "nmcs-provider-aliyun.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 /*****************************************************************************/
@@ -85,6 +86,7 @@ _provider_detect(GCancellable *sigterm_cancellable)
         NMCS_TYPE_PROVIDER_EC2,
         NMCS_TYPE_PROVIDER_GCP,
         NMCS_TYPE_PROVIDER_AZURE,
+        NMCS_TYPE_PROVIDER_ALIYUN,
     };
     int    i;
     gulong cancellable_signal_id;
@@ -285,7 +287,6 @@ _nmc_mangle_connection(NMDevice *                            device,
     gs_unref_ptrarray GPtrArray *addrs_new  = NULL;
     gs_unref_ptrarray GPtrArray *rules_new  = NULL;
     gs_unref_ptrarray GPtrArray *routes_new = NULL;
-
     if (!nm_streq0(nm_connection_get_connection_type(connection), NM_SETTING_WIRED_SETTING_NAME))
         return FALSE;
 
