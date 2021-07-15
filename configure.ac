@@ -1043,27 +1043,21 @@ fi
 
 PKG_CHECK_MODULES(LIBNDP, [libndp])
 
-AC_ARG_WITH(readline,
-	AS_HELP_STRING([--with-readline=auto|libreadline|libedit|none], [Using libreadline (auto) or libedit]),
-        [], [with_readline=auto])
-
-if test "$with_readline" != "none" -a "$with_readline" != "auto" -a "$with_readline" != "libreadline" -a "$with_readline" != "libedit"; then
-        AC_MSG_ERROR([invalid --with-readline option])
-fi
-
-if test "$with_readline" != "none"; then
-        AX_LIB_READLINE
-        if test -z "${READLINE_LIBS}"; then
-                AC_MSG_FAILURE([readline library not found])
-        fi
-fi
+AX_LIB_READLINE
 
 AC_ARG_WITH(nmcli,
-            AS_HELP_STRING([--with-nmcli=yes|no], [Build nmcli]))
-if test "$with_nmcli" != no; then
-	build_nmcli=yes
+            AS_HELP_STRING([--with-nmcli=yes|no], [Build nmcli]),
+            [],
+            [with_nmcli=yes])
+if test "$with_nmcli" == yes; then
+    if test "$with_readline" = none; then
+        AC_MSG_FAILURE([nmcli requires readline library. Use --with-readline or --with-nmcli=no])
+    fi
+    build_nmcli=yes
+elif test "$with_nmcli" == no; then
+    build_nmcli=no
 else
-	build_nmcli=no
+    AC_MSG_ERROR([invalid --with-nmcli option. Valid options are --with-nmcli=yes|no])
 fi
 AM_CONDITIONAL(BUILD_NMCLI, test "$build_nmcli" = yes)
 
