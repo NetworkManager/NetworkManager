@@ -255,20 +255,36 @@ svEscape(const char *s, char **to_free)
     gsize    slen;
     gsize    i;
     gsize    j;
+    gboolean all_ascii = TRUE;
 
     for (slen = 0; s[slen]; slen++) {
         if (_char_req_escape(s[slen]))
             mangle++;
         else if (_char_req_quotes(s[slen]))
             requires_quotes = TRUE;
-        else if (s[slen] < ' ') {
+        else if (((guchar) s[slen]) < ' ') {
             /* if the string contains newline we can only express it using ANSI C quotation
              * (as we don't support line continuation).
              * Additionally, ANSI control characters look odd with regular quotation, so handle
              * them too. */
             return (*to_free = _escape_ansic(s));
+        } else if (((guchar) s[slen]) >= 0177) {
+            all_ascii       = FALSE;
+            requires_quotes = TRUE;
         }
     }
+
+    if (!all_ascii && !g_utf8_validate(s, -1, NULL)) {
+        /* The string is not valid ASCII/UTF-8. We can escape that via
+         * _escape_ansic(), however the reader might have a problem to
+         * do something sensible with the blob later.
+         *
+         * This is really a bug of the caller, which should not present us with
+         * non-text in the first place. But at this place, we cannot handle the
+         * error better, so just escape it. */
+        return (*to_free = _escape_ansic(s));
+    }
+
     if (!mangle && !requires_quotes) {
         *to_free = NULL;
         return s;
@@ -371,6 +387,12 @@ _strbuf_init(NMStrBuf *str, const char *value, gsize i)
 
 const char *
 svUnescape(const char *value, char **to_free)
+{
+    return svUnescape_full(value, to_free, TRUE);
+}
+
+const char *
+svUnescape_full(const char *value, char **to_free, gboolean check_utf8)
 {
     NMStrBuf str                      = NM_STR_BUF_INIT(0, FALSE);
     int      looks_like_old_svescaped = -1;
@@ -646,6 +668,8 @@ out_value:
     }
 
     if (str.allocated > 0) {
+        if (check_utf8 && !nm_str_buf_utf8_validate(&str))
+            goto out_error;
         if (str.len == 0 || nm_str_buf_get_str_unsafe(&str)[0] == '\0') {
             nm_str_buf_destroy(&str);
             *to_free = NULL;
@@ -654,6 +678,11 @@ out_value:
             *to_free = nm_str_buf_finalize(&str, NULL);
             return *to_free;
         }
+    }
+
+    if (check_utf8 && !g_utf8_validate(value, i, NULL)) {
+        *to_free = NULL;
+        return NULL;
     }
 
     if (value[i] != '\0') {
@@ -1120,9 +1149,8 @@ _svGetValue(shvarFile *s, const char *key, char **to_free)
     if (line && line->line) {
         v = svUnescape(line->line, to_free);
         if (!v) {
-            /* a wrongly quoted value is treated like the empty string.
-             * See also svWriteFile(), which handles unparsable values
-             * that way. */
+            /* a wrongly quoted value or non-UTF-8 is treated like the empty string.
+             * See also svWriteFile(), which handles unparsable values that way. */
             nm_assert(!*to_free);
             return "";
         }
@@ -1491,6 +1519,91 @@ gboolean
 svUnsetValue(shvarFile *s, const char *key)
 {
     return svSetValue(s, key, NULL);
+}
+
+/*****************************************************************************/
+
+void
+svWarnInvalid(shvarFile *s, const char *file_type, NMLogDomain log_domain)
+{
+    shvarLine *line;
+    gsize      n;
+
+    if (!nm_logging_enabled(LOGL_WARN, log_domain))
+        return;
+
+    n = 0;
+    c_list_for_each_entry (line, &s->lst_head, lst) {
+        gs_free char *s_tmp = NULL;
+
+        n++;
+
+        if (!line->key) {
+            const char *str;
+
+            nm_assert(line->line);
+            str = nm_str_skip_leading_spaces(line->line);
+            if (!NM_IN_SET(str[0], '\0', '#')) {
+                nm_log_warn(log_domain,
+                            "ifcfg-rh: %s,%s:%zu: invalid line ignored",
+                            file_type,
+                            s->fileName,
+                            n);
+            }
+            continue;
+        }
+
+        if (g_hash_table_lookup(s->lst_idx, line) != line) {
+            nm_log_warn(
+                log_domain,
+                "ifcfg-rh: %s,%s:%zu: key %s is duplicated and the early occurrence ignored",
+                file_type,
+                s->fileName,
+                n,
+                line->key);
+            continue;
+        }
+
+        if (!line->line) {
+            /* the line is deleted via svUnsetValue(). Ignore. */
+            continue;
+        }
+
+        if (!svUnescape(line->line, &s_tmp)) {
+            if (!svUnescape_full(line->line, &s_tmp, FALSE)) {
+                nm_log_warn(log_domain,
+                            "ifcfg-rh: %s,%s:%zu: key %s is badly quoted and is treated as \"\"",
+                            file_type,
+                            s->fileName,
+                            n,
+                            line->key);
+            } else {
+                nm_log_warn(log_domain,
+                            "ifcfg-rh: %s,%s:%zu: key %s does not contain valid UTF-8 and is "
+                            "treated as \"\"",
+                            file_type,
+                            s->fileName,
+                            n,
+                            line->key);
+            }
+            continue;
+        }
+
+        /* TODO: we read different shell scripts, and whether a key is recognized
+         * depends on the type. For example, alias files only accept a subset of
+         * known keys.
+         *
+         * Basically, depending on the @file_type, different keys are valid. */
+        if (!nms_ifcfg_rh_utils_is_well_known_key(line->key)) {
+            nm_log_dbg(log_domain,
+                       "ifcfg-rh: %s,%s:%zu: key %s is unknown and ignored",
+                       file_type,
+                       s->fileName,
+                       n,
+                       line->key);
+            continue;
+        }
+    }
 }
 
 /*****************************************************************************/

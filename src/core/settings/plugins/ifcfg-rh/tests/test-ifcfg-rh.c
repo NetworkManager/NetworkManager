@@ -738,10 +738,13 @@ test_read_variables_corner_cases(void)
     const char *         mac;
     char                 expected_mac_address[ETH_ALEN] = {0x00, 0x16, 0x41, 0x11, 0x22, 0x33};
 
+    NMTST_EXPECT_NM_WARN("*key NAME is badly quoted and is treated as \"\"*");
+    NMTST_EXPECT_NM_WARN("*key ZONE is badly quoted and is treated as \"\"*");
     connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-variables-corner-cases-1",
                                        NULL,
                                        TYPE_ETHERNET,
                                        NULL);
+    g_test_assert_expected_messages();
 
     /* ===== CONNECTION SETTING ===== */
     s_con = nm_connection_get_setting_connection(connection);
@@ -830,10 +833,12 @@ test_read_unrecognized(void)
     gs_free char *       unhandled_spec     = NULL;
     guint64              expected_timestamp = 0;
 
+    NMTST_EXPECT_NM_WARN("*key NAME is badly quoted and is treated as \"\"*");
     connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-unrecognized",
                                        NULL,
                                        NULL,
                                        &unhandled_spec);
+    g_test_assert_expected_messages();
     g_assert_cmpstr(unhandled_spec, ==, "unrecognized:mac:00:11:22:33");
 
     /* ===== CONNECTION SETTING ===== */
@@ -1004,10 +1009,12 @@ test_read_wired_dhcp(void)
     char                 expected_mac_address[ETH_ALEN] = {0x00, 0x11, 0x22, 0x33, 0x44, 0xee};
     const char *         mac;
 
+    NMTST_EXPECT_NM_WARN("*key IPV6INIT is duplicated and the early occurrence ignored*");
     connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-wired-dhcp",
                                        NULL,
                                        TYPE_ETHERNET,
                                        &unmanaged);
+    g_test_assert_expected_messages();
     g_assert(unmanaged == NULL);
 
     /* ===== CONNECTION SETTING ===== */
@@ -3583,10 +3590,12 @@ test_read_wifi_wpa_eap_tls(void)
     char *             unmanaged                 = NULL;
     const char *       expected_privkey_password = "test1";
 
+    NMTST_EXPECT_NM_WARN("*key ONBOOT is duplicated and the early occurrence ignored*");
     connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-wifi-wpa-eap-tls",
                                        NULL,
                                        TYPE_ETHERNET,
                                        &unmanaged);
+    g_test_assert_expected_messages();
     g_assert(!unmanaged);
 
     /* ===== WIRELESS SETTING ===== */
@@ -3791,10 +3800,12 @@ test_read_wifi_wep_eap_ttls_chap(void)
     NMSetting8021x *           s_8021x;
     char *                     unmanaged = NULL;
 
+    NMTST_EXPECT_NM_WARN("*key ONBOOT is duplicated and the early occurrence ignored*");
     connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-wifi-wep-eap-ttls-chap",
                                        NULL,
                                        TYPE_WIRELESS,
                                        &unmanaged);
+    g_test_assert_expected_messages();
     g_assert(!unmanaged);
 
     /* ===== WIRELESS SETTING ===== */
@@ -10476,7 +10487,7 @@ _svUnescape(const char *str, char **to_free)
         str = (str_free = g_strdup(str));
     }
 
-    s = svUnescape(str, to_free);
+    s = svUnescape_full(str, to_free, FALSE);
     if (*to_free) {
         g_assert(s == *to_free);
         g_assert(s[0]);
@@ -10484,6 +10495,37 @@ _svUnescape(const char *str, char **to_free)
         g_assert(s == NULL || (!s[0] && (s < str || s > strchr(str, '\0')))
                  || (s[0] && s >= str && s <= strchr(str, '\0')));
     }
+
+    {
+        const char *  s2;
+        gs_free char *to_free2 = NULL;
+
+        gboolean is_utf8 = s && g_utf8_validate(s, -1, NULL);
+
+        s2 = svUnescape_full(str, &to_free2, TRUE);
+        if (NM_IN_STRSET(str, "$'\\U0x'", "$'\\x0'", "$'\\008'", "$'\\08'")) {
+            g_assert_cmpstr(s2, ==, NULL);
+            g_assert(!to_free2);
+            g_assert_cmpstr(s, ==, "");
+            g_assert(!*to_free);
+        } else if (NM_IN_STRSET(str, "$'x\\U0'")) {
+            g_assert_cmpstr(s2, ==, NULL);
+            g_assert(!to_free2);
+            g_assert_cmpstr(s, ==, "x");
+            g_assert(*to_free == s);
+        } else if (!is_utf8) {
+            g_assert(!s2);
+            g_assert(!to_free2);
+        } else if (!to_free2) {
+            g_assert_cmpstr(s, ==, s2);
+            g_assert(s == s2);
+        } else {
+            g_assert_cmpstr(s, ==, s2);
+            g_assert(s != s2);
+            g_assert(s2 == to_free2);
+        }
+    }
+
     return s;
 }
 
@@ -10665,6 +10707,9 @@ test_svUnescape(void)
         V1("\"\\'\"''", "\\'"),
         V0("\"b\\~b\" ", "b\\~b"),
         V1("\"b\\~b\"x", "b\\~bx"),
+
+        V0("$'x\\U0'", "x"),
+        V0("$'\\U0x'", ""),
     };
     const UnescapeTestData data_ansi[] = {
         /* strings inside $''. They cannot be compared directly, but must
@@ -10851,7 +10896,7 @@ test_write_unknown(gconstpointer test_data)
         _svGetValue_check(sv, "METRIC", NULL);
         _svGetValue_check(sv, "METRIC1", "");
         _svGetValue_check(sv, "METRIC2", "");
-        _svGetValue_check(sv, "METRIC3", "x");
+        _svGetValue_check(sv, "METRIC3", "");
 
         _svGetValue_check(sv, "IPADDR", "set-by-test1");
         _svGetValue_check(sv, "IPADDR2", "set-by-test2");
