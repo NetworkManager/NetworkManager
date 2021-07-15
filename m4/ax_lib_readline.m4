@@ -62,73 +62,97 @@
 
 AU_ALIAS([VL_LIB_READLINE], [AX_LIB_READLINE])
 AC_DEFUN([AX_LIB_READLINE], [
-  AC_CACHE_CHECK([for a readline compatible library],
-                 ax_cv_lib_readline, [
-    ORIG_LIBS="$LIBS"
 
-    search_readlines="readline edit"
-    if test "$with_readline" = "libreadline"; then
-      search_readlines="readline"
-    fi
-    if test "$with_readline" = "libedit"; then
-      search_readlines="edit"
-    fi
-    for readline_lib in $search_readlines; do
-      # prefer ncurses since we use it for nmtui too
-      for termcap_lib in "" termcap curses ncurses; do
-        if test -z "$termcap_lib"; then
-          TRY_LIB="-l$readline_lib"
-        else
-          TRY_LIB="-l$readline_lib -l$termcap_lib"
-        fi
-        LIBS="$ORIG_LIBS $TRY_LIB"
-        AC_LINK_IFELSE([AC_LANG_CALL([], [readline])], [ax_cv_lib_readline="$TRY_LIB"])
+  AC_ARG_WITH(readline,
+              AS_HELP_STRING([--with-readline=auto|libreadline|libedit|none], [Using libreadline (auto) or libedit]),
+              [],
+              [with_readline=auto])
+
+  if test "$with_readline" != "none"; then
+
+    AC_CACHE_CHECK([for a readline compatible library],
+                   ax_cv_lib_readline, [
+      ORIG_LIBS="$LIBS"
+
+      if test "$with_readline" = "libreadline"; then
+        search_readlines="readline"
+      elif test "$with_readline" = "libedit"; then
+        search_readlines="edit"
+      elif test "$with_readline" = "auto"; then
+        search_readlines="readline edit"
+      else
+        AC_MSG_ERROR([invalid --with-readline option. Valid options are --with-readline=auto|libreadline|libedit|none])
+      fi
+
+      for readline_lib in $search_readlines; do
+        # prefer ncurses since we use it for nmtui too
+        for termcap_lib in "" termcap curses ncurses; do
+          if test -z "$termcap_lib"; then
+            TRY_LIB="-l$readline_lib"
+          else
+            TRY_LIB="-l$readline_lib -l$termcap_lib"
+          fi
+          LIBS="$ORIG_LIBS $TRY_LIB"
+          AC_LINK_IFELSE([AC_LANG_CALL([], [readline])], [ax_cv_lib_readline="$TRY_LIB"])
+          if test -n "$ax_cv_lib_readline"; then
+            break
+          fi
+        done
         if test -n "$ax_cv_lib_readline"; then
+          if test "$with_readline" = auto; then
+            if test "$readline_lib" = readline; then
+              with_readline=libreadline
+            else
+              with_readline=libedit
+            fi
+          fi
           break
         fi
       done
-      if test -n "$ax_cv_lib_readline"; then
-        break
+      if test -z "$ax_cv_lib_readline"; then
+        if test "$with_readline" != auto; then
+          AC_MSG_ERROR([libreadline not found for --with-readline=$with_readline"])
+        fi
+        with_readline=none
+        ax_cv_lib_readline="no"
       fi
-    done
-    if test -z "$ax_cv_lib_readline"; then
-      ax_cv_lib_readline="no"
-    fi
-    LIBS="$ORIG_LIBS"
-  ])
-
-  if test "$ax_cv_lib_readline" != "no"; then
-    READLINE_LIBS="$ax_cv_lib_readline"
-    AC_SUBST(READLINE_LIBS)
-    AC_DEFINE(HAVE_LIBREADLINE, 1,
-              [Define if you have a readline compatible library])
-
-    if test "$with_readline" = "libedit"; then
-      AC_DEFINE(HAVE_EDITLINE_READLINE, 1,
-              [Explicitly set to 1 when libedit shall be used])
-    else
-      AC_DEFINE(HAVE_EDITLINE_READLINE, 0,
-              [By default the libreadline is used as readline library])
-
-    fi
-
-    ORIG_LIBS="$LIBS"
-    LIBS="$ORIG_LIBS $ax_cv_lib_readline"
-    AC_CACHE_CHECK([whether readline supports history],
-                   ax_cv_lib_readline_history, [
-      ax_cv_lib_readline_history="no"
-      AC_LINK_IFELSE([AC_LANG_CALL([], [history_set_history_state])],
-              [ax_cv_lib_readline_history="yes"])
+      LIBS="$ORIG_LIBS"
     ])
-    LIBS=$ORIG_LIBS
 
-    if test "$ax_cv_lib_readline_history" = "yes"; then
-      AC_DEFINE(HAVE_READLINE_HISTORY, 1,
-        [Define if your readline library has \`history_set_history_state'])
-      AC_CHECK_HEADERS(readline/history.h histedit.h)
-    else
-      AC_DEFINE(HAVE_READLINE_HISTORY, 0,
-        [Explicitly set to 0 when libreadline shall not be used])
+    if test "$ax_cv_lib_readline" != "no"; then
+      READLINE_LIBS="$ax_cv_lib_readline"
+      AC_SUBST(READLINE_LIBS)
+      AC_DEFINE(HAVE_LIBREADLINE, 1,
+                [Define if you have a readline compatible library])
+
+      if test "$with_readline" = "libedit"; then
+        AC_DEFINE(HAVE_EDITLINE_READLINE, 1,
+                [Explicitly set to 1 when libedit shall be used])
+      else
+        AC_DEFINE(HAVE_EDITLINE_READLINE, 0,
+                [By default the libreadline is used as readline library])
+
+      fi
+
+      ORIG_LIBS="$LIBS"
+      LIBS="$ORIG_LIBS $ax_cv_lib_readline"
+      AC_CACHE_CHECK([whether readline supports history],
+                     ax_cv_lib_readline_history, [
+        ax_cv_lib_readline_history="no"
+        AC_LINK_IFELSE([AC_LANG_CALL([], [history_set_history_state])],
+                [ax_cv_lib_readline_history="yes"])
+      ])
+      LIBS=$ORIG_LIBS
+
+      if test "$ax_cv_lib_readline_history" = "yes"; then
+        AC_DEFINE(HAVE_READLINE_HISTORY, 1,
+          [Define if your readline library has \`history_set_history_state'])
+        AC_CHECK_HEADERS(readline/history.h histedit.h)
+      else
+        AC_DEFINE(HAVE_READLINE_HISTORY, 0,
+          [Explicitly set to 0 when libreadline shall not be used])
+      fi
     fi
+
   fi
 ])dnl
