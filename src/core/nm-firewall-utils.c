@@ -613,17 +613,17 @@ _fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
 
 #define _append(p_strbuf, fmt, ...) nm_str_buf_append_printf((p_strbuf), "" fmt "\n", ##__VA_ARGS__)
 
-    _append(&strbuf, "add table inet %s", table_name);
-    _append(&strbuf, "%s table inet %s", add ? "flush" : "delete", table_name);
+    _append(&strbuf, "add table ip %s", table_name);
+    _append(&strbuf, "%s table ip %s", add ? "flush" : "delete", table_name);
 
     if (add) {
         _append(&strbuf,
-                "add chain inet %s nat_postrouting {"
+                "add chain ip %s nat_postrouting {"
                 " type nat hook postrouting priority 100; policy accept; "
                 "};",
                 table_name);
         _append(&strbuf,
-                "add rule inet %s nat_postrouting ip saddr %s ip daddr != %s masquerade;",
+                "add rule ip %s nat_postrouting ip saddr %s ip daddr != %s masquerade;",
                 table_name,
                 str_subnet,
                 str_subnet);
@@ -634,41 +634,41 @@ _fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
          */
         /*
         _append(&strbuf,
-                "add chain inet %s filter_input {"
+                "add chain ip %s filter_input {"
                 " type filter hook input priority 0; policy accept; "
                 "};",
                 table_name);
-        _append(&strbuf, "add rule inet %s filter_input tcp dport { 67, 53 } accept;", table_name);
-        _append(&strbuf, "add rule inet %s filter_input udp dport { 67, 53 } accept;", table_name);
+        _append(&strbuf, "add rule ip %s filter_input tcp dport { 67, 53 } accept;", table_name);
+        _append(&strbuf, "add rule ip %s filter_input udp dport { 67, 53 } accept;", table_name);
         */
 
         _append(&strbuf,
-                "add chain inet %s filter_forward {"
+                "add chain ip %s filter_forward {"
                 " type filter hook forward priority 0; policy accept; "
                 "};",
                 table_name);
         _append(&strbuf,
-                "add rule inet %s filter_forward ip daddr %s oifname \"%s\" "
+                "add rule ip %s filter_forward ip daddr %s oifname \"%s\" "
                 " ct state { established, related } accept;",
                 table_name,
                 str_subnet,
                 ip_iface);
         _append(&strbuf,
-                "add rule inet %s filter_forward ip saddr %s iifname \"%s\" accept;",
+                "add rule ip %s filter_forward ip saddr %s iifname \"%s\" accept;",
                 table_name,
                 str_subnet,
                 ip_iface);
         _append(&strbuf,
-                "add rule inet %s filter_forward iifname \"%s\" oifname \"%s\" accept;",
+                "add rule ip %s filter_forward iifname \"%s\" oifname \"%s\" accept;",
                 table_name,
                 ip_iface,
                 ip_iface);
         _append(&strbuf,
-                "add rule inet %s filter_forward iifname \"%s\" reject;",
+                "add rule ip %s filter_forward iifname \"%s\" reject;",
                 table_name,
                 ip_iface);
         _append(&strbuf,
-                "add rule inet %s filter_forward oifname \"%s\" reject;",
+                "add rule ip %s filter_forward oifname \"%s\" reject;",
                 table_name,
                 ip_iface);
     }
