@@ -2438,6 +2438,40 @@ nm_hexchar(int x, gboolean upper_case)
     return upper_case ? _nm_hexchar_table_upper[x & 15] : _nm_hexchar_table_lower[x & 15];
 }
 
+static inline gboolean
+nm_ascii_is_ctrl(char ch)
+{
+    /* 0 to ' '-1 is the C0 range.
+     *
+     * Other ranges may also be considered control characters, but NOT
+     * CONSIDERED by this function. For example:
+     *   - DEL (127) is also a control character.
+     *   - SP (' ', 0x20) is also considered a control character.
+     *   - DEL+1 (0x80) to 0x9F is C1 range.
+     *   - NBSP (0xA0) and SHY (0xAD) are ISO 8859 special characters
+     */
+    return ((guchar) ch) < ' ';
+}
+
+static inline gboolean
+nm_ascii_is_ctrl_or_del(char ch)
+{
+    return ((guchar) ch) < ' ' || ch == 127;
+}
+
+static inline gboolean
+nm_ascii_is_non_ascii(char ch)
+{
+    return ((guchar) ch) > 127;
+}
+
+static inline gboolean
+nm_ascii_is_regular(char ch)
+{
+    /* same as(!nm_ascii_is_ctrl_or_del(ch) && !nm_ascii_is_non_ascii(ch)) */
+    return ch >= ' ' && ch < 127;
+}
+
 char *nm_utils_bin2hexstr_full(gconstpointer addr,
                                gsize         length,
                                char          delimiter,
