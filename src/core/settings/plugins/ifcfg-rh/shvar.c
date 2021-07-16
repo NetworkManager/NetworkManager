@@ -262,13 +262,14 @@ svEscape(const char *s, char **to_free)
             mangle++;
         else if (_char_req_quotes(s[slen]))
             requires_quotes = TRUE;
-        else if (nm_ascii_is_ctrl(s[slen])) {
-            /* if the string contains newline we can only express it using ANSI C quotation
-             * (as we don't support line continuation).
-             * Additionally, ANSI control characters look odd with regular quotation, so handle
-             * them too. */
-            return (*to_free = _escape_ansic(s));
-        } else if (nm_ascii_is_non_ascii(s[slen])) {
+        else if (!nm_ascii_is_regular(s[slen])) {
+            if (nm_ascii_is_ctrl_or_del(s[slen])) {
+                /* if the string contains newline we can only express it using ANSI C quotation
+                 * (as we don't support line continuation).
+                 * Additionally, ANSI control characters look odd with regular quotation, so handle
+                 * them too. */
+                return (*to_free = _escape_ansic(s));
+            }
             all_ascii       = FALSE;
             requires_quotes = TRUE;
         }
