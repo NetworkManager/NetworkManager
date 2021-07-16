@@ -1,4 +1,28 @@
 ===============================================
+NetworkManager-1.30.6
+Overview of changes since NetworkManager-1.30.4
+===============================================
+
+* By default, don't touch existing traffic control (TC) configuration
+  on devices.
+* Send ARP announcements only when the interface gets carrier.
+* Support the 'peer_notif_delay' bond option.
+* Always start DHCPv6 on the default interface when an IPv6 prefix
+  delegation is needed.
+* Prefer the IPv4 address to determine the system hostname via address
+  lookup.
+* Support DHCP option 249 (Microsoft classless static route) with the
+  internal nettools client.
+* Force a restart of hostname resolution via DNS on signal SIGUSR1
+  when resolv.conf is not managed by NetworkManager.
+* Fix adding duplicate iptables rules for shared mode.
+* Fix parsing of Wi-Fi Information Element (IE) for Microsoft Network
+  Cost.
+* Fix parsing of empty DHCP option 40 (NIS domain name) in the
+  internal nettools client.
+* Other various bugfixes.
+
+===============================================
 NetworkManager-1.30.4
 Overview of changes since NetworkManager-1.30.2
 ===============================================
