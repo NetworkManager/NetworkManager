@@ -825,21 +825,11 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
                      "open",
                      NULL);
     } else if (nm_streq0(key_mgmt, "sae") || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)) {
-        g_object_set(s_wsec,
-                     NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
-                     "sae",
-                     NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
-                     "open",
-                     NULL);
+        g_object_set(s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "sae", NULL);
     } else if (nm_streq0(key_mgmt, "owe")
                || NM_FLAGS_ANY(ap_rsn_flags,
                                NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
-        g_object_set(s_wsec,
-                     NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
-                     "owe",
-                     NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
-                     "open",
-                     NULL);
+        g_object_set(s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "owe", NULL);
     } else if (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK
                || ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
         g_object_set(s_wsec,
@@ -853,12 +843,7 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
          */
     } else if (nm_streq0(key_mgmt, "wpa-eap-suite-b-192")
                || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)) {
-        g_object_set(s_wsec,
-                     NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
-                     "wpa-eap-suite-b-192",
-                     NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
-                     "open",
-                     NULL);
+        g_object_set(s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap-suite-b-192", NULL);
     } else {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
