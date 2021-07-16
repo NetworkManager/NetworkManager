@@ -1446,10 +1446,14 @@ GType nm_g_type_find_implementing_class_for_property(GType gtype, const char *pn
 typedef enum {
     NM_UTILS_STR_UTF8_SAFE_FLAG_NONE = 0,
 
-    /* This flag only has an effect during escaping. */
+    /* This flag only has an effect during escaping.
+     *
+     * It will backslash escape ascii characters according to nm_ascii_is_ctrl_or_del(). */
     NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL = 0x0001,
 
-    /* This flag only has an effect during escaping. */
+    /* This flag only has an effect during escaping.
+     *
+     * It will backslash escape ascii characters according to nm_ascii_is_non_ascii(). */
     NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII = 0x0002,
 
     /* This flag only has an effect during escaping to ensure we

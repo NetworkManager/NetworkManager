@@ -2996,7 +2996,7 @@ nm_utils_buf_utf8safe_escape(gconstpointer           buf,
                             ch,
                             (ch == '\\'
                              || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL)
-                                 && nm_ascii_is_ctrl(ch))
+                                 && nm_ascii_is_ctrl_or_del(ch))
                              || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
                                  && nm_ascii_is_non_ascii(ch)))))
             return str;
@@ -3016,7 +3016,7 @@ nm_utils_buf_utf8safe_escape(gconstpointer           buf,
             if (ch == '\\')
                 nm_str_buf_append_c(&strbuf, '\\', '\\');
             else if ((NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL)
-                      && nm_ascii_is_ctrl(ch))
+                      && nm_ascii_is_ctrl_or_del(ch))
                      || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
                          && nm_ascii_is_non_ascii(ch)))
                 _str_buf_append_c_escape_octal(&strbuf, ch);
