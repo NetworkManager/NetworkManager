@@ -677,7 +677,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
 static GVariant *
 _override_flags_get(const NMSettInfoSetting *               sett_info,
-                    guint                                   property_idx,
+                    const NMSettInfoProperty *              property_info,
                     NMConnection *                          connection,
                     NMSetting *                             setting,
                     NMConnectionSerializationFlags          flags,
@@ -927,8 +927,11 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
         properties_override,
         obj_properties[PROP_FLAGS],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_UINT32,
-                                       .to_dbus_fcn           = _override_flags_get,
-                                       .missing_from_dbus_fcn = _override_flags_not_set, ));
+                                       .to_dbus_fcn = _override_flags_get,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                       .missing_from_dbus_fcn = _override_flags_not_set,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /**
      * NMSettingVlan:ingress-priority-map:

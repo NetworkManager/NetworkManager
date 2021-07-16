@@ -757,8 +757,11 @@ _nm_setting_dcb_uint_array_from_dbus(GVariant *dbus_value, GValue *prop_value)
 static const NMSettInfoPropertType nm_sett_info_propert_type_dcb_au =
     NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(
         NM_G_VARIANT_TYPE("au"),
-        .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_GARRAY_UINT,
-        .gprop_from_dbus_fcn        = _nm_setting_dcb_uint_array_from_dbus, );
+        .typdata_to_dbus.gprop_type  = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_GARRAY_UINT,
+        .typdata_from_dbus.gprop_fcn = _nm_setting_dcb_uint_array_from_dbus,
+        .compare_fcn                 = _nm_setting_property_compare_fcn_default,
+        .from_dbus_fcn               = _nm_setting_property_from_dbus_fcn_gprop,
+        .from_dbus_is_full           = TRUE);
 
 /*****************************************************************************/
 

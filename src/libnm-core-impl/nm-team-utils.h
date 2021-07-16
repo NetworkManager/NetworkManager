@@ -266,6 +266,5 @@ extern const NMSettInfoPropertType nm_sett_info_propert_type_team_b;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_team_i;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_team_s;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_team_as;
-extern const NMSettInfoPropertType nm_sett_info_propert_type_team_link_watchers;
 
 #endif /* __NM_TEAM_UITLS_H__ */

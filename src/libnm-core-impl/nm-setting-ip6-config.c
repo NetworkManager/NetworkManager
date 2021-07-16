@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 
 #include "nm-setting-private.h"
+#include "nm-utils-private.h"
 #include "nm-core-enum-types.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
@@ -362,9 +363,21 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GVariant *
-ip6_dns_to_dbus(const GValue *prop_value)
+ip6_dns_to_dbus(const NMSettInfoSetting *               sett_info,
+                const NMSettInfoProperty *              property_info,
+                NMConnection *                          connection,
+                NMSetting *                             setting,
+                NMConnectionSerializationFlags          flags,
+                const NMConnectionSerializationOptions *options)
 {
-    return nm_utils_ip6_dns_to_variant(g_value_get_boxed(prop_value));
+    GPtrArray *dns;
+
+    dns = _nm_setting_ip_config_get_dns_array(NM_SETTING_IP_CONFIG(setting));
+
+    if (nm_g_ptr_array_len(dns) == 0)
+        return NULL;
+
+    return _nm_utils_ip6_dns_to_variant((const char *const *) dns->pdata, dns->len);
 }
 
 static void
@@ -375,7 +388,7 @@ ip6_dns_from_dbus(GVariant *dbus_value, GValue *prop_value)
 
 static GVariant *
 ip6_addresses_get(const NMSettInfoSetting *               sett_info,
-                  guint                                   property_idx,
+                  const NMSettInfoProperty *              property_info,
                   NMConnection *                          connection,
                   NMSetting *                             setting,
                   NMConnectionSerializationFlags          flags,
@@ -390,12 +403,13 @@ ip6_addresses_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip6_addresses_set(NMSetting *         setting,
-                  GVariant *          connection_dict,
-                  const char *        property,
-                  GVariant *          value,
-                  NMSettingParseFlags parse_flags,
-                  GError **           error)
+ip6_addresses_set(const NMSettInfoSetting * sett_info,
+                  const NMSettInfoProperty *property_info,
+                  NMSetting *               setting,
+                  GVariant *                connection_dict,
+                  GVariant *                value,
+                  NMSettingParseFlags       parse_flags,
+                  GError **                 error)
 {
     GPtrArray *addrs;
     char *     gateway = NULL;
@@ -420,7 +434,7 @@ ip6_addresses_set(NMSetting *         setting,
 
 static GVariant *
 ip6_address_data_get(const NMSettInfoSetting *               sett_info,
-                     guint                                   property_idx,
+                     const NMSettInfoProperty *              property_info,
                      NMConnection *                          connection,
                      NMSetting *                             setting,
                      NMConnectionSerializationFlags          flags,
@@ -436,12 +450,13 @@ ip6_address_data_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip6_address_data_set(NMSetting *         setting,
-                     GVariant *          connection_dict,
-                     const char *        property,
-                     GVariant *          value,
-                     NMSettingParseFlags parse_flags,
-                     GError **           error)
+ip6_address_data_set(const NMSettInfoSetting * sett_info,
+                     const NMSettInfoProperty *property_info,
+                     NMSetting *               setting,
+                     GVariant *                connection_dict,
+                     GVariant *                value,
+                     NMSettingParseFlags       parse_flags,
+                     GError **                 error)
 {
     GPtrArray *addrs;
 
@@ -459,7 +474,7 @@ ip6_address_data_set(NMSetting *         setting,
 
 static GVariant *
 ip6_routes_get(const NMSettInfoSetting *               sett_info,
-               guint                                   property_idx,
+               const NMSettInfoProperty *              property_info,
                NMConnection *                          connection,
                NMSetting *                             setting,
                NMConnectionSerializationFlags          flags,
@@ -472,12 +487,13 @@ ip6_routes_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip6_routes_set(NMSetting *         setting,
-               GVariant *          connection_dict,
-               const char *        property,
-               GVariant *          value,
-               NMSettingParseFlags parse_flags,
-               GError **           error)
+ip6_routes_set(const NMSettInfoSetting * sett_info,
+               const NMSettInfoProperty *property_info,
+               NMSetting *               setting,
+               GVariant *                connection_dict,
+               GVariant *                value,
+               NMSettingParseFlags       parse_flags,
+               GError **                 error)
 {
     GPtrArray *routes;
 
@@ -487,14 +503,14 @@ ip6_routes_set(NMSetting *         setting,
         return TRUE;
 
     routes = nm_utils_ip6_routes_from_variant(value);
-    g_object_set(setting, property, routes, NULL);
+    g_object_set(setting, property_info->name, routes, NULL);
     g_ptr_array_unref(routes);
     return TRUE;
 }
 
 static GVariant *
 ip6_route_data_get(const NMSettInfoSetting *               sett_info,
-                   guint                                   property_idx,
+                   const NMSettInfoProperty *              property_info,
                    NMConnection *                          connection,
                    NMSetting *                             setting,
                    NMConnectionSerializationFlags          flags,
@@ -510,12 +526,13 @@ ip6_route_data_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip6_route_data_set(NMSetting *         setting,
-                   GVariant *          connection_dict,
-                   const char *        property,
-                   GVariant *          value,
-                   NMSettingParseFlags parse_flags,
-                   GError **           error)
+ip6_route_data_set(const NMSettInfoSetting * sett_info,
+                   const NMSettInfoProperty *property_info,
+                   NMSetting *               setting,
+                   GVariant *                connection_dict,
+                   GVariant *                value,
+                   NMSettingParseFlags       parse_flags,
+                   GError **                 error)
 {
     GPtrArray *routes;
 
@@ -1021,9 +1038,12 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
-        NM_SETT_INFO_PROPERT_TYPE_GPROP(NM_G_VARIANT_TYPE("aay"),
-                                        .gprop_from_dbus_fcn = ip6_dns_from_dbus, ),
-        .to_dbus_data.gprop_to_dbus_fcn = ip6_dns_to_dbus);
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aay"),
+                                       .compare_fcn = _nm_setting_property_compare_fcn_default,
+                                       .to_dbus_fcn = ip6_dns_to_dbus,
+                                       .typdata_from_dbus.gprop_fcn = ip6_dns_from_dbus,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /* ---dbus---
      * property: addresses
@@ -1044,6 +1064,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuay)"),
                                        .to_dbus_fcn   = ip6_addresses_get,
+                                       .compare_fcn   = _nm_setting_ip_config_compare_fcn_addresses,
                                        .from_dbus_fcn = ip6_addresses_set, ));
 
     /* ---dbus---
@@ -1060,6 +1081,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         "address-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = ip6_address_data_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                        .from_dbus_fcn = ip6_address_data_set, ));
 
     /* ---dbus---
@@ -1081,6 +1103,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuayu)"),
                                        .to_dbus_fcn   = ip6_routes_get,
+                                       .compare_fcn   = _nm_setting_ip_config_compare_fcn_routes,
                                        .from_dbus_fcn = ip6_routes_set, ));
 
     /* ---dbus---
@@ -1101,6 +1124,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         "route-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
                                        .to_dbus_fcn   = ip6_route_data_get,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                        .from_dbus_fcn = ip6_route_data_set, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);

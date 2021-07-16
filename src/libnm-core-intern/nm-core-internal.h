@@ -651,23 +651,23 @@ typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
 typedef GVariant *(*NMSettInfoPropToDBusFcn)(const NMSettInfoSetting *               sett_info,
-                                             guint                                   property_idx,
+                                             const NMSettInfoProperty *              property_info,
                                              NMConnection *                          connection,
                                              NMSetting *                             setting,
                                              NMConnectionSerializationFlags          flags,
                                              const NMConnectionSerializationOptions *options);
-typedef gboolean (*NMSettInfoPropFromDBusFcn)(NMSetting *         setting,
-                                              GVariant *          connection_dict,
-                                              const char *        property,
-                                              GVariant *          value,
-                                              NMSettingParseFlags parse_flags,
-                                              GError **           error);
+typedef gboolean (*NMSettInfoPropFromDBusFcn)(const NMSettInfoSetting * sett_info,
+                                              const NMSettInfoProperty *property_info,
+                                              NMSetting *               setting,
+                                              GVariant *                connection_dict,
+                                              GVariant *                value,
+                                              NMSettingParseFlags       parse_flags,
+                                              GError **                 error);
 typedef gboolean (*NMSettInfoPropMissingFromDBusFcn)(NMSetting *         setting,
                                                      GVariant *          connection_dict,
                                                      const char *        property,
                                                      NMSettingParseFlags parse_flags,
                                                      GError **           error);
-typedef GVariant *(*NMSettInfoPropGPropToDBusFcn)(const GValue *from);
 typedef void (*NMSettInfoPropGPropFromDBusFcn)(GVariant *from, GValue *to);
 
 const NMSettInfoSetting *nmtst_sett_info_settings(void);
@@ -693,13 +693,41 @@ typedef struct {
      * to the property value. */
     NMValueType direct_type;
 
+    /* Whether from_dbus_fcn() has special capabilities
+     *
+     * - whether the from_dbus_fcn expects to handle differences between
+     *   the D-Bus types and can convert between them. Otherwise, the caller
+     *   will already pre-validate that the D-Bus types match.
+     * - by default, with NM_SETTING_PARSE_FLAGS_BEST_EFFORT all errors from
+     *   from_dbus_fcn() are ignored. If true, then error are propagated. */
+    bool from_dbus_is_full : 1;
+
+    /* compare_fcn() returns a ternary, where DEFAULT means that the property should not
+     * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
+     * equal/not-equal.
+     *
+     * The "b" setting may be %NULL, in which case the function only determines whether
+     * the setting should be compared (TRUE) or not (DEFAULT). */
+    NMTernary (*compare_fcn)(const NMSettInfoSetting * sett_info,
+                             const NMSettInfoProperty *property_info,
+                             NMConnection *            con_a,
+                             NMSetting *               set_a,
+                             NMConnection *            con_b,
+                             NMSetting *               set_b,
+                             NMSettingCompareFlags     flags);
+
     NMSettInfoPropToDBusFcn          to_dbus_fcn;
     NMSettInfoPropFromDBusFcn        from_dbus_fcn;
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
 
-    /* Simpler variants of @from_dbus_fcn that operate solely
-     * on the GValue value of the GObject property. */
-    NMSettInfoPropGPropFromDBusFcn gprop_from_dbus_fcn;
+    struct {
+        union {
+            /* If from_dbus_fcn is set to _nm_setting_property_from_dbus_fcn_gprop,
+             * then this is an optional handler for converting between GVariant and
+             * GValue. */
+            NMSettInfoPropGPropFromDBusFcn gprop_fcn;
+        };
+    } typdata_from_dbus;
 
     struct {
         union {
@@ -731,18 +759,11 @@ struct _NMSettInfoProperty {
      * except of marking those properties and serve as a reminder that special care needs to be taken. */
     bool direct_has_special_setter : 1;
 
-    struct {
-        union {
-            gpointer                     none;
-            NMSettInfoPropGPropToDBusFcn gprop_to_dbus_fcn;
-        };
-
-        /* Usually, properties that are set to the default value for the GParamSpec
-         * are not serialized to GVariant (and NULL is returned by to_dbus_data().
-         * Set this flag to force always converting the property even if the value
-         * is the default. */
-        bool including_default : 1;
-    } to_dbus_data;
+    /* Usually, properties that are set to the default value for the GParamSpec
+     * are not serialized to GVariant (and NULL is returned by to_dbus_data().
+     * Set this flag to force always converting the property even if the value
+     * is the default. */
+    bool to_dbus_including_default : 1;
 };
 
 typedef struct {
@@ -951,5 +972,7 @@ _nm_variant_attribute_spec_find_binary_search(const NMVariantAttributeSpec *cons
 /*****************************************************************************/
 
 gboolean _nm_ip_tunnel_mode_is_layer2(NMIPTunnelMode mode);
+
+GPtrArray *_nm_setting_ip_config_get_dns_array(NMSettingIPConfig *setting);
 
 #endif

@@ -70,24 +70,12 @@ struct _NMSettingClass {
                                  GError **            error);
 
     gboolean (*clear_secrets)(const struct _NMSettInfoSetting *sett_info,
-                              guint                            property_idx,
+                              const NMSettInfoProperty *       property_info,
                               NMSetting *                      setting,
                               NMSettingClearSecretsWithFlagsFn func,
                               gpointer                         user_data);
 
-    /* compare_property() returns a ternary, where DEFAULT means that the property should not
-     * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
-     * equal/not-equal.
-     *
-     * @other may be %NULL, in which case the function only determines whether
-     * the setting should be compared (TRUE) or not (DEFAULT). */
-    NMTernary (*compare_property)(const struct _NMSettInfoSetting *sett_info,
-                                  guint                            property_idx,
-                                  NMConnection *                   con_a,
-                                  NMSetting *                      set_a,
-                                  NMConnection *                   con_b,
-                                  NMSetting *                      set_b,
-                                  NMSettingCompareFlags            flags);
+    void (*padding_1)(void);
 
     void (*duplicate_copy_properties)(const struct _NMSettInfoSetting *sett_info,
                                       NMSetting *                      src,
@@ -292,6 +280,7 @@ gboolean _nm_setting_clear_secrets(NMSetting *                      setting,
  */
 #define NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS (1 << (7 + G_PARAM_USER_SHIFT))
 
+extern const NMSettInfoPropertType nm_sett_info_propert_type_setting_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u;
@@ -315,6 +304,35 @@ gboolean _nm_setting_aggregate(NMSetting *setting, NMConnectionAggregateType typ
 
 gboolean _nm_setting_slave_type_is_valid(const char *slave_type, const char **out_port_type);
 
+gboolean _nm_setting_compare_flags_check(const GParamSpec *    param_spec,
+                                         NMSettingCompareFlags flags,
+                                         NMSetting *           set_a,
+                                         NMSetting *           set_b);
+
+NMTernary _nm_setting_property_compare_fcn_ignore(const NMSettInfoSetting * sett_info,
+                                                  const NMSettInfoProperty *property_info,
+                                                  NMConnection *            con_a,
+                                                  NMSetting *               set_a,
+                                                  NMConnection *            con_b,
+                                                  NMSetting *               set_b,
+                                                  NMSettingCompareFlags     flags);
+
+NMTernary _nm_setting_property_compare_fcn_direct(const NMSettInfoSetting * sett_info,
+                                                  const NMSettInfoProperty *property_info,
+                                                  NMConnection *            con_a,
+                                                  NMSetting *               set_a,
+                                                  NMConnection *            con_b,
+                                                  NMSetting *               set_b,
+                                                  NMSettingCompareFlags     flags);
+
+NMTernary _nm_setting_property_compare_fcn_default(const NMSettInfoSetting * sett_info,
+                                                   const NMSettInfoProperty *property_info,
+                                                   NMConnection *            con_a,
+                                                   NMSetting *               set_a,
+                                                   NMConnection *            con_b,
+                                                   NMSetting *               set_b,
+                                                   NMSettingCompareFlags     flags);
+
 void _nm_setting_property_get_property_direct(GObject *   object,
                                               guint       prop_id,
                                               GValue *    value,
@@ -325,19 +343,42 @@ void _nm_setting_property_set_property_direct(GObject *     object,
                                               const GValue *value,
                                               GParamSpec *  pspec);
 
+GVariant *_nm_setting_property_to_dbus_fcn_ignore(const NMSettInfoSetting *      sett_info,
+                                                  const NMSettInfoProperty *     property_info,
+                                                  NMConnection *                 connection,
+                                                  NMSetting *                    setting,
+                                                  NMConnectionSerializationFlags flags,
+                                                  const NMConnectionSerializationOptions *options);
+
 GVariant *_nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *      sett_info,
-                                                 guint                          property_idx,
+                                                 const NMSettInfoProperty *     property_info,
                                                  NMConnection *                 connection,
                                                  NMSetting *                    setting,
                                                  NMConnectionSerializationFlags flags,
                                                  const NMConnectionSerializationOptions *options);
 
 GVariant *_nm_setting_property_to_dbus_fcn_direct(const NMSettInfoSetting *      sett_info,
-                                                  guint                          property_idx,
+                                                  const NMSettInfoProperty *     property_info,
                                                   NMConnection *                 connection,
                                                   NMSetting *                    setting,
                                                   NMConnectionSerializationFlags flags,
                                                   const NMConnectionSerializationOptions *options);
+
+gboolean _nm_setting_property_from_dbus_fcn_ignore(const NMSettInfoSetting * sett_info,
+                                                   const NMSettInfoProperty *property_info,
+                                                   NMSetting *               setting,
+                                                   GVariant *                connection_dict,
+                                                   GVariant *                value,
+                                                   NMSettingParseFlags       parse_flags,
+                                                   GError **                 error);
+
+gboolean _nm_setting_property_from_dbus_fcn_gprop(const NMSettInfoSetting * sett_info,
+                                                  const NMSettInfoProperty *property_info,
+                                                  NMSetting *               setting,
+                                                  GVariant *                connection_dict,
+                                                  GVariant *                value,
+                                                  NMSettingParseFlags       parse_flags,
+                                                  GError **                 error);
 
 GVariant *_nm_setting_to_dbus(NMSetting *                             setting,
                               NMConnection *                          connection,
@@ -397,11 +438,10 @@ void _nm_setting_class_commit(NMSettingClass *            setting_class,
         .dbus_type = _dbus_type, __VA_ARGS__                 \
     }
 
-#define NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(_dbus_type, ...)                           \
-    {                                                                                   \
-        .dbus_type = _dbus_type, .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop, \
-        __VA_ARGS__                                                                     \
-    }
+#define NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(_dbus_type, ...)                                  \
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(_dbus_type,                                            \
+                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_gprop, \
+                                        __VA_ARGS__)
 
 #define NM_SETT_INFO_PROPERT_TYPE(init)               \
     ({                                                \
@@ -619,6 +659,58 @@ gboolean _nm_setting_should_compare_secret_property(NMSetting *           settin
 
 NMBridgeVlan *_nm_bridge_vlan_dup(const NMBridgeVlan *vlan);
 NMBridgeVlan *_nm_bridge_vlan_dup_and_seal(const NMBridgeVlan *vlan);
+
+gboolean _nm_utils_bridge_vlans_from_dbus(const NMSettInfoSetting * sett_info,
+                                          const NMSettInfoProperty *property_info,
+                                          NMSetting *               setting,
+                                          GVariant *                connection_dict,
+                                          GVariant *                value,
+                                          NMSettingParseFlags       parse_flags,
+                                          GError **                 error);
+
+GVariant *_nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info,
+                                         const NMSettInfoProperty *              property_info,
+                                         NMConnection *                          connection,
+                                         NMSetting *                             setting,
+                                         NMConnectionSerializationFlags          flags,
+                                         const NMConnectionSerializationOptions *options);
+
+NMTernary _nm_setting_ip_config_compare_fcn_addresses(const NMSettInfoSetting * sett_info,
+                                                      const NMSettInfoProperty *property_info,
+                                                      NMConnection *            con_a,
+                                                      NMSetting *               set_a,
+                                                      NMConnection *            con_b,
+                                                      NMSetting *               set_b,
+                                                      NMSettingCompareFlags     flags);
+
+NMTernary _nm_setting_ip_config_compare_fcn_routes(const NMSettInfoSetting * sett_info,
+                                                   const NMSettInfoProperty *property_info,
+                                                   NMConnection *            con_a,
+                                                   NMSetting *               set_a,
+                                                   NMConnection *            con_b,
+                                                   NMSetting *               set_b,
+                                                   NMSettingCompareFlags     flags);
+
+gboolean _nm_utils_hwaddr_cloned_not_set(NMSetting *         setting,
+                                         GVariant *          connection_dict,
+                                         const char *        property,
+                                         NMSettingParseFlags parse_flags,
+                                         GError **           error);
+
+GVariant *_nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
+                                      const NMSettInfoProperty *              property_info,
+                                      NMConnection *                          connection,
+                                      NMSetting *                             setting,
+                                      NMConnectionSerializationFlags          flags,
+                                      const NMConnectionSerializationOptions *options);
+
+gboolean _nm_utils_hwaddr_cloned_set(const NMSettInfoSetting * sett_info,
+                                     const NMSettInfoProperty *property_info,
+                                     NMSetting *               setting,
+                                     GVariant *                connection_dict,
+                                     GVariant *                value,
+                                     NMSettingParseFlags       parse_flags,
+                                     GError **                 error);
 
 /*****************************************************************************/
 

@@ -4480,9 +4480,8 @@ test_setting_metadata(void)
 
             if (!sip->property_type->to_dbus_fcn) {
                 /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
-                 * properties must not have a param_spec and no gprop_to_dbus_fcn. */
+                 * properties must not have a param_spec. */
                 g_assert(!sip->param_spec);
-                g_assert(!sip->to_dbus_data.none);
             } else if (sip->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop) {
                 g_assert(sip->param_spec);
                 switch (sip->property_type->typdata_to_dbus.gprop_type) {
@@ -4509,20 +4508,57 @@ test_setting_metadata(void)
                 }
                 g_assert_not_reached();
 check_done:;
-                if (sip->property_type->typdata_to_dbus.gprop_type
-                    != NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT)
-                    g_assert(!sip->to_dbus_data.gprop_to_dbus_fcn);
                 can_set_including_default = TRUE;
             }
 
             if (!can_set_including_default)
-                g_assert(!sip->to_dbus_data.including_default);
+                g_assert(!sip->to_dbus_including_default);
 
-            g_assert(!sip->property_type->from_dbus_fcn
-                     || !sip->property_type->gprop_from_dbus_fcn);
+            g_assert(sip->property_type->from_dbus_fcn || !sip->param_spec);
+            if (sip->property_type->typdata_from_dbus.gprop_fcn) {
+                g_assert(sip->property_type->from_dbus_fcn
+                         == _nm_setting_property_from_dbus_fcn_gprop);
+            }
+            if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_gprop)
+                g_assert(sip->param_spec);
+
+            g_assert(sip->property_type->from_dbus_is_full
+                     == NM_IN_SET(sip->property_type->from_dbus_fcn,
+                                  _nm_setting_property_from_dbus_fcn_gprop,
+                                  _nm_setting_property_from_dbus_fcn_ignore));
 
             if (!g_hash_table_insert(h_properties, (char *) sip->name, sip->param_spec))
                 g_assert_not_reached();
+
+            if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_default) {
+                g_assert(sip->param_spec);
+                g_assert_cmpstr(sip->name, !=, NM_SETTING_NAME);
+            } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_direct) {
+                g_assert(sip->param_spec);
+                g_assert(sip->property_type->direct_type != NM_VALUE_TYPE_NONE);
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+            } else if (sip->property_type->compare_fcn == _nm_setting_property_compare_fcn_ignore) {
+                if (NM_IN_SET(sip->property_type,
+                              &nm_sett_info_propert_type_deprecated_ignore_i,
+                              &nm_sett_info_propert_type_deprecated_ignore_u,
+                              &nm_sett_info_propert_type_assigned_mac_address)) {
+                    /* pass */
+                } else if (!sip->param_spec) {
+                    /* pass */
+                } else if (nm_streq(sip->name, NM_SETTING_NAME)) {
+                    /* pass */
+                } else {
+                    /* ignoring a property for comparison make only sense in very specific cases. */
+                    g_assert_not_reached();
+                }
+            } else if (sip->property_type->compare_fcn) {
+                /* pass */
+            } else {
+                g_assert_not_reached();
+            }
+            g_assert((sip->property_type->compare_fcn != _nm_setting_property_compare_fcn_direct)
+                     || (sip->property_type->direct_type != NM_VALUE_TYPE_NONE));
 
             property_types_data = g_hash_table_lookup(h_property_types, sip->property_type);
             if (!property_types_data) {
@@ -4539,6 +4575,11 @@ check_done:;
                 nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
 
                 g_assert_cmpstr(sip->name, ==, sip->param_spec->name);
+
+                g_assert(NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_WRITABLE)
+                         != nm_streq(sip->name, NM_SETTING_NAME));
+                g_assert((sip->property_type == &nm_sett_info_propert_type_setting_name)
+                         == nm_streq(sip->name, NM_SETTING_NAME));
 
                 g_value_init(&val, sip->param_spec->value_type);
                 g_object_get_property(G_OBJECT(setting), sip->name, &val);
@@ -4675,8 +4716,12 @@ check_done:;
                 if (!g_variant_type_equal(pt->dbus_type, pt_2->dbus_type)
                     || pt->direct_type != pt_2->direct_type || pt->to_dbus_fcn != pt_2->to_dbus_fcn
                     || pt->from_dbus_fcn != pt_2->from_dbus_fcn
+                    || pt->compare_fcn != pt_2->compare_fcn
                     || pt->missing_from_dbus_fcn != pt_2->missing_from_dbus_fcn
-                    || pt->gprop_from_dbus_fcn != pt_2->gprop_from_dbus_fcn
+                    || memcmp(&pt->typdata_from_dbus,
+                              &pt_2->typdata_from_dbus,
+                              sizeof(pt->typdata_from_dbus))
+                           != 0
                     || memcmp(&pt->typdata_to_dbus,
                               &pt_2->typdata_to_dbus,
                               sizeof(pt->typdata_to_dbus))

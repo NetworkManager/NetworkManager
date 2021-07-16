@@ -1290,13 +1290,24 @@ set_secret_flags(NMSetting *          setting,
         ->set_secret_flags(setting, secret_name, flags, error);
 }
 
-/* NMSettingWirelessSecurity:wep-key-type is an enum, but needs to be marshalled
- * as 'u', not 'i', for backward-compatibility.
- */
 static GVariant *
-wep_key_type_to_dbus(const GValue *from)
+wep_key_type_to_dbus(const NMSettInfoSetting *               sett_info,
+                     const NMSettInfoProperty *              property_info,
+                     NMConnection *                          connection,
+                     NMSetting *                             setting,
+                     NMConnectionSerializationFlags          flags,
+                     const NMConnectionSerializationOptions *options)
 {
-    return g_variant_new_uint32(g_value_get_enum(from));
+    NMWepKeyType t;
+
+    t = nm_setting_wireless_security_get_wep_key_type(NM_SETTING_WIRELESS_SECURITY(setting));
+    if (t == NM_WEP_KEY_TYPE_UNKNOWN)
+        return NULL;
+
+    /* NMSettingWirelessSecurity:wep-key-type is an enum, but needs to be marshalled
+     * as 'u', not 'i', for backward-compatibility.
+     */
+    return g_variant_new_uint32(t);
 }
 
 /*****************************************************************************/
@@ -1924,10 +1935,14 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                           NM_TYPE_WEP_KEY_TYPE,
                           NM_WEP_KEY_TYPE_UNKNOWN,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_WEP_KEY_TYPE],
-                                 &nm_sett_info_propert_type_plain_u,
-                                 .to_dbus_data.gprop_to_dbus_fcn = wep_key_type_to_dbus, );
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_WEP_KEY_TYPE],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_UINT32,
+                                       .to_dbus_fcn   = wep_key_type_to_dbus,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                       .from_dbus_is_full = TRUE));
 
     /**
      * NMSettingWirelessSecurity:wps-method:
