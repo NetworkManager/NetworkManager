@@ -166,7 +166,7 @@ _fixup_string(const char *       desc,
             in_paren = TRUE;
         else if (*p == ')')
             in_paren = FALSE;
-        else if (NM_IN_SET(*p, '_', ',') || *p < ' ' || in_paren) {
+        else if (NM_IN_SET(*p, '_', ',') || nm_ascii_is_ctrl_or_del(*p) || in_paren) {
             /* pass */
         } else
             continue;
