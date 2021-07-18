@@ -153,6 +153,7 @@ typedef enum {
     NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS  = 1024,
     NM_DHCP_OPTION_DHCP4_NM_EXPIRY      = 1025,
     NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER = 1026,
+    NM_DHCP_OPTION_DHCP4_NM_FILENAME    = 1027, /* 'file' DHCP header */
 } NMDhcpOptionDhcp4Options;
 
 typedef enum {
@@ -185,7 +186,7 @@ typedef struct {
     bool        include;
 } NMDhcpOption;
 
-extern const NMDhcpOption _nm_dhcp_option_dhcp4_options[142];
+extern const NMDhcpOption _nm_dhcp_option_dhcp4_options[143];
 extern const NMDhcpOption _nm_dhcp_option_dhcp6_options[16];
 
 static inline const char *
