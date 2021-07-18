@@ -169,6 +169,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp4_options[] = {
     REQ(NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS, "ip_address", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_NM_EXPIRY, "expiry", FALSE),
     REQ(NM_DHCP_OPTION_DHCP4_NM_NEXT_SERVER, "next_server", FALSE),
+    REQ(NM_DHCP_OPTION_DHCP4_NM_FILENAME, "filename", FALSE),
 };
 
 static const NMDhcpOption *const _sorted_options_4[G_N_ELEMENTS(_nm_dhcp_option_dhcp4_options)] = {
@@ -184,7 +185,7 @@ static const NMDhcpOption *const _sorted_options_4[G_N_ELEMENTS(_nm_dhcp_option_
     A(98),  A(99),  A(100), A(101), A(102), A(103), A(104), A(105), A(106), A(107), A(108), A(109),
     A(110), A(111), A(112), A(113), A(114), A(115), A(116), A(117), A(118), A(119), A(120), A(121),
     A(122), A(123), A(124), A(125), A(126), A(127), A(128), A(129), A(130), A(131), A(132), A(133),
-    A(134), A(15),  A(135), A(136), A(16),  A(137), A(138), A(139), A(140), A(141),
+    A(134), A(15),  A(135), A(136), A(16),  A(137), A(138), A(139), A(140), A(141), A(142),
 #undef A
 };
 
