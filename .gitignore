@@ -68,6 +68,9 @@ test-*.trs
 /src/nm-dispatcher/org.freedesktop.nm_dispatcher.service
 /src/nm-dispatcher/tests/test-dispatcher-envp
 
+/src/nm-sudo/nm-sudo
+/src/nm-sudo/org.freedesktop.nm.sudo.service
+
 /data/NetworkManager.service
 /data/NetworkManager-wait-online.service
 /data/NetworkManager-dispatcher.service
@@ -75,6 +78,7 @@ test-*.trs
 /data/server.conf
 /data/org.freedesktop.NetworkManager.policy
 /data/org.freedesktop.NetworkManager.policy.in
+/data/nm-sudo.service
 
 /docs/api/version.xml
 /docs/api/settings-spec.html

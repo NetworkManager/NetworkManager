@@ -1,6 +1,7 @@
 contrib/fedora/rpm/
 data/NetworkManager-wait-online.service.in
 data/NetworkManager.service.in
+data/nm-sudo.service.in
 data/org.freedesktop.NetworkManager.policy.in
 examples/python/NetworkManager.py
 examples/python/systray/eggtrayicon.c

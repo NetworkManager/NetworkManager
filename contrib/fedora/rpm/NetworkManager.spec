@@ -40,7 +40,7 @@
 
 %global real_version_major %(printf '%s' '%{real_version}' | sed -n 's/^\\([1-9][0-9]*\\.[0-9][0-9]*\\)\\.[0-9][0-9]*$/\\1/p')
 
-%global systemd_units NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service
+%global systemd_units NetworkManager.service NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-sudo.service
 
 %global systemd_units_cloud_setup nm-cloud-setup.service nm-cloud-setup.timer
 
@@ -940,7 +940,7 @@ if [ $1 -eq 0 ]; then
 
     /usr/sbin/update-alternatives --remove ifup %{_libexecdir}/nm-ifup >/dev/null 2>&1 || :
 fi
-%systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service
+%systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-sudo.service
 
 
 %if %{with nm_cloud_setup}
@@ -974,6 +974,7 @@ fi
 %files
 %{dbus_sys_dir}/org.freedesktop.NetworkManager.conf
 %{dbus_sys_dir}/nm-dispatcher.conf
+%{dbus_sys_dir}/nm-sudo.conf
 %{dbus_sys_dir}/nm-ifcfg-rh.conf
 %{_sbindir}/%{name}
 %{_bindir}/nmcli
@@ -999,6 +1000,7 @@ fi
 %{_libexecdir}/nm-iface-helper
 %{_libexecdir}/nm-initrd-generator
 %{_libexecdir}/nm-daemon-helper
+%{_libexecdir}/nm-sudo
 %dir %{_libdir}/%{name}
 %dir %{nmplugindir}
 %{nmplugindir}/libnm-settings-plugin*.so
@@ -1022,6 +1024,7 @@ fi
 %dir %{_localstatedir}/lib/NetworkManager
 %dir %{_sysconfdir}/sysconfig/network-scripts
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
+%{_datadir}/dbus-1/system-services/org.freedesktop.nm.sudo.service
 %{_datadir}/polkit-1/actions/*.policy
 %{_prefix}/lib/udev/rules.d/*.rules
 %if %{with firewalld_zone}
@@ -1031,6 +1034,7 @@ fi
 %{systemd_dir}/NetworkManager.service
 %{systemd_dir}/NetworkManager-wait-online.service
 %{systemd_dir}/NetworkManager-dispatcher.service
+%{systemd_dir}/nm-sudo.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
 %doc NEWS AUTHORS README CONTRIBUTING.md TODO
