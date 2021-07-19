@@ -1788,6 +1788,14 @@ nm_g_unix_fd_add_source(int               fd,
         NULL);
 }
 
+static inline GSource *
+nm_g_unix_signal_add_source(int signum, GSourceFunc handler, gpointer user_data)
+{
+    return nm_g_source_attach(
+        nm_g_unix_signal_source_new(signum, G_PRIORITY_DEFAULT, handler, user_data, NULL),
+        NULL);
+}
+
 NM_AUTO_DEFINE_FCN0(GMainContext *, _nm_auto_unref_gmaincontext, g_main_context_unref);
 #define nm_auto_unref_gmaincontext nm_auto(_nm_auto_unref_gmaincontext)
 
