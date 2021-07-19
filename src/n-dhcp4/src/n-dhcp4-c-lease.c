@@ -249,9 +249,11 @@ _c_public_ void n_dhcp4_client_lease_get_lifetime(NDhcp4ClientLease *lease, uint
  * Gets the address contained in the server-identifier DHCP option, in network
  * byte order.
  *
- * Return: 0 on success, negative error code on failure.
+ * Return: 0 on success,
+ *         N_DHCP4_E_UNSET if the lease doesn't contain a server-identifier, or
+ *         N_DCHP4_E_INTERNAL if the server-identifier is not valid.
  */
-_c_public_ int n_dhcp4_client_lease_get_server_identifier (NDhcp4ClientLease *lease, struct in_addr *addr) {
+_c_public_ int n_dhcp4_client_lease_get_server_identifier(NDhcp4ClientLease *lease, struct in_addr *addr) {
         uint8_t *data;
         size_t n_data;
         int r;
@@ -260,7 +262,7 @@ _c_public_ int n_dhcp4_client_lease_get_server_identifier (NDhcp4ClientLease *le
         if (r)
                 return r;
         if (n_data < sizeof(struct in_addr))
-                return N_DHCP4_E_MALFORMED;
+                return N_DHCP4_E_INTERNAL;
 
         memcpy(addr, data, sizeof(struct in_addr));
 
