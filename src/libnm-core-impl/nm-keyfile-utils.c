@@ -531,7 +531,7 @@ _keyfile_key_encode(const char *name, char **out_to_free)
             if (ch == '\0')
                 return name;
 
-            if (ch < 0x20 || ch >= 127 || NM_IN_SET(ch, '=', '[', ']')
+            if (!nm_ascii_is_regular(ch) || NM_IN_SET(ch, '=', '[', ']')
                 || (ch == '\\' && g_ascii_isxdigit(name[i + 1]) && g_ascii_isxdigit(name[i + 2]))
                 || (ch == ' ' && name[i + 1] == '\0'))
                 break;
@@ -557,7 +557,7 @@ _keyfile_key_encode(const char *name, char **out_to_free)
         if (ch == '\0')
             break;
 
-        if (ch < 0x20 || ch >= 127 || NM_IN_SET(ch, '=', '[', ']')
+        if (!nm_ascii_is_regular(ch) || NM_IN_SET(ch, '=', '[', ']')
             || (ch == '\\' && g_ascii_isxdigit(name[i + 1]) && g_ascii_isxdigit(name[i + 2]))
             || (ch == ' ' && name[i + 1] == '\0')) {
             nm_str_buf_append_c(&str, '\\');

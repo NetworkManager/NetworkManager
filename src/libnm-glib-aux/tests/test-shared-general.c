@@ -1370,6 +1370,49 @@ test_nm_g_source_sentinel(void)
 
 /*****************************************************************************/
 
+static void
+test_nm_ascii(void)
+{
+    int i;
+
+    for (i = 0; i < 256; i++) {
+        const char ch = i;
+        gboolean   is_space;
+
+        if (ch == 127) {
+            g_assert(nm_ascii_is_ctrl_or_del(ch));
+            g_assert(!nm_ascii_is_ctrl(ch));
+        } else
+            g_assert(nm_ascii_is_ctrl_or_del(ch) == nm_ascii_is_ctrl(ch));
+        g_assert(nm_ascii_is_ctrl_or_del(ch) == g_ascii_iscntrl(ch));
+
+        g_assert(nm_ascii_is_non_ascii(ch) == (i >= 128));
+
+        g_assert(!nm_ascii_is_ctrl_or_del(ch) || !nm_ascii_is_non_ascii(ch));
+
+        g_assert((nm_ascii_is_ctrl_or_del(ch) || nm_ascii_is_regular(ch))
+                 != nm_ascii_is_non_ascii(ch));
+
+        g_assert(nm_ascii_is_regular(ch)
+                 == (!nm_ascii_is_ctrl_or_del(ch) && !nm_ascii_is_non_ascii(ch)));
+
+        is_space = g_ascii_isspace(ch);
+        if (NM_IN_SET(ch, '\t', '\n', '\f', '\r')) {
+            /* hack is-space, so that the check below works to check for regular ASCII characters. */
+            g_assert(!nm_ascii_is_regular(ch));
+            g_assert(is_space);
+            is_space = FALSE;
+        }
+        g_assert(nm_ascii_is_regular(ch)
+                 == (g_ascii_isalnum(ch) || g_ascii_isalpha(ch) || g_ascii_isdigit(ch)
+                     || g_ascii_isgraph(ch) || g_ascii_islower(ch) || g_ascii_isprint(ch)
+                     || g_ascii_ispunct(ch) || is_space || g_ascii_isupper(ch)
+                     || g_ascii_isxdigit(ch)));
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -1402,6 +1445,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_strv_dup_packed", test_strv_dup_packed);
     g_test_add_func("/general/test_utils_hashtable_cmp", test_utils_hashtable_cmp);
     g_test_add_func("/general/test_nm_g_source_sentinel", test_nm_g_source_sentinel);
+    g_test_add_func("/general/test_nm_ascii", test_nm_ascii);
 
     return g_test_run();
 }

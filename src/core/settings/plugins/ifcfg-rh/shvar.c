@@ -172,7 +172,7 @@ _escape_ansic(const char *source)
             n_alloc += 2;
             break;
         default:
-            if ((*p < ' ') || (*p >= 0177))
+            if (!nm_ascii_is_regular(*p))
                 n_alloc += 4;
             else
                 n_alloc += 1;
@@ -221,7 +221,7 @@ _escape_ansic(const char *source)
             *q++ = *p;
             break;
         default:
-            if ((*p < ' ') || (*p >= 0177)) {
+            if (!nm_ascii_is_regular(*p)) {
                 *q++ = '\\';
                 *q++ = '0' + (((*p) >> 6) & 07);
                 *q++ = '0' + (((*p) >> 3) & 07);
@@ -262,13 +262,14 @@ svEscape(const char *s, char **to_free)
             mangle++;
         else if (_char_req_quotes(s[slen]))
             requires_quotes = TRUE;
-        else if (((guchar) s[slen]) < ' ') {
-            /* if the string contains newline we can only express it using ANSI C quotation
-             * (as we don't support line continuation).
-             * Additionally, ANSI control characters look odd with regular quotation, so handle
-             * them too. */
-            return (*to_free = _escape_ansic(s));
-        } else if (((guchar) s[slen]) >= 0177) {
+        else if (!nm_ascii_is_regular(s[slen])) {
+            if (nm_ascii_is_ctrl_or_del(s[slen])) {
+                /* if the string contains newline we can only express it using ANSI C quotation
+                 * (as we don't support line continuation).
+                 * Additionally, ANSI control characters look odd with regular quotation, so handle
+                 * them too. */
+                return (*to_free = _escape_ansic(s));
+            }
             all_ascii       = FALSE;
             requires_quotes = TRUE;
         }
