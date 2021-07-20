@@ -1795,5 +1795,6 @@ global:
 } libnm_1_30_0;
 
 libnm_1_32_4 {
+global:
 	nm_setting_ip_config_get_required_timeout;
 } libnm_1_32_0;
