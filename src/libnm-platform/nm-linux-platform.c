@@ -3519,6 +3519,7 @@ rta_multipath_done:;
 
     obj = nmp_object_new(is_v4 ? NMP_OBJECT_TYPE_IP4_ROUTE : NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 
+    obj->ip_route.is_external   = TRUE;
     obj->ip_route.type_coerced  = nm_platform_route_type_coerce(rtm->rtm_type);
     obj->ip_route.table_coerced = nm_platform_route_table_coerce(
         tb[RTA_TABLE] ? nla_get_u32(tb[RTA_TABLE]) : (guint32) rtm->rtm_table);
