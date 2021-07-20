@@ -5,6 +5,20 @@ Overview of changes since NetworkManager-1.32.2
 
 * core: remove stale entries from "seen-bssids" and "timestamp"
   files in "/var/lib/NetworkManager".
+* bond: support the peer_notif_delay option.
+* core: add ipv[46].required-timeout option to wait for IP
+  configuration while activating.
+* core: send ARP announcements when there is carrier.
+* core: start DHCPv6 when a prefix delegation is needed for shared
+  mode.
+* firewall: fix nftables backend to create "ip" table for
+  IPv4 only.
+* initrd: set required-timeout of 20 seconds for default IPv4 configuration
+  to opportunistically wait for IPv4.
+* ifcfg: log warning about invalid keys in ifcfg files.
+* ifcfg: reject non-UTF-8 from ifcfg files.
+* nmcli: show DNS SEARCH field in device information.
+* cloud-setup: add support for Aliyun cloud.
 
 =============================================
 NetworkManager-1.32.2
