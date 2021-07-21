@@ -28,12 +28,6 @@ _nm_logging_enabled_init(const char *level_str)
     _nm_logging_configured_level = level;
 }
 
-void
-_nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
-                                          gint64                 offset_sec,
-                                          gboolean               is_boottime)
-{}
-
 /*****************************************************************************/
 
 G_LOCK_DEFINE_STATIC(_wait_for_objects_lock);
