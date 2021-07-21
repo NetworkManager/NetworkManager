@@ -13,16 +13,6 @@
 
 /*****************************************************************************/
 
-extern volatile NMLogLevel _nm_logging_configured_level;
-
-static inline gboolean
-nm_logging_enabled(NMLogLevel level)
-{
-    return level >= _nm_logging_configured_level;
-}
-
-void _nm_logging_enabled_init(const char *level_str);
-
 #define _nm_log(level, ...) _nm_log_simple_printf((level), __VA_ARGS__);
 
 #define _NMLOG(level, ...)                 \
@@ -30,7 +20,7 @@ void _nm_logging_enabled_init(const char *level_str);
     {                                      \
         const NMLogLevel _level = (level); \
                                            \
-        if (nm_logging_enabled(_level)) {  \
+        if (_nm_logging_enabled(_level)) { \
             _nm_log(_level, __VA_ARGS__);  \
         }                                  \
     }                                      \

@@ -82,6 +82,23 @@ _nm_log_parse_level(const char *level, NMLogLevel *out_level)
 
 /*****************************************************************************/
 
+volatile NMLogLevel _nm_logging_enabled_value = LOGL_TRACE;
+
+void
+_nm_logging_enabled_init(const char *level_str)
+{
+    NMLogLevel level;
+
+    if (!_nm_log_parse_level(level_str, &level))
+        level = LOGL_WARN;
+    else if (level == _LOGL_KEEP)
+        level = LOGL_WARN;
+
+    _nm_logging_enabled_value = level;
+}
+
+/*****************************************************************************/
+
 void
 _nm_log_simple_printf(NMLogLevel level, const char *fmt, ...)
 {
