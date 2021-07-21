@@ -3,7 +3,7 @@
 #ifndef __NM_CLOUD_SETUP_UTILS_H__
 #define __NM_CLOUD_SETUP_UTILS_H__
 
-#include "libnm-glib-aux/nm-logging-fwd.h"
+#include "libnm-glib-aux/nm-logging-base.h"
 
 /*****************************************************************************/
 
@@ -23,9 +23,7 @@ nm_logging_enabled(NMLogLevel level)
 
 void _nm_logging_enabled_init(const char *level_str);
 
-void _nm_log_impl_cs(NMLogLevel level, const char *fmt, ...) _nm_printf(2, 3);
-
-#define _nm_log(level, ...) _nm_log_impl_cs((level), __VA_ARGS__);
+#define _nm_log(level, ...) _nm_log_simple_printf((level), __VA_ARGS__);
 
 #define _NMLOG(level, ...)                 \
     G_STMT_START                           \
