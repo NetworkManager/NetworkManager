@@ -4113,6 +4113,8 @@ check-local-devices-ovs: src/core/devices/ovs/libnm-device-plugin-ovs.la
 	$(srcdir)/tools/check-exports.sh $(builddir)/src/core/devices/ovs/.libs/libnm-device-plugin-ovs.so "$(srcdir)/linker-script-devices.ver"
 	$(call check_so_symbols,$(builddir)/src/core/devices/ovs/.libs/libnm-device-plugin-ovs.so)
 
+check_local += check-local-devices-ovs
+
 endif
 
 EXTRA_DIST += \
