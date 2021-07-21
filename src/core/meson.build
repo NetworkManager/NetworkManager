@@ -270,6 +270,14 @@ endif
 subdir('devices')
 subdir('settings/plugins')
 
+# NetworkManager binary also must contain symbols that are not used by the binary
+# itself, but by the plugins (that are dlopened). We need to explicitly include
+# them during linking.
+networkmanager_undefined_symbols_args = []
+foreach s: []
+  networkmanager_undefined_symbols_args += ['-u', s]
+endforeach
+
 # NetworkManager binary
 
 # libNetworkManager.a, as built by meson doesn't contain all symbols
@@ -284,7 +292,9 @@ NetworkManager_all_sym = executable(
     nm_deps,
     libudev_dep,
   ],
-  link_args: '-Wl,--no-gc-sections',
+  link_args: [
+    '-Wl,--no-gc-sections',
+  ] + networkmanager_undefined_symbols_args,
   link_whole: [
     libNetworkManager,
     libNetworkManagerBase,
@@ -345,7 +355,7 @@ NetworkManager = executable(
   link_args: [
     '-rdynamic',
     '-Wl,--version-script,@0@'.format(ver_script.full_path()),
-  ],
+  ] + networkmanager_undefined_symbols_args,
   link_depends: ver_script,
   install: true,
   install_dir: nm_sbindir,
