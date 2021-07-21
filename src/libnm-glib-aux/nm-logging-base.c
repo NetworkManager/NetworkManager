@@ -80,6 +80,8 @@ _nm_log_parse_level(const char *level, NMLogLevel *out_level)
     return FALSE;
 }
 
+/*****************************************************************************/
+
 void
 _nm_log_simple_printf(NMLogLevel level, const char *fmt, ...)
 {
