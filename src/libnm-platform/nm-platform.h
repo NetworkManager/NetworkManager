@@ -462,6 +462,14 @@ typedef union {
      * the "table_coerced" field is ignored (unlike for the metric). */            \
     bool table_any : 1;                                                                   \
                                                                                           \
+    /* This route is tracked as external route, that is not a route that NetworkManager
+     * actively wants to add, but a route that was added externally. In some cases, such
+     * a route should be ignored.
+     *
+     * Note that unlike most other fields here, this flag only exists inside NetworkManager
+     * and is not reflected on netlink. */   \
+    bool is_external : 1;                                                                 \
+                                                                                          \
     /* rtnh_flags
      *
      * Routes with rtm_flags RTM_F_CLONED are hidden by platform and

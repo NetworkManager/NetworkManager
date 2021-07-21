@@ -163,6 +163,11 @@ _nm_ip_config_add_obj(NMDedupMultiIndex *          multi_idx,
                     obj_new_stackinit.ip_route.rt_source = obj_old->ip_route.rt_source;
                     modified                             = TRUE;
                 }
+                if (!obj_new->ip_route.is_external && obj_old->ip_route.is_external) {
+                    obj_new = nmp_object_stackinit_obj(&obj_new_stackinit, obj_new);
+                    obj_new_stackinit.ip_route.is_external = FALSE;
+                    modified                               = TRUE;
+                }
                 break;
             default:
                 nm_assert_not_reached();
