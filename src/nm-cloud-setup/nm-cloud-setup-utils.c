@@ -13,23 +13,6 @@
 
 /*****************************************************************************/
 
-volatile NMLogLevel _nm_logging_configured_level = LOGL_TRACE;
-
-void
-_nm_logging_enabled_init(const char *level_str)
-{
-    NMLogLevel level;
-
-    if (!_nm_log_parse_level(level_str, &level))
-        level = LOGL_WARN;
-    else if (level == _LOGL_KEEP)
-        level = LOGL_WARN;
-
-    _nm_logging_configured_level = level;
-}
-
-/*****************************************************************************/
-
 G_LOCK_DEFINE_STATIC(_wait_for_objects_lock);
 static GSList *_wait_for_objects_list;
 static GSList *_wait_for_objects_iterate_loops;
