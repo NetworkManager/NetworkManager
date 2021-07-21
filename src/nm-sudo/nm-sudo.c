@@ -2,6 +2,8 @@
 
 #include "libnm-glib-aux/nm-default-glib-i18n-prog.h"
 
+#include <gio/gunixfdlist.h>
+
 #include "c-list/src/c-list.h"
 #include "libnm-glib-aux/nm-logging-base.h"
 #include "libnm-glib-aux/nm-shared-utils.h"
@@ -96,6 +98,28 @@ _handle_ping(GlobalData *gl, GDBusMethodInvocation *invocation, const char *arg)
                           gl->no_auth_for_testing ? ", no-auth-for-testing" : "",
                           arg);
     g_dbus_method_invocation_return_value(invocation, g_variant_new("(s)", msg));
+}
+
+static void
+_handle_get_fd(GlobalData *gl, GDBusMethodInvocation *invocation, guint32 fd_type)
+{
+    nm_auto_close int fd                 = -1;
+    gs_unref_object GUnixFDList *fd_list = NULL;
+    gs_free_error GError *error          = NULL;
+
+    if (fd_type != (NMSudoGetFDType) fd_type)
+        fd_type = NM_SUDO_GET_FD_TYPE_NONE;
+
+    fd = nm_sudo_utils_open_fd(fd_type, &error);
+    if (fd < 0) {
+        g_dbus_method_invocation_take_error(invocation, g_steal_pointer(&error));
+        return;
+    }
+
+    fd_list = g_unix_fd_list_new_from_array(&fd, 1);
+    nm_steal_fd(&fd);
+
+    g_dbus_method_invocation_return_value_with_unix_fd_list(invocation, NULL, fd_list);
 }
 
 /*****************************************************************************/
@@ -260,6 +284,7 @@ _bus_method_call(GDBusConnection *      connection,
 {
     GlobalData *gl = user_data;
     const char *arg_s;
+    guint32     arg_u;
 
     nm_assert(nm_streq(object_path, NM_SUDO_DBUS_OBJECT_PATH));
     nm_assert(nm_streq(interface_name, NM_SUDO_DBUS_IFACE_NAME));
@@ -286,6 +311,9 @@ _bus_method_call(GDBusConnection *      connection,
     if (nm_streq(method_name, "Ping")) {
         g_variant_get(parameters, "(&s)", &arg_s);
         _handle_ping(gl, invocation, arg_s);
+    } else if (nm_streq(method_name, "GetFD")) {
+        g_variant_get(parameters, "(u)", &arg_u);
+        _handle_get_fd(gl, invocation, arg_u);
     } else
         nm_assert_not_reached();
 }
@@ -296,7 +324,10 @@ static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO
         NM_DEFINE_GDBUS_METHOD_INFO(
             "Ping",
             .in_args  = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("arg", "s"), ),
-            .out_args = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("arg", "s"), ), ), ), );
+            .out_args = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("arg", "s"), ), ),
+        NM_DEFINE_GDBUS_METHOD_INFO("GetFD",
+                                    .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
+                                        NM_DEFINE_GDBUS_ARG_INFO("fd_type", "u"), ), ), ), );
 
 typedef struct {
     GlobalData *gl;

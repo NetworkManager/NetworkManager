@@ -275,7 +275,10 @@ subdir('settings/plugins')
 # itself, but by the plugins (that are dlopened). We need to explicitly include
 # them during linking.
 networkmanager_undefined_symbols_args = []
-foreach s: []
+foreach s: [
+              'nm_sudo_call_get_fd',
+              'nm_sudo_utils_open_fd',
+           ]
   networkmanager_undefined_symbols_args += ['-u', s]
 endforeach
 
