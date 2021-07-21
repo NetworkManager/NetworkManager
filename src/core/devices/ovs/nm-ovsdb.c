@@ -17,6 +17,7 @@
 #include "devices/nm-device.h"
 #include "nm-manager.h"
 #include "nm-setting-ovs-external-ids.h"
+#include "nm-sudo-call.h"
 
 /*****************************************************************************/
 
@@ -118,9 +119,8 @@ enum {
 static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
-    GSocketClient *    client;
     GSocketConnection *conn;
-    GCancellable *     cancellable;
+    GCancellable *     conn_cancellable;
     char               buf[4096]; /* Input buffer */
     size_t             bufp;      /* Last decoded byte in the input buffer. */
     GString *          input;     /* JSON stream waiting for decoding. */
@@ -2223,7 +2223,7 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
 
     nm_assert(!retry || !is_disposing);
 
-    if (!priv->client)
+    if (!priv->conn && !priv->conn_cancellable)
         return;
 
     _LOGD("disconnecting from ovsdb, retry %d", retry);
@@ -2250,10 +2250,9 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
     priv->bufp = 0;
     g_string_truncate(priv->input, 0);
     g_string_truncate(priv->output, 0);
-    g_clear_object(&priv->client);
     g_clear_object(&priv->conn);
     nm_clear_g_free(&priv->db_uuid);
-    nm_clear_g_cancellable(&priv->cancellable);
+    nm_clear_g_cancellable(&priv->conn_cancellable);
 
     if (retry)
         ovsdb_try_connect(self);
@@ -2348,30 +2347,75 @@ _monitor_bridges_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_
 }
 
 static void
-_client_connect_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
+_ovsdb_connect_complete_with_fd(NMOvsdb *self, int fd_take)
 {
-    GSocketClient *    client = G_SOCKET_CLIENT(source_object);
-    NMOvsdb *          self   = NM_OVSDB(user_data);
-    NMOvsdbPrivate *   priv;
-    GError *           error = NULL;
-    GSocketConnection *conn;
+    NMOvsdbPrivate *priv            = NM_OVSDB_GET_PRIVATE(self);
+    gs_unref_object GSocket *socket = NULL;
+    gs_free_error GError *error     = NULL;
 
-    conn = g_socket_client_connect_finish(client, res, &error);
-    if (conn == NULL) {
-        if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-            _LOGI("%s", error->message);
-
+    socket = g_socket_new_from_fd(nm_steal_fd(&fd_take), &error);
+    if (!socket) {
+        _LOGT("connect: failure to open socket for new FD: %s", error->message);
         ovsdb_disconnect(self, FALSE, FALSE);
-        g_clear_error(&error);
         return;
     }
 
-    priv       = NM_OVSDB_GET_PRIVATE(self);
-    priv->conn = conn;
-    g_clear_object(&priv->cancellable);
+    priv->conn = g_socket_connection_factory_create_connection(socket);
+    g_clear_object(&priv->conn_cancellable);
 
     ovsdb_read(self);
     ovsdb_next_command(self);
+}
+
+static void
+_ovsdb_connect_sudo_cb(int fd_take, GError *error, gpointer user_data)
+{
+    nm_auto_close int fd = fd_take;
+    NMOvsdb *         self;
+
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    self = user_data;
+
+    if (error) {
+        _LOGT("connect: failure to get FD from nm-sudo: %s", error->message);
+        ovsdb_disconnect(self, FALSE, FALSE);
+        return;
+    }
+
+    _LOGT("connect: connected successfully with FD from nm-sudo");
+    _ovsdb_connect_complete_with_fd(self, nm_steal_fd(&fd));
+}
+
+static void
+_ovsdb_connect_idle(gpointer user_data, GCancellable *cancellable)
+{
+    NMOvsdb *         self;
+    NMOvsdbPrivate *  priv;
+    nm_auto_close int fd        = -1;
+    gs_free_error GError *error = NULL;
+
+    if (g_cancellable_is_cancelled(cancellable))
+        return;
+
+    self = user_data;
+    priv = NM_OVSDB_GET_PRIVATE(self);
+
+    fd = nm_sudo_utils_open_fd(NM_SUDO_GET_FD_TYPE_OVSDB_SOCKET, &error);
+    if (fd < 0) {
+        _LOGT("connect: opening %s failed (\"%s\"). Retry with nm-sudo",
+              NM_OVSDB_SOCKET,
+              error->message);
+        nm_sudo_call_get_fd(NM_SUDO_GET_FD_TYPE_OVSDB_SOCKET,
+                            priv->conn_cancellable,
+                            _ovsdb_connect_sudo_cb,
+                            self);
+        return;
+    }
+
+    _LOGT("connect: opening %s succeeded", NM_OVSDB_SOCKET);
+    _ovsdb_connect_complete_with_fd(self, nm_steal_fd(&fd));
 }
 
 /**
@@ -2385,22 +2429,13 @@ static void
 ovsdb_try_connect(NMOvsdb *self)
 {
     NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
-    GSocketAddress *addr;
 
-    if (priv->client)
+    if (priv->conn || priv->conn_cancellable)
         return;
 
-    /* TODO: This should probably be made configurable via NetworkManager.conf */
-    addr = g_unix_socket_address_new(RUNSTATEDIR "/openvswitch/db.sock");
-
-    priv->client      = g_socket_client_new();
-    priv->cancellable = g_cancellable_new();
-    g_socket_client_connect_async(priv->client,
-                                  G_SOCKET_CONNECTABLE(addr),
-                                  priv->cancellable,
-                                  _client_connect_cb,
-                                  self);
-    g_object_unref(addr);
+    _LOGT("connect: start connecting socket %s on idle", NM_OVSDB_SOCKET);
+    priv->conn_cancellable = g_cancellable_new();
+    nm_utils_invoke_on_idle(priv->conn_cancellable, _ovsdb_connect_idle, self);
 
     /* Queue a monitor call before any other command, ensuring that we have an up
      * to date view of existing bridged that we need for add and remove ops. */
