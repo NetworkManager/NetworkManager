@@ -102,14 +102,15 @@ _nm_logging_enabled_init(const char *level_str)
 void
 _nm_log_simple_printf(NMLogLevel level, const char *fmt, ...)
 {
-    gs_free char *msg = NULL;
-    va_list       ap;
+    gs_free char *msg_heap = NULL;
+    char          msg_stack[700];
+    const char *  msg;
     const char *  level_str;
     gint64        ts;
 
-    va_start(ap, fmt);
-    msg = g_strdup_vprintf(fmt, ap);
-    va_end(ap);
+    ts = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
+
+    msg = nm_vsprintf_buf_or_alloc(fmt, fmt, msg_stack, &msg_heap, NULL);
 
     switch (level) {
     case LOGL_TRACE:
@@ -129,8 +130,6 @@ _nm_log_simple_printf(NMLogLevel level, const char *fmt, ...)
         level_str = "<error>";
         break;
     }
-
-    ts = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
 
     g_print("[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s %s\n",
             ts / NM_UTILS_NSEC_PER_SEC,
