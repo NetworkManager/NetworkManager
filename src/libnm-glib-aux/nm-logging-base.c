@@ -6,6 +6,8 @@
 
 #include <syslog.h>
 
+#include "nm-time-utils.h"
+
 /*****************************************************************************/
 
 const LogLevelDesc nm_log_level_desc[_LOGL_N] = {
@@ -76,4 +78,44 @@ _nm_log_parse_level(const char *level, NMLogLevel *out_level)
     }
 
     return FALSE;
+}
+
+void
+_nm_log_simple_printf(NMLogLevel level, const char *fmt, ...)
+{
+    gs_free char *msg = NULL;
+    va_list       ap;
+    const char *  level_str;
+    gint64        ts;
+
+    va_start(ap, fmt);
+    msg = g_strdup_vprintf(fmt, ap);
+    va_end(ap);
+
+    switch (level) {
+    case LOGL_TRACE:
+        level_str = "<trace>";
+        break;
+    case LOGL_DEBUG:
+        level_str = "<debug>";
+        break;
+    case LOGL_INFO:
+        level_str = "<info> ";
+        break;
+    case LOGL_WARN:
+        level_str = "<warn> ";
+        break;
+    default:
+        nm_assert(level == LOGL_ERR);
+        level_str = "<error>";
+        break;
+    }
+
+    ts = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
+
+    g_print("[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s %s\n",
+            ts / NM_UTILS_NSEC_PER_SEC,
+            (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
+            level_str,
+            msg);
 }

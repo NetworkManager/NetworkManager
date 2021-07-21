@@ -25,4 +25,6 @@ extern const LogLevelDesc nm_log_level_desc[_LOGL_N];
 
 gboolean _nm_log_parse_level(const char *level, NMLogLevel *out_level);
 
+void _nm_log_simple_printf(NMLogLevel level, const char *fmt, ...) _nm_printf(2, 3);
+
 #endif /* __NM_LOGGING_BASE_H__ */
