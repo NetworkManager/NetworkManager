@@ -604,7 +604,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                          NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
                          NULL);
         }
-    } else if (nm_streq0(kind, "dhcp")) {
+    } else if (NM_IN_STRSET(kind, "dhcp", "single-dhcp")) {
         g_object_set(s_ip4,
                      NM_SETTING_IP_CONFIG_METHOD,
                      NM_SETTING_IP4_CONFIG_METHOD_AUTO,
