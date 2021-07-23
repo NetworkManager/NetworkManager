@@ -5172,6 +5172,7 @@ src_nm_cloud_setup_nm_cloud_setup_LDADD = \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	src/libnm-client-impl/libnm.la \
@@ -5236,6 +5237,7 @@ src_nm_cloud_setup_tests_test_cloud_setup_general_LDADD = \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	src/libnm-client-impl/libnm.la \

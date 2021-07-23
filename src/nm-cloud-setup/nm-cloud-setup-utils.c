@@ -13,69 +13,6 @@
 
 /*****************************************************************************/
 
-volatile NMLogLevel _nm_logging_configured_level = LOGL_TRACE;
-
-void
-_nm_logging_enabled_init(const char *level_str)
-{
-    NMLogLevel level;
-
-    if (!_nm_log_parse_level(level_str, &level))
-        level = LOGL_WARN;
-    else if (level == _LOGL_KEEP)
-        level = LOGL_WARN;
-
-    _nm_logging_configured_level = level;
-}
-
-void
-_nm_log_impl_cs(NMLogLevel level, const char *fmt, ...)
-{
-    gs_free char *msg = NULL;
-    va_list       ap;
-    const char *  level_str;
-    gint64        ts;
-
-    va_start(ap, fmt);
-    msg = g_strdup_vprintf(fmt, ap);
-    va_end(ap);
-
-    switch (level) {
-    case LOGL_TRACE:
-        level_str = "<trace>";
-        break;
-    case LOGL_DEBUG:
-        level_str = "<debug>";
-        break;
-    case LOGL_INFO:
-        level_str = "<info> ";
-        break;
-    case LOGL_WARN:
-        level_str = "<warn> ";
-        break;
-    default:
-        nm_assert(level == LOGL_ERR);
-        level_str = "<error>";
-        break;
-    }
-
-    ts = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
-
-    g_print("[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s %s\n",
-            ts / NM_UTILS_NSEC_PER_SEC,
-            (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
-            level_str,
-            msg);
-}
-
-void
-_nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
-                                          gint64                 offset_sec,
-                                          gboolean               is_boottime)
-{}
-
-/*****************************************************************************/
-
 G_LOCK_DEFINE_STATIC(_wait_for_objects_lock);
 static GSList *_wait_for_objects_list;
 static GSList *_wait_for_objects_iterate_loops;

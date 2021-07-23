@@ -25,4 +25,20 @@ extern const LogLevelDesc nm_log_level_desc[_LOGL_N];
 
 gboolean _nm_log_parse_level(const char *level, NMLogLevel *out_level);
 
+/*****************************************************************************/
+
+extern volatile NMLogLevel _nm_logging_enabled_value;
+
+static inline gboolean
+_nm_logging_enabled(NMLogLevel level)
+{
+    return level >= _nm_logging_enabled_value;
+}
+
+void _nm_logging_enabled_init(const char *level_str);
+
+/*****************************************************************************/
+
+void _nm_log_simple_printf(NMLogLevel level, const char *fmt, ...) _nm_printf(2, 3);
+
 #endif /* __NM_LOGGING_BASE_H__ */
