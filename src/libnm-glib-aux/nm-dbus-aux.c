@@ -97,6 +97,33 @@ nm_dbus_connection_call_get_all(GDBusConnection              *dbus_connection,
 }
 
 void
+nm_dbus_connection_call_get(GDBusConnection              *dbus_connection,
+                            const char                   *bus_name,
+                            const char                   *object_path,
+                            const char                   *interface_name,
+                            const char                   *property_name,
+                            int                           timeout_msec,
+                            GCancellable                 *cancellable,
+                            NMDBusConnectionCallDefaultCb callback,
+                            gpointer                      user_data)
+{
+    nm_assert(callback);
+
+    g_dbus_connection_call(dbus_connection,
+                           bus_name,
+                           object_path,
+                           DBUS_INTERFACE_PROPERTIES,
+                           "Get",
+                           g_variant_new("(s)", interface_name, property_name),
+                           G_VARIANT_TYPE("(v)"),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           timeout_msec,
+                           cancellable,
+                           _nm_dbus_connection_call_default_cb,
+                           nm_utils_user_data_pack(user_data, callback));
+}
+
+void
 nm_dbus_connection_call_set(GDBusConnection              *dbus_connection,
                             const char                   *bus_name,
                             const char                   *object_path,

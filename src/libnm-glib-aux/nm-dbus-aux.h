@@ -147,6 +147,16 @@ void nm_dbus_connection_call_get_all(GDBusConnection              *dbus_connecti
                                      NMDBusConnectionCallDefaultCb callback,
                                      gpointer                      user_data);
 
+void nm_dbus_connection_call_get(GDBusConnection              *dbus_connection,
+                                 const char                   *bus_name,
+                                 const char                   *object_path,
+                                 const char                   *interface_name,
+                                 const char                   *property_name,
+                                 int                           timeout_msec,
+                                 GCancellable                 *cancellable,
+                                 NMDBusConnectionCallDefaultCb callback,
+                                 gpointer                      user_data);
+
 void nm_dbus_connection_call_set(GDBusConnection              *dbus_connection,
                                  const char                   *bus_name,
                                  const char                   *object_path,
