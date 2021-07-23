@@ -262,7 +262,7 @@ private_server_closed_connection(GDBusConnection *conn,
 
     /* Delay the close of connection to ensure that D-Bus signals
      * are handled */
-    g_idle_add(close_connection_in_idle, info);
+    nm_g_idle_add(close_connection_in_idle, info);
 }
 
 static gboolean
