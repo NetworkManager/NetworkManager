@@ -644,7 +644,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                          NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
                          NULL);
         }
-    } else if (nm_streq0(kind, "ibft")) {
+    } else if (NM_IN_STRSET(kind, "fw", "ibft")) {
         NMSettingWired *s_wired;
         const char *    mac = NULL;
         const char *    ifname;
