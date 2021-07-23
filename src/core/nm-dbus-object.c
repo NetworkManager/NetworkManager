@@ -178,7 +178,7 @@ nm_dbus_object_unexport_on_idle(gpointer /* (NMDBusObject *) */ self_take)
     nm_shutdown_wait_obj_register_object(self, "unexport-dbus-obj-on-idle");
 
     /* pass on ownership. */
-    g_idle_add(_unexport_on_idle_cb, g_steal_pointer(&self));
+    nm_g_idle_add(_unexport_on_idle_cb, g_steal_pointer(&self));
 }
 
 /*****************************************************************************/
