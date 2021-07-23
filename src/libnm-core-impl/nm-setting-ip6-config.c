@@ -650,7 +650,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     GObjectClass *          object_class            = G_OBJECT_CLASS(klass);
     NMSettingClass *        setting_class           = NM_SETTING_CLASS(klass);
     NMSettingIPConfigClass *setting_ip_config_class = NM_SETTING_IP_CONFIG_CLASS(klass);
-    GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config();
+    GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config(AF_INET6);
 
     g_type_class_add_private(klass, sizeof(NMSettingIP6ConfigPrivate));
 

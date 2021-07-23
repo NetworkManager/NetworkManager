@@ -43,10 +43,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_MAC_ADDRESS,
 
 typedef struct {
     char *  mac_address;
-    guint16 pan_id;
-    guint16 short_address;
-    gint16  page;
-    gint16  channel;
+    guint32 pan_id;
+    guint32 short_address;
+    gint32  page;
+    gint32  channel;
 } NMSettingWpanPrivate;
 
 /**
@@ -201,73 +201,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingWpan *setting = NM_SETTING_WPAN(object);
-
-    switch (prop_id) {
-    case PROP_MAC_ADDRESS:
-        g_value_set_string(value, nm_setting_wpan_get_mac_address(setting));
-        break;
-    case PROP_PAN_ID:
-        g_value_set_uint(value, nm_setting_wpan_get_pan_id(setting));
-        break;
-    case PROP_SHORT_ADDRESS:
-        g_value_set_uint(value, nm_setting_wpan_get_short_address(setting));
-        break;
-    case PROP_PAGE:
-        g_value_set_int(value, nm_setting_wpan_get_page(setting));
-        break;
-    case PROP_CHANNEL:
-        g_value_set_int(value, nm_setting_wpan_get_channel(setting));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingWpanPrivate *priv = NM_SETTING_WPAN_GET_PRIVATE(object);
-
-    switch (prop_id) {
-    case PROP_MAC_ADDRESS:
-        g_free(priv->mac_address);
-        priv->mac_address =
-            _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), IEEE802154_ADDR_LEN);
-        break;
-    case PROP_PAN_ID:
-        priv->pan_id = g_value_get_uint(value);
-        break;
-    case PROP_SHORT_ADDRESS:
-        priv->short_address = g_value_get_uint(value);
-        break;
-    case PROP_PAGE:
-        priv->page = g_value_get_int(value);
-        break;
-    case PROP_CHANNEL:
-        priv->channel = g_value_get_int(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_wpan_init(NMSettingWpan *setting)
-{
-    NMSettingWpanPrivate *priv = NM_SETTING_WPAN_GET_PRIVATE(setting);
-
-    priv->pan_id        = G_MAXUINT16;
-    priv->short_address = G_MAXUINT16;
-    priv->page          = NM_SETTING_WPAN_PAGE_DEFAULT;
-    priv->channel       = NM_SETTING_WPAN_CHANNEL_DEFAULT;
-}
+{}
 
 /**
  * nm_setting_wpan_new:
@@ -285,28 +220,19 @@ nm_setting_wpan_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingWpanPrivate *priv = NM_SETTING_WPAN_GET_PRIVATE(object);
-
-    g_free(priv->mac_address);
-
-    G_OBJECT_CLASS(nm_setting_wpan_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_wpan_class_init(NMSettingWpanClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(setting_class, sizeof(NMSettingWpanPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
-    setting_class->verify = verify;
+    setting_class->verify          = verify;
+    setting_class->finalize_direct = TRUE;
 
     /**
      * NMSettingWpan:mac-address:
@@ -321,39 +247,47 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
      *   (e.g. 76:d8:9b:87:66:60:84:ee).
      * ---end---
      */
-    obj_properties[PROP_MAC_ADDRESS] =
-        g_param_spec_string(NM_SETTING_WPAN_MAC_ADDRESS,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WPAN_MAC_ADDRESS,
+                                              PROP_MAC_ADDRESS,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingWpanPrivate,
+                                              mac_address,
+                                              .direct_set_string_mac_address_len =
+                                                  IEEE802154_ADDR_LEN);
 
     /**
      * NMSettingWpan:pan-id:
      *
      * IEEE 802.15.4 Personal Area Network (PAN) identifier.
      **/
-    obj_properties[PROP_PAN_ID] = g_param_spec_uint(NM_SETTING_WPAN_PAN_ID,
-                                                    "",
-                                                    "",
-                                                    0,
-                                                    G_MAXUINT16,
-                                                    G_MAXUINT16,
-                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WPAN_PAN_ID,
+                                              PROP_PAN_ID,
+                                              0,
+                                              G_MAXUINT16,
+                                              G_MAXUINT16,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingWpanPrivate,
+                                              pan_id);
 
     /**
      * NMSettingWpan:short-address:
      *
      * Short IEEE 802.15.4 address to be used within a restricted environment.
      **/
-    obj_properties[PROP_SHORT_ADDRESS] =
-        g_param_spec_uint(NM_SETTING_WPAN_SHORT_ADDRESS,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT16,
-                          G_MAXUINT16,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WPAN_SHORT_ADDRESS,
+                                              PROP_SHORT_ADDRESS,
+                                              0,
+                                              G_MAXUINT16,
+                                              G_MAXUINT16,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingWpanPrivate,
+                                              short_address);
 
     /**
      * NMSettingWpan:page:
@@ -363,13 +297,16 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_PAGE] = g_param_spec_int(NM_SETTING_WPAN_PAGE,
-                                                 "",
-                                                 "",
-                                                 G_MININT16,
-                                                 G_MAXINT16,
-                                                 NM_SETTING_WPAN_PAGE_DEFAULT,
-                                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_WPAN_PAGE,
+                                             PROP_PAGE,
+                                             G_MININT16,
+                                             G_MAXINT16,
+                                             NM_SETTING_WPAN_PAGE_DEFAULT,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingWpanPrivate,
+                                             page);
 
     /**
      * NMSettingWpan:channel:
@@ -379,15 +316,22 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_CHANNEL] = g_param_spec_int(NM_SETTING_WPAN_CHANNEL,
-                                                    "",
-                                                    "",
-                                                    G_MININT16,
-                                                    G_MAXINT16,
-                                                    NM_SETTING_WPAN_CHANNEL_DEFAULT,
-                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_WPAN_CHANNEL,
+                                             PROP_CHANNEL,
+                                             G_MININT16,
+                                             G_MAXINT16,
+                                             NM_SETTING_WPAN_CHANNEL_DEFAULT,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingWpanPrivate,
+                                             channel);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_WPAN, NULL, NULL, 0);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_WPAN,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

@@ -679,7 +679,6 @@ typedef enum _nm_packed {
     NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS,
     NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_GARRAY_UINT,
     NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT,
-    NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS,
 } NMSettingPropertyToDBusFcnGPropType;
 
 typedef struct {
@@ -702,6 +701,13 @@ typedef struct {
      *   from_dbus_fcn() are ignored. If true, then error are propagated. */
     bool from_dbus_is_full : 1;
 
+    /* Only if from_dbus_fcn is set to _nm_setting_property_from_dbus_fcn_direct.
+     * Historically, libnm used g_dbus_gvariant_to_gvalue() and g_value_transform() to
+     * convert from D-Bus to the GObject property. Thereby, various transformations are
+     * allowed and supported. If this is TRUE, then such transformations are still
+     * allowed for backward compatibility. */
+    bool from_dbus_direct_allow_transform : 1;
+
     /* compare_fcn() returns a ternary, where DEFAULT means that the property should not
      * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
      * equal/not-equal.
@@ -721,12 +727,10 @@ typedef struct {
     NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
 
     struct {
-        union {
-            /* If from_dbus_fcn is set to _nm_setting_property_from_dbus_fcn_gprop,
-             * then this is an optional handler for converting between GVariant and
-             * GValue. */
-            NMSettInfoPropGPropFromDBusFcn gprop_fcn;
-        };
+        /* Only if from_dbus_fcn is set to _nm_setting_property_from_dbus_fcn_gprop.
+         * This is an optional handler for converting between GVariant and
+         * GValue. */
+        NMSettInfoPropGPropFromDBusFcn gprop_fcn;
     } typdata_from_dbus;
 
     struct {
@@ -749,15 +753,19 @@ struct _NMSettInfoProperty {
      * the direct location. */
     guint16 direct_offset;
 
-    /* Currently, properties that set property_type->direct_type only have to_dbus_fcn()
-     * implemented "the direct way". For the property setter, they still call g_object_set().
-     * In the future, also other operations, like from_dbus_fcn() should be implemented
-     * by direct access (thereby, bypassing g_object_set()).
-     *
-     * A "direct_has_special_setter" property does something unusual, that will require special attention
-     * in the future, when we implement more functionality regarding the setter. It has no effect,
-     * except of marking those properties and serve as a reminder that special care needs to be taken. */
-    bool direct_has_special_setter : 1;
+    /* If TRUE, this is a NM_VALUE_TYPE_STRING direct property, and the setter will
+     * normalize the string via g_ascii_strdown(). */
+    bool direct_set_string_ascii_strdown : 1;
+
+    /* If non-zero, this is a NM_VALUE_TYPE_STRING direct property. Actually, it is
+     * a _nm_setting_property_define_direct_mac_address(), and the setter will
+     * call _nm_utils_hwaddr_canonical_or_invalid() on the string, with the specified
+     * MAC address length. */
+    guint8 direct_set_string_mac_address_len : 5;
+
+    /* If non-zero, this is the addr-family (AF_INET/AF_INET6) for normalizing an IP
+     * address. */
+    guint8 direct_set_string_ip_address_addr_family : 5;
 
     /* Usually, properties that are set to the default value for the GParamSpec
      * are not serialized to GVariant (and NULL is returned by to_dbus_data().
