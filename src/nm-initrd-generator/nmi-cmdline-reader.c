@@ -439,6 +439,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                          "none",
                          "off",
                          "dhcp",
+                         "single-dhcp",
                          "on"
                          "any",
                          "dhcp6",
