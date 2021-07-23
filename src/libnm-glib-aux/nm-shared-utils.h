@@ -746,6 +746,11 @@ char **_nm_utils_strv_cleanup(char **  strv,
                               gboolean skip_empty,
                               gboolean skip_repeated);
 
+gboolean nm_strv_is_same_unordered(const char *const *strv1,
+                                   gssize             len1,
+                                   const char *const *strv2,
+                                   gssize             len2);
+
 /*****************************************************************************/
 
 static inline gpointer
