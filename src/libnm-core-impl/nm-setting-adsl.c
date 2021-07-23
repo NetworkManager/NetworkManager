@@ -409,34 +409,28 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
      *
      * ADSL connection protocol.  Can be "pppoa", "pppoe" or "ipoatm".
      **/
-    _nm_setting_property_define_direct_string(
-        properties_override,
-        obj_properties,
-        NM_SETTING_ADSL_PROTOCOL,
-        PROP_PROTOCOL,
-        NM_SETTING_PARAM_NONE,
-        NMSettingAdslPrivate,
-        protocol,
-        /* it's special, because set_property() calls g_ascii_strdown() on
-         * the string! */
-        .direct_has_special_setter = TRUE);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_ADSL_PROTOCOL,
+                                              PROP_PROTOCOL,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingAdslPrivate,
+                                              protocol,
+                                              .direct_set_string_ascii_strdown = TRUE);
 
     /**
      * NMSettingAdsl:encapsulation:
      *
      * Encapsulation of ADSL connection.  Can be "vcmux" or "llc".
      **/
-    _nm_setting_property_define_direct_string(
-        properties_override,
-        obj_properties,
-        NM_SETTING_ADSL_ENCAPSULATION,
-        PROP_ENCAPSULATION,
-        NM_SETTING_PARAM_NONE,
-        NMSettingAdslPrivate,
-        encapsulation,
-        /* it's special, because set_property() calls g_ascii_strdown() on
-         * the string! */
-        .direct_has_special_setter = TRUE);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_ADSL_ENCAPSULATION,
+                                              PROP_ENCAPSULATION,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingAdslPrivate,
+                                              encapsulation,
+                                              .direct_set_string_ascii_strdown = TRUE);
 
     /**
      * NMSettingAdsl:vpi:

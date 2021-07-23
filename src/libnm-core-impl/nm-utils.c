@@ -3648,6 +3648,23 @@ nm_utils_wifi_strength_bars(guint8 strength)
         return "    ";
 }
 
+gboolean
+_nm_property_variant_to_gvalue(GVariant *src_value, GValue *dst_value)
+{
+    GValue   tmp = G_VALUE_INIT;
+    gboolean success;
+
+    g_dbus_gvariant_to_gvalue(src_value, &tmp);
+    if (G_VALUE_TYPE(&tmp) == G_VALUE_TYPE(dst_value)) {
+        *dst_value = tmp;
+        return TRUE;
+    }
+
+    success = g_value_transform(&tmp, dst_value);
+    g_value_unset(&tmp);
+    return success;
+}
+
 /**
  * nm_utils_hwaddr_len:
  * @type: the type of address; either <literal>ARPHRD_ETHER</literal> or
@@ -3878,6 +3895,25 @@ _nm_utils_hwaddr_canonical_or_invalid(const char *mac, gssize length)
         return canonical;
     else
         return g_strdup(mac);
+}
+
+char *
+_nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip)
+{
+    NMIPAddr addr_bin;
+
+    nm_assert_addr_family(addr_family);
+
+    if (!ip)
+        return NULL;
+
+    if (!nm_utils_parse_inaddr_bin(addr_family, ip, NULL, &addr_bin))
+        return g_strdup(ip);
+
+    if (nm_ip_addr_is_null(addr_family, &addr_bin))
+        return NULL;
+
+    return nm_utils_inet_ntop_dup(addr_family, &addr_bin);
 }
 
 /*
@@ -4148,26 +4184,6 @@ const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address =
                                         .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                         .to_dbus_fcn   = _nm_utils_hwaddr_cloned_data_synth,
                                         .from_dbus_fcn = _nm_utils_hwaddr_cloned_data_set, );
-
-static void
-_nm_utils_hwaddr_from_dbus(GVariant *dbus_value, GValue *prop_value)
-{
-    gsize         length = 0;
-    const guint8 *array  = g_variant_get_fixed_array(dbus_value, &length, 1);
-    char *        str;
-
-    str = length ? nm_utils_hwaddr_ntoa(array, length) : NULL;
-    g_value_take_string(prop_value, str);
-}
-
-const NMSettInfoPropertType nm_sett_info_propert_type_mac_address =
-    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_BYTESTRING,
-                                         .typdata_from_dbus.gprop_fcn = _nm_utils_hwaddr_from_dbus,
-                                         .typdata_to_dbus.gprop_type =
-                                             NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_MAC_ADDRESS,
-                                         .compare_fcn   = _nm_setting_property_compare_fcn_default,
-                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
-                                         .from_dbus_is_full = TRUE);
 
 /*****************************************************************************/
 

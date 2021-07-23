@@ -32,9 +32,9 @@ gboolean _nm_utils_wps_method_validate(NMSettingWirelessSecurityWpsMethod wps_me
 
 /* D-Bus transform funcs */
 
-extern const NMSettInfoPropertType nm_sett_info_propert_type_strdict;
+gboolean _nm_property_variant_to_gvalue(GVariant *src_value, GValue *dst_value);
 
-extern const NMSettInfoPropertType nm_sett_info_propert_type_mac_address;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_strdict;
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address;
 
@@ -43,6 +43,8 @@ void _nm_utils_strdict_from_dbus(GVariant *dbus_value, GValue *prop_value);
 void _nm_utils_bytes_from_dbus(GVariant *dbus_value, GValue *prop_value);
 
 char *_nm_utils_hwaddr_canonical_or_invalid(const char *mac, gssize length);
+
+char *_nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip);
 
 gboolean _nm_utils_hwaddr_link_local_valid(const char *mac);
 

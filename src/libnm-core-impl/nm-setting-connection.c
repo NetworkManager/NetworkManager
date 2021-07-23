@@ -82,17 +82,17 @@ typedef struct {
     char *                               zone;
     char *                               mud_url;
     guint64                              timestamp;
-    int                                  autoconnect_priority;
-    int                                  autoconnect_retries;
-    int                                  multi_connect;
-    int                                  auth_retries;
-    int                                  mdns;
-    int                                  llmnr;
-    int                                  wait_device_timeout;
-    guint                                gateway_ping_timeout;
+    gint32                               autoconnect_priority;
+    gint32                               autoconnect_retries;
+    gint32                               multi_connect;
+    gint32                               auth_retries;
+    gint32                               mdns;
+    gint32                               llmnr;
+    gint32                               wait_device_timeout;
+    gint32                               lldp;
+    guint32                              gateway_ping_timeout;
     NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
     NMMetered                            metered;
-    NMSettingConnectionLldp              lldp;
     bool                                 autoconnect;
     bool                                 read_only;
 } NMSettingConnectionPrivate;
@@ -1821,14 +1821,7 @@ nm_setting_connection_init(NMSettingConnection *setting)
 {
     NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
 
-    priv->auth_retries         = -1;
-    priv->autoconnect_priority = NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT;
-    priv->autoconnect_retries  = -1;
-    priv->autoconnect_slaves   = NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT;
-    priv->lldp                 = NM_SETTING_CONNECTION_LLDP_DEFAULT;
-    priv->llmnr                = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
-    priv->mdns                 = NM_SETTING_CONNECTION_MDNS_DEFAULT;
-    priv->wait_device_timeout  = -1;
+    priv->autoconnect_slaves = NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT;
 }
 
 /**
@@ -1901,9 +1894,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                        .direct_type   = NM_VALUE_TYPE_STRING,
                                        .compare_fcn   = compare_fcn_id,
                                        .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
-                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
-                                       .from_dbus_is_full = TRUE),
-
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,
+                                       .from_dbus_is_full                = TRUE,
+                                       .from_dbus_direct_allow_transform = TRUE),
         NMSettingConnectionPrivate,
         id);
 
@@ -2028,8 +2021,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                        .to_dbus_fcn = _nm_setting_property_to_dbus_fcn_direct,
                                        .missing_from_dbus_fcn =
                                            nm_setting_connection_no_interface_name,
-                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
-                                       .from_dbus_is_full = TRUE),
+                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,
+                                       .from_dbus_is_full                = TRUE,
+                                       .from_dbus_direct_allow_transform = TRUE),
         NMSettingConnectionPrivate,
         interface_name);
 
@@ -2143,14 +2137,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: AUTOCONNECT_PRIORITY=20
      * ---end---
      */
-    obj_properties[PROP_AUTOCONNECT_PRIORITY] = g_param_spec_int(
-        NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
-        "",
-        "",
-        NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
-        NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
-        NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
+                                             PROP_AUTOCONNECT_PRIORITY,
+                                             NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MIN,
+                                             NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX,
+                                             NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT,
+                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                             NMSettingConnectionPrivate,
+                                             autoconnect_priority);
 
     /**
      * NMSettingConnection:autoconnect-retries:
@@ -2170,14 +2166,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: AUTOCONNECT_RETRIES=1
      * ---end---
      */
-    obj_properties[PROP_AUTOCONNECT_RETRIES] = g_param_spec_int(
-        NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
-        "",
-        "",
-        -1,
-        G_MAXINT32,
-        -1,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
+                                             PROP_AUTOCONNECT_RETRIES,
+                                             -1,
+                                             G_MAXINT32,
+                                             -1,
+                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                             NMSettingConnectionPrivate,
+                                             autoconnect_retries);
 
     /**
      * NMSettingConnection:multi-connect:
@@ -2195,14 +2193,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: MULTI_CONNECT=3
      * ---end---
      */
-    obj_properties[PROP_MULTI_CONNECT] = g_param_spec_int(
-        NM_SETTING_CONNECTION_MULTI_CONNECT,
-        "",
-        "",
-        G_MININT32,
-        G_MAXINT32,
-        NM_CONNECTION_MULTI_CONNECT_DEFAULT,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_MULTI_CONNECT,
+                                             PROP_MULTI_CONNECT,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_CONNECTION_MULTI_CONNECT_DEFAULT,
+                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                             NMSettingConnectionPrivate,
+                                             multi_connect);
 
     /**
      * NMSettingConnection:timestamp:
@@ -2392,14 +2392,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: GATEWAY_PING_TIMEOUT=5
      * ---end---
      */
-    obj_properties[PROP_GATEWAY_PING_TIMEOUT] =
-        g_param_spec_uint(NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT,
-                          "",
-                          "",
-                          0,
-                          600,
-                          0,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT,
+                                              PROP_GATEWAY_PING_TIMEOUT,
+                                              0,
+                                              600,
+                                              0,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingConnectionPrivate,
+                                              gateway_ping_timeout);
 
     /**
      * NMSettingConnection:metered:
@@ -2443,14 +2445,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: LLDP=no
      * ---end---
      */
-    obj_properties[PROP_LLDP] = g_param_spec_int(NM_SETTING_CONNECTION_LLDP,
-                                                 "",
-                                                 "",
-                                                 G_MININT32,
-                                                 G_MAXINT32,
-                                                 NM_SETTING_CONNECTION_LLDP_DEFAULT,
-                                                 NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE
-                                                     | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_LLDP,
+                                             PROP_LLDP,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_SETTING_CONNECTION_LLDP_DEFAULT,
+                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                             NMSettingConnectionPrivate,
+                                             lldp);
 
     /**
      * NMSettingConnection:auth-retries:
@@ -2470,14 +2474,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * description: Number of retries for authentication.
      * ---end---
      */
-    obj_properties[PROP_AUTH_RETRIES] = g_param_spec_int(
-        NM_SETTING_CONNECTION_AUTH_RETRIES,
-        "",
-        "",
-        -1,
-        G_MAXINT32,
-        -1,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_AUTH_RETRIES,
+                                             PROP_AUTH_RETRIES,
+                                             -1,
+                                             G_MAXINT32,
+                                             -1,
+                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                             NMSettingConnectionPrivate,
+                                             auth_retries);
 
     /**
      * NMSettingConnection:mdns:
@@ -2493,7 +2499,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * This feature requires a plugin which supports mDNS. Otherwise, the
      * setting has no effect. One such plugin is dns-systemd-resolved.
-*
+     *
      * Since: 1.12
      **/
     /* ---ifcfg-rh---
@@ -2505,13 +2511,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: MDNS=yes
      * ---end---
      */
-    obj_properties[PROP_MDNS] = g_param_spec_int(NM_SETTING_CONNECTION_MDNS,
-                                                 "",
-                                                 "",
-                                                 G_MININT32,
-                                                 G_MAXINT32,
-                                                 NM_SETTING_CONNECTION_MDNS_DEFAULT,
-                                                 G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_MDNS,
+                                             PROP_MDNS,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_SETTING_CONNECTION_MDNS_DEFAULT,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingConnectionPrivate,
+                                             mdns);
 
     /**
      * NMSettingConnection:llmnr:
@@ -2541,13 +2550,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: LLMNR=yes
      * ---end---
      */
-    obj_properties[PROP_LLMNR] = g_param_spec_int(NM_SETTING_CONNECTION_LLMNR,
-                                                  "",
-                                                  "",
-                                                  G_MININT32,
-                                                  G_MAXINT32,
-                                                  NM_SETTING_CONNECTION_LLMNR_DEFAULT,
-                                                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_LLMNR,
+                                             PROP_LLMNR,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingConnectionPrivate,
+                                             llmnr);
 
     /**
      * NMSettingConnection:wait-device-timeout:
@@ -2574,14 +2586,16 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: DEVTIMEOUT=5
      * ---end---
      */
-    obj_properties[PROP_WAIT_DEVICE_TIMEOUT] =
-        g_param_spec_int(NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT,
-                         "",
-                         "",
-                         -1,
-                         G_MAXINT32,
-                         -1,
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT,
+                                             PROP_WAIT_DEVICE_TIMEOUT,
+                                             -1,
+                                             G_MAXINT32,
+                                             -1,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingConnectionPrivate,
+                                             wait_device_timeout);
 
     /**
      * NMSettingConnection:mud-url:
