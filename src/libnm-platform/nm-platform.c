@@ -56,6 +56,7 @@ G_STATIC_ASSERT(_nm_alignof(NMPlatformIPAddress) == _nm_alignof(NMPlatformIPXAdd
 
 G_STATIC_ASSERT(sizeof(((NMPLinkAddress *) NULL)->data) == _NM_UTILS_HWADDR_LEN_MAX);
 G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_address.data) == _NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_perm_address.data) == _NM_UTILS_HWADDR_LEN_MAX);
 G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_broadcast.data) == _NM_UTILS_HWADDR_LEN_MAX);
 
 static const char *
@@ -5527,6 +5528,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
     gsize       l;
     char        str_addrmode[30];
     char        str_address[_NM_UTILS_HWADDR_LEN_MAX * 3];
+    char        str_perm_address[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char        str_broadcast[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char        str_inet6_token[NM_UTILS_INET_ADDRSTRLEN];
     const char *str_link_type;
@@ -5565,6 +5567,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         parent[0] = 0;
 
     _nmp_link_address_to_string(&link->l_address, str_address);
+    _nmp_link_address_to_string(&link->l_perm_address, str_perm_address);
     _nmp_link_address_to_string(&link->l_broadcast, str_broadcast);
 
     str_link_type = nm_link_type_to_string(link->type);
@@ -5584,6 +5587,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         "%s"      /* is-in-udev */
         "%s%s"    /* addr-gen-mode */
         "%s%s"    /* l_address */
+        "%s%s"    /* l_perm_address */
         "%s%s"    /* l_broadcast */
         "%s%s"    /* inet6_token */
         "%s%s"    /* driver */
@@ -7306,6 +7310,9 @@ nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h)
                        obj->l_address.data,
                        NM_MIN(obj->l_address.len, sizeof(obj->l_address.data)));
     nm_hash_update_mem(h,
+                       obj->l_perm_address.data,
+                       NM_MIN(obj->l_perm_address.len, sizeof(obj->l_perm_address.data)));
+    nm_hash_update_mem(h,
                        obj->l_broadcast.data,
                        NM_MIN(obj->l_broadcast.len, sizeof(obj->l_broadcast.data)));
 }
@@ -7325,12 +7332,15 @@ nm_platform_link_cmp(const NMPlatformLink *a, const NMPlatformLink *b)
     NM_CMP_FIELD_BOOL(a, b, initialized);
     NM_CMP_FIELD(a, b, arptype);
     NM_CMP_FIELD(a, b, l_address.len);
+    NM_CMP_FIELD(a, b, l_perm_address.len);
     NM_CMP_FIELD(a, b, l_broadcast.len);
     NM_CMP_FIELD(a, b, inet6_addr_gen_mode_inv);
     NM_CMP_FIELD_STR_INTERNED(a, b, kind);
     NM_CMP_FIELD_STR_INTERNED(a, b, driver);
     if (a->l_address.len)
         NM_CMP_FIELD_MEMCMP_LEN(a, b, l_address.data, a->l_address.len);
+    if (a->l_perm_address.len)
+        NM_CMP_FIELD_MEMCMP_LEN(a, b, l_perm_address.data, a->l_perm_address.len);
     if (a->l_broadcast.len)
         NM_CMP_FIELD_MEMCMP_LEN(a, b, l_broadcast.data, a->l_broadcast.len);
     NM_CMP_FIELD_MEMCMP(a, b, inet6_token);
