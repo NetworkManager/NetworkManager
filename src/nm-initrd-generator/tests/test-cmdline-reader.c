@@ -2262,6 +2262,193 @@ test_carrier_timeout(void)
     g_assert_cmpint(carrier_timeout_sec, ==, 20);
 }
 
+/* Obs1.: this function is implemented as macro, and not as a function, to show g_assert() line on debug */
+#define _ethtool_connection_check_and_get(connection)                                \
+    ({                                                                               \
+        NMSettingWired *_s_wired    = NULL;                                          \
+        NMConnection *  _connection = connection;                                    \
+                                                                                     \
+        g_assert(nm_connection_get_setting_connection(_connection));                 \
+        g_assert(nm_connection_is_type(_connection, NM_SETTING_WIRED_SETTING_NAME)); \
+        g_assert(nm_connection_get_setting_ip4_config(_connection));                 \
+        g_assert(nm_connection_get_setting_ip6_config(_connection));                 \
+        _s_wired = nm_connection_get_setting_wired(_connection);                     \
+        g_assert(_s_wired);                                                          \
+                                                                                     \
+        _s_wired;                                                                    \
+    })
+
+static void
+test_rd_ethtool(void)
+{
+    const char *const *ARGV        = NULL;
+    NMConnection *     connection  = NULL;
+    GHashTable *       connections = NULL;
+    NMSettingWired *   s_wired     = NULL;
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_hash_table_unref(connections);
+    g_test_assert_expected_messages();
+
+    ARGV        = NM_MAKE_STRV("rd.ethtool=eth0");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_hash_table_unref(connections);
+
+    ARGV        = NM_MAKE_STRV("rd.ethtool=eth0:");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_hash_table_unref(connections);
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=::");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_test_assert_expected_messages();
+    g_hash_table_unref(connections);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0:on");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(nm_setting_wired_get_auto_negotiate(s_wired));
+    g_object_unref(connection);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0:off");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(!nm_setting_wired_get_auto_negotiate(s_wired));
+    g_object_unref(connection);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0:true");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(nm_setting_wired_get_auto_negotiate(s_wired));
+    g_object_unref(connection);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0:false");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(!nm_setting_wired_get_auto_negotiate(s_wired));
+    g_object_unref(connection);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0:1");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(nm_setting_wired_get_auto_negotiate(s_wired));
+    g_object_unref(connection);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0:0");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(!nm_setting_wired_get_auto_negotiate(s_wired));
+    g_object_unref(connection);
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0:randomstring");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool autoneg was not set, invalid value");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_test_assert_expected_messages();
+    g_hash_table_unref(connections);
+
+    ARGV        = NM_MAKE_STRV("rd.ethtool=eth0::");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_hash_table_unref(connections);
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0::astring");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool speed was not set, invalid value. Then, "
+                         "duplex was disregarded.");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_test_assert_expected_messages();
+    g_hash_table_unref(connections);
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0::1000000000000000000000000000000000000");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool speed was not set, invalid value. Then, "
+                         "duplex was disregarded.");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_test_assert_expected_messages();
+    g_hash_table_unref(connections);
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0::0.67");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool speed was not set, invalid value. Then, "
+                         "duplex was disregarded.");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_test_assert_expected_messages();
+    g_hash_table_unref(connections);
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0::-23");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool speed was not set, invalid value. Then, "
+                         "duplex was disregarded.");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_test_assert_expected_messages();
+    g_hash_table_unref(connections);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0:1:10");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(nm_setting_wired_get_auto_negotiate(s_wired));
+    g_assert_cmpint(nm_setting_wired_get_speed(s_wired), ==, 10);
+    g_assert_cmpstr(nm_setting_wired_get_duplex(s_wired), ==, "full");
+    g_object_unref(connection);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0::100");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(!nm_setting_wired_get_auto_negotiate(s_wired));
+    g_assert_cmpint(nm_setting_wired_get_speed(s_wired), ==, 100);
+    g_assert_cmpstr(nm_setting_wired_get_duplex(s_wired), ==, "full");
+    g_object_unref(connection);
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0:::half");
+    NMTST_EXPECT_NM_WARN(
+        "cmdline-reader: rd.ethtool.duplex needs rd.ethtool.speed value to be set");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_test_assert_expected_messages();
+    g_hash_table_unref(connections);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0::10:half");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(!nm_setting_wired_get_auto_negotiate(s_wired));
+    g_assert_cmpint(nm_setting_wired_get_speed(s_wired), ==, 10);
+    g_assert_cmpstr(nm_setting_wired_get_duplex(s_wired), ==, "half");
+    g_object_unref(connection);
+
+    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0:on:100:full");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(nm_setting_wired_get_auto_negotiate(s_wired));
+    g_assert_cmpint(nm_setting_wired_get_speed(s_wired), ==, 100);
+    g_assert_cmpstr(nm_setting_wired_get_duplex(s_wired), ==, "full");
+    g_object_unref(connection);
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0:on:100:anyvalue");
+    NMTST_EXPECT_NM_WARN(
+        "cmdline-reader: rd.ethtool.duplex has a invalid format, duplex was set as default:full");
+    connection = _parse_con(ARGV, "eth0");
+    s_wired    = _ethtool_connection_check_and_get(connection);
+    g_assert(nm_setting_wired_get_auto_negotiate(s_wired));
+    g_assert_cmpint(nm_setting_wired_get_speed(s_wired), ==, 100);
+    g_assert_cmpstr(nm_setting_wired_get_duplex(s_wired), ==, "full");
+    g_test_assert_expected_messages();
+    g_object_unref(connection);
+
+    ARGV = NM_MAKE_STRV("rd.ethtool=:::");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
+    connections = _parse_cons(ARGV);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_test_assert_expected_messages();
+    g_hash_table_unref(connections);
+}
+
 NMTST_DEFINE();
 
 int
@@ -2316,6 +2503,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/infiniband/mac", test_infiniband_mac);
     g_test_add_func("/initrd/cmdline/infiniband/pkey", test_infiniband_pkey);
     g_test_add_func("/initrd/cmdline/carrier_timeout", test_carrier_timeout);
+    g_test_add_func("/initrd/cmdline/rd_ethtool", test_rd_ethtool);
 
     return g_test_run();
 }
