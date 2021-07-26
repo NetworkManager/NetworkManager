@@ -89,11 +89,12 @@ _handle_ping(GlobalData *gl, GDBusMethodInvocation *invocation, const char *arg)
 
     running_msec = nm_utils_clock_gettime_msec(CLOCK_BOOTTIME) - gl->start_timestamp_msec;
 
-    msg = g_strdup_printf("pid=%lu, unique-name=%s, nm-name-owner=%s, since=%ld.%03d%s, pong=%s",
+    msg = g_strdup_printf("pid=%lu, unique-name=%s, nm-name-owner=%s, since=%" G_GINT64_FORMAT
+                          ".%03d%s, pong=%s",
                           (unsigned long) getpid(),
                           g_dbus_connection_get_unique_name(gl->dbus_connection),
                           gl->name_owner ?: "(none)",
-                          running_msec / 1000,
+                          (gint64) (running_msec / 1000),
                           (int) (running_msec % 1000),
                           gl->no_auth_for_testing ? ", no-auth-for-testing" : "",
                           arg);
