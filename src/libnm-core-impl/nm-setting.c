@@ -1561,6 +1561,67 @@ _nm_setting_new_from_dbus(GType               setting_type,
 }
 
 static gboolean
+_property_set_from_dbus(const NMSettInfoSetting * sett_info,
+                        const NMSettInfoProperty *property_info,
+                        NMSetting *               setting,
+                        GVariant *                connection_dict,
+                        GVariant *                value,
+                        NMSettingParseFlags       parse_flags,
+                        GError **                 error)
+{
+    gs_free_error GError *local = NULL;
+
+    if (!property_info->property_type->from_dbus_fcn) {
+        nm_assert(!property_info->param_spec);
+        return TRUE;
+    }
+
+    if (property_info->property_type->from_dbus_is_full) {
+        /* These hooks perform their own type checking, and can coerce/ignore
+         * a value regardless of the D-Bus type. */
+    } else if (!g_variant_type_equal(g_variant_get_type(value),
+                                     property_info->property_type->dbus_type)) {
+        /* for backward behavior, fail unless best-effort is chosen. */
+        if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT))
+            return TRUE;
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("can't set property of type '%s' from value of type '%s'"),
+                    property_info->property_type->dbus_type
+                        ? g_variant_type_peek_string(property_info->property_type->dbus_type)
+                    : property_info->param_spec ? g_type_name(property_info->param_spec->value_type)
+                                                : "(unknown)",
+                    g_variant_get_type_string(value));
+        g_prefix_error(error, "%s.%s: ", nm_setting_get_name(setting), property_info->name);
+        return FALSE;
+    }
+
+    if (!property_info->property_type->from_dbus_fcn(sett_info,
+                                                     property_info,
+                                                     setting,
+                                                     connection_dict,
+                                                     value,
+                                                     parse_flags,
+                                                     &local)) {
+        if (property_info->property_type->from_dbus_is_full) {
+            /* the error we received from from_dbus_fcn() should be propagated, even
+                     * in non-strict mode. */
+        } else if (!NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
+            return TRUE;
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("failed to set property: %s"),
+                    local->message);
+        g_prefix_error(error, "%s.%s: ", nm_setting_get_name(setting), property_info->name);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static gboolean
 init_from_dbus(NMSetting *                     setting,
                GHashTable *                    keys,
                GVariant *                      setting_dict,
@@ -1644,53 +1705,14 @@ init_from_dbus(NMSetting *                     setting,
         if (keys)
             g_hash_table_remove(keys, property_info->name);
 
-        if (property_info->property_type->from_dbus_fcn) {
-            if (property_info->property_type->from_dbus_is_full) {
-                /* These hooks perform their own type checking, and can coerce/ignore
-                 * a value regardless of the D-Bus type. */
-            } else if (!g_variant_type_equal(g_variant_get_type(value),
-                                             property_info->property_type->dbus_type)) {
-                /* for backward behavior, fail unless best-effort is chosen. */
-                if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT))
-                    continue;
-                g_set_error(
-                    error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("can't set property of type '%s' from value of type '%s'"),
-                    property_info->property_type->dbus_type
-                        ? g_variant_type_peek_string(property_info->property_type->dbus_type)
-                    : property_info->param_spec ? g_type_name(property_info->param_spec->value_type)
-                                                : "(unknown)",
-                    g_variant_get_type_string(value));
-                g_prefix_error(error, "%s.%s: ", nm_setting_get_name(setting), property_info->name);
-                return FALSE;
-            }
-
-            if (!property_info->property_type->from_dbus_fcn(sett_info,
-                                                             property_info,
-                                                             setting,
-                                                             connection_dict,
-                                                             value,
-                                                             parse_flags,
-                                                             &local)) {
-                if (property_info->property_type->from_dbus_is_full) {
-                    /* the error we received from from_dbus_fcn() should be propagated, even
-                     * in non-strict mode. */
-                } else if (!NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
-                    continue;
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("failed to set property: %s"),
-                            local->message);
-                g_prefix_error(error, "%s.%s: ", nm_setting_get_name(setting), property_info->name);
-                return FALSE;
-            }
-            continue;
-        }
-
-        nm_assert(!property_info->param_spec);
+        if (!_property_set_from_dbus(sett_info,
+                                     property_info,
+                                     setting,
+                                     connection_dict,
+                                     value,
+                                     parse_flags,
+                                     error))
+            return FALSE;
     }
 
     return TRUE;
