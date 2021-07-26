@@ -404,7 +404,10 @@ nm_dhcp_option_add_option_utf8safe_escape(GHashTable *  options,
     gs_free char *to_free = NULL;
     const char *  escaped;
 
-    escaped = nm_utils_buf_utf8safe_escape((char *) data, n_data, 0, &to_free);
+    escaped = nm_utils_buf_utf8safe_escape((char *) data,
+                                           n_data,
+                                           NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                           &to_free);
     nm_dhcp_option_add_option(options, addr_family, option, escaped ?: "");
 }
 
