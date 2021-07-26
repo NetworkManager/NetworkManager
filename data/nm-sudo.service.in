@@ -1,5 +1,5 @@
 [Unit]
-Description=Network Manager Sudo Helper
+Description=NetworkManager Sudo Helper
 #
 # nm-sudo exists for privilege separation. It allows to run NetworkManager
 # without certain capabilities, and ask nm-sudo for special operations
@@ -19,11 +19,18 @@ Type=dbus
 BusName=org.freedesktop.nm.sudo
 ExecStart=@libexecdir@/nm-sudo
 
-# Environment=NM_SUDO_NO_AUTH_FOR_TESTING=0
-# Environment=NM_SUDO_IDLE_TIMEOUT=10
-# Environment=NM_SUDO_LOG=TRACE
-# Environment=G_DEBUG=fatal-warnings
-# Environment=G_DBUS_DEBUG=all
+# Extra configuration options. Set via `systemctl edit nm-sudo.service`:
+#
+# FOR TESTING ONLY: disable authentication to allow requests from
+# everybody. Don't set this outside of testing!
+#Environment=NM_SUDO_NO_AUTH_FOR_TESTING=1
+#
+# The logging level for debug messages (to stdout).
+#Environment=NM_SUDO_LOG=TRACE
+#
+# nm-sudo will exit on idle after timeout. Set timeout here
+# or set to 2147483647 for infinity.
+#Environment=NM_SUDO_IDLE_TIMEOUT_MSEC=10000
 
 [Install]
 Alias=dbus-org.freedesktop.nm.sudo.service
