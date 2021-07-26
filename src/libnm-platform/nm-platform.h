@@ -231,6 +231,9 @@ struct _NMPlatformLink {
     /* IFLA_ADDRESS */
     NMPLinkAddress l_address;
 
+    /* IFLA_PERM_ADDRESS */
+    NMPLinkAddress l_perm_address;
+
     /* IFLA_BROADCAST */
     NMPLinkAddress l_broadcast;
 

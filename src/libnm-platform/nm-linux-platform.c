@@ -145,6 +145,8 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 #define IFLA_BR_VLAN_STATS_ENABLED 41
 
+#define IFLA_PERM_ADDRESS 54
+
 /*****************************************************************************/
 
 /* Appeared in the kernel prior to 3.13 dated 19 January, 2014 */
@@ -2935,6 +2937,7 @@ _new_from_nl_link(NMPlatform *     platform,
         [IFLA_NET_NS_PID]    = {.type = NLA_U32},
         [IFLA_NET_NS_FD]     = {.type = NLA_U32},
         [IFLA_LINK_NETNSID]  = {},
+        [IFLA_PERM_ADDRESS]  = {.type = NLA_UNSPEC},
     };
     const struct ifinfomsg *ifi;
     struct nlattr *         tb[G_N_ELEMENTS(policy)];
@@ -2945,12 +2948,13 @@ _new_from_nl_link(NMPlatform *     platform,
     gboolean *                completed_from_cache     = cache ? &completed_from_cache_val : NULL;
     const NMPObject *         link_cached              = NULL;
     const NMPObject *         lnk_data                 = NULL;
-    gboolean                  address_complete_from_cache   = TRUE;
-    gboolean                  broadcast_complete_from_cache = TRUE;
-    gboolean                  lnk_data_complete_from_cache  = TRUE;
-    gboolean                  need_ext_data                 = FALSE;
-    gboolean                  af_inet6_token_valid          = FALSE;
-    gboolean                  af_inet6_addr_gen_mode_valid  = FALSE;
+    gboolean                  address_complete_from_cache      = TRUE;
+    gboolean                  perm_address_complete_from_cache = TRUE;
+    gboolean                  broadcast_complete_from_cache    = TRUE;
+    gboolean                  lnk_data_complete_from_cache     = TRUE;
+    gboolean                  need_ext_data                    = FALSE;
+    gboolean                  af_inet6_token_valid             = FALSE;
+    gboolean                  af_inet6_addr_gen_mode_valid     = FALSE;
 
     if (!nlmsg_valid_hdr(nlh, sizeof(*ifi)))
         return NULL;
@@ -3053,6 +3057,11 @@ _new_from_nl_link(NMPlatform *     platform,
         address_complete_from_cache = FALSE;
     }
 
+    if (tb[IFLA_PERM_ADDRESS]) {
+        _nmp_link_address_set(&obj->link.l_perm_address, tb[IFLA_PERM_ADDRESS]);
+        perm_address_complete_from_cache = FALSE;
+    }
+
     if (tb[IFLA_BROADCAST]) {
         _nmp_link_address_set(&obj->link.l_broadcast, tb[IFLA_BROADCAST]);
         broadcast_complete_from_cache = FALSE;
@@ -3135,8 +3144,8 @@ _new_from_nl_link(NMPlatform *     platform,
 
     if (completed_from_cache
         && (lnk_data_complete_from_cache || need_ext_data || address_complete_from_cache
-            || broadcast_complete_from_cache || !af_inet6_token_valid
-            || !af_inet6_addr_gen_mode_valid || !tb[IFLA_STATS64])) {
+            || perm_address_complete_from_cache || broadcast_complete_from_cache
+            || !af_inet6_token_valid || !af_inet6_addr_gen_mode_valid || !tb[IFLA_STATS64])) {
         _lookup_cached_link(cache, obj->link.ifindex, completed_from_cache, &link_cached);
         if (link_cached && link_cached->_link.netlink.is_in_netlink) {
             if (lnk_data_complete_from_cache && link_cached->link.type == obj->link.type
@@ -3160,6 +3169,8 @@ _new_from_nl_link(NMPlatform *     platform,
 
             if (address_complete_from_cache)
                 obj->link.l_address = link_cached->link.l_address;
+            if (perm_address_complete_from_cache)
+                obj->link.l_perm_address = link_cached->link.l_perm_address;
             if (broadcast_complete_from_cache)
                 obj->link.l_broadcast = link_cached->link.l_broadcast;
             if (!af_inet6_token_valid)
