@@ -621,12 +621,7 @@ nm_setting_connection_get_timestamp(NMSettingConnection *setting)
 }
 
 static GVariant *
-_to_dbus_fcn_timestamp(const NMSettInfoSetting *               sett_info,
-                       const NMSettInfoProperty *              property_info,
-                       NMConnection *                          connection,
-                       NMSetting *                             setting,
-                       NMConnectionSerializationFlags          flags,
-                       const NMConnectionSerializationOptions *options)
+_to_dbus_fcn_timestamp(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     guint64 v;
 
@@ -1540,11 +1535,7 @@ find_virtual_interface_name(GVariant *connection_dict, GVariant **variant_to_fre
 }
 
 static gboolean
-nm_setting_connection_no_interface_name(NMSetting *         setting,
-                                        GVariant *          connection_dict,
-                                        const char *        property,
-                                        NMSettingParseFlags parse_flags,
-                                        GError **           error)
+nm_setting_connection_no_interface_name(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     const char *     virtual_interface_name;
     gs_unref_variant GVariant *variant_to_free = NULL;
@@ -1558,13 +1549,7 @@ nm_setting_connection_no_interface_name(NMSetting *         setting,
 }
 
 static NMTernary
-compare_fcn_id(const NMSettInfoSetting * sett_info,
-               const NMSettInfoProperty *property_info,
-               NMConnection *            con_a,
-               NMSetting *               set_a,
-               NMConnection *            con_b,
-               NMSetting *               set_b,
-               NMSettingCompareFlags     flags)
+compare_fcn_id(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_ID))
         return NM_TERNARY_DEFAULT;
@@ -1579,13 +1564,7 @@ compare_fcn_id(const NMSettInfoSetting * sett_info,
 }
 
 static NMTernary
-compare_fcn_timestamp(const NMSettInfoSetting * sett_info,
-                      const NMSettInfoProperty *property_info,
-                      NMConnection *            con_a,
-                      NMSetting *               set_a,
-                      NMConnection *            con_b,
-                      NMSetting *               set_b,
-                      NMSettingCompareFlags     flags)
+compare_fcn_timestamp(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_IGNORE_TIMESTAMP))
         return NM_TERNARY_DEFAULT;

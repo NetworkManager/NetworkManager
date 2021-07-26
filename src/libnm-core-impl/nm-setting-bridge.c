@@ -1315,13 +1315,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_fcn_vlans(const NMSettInfoSetting * sett_info,
-                  const NMSettInfoProperty *property_info,
-                  NMConnection *            con_a,
-                  NMSetting *               set_a,
-                  NMConnection *            con_b,
-                  NMSetting *               set_b,
-                  NMSettingCompareFlags     flags)
+compare_fcn_vlans(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     if (set_b) {
         return _nm_utils_bridge_compare_vlans(NM_SETTING_BRIDGE_GET_PRIVATE(set_a)->vlans,

@@ -2725,12 +2725,7 @@ _nm_setting_get_team_setting(struct _NMSetting *setting)
 }
 
 GVariant *
-_nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_info,
-                                   const NMSettInfoProperty *              property_info,
-                                   NMConnection *                          connection,
-                                   NMSetting *                             setting,
-                                   NMConnectionSerializationFlags          flags,
-                                   const NMConnectionSerializationOptions *options)
+_nm_team_settings_property_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMTeamSetting *     self = _nm_setting_get_team_setting(setting);
     const TeamAttrData *attr_data =
@@ -2774,10 +2769,10 @@ _nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_
 }
 
 void
-_nm_team_settings_property_from_dbus_link_watchers(GVariant *dbus_value, GValue *prop_value)
+_nm_team_settings_property_from_dbus_link_watchers(
+    _NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil)
 {
-    g_value_take_boxed(prop_value,
-                       _nm_utils_team_link_watchers_from_variant(dbus_value, FALSE, NULL));
+    g_value_take_boxed(to, _nm_utils_team_link_watchers_from_variant(from, FALSE, NULL));
 }
 
 const NMSettInfoPropertType nm_sett_info_propert_type_team_b =

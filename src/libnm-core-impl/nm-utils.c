@@ -759,18 +759,18 @@ _nm_utils_hash_values_to_slist(GHashTable *hash)
 }
 
 void
-_nm_utils_strdict_from_dbus(GVariant *dbus_value, GValue *prop_value)
+_nm_utils_strdict_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil)
 {
     GVariantIter iter;
     const char * key, *value;
     GHashTable * hash;
 
     hash = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
-    g_variant_iter_init(&iter, dbus_value);
+    g_variant_iter_init(&iter, from);
     while (g_variant_iter_next(&iter, "{&s&s}", &key, &value))
         g_hash_table_insert(hash, g_strdup(key), g_strdup(value));
 
-    g_value_take_boxed(prop_value, hash);
+    g_value_take_boxed(to, hash);
 }
 
 const NMSettInfoPropertType nm_sett_info_propert_type_strdict =
@@ -4062,12 +4062,7 @@ nm_utils_hwaddr_to_dbus(const char *str)
 }
 
 GVariant *
-_nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
-                            const NMSettInfoProperty *              property_info,
-                            NMConnection *                          connection,
-                            NMSetting *                             setting,
-                            NMConnectionSerializationFlags          flags,
-                            const NMConnectionSerializationOptions *options)
+_nm_utils_hwaddr_cloned_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_free char *addr = NULL;
 
@@ -4078,13 +4073,7 @@ _nm_utils_hwaddr_cloned_get(const NMSettInfoSetting *               sett_info,
 }
 
 gboolean
-_nm_utils_hwaddr_cloned_set(const NMSettInfoSetting * sett_info,
-                            const NMSettInfoProperty *property_info,
-                            NMSetting *               setting,
-                            GVariant *                connection_dict,
-                            GVariant *                value,
-                            NMSettingParseFlags       parse_flags,
-                            GError **                 error)
+_nm_utils_hwaddr_cloned_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gsize         length;
     const guint8 *array;
@@ -4111,23 +4100,14 @@ _nm_utils_hwaddr_cloned_set(const NMSettInfoSetting * sett_info,
 }
 
 gboolean
-_nm_utils_hwaddr_cloned_not_set(NMSetting *         setting,
-                                GVariant *          connection_dict,
-                                const char *        property,
-                                NMSettingParseFlags parse_flags,
-                                GError **           error)
+_nm_utils_hwaddr_cloned_not_set(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     nm_assert(nm_streq0(property, "cloned-mac-address"));
     return TRUE;
 }
 
 static GVariant *
-_nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_info,
-                                   const NMSettInfoProperty *              property_info,
-                                   NMConnection *                          connection,
-                                   NMSetting *                             setting,
-                                   NMConnectionSerializationFlags          flags,
-                                   const NMConnectionSerializationOptions *options)
+_nm_utils_hwaddr_cloned_data_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_free char *addr = NULL;
 
@@ -4156,13 +4136,7 @@ _nm_utils_hwaddr_cloned_data_synth(const NMSettInfoSetting *               sett_
 }
 
 static gboolean
-_nm_utils_hwaddr_cloned_data_set(const NMSettInfoSetting * sett_info,
-                                 const NMSettInfoProperty *property_info,
-                                 NMSetting *               setting,
-                                 GVariant *                connection_dict,
-                                 GVariant *                value,
-                                 NMSettingParseFlags       parse_flags,
-                                 GError **                 error)
+_nm_utils_hwaddr_cloned_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     nm_assert(nm_streq0(property_info->name, "assigned-mac-address"));
 
@@ -5485,12 +5459,7 @@ nm_utils_base64secret_normalize(const char *base64_key,
 }
 
 GVariant *
-_nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info,
-                               const NMSettInfoProperty *              property_info,
-                               NMConnection *                          connection,
-                               NMSetting *                             setting,
-                               NMConnectionSerializationFlags          flags,
-                               const NMConnectionSerializationOptions *options)
+_nm_utils_bridge_vlans_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *vlans = NULL;
     GVariantBuilder              builder;
@@ -5532,13 +5501,7 @@ _nm_utils_bridge_vlans_to_dbus(const NMSettInfoSetting *               sett_info
 }
 
 gboolean
-_nm_utils_bridge_vlans_from_dbus(const NMSettInfoSetting * sett_info,
-                                 const NMSettInfoProperty *property_info,
-                                 NMSetting *               setting,
-                                 GVariant *                connection_dict,
-                                 GVariant *                value,
-                                 NMSettingParseFlags       parse_flags,
-                                 GError **                 error)
+_nm_utils_bridge_vlans_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *vlans = NULL;
     GVariantIter                 vlan_iter;

@@ -676,22 +676,13 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GVariant *
-_override_flags_get(const NMSettInfoSetting *               sett_info,
-                    const NMSettInfoProperty *              property_info,
-                    NMConnection *                          connection,
-                    NMSetting *                             setting,
-                    NMConnectionSerializationFlags          flags,
-                    const NMConnectionSerializationOptions *options)
+_override_flags_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     return g_variant_new_uint32(nm_setting_vlan_get_flags((NMSettingVlan *) setting));
 }
 
 static gboolean
-_override_flags_not_set(NMSetting *         setting,
-                        GVariant *          connection_dict,
-                        const char *        property,
-                        NMSettingParseFlags parse_flags,
-                        GError **           error)
+_override_flags_not_set(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     /* we changed the default value for FLAGS. When an older client
      * doesn't serialize the property, we assume it is the old default. */

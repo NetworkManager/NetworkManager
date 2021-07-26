@@ -745,13 +745,13 @@ set_gvalue_from_array(GValue *v, uint *a, size_t len)
 #define SET_GVALUE_FROM_ARRAY(v, a) set_gvalue_from_array(v, a, G_N_ELEMENTS(a))
 
 static void
-_nm_setting_dcb_uint_array_from_dbus(GVariant *dbus_value, GValue *prop_value)
+_nm_setting_dcb_uint_array_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil)
 {
     gconstpointer array;
     gsize         length;
 
-    array = g_variant_get_fixed_array(dbus_value, &length, sizeof(guint32));
-    set_gvalue_from_array(prop_value, (guint *) array, length);
+    array = g_variant_get_fixed_array(from, &length, sizeof(guint32));
+    set_gvalue_from_array(to, (guint *) array, length);
 }
 
 static const NMSettInfoPropertType nm_sett_info_propert_type_dcb_au =

@@ -4949,12 +4949,7 @@ nm_setting_ip_config_clear_routing_rules(NMSettingIPConfig *setting)
 }
 
 static GVariant *
-_routing_rules_dbus_only_synth(const NMSettInfoSetting *               sett_info,
-                               const NMSettInfoProperty *              property_info,
-                               NMConnection *                          connection,
-                               NMSetting *                             setting,
-                               NMConnectionSerializationFlags          flags,
-                               const NMConnectionSerializationOptions *options)
+_routing_rules_dbus_only_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingIPConfig *       self = NM_SETTING_IP_CONFIG(setting);
     NMSettingIPConfigPrivate *priv;
@@ -4985,13 +4980,7 @@ _routing_rules_dbus_only_synth(const NMSettInfoSetting *               sett_info
 }
 
 static gboolean
-_routing_rules_dbus_only_set(const NMSettInfoSetting * sett_info,
-                             const NMSettInfoProperty *property_info,
-                             NMSetting *               setting,
-                             GVariant *                connection_dict,
-                             GVariant *                value,
-                             NMSettingParseFlags       parse_flags,
-                             GError **                 error)
+_routing_rules_dbus_only_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GVariantIter iter_rules;
     GVariant *   rule_var;
@@ -5627,13 +5616,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 NMTernary
-_nm_setting_ip_config_compare_fcn_addresses(const NMSettInfoSetting * sett_info,
-                                            const NMSettInfoProperty *property_info,
-                                            NMConnection *            con_a,
-                                            NMSetting *               set_a,
-                                            NMConnection *            con_b,
-                                            NMSetting *               set_b,
-                                            NMSettingCompareFlags     flags)
+_nm_setting_ip_config_compare_fcn_addresses(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     NMSettingIPConfigPrivate *a_priv;
     NMSettingIPConfigPrivate *b_priv;
@@ -5657,13 +5640,7 @@ _nm_setting_ip_config_compare_fcn_addresses(const NMSettInfoSetting * sett_info,
 }
 
 NMTernary
-_nm_setting_ip_config_compare_fcn_routes(const NMSettInfoSetting * sett_info,
-                                         const NMSettInfoProperty *property_info,
-                                         NMConnection *            con_a,
-                                         NMSetting *               set_a,
-                                         NMConnection *            con_b,
-                                         NMSetting *               set_b,
-                                         NMSettingCompareFlags     flags)
+_nm_setting_ip_config_compare_fcn_routes(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     NMSettingIPConfigPrivate *a_priv;
     NMSettingIPConfigPrivate *b_priv;
@@ -5686,13 +5663,7 @@ _nm_setting_ip_config_compare_fcn_routes(const NMSettInfoSetting * sett_info,
 }
 
 static NMTernary
-compare_fcn_routing_rules(const NMSettInfoSetting * sett_info,
-                          const NMSettInfoProperty *property_info,
-                          NMConnection *            con_a,
-                          NMSetting *               set_a,
-                          NMConnection *            con_b,
-                          NMSetting *               set_b,
-                          NMSettingCompareFlags     flags)
+compare_fcn_routing_rules(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     NMSettingIPConfigPrivate *a_priv;
     NMSettingIPConfigPrivate *b_priv;
@@ -5776,13 +5747,8 @@ enumerate_values(const NMSettInfoProperty *property_info,
 /*****************************************************************************/
 
 gboolean
-_nm_setting_property_from_dbus_fcn_direct_ip_config_gateway(const NMSettInfoSetting * sett_info,
-                                                            const NMSettInfoProperty *property_info,
-                                                            NMSetting *               setting,
-                                                            GVariant *          connection_dict,
-                                                            GVariant *          value,
-                                                            NMSettingParseFlags parse_flags,
-                                                            GError **           error)
+_nm_setting_property_from_dbus_fcn_direct_ip_config_gateway(
+    _NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     /* Don't set from 'gateway' if we're going to use the gateway in 'addresses' */
     if (_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "gateway"))

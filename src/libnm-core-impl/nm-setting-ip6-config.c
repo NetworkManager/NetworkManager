@@ -363,12 +363,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GVariant *
-ip6_dns_to_dbus(const NMSettInfoSetting *               sett_info,
-                const NMSettInfoProperty *              property_info,
-                NMConnection *                          connection,
-                NMSetting *                             setting,
-                NMConnectionSerializationFlags          flags,
-                const NMConnectionSerializationOptions *options)
+ip6_dns_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *dns;
 
@@ -381,18 +376,13 @@ ip6_dns_to_dbus(const NMSettInfoSetting *               sett_info,
 }
 
 static void
-ip6_dns_from_dbus(GVariant *dbus_value, GValue *prop_value)
+ip6_dns_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil)
 {
-    g_value_take_boxed(prop_value, nm_utils_ip6_dns_from_variant(dbus_value));
+    g_value_take_boxed(to, nm_utils_ip6_dns_from_variant(from));
 }
 
 static GVariant *
-ip6_addresses_get(const NMSettInfoSetting *               sett_info,
-                  const NMSettInfoProperty *              property_info,
-                  NMConnection *                          connection,
-                  NMSetting *                             setting,
-                  NMConnectionSerializationFlags          flags,
-                  const NMConnectionSerializationOptions *options)
+ip6_addresses_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *addrs = NULL;
     const char *                 gateway;
@@ -403,13 +393,7 @@ ip6_addresses_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip6_addresses_set(const NMSettInfoSetting * sett_info,
-                  const NMSettInfoProperty *property_info,
-                  NMSetting *               setting,
-                  GVariant *                connection_dict,
-                  GVariant *                value,
-                  NMSettingParseFlags       parse_flags,
-                  GError **                 error)
+ip6_addresses_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *addrs;
     char *     gateway = NULL;
@@ -433,12 +417,7 @@ ip6_addresses_set(const NMSettInfoSetting * sett_info,
 }
 
 static GVariant *
-ip6_address_data_get(const NMSettInfoSetting *               sett_info,
-                     const NMSettInfoProperty *              property_info,
-                     NMConnection *                          connection,
-                     NMSetting *                             setting,
-                     NMConnectionSerializationFlags          flags,
-                     const NMConnectionSerializationOptions *options)
+ip6_address_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *addrs = NULL;
 
@@ -450,13 +429,7 @@ ip6_address_data_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip6_address_data_set(const NMSettInfoSetting * sett_info,
-                     const NMSettInfoProperty *property_info,
-                     NMSetting *               setting,
-                     GVariant *                connection_dict,
-                     GVariant *                value,
-                     NMSettingParseFlags       parse_flags,
-                     GError **                 error)
+ip6_address_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *addrs;
 
@@ -473,12 +446,7 @@ ip6_address_data_set(const NMSettInfoSetting * sett_info,
 }
 
 static GVariant *
-ip6_routes_get(const NMSettInfoSetting *               sett_info,
-               const NMSettInfoProperty *              property_info,
-               NMConnection *                          connection,
-               NMSetting *                             setting,
-               NMConnectionSerializationFlags          flags,
-               const NMConnectionSerializationOptions *options)
+ip6_routes_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *routes = NULL;
 
@@ -487,13 +455,7 @@ ip6_routes_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip6_routes_set(const NMSettInfoSetting * sett_info,
-               const NMSettInfoProperty *property_info,
-               NMSetting *               setting,
-               GVariant *                connection_dict,
-               GVariant *                value,
-               NMSettingParseFlags       parse_flags,
-               GError **                 error)
+ip6_routes_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *routes;
 
@@ -509,12 +471,7 @@ ip6_routes_set(const NMSettInfoSetting * sett_info,
 }
 
 static GVariant *
-ip6_route_data_get(const NMSettInfoSetting *               sett_info,
-                   const NMSettInfoProperty *              property_info,
-                   NMConnection *                          connection,
-                   NMSetting *                             setting,
-                   NMConnectionSerializationFlags          flags,
-                   const NMConnectionSerializationOptions *options)
+ip6_route_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *routes = NULL;
 
@@ -526,13 +483,7 @@ ip6_route_data_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-ip6_route_data_set(const NMSettInfoSetting * sett_info,
-                   const NMSettInfoProperty *property_info,
-                   NMSetting *               setting,
-                   GVariant *                connection_dict,
-                   GVariant *                value,
-                   NMSettingParseFlags       parse_flags,
-                   GError **                 error)
+ip6_route_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *routes;
 

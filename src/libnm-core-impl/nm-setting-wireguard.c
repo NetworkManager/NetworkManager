@@ -1460,12 +1460,7 @@ nm_setting_wireguard_clear_peers(NMSettingWireGuard *self)
 /*****************************************************************************/
 
 static GVariant *
-_peers_dbus_only_synth(const NMSettInfoSetting *               sett_info,
-                       const NMSettInfoProperty *              property_info,
-                       NMConnection *                          connection,
-                       NMSetting *                             setting,
-                       NMConnectionSerializationFlags          flags,
-                       const NMConnectionSerializationOptions *options)
+_peers_dbus_only_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingWireGuard *       self = NM_SETTING_WIREGUARD(setting);
     NMSettingWireGuardPrivate *priv;
@@ -1563,13 +1558,7 @@ _peers_dbus_only_synth(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-_peers_dbus_only_set(const NMSettInfoSetting * sett_info,
-                     const NMSettInfoProperty *property_info,
-                     NMSetting *               setting,
-                     GVariant *                connection_dict,
-                     GVariant *                value,
-                     NMSettingParseFlags       parse_flags,
-                     GError **                 error)
+_peers_dbus_only_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GVariantIter iter_peers;
     GVariant *   peer_var;
@@ -1998,13 +1987,7 @@ update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError *
 }
 
 static NMTernary
-compare_fcn_peers(const NMSettInfoSetting * sett_info,
-                  const NMSettInfoProperty *property_info,
-                  NMConnection *            con_a,
-                  NMSetting *               set_a,
-                  NMConnection *            con_b,
-                  NMSetting *               set_b,
-                  NMSettingCompareFlags     flags)
+compare_fcn_peers(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     NMSettingWireGuardPrivate *a_priv;
     NMSettingWireGuardPrivate *b_priv;

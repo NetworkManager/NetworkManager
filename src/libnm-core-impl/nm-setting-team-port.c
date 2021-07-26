@@ -350,13 +350,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_fcn_link_watchers(const NMSettInfoSetting * sett_info,
-                          const NMSettInfoProperty *property_info,
-                          NMConnection *            con_a,
-                          NMSetting *               set_a,
-                          NMConnection *            con_b,
-                          NMSetting *               set_b,
-                          NMSettingCompareFlags     flags)
+compare_fcn_link_watchers(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     NMSettingTeamPortPrivate *a_priv;
     NMSettingTeamPortPrivate *b_priv;
@@ -373,13 +367,7 @@ compare_fcn_link_watchers(const NMSettInfoSetting * sett_info,
 }
 
 static NMTernary
-compare_fcn_config(const NMSettInfoSetting * sett_info,
-                   const NMSettInfoProperty *property_info,
-                   NMConnection *            con_a,
-                   NMSetting *               set_a,
-                   NMConnection *            con_b,
-                   NMSetting *               set_b,
-                   NMSettingCompareFlags     flags)
+compare_fcn_config(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     NMSettingTeamPortPrivate *a_priv;
     NMSettingTeamPortPrivate *b_priv;
