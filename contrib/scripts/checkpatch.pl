@@ -191,7 +191,7 @@ complain ("This gtk-doc annotation looks wrong") if $line =~ /\*.*\( *(transfer-
 complain ("Prefer nm_assert() or g_return*() to g_assert*()") if $line =~ /g_assert/ and (not $filename =~ /\/tests\//) and (not $filename =~ /\/nm-test-/);
 complain ("Use gs_free_error with GError variables") if $line =~ /\bgs_free\b +GError *\*/;
 complain ("Don't use strcmp/g_strcmp0 unless you need to sort. Consider nm_streq()/nm_streq0(),NM_IN_STRSET() for testing equality") if $line =~ /\b(strcmp|g_strcmp0)\b/;
-complain ("Don't use API that uses the numeric source id. Instead, use GSource and API like nm_g_idle_add_source(), nm_clear_g_source_inst(), etc.") if $line =~ /\b(g_idle_add|g_idle_add_full|g_timeout_add|g_timeout_add_seconds|g_source_remove|nm_clear_g_source)\b/;
+complain ("Don't use API that uses the numeric source id. Instead, use GSource and API like nm_g_idle_add(), nm_g_idle_add_source(), nm_clear_g_source_inst(), etc.") if $line =~ /\b(g_idle_add|g_idle_add_full|g_timeout_add|g_timeout_add_seconds|g_source_remove|nm_clear_g_source)\b/;
 #complain ("Use spaces instead of tabs") if $line =~ /\t/;
 
 # Further on we process stuff without comments.

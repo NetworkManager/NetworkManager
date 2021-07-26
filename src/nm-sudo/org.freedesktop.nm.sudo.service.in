@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=org.freedesktop.nm.sudo
+Exec=@libexecdir@/nm-sudo
+User=root
+SystemdService=dbus-org.freedesktop.nm.sudo.service

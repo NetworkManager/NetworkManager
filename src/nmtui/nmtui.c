@@ -283,7 +283,7 @@ main(int argc, char **argv)
 
     startup_data.argc = argc;
     startup_data.argv = argv;
-    g_idle_add(idle_run_subprogram, &startup_data);
+    nm_g_idle_add(idle_run_subprogram, &startup_data);
     loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(loop);
     g_main_loop_unref(loop);
