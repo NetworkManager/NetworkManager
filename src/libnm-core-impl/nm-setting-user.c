@@ -254,18 +254,10 @@ nm_setting_user_get_keys(NMSettingUser *setting, guint *out_len)
 const char *
 nm_setting_user_get_data(NMSettingUser *setting, const char *key)
 {
-    NMSettingUser *       self = setting;
-    NMSettingUserPrivate *priv;
-
-    g_return_val_if_fail(NM_IS_SETTING_USER(self), NULL);
+    g_return_val_if_fail(NM_IS_SETTING_USER(setting), NULL);
     g_return_val_if_fail(key, NULL);
 
-    priv = NM_SETTING_USER_GET_PRIVATE(self);
-
-    if (!priv->data)
-        return NULL;
-
-    return g_hash_table_lookup(priv->data, key);
+    return nm_g_hash_table_lookup(NM_SETTING_USER_GET_PRIVATE(setting)->data, key);
 }
 
 /**
