@@ -643,6 +643,20 @@ _nm_setting_use_legacy_property(NMSetting * setting,
     gs_unref_variant GVariant *setting_dict = NULL;
     gs_unref_variant GVariant *value        = NULL;
 
+    if (!connection_dict) {
+        /* we also allow the caller to provide no connection_dict.
+         *
+         * We hit this code bug when being called by update_one_secret().
+         * In this case, we use the legacy property, because we are not
+         * sophisticated enough to mediate between deprecated and legacy
+         * properties...
+         *
+         * However, in practice this code is unreachable, because update_one_secret()
+         * only ends up calling from_dbus_fcn() for certain properties, and none
+         * of those are actually deprecated (for now). So this cannot really happen. */
+        return nm_assert_unreachable_val(FALSE);
+    }
+
     setting_dict = g_variant_lookup_value(connection_dict,
                                           nm_setting_get_name(NM_SETTING(setting)),
                                           NM_VARIANT_TYPE_SETTING);
@@ -2805,14 +2819,13 @@ _nm_setting_need_secrets(NMSetting *setting)
 static int
 update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError **error)
 {
-    const NMSettInfoProperty *property;
-    GParamSpec *              prop_spec;
-    GValue                    prop_value = {
-        0,
-    };
+    const NMSettInfoSetting * sett_info;
+    const NMSettInfoProperty *property_info;
+    gboolean                  is_modified;
 
-    property = _nm_setting_class_get_property_info(NM_SETTING_GET_CLASS(setting), key);
-    if (!property) {
+    sett_info     = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
+    property_info = _nm_sett_info_setting_get_property_info(sett_info, key);
+    if (!property_info) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_PROPERTY_NOT_FOUND,
@@ -2821,32 +2834,25 @@ update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError *
         return NM_SETTING_UPDATE_SECRET_ERROR;
     }
 
-    /* Silently ignore non-secrets */
-    prop_spec = property->param_spec;
-    if (!prop_spec || !(prop_spec->flags & NM_SETTING_PARAM_SECRET))
+    if (!property_info->param_spec
+        || !NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
+        /* Silently ignore non-secrets */
         return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
-
-    if (g_variant_is_of_type(value, G_VARIANT_TYPE_STRING) && G_IS_PARAM_SPEC_STRING(prop_spec)) {
-        /* String is expected to be a common case. Handle it specially and check
-         * whether the value is already set. Otherwise, we just reset the
-         * property and assume the value got modified.
-         */
-        char *v;
-
-        g_object_get(G_OBJECT(setting), prop_spec->name, &v, NULL);
-        if (g_strcmp0(v, g_variant_get_string(value, NULL)) == 0) {
-            g_free(v);
-            return NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
-        }
-        g_free(v);
     }
 
-    g_value_init(&prop_value, prop_spec->value_type);
-    set_property_from_dbus(property, value, &prop_value);
-    g_object_set_property(G_OBJECT(setting), prop_spec->name, &prop_value);
-    g_value_unset(&prop_value);
+    if (!_property_set_from_dbus(sett_info,
+                                 property_info,
+                                 setting,
+                                 NULL,
+                                 value,
+                                 NM_SETTING_PARSE_FLAGS_BEST_EFFORT,
+                                 &is_modified,
+                                 NULL)) {
+        /* Silently ignore errors. */
+    }
 
-    return NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED;
+    return is_modified ? NM_SETTING_UPDATE_SECRET_SUCCESS_MODIFIED
+                       : NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 }
 
 /**
