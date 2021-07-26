@@ -1,0 +1,66 @@
+[Unit]
+Description=Network Manager Sudo Helper
+#
+# nm-sudo exists for privilege separation. It allows to run NetworkManager
+# without certain capabilities, and ask nm-sudo for special operations
+# where more privileges are required.
+#
+# While nm-sudo has privileges that NetworkManager has not, it does not
+# mean that itself should run totally unconstrained. On the contrary, it
+# also should only have permissions it requires.
+#
+# nm-sudo rejects all requests that come from any other than the name
+# owner of "org.freedesktop.NetworkManager" (that is, NetworkManager process
+# itself). It is thus only an implementation detail and provides no public
+# API to the user.
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.nm.sudo
+ExecStart=@libexecdir@/nm-sudo
+
+# Environment=NM_SUDO_NO_AUTH_FOR_TESTING=0
+# Environment=NM_SUDO_IDLE_TIMEOUT=10
+# Environment=NM_SUDO_LOG=TRACE
+# Environment=G_DEBUG=fatal-warnings
+# Environment=G_DBUS_DEBUG=all
+
+[Install]
+Alias=dbus-org.freedesktop.nm.sudo.service
+
+[Service]
+# Restrict:
+AmbientCapabilities=
+CapabilityBoundingSet=
+PrivateDevices=true
+PrivateMounts=true
+PrivateNetwork=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+RestrictAddressFamilies=
+RestrictNamespaces=true
+SystemCallFilter=~@clock
+SystemCallFilter=~@cpu-emulation
+SystemCallFilter=~@debug
+SystemCallFilter=~@module
+SystemCallFilter=~@mount
+SystemCallFilter=~@obsolete
+SystemCallFilter=~@privileged
+SystemCallFilter=~@raw-io
+SystemCallFilter=~@reboot
+SystemCallFilter=~@swap
+NoNewPrivileges=true
+SupplementaryGroups=
+
+# Grant:
+CapabilityBoundingSet=CAP_DAC_OVERRIDE
+PrivateUsers=no
+RestrictAddressFamilies=AF_UNIX
+SystemCallFilter=@resources

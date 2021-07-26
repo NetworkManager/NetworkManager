@@ -5,6 +5,7 @@ libnm_base = static_library(
   sources: files(
     'nm-ethtool-base.c',
     'nm-net-aux.c',
+    'nm-sudo-utils.c',
   ),
   include_directories: [
     src_inc,
