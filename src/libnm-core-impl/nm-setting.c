@@ -640,36 +640,28 @@ _nm_setting_use_legacy_property(NMSetting * setting,
                                 const char *legacy_property,
                                 const char *new_property)
 {
-    GVariant *setting_dict, *value;
+    gs_unref_variant GVariant *setting_dict = NULL;
+    gs_unref_variant GVariant *value        = NULL;
 
     setting_dict = g_variant_lookup_value(connection_dict,
                                           nm_setting_get_name(NM_SETTING(setting)),
                                           NM_VARIANT_TYPE_SETTING);
+
     g_return_val_if_fail(setting_dict != NULL, FALSE);
 
     /* If the new property isn't set, we have to use the legacy property. */
     value = g_variant_lookup_value(setting_dict, new_property, NULL);
-    if (!value) {
-        g_variant_unref(setting_dict);
+    if (!value)
         return TRUE;
-    }
-    g_variant_unref(value);
+    nm_clear_pointer(&value, g_variant_unref);
 
     /* Otherwise, clients always prefer new properties sent from the daemon. */
-    if (!_nm_utils_is_manager_process) {
-        g_variant_unref(setting_dict);
+    if (!_nm_utils_is_manager_process)
         return FALSE;
-    }
 
     /* The daemon prefers the legacy property if it exists. */
     value = g_variant_lookup_value(setting_dict, legacy_property, NULL);
-    g_variant_unref(setting_dict);
-
-    if (value) {
-        g_variant_unref(value);
-        return TRUE;
-    } else
-        return FALSE;
+    return !!value;
 }
 
 /*****************************************************************************/
