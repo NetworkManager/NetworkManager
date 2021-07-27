@@ -28,6 +28,8 @@
 #define _nm_deprecated(msg)    __attribute__((__deprecated__(msg)))
 #define nm_auto(fcn)           __attribute__((__cleanup__(fcn)))
 
+#define _nm_nil
+
 /* This is required to make LTO working.
  *
  * See https://gitlab.freedesktop.org/NetworkManager/NetworkManager/merge_requests/76#note_112694
