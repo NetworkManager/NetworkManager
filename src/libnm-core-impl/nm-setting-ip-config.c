@@ -5024,6 +5024,7 @@ _routing_rules_dbus_only_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     success = TRUE;
 
 out:
+    *out_is_modified = rules_changed;
     if (rules_changed)
         _routing_rules_notify(NM_SETTING_IP_CONFIG(setting));
     return success;
@@ -5760,6 +5761,7 @@ _nm_setting_property_from_dbus_fcn_direct_ip_config_gateway(
                                                      connection_dict,
                                                      value,
                                                      parse_flags,
+                                                     out_is_modified,
                                                      error);
 }
 

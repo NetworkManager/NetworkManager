@@ -1486,12 +1486,10 @@ tc_qdiscs_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 tc_qdiscs_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *qdiscs;
+    gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 
     qdiscs = _qdiscs_from_variant(value);
     g_object_set(setting, NM_SETTING_TC_CONFIG_QDISCS, qdiscs, NULL);
-    g_ptr_array_unref(qdiscs);
-
     return TRUE;
 }
 

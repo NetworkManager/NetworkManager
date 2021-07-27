@@ -1071,6 +1071,7 @@ _nm_setting_property_to_dbus_fcn_gprop(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_n
 gboolean
 _nm_setting_property_from_dbus_fcn_ignore(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
+    *out_is_modified = FALSE;
     return TRUE;
 }
 
@@ -1091,8 +1092,10 @@ _nm_setting_property_from_dbus_fcn_direct_mac_address(_NM_SETT_INFO_PROP_FROM_DB
 
     if (nm_strdup_reset_take(
             _nm_setting_get_private(setting, sett_info, property_info->direct_offset),
-            length > 0 ? nm_utils_hwaddr_ntoa(array, length) : NULL))
+            length > 0 ? nm_utils_hwaddr_ntoa(array, length) : NULL)) {
         g_object_notify_by_pspec(G_OBJECT(setting), property_info->param_spec);
+    } else
+        *out_is_modified = FALSE;
 
     return TRUE;
 }
@@ -1124,6 +1127,8 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
         }                                                                              \
         _success;                                                                      \
     })
+
+    *out_is_modified = FALSE;
 
     switch (property_info->property_type->direct_type) {
     case NM_VALUE_TYPE_BOOL:
@@ -1239,6 +1244,7 @@ out_unchanged:
     return TRUE;
 
 out_notify:
+    *out_is_modified = TRUE;
     g_object_notify_by_pspec(G_OBJECT(setting), property_info->param_spec);
     return TRUE;
 
@@ -1282,6 +1288,7 @@ _nm_setting_property_from_dbus_fcn_gprop(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _
     g_value_init(&object_value, property_info->param_spec->value_type);
     if (!set_property_from_dbus(property_info, value, &object_value)) {
         /* for backward behavior, fail unless best-effort is chosen. */
+        *out_is_modified = FALSE;
         if (NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_BEST_EFFORT))
             return TRUE;
         g_set_error(error,
@@ -1302,6 +1309,7 @@ _nm_setting_property_from_dbus_fcn_gprop(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _
                                   property_info->param_spec->name,
                                   &object_value,
                                   &local)) {
+        *out_is_modified = FALSE;
         if (!NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
             return TRUE;
         g_set_error(error,
@@ -1567,9 +1575,14 @@ _property_set_from_dbus(const NMSettInfoSetting * sett_info,
                         GVariant *                connection_dict,
                         GVariant *                value,
                         NMSettingParseFlags       parse_flags,
+                        gboolean *                out_is_modified,
                         GError **                 error)
 {
-    gs_free_error GError *local = NULL;
+    gs_free_error GError *local       = NULL;
+    NMTernary             is_modified = NM_TERNARY_DEFAULT;
+    gboolean              success;
+
+    NM_SET_OUT(out_is_modified, FALSE);
 
     if (!property_info->property_type->from_dbus_fcn) {
         nm_assert(!property_info->param_spec);
@@ -1597,16 +1610,24 @@ _property_set_from_dbus(const NMSettInfoSetting * sett_info,
         return FALSE;
     }
 
-    if (!property_info->property_type->from_dbus_fcn(sett_info,
-                                                     property_info,
-                                                     setting,
-                                                     connection_dict,
-                                                     value,
-                                                     parse_flags,
-                                                     &local)) {
+    success = property_info->property_type->from_dbus_fcn(sett_info,
+                                                          property_info,
+                                                          setting,
+                                                          connection_dict,
+                                                          value,
+                                                          parse_flags,
+                                                          &is_modified,
+                                                          &local);
+
+    /* We allow the from_dbus_fcn() to leave is_modified at NM_TERNARY_DEFAULT,
+     * which we assume to also mean that it was modified. That is, we err on the
+     * side of assuming modification happened. */
+    NM_SET_OUT(out_is_modified, is_modified != FALSE);
+
+    if (!success) {
         if (property_info->property_type->from_dbus_is_full) {
             /* the error we received from from_dbus_fcn() should be propagated, even
-                     * in non-strict mode. */
+             * in non-strict mode. */
         } else if (!NM_FLAGS_HAS(parse_flags, NM_SETTING_PARSE_FLAGS_STRICT))
             return TRUE;
         g_set_error(error,
@@ -1711,6 +1732,7 @@ init_from_dbus(NMSetting *                     setting,
                                      connection_dict,
                                      value,
                                      parse_flags,
+                                     NULL,
                                      error))
             return FALSE;
     }

@@ -4084,14 +4084,18 @@ _nm_utils_hwaddr_cloned_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     if (!_nm_setting_use_legacy_property(setting,
                                          connection_dict,
                                          "cloned-mac-address",
-                                         "assigned-mac-address"))
+                                         "assigned-mac-address")) {
+        *out_is_modified = FALSE;
         return TRUE;
+    }
 
     length = 0;
     array  = g_variant_get_fixed_array(value, &length, 1);
 
-    if (!length)
+    if (!length) {
+        *out_is_modified = FALSE;
         return TRUE;
+    }
 
     str = nm_utils_hwaddr_ntoa(array, length);
     g_object_set(setting, "cloned-mac-address", str, NULL);
@@ -4143,8 +4147,10 @@ _nm_utils_hwaddr_cloned_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     if (_nm_setting_use_legacy_property(setting,
                                         connection_dict,
                                         "cloned-mac-address",
-                                        "assigned-mac-address"))
+                                        "assigned-mac-address")) {
+        *out_is_modified = FALSE;
         return TRUE;
+    }
 
     g_object_set(setting,
                  "cloned-mac-address",

@@ -361,8 +361,10 @@ ip4_addresses_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
     /* FIXME: properly handle errors */
 
-    if (!_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "address-data"))
+    if (!_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "address-data")) {
+        *out_is_modified = FALSE;
         return TRUE;
+    }
 
     addrs = nm_utils_ip4_addresses_from_variant(value, &gateway);
 
@@ -449,8 +451,10 @@ ip4_address_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     /* FIXME: properly handle errors */
 
     /* Ignore 'address-data' if we're going to process 'addresses' */
-    if (_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "address-data"))
+    if (_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "address-data")) {
+        *out_is_modified = FALSE;
         return TRUE;
+    }
 
     addrs = nm_utils_ip_addresses_from_variant(value, AF_INET);
     g_object_set(setting, NM_SETTING_IP_CONFIG_ADDRESSES, addrs, NULL);
@@ -474,8 +478,10 @@ ip4_routes_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
     /* FIXME: properly handle errors */
 
-    if (!_nm_setting_use_legacy_property(setting, connection_dict, "routes", "route-data"))
+    if (!_nm_setting_use_legacy_property(setting, connection_dict, "routes", "route-data")) {
+        *out_is_modified = FALSE;
         return TRUE;
+    }
 
     routes = nm_utils_ip4_routes_from_variant(value);
     g_object_set(setting, property_info->name, routes, NULL);
@@ -503,8 +509,10 @@ ip4_route_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     /* FIXME: properly handle errors */
 
     /* Ignore 'route-data' if we're going to process 'routes' */
-    if (_nm_setting_use_legacy_property(setting, connection_dict, "routes", "route-data"))
+    if (_nm_setting_use_legacy_property(setting, connection_dict, "routes", "route-data")) {
+        *out_is_modified = FALSE;
         return TRUE;
+    }
 
     routes = nm_utils_ip_routes_from_variant(value, AF_INET);
     g_object_set(setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);

@@ -716,7 +716,7 @@ typedef struct {
 #define _NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS                                    \
     const NMSettInfoSetting *sett_info, const NMSettInfoProperty *property_info, \
         NMSetting *setting, GVariant *connection_dict, GVariant *value,          \
-        NMSettingParseFlags parse_flags, GError **error
+        NMSettingParseFlags parse_flags, NMTernary *out_is_modified, GError **error
 
     gboolean (*from_dbus_fcn)(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
 

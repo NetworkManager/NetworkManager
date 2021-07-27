@@ -1677,6 +1677,7 @@ _peers_dbus_only_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     success = TRUE;
 
 out:
+    *out_is_modified = peers_changed;
     if (peers_changed)
         _peers_notify(setting);
     return success;

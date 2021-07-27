@@ -771,6 +771,7 @@ _from_dbus_fcn_seen_bssids(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     if (_nm_utils_is_manager_process) {
         /* in the manager process, we don't accept seen-bssid from the client.
          * Do nothing.  */
+        *out_is_modified = FALSE;
         return TRUE;
     }
 
