@@ -694,10 +694,38 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 
         /* https://tools.ietf.org/html/rfc2132#section-8.1 */
 
-        v_str = nm_utils_buf_utf8safe_escape((char *) l_data, l_data_len, 0, &to_free);
+        v_str = nm_utils_buf_utf8safe_escape((char *) l_data,
+                                             l_data_len,
+                                             NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                             &to_free);
 
         nm_dhcp_option_add_option(options, AF_INET, NM_DHCP_OPTION_DHCP4_NIS_DOMAIN, v_str ?: "");
         nm_ip4_config_set_nis_domain(ip4_config, v_str ?: "");
+    }
+
+    r = n_dhcp4_client_lease_get_file(lease, &v_str);
+    if (r == 0) {
+        gs_free char *to_free = NULL;
+
+        v_str = nm_utils_buf_utf8safe_escape(v_str,
+                                             -1,
+                                             NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                             &to_free);
+        nm_dhcp_option_add_option(options, AF_INET, NM_DHCP_OPTION_DHCP4_NM_FILENAME, v_str ?: "");
+    }
+
+    r = _client_lease_query(lease, NM_DHCP_OPTION_DHCP4_BOOTFILE_NAME, &l_data, &l_data_len);
+    if (r == 0 && nm_dhcp_lease_data_parse_cstr(l_data, l_data_len, &l_data_len)) {
+        gs_free char *to_free = NULL;
+
+        v_str = nm_utils_buf_utf8safe_escape((char *) l_data,
+                                             l_data_len,
+                                             NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                             &to_free);
+        nm_dhcp_option_add_option(options,
+                                  AF_INET,
+                                  NM_DHCP_OPTION_DHCP4_BOOTFILE_NAME,
+                                  v_str ?: "");
     }
 
     lease_parse_address_list(lease, ip4_config, NM_DHCP_OPTION_DHCP4_NIS_SERVERS, options, &sbuf);
