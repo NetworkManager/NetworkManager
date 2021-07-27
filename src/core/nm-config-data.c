@@ -26,6 +26,15 @@ typedef struct {
         gboolean has;
         GSList * spec;
     } match_device;
+    union {
+        struct {
+            GSList * allowed_connections;
+            gboolean allowed_connections_has;
+        } device;
+    };
+    gboolean is_device;
+
+    /* List of key/value pairs in the section, sorted by key */
     gsize                    lookup_len;
     const NMUtilsNamedValue *lookup_idx;
 } MatchSectionInfo;
@@ -1436,13 +1445,13 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
             match = TRUE;
 
         if (match) {
-            *out_value = value;
+            NM_SET_OUT(out_value, value);
             return match_section_infos;
         }
     }
 
 out:
-    *out_value = NULL;
+    NM_SET_OUT(out_value, NULL);
     return NULL;
 }
 
@@ -1538,6 +1547,37 @@ nm_config_data_get_device_config_int64(const NMConfigData *self,
     return _nm_utils_ascii_str_to_int64(value, base, min, max, val_invalid);
 }
 
+const GSList *
+nm_config_data_get_device_allowed_connections_specs(const NMConfigData *self,
+                                                    NMDevice *          device,
+                                                    gboolean *          has_match)
+{
+    const NMConfigDataPrivate *priv;
+    const MatchSectionInfo *   connection_info;
+    const GSList *             ret = NULL;
+
+    g_return_val_if_fail(self, NULL);
+
+    priv = NM_CONFIG_DATA_GET_PRIVATE(self);
+
+    connection_info = _match_section_infos_lookup(&priv->device_infos[0],
+                                                  priv->keyfile,
+                                                  NM_CONFIG_KEYFILE_KEY_DEVICE_ALLOWED_CONNECTIONS,
+                                                  device,
+                                                  NULL,
+                                                  NULL,
+                                                  NULL);
+
+    if (connection_info) {
+        nm_assert(connection_info->device.allowed_connections_has);
+        ret = connection_info->device.allowed_connections;
+        NM_SET_OUT(has_match, TRUE);
+    } else
+        NM_SET_OUT(has_match, FALSE);
+
+    return ret;
+}
+
 const char *
 nm_config_data_get_connection_default(const NMConfigData *self,
                                       const char *        property,
@@ -1610,7 +1650,10 @@ _match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, const 
 }
 
 static void
-_match_section_info_init(MatchSectionInfo *connection_info, GKeyFile *keyfile, char *group)
+_match_section_info_init(MatchSectionInfo *connection_info,
+                         GKeyFile *        keyfile,
+                         char *            group,
+                         gboolean          is_device)
 {
     char **            keys = NULL;
     gsize              n_keys;
@@ -1628,6 +1671,14 @@ _match_section_info_init(MatchSectionInfo *connection_info, GKeyFile *keyfile, c
                                  &connection_info->match_device.has);
     connection_info->stop_match =
         nm_config_keyfile_get_boolean(keyfile, group, NM_CONFIG_KEYFILE_KEY_STOP_MATCH, FALSE);
+
+    if (is_device) {
+        connection_info->device.allowed_connections =
+            nm_config_get_match_spec(keyfile,
+                                     group,
+                                     NM_CONFIG_KEYFILE_KEY_DEVICE_ALLOWED_CONNECTIONS,
+                                     &connection_info->device.allowed_connections_has);
+    }
 
     keys = g_key_file_get_keys(keyfile, group, &n_keys, NULL);
     nm_utils_strv_sort(keys, n_keys);
@@ -1680,9 +1731,13 @@ _match_section_infos_free(MatchSectionInfo *match_section_infos)
 
     if (!match_section_infos)
         return;
+
     for (m = match_section_infos; m->group_name; m++) {
         g_free(m->group_name);
         g_slist_free_full(m->match_device.spec, g_free);
+        if (m->is_device) {
+            g_slist_free_full(m->device.allowed_connections, g_free);
+        }
         for (i = 0; i < m->lookup_len; i++) {
             g_free(m->lookup_idx[i].name_mutable);
             g_free(m->lookup_idx[i].value_str_mutable);
@@ -1693,12 +1748,16 @@ _match_section_infos_free(MatchSectionInfo *match_section_infos)
 }
 
 static MatchSectionInfo *
-_match_section_infos_construct(GKeyFile *keyfile, const char *prefix)
+_match_section_infos_construct(GKeyFile *keyfile, gboolean is_device)
 {
     char **           groups;
     gsize             i, j, ngroups;
     char *            connection_tag      = NULL;
     MatchSectionInfo *match_section_infos = NULL;
+    const char *      prefix;
+
+    prefix =
+        is_device ? NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE : NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION;
 
     /* get the list of existing [connection.\+]/[device.\+] sections.
      *
@@ -1730,13 +1789,17 @@ _match_section_infos_construct(GKeyFile *keyfile, const char *prefix)
     }
 
     match_section_infos = g_new0(MatchSectionInfo, ngroups + 1 + (connection_tag ? 1 : 0));
+    match_section_infos->is_device = is_device;
     for (i = 0; i < ngroups; i++) {
         /* pass ownership of @group on... */
-        _match_section_info_init(&match_section_infos[i], keyfile, groups[ngroups - i - 1]);
+        _match_section_info_init(&match_section_infos[i],
+                                 keyfile,
+                                 groups[ngroups - i - 1],
+                                 is_device);
     }
     if (connection_tag) {
         /* pass ownership of @connection_tag on... */
-        _match_section_info_init(&match_section_infos[i], keyfile, connection_tag);
+        _match_section_info_init(&match_section_infos[i], keyfile, connection_tag, is_device);
     }
     g_free(groups);
 
@@ -1950,10 +2013,8 @@ constructed(GObject *object)
 
     priv->keyfile = _merge_keyfiles(priv->keyfile_user, priv->keyfile_intern);
 
-    priv->connection_infos =
-        _match_section_infos_construct(priv->keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
-    priv->device_infos =
-        _match_section_infos_construct(priv->keyfile, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
+    priv->connection_infos = _match_section_infos_construct(priv->keyfile, FALSE);
+    priv->device_infos     = _match_section_infos_construct(priv->keyfile, TRUE);
 
     priv->connectivity.enabled =
         nm_config_keyfile_get_boolean(priv->keyfile,
