@@ -498,6 +498,8 @@ _startup_complete_check_is_ready(NMSettings *          self,
     conn = nm_settings_connection_get_connection(sett_conn);
 
     nm_manager_for_each_device (priv->manager, device, tmp_lst) {
+        gs_free_error GError *error = NULL;
+
         if (!nm_device_is_real(device))
             continue;
 
@@ -508,7 +510,13 @@ _startup_complete_check_is_ready(NMSettings *          self,
             continue;
         }
 
-        if (!nm_device_check_connection_compatible(device, conn, NULL))
+        /* Check that device is compatible with the device. We are also happy
+         * with a device compatible but for which the connection is disallowed
+         * by NM configuration. */
+        if (!nm_device_check_connection_compatible(device, conn, &error)
+            && !g_error_matches(error,
+                                NM_UTILS_ERROR,
+                                NM_UTILS_ERROR_CONNECTION_AVAILABLE_DISALLOWED))
             continue;
 
         return TRUE;

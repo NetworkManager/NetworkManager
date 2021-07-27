@@ -1484,6 +1484,112 @@ nm_match_spec_device(const GSList *specs,
     return _match_result(has_except, has_not_except, has_match, has_match_except);
 }
 
+typedef struct {
+    const char *uuid;
+    const char *id;
+    const char *origin;
+} MatchConnectionData;
+
+static gboolean
+match_connection_eval(const char *spec_str, const MatchConnectionData *match_data)
+{
+    if (spec_str[0] == '*' && spec_str[1] == '\0')
+        return TRUE;
+
+    if (_MATCH_CHECK(spec_str, "id:"))
+        return nm_streq0(spec_str, match_data->id);
+
+    if (_MATCH_CHECK(spec_str, "uuid:"))
+        return nm_streq0(spec_str, match_data->uuid);
+
+    if (_MATCH_CHECK(spec_str, "origin:"))
+        return nm_streq0(spec_str, match_data->origin);
+
+    return FALSE;
+}
+
+static NMMatchSpecMatchType
+match_spec_connection(const GSList *specs, const char *id, const char *uuid, const char *origin)
+{
+    const GSList *            iter;
+    gboolean                  has_match        = FALSE;
+    gboolean                  has_match_except = FALSE;
+    gboolean                  has_except       = FALSE;
+    gboolean                  has_not_except   = FALSE;
+    const char *              spec_str;
+    const MatchConnectionData match_data = {
+        .id     = nm_str_not_empty(id),
+        .uuid   = nm_str_not_empty(uuid),
+        .origin = nm_str_not_empty(origin),
+    };
+
+    if (!specs)
+        return NM_MATCH_SPEC_NO_MATCH;
+
+    for (iter = specs; iter; iter = iter->next) {
+        gboolean except;
+
+        spec_str = iter->data;
+
+        if (!spec_str || !*spec_str)
+            continue;
+
+        spec_str = match_except(spec_str, &except);
+
+        if (except)
+            has_except = TRUE;
+        else
+            has_not_except = TRUE;
+
+        if ((except && has_match_except) || (!except && has_match)) {
+            /* evaluating the match does not give new information. Skip it. */
+            continue;
+        }
+
+        if (!match_connection_eval(spec_str, &match_data))
+            continue;
+
+        if (except)
+            has_match_except = TRUE;
+        else
+            has_match = TRUE;
+    }
+
+    return _match_result(has_except, has_not_except, has_match, has_match_except);
+}
+
+int
+nm_utils_connection_match_spec_list(NMConnection *connection,
+                                    const GSList *specs,
+                                    int           no_match_value)
+{
+    NMMatchSpecMatchType m;
+    NMSettingUser *      s_user;
+    const char *         origin = NULL;
+
+    if (!specs)
+        return no_match_value;
+
+    s_user = _nm_connection_get_setting(connection, NM_TYPE_SETTING_USER);
+    if (s_user)
+        origin = nm_setting_user_get_data(s_user, NM_USER_TAG_ORIGIN);
+
+    m = match_spec_connection(specs,
+                              nm_connection_get_id(connection),
+                              nm_connection_get_uuid(connection),
+                              origin);
+    switch (m) {
+    case NM_MATCH_SPEC_MATCH:
+        return TRUE;
+    case NM_MATCH_SPEC_NEG_MATCH:
+        return FALSE;
+    case NM_MATCH_SPEC_NO_MATCH:
+        return no_match_value;
+    }
+    nm_assert_not_reached();
+    return no_match_value;
+}
+
 static gboolean
 match_config_eval(const char *str, const char *tag, guint cur_nm_version)
 {
