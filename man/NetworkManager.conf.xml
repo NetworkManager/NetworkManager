@@ -1150,6 +1150,63 @@ managed=1
             </para>
           </listitem>
         </varlistentry>
+        <varlistentry id="keep-configuration">
+         <term><varname>keep-configuration</varname></term>
+          <listitem>
+            <para>
+              On startup, NetworkManager tries to not interfere with
+              interfaces that are already configured. It does so by
+              generating a in-memory connection based on the interface
+              current configuration.
+            </para>
+            <para>
+              If this generated connection matches one of the existing
+              persistent connections, the persistent connection gets
+              activated. If there is no match, the generated
+              connection gets activated as "external", which means
+              that the connection is considered as active, but
+              NetworkManager doesn't actually touch the interface.
+            </para>
+            <para>
+              It is possible to disable this behavior by setting
+              <literal>keep-configuration</literal> to
+              <literal>no</literal>. In this way, on startup
+              NetworkManager always tries to activate the most
+              suitable persistent connection (the one with highest
+              autoconnect-priority or, in case of a tie, the one
+              activated most recently).
+            </para>
+            <para>
+              Note that when NetworkManager gets restarted, it stores
+              the previous state in
+              <filename>/run/NetworkManager</filename>; in particular
+              it saves the UUID of the connection that was previously
+              active so that it can be activated again after the
+              restart. Therefore,
+              <literal>keep-configuration</literal> does not have
+              any effect on service restart.
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry id="allowed-connections">
+          <term><varname>allowed-connections</varname></term>
+          <listitem>
+            <para>
+              A list of connections that can be activated on the
+              device. See <xref linkend="connection-spec"/> for the
+              syntax to specify a connection. If this option is not
+              specified, all connections can be potentially activated
+              on the device, provided that the connection type and
+              other settings match.
+            </para>
+            <para>
+              A notable use case for this is to filter which
+              connections can be activated based on how they were
+              created; see the <literal>origin</literal> keyword in
+              <xref linkend="connection-spec"/>.
+            </para>
+          </listitem>
+        </varlistentry>
         <varlistentry>
           <term><varname>wifi.scan-rand-mac-address</varname></term>
           <listitem>
@@ -1647,6 +1704,55 @@ interface-name:vboxnet*,except:interface-name:vboxnet2
 </programlisting>
       </para>
     </refsect2>
+
+    <refsect2 id="connection-spec">
+      <title>Connection List Format</title>
+      <para>
+          Connections can be specified using the following format:
+      </para>
+      <para>
+      <variablelist>
+        <varlistentry>
+          <term>*</term>
+          <listitem><para>Matches every connection.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>uuid:UUID</term>
+          <listitem><para>Match the connection by UUID, for example
+          <literal>"uuid:83037490-1d17-4986-a397-01f1db3a7fc2"</literal></para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>id=ID</term>
+          <listitem><para>Match the connection by name.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>origin:ORIGIN</term>
+          <listitem><para>Match the connection by origin, stored in the
+          <literal>org.freedesktop.NetworkManager.origin</literal> tag of the user setting. For example, use
+          <literal>"except:origin:nm-initrd-generator"</literal> to forbid activation of connections created by the
+          initrd generator.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>except:SPEC</term>
+          <listitem><para>Negative match of a connection. A negative match has higher priority then the positive
+          matches above.</para>
+          <para>If there is a list consisting only of negative matches, the behavior is the same as if there is also
+          match-all. That means, if none of all the negative matches is satisfied, the overall result is still a
+          positive match.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term>SPEC[,;]SPEC</term>
+          <listitem><para>Multiple specs can be concatenated with commas or semicolons. The order does not matter as
+          matches are either inclusive or negative (<literal>except:</literal>), with negative matches having higher
+          priority.</para>
+          <para>Backslash is supported to escape the separators ';' and ',', and to express special characters such as
+          newline ('\n'), tabulator ('\t'), whitespace ('\s') and backslash ('\\'). Whitespace is not a separator but
+          will be trimmed between two specs (unless escaped as '\s').</para></listitem>
+        </varlistentry>
+      </variablelist>
+      </para>
+    </refsect2>
+
   </refsect1>
 
   <refsect1>

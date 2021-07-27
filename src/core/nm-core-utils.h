@@ -211,6 +211,10 @@ gboolean nm_utils_kernel_cmdline_match_check(const char *const *proc_cmdline,
                                              guint              num_patterns,
                                              GError **          error);
 
+int nm_utils_connection_match_spec_list(NMConnection *connection,
+                                        const GSList *specs,
+                                        int           no_match_value);
+
 /*****************************************************************************/
 
 gboolean nm_utils_connection_has_default_route(NMConnection *connection,

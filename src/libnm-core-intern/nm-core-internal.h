@@ -60,6 +60,7 @@
 #include "nm-setting-team-port.h"
 #include "nm-setting-team.h"
 #include "nm-setting-tun.h"
+#include "nm-setting-user.h"
 #include "nm-setting-veth.h"
 #include "nm-setting-vlan.h"
 #include "nm-setting-vpn.h"
@@ -79,6 +80,10 @@
 #include "nm-vpn-editor-plugin.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-glib-aux/nm-value-type.h"
+
+#define NM_USER_TAG_ORIGIN "org.freedesktop.NetworkManager.origin"
+
+/*****************************************************************************/
 
 /* NM_SETTING_COMPARE_FLAG_INFERRABLE: check whether a device-generated
  * connection can be replaced by a already-defined connection. This flag only

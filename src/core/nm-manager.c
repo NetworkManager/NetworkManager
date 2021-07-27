@@ -2595,6 +2595,12 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
 
     nm_device_capture_initial_config(device);
 
+    if (!nm_device_can_assume_connections(device)) {
+        nm_device_assume_state_reset(device);
+        _LOG2D(LOGD_DEVICE, device, "assume: device cannot assume connection");
+        return NULL;
+    }
+
     if (ifindex) {
         int master_ifindex = nm_platform_link_get_master(priv->platform, ifindex);
 
@@ -2626,39 +2632,47 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         }
     }
 
-    /* The core of the API is nm_device_generate_connection() function and
-     * update_connection() virtual method and the convenient connection_type
-     * class attribute. Subclasses supporting the new API must have
-     * update_connection() implemented, otherwise nm_device_generate_connection()
-     * returns NULL.
-     */
-    connection = nm_device_generate_connection(device, master, &maybe_later, &gen_error);
-    if (!connection) {
-        if (maybe_later) {
-            /* The device can generate a connection, but it failed for now.
-             * Give it a chance to match a connection from the state file. */
-            only_by_uuid = TRUE;
-        } else {
-            nm_device_assume_state_reset(device);
-            _LOG2D(LOGD_DEVICE,
-                   device,
-                   "assume: cannot generate connection: %s",
-                   gen_error->message);
-            return NULL;
+    if (nm_config_data_get_device_config_boolean(NM_CONFIG_GET_DATA,
+                                                 NM_CONFIG_KEYFILE_KEY_DEVICE_KEEP_CONFIGURATION,
+                                                 device,
+                                                 TRUE,
+                                                 TRUE)) {
+        /* The core of the API is nm_device_generate_connection() function, based on
+         * update_connection() virtual method and the @connection_type_supported
+         * class attribute. Devices that support assuming existing connections must
+         * have update_connection() implemented, otherwise
+         * nm_device_generate_connection() returns NULL. */
+        connection = nm_device_generate_connection(device, master, &maybe_later, &gen_error);
+        if (!connection) {
+            if (maybe_later) {
+                /* The device can potentially assume connections, but at this
+                 * time we can't generate a connection because no address is
+                 * configured. Allow the device to assume a connection indicated
+                 * in the state file by UUID. */
+                only_by_uuid = TRUE;
+            } else {
+                nm_device_assume_state_reset(device);
+                _LOG2D(LOGD_DEVICE,
+                       device,
+                       "assume: cannot generate connection: %s",
+                       gen_error->message);
+                return NULL;
+            }
         }
+    } else {
+        connection   = NULL;
+        only_by_uuid = TRUE;
+        g_set_error(&gen_error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_FAILED,
+                    "device %s has 'keep-configuration=no'",
+                    nm_device_get_iface(device));
     }
 
     nm_device_assume_state_get(device, &assume_state_guess_assume, &assume_state_connection_uuid);
 
-    /* Now we need to compare the generated connection to each configured
-     * connection. The comparison function is the heart of the connection
-     * assumption implementation and it must compare the connections very
-     * carefully to sort out various corner cases. Also, the comparison is
-     * not entirely symmetric.
-     *
-     * When no configured connection matches the generated connection, we keep
-     * the generated connection instead.
-     */
+    /* If the device state file indicates a connection that was active before NM
+     * restarted, perform basic sanity checks on it. */
     if (assume_state_connection_uuid
         && (connection_checked =
                 nm_settings_get_connection_by_uuid(priv->settings, assume_state_connection_uuid))
@@ -2692,8 +2706,9 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         gs_free NMSettingsConnection **sett_conns = NULL;
         guint                          len, i, j;
 
-        /* the state file doesn't indicate a connection UUID to assume. Search the
-         * persistent connections for a matching candidate. */
+        /* @assume_state_guess_assume=TRUE means this is the first start of NM
+         * and the state file contains no UUID. Search persistent connections
+         * for a matching candidate. */
         sett_conns = nm_manager_get_activatable_connections(self, FALSE, FALSE, &len);
         if (len > 0) {
             for (i = 0, j = 0; i < len; i++) {
@@ -2766,6 +2781,8 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         return matched;
     }
 
+    /* When no configured connection matches the generated connection, we keep
+     * the generated connection instead. */
     _LOG2D(LOGD_DEVICE,
            device,
            "assume: generated connection '%s' (%s)",
