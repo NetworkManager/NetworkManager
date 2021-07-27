@@ -2770,21 +2770,20 @@ _nm_setting_clear_secrets(NMSetting *                      setting,
 {
     const NMSettInfoSetting *sett_info;
     gboolean                 changed = FALSE;
+    NMSettingClass *         klass;
     guint16                  i;
-    gboolean (*my_clear_secrets)(const struct _NMSettInfoSetting *sett_info,
-                                 const NMSettInfoProperty *       property_info,
-                                 NMSetting *                      setting,
-                                 NMSettingClearSecretsWithFlagsFn func,
-                                 gpointer                         user_data);
 
     g_return_val_if_fail(NM_IS_SETTING(setting), FALSE);
 
-    my_clear_secrets = NM_SETTING_GET_CLASS(setting)->clear_secrets;
+    klass = NM_SETTING_GET_CLASS(setting);
 
     sett_info = _nm_setting_class_get_sett_info(NM_SETTING_GET_CLASS(setting));
     for (i = 0; i < sett_info->property_infos_len; i++) {
-        changed |=
-            my_clear_secrets(sett_info, &sett_info->property_infos[i], setting, func, user_data);
+        changed |= klass->clear_secrets(sett_info,
+                                        &sett_info->property_infos[i],
+                                        setting,
+                                        func,
+                                        user_data);
     }
     return changed;
 }
