@@ -2382,13 +2382,37 @@ nm_strv_is_same_unordered(const char *const *strv1,
     return TRUE;
 }
 
+const char **
+_nm_utils_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated)
+{
+    gsize i;
+    gsize j;
+
+    if (!strv || !*strv)
+        return strv;
+
+    if (!skip_empty && !skip_repeated)
+        return strv;
+
+    j = 0;
+    for (i = 0; strv[i]; i++) {
+        if ((skip_empty && !*strv[i])
+            || (skip_repeated && nm_utils_strv_find_first((char **) strv, j, strv[i]) >= 0))
+            continue;
+        strv[j++] = strv[i];
+    }
+    strv[j] = NULL;
+    return strv;
+}
+
 char **
 _nm_utils_strv_cleanup(char **  strv,
                        gboolean strip_whitespace,
                        gboolean skip_empty,
                        gboolean skip_repeated)
 {
-    guint i, j;
+    gsize i;
+    gsize j;
 
     if (!strv || !*strv)
         return strv;
