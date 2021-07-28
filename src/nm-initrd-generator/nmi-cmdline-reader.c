@@ -394,19 +394,25 @@ reader_read_all_connections_from_fw(Reader *reader, const char *sysfs_dir)
         reader_add_connection(reader, "ofw", dt_connection);
 }
 
-#define _strv_is_same_unordered(strv, len, ...) \
-    nm_strv_is_same_unordered(NM_CAST_STRV_CC(strv), (len), NM_MAKE_STRV(__VA_ARGS__), -1)
+#define _strv_is_same_unordered(strv, ...) \
+    nm_strv_is_same_unordered(NM_CAST_STRV_CC(strv), -1, NM_MAKE_STRV(__VA_ARGS__), -1)
 
 static void
-_strv_remove_fast(const char **strv, gsize *len, const char *needle)
+_strv_remove(const char **strv, const char *needle)
 {
     gssize idx;
+    gsize  len;
+    gsize  i;
 
-    idx = nm_utils_strv_find_first((char **) strv, *len, needle);
-    if (idx >= 0) {
-        NM_SWAP(&strv[idx], &strv[(*len) - 1]);
-        (*len)--;
-    }
+    idx = nm_utils_strv_find_first((char **) strv, -1, needle);
+    if (idx < 0)
+        return;
+
+    /* Remove element at idx, by shifting the remaining ones
+     * (including the terminating NULL). */
+    len = NM_PTRARRAY_LEN(strv);
+    for (i = idx; i < len; i++)
+        strv[i] = strv[i + 1];
 }
 
 static const char *
@@ -421,9 +427,8 @@ _parse_ip_method(const char *kind)
         "ibft",
     };
     gs_free char *       kind_to_free = NULL;
+    gs_free const char **strv         = NULL;
     gsize                i;
-    gsize                strv_len;
-    gs_free const char **strv = NULL;
 
     kind = nm_strstrip_avoid_copy_a(300, kind, &kind_to_free);
 
@@ -460,8 +465,6 @@ _parse_ip_method(const char *kind)
     if (!strv)
         return NULL;
 
-    strv_len = NM_PTRARRAY_LEN(strv);
-
     /* first normalize the strv array by replacing all entries by their
      * normalized kind. */
     for (i = 0; strv[i]; i++) {
@@ -472,17 +475,21 @@ _parse_ip_method(const char *kind)
         }
     }
 
-    if (nm_utils_strv_find_first((char **) strv, strv_len, "auto") >= 0) {
+    /* sort list and remove duplicates. */
+    nm_utils_strv_sort(strv, -1);
+    _nm_utils_strv_cleanup_const(strv, TRUE, TRUE);
+
+    if (nm_utils_strv_find_first((char **) strv, -1, "auto") >= 0) {
         /* if "auto" is present, then "dhcp4", "dhcp6", and "local6" is implied. */
-        _strv_remove_fast(strv, &strv_len, "dhcp4");
-        _strv_remove_fast(strv, &strv_len, "dhcp6");
-        _strv_remove_fast(strv, &strv_len, "local6");
-    } else if (nm_utils_strv_find_first((char **) strv, strv_len, "dhcp6") >= 0) {
+        _strv_remove(strv, "dhcp4");
+        _strv_remove(strv, "dhcp6");
+        _strv_remove(strv, "local6");
+    } else if (nm_utils_strv_find_first((char **) strv, -1, "dhcp6") >= 0) {
         /* if "dhcp6" is present, then "local6" is implied. */
-        _strv_remove_fast(strv, &strv_len, "local6");
+        _strv_remove(strv, "local6");
     }
 
-    if (strv_len == 1) {
+    if (strv[0] && !strv[1]) {
         /* there is only one value left. It's good. */
         return strv[0];
     }
@@ -490,11 +497,11 @@ _parse_ip_method(const char *kind)
     /* only certain combinations are allowed... those are listed
      * and mapped to a canonical value.
      *
-     * For the moment, they map all to "auto". That might be revisited
-     * as they could use special behaviors. */
-    if (_strv_is_same_unordered(strv, strv_len, "dhcp", "dhcp6"))
+     * For the moment, these map all to "auto". This might be revisited
+     * in the future to add new kinds like "dhcp+local6". */
+    if (_strv_is_same_unordered(strv, "dhcp", "dhcp6"))
         return "auto";
-    if (_strv_is_same_unordered(strv, strv_len, "dhcp", "local6"))
+    if (_strv_is_same_unordered(strv, "dhcp", "local6"))
         return "auto";
 
     /* undetected. */
