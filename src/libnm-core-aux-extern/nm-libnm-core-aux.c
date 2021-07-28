@@ -8,6 +8,7 @@
 #include "nm-libnm-core-aux.h"
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 /*****************************************************************************/
 
@@ -433,4 +434,39 @@ nm_utils_team_link_watcher_from_string(const char *str, GError **error)
 #endif
 
     return watcher;
+}
+
+/*****************************************************************************/
+
+/**
+ * _nm_ip_route_to_string:
+ * @route: route to get information about
+ * @strbuf: NMStrBuf to store information about route
+ *
+ * Gets available information about route and prints it into buffer
+ */
+void
+_nm_ip_route_to_string(NMIPRoute *route, NMStrBuf *strbuf)
+{
+    const char *next_hop;
+    gint64      metric;
+
+    nm_assert(route);
+    nm_assert(strbuf);
+
+    next_hop = nm_ip_route_get_next_hop(route);
+    metric   = nm_ip_route_get_metric(route);
+
+    nm_str_buf_append_printf(strbuf,
+                             "%s/%u",
+                             nm_ip_route_get_dest(route),
+                             nm_ip_route_get_prefix(route));
+
+    if (next_hop) {
+        nm_str_buf_append_printf(strbuf, " via %s", next_hop);
+    }
+
+    if (metric != -1) {
+        nm_str_buf_append_printf(strbuf, " metric %" G_GINT64_FORMAT, metric);
+    }
 }
