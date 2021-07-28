@@ -14,7 +14,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   Adjust the "dns-priority" to your liking after import yourself.
 
 The following changes were backported to 1.32.x releases between 1.32.0
-and 1.32.4 are also present in NetworkManager-1.32:
+and 1.32.6 are also present in NetworkManager-1.32:
 
 - 1.32.2:
 * hostname: prefer IPv4 addresses for reverse DNS lookup.
@@ -24,10 +24,37 @@ and 1.32.4 are also present in NetworkManager-1.32:
   option was set.
 * cloud-setup: preserve IP addresses, routes and rules from
   currently active connection profile.
+* Various bugfixes and performance improvements.
 
 - 1.32.4:
 * core: remove stale entries from "seen-bssids" and "timestamp"
   files in "/var/lib/NetworkManager".
+* bond: support the peer_notif_delay option.
+* core: add ipv[46].required-timeout option to wait for IP
+  configuration while activating.
+* core: send ARP announcements when there is carrier.
+* core: start DHCPv6 when a prefix delegation is needed for shared
+  mode.
+* firewall: fix nftables backend to create "ip" table for
+  IPv4 only.
+* initrd: set required-timeout of 20 seconds for default IPv4 configuration
+  to opportunistically wait for IPv4.
+* ifcfg: log warning about invalid keys in ifcfg files.
+* ifcfg: reject non-UTF-8 from ifcfg files.
+* nmcli: show DNS SEARCH field in device information.
+* cloud-setup: add support for Aliyun cloud.
+
+- 1.32.6:
+* core: fix adding stale local routes when address changes.
+* initrd: tag generated profiles with origin in user data.
+* core: introduce "allowed-connections" option to disallow
+  profiles on a device. This allows to filter out profiles
+  that originate from initrd.
+* core: introduce "keep-configuration" device option to forcefully
+  activate a profile on start.
+* dhcp: handle filename/bootfile_name DHCP option and write it to
+  device state file for initrd/kickstart.
+* initrd: add "ib.pkey=" command line option
 
 =============================================
 NetworkManager-1.32
