@@ -7,6 +7,7 @@
 #define __NM_LIBNM_CORE_AUX_H__
 
 #include "nm-setting-team.h"
+#include "nm-setting-ip-config.h"
 
 typedef enum {
     NM_TEAM_LINK_WATCHER_TYPE_NONE     = 0,
@@ -32,6 +33,9 @@ typedef enum {
 } NMTeamLinkWatcherKeyId;
 
 char *nm_utils_team_link_watcher_to_string(const NMTeamLinkWatcher *watcher);
+
+struct _NMStrBuf;
+void _nm_ip_route_to_string(NMIPRoute *route, struct _NMStrBuf *strbuf);
 
 NMTeamLinkWatcher *nm_utils_team_link_watcher_from_string(const char *str, GError **error);
 
