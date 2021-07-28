@@ -1,4 +1,20 @@
 ===============================================
+NetworkManager-1.32.6
+Overview of changes since NetworkManager-1.32.4
+===============================================
+
+* core: fix adding stale local routes when address changes.
+* initrd: tag generated profiles with origin in user data.
+* core: introduce "allowed-connections" option to disallow
+  profiles on a device. This allows to filter out profiles
+  that originate from initrd.
+* core: introduce "keep-configuration" device option to forcefully
+  activate a profile on start.
+* dhcp: handle filename/bootfile_name DHCP option and write it to
+  device state file for initrd/kickstart.
+* initrd: add "ib.pkey=" command line option
+
+===============================================
 NetworkManager-1.32.4
 Overview of changes since NetworkManager-1.32.2
 ===============================================
