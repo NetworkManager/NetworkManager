@@ -190,7 +190,7 @@ next:
                 g_variant_iter_free(iter_v);
             }
             if (arr && arr->len > 0)
-                nameservers_new = nm_utils_strv_dup((char **) arr->pdata, arr->len, FALSE);
+                nameservers_new = nm_strv_dup((char **) arr->pdata, arr->len, FALSE);
             else
                 nameservers_new = g_new0(char *, 1);
         }

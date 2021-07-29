@@ -346,7 +346,7 @@ _getsettings_cached_get(NMSettingsConnection *self, const NMConnectionSerializat
 
     priv->getsettings_cached.options = *options;
     priv->getsettings_cached.options.seen_bssids =
-        nm_utils_strv_dup_packed(priv->getsettings_cached.options.seen_bssids, -1);
+        nm_strv_dup_packed(priv->getsettings_cached.options.seen_bssids, -1);
 
     return priv->getsettings_cached.variant;
 }

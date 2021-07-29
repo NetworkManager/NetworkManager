@@ -12426,7 +12426,7 @@ _nm_device_hash_check_invalid_keys(GHashTable *       hash,
 
         g_hash_table_iter_init(&iter, hash);
         while (g_hash_table_iter_next(&iter, (gpointer *) &k, NULL)) {
-            if (nm_utils_strv_find_first(whitelist, -1, k) < 0) {
+            if (nm_strv_find_first(whitelist, -1, k) < 0) {
                 first_invalid_key = k;
                 break;
             }

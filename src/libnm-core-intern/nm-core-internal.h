@@ -341,10 +341,10 @@ GPtrArray *
 _nm_utils_copy_array(const GPtrArray *array, NMUtilsCopyFunc copy_func, GDestroyNotify free_func);
 GPtrArray *_nm_utils_copy_object_array(const GPtrArray *array);
 
-GSList *_nm_utils_strv_to_slist(char **strv, gboolean deep_copy);
+GSList *nm_strv_to_gslist(char **strv, gboolean deep_copy);
 char ** _nm_utils_slist_to_strv(const GSList *slist, gboolean deep_copy);
 
-GPtrArray *_nm_utils_strv_to_ptrarray(char **strv);
+GPtrArray *nm_strv_to_ptrarray(char **strv);
 char **    _nm_utils_ptrarray_to_strv(const GPtrArray *ptrarray);
 
 gboolean _nm_utils_check_file(const char *              filename,

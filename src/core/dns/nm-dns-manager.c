@@ -1327,7 +1327,7 @@ get_ip_rdns_domains(NMIPConfig *ip_config)
     /* Free the array and return NULL if the only element was the ending NULL */
     strv = (char **) g_ptr_array_free(domains, (domains->len == 1));
 
-    return _nm_utils_strv_cleanup(strv, FALSE, FALSE, TRUE);
+    return nm_strv_cleanup(strv, FALSE, FALSE, TRUE);
 }
 
 static gboolean
@@ -1744,8 +1744,8 @@ plugin_skip:;
         nameservers    = g_new0(char *, 2);
         nameservers[0] = g_strdup(lladdr);
 
-        need_edns0 = nm_utils_strv_find_first(options, -1, NM_SETTING_DNS_OPTION_EDNS0) < 0;
-        need_trust = nm_utils_strv_find_first(options, -1, NM_SETTING_DNS_OPTION_TRUST_AD) < 0;
+        need_edns0 = nm_strv_find_first(options, -1, NM_SETTING_DNS_OPTION_EDNS0) < 0;
+        need_trust = nm_strv_find_first(options, -1, NM_SETTING_DNS_OPTION_TRUST_AD) < 0;
 
         if (need_edns0 || need_trust) {
             gsize len;
@@ -2128,7 +2128,7 @@ _resolvconf_resolved_managed(void)
          * We want to handle that, because systemd-resolved might not
          * have started yet. */
         full_path = g_file_read_link(_PATH_RESCONF, NULL);
-        if (nm_utils_strv_find_first(RESOLVED_PATHS, G_N_ELEMENTS(RESOLVED_PATHS), full_path) >= 0)
+        if (nm_strv_find_first(RESOLVED_PATHS, G_N_ELEMENTS(RESOLVED_PATHS), full_path) >= 0)
             return TRUE;
 
         /* see if resolv.conf is a symlink that resolves exactly one
@@ -2140,7 +2140,7 @@ _resolvconf_resolved_managed(void)
          * We want to handle that, because systemd-resolved might not
          * have started yet. */
         real_path = realpath(_PATH_RESCONF, NULL);
-        if (nm_utils_strv_find_first(RESOLVED_PATHS, G_N_ELEMENTS(RESOLVED_PATHS), real_path) >= 0)
+        if (nm_strv_find_first(RESOLVED_PATHS, G_N_ELEMENTS(RESOLVED_PATHS), real_path) >= 0)
             return TRUE;
 
         /* fall-through and resolve the symlink, to check the file

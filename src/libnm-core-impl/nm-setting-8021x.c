@@ -3269,7 +3269,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     switch (prop_id) {
     case PROP_EAP:
         g_slist_free_full(priv->eap, g_free);
-        priv->eap = _nm_utils_strv_to_slist(g_value_get_boxed(value), TRUE);
+        priv->eap = nm_strv_to_gslist(g_value_get_boxed(value), TRUE);
         break;
     case PROP_IDENTITY:
         g_free(priv->identity);
@@ -3304,7 +3304,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_ALTSUBJECT_MATCHES:
         g_slist_free_full(priv->altsubject_matches, g_free);
-        priv->altsubject_matches = _nm_utils_strv_to_slist(g_value_get_boxed(value), TRUE);
+        priv->altsubject_matches = nm_strv_to_gslist(g_value_get_boxed(value), TRUE);
         break;
     case PROP_DOMAIN_SUFFIX_MATCH:
         g_free(priv->domain_suffix_match);
@@ -3369,7 +3369,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_PHASE2_ALTSUBJECT_MATCHES:
         g_slist_free_full(priv->phase2_altsubject_matches, g_free);
-        priv->phase2_altsubject_matches = _nm_utils_strv_to_slist(g_value_get_boxed(value), TRUE);
+        priv->phase2_altsubject_matches = nm_strv_to_gslist(g_value_get_boxed(value), TRUE);
         break;
     case PROP_PHASE2_DOMAIN_SUFFIX_MATCH:
         g_free(priv->phase2_domain_suffix_match);

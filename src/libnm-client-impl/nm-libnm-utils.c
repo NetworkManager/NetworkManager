@@ -208,7 +208,7 @@ _fixup_string(const char *       desc,
         if (eow)
             *eow = '\0';
 
-        if (nm_utils_strv_find_first(ignored_words, -1, p) >= 0)
+        if (nm_strv_find_first(ignored_words, -1, p) >= 0)
             goto next;
 
         l = strlen(p);

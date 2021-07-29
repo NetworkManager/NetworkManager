@@ -3372,7 +3372,7 @@ load_plugins(NMSettings *self, const char *const *plugins, GError **error)
             continue;
         }
 
-        if (nm_utils_strv_find_first(plugins, iter - plugins, pname) >= 0) {
+        if (nm_strv_find_first(plugins, iter - plugins, pname) >= 0) {
             /* the plugin is already mentioned in the list previously.
              * Don't load a duplicate. */
             continue;
@@ -3938,7 +3938,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
             priv->connections_len,
             G_STRUCT_OFFSET(NMSettingsConnection, _connections_lst),
             TRUE);
-        g_value_take_boxed(value, nm_utils_strv_make_deep_copied(strv));
+        g_value_take_boxed(value, nm_strv_make_deep_copied(strv));
         break;
     case PROP_STARTUP_COMPLETE:
         g_value_set_boolean(value, !nm_settings_get_startup_complete_blocked_reason(self, FALSE));

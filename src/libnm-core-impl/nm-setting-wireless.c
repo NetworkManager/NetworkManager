@@ -1220,11 +1220,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_uint(value, nm_setting_wireless_get_mtu(setting));
         break;
     case PROP_SEEN_BSSIDS:
-        g_value_take_boxed(value,
-                           priv->seen_bssids ? nm_utils_strv_dup((char **) priv->seen_bssids->pdata,
-                                                                 priv->seen_bssids->len,
-                                                                 TRUE)
-                                             : NULL);
+        g_value_take_boxed(
+            value,
+            priv->seen_bssids
+                ? nm_strv_dup((char **) priv->seen_bssids->pdata, priv->seen_bssids->len, TRUE)
+                : NULL);
         break;
     case PROP_HIDDEN:
         g_value_set_boolean(value, nm_setting_wireless_get_hidden(setting));

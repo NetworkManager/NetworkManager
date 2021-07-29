@@ -553,7 +553,7 @@ _ASSERT_ethtool_feature_infos(void)
         for (k = 0; k < inf->n_kernel_names; k++) {
             const char *name = inf->kernel_names[k];
 
-            g_assert(nm_utils_strv_find_first(inf->kernel_names, k, name) < 0);
+            g_assert(nm_strv_find_first(inf->kernel_names, k, name) < 0);
 
             /* these offload features are only informational and cannot be set from user-space
              * (NETIF_F_NEVER_CHANGE). We should not track them in _ethtool_feature_infos. */

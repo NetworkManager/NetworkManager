@@ -546,7 +546,7 @@ nm_ip_address_get_attribute_names(NMIPAddress *address)
     g_return_val_if_fail(address, NULL);
 
     names = _nm_ip_address_get_attribute_names(address, TRUE, NULL);
-    return nm_utils_strv_make_deep_copied_nonnull(names);
+    return nm_strv_make_deep_copied_nonnull(names);
 }
 
 /**
@@ -1153,7 +1153,7 @@ nm_ip_route_get_attribute_names(NMIPRoute *route)
     g_return_val_if_fail(route != NULL, NULL);
 
     names = _nm_ip_route_get_attribute_names(route, TRUE, NULL);
-    return nm_utils_strv_make_deep_copied_nonnull(names);
+    return nm_strv_make_deep_copied_nonnull(names);
 }
 
 /**
@@ -5990,11 +5990,11 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_DNS:
         g_ptr_array_unref(priv->dns);
-        priv->dns = _nm_utils_strv_to_ptrarray(g_value_get_boxed(value));
+        priv->dns = nm_strv_to_ptrarray(g_value_get_boxed(value));
         break;
     case PROP_DNS_SEARCH:
         g_ptr_array_unref(priv->dns_search);
-        priv->dns_search = _nm_utils_strv_to_ptrarray(g_value_get_boxed(value));
+        priv->dns_search = nm_strv_to_ptrarray(g_value_get_boxed(value));
         break;
     case PROP_DNS_OPTIONS:
         strv = g_value_get_boxed(value);

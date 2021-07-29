@@ -1408,15 +1408,15 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_PROTO:
         g_slist_free_full(priv->proto, g_free);
-        priv->proto = _nm_utils_strv_to_slist(g_value_get_boxed(value), TRUE);
+        priv->proto = nm_strv_to_gslist(g_value_get_boxed(value), TRUE);
         break;
     case PROP_PAIRWISE:
         g_slist_free_full(priv->pairwise, g_free);
-        priv->pairwise = _nm_utils_strv_to_slist(g_value_get_boxed(value), TRUE);
+        priv->pairwise = nm_strv_to_gslist(g_value_get_boxed(value), TRUE);
         break;
     case PROP_GROUP:
         g_slist_free_full(priv->group, g_free);
-        priv->group = _nm_utils_strv_to_slist(g_value_get_boxed(value), TRUE);
+        priv->group = nm_strv_to_gslist(g_value_get_boxed(value), TRUE);
         break;
     case PROP_PMF:
         priv->pmf = g_value_get_int(value);

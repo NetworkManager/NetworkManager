@@ -3641,7 +3641,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case PROP_ACCESS_POINTS:
         list = nm_wifi_aps_get_paths(&priv->aps_lst_head, TRUE);
-        g_value_take_boxed(value, nm_utils_strv_make_deep_copied(list));
+        g_value_take_boxed(value, nm_strv_make_deep_copied(list));
         break;
     case PROP_ACTIVE_ACCESS_POINT:
         nm_dbus_utils_g_value_set_object_path(value, priv->current_ap);

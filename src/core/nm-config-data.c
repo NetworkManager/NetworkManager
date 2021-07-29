@@ -271,7 +271,7 @@ nm_config_data_get_plugins(const NMConfigData *self, gboolean allow_default)
                              NM_CONFIG_DEFAULT_MAIN_PLUGINS);
         list = g_key_file_get_string_list(kf, NM_CONFIG_KEYFILE_GROUP_MAIN, "plugins", NULL, NULL);
     }
-    return _nm_utils_strv_cleanup(list, TRUE, TRUE, TRUE);
+    return nm_strv_cleanup(list, TRUE, TRUE, TRUE);
 }
 
 gboolean
@@ -1060,7 +1060,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
                                       NULL,
                                       NULL);
     if (strv) {
-        _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
+        nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
         if (!strv[0])
             g_free(strv);
         else
@@ -1073,7 +1073,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
                                       NULL,
                                       NULL);
     if (strv) {
-        _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
+        nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
         for (i = 0, j = 0; strv[i]; i++) {
             if (_nm_utils_dns_option_validate(strv[i], NULL, NULL, TRUE, NULL))
                 strv[j++] = strv[i];
@@ -1103,7 +1103,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
                                           NULL,
                                           NULL);
         if (strv) {
-            _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
+            nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
             for (i = 0, j = 0; strv[i]; i++) {
                 if (nm_utils_ipaddr_is_valid(AF_INET, strv[i])
                     || nm_utils_ipaddr_is_valid(AF_INET6, strv[i]))
@@ -1128,7 +1128,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
                                           NULL,
                                           NULL);
         if (strv) {
-            options = _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
+            options = nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
             if (!options[0])
                 nm_clear_g_free(&options);
         }
@@ -1240,7 +1240,7 @@ global_dns_domain_from_dbus(char *name, GVariant *variant)
     while (g_variant_iter_next(&iter, "{&sv}", &key, &val)) {
         if (nm_streq0(key, "servers") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
             strv = g_variant_dup_strv(val, NULL);
-            _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
+            nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
             for (i = 0, j = 0; strv && strv[i]; i++) {
                 if (nm_utils_ipaddr_is_valid(AF_INET, strv[i])
                     || nm_utils_ipaddr_is_valid(AF_INET6, strv[i]))
@@ -1258,7 +1258,7 @@ global_dns_domain_from_dbus(char *name, GVariant *variant)
         } else if (nm_streq0(key, "options") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
             strv = g_variant_dup_strv(val, NULL);
             g_strfreev(domain->options);
-            domain->options = _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
+            domain->options = nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
             if (!domain->options[0])
                 nm_clear_g_free(&domain->options);
         }
@@ -1305,10 +1305,10 @@ nm_global_dns_config_from_dbus(const GValue *value, GError **error)
     while (g_variant_iter_next(&iter, "{&sv}", &key, &val)) {
         if (nm_streq0(key, "searches") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
             strv                 = g_variant_dup_strv(val, NULL);
-            dns_config->searches = _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
+            dns_config->searches = nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
         } else if (nm_streq0(key, "options") && g_variant_is_of_type(val, G_VARIANT_TYPE("as"))) {
             strv = g_variant_dup_strv(val, NULL);
-            _nm_utils_strv_cleanup(strv, TRUE, TRUE, TRUE);
+            nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
 
             for (i = 0, j = 0; strv && strv[i]; i++) {
                 if (_nm_utils_dns_option_validate(strv[i], NULL, NULL, TRUE, NULL))
@@ -1370,8 +1370,7 @@ global_dns_equal(NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
     if (!old || !new)
         return FALSE;
 
-    if (!nm_utils_strv_equal(old->options, new->options)
-        || !nm_utils_strv_equal(old->searches, new->searches))
+    if (!nm_strv_equal(old->options, new->options) || !nm_strv_equal(old->searches, new->searches))
         return FALSE;
 
     if ((!old->domains || !new->domains) && old->domains != new->domains)
@@ -1389,8 +1388,8 @@ global_dns_equal(NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
         domain_old = value_old;
         domain_new = value_new;
 
-        if (!nm_utils_strv_equal(domain_old->options, domain_new->options)
-            || !nm_utils_strv_equal(domain_old->servers, domain_new->servers))
+        if (!nm_strv_equal(domain_old->options, domain_new->options)
+            || !nm_strv_equal(domain_old->servers, domain_new->servers))
             return FALSE;
     }
 
@@ -1681,7 +1680,7 @@ _match_section_info_init(MatchSectionInfo *connection_info,
     }
 
     keys = g_key_file_get_keys(keyfile, group, &n_keys, NULL);
-    nm_utils_strv_sort(keys, n_keys);
+    nm_strv_sort(keys, n_keys);
 
     vals = g_new(NMUtilsNamedValue, n_keys);
 
@@ -1963,8 +1962,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             /* sort entries, remove duplicates and empty words. */
             value_arr =
                 len == 0 ? NULL : nm_memdup(value_arr_orig, sizeof(const char *) * (len + 1));
-            nm_utils_strv_sort(value_arr, len);
-            _nm_utils_strv_cleanup((char **) value_arr, FALSE, TRUE, TRUE);
+            nm_strv_sort(value_arr, len);
+            nm_strv_cleanup((char **) value_arr, FALSE, TRUE, TRUE);
 
             len = NM_PTRARRAY_LEN(value_arr);
             j   = 0;
@@ -1988,7 +1987,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                 specs = g_slist_prepend(specs, spec);
             }
 
-            priv->no_auto_default.arr   = nm_utils_strv_dup(value_arr, j, TRUE);
+            priv->no_auto_default.arr   = nm_strv_dup(value_arr, j, TRUE);
             priv->no_auto_default.specs = g_slist_reverse(specs);
         }
         break;

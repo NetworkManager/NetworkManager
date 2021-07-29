@@ -112,7 +112,7 @@ get_new_connection_name(NMConnection *const *existing_connections,
          * connection id. */
         temp = g_strdup_printf(C_("connection id fallback", "%s %u"), fallback_prefix, i);
 
-        if (nm_utils_strv_find_first(existing_names, existing_len, temp) < 0)
+        if (nm_strv_find_first(existing_names, existing_len, temp) < 0)
             return temp;
 
         g_free(temp);

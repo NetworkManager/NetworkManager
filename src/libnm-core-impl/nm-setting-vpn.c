@@ -278,7 +278,7 @@ foreach_item_helper(NMSettingVpn *self, GHashTable **p_hash, NMVpnIterFunc func,
     nm_assert(NM_IS_SETTING_VPN(self));
     nm_assert(func);
 
-    keys = nm_utils_strv_make_deep_copied(nm_utils_strdict_get_keys(*p_hash, TRUE, &len));
+    keys = nm_strv_make_deep_copied(nm_utils_strdict_get_keys(*p_hash, TRUE, &len));
     if (len == 0u) {
         nm_assert(!keys);
         return;

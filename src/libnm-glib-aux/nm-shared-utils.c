@@ -2261,7 +2261,7 @@ nm_utils_strsplit_quoted(const char *str)
 /*****************************************************************************/
 
 /**
- * _nm_utils_strv_find_first:
+ * _nm_strv_find_first:
  * @list: the strv list to search
  * @len: the length of the list, or a negative value if @list is %NULL terminated.
  * @needle: the value to search for. The search is done using strcmp().
@@ -2274,7 +2274,7 @@ nm_utils_strsplit_quoted(const char *str)
  * Returns: index of first occurrence or -1 if @needle is not found in @list.
  */
 gssize
-_nm_utils_strv_find_first(const char *const *list, gssize len, const char *needle)
+_nm_strv_find_first(const char *const *list, gssize len, const char *needle)
 {
     gssize i;
 
@@ -2370,8 +2370,8 @@ nm_strv_is_same_unordered(const char *const *strv1,
     if (l > 1) {
         strv1 = nm_memdup_maybe_a(300, strv1, sizeof(char *) * l, &ss1_free);
         strv2 = nm_memdup_maybe_a(300, strv2, sizeof(char *) * l2, &ss2_free);
-        _nm_utils_strv_sort((const char **) strv1, l);
-        _nm_utils_strv_sort((const char **) strv2, l);
+        _nm_strv_sort((const char **) strv1, l);
+        _nm_strv_sort((const char **) strv2, l);
     }
 
     for (i = 0; i < l; i++) {
@@ -2383,7 +2383,7 @@ nm_strv_is_same_unordered(const char *const *strv1,
 }
 
 const char **
-_nm_utils_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated)
+nm_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated)
 {
     gsize i;
     gsize j;
@@ -2397,7 +2397,7 @@ _nm_utils_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean sk
     j = 0;
     for (i = 0; strv[i]; i++) {
         if ((skip_empty && !*strv[i])
-            || (skip_repeated && nm_utils_strv_find_first(strv, j, strv[i]) >= 0))
+            || (skip_repeated && nm_strv_find_first(strv, j, strv[i]) >= 0))
             continue;
         strv[j++] = strv[i];
     }
@@ -2406,10 +2406,7 @@ _nm_utils_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean sk
 }
 
 char **
-_nm_utils_strv_cleanup(char **  strv,
-                       gboolean strip_whitespace,
-                       gboolean skip_empty,
-                       gboolean skip_repeated)
+nm_strv_cleanup(char **strv, gboolean strip_whitespace, gboolean skip_empty, gboolean skip_repeated)
 {
     gsize i;
     gsize j;
@@ -2428,7 +2425,7 @@ _nm_utils_strv_cleanup(char **  strv,
     j = 0;
     for (i = 0; strv[i]; i++) {
         if ((skip_empty && !*strv[i])
-            || (skip_repeated && nm_utils_strv_find_first(strv, j, strv[i]) >= 0))
+            || (skip_repeated && nm_strv_find_first(strv, j, strv[i]) >= 0))
             g_free(strv[i]);
         else
             strv[j++] = strv[i];
@@ -3831,7 +3828,7 @@ nm_utils_hashtable_cmp(const GHashTable *a,
 }
 
 char **
-nm_utils_strv_make_deep_copied(const char **strv)
+nm_strv_make_deep_copied(const char **strv)
 {
     gsize i;
 
@@ -3848,7 +3845,7 @@ nm_utils_strv_make_deep_copied(const char **strv)
 }
 
 char **
-nm_utils_strv_make_deep_copied_n(const char **strv, gsize len)
+nm_strv_make_deep_copied_n(const char **strv, gsize len)
 {
     gsize i;
 
@@ -3891,7 +3888,7 @@ nm_utils_strv_make_deep_copied_n(const char **strv, gsize len)
  *   cloned or not.
  */
 char **
-_nm_utils_strv_dup(const char *const *strv, gssize len, gboolean deep_copied)
+_nm_strv_dup(const char *const *strv, gssize len, gboolean deep_copied)
 {
     gsize  i, l;
     char **v;
@@ -3927,7 +3924,7 @@ _nm_utils_strv_dup(const char *const *strv, gssize len, gboolean deep_copied)
 }
 
 const char **
-_nm_utils_strv_dup_packed(const char *const *strv, gssize len)
+_nm_strv_dup_packed(const char *const *strv, gssize len)
 
 {
     gs_free gsize *str_len_free = NULL;
@@ -4316,7 +4313,7 @@ fail:
 /*****************************************************************************/
 
 /**
- * _nm_utils_strv_sort:
+ * _nm_strv_sort:
  * @strv: pointer containing strings that will be sorted
  *   in-place, %NULL is allowed, unless @len indicates
  *   that there are more elements.
@@ -4330,7 +4327,7 @@ fail:
  * comparison.
  */
 void
-_nm_utils_strv_sort(const char **strv, gssize len)
+_nm_strv_sort(const char **strv, gssize len)
 {
     GCompareDataFunc cmp;
     gsize            l;
@@ -4352,7 +4349,7 @@ _nm_utils_strv_sort(const char **strv, gssize len)
 }
 
 /**
- * _nm_utils_strv_cmp_n:
+ * _nm_strv_cmp_n:
  * @strv1: a string array
  * @len1: the length of @strv1, or -1 for NULL terminated array.
  * @strv2: a string array
@@ -4375,7 +4372,7 @@ _nm_utils_strv_sort(const char **strv, gssize len)
  * Returns: 0 if the arrays are equal (using strcmp).
  **/
 int
-_nm_utils_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2)
+_nm_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2)
 {
     gsize n, n2;
 

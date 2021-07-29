@@ -944,8 +944,8 @@ _nm_setting_connection_verify_secondaries(GArray *secondaries, GError **error)
         gs_free const char **strv_to_free = NULL;
         const char **        strv2;
 
-        strv2 = nm_utils_strv_dup_shallow_maybe_a(20, strv, len, &strv_to_free);
-        nm_utils_strv_sort(strv2, len);
+        strv2 = nm_strv_dup_shallow_maybe_a(20, strv, len, &strv_to_free);
+        nm_strv_sort(strv2, len);
         has_duplicate = nm_strv_has_duplicate(strv2, len, TRUE);
     }
 
@@ -1002,7 +1002,7 @@ _normalize_connection_secondaries(NMConnection *self)
         if (!nm_uuid_is_valid_nm(s, &uuid_is_normalized, uuid_normalized))
             continue;
 
-        if (nm_utils_strv_find_first(strv, j, uuid_is_normalized ? uuid_normalized : s) >= 0)
+        if (nm_strv_find_first(strv, j, uuid_is_normalized ? uuid_normalized : s) >= 0)
             continue;
 
         strv[j++] = uuid_is_normalized ? g_strdup(uuid_normalized) : g_steal_pointer(&s);
@@ -2570,8 +2570,7 @@ nm_connection_serialization_options_equal(const NMConnectionSerializationOptions
         return FALSE;
     if (a->timestamp.has && a->timestamp.val != b->timestamp.val)
         return FALSE;
-    if (!nm_utils_strv_equal(a->seen_bssids ?: NM_STRV_EMPTY_CC(),
-                             b->seen_bssids ?: NM_STRV_EMPTY_CC()))
+    if (!nm_strv_equal(a->seen_bssids ?: NM_STRV_EMPTY_CC(), b->seen_bssids ?: NM_STRV_EMPTY_CC()))
         return FALSE;
 
     return TRUE;

@@ -276,7 +276,7 @@ set_arp_targets(NMDevice *device, const char *cur_arp_ip_target, const char *new
                 }
             }
 
-            if (nm_utils_strv_find_first(new_strv, i, s) < 0)
+            if (nm_strv_find_first(new_strv, i, s) < 0)
                 new_strv[j++] = s;
         }
         new_strv[j] = NULL;
@@ -286,7 +286,7 @@ set_arp_targets(NMDevice *device, const char *cur_arp_ip_target, const char *new
     if (cur_len == 0 && new_len == 0)
         return;
 
-    if (nm_utils_strv_equal(cur_strv, new_strv))
+    if (nm_strv_equal(cur_strv, new_strv))
         return;
 
     for (i = 0; i < cur_len; i++)

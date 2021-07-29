@@ -838,7 +838,7 @@ _nm_utils_bytes_from_dbus(GVariant *dbus_value, GValue *prop_value)
 /*****************************************************************************/
 
 GSList *
-_nm_utils_strv_to_slist(char **strv, gboolean deep_copy)
+nm_strv_to_gslist(char **strv, gboolean deep_copy)
 {
     GSList *list = NULL;
     gsize   i;
@@ -887,7 +887,7 @@ _nm_utils_slist_to_strv(const GSList *slist, gboolean deep_copy)
 }
 
 GPtrArray *
-_nm_utils_strv_to_ptrarray(char **strv)
+nm_strv_to_ptrarray(char **strv)
 {
     GPtrArray *ptrarray;
     gsize      i, l;

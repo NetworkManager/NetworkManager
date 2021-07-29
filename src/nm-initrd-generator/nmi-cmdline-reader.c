@@ -404,7 +404,7 @@ _strv_remove(const char **strv, const char *needle)
     gsize  len;
     gsize  i;
 
-    idx = nm_utils_strv_find_first(strv, -1, needle);
+    idx = nm_strv_find_first(strv, -1, needle);
     if (idx < 0)
         return;
 
@@ -476,15 +476,15 @@ _parse_ip_method(const char *kind)
     }
 
     /* sort list and remove duplicates. */
-    nm_utils_strv_sort(strv, -1);
-    _nm_utils_strv_cleanup_const(strv, TRUE, TRUE);
+    nm_strv_sort(strv, -1);
+    nm_strv_cleanup_const(strv, TRUE, TRUE);
 
-    if (nm_utils_strv_find_first(strv, -1, "auto") >= 0) {
+    if (nm_strv_find_first(strv, -1, "auto") >= 0) {
         /* if "auto" is present, then "dhcp4", "dhcp6", and "local6" is implied. */
         _strv_remove(strv, "dhcp4");
         _strv_remove(strv, "dhcp6");
         _strv_remove(strv, "local6");
-    } else if (nm_utils_strv_find_first(strv, -1, "dhcp6") >= 0) {
+    } else if (nm_strv_find_first(strv, -1, "dhcp6") >= 0) {
         /* if "dhcp6" is present, then "local6" is implied. */
         _strv_remove(strv, "local6");
     }

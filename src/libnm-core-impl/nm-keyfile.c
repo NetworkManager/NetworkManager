@@ -3384,7 +3384,7 @@ _read_setting(KeyfileReaderInfo *info)
         if (n_keys > 0) {
             GHashTable *h = _nm_setting_option_hash(setting, TRUE);
 
-            nm_utils_strv_sort(keys, n_keys);
+            nm_strv_sort(keys, n_keys);
             for (k = 0; k < n_keys; k++) {
                 gs_free char *key           = keys[k];
                 gs_free_error GError *local = NULL;

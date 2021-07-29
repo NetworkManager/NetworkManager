@@ -433,7 +433,7 @@ nm_config_set_no_auto_default_for_device(NMConfig *self, NMDevice *device)
 
     len = NM_PTRARRAY_LEN(no_auto_default_current);
 
-    idx = nm_utils_strv_find_binary_search(no_auto_default_current, len, spec);
+    idx = nm_strv_find_binary_search(no_auto_default_current, len, spec);
     if (idx >= 0) {
         /* @spec is already blocked. We don't have to update our in-memory representation.
          * Maybe we should write to no_auto_default_file anew, but let's save that too. */
@@ -1122,14 +1122,12 @@ read_config(GKeyFile *  keyfile,
                     /* merge the string lists, by omitting duplicates. */
 
                     for (iter_val = old_val; iter_val && *iter_val; iter_val++) {
-                        if (last_char != '-'
-                            || nm_utils_strv_find_first(new_val, -1, *iter_val) < 0)
+                        if (last_char != '-' || nm_strv_find_first(new_val, -1, *iter_val) < 0)
                             g_ptr_array_add(new, g_strdup(*iter_val));
                     }
                     for (iter_val = new_val; iter_val && *iter_val; iter_val++) {
                         /* don't add duplicates. That means an "option=a,b"; "option+=a,c" results in "option=a,b,c" */
-                        if (last_char == '+'
-                            && nm_utils_strv_find_first(old_val, -1, *iter_val) < 0)
+                        if (last_char == '+' && nm_strv_find_first(old_val, -1, *iter_val) < 0)
                             g_ptr_array_add(new, *iter_val);
                         else
                             g_free(*iter_val);
@@ -1147,7 +1145,7 @@ read_config(GKeyFile *  keyfile,
                             gs_free char *             specs_joined = NULL;
 
                             g_ptr_array_add(new, NULL);
-                            specs = _nm_utils_strv_to_slist((char **) new->pdata, FALSE);
+                            specs = nm_strv_to_gslist((char **) new->pdata, FALSE);
 
                             specs_joined = nm_match_spec_join(specs);
 

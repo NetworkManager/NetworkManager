@@ -1702,7 +1702,7 @@ static const char *const *_values_fcn_gobject_enum(ARGS_VALUES_FCN)
     /* the gobject_enum.value_infos are currently ignored for the list of
      * values. They only declare additional (hidden) aliases for the setter. */
 
-    v = nm_utils_strv_make_deep_copied(nm_utils_enum_get_values(gtype, min, max));
+    v = nm_strv_make_deep_copied(nm_utils_enum_get_values(gtype, min, max));
     return (const char *const *) (*out_to_free = v);
 }
 
@@ -3589,7 +3589,7 @@ _multilist_remove_by_value_fcn_ip_config_dhcp_reject_servers(NMSettingIPConfig *
     gssize             idx;
 
     strv = nm_setting_ip_config_get_dhcp_reject_servers(setting, &num);
-    idx  = nm_utils_strv_find_first(strv, num, item);
+    idx  = nm_strv_find_first(strv, num, item);
     if (idx >= 0)
         nm_setting_ip_config_remove_dhcp_reject_server(setting, idx);
     return TRUE;

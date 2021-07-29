@@ -1124,7 +1124,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_REJECT_SERVERS:
         /* construct-only */
-        priv->reject_servers = nm_utils_strv_dup_packed(g_value_get_boxed(value), -1);
+        priv->reject_servers = nm_strv_dup_packed(g_value_get_boxed(value), -1);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);

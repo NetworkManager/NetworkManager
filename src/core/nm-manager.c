@@ -8076,7 +8076,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_boolean(value, priv->sleeping);
         break;
     case PROP_DEVICES:
-        g_value_take_boxed(value, nm_utils_strv_make_deep_copied(_get_devices_paths(self, FALSE)));
+        g_value_take_boxed(value, nm_strv_make_deep_copied(_get_devices_paths(self, FALSE)));
         break;
     case PROP_METERED:
         g_value_set_uint(value, priv->metered);
@@ -8087,12 +8087,12 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         nm_global_dns_config_to_dbus(dns_config, value);
         break;
     case PROP_ALL_DEVICES:
-        g_value_take_boxed(value, nm_utils_strv_make_deep_copied(_get_devices_paths(self, TRUE)));
+        g_value_take_boxed(value, nm_strv_make_deep_copied(_get_devices_paths(self, TRUE)));
         break;
     case PROP_CHECKPOINTS:
         g_value_take_boxed(
             value,
-            priv->checkpoint_mgr ? nm_utils_strv_make_deep_copied(
+            priv->checkpoint_mgr ? nm_strv_make_deep_copied(
                 nm_checkpoint_manager_get_checkpoint_paths(priv->checkpoint_mgr, NULL))
                                  : NULL);
         break;

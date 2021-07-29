@@ -737,20 +737,19 @@ nm_utils_strsplit_set(const char *str, const char *delimiters)
     return nm_utils_strsplit_set_full(str, delimiters, NM_UTILS_STRSPLIT_SET_FLAGS_NONE);
 }
 
-gssize _nm_utils_strv_find_first(const char *const *list, gssize len, const char *needle);
+gssize _nm_strv_find_first(const char *const *list, gssize len, const char *needle);
 
-#define nm_utils_strv_find_first(list, len, needle) \
-    _nm_utils_strv_find_first(NM_CAST_STRV_CC(list), (len), (needle))
+#define nm_strv_find_first(list, len, needle) \
+    _nm_strv_find_first(NM_CAST_STRV_CC(list), (len), (needle))
 
 gboolean nm_strv_has_duplicate(const char *const *list, gssize len, gboolean is_sorted);
 
-const char **
-_nm_utils_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated);
+const char **nm_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated);
 
-char **_nm_utils_strv_cleanup(char **  strv,
-                              gboolean strip_whitespace,
-                              gboolean skip_empty,
-                              gboolean skip_repeated);
+char **nm_strv_cleanup(char **  strv,
+                       gboolean strip_whitespace,
+                       gboolean skip_empty,
+                       gboolean skip_repeated);
 
 gboolean nm_strv_is_same_unordered(const char *const *strv1,
                                    gssize             len1,
@@ -2004,26 +2003,26 @@ int nm_utils_hashtable_cmp(const GHashTable *a,
                            GCompareDataFunc  cmp_values,
                            gpointer          user_data);
 
-char **nm_utils_strv_make_deep_copied(const char **strv);
+char **nm_strv_make_deep_copied(const char **strv);
 
-char **nm_utils_strv_make_deep_copied_n(const char **strv, gsize len);
+char **nm_strv_make_deep_copied_n(const char **strv, gsize len);
 
 static inline char **
-nm_utils_strv_make_deep_copied_nonnull(const char **strv)
+nm_strv_make_deep_copied_nonnull(const char **strv)
 {
-    return nm_utils_strv_make_deep_copied(strv) ?: g_new0(char *, 1);
+    return nm_strv_make_deep_copied(strv) ?: g_new0(char *, 1);
 }
 
-char **_nm_utils_strv_dup(const char *const *strv, gssize len, gboolean deep_copied);
+char **_nm_strv_dup(const char *const *strv, gssize len, gboolean deep_copied);
 
-#define nm_utils_strv_dup(strv, len, deep_copied) \
-    _nm_utils_strv_dup(NM_CAST_STRV_CC(strv), (len), (deep_copied))
+#define nm_strv_dup(strv, len, deep_copied) \
+    _nm_strv_dup(NM_CAST_STRV_CC(strv), (len), (deep_copied))
 
-const char **_nm_utils_strv_dup_packed(const char *const *strv, gssize len);
+const char **_nm_strv_dup_packed(const char *const *strv, gssize len);
 
-#define nm_utils_strv_dup_packed(strv, len) _nm_utils_strv_dup_packed(NM_CAST_STRV_CC(strv), (len))
+#define nm_strv_dup_packed(strv, len) _nm_strv_dup_packed(NM_CAST_STRV_CC(strv), (len))
 
-#define nm_utils_strv_dup_shallow_maybe_a(alloca_maxlen, strv, len, to_free)       \
+#define nm_strv_dup_shallow_maybe_a(alloca_maxlen, strv, len, to_free)             \
     ({                                                                             \
         const char *const *const _strv    = NM_CAST_STRV_CC(strv);                 \
         const gssize             _len     = (len);                                 \
@@ -2245,7 +2244,7 @@ gssize nm_utils_ptrarray_find_binary_search_range(gconstpointer *  list,
                                                   gssize *         out_idx_first,
                                                   gssize *         out_idx_last);
 
-#define nm_utils_strv_find_binary_search(strv, len, needle)           \
+#define nm_strv_find_binary_search(strv, len, needle)                 \
     ({                                                                \
         const char *const *const _strv   = NM_CAST_STRV_CC(strv);     \
         const gsize              _len    = (len);                     \
@@ -2272,16 +2271,15 @@ gssize nm_utils_ptrarray_find_first(gconstpointer *list, gssize len, gconstpoint
 
 /*****************************************************************************/
 
-void _nm_utils_strv_sort(const char **strv, gssize len);
-#define nm_utils_strv_sort(strv, len) _nm_utils_strv_sort(NM_CAST_STRV_MC(strv), len)
+void _nm_strv_sort(const char **strv, gssize len);
+#define nm_strv_sort(strv, len) _nm_strv_sort(NM_CAST_STRV_MC(strv), len)
 
-int
-_nm_utils_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2);
+int _nm_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *strv2, gssize len2);
 
-#define nm_utils_strv_cmp_n(strv1, len1, strv2, len2) \
-    _nm_utils_strv_cmp_n(NM_CAST_STRV_CC(strv1), (len1), NM_CAST_STRV_CC(strv2), (len2))
+#define nm_strv_cmp_n(strv1, len1, strv2, len2) \
+    _nm_strv_cmp_n(NM_CAST_STRV_CC(strv1), (len1), NM_CAST_STRV_CC(strv2), (len2))
 
-#define nm_utils_strv_equal(strv1, strv2) (nm_utils_strv_cmp_n((strv1), -1, (strv2), -1) == 0)
+#define nm_strv_equal(strv1, strv2) (nm_strv_cmp_n((strv1), -1, (strv2), -1) == 0)
 
 /*****************************************************************************/
 
@@ -2486,7 +2484,7 @@ nm_strv_ptrarray_find_first(const GPtrArray *strv, const char *str)
 {
     if (!strv)
         return -1;
-    return nm_utils_strv_find_first((const char *const *) strv->pdata, strv->len, str);
+    return nm_strv_find_first((const char *const *) strv->pdata, strv->len, str);
 }
 
 static inline gboolean
@@ -2498,14 +2496,14 @@ nm_strv_ptrarray_contains(const GPtrArray *strv, const char *str)
 static inline int
 nm_strv_ptrarray_cmp(const GPtrArray *a, const GPtrArray *b)
 {
-    /* nm_utils_strv_cmp_n() will treat NULL and empty arrays the same.
+    /* nm_strv_cmp_n() will treat NULL and empty arrays the same.
      * That means, an empty strv array can both be represented by NULL
      * and an array of length zero.
      * If you need to distinguish between these case, do that yourself. */
-    return nm_utils_strv_cmp_n((const char *const *) nm_g_ptr_array_pdata(a),
-                               nm_g_ptr_array_len(a),
-                               (const char *const *) nm_g_ptr_array_pdata(b),
-                               nm_g_ptr_array_len(b));
+    return nm_strv_cmp_n((const char *const *) nm_g_ptr_array_pdata(a),
+                         nm_g_ptr_array_len(a),
+                         (const char *const *) nm_g_ptr_array_pdata(b),
+                         nm_g_ptr_array_len(b));
 }
 
 /*****************************************************************************/
@@ -2934,7 +2932,7 @@ nm_strvarray_get_strv_non_empty_dup(GArray *arr, guint *length)
 
     NM_SET_OUT(length, arr->len);
     strv = &g_array_index(arr, const char *, 0);
-    return nm_utils_strv_dup(strv, arr->len, TRUE);
+    return nm_strv_dup(strv, arr->len, TRUE);
 }
 
 static inline const char *const *

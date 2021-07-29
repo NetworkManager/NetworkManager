@@ -408,9 +408,9 @@ nm_wifi_p2p_peer_update_from_properties(NMWifiP2PPeer *peer, const NMSupplicantP
 
     /* We currently only use the groups information internally to check if
      * the peer is still joined. */
-    if (!nm_utils_strv_equal(priv->groups, peer_info->groups)) {
+    if (!nm_strv_equal(priv->groups, peer_info->groups)) {
         g_free(priv->groups);
-        priv->groups = nm_utils_strv_dup_packed(peer_info->groups, -1);
+        priv->groups = nm_strv_dup_packed(peer_info->groups, -1);
         changed |= TRUE;
     }
 

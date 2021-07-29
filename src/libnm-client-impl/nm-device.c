@@ -3001,7 +3001,7 @@ nm_lldp_neighbor_get_attr_names(NMLldpNeighbor *neighbor)
 
     keys = nm_utils_strdict_get_keys(neighbor->attrs, TRUE, NULL);
 
-    return nm_utils_strv_make_deep_copied_nonnull(keys);
+    return nm_strv_make_deep_copied_nonnull(keys);
 }
 
 /**

@@ -147,9 +147,9 @@ _nm_setting_wired_is_valid_s390_option(const char *option)
     }
 
     return option
-           && (nm_utils_strv_find_binary_search(valid_s390_opts,
-                                                G_N_ELEMENTS(valid_s390_opts) - 1,
-                                                option)
+           && (nm_strv_find_binary_search(valid_s390_opts,
+                                          G_N_ELEMENTS(valid_s390_opts) - 1,
+                                          option)
                >= 0);
 }
 

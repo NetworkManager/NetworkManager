@@ -934,7 +934,7 @@ _peer_info_properties_changed(NMSupplicantInterface *self,
 
     if (nm_g_variant_lookup(properties, "Groups", "^a&o", &v_strv)) {
         g_free(peer_info->groups);
-        peer_info->groups = nm_utils_strv_dup_packed(v_strv, -1);
+        peer_info->groups = nm_strv_dup_packed(v_strv, -1);
 
         g_free(v_strv);
     }
