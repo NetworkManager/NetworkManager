@@ -56,7 +56,10 @@ DEFINE_TRIVIAL_CLEANUP_FUNC_FULL(DIR*, closedir, NULL);
 int fd_nonblock(int fd, bool nonblock);
 int fd_cloexec(int fd, bool cloexec);
 
-int close_all_fds(const int except[], size_t n_except);
+int close_all_fds_full(int except[], size_t n_except, bool allow_alloc);
+static inline int close_all_fds(int except[], size_t n_except) {
+        return close_all_fds_full(except, n_except, true);
+}
 
 int same_fd(int a, int b);
 
@@ -75,10 +78,6 @@ enum {
         ACQUIRE_NO_TMPFILE  = 1 << 3,
         ACQUIRE_NO_REGULAR  = 1 << 4,
 };
-
-int acquire_data_fd(const void *data, size_t size, unsigned flags);
-
-int fd_duplicate_data_fd(int fd);
 
 int fd_move_above_stdio(int fd);
 
@@ -107,5 +106,5 @@ static inline int make_null_stdio(void) {
 
 
 int fd_reopen(int fd, int flags);
-
 int read_nr_open(void);
+int btrfs_defrag_fd(int fd);

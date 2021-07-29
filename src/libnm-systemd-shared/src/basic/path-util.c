@@ -472,8 +472,10 @@ char *path_startswith_full(const char *path, const char *prefix, bool accept_dot
 int path_compare(const char *a, const char *b) {
         int r;
 
-        assert(a);
-        assert(b);
+        /* Order NULL before non-NULL */
+        r = CMP(!!a, !!b);
+        if (r != 0)
+                return r;
 
         /* A relative path and an absolute path must not compare as equal.
          * Which one is sorted before the other does not really matter.
@@ -520,15 +522,9 @@ int path_compare(const char *a, const char *b) {
         }
 }
 
-bool path_equal(const char *a, const char *b) {
-        return path_compare(a, b) == 0;
-}
-
-#if 0 /* NM_IGNORED */
 bool path_equal_or_files_same(const char *a, const char *b, int flags) {
         return path_equal(a, b) || files_same(a, b, flags) > 0;
 }
-#endif /* NM_IGNORED */
 
 bool path_equal_filename(const char *a, const char *b) {
         _cleanup_free_ char *a_basename = NULL, *b_basename = NULL;

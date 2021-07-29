@@ -241,7 +241,6 @@ int signal_from_string(const char *s) {
 void nop_signal_handler(int sig) {
         /* nothing here */
 }
-#endif /* NM_IGNORED */
 
 int signal_is_blocked(int sig) {
         sigset_t ss;
@@ -257,3 +256,39 @@ int signal_is_blocked(int sig) {
 
         return r;
 }
+
+int pop_pending_signal_internal(int sig, ...) {
+        sigset_t ss;
+        va_list ap;
+        int r;
+
+        if (sig < 0) /* Empty list? */
+                return -EINVAL;
+
+        if (sigemptyset(&ss) < 0)
+                return -errno;
+
+        /* Add first signal (if the signal is zero, we'll silently skip it, to make it easiert to build
+         * parameter lists where some element are sometimes off, similar to how sigset_add_many_ap() handles
+         * this.) */
+        if (sig > 0 && sigaddset(&ss, sig) < 0)
+                return -errno;
+
+        /* Add all other signals */
+        va_start(ap, sig);
+        r = sigset_add_many_ap(&ss, ap);
+        va_end(ap);
+        if (r < 0)
+                return r;
+
+        r = sigtimedwait(&ss, NULL, &(struct timespec) { 0, 0 });
+        if (r < 0) {
+                if (errno == EAGAIN)
+                        return 0;
+
+                return -errno;
+        }
+
+        return r; /* Returns the signal popped */
+}
+#endif /* NM_IGNORED */

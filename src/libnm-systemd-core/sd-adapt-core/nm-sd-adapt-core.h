@@ -61,6 +61,8 @@
 
 /*****************************************************************************/
 
+#define HAVE_OPENSSL 0
+
 static inline int
 sd_notify(int unset_environment, const char *state)
 {
