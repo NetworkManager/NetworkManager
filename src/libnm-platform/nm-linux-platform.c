@@ -2945,12 +2945,13 @@ _new_from_nl_link(NMPlatform *     platform,
     gboolean *                completed_from_cache     = cache ? &completed_from_cache_val : NULL;
     const NMPObject *         link_cached              = NULL;
     const NMPObject *         lnk_data                 = NULL;
-    gboolean                  address_complete_from_cache   = TRUE;
-    gboolean                  broadcast_complete_from_cache = TRUE;
-    gboolean                  lnk_data_complete_from_cache  = TRUE;
-    gboolean                  need_ext_data                 = FALSE;
-    gboolean                  af_inet6_token_valid          = FALSE;
-    gboolean                  af_inet6_addr_gen_mode_valid  = FALSE;
+    gboolean                  address_complete_from_cache      = TRUE;
+    gboolean                  perm_address_complete_from_cache = TRUE;
+    gboolean                  broadcast_complete_from_cache    = TRUE;
+    gboolean                  lnk_data_complete_from_cache     = TRUE;
+    gboolean                  need_ext_data                    = FALSE;
+    gboolean                  af_inet6_token_valid             = FALSE;
+    gboolean                  af_inet6_addr_gen_mode_valid     = FALSE;
 
     if (!nlmsg_valid_hdr(nlh, sizeof(*ifi)))
         return NULL;
@@ -3051,6 +3052,11 @@ _new_from_nl_link(NMPlatform *     platform,
     if (tb[IFLA_ADDRESS]) {
         _nmp_link_address_set(&obj->link.l_address, tb[IFLA_ADDRESS]);
         address_complete_from_cache = FALSE;
+    }
+
+    if (tb[IFLA_PERM_ADDRESS]) {
+        _nmp_link_address_set(&obj->link.l_perm_address, tb[IFLA_PERM_ADDRESS]);
+        perm_address_complete_from_cache = FALSE;
     }
 
     if (tb[IFLA_BROADCAST]) {
@@ -3160,6 +3166,8 @@ _new_from_nl_link(NMPlatform *     platform,
 
             if (address_complete_from_cache)
                 obj->link.l_address = link_cached->link.l_address;
+            if (perm_address_complete_from_cache)
+                obj->link.l_perm_address = link_cached->link.l_perm_address;
             if (broadcast_complete_from_cache)
                 obj->link.l_broadcast = link_cached->link.l_broadcast;
             if (!af_inet6_token_valid)
