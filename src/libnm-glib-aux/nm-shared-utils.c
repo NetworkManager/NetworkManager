@@ -2336,13 +2336,83 @@ nm_strv_has_duplicate(const char *const *strv, gssize len, gboolean is_sorted)
     return FALSE;
 }
 
+gboolean
+nm_strv_is_same_unordered(const char *const *strv1,
+                          gssize             len1,
+                          const char *const *strv2,
+                          gssize             len2)
+{
+    gs_free const char **ss1_free = NULL;
+    gs_free const char **ss2_free = NULL;
+    gsize                l2;
+    gsize                l;
+    gsize                i;
+
+    if (len1 < 0)
+        l = NM_PTRARRAY_LEN(strv1);
+    else
+        l = (gsize) len1;
+
+    if (len2 < 0)
+        l2 = NM_PTRARRAY_LEN(strv2);
+    else
+        l2 = (gsize) len2;
+
+    if (l != l2)
+        return FALSE;
+
+    if (l == 0) {
+        /* An empty array. We treat (NULL, -1), (NULL, 0) and ([...], 0)
+         * all the same. */
+        return TRUE;
+    }
+
+    if (l > 1) {
+        strv1 = nm_memdup_maybe_a(300, strv1, sizeof(char *) * l, &ss1_free);
+        strv2 = nm_memdup_maybe_a(300, strv2, sizeof(char *) * l2, &ss2_free);
+        _nm_utils_strv_sort((const char **) strv1, l);
+        _nm_utils_strv_sort((const char **) strv2, l);
+    }
+
+    for (i = 0; i < l; i++) {
+        if (!nm_streq0(strv1[i], strv2[i]))
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+const char **
+_nm_utils_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated)
+{
+    gsize i;
+    gsize j;
+
+    if (!strv || !*strv)
+        return strv;
+
+    if (!skip_empty && !skip_repeated)
+        return strv;
+
+    j = 0;
+    for (i = 0; strv[i]; i++) {
+        if ((skip_empty && !*strv[i])
+            || (skip_repeated && nm_utils_strv_find_first((char **) strv, j, strv[i]) >= 0))
+            continue;
+        strv[j++] = strv[i];
+    }
+    strv[j] = NULL;
+    return strv;
+}
+
 char **
 _nm_utils_strv_cleanup(char **  strv,
                        gboolean strip_whitespace,
                        gboolean skip_empty,
                        gboolean skip_repeated)
 {
-    guint i, j;
+    gsize i;
+    gsize j;
 
     if (!strv || !*strv)
         return strv;

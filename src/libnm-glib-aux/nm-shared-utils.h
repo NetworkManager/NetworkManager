@@ -741,10 +741,18 @@ gssize nm_utils_strv_find_first(char **list, gssize len, const char *needle);
 
 gboolean nm_strv_has_duplicate(const char *const *list, gssize len, gboolean is_sorted);
 
+const char **
+_nm_utils_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated);
+
 char **_nm_utils_strv_cleanup(char **  strv,
                               gboolean strip_whitespace,
                               gboolean skip_empty,
                               gboolean skip_repeated);
+
+gboolean nm_strv_is_same_unordered(const char *const *strv1,
+                                   gssize             len1,
+                                   const char *const *strv2,
+                                   gssize             len2);
 
 /*****************************************************************************/
 

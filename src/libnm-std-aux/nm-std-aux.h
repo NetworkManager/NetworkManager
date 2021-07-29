@@ -316,22 +316,28 @@ nm_mult_clamped_u(unsigned a, unsigned b)
 /* macro to return strlen() of a compile time string. */
 #define NM_STRLEN(str) (sizeof("" str "") - 1u)
 
+static inline size_t
+_nm_ptrarray_len_impl(const void *const *array)
+{
+    size_t n = 0;
+
+    if (array) {
+        while (array[n])
+            n++;
+    }
+    return n;
+}
+
 /* returns the length of a NULL terminated array of pointers,
  * like g_strv_length() does. The difference is:
  *  - it operates on arrays of pointers (of any kind, requiring no cast).
  *  - it accepts NULL to return zero. */
-#define NM_PTRARRAY_LEN(array)                                         \
-    ({                                                                 \
-        typeof(*(array)) *const _array = (array);                      \
-        size_t                  _n     = 0;                            \
-                                                                       \
-        if (_array) {                                                  \
-            _nm_unused const void *_type_check_is_pointer = _array[0]; \
-                                                                       \
-            while (_array[_n])                                         \
-                _n++;                                                  \
-        }                                                              \
-        _n;                                                            \
+#define NM_PTRARRAY_LEN(array)                                                 \
+    ({                                                                         \
+        typeof(*(array)) *const _array                 = (array);              \
+        _nm_unused const void * _type_check_is_pointer = 0 ? _array[0] : NULL; \
+                                                                               \
+        _nm_ptrarray_len_impl((const void *const *) _array);                   \
     })
 
 /*****************************************************************************/
