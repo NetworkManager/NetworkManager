@@ -2266,7 +2266,7 @@ class IP4Config(ExportedObj):
     def __init__(self, generate_seed=_DEFAULT_ARG):
         ExportedObj.__init__(self, ExportedObj.create_path(IP4Config))
 
-        if generate_seed == _DEFAULT_ARG:
+        if generate_seed is _DEFAULT_ARG:
             generate_seed = self.path
 
         props = self._props_generate(generate_seed)
@@ -2465,7 +2465,7 @@ class IP6Config(ExportedObj):
     def __init__(self, generate_seed=_DEFAULT_ARG):
         ExportedObj.__init__(self, ExportedObj.create_path(IP6Config))
 
-        if generate_seed == _DEFAULT_ARG:
+        if generate_seed is _DEFAULT_ARG:
             generate_seed = self.path
 
         props = self._props_generate(generate_seed)
@@ -2639,7 +2639,7 @@ class Dhcp4Config(ExportedObj):
     def __init__(self, generate_seed=_DEFAULT_ARG):
         ExportedObj.__init__(self, ExportedObj.create_path(Dhcp4Config))
 
-        if generate_seed == _DEFAULT_ARG:
+        if generate_seed is _DEFAULT_ARG:
             generate_seed = self.path
 
         props = self._props_generate(generate_seed)
@@ -2680,7 +2680,7 @@ class Dhcp6Config(ExportedObj):
     def __init__(self, generate_seed=_DEFAULT_ARG):
         ExportedObj.__init__(self, ExportedObj.create_path(Dhcp6Config))
 
-        if generate_seed == _DEFAULT_ARG:
+        if generate_seed is _DEFAULT_ARG:
             generate_seed = self.path
 
         props = self._props_generate(generate_seed)
