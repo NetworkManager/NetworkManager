@@ -82,8 +82,6 @@ int pid_from_same_root_fs(pid_t pid);
 
 bool is_main_thread(void);
 
-_noreturn_ void freeze(void);
-
 bool oom_score_adjust_is_valid(int oa);
 
 #ifndef PERSONALITY_INVALID
@@ -168,15 +166,13 @@ typedef enum ForkFlags {
         FORK_NEW_USERNS         = 1 << 13, /* Run child in its own user namespace */
 } ForkFlags;
 
-int safe_fork_full(const char *name, const int except_fds[], size_t n_except_fds, ForkFlags flags, pid_t *ret_pid);
+int safe_fork_full(const char *name, int except_fds[], size_t n_except_fds, ForkFlags flags, pid_t *ret_pid);
 
 static inline int safe_fork(const char *name, ForkFlags flags, pid_t *ret_pid) {
         return safe_fork_full(name, NULL, 0, flags, ret_pid);
 }
 
-int namespace_fork(const char *outer_name, const char *inner_name, const int except_fds[], size_t n_except_fds, ForkFlags flags, int pidns_fd, int mntns_fd, int netns_fd, int userns_fd, int root_fd, pid_t *ret_pid);
-
-int fork_agent(const char *name, const int except[], size_t n_except, pid_t *pid, const char *path, ...) _sentinel_;
+int namespace_fork(const char *outer_name, const char *inner_name, int except_fds[], size_t n_except_fds, ForkFlags flags, int pidns_fd, int mntns_fd, int netns_fd, int userns_fd, int root_fd, pid_t *ret_pid);
 
 int set_oom_score_adjust(int value);
 

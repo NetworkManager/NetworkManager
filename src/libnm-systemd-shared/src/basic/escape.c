@@ -8,6 +8,7 @@
 #include "escape.h"
 #include "hexdecoct.h"
 #include "macro.h"
+#include "strv.h"
 #include "utf8.h"
 
 int cescape_char(char c, char *buf) {
@@ -288,10 +289,12 @@ int cunescape_one(const char *p, size_t length, char32_t *ret, bool *eight_bit, 
         return r;
 }
 
-int cunescape_length_with_prefix(const char *s, size_t length, const char *prefix, UnescapeFlags flags, char **ret) {
-        char *r, *t;
+ssize_t cunescape_length_with_prefix(const char *s, size_t length, const char *prefix, UnescapeFlags flags, char **ret) {
+        _cleanup_free_ char *ans = NULL;
+        char *t;
         const char *f;
         size_t pl;
+        int r;
 
         assert(s);
         assert(ret);
@@ -300,18 +303,17 @@ int cunescape_length_with_prefix(const char *s, size_t length, const char *prefi
 
         pl = strlen_ptr(prefix);
 
-        r = new(char, pl+length+1);
-        if (!r)
+        ans = new(char, pl+length+1);
+        if (!ans)
                 return -ENOMEM;
 
         if (prefix)
-                memcpy(r, prefix, pl);
+                memcpy(ans, prefix, pl);
 
-        for (f = s, t = r + pl; f < s + length; f++) {
+        for (f = s, t = ans + pl; f < s + length; f++) {
                 size_t remaining;
                 bool eight_bit = false;
                 char32_t u;
-                int k;
 
                 remaining = s + length - f;
                 assert(remaining > 0);
@@ -329,23 +331,21 @@ int cunescape_length_with_prefix(const char *s, size_t length, const char *prefi
                                 continue;
                         }
 
-                        free(r);
                         return -EINVAL;
                 }
 
-                k = cunescape_one(f + 1, remaining - 1, &u, &eight_bit, flags & UNESCAPE_ACCEPT_NUL);
-                if (k < 0) {
+                r = cunescape_one(f + 1, remaining - 1, &u, &eight_bit, flags & UNESCAPE_ACCEPT_NUL);
+                if (r < 0) {
                         if (flags & UNESCAPE_RELAX) {
                                 /* Invalid escape code, let's take it literal then */
                                 *(t++) = '\\';
                                 continue;
                         }
 
-                        free(r);
-                        return k;
+                        return r;
                 }
 
-                f += k;
+                f += r;
                 if (eight_bit)
                         /* One byte? Set directly as specified */
                         *(t++) = u;
@@ -356,8 +356,9 @@ int cunescape_length_with_prefix(const char *s, size_t length, const char *prefi
 
         *t = 0;
 
-        *ret = r;
-        return t - r;
+        assert(t >= ans); /* Let static analyzers know that the answer is non-negative. */
+        *ret = TAKE_PTR(ans);
+        return t - *ret;
 }
 
 char* xescape_full(const char *s, const char *bad, size_t console_width, XEscapeFlags flags) {
@@ -541,4 +542,24 @@ char* shell_maybe_quote(const char *s, ShellEscapeFlags flags) {
         *t = 0;
 
         return str_realloc(buf);
+}
+
+char* quote_command_line(char **argv) {
+        _cleanup_free_ char *result = NULL;
+
+        assert(argv);
+
+        char **a;
+        STRV_FOREACH(a, argv) {
+                _cleanup_free_ char *t = NULL;
+
+                t = shell_maybe_quote(*a, SHELL_ESCAPE_EMPTY);
+                if (!t)
+                        return NULL;
+
+                if (!strextend_with_separator(&result, " ", t))
+                        return NULL;
+        }
+
+        return TAKE_PTR(result);
 }
