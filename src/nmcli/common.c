@@ -711,8 +711,8 @@ get_secrets_from_user(const NmcConfig *nmc_config,
                         continue;
                     } else {
                         /* Prefill the password if we have it. */
-                        rl_startup_hook          = nmc_rl_set_deftext;
-                        nmc_rl_pre_input_deftext = g_strdup(secret->value);
+                        rl_startup_hook = nmc_rl_set_deftext;
+                        nm_utils_strdup_reset(&nmc_rl_pre_input_deftext, secret->value);
                     }
                 }
                 if (msg)
@@ -1150,16 +1150,14 @@ nmc_rl_gen_func_ifnames(const char *text, int state)
     return ret;
 }
 
-/* for pre-filling a string to readline prompt */
 char *nmc_rl_pre_input_deftext;
 
 int nmc_rl_set_deftext(_NMC_RL_STARTUPHOOK_ARGS)
 {
     if (nmc_rl_pre_input_deftext && rl_startup_hook) {
         rl_insert_text(nmc_rl_pre_input_deftext);
-        g_free(nmc_rl_pre_input_deftext);
-        nmc_rl_pre_input_deftext = NULL;
-        rl_startup_hook          = NULL;
+        nm_clear_g_free(&nmc_rl_pre_input_deftext);
+        rl_startup_hook = NULL;
     }
     return 0;
 }

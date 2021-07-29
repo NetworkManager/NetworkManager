@@ -54,15 +54,14 @@ usage_agent_all(void)
                  "Runs nmcli as both NetworkManager secret and a polkit agent.\n\n"));
 }
 
-/* for pre-filling a string to readline prompt */
 static char *pre_input_deftext;
-static int   set_deftext(_NMC_RL_STARTUPHOOK_ARGS)
+
+static int set_deftext(_NMC_RL_STARTUPHOOK_ARGS)
 {
     if (pre_input_deftext && rl_startup_hook) {
         rl_insert_text(pre_input_deftext);
-        g_free(pre_input_deftext);
-        pre_input_deftext = NULL;
-        rl_startup_hook   = NULL;
+        nm_clear_g_free(&pre_input_deftext);
+        rl_startup_hook = NULL;
     }
     return 0;
 }
@@ -85,8 +84,8 @@ get_secrets_from_user(const NmcConfig *nmc_config,
             g_print("%s\n", msg);
         if (secret->value) {
             /* Prefill the password if we have it. */
-            rl_startup_hook   = set_deftext;
-            pre_input_deftext = g_strdup(secret->value);
+            rl_startup_hook = set_deftext;
+            nm_utils_strdup_reset(&pre_input_deftext, secret->value);
         }
         if (secret->no_prompt_entry_id)
             pwd = nmc_readline(nmc_config, "%s: ", secret->pretty_name);

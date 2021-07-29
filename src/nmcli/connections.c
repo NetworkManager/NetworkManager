@@ -7377,8 +7377,9 @@ property_edit_submenu(NmCli *              nmc,
 
         case NMC_EDITOR_SUB_CMD_CHANGE:
             rl_startup_hook = nmc_rl_set_deftext;
-            nmc_rl_pre_input_deftext =
-                nmc_setting_get_property_parsable(curr_setting, prop_name, NULL);
+            nm_utils_strdup_reset_take(
+                &nmc_rl_pre_input_deftext,
+                nmc_setting_get_property_parsable(curr_setting, prop_name, NULL));
             prop_val_user = nmc_readline(&nmc->nmc_config, _("Edit '%s' value: "), prop_name);
 
             if (!nmc_setting_set_property(nmc->client,
