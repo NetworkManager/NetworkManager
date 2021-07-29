@@ -831,6 +831,7 @@ char **strv_reverse(char **l) {
         return l;
 }
 
+#if 0 /* NM_IGNORED */
 char **strv_shell_escape(char **l, const char *bad) {
         char **s;
 
@@ -850,6 +851,7 @@ char **strv_shell_escape(char **l, const char *bad) {
 
         return l;
 }
+#endif /* NM_IGNORED */
 
 bool strv_fnmatch_full(char* const* patterns, const char *s, int flags, size_t *matched_pos) {
         for (size_t i = 0; patterns && patterns[i]; i++)
