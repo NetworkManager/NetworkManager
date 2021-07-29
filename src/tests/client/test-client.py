@@ -1367,6 +1367,8 @@ class TestNmcli(NmTestBase):
             dbus.UInt32(NM.ActiveConnectionState.DEACTIVATING),
         )
 
+        self.call_nmcli_l([], replace_stdout=replace_uuids)
+
         for i in [0, 1]:
             if i == 1:
                 self.async_wait()
@@ -1497,6 +1499,8 @@ class TestNmcli(NmTestBase):
         uuids = Util.replace_text_sort_list(
             [c[1] for c in self.srv.findConnections()], replace_uuids
         )
+
+        self.call_nmcli_l([], replace_stdout=replace_uuids)
 
         for mode in Util.iter_nmcli_output_modes():
 
