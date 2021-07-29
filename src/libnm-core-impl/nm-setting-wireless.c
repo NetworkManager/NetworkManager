@@ -690,10 +690,7 @@ nm_setting_wireless_add_seen_bssid(NMSettingWireless *setting, const char *bssid
     if (!priv->seen_bssids) {
         priv->seen_bssids = g_ptr_array_new_with_free_func(g_free);
     } else {
-        if (nm_utils_strv_find_first((char **) priv->seen_bssids->pdata,
-                                     priv->seen_bssids->len,
-                                     lower_bssid)
-            >= 0)
+        if (nm_strv_ptrarray_find_first(priv->seen_bssids, lower_bssid) >= 0)
             return FALSE;
     }
 

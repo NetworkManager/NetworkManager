@@ -2397,7 +2397,7 @@ _nm_utils_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean sk
     j = 0;
     for (i = 0; strv[i]; i++) {
         if ((skip_empty && !*strv[i])
-            || (skip_repeated && nm_utils_strv_find_first((char **) strv, j, strv[i]) >= 0))
+            || (skip_repeated && nm_utils_strv_find_first(strv, j, strv[i]) >= 0))
             continue;
         strv[j++] = strv[i];
     }

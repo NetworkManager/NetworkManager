@@ -276,7 +276,7 @@ set_arp_targets(NMDevice *device, const char *cur_arp_ip_target, const char *new
                 }
             }
 
-            if (nm_utils_strv_find_first((char **) new_strv, i, s) < 0)
+            if (nm_utils_strv_find_first(new_strv, i, s) < 0)
                 new_strv[j++] = s;
         }
         new_strv[j] = NULL;

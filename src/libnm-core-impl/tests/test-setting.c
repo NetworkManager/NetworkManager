@@ -3249,7 +3249,7 @@ _rndt_wired_add_s390_options(NMSettingWired *s_wired, char **out_keyfile_entries
         g_assert(k);
         g_assert(v);
 
-        idx = nm_utils_strv_find_first((char **) opt_keys, n_opts, k);
+        idx = nm_utils_strv_find_first(opt_keys, n_opts, k);
         g_assert(idx >= 0);
         g_assert(!opt_found[idx]);
         opt_found[idx] = TRUE;
@@ -4916,7 +4916,7 @@ test_setting_connection_secondaries_verify(void)
             if (is_normalized)
                 s = uuid_normalized;
 
-            if (nm_utils_strv_find_first((char **) arr_norm->pdata, arr_norm->len, s) >= 0)
+            if (nm_strv_ptrarray_find_first(arr_norm, s) >= 0)
                 continue;
 
             g_ptr_array_add(arr_norm, g_strdup(s));

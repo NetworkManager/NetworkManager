@@ -3589,7 +3589,7 @@ _multilist_remove_by_value_fcn_ip_config_dhcp_reject_servers(NMSettingIPConfig *
     gssize             idx;
 
     strv = nm_setting_ip_config_get_dhcp_reject_servers(setting, &num);
-    idx  = nm_utils_strv_find_first((char **) strv, num, item);
+    idx  = nm_utils_strv_find_first(strv, num, item);
     if (idx >= 0)
         nm_setting_ip_config_remove_dhcp_reject_server(setting, idx);
     return TRUE;

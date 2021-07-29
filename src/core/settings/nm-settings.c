@@ -3372,7 +3372,7 @@ load_plugins(NMSettings *self, const char *const *plugins, GError **error)
             continue;
         }
 
-        if (nm_utils_strv_find_first((char **) plugins, iter - plugins, pname) >= 0) {
+        if (nm_utils_strv_find_first(plugins, iter - plugins, pname) >= 0) {
             /* the plugin is already mentioned in the list previously.
              * Don't load a duplicate. */
             continue;

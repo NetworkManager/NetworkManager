@@ -337,7 +337,7 @@ nm_vpn_plugin_info_list_load()
     uid = getuid();
 
     for (i = 0; i < G_N_ELEMENTS(dir); i++) {
-        if (!dir[i] || nm_utils_strv_find_first((char **) dir, i, dir[i]) >= 0)
+        if (!dir[i] || nm_utils_strv_find_first(dir, i, dir[i]) >= 0)
             continue;
 
         infos = _nm_vpn_plugin_info_list_load_dir(dir[i], TRUE, uid, NULL, NULL);
@@ -639,7 +639,7 @@ nm_vpn_plugin_info_list_find_service_type(GSList *list, const char *name)
 
     /* check the hard-coded list of short-names. They all have the same
      * well-known prefix org.freedesktop.NetworkManager and the name. */
-    if (nm_utils_strv_find_first((char **) known_names, G_N_ELEMENTS(known_names), name) >= 0)
+    if (nm_utils_strv_find_first(known_names, G_N_ELEMENTS(known_names), name) >= 0)
         return g_strdup_printf("%s.%s", NM_DBUS_INTERFACE, name);
 
     /* try, if there exists a plugin with @name under org.freedesktop.NetworkManager.

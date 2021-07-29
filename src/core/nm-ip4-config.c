@@ -2352,7 +2352,7 @@ _nm_ip_config_check_and_add_domain(GPtrArray *array, const char *domain)
     if (domain[len - 1] == '.')
         domain = copy = g_strndup(domain, len - 1);
 
-    if (nm_utils_strv_find_first((char **) array->pdata, array->len, domain) >= 0) {
+    if (nm_strv_ptrarray_find_first(array, domain) >= 0) {
         g_free(copy);
         return FALSE;
     }

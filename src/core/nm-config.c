@@ -1333,9 +1333,8 @@ read_entire_config(const NMConfigCmdLineOptions *cli,
         const char *filename = system_confs->pdata[i];
 
         /* if a same named file exists in config_dir or run_config_dir, skip it. */
-        if (nm_utils_strv_find_first((char **) confs->pdata, confs->len, filename) >= 0
-            || nm_utils_strv_find_first((char **) run_confs->pdata, run_confs->len, filename)
-                   >= 0) {
+        if (nm_strv_ptrarray_find_first(confs, filename) >= 0
+            || nm_strv_ptrarray_find_first(run_confs, filename) >= 0) {
             g_ptr_array_remove_index(system_confs, i);
             continue;
         }
@@ -1349,7 +1348,7 @@ read_entire_config(const NMConfigCmdLineOptions *cli,
         const char *filename = run_confs->pdata[i];
 
         /* if a same named file exists in config_dir, skip it. */
-        if (nm_utils_strv_find_first((char **) confs->pdata, confs->len, filename) >= 0) {
+        if (nm_strv_ptrarray_find_first(confs, filename) >= 0) {
             g_ptr_array_remove_index(run_confs, i);
             continue;
         }

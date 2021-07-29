@@ -2486,7 +2486,7 @@ nm_strv_ptrarray_find_first(const GPtrArray *strv, const char *str)
 {
     if (!strv)
         return -1;
-    return nm_utils_strv_find_first((char **) strv->pdata, strv->len, str);
+    return nm_utils_strv_find_first((const char *const *) strv->pdata, strv->len, str);
 }
 
 static inline gboolean
