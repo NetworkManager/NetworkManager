@@ -737,7 +737,10 @@ nm_utils_strsplit_set(const char *str, const char *delimiters)
     return nm_utils_strsplit_set_full(str, delimiters, NM_UTILS_STRSPLIT_SET_FLAGS_NONE);
 }
 
-gssize nm_utils_strv_find_first(char **list, gssize len, const char *needle);
+gssize _nm_utils_strv_find_first(const char *const *list, gssize len, const char *needle);
+
+#define nm_utils_strv_find_first(list, len, needle) \
+    _nm_utils_strv_find_first(NM_CAST_STRV_CC(list), (len), (needle))
 
 gboolean nm_strv_has_duplicate(const char *const *list, gssize len, gboolean is_sorted);
 

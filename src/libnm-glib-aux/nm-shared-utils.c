@@ -2261,7 +2261,7 @@ nm_utils_strsplit_quoted(const char *str)
 /*****************************************************************************/
 
 /**
- * nm_utils_strv_find_first:
+ * _nm_utils_strv_find_first:
  * @list: the strv list to search
  * @len: the length of the list, or a negative value if @list is %NULL terminated.
  * @needle: the value to search for. The search is done using strcmp().
@@ -2274,7 +2274,7 @@ nm_utils_strsplit_quoted(const char *str)
  * Returns: index of first occurrence or -1 if @needle is not found in @list.
  */
 gssize
-nm_utils_strv_find_first(char **list, gssize len, const char *needle)
+_nm_utils_strv_find_first(const char *const *list, gssize len, const char *needle)
 {
     gssize i;
 
