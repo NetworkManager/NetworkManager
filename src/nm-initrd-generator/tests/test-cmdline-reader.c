@@ -130,7 +130,7 @@ static void
 test_dhcp_with_hostname(void)
 {
     gs_unref_hashtable GHashTable *connections = NULL;
-    const char *const *            ARGV        = NM_MAKE_STRV("ip=::::host1::dhcp");
+    const char *const *            ARGV        = NM_MAKE_STRV("ip=::::host1::dhcp,dhcp6");
     NMConnection *                 connection;
     NMSettingConnection *          s_con;
     NMSettingWired *               s_wired;
@@ -181,7 +181,7 @@ test_dhcp_with_hostname(void)
 static void
 test_dhcp_with_mtu(void)
 {
-    const char *const *ARGV0  = NM_MAKE_STRV("ip=:dhcp:1499");
+    const char *const *ARGV0  = NM_MAKE_STRV("ip=:dhcp6,dhcp:1499");
     const char *const *ARGV1  = NM_MAKE_STRV("ip=::::::dhcp:1499");
     const char *const *ARGV[] = {ARGV0, ARGV1};
     guint              i;
@@ -290,7 +290,7 @@ test_dhcp_timeout(void)
 static void
 test_if_auto_with_mtu(void)
 {
-    const char *const *ARGV                  = NM_MAKE_STRV("ip=eth0:auto:1666");
+    const char *const *ARGV                  = NM_MAKE_STRV("ip=eth0:dhcp,dhcp6:1666");
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection *         s_con;
     NMSettingWired *              s_wired;
