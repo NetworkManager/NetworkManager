@@ -192,7 +192,7 @@ int sd_dhcp_client_id_to_string(const void *data, size_t len, char **ret) {
                 if (len != sizeof_field(sd_dhcp_client_id, eth))
                         return -EINVAL;
 
-                r = asprintf(&t, "%x:%x:%x:%x:%x:%x",
+                r = asprintf(&t, "%02x:%02x:%02x:%02x:%02x:%02x",
                              client_id->eth.haddr[0],
                              client_id->eth.haddr[1],
                              client_id->eth.haddr[2],
@@ -297,11 +297,19 @@ int sd_dhcp_client_set_ifname(sd_dhcp_client *client, const char *ifname) {
         return free_and_strdup(&client->ifname, ifname);
 }
 
-const char *sd_dhcp_client_get_ifname(sd_dhcp_client *client) {
-        if (!client)
-                return NULL;
+int sd_dhcp_client_get_ifname(sd_dhcp_client *client, const char **ret) {
+        int r;
 
-        return get_ifname(client->ifindex, &client->ifname);
+        assert_return(client, -EINVAL);
+
+        r = get_ifname(client->ifindex, &client->ifname);
+        if (r < 0)
+                return r;
+
+        if (ret)
+                *ret = client->ifname;
+
+        return 0;
 }
 
 int sd_dhcp_client_set_mac(
@@ -726,7 +734,7 @@ static int client_notify(sd_dhcp_client *client, int event) {
 static int client_initialize(sd_dhcp_client *client) {
         assert_return(client, -EINVAL);
 
-        client->receive_message = sd_event_source_unref(client->receive_message);
+        client->receive_message = sd_event_source_disable_unref(client->receive_message);
 
         client->fd = safe_close(client->fd);
 
@@ -1308,7 +1316,7 @@ static int client_timeout_resend(
                 goto error;
 
         default:
-                assert_not_reached("Unhandled choice");
+                assert_not_reached();
         }
 
         r = event_reset_time(client->event, &client->timeout_resend,
@@ -1492,7 +1500,7 @@ static int client_timeout_t2(sd_event_source *s, uint64_t usec, void *userdata) 
 
         assert(client);
 
-        client->receive_message = sd_event_source_unref(client->receive_message);
+        client->receive_message = sd_event_source_disable_unref(client->receive_message);
         client->fd = safe_close(client->fd);
 
         client->state = DHCP_STATE_REBINDING;
@@ -1844,7 +1852,7 @@ static int client_handle_message(sd_dhcp_client *client, DHCPMessage *message, i
 
                 client->start_delay = 0;
                 (void) event_source_disable(client->timeout_resend);
-                client->receive_message = sd_event_source_unref(client->receive_message);
+                client->receive_message = sd_event_source_disable_unref(client->receive_message);
                 client->fd = safe_close(client->fd);
 
                 client->state = DHCP_STATE_BOUND;
@@ -1896,7 +1904,7 @@ static int client_handle_message(sd_dhcp_client *client, DHCPMessage *message, i
                 r = -EINVAL;
                 goto error;
         default:
-                assert_not_reached("invalid state");
+                assert_not_reached();
         }
 
 error:
@@ -2226,16 +2234,14 @@ static sd_dhcp_client *dhcp_client_free(sd_dhcp_client *client) {
 
         log_dhcp_client(client, "FREE");
 
+        client_initialize(client);
+
         client->timeout_resend = sd_event_source_unref(client->timeout_resend);
         client->timeout_t1 = sd_event_source_unref(client->timeout_t1);
         client->timeout_t2 = sd_event_source_unref(client->timeout_t2);
         client->timeout_expire = sd_event_source_unref(client->timeout_expire);
 
-        client_initialize(client);
-
         sd_dhcp_client_detach_event(client);
-
-        sd_dhcp_lease_unref(client->lease);
 
         set_free(client->req_opts);
         free(client->hostname);

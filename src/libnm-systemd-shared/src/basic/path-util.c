@@ -13,6 +13,7 @@
 #undef basename
 
 #include "alloc-util.h"
+#include "chase-symlinks.h"
 #include "extract-word.h"
 #include "fd-util.h"
 #include "fs-util.h"
@@ -630,7 +631,11 @@ static int check_x_access(const char *path, int *ret_fd) {
                 return r;
 
         r = access_fd(fd, X_OK);
-        if (r < 0)
+        if (r == -ENOSYS) {
+                /* /proc is not mounted. Fallback to access(). */
+                if (access(path, X_OK) < 0)
+                        return -errno;
+        } else if (r < 0)
                 return r;
 
         if (ret_fd)
@@ -639,30 +644,53 @@ static int check_x_access(const char *path, int *ret_fd) {
         return 0;
 }
 
-int find_executable_full(const char *name, bool use_path_envvar, char **ret_filename, int *ret_fd) {
-        int last_error, r;
+static int find_executable_impl(const char *name, const char *root, char **ret_filename, int *ret_fd) {
+        _cleanup_close_ int fd = -1;
+        _cleanup_free_ char *path_name = NULL;
+        int r;
+
+        assert(name);
+
+        /* Function chase_symlinks() is invoked only when root is not NULL, as using it regardless of
+         * root value would alter the behavior of existing callers for example: /bin/sleep would become
+         * /usr/bin/sleep when find_executables is called. Hence, this function should be invoked when
+         * needed to avoid unforeseen regression or other complicated changes. */
+        if (root) {
+                r = chase_symlinks(name,
+                                   root,
+                                   CHASE_PREFIX_ROOT,
+                                   &path_name,
+                                   /* ret_fd= */ NULL); /* prefix root to name in case full paths are not specified */
+                if (r < 0)
+                        return r;
+
+                name = path_name;
+        }
+
+        r = check_x_access(name, ret_fd ? &fd : NULL);
+        if (r < 0)
+                return r;
+
+        if (ret_filename) {
+                r = path_make_absolute_cwd(name, ret_filename);
+                if (r < 0)
+                        return r;
+        }
+
+        if (ret_fd)
+                *ret_fd = TAKE_FD(fd);
+
+        return 0;
+}
+
+int find_executable_full(const char *name, const char *root, char **exec_search_path, bool use_path_envvar, char **ret_filename, int *ret_fd) {
+        int last_error = -ENOENT, r = 0;
         const char *p = NULL;
 
         assert(name);
 
-        if (is_path(name)) {
-                _cleanup_close_ int fd = -1;
-
-                r = check_x_access(name, ret_fd ? &fd : NULL);
-                if (r < 0)
-                        return r;
-
-                if (ret_filename) {
-                        r = path_make_absolute_cwd(name, ret_filename);
-                        if (r < 0)
-                                return r;
-                }
-
-                if (ret_fd)
-                        *ret_fd = TAKE_FD(fd);
-
-                return 0;
-        }
+        if (is_path(name))
+                return find_executable_impl(name, root, ret_filename, ret_fd);
 
         if (use_path_envvar)
                 /* Plain getenv, not secure_getenv, because we want to actually allow the user to pick the
@@ -671,12 +699,31 @@ int find_executable_full(const char *name, bool use_path_envvar, char **ret_file
         if (!p)
                 p = DEFAULT_PATH;
 
-        last_error = -ENOENT;
+        if (exec_search_path) {
+                char **element;
+
+                STRV_FOREACH(element, exec_search_path) {
+                        _cleanup_free_ char *full_path = NULL;
+                        if (!path_is_absolute(*element))
+                                continue;
+                        full_path = path_join(*element, name);
+                        if (!full_path)
+                                return -ENOMEM;
+
+                        r = find_executable_impl(full_path, root, ret_filename, ret_fd);
+                        if (r < 0) {
+                                if (r != -EACCES)
+                                        last_error = r;
+                                continue;
+                        }
+                        return 0;
+                }
+                return last_error;
+        }
 
         /* Resolve a single-component name to a full path */
         for (;;) {
                 _cleanup_free_ char *element = NULL;
-                _cleanup_close_ int fd = -1;
 
                 r = extract_first_word(&p, &element, ":", EXTRACT_RELAX|EXTRACT_DONT_COALESCE_SEPARATORS);
                 if (r < 0)
@@ -690,7 +737,7 @@ int find_executable_full(const char *name, bool use_path_envvar, char **ret_file
                 if (!path_extend(&element, name))
                         return -ENOMEM;
 
-                r = check_x_access(element, ret_fd ? &fd : NULL);
+                r = find_executable_impl(element, root, ret_filename, ret_fd);
                 if (r < 0) {
                         /* PATH entries which we don't have access to are ignored, as per tradition. */
                         if (r != -EACCES)
@@ -699,11 +746,6 @@ int find_executable_full(const char *name, bool use_path_envvar, char **ret_file
                 }
 
                 /* Found it! */
-                if (ret_filename)
-                        *ret_filename = path_simplify(TAKE_PTR(element));
-                if (ret_fd)
-                        *ret_fd = TAKE_FD(fd);
-
                 return 0;
         }
 
