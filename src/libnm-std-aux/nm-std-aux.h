@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stddef.h>
 
 /*****************************************************************************/
 
@@ -221,6 +222,14 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 /*****************************************************************************/
 
 #define NM_N_ELEMENTS(arr) (sizeof(arr) / sizeof((arr)[0]))
+
+/*****************************************************************************/
+
+#define nm_offsetof(t, m) offsetof(t, m)
+
+#define nm_offsetofend(t, m) (nm_offsetof(t, m) + sizeof(((t *) NULL)->m))
+
+/*****************************************************************************/
 
 /* This does a compile time check that "type" is a suitable C type. It either
  * returns a compile time constant of 1 or it fails compilation. The point

@@ -43,10 +43,6 @@
 
 /*****************************************************************************/
 
-#define nm_offsetofend(t, m) (G_STRUCT_OFFSET(t, m) + sizeof(((t *) NULL)->m))
-
-/*****************************************************************************/
-
 #define gs_free            nm_auto_g_free
 #define gs_unref_object    nm_auto_unref_object
 #define gs_unref_variant   nm_auto_unref_variant
