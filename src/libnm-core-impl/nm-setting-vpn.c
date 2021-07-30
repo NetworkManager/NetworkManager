@@ -241,7 +241,7 @@ nm_setting_vpn_get_data_keys(NMSettingVpn *setting, guint *out_length)
 {
     g_return_val_if_fail(NM_IS_SETTING_VPN(setting), NULL);
 
-    return nm_utils_strdict_get_keys(NM_SETTING_VPN_GET_PRIVATE(setting)->data, TRUE, out_length);
+    return nm_strdict_get_keys(NM_SETTING_VPN_GET_PRIVATE(setting)->data, TRUE, out_length);
 }
 
 /**
@@ -278,7 +278,7 @@ foreach_item_helper(NMSettingVpn *self, GHashTable **p_hash, NMVpnIterFunc func,
     nm_assert(NM_IS_SETTING_VPN(self));
     nm_assert(func);
 
-    keys = nm_strv_make_deep_copied(nm_utils_strdict_get_keys(*p_hash, TRUE, &len));
+    keys = nm_strv_make_deep_copied(nm_strdict_get_keys(*p_hash, TRUE, &len));
     if (len == 0u) {
         nm_assert(!keys);
         return;
@@ -408,9 +408,7 @@ nm_setting_vpn_get_secret_keys(NMSettingVpn *setting, guint *out_length)
 {
     g_return_val_if_fail(NM_IS_SETTING_VPN(setting), NULL);
 
-    return nm_utils_strdict_get_keys(NM_SETTING_VPN_GET_PRIVATE(setting)->secrets,
-                                     TRUE,
-                                     out_length);
+    return nm_strdict_get_keys(NM_SETTING_VPN_GET_PRIVATE(setting)->secrets, TRUE, out_length);
 }
 
 /**
@@ -960,7 +958,7 @@ vpn_secrets_to_dbus(const NMSettInfoSetting *               sett_info,
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("a{ss}"));
 
-    keys = nm_utils_strdict_get_keys(priv->secrets, TRUE, &len);
+    keys = nm_strdict_get_keys(priv->secrets, TRUE, &len);
     for (i = 0; i < len; i++) {
         const char *         key          = keys[i];
         NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;

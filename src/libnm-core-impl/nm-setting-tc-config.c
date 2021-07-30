@@ -320,7 +320,7 @@ nm_tc_qdisc_get_attribute_names(NMTCQdisc *qdisc)
 {
     g_return_val_if_fail(qdisc, NULL);
 
-    return nm_utils_strdict_get_keys(qdisc->attributes, TRUE, NULL);
+    return nm_strdict_get_keys(qdisc->attributes, TRUE, NULL);
 }
 
 GHashTable *
@@ -594,7 +594,7 @@ nm_tc_action_get_attribute_names(NMTCAction *action)
 
     g_return_val_if_fail(action, NULL);
 
-    names = nm_utils_strdict_get_keys(action->attributes, TRUE, NULL);
+    names = nm_strdict_get_keys(action->attributes, TRUE, NULL);
     return nm_strv_make_deep_copied_nonnull(names);
 }
 

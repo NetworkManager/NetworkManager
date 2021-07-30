@@ -848,7 +848,7 @@ _unhandled_specs_from_hashtable(GHashTable *hash)
     GSList *             list = NULL;
     guint                i, l;
 
-    keys = nm_utils_strdict_get_keys(hash, TRUE, &l);
+    keys = nm_strdict_get_keys(hash, TRUE, &l);
     for (i = l; i > 0;) {
         i--;
         list = g_slist_prepend(list, g_strdup(keys[i]));

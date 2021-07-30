@@ -364,7 +364,7 @@ reader_read_all_connections_from_fw(Reader *reader, const char *sysfs_dir)
     gs_free const char **          keys = NULL;
 
     ibft = nmi_ibft_read(sysfs_dir);
-    keys = nm_utils_strdict_get_keys(ibft, TRUE, &length);
+    keys = nm_strdict_get_keys(ibft, TRUE, &length);
 
     for (i = 0; i < length; i++) {
         gs_unref_object NMConnection *connection = NULL;

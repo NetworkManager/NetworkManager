@@ -1026,7 +1026,7 @@ global_dns_config_seal_domains(NMGlobalDnsConfig *dns_config)
     if (g_hash_table_size(dns_config->domains) == 0)
         nm_clear_pointer(&dns_config->domains, g_hash_table_unref);
     else
-        dns_config->domain_list = nm_utils_strdict_get_keys(dns_config->domains, TRUE, NULL);
+        dns_config->domain_list = nm_strdict_get_keys(dns_config->domains, TRUE, NULL);
 }
 
 static NMGlobalDnsConfig *

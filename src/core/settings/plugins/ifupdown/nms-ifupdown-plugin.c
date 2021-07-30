@@ -189,7 +189,7 @@ _unmanaged_specs(GHashTable *eni_ifaces)
     GSList *             specs = NULL;
     guint                i, len;
 
-    keys = nm_utils_strdict_get_keys(eni_ifaces, TRUE, &len);
+    keys = nm_strdict_get_keys(eni_ifaces, TRUE, &len);
     for (i = len; i > 0;) {
         i--;
         specs = g_slist_prepend(specs,

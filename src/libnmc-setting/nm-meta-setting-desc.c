@@ -921,7 +921,7 @@ _get_fcn_gobject_impl(const NMMetaPropertyInfo *property_info,
         nm_assert(property_info->property_type->set_fcn == _set_fcn_optionlist);
 
         strdict = g_value_get_boxed(&val);
-        keys    = nm_utils_strdict_get_keys(strdict, TRUE, NULL);
+        keys    = nm_strdict_get_keys(strdict, TRUE, NULL);
         if (!keys)
             return NULL;
 

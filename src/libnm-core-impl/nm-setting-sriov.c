@@ -322,7 +322,7 @@ nm_sriov_vf_get_attribute_names(const NMSriovVF *vf)
     g_return_val_if_fail(vf, NULL);
     g_return_val_if_fail(vf->refcount > 0, NULL);
 
-    return nm_utils_strdict_get_keys(vf->attributes, TRUE, NULL);
+    return nm_strdict_get_keys(vf->attributes, TRUE, NULL);
 }
 
 /**
@@ -904,7 +904,7 @@ vfs_to_dbus(const NMSettInfoSetting *               sett_info,
                                   "index",
                                   g_variant_new_uint32(nm_sriov_vf_get_index(vf)));
 
-            attr_names = nm_utils_strdict_get_keys(vf->attributes, TRUE, NULL);
+            attr_names = nm_strdict_get_keys(vf->attributes, TRUE, NULL);
             if (attr_names) {
                 for (name = attr_names; *name; name++) {
                     g_variant_builder_add(&vf_builder,

@@ -2483,7 +2483,7 @@ write_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key, const 
 
     hash = g_value_get_boxed(value);
 
-    keys = nm_utils_strdict_get_keys(hash, TRUE, &l);
+    keys = nm_strdict_get_keys(hash, TRUE, &l);
     for (i = 0; i < l; i++) {
         gs_free char *to_free = NULL;
         const char *  property, *data;

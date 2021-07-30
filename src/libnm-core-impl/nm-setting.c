@@ -1090,7 +1090,7 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
         return nm_g_variant_new_au((const guint32 *) tmp_array->data, tmp_array->len);
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT:
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_HASH_TABLE));
-        return nm_utils_strdict_to_variant_ass(g_value_get_boxed(&prop_value));
+        return nm_strdict_to_variant_ass(g_value_get_boxed(&prop_value));
     }
 
     return nm_assert_unreachable_val(NULL);
@@ -3326,7 +3326,7 @@ _nm_setting_option_get_all(NMSetting *         setting,
         return len;
 
     if (G_UNLIKELY(!gendata->names)) {
-        gendata->names = nm_utils_strdict_get_keys(hash, TRUE, NULL);
+        gendata->names = nm_strdict_get_keys(hash, TRUE, NULL);
     }
 
     if (out_values) {

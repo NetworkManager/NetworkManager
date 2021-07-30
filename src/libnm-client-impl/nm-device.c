@@ -2999,7 +2999,7 @@ nm_lldp_neighbor_get_attr_names(NMLldpNeighbor *neighbor)
 
     g_return_val_if_fail(NM_IS_LLDP_NEIGHBOR(neighbor), NULL);
 
-    keys = nm_utils_strdict_get_keys(neighbor->attrs, TRUE, NULL);
+    keys = nm_strdict_get_keys(neighbor->attrs, TRUE, NULL);
 
     return nm_strv_make_deep_copied_nonnull(keys);
 }
