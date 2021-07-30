@@ -343,32 +343,6 @@ NM_G_ERROR_MSG(GError *error)
         _ptr;                     \
     })
 
-#if _NM_CC_SUPPORT_GENERIC
-/* returns @value, if the type of @value matches @type.
-     * This requires support for C11 _Generic(). If no support is
-     * present, this returns @value directly.
-     *
-     * It's useful to check the let the compiler ensure that @value is
-     * of a certain type. */
-#define _NM_ENSURE_TYPE(type, value) (_Generic((value), type : (value)))
-#define _NM_ENSURE_TYPE_CONST(type, value)               \
-    (_Generic((value), const type                        \
-              : ((const type) (value)), const type const \
-              : ((const type) (value)), type             \
-              : ((const type) (value)), type const       \
-              : ((const type) (value))))
-#else
-#define _NM_ENSURE_TYPE(type, value)       (value)
-#define _NM_ENSURE_TYPE_CONST(type, value) ((const type) (value))
-#endif
-
-#if _NM_CC_SUPPORT_GENERIC && (!defined(__clang__) || __clang_major__ > 3)
-#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) \
-    (_Generic((&(((container *) NULL)->field))[0], type : G_STRUCT_OFFSET(container, field)))
-#else
-#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) G_STRUCT_OFFSET(container, field)
-#endif
-
 /* Casts (arg) to (type**), but also having a compile time check that
  * the arg is some sort of pointer to a pointer.
  *
