@@ -1292,7 +1292,7 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
                 _nm_utils_ascii_str_to_int64(argument, 10, 1, G_MAXINT32, dhcp_num_tries);
         } else if (nm_streq(tag, "rd.net.dhcp.vendor-class")) {
             if (nm_utils_validate_dhcp4_vendor_class_id(argument, NULL))
-                nm_utils_strdup_reset(&reader->dhcp4_vci, argument);
+                nm_strdup_reset(&reader->dhcp4_vci, argument);
         } else if (nm_streq(tag, "rd.net.timeout.carrier")) {
             reader->carrier_timeout_sec =
                 _nm_utils_ascii_str_to_int64(argument, 10, 0, G_MAXINT32, 0);

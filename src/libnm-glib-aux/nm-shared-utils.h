@@ -2828,7 +2828,7 @@ guint nm_utils_parse_debug_string(const char *string, const GDebugKey *keys, gui
 /*****************************************************************************/
 
 static inline gboolean
-nm_utils_strdup_reset(char **dst, const char *src)
+nm_strdup_reset(char **dst, const char *src)
 {
     char *old;
 
@@ -2843,7 +2843,7 @@ nm_utils_strdup_reset(char **dst, const char *src)
 }
 
 static inline gboolean
-nm_utils_strdup_reset_take(char **dst, char *src)
+nm_strdup_reset_take(char **dst, char *src)
 {
     char *old;
 

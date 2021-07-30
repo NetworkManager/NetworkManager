@@ -1267,8 +1267,8 @@ _nm_device_notify_update_prop_hw_address(NMClient *              client,
 
     priv->hw_address_is_new = is_new;
 
-    nm_utils_strdup_reset(&priv->hw_address,
-                          _nml_coerce_property_str_not_empty(g_variant_get_string(value, NULL)));
+    nm_strdup_reset(&priv->hw_address,
+                    _nml_coerce_property_str_not_empty(g_variant_get_string(value, NULL)));
 
     /* always emit a changed signal here, even if "priv->hw_address" might be unchanged.
      * We want to emit the signal because we received a PropertiesChanged signal on D-Bus,

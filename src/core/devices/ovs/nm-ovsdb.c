@@ -1595,7 +1595,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         iter = json_object_iter(ovs);
         s    = json_object_iter_key(iter);
         if (s)
-            nm_utils_strdup_reset(&priv->db_uuid, s);
+            nm_strdup_reset(&priv->db_uuid, s);
     }
 
     json_object_foreach (interface, key, value) {
@@ -1665,8 +1665,8 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
             nm_assert(nm_streq0(ovs_interface->name, name));
 
-            changed |= nm_utils_strdup_reset(&ovs_interface->type, type);
-            changed |= nm_utils_strdup_reset(&ovs_interface->connection_uuid, connection_uuid);
+            changed |= nm_strdup_reset(&ovs_interface->type, type);
+            changed |= nm_strdup_reset(&ovs_interface->connection_uuid, connection_uuid);
             if (!_external_ids_equal(ovs_interface->external_ids, external_ids_arr)) {
                 NM_SWAP(&ovs_interface->external_ids, &external_ids_arr);
                 changed = TRUE;
@@ -1776,8 +1776,8 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
             nm_assert(nm_streq0(ovs_port->name, name));
 
-            changed |= nm_utils_strdup_reset(&ovs_port->name, name);
-            changed |= nm_utils_strdup_reset(&ovs_port->connection_uuid, connection_uuid);
+            changed |= nm_strdup_reset(&ovs_port->name, name);
+            changed |= nm_strdup_reset(&ovs_port->connection_uuid, connection_uuid);
             if (nm_strv_ptrarray_cmp(ovs_port->interfaces, interfaces) != 0) {
                 NM_SWAP(&ovs_port->interfaces, &interfaces);
                 changed = TRUE;
@@ -1881,8 +1881,8 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
             nm_assert(nm_streq0(ovs_bridge->name, name));
 
-            changed = nm_utils_strdup_reset(&ovs_bridge->name, name);
-            changed = nm_utils_strdup_reset(&ovs_bridge->connection_uuid, connection_uuid);
+            changed = nm_strdup_reset(&ovs_bridge->name, name);
+            changed = nm_strdup_reset(&ovs_bridge->connection_uuid, connection_uuid);
             if (nm_strv_ptrarray_cmp(ovs_bridge->ports, ports) != 0) {
                 NM_SWAP(&ovs_bridge->ports, &ports);
                 changed = TRUE;
