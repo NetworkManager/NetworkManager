@@ -258,6 +258,17 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 #define _NM_ENSURE_TYPE_CONST(type, value) ((const type) (value))
 #endif
 
+/* returns void, but does a compile time check that the argument is a pointer
+ * (that is, can be converted to (const void *)). It does not actually evaluate
+ * (value). That means, it's also safe to call _NM_ENSURE_POINTER(array[0]) if
+ * array might be NULL. It's also safe to call on a macro argument that is
+ * supposed to be evaluate at most once (this macro will not "execute" the
+ * argument). */
+#define _NM_ENSURE_POINTER(value)                                                 \
+    do {                                                                          \
+        _nm_unused const void *const _unused_for_type_check = 0 ? (value) : NULL; \
+    } while (0)
+
 #if _NM_CC_SUPPORT_GENERIC && (!defined(__clang__) || __clang_major__ > 3)
 #define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) \
     (_Generic((&(((container *) NULL)->field))[0], type : nm_offsetof(container, field)))
