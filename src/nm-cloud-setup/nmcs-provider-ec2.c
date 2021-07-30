@@ -145,9 +145,9 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
         gs_free const char **s_addrs = NULL;
         gsize                i, len;
 
-        s_addrs = nm_utils_strsplit_set_full(g_bytes_get_data(response, NULL),
-                                             "\n",
-                                             NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+        s_addrs = nm_strsplit_set_full(g_bytes_get_data(response, NULL),
+                                       "\n",
+                                       NM_STRSPLIT_SET_FLAGS_STRSTRIP);
         len     = NM_PTRARRAY_LEN(s_addrs);
 
         nm_assert(!config_iface_data->has_ipv4s);

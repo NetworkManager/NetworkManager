@@ -296,7 +296,7 @@ nm_logging_setup(const char *level, const char *domains, char **bad_domains, GEr
         }
     }
 
-    domains_v = nm_utils_strsplit_set(domains, ", ");
+    domains_v = nm_strsplit_set(domains, ", ");
     for (i_d = 0; domains_v && domains_v[i_d]; i_d++) {
         const char *   s = domains_v[i_d];
         const char *   p;

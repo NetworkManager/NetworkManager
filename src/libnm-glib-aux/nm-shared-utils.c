@@ -1732,7 +1732,7 @@ _char_lookup_has_all(const CharLookupTable *lookup, const char *candidates)
 }
 
 /**
- * nm_utils_strsplit_set_full:
+ * nm_strsplit_set_full:
  * @str: the string to split.
  * @delimiters: the set of delimiters.
  * @flags: additional flags for controlling the operation.
@@ -1746,7 +1746,7 @@ _char_lookup_has_all(const CharLookupTable *lookup, const char *candidates)
  * This never returns an empty array.
  *
  * Returns: %NULL if @str is %NULL or "".
- *   If @str only contains delimiters and %NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
+ *   If @str only contains delimiters and %NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
  *   is not set, it also returns %NULL.
  *   Otherwise, a %NULL terminated strv array containing the split words.
  *   (delimiter characters are removed).
@@ -1757,7 +1757,7 @@ _char_lookup_has_all(const CharLookupTable *lookup, const char *candidates)
  *   like "g_strstrip((char *) iter[0])".
  */
 const char **
-nm_utils_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsplitSetFlags flags)
+nm_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsplitSetFlags flags)
 {
     const char **   ptr;
     gsize           num_tokens;
@@ -1766,12 +1766,11 @@ nm_utils_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsp
     const char *    c_str;
     char *          s;
     CharLookupTable ch_lookup;
-    const gboolean  f_escaped = NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED);
+    const gboolean  f_escaped = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_ESCAPED);
     const gboolean  f_allow_escaping =
-        f_escaped || NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
-    const gboolean f_preserve_empty =
-        NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
-    const gboolean f_strstrip = NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+        f_escaped || NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+    const gboolean f_preserve_empty = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
+    const gboolean f_strstrip       = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_STRSTRIP);
 
     if (!str)
         return NULL;
@@ -1790,8 +1789,8 @@ nm_utils_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsp
     }
 
     if (!str[0]) {
-        /* We return %NULL here, also with NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY.
-         * That makes nm_utils_strsplit_set_full() with NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
+        /* We return %NULL here, also with NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY.
+         * That makes nm_strsplit_set_full() with NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
          * different from g_strsplit_set(), which would in this case return an empty array.
          * If you need to handle %NULL, and "" specially, then check the input string first. */
         return NULL;
@@ -2174,7 +2173,7 @@ nm_utils_escaped_tokens_options_split(char *str, const char **out_key, const cha
  * with the flags "EXTRACT_UNQUOTE | EXTRACT_RELAX". This is what
  * systemd uses to parse /proc/cmdline, and we do too.
  *
- * Splits the string. We have nm_utils_strsplit_set() which
+ * Splits the string. We have nm_strsplit_set() which
  * supports a variety of flags. However, extending that already
  * complex code to also support quotation and escaping is hard.
  * Instead, add a naive implementation.
@@ -4285,7 +4284,7 @@ nm_utils_get_start_time_for_pid(pid_t pid, char *out_state, pid_t *out_ppid)
 
     state = p[0];
 
-    tokens = nm_utils_strsplit_set(p, " ");
+    tokens = nm_strsplit_set(p, " ");
 
     if (NM_PTRARRAY_LEN(tokens) < 20)
         goto fail;

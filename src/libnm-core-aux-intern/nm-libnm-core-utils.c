@@ -14,7 +14,7 @@
 const char **
 nm_utils_bond_option_arp_ip_targets_split(const char *arp_ip_target)
 {
-    return nm_utils_strsplit_set_full(arp_ip_target, ",", NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+    return nm_strsplit_set_full(arp_ip_target, ",", NM_STRSPLIT_SET_FLAGS_STRSTRIP);
 }
 
 void

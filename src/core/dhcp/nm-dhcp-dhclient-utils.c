@@ -59,7 +59,7 @@ grab_request_options(GPtrArray *store, const char *line)
     gsize                i;
 
     /* Grab each 'request' or 'also request'  option and save for later */
-    line_v = nm_utils_strsplit_set(line, "\t ,");
+    line_v = nm_strsplit_set(line, "\t ,");
     for (i = 0; line_v && line_v[i]; i++) {
         const char *ss = nm_str_skip_leading_spaces(line_v[i]);
         gsize       l;
@@ -330,7 +330,7 @@ nm_dhcp_dhclient_create_config(const char *        interface,
         g_string_append_printf(new_contents, _("# Merged from %s\n\n"), orig_path);
         intf[0] = '\0';
 
-        lines = nm_utils_strsplit_set(orig_contents, "\n\r");
+        lines = nm_strsplit_set(orig_contents, "\n\r");
         for (line_i = 0; lines && lines[line_i]; line_i++) {
             const char *line = nm_str_skip_leading_spaces(lines[line_i]);
             const char *p;
@@ -620,7 +620,7 @@ nm_dhcp_dhclient_read_duid(const char *leasefile, GError **error)
     if (!g_file_get_contents(leasefile, &contents, NULL, error))
         return NULL;
 
-    contents_v = nm_utils_strsplit_set(contents, "\n\r");
+    contents_v = nm_strsplit_set(contents, "\n\r");
     for (i = 0; contents_v && contents_v[i]; i++) {
         const char *p = nm_str_skip_leading_spaces(contents_v[i]);
         GBytes *    duid;
@@ -671,7 +671,7 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
             return FALSE;
         }
 
-        lines = nm_utils_strsplit_set_with_empty(contents, "\n\r");
+        lines = nm_strsplit_set_with_empty(contents, "\n\r");
     }
 
     s = g_string_sized_new(len + 50);

@@ -656,85 +656,85 @@ int nm_utils_dbus_path_cmp(const char *dbus_path_a, const char *dbus_path_b);
 /*****************************************************************************/
 
 typedef enum {
-    NM_UTILS_STRSPLIT_SET_FLAGS_NONE = 0,
+    NM_STRSPLIT_SET_FLAGS_NONE = 0,
 
     /* by default, strsplit will coalesce consecutive delimiters and remove
      * them from the result. If this flag is present, empty values are preserved
      * and returned.
      *
-     * When combined with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, if a value gets
+     * When combined with %NM_STRSPLIT_SET_FLAGS_STRSTRIP, if a value gets
      * empty after strstrip(), it also gets removed. */
-    NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY = (1u << 0),
+    NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY = (1u << 0),
 
-    /* %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING means that delimiters prefixed
+    /* %NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING means that delimiters prefixed
      * by a backslash are not treated as a separator. Such delimiters and their escape
      * character are copied to the current word without unescaping them. In general,
-     * nm_utils_strsplit_set_full() does not remove any backslash escape characters
+     * nm_strsplit_set_full() does not remove any backslash escape characters
      * and does no unescaping. It only considers them for skipping to split at
      * an escaped delimiter.
      *
-     * If this is combined with (or implied by %NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED), then
+     * If this is combined with (or implied by %NM_STRSPLIT_SET_FLAGS_ESCAPED), then
      * the backslash escapes are removed from the result.
      */
-    NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING = (1u << 1),
+    NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING = (1u << 1),
 
     /* If flag is set, does the same as g_strstrip() on the returned tokens.
      * This will remove leading and trailing ascii whitespaces (g_ascii_isspace()
      * and NM_ASCII_SPACES).
      *
-     * - when combined with !%NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
+     * - when combined with !%NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
      *   empty tokens will be removed (and %NULL will be returned if that
      *   results in an empty string array).
-     * - when combined with %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING,
+     * - when combined with %NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING,
      *   trailing whitespace escaped by backslash are not stripped. */
-    NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP = (1u << 2),
+    NM_STRSPLIT_SET_FLAGS_STRSTRIP = (1u << 2),
 
-    /* This implies %NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING.
+    /* This implies %NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING.
      *
      * This will do a final run over all tokens and remove all backslash
      * escape characters that
      *   - precede a delimiter.
      *   - precede a backslash.
-     *   - precede a whitespace (only with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
+     *   - precede a whitespace (only with %NM_STRSPLIT_SET_FLAGS_STRSTRIP).
      *
-     *  Note that with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP, it is only
+     *  Note that with %NM_STRSPLIT_SET_FLAGS_STRSTRIP, it is only
      *  necessary to escape the very last whitespace (if the delimiters
      *  are not whitespace themself). So, technically, it would be sufficient
      *  to only unescape a backslash before the last whitespace and the user
      *  still could express everything. However, such a rule would be complicated
-     *  to understand, so when using backslash escaping with nm_utils_strsplit_set_full(),
+     *  to understand, so when using backslash escaping with nm_strsplit_set_full(),
      *  then all characters (including backslash) are treated verbatim, except:
      *
      *    - "\\$DELIMITER" (escaped delimiter)
      *    - "\\\\" (escaped backslash)
-     *    - "\\$SPACE" (escaped space) (only with %NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP).
+     *    - "\\$SPACE" (escaped space) (only with %NM_STRSPLIT_SET_FLAGS_STRSTRIP).
      *
      * Note that all other escapes like "\\n" or "\\001" are left alone.
      * That makes the escaping/unescaping rules simple. Also, for the most part
      * a text is just taken as-is, with little additional rules. Only backslashes
      * need extra care, and then only if they proceed one of the relevant characters.
      */
-    NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED = (1u << 3),
+    NM_STRSPLIT_SET_FLAGS_ESCAPED = (1u << 3),
 
 } NMUtilsStrsplitSetFlags;
 
 const char **
-nm_utils_strsplit_set_full(const char *str, const char *delimiter, NMUtilsStrsplitSetFlags flags);
+nm_strsplit_set_full(const char *str, const char *delimiter, NMUtilsStrsplitSetFlags flags);
 
 static inline const char **
-nm_utils_strsplit_set_with_empty(const char *str, const char *delimiters)
+nm_strsplit_set_with_empty(const char *str, const char *delimiters)
 {
     /* this returns the same result as g_strsplit_set(str, delimiters, -1), except
      * it does not deep-clone the strv array.
      * Also, for @str == "", this returns %NULL while g_strsplit_set() would return
      * an empty strv array. */
-    return nm_utils_strsplit_set_full(str, delimiters, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
+    return nm_strsplit_set_full(str, delimiters, NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
 }
 
 static inline const char **
-nm_utils_strsplit_set(const char *str, const char *delimiters)
+nm_strsplit_set(const char *str, const char *delimiters)
 {
-    return nm_utils_strsplit_set_full(str, delimiters, NM_UTILS_STRSPLIT_SET_FLAGS_NONE);
+    return nm_strsplit_set_full(str, delimiters, NM_STRSPLIT_SET_FLAGS_NONE);
 }
 
 gssize _nm_strv_find_first(const char *const *list, gssize len, const char *needle);
@@ -769,10 +769,9 @@ nm_copy_func_g_strdup(gconstpointer arg, gpointer user_data)
 static inline const char **
 nm_utils_escaped_tokens_split(const char *str, const char *delimiters)
 {
-    return nm_utils_strsplit_set_full(str,
-                                      delimiters,
-                                      NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED
-                                          | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+    return nm_strsplit_set_full(str,
+                                delimiters,
+                                NM_STRSPLIT_SET_FLAGS_ESCAPED | NM_STRSPLIT_SET_FLAGS_STRSTRIP);
 }
 
 typedef enum {
@@ -895,10 +894,10 @@ char **nm_utils_strsplit_quoted(const char *str);
 static inline const char **
 nm_utils_escaped_tokens_options_split_list(const char *str)
 {
-    return nm_utils_strsplit_set_full(str,
-                                      ",",
-                                      NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP
-                                          | NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+    return nm_strsplit_set_full(str,
+                                ",",
+                                NM_STRSPLIT_SET_FLAGS_STRSTRIP
+                                    | NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
 }
 
 void nm_utils_escaped_tokens_options_split(char *str, const char **out_key, const char **out_val);

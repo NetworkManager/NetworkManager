@@ -35,7 +35,7 @@ ip4_process_dhcpcd_rfc3442_routes(const char * iface,
     const char **        r;
     gboolean             have_routes = FALSE;
 
-    routes = nm_utils_strsplit_set(str, " ");
+    routes = nm_strsplit_set(str, " ");
     if (!routes)
         return FALSE;
 
@@ -164,7 +164,7 @@ ip4_process_dhclient_rfc3442_routes(const char * iface,
     const char *const *  o;
     gboolean             have_routes = FALSE;
 
-    octets = nm_utils_strsplit_set_with_empty(str, " .");
+    octets = nm_strsplit_set_with_empty(str, " .");
     if (NM_PTRARRAY_LEN(octets) < 5) {
         _LOG2W(LOGD_DHCP4, iface, "ignoring invalid classless static routes '%s'", str);
         return FALSE;
@@ -296,7 +296,7 @@ process_classful_routes(const char * iface,
     if (!str)
         return;
 
-    searches = nm_utils_strsplit_set(str, " ");
+    searches = nm_strsplit_set(str, " ");
     if (!searches)
         return;
 
@@ -376,7 +376,7 @@ process_domain_search(const char *iface, const char *str, GFunc add_func, gpoint
         return;
     }
 
-    searches = nm_utils_strsplit_set(unescaped, " ");
+    searches = nm_strsplit_set(unescaped, " ");
     for (s = searches; searches && *s; s++) {
         _LOG2I(LOGD_DHCP, iface, "  domain search '%s'", *s);
         add_func((gpointer) *s, user_data);
@@ -450,7 +450,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
          */
         str = g_hash_table_lookup(options, "routers");
         if (str) {
-            gs_free const char **routers = nm_utils_strsplit_set(str, " ");
+            gs_free const char **routers = nm_strsplit_set(str, " ");
             const char **        s;
 
             for (s = routers; routers && *s; s++) {
@@ -491,7 +491,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
 
     str = g_hash_table_lookup(options, "domain_name_servers");
     if (str) {
-        gs_free const char **dns = nm_utils_strsplit_set(str, " ");
+        gs_free const char **dns = nm_strsplit_set(str, " ");
         const char **        s;
 
         for (s = dns; dns && *s; s++) {
@@ -507,7 +507,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
 
     str = g_hash_table_lookup(options, "domain_name");
     if (str) {
-        gs_free const char **domains = nm_utils_strsplit_set(str, " ");
+        gs_free const char **domains = nm_strsplit_set(str, " ");
         const char **        s;
 
         for (s = domains; domains && *s; s++) {
@@ -522,7 +522,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
 
     str = g_hash_table_lookup(options, "netbios_name_servers");
     if (str) {
-        gs_free const char **nbns = nm_utils_strsplit_set(str, " ");
+        gs_free const char **nbns = nm_strsplit_set(str, " ");
         const char **        s;
 
         for (s = nbns; nbns && *s; s++) {
@@ -557,7 +557,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
 
     str = g_hash_table_lookup(options, "nis_servers");
     if (str) {
-        gs_free const char **nis = nm_utils_strsplit_set(str, " ");
+        gs_free const char **nis = nm_strsplit_set(str, " ");
         const char **        s;
 
         for (s = nis; nis && *s; s++) {
@@ -689,7 +689,7 @@ nm_dhcp_utils_ip6_config_from_options(NMDedupMultiIndex *multi_idx,
 
     str = g_hash_table_lookup(options, "dhcp6_name_servers");
     if (str) {
-        gs_free const char **dns = nm_utils_strsplit_set(str, " ");
+        gs_free const char **dns = nm_strsplit_set(str, " ");
         const char **        s;
 
         for (s = dns; dns && *s; s++) {

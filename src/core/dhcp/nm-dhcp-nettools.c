@@ -601,7 +601,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
         nm_str_buf_append_len0(&sbuf, (const char *) l_data, l_data_len);
 
         /* Multiple domains sometimes stuffed into option 15 "Domain Name". */
-        domains = nm_utils_strsplit_set(nm_str_buf_get_str(&sbuf), " ");
+        domains = nm_strsplit_set(nm_str_buf_get_str(&sbuf), " ");
 
         nm_str_buf_reset(&sbuf);
         if (domains) {

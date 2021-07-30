@@ -191,14 +191,13 @@ _value_strsplit(const char *value, ValueStrsplitMode split_mode, gsize *out_len)
     /* note that all modes remove empty tokens (",", "a,,b", ",,"). */
     switch (split_mode) {
     case VALUE_STRSPLIT_MODE_OBJLIST:
-        strv = nm_utils_strsplit_set_full(value,
-                                          ESCAPED_TOKENS_DELIMITERS,
-                                          NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+        strv =
+            nm_strsplit_set_full(value, ESCAPED_TOKENS_DELIMITERS, NM_STRSPLIT_SET_FLAGS_STRSTRIP);
         break;
     case VALUE_STRSPLIT_MODE_MULTILIST:
-        strv = nm_utils_strsplit_set_full(value,
-                                          ESCAPED_TOKENS_WITH_SPACES_DELIMTERS,
-                                          NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+        strv = nm_strsplit_set_full(value,
+                                    ESCAPED_TOKENS_WITH_SPACES_DELIMTERS,
+                                    NM_STRSPLIT_SET_FLAGS_STRSTRIP);
         break;
     case VALUE_STRSPLIT_MODE_ESCAPED_TOKENS:
         strv = nm_utils_escaped_tokens_split(value, ESCAPED_TOKENS_DELIMITERS);
@@ -309,7 +308,7 @@ _parse_ip_route(int family, const char *str, GError **error)
     nm_assert(!error || !*error);
 
     str_clean = nm_strstrip_avoid_copy_a(300, str, &str_clean_free);
-    routev    = nm_utils_strsplit_set(str_clean, " \t");
+    routev    = nm_strsplit_set(str_clean, " \t");
     if (!routev) {
         g_set_error(error, 1, 0, "'%s' is not valid. %s", str, ROUTE_SYNTAX);
         return NULL;
@@ -2271,7 +2270,7 @@ static gboolean _set_fcn_gobject_bytes(ARGS_SET_FCN)
     }
 
     /* Otherwise, consider the following format: AA b 0xCc D */
-    strv  = nm_utils_strsplit_set(value, " \t");
+    strv  = nm_strsplit_set(value, " \t");
     array = g_byte_array_sized_new(NM_PTRARRAY_LEN(strv));
     for (iter = strv; iter && *iter; iter++) {
         int    v;
@@ -2916,7 +2915,7 @@ static gboolean _set_fcn_dcb_flags(ARGS_SET_FCN)
         const char *const *  iter;
 
         /* Check for individual flag numbers */
-        strv = nm_utils_strsplit_set(value, " \t,");
+        strv = nm_strsplit_set(value, " \t,");
         for (iter = strv; iter && *iter; iter++) {
             t = _nm_utils_ascii_str_to_int64(*iter, 0, 0, DCB_ALL_FLAGS, -1);
 
@@ -2957,7 +2956,7 @@ dcb_parse_uint_array(const char *val,
     const char *const *  iter;
     gsize                i;
 
-    items = nm_utils_strsplit_set_with_empty(val, ",");
+    items = nm_strsplit_set_with_empty(val, ",");
     if (NM_PTRARRAY_LEN(items) != 8) {
         g_set_error_literal(error, 1, 0, _("must contain 8 comma-separated numbers"));
         return FALSE;
@@ -4033,7 +4032,7 @@ static gboolean _set_fcn_wired_s390_subchannels(ARGS_SET_FCN)
     if (_SET_FCN_DO_RESET_DEFAULT(property_info, modifier, value))
         return _gobject_property_reset_default(setting, property_info->property_name);
 
-    strv = nm_utils_strsplit_set(value, " ,\t");
+    strv = nm_strsplit_set(value, " ,\t");
     len  = NM_PTRARRAY_LEN(strv);
     if (len != 2 && len != 3) {
         g_set_error(error, 1, 0, _("'%s' is not valid; 2 or 3 strings should be provided"), value);

@@ -264,7 +264,7 @@ load_eni_ifaces(NMSIfupdownPlugin *self)
 
                     _LOGD("parse: found bridge ports %s for %s", ports, block->name);
 
-                    port_ifaces = nm_utils_strsplit_set(ports, " \t");
+                    port_ifaces = nm_strsplit_set(ports, " \t");
                     for (i = 0; port_ifaces && port_ifaces[i]; i++) {
                         const char *token = port_ifaces[i];
 
