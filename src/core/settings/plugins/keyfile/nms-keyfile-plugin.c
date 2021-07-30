@@ -101,27 +101,27 @@ _extra_flags_to_string(char *   str,
     const char *str0 = str;
 
     if (!is_nm_generated && !is_volatile && !is_external)
-        nm_utils_strbuf_append_str(&str, &str_len, "");
+        nm_strbuf_append_str(&str, &str_len, "");
     else {
         char ch = '(';
 
-        nm_utils_strbuf_append_c(&str, &str_len, ' ');
+        nm_strbuf_append_c(&str, &str_len, ' ');
         if (is_nm_generated) {
-            nm_utils_strbuf_append_c(&str, &str_len, ch);
-            nm_utils_strbuf_append_str(&str, &str_len, "nm-generated");
+            nm_strbuf_append_c(&str, &str_len, ch);
+            nm_strbuf_append_str(&str, &str_len, "nm-generated");
             ch = ',';
         }
         if (is_volatile) {
-            nm_utils_strbuf_append_c(&str, &str_len, ch);
-            nm_utils_strbuf_append_str(&str, &str_len, "volatile");
+            nm_strbuf_append_c(&str, &str_len, ch);
+            nm_strbuf_append_str(&str, &str_len, "volatile");
             ch = ',';
         }
         if (is_external) {
-            nm_utils_strbuf_append_c(&str, &str_len, ch);
-            nm_utils_strbuf_append_str(&str, &str_len, "external");
+            nm_strbuf_append_c(&str, &str_len, ch);
+            nm_strbuf_append_str(&str, &str_len, "external");
             ch = ',';
         }
-        nm_utils_strbuf_append_c(&str, &str_len, ')');
+        nm_strbuf_append_c(&str, &str_len, ')');
     }
 
     return str0;

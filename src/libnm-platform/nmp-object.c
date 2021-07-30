@@ -949,30 +949,30 @@ _vt_cmd_obj_to_string_link(const NMPObject *     obj,
     case NMP_OBJECT_TO_STRING_ID:
         return klass->cmd_plobj_to_string_id(&obj->object, buf, buf_size);
     case NMP_OBJECT_TO_STRING_ALL:
-        nm_utils_strbuf_append(&b,
-                               &buf_size,
-                               "[%s,%p,%u,%calive,%cvisible,%cin-nl,%p; ",
-                               klass->obj_type_name,
-                               obj,
-                               obj->parent._ref_count,
-                               nmp_object_is_alive(obj) ? '+' : '-',
-                               nmp_object_is_visible(obj) ? '+' : '-',
-                               obj->_link.netlink.is_in_netlink ? '+' : '-',
-                               obj->_link.udev.device);
+        nm_strbuf_append(&b,
+                         &buf_size,
+                         "[%s,%p,%u,%calive,%cvisible,%cin-nl,%p; ",
+                         klass->obj_type_name,
+                         obj,
+                         obj->parent._ref_count,
+                         nmp_object_is_alive(obj) ? '+' : '-',
+                         nmp_object_is_visible(obj) ? '+' : '-',
+                         obj->_link.netlink.is_in_netlink ? '+' : '-',
+                         obj->_link.udev.device);
         NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, b, buf_size);
-        nm_utils_strbuf_seek_end(&b, &buf_size);
+        nm_strbuf_seek_end(&b, &buf_size);
         if (obj->_link.netlink.lnk) {
-            nm_utils_strbuf_append_str(&b, &buf_size, "; ");
+            nm_strbuf_append_str(&b, &buf_size, "; ");
             nmp_object_to_string(obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_ALL, b, buf_size);
-            nm_utils_strbuf_seek_end(&b, &buf_size);
+            nm_strbuf_seek_end(&b, &buf_size);
         }
-        nm_utils_strbuf_append_c(&b, &buf_size, ']');
+        nm_strbuf_append_c(&b, &buf_size, ']');
         return buf;
     case NMP_OBJECT_TO_STRING_PUBLIC:
         NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, b, buf_size);
         if (obj->_link.netlink.lnk) {
-            nm_utils_strbuf_seek_end(&b, &buf_size);
-            nm_utils_strbuf_append_str(&b, &buf_size, "; ");
+            nm_strbuf_seek_end(&b, &buf_size);
+            nm_strbuf_append_str(&b, &buf_size, "; ");
             nmp_object_to_string(obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, b, buf_size);
         }
         return buf;
@@ -1065,29 +1065,28 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject *     obj,
     case NMP_OBJECT_TO_STRING_ALL:
         b = buf;
 
-        nm_utils_strbuf_append(
-            &b,
-            &buf_size,
-            "[%s,%p,%u,%calive,%cvisible; %s"
-            "%s",
-            klass->obj_type_name,
-            obj,
-            obj->parent._ref_count,
-            nmp_object_is_alive(obj) ? '+' : '-',
-            nmp_object_is_visible(obj) ? '+' : '-',
-            nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof(buf2)),
-            obj->_lnk_wireguard.peers_len > 0 ? " peers {" : "");
+        nm_strbuf_append(&b,
+                         &buf_size,
+                         "[%s,%p,%u,%calive,%cvisible; %s"
+                         "%s",
+                         klass->obj_type_name,
+                         obj,
+                         obj->parent._ref_count,
+                         nmp_object_is_alive(obj) ? '+' : '-',
+                         nmp_object_is_visible(obj) ? '+' : '-',
+                         nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof(buf2)),
+                         obj->_lnk_wireguard.peers_len > 0 ? " peers {" : "");
 
         for (i = 0; i < obj->_lnk_wireguard.peers_len; i++) {
             const NMPWireGuardPeer *peer = &obj->_lnk_wireguard.peers[i];
 
-            nm_utils_strbuf_append_str(&b, &buf_size, " { ");
+            nm_strbuf_append_str(&b, &buf_size, " { ");
             nm_platform_wireguard_peer_to_string(peer, b, buf_size);
-            nm_utils_strbuf_seek_end(&b, &buf_size);
-            nm_utils_strbuf_append_str(&b, &buf_size, " }");
+            nm_strbuf_seek_end(&b, &buf_size);
+            nm_strbuf_append_str(&b, &buf_size, " }");
         }
         if (obj->_lnk_wireguard.peers_len)
-            nm_utils_strbuf_append_str(&b, &buf_size, " }");
+            nm_strbuf_append_str(&b, &buf_size, " }");
 
         return buf;
     case NMP_OBJECT_TO_STRING_PUBLIC:

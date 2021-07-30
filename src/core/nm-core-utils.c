@@ -4072,8 +4072,8 @@ nm_utils_get_reverse_dns_domains_ip_4(guint32 addr, guint8 plen, GPtrArray *doma
         len = len0;
         str = s = g_malloc(len);
         for (i = octets; i > 0; i--)
-            nm_utils_strbuf_append(&s, &len, "%u.", p[i - 1] & 0xff);
-        nm_utils_strbuf_append_str(&s, &len, "in-addr.arpa");
+            nm_strbuf_append(&s, &len, "%u.", p[i - 1] & 0xff);
+        nm_strbuf_append_str(&s, &len, "in-addr.arpa");
 
         g_ptr_array_add(domains, str);
 
@@ -4124,8 +4124,8 @@ nm_utils_get_reverse_dns_domains_ip_6(const struct in6_addr *ip, guint8 plen, GP
         str = s = g_malloc(len);
 
         for (j = nibbles - 1; j >= 0; j--)
-            nm_utils_strbuf_append(&s, &len, "%x.", (addr.s6_addr[j / 2] >> N_SHIFT(j)) & 0xf);
-        nm_utils_strbuf_append_str(&s, &len, "ip6.arpa");
+            nm_strbuf_append(&s, &len, "%x.", (addr.s6_addr[j / 2] >> N_SHIFT(j)) & 0xf);
+        nm_strbuf_append_str(&s, &len, "ip6.arpa");
 
         g_ptr_array_add(domains, str);
 

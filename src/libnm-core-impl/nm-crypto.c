@@ -310,7 +310,7 @@ parse_old_openssl_key_file(const guint8 *      data,
                             "Malformed PEM file: both Proc-Type and DEK-Info tags are required.");
                 return FALSE;
             }
-            nm_utils_strbuf_append_str(&str_p, &str_len, p);
+            nm_strbuf_append_str(&str_p, &str_len, p);
             nm_assert(str_len > 0);
         }
     }

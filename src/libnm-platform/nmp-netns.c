@@ -43,22 +43,20 @@ __ns_types_to_str(int ns_types, int ns_types_already_set, char *buf, gsize len)
     const char *b = buf;
     char        bb[200];
 
-    nm_utils_strbuf_append_c(&buf, &len, '[');
+    nm_strbuf_append_c(&buf, &len, '[');
     if (ns_types & ~ns_types_already_set) {
-        nm_utils_strbuf_append_str(
-            &buf,
-            &len,
-            _clone_ns_to_str(ns_types & ~ns_types_already_set, bb, sizeof(bb)));
+        nm_strbuf_append_str(&buf,
+                             &len,
+                             _clone_ns_to_str(ns_types & ~ns_types_already_set, bb, sizeof(bb)));
     }
     if (ns_types & ns_types_already_set) {
         if (ns_types & ~ns_types_already_set)
-            nm_utils_strbuf_append_c(&buf, &len, '/');
-        nm_utils_strbuf_append_str(
-            &buf,
-            &len,
-            _clone_ns_to_str(ns_types & ns_types_already_set, bb, sizeof(bb)));
+            nm_strbuf_append_c(&buf, &len, '/');
+        nm_strbuf_append_str(&buf,
+                             &len,
+                             _clone_ns_to_str(ns_types & ns_types_already_set, bb, sizeof(bb)));
     }
-    nm_utils_strbuf_append_c(&buf, &len, ']');
+    nm_strbuf_append_c(&buf, &len, ']');
     return b;
 }
 #define _ns_types_to_str(ns_types, ns_types_already_set, buf) \

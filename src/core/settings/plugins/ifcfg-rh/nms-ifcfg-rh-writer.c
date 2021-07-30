@@ -1442,12 +1442,12 @@ write_vlan_setting(NMConnection *connection, shvarFile *ifcfg, gboolean *wired, 
     svSetValueBoolean(ifcfg, "REORDER_HDR", NM_FLAGS_HAS(vlan_flags, NM_VLAN_FLAG_REORDER_HEADERS));
     svSetValueBoolean(ifcfg, "GVRP", NM_FLAGS_HAS(vlan_flags, NM_VLAN_FLAG_GVRP));
 
-    nm_utils_strbuf_init(s_buf, &s_buf_ptr, &s_buf_len);
+    nm_strbuf_init_arr(s_buf, &s_buf_ptr, &s_buf_len);
 
     if (NM_FLAGS_HAS(vlan_flags, NM_VLAN_FLAG_LOOSE_BINDING))
-        nm_utils_strbuf_append_str(&s_buf_ptr, &s_buf_len, "LOOSE_BINDING");
+        nm_strbuf_append_str(&s_buf_ptr, &s_buf_len, "LOOSE_BINDING");
     if (!NM_FLAGS_HAS(vlan_flags, NM_VLAN_FLAG_REORDER_HEADERS))
-        nm_utils_strbuf_append(&s_buf_ptr, &s_buf_len, "%sNO_REORDER_HDR", s_buf[0] ? "," : "");
+        nm_strbuf_append(&s_buf_ptr, &s_buf_len, "%sNO_REORDER_HDR", s_buf[0] ? "," : "");
 
     svSetValueStr(ifcfg, "VLAN_FLAGS", s_buf);
 

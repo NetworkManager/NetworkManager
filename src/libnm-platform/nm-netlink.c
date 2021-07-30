@@ -162,28 +162,28 @@ nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
     }
 
     if (s)
-        nm_utils_strbuf_append_str(&buf, &len, s);
+        nm_strbuf_append_str(&buf, &len, s);
     else
-        nm_utils_strbuf_append(&buf, &len, "(%u)", (unsigned) hdr->nlmsg_type);
+        nm_strbuf_append(&buf, &len, "(%u)", (unsigned) hdr->nlmsg_type);
 
     flags = hdr->nlmsg_flags;
 
     if (!flags) {
-        nm_utils_strbuf_append_str(&buf, &len, ", flags 0");
+        nm_strbuf_append_str(&buf, &len, ", flags 0");
         goto flags_done;
     }
 
-#define _F(f, n)                                                   \
-    G_STMT_START                                                   \
-    {                                                              \
-        if (NM_FLAGS_ALL(flags, f)) {                              \
-            flags &= ~(f);                                         \
-            nm_utils_strbuf_append(&buf, &len, "%s%s", prefix, n); \
-            if (!flags)                                            \
-                goto flags_done;                                   \
-            prefix = ",";                                          \
-        }                                                          \
-    }                                                              \
+#define _F(f, n)                                             \
+    G_STMT_START                                             \
+    {                                                        \
+        if (NM_FLAGS_ALL(flags, f)) {                        \
+            flags &= ~(f);                                   \
+            nm_strbuf_append(&buf, &len, "%s%s", prefix, n); \
+            if (!flags)                                      \
+                goto flags_done;                             \
+            prefix = ",";                                    \
+        }                                                    \
+    }                                                        \
     G_STMT_END
 
     prefix       = ", flags ";
@@ -225,11 +225,11 @@ nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
 
     if (flags_before != flags)
         prefix = ";";
-    nm_utils_strbuf_append(&buf, &len, "%s0x%04x", prefix, flags);
+    nm_strbuf_append(&buf, &len, "%s0x%04x", prefix, flags);
 
 flags_done:
 
-    nm_utils_strbuf_append(&buf, &len, ", seq %u", (unsigned) hdr->nlmsg_seq);
+    nm_strbuf_append(&buf, &len, ", seq %u", (unsigned) hdr->nlmsg_seq);
 
     return b;
 }

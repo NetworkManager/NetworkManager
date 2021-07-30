@@ -439,27 +439,23 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                 const char *s_prefix = "ndisc: ";
 
                 if (self->ndisc_hop_limit_set) {
-                    nm_utils_strbuf_append(&p,
-                                           &l,
-                                           "%shop-limit=%d",
-                                           s_prefix,
-                                           self->ndisc_hop_limit_val);
+                    nm_strbuf_append(&p, &l, "%shop-limit=%d", s_prefix, self->ndisc_hop_limit_val);
                     s_prefix = ", ";
                 }
                 if (self->ndisc_reachable_time_msec_set) {
-                    nm_utils_strbuf_append(&p,
-                                           &l,
-                                           "%sreachable-time-msec=%u",
-                                           s_prefix,
-                                           self->ndisc_reachable_time_msec_val);
+                    nm_strbuf_append(&p,
+                                     &l,
+                                     "%sreachable-time-msec=%u",
+                                     s_prefix,
+                                     self->ndisc_reachable_time_msec_val);
                     s_prefix = ", ";
                 }
                 if (self->ndisc_retrans_timer_msec_set) {
-                    nm_utils_strbuf_append(&p,
-                                           &l,
-                                           "%sretrans-timer-msec=%u",
-                                           s_prefix,
-                                           self->ndisc_retrans_timer_msec_val);
+                    nm_strbuf_append(&p,
+                                     &l,
+                                     "%sretrans-timer-msec=%u",
+                                     s_prefix,
+                                     self->ndisc_retrans_timer_msec_val);
                     s_prefix = ", ";
                 }
                 _L("%s", sbuf);
