@@ -461,7 +461,7 @@ _parse_ip_method(const char *kind)
 
     /* dracut also supports combinations, separated by comma. We don't
      * support arbitrary combinations, but accept specific subsets. */
-    strv = nm_utils_strsplit_set_full(kind, ",", NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+    strv = nm_strsplit_set_full(kind, ",", NM_STRSPLIT_SET_FLAGS_STRSTRIP);
     if (!strv)
         return NULL;
 

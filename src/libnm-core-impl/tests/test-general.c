@@ -542,27 +542,25 @@ test_nm_g_slice_free_fcn(void)
 /*****************************************************************************/
 
 static void
-_do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
-                                     const char *            str,
-                                     gsize                   words_len,
-                                     const char *const *     exp_words)
+_do_test_nm_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
+                               const char *            str,
+                               gsize                   words_len,
+                               const char *const *     exp_words)
 {
 #define DELIMITERS   " \n"
 #define DELIMITERS_C ' ', '\n'
 
     gs_free const char **words = NULL;
     gsize                i, j, k;
-    const gboolean       f_allow_escaping =
-        NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
-    const gboolean f_preserve_empty =
-        NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
+    const gboolean     f_allow_escaping = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+    const gboolean     f_preserve_empty = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
     const char *       s1;
     gsize              initial_offset;
     gs_strfreev char **words_g = NULL;
 
-    g_assert(!NM_FLAGS_ANY(flags,
-                           ~(NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING
-                             | NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY)));
+    g_assert(!NM_FLAGS_ANY(
+        flags,
+        ~(NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING | NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY)));
 
     /* assert that the expected words are valid (and don't contain unescaped delimiters). */
     for (i = 0; i < words_len; i++) {
@@ -623,12 +621,12 @@ _do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
         }
     }
 
-    if (flags == NM_UTILS_STRSPLIT_SET_FLAGS_NONE && nmtst_get_rand_bool())
-        words = nm_utils_strsplit_set(str, DELIMITERS);
-    else if (flags == NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY && nmtst_get_rand_bool())
-        words = nm_utils_strsplit_set_with_empty(str, DELIMITERS);
+    if (flags == NM_STRSPLIT_SET_FLAGS_NONE && nmtst_get_rand_bool())
+        words = nm_strsplit_set(str, DELIMITERS);
+    else if (flags == NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY && nmtst_get_rand_bool())
+        words = nm_strsplit_set_with_empty(str, DELIMITERS);
     else
-        words = nm_utils_strsplit_set_full(str, DELIMITERS, flags);
+        words = nm_strsplit_set_full(str, DELIMITERS, flags);
 
     g_assert_cmpint(NM_PTRARRAY_LEN(words), ==, words_len);
 
@@ -751,14 +749,14 @@ _do_test_nm_utils_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
 }
 
 static void
-_do_test_nm_utils_strsplit_set_f(NMUtilsStrsplitSetFlags flags,
-                                 const char *            str,
-                                 gsize                   words_len,
-                                 const char *const *     exp_words)
+_do_test_nm_strsplit_set_f(NMUtilsStrsplitSetFlags flags,
+                           const char *            str,
+                           gsize                   words_len,
+                           const char *const *     exp_words)
 {
-    _do_test_nm_utils_strsplit_set_f_one(flags, str, words_len, exp_words);
+    _do_test_nm_strsplit_set_f_one(flags, str, words_len, exp_words);
 
-    if (NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY)) {
+    if (NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY)) {
         gs_unref_ptrarray GPtrArray *exp_words2 = NULL;
         gsize                        k;
 
@@ -768,32 +766,32 @@ _do_test_nm_utils_strsplit_set_f(NMUtilsStrsplitSetFlags flags,
                 g_ptr_array_add(exp_words2, (gpointer) exp_words[k]);
         }
 
-        _do_test_nm_utils_strsplit_set_f_one(flags & (~NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY),
-                                             str,
-                                             exp_words2->len,
-                                             (const char *const *) exp_words2->pdata);
+        _do_test_nm_strsplit_set_f_one(flags & (~NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY),
+                                       str,
+                                       exp_words2->len,
+                                       (const char *const *) exp_words2->pdata);
     }
 }
 
-#define do_test_nm_utils_strsplit_set_f(flags, str, ...) \
-    _do_test_nm_utils_strsplit_set_f(flags, str, NM_NARG(__VA_ARGS__), NM_MAKE_STRV(__VA_ARGS__))
+#define do_test_nm_strsplit_set_f(flags, str, ...) \
+    _do_test_nm_strsplit_set_f(flags, str, NM_NARG(__VA_ARGS__), NM_MAKE_STRV(__VA_ARGS__))
 
-#define do_test_nm_utils_strsplit_set(allow_escaping, str, ...)                                   \
-    do_test_nm_utils_strsplit_set_f((allow_escaping) ? NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING \
-                                                     : NM_UTILS_STRSPLIT_SET_FLAGS_NONE,          \
-                                    str,                                                          \
-                                    ##__VA_ARGS__)
+#define do_test_nm_strsplit_set(allow_escaping, str, ...)                             \
+    do_test_nm_strsplit_set_f((allow_escaping) ? NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING \
+                                               : NM_STRSPLIT_SET_FLAGS_NONE,          \
+                              str,                                                    \
+                              ##__VA_ARGS__)
 
 static void
-_do_test_nm_utils_strsplit_set_simple(NMUtilsStrsplitSetFlags flags,
-                                      const char *            str,
-                                      gsize                   words_len,
-                                      const char *const *     exp_words)
+_do_test_nm_strsplit_set_simple(NMUtilsStrsplitSetFlags flags,
+                                const char *            str,
+                                gsize                   words_len,
+                                const char *const *     exp_words)
 {
     gs_free const char **tokens = NULL;
     gsize                n_tokens;
 
-    tokens = nm_utils_strsplit_set_full(str, DELIMITERS, flags);
+    tokens = nm_strsplit_set_full(str, DELIMITERS, flags);
 
     if (!tokens) {
         g_assert_cmpint(words_len, ==, 0);
@@ -826,107 +824,87 @@ _do_test_nm_utils_strsplit_set_simple(NMUtilsStrsplitSetFlags flags,
     }
     g_assert_cmpint(words_len, ==, NM_PTRARRAY_LEN(tokens));
 }
-#define do_test_nm_utils_strsplit_set_simple(flags, str, ...)   \
-    _do_test_nm_utils_strsplit_set_simple((flags),              \
-                                          (str),                \
-                                          NM_NARG(__VA_ARGS__), \
-                                          NM_MAKE_STRV(__VA_ARGS__))
+#define do_test_nm_strsplit_set_simple(flags, str, ...) \
+    _do_test_nm_strsplit_set_simple((flags), (str), NM_NARG(__VA_ARGS__), NM_MAKE_STRV(__VA_ARGS__))
 
 static void
-test_nm_utils_strsplit_set(void)
+test_nm_strsplit_set(void)
 {
     gs_unref_ptrarray GPtrArray *words_exp = NULL;
     guint                        test_run;
 
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_NONE, NULL);
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_NONE, "");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_NONE, " ");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_NONE, "a  b", "a", "b");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_NONE, NULL);
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_NONE, "");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_NONE, " ");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_NONE, "a  b", "a", "b");
 
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, NULL);
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, " ", "", "");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "  ", "", "", "");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "a  ", "a", "", "");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
-                                    "a  b",
-                                    "a",
-                                    "",
-                                    "b");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
-                                    " ab  b",
-                                    "",
-                                    "ab",
-                                    "",
-                                    "b");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
-                                    "ab  b",
-                                    "ab",
-                                    "",
-                                    "b");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "abb", "abb");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
-                                    "abb  bb ",
-                                    "abb",
-                                    "",
-                                    "bb",
-                                    "");
-    do_test_nm_utils_strsplit_set_f(NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
-                                    "abb bcb ",
-                                    "abb",
-                                    "bcb",
-                                    "");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, NULL);
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, " ", "", "");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "  ", "", "", "");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "a  ", "a", "", "");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "a  b", "a", "", "b");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, " ab  b", "", "ab", "", "b");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "ab  b", "ab", "", "b");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "abb", "abb");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
+                              "abb  bb ",
+                              "abb",
+                              "",
+                              "bb",
+                              "");
+    do_test_nm_strsplit_set_f(NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY, "abb bcb ", "abb", "bcb", "");
 
-    do_test_nm_utils_strsplit_set(FALSE, NULL);
-    do_test_nm_utils_strsplit_set(FALSE, "");
-    do_test_nm_utils_strsplit_set(FALSE, "\n");
-    do_test_nm_utils_strsplit_set(TRUE, " \t\n", "\t");
-    do_test_nm_utils_strsplit_set(FALSE, "a", "a");
-    do_test_nm_utils_strsplit_set(FALSE, "a b", "a", "b");
-    do_test_nm_utils_strsplit_set(FALSE, "a\rb", "a\rb");
-    do_test_nm_utils_strsplit_set(FALSE, "  a\rb  ", "a\rb");
-    do_test_nm_utils_strsplit_set(FALSE, "  a bbbd afds ere", "a", "bbbd", "afds", "ere");
-    do_test_nm_utils_strsplit_set(FALSE,
-                                  "1 2 3 4 5 6 7 8 9 0 "
-                                  "1 2 3 4 5 6 7 8 9 0 "
-                                  "1 2 3 4 5 6 7 8 9 0",
-                                  "1",
-                                  "2",
-                                  "3",
-                                  "4",
-                                  "5",
-                                  "6",
-                                  "7",
-                                  "8",
-                                  "9",
-                                  "0",
-                                  "1",
-                                  "2",
-                                  "3",
-                                  "4",
-                                  "5",
-                                  "6",
-                                  "7",
-                                  "8",
-                                  "9",
-                                  "0",
-                                  "1",
-                                  "2",
-                                  "3",
-                                  "4",
-                                  "5",
-                                  "6",
-                                  "7",
-                                  "8",
-                                  "9",
-                                  "0");
-    do_test_nm_utils_strsplit_set(TRUE, "\\", "\\");
-    do_test_nm_utils_strsplit_set(TRUE, "\\ ", "\\ ");
-    do_test_nm_utils_strsplit_set(TRUE, "\\\\", "\\\\");
-    do_test_nm_utils_strsplit_set(TRUE, "\\\t", "\\\t");
-    do_test_nm_utils_strsplit_set(TRUE, "foo\\", "foo\\");
-    do_test_nm_utils_strsplit_set(TRUE, "bar foo\\", "bar", "foo\\");
-    do_test_nm_utils_strsplit_set(TRUE, "\\ a b\\ \\  c", "\\ a", "b\\ \\ ", "c");
+    do_test_nm_strsplit_set(FALSE, NULL);
+    do_test_nm_strsplit_set(FALSE, "");
+    do_test_nm_strsplit_set(FALSE, "\n");
+    do_test_nm_strsplit_set(TRUE, " \t\n", "\t");
+    do_test_nm_strsplit_set(FALSE, "a", "a");
+    do_test_nm_strsplit_set(FALSE, "a b", "a", "b");
+    do_test_nm_strsplit_set(FALSE, "a\rb", "a\rb");
+    do_test_nm_strsplit_set(FALSE, "  a\rb  ", "a\rb");
+    do_test_nm_strsplit_set(FALSE, "  a bbbd afds ere", "a", "bbbd", "afds", "ere");
+    do_test_nm_strsplit_set(FALSE,
+                            "1 2 3 4 5 6 7 8 9 0 "
+                            "1 2 3 4 5 6 7 8 9 0 "
+                            "1 2 3 4 5 6 7 8 9 0",
+                            "1",
+                            "2",
+                            "3",
+                            "4",
+                            "5",
+                            "6",
+                            "7",
+                            "8",
+                            "9",
+                            "0",
+                            "1",
+                            "2",
+                            "3",
+                            "4",
+                            "5",
+                            "6",
+                            "7",
+                            "8",
+                            "9",
+                            "0",
+                            "1",
+                            "2",
+                            "3",
+                            "4",
+                            "5",
+                            "6",
+                            "7",
+                            "8",
+                            "9",
+                            "0");
+    do_test_nm_strsplit_set(TRUE, "\\", "\\");
+    do_test_nm_strsplit_set(TRUE, "\\ ", "\\ ");
+    do_test_nm_strsplit_set(TRUE, "\\\\", "\\\\");
+    do_test_nm_strsplit_set(TRUE, "\\\t", "\\\t");
+    do_test_nm_strsplit_set(TRUE, "foo\\", "foo\\");
+    do_test_nm_strsplit_set(TRUE, "bar foo\\", "bar", "foo\\");
+    do_test_nm_strsplit_set(TRUE, "\\ a b\\ \\  c", "\\ a", "b\\ \\ ", "c");
 
     words_exp = g_ptr_array_new_with_free_func(g_free);
     for (test_run = 0; test_run < 100; test_run++) {
@@ -974,52 +952,40 @@ test_nm_utils_strsplit_set(void)
             words_len = 0;
         }
 
-        _do_test_nm_utils_strsplit_set_f((f_allow_escaping
-                                              ? NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING
-                                              : NM_UTILS_STRSPLIT_SET_FLAGS_NONE)
-                                             | NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
-                                         str,
-                                         words_len,
-                                         (const char *const *) words_exp->pdata);
+        _do_test_nm_strsplit_set_f(
+            (f_allow_escaping ? NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING : NM_STRSPLIT_SET_FLAGS_NONE)
+                | NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
+            str,
+            words_len,
+            (const char *const *) words_exp->pdata);
     }
 
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED, "\t", "\t");
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED
-                                             | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP,
-                                         "\t");
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED
-                                             | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP
-                                             | NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
-                                         "\t",
-                                         "");
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED
-                                             | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP
-                                             | NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
-                                         "\t\\\t\t\t\\\t",
-                                         "\t\t\t\t");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED, "\t", "\t");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED | NM_STRSPLIT_SET_FLAGS_STRSTRIP,
+                                   "\t");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED | NM_STRSPLIT_SET_FLAGS_STRSTRIP
+                                       | NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
+                                   "\t",
+                                   "");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED | NM_STRSPLIT_SET_FLAGS_STRSTRIP
+                                       | NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY,
+                                   "\t\\\t\t\t\\\t",
+                                   "\t\t\t\t");
 
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED, "\ta", "\ta");
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED
-                                             | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP,
-                                         "\ta",
-                                         "a");
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED,
-                                         "\ta\\ b\t\\ ",
-                                         "\ta b\t ");
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED
-                                             | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP,
-                                         "\ta\\ b\t\\ \t",
-                                         "a b\t ");
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED, "a\\  b", "a ", "b");
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED,
-                                         "\ta\\  b",
-                                         "\ta ",
-                                         "b");
-    do_test_nm_utils_strsplit_set_simple(NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED
-                                             | NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP,
-                                         "\ta\\  b",
-                                         "a ",
-                                         "b");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED, "\ta", "\ta");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED | NM_STRSPLIT_SET_FLAGS_STRSTRIP,
+                                   "\ta",
+                                   "a");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED, "\ta\\ b\t\\ ", "\ta b\t ");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED | NM_STRSPLIT_SET_FLAGS_STRSTRIP,
+                                   "\ta\\ b\t\\ \t",
+                                   "a b\t ");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED, "a\\  b", "a ", "b");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED, "\ta\\  b", "\ta ", "b");
+    do_test_nm_strsplit_set_simple(NM_STRSPLIT_SET_FLAGS_ESCAPED | NM_STRSPLIT_SET_FLAGS_STRSTRIP,
+                                   "\ta\\  b",
+                                   "a ",
+                                   "b");
 }
 
 /*****************************************************************************/
@@ -10718,7 +10684,7 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_c_list_sort", test_c_list_sort);
     g_test_add_func("/core/general/test_dedup_multi", test_dedup_multi);
     g_test_add_func("/core/general/test_utils_str_utf8safe", test_utils_str_utf8safe);
-    g_test_add_func("/core/general/test_nm_utils_strsplit_set", test_nm_utils_strsplit_set);
+    g_test_add_func("/core/general/test_nm_strsplit_set", test_nm_strsplit_set);
     g_test_add_func("/core/general/test_nm_utils_escaped_tokens", test_nm_utils_escaped_tokens);
     g_test_add_func("/core/general/test_nm_in_set", test_nm_in_set);
     g_test_add_func("/core/general/test_nm_in_strset", test_nm_in_strset);

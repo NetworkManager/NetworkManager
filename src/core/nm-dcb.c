@@ -35,7 +35,7 @@ do_helper(const char *iface,
     cmdline = g_strdup_vprintf(fmt, args);
     va_end(args);
 
-    split = nm_utils_strsplit_set_with_empty(cmdline, " ");
+    split = nm_strsplit_set_with_empty(cmdline, " ");
     if (!split) {
         g_set_error(error,
                     NM_MANAGER_ERROR,

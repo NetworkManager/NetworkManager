@@ -1666,7 +1666,7 @@ split_required_fields_for_con_show(const char *input,
     str1 = g_string_new(NULL);
     str2 = g_string_new(NULL);
 
-    fields = nm_utils_strsplit_set_with_empty(input, ",");
+    fields = nm_strsplit_set_with_empty(input, ",");
     for (iter = fields; iter && *iter; iter++) {
         char *   s_mutable = (char *) (*iter);
         char *   dot;
@@ -2007,7 +2007,7 @@ parse_preferred_connection_order(const char *order, GError **error)
     gboolean             inverse, unique;
     guint                i;
 
-    strv = nm_utils_strsplit_set(order, ":");
+    strv = nm_strsplit_set(order, ":");
     if (!strv) {
         g_set_error(error, NMCLI_ERROR, 0, _("incorrect string '%s' of '--order' option"), order);
         return NULL;

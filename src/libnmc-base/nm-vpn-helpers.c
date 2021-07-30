@@ -236,7 +236,7 @@ nm_vpn_openconnect_authenticate_helper(const char *host,
      * HOST='1.2.3.4'
      * FINGERPRINT='sha1:32bac90cf09a722e10ecc1942c67fe2ac8c21e2e'
      */
-    output_v = nm_utils_strsplit_set_with_empty(output, "\r\n");
+    output_v = nm_strsplit_set_with_empty(output, "\r\n");
     for (iter = output_v; iter && *iter; iter++) {
         char *s_mutable = (char *) *iter;
 

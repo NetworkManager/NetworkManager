@@ -397,7 +397,7 @@ ifupdown_ip4_add_dns(NMSettingIPConfig *s_ip4, const char *dns)
     if (dns == NULL)
         return;
 
-    list = nm_utils_strsplit_set(dns, " \t");
+    list = nm_strsplit_set(dns, " \t");
     for (iter = list; iter && *iter; iter++) {
         if (!inet_pton(AF_INET, *iter, &addr)) {
             _LOGW("    ignoring invalid nameserver '%s'", *iter);
@@ -497,7 +497,7 @@ update_ip4_setting_from_if_block(NMConnection *connection, if_block *block, GErr
             gs_free const char **list = NULL;
             const char **        iter;
 
-            list = nm_utils_strsplit_set(search_v, " \t");
+            list = nm_strsplit_set(search_v, " \t");
             for (iter = list; iter && *iter; iter++) {
                 if (!nm_setting_ip_config_add_dns_search(s_ip4, *iter))
                     _LOGW("    duplicate DNS domain '%s'", *iter);
@@ -521,7 +521,7 @@ ifupdown_ip6_add_dns(NMSettingIPConfig *s_ip6, const char *dns)
     if (dns == NULL)
         return;
 
-    list = nm_utils_strsplit_set(dns, " \t");
+    list = nm_strsplit_set(dns, " \t");
     for (iter = list; iter && *iter; iter++) {
         if (!inet_pton(AF_INET6, *iter, &addr)) {
             _LOGW("    ignoring invalid nameserver '%s'", *iter);
@@ -605,7 +605,7 @@ update_ip6_setting_from_if_block(NMConnection *connection, if_block *block, GErr
             gs_free const char **list = NULL;
             const char **        iter;
 
-            list = nm_utils_strsplit_set(search_v, " \t");
+            list = nm_strsplit_set(search_v, " \t");
             for (iter = list; iter && *iter; iter++) {
                 if (!nm_setting_ip_config_add_dns_search(s_ip6, *iter))
                     _LOGW("    duplicate DNS domain '%s'", *iter);

@@ -362,7 +362,7 @@ _set_fcn_precheck_connection_secondaries(NMClient *  client,
     char **              iter;
     gboolean             modified = FALSE;
 
-    strv0 = nm_utils_strsplit_set(value, " \t,");
+    strv0 = nm_strsplit_set(value, " \t,");
     if (!strv0)
         return TRUE;
 

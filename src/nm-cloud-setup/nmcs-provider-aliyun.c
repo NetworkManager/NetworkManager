@@ -159,9 +159,9 @@ _get_config_fetch_done_cb(NMHttpClient *         http_client,
     switch (fetch_type) {
     case GET_CONFIG_FETCH_DONE_TYPE_PRIVATE_IPV4S:
 
-        s_addrs = nm_utils_strsplit_set_full(g_bytes_get_data(response, NULL),
-                                             ",",
-                                             NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+        s_addrs = nm_strsplit_set_full(g_bytes_get_data(response, NULL),
+                                       ",",
+                                       NM_STRSPLIT_SET_FLAGS_STRSTRIP);
         len     = NM_PTRARRAY_LEN(s_addrs);
         nm_assert(!config_iface_data->has_ipv4s);
         nm_assert(!config_iface_data->ipv4s_arr);

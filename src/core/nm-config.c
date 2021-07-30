@@ -336,7 +336,7 @@ no_auto_default_from_file(const char *no_auto_default_file)
     gsize         i;
 
     if (no_auto_default_file && g_file_get_contents(no_auto_default_file, &data, NULL, NULL))
-        list = nm_utils_strsplit_set(data, "\n");
+        list = nm_strsplit_set(data, "\n");
 
     if (list) {
         for (i = 0; list[i]; i++)

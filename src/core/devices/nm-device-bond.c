@@ -250,9 +250,8 @@ set_arp_targets(NMDevice *device, const char *cur_arp_ip_target, const char *new
     gsize                        i;
     gsize                        j;
 
-    cur_strv = nm_utils_strsplit_set_full(cur_arp_ip_target,
-                                          NM_ASCII_SPACES,
-                                          NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+    cur_strv =
+        nm_strsplit_set_full(cur_arp_ip_target, NM_ASCII_SPACES, NM_STRSPLIT_SET_FLAGS_STRSTRIP);
     new_strv = nm_utils_bond_option_arp_ip_targets_split(new_arp_ip_target);
 
     cur_len = NM_PTRARRAY_LEN(cur_strv);

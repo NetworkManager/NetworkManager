@@ -124,7 +124,7 @@ nmt_newt_parse_colors(const char *s, bool is_newt)
     gs_free const char **lines = NULL;
     size_t               i;
 
-    lines = nm_utils_strsplit_set(s, ";:\n\r\t ");
+    lines = nm_strsplit_set(s, ";:\n\r\t ");
 
     if (!lines)
         return;
