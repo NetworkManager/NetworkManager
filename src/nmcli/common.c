@@ -712,7 +712,7 @@ get_secrets_from_user(const NmcConfig *nmc_config,
                     } else {
                         /* Prefill the password if we have it. */
                         rl_startup_hook = nmc_rl_set_deftext;
-                        nm_utils_strdup_reset(&nmc_rl_pre_input_deftext, secret->value);
+                        nm_strdup_reset(&nmc_rl_pre_input_deftext, secret->value);
                     }
                 }
                 if (msg)

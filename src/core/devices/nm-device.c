@@ -5803,7 +5803,7 @@ nm_device_update_from_platform_link(NMDevice *self, const NMPlatformLink *plink)
         _notify(self, PROP_PATH);
     }
 
-    if (plink && !nm_str_is_empty(plink->name) && nm_utils_strdup_reset(&priv->iface_, plink->name))
+    if (plink && !nm_str_is_empty(plink->name) && nm_strdup_reset(&priv->iface_, plink->name))
         _notify(self, PROP_IFACE);
 
     str = plink ? plink->driver : NULL;

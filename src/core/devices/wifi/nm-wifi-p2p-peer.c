@@ -168,7 +168,7 @@ nm_wifi_p2p_peer_set_name(NMWifiP2PPeer *peer, const char *str)
 {
     NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE(peer);
 
-    if (!nm_utils_strdup_reset(&priv->name, str))
+    if (!nm_strdup_reset(&priv->name, str))
         return FALSE;
     _notify(peer, PROP_NAME);
     return TRUE;
@@ -187,7 +187,7 @@ nm_wifi_p2p_peer_set_manufacturer(NMWifiP2PPeer *peer, const char *str)
 {
     NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE(peer);
 
-    if (!nm_utils_strdup_reset(&priv->manufacturer, str))
+    if (!nm_strdup_reset(&priv->manufacturer, str))
         return FALSE;
     _notify(peer, PROP_MANUFACTURER);
     return TRUE;
@@ -206,7 +206,7 @@ nm_wifi_p2p_peer_set_model(NMWifiP2PPeer *peer, const char *str)
 {
     NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE(peer);
 
-    if (!nm_utils_strdup_reset(&priv->model, str))
+    if (!nm_strdup_reset(&priv->model, str))
         return FALSE;
     _notify(peer, PROP_MODEL);
     return TRUE;
@@ -225,7 +225,7 @@ nm_wifi_p2p_peer_set_model_number(NMWifiP2PPeer *peer, const char *str)
 {
     NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE(peer);
 
-    if (!nm_utils_strdup_reset(&priv->model_number, str))
+    if (!nm_strdup_reset(&priv->model_number, str))
         return FALSE;
     _notify(peer, PROP_MODEL_NUMBER);
     return TRUE;
@@ -244,7 +244,7 @@ nm_wifi_p2p_peer_set_serial(NMWifiP2PPeer *peer, const char *str)
 {
     NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE(peer);
 
-    if (!nm_utils_strdup_reset(&priv->serial, str))
+    if (!nm_strdup_reset(&priv->serial, str))
         return FALSE;
     _notify(peer, PROP_SERIAL);
     return TRUE;

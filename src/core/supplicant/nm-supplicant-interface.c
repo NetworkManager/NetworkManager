@@ -918,19 +918,19 @@ _peer_info_properties_changed(NMSupplicantInterface *self,
         peer_info->signal_percent = nm_wifi_utils_level_to_quality(v_i32);
 
     if (nm_g_variant_lookup(properties, "DeviceName", "&s", &v_s))
-        nm_utils_strdup_reset(&peer_info->device_name, v_s);
+        nm_strdup_reset(&peer_info->device_name, v_s);
 
     if (nm_g_variant_lookup(properties, "Manufacturer", "&s", &v_s))
-        nm_utils_strdup_reset(&peer_info->manufacturer, v_s);
+        nm_strdup_reset(&peer_info->manufacturer, v_s);
 
     if (nm_g_variant_lookup(properties, "Model", "&s", &v_s))
-        nm_utils_strdup_reset(&peer_info->model, v_s);
+        nm_strdup_reset(&peer_info->model, v_s);
 
     if (nm_g_variant_lookup(properties, "ModelNumber", "&s", &v_s))
-        nm_utils_strdup_reset(&peer_info->model_number, v_s);
+        nm_strdup_reset(&peer_info->model_number, v_s);
 
     if (nm_g_variant_lookup(properties, "Serial", "&s", &v_s))
-        nm_utils_strdup_reset(&peer_info->serial, v_s);
+        nm_strdup_reset(&peer_info->serial, v_s);
 
     if (nm_g_variant_lookup(properties, "Groups", "^a&o", &v_strv)) {
         g_free(peer_info->groups);
@@ -1907,11 +1907,11 @@ _properties_changed_main(NMSupplicantInterface *self, GVariant *properties)
     }
 
     if (nm_g_variant_lookup(properties, "Ifname", "&s", &v_s)) {
-        if (nm_utils_strdup_reset(&priv->ifname, v_s))
+        if (nm_strdup_reset(&priv->ifname, v_s))
             do_log_driver_info = TRUE;
     }
     if (nm_g_variant_lookup(properties, "Driver", "&s", &v_s)) {
-        if (nm_utils_strdup_reset(&priv->driver, v_s))
+        if (nm_strdup_reset(&priv->driver, v_s))
             do_log_driver_info = TRUE;
     }
 

@@ -85,7 +85,7 @@ get_secrets_from_user(const NmcConfig *nmc_config,
         if (secret->value) {
             /* Prefill the password if we have it. */
             rl_startup_hook = set_deftext;
-            nm_utils_strdup_reset(&pre_input_deftext, secret->value);
+            nm_strdup_reset(&pre_input_deftext, secret->value);
         }
         if (secret->no_prompt_entry_id)
             pwd = nmc_readline(nmc_config, "%s: ", secret->pretty_name);

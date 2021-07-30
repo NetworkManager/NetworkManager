@@ -596,7 +596,7 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
 
     nm_clear_g_source_inst(&priv->try_start_timeout_source);
 
-    nm_utils_strdup_reset(&priv->dbus_owner, owner);
+    nm_strdup_reset(&priv->dbus_owner, owner);
 
     if (owner) {
         priv->try_start_blocked    = FALSE;

@@ -214,7 +214,7 @@ _name_owner_changed_cb(GDBusConnection *connection,
           gl->name_owner ?: "(null)",
           new_owner ?: "(null)");
 
-    nm_utils_strdup_reset(&gl->name_owner, new_owner);
+    nm_strdup_reset(&gl->name_owner, new_owner);
 }
 
 typedef struct {
