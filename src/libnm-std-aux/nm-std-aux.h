@@ -410,12 +410,10 @@ _nm_ptrarray_len_impl(const void *const *array)
  * like g_strv_length() does. The difference is:
  *  - it operates on arrays of pointers (of any kind, requiring no cast).
  *  - it accepts NULL to return zero. */
-#define NM_PTRARRAY_LEN(array)                                                 \
-    ({                                                                         \
-        typeof(*(array)) *const _array                 = (array);              \
-        _nm_unused const void * _type_check_is_pointer = 0 ? _array[0] : NULL; \
-                                                                               \
-        _nm_ptrarray_len_impl((const void *const *) _array);                   \
+#define NM_PTRARRAY_LEN(array)                                \
+    ({                                                        \
+        _NM_ENSURE_POINTER((array)[0]);                       \
+        _nm_ptrarray_len_impl((const void *const *) (array)); \
     })
 
 /*****************************************************************************/
@@ -944,7 +942,7 @@ _nm_auto_fclose(FILE **pfd)
         int            _changed = false;                                             \
                                                                                      \
         if (_pp && (_p = *_pp)) {                                                    \
-            _nm_unused const void *_p_check_is_pointer = _p;                         \
+            _NM_ENSURE_POINTER(_p);                                                  \
                                                                                      \
             *_pp = NULL;                                                             \
                                                                                      \
@@ -967,14 +965,15 @@ _nm_auto_fclose(FILE **pfd)
 
 /*****************************************************************************/
 
-#define nm_steal_pointer(pp)                               \
-    ({                                                     \
-        typeof(*(pp)) *const         _pp           = (pp); \
-        typeof(*_pp)                 _p            = *_pp; \
-        _nm_unused const void *const _p_type_check = _p;   \
-                                                           \
-        *_pp = NULL;                                       \
-        _p;                                                \
+#define nm_steal_pointer(pp)             \
+    ({                                   \
+        typeof(*(pp)) *const _pp = (pp); \
+        typeof(*_pp)         _p  = *_pp; \
+                                         \
+        _NM_ENSURE_POINTER(_p);          \
+                                         \
+        *_pp = NULL;                     \
+        _p;                              \
     })
 
 /**
