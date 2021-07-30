@@ -46,6 +46,36 @@
 
 /*****************************************************************************/
 
+#ifndef _NM_CC_SUPPORT_AUTO_TYPE
+#if (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)))
+#define _NM_CC_SUPPORT_AUTO_TYPE 1
+#else
+#define _NM_CC_SUPPORT_AUTO_TYPE 0
+#endif
+#endif
+
+#if _NM_CC_SUPPORT_AUTO_TYPE
+#define _nm_auto_type __auto_type
+#endif
+
+#ifndef _NM_CC_SUPPORT_GENERIC
+/* In the meantime, NetworkManager requires C11 and _Generic() should always be available.
+ * However, shared/nm-utils may also be used in VPN/applet, which possibly did not yet
+ * bump the C standard requirement. Leave this for the moment, but eventually we can
+ * drop it.
+ *
+ * Technically, gcc 4.9 already has some support for _Generic(). But there seems
+ * to be issues with propagating "const char *[5]" to "const char **". Only assume
+ * we have _Generic() since gcc 5. */
+#if (defined(__GNUC__) && __GNUC__ >= 5) || (defined(__clang__))
+#define _NM_CC_SUPPORT_GENERIC 1
+#else
+#define _NM_CC_SUPPORT_GENERIC 0
+#endif
+#endif
+
+/*****************************************************************************/
+
 #ifdef __CHECKER__
 #define _nm_bitwise __attribute__((__bitwise__))
 #define _nm_force   __attribute__((__force__))
