@@ -469,7 +469,7 @@ nm_dhcp_client_set_state(NMDhcpClient *self,
         gs_free const char **keys = NULL;
         guint                i, nkeys;
 
-        keys = nm_utils_strdict_get_keys(options, TRUE, &nkeys);
+        keys = nm_strdict_get_keys(options, TRUE, &nkeys);
         for (i = 0; i < nkeys; i++) {
             _LOGD("option %-20s => '%s'", keys[i], (char *) g_hash_table_lookup(options, keys[i]));
         }

@@ -2569,12 +2569,10 @@ nm_ovsdb_set_external_ids(NMOvsdb *                self,
     gs_unref_hashtable GHashTable *exid_old = NULL;
     gs_unref_hashtable GHashTable *exid_new = NULL;
 
-    exid_old = s_exid_old
-                   ? nm_utils_strdict_clone(_nm_setting_ovs_external_ids_get_data(s_exid_old))
-                   : NULL;
-    exid_new = s_exid_new
-                   ? nm_utils_strdict_clone(_nm_setting_ovs_external_ids_get_data(s_exid_new))
-                   : NULL;
+    exid_old =
+        s_exid_old ? nm_strdict_clone(_nm_setting_ovs_external_ids_get_data(s_exid_old)) : NULL;
+    exid_new =
+        s_exid_new ? nm_strdict_clone(_nm_setting_ovs_external_ids_get_data(s_exid_new)) : NULL;
 
     ovsdb_call_method(self,
                       NULL,

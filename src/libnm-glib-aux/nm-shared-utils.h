@@ -609,10 +609,10 @@ gboolean nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize 
 
 GVariant *nm_utils_gbytes_to_variant_ay(GBytes *bytes);
 
-GHashTable *nm_utils_strdict_clone(GHashTable *src);
+GHashTable *nm_strdict_clone(GHashTable *src);
 
-GVariant *nm_utils_strdict_to_variant_ass(GHashTable *strdict);
-GVariant *nm_utils_strdict_to_variant_asv(GHashTable *strdict);
+GVariant *nm_strdict_to_variant_ass(GHashTable *strdict);
+GVariant *nm_strdict_to_variant_asv(GHashTable *strdict);
 
 /*****************************************************************************/
 
@@ -1971,7 +1971,7 @@ gpointer *nm_utils_hash_values_to_array(GHashTable *     hash,
                                         guint *          out_len);
 
 static inline const char **
-nm_utils_strdict_get_keys(const GHashTable *hash, gboolean sorted, guint *out_length)
+nm_strdict_get_keys(const GHashTable *hash, gboolean sorted, guint *out_length)
 {
     return (const char **) nm_utils_hash_keys_to_array((GHashTable *) hash,
                                                        sorted ? nm_strcmp_p_with_data : NULL,

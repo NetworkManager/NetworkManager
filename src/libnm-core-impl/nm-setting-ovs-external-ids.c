@@ -211,7 +211,7 @@ nm_setting_ovs_external_ids_get_data_keys(NMSettingOvsExternalIDs *setting, guin
         return priv->data_keys;
     }
 
-    priv->data_keys = nm_utils_strdict_get_keys(priv->data, TRUE, out_len);
+    priv->data_keys = nm_strdict_get_keys(priv->data, TRUE, out_len);
 
     /* don't return %NULL, but hijack the @data_keys fields as a pseudo
      * empty strv array. */

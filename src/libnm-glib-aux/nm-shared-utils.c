@@ -622,7 +622,7 @@ nm_g_variant_singleton_aaLsvI(void)
 /*****************************************************************************/
 
 GHashTable *
-nm_utils_strdict_clone(GHashTable *src)
+nm_strdict_clone(GHashTable *src)
 {
     GHashTable *   dst;
     GHashTableIter iter;
@@ -644,7 +644,7 @@ nm_utils_strdict_clone(GHashTable *src)
  * Returns a floating reference.
  */
 GVariant *
-nm_utils_strdict_to_variant_ass(GHashTable *strdict)
+nm_strdict_to_variant_ass(GHashTable *strdict)
 {
     gs_free NMUtilsNamedValue *values_free = NULL;
     NMUtilsNamedValue          values_prepared[20];
@@ -665,7 +665,7 @@ nm_utils_strdict_to_variant_ass(GHashTable *strdict)
 /*****************************************************************************/
 
 GVariant *
-nm_utils_strdict_to_variant_asv(GHashTable *strdict)
+nm_strdict_to_variant_asv(GHashTable *strdict)
 {
     gs_free NMUtilsNamedValue *values_free = NULL;
     NMUtilsNamedValue          values_prepared[20];
