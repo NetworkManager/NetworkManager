@@ -358,31 +358,29 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
     nm_assert(sbuf_size > 0);
 
     _l3_config_notify_type_to_string(notify_data->notify_type, s, l);
-    nm_utils_strbuf_seek_end(&s, &l);
+    nm_strbuf_seek_end(&s, &l);
 
     switch (notify_data->notify_type) {
     case NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED:
-        nm_utils_strbuf_append(
-            &s,
-            &l,
-            ", l3cd-old=%s",
-            NM_HASH_OBFUSCATE_PTR_STR(notify_data->l3cd_changed.l3cd_old, sbufobf));
-        nm_utils_strbuf_append(
-            &s,
-            &l,
-            ", l3cd-new=%s",
-            NM_HASH_OBFUSCATE_PTR_STR(notify_data->l3cd_changed.l3cd_new, sbufobf));
-        nm_utils_strbuf_append(&s, &l, ", commited=%d", notify_data->l3cd_changed.commited);
+        nm_strbuf_append(&s,
+                         &l,
+                         ", l3cd-old=%s",
+                         NM_HASH_OBFUSCATE_PTR_STR(notify_data->l3cd_changed.l3cd_old, sbufobf));
+        nm_strbuf_append(&s,
+                         &l,
+                         ", l3cd-new=%s",
+                         NM_HASH_OBFUSCATE_PTR_STR(notify_data->l3cd_changed.l3cd_new, sbufobf));
+        nm_strbuf_append(&s, &l, ", commited=%d", notify_data->l3cd_changed.commited);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT:
-        nm_utils_strbuf_append(&s,
-                               &l,
-                               ", addr=%s, state=%s",
-                               _nm_utils_inet4_ntop(notify_data->acd_event.info.addr, sbuf_addr),
-                               _l3_acd_addr_state_to_string(notify_data->acd_event.info.state));
+        nm_strbuf_append(&s,
+                         &l,
+                         ", addr=%s, state=%s",
+                         _nm_utils_inet4_ntop(notify_data->acd_event.info.addr, sbuf_addr),
+                         _l3_acd_addr_state_to_string(notify_data->acd_event.info.state));
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE:
-        nm_utils_strbuf_append(
+        nm_strbuf_append(
             &s,
             &l,
             ", obj-type=%s, change=%s, obj=",
@@ -391,15 +389,15 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
         nmp_object_to_string(notify_data->platform_change.obj, NMP_OBJECT_TO_STRING_PUBLIC, s, l);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
-        nm_utils_strbuf_append(&s,
-                               &l,
-                               ", obj-type-flags=0x%x",
-                               notify_data->platform_change_on_idle.obj_type_flags);
+        nm_strbuf_append(&s,
+                         &l,
+                         ", obj-type-flags=0x%x",
+                         notify_data->platform_change_on_idle.obj_type_flags);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT:
         nm_assert(NM_IS_L3_IPV4LL(notify_data->ipv4ll_event.ipv4ll));
         addr4 = nm_l3_ipv4ll_get_addr(notify_data->ipv4ll_event.ipv4ll);
-        nm_utils_strbuf_append(
+        nm_strbuf_append(
             &s,
             &l,
             ", ipv4ll=" NM_HASH_OBFUSCATE_PTR_FMT "%s%s, state=%s",

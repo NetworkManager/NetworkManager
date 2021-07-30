@@ -1229,25 +1229,25 @@ nm_platform_link_add(NMPlatform *           self,
 
                switch (type) {
                case NM_LINK_TYPE_BRIDGE:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_bridge_to_string((const NMPlatformLnkBridge *) extra_data,
                                                     buf_p,
                                                     buf_len);
                    break;
                case NM_LINK_TYPE_VLAN:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_vlan_to_string((const NMPlatformLnkVlan *) extra_data,
                                                   buf_p,
                                                   buf_len);
                    break;
                case NM_LINK_TYPE_VRF:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_vrf_to_string((const NMPlatformLnkVrf *) extra_data,
                                                  buf_p,
                                                  buf_len);
                    break;
                case NM_LINK_TYPE_VXLAN:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_vxlan_to_string((const NMPlatformLnkVxlan *) extra_data,
                                                    buf_p,
                                                    buf_len);
@@ -1257,13 +1257,13 @@ nm_platform_link_add(NMPlatform *           self,
                    break;
                case NM_LINK_TYPE_GRE:
                case NM_LINK_TYPE_GRETAP:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_gre_to_string((const NMPlatformLnkGre *) extra_data,
                                                  buf_p,
                                                  buf_len);
                    break;
                case NM_LINK_TYPE_SIT:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_sit_to_string((const NMPlatformLnkSit *) extra_data,
                                                  buf_p,
                                                  buf_len);
@@ -1271,26 +1271,26 @@ nm_platform_link_add(NMPlatform *           self,
                case NM_LINK_TYPE_IP6TNL:
                case NM_LINK_TYPE_IP6GRE:
                case NM_LINK_TYPE_IP6GRETAP:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_ip6tnl_to_string((const NMPlatformLnkIp6Tnl *) extra_data,
                                                     buf_p,
                                                     buf_len);
                    break;
                case NM_LINK_TYPE_IPIP:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_ipip_to_string((const NMPlatformLnkIpIp *) extra_data,
                                                   buf_p,
                                                   buf_len);
                    break;
                case NM_LINK_TYPE_MACSEC:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_macsec_to_string((const NMPlatformLnkMacsec *) extra_data,
                                                     buf_p,
                                                     buf_len);
                    break;
                case NM_LINK_TYPE_MACVLAN:
                case NM_LINK_TYPE_MACVTAP:
-                   nm_utils_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_macvlan_to_string((const NMPlatformLnkMacvlan *) extra_data,
                                                      buf_p,
                                                      buf_len);
@@ -2336,13 +2336,13 @@ nm_platform_link_wireguard_change(NMPlatform *                              self
             gsize len = sizeof(buf_peers);
             guint i;
 
-            nm_utils_strbuf_append_str(&b, &len, " { ");
+            nm_strbuf_append_str(&b, &len, " { ");
             for (i = 0; i < peers_len; i++) {
-                nm_utils_strbuf_append_str(&b, &len, " { ");
+                nm_strbuf_append_str(&b, &len, " { ");
                 nm_platform_wireguard_peer_to_string(&peers[i], b, len);
-                nm_utils_strbuf_seek_end(&b, &len);
+                nm_strbuf_seek_end(&b, &len);
                 if (peer_flags) {
-                    nm_utils_strbuf_append(
+                    nm_strbuf_append(
                         &b,
                         &len,
                         " (%s)",
@@ -2350,9 +2350,9 @@ nm_platform_link_wireguard_change(NMPlatform *                              self
                                                                buf_change_flags,
                                                                sizeof(buf_change_flags)));
                 }
-                nm_utils_strbuf_append_str(&b, &len, " } ");
+                nm_strbuf_append_str(&b, &len, " } ");
             }
-            nm_utils_strbuf_append_str(&b, &len, "}");
+            nm_strbuf_append_str(&b, &len, "}");
         }
 
         _LOG3D("link: change wireguard ifindex %d, %s, (%s), %u peers%s",
@@ -2620,30 +2620,30 @@ nm_platform_link_vlan_change(NMPlatform *            self,
         len  = sizeof(buf);
 
         if (flags_mask)
-            nm_utils_strbuf_append(&b,
-                                   &len,
-                                   " flags 0x%x/0x%x",
-                                   (unsigned) flags_set,
-                                   (unsigned) flags_mask);
+            nm_strbuf_append(&b,
+                             &len,
+                             " flags 0x%x/0x%x",
+                             (unsigned) flags_set,
+                             (unsigned) flags_mask);
 
         if (ingress_reset_all || n_ingress_map) {
-            nm_utils_strbuf_append_str(&b, &len, " ingress-qos-map");
+            nm_strbuf_append_str(&b, &len, " ingress-qos-map");
             nm_platform_vlan_qos_mapping_to_string("", ingress_map, n_ingress_map, b, len);
             i = strlen(b);
             b += i;
             len -= i;
             if (ingress_reset_all)
-                nm_utils_strbuf_append_str(&b, &len, " (reset-all)");
+                nm_strbuf_append_str(&b, &len, " (reset-all)");
         }
 
         if (egress_reset_all || n_egress_map) {
-            nm_utils_strbuf_append_str(&b, &len, " egress-qos-map");
+            nm_strbuf_append_str(&b, &len, " egress-qos-map");
             nm_platform_vlan_qos_mapping_to_string("", egress_map, n_egress_map, b, len);
             i = strlen(b);
             b += i;
             len -= i;
             if (egress_reset_all)
-                nm_utils_strbuf_append_str(&b, &len, " (reset-all)");
+                nm_strbuf_append_str(&b, &len, " (reset-all)");
         }
 
         _LOG3D("link: change vlan %s", buf);
@@ -5454,7 +5454,7 @@ nm_platform_vlan_qos_mapping_to_string(const char *            name,
     nm_utils_to_string_buffer_init(&buf, &len);
 
     if (!n_map) {
-        nm_utils_strbuf_append_str(&buf, &len, "");
+        nm_strbuf_append_str(&buf, &len, "");
         return buf;
     }
 
@@ -5464,14 +5464,14 @@ nm_platform_vlan_qos_mapping_to_string(const char *            name,
     b = buf;
 
     if (name) {
-        nm_utils_strbuf_append_str(&b, &len, name);
-        nm_utils_strbuf_append_str(&b, &len, " {");
+        nm_strbuf_append_str(&b, &len, name);
+        nm_strbuf_append_str(&b, &len, " {");
     } else
-        nm_utils_strbuf_append_c(&b, &len, '{');
+        nm_strbuf_append_c(&b, &len, '{');
 
     for (i = 0; i < n_map; i++)
-        nm_utils_strbuf_append(&b, &len, " %u:%u", map[i].from, map[i].to);
-    nm_utils_strbuf_append_str(&b, &len, " }");
+        nm_strbuf_append(&b, &len, " %u:%u", map[i].from, map[i].to);
+    nm_strbuf_append_str(&b, &len, " }");
     return buf;
 }
 
@@ -5537,13 +5537,13 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
     s = str_highlighted_flags;
     l = sizeof(str_highlighted_flags);
     if (NM_FLAGS_HAS(link->n_ifi_flags, IFF_NOARP))
-        nm_utils_strbuf_append_str(&s, &l, "NOARP,");
+        nm_strbuf_append_str(&s, &l, "NOARP,");
     if (NM_FLAGS_HAS(link->n_ifi_flags, IFF_UP))
-        nm_utils_strbuf_append_str(&s, &l, "UP");
+        nm_strbuf_append_str(&s, &l, "UP");
     else
-        nm_utils_strbuf_append_str(&s, &l, "DOWN");
+        nm_strbuf_append_str(&s, &l, "DOWN");
     if (link->connected)
-        nm_utils_strbuf_append_str(&s, &l, ",LOWER_UP");
+        nm_strbuf_append_str(&s, &l, ",LOWER_UP");
     nm_assert(s > str_highlighted_flags && l > 0);
 
     if (link->n_ifi_flags) {
@@ -6028,9 +6028,9 @@ nm_platform_lnk_vlan_to_string(const NMPlatformLnkVlan *lnk, char *buf, gsize le
 
     b = buf;
 
-    nm_utils_strbuf_append(&b, &len, "vlan %u", lnk->id);
+    nm_strbuf_append(&b, &len, "vlan %u", lnk->id);
     if (lnk->flags)
-        nm_utils_strbuf_append(&b, &len, " flags 0x%x", lnk->flags);
+        nm_strbuf_append(&b, &len, " flags 0x%x", lnk->flags);
     return buf;
 }
 
@@ -6044,7 +6044,7 @@ nm_platform_lnk_vrf_to_string(const NMPlatformLnkVrf *lnk, char *buf, gsize len)
 
     b = buf;
 
-    nm_utils_strbuf_append(&b, &len, "table %u", lnk->table);
+    nm_strbuf_append(&b, &len, "table %u", lnk->table);
     return buf;
 }
 
@@ -6169,36 +6169,36 @@ nm_platform_wireguard_peer_to_string(const NMPWireGuardPeer *peer, char *buf, gs
     } else
         s_endpoint[0] = '\0';
 
-    nm_utils_strbuf_append(
-        &buf,
-        &len,
-        "public-key %s"
-        "%s"                                                   /* preshared-key */
-        "%s"                                                   /* endpoint */
-        " rx %" G_GUINT64_FORMAT " tx %" G_GUINT64_FORMAT "%s" /* persistent-keepalive */
-        "%s",                                                  /* allowed-ips */
-        public_key_b64,
-        nm_utils_memeqzero_secret(peer->preshared_key, sizeof(peer->preshared_key))
-            ? ""
-            : " preshared-key (hidden)",
-        s_endpoint,
-        peer->rx_bytes,
-        peer->tx_bytes,
-        peer->persistent_keepalive_interval > 0
-            ? nm_sprintf_buf(s_keepalive,
-                             " keepalive %u",
-                             (guint) peer->persistent_keepalive_interval)
-            : "",
-        peer->allowed_ips_len > 0 ? " allowed-ips" : "");
+    nm_strbuf_append(&buf,
+                     &len,
+                     "public-key %s"
+                     "%s" /* preshared-key */
+                     "%s" /* endpoint */
+                     " rx %" G_GUINT64_FORMAT " tx %" G_GUINT64_FORMAT
+                     "%s"  /* persistent-keepalive */
+                     "%s", /* allowed-ips */
+                     public_key_b64,
+                     nm_utils_memeqzero_secret(peer->preshared_key, sizeof(peer->preshared_key))
+                         ? ""
+                         : " preshared-key (hidden)",
+                     s_endpoint,
+                     peer->rx_bytes,
+                     peer->tx_bytes,
+                     peer->persistent_keepalive_interval > 0
+                         ? nm_sprintf_buf(s_keepalive,
+                                          " keepalive %u",
+                                          (guint) peer->persistent_keepalive_interval)
+                         : "",
+                     peer->allowed_ips_len > 0 ? " allowed-ips" : "");
 
     for (i = 0; i < peer->allowed_ips_len; i++) {
         const NMPWireGuardAllowedIP *allowed_ip = &peer->allowed_ips[i];
 
-        nm_utils_strbuf_append(&buf,
-                               &len,
-                               " %s/%u",
-                               nm_utils_inet_ntop(allowed_ip->family, &allowed_ip->addr, s_addr),
-                               allowed_ip->mask);
+        nm_strbuf_append(&buf,
+                         &len,
+                         " %s/%u",
+                         nm_utils_inet_ntop(allowed_ip->family, &allowed_ip->addr, s_addr),
+                         allowed_ip->mask);
     }
 
     return buf0;
@@ -6490,7 +6490,7 @@ _rtm_flags_to_string_full(char *buf, gsize buf_size, unsigned rtm_flags)
     if (!rtm_flags)
         return "";
 
-    nm_utils_strbuf_append_str(&buf, &buf_size, " rtm_flags ");
+    nm_strbuf_append_str(&buf, &buf_size, " rtm_flags ");
     _rtm_flags_to_string(rtm_flags, buf, buf_size);
     nm_assert(strlen(buf) < buf_size);
     return buf0;
@@ -6762,18 +6762,18 @@ _routing_rule_addr_to_string(char **         buf,
 
     if (plen == 0 && is_zero) {
         if (is_src)
-            nm_utils_strbuf_append_str(buf, len, " from all");
+            nm_strbuf_append_str(buf, len, " from all");
         else
-            nm_utils_strbuf_append_str(buf, len, "");
+            nm_strbuf_append_str(buf, len, "");
         return;
     }
 
-    nm_utils_strbuf_append_str(buf, len, is_src ? " from " : " to ");
+    nm_strbuf_append_str(buf, len, is_src ? " from " : " to ");
 
-    nm_utils_strbuf_append_str(buf, len, nm_utils_inet_ntop(addr_family, addr, s_addr));
+    nm_strbuf_append_str(buf, len, nm_utils_inet_ntop(addr_family, addr, s_addr));
 
     if (plen != (addr_size * 8))
-        nm_utils_strbuf_append(buf, len, "/%u", plen);
+        nm_strbuf_append(buf, len, "/%u", plen);
 }
 
 static void
@@ -6783,11 +6783,11 @@ _routing_rule_port_range_to_string(char **                   buf,
                                    const char *              name)
 {
     if (port_range->start == 0 && port_range->end == 0)
-        nm_utils_strbuf_append_str(buf, len, "");
+        nm_strbuf_append_str(buf, len, "");
     else {
-        nm_utils_strbuf_append(buf, len, " %s %u", name, port_range->start);
+        nm_strbuf_append(buf, len, " %s %u", name, port_range->start);
         if (port_range->start != port_range->end)
-            nm_utils_strbuf_append(buf, len, "-%u", port_range->end);
+            nm_strbuf_append(buf, len, "-%u", port_range->end);
     }
 }
 
@@ -6814,14 +6814,14 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
     rr_flags = routing_rule->flags;
 
     rr_flags = NM_FLAGS_UNSET(rr_flags, FIB_RULE_INVERT);
-    nm_utils_strbuf_append(&buf,
-                           &len,
-                           "[%c] " /* addr-family */
-                           "%u:"   /* priority */
-                           "%s",   /* not/FIB_RULE_INVERT */
-                           nm_utils_addr_family_to_char(routing_rule->addr_family),
-                           routing_rule->priority,
-                           (NM_FLAGS_HAS(routing_rule->flags, FIB_RULE_INVERT) ? " not" : ""));
+    nm_strbuf_append(&buf,
+                     &len,
+                     "[%c] " /* addr-family */
+                     "%u:"   /* priority */
+                     "%s",   /* not/FIB_RULE_INVERT */
+                     nm_utils_addr_family_to_char(routing_rule->addr_family),
+                     routing_rule->priority,
+                     (NM_FLAGS_HAS(routing_rule->flags, FIB_RULE_INVERT) ? " not" : ""));
 
     _routing_rule_addr_to_string(&buf,
                                  &len,
@@ -6838,53 +6838,53 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
                                  FALSE);
 
     if (routing_rule->tos)
-        nm_utils_strbuf_append(&buf, &len, " tos 0x%02x", routing_rule->tos);
+        nm_strbuf_append(&buf, &len, " tos 0x%02x", routing_rule->tos);
 
     if (routing_rule->fwmark != 0 || routing_rule->fwmask != 0) {
-        nm_utils_strbuf_append(&buf, &len, " fwmark %#x", (unsigned) routing_rule->fwmark);
+        nm_strbuf_append(&buf, &len, " fwmark %#x", (unsigned) routing_rule->fwmark);
         if (routing_rule->fwmark != 0xFFFFFFFFu)
-            nm_utils_strbuf_append(&buf, &len, "/%#x", (unsigned) routing_rule->fwmask);
+            nm_strbuf_append(&buf, &len, "/%#x", (unsigned) routing_rule->fwmask);
     }
 
     if (routing_rule->iifname[0]) {
-        nm_utils_strbuf_append(&buf, &len, " iif %s", routing_rule->iifname);
+        nm_strbuf_append(&buf, &len, " iif %s", routing_rule->iifname);
         rr_flags = NM_FLAGS_UNSET(rr_flags, FIB_RULE_IIF_DETACHED);
         if (NM_FLAGS_HAS(routing_rule->flags, FIB_RULE_IIF_DETACHED))
-            nm_utils_strbuf_append_str(&buf, &len, " [detached]");
+            nm_strbuf_append_str(&buf, &len, " [detached]");
     }
 
     if (routing_rule->oifname[0]) {
-        nm_utils_strbuf_append(&buf, &len, " oif %s", routing_rule->oifname);
+        nm_strbuf_append(&buf, &len, " oif %s", routing_rule->oifname);
         rr_flags = NM_FLAGS_UNSET(rr_flags, FIB_RULE_OIF_DETACHED);
         if (NM_FLAGS_HAS(routing_rule->flags, FIB_RULE_OIF_DETACHED))
-            nm_utils_strbuf_append_str(&buf, &len, " [detached]");
+            nm_strbuf_append_str(&buf, &len, " [detached]");
     }
 
     if (routing_rule->l3mdev != 0) {
         if (routing_rule->l3mdev == 1)
-            nm_utils_strbuf_append_str(&buf, &len, " lookup [l3mdev-table]");
+            nm_strbuf_append_str(&buf, &len, " lookup [l3mdev-table]");
         else {
-            nm_utils_strbuf_append(&buf,
-                                   &len,
-                                   " lookup [l3mdev-table/%u]",
-                                   (unsigned) routing_rule->l3mdev);
+            nm_strbuf_append(&buf,
+                             &len,
+                             " lookup [l3mdev-table/%u]",
+                             (unsigned) routing_rule->l3mdev);
         }
     }
 
     if (routing_rule->uid_range_has || routing_rule->uid_range.start
         || routing_rule->uid_range.end) {
-        nm_utils_strbuf_append(&buf,
-                               &len,
-                               " uidrange %u-%u%s",
-                               routing_rule->uid_range.start,
-                               routing_rule->uid_range.end,
-                               routing_rule->uid_range_has ? "" : "(?)");
+        nm_strbuf_append(&buf,
+                         &len,
+                         " uidrange %u-%u%s",
+                         routing_rule->uid_range.start,
+                         routing_rule->uid_range.end,
+                         routing_rule->uid_range_has ? "" : "(?)");
     }
 
     if (routing_rule->ip_proto != 0) {
         /* we don't call getprotobynumber(), just print the numeric value.
          * This differs from what ip-rule prints. */
-        nm_utils_strbuf_append(&buf, &len, " ipproto %u", routing_rule->ip_proto);
+        nm_strbuf_append(&buf, &len, " ipproto %u", routing_rule->ip_proto);
     }
 
     _routing_rule_port_range_to_string(&buf, &len, &routing_rule->sport_range, "sport");
@@ -6892,25 +6892,25 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
     _routing_rule_port_range_to_string(&buf, &len, &routing_rule->dport_range, "dport");
 
     if (routing_rule->tun_id != 0) {
-        nm_utils_strbuf_append(&buf, &len, " tun_id %" G_GUINT64_FORMAT, routing_rule->tun_id);
+        nm_strbuf_append(&buf, &len, " tun_id %" G_GUINT64_FORMAT, routing_rule->tun_id);
     }
 
     if (routing_rule->table != 0) {
-        nm_utils_strbuf_append(&buf, &len, " lookup %u", routing_rule->table);
+        nm_strbuf_append(&buf, &len, " lookup %u", routing_rule->table);
     }
 
     if (routing_rule->suppress_prefixlen_inverse != 0) {
-        nm_utils_strbuf_append(&buf,
-                               &len,
-                               " suppress_prefixlen %d",
-                               (int) (~routing_rule->suppress_prefixlen_inverse));
+        nm_strbuf_append(&buf,
+                         &len,
+                         " suppress_prefixlen %d",
+                         (int) (~routing_rule->suppress_prefixlen_inverse));
     }
 
     if (routing_rule->suppress_ifgroup_inverse != 0) {
-        nm_utils_strbuf_append(&buf,
-                               &len,
-                               " suppress_ifgroup %d",
-                               (int) (~routing_rule->suppress_ifgroup_inverse));
+        nm_strbuf_append(&buf,
+                         &len,
+                         " suppress_ifgroup %d",
+                         (int) (~routing_rule->suppress_ifgroup_inverse));
     }
 
     if (routing_rule->flow) {
@@ -6919,7 +6919,7 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
          *
          * We don't follow the style how ip-rule prints flow/realms. It's confusing. Just
          * print the value hex. */
-        nm_utils_strbuf_append(&buf, &len, " realms 0x%08x", routing_rule->flow);
+        nm_strbuf_append(&buf, &len, " realms 0x%08x", routing_rule->flow);
     }
 
     if (routing_rule->action == RTN_NAT) {
@@ -6927,36 +6927,36 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
 
         /* NAT is deprecated for many years. We don't support RTA_GATEWAY/FRA_UNUSED2
          * for the gateway, and so do recent kernels ignore that parameter. */
-        nm_utils_strbuf_append_str(&buf, &len, " masquerade");
+        nm_strbuf_append_str(&buf, &len, " masquerade");
     } else if (routing_rule->action == FR_ACT_GOTO) {
         if (routing_rule->goto_target != 0)
-            nm_utils_strbuf_append(&buf, &len, " goto %u", routing_rule->goto_target);
+            nm_strbuf_append(&buf, &len, " goto %u", routing_rule->goto_target);
         else
-            nm_utils_strbuf_append_str(&buf, &len, " goto none");
+            nm_strbuf_append_str(&buf, &len, " goto none");
         rr_flags = NM_FLAGS_UNSET(rr_flags, FIB_RULE_UNRESOLVED);
         if (NM_FLAGS_HAS(routing_rule->flags, FIB_RULE_UNRESOLVED))
-            nm_utils_strbuf_append_str(&buf, &len, " unresolved");
+            nm_strbuf_append_str(&buf, &len, " unresolved");
     } else if (routing_rule->action != FR_ACT_TO_TBL) {
         char ss_buf[60];
 
-        nm_utils_strbuf_append(&buf,
-                               &len,
-                               " %s",
-                               nm_net_aux_rtnl_rtntype_n2a(routing_rule->action)
-                                   ?: nm_sprintf_buf(ss_buf, "action-%u", routing_rule->action));
+        nm_strbuf_append(&buf,
+                         &len,
+                         " %s",
+                         nm_net_aux_rtnl_rtntype_n2a(routing_rule->action)
+                             ?: nm_sprintf_buf(ss_buf, "action-%u", routing_rule->action));
     }
 
     if (routing_rule->protocol != RTPROT_UNSPEC)
-        nm_utils_strbuf_append(&buf, &len, " protocol %u", routing_rule->protocol);
+        nm_strbuf_append(&buf, &len, " protocol %u", routing_rule->protocol);
 
     if (routing_rule->goto_target != 0 && routing_rule->action != FR_ACT_GOTO) {
         /* a trailing target is set for an unexpected action. Print it. */
-        nm_utils_strbuf_append(&buf, &len, " goto-target %u", routing_rule->goto_target);
+        nm_strbuf_append(&buf, &len, " goto-target %u", routing_rule->goto_target);
     }
 
     if (rr_flags != 0) {
         /* we have some flags we didn't print about yet. */
-        nm_utils_strbuf_append(&buf, &len, " remaining-flags %x", rr_flags);
+        nm_strbuf_append(&buf, &len, " remaining-flags %x", rr_flags);
     }
 
     return buf0;
@@ -6973,53 +6973,53 @@ nm_platform_qdisc_to_string(const NMPlatformQdisc *qdisc, char *buf, gsize len)
 
     buf0 = buf;
 
-    nm_utils_strbuf_append(&buf,
-                           &len,
-                           "%s%s family %u handle %x parent %x info %x",
-                           qdisc->kind,
-                           _to_string_dev(NULL, qdisc->ifindex, str_dev, sizeof(str_dev)),
-                           qdisc->addr_family,
-                           qdisc->handle,
-                           qdisc->parent,
-                           qdisc->info);
+    nm_strbuf_append(&buf,
+                     &len,
+                     "%s%s family %u handle %x parent %x info %x",
+                     qdisc->kind,
+                     _to_string_dev(NULL, qdisc->ifindex, str_dev, sizeof(str_dev)),
+                     qdisc->addr_family,
+                     qdisc->handle,
+                     qdisc->parent,
+                     qdisc->info);
 
     if (nm_streq0(qdisc->kind, "fq_codel")) {
         if (qdisc->fq_codel.limit)
-            nm_utils_strbuf_append(&buf, &len, " limit %u", qdisc->fq_codel.limit);
+            nm_strbuf_append(&buf, &len, " limit %u", qdisc->fq_codel.limit);
         if (qdisc->fq_codel.flows)
-            nm_utils_strbuf_append(&buf, &len, " flows %u", qdisc->fq_codel.flows);
+            nm_strbuf_append(&buf, &len, " flows %u", qdisc->fq_codel.flows);
         if (qdisc->fq_codel.target)
-            nm_utils_strbuf_append(&buf, &len, " target %u", qdisc->fq_codel.target);
+            nm_strbuf_append(&buf, &len, " target %u", qdisc->fq_codel.target);
         if (qdisc->fq_codel.interval)
-            nm_utils_strbuf_append(&buf, &len, " interval %u", qdisc->fq_codel.interval);
+            nm_strbuf_append(&buf, &len, " interval %u", qdisc->fq_codel.interval);
         if (qdisc->fq_codel.quantum)
-            nm_utils_strbuf_append(&buf, &len, " quantum %u", qdisc->fq_codel.quantum);
+            nm_strbuf_append(&buf, &len, " quantum %u", qdisc->fq_codel.quantum);
         if (qdisc->fq_codel.ce_threshold != NM_PLATFORM_FQ_CODEL_CE_THRESHOLD_DISABLED)
-            nm_utils_strbuf_append(&buf, &len, " ce_threshold %u", qdisc->fq_codel.ce_threshold);
+            nm_strbuf_append(&buf, &len, " ce_threshold %u", qdisc->fq_codel.ce_threshold);
         if (qdisc->fq_codel.memory_limit != NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET)
-            nm_utils_strbuf_append(&buf, &len, " memory_limit %u", qdisc->fq_codel.memory_limit);
+            nm_strbuf_append(&buf, &len, " memory_limit %u", qdisc->fq_codel.memory_limit);
         if (qdisc->fq_codel.ecn)
-            nm_utils_strbuf_append(&buf, &len, " ecn");
+            nm_strbuf_append(&buf, &len, " ecn");
     } else if (nm_streq0(qdisc->kind, "sfq")) {
         if (qdisc->sfq.quantum)
-            nm_utils_strbuf_append(&buf, &len, " quantum %u", qdisc->sfq.quantum);
+            nm_strbuf_append(&buf, &len, " quantum %u", qdisc->sfq.quantum);
         if (qdisc->sfq.perturb_period)
-            nm_utils_strbuf_append(&buf, &len, " perturb %d", qdisc->sfq.perturb_period);
+            nm_strbuf_append(&buf, &len, " perturb %d", qdisc->sfq.perturb_period);
         if (qdisc->sfq.limit)
-            nm_utils_strbuf_append(&buf, &len, " limit %u", (guint) qdisc->sfq.limit);
+            nm_strbuf_append(&buf, &len, " limit %u", (guint) qdisc->sfq.limit);
         if (qdisc->sfq.divisor)
-            nm_utils_strbuf_append(&buf, &len, " divisor %u", qdisc->sfq.divisor);
+            nm_strbuf_append(&buf, &len, " divisor %u", qdisc->sfq.divisor);
         if (qdisc->sfq.flows)
-            nm_utils_strbuf_append(&buf, &len, " flows %u", qdisc->sfq.flows);
+            nm_strbuf_append(&buf, &len, " flows %u", qdisc->sfq.flows);
         if (qdisc->sfq.depth)
-            nm_utils_strbuf_append(&buf, &len, " depth %u", qdisc->sfq.depth);
+            nm_strbuf_append(&buf, &len, " depth %u", qdisc->sfq.depth);
     } else if (nm_streq0(qdisc->kind, "tbf")) {
-        nm_utils_strbuf_append(&buf, &len, " rate %" G_GUINT64_FORMAT, qdisc->tbf.rate);
-        nm_utils_strbuf_append(&buf, &len, " burst %u", qdisc->tbf.burst);
+        nm_strbuf_append(&buf, &len, " rate %" G_GUINT64_FORMAT, qdisc->tbf.rate);
+        nm_strbuf_append(&buf, &len, " burst %u", qdisc->tbf.burst);
         if (qdisc->tbf.limit)
-            nm_utils_strbuf_append(&buf, &len, " limit %u", qdisc->tbf.limit);
+            nm_strbuf_append(&buf, &len, " limit %u", qdisc->tbf.limit);
         if (qdisc->tbf.latency)
-            nm_utils_strbuf_append(&buf, &len, " latency %uns", qdisc->tbf.latency);
+            nm_strbuf_append(&buf, &len, " latency %uns", qdisc->tbf.latency);
     }
 
     return buf0;
@@ -7114,11 +7114,11 @@ nm_platform_tfilter_to_string(const NMPlatformTfilter *tfilter, char *buf, gsize
         p = act_buf;
         l = sizeof(act_buf);
 
-        nm_utils_strbuf_append(&p, &l, " \"%s\"", tfilter->action.kind);
+        nm_strbuf_append(&p, &l, " \"%s\"", tfilter->action.kind);
         if (nm_streq(tfilter->action.kind, NM_PLATFORM_ACTION_KIND_SIMPLE)) {
             gs_free char *t = NULL;
 
-            nm_utils_strbuf_append(
+            nm_strbuf_append(
                 &p,
                 &l,
                 " (\"%s\")",
@@ -7127,14 +7127,14 @@ nm_platform_tfilter_to_string(const NMPlatformTfilter *tfilter, char *buf, gsize
                                                  | NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII,
                                              &t));
         } else if (nm_streq(tfilter->action.kind, NM_PLATFORM_ACTION_KIND_MIRRED)) {
-            nm_utils_strbuf_append(&p,
-                                   &l,
-                                   "%s%s%s%s dev %d",
-                                   tfilter->action.mirred.ingress ? " ingress" : "",
-                                   tfilter->action.mirred.egress ? " egress" : "",
-                                   tfilter->action.mirred.mirror ? " mirror" : "",
-                                   tfilter->action.mirred.redirect ? " redirect" : "",
-                                   tfilter->action.mirred.ifindex);
+            nm_strbuf_append(&p,
+                             &l,
+                             "%s%s%s%s dev %d",
+                             tfilter->action.mirred.ingress ? " ingress" : "",
+                             tfilter->action.mirred.egress ? " egress" : "",
+                             tfilter->action.mirred.mirror ? " mirror" : "",
+                             tfilter->action.mirred.redirect ? " redirect" : "",
+                             tfilter->action.mirred.ifindex);
         }
     } else
         act_buf[0] = '\0';

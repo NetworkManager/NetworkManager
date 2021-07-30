@@ -14738,15 +14738,15 @@ _unmanaged_flags2str(NMUnmanagedFlags flags, NMUnmanagedFlags mask, char *buf, g
         tmp = buf2;
         while (TRUE) {
             if (add_separator)
-                nm_utils_strbuf_append_c(&b, &len, ',');
+                nm_strbuf_append_c(&b, &len, ',');
             add_separator = TRUE;
 
             tmp2 = strchr(tmp, ',');
             if (tmp2)
                 tmp2[0] = '\0';
 
-            nm_utils_strbuf_append_c(&b, &len, '!');
-            nm_utils_strbuf_append_str(&b, &len, tmp);
+            nm_strbuf_append_c(&b, &len, '!');
+            nm_strbuf_append_str(&b, &len, tmp);
             if (!tmp2)
                 break;
 

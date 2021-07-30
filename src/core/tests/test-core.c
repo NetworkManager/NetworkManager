@@ -1728,86 +1728,86 @@ test_nm_utils_strbuf_append(void)
     char buf[NM_STRLEN(BUF_ORIG) + 1];
     char str[NM_STRLEN(BUF_ORIG) + 1];
 
-#define _strbuf_append(buf, len, format, ...)                           \
-    G_STMT_START                                                        \
-    {                                                                   \
-        char **       _buf = (buf);                                     \
-        gsize *       _len = (len);                                     \
-        const char *  _str_iter;                                        \
-        gs_free char *_str = NULL;                                      \
-                                                                        \
-        switch (nmtst_get_rand_uint32() % 4) {                          \
-        case 0:                                                         \
-            nm_utils_strbuf_append(_buf, _len, (format), __VA_ARGS__);  \
-            break;                                                      \
-        case 1:                                                         \
-            _str = g_strdup_printf((format), __VA_ARGS__);              \
-            nm_utils_strbuf_append_str(_buf, _len, _str);               \
-            break;                                                      \
-        case 2:                                                         \
-            _str = g_strdup_printf((format), __VA_ARGS__);              \
-            nm_utils_strbuf_append_bin(_buf, _len, _str, strlen(_str)); \
-            break;                                                      \
-        case 3:                                                         \
-            _str = g_strdup_printf((format), __VA_ARGS__);              \
-            if (!_str[0])                                               \
-                nm_utils_strbuf_append_str(_buf, _len, _str);           \
-            for (_str_iter = _str; _str_iter[0]; _str_iter++)           \
-                nm_utils_strbuf_append_c(_buf, _len, _str_iter[0]);     \
-            break;                                                      \
-        }                                                               \
-    }                                                                   \
+#define _strbuf_append(buf, len, format, ...)                     \
+    G_STMT_START                                                  \
+    {                                                             \
+        char **       _buf = (buf);                               \
+        gsize *       _len = (len);                               \
+        const char *  _str_iter;                                  \
+        gs_free char *_str = NULL;                                \
+                                                                  \
+        switch (nmtst_get_rand_uint32() % 4) {                    \
+        case 0:                                                   \
+            nm_strbuf_append(_buf, _len, (format), __VA_ARGS__);  \
+            break;                                                \
+        case 1:                                                   \
+            _str = g_strdup_printf((format), __VA_ARGS__);        \
+            nm_strbuf_append_str(_buf, _len, _str);               \
+            break;                                                \
+        case 2:                                                   \
+            _str = g_strdup_printf((format), __VA_ARGS__);        \
+            nm_strbuf_append_bin(_buf, _len, _str, strlen(_str)); \
+            break;                                                \
+        case 3:                                                   \
+            _str = g_strdup_printf((format), __VA_ARGS__);        \
+            if (!_str[0])                                         \
+                nm_strbuf_append_str(_buf, _len, _str);           \
+            for (_str_iter = _str; _str_iter[0]; _str_iter++)     \
+                nm_strbuf_append_c(_buf, _len, _str_iter[0]);     \
+            break;                                                \
+        }                                                         \
+    }                                                             \
     G_STMT_END
 
-#define _strbuf_append_str(buf, len, str)                                          \
-    G_STMT_START                                                                   \
-    {                                                                              \
-        char **     _buf = (buf);                                                  \
-        gsize *     _len = (len);                                                  \
-        const char *_str = (str);                                                  \
-                                                                                   \
-        switch (nmtst_get_rand_uint32() % 4) {                                     \
-        case 0:                                                                    \
-            nm_utils_strbuf_append(_buf, _len, "%s", _str ?: "");                  \
-            break;                                                                 \
-        case 1:                                                                    \
-            nm_utils_strbuf_append_str(_buf, _len, _str);                          \
-            break;                                                                 \
-        case 2:                                                                    \
-            nm_utils_strbuf_append_bin(_buf, _len, _str, _str ? strlen(_str) : 0); \
-            break;                                                                 \
-        case 3:                                                                    \
-            if (!_str || !_str[0])                                                 \
-                nm_utils_strbuf_append_str(_buf, _len, _str);                      \
-            for (; _str && _str[0]; _str++)                                        \
-                nm_utils_strbuf_append_c(_buf, _len, _str[0]);                     \
-            break;                                                                 \
-        }                                                                          \
-    }                                                                              \
+#define _strbuf_append_str(buf, len, str)                                    \
+    G_STMT_START                                                             \
+    {                                                                        \
+        char **     _buf = (buf);                                            \
+        gsize *     _len = (len);                                            \
+        const char *_str = (str);                                            \
+                                                                             \
+        switch (nmtst_get_rand_uint32() % 4) {                               \
+        case 0:                                                              \
+            nm_strbuf_append(_buf, _len, "%s", _str ?: "");                  \
+            break;                                                           \
+        case 1:                                                              \
+            nm_strbuf_append_str(_buf, _len, _str);                          \
+            break;                                                           \
+        case 2:                                                              \
+            nm_strbuf_append_bin(_buf, _len, _str, _str ? strlen(_str) : 0); \
+            break;                                                           \
+        case 3:                                                              \
+            if (!_str || !_str[0])                                           \
+                nm_strbuf_append_str(_buf, _len, _str);                      \
+            for (; _str && _str[0]; _str++)                                  \
+                nm_strbuf_append_c(_buf, _len, _str[0]);                     \
+            break;                                                           \
+        }                                                                    \
+    }                                                                        \
     G_STMT_END
 
-#define _strbuf_append_c(buf, len, ch)                                   \
-    G_STMT_START                                                         \
-    {                                                                    \
-        char **_buf = (buf);                                             \
-        gsize *_len = (len);                                             \
-        char   _ch  = (ch);                                              \
-                                                                         \
-        switch (nmtst_get_rand_uint32() % 4) {                           \
-        case 0:                                                          \
-            nm_utils_strbuf_append(_buf, _len, "%c", _ch);               \
-            break;                                                       \
-        case 1:                                                          \
-            nm_utils_strbuf_append_str(_buf, _len, ((char[2]){_ch, 0})); \
-            break;                                                       \
-        case 2:                                                          \
-            nm_utils_strbuf_append_bin(_buf, _len, &_ch, 1);             \
-            break;                                                       \
-        case 3:                                                          \
-            nm_utils_strbuf_append_c(_buf, _len, _ch);                   \
-            break;                                                       \
-        }                                                                \
-    }                                                                    \
+#define _strbuf_append_c(buf, len, ch)                             \
+    G_STMT_START                                                   \
+    {                                                              \
+        char **_buf = (buf);                                       \
+        gsize *_len = (len);                                       \
+        char   _ch  = (ch);                                        \
+                                                                   \
+        switch (nmtst_get_rand_uint32() % 4) {                     \
+        case 0:                                                    \
+            nm_strbuf_append(_buf, _len, "%c", _ch);               \
+            break;                                                 \
+        case 1:                                                    \
+            nm_strbuf_append_str(_buf, _len, ((char[2]){_ch, 0})); \
+            break;                                                 \
+        case 2:                                                    \
+            nm_strbuf_append_bin(_buf, _len, &_ch, 1);             \
+            break;                                                 \
+        case 3:                                                    \
+            nm_strbuf_append_c(_buf, _len, _ch);                   \
+            break;                                                 \
+        }                                                          \
+    }                                                              \
     G_STMT_END
 
     for (buf_len = 0; buf_len < 10; buf_len++) {
@@ -1854,28 +1854,28 @@ test_nm_utils_strbuf_append(void)
                 if (t_len > 0 && strlen(str) >= buf_len && (nmtst_get_rand_uint32() % 2)) {
                     /* the string was truncated by g_snprintf(). That means, at the last position in the
                      * buffer is now NUL.
-                     * Replace the NUL by the actual character, and check that nm_utils_strbuf_seek_end()
+                     * Replace the NUL by the actual character, and check that nm_strbuf_seek_end()
                      * does the right thing: NUL terminate the buffer and seek past the end of the buffer. */
                     g_assert_cmpmem(t_buf, t_len - 1, str, t_len - 1);
                     g_assert(t_buf[t_len - 1] == '\0');
                     g_assert(str[t_len - 1] != '\0');
                     t_buf[t_len - 1] = str[t_len - 1];
-                    nm_utils_strbuf_seek_end(&t_buf, &t_len);
+                    nm_strbuf_seek_end(&t_buf, &t_len);
                     g_assert(t_len == 0);
                     g_assert(t_buf == &buf[buf_len]);
                     g_assert(t_buf[-1] == '\0');
                 } else {
-                    nm_utils_strbuf_seek_end(&t_buf, &t_len);
+                    nm_strbuf_seek_end(&t_buf, &t_len);
                     if (buf_len > 0 && strlen(str) + 1 > buf_len) {
                         /* the buffer was truncated by g_snprintf() above.
                          *
-                         * But nm_utils_strbuf_seek_end() does not recognize that and returns
+                         * But nm_strbuf_seek_end() does not recognize that and returns
                          * a remaining length of 1.
                          *
-                         * Note that other nm_utils_strbuf_append*() functions recognize
+                         * Note that other nm_strbuf_append*() functions recognize
                          * truncation, and properly set the remaining length to zero.
-                         * As the assertions below check for the behavior of nm_utils_strbuf_append*(),
-                         * we assert here that nm_utils_strbuf_seek_end() behaved as expected, and then
+                         * As the assertions below check for the behavior of nm_strbuf_append*(),
+                         * we assert here that nm_strbuf_seek_end() behaved as expected, and then
                          * adjust t_buf/t_len according to the "is-truncated" case. */
                         g_assert(t_len == 1);
                         g_assert(t_buf == &buf[buf_len - 1]);
@@ -2594,7 +2594,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_logging_domains", test_logging_domains);
     g_test_add_func("/general/test_logging_error", test_logging_error);
 
-    g_test_add_func("/general/nm_utils_strbuf_append", test_nm_utils_strbuf_append);
+    g_test_add_func("/general/nm_strbuf_append", test_nm_utils_strbuf_append);
 
     g_test_add_func("/general/nm_utils_ip6_address_clear_host_address",
                     test_nm_utils_ip6_address_clear_host_address);

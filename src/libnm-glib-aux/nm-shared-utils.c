@@ -263,7 +263,7 @@ _nm_assert_on_main_thread(void)
 /*****************************************************************************/
 
 void
-nm_utils_strbuf_append_c(char **buf, gsize *len, char c)
+nm_strbuf_append_c(char **buf, gsize *len, char c)
 {
     switch (*len) {
     case 0:
@@ -283,7 +283,7 @@ nm_utils_strbuf_append_c(char **buf, gsize *len, char c)
 }
 
 void
-nm_utils_strbuf_append_bin(char **buf, gsize *len, gconstpointer str, gsize str_len)
+nm_strbuf_append_bin(char **buf, gsize *len, gconstpointer str, gsize str_len)
 {
     switch (*len) {
     case 0:
@@ -318,7 +318,7 @@ nm_utils_strbuf_append_bin(char **buf, gsize *len, gconstpointer str, gsize str_
 }
 
 void
-nm_utils_strbuf_append_str(char **buf, gsize *len, const char *str)
+nm_strbuf_append_str(char **buf, gsize *len, const char *str)
 {
     gsize src_len;
 
@@ -352,7 +352,7 @@ nm_utils_strbuf_append_str(char **buf, gsize *len, const char *str)
 }
 
 void
-nm_utils_strbuf_append(char **buf, gsize *len, const char *format, ...)
+nm_strbuf_append(char **buf, gsize *len, const char *format, ...)
 {
     char *  p = *buf;
     va_list args;
@@ -375,25 +375,25 @@ nm_utils_strbuf_append(char **buf, gsize *len, const char *format, ...)
 }
 
 /**
- * nm_utils_strbuf_seek_end:
+ * nm_strbuf_seek_end:
  * @buf: the input/output buffer
  * @len: the input/output length of the buffer.
  *
- * Commonly, one uses nm_utils_strbuf_append*(), to incrementally
+ * Commonly, one uses nm_strbuf_append*(), to incrementally
  * append strings to the buffer. However, sometimes we need to use
  * existing API to write to the buffer.
  * After doing so, we want to adjust the buffer counter.
  * Essentially,
  *
  *   g_snprintf (buf, len, ...);
- *   nm_utils_strbuf_seek_end (&buf, &len);
+ *   nm_strbuf_seek_end (&buf, &len);
  *
  * is almost the same as
  *
- *   nm_utils_strbuf_append (&buf, &len, ...);
+ *   nm_strbuf_append (&buf, &len, ...);
  *
  * The only difference is the behavior when the string got truncated:
- * nm_utils_strbuf_append() will recognize that and set the remaining
+ * nm_strbuf_append() will recognize that and set the remaining
  * length to zero.
  *
  * In general, the behavior is:
@@ -411,13 +411,13 @@ nm_utils_strbuf_append(char **buf, gsize *len, const char *format, ...)
  *    the NUL byte. This would happen with
  *
  *       strncpy (buf, long_str, len);
- *       nm_utils_strbuf_seek_end (&buf, &len).
+ *       nm_strbuf_seek_end (&buf, &len).
  *
  *    where strncpy() does truncate the string and not NUL terminate it.
- *    nm_utils_strbuf_seek_end() would then NUL terminate it.
+ *    nm_strbuf_seek_end() would then NUL terminate it.
  */
 void
-nm_utils_strbuf_seek_end(char **buf, gsize *len)
+nm_strbuf_seek_end(char **buf, gsize *len)
 {
     gsize l;
     char *end;
@@ -714,7 +714,7 @@ nm_strquote(char *buf, gsize buf_len, const char *str)
     const char *const buf0 = buf;
 
     if (!str) {
-        nm_utils_strbuf_append_str(&buf, &buf_len, "(null)");
+        nm_strbuf_append_str(&buf, &buf_len, "(null)");
         goto out;
     }
 
@@ -733,7 +733,7 @@ nm_strquote(char *buf, gsize buf_len, const char *str)
     *(buf++) = '"';
     buf_len--;
 
-    nm_utils_strbuf_append_str(&buf, &buf_len, str);
+    nm_strbuf_append_str(&buf, &buf_len, str);
 
     /* if the string was too long we indicate truncation with a
      * '^' instead of a closing quote. */
@@ -817,7 +817,7 @@ nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
     if (!flags) {
         for (i = 0; i < n_descs; i++) {
             if (!descs[i].flag) {
-                nm_utils_strbuf_append_str(&p, &len, descs[i].name);
+                nm_strbuf_append_str(&p, &len, descs[i].name);
                 break;
             }
         }
@@ -829,14 +829,14 @@ nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
             flags &= ~descs[i].flag;
 
             if (buf[0] != '\0')
-                nm_utils_strbuf_append_c(&p, &len, ',');
-            nm_utils_strbuf_append_str(&p, &len, descs[i].name);
+                nm_strbuf_append_c(&p, &len, ',');
+            nm_strbuf_append_str(&p, &len, descs[i].name);
         }
     }
     if (flags) {
         if (buf[0] != '\0')
-            nm_utils_strbuf_append_c(&p, &len, ',');
-        nm_utils_strbuf_append(&p, &len, "0x%x", flags);
+            nm_strbuf_append_c(&p, &len, ',');
+        nm_strbuf_append(&p, &len, "0x%x", flags);
     }
     return buf;
 };

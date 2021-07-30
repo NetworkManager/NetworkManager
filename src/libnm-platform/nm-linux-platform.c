@@ -582,25 +582,25 @@ wait_for_nl_response_to_string(WaitForNlResponseResult seq_result,
 
     switch (seq_result) {
     case WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN:
-        nm_utils_strbuf_append_str(&buf, &buf_size, "unknown");
+        nm_strbuf_append_str(&buf, &buf_size, "unknown");
         break;
     case WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK:
-        nm_utils_strbuf_append_str(&buf, &buf_size, "success");
+        nm_strbuf_append_str(&buf, &buf_size, "success");
         break;
     case WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN:
-        nm_utils_strbuf_append_str(&buf, &buf_size, "failure");
+        nm_strbuf_append_str(&buf, &buf_size, "failure");
         break;
     default:
         if (seq_result < 0) {
-            nm_utils_strbuf_append(&buf,
-                                   &buf_size,
-                                   "failure %d (%s%s%s)",
-                                   -((int) seq_result),
-                                   nm_strerror_native(-((int) seq_result)),
-                                   errmsg ? " - " : "",
-                                   errmsg ?: "");
+            nm_strbuf_append(&buf,
+                             &buf_size,
+                             "failure %d (%s%s%s)",
+                             -((int) seq_result),
+                             nm_strerror_native(-((int) seq_result)),
+                             errmsg ? " - " : "",
+                             errmsg ?: "");
         } else
-            nm_utils_strbuf_append(&buf, &buf_size, "internal failure %d", (int) seq_result);
+            nm_strbuf_append(&buf, &buf_size, "internal failure %d", (int) seq_result);
         break;
     }
     return buf0;
@@ -5811,13 +5811,13 @@ delayed_action_to_string_full(DelayedActionType action_type,
     char *                                    buf0 = buf;
     const DelayedActionWaitForNlResponseData *data;
 
-    nm_utils_strbuf_append_str(&buf, &buf_size, delayed_action_to_string(action_type));
+    nm_strbuf_append_str(&buf, &buf_size, delayed_action_to_string(action_type));
     switch (action_type) {
     case DELAYED_ACTION_TYPE_MASTER_CONNECTED:
-        nm_utils_strbuf_append(&buf, &buf_size, " (master-ifindex %d)", GPOINTER_TO_INT(user_data));
+        nm_strbuf_append(&buf, &buf_size, " (master-ifindex %d)", GPOINTER_TO_INT(user_data));
         break;
     case DELAYED_ACTION_TYPE_REFRESH_LINK:
-        nm_utils_strbuf_append(&buf, &buf_size, " (ifindex %d)", GPOINTER_TO_INT(user_data));
+        nm_strbuf_append(&buf, &buf_size, " (ifindex %d)", GPOINTER_TO_INT(user_data));
         break;
     case DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE:
         data = user_data;
@@ -5826,7 +5826,7 @@ delayed_action_to_string_full(DelayedActionType action_type,
             gint64 timeout = data->timeout_abs_ns - nm_utils_get_monotonic_timestamp_nsec();
             char   b[255];
 
-            nm_utils_strbuf_append(
+            nm_strbuf_append(
                 &buf,
                 &buf_size,
                 " (seq %u, timeout in %s%" G_GINT64_FORMAT ".%09" G_GINT64_FORMAT
@@ -5841,7 +5841,7 @@ delayed_action_to_string_full(DelayedActionType action_type,
                     ? wait_for_nl_response_to_string(data->seq_result, NULL, b, sizeof(b))
                     : "");
         } else
-            nm_utils_strbuf_append_str(&buf, &buf_size, " (any)");
+            nm_strbuf_append_str(&buf, &buf_size, " (any)");
         break;
     default:
         nm_assert(!user_data);
