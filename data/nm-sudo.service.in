@@ -18,6 +18,7 @@ Description=NetworkManager Sudo Helper
 Type=dbus
 BusName=org.freedesktop.nm.sudo
 ExecStart=@libexecdir@/nm-sudo
+NotifyAccess=main
 
 # Extra configuration options. Set via `systemctl edit nm-sudo.service`:
 #
