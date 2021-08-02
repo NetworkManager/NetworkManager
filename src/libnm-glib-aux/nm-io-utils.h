@@ -75,4 +75,6 @@ struct sockaddr_un;
 
 int nm_io_sockaddr_un_set(struct sockaddr_un *ret, NMOptionBool is_abstract, const char *path);
 
+int nm_sd_notify(const char *state);
+
 #endif /* __NM_IO_UTILS_H__ */

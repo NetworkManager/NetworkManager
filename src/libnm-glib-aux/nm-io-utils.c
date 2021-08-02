@@ -675,3 +675,51 @@ nm_io_sockaddr_un_set(struct sockaddr_un *ret, NMOptionBool is_abstract, const c
      * calculated the same. */
     return (nm_offsetof(struct sockaddr_un, sun_path) + 1) + l;
 }
+
+/*****************************************************************************/
+
+/* taken from systemd's sd_notify(). */
+int
+nm_sd_notify(const char *state)
+{
+    struct sockaddr_un sockaddr;
+    struct iovec       iovec;
+    struct msghdr      msghdr = {
+        .msg_iov    = &iovec,
+        .msg_iovlen = 1,
+        .msg_name   = &sockaddr,
+    };
+    nm_auto_close int fd = -1;
+    const char *      e;
+    int               r;
+
+    if (!state)
+        g_return_val_if_reached(-EINVAL);
+
+    e = getenv("NOTIFY_SOCKET");
+    if (!e)
+        return 0;
+
+    r = nm_io_sockaddr_un_set(&sockaddr, NM_OPTION_BOOL_DEFAULT, e);
+    if (r < 0)
+        return r;
+    msghdr.msg_namelen = r;
+
+    fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+    if (fd < 0)
+        return -NM_ERRNO_NATIVE(errno);
+
+    /* systemd calls here fd_set_sndbuf(fd, SNDBUF_SIZE) .We don't bother. */
+
+    iovec = (struct iovec){
+        .iov_base = (gpointer) state,
+        .iov_len  = strlen(state),
+    };
+
+    /* systemd sends ucred, if geteuid()/getegid() does not match getuid()/getgid(). We don't bother. */
+
+    if (sendmsg(fd, &msghdr, MSG_NOSIGNAL) < 0)
+        return -NM_ERRNO_NATIVE(errno);
+
+    return 0;
+}
