@@ -1314,13 +1314,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_fcn_qdiscs(const NMSettInfoSetting * sett_info,
-                   const NMSettInfoProperty *property_info,
-                   NMConnection *            con_a,
-                   NMSetting *               set_a,
-                   NMConnection *            con_b,
-                   NMSetting *               set_b,
-                   NMSettingCompareFlags     flags)
+compare_fcn_qdiscs(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG(set_a);
     NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG(set_b);
@@ -1338,13 +1332,7 @@ compare_fcn_qdiscs(const NMSettInfoSetting * sett_info,
 }
 
 static NMTernary
-compare_fcn_tfilter(const NMSettInfoSetting * sett_info,
-                    const NMSettInfoProperty *property_info,
-                    NMConnection *            con_a,
-                    NMSetting *               set_a,
-                    NMConnection *            con_b,
-                    NMSetting *               set_b,
-                    NMSettingCompareFlags     flags)
+compare_fcn_tfilter(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     NMSettingTCConfig *a_tc_config = NM_SETTING_TC_CONFIG(set_a);
     NMSettingTCConfig *b_tc_config = NM_SETTING_TC_CONFIG(set_b);
@@ -1487,12 +1475,7 @@ next:
 }
 
 static GVariant *
-tc_qdiscs_get(const NMSettInfoSetting *               sett_info,
-              const NMSettInfoProperty *              property_info,
-              NMConnection *                          connection,
-              NMSetting *                             setting,
-              NMConnectionSerializationFlags          flags,
-              const NMConnectionSerializationOptions *options)
+tc_qdiscs_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 
@@ -1501,20 +1484,12 @@ tc_qdiscs_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-tc_qdiscs_set(const NMSettInfoSetting * sett_info,
-              const NMSettInfoProperty *property_info,
-              NMSetting *               setting,
-              GVariant *                connection_dict,
-              GVariant *                value,
-              NMSettingParseFlags       parse_flags,
-              GError **                 error)
+tc_qdiscs_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *qdiscs;
+    gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 
     qdiscs = _qdiscs_from_variant(value);
     g_object_set(setting, NM_SETTING_TC_CONFIG_QDISCS, qdiscs, NULL);
-    g_ptr_array_unref(qdiscs);
-
     return TRUE;
 }
 
@@ -1686,12 +1661,7 @@ next:
 }
 
 static GVariant *
-tc_tfilters_get(const NMSettInfoSetting *               sett_info,
-                const NMSettInfoProperty *              property_info,
-                NMConnection *                          connection,
-                NMSetting *                             setting,
-                NMConnectionSerializationFlags          flags,
-                const NMConnectionSerializationOptions *options)
+tc_tfilters_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *tfilters = NULL;
 
@@ -1700,13 +1670,7 @@ tc_tfilters_get(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-tc_tfilters_set(const NMSettInfoSetting * sett_info,
-                const NMSettInfoProperty *property_info,
-                NMSetting *               setting,
-                GVariant *                connection_dict,
-                GVariant *                value,
-                NMSettingParseFlags       parse_flags,
-                GError **                 error)
+tc_tfilters_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *tfilters = NULL;
 

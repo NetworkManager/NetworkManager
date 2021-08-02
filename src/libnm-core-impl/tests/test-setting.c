@@ -4672,6 +4672,24 @@ check_done:;
 
                 g_assert(!NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_CONSTRUCT));
                 g_assert(!NM_FLAGS_HAS(sip->param_spec->flags, G_PARAM_CONSTRUCT_ONLY));
+
+                if (NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
+                    if (sip->param_spec->value_type == G_TYPE_STRING) {
+                        g_assert_cmpstr(NM_G_PARAM_SPEC_GET_DEFAULT_STRING(sip->param_spec),
+                                        ==,
+                                        NULL);
+                    } else if (sip->param_spec->value_type == G_TYPE_BYTES) {
+                        /* pass */
+                    } else if (sip->param_spec->value_type == G_TYPE_HASH_TABLE) {
+                        g_assert(NM_IS_SETTING_VPN(setting));
+                        g_assert_cmpstr(sip->name, ==, NM_SETTING_VPN_SECRETS);
+                    } else {
+                        g_error("secret %s.%s is of unexpected property type %s",
+                                nm_setting_get_name(setting),
+                                sip->name,
+                                g_type_name(sip->param_spec->value_type));
+                    }
+                }
             }
         }
 

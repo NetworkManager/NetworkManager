@@ -130,12 +130,7 @@ nm_setting_serial_get_send_delay(NMSettingSerial *setting)
 }
 
 static GVariant *
-parity_to_dbus_fcn(const NMSettInfoSetting *               sett_info,
-                   const NMSettInfoProperty *              property_info,
-                   NMConnection *                          connection,
-                   NMSetting *                             setting,
-                   NMConnectionSerializationFlags          flags,
-                   const NMConnectionSerializationOptions *options)
+parity_to_dbus_fcn(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     switch (nm_setting_serial_get_parity(NM_SETTING_SERIAL(setting))) {
     case NM_SETTING_SERIAL_PARITY_EVEN:
@@ -151,7 +146,7 @@ parity_to_dbus_fcn(const NMSettInfoSetting *               sett_info,
 }
 
 static void
-parity_from_dbus(GVariant *from, GValue *to)
+parity_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil)
 {
     switch (g_variant_get_byte(from)) {
     case 'E':
