@@ -7,9 +7,11 @@
 
 #include "nm-io-utils.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/un.h>
 
 #include "nm-str-buf.h"
 #include "nm-shared-utils.h"
@@ -627,4 +629,49 @@ next:;
 
     g_ptr_array_add(arr, NULL);
     return (char **) g_ptr_array_free(arr, FALSE);
+}
+
+/*****************************************************************************/
+
+/* taken from systemd's sockaddr_un_set_path(). */
+int
+nm_io_sockaddr_un_set(struct sockaddr_un *ret, NMOptionBool is_abstract, const char *path)
+{
+    gsize l;
+
+    g_return_val_if_fail(ret, -EINVAL);
+    g_return_val_if_fail(path, -EINVAL);
+    nm_assert_is_ternary(is_abstract);
+
+    if (is_abstract == NM_OPTION_BOOL_DEFAULT)
+        is_abstract = nm_io_sockaddr_un_path_is_abstract(path, &path);
+
+    l = strlen(path);
+    if (l < 1)
+        return -EINVAL;
+    if (l > sizeof(ret->sun_path) - 1)
+        return -EINVAL;
+
+    if (!is_abstract) {
+        if (path[0] != '/') {
+            /* non-abstract paths must be absolute. */
+            return -EINVAL;
+        }
+    }
+
+    memset(ret, 0, nm_offsetof(struct sockaddr_un, sun_path));
+    ret->sun_family = AF_UNIX;
+
+    if (is_abstract) {
+        ret->sun_path[0] = '\0';
+        memcpy(&ret->sun_path[1], path, NM_MIN(l + 1, sizeof(ret->sun_path) - 1));
+    } else
+        memcpy(&ret->sun_path, path, l + 1);
+
+    /* For pathname addresses, we return the size with the trailing NUL.
+     * For abstract addresses, we return the size without the trailing NUL
+     * (which may not be even written). But as abstract sockets also have
+     * a NUL at the beginning of sun_path, the total length is always
+     * calculated the same. */
+    return (nm_offsetof(struct sockaddr_un, sun_path) + 1) + l;
 }
