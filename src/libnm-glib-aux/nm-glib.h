@@ -411,14 +411,15 @@ _nm_g_hash_table_get_keys_as_array(GHashTable *hash_table, guint *length)
 #undef g_steal_pointer
 #endif
 
-#define g_steal_pointer(pp)                                \
-    ({                                                     \
-        typeof(*(pp)) *const         _pp           = (pp); \
-        typeof(*_pp)                 _p            = *_pp; \
-        _nm_unused const void *const _p_type_check = _p;   \
-                                                           \
-        *_pp = NULL;                                       \
-        _p;                                                \
+#define g_steal_pointer(pp)              \
+    ({                                   \
+        typeof(*(pp)) *const _pp = (pp); \
+        typeof(*_pp)         _p  = *_pp; \
+                                         \
+        _NM_ENSURE_POINTER(_p);          \
+                                         \
+        *_pp = NULL;                     \
+        _p;                              \
     })
 
 /*****************************************************************************/

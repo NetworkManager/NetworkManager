@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stddef.h>
 
 /*****************************************************************************/
 
@@ -42,6 +43,36 @@
 #define _nm_fallthrough __attribute__((__fallthrough__))
 #else
 #define _nm_fallthrough
+#endif
+
+/*****************************************************************************/
+
+#ifndef _NM_CC_SUPPORT_AUTO_TYPE
+#if (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)))
+#define _NM_CC_SUPPORT_AUTO_TYPE 1
+#else
+#define _NM_CC_SUPPORT_AUTO_TYPE 0
+#endif
+#endif
+
+#if _NM_CC_SUPPORT_AUTO_TYPE
+#define _nm_auto_type __auto_type
+#endif
+
+#ifndef _NM_CC_SUPPORT_GENERIC
+/* In the meantime, NetworkManager requires C11 and _Generic() should always be available.
+ * However, shared/nm-utils may also be used in VPN/applet, which possibly did not yet
+ * bump the C standard requirement. Leave this for the moment, but eventually we can
+ * drop it.
+ *
+ * Technically, gcc 4.9 already has some support for _Generic(). But there seems
+ * to be issues with propagating "const char *[5]" to "const char **". Only assume
+ * we have _Generic() since gcc 5. */
+#if (defined(__GNUC__) && __GNUC__ >= 5) || (defined(__clang__))
+#define _NM_CC_SUPPORT_GENERIC 1
+#else
+#define _NM_CC_SUPPORT_GENERIC 0
+#endif
 #endif
 
 /*****************************************************************************/
@@ -192,11 +223,58 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 #define NM_N_ELEMENTS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+/*****************************************************************************/
+
+#define nm_offsetof(t, m) offsetof(t, m)
+
+#define nm_offsetofend(t, m) (nm_offsetof(t, m) + sizeof(((t *) NULL)->m))
+
+/*****************************************************************************/
+
 /* This does a compile time check that "type" is a suitable C type. It either
  * returns a compile time constant of 1 or it fails compilation. The point
  * is only in macros to check that a macro parameter (what we might pass to
  * sizeof() is really a type, and not a variable. */
 #define NM_ENSURE_IS_TYPE(type) (sizeof(void (*)(type[])) == sizeof(void (*)(void *)))
+
+/*****************************************************************************/
+
+#if _NM_CC_SUPPORT_GENERIC
+/* returns @value, if the type of @value matches @type.
+     * This requires support for C11 _Generic(). If no support is
+     * present, this returns @value directly.
+     *
+     * It's useful to check the let the compiler ensure that @value is
+     * of a certain type. */
+#define _NM_ENSURE_TYPE(type, value) (_Generic((value), type : (value)))
+#define _NM_ENSURE_TYPE_CONST(type, value)               \
+    (_Generic((value), const type                        \
+              : ((const type) (value)), const type const \
+              : ((const type) (value)), type             \
+              : ((const type) (value)), type const       \
+              : ((const type) (value))))
+#else
+#define _NM_ENSURE_TYPE(type, value)       (value)
+#define _NM_ENSURE_TYPE_CONST(type, value) ((const type) (value))
+#endif
+
+/* returns void, but does a compile time check that the argument is a pointer
+ * (that is, can be converted to (const void *)). It does not actually evaluate
+ * (value). That means, it's also safe to call _NM_ENSURE_POINTER(array[0]) if
+ * array might be NULL. It's also safe to call on a macro argument that is
+ * supposed to be evaluate at most once (this macro will not "execute" the
+ * argument). */
+#define _NM_ENSURE_POINTER(value)                                                 \
+    do {                                                                          \
+        _nm_unused const void *const _unused_for_type_check = 0 ? (value) : NULL; \
+    } while (0)
+
+#if _NM_CC_SUPPORT_GENERIC && (!defined(__clang__) || __clang_major__ > 3)
+#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) \
+    (_Generic((&(((container *) NULL)->field))[0], type : nm_offsetof(container, field)))
+#else
+#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) nm_offsetof(container, field)
+#endif
 
 /*****************************************************************************/
 
@@ -332,12 +410,10 @@ _nm_ptrarray_len_impl(const void *const *array)
  * like g_strv_length() does. The difference is:
  *  - it operates on arrays of pointers (of any kind, requiring no cast).
  *  - it accepts NULL to return zero. */
-#define NM_PTRARRAY_LEN(array)                                                 \
-    ({                                                                         \
-        typeof(*(array)) *const _array                 = (array);              \
-        _nm_unused const void * _type_check_is_pointer = 0 ? _array[0] : NULL; \
-                                                                               \
-        _nm_ptrarray_len_impl((const void *const *) _array);                   \
+#define NM_PTRARRAY_LEN(array)                                \
+    ({                                                        \
+        _NM_ENSURE_POINTER((array)[0]);                       \
+        _nm_ptrarray_len_impl((const void *const *) (array)); \
     })
 
 /*****************************************************************************/
@@ -866,7 +942,7 @@ _nm_auto_fclose(FILE **pfd)
         int            _changed = false;                                             \
                                                                                      \
         if (_pp && (_p = *_pp)) {                                                    \
-            _nm_unused const void *_p_check_is_pointer = _p;                         \
+            _NM_ENSURE_POINTER(_p);                                                  \
                                                                                      \
             *_pp = NULL;                                                             \
                                                                                      \
@@ -889,14 +965,15 @@ _nm_auto_fclose(FILE **pfd)
 
 /*****************************************************************************/
 
-#define nm_steal_pointer(pp)                               \
-    ({                                                     \
-        typeof(*(pp)) *const         _pp           = (pp); \
-        typeof(*_pp)                 _p            = *_pp; \
-        _nm_unused const void *const _p_type_check = _p;   \
-                                                           \
-        *_pp = NULL;                                       \
-        _p;                                                \
+#define nm_steal_pointer(pp)             \
+    ({                                   \
+        typeof(*(pp)) *const _pp = (pp); \
+        typeof(*_pp)         _p  = *_pp; \
+                                         \
+        _NM_ENSURE_POINTER(_p);          \
+                                         \
+        *_pp = NULL;                     \
+        _p;                              \
     })
 
 /**

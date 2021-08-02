@@ -43,10 +43,6 @@
 
 /*****************************************************************************/
 
-#define nm_offsetofend(t, m) (G_STRUCT_OFFSET(t, m) + sizeof(((t *) NULL)->m))
-
-/*****************************************************************************/
-
 #define gs_free            nm_auto_g_free
 #define gs_unref_object    nm_auto_unref_object
 #define gs_unref_variant   nm_auto_unref_variant
@@ -228,34 +224,6 @@ NM_G_ERROR_MSG(GError *error)
 
 /*****************************************************************************/
 
-#ifndef _NM_CC_SUPPORT_AUTO_TYPE
-#if (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)))
-#define _NM_CC_SUPPORT_AUTO_TYPE 1
-#else
-#define _NM_CC_SUPPORT_AUTO_TYPE 0
-#endif
-#endif
-
-#ifndef _NM_CC_SUPPORT_GENERIC
-/* In the meantime, NetworkManager requires C11 and _Generic() should always be available.
-     * However, shared/nm-utils may also be used in VPN/applet, which possibly did not yet
-     * bump the C standard requirement. Leave this for the moment, but eventually we can
-     * drop it.
-     *
-     * Technically, gcc 4.9 already has some support for _Generic(). But there seems
-     * to be issues with propagating "const char *[5]" to "const char **". Only assume
-     * we have _Generic() since gcc 5. */
-#if (defined(__GNUC__) && __GNUC__ >= 5) || (defined(__clang__))
-#define _NM_CC_SUPPORT_GENERIC 1
-#else
-#define _NM_CC_SUPPORT_GENERIC 0
-#endif
-#endif
-
-#if _NM_CC_SUPPORT_AUTO_TYPE
-#define _nm_auto_type __auto_type
-#endif
-
 #if _NM_CC_SUPPORT_GENERIC
 #define _NM_CONSTCAST_FULL_1(type, obj_expr, obj) \
     (_Generic ((obj_expr), \
@@ -375,45 +343,16 @@ NM_G_ERROR_MSG(GError *error)
         _ptr;                     \
     })
 
-#if _NM_CC_SUPPORT_GENERIC
-/* returns @value, if the type of @value matches @type.
-     * This requires support for C11 _Generic(). If no support is
-     * present, this returns @value directly.
-     *
-     * It's useful to check the let the compiler ensure that @value is
-     * of a certain type. */
-#define _NM_ENSURE_TYPE(type, value) (_Generic((value), type : (value)))
-#define _NM_ENSURE_TYPE_CONST(type, value)               \
-    (_Generic((value), const type                        \
-              : ((const type) (value)), const type const \
-              : ((const type) (value)), type             \
-              : ((const type) (value)), type const       \
-              : ((const type) (value))))
-#else
-#define _NM_ENSURE_TYPE(type, value)       (value)
-#define _NM_ENSURE_TYPE_CONST(type, value) ((const type) (value))
-#endif
-
-#if _NM_CC_SUPPORT_GENERIC && (!defined(__clang__) || __clang_major__ > 3)
-#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) \
-    (_Generic((&(((container *) NULL)->field))[0], type : G_STRUCT_OFFSET(container, field)))
-#else
-#define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) G_STRUCT_OFFSET(container, field)
-#endif
-
 /* Casts (arg) to (type**), but also having a compile time check that
  * the arg is some sort of pointer to a pointer.
  *
  * The only purpose of this macro is some additional compile time safety,
  * that the argument is a pointer to pointer. But then it will C cast any kind
  * of such argument. */
-#define NM_CAST_PPTR(type, arg)                                   \
-    ({                                                            \
-        typeof(*(arg)) *const        _arg  = (arg);               \
-        typeof(*_arg)                _arg2 = _arg ? *_arg : NULL; \
-        _nm_unused const void *const _arg3 = _arg2;               \
-                                                                  \
-        (type **) _arg;                                           \
+#define NM_CAST_PPTR(type, arg)     \
+    ({                              \
+        _NM_ENSURE_POINTER(*(arg)); \
+        (type **) (arg);            \
     })
 
 #if _NM_CC_SUPPORT_GENERIC
