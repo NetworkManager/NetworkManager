@@ -849,13 +849,7 @@ compare_property_secrets(NMSettingVpn *a, NMSettingVpn *b, NMSettingCompareFlags
 }
 
 static NMTernary
-compare_fcn_secrets(const NMSettInfoSetting * sett_info,
-                    const NMSettInfoProperty *property_info,
-                    NMConnection *            con_a,
-                    NMSetting *               set_a,
-                    NMConnection *            con_b,
-                    NMSetting *               set_b,
-                    NMSettingCompareFlags     flags)
+compare_fcn_secrets(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
         return NM_TERNARY_DEFAULT;
@@ -907,13 +901,7 @@ clear_secrets(const NMSettInfoSetting *        sett_info,
 }
 
 static gboolean
-vpn_secrets_from_dbus(const NMSettInfoSetting * sett_info,
-                      const NMSettInfoProperty *property_info,
-                      NMSetting *               setting,
-                      GVariant *                connection_dict,
-                      GVariant *                value,
-                      NMSettingParseFlags       parse_flags,
-                      GError **                 error)
+vpn_secrets_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingVpn *       self                = NM_SETTING_VPN(setting);
     NMSettingVpnPrivate *priv                = NM_SETTING_VPN_GET_PRIVATE(self);
@@ -936,12 +924,7 @@ vpn_secrets_from_dbus(const NMSettInfoSetting * sett_info,
 }
 
 static GVariant *
-vpn_secrets_to_dbus(const NMSettInfoSetting *               sett_info,
-                    const NMSettInfoProperty *              property_info,
-                    NMConnection *                          connection,
-                    NMSetting *                             setting,
-                    NMConnectionSerializationFlags          flags,
-                    const NMConnectionSerializationOptions *options)
+vpn_secrets_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
     GVariantBuilder      builder;

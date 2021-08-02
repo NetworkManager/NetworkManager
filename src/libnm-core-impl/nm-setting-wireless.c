@@ -740,12 +740,7 @@ nm_setting_wireless_get_seen_bssid(NMSettingWireless *setting, guint32 i)
 }
 
 static GVariant *
-_to_dbus_fcn_seen_bssids(const NMSettInfoSetting *               sett_info,
-                         const NMSettInfoProperty *              property_info,
-                         NMConnection *                          connection,
-                         NMSetting *                             setting,
-                         NMConnectionSerializationFlags          flags,
-                         const NMConnectionSerializationOptions *options)
+_to_dbus_fcn_seen_bssids(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     if (options && options->seen_bssids)
         return options->seen_bssids[0] ? g_variant_new_strv(options->seen_bssids, -1) : NULL;
@@ -766,13 +761,7 @@ _to_dbus_fcn_seen_bssids(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-_from_dbus_fcn_seen_bssids(const NMSettInfoSetting * sett_info,
-                           const NMSettInfoProperty *property_info,
-                           NMSetting *               setting,
-                           GVariant *                connection_dict,
-                           GVariant *                value,
-                           NMSettingParseFlags       parse_flags,
-                           GError **                 error)
+_from_dbus_fcn_seen_bssids(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingWirelessPrivate *priv;
     gs_free const char **     s = NULL;
@@ -782,6 +771,7 @@ _from_dbus_fcn_seen_bssids(const NMSettInfoSetting * sett_info,
     if (_nm_utils_is_manager_process) {
         /* in the manager process, we don't accept seen-bssid from the client.
          * Do nothing.  */
+        *out_is_modified = FALSE;
         return TRUE;
     }
 
@@ -1100,13 +1090,7 @@ mac_addr_rand_ok:
 }
 
 static NMTernary
-compare_fcn_cloned_mac_address(const NMSettInfoSetting * sett_info,
-                               const NMSettInfoProperty *property_info,
-                               NMConnection *            con_a,
-                               NMSetting *               set_a,
-                               NMConnection *            con_b,
-                               NMSetting *               set_b,
-                               NMSettingCompareFlags     flags)
+compare_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     return !set_b
            || nm_streq0(NM_SETTING_WIRELESS_GET_PRIVATE(set_a)->cloned_mac_address,
@@ -1114,13 +1098,7 @@ compare_fcn_cloned_mac_address(const NMSettInfoSetting * sett_info,
 }
 
 static NMTernary
-compare_fcn_seen_bssids(const NMSettInfoSetting * sett_info,
-                        const NMSettInfoProperty *property_info,
-                        NMConnection *            con_a,
-                        NMSetting *               set_a,
-                        NMConnection *            con_b,
-                        NMSetting *               set_b,
-                        NMSettingCompareFlags     flags)
+compare_fcn_seen_bssids(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     return !set_b
            || (nm_strv_ptrarray_cmp(NM_SETTING_WIRELESS_GET_PRIVATE(set_a)->seen_bssids,
@@ -1131,12 +1109,7 @@ compare_fcn_seen_bssids(const NMSettInfoSetting * sett_info,
 /*****************************************************************************/
 
 static GVariant *
-nm_setting_wireless_get_security(const NMSettInfoSetting *               sett_info,
-                                 const NMSettInfoProperty *              property_info,
-                                 NMConnection *                          connection,
-                                 NMSetting *                             setting,
-                                 NMConnectionSerializationFlags          flags,
-                                 const NMConnectionSerializationOptions *options)
+nm_setting_wireless_get_security(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     if (!_nm_connection_serialize_non_secret(flags))
         return NULL;

@@ -655,26 +655,6 @@ GVariant *nm_utils_hwaddr_to_dbus(const char *str);
 typedef struct _NMSettInfoSetting  NMSettInfoSetting;
 typedef struct _NMSettInfoProperty NMSettInfoProperty;
 
-typedef GVariant *(*NMSettInfoPropToDBusFcn)(const NMSettInfoSetting *               sett_info,
-                                             const NMSettInfoProperty *              property_info,
-                                             NMConnection *                          connection,
-                                             NMSetting *                             setting,
-                                             NMConnectionSerializationFlags          flags,
-                                             const NMConnectionSerializationOptions *options);
-typedef gboolean (*NMSettInfoPropFromDBusFcn)(const NMSettInfoSetting * sett_info,
-                                              const NMSettInfoProperty *property_info,
-                                              NMSetting *               setting,
-                                              GVariant *                connection_dict,
-                                              GVariant *                value,
-                                              NMSettingParseFlags       parse_flags,
-                                              GError **                 error);
-typedef gboolean (*NMSettInfoPropMissingFromDBusFcn)(NMSetting *         setting,
-                                                     GVariant *          connection_dict,
-                                                     const char *        property,
-                                                     NMSettingParseFlags parse_flags,
-                                                     GError **           error);
-typedef void (*NMSettInfoPropGPropFromDBusFcn)(GVariant *from, GValue *to);
-
 const NMSettInfoSetting *nmtst_sett_info_settings(void);
 
 typedef enum _nm_packed {
@@ -713,29 +693,46 @@ typedef struct {
      * allowed for backward compatibility. */
     bool from_dbus_direct_allow_transform : 1;
 
+#define _NM_SETT_INFO_PROP_COMPARE_FCN_ARGS                                           \
+    const NMSettInfoSetting *sett_info, const NMSettInfoProperty *property_info,      \
+        NMConnection *con_a, NMSetting *set_a, NMConnection *con_b, NMSetting *set_b, \
+        NMSettingCompareFlags flags
+
     /* compare_fcn() returns a ternary, where DEFAULT means that the property should not
      * be compared due to the compare @flags. A TRUE/FALSE result means that the property is
      * equal/not-equal.
      *
      * The "b" setting may be %NULL, in which case the function only determines whether
      * the setting should be compared (TRUE) or not (DEFAULT). */
-    NMTernary (*compare_fcn)(const NMSettInfoSetting * sett_info,
-                             const NMSettInfoProperty *property_info,
-                             NMConnection *            con_a,
-                             NMSetting *               set_a,
-                             NMConnection *            con_b,
-                             NMSetting *               set_b,
-                             NMSettingCompareFlags     flags);
+    NMTernary (*compare_fcn)(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);
 
-    NMSettInfoPropToDBusFcn          to_dbus_fcn;
-    NMSettInfoPropFromDBusFcn        from_dbus_fcn;
-    NMSettInfoPropMissingFromDBusFcn missing_from_dbus_fcn;
+#define _NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS                                                 \
+    const NMSettInfoSetting *sett_info, const NMSettInfoProperty *property_info,            \
+        NMConnection *connection, NMSetting *setting, NMConnectionSerializationFlags flags, \
+        const NMConnectionSerializationOptions *options
+
+    GVariant *(*to_dbus_fcn)(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
+
+#define _NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS                                    \
+    const NMSettInfoSetting *sett_info, const NMSettInfoProperty *property_info, \
+        NMSetting *setting, GVariant *connection_dict, GVariant *value,          \
+        NMSettingParseFlags parse_flags, NMTernary *out_is_modified, GError **error
+
+    gboolean (*from_dbus_fcn)(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+
+#define _NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS                    \
+    NMSetting *setting, GVariant *connection_dict, const char *property, \
+        NMSettingParseFlags parse_flags, GError **error
+
+    gboolean (*missing_from_dbus_fcn)(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil);
 
     struct {
+#define _NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS GVariant *from, GValue *to
+
         /* Only if from_dbus_fcn is set to _nm_setting_property_from_dbus_fcn_gprop.
          * This is an optional handler for converting between GVariant and
          * GValue. */
-        NMSettInfoPropGPropFromDBusFcn gprop_fcn;
+        void (*gprop_fcn)(_NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil);
     } typdata_from_dbus;
 
     struct {

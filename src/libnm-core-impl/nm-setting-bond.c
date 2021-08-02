@@ -1090,13 +1090,7 @@ options_equal(NMSettingBond *s_bond, NMSettingBond *s_bond2, NMSettingCompareFla
 }
 
 static NMTernary
-compare_fcn_options(const NMSettInfoSetting * sett_info,
-                    const NMSettInfoProperty *property_info,
-                    NMConnection *            con_a,
-                    NMSetting *               set_a,
-                    NMConnection *            con_b,
-                    NMSetting *               set_b,
-                    NMSettingCompareFlags     flags)
+compare_fcn_options(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     return (!set_b || options_equal(NM_SETTING_BOND(set_a), NM_SETTING_BOND(set_b), flags));
 }

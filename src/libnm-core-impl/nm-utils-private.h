@@ -38,7 +38,7 @@ extern const NMSettInfoPropertType nm_sett_info_propert_type_strdict;
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address;
 
-void _nm_utils_strdict_from_dbus(GVariant *dbus_value, GValue *prop_value);
+void _nm_utils_strdict_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil);
 
 void _nm_utils_bytes_from_dbus(GVariant *dbus_value, GValue *prop_value);
 
@@ -58,14 +58,10 @@ gboolean _nm_utils_bridge_vlan_verify_list(GPtrArray * vlans,
 
 NMTernary _nm_utils_bridge_compare_vlans(GPtrArray *vlans_a, GPtrArray *vlans_b);
 
-GVariant *_nm_team_settings_property_to_dbus(const NMSettInfoSetting *               sett_info,
-                                             const NMSettInfoProperty *              property_info,
-                                             NMConnection *                          connection,
-                                             NMSetting *                             setting,
-                                             NMConnectionSerializationFlags          flags,
-                                             const NMConnectionSerializationOptions *options);
+GVariant *_nm_team_settings_property_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
 
-void _nm_team_settings_property_from_dbus_link_watchers(GVariant *dbus_value, GValue *prop_value);
+void _nm_team_settings_property_from_dbus_link_watchers(
+    _NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil);
 
 GVariant *_nm_utils_ip4_dns_to_variant(const char *const *dns, gssize len);
 GVariant *_nm_utils_ip6_dns_to_variant(const char *const *dns, gssize len);

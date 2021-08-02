@@ -1291,12 +1291,7 @@ set_secret_flags(NMSetting *          setting,
 }
 
 static GVariant *
-wep_key_type_to_dbus(const NMSettInfoSetting *               sett_info,
-                     const NMSettInfoProperty *              property_info,
-                     NMConnection *                          connection,
-                     NMSetting *                             setting,
-                     NMConnectionSerializationFlags          flags,
-                     const NMConnectionSerializationOptions *options)
+wep_key_type_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMWepKeyType t;
 

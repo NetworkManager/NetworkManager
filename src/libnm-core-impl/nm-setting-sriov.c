@@ -875,12 +875,7 @@ _nm_setting_sriov_sort_vfs(NMSettingSriov *setting)
 /*****************************************************************************/
 
 static GVariant *
-vfs_to_dbus(const NMSettInfoSetting *               sett_info,
-            const NMSettInfoProperty *              property_info,
-            NMConnection *                          connection,
-            NMSetting *                             setting,
-            NMConnectionSerializationFlags          flags,
-            const NMConnectionSerializationOptions *options)
+vfs_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *vfs = NULL;
     GVariantBuilder              builder;
@@ -956,13 +951,7 @@ vfs_to_dbus(const NMSettInfoSetting *               sett_info,
 }
 
 static gboolean
-vfs_from_dbus(const NMSettInfoSetting * sett_info,
-              const NMSettInfoProperty *property_info,
-              NMSetting *               setting,
-              GVariant *                connection_dict,
-              GVariant *                value,
-              NMSettingParseFlags       parse_flags,
-              GError **                 error)
+vfs_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *  vfs;
     GVariantIter vf_iter;
@@ -1120,13 +1109,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_fcn_vfs(const NMSettInfoSetting * sett_info,
-                const NMSettInfoProperty *property_info,
-                NMConnection *            con_a,
-                NMSetting *               set_a,
-                NMConnection *            con_b,
-                NMSetting *               set_b,
-                NMSettingCompareFlags     flags)
+compare_fcn_vfs(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     NMSettingSriov *a;
     NMSettingSriov *b;

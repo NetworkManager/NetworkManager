@@ -976,13 +976,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static NMTernary
-compare_fcn_cloned_mac_address(const NMSettInfoSetting * sett_info,
-                               const NMSettInfoProperty *property_info,
-                               NMConnection *            con_a,
-                               NMSetting *               set_a,
-                               NMConnection *            con_b,
-                               NMSetting *               set_b,
-                               NMSettingCompareFlags     flags)
+compare_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
     return !set_b
            || nm_streq0(NM_SETTING_WIRED_GET_PRIVATE(set_a)->cloned_mac_address,
