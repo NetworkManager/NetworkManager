@@ -678,21 +678,20 @@ static gboolean
 _property_direct_set_string(const NMSettInfoProperty *property_info, char **dst, const char *src)
 {
     if (property_info->direct_set_string_ascii_strdown)
-        return nm_utils_strdup_reset_take(dst, src ? g_ascii_strdown(src, -1) : NULL);
+        return nm_strdup_reset_take(dst, src ? g_ascii_strdown(src, -1) : NULL);
     if (property_info->direct_set_string_mac_address_len > 0) {
-        return nm_utils_strdup_reset_take(dst,
-                                          _nm_utils_hwaddr_canonical_or_invalid(
-                                              src,
-                                              property_info->direct_set_string_mac_address_len));
+        return nm_strdup_reset_take(dst,
+                                    _nm_utils_hwaddr_canonical_or_invalid(
+                                        src,
+                                        property_info->direct_set_string_mac_address_len));
     }
     if (property_info->direct_set_string_ip_address_addr_family != 0) {
-        return nm_utils_strdup_reset_take(
-            dst,
-            _nm_utils_ipaddr_canonical_or_invalid(
-                property_info->direct_set_string_ip_address_addr_family,
-                src));
+        return nm_strdup_reset_take(dst,
+                                    _nm_utils_ipaddr_canonical_or_invalid(
+                                        property_info->direct_set_string_ip_address_addr_family,
+                                        src));
     }
-    return nm_utils_strdup_reset(dst, src);
+    return nm_strdup_reset(dst, src);
 }
 
 void
@@ -1091,7 +1090,7 @@ _nm_setting_property_to_dbus_fcn_gprop(const NMSettInfoSetting *               s
         return nm_g_variant_new_au((const guint32 *) tmp_array->data, tmp_array->len);
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT:
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_HASH_TABLE));
-        return nm_utils_strdict_to_variant_ass(g_value_get_boxed(&prop_value));
+        return nm_strdict_to_variant_ass(g_value_get_boxed(&prop_value));
     }
 
     return nm_assert_unreachable_val(NULL);
@@ -1130,7 +1129,7 @@ _nm_setting_property_from_dbus_fcn_direct_mac_address(const NMSettInfoSetting * 
 
     array = g_variant_get_fixed_array(value, &length, 1);
 
-    if (nm_utils_strdup_reset_take(
+    if (nm_strdup_reset_take(
             _nm_setting_get_private(setting, sett_info, property_info->direct_offset),
             length > 0 ? nm_utils_hwaddr_ntoa(array, length) : NULL))
         g_object_notify_by_pspec(G_OBJECT(setting), property_info->param_spec);
@@ -3327,7 +3326,7 @@ _nm_setting_option_get_all(NMSetting *         setting,
         return len;
 
     if (G_UNLIKELY(!gendata->names)) {
-        gendata->names = nm_utils_strdict_get_keys(hash, TRUE, NULL);
+        gendata->names = nm_strdict_get_keys(hash, TRUE, NULL);
     }
 
     if (out_values) {

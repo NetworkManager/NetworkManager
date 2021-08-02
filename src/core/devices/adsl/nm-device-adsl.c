@@ -356,7 +356,7 @@ br2684_create_iface(NMDeviceAdsl *self)
             return FALSE;
         }
 
-        nm_utils_strdup_reset(&priv->nas_ifname, ni.ifname);
+        nm_strdup_reset(&priv->nas_ifname, ni.ifname);
         _LOGD(LOGD_ADSL, "waiting for br2684 iface '%s' to appear", priv->nas_ifname);
         priv->nas_update_count = 0;
         priv->nas_update_id    = g_timeout_add(100, nas_update_cb, self);

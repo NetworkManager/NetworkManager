@@ -263,7 +263,7 @@ _nm_assert_on_main_thread(void)
 /*****************************************************************************/
 
 void
-nm_utils_strbuf_append_c(char **buf, gsize *len, char c)
+nm_strbuf_append_c(char **buf, gsize *len, char c)
 {
     switch (*len) {
     case 0:
@@ -283,7 +283,7 @@ nm_utils_strbuf_append_c(char **buf, gsize *len, char c)
 }
 
 void
-nm_utils_strbuf_append_bin(char **buf, gsize *len, gconstpointer str, gsize str_len)
+nm_strbuf_append_bin(char **buf, gsize *len, gconstpointer str, gsize str_len)
 {
     switch (*len) {
     case 0:
@@ -318,7 +318,7 @@ nm_utils_strbuf_append_bin(char **buf, gsize *len, gconstpointer str, gsize str_
 }
 
 void
-nm_utils_strbuf_append_str(char **buf, gsize *len, const char *str)
+nm_strbuf_append_str(char **buf, gsize *len, const char *str)
 {
     gsize src_len;
 
@@ -352,7 +352,7 @@ nm_utils_strbuf_append_str(char **buf, gsize *len, const char *str)
 }
 
 void
-nm_utils_strbuf_append(char **buf, gsize *len, const char *format, ...)
+nm_strbuf_append(char **buf, gsize *len, const char *format, ...)
 {
     char *  p = *buf;
     va_list args;
@@ -375,25 +375,25 @@ nm_utils_strbuf_append(char **buf, gsize *len, const char *format, ...)
 }
 
 /**
- * nm_utils_strbuf_seek_end:
+ * nm_strbuf_seek_end:
  * @buf: the input/output buffer
  * @len: the input/output length of the buffer.
  *
- * Commonly, one uses nm_utils_strbuf_append*(), to incrementally
+ * Commonly, one uses nm_strbuf_append*(), to incrementally
  * append strings to the buffer. However, sometimes we need to use
  * existing API to write to the buffer.
  * After doing so, we want to adjust the buffer counter.
  * Essentially,
  *
  *   g_snprintf (buf, len, ...);
- *   nm_utils_strbuf_seek_end (&buf, &len);
+ *   nm_strbuf_seek_end (&buf, &len);
  *
  * is almost the same as
  *
- *   nm_utils_strbuf_append (&buf, &len, ...);
+ *   nm_strbuf_append (&buf, &len, ...);
  *
  * The only difference is the behavior when the string got truncated:
- * nm_utils_strbuf_append() will recognize that and set the remaining
+ * nm_strbuf_append() will recognize that and set the remaining
  * length to zero.
  *
  * In general, the behavior is:
@@ -411,13 +411,13 @@ nm_utils_strbuf_append(char **buf, gsize *len, const char *format, ...)
  *    the NUL byte. This would happen with
  *
  *       strncpy (buf, long_str, len);
- *       nm_utils_strbuf_seek_end (&buf, &len).
+ *       nm_strbuf_seek_end (&buf, &len).
  *
  *    where strncpy() does truncate the string and not NUL terminate it.
- *    nm_utils_strbuf_seek_end() would then NUL terminate it.
+ *    nm_strbuf_seek_end() would then NUL terminate it.
  */
 void
-nm_utils_strbuf_seek_end(char **buf, gsize *len)
+nm_strbuf_seek_end(char **buf, gsize *len)
 {
     gsize l;
     char *end;
@@ -622,7 +622,7 @@ nm_g_variant_singleton_aaLsvI(void)
 /*****************************************************************************/
 
 GHashTable *
-nm_utils_strdict_clone(GHashTable *src)
+nm_strdict_clone(GHashTable *src)
 {
     GHashTable *   dst;
     GHashTableIter iter;
@@ -644,7 +644,7 @@ nm_utils_strdict_clone(GHashTable *src)
  * Returns a floating reference.
  */
 GVariant *
-nm_utils_strdict_to_variant_ass(GHashTable *strdict)
+nm_strdict_to_variant_ass(GHashTable *strdict)
 {
     gs_free NMUtilsNamedValue *values_free = NULL;
     NMUtilsNamedValue          values_prepared[20];
@@ -665,7 +665,7 @@ nm_utils_strdict_to_variant_ass(GHashTable *strdict)
 /*****************************************************************************/
 
 GVariant *
-nm_utils_strdict_to_variant_asv(GHashTable *strdict)
+nm_strdict_to_variant_asv(GHashTable *strdict)
 {
     gs_free NMUtilsNamedValue *values_free = NULL;
     NMUtilsNamedValue          values_prepared[20];
@@ -714,7 +714,7 @@ nm_strquote(char *buf, gsize buf_len, const char *str)
     const char *const buf0 = buf;
 
     if (!str) {
-        nm_utils_strbuf_append_str(&buf, &buf_len, "(null)");
+        nm_strbuf_append_str(&buf, &buf_len, "(null)");
         goto out;
     }
 
@@ -733,7 +733,7 @@ nm_strquote(char *buf, gsize buf_len, const char *str)
     *(buf++) = '"';
     buf_len--;
 
-    nm_utils_strbuf_append_str(&buf, &buf_len, str);
+    nm_strbuf_append_str(&buf, &buf_len, str);
 
     /* if the string was too long we indicate truncation with a
      * '^' instead of a closing quote. */
@@ -817,7 +817,7 @@ nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
     if (!flags) {
         for (i = 0; i < n_descs; i++) {
             if (!descs[i].flag) {
-                nm_utils_strbuf_append_str(&p, &len, descs[i].name);
+                nm_strbuf_append_str(&p, &len, descs[i].name);
                 break;
             }
         }
@@ -829,14 +829,14 @@ nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
             flags &= ~descs[i].flag;
 
             if (buf[0] != '\0')
-                nm_utils_strbuf_append_c(&p, &len, ',');
-            nm_utils_strbuf_append_str(&p, &len, descs[i].name);
+                nm_strbuf_append_c(&p, &len, ',');
+            nm_strbuf_append_str(&p, &len, descs[i].name);
         }
     }
     if (flags) {
         if (buf[0] != '\0')
-            nm_utils_strbuf_append_c(&p, &len, ',');
-        nm_utils_strbuf_append(&p, &len, "0x%x", flags);
+            nm_strbuf_append_c(&p, &len, ',');
+        nm_strbuf_append(&p, &len, "0x%x", flags);
     }
     return buf;
 };
@@ -1732,7 +1732,7 @@ _char_lookup_has_all(const CharLookupTable *lookup, const char *candidates)
 }
 
 /**
- * nm_utils_strsplit_set_full:
+ * nm_strsplit_set_full:
  * @str: the string to split.
  * @delimiters: the set of delimiters.
  * @flags: additional flags for controlling the operation.
@@ -1746,7 +1746,7 @@ _char_lookup_has_all(const CharLookupTable *lookup, const char *candidates)
  * This never returns an empty array.
  *
  * Returns: %NULL if @str is %NULL or "".
- *   If @str only contains delimiters and %NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
+ *   If @str only contains delimiters and %NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
  *   is not set, it also returns %NULL.
  *   Otherwise, a %NULL terminated strv array containing the split words.
  *   (delimiter characters are removed).
@@ -1757,7 +1757,7 @@ _char_lookup_has_all(const CharLookupTable *lookup, const char *candidates)
  *   like "g_strstrip((char *) iter[0])".
  */
 const char **
-nm_utils_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsplitSetFlags flags)
+nm_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsplitSetFlags flags)
 {
     const char **   ptr;
     gsize           num_tokens;
@@ -1766,12 +1766,11 @@ nm_utils_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsp
     const char *    c_str;
     char *          s;
     CharLookupTable ch_lookup;
-    const gboolean  f_escaped = NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_ESCAPED);
+    const gboolean  f_escaped = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_ESCAPED);
     const gboolean  f_allow_escaping =
-        f_escaped || NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
-    const gboolean f_preserve_empty =
-        NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
-    const gboolean f_strstrip = NM_FLAGS_HAS(flags, NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+        f_escaped || NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
+    const gboolean f_preserve_empty = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
+    const gboolean f_strstrip       = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_STRSTRIP);
 
     if (!str)
         return NULL;
@@ -1790,8 +1789,8 @@ nm_utils_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsp
     }
 
     if (!str[0]) {
-        /* We return %NULL here, also with NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY.
-         * That makes nm_utils_strsplit_set_full() with NM_UTILS_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
+        /* We return %NULL here, also with NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY.
+         * That makes nm_strsplit_set_full() with NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY
          * different from g_strsplit_set(), which would in this case return an empty array.
          * If you need to handle %NULL, and "" specially, then check the input string first. */
         return NULL;
@@ -2174,7 +2173,7 @@ nm_utils_escaped_tokens_options_split(char *str, const char **out_key, const cha
  * with the flags "EXTRACT_UNQUOTE | EXTRACT_RELAX". This is what
  * systemd uses to parse /proc/cmdline, and we do too.
  *
- * Splits the string. We have nm_utils_strsplit_set() which
+ * Splits the string. We have nm_strsplit_set() which
  * supports a variety of flags. However, extending that already
  * complex code to also support quotation and escaping is hard.
  * Instead, add a naive implementation.
@@ -4285,7 +4284,7 @@ nm_utils_get_start_time_for_pid(pid_t pid, char *out_state, pid_t *out_ppid)
 
     state = p[0];
 
-    tokens = nm_utils_strsplit_set(p, " ");
+    tokens = nm_strsplit_set(p, " ");
 
     if (NM_PTRARRAY_LEN(tokens) < 20)
         goto fail;

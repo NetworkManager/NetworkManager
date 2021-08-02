@@ -626,7 +626,7 @@ nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const
         };
         priv->s390_options.len++;
     } else {
-        if (!nm_utils_strdup_reset(&priv->s390_options.arr[idx].value_str_mutable, value))
+        if (!nm_strdup_reset(&priv->s390_options.arr[idx].value_str_mutable, value))
             return TRUE;
     }
 

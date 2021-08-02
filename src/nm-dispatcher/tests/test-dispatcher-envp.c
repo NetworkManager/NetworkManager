@@ -159,7 +159,7 @@ add_uint_array(GKeyFile *       kf,
     if (tmp == NULL)
         return TRUE;
 
-    split = nm_utils_strsplit_set_with_empty(tmp, " ");
+    split = nm_strsplit_set_with_empty(tmp, " ");
     if (split) {
         gs_unref_array GArray *items = NULL;
 
@@ -229,7 +229,7 @@ parse_ip4(GKeyFile *kf, GVariant **out_props, const char *section, GError **erro
     tmp = g_key_file_get_string(kf, section, "domains", error);
     if (tmp == NULL)
         return FALSE;
-    split = nm_utils_strsplit_set_with_empty(tmp, " ");
+    split = nm_strsplit_set_with_empty(tmp, " ");
     if (split) {
         for (iter = split; *iter; iter++)
             g_strstrip((char *) *iter);
@@ -247,7 +247,7 @@ parse_ip4(GKeyFile *kf, GVariant **out_props, const char *section, GError **erro
     tmp = g_key_file_get_string(kf, section, "addresses", error);
     if (tmp == NULL)
         return FALSE;
-    split = nm_utils_strsplit_set_with_empty(tmp, ",");
+    split = nm_strsplit_set_with_empty(tmp, ",");
     if (split) {
         gs_unref_ptrarray GPtrArray *addresses = NULL;
         const char *                 gateway   = NULL;
@@ -291,7 +291,7 @@ parse_ip4(GKeyFile *kf, GVariant **out_props, const char *section, GError **erro
 
     nm_clear_g_free(&tmp);
     tmp   = g_key_file_get_string(kf, section, "routes", NULL);
-    split = nm_utils_strsplit_set_with_empty(tmp, ",");
+    split = nm_strsplit_set_with_empty(tmp, ",");
     if (split) {
         gs_unref_ptrarray GPtrArray *routes = NULL;
 

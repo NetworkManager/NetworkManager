@@ -232,7 +232,7 @@ nm_setting_user_get_keys(NMSettingUser *setting, guint *out_len)
         return priv->keys;
     }
 
-    priv->keys = nm_utils_strdict_get_keys(priv->data, TRUE, out_len);
+    priv->keys = nm_strdict_get_keys(priv->data, TRUE, out_len);
 
     /* don't return %NULL, but hijack the @keys fields as a pseudo
      * empty strv array. */

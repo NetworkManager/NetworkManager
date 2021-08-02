@@ -474,7 +474,7 @@ make_connection_setting(const char *file,
     if (v) {
         gs_free const char **items = NULL;
 
-        items = nm_utils_strsplit_set(v, " ");
+        items = nm_strsplit_set(v, " ");
         for (iter = items; iter && *iter; iter++) {
             if (!nm_setting_connection_add_permission(s_con, "user", *iter, NULL))
                 PARSE_WARNING("invalid USERS item '%s'", *iter);
@@ -490,7 +490,7 @@ make_connection_setting(const char *file,
     if (v) {
         gs_free const char **items = NULL;
 
-        items = nm_utils_strsplit_set(v, " \t");
+        items = nm_strsplit_set(v, " \t");
         for (iter = items; iter && *iter; iter++) {
             if (!nm_setting_connection_add_secondary(s_con, *iter))
                 PARSE_WARNING("secondary connection UUID '%s' already added", *iter);
@@ -1036,7 +1036,7 @@ parse_route_line(const char *line,
      * Maybe later we want to support some form of quotation here.
      * Which of course, would be incompatible with initscripts.
      */
-    words_free = nm_utils_strsplit_set(line, " \t\n");
+    words_free = nm_strsplit_set(line, " \t\n");
 
     words = words_free ?: NM_PTRARRAY_EMPTY(const char *);
 
@@ -1582,7 +1582,7 @@ parse_dns_options(NMSettingIPConfig *ip_config, const char *value)
     if (!nm_setting_ip_config_has_dns_options(ip_config))
         nm_setting_ip_config_clear_dns_options(ip_config, TRUE);
 
-    options = nm_utils_strsplit_set(value, " ");
+    options = nm_strsplit_set(value, " ");
     if (options) {
         for (item = options; *item; item++) {
             if (!nm_setting_ip_config_add_dns_option(ip_config, *item))
@@ -1999,7 +1999,7 @@ make_ip4_setting(shvarFile *ifcfg,
         if (v) {
             gs_free const char **searches = NULL;
 
-            searches = nm_utils_strsplit_set(v, " ");
+            searches = nm_strsplit_set(v, " ");
             if (searches) {
                 for (item = searches; *item; item++) {
                     if (!nm_setting_ip_config_add_dns_search(s_ip4, *item))
@@ -2059,7 +2059,7 @@ make_ip4_setting(shvarFile *ifcfg,
         if (v) {
             gs_free const char **searches = NULL;
 
-            searches = nm_utils_strsplit_set(v, " ");
+            searches = nm_strsplit_set(v, " ");
             if (searches) {
                 for (item = searches; *item; item++) {
                     if (!nm_setting_ip_config_add_dns_search(s_ip4, *item))
@@ -2433,7 +2433,7 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                       ipv6addr_secondaries ?: "",
                       NULL);
 
-    list = nm_utils_strsplit_set(value, " ");
+    list = nm_strsplit_set(value, " ");
     for (iter = list, i = 0; iter && *iter; iter++, i++) {
         NMIPAddress *addr = NULL;
 
@@ -2532,7 +2532,7 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
     if (v) {
         gs_free const char **searches = NULL;
 
-        searches = nm_utils_strsplit_set(v, " ");
+        searches = nm_strsplit_set(v, " ");
         if (searches) {
             for (iter = searches; *iter; iter++) {
                 if (!nm_setting_ip_config_add_dns_search(s_ip6, *iter))
@@ -2949,7 +2949,7 @@ read_dcb_percent_array(shvarFile *       ifcfg,
         return TRUE;
     }
 
-    split = nm_utils_strsplit_set(val, ",");
+    split = nm_strsplit_set(val, ",");
     if (NM_PTRARRAY_LEN(split) != 8) {
         PARSE_WARNING("invalid %s percentage list value '%s'", prop, val);
         g_set_error_literal(error,
@@ -3368,7 +3368,7 @@ fill_wpa_ciphers(shvarFile *ifcfg, NMSettingWirelessSecurity *wsec, gboolean gro
     if (!p)
         return TRUE;
 
-    list = nm_utils_strsplit_set(p, " ");
+    list = nm_strsplit_set(p, " ");
     for (iter = list; iter && *iter; iter++, i++) {
         if (!strcmp(*iter, "CCMP")) {
             if (group)
@@ -3604,7 +3604,7 @@ parse_8021x_phase2_auth(shvarFile *     ifcfg,
     }
 
     inner_auth = g_ascii_strdown(v, -1);
-    list       = nm_utils_strsplit_set(inner_auth, " ");
+    list       = nm_strsplit_set(inner_auth, " ");
     for (iter = list; iter && *iter; iter++) {
         if (NM_IN_STRSET(*iter, "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5")) {
             if (num_auth == 0) {
@@ -3779,7 +3779,7 @@ eap_fast_reader(const char *    eap_method,
     if (fast_provisioning) {
         gs_free const char **list = NULL;
 
-        list = nm_utils_strsplit_set(fast_provisioning, " \t");
+        list = nm_strsplit_set(fast_provisioning, " \t");
         for (iter = list; iter && *iter; iter++) {
             if (strcmp(*iter, "allow-unauth") == 0)
                 allow_unauth = TRUE;
@@ -3857,7 +3857,7 @@ read_8021x_list_value(shvarFile *     ifcfg,
     if (!v)
         return;
 
-    strv = nm_utils_strsplit_set(v, " \t");
+    strv = nm_strsplit_set(v, " \t");
     if (strv)
         g_object_set(setting, prop_name, strv, NULL);
 }
@@ -3884,7 +3884,7 @@ fill_8021x(shvarFile *ifcfg, const char *file, const char *key_mgmt, gboolean wi
         return NULL;
     }
 
-    list = nm_utils_strsplit_set(v, " ");
+    list = nm_strsplit_set(v, " ");
 
     s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
 
@@ -4237,7 +4237,7 @@ transform_hwaddr_blacklist(const char *blacklist)
     const char **strv;
     gsize        i, j;
 
-    strv = nm_utils_strsplit_set(blacklist, " \t");
+    strv = nm_strsplit_set(blacklist, " \t");
     if (!strv)
         return NULL;
     for (i = 0, j = 0; strv[j]; j++) {
@@ -4706,7 +4706,7 @@ parse_ethtool_option(const char *             value,
     gs_free const char **words        = NULL;
     NMEthtoolType        ethtool_type = NM_ETHTOOL_TYPE_UNKNOWN;
 
-    words = nm_utils_strsplit_set(value, " \t\n");
+    words = nm_strsplit_set(value, " \t\n");
     if (!words)
         return;
 
@@ -4968,7 +4968,7 @@ parse_ethtool_options(shvarFile *ifcfg, NMConnection *connection)
             gs_free const char **opts = NULL;
             const char *const *  iter;
 
-            opts = nm_utils_strsplit_set(ethtool_opts, ";");
+            opts = nm_strsplit_set(ethtool_opts, ";");
             for (iter = opts; iter && iter[0]; iter++) {
                 /* in case of repeated wol_passwords, parse_ethtool_option()
                  * will do the right thing and clear wol_password before resetting. */
@@ -5076,7 +5076,7 @@ make_wired_setting(shvarFile *ifcfg, const char *file, NMSetting8021x **s_8021x,
                 gs_free const char **chans = NULL;
                 guint32              num_chans;
 
-                chans     = nm_utils_strsplit_set(cvalue, ",");
+                chans     = nm_strsplit_set(cvalue, ",");
                 num_chans = NM_PTRARRAY_LEN(chans);
                 if (num_chans < 2 || num_chans > 3) {
                     PARSE_WARNING("invalid SUBCHANNELS '%s' (%u channels, 2 or 3 expected)",
@@ -5448,7 +5448,7 @@ make_bond_setting(shvarFile *ifcfg, const char *file, GError **error)
         gs_free const char **items = NULL;
         const char *const *  iter;
 
-        items = nm_utils_strsplit_set(v, " ");
+        items = nm_strsplit_set(v, " ");
         for (iter = items; iter && *iter; iter++) {
             gs_free char *key = NULL;
             const char *  val;
@@ -5758,7 +5758,7 @@ handle_bridging_opts(NMSetting *   setting,
     gs_free const char **items = NULL;
     const char *const *  iter;
 
-    items = nm_utils_strsplit_set(value, " ");
+    items = nm_strsplit_set(value, " ");
     for (iter = items; iter && *iter; iter++) {
         gs_free char *key = NULL;
         const char *  val;
@@ -6019,7 +6019,7 @@ parse_prio_map_list(NMSettingVlan *s_vlan, shvarFile *ifcfg, const char *key, NM
     v = svGetValueStr(ifcfg, key, &value);
     if (!v)
         return;
-    list = nm_utils_strsplit_set(v, ",");
+    list = nm_strsplit_set(v, ",");
 
     for (iter = list; iter && *iter; iter++) {
         if (!strchr(*iter, ':'))
@@ -6130,7 +6130,7 @@ make_vlan_setting(shvarFile *ifcfg, const char *file, GError **error)
         gs_free const char **strv = NULL;
         const char *const *  ptr;
 
-        strv = nm_utils_strsplit_set(v, ", ");
+        strv = nm_strsplit_set(v, ", ");
         for (ptr = strv; ptr && *ptr; ptr++) {
             if (nm_streq(*ptr, "GVRP") && gvrp == -1)
                 vlan_flags |= NM_VLAN_FLAG_GVRP;
@@ -6276,7 +6276,7 @@ check_dns_search_domains(shvarFile *ifcfg, NMSetting *s_ip4, NMSetting *s_ip6)
             gs_free const char **searches = NULL;
             const char *const *  item;
 
-            searches = nm_utils_strsplit_set(v, " ");
+            searches = nm_strsplit_set(v, " ");
             if (searches) {
                 for (item = searches; *item; item++) {
                     if (!nm_setting_ip_config_add_dns_search(NM_SETTING_IP_CONFIG(s_ip6), *item))

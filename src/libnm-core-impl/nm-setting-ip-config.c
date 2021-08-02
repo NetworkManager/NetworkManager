@@ -527,7 +527,7 @@ _nm_ip_address_get_attribute_names(const NMIPAddress *address, gboolean sorted, 
 {
     nm_assert(address);
 
-    return nm_utils_strdict_get_keys(address->attributes, sorted, out_length);
+    return nm_strdict_get_keys(address->attributes, sorted, out_length);
 }
 
 /**
@@ -1134,7 +1134,7 @@ _nm_ip_route_get_attribute_names(const NMIPRoute *route, gboolean sorted, guint 
 {
     nm_assert(route);
 
-    return nm_utils_strdict_get_keys(route->attributes, sorted, out_length);
+    return nm_strdict_get_keys(route->attributes, sorted, out_length);
 }
 
 /**

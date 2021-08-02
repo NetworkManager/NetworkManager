@@ -364,7 +364,7 @@ reader_read_all_connections_from_fw(Reader *reader, const char *sysfs_dir)
     gs_free const char **          keys = NULL;
 
     ibft = nmi_ibft_read(sysfs_dir);
-    keys = nm_utils_strdict_get_keys(ibft, TRUE, &length);
+    keys = nm_strdict_get_keys(ibft, TRUE, &length);
 
     for (i = 0; i < length; i++) {
         gs_unref_object NMConnection *connection = NULL;
@@ -461,7 +461,7 @@ _parse_ip_method(const char *kind)
 
     /* dracut also supports combinations, separated by comma. We don't
      * support arbitrary combinations, but accept specific subsets. */
-    strv = nm_utils_strsplit_set_full(kind, ",", NM_UTILS_STRSPLIT_SET_FLAGS_STRSTRIP);
+    strv = nm_strsplit_set_full(kind, ",", NM_STRSPLIT_SET_FLAGS_STRSTRIP);
     if (!strv)
         return NULL;
 
@@ -1292,7 +1292,7 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
                 _nm_utils_ascii_str_to_int64(argument, 10, 1, G_MAXINT32, dhcp_num_tries);
         } else if (nm_streq(tag, "rd.net.dhcp.vendor-class")) {
             if (nm_utils_validate_dhcp4_vendor_class_id(argument, NULL))
-                nm_utils_strdup_reset(&reader->dhcp4_vci, argument);
+                nm_strdup_reset(&reader->dhcp4_vci, argument);
         } else if (nm_streq(tag, "rd.net.timeout.carrier")) {
             reader->carrier_timeout_sec =
                 _nm_utils_ascii_str_to_int64(argument, 10, 0, G_MAXINT32, 0);

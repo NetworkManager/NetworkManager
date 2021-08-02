@@ -189,7 +189,7 @@ _unmanaged_specs(GHashTable *eni_ifaces)
     GSList *             specs = NULL;
     guint                i, len;
 
-    keys = nm_utils_strdict_get_keys(eni_ifaces, TRUE, &len);
+    keys = nm_strdict_get_keys(eni_ifaces, TRUE, &len);
     for (i = len; i > 0;) {
         i--;
         specs = g_slist_prepend(specs,
@@ -264,7 +264,7 @@ load_eni_ifaces(NMSIfupdownPlugin *self)
 
                     _LOGD("parse: found bridge ports %s for %s", ports, block->name);
 
-                    port_ifaces = nm_utils_strsplit_set(ports, " \t");
+                    port_ifaces = nm_strsplit_set(ports, " \t");
                     for (i = 0; port_ifaces && port_ifaces[i]; i++) {
                         const char *token = port_ifaces[i];
 
