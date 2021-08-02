@@ -342,7 +342,7 @@ _handle_dbus_start(NMFirewalldManager *self, NMFirewalldManagerCallId *call_id)
     call_id->dbus.cancellable = g_cancellable_new();
 
     g_dbus_connection_call(priv->dbus_connection,
-                           FIREWALL_DBUS_SERVICE,
+                           priv->name_owner,
                            FIREWALL_DBUS_PATH,
                            FIREWALL_DBUS_INTERFACE_ZONE,
                            dbus_method,
