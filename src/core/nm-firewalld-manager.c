@@ -15,6 +15,7 @@
 
 #define FIREWALL_DBUS_SERVICE        "org.fedoraproject.FirewallD1"
 #define FIREWALL_DBUS_PATH           "/org/fedoraproject/FirewallD1"
+#define FIREWALL_DBUS_INTERFACE      "org.fedoraproject.FirewallD1"
 #define FIREWALL_DBUS_INTERFACE_ZONE "org.fedoraproject.FirewallD1.zone"
 
 /*****************************************************************************/
@@ -32,6 +33,7 @@ typedef struct {
 
     char *name_owner;
 
+    guint reloaded_id;
     guint name_owner_changed_id;
 
     bool dbus_inited : 1;
@@ -148,9 +150,9 @@ _ops_type_to_string(OpsType ops_type)
 /*****************************************************************************/
 
 static void
-_signal_emit_state_changed(NMFirewalldManager *self, gboolean initialized_now)
+_signal_emit_state_changed(NMFirewalldManager *self, NMFirewalldManagerStateChangedType signal_type)
 {
-    g_signal_emit(self, signals[STATE_CHANGED], 0, initialized_now);
+    g_signal_emit(self, signals[STATE_CHANGED], 0, (int) signal_type);
 }
 
 /*****************************************************************************/
@@ -521,8 +523,30 @@ name_owner_changed(NMFirewalldManager *self, const char *owner)
         }
     }
 
-    if (was_running != now_running || name_owner_changed)
-        _signal_emit_state_changed(self, just_initied);
+    if (just_initied)
+        _signal_emit_state_changed(self, NM_FIREWALLD_MANAGER_STATE_CHANGED_TYPE_INITIALIZED);
+    else if (was_running != now_running || name_owner_changed)
+        _signal_emit_state_changed(self,
+                                   NM_FIREWALLD_MANAGER_STATE_CHANGED_TYPE_NAME_OWNER_CHANGED);
+}
+
+static void
+reloaded_cb(GDBusConnection *connection,
+            const char *     sender_name,
+            const char *     object_path,
+            const char *     interface_name,
+            const char *     signal_name,
+            GVariant *       parameters,
+            gpointer         user_data)
+{
+    NMFirewalldManager *       self = user_data;
+    NMFirewalldManagerPrivate *priv = NM_FIREWALLD_MANAGER_GET_PRIVATE(self);
+
+    if (!nm_streq0(sender_name, priv->name_owner))
+        return;
+
+    _LOGT(NULL, "reloaded signal received");
+    _signal_emit_state_changed(self, NM_FIREWALLD_MANAGER_STATE_CHANGED_TYPE_RELOADED);
 }
 
 static void
@@ -578,6 +602,17 @@ nm_firewalld_manager_init(NMFirewalldManager *self)
         return;
     }
 
+    priv->reloaded_id = g_dbus_connection_signal_subscribe(priv->dbus_connection,
+                                                           FIREWALL_DBUS_SERVICE,
+                                                           FIREWALL_DBUS_INTERFACE,
+                                                           "Reloaded",
+                                                           FIREWALL_DBUS_PATH,
+                                                           NULL,
+                                                           G_DBUS_SIGNAL_FLAGS_NONE,
+                                                           reloaded_cb,
+                                                           self,
+                                                           NULL);
+
     priv->name_owner_changed_id =
         nm_dbus_connection_signal_subscribe_name_owner_changed(priv->dbus_connection,
                                                                FIREWALL_DBUS_SERVICE,
@@ -604,6 +639,7 @@ dispose(GObject *object)
      * we don't expect pending operations at this point. */
     nm_assert(c_list_is_empty(&priv->pending_calls));
 
+    nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->reloaded_id);
     nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
 
     nm_clear_g_cancellable(&priv->get_name_owner_cancellable);
@@ -626,8 +662,8 @@ nm_firewalld_manager_class_init(NMFirewalldManagerClass *klass)
                                           0,
                                           NULL,
                                           NULL,
-                                          g_cclosure_marshal_VOID__BOOLEAN,
+                                          g_cclosure_marshal_VOID__INT,
                                           G_TYPE_NONE,
                                           1,
-                                          G_TYPE_BOOLEAN /* initialized_now */);
+                                          G_TYPE_INT /* signal-type */);
 }
