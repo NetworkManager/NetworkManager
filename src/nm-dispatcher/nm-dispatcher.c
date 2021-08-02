@@ -1054,6 +1054,9 @@ main(int argc, char **argv)
 
 done:
 
+    /* FIXME: nm-dispatcher does not exit-on-idle in a racefree manner.
+     * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html */
+
     if (gl.num_requests_pending > 0) {
         /* this only happens when we quit due to SIGTERM (not due to the idle timer).
          *
