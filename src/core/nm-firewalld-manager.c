@@ -30,10 +30,11 @@ typedef struct {
 
     CList pending_calls;
 
+    char *name_owner;
+
     guint name_owner_changed_id;
 
     bool dbus_inited : 1;
-    bool running : 1;
 } NMFirewalldManagerPrivate;
 
 struct _NMFirewalldManager {
@@ -154,7 +155,7 @@ _get_running(NMFirewalldManagerPrivate *priv)
      * service is indeed running. That is the time when we queue the
      * requests, and they will be started once the get-name-owner call
      * returns. */
-    return priv->running || (priv->dbus_connection && !priv->dbus_inited);
+    return priv->name_owner || (priv->dbus_connection && !priv->dbus_inited);
 }
 
 gboolean
@@ -315,7 +316,7 @@ _handle_dbus_start(NMFirewalldManager *self, NMFirewalldManagerCallId *call_id)
     GVariant *                 arg;
 
     nm_assert(call_id);
-    nm_assert(priv->running);
+    nm_assert(priv->name_owner);
     nm_assert(!call_id->is_idle);
     nm_assert(c_list_contains(&priv->pending_calls, &call_id->lst));
 
@@ -378,10 +379,10 @@ _start_request(NMFirewalldManager *                self,
           iface,
           NM_PRINT_FMT_QUOTED(zone, "\"", zone, "\"", "default"),
           call_id->is_idle ? " (not running, simulate success)"
-                           : (!priv->running ? " (waiting to initialize)" : ""));
+                           : (!priv->name_owner ? " (waiting to initialize)" : ""));
 
     if (!call_id->is_idle) {
-        if (priv->running)
+        if (priv->name_owner)
             _handle_dbus_start(self, call_id);
         if (!call_id->callback) {
             /* if the user did not provide a callback, the call_id is useless.
@@ -463,6 +464,7 @@ name_owner_changed(NMFirewalldManager *self, const char *owner)
     gboolean                                       was_running;
     gboolean                                       now_running;
     gboolean                                       just_initied;
+    gboolean                                       name_owner_changed;
 
     owner = nm_str_not_empty(owner);
 
@@ -474,8 +476,8 @@ name_owner_changed(NMFirewalldManager *self, const char *owner)
     was_running  = _get_running(priv);
     just_initied = !priv->dbus_inited;
 
-    priv->dbus_inited = TRUE;
-    priv->running     = !!owner;
+    priv->dbus_inited  = TRUE;
+    name_owner_changed = nm_strdup_reset(&priv->name_owner, owner);
 
     now_running = _get_running(priv);
 
@@ -495,7 +497,7 @@ name_owner_changed(NMFirewalldManager *self, const char *owner)
             nm_assert(!call_id->is_idle);
             nm_assert(call_id->dbus.arg);
 
-            if (priv->running) {
+            if (priv->name_owner) {
                 _LOGD(call_id, "initalizing: make D-Bus call");
                 _handle_dbus_start(self, call_id);
             } else {
@@ -511,7 +513,7 @@ name_owner_changed(NMFirewalldManager *self, const char *owner)
         }
     }
 
-    if (was_running != now_running)
+    if (was_running != now_running || name_owner_changed)
         g_signal_emit(self, signals[STATE_CHANGED], 0, FALSE);
 }
 
@@ -541,7 +543,7 @@ get_name_owner_cb(const char *name_owner, GError *error, gpointer user_data)
     NMFirewalldManager *       self;
     NMFirewalldManagerPrivate *priv;
 
-    if (!name_owner && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+    if (nm_utils_error_is_cancelled(error))
         return;
 
     self = user_data;
