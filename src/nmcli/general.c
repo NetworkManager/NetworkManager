@@ -7,10 +7,10 @@
 
 #include <stdlib.h>
 
-#include "libnm-core-aux-intern/nm-common-macros.h"
-
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnmc-base/nm-client-utils.h"
+#include "libnm-core-aux-extern/nm-libnm-core-aux.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 
 #include "polkit-agent.h"
 #include "utils.h"
@@ -1392,8 +1392,9 @@ device_overview(NmCli *nmc, NMDevice *device)
 static void
 ac_overview(NmCli *nmc, NMActiveConnection *ac)
 {
-    GString *   outbuf = g_string_sized_new(80);
-    NMIPConfig *ip;
+    GString *                outbuf = g_string_sized_new(80);
+    NMIPConfig *             ip;
+    nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
 
     if (nm_active_connection_get_master(ac)) {
         g_string_append_printf(outbuf,
@@ -1426,7 +1427,11 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
         p = nm_ip_config_get_routes(ip);
         for (i = 0; i < p->len; i++) {
             NMIPRoute *a = p->pdata[i];
-            g_print("\troute4 %s/%d\n", nm_ip_route_get_dest(a), nm_ip_route_get_prefix(a));
+
+            nm_str_buf_reset(&str);
+            _nm_ip_route_to_string(a, &str);
+
+            g_print("\troute4 %s\n", nm_str_buf_get_str(&str));
         }
     }
 
@@ -1444,7 +1449,11 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
         p = nm_ip_config_get_routes(ip);
         for (i = 0; i < p->len; i++) {
             NMIPRoute *a = p->pdata[i];
-            g_print("\troute6 %s/%d\n", nm_ip_route_get_dest(a), nm_ip_route_get_prefix(a));
+
+            nm_str_buf_reset(&str);
+            _nm_ip_route_to_string(a, &str);
+
+            g_print("\troute6 %s\n", nm_str_buf_get_str(&str));
         }
     }
 
