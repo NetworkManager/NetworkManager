@@ -147,6 +147,14 @@ _ops_type_to_string(OpsType ops_type)
 
 /*****************************************************************************/
 
+static void
+_signal_emit_state_changed(NMFirewalldManager *self, gboolean initialized_now)
+{
+    g_signal_emit(self, signals[STATE_CHANGED], 0, initialized_now);
+}
+
+/*****************************************************************************/
+
 static gboolean
 _get_running(NMFirewalldManagerPrivate *priv)
 {
@@ -514,7 +522,7 @@ name_owner_changed(NMFirewalldManager *self, const char *owner)
     }
 
     if (was_running != now_running || name_owner_changed)
-        g_signal_emit(self, signals[STATE_CHANGED], 0, FALSE);
+        _signal_emit_state_changed(self, just_initied);
 }
 
 static void
