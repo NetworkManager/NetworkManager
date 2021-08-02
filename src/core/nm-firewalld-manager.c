@@ -105,7 +105,7 @@ _ops_type_to_string(OpsType ops_type)
 }
 
 #define _NMLOG_DOMAIN      LOGD_FIREWALL
-#define _NMLOG_PREFIX_NAME "firewall"
+#define _NMLOG_PREFIX_NAME "firewalld"
 #define _NMLOG(level, call_id, ...)                                                 \
     G_STMT_START                                                                    \
     {                                                                               \
