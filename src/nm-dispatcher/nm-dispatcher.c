@@ -26,6 +26,7 @@ typedef struct Request Request;
 
 static struct {
     GDBusConnection *dbus_connection;
+    GCancellable *   quit_cancellable;
     gboolean         debug;
     gboolean         persist;
     GSource *        quit_source;
@@ -963,6 +964,7 @@ signal_handler(gpointer user_data)
 
     _LOG_X_I("Caught signal %d, shutting down...", signo);
     gl.shutdown_quitting = TRUE;
+    g_cancellable_cancel(gl.quit_cancellable);
     return G_SOURCE_CONTINUE;
 }
 
@@ -999,6 +1001,8 @@ main(int argc, char **argv)
     signal(SIGPIPE, SIG_IGN);
     source_term = nm_g_unix_signal_add_source(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
     source_int  = nm_g_unix_signal_add_source(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
+
+    gl.quit_cancellable = g_cancellable_new();
 
     if (!parse_command_line(&argc, &argv, &error)) {
         _LOG_X_W("Error parsing command line arguments: %s", error->message);
@@ -1093,6 +1097,8 @@ done:
 
     nm_clear_g_source_inst(&source_term);
     nm_clear_g_source_inst(&source_int);
+
+    g_clear_object(&gl.quit_cancellable);
 
     return gl.exit_with_failure ? 1 : 0;
 }
