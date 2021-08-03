@@ -201,10 +201,14 @@ quit_timeout_cb(gpointer user_data)
 static void
 quit_timeout_reschedule(void)
 {
-    if (!gl.persist) {
-        nm_clear_g_source_inst(&gl.quit_source);
-        gl.quit_source = nm_g_timeout_add_source_seconds(10, quit_timeout_cb, NULL);
-    }
+    if (gl.persist)
+        return;
+
+    if (gl.shutdown_quitting)
+        return;
+
+    nm_clear_g_source_inst(&gl.quit_source);
+    gl.quit_source = nm_g_timeout_add_source(10000, quit_timeout_cb, NULL);
 }
 
 /**
@@ -961,11 +965,11 @@ logging_shutdown(void)
 static gboolean
 signal_handler(gpointer user_data)
 {
-    int signo = GPOINTER_TO_INT(user_data);
-
-    _LOG_X_I("Caught signal %d, shutting down...", signo);
-    gl.shutdown_quitting = TRUE;
-    g_cancellable_cancel(gl.quit_cancellable);
+    if (!gl.shutdown_quitting) {
+        gl.shutdown_quitting = TRUE;
+        _LOG_X_I("Caught signal %d, shutting down...", GPOINTER_TO_INT(user_data));
+        g_cancellable_cancel(gl.quit_cancellable);
+    }
     return G_SOURCE_CONTINUE;
 }
 
@@ -1039,6 +1043,8 @@ main(int argc, char **argv)
 
     gl.requests_waiting = g_queue_new();
 
+    quit_timeout_reschedule();
+
     dbus_regist_id =
         g_dbus_connection_register_object(gl.dbus_connection,
                                           NM_DISPATCHER_DBUS_PATH,
@@ -1061,8 +1067,6 @@ main(int argc, char **argv)
                                                     NULL,
                                                     NULL);
 
-    quit_timeout_reschedule();
-
     while (TRUE) {
         if (gl.shutdown_timeout || gl.shutdown_quitting)
             break;
@@ -1070,6 +1074,9 @@ main(int argc, char **argv)
     }
 
 done:
+
+    gl.shutdown_quitting = TRUE;
+    g_cancellable_cancel(gl.quit_cancellable);
 
     /* FIXME: nm-dispatcher does not exit-on-idle in a racefree manner.
      * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html */
