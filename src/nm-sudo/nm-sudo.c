@@ -50,7 +50,6 @@ struct _GlobalData {
     gint64   start_timestamp_msec;
     guint32  timeout_msec;
     bool     name_owner_initialized;
-    bool     service_registered;
     bool     name_requested;
 
     /* This is controlled by $NM_SUDO_NO_AUTH_FOR_TESTING. It disables authentication
@@ -312,7 +311,7 @@ static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO
                                     .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
                                         NM_DEFINE_GDBUS_ARG_INFO("fd_type", "u"), ), ), ), );
 
-static void
+static gboolean
 _bus_register_service(GlobalData *gl)
 {
     static const GDBusInterfaceVTable interface_vtable = {
@@ -325,8 +324,6 @@ _bus_register_service(GlobalData *gl)
     gs_unref_variant GVariant *ret = NULL;
     guint32                    ret_val;
 
-    nm_assert(!gl->service_registered);
-
     gl->service_regist_id =
         g_dbus_connection_register_object(gl->dbus_connection,
                                           NM_SUDO_DBUS_OBJECT_PATH,
@@ -337,7 +334,7 @@ _bus_register_service(GlobalData *gl)
                                           &error);
     if (gl->service_regist_id == 0) {
         _LOGE("dbus: error registering object %s: %s", NM_SUDO_DBUS_OBJECT_PATH, error->message);
-        return;
+        return FALSE;
     }
 
     _LOGD("dbus: object %s registered", NM_SUDO_DBUS_OBJECT_PATH);
@@ -362,11 +359,11 @@ _bus_register_service(GlobalData *gl)
     ret = nm_dbus_connection_call_blocking(&data, &error);
 
     if (nm_utils_error_is_cancelled(error))
-        return;
+        return FALSE;
 
     if (error) {
         _LOGE("d-bus: failed to request name %s: %s", NM_SUDO_DBUS_BUS_NAME, error->message);
-        return;
+        return FALSE;
     }
 
     g_variant_get(ret, "(u)", &ret_val);
@@ -375,11 +372,11 @@ _bus_register_service(GlobalData *gl)
         _LOGW("dbus: request name for %s failed to take name (response %u)",
               NM_SUDO_DBUS_BUS_NAME,
               ret_val);
-        return;
+        return FALSE;
     }
 
     _LOGD("dbus: request name for %s succeeded", NM_SUDO_DBUS_BUS_NAME);
-    gl->service_registered = TRUE;
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -536,14 +533,14 @@ main(int argc, char **argv)
 
     exit_code = EXIT_SUCCESS;
 
-    _bus_register_service(gl);
-    if (!gl->service_registered) {
+    if (!_bus_register_service(gl)) {
         /* We failed to RequestName, but due to D-Bus activation we
          * might have a pending request still (on the unique name).
          * Process it below.
          *
          * Let's fake a shutdown signal, and still process the request below. */
-        exit_code                     = EXIT_FAILURE;
+        if (!g_cancellable_is_cancelled(gl->quit_cancellable))
+            exit_code = EXIT_FAILURE;
         gl->is_shutting_down_quitting = TRUE;
     }
 
