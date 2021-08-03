@@ -453,3 +453,40 @@ nm_g_bus_get_blocking(GCancellable *cancellable, GError **error)
 
     return g_steal_pointer(&dbus_connection);
 }
+
+/*****************************************************************************/
+
+void
+nm_dbus_connection_call_blocking_callback(GObject *source, GAsyncResult *res, gpointer user_data)
+{
+    NMDBusConnectionCallBlockingData *data = user_data;
+
+    nm_assert(data);
+    nm_assert(!data->result);
+    nm_assert(!data->error);
+
+    data->result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), res, &data->error);
+}
+
+GVariant *
+nm_dbus_connection_call_blocking(NMDBusConnectionCallBlockingData *data, GError **error)
+{
+    GMainContext *main_context        = g_main_context_get_thread_default();
+    gs_free_error GError *local_error = NULL;
+    gs_unref_variant GVariant *result = NULL;
+
+    nm_assert(data);
+
+    while (!data->result && !data->error)
+        g_main_context_iteration(main_context, TRUE);
+
+    local_error = g_steal_pointer(&data->error);
+    result      = g_steal_pointer(&data->result);
+
+    if (!result) {
+        g_propagate_error(error, g_steal_pointer(&local_error));
+        return NULL;
+    }
+
+    return g_steal_pointer(&result);
+}

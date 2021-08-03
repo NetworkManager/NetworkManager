@@ -240,4 +240,16 @@ gboolean _nm_dbus_error_is(GError *error, ...) G_GNUC_NULL_TERMINATED;
 
 GDBusConnection *nm_g_bus_get_blocking(GCancellable *cancellable, GError **error);
 
+/*****************************************************************************/
+
+typedef struct {
+    GVariant *result;
+    GError *  error;
+} NMDBusConnectionCallBlockingData;
+
+void
+nm_dbus_connection_call_blocking_callback(GObject *source, GAsyncResult *res, gpointer user_data);
+
+GVariant *nm_dbus_connection_call_blocking(NMDBusConnectionCallBlockingData *data, GError **error);
+
 #endif /* __NM_DBUS_AUX_H__ */
