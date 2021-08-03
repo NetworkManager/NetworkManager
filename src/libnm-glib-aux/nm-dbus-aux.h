@@ -84,6 +84,29 @@ void nm_dbus_connection_call_get_name_owner(GDBusConnection *                  d
                                             NMDBusConnectionCallGetNameOwnerCb callback,
                                             gpointer                           user_data);
 
+static inline void
+nm_dbus_connection_call_request_name(GDBusConnection *   dbus_connection,
+                                     const char *        name,
+                                     guint32             flags,
+                                     int                 timeout_msec,
+                                     GCancellable *      cancellable,
+                                     GAsyncReadyCallback callback,
+                                     gpointer            user_data)
+{
+    g_dbus_connection_call(dbus_connection,
+                           DBUS_SERVICE_DBUS,
+                           DBUS_PATH_DBUS,
+                           DBUS_INTERFACE_DBUS,
+                           "RequestName",
+                           g_variant_new("(su)", name, flags),
+                           G_VARIANT_TYPE("(u)"),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           timeout_msec,
+                           cancellable,
+                           callback,
+                           user_data);
+}
+
 static inline guint
 nm_dbus_connection_signal_subscribe_properties_changed(GDBusConnection *   dbus_connection,
                                                        const char *        bus_name,
