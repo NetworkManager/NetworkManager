@@ -5,6 +5,7 @@ Description=Network Manager Script Dispatcher Service
 Type=dbus
 BusName=org.freedesktop.nm_dispatcher
 ExecStart=@libexecdir@/nm-dispatcher
+NotifyAccess=main
 
 # We want to allow scripts to spawn long-running daemons, so tell
 # systemd to not clean up when nm-dispatcher exits
