@@ -389,7 +389,7 @@ test_l3cfg(gconstpointer test_data)
     {
         nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
 
-        l3cd = nm_l3_config_data_new(f->multiidx, f->ifindex0);
+        l3cd = nm_l3_config_data_new(f->multiidx, f->ifindex0, NM_IP_CONFIG_SOURCE_UNKNOWN);
 
         nm_l3_config_data_add_address_4(
             l3cd,

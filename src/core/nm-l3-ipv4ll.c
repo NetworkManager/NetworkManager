@@ -357,8 +357,7 @@ _l3cd_config_create(int ifindex, in_addr_t addr, NMDedupMultiIndex *multi_idx)
     nm_assert(ifindex > 0);
     nm_assert(multi_idx);
 
-    l3cd = nm_l3_config_data_new(multi_idx, ifindex);
-    nm_l3_config_data_set_source(l3cd, NM_IP_CONFIG_SOURCE_IP4LL);
+    l3cd = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_IP4LL);
 
     nm_l3_config_data_add_address_4(l3cd, _l3cd_config_plat_init_addr(&a, ifindex, addr));
     nm_l3_config_data_add_route_4(l3cd, _l3cd_config_plat_init_route(&r, ifindex));

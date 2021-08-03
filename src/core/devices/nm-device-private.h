@@ -143,7 +143,7 @@ NMIP6Config *nm_device_ip6_config_new(NMDevice *self);
 
 NMIPConfig *nm_device_ip_config_new(NMDevice *self, int addr_family);
 
-NML3ConfigData *nm_device_create_l3_config_data(NMDevice *self);
+NML3ConfigData *nm_device_create_l3_config_data(NMDevice *self, NMIPConfigSource source);
 
 /*****************************************************************************/
 

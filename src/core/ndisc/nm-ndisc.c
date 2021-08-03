@@ -112,9 +112,7 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
     guint                                   i;
     const gint32                            now_sec = nm_utils_get_monotonic_timestamp_sec();
 
-    l3cd = nm_l3_config_data_new(multi_idx, ifindex);
-
-    nm_l3_config_data_set_source(l3cd, NM_IP_CONFIG_SOURCE_NDISC);
+    l3cd = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_NDISC);
 
     nm_l3_config_data_set_ip6_privacy(l3cd, ip6_privacy);
 

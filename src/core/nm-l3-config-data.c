@@ -639,12 +639,14 @@ _idx_type_init(DedupMultiIdxType *idx_type, NMPObjectType obj_type)
 }
 
 NML3ConfigData *
-nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex)
+nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSource source)
 {
     NML3ConfigData *self;
 
     nm_assert(multi_idx);
     nm_assert(ifindex > 0);
+    nm_assert(source == NM_IP_CONFIG_SOURCE_UNKNOWN
+              || (source >= NM_IP_CONFIG_SOURCE_KERNEL && source <= NM_IP_CONFIG_SOURCE_USER));
 
     self  = g_slice_new(NML3ConfigData);
     *self = (NML3ConfigData){
@@ -659,7 +661,7 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex)
         .proxy_method                  = NM_PROXY_CONFIG_METHOD_UNKNOWN,
         .route_table_sync_4            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
         .route_table_sync_6            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
-        .source                        = NM_IP_CONFIG_SOURCE_UNKNOWN,
+        .source                        = source,
         .ip6_privacy                   = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
         .ndisc_hop_limit_set           = FALSE,
         .ndisc_reachable_time_msec_set = FALSE,
@@ -1678,18 +1680,6 @@ nm_l3_config_data_set_ip6_mtu(NML3ConfigData *self, guint32 ip6_mtu)
     return TRUE;
 }
 
-gboolean
-nm_l3_config_data_set_source(NML3ConfigData *self, NMIPConfigSource source)
-{
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
-
-    if (self->source == source)
-        return FALSE;
-
-    self->source = source;
-    return TRUE;
-}
-
 NMSettingIP6ConfigPrivacy
 nm_l3_config_data_get_ip6_privacy(const NML3ConfigData *self)
 {
@@ -2570,7 +2560,7 @@ nm_l3_config_data_new_from_connection(NMDedupMultiIndex *multi_idx,
     NML3ConfigData *self;
     NMSettingProxy *s_proxy;
 
-    self = nm_l3_config_data_new(multi_idx, ifindex);
+    self = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_USER);
 
     _init_from_connection_ip(self, AF_INET, connection, route_table_4, route_metric_4);
     _init_from_connection_ip(self, AF_INET6, connection, route_table_6, route_metric_6);
@@ -2689,7 +2679,7 @@ nm_l3_config_data_new_from_platform(NMDedupMultiIndex *       multi_idx,
     if (nm_platform_link_get_master(platform, ifindex) > 0)
         return NULL;
 
-    self = nm_l3_config_data_new(multi_idx, ifindex);
+    self = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_KERNEL);
 
     _init_from_platform(self, AF_INET, platform, ipv6_privacy_rfc4941);
     _init_from_platform(self, AF_INET6, platform, ipv6_privacy_rfc4941);
@@ -2929,7 +2919,7 @@ nm_l3_config_data_new_clone(const NML3ConfigData *src, int ifindex)
     if (ifindex <= 0)
         ifindex = src->ifindex;
 
-    self = nm_l3_config_data_new(src->multi_idx, ifindex);
+    self = nm_l3_config_data_new(src->multi_idx, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN);
     nm_l3_config_data_merge(self,
                             src,
                             NM_L3_CONFIG_MERGE_FLAGS_CLONE,

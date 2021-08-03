@@ -2407,7 +2407,7 @@ nm_device_ip_config_new(NMDevice *self, int addr_family)
 }
 
 NML3ConfigData *
-nm_device_create_l3_config_data(NMDevice *self)
+nm_device_create_l3_config_data(NMDevice *self, NMIPConfigSource source)
 {
     int ifindex;
 
@@ -2417,7 +2417,7 @@ nm_device_create_l3_config_data(NMDevice *self)
     if (ifindex <= 0)
         g_return_val_if_reached(NULL);
 
-    return nm_l3_config_data_new(nm_device_get_multi_index(self), ifindex);
+    return nm_l3_config_data_new(nm_device_get_multi_index(self), ifindex, source);
 }
 
 static void

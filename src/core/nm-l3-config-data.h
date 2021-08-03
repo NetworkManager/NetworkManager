@@ -82,7 +82,8 @@ typedef enum _nm_packed {
 
 static inline gboolean NM_IS_L3_CONFIG_DATA(const NML3ConfigData *self);
 
-NML3ConfigData *      nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex);
+NML3ConfigData *
+nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSource source);
 const NML3ConfigData *nm_l3_config_data_ref(const NML3ConfigData *self);
 const NML3ConfigData *nm_l3_config_data_ref_and_seal(const NML3ConfigData *self);
 const NML3ConfigData *nm_l3_config_data_seal(const NML3ConfigData *self);
@@ -362,8 +363,6 @@ nm_l3_config_data_unset_flags(NML3ConfigData *self, NML3ConfigDatFlags flags)
 }
 
 /*****************************************************************************/
-
-gboolean nm_l3_config_data_set_source(NML3ConfigData *self, NMIPConfigSource source);
 
 const NMPObject *nm_l3_config_data_get_first_obj(const NML3ConfigData *self,
                                                  NMPObjectType         obj_type,

@@ -3009,7 +3009,8 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
         };
 
         l3cd = nm_l3_config_data_new(nm_platform_get_multi_idx(self->priv.platform),
-                                     self->priv.ifindex);
+                                     self->priv.ifindex,
+                                     NM_IP_CONFIG_SOURCE_UNKNOWN);
 
         for (i = 0; i < l3_config_datas_len; i++) {
             const L3ConfigData *l3cd_data = l3_config_datas_arr[i];
