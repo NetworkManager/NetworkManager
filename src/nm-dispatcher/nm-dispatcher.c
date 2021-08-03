@@ -26,13 +26,15 @@ typedef struct Request Request;
 
 static struct {
     GDBusConnection *dbus_connection;
-    GMainLoop *      loop;
     gboolean         debug;
     gboolean         persist;
     guint            quit_id;
     guint            request_id_counter;
     gboolean         ever_acquired_name;
     bool             exit_with_failure;
+
+    bool shutdown_timeout;
+    bool shutdown_quitting;
 
     Request *current_request;
     GQueue * requests_waiting;
@@ -189,8 +191,8 @@ request_free(Request *request)
 static gboolean
 quit_timeout_cb(gpointer user_data)
 {
-    gl.quit_id = 0;
-    g_main_loop_quit(gl.loop);
+    gl.quit_id          = 0;
+    gl.shutdown_timeout = TRUE;
     return G_SOURCE_REMOVE;
 }
 
@@ -851,7 +853,7 @@ on_name_lost(GDBusConnection *connection, const char *name, gpointer user_data)
     } else
         _LOG_X_I("Lost the " NM_DISPATCHER_DBUS_SERVICE " name. Exiting");
 
-    g_main_loop_quit(gl.loop);
+    gl.shutdown_quitting = TRUE;
 }
 
 static void
@@ -959,8 +961,7 @@ signal_handler(gpointer user_data)
     int signo = GPOINTER_TO_INT(user_data);
 
     _LOG_X_I("Caught signal %d, shutting down...", signo);
-    g_main_loop_quit(gl.loop);
-
+    gl.shutdown_quitting = TRUE;
     return G_SOURCE_CONTINUE;
 }
 
@@ -1014,8 +1015,6 @@ main(int argc, char **argv)
     } else
         logging_setup();
 
-    gl.loop = g_main_loop_new(NULL, FALSE);
-
     gl.dbus_connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
     if (!gl.dbus_connection) {
         _LOG_X_W("Could not get the system bus (%s).  Make sure the message bus daemon is running!",
@@ -1050,7 +1049,11 @@ main(int argc, char **argv)
 
     quit_timeout_reschedule();
 
-    g_main_loop_run(gl.loop);
+    while (TRUE) {
+        if (gl.shutdown_timeout || gl.shutdown_quitting)
+            break;
+        g_main_context_iteration(NULL, TRUE);
+    }
 
 done:
 
@@ -1083,7 +1086,6 @@ done:
     nm_clear_g_source(&signal_id_term);
     nm_clear_g_source(&signal_id_int);
     nm_clear_g_source(&gl.quit_id);
-    nm_clear_pointer(&gl.loop, g_main_loop_unref);
     g_clear_object(&gl.dbus_connection);
 
     if (!gl.debug)
