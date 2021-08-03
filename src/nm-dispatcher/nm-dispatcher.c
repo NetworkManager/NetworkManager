@@ -20,6 +20,7 @@
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 #include "nm-dispatcher-utils.h"
 
 /*****************************************************************************/
@@ -41,6 +42,8 @@ static struct {
     GSource *        quit_source;
     guint            request_id_counter;
     guint            dbus_regist_id;
+
+    gint64 start_timestamp_msec;
 
     bool name_requested;
 
@@ -854,6 +857,26 @@ _method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
 }
 
 static void
+_method_call_ping(GDBusMethodInvocation *invocation, GVariant *parameters)
+{
+    gs_free char *msg = NULL;
+    gint64        running_msec;
+    const char *  arg_s;
+
+    g_variant_get(parameters, "(&s)", &arg_s);
+
+    running_msec = nm_utils_clock_gettime_msec(CLOCK_BOOTTIME) - gl.start_timestamp_msec;
+
+    msg = g_strdup_printf("pid=%lu, unique-name=%s, since=%" G_GINT64_FORMAT ".%03d, pong=%s",
+                          (unsigned long) getpid(),
+                          g_dbus_connection_get_unique_name(gl.dbus_connection),
+                          (gint64) (running_msec / 1000),
+                          (int) (running_msec % 1000),
+                          arg_s);
+    g_dbus_method_invocation_return_value(invocation, g_variant_new("(s)", msg));
+}
+
+static void
 _method_call(GDBusConnection *      connection,
              const char *           sender,
              const char *           object_path,
@@ -868,6 +891,10 @@ _method_call(GDBusConnection *      connection,
             _method_call_action(invocation, parameters);
             return;
         }
+        if (nm_streq(method_name, "Ping")) {
+            _method_call_ping(invocation, parameters);
+            return;
+        }
     }
     g_dbus_method_invocation_return_error(invocation,
                                           G_DBUS_ERROR,
@@ -879,6 +906,10 @@ _method_call(GDBusConnection *      connection,
 static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO(
     NM_DISPATCHER_DBUS_INTERFACE,
     .methods = NM_DEFINE_GDBUS_METHOD_INFOS(
+        NM_DEFINE_GDBUS_METHOD_INFO(
+            "Ping",
+            .in_args  = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("arg", "s"), ),
+            .out_args = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("arg", "s"), ), ),
         NM_DEFINE_GDBUS_METHOD_INFO(
             "Action",
             .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
@@ -1094,6 +1125,8 @@ main(int argc, char **argv)
     signal(SIGPIPE, SIG_IGN);
     source_term = nm_g_unix_signal_add_source(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
     source_int  = nm_g_unix_signal_add_source(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
+
+    gl.start_timestamp_msec = nm_utils_clock_gettime_msec(CLOCK_BOOTTIME);
 
     gl.quit_cancellable = g_cancellable_new();
 
