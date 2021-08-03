@@ -28,7 +28,7 @@ static struct {
     GDBusConnection *dbus_connection;
     gboolean         debug;
     gboolean         persist;
-    guint            quit_id;
+    GSource *        quit_source;
     guint            request_id_counter;
     gboolean         ever_acquired_name;
     bool             exit_with_failure;
@@ -50,8 +50,8 @@ typedef struct {
     char *         error;
     gboolean       wait;
     gboolean       dispatched;
-    guint          watch_id;
-    guint          timeout_id;
+    GSource *      watch_source;
+    GSource *      timeout_source;
 } ScriptInfo;
 
 struct Request {
@@ -191,17 +191,17 @@ request_free(Request *request)
 static gboolean
 quit_timeout_cb(gpointer user_data)
 {
-    gl.quit_id          = 0;
+    nm_clear_g_source_inst(&gl.quit_source);
     gl.shutdown_timeout = TRUE;
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
 quit_timeout_reschedule(void)
 {
     if (!gl.persist) {
-        nm_clear_g_source(&gl.quit_id);
-        gl.quit_id = g_timeout_add_seconds(10, quit_timeout_cb, NULL);
+        nm_clear_g_source_inst(&gl.quit_source);
+        gl.quit_source = nm_g_timeout_add_source_seconds(10, quit_timeout_cb, NULL);
     }
 }
 
@@ -367,8 +367,8 @@ script_watch_cb(GPid pid, int status, gpointer user_data)
 
     g_assert(pid == script->pid);
 
-    script->watch_id = 0;
-    nm_clear_g_source(&script->timeout_id);
+    nm_clear_g_source_inst(&script->watch_source);
+    nm_clear_g_source_inst(&script->timeout_source);
     script->request->num_scripts_done++;
     if (!script->wait)
         script->request->num_scripts_nowait--;
@@ -397,8 +397,8 @@ script_timeout_cb(gpointer user_data)
 {
     ScriptInfo *script = user_data;
 
-    script->timeout_id = 0;
-    nm_clear_g_source(&script->watch_id);
+    nm_clear_g_source_inst(&script->timeout_source);
+    nm_clear_g_source_inst(&script->watch_source);
     script->request->num_scripts_done++;
     if (!script->wait)
         script->request->num_scripts_nowait--;
@@ -419,7 +419,7 @@ again:
 
     complete_script(script);
 
-    return FALSE;
+    return G_SOURCE_CONTINUE;
 }
 
 static gboolean
@@ -516,8 +516,9 @@ script_dispatch(ScriptInfo *script)
         return FALSE;
     }
 
-    script->watch_id   = g_child_watch_add(script->pid, (GChildWatchFunc) script_watch_cb, script);
-    script->timeout_id = g_timeout_add_seconds(SCRIPT_TIMEOUT, script_timeout_cb, script);
+    script->watch_source = nm_g_child_watch_add_source(script->pid, script_watch_cb, script);
+    script->timeout_source =
+        nm_g_timeout_add_source_seconds(SCRIPT_TIMEOUT, script_timeout_cb, script);
     if (!script->wait)
         request->num_scripts_nowait++;
     return TRUE;
@@ -784,7 +785,7 @@ _method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
         return;
     }
 
-    nm_clear_g_source(&gl.quit_id);
+    nm_clear_g_source_inst(&gl.quit_source);
 
     gl.num_requests_pending++;
 
@@ -990,8 +991,8 @@ int
 main(int argc, char **argv)
 {
     gs_free_error GError *error            = NULL;
-    guint                 signal_id_term   = 0;
-    guint                 signal_id_int    = 0;
+    GSource *             source_term      = NULL;
+    GSource *             source_int       = NULL;
     guint                 dbus_regist_id   = 0;
     guint                 dbus_own_name_id = 0;
 
@@ -1001,8 +1002,8 @@ main(int argc, char **argv)
         goto done;
     }
 
-    signal_id_term = g_unix_signal_add(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
-    signal_id_int  = g_unix_signal_add(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
+    source_term = nm_g_unix_signal_add_source(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
+    source_int  = nm_g_unix_signal_add_source(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
 
     if (gl.debug) {
         if (!g_getenv("G_MESSAGES_DEBUG")) {
@@ -1083,9 +1084,9 @@ done:
 
     nm_clear_pointer(&gl.requests_waiting, g_queue_free);
 
-    nm_clear_g_source(&signal_id_term);
-    nm_clear_g_source(&signal_id_int);
-    nm_clear_g_source(&gl.quit_id);
+    nm_clear_g_source_inst(&source_term);
+    nm_clear_g_source_inst(&source_int);
+    nm_clear_g_source_inst(&gl.quit_source);
     g_clear_object(&gl.dbus_connection);
 
     if (!gl.debug)
