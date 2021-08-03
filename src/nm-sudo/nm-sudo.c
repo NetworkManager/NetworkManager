@@ -312,54 +312,18 @@ static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO
                                     .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
                                         NM_DEFINE_GDBUS_ARG_INFO("fd_type", "u"), ), ), ), );
 
-typedef struct {
-    GlobalData *gl;
-    gboolean    is_waiting;
-} BusRegisterServiceRequestNameData;
-
-static void
-_bus_register_service_request_name_cb(GObject *source, GAsyncResult *res, gpointer user_data)
-{
-    BusRegisterServiceRequestNameData *data = user_data;
-    gs_free_error GError *error             = NULL;
-    gs_unref_variant GVariant *ret          = NULL;
-    gboolean                   success      = FALSE;
-
-    ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), res, &error);
-
-    if (nm_utils_error_is_cancelled(error))
-        goto out;
-
-    if (error)
-        _LOGE("d-bus: failed to request name %s: %s", NM_SUDO_DBUS_BUS_NAME, error->message);
-    else {
-        guint32 ret_val;
-
-        g_variant_get(ret, "(u)", &ret_val);
-        if (ret_val != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-            _LOGW("dbus: request name for %s failed to take name (response %u)",
-                  NM_SUDO_DBUS_BUS_NAME,
-                  ret_val);
-        } else {
-            _LOGD("dbus: request name for %s succeeded", NM_SUDO_DBUS_BUS_NAME);
-            success = TRUE;
-        }
-    }
-
-out:
-    if (success)
-        data->gl->service_registered = TRUE;
-    data->is_waiting = FALSE;
-}
-
 static void
 _bus_register_service(GlobalData *gl)
 {
     static const GDBusInterfaceVTable interface_vtable = {
         .method_call = _bus_method_call,
     };
-    gs_free_error GError *            error = NULL;
-    BusRegisterServiceRequestNameData data;
+    gs_free_error GError *           error = NULL;
+    NMDBusConnectionCallBlockingData data  = {
+        .result = NULL,
+    };
+    gs_unref_variant GVariant *ret = NULL;
+    guint32                    ret_val;
 
     nm_assert(!gl->service_registered);
 
@@ -378,36 +342,44 @@ _bus_register_service(GlobalData *gl)
 
     _LOGD("dbus: object %s registered", NM_SUDO_DBUS_OBJECT_PATH);
 
-    data = (BusRegisterServiceRequestNameData){
-        .gl         = gl,
-        .is_waiting = TRUE,
-    };
-
     /* regardless whether the request is successful, after we start calling
      * RequestName, we remember that we need to ReleaseName it. */
     gl->name_requested = TRUE;
 
-    g_dbus_connection_call(
-        gl->dbus_connection,
-        DBUS_SERVICE_DBUS,
-        DBUS_PATH_DBUS,
-        DBUS_INTERFACE_DBUS,
-        "RequestName",
-        g_variant_new("(su)",
-                      NM_SUDO_DBUS_BUS_NAME,
-                      (guint) (DBUS_NAME_FLAG_ALLOW_REPLACEMENT | DBUS_NAME_FLAG_REPLACE_EXISTING)),
-        G_VARIANT_TYPE("(u)"),
-        G_DBUS_CALL_FLAGS_NONE,
-        10000,
-        gl->quit_cancellable,
-        _bus_register_service_request_name_cb,
-        &data);
+    nm_dbus_connection_call_request_name(gl->dbus_connection,
+                                         NM_SUDO_DBUS_BUS_NAME,
+                                         DBUS_NAME_FLAG_ALLOW_REPLACEMENT
+                                             | DBUS_NAME_FLAG_REPLACE_EXISTING,
+                                         10000,
+                                         gl->quit_cancellable,
+                                         nm_dbus_connection_call_blocking_callback,
+                                         &data);
 
     /* Note that with D-Bus activation, the first request will already hit us before RequestName
-     * completes. */
+     * completes. So when we start iterating the main context, the first request may already come
+     * in. */
 
-    while (data.is_waiting)
-        g_main_context_iteration(NULL, TRUE);
+    ret = nm_dbus_connection_call_blocking(&data, &error);
+
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    if (error) {
+        _LOGE("d-bus: failed to request name %s: %s", NM_SUDO_DBUS_BUS_NAME, error->message);
+        return;
+    }
+
+    g_variant_get(ret, "(u)", &ret_val);
+
+    if (ret_val != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+        _LOGW("dbus: request name for %s failed to take name (response %u)",
+              NM_SUDO_DBUS_BUS_NAME,
+              ret_val);
+        return;
+    }
+
+    _LOGD("dbus: request name for %s succeeded", NM_SUDO_DBUS_BUS_NAME);
+    gl->service_registered = TRUE;
 }
 
 /*****************************************************************************/
