@@ -5080,12 +5080,12 @@ nm_g_unix_signal_source_new(int            signum,
 }
 
 GSource *
-nm_g_unix_fd_source_new(int          fd,
-                        GIOCondition io_condition,
-                        int          priority,
-                        gboolean (*source_func)(int fd, GIOCondition condition, gpointer user_data),
-                        gpointer       user_data,
-                        GDestroyNotify destroy_notify)
+nm_g_unix_fd_source_new(int               fd,
+                        GIOCondition      io_condition,
+                        int               priority,
+                        GUnixFDSourceFunc source_func,
+                        gpointer          user_data,
+                        GDestroyNotify    destroy_notify)
 {
     GSource *source;
 
