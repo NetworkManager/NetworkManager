@@ -337,7 +337,7 @@
   <refsect1>
     <title>See Also</title>
     <para>
-      <ulink url="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager home page</ulink>,
+      <ulink url="https://networkmanager.dev">NetworkManager home page</ulink>,
       <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
       <link linkend='NetworkManager-dispatcher'><citerefentry><refentrytitle>NetworkManager-dispatcher</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
       <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
