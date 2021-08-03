@@ -646,17 +646,12 @@ done:
     nm_clear_g_source_inst(&gl->source_idle_timeout);
     nm_clear_g_free(&gl->name_owner);
 
-    while (g_main_context_iteration(NULL, FALSE)) {
-        ;
-    }
+    nm_g_main_context_iterate_ready(NULL);
 
     if (gl->dbus_connection) {
         g_dbus_connection_flush_sync(gl->dbus_connection, NULL, NULL);
         g_clear_object(&gl->dbus_connection);
-
-        while (g_main_context_iteration(NULL, FALSE)) {
-            ;
-        }
+        nm_g_main_context_iterate_ready(NULL);
     }
 
     nm_clear_g_cancellable(&gl->quit_cancellable);
