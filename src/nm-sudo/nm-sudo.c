@@ -142,33 +142,13 @@ _signal_callback_term(gpointer user_data)
 
 /*****************************************************************************/
 
-typedef struct {
-    GDBusConnection **p_dbus_connection;
-    GError **         p_error;
-} BusGetData;
-
-static void
-_bus_get_cb(GObject *source, GAsyncResult *result, gpointer user_data)
-{
-    BusGetData *data = user_data;
-
-    *data->p_dbus_connection = g_bus_get_finish(result, data->p_error);
-}
-
 static GDBusConnection *
 _bus_get(GCancellable *cancellable, int *out_exit_code)
 {
     gs_free_error GError *error                      = NULL;
     gs_unref_object GDBusConnection *dbus_connection = NULL;
-    BusGetData                       data            = {
-        .p_dbus_connection = &dbus_connection,
-        .p_error           = &error,
-    };
 
-    g_bus_get(G_BUS_TYPE_SYSTEM, cancellable, _bus_get_cb, &data);
-
-    while (!dbus_connection && !error)
-        g_main_context_iteration(NULL, TRUE);
+    dbus_connection = nm_g_bus_get_blocking(cancellable, &error);
 
     if (!dbus_connection) {
         gboolean was_cancelled = nm_utils_error_is_cancelled(error);
