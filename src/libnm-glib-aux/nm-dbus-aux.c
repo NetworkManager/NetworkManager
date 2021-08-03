@@ -403,3 +403,53 @@ _nm_dbus_error_is(GError *error, ...)
 
     return FALSE;
 }
+
+/*****************************************************************************/
+
+typedef struct {
+    GDBusConnection **p_dbus_connection;
+    GError **         p_error;
+} BusGetData;
+
+static void
+_bus_get_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    BusGetData *data = user_data;
+
+    *data->p_dbus_connection = g_bus_get_finish(result, data->p_error);
+}
+
+/**
+ * nm_g_bus_get_blocking:
+ * @cancellable: (allow-none): a #GCancellable to abort the operation.
+ * @error: (allow-none): the error.
+ *
+ * This calls g_bus_get(), but iterates the current (thread-default) GMainContext
+ * until the response is ready. As such, it's similar to g_bus_get_sync(),
+ * but it allows to cancel the operation (without having multiple threads).
+ *
+ * Returns: (transfer full): the new #GDBusConnection or %NULL on error.
+ */
+GDBusConnection *
+nm_g_bus_get_blocking(GCancellable *cancellable, GError **error)
+{
+    gs_free_error GError *local_error                = NULL;
+    gs_unref_object GDBusConnection *dbus_connection = NULL;
+    GMainContext *                   main_context    = g_main_context_get_thread_default();
+    BusGetData                       data            = {
+        .p_dbus_connection = &dbus_connection,
+        .p_error           = &local_error,
+    };
+
+    g_bus_get(G_BUS_TYPE_SYSTEM, cancellable, _bus_get_cb, &data);
+
+    while (!dbus_connection && !local_error)
+        g_main_context_iteration(main_context, TRUE);
+
+    if (!dbus_connection) {
+        g_propagate_error(error, g_steal_pointer(&local_error));
+        return NULL;
+    }
+
+    return g_steal_pointer(&dbus_connection);
+}
