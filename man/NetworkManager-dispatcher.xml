@@ -324,7 +324,7 @@
   <refsect1>
     <title>See Also</title>
     <para>
-      <ulink url="https://wiki.gnome.org/Projects/NetworkManager">NetworkManager home page</ulink>,
+      <ulink url="https://networkmanager.dev">NetworkManager home page</ulink>,
       <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
     </para>
   </refsect1>
