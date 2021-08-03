@@ -1893,6 +1893,14 @@ nm_g_main_context_push_thread_default_if_necessary(GMainContext *context)
     return context;
 }
 
+static inline void
+nm_g_main_context_iterate_ready(GMainContext *context)
+{
+    while (g_main_context_iteration(context, FALSE)) {
+        ;
+    }
+}
+
 /*****************************************************************************/
 
 static inline int
