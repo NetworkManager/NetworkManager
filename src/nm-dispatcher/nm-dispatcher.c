@@ -996,6 +996,7 @@ main(int argc, char **argv)
     guint                 dbus_regist_id   = 0;
     guint                 dbus_own_name_id = 0;
 
+    signal(SIGPIPE, SIG_IGN);
     source_term = nm_g_unix_signal_add_source(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
     source_int  = nm_g_unix_signal_add_source(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
 
