@@ -290,14 +290,26 @@ _bus_method_call(GDBusConnection *      connection,
           method_name,
           g_variant_get_type_string(parameters));
 
+    if (!nm_streq(interface_name, NM_SUDO_DBUS_IFACE_NAME))
+        goto out_unknown_method;
+
+    if (nm_streq(method_name, "GetFD")) {
+        g_variant_get(parameters, "(u)", &arg_u);
+        _handle_get_fd(gl, invocation, arg_u);
+        return;
+    }
     if (nm_streq(method_name, "Ping")) {
         g_variant_get(parameters, "(&s)", &arg_s);
         _handle_ping(gl, invocation, arg_s);
-    } else if (nm_streq(method_name, "GetFD")) {
-        g_variant_get(parameters, "(u)", &arg_u);
-        _handle_get_fd(gl, invocation, arg_u);
-    } else
-        nm_assert_not_reached();
+        return;
+    }
+
+out_unknown_method:
+    g_dbus_method_invocation_return_error(invocation,
+                                          G_DBUS_ERROR,
+                                          G_DBUS_ERROR_UNKNOWN_METHOD,
+                                          "Unknown method %s",
+                                          method_name);
 }
 
 static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO(
