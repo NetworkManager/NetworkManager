@@ -18,6 +18,7 @@
 #include <arpa/inet.h>
 
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-dispatcher-utils.h"
 
 /*****************************************************************************/
@@ -1021,13 +1022,20 @@ main(int argc, char **argv)
     } else
         logging_setup();
 
-    gl.dbus_connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
+    gl.dbus_connection = nm_g_bus_get_blocking(gl.quit_cancellable, &error);
     if (!gl.dbus_connection) {
-        _LOG_X_W("Could not get the system bus (%s).  Make sure the message bus daemon is running!",
-                 error->message);
-        gl.exit_with_failure = TRUE;
+        if (!nm_utils_error_is_cancelled(error)) {
+            _LOG_X_W("dbus: failure to get D-Bus connection: %s", error->message);
+            gl.exit_with_failure = TRUE;
+        }
         goto done;
     }
+
+    /* On bus-disconnect, GDBus will raise(SIGTERM), which we handle like a
+     * regular request to quit. */
+    g_dbus_connection_set_exit_on_close(gl.dbus_connection, TRUE);
+
+    _LOG_X_D("dbus: unique name: %s", g_dbus_connection_get_unique_name(gl.dbus_connection));
 
     gl.requests_waiting = g_queue_new();
 
