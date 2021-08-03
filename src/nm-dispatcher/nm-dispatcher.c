@@ -996,14 +996,14 @@ main(int argc, char **argv)
     guint                 dbus_regist_id   = 0;
     guint                 dbus_own_name_id = 0;
 
+    source_term = nm_g_unix_signal_add_source(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
+    source_int  = nm_g_unix_signal_add_source(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
+
     if (!parse_command_line(&argc, &argv, &error)) {
         _LOG_X_W("Error parsing command line arguments: %s", error->message);
         gl.exit_with_failure = TRUE;
         goto done;
     }
-
-    source_term = nm_g_unix_signal_add_source(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
-    source_int  = nm_g_unix_signal_add_source(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
 
     if (gl.debug) {
         if (!g_getenv("G_MESSAGES_DEBUG")) {
@@ -1084,13 +1084,14 @@ done:
 
     nm_clear_pointer(&gl.requests_waiting, g_queue_free);
 
-    nm_clear_g_source_inst(&source_term);
-    nm_clear_g_source_inst(&source_int);
     nm_clear_g_source_inst(&gl.quit_source);
     g_clear_object(&gl.dbus_connection);
 
     if (!gl.debug)
         logging_shutdown();
+
+    nm_clear_g_source_inst(&source_term);
+    nm_clear_g_source_inst(&source_int);
 
     return gl.exit_with_failure ? 1 : 0;
 }
