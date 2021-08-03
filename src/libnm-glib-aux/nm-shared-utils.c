@@ -5097,6 +5097,23 @@ nm_g_unix_fd_source_new(int               fd,
     return source;
 }
 
+GSource *
+nm_g_child_watch_source_new(GPid            pid,
+                            int             priority,
+                            GChildWatchFunc handler,
+                            gpointer        user_data,
+                            GDestroyNotify  notify)
+{
+    GSource *source;
+
+    source = g_child_watch_source_new(pid);
+
+    if (priority != G_PRIORITY_DEFAULT)
+        g_source_set_priority(source, priority);
+    g_source_set_callback(source, G_SOURCE_FUNC(handler), user_data, notify);
+    return source;
+}
+
 /*****************************************************************************/
 
 #define _CTX_LOG(fmt, ...)                                                                       \

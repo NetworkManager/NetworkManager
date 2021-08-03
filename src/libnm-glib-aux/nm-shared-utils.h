@@ -1728,6 +1728,12 @@ GSource *nm_g_unix_signal_source_new(int            signum,
                                      gpointer       user_data,
                                      GDestroyNotify notify);
 
+GSource *nm_g_child_watch_source_new(GPid            pid,
+                                     int             priority,
+                                     GChildWatchFunc handler,
+                                     gpointer        user_data,
+                                     GDestroyNotify  notify);
+
 static inline GSource *
 nm_g_source_attach(GSource *source, GMainContext *context)
 {
@@ -1821,6 +1827,14 @@ nm_g_unix_signal_add_source(int signum, GSourceFunc handler, gpointer user_data)
 {
     return nm_g_source_attach(
         nm_g_unix_signal_source_new(signum, G_PRIORITY_DEFAULT, handler, user_data, NULL),
+        NULL);
+}
+
+static inline GSource *
+nm_g_child_watch_add_source(GPid pid, GChildWatchFunc handler, gpointer user_data)
+{
+    return nm_g_source_attach(
+        nm_g_child_watch_source_new(pid, G_PRIORITY_DEFAULT, handler, user_data, NULL),
         NULL);
 }
 
