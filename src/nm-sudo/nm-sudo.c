@@ -66,7 +66,7 @@ static void _pending_job_register_object(GlobalData *gl, GObject *obj);
 
 /*****************************************************************************/
 
-#define _nm_log(level, ...) _nm_log_simple_printf((level), __VA_ARGS__);
+#define _nm_log(level, ...) _nm_log_simple_printf((level), __VA_ARGS__)
 
 #define _NMLOG(level, ...)                 \
     G_STMT_START                           \
