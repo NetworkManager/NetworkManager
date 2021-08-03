@@ -24,12 +24,19 @@
 
 /*****************************************************************************/
 
+/* Serves only the purpose to mark environment variables that are honored by
+ * the application. You can search for this macro, and find what options are supported. */
+#define _ENV(var) ("" var "")
+
+/*****************************************************************************/
+
 typedef struct Request Request;
 
 static struct {
     GDBusConnection *dbus_connection;
     GCancellable *   quit_cancellable;
-    gboolean         debug;
+    bool             log_verbose;
+    bool             log_stdout;
     gboolean         persist;
     GSource *        quit_source;
     guint            request_id_counter;
@@ -145,7 +152,7 @@ struct Request {
     }                                                                         \
     G_STMT_END
 
-#define _LOG_X_D_enabled() (gl.debug)
+#define _LOG_X_D_enabled() (gl.log_verbose)
 #define _LOG_X_T_enabled() _LOG_X_D_enabled()
 
 #define _LOG_R_D_enabled(request) (_NM_ENSURE_TYPE_CONST(Request *, request)->debug)
@@ -743,7 +750,7 @@ _method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
 
     request             = g_slice_new0(Request);
     request->request_id = ++gl.request_id_counter;
-    request->debug      = debug || gl.debug;
+    request->debug      = debug || gl.log_verbose;
     request->context    = invocation;
     request->action     = g_strdup(action);
 
@@ -1034,11 +1041,32 @@ static gboolean
 parse_command_line(int *p_argc, char ***p_argv, GError **error)
 {
     GOptionContext *opt_ctx;
-    GOptionEntry    entries[] = {
-        {"debug", 0, 0, G_OPTION_ARG_NONE, &gl.debug, "Output to console rather than syslog", NULL},
-        {"persist", 0, 0, G_OPTION_ARG_NONE, &gl.persist, "Don't quit after a short timeout", NULL},
-        {NULL}};
-    gboolean success;
+    gboolean        arg_debug = FALSE;
+    GOptionEntry    entries[] = {{
+                                  "debug",
+                                  0,
+                                  0,
+                                  G_OPTION_ARG_NONE,
+                                  &arg_debug,
+                                  "Output to console rather than syslog",
+                                  NULL,
+                              },
+                              {
+                                  "persist",
+                                  0,
+                                  0,
+                                  G_OPTION_ARG_NONE,
+                                  &gl.persist,
+                                  "Don't quit after a short timeout",
+                                  NULL,
+                              },
+                              {
+                                  NULL,
+                              }};
+    gboolean        success;
+
+    gl.log_stdout  = FALSE;
+    gl.log_verbose = _nm_utils_ascii_str_to_bool(g_getenv(_ENV("NM_DISPATCHER_DEBUG_LOG")), FALSE);
 
     opt_ctx = g_option_context_new(NULL);
     g_option_context_set_summary(opt_ctx, "Executes scripts upon actions by NetworkManager.");
@@ -1047,6 +1075,11 @@ parse_command_line(int *p_argc, char ***p_argv, GError **error)
     success = g_option_context_parse(opt_ctx, p_argc, p_argv, error);
 
     g_option_context_free(opt_ctx);
+
+    if (success && arg_debug) {
+        gl.log_stdout  = TRUE;
+        gl.log_verbose = TRUE;
+    }
 
     return success;
 }
@@ -1070,7 +1103,7 @@ main(int argc, char **argv)
         goto done;
     }
 
-    if (gl.debug) {
+    if (gl.log_stdout) {
         if (!g_getenv("G_MESSAGES_DEBUG")) {
             /* we log our regular messages using g_debug() and g_info().
              * When we redirect glib logging to syslog, there is no problem.
@@ -1179,7 +1212,7 @@ done:
 
     _LOG_X_T("shutdown: exiting with %s", gl.exit_with_failure ? "failure" : "success");
 
-    if (!gl.debug)
+    if (gl.log_stdout)
         logging_shutdown();
 
     nm_clear_g_source_inst(&source_term);
