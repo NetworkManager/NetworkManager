@@ -627,8 +627,10 @@ main(int argc, char **argv)
     }
 
 done:
-    gl->is_shutting_down_cleanup = TRUE;
     _LOGD("shutdown: cleanup");
+
+    gl->is_shutting_down_cleanup = TRUE;
+    g_cancellable_cancel(gl->quit_cancellable);
 
     nm_assert(c_list_is_empty(&gl->pending_jobs_lst_head));
 
@@ -640,7 +642,6 @@ done:
         g_dbus_connection_signal_unsubscribe(gl->dbus_connection,
                                              nm_steal_int(&gl->name_owner_changed_id));
     }
-    nm_clear_g_cancellable(&gl->quit_cancellable);
     nm_clear_g_source_inst(&gl->source_sigterm);
     nm_clear_g_source_inst(&gl->source_idle_timeout);
     nm_clear_g_free(&gl->name_owner);
@@ -657,6 +658,8 @@ done:
             ;
         }
     }
+
+    nm_clear_g_cancellable(&gl->quit_cancellable);
 
     _LOGD("exit (%d)", exit_code);
     return exit_code;
