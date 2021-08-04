@@ -7,15 +7,15 @@
 
 #include "libnm-client-aux-extern/nm-default-client.h"
 
-#include <syslog.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
 #include <arpa/inet.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <syslog.h>
+#include <unistd.h>
 
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
@@ -33,31 +33,36 @@
 
 typedef struct Request Request;
 
-static struct {
+typedef struct {
     GDBusConnection *dbus_connection;
     GCancellable *   quit_cancellable;
-    bool             log_verbose;
-    bool             log_stdout;
-    gboolean         persist;
-    GSource *        quit_source;
-    guint            request_id_counter;
-    guint            dbus_regist_id;
+
+    bool log_verbose;
+    bool log_stdout;
+
+    GSource *source_idle_timeout;
 
     gint64 start_timestamp_msec;
 
-    bool name_requested;
+    guint request_id_counter;
+    guint service_regist_id;
 
-    bool reject_new_requests;
-
-    bool exit_with_failure;
-
-    bool shutdown_timeout;
-    bool shutdown_quitting;
+    gboolean persist;
 
     Request *current_request;
     GQueue * requests_waiting;
     int      num_requests_pending;
-} gl;
+
+    bool exit_with_failure;
+
+    bool name_requested;
+    bool reject_new_requests;
+
+    bool shutdown_timeout;
+    bool shutdown_quitting;
+} GlobalData;
+
+GlobalData gl;
 
 typedef struct {
     Request *request;
@@ -206,18 +211,20 @@ request_free(Request *request)
     g_slice_free(Request, request);
 }
 
+/*****************************************************************************/
+
 static gboolean
-quit_timeout_cb(gpointer user_data)
+_idle_timeout_cb(gpointer user_data)
 {
-    nm_clear_g_source_inst(&gl.quit_source);
+    nm_clear_g_source_inst(&gl.source_idle_timeout);
     gl.shutdown_timeout = TRUE;
     return G_SOURCE_CONTINUE;
 }
 
 static void
-quit_timeout_reschedule(void)
+_idle_timeout_restart(void)
 {
-    nm_clear_g_source_inst(&gl.quit_source);
+    nm_clear_g_source_inst(&gl.source_idle_timeout);
 
     if (gl.persist)
         return;
@@ -228,8 +235,10 @@ quit_timeout_reschedule(void)
     if (gl.num_requests_pending > 0)
         return;
 
-    gl.quit_source = nm_g_timeout_add_source(10000, quit_timeout_cb, NULL);
+    gl.source_idle_timeout = nm_g_timeout_add_source(10000, _idle_timeout_cb, NULL);
 }
+
+/*****************************************************************************/
 
 /**
  * next_request:
@@ -278,7 +287,7 @@ next_request(Request *request)
  * Checks if all the scripts for the request have terminated and in such case
  * it sends the D-Bus response and releases the request resources.
  *
- * It also decreases @num_requests_pending and possibly does quit_timeout_reschedule().
+ * It also decreases @num_requests_pending and possibly does _idle_timeout_restart().
  */
 static void
 complete_request(Request *request)
@@ -317,7 +326,7 @@ complete_request(Request *request)
     nm_assert(gl.num_requests_pending > 0);
     if (--gl.num_requests_pending <= 0) {
         nm_assert(!gl.current_request && !g_queue_peek_head(gl.requests_waiting));
-        quit_timeout_reschedule();
+        _idle_timeout_restart();
     }
 }
 
@@ -695,7 +704,7 @@ script_must_wait(const char *path)
 }
 
 static void
-_method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
+_handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
 {
     const char *     action;
     gs_unref_variant GVariant *connection              = NULL;
@@ -813,7 +822,7 @@ _method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
 
     gl.num_requests_pending++;
     gl.shutdown_timeout = FALSE;
-    nm_clear_g_source_inst(&gl.quit_source);
+    nm_clear_g_source_inst(&gl.source_idle_timeout);
 
     for (i = 0; i < request->scripts->len; i++) {
         ScriptInfo *s = g_ptr_array_index(request->scripts, i);
@@ -859,7 +868,7 @@ _method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
 }
 
 static void
-_method_call_ping(GDBusMethodInvocation *invocation, GVariant *parameters)
+_handle_ping(GDBusMethodInvocation *invocation, GVariant *parameters)
 {
     gs_free char *msg = NULL;
     gint64        running_msec;
@@ -879,14 +888,14 @@ _method_call_ping(GDBusMethodInvocation *invocation, GVariant *parameters)
 }
 
 static void
-_method_call(GDBusConnection *      connection,
-             const char *           sender,
-             const char *           object_path,
-             const char *           interface_name,
-             const char *           method_name,
-             GVariant *             parameters,
-             GDBusMethodInvocation *invocation,
-             gpointer               user_data)
+_bus_method_call(GDBusConnection *      connection,
+                 const char *           sender,
+                 const char *           object_path,
+                 const char *           interface_name,
+                 const char *           method_name,
+                 GVariant *             parameters,
+                 GDBusMethodInvocation *invocation,
+                 gpointer               user_data)
 {
     if (gl.reject_new_requests) {
         g_dbus_method_invocation_return_error(invocation,
@@ -897,11 +906,11 @@ _method_call(GDBusConnection *      connection,
     }
     if (nm_streq(interface_name, NM_DISPATCHER_DBUS_INTERFACE)) {
         if (nm_streq(method_name, "Action")) {
-            _method_call_action(invocation, parameters);
+            _handle_action(invocation, parameters);
             return;
         }
         if (nm_streq(method_name, "Ping")) {
-            _method_call_ping(invocation, parameters);
+            _handle_ping(invocation, parameters);
             return;
         }
     }
@@ -944,7 +953,7 @@ static gboolean
 _bus_register_service(void)
 {
     static const GDBusInterfaceVTable interface_vtable = {
-        .method_call = _method_call,
+        .method_call = _bus_method_call,
     };
     gs_free_error GError *           error = NULL;
     NMDBusConnectionCallBlockingData data  = {
@@ -953,7 +962,7 @@ _bus_register_service(void)
     gs_unref_variant GVariant *ret = NULL;
     guint32                    ret_val;
 
-    gl.dbus_regist_id =
+    gl.service_regist_id =
         g_dbus_connection_register_object(gl.dbus_connection,
                                           NM_DISPATCHER_DBUS_PATH,
                                           interface_info,
@@ -961,7 +970,7 @@ _bus_register_service(void)
                                           NULL,
                                           NULL,
                                           &error);
-    if (gl.dbus_regist_id == 0) {
+    if (gl.service_regist_id == 0) {
         _LOG_X_W("dbus: could not export dispatcher D-Bus interface %s: %s",
                  NM_DISPATCHER_DBUS_PATH,
                  error->message);
@@ -1059,7 +1068,7 @@ logging_shutdown(void)
 }
 
 static gboolean
-signal_handler(gpointer user_data)
+_signal_callback_term(gpointer user_data)
 {
     if (!gl.shutdown_quitting) {
         gl.shutdown_quitting = TRUE;
@@ -1098,7 +1107,7 @@ _bus_release_name(void)
 
     /* we create a fake pending request. */
     gl.num_requests_pending++;
-    nm_clear_g_source_inst(&gl.quit_source);
+    nm_clear_g_source_inst(&gl.source_idle_timeout);
 
     r = nm_sd_notify("STOPPING=1");
     if (r < 0)
@@ -1124,7 +1133,7 @@ _bus_release_name(void)
 /*****************************************************************************/
 
 static gboolean
-parse_command_line(int *p_argc, char ***p_argv, GError **error)
+_initial_setup(int *p_argc, char ***p_argv, GError **error)
 {
     GOptionContext *opt_ctx;
     gboolean        arg_debug = FALSE;
@@ -1170,6 +1179,8 @@ parse_command_line(int *p_argc, char ***p_argv, GError **error)
     return success;
 }
 
+/*****************************************************************************/
+
 int
 main(int argc, char **argv)
 {
@@ -1178,14 +1189,16 @@ main(int argc, char **argv)
     GSource *             source_int  = NULL;
 
     signal(SIGPIPE, SIG_IGN);
-    source_term = nm_g_unix_signal_add_source(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
-    source_int  = nm_g_unix_signal_add_source(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
+    source_term =
+        nm_g_unix_signal_add_source(SIGTERM, _signal_callback_term, GINT_TO_POINTER(SIGTERM));
+    source_int =
+        nm_g_unix_signal_add_source(SIGINT, _signal_callback_term, GINT_TO_POINTER(SIGINT));
 
     gl.start_timestamp_msec = nm_utils_clock_gettime_msec(CLOCK_BOOTTIME);
 
     gl.quit_cancellable = g_cancellable_new();
 
-    if (!parse_command_line(&argc, &argv, &error)) {
+    if (!_initial_setup(&argc, &argv, &error)) {
         _LOG_X_W("Error parsing command line arguments: %s", error->message);
         gl.exit_with_failure = TRUE;
         goto done;
@@ -1219,7 +1232,7 @@ main(int argc, char **argv)
 
     gl.requests_waiting = g_queue_new();
 
-    quit_timeout_reschedule();
+    _idle_timeout_restart();
 
     if (!_bus_register_service()) {
         /* we failed to start the D-Bus service, and will shut down. However,
@@ -1248,19 +1261,19 @@ main(int argc, char **argv)
     }
 
 done:
-    nm_g_main_context_iterate_ready(NULL);
-
     gl.shutdown_quitting = TRUE;
     g_cancellable_cancel(gl.quit_cancellable);
 
     nm_assert(gl.num_requests_pending == 0);
 
-    if (gl.dbus_regist_id != 0)
-        g_dbus_connection_unregister_object(gl.dbus_connection, nm_steal_int(&gl.dbus_regist_id));
+    if (gl.service_regist_id != 0) {
+        g_dbus_connection_unregister_object(gl.dbus_connection,
+                                            nm_steal_int(&gl.service_regist_id));
+    }
 
     nm_clear_pointer(&gl.requests_waiting, g_queue_free);
 
-    nm_clear_g_source_inst(&gl.quit_source);
+    nm_clear_g_source_inst(&gl.source_idle_timeout);
 
     if (gl.dbus_connection) {
         g_dbus_connection_flush_sync(gl.dbus_connection, NULL, NULL);
@@ -1276,7 +1289,6 @@ done:
 
     nm_clear_g_source_inst(&source_term);
     nm_clear_g_source_inst(&source_int);
-
     g_clear_object(&gl.quit_cancellable);
 
     return gl.exit_with_failure ? 1 : 0;
