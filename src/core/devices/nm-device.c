@@ -316,7 +316,12 @@ typedef struct _NMDevicePrivate {
         guint queued_ip_config_id_x[2];
     };
 
-    GSList *pending_actions;
+    struct {
+        const char **arr;
+        guint        len;
+        guint        alloc;
+    } pending_actions;
+
     GSList *dad6_failed_addrs;
 
     NMDBusTrackObjPath parent_device;
@@ -14951,7 +14956,7 @@ _set_unmanaged_flags(NMDevice *          self,
         priv->queued_ip_config_id_4 = g_idle_add(queued_ip4_config_change, self);
         priv->queued_ip_config_id_6 = g_idle_add(queued_ip6_config_change, self);
 
-        if (!priv->pending_actions) {
+        if (priv->pending_actions.len == 0) {
             do_notify_has_pending_actions = TRUE;
             had_pending_actions           = nm_device_has_pending_action(self);
         }
@@ -15745,37 +15750,39 @@ gboolean
 nm_device_add_pending_action(NMDevice *self, const char *action, gboolean assert_not_yet_pending)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    GSList *         iter;
-    guint            count = 0;
+    gssize           idx;
 
     g_return_val_if_fail(action, FALSE);
 
-    /* Check if the action is already pending. Cannot add duplicate actions */
-    for (iter = priv->pending_actions; iter; iter = iter->next) {
-        if (nm_streq(action, iter->data)) {
-            if (assert_not_yet_pending) {
-                _LOGW(LOGD_DEVICE,
-                      "add_pending_action (%d): '%s' already pending",
-                      count + g_slist_length(iter),
-                      action);
-                g_return_val_if_reached(FALSE);
-            } else {
-                _LOGT(LOGD_DEVICE,
-                      "add_pending_action (%d): '%s' already pending (expected)",
-                      count + g_slist_length(iter),
-                      action);
-            }
-            return FALSE;
+    idx = nm_strv_find_binary_search(priv->pending_actions.arr, priv->pending_actions.len, action);
+    if (idx >= 0) {
+        if (assert_not_yet_pending) {
+            _LOGW(LOGD_DEVICE,
+                  "add_pending_action (%u): '%s' already pending",
+                  priv->pending_actions.len,
+                  action);
+            g_return_val_if_reached(FALSE);
+        } else {
+            _LOGT(LOGD_DEVICE,
+                  "add_pending_action (%u): '%s' already pending (expected)",
+                  priv->pending_actions.len,
+                  action);
         }
-        count++;
+        return FALSE;
     }
 
-    priv->pending_actions = g_slist_prepend(priv->pending_actions, (char *) action);
-    count++;
+    if (priv->pending_actions.len == priv->pending_actions.alloc) {
+        nm_assert(priv->pending_actions.alloc < G_MAXUINT / 2u);
+        priv->pending_actions.alloc = NM_MAX(priv->pending_actions.alloc * 2u, 4u);
+        priv->pending_actions.arr =
+            g_renew(const char *, priv->pending_actions.arr, priv->pending_actions.alloc);
+    }
+    nm_arr_insert_at(priv->pending_actions.arr, priv->pending_actions.len, ~idx, action);
+    priv->pending_actions.len++;
 
-    _LOGD(LOGD_DEVICE, "add_pending_action (%d): '%s'", count, action);
+    _LOGD(LOGD_DEVICE, "add_pending_action (%u): '%s'", priv->pending_actions.len, action);
 
-    if (count == 1)
+    if (priv->pending_actions.len == 1)
         _notify(self, PROP_HAS_PENDING_ACTION);
 
     return TRUE;
@@ -15797,37 +15804,38 @@ gboolean
 nm_device_remove_pending_action(NMDevice *self, const char *action, gboolean assert_is_pending)
 {
     NMDevicePrivate *priv;
-    GSList *         iter, *next;
-    guint            count = 0;
+    gssize           idx;
 
     g_return_val_if_fail(self, FALSE);
     g_return_val_if_fail(action, FALSE);
 
     priv = NM_DEVICE_GET_PRIVATE(self);
 
-    for (iter = priv->pending_actions; iter; iter = next) {
-        next = iter->next;
-        if (nm_streq(action, iter->data)) {
-            _LOGD(LOGD_DEVICE,
-                  "remove_pending_action (%d): '%s'",
-                  count + g_slist_length(iter->next), /* length excluding 'iter' */
-                  action);
-            priv->pending_actions = g_slist_delete_link(priv->pending_actions, iter);
-            if (priv->pending_actions == NULL)
-                _notify(self, PROP_HAS_PENDING_ACTION);
-            return TRUE;
-        }
-        count++;
+    idx = nm_strv_find_binary_search(priv->pending_actions.arr, priv->pending_actions.len, action);
+    if (idx >= 0) {
+        _LOGD(LOGD_DEVICE,
+              "remove_pending_action (%u): '%s'",
+              priv->pending_actions.len - 1u,
+              action);
+        nm_arr_remove_at(priv->pending_actions.arr, priv->pending_actions.len, idx);
+        priv->pending_actions.len--;
+        if (priv->pending_actions.len == 0)
+            _notify(self, PROP_HAS_PENDING_ACTION);
+        return TRUE;
     }
 
     if (assert_is_pending) {
-        _LOGW(LOGD_DEVICE, "remove_pending_action (%d): '%s' not pending", count, action);
-        g_return_val_if_reached(FALSE);
-    } else
-        _LOGT(LOGD_DEVICE,
-              "remove_pending_action (%d): '%s' not pending (expected)",
-              count,
+        _LOGW(LOGD_DEVICE,
+              "remove_pending_action (%u): '%s' not pending",
+              priv->pending_actions.len,
               action);
+        g_return_val_if_reached(FALSE);
+    } else {
+        _LOGT(LOGD_DEVICE,
+              "remove_pending_action (%u): '%s' not pending (expected)",
+              priv->pending_actions.len,
+              action);
+    }
 
     return FALSE;
 }
@@ -15837,15 +15845,15 @@ nm_device_has_pending_action_reason(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    if (priv->pending_actions) {
-        if (!priv->pending_actions->next && nm_device_get_state(self) == NM_DEVICE_STATE_ACTIVATED
-            && nm_streq(priv->pending_actions->data, NM_PENDING_ACTION_CARRIER_WAIT)) {
+    if (priv->pending_actions.len > 0) {
+        if (priv->pending_actions.len == 1 && nm_device_get_state(self) == NM_DEVICE_STATE_ACTIVATED
+            && nm_streq(priv->pending_actions.arr[0], NM_PENDING_ACTION_CARRIER_WAIT)) {
             /* if the device is already in activated state, and the only reason
              * why it appears still busy is "carrier-wait", then we are already complete. */
             return NULL;
         }
 
-        return priv->pending_actions->data;
+        return priv->pending_actions.arr[0];
     }
 
     if (nm_device_is_real(self)
@@ -18574,7 +18582,7 @@ finalize(GObject *object)
     g_free(priv->hw_addr);
     g_free(priv->hw_addr_perm);
     g_free(priv->hw_addr_initial);
-    g_slist_free(priv->pending_actions);
+    g_free(priv->pending_actions.arr);
     g_slist_free_full(priv->dad6_failed_addrs, (GDestroyNotify) nmp_object_unref);
     nm_clear_g_free(&priv->physical_port_id);
     g_free(priv->udi);
