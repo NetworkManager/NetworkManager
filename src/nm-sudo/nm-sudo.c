@@ -302,8 +302,6 @@ _bus_method_call(GDBusConnection *      connection,
         return;
     }
 
-    _pending_job_register_object(gl, G_OBJECT(invocation));
-
     _LOGT("dbus: request sender=%s, %s%s",
           sender,
           method_name,
