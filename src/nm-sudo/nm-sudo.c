@@ -56,6 +56,8 @@ struct _GlobalData {
      * of the request, so it is ONLY for testing. */
     bool no_auth_for_testing;
 
+    bool reject_new_requests;
+
     bool is_shutting_down_quitting;
     bool is_shutting_down_timeout;
     bool is_shutting_down_cleanup;
@@ -283,6 +285,23 @@ _bus_method_call(GDBusConnection *      connection,
         return;
     }
 
+    if (gl->reject_new_requests) {
+        /* after the name was released, we must not accept new requests. This new
+         * request was probably targeted against the unique-name. But we already
+         * gave up the well-known name. If we'd accept new request now, they would
+         * keep the service running indefinitely (and thus preventing the service
+         * to restart and serve the well-known name. */
+        _LOGT("dbus: request sender=%s, %s%s, SERVER SHUTTING DOWN",
+              sender,
+              method_name,
+              g_variant_get_type_string(parameters));
+        g_dbus_method_invocation_return_error(invocation,
+                                              G_DBUS_ERROR,
+                                              G_DBUS_ERROR_NO_SERVER,
+                                              "Server is exiting");
+        return;
+    }
+
     _pending_job_register_object(gl, G_OBJECT(invocation));
 
     _LOGT("dbus: request sender=%s, %s%s",
@@ -476,9 +495,57 @@ _pending_job_register_object(GlobalData *gl, GObject *obj)
 static void
 _bus_release_name_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    _nm_unused gs_unref_object GObject *keep_alive_object = user_data;
+    _nm_unused gs_unref_object GObject *keep_alive_object = NULL;
+    GlobalData *                        gl;
 
+    nm_utils_user_data_unpack(user_data, &gl, &keep_alive_object);
+
+    gl->reject_new_requests = TRUE;
     g_main_context_wakeup(NULL);
+}
+
+static gboolean
+_bus_release_name(GlobalData *gl)
+{
+    gs_unref_object GObject *keep_alive_object = NULL;
+    int                      r;
+
+    /* We already requested a name. To exit-on-idle without race, we need to dance.
+     * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html . */
+
+    if (!gl->name_requested)
+        return FALSE;
+
+    gl->name_requested            = FALSE;
+    gl->is_shutting_down_quitting = TRUE;
+
+    _LOGT("shutdown: release-name");
+
+    keep_alive_object = g_object_new(G_TYPE_OBJECT, NULL);
+
+    /* we use the _pending_job_register_object() mechanism to make the loop busy during
+     * shutdown. */
+    _pending_job_register_object(gl, keep_alive_object);
+
+    r = nm_sd_notify("STOPPING=1");
+    if (r < 0)
+        _LOGW("shutdown: sd_notifiy(STOPPING=1) failed: %s", nm_strerror_native(-r));
+    else
+        _LOGT("shutdown: sd_notifiy(STOPPING=1) succeeded");
+
+    g_dbus_connection_call(gl->dbus_connection,
+                           DBUS_SERVICE_DBUS,
+                           DBUS_PATH_DBUS,
+                           DBUS_INTERFACE_DBUS,
+                           "ReleaseName",
+                           g_variant_new("(s)", NM_SUDO_DBUS_BUS_NAME),
+                           G_VARIANT_TYPE("(u)"),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           10000,
+                           NULL,
+                           _bus_release_name_cb,
+                           nm_utils_user_data_pack(gl, g_steal_pointer(&keep_alive_object)));
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -555,9 +622,21 @@ main(int argc, char **argv)
         if (!g_cancellable_is_cancelled(gl->quit_cancellable))
             exit_code = EXIT_FAILURE;
         gl->is_shutting_down_quitting = TRUE;
+
+        if (gl->name_requested) {
+            /* We requested a name, but something went wrong. Below we will release
+             * the name right away. */
+        } else {
+            /* In case we didn't even went as far to request the name. New requests
+             * can only come via the unique name, and as we are shutting down, they
+             * are rejected. */
+            gl->reject_new_requests = TRUE;
+        }
     }
 
     while (TRUE) {
+        if (gl->is_shutting_down_quitting)
+            _bus_release_name(gl);
         if (!c_list_is_empty(&gl->pending_jobs_lst_head)) {
             /* we must first reply to all requests. No matter what. */
         } else if (gl->is_shutting_down_quitting || gl->is_shutting_down_timeout) {
@@ -565,44 +644,8 @@ main(int argc, char **argv)
              * if we received an idle-timeout and the very moment afterwards
              * a new request, then _bus_method_call() will clear gl->is_shutting_down_timeout
              * (via _pending_job_register_object()). */
-
-            if (gl->name_requested) {
-                gs_unref_object GObject *keep_alive_object = g_object_new(G_TYPE_OBJECT, NULL);
-
-                /* We already requested a name. To exit-on-idle without race, we need to dance.
-                 * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html . */
-
-                gl->name_requested            = FALSE;
-                gl->is_shutting_down_quitting = TRUE;
-
-                _LOGT("shutdown: release-name");
-
-                /* we use the _pending_job_register_object() mechanism to make the loop busy during
-                 * shutdown. */
-                _pending_job_register_object(gl, keep_alive_object);
-
-                r = nm_sd_notify("STOPPING=1");
-                if (r < 0)
-                    _LOGW("shutdown: sd_notifiy(STOPPING=1) failed: %s", nm_strerror_native(-r));
-                else
-                    _LOGT("shutdown: sd_notifiy(STOPPING=1) succeeded");
-
-                g_dbus_connection_call(gl->dbus_connection,
-                                       DBUS_SERVICE_DBUS,
-                                       DBUS_PATH_DBUS,
-                                       DBUS_INTERFACE_DBUS,
-                                       "ReleaseName",
-                                       g_variant_new("(s)", NM_SUDO_DBUS_BUS_NAME),
-                                       G_VARIANT_TYPE("(u)"),
-                                       G_DBUS_CALL_FLAGS_NONE,
-                                       10000,
-                                       NULL,
-                                       _bus_release_name_cb,
-                                       g_steal_pointer(&keep_alive_object));
-                continue;
-            }
-
-            break;
+            if (!_bus_release_name(gl))
+                break;
         }
 
         g_main_context_iteration(NULL, TRUE);
