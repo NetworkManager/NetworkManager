@@ -47,6 +47,8 @@ static struct {
 
     bool name_requested;
 
+    bool reject_new_requests;
+
     bool exit_with_failure;
 
     bool shutdown_timeout;
@@ -886,6 +888,13 @@ _method_call(GDBusConnection *      connection,
              GDBusMethodInvocation *invocation,
              gpointer               user_data)
 {
+    if (gl.reject_new_requests) {
+        g_dbus_method_invocation_return_error(invocation,
+                                              G_DBUS_ERROR,
+                                              G_DBUS_ERROR_NO_SERVER,
+                                              "Server is exiting");
+        return;
+    }
     if (nm_streq(interface_name, NM_DISPATCHER_DBUS_INTERFACE)) {
         if (nm_streq(method_name, "Action")) {
             _method_call_action(invocation, parameters);
@@ -1060,13 +1069,59 @@ signal_handler(gpointer user_data)
     return G_SOURCE_CONTINUE;
 }
 
+/*****************************************************************************/
+
 static void
 _bus_release_name_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     nm_assert(gl.num_requests_pending > 0);
+    gl.reject_new_requests = TRUE;
     gl.num_requests_pending--;
     g_main_context_wakeup(NULL);
 }
+
+static gboolean
+_bus_release_name(void)
+{
+    int r;
+
+    /* We already requested a name. To exit-on-idle without race, we need to dance.
+     * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html . */
+
+    if (!gl.name_requested)
+        return FALSE;
+
+    gl.name_requested    = FALSE;
+    gl.shutdown_quitting = TRUE;
+
+    _LOG_X_T("shutdown: release-name");
+
+    /* we create a fake pending request. */
+    gl.num_requests_pending++;
+    nm_clear_g_source_inst(&gl.quit_source);
+
+    r = nm_sd_notify("STOPPING=1");
+    if (r < 0)
+        _LOG_X_W("shutdown: sd_notifiy(STOPPING=1) failed: %s", nm_strerror_native(-r));
+    else
+        _LOG_X_T("shutdown: sd_notifiy(STOPPING=1) succeeded");
+
+    g_dbus_connection_call(gl.dbus_connection,
+                           DBUS_SERVICE_DBUS,
+                           DBUS_PATH_DBUS,
+                           DBUS_INTERFACE_DBUS,
+                           "ReleaseName",
+                           g_variant_new("(s)", NM_DISPATCHER_DBUS_SERVICE),
+                           G_VARIANT_TYPE("(u)"),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           10000,
+                           NULL,
+                           _bus_release_name_cb,
+                           NULL);
+    return TRUE;
+}
+
+/*****************************************************************************/
 
 static gboolean
 parse_command_line(int *p_argc, char ***p_argv, GError **error)
@@ -1173,49 +1228,20 @@ main(int argc, char **argv)
         if (!g_cancellable_is_cancelled(gl.quit_cancellable))
             gl.exit_with_failure = TRUE;
         gl.shutdown_quitting = TRUE;
+
+        if (!gl.name_requested)
+            gl.reject_new_requests = TRUE;
     }
 
     while (TRUE) {
+        if (gl.shutdown_quitting)
+            _bus_release_name();
+
         if (gl.num_requests_pending > 0) {
             /* while we have requests pending, we cannot stop processing them... */
         } else if (gl.shutdown_timeout || gl.shutdown_quitting) {
-            if (gl.name_requested) {
-                int r;
-
-                /* We already requested a name. To exit-on-idle without race, we need to dance.
-                 * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html . */
-
-                gl.name_requested    = FALSE;
-                gl.shutdown_quitting = TRUE;
-
-                _LOG_X_T("shutdown: release-name");
-
-                /* we create a fake pending request. */
-                gl.num_requests_pending++;
-                nm_clear_g_source_inst(&gl.quit_source);
-
-                r = nm_sd_notify("STOPPING=1");
-                if (r < 0)
-                    _LOG_X_W("shutdown: sd_notifiy(STOPPING=1) failed: %s", nm_strerror_native(-r));
-                else
-                    _LOG_X_T("shutdown: sd_notifiy(STOPPING=1) succeeded");
-
-                g_dbus_connection_call(gl.dbus_connection,
-                                       DBUS_SERVICE_DBUS,
-                                       DBUS_PATH_DBUS,
-                                       DBUS_INTERFACE_DBUS,
-                                       "ReleaseName",
-                                       g_variant_new("(s)", NM_DISPATCHER_DBUS_SERVICE),
-                                       G_VARIANT_TYPE("(u)"),
-                                       G_DBUS_CALL_FLAGS_NONE,
-                                       10000,
-                                       NULL,
-                                       _bus_release_name_cb,
-                                       NULL);
-                continue;
-            }
-
-            break;
+            if (!_bus_release_name())
+                break;
         }
 
         g_main_context_iteration(NULL, TRUE);
