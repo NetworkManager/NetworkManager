@@ -6548,3 +6548,33 @@ nm_utils_thread_local_register_destroy(gpointer tls_data, GDestroyNotify destroy
     entry->destroy_notify = destroy_notify;
     c_list_link_tail(lst_head, &entry->lst);
 }
+
+/*****************************************************************************/
+
+static gboolean
+_iterate_for_msec_timeout(gpointer user_data)
+{
+    GSource **p_source = user_data;
+
+    nm_clear_g_source_inst(p_source);
+    return G_SOURCE_CONTINUE;
+}
+
+void
+nm_g_main_context_iterate_for_msec(GMainContext *context, guint timeout_msec)
+{
+    GSource *source;
+
+    /* In production is this function not very useful. It is however useful to
+     * have in the toolbox for printf debugging. */
+
+    source = g_timeout_source_new(timeout_msec);
+    g_source_set_callback(source, _iterate_for_msec_timeout, &source, NULL);
+
+    if (!context)
+        context = g_main_context_default();
+
+    g_source_attach(source, context);
+    while (source)
+        g_main_context_iteration(context, TRUE);
+}
