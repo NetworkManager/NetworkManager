@@ -399,6 +399,7 @@ _idle_timeout_cb(gpointer user_data)
     GlobalData *gl = user_data;
 
     _LOGT("idle-timeout: expired");
+    nm_clear_g_source_inst(&gl->source_idle_timeout);
     gl->is_shutting_down_timeout = TRUE;
     return G_SOURCE_CONTINUE;
 }
