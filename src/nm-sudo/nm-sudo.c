@@ -5,12 +5,12 @@
 #include <gio/gunixfdlist.h>
 
 #include "c-list/src/c-list.h"
+#include "libnm-base/nm-sudo-utils.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-logging-base.h"
 #include "libnm-glib-aux/nm-shared-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
-#include "libnm-base/nm-sudo-utils.h"
 
 /* nm-sudo doesn't link with libnm-core nor libnm-base, but these headers
  * can be used independently. */
@@ -37,30 +37,35 @@ typedef struct {
 } PendingJobData;
 
 struct _GlobalData {
-    GCancellable *   quit_cancellable;
     GDBusConnection *dbus_connection;
-    GSource *        source_sigterm;
+    GCancellable *   quit_cancellable;
+
+    GSource *source_sigterm;
 
     CList pending_jobs_lst_head;
 
     GSource *source_idle_timeout;
-    char *   name_owner;
-    guint    name_owner_changed_id;
-    guint    service_regist_id;
-    gint64   start_timestamp_msec;
-    guint32  timeout_msec;
-    bool     name_owner_initialized;
-    bool     name_requested;
+
+    char *name_owner;
+
+    gint64 start_timestamp_msec;
+
+    guint name_owner_changed_id;
+    guint service_regist_id;
+
+    guint32 timeout_msec;
+
+    bool name_owner_initialized;
 
     /* This is controlled by $NM_SUDO_NO_AUTH_FOR_TESTING. It disables authentication
      * of the request, so it is ONLY for testing. */
     bool no_auth_for_testing;
 
+    bool name_requested;
     bool reject_new_requests;
 
-    bool is_shutting_down_quitting;
-    bool is_shutting_down_timeout;
-    bool is_shutting_down_cleanup;
+    bool shutdown_quitting;
+    bool shutdown_timeout;
 };
 
 /*****************************************************************************/
@@ -136,7 +141,7 @@ _signal_callback_term(gpointer user_data)
     _LOGD("sigterm received (%s)",
           c_list_is_empty(&gl->pending_jobs_lst_head) ? "quit mainloop" : "cancel operations");
 
-    gl->is_shutting_down_quitting = TRUE;
+    gl->shutdown_quitting = TRUE;
     g_cancellable_cancel(gl->quit_cancellable);
     return G_SOURCE_CONTINUE;
 }
@@ -417,7 +422,7 @@ _idle_timeout_cb(gpointer user_data)
 
     _LOGT("idle-timeout: expired");
     nm_clear_g_source_inst(&gl->source_idle_timeout);
-    gl->is_shutting_down_timeout = TRUE;
+    gl->shutdown_timeout = TRUE;
     return G_SOURCE_CONTINUE;
 }
 
@@ -426,10 +431,7 @@ _idle_timeout_restart(GlobalData *gl)
 {
     nm_clear_g_source_inst(&gl->source_idle_timeout);
 
-    if (gl->is_shutting_down_quitting)
-        return;
-
-    if (gl->is_shutting_down_cleanup)
+    if (gl->shutdown_quitting)
         return;
 
     if (!c_list_is_empty(&gl->pending_jobs_lst_head))
@@ -475,7 +477,7 @@ _pending_job_register_object(GlobalData *gl, GObject *obj)
     PendingJobData *idle_data;
 
     /* if we just hit the timeout, we can ignore it. */
-    gl->is_shutting_down_timeout = FALSE;
+    gl->shutdown_timeout = FALSE;
 
     if (nm_clear_g_source_inst(&gl->source_idle_timeout))
         _LOGT("idle-timeout: suspend timeout for pending request");
@@ -514,8 +516,8 @@ _bus_release_name(GlobalData *gl)
     if (!gl->name_requested)
         return FALSE;
 
-    gl->name_requested            = FALSE;
-    gl->is_shutting_down_quitting = TRUE;
+    gl->name_requested    = FALSE;
+    gl->shutdown_quitting = TRUE;
 
     _LOGT("shutdown: release-name");
 
@@ -564,6 +566,8 @@ _initial_setup(GlobalData *gl)
     signal(SIGPIPE, SIG_IGN);
     gl->source_sigterm = nm_g_unix_signal_add_source(SIGTERM, _signal_callback_term, gl);
 }
+
+/*****************************************************************************/
 
 int
 main(int argc, char **argv)
@@ -619,7 +623,7 @@ main(int argc, char **argv)
          * Let's fake a shutdown signal, and still process the request below. */
         if (!g_cancellable_is_cancelled(gl->quit_cancellable))
             exit_code = EXIT_FAILURE;
-        gl->is_shutting_down_quitting = TRUE;
+        gl->shutdown_quitting = TRUE;
 
         if (gl->name_requested) {
             /* We requested a name, but something went wrong. Below we will release
@@ -633,14 +637,15 @@ main(int argc, char **argv)
     }
 
     while (TRUE) {
-        if (gl->is_shutting_down_quitting)
+        if (gl->shutdown_quitting)
             _bus_release_name(gl);
+
         if (!c_list_is_empty(&gl->pending_jobs_lst_head)) {
             /* we must first reply to all requests. No matter what. */
-        } else if (gl->is_shutting_down_quitting || gl->is_shutting_down_timeout) {
+        } else if (gl->shutdown_quitting || gl->shutdown_timeout) {
             /* we either hit the idle timeout or received SIGTERM. Note that
              * if we received an idle-timeout and the very moment afterwards
-             * a new request, then _bus_method_call() will clear gl->is_shutting_down_timeout
+             * a new request, then _bus_method_call() will clear gl->shutdown_timeout
              * (via _pending_job_register_object()). */
             if (!_bus_release_name(gl))
                 break;
@@ -652,7 +657,7 @@ main(int argc, char **argv)
 done:
     _LOGD("shutdown: cleanup");
 
-    gl->is_shutting_down_cleanup = TRUE;
+    gl->shutdown_quitting = TRUE;
     g_cancellable_cancel(gl->quit_cancellable);
 
     nm_assert(c_list_is_empty(&gl->pending_jobs_lst_head));
@@ -665,19 +670,19 @@ done:
         g_dbus_connection_signal_unsubscribe(gl->dbus_connection,
                                              nm_steal_int(&gl->name_owner_changed_id));
     }
-    nm_clear_g_source_inst(&gl->source_sigterm);
-    nm_clear_g_source_inst(&gl->source_idle_timeout);
-    nm_clear_g_free(&gl->name_owner);
-
-    nm_g_main_context_iterate_ready(NULL);
 
     if (gl->dbus_connection) {
         g_dbus_connection_flush_sync(gl->dbus_connection, NULL, NULL);
         g_clear_object(&gl->dbus_connection);
-        nm_g_main_context_iterate_ready(NULL);
     }
 
-    nm_clear_g_cancellable(&gl->quit_cancellable);
+    nm_g_main_context_iterate_ready(NULL);
+
+    nm_clear_g_free(&gl->name_owner);
+
+    nm_clear_g_source_inst(&gl->source_sigterm);
+    nm_clear_g_source_inst(&gl->source_idle_timeout);
+    g_clear_object(&gl->quit_cancellable);
 
     _LOGD("exit (%d)", exit_code);
     return exit_code;
