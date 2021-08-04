@@ -84,6 +84,29 @@ void nm_dbus_connection_call_get_name_owner(GDBusConnection *                  d
                                             NMDBusConnectionCallGetNameOwnerCb callback,
                                             gpointer                           user_data);
 
+static inline void
+nm_dbus_connection_call_request_name(GDBusConnection *   dbus_connection,
+                                     const char *        name,
+                                     guint32             flags,
+                                     int                 timeout_msec,
+                                     GCancellable *      cancellable,
+                                     GAsyncReadyCallback callback,
+                                     gpointer            user_data)
+{
+    g_dbus_connection_call(dbus_connection,
+                           DBUS_SERVICE_DBUS,
+                           DBUS_PATH_DBUS,
+                           DBUS_INTERFACE_DBUS,
+                           "RequestName",
+                           g_variant_new("(su)", name, flags),
+                           G_VARIANT_TYPE("(u)"),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           timeout_msec,
+                           cancellable,
+                           callback,
+                           user_data);
+}
+
 static inline guint
 nm_dbus_connection_signal_subscribe_properties_changed(GDBusConnection *   dbus_connection,
                                                        const char *        bus_name,
@@ -214,5 +237,19 @@ gboolean _nm_dbus_error_is(GError *error, ...) G_GNUC_NULL_TERMINATED;
 #define NM_DBUS_ERROR_NAME_UNKNOWN_METHOD "org.freedesktop.DBus.Error.UnknownMethod"
 
 /*****************************************************************************/
+
+GDBusConnection *nm_g_bus_get_blocking(GCancellable *cancellable, GError **error);
+
+/*****************************************************************************/
+
+typedef struct {
+    GVariant *result;
+    GError *  error;
+} NMDBusConnectionCallBlockingData;
+
+void
+nm_dbus_connection_call_blocking_callback(GObject *source, GAsyncResult *res, gpointer user_data);
+
+GVariant *nm_dbus_connection_call_blocking(NMDBusConnectionCallBlockingData *data, GError **error);
 
 #endif /* __NM_DBUS_AUX_H__ */

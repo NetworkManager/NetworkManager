@@ -5080,12 +5080,12 @@ nm_g_unix_signal_source_new(int            signum,
 }
 
 GSource *
-nm_g_unix_fd_source_new(int          fd,
-                        GIOCondition io_condition,
-                        int          priority,
-                        gboolean (*source_func)(int fd, GIOCondition condition, gpointer user_data),
-                        gpointer       user_data,
-                        GDestroyNotify destroy_notify)
+nm_g_unix_fd_source_new(int               fd,
+                        GIOCondition      io_condition,
+                        int               priority,
+                        GUnixFDSourceFunc source_func,
+                        gpointer          user_data,
+                        GDestroyNotify    destroy_notify)
 {
     GSource *source;
 
@@ -5094,6 +5094,23 @@ nm_g_unix_fd_source_new(int          fd,
     if (priority != G_PRIORITY_DEFAULT)
         g_source_set_priority(source, priority);
     g_source_set_callback(source, G_SOURCE_FUNC(source_func), user_data, destroy_notify);
+    return source;
+}
+
+GSource *
+nm_g_child_watch_source_new(GPid            pid,
+                            int             priority,
+                            GChildWatchFunc handler,
+                            gpointer        user_data,
+                            GDestroyNotify  notify)
+{
+    GSource *source;
+
+    source = g_child_watch_source_new(pid);
+
+    if (priority != G_PRIORITY_DEFAULT)
+        g_source_set_priority(source, priority);
+    g_source_set_callback(source, G_SOURCE_FUNC(handler), user_data, notify);
     return source;
 }
 

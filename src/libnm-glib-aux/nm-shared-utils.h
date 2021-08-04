@@ -1715,18 +1715,24 @@ GSource *nm_g_timeout_source_new_seconds(guint          timeout_sec,
                                          gpointer       user_data,
                                          GDestroyNotify destroy_notify);
 
-GSource *
-         nm_g_unix_fd_source_new(int          fd,
-                                 GIOCondition io_condition,
-                                 int          priority,
-                                 gboolean (*source_func)(int fd, GIOCondition condition, gpointer user_data),
-                                 gpointer       user_data,
-                                 GDestroyNotify destroy_notify);
+GSource *nm_g_unix_fd_source_new(int               fd,
+                                 GIOCondition      io_condition,
+                                 int               priority,
+                                 GUnixFDSourceFunc source_func,
+                                 gpointer          user_data,
+                                 GDestroyNotify    destroy_notify);
+
 GSource *nm_g_unix_signal_source_new(int            signum,
                                      int            priority,
                                      GSourceFunc    handler,
                                      gpointer       user_data,
                                      GDestroyNotify notify);
+
+GSource *nm_g_child_watch_source_new(GPid            pid,
+                                     int             priority,
+                                     GChildWatchFunc handler,
+                                     gpointer        user_data,
+                                     GDestroyNotify  notify);
 
 static inline GSource *
 nm_g_source_attach(GSource *source, GMainContext *context)
@@ -1824,6 +1830,14 @@ nm_g_unix_signal_add_source(int signum, GSourceFunc handler, gpointer user_data)
         NULL);
 }
 
+static inline GSource *
+nm_g_child_watch_add_source(GPid pid, GChildWatchFunc handler, gpointer user_data)
+{
+    return nm_g_source_attach(
+        nm_g_child_watch_source_new(pid, G_PRIORITY_DEFAULT, handler, user_data, NULL),
+        NULL);
+}
+
 NM_AUTO_DEFINE_FCN0(GMainContext *, _nm_auto_unref_gmaincontext, g_main_context_unref);
 #define nm_auto_unref_gmaincontext nm_auto(_nm_auto_unref_gmaincontext)
 
@@ -1877,6 +1891,14 @@ nm_g_main_context_push_thread_default_if_necessary(GMainContext *context)
 
     g_main_context_push_thread_default(context);
     return context;
+}
+
+static inline void
+nm_g_main_context_iterate_ready(GMainContext *context)
+{
+    while (g_main_context_iteration(context, FALSE)) {
+        ;
+    }
 }
 
 /*****************************************************************************/

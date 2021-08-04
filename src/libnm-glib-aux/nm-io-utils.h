@@ -60,4 +60,21 @@ void nm_g_subprocess_terminate_in_background(GSubprocess *subprocess, int timeou
 
 char **nm_utils_find_mkstemp_files(const char *dirname, const char *filename);
 
+static inline gboolean
+nm_io_sockaddr_un_path_is_abstract(const char *path, const char **out_path)
+{
+    if (path && path[0] == '@') {
+        NM_SET_OUT(out_path, &path[1]);
+        return TRUE;
+    }
+    NM_SET_OUT(out_path, path);
+    return FALSE;
+}
+
+struct sockaddr_un;
+
+int nm_io_sockaddr_un_set(struct sockaddr_un *ret, NMOptionBool is_abstract, const char *path);
+
+int nm_sd_notify(const char *state);
+
 #endif /* __NM_IO_UTILS_H__ */

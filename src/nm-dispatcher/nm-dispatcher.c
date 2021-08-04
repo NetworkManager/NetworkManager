@@ -18,7 +18,16 @@
 #include <arpa/inet.h>
 
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 #include "nm-dispatcher-utils.h"
+
+/*****************************************************************************/
+
+/* Serves only the purpose to mark environment variables that are honored by
+ * the application. You can search for this macro, and find what options are supported. */
+#define _ENV(var) ("" var "")
 
 /*****************************************************************************/
 
@@ -26,13 +35,22 @@ typedef struct Request Request;
 
 static struct {
     GDBusConnection *dbus_connection;
-    GMainLoop *      loop;
-    gboolean         debug;
+    GCancellable *   quit_cancellable;
+    bool             log_verbose;
+    bool             log_stdout;
     gboolean         persist;
-    guint            quit_id;
+    GSource *        quit_source;
     guint            request_id_counter;
-    gboolean         ever_acquired_name;
-    bool             exit_with_failure;
+    guint            dbus_regist_id;
+
+    gint64 start_timestamp_msec;
+
+    bool name_requested;
+
+    bool exit_with_failure;
+
+    bool shutdown_timeout;
+    bool shutdown_quitting;
 
     Request *current_request;
     GQueue * requests_waiting;
@@ -48,8 +66,8 @@ typedef struct {
     char *         error;
     gboolean       wait;
     gboolean       dispatched;
-    guint          watch_id;
-    guint          timeout_id;
+    GSource *      watch_source;
+    GSource *      timeout_source;
 } ScriptInfo;
 
 struct Request {
@@ -137,7 +155,7 @@ struct Request {
     }                                                                         \
     G_STMT_END
 
-#define _LOG_X_D_enabled() (gl.debug)
+#define _LOG_X_D_enabled() (gl.log_verbose)
 #define _LOG_X_T_enabled() _LOG_X_D_enabled()
 
 #define _LOG_R_D_enabled(request) (_NM_ENSURE_TYPE_CONST(Request *, request)->debug)
@@ -189,18 +207,26 @@ request_free(Request *request)
 static gboolean
 quit_timeout_cb(gpointer user_data)
 {
-    gl.quit_id = 0;
-    g_main_loop_quit(gl.loop);
-    return G_SOURCE_REMOVE;
+    nm_clear_g_source_inst(&gl.quit_source);
+    gl.shutdown_timeout = TRUE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
 quit_timeout_reschedule(void)
 {
-    if (!gl.persist) {
-        nm_clear_g_source(&gl.quit_id);
-        gl.quit_id = g_timeout_add_seconds(10, quit_timeout_cb, NULL);
-    }
+    nm_clear_g_source_inst(&gl.quit_source);
+
+    if (gl.persist)
+        return;
+
+    if (gl.shutdown_quitting)
+        return;
+
+    if (gl.num_requests_pending > 0)
+        return;
+
+    gl.quit_source = nm_g_timeout_add_source(10000, quit_timeout_cb, NULL);
 }
 
 /**
@@ -286,7 +312,7 @@ complete_request(Request *request)
 
     request_free(request);
 
-    g_assert_cmpuint(gl.num_requests_pending, >, 0);
+    nm_assert(gl.num_requests_pending > 0);
     if (--gl.num_requests_pending <= 0) {
         nm_assert(!gl.current_request && !g_queue_peek_head(gl.requests_waiting));
         quit_timeout_reschedule();
@@ -365,8 +391,8 @@ script_watch_cb(GPid pid, int status, gpointer user_data)
 
     g_assert(pid == script->pid);
 
-    script->watch_id = 0;
-    nm_clear_g_source(&script->timeout_id);
+    nm_clear_g_source_inst(&script->watch_source);
+    nm_clear_g_source_inst(&script->timeout_source);
     script->request->num_scripts_done++;
     if (!script->wait)
         script->request->num_scripts_nowait--;
@@ -395,8 +421,8 @@ script_timeout_cb(gpointer user_data)
 {
     ScriptInfo *script = user_data;
 
-    script->timeout_id = 0;
-    nm_clear_g_source(&script->watch_id);
+    nm_clear_g_source_inst(&script->timeout_source);
+    nm_clear_g_source_inst(&script->watch_source);
     script->request->num_scripts_done++;
     if (!script->wait)
         script->request->num_scripts_nowait--;
@@ -417,7 +443,7 @@ again:
 
     complete_script(script);
 
-    return FALSE;
+    return G_SOURCE_CONTINUE;
 }
 
 static gboolean
@@ -514,8 +540,9 @@ script_dispatch(ScriptInfo *script)
         return FALSE;
     }
 
-    script->watch_id   = g_child_watch_add(script->pid, (GChildWatchFunc) script_watch_cb, script);
-    script->timeout_id = g_timeout_add_seconds(SCRIPT_TIMEOUT, script_timeout_cb, script);
+    script->watch_source = nm_g_child_watch_add_source(script->pid, script_watch_cb, script);
+    script->timeout_source =
+        nm_g_timeout_add_source_seconds(SCRIPT_TIMEOUT, script_timeout_cb, script);
     if (!script->wait)
         request->num_scripts_nowait++;
     return TRUE;
@@ -726,7 +753,7 @@ _method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
 
     request             = g_slice_new0(Request);
     request->request_id = ++gl.request_id_counter;
-    request->debug      = debug || gl.debug;
+    request->debug      = debug || gl.log_verbose;
     request->context    = invocation;
     request->action     = g_strdup(action);
 
@@ -782,9 +809,9 @@ _method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
         return;
     }
 
-    nm_clear_g_source(&gl.quit_id);
-
     gl.num_requests_pending++;
+    gl.shutdown_timeout = FALSE;
+    nm_clear_g_source_inst(&gl.quit_source);
 
     for (i = 0; i < request->scripts->len; i++) {
         ScriptInfo *s = g_ptr_array_index(request->scripts, i);
@@ -830,28 +857,23 @@ _method_call_action(GDBusMethodInvocation *invocation, GVariant *parameters)
 }
 
 static void
-on_name_acquired(GDBusConnection *connection, const char *name, gpointer user_data)
+_method_call_ping(GDBusMethodInvocation *invocation, GVariant *parameters)
 {
-    gl.ever_acquired_name = TRUE;
-}
+    gs_free char *msg = NULL;
+    gint64        running_msec;
+    const char *  arg_s;
 
-static void
-on_name_lost(GDBusConnection *connection, const char *name, gpointer user_data)
-{
-    if (!connection) {
-        if (!gl.ever_acquired_name) {
-            _LOG_X_W("Could not get the system bus.  Make sure the message bus daemon is running!");
-            gl.exit_with_failure = TRUE;
-        } else {
-            _LOG_X_I("System bus stopped. Exiting");
-        }
-    } else if (!gl.ever_acquired_name) {
-        _LOG_X_W("Could not acquire the " NM_DISPATCHER_DBUS_SERVICE " service.");
-        gl.exit_with_failure = TRUE;
-    } else
-        _LOG_X_I("Lost the " NM_DISPATCHER_DBUS_SERVICE " name. Exiting");
+    g_variant_get(parameters, "(&s)", &arg_s);
 
-    g_main_loop_quit(gl.loop);
+    running_msec = nm_utils_clock_gettime_msec(CLOCK_BOOTTIME) - gl.start_timestamp_msec;
+
+    msg = g_strdup_printf("pid=%lu, unique-name=%s, since=%" G_GINT64_FORMAT ".%03d, pong=%s",
+                          (unsigned long) getpid(),
+                          g_dbus_connection_get_unique_name(gl.dbus_connection),
+                          (gint64) (running_msec / 1000),
+                          (int) (running_msec % 1000),
+                          arg_s);
+    g_dbus_method_invocation_return_value(invocation, g_variant_new("(s)", msg));
 }
 
 static void
@@ -869,6 +891,10 @@ _method_call(GDBusConnection *      connection,
             _method_call_action(invocation, parameters);
             return;
         }
+        if (nm_streq(method_name, "Ping")) {
+            _method_call_ping(invocation, parameters);
+            return;
+        }
     }
     g_dbus_method_invocation_return_error(invocation,
                                           G_DBUS_ERROR,
@@ -880,6 +906,10 @@ _method_call(GDBusConnection *      connection,
 static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO(
     NM_DISPATCHER_DBUS_INTERFACE,
     .methods = NM_DEFINE_GDBUS_METHOD_INFOS(
+        NM_DEFINE_GDBUS_METHOD_INFO(
+            "Ping",
+            .in_args  = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("arg", "s"), ),
+            .out_args = NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("arg", "s"), ), ),
         NM_DEFINE_GDBUS_METHOD_INFO(
             "Action",
             .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
@@ -901,9 +931,75 @@ static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO
             .out_args =
                 NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("results", "a(sus)"), ), ), ), );
 
-static const GDBusInterfaceVTable interface_vtable = {
-    .method_call = _method_call,
-};
+static gboolean
+_bus_register_service(void)
+{
+    static const GDBusInterfaceVTable interface_vtable = {
+        .method_call = _method_call,
+    };
+    gs_free_error GError *           error = NULL;
+    NMDBusConnectionCallBlockingData data  = {
+        .result = NULL,
+    };
+    gs_unref_variant GVariant *ret = NULL;
+    guint32                    ret_val;
+
+    gl.dbus_regist_id =
+        g_dbus_connection_register_object(gl.dbus_connection,
+                                          NM_DISPATCHER_DBUS_PATH,
+                                          interface_info,
+                                          NM_UNCONST_PTR(GDBusInterfaceVTable, &interface_vtable),
+                                          NULL,
+                                          NULL,
+                                          &error);
+    if (gl.dbus_regist_id == 0) {
+        _LOG_X_W("dbus: could not export dispatcher D-Bus interface %s: %s",
+                 NM_DISPATCHER_DBUS_PATH,
+                 error->message);
+        return FALSE;
+    }
+
+    _LOG_X_D("dbus: dispatcher D-Bus interface %s registered", NM_DISPATCHER_DBUS_PATH);
+
+    gl.name_requested = TRUE;
+
+    nm_dbus_connection_call_request_name(gl.dbus_connection,
+                                         NM_DISPATCHER_DBUS_SERVICE,
+                                         DBUS_NAME_FLAG_ALLOW_REPLACEMENT
+                                             | DBUS_NAME_FLAG_REPLACE_EXISTING,
+                                         10000,
+                                         gl.quit_cancellable,
+                                         nm_dbus_connection_call_blocking_callback,
+                                         &data);
+
+    /* Note that with D-Bus activation, the first request will already hit us before RequestName
+     * completes. So when we start iterating the main context, the first request may already come
+     * in. */
+
+    ret = nm_dbus_connection_call_blocking(&data, &error);
+
+    if (nm_utils_error_is_cancelled(error))
+        return FALSE;
+
+    if (error) {
+        _LOG_X_W("d-bus: failed to request name %s: %s",
+                 NM_DISPATCHER_DBUS_SERVICE,
+                 error->message);
+        return FALSE;
+    }
+
+    g_variant_get(ret, "(u)", &ret_val);
+
+    if (ret_val != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+        _LOG_X_W("dbus: request name for %s failed to take name (response %u)",
+                 NM_DISPATCHER_DBUS_SERVICE,
+                 ret_val);
+        return FALSE;
+    }
+
+    _LOG_X_D("dbus: request name for %s succeeded", NM_DISPATCHER_DBUS_SERVICE);
+    return TRUE;
+}
 
 /*****************************************************************************/
 
@@ -956,23 +1052,52 @@ logging_shutdown(void)
 static gboolean
 signal_handler(gpointer user_data)
 {
-    int signo = GPOINTER_TO_INT(user_data);
-
-    _LOG_X_I("Caught signal %d, shutting down...", signo);
-    g_main_loop_quit(gl.loop);
-
+    if (!gl.shutdown_quitting) {
+        gl.shutdown_quitting = TRUE;
+        _LOG_X_I("Caught signal %d, shutting down...", GPOINTER_TO_INT(user_data));
+        g_cancellable_cancel(gl.quit_cancellable);
+    }
     return G_SOURCE_CONTINUE;
+}
+
+static void
+_bus_release_name_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    nm_assert(gl.num_requests_pending > 0);
+    gl.num_requests_pending--;
+    g_main_context_wakeup(NULL);
 }
 
 static gboolean
 parse_command_line(int *p_argc, char ***p_argv, GError **error)
 {
     GOptionContext *opt_ctx;
-    GOptionEntry    entries[] = {
-        {"debug", 0, 0, G_OPTION_ARG_NONE, &gl.debug, "Output to console rather than syslog", NULL},
-        {"persist", 0, 0, G_OPTION_ARG_NONE, &gl.persist, "Don't quit after a short timeout", NULL},
-        {NULL}};
-    gboolean success;
+    gboolean        arg_debug = FALSE;
+    GOptionEntry    entries[] = {{
+                                  "debug",
+                                  0,
+                                  0,
+                                  G_OPTION_ARG_NONE,
+                                  &arg_debug,
+                                  "Output to console rather than syslog",
+                                  NULL,
+                              },
+                              {
+                                  "persist",
+                                  0,
+                                  0,
+                                  G_OPTION_ARG_NONE,
+                                  &gl.persist,
+                                  "Don't quit after a short timeout",
+                                  NULL,
+                              },
+                              {
+                                  NULL,
+                              }};
+    gboolean        success;
+
+    gl.log_stdout  = FALSE;
+    gl.log_verbose = _nm_utils_ascii_str_to_bool(g_getenv(_ENV("NM_DISPATCHER_DEBUG_LOG")), FALSE);
 
     opt_ctx = g_option_context_new(NULL);
     g_option_context_set_summary(opt_ctx, "Executes scripts upon actions by NetworkManager.");
@@ -982,17 +1107,28 @@ parse_command_line(int *p_argc, char ***p_argv, GError **error)
 
     g_option_context_free(opt_ctx);
 
+    if (success && arg_debug) {
+        gl.log_stdout  = TRUE;
+        gl.log_verbose = TRUE;
+    }
+
     return success;
 }
 
 int
 main(int argc, char **argv)
 {
-    gs_free_error GError *error            = NULL;
-    guint                 signal_id_term   = 0;
-    guint                 signal_id_int    = 0;
-    guint                 dbus_regist_id   = 0;
-    guint                 dbus_own_name_id = 0;
+    gs_free_error GError *error       = NULL;
+    GSource *             source_term = NULL;
+    GSource *             source_int  = NULL;
+
+    signal(SIGPIPE, SIG_IGN);
+    source_term = nm_g_unix_signal_add_source(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
+    source_int  = nm_g_unix_signal_add_source(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
+
+    gl.start_timestamp_msec = nm_utils_clock_gettime_msec(CLOCK_BOOTTIME);
+
+    gl.quit_cancellable = g_cancellable_new();
 
     if (!parse_command_line(&argc, &argv, &error)) {
         _LOG_X_W("Error parsing command line arguments: %s", error->message);
@@ -1000,10 +1136,7 @@ main(int argc, char **argv)
         goto done;
     }
 
-    signal_id_term = g_unix_signal_add(SIGTERM, signal_handler, GINT_TO_POINTER(SIGTERM));
-    signal_id_int  = g_unix_signal_add(SIGINT, signal_handler, GINT_TO_POINTER(SIGINT));
-
-    if (gl.debug) {
+    if (gl.log_stdout) {
         if (!g_getenv("G_MESSAGES_DEBUG")) {
             /* we log our regular messages using g_debug() and g_info().
              * When we redirect glib logging to syslog, there is no problem.
@@ -1014,77 +1147,111 @@ main(int argc, char **argv)
     } else
         logging_setup();
 
-    gl.loop = g_main_loop_new(NULL, FALSE);
-
-    gl.dbus_connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, NULL, &error);
+    gl.dbus_connection = nm_g_bus_get_blocking(gl.quit_cancellable, &error);
     if (!gl.dbus_connection) {
-        _LOG_X_W("Could not get the system bus (%s).  Make sure the message bus daemon is running!",
-                 error->message);
-        gl.exit_with_failure = TRUE;
+        if (!nm_utils_error_is_cancelled(error)) {
+            _LOG_X_W("dbus: failure to get D-Bus connection: %s", error->message);
+            gl.exit_with_failure = TRUE;
+        }
         goto done;
     }
+
+    /* On bus-disconnect, GDBus will raise(SIGTERM), which we handle like a
+     * regular request to quit. */
+    g_dbus_connection_set_exit_on_close(gl.dbus_connection, TRUE);
+
+    _LOG_X_D("dbus: unique name: %s", g_dbus_connection_get_unique_name(gl.dbus_connection));
 
     gl.requests_waiting = g_queue_new();
 
-    dbus_regist_id =
-        g_dbus_connection_register_object(gl.dbus_connection,
-                                          NM_DISPATCHER_DBUS_PATH,
-                                          interface_info,
-                                          NM_UNCONST_PTR(GDBusInterfaceVTable, &interface_vtable),
-                                          NULL,
-                                          NULL,
-                                          &error);
-    if (dbus_regist_id == 0) {
-        _LOG_X_W("Could not export Dispatcher D-Bus interface: %s", error->message);
-        gl.exit_with_failure = 1;
-        goto done;
-    }
-
-    dbus_own_name_id = g_bus_own_name_on_connection(gl.dbus_connection,
-                                                    NM_DISPATCHER_DBUS_SERVICE,
-                                                    G_BUS_NAME_OWNER_FLAGS_NONE,
-                                                    on_name_acquired,
-                                                    on_name_lost,
-                                                    NULL,
-                                                    NULL);
-
     quit_timeout_reschedule();
 
-    g_main_loop_run(gl.loop);
-
-done:
-
-    if (gl.num_requests_pending > 0) {
-        /* this only happens when we quit due to SIGTERM (not due to the idle timer).
-         *
-         * Log a warning about pending scripts.
-         *
-         * Maybe we should notify NetworkManager that these scripts are left in an unknown state.
-         * But this is either a bug of a dispatcher script (not terminating in time).
-         *
-         * FIXME(shutdown): Also, currently NetworkManager behaves wrongly on shutdown.
-         * Note that systemd would not terminate NetworkManager-dispatcher before NetworkManager.
-         * It's NetworkManager's responsibility to keep running long enough so that all requests
-         * can complete (with a watchdog timer, and a warning that user provided scripts hang). */
-        _LOG_X_W("exiting but there are still %u requests pending", gl.num_requests_pending);
+    if (!_bus_register_service()) {
+        /* we failed to start the D-Bus service, and will shut down. However,
+         * first see whether there are any requests that we should process.
+         * Even if RequestName fails, we might already have requests pending. */
+        if (!g_cancellable_is_cancelled(gl.quit_cancellable))
+            gl.exit_with_failure = TRUE;
+        gl.shutdown_quitting = TRUE;
     }
 
-    if (dbus_own_name_id != 0)
-        g_bus_unown_name(nm_steal_int(&dbus_own_name_id));
+    while (TRUE) {
+        if (gl.num_requests_pending > 0) {
+            /* while we have requests pending, we cannot stop processing them... */
+        } else if (gl.shutdown_timeout || gl.shutdown_quitting) {
+            if (gl.name_requested) {
+                int r;
 
-    if (dbus_regist_id != 0)
-        g_dbus_connection_unregister_object(gl.dbus_connection, nm_steal_int(&dbus_regist_id));
+                /* We already requested a name. To exit-on-idle without race, we need to dance.
+                 * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html . */
+
+                gl.name_requested    = FALSE;
+                gl.shutdown_quitting = TRUE;
+
+                _LOG_X_T("shutdown: release-name");
+
+                /* we create a fake pending request. */
+                gl.num_requests_pending++;
+                nm_clear_g_source_inst(&gl.quit_source);
+
+                r = nm_sd_notify("STOPPING=1");
+                if (r < 0)
+                    _LOG_X_W("shutdown: sd_notifiy(STOPPING=1) failed: %s", nm_strerror_native(-r));
+                else
+                    _LOG_X_T("shutdown: sd_notifiy(STOPPING=1) succeeded");
+
+                g_dbus_connection_call(gl.dbus_connection,
+                                       DBUS_SERVICE_DBUS,
+                                       DBUS_PATH_DBUS,
+                                       DBUS_INTERFACE_DBUS,
+                                       "ReleaseName",
+                                       g_variant_new("(s)", NM_DISPATCHER_DBUS_SERVICE),
+                                       G_VARIANT_TYPE("(u)"),
+                                       G_DBUS_CALL_FLAGS_NONE,
+                                       10000,
+                                       NULL,
+                                       _bus_release_name_cb,
+                                       NULL);
+                continue;
+            }
+
+            break;
+        }
+
+        g_main_context_iteration(NULL, TRUE);
+    }
+
+done:
+    nm_g_main_context_iterate_ready(NULL);
+
+    gl.shutdown_quitting = TRUE;
+    g_cancellable_cancel(gl.quit_cancellable);
+
+    nm_assert(gl.num_requests_pending == 0);
+
+    if (gl.dbus_regist_id != 0)
+        g_dbus_connection_unregister_object(gl.dbus_connection, nm_steal_int(&gl.dbus_regist_id));
 
     nm_clear_pointer(&gl.requests_waiting, g_queue_free);
 
-    nm_clear_g_source(&signal_id_term);
-    nm_clear_g_source(&signal_id_int);
-    nm_clear_g_source(&gl.quit_id);
-    nm_clear_pointer(&gl.loop, g_main_loop_unref);
-    g_clear_object(&gl.dbus_connection);
+    nm_clear_g_source_inst(&gl.quit_source);
 
-    if (!gl.debug)
+    if (gl.dbus_connection) {
+        g_dbus_connection_flush_sync(gl.dbus_connection, NULL, NULL);
+        g_clear_object(&gl.dbus_connection);
+    }
+
+    nm_g_main_context_iterate_ready(NULL);
+
+    _LOG_X_T("shutdown: exiting with %s", gl.exit_with_failure ? "failure" : "success");
+
+    if (gl.log_stdout)
         logging_shutdown();
+
+    nm_clear_g_source_inst(&source_term);
+    nm_clear_g_source_inst(&source_int);
+
+    g_clear_object(&gl.quit_cancellable);
 
     return gl.exit_with_failure ? 1 : 0;
 }

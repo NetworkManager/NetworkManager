@@ -5,10 +5,11 @@
 #include <gio/gunixfdlist.h>
 
 #include "c-list/src/c-list.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-logging-base.h"
 #include "libnm-glib-aux/nm-shared-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
-#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-base/nm-sudo-utils.h"
 
 /* nm-sudo doesn't link with libnm-core nor libnm-base, but these headers
@@ -49,7 +50,7 @@ struct _GlobalData {
     gint64   start_timestamp_msec;
     guint32  timeout_msec;
     bool     name_owner_initialized;
-    bool     service_registered;
+    bool     name_requested;
 
     /* This is controlled by $NM_SUDO_NO_AUTH_FOR_TESTING. It disables authentication
      * of the request, so it is ONLY for testing. */
@@ -66,7 +67,7 @@ static void _pending_job_register_object(GlobalData *gl, GObject *obj);
 
 /*****************************************************************************/
 
-#define _nm_log(level, ...) _nm_log_simple_printf((level), __VA_ARGS__);
+#define _nm_log(level, ...) _nm_log_simple_printf((level), __VA_ARGS__)
 
 #define _NMLOG(level, ...)                 \
     G_STMT_START                           \
@@ -140,33 +141,13 @@ _signal_callback_term(gpointer user_data)
 
 /*****************************************************************************/
 
-typedef struct {
-    GDBusConnection **p_dbus_connection;
-    GError **         p_error;
-} BusGetData;
-
-static void
-_bus_get_cb(GObject *source, GAsyncResult *result, gpointer user_data)
-{
-    BusGetData *data = user_data;
-
-    *data->p_dbus_connection = g_bus_get_finish(result, data->p_error);
-}
-
 static GDBusConnection *
 _bus_get(GCancellable *cancellable, int *out_exit_code)
 {
     gs_free_error GError *error                      = NULL;
     gs_unref_object GDBusConnection *dbus_connection = NULL;
-    BusGetData                       data            = {
-        .p_dbus_connection = &dbus_connection,
-        .p_error           = &error,
-    };
 
-    g_bus_get(G_BUS_TYPE_SYSTEM, cancellable, _bus_get_cb, &data);
-
-    while (!dbus_connection && !error)
-        g_main_context_iteration(NULL, TRUE);
+    dbus_connection = nm_g_bus_get_blocking(cancellable, &error);
 
     if (!dbus_connection) {
         gboolean was_cancelled = nm_utils_error_is_cancelled(error);
@@ -309,14 +290,26 @@ _bus_method_call(GDBusConnection *      connection,
           method_name,
           g_variant_get_type_string(parameters));
 
+    if (!nm_streq(interface_name, NM_SUDO_DBUS_IFACE_NAME))
+        goto out_unknown_method;
+
+    if (nm_streq(method_name, "GetFD")) {
+        g_variant_get(parameters, "(u)", &arg_u);
+        _handle_get_fd(gl, invocation, arg_u);
+        return;
+    }
     if (nm_streq(method_name, "Ping")) {
         g_variant_get(parameters, "(&s)", &arg_s);
         _handle_ping(gl, invocation, arg_s);
-    } else if (nm_streq(method_name, "GetFD")) {
-        g_variant_get(parameters, "(u)", &arg_u);
-        _handle_get_fd(gl, invocation, arg_u);
-    } else
-        nm_assert_not_reached();
+        return;
+    }
+
+out_unknown_method:
+    g_dbus_method_invocation_return_error(invocation,
+                                          G_DBUS_ERROR,
+                                          G_DBUS_ERROR_UNKNOWN_METHOD,
+                                          "Unknown method %s",
+                                          method_name);
 }
 
 static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO(
@@ -330,56 +323,18 @@ static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO
                                     .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
                                         NM_DEFINE_GDBUS_ARG_INFO("fd_type", "u"), ), ), ), );
 
-typedef struct {
-    GlobalData *gl;
-    gboolean    is_waiting;
-} BusRegisterServiceRequestNameData;
-
-static void
-_bus_register_service_request_name_cb(GObject *source, GAsyncResult *res, gpointer user_data)
-{
-    BusRegisterServiceRequestNameData *data = user_data;
-    gs_free_error GError *error             = NULL;
-    gs_unref_variant GVariant *ret          = NULL;
-    gboolean                   success      = FALSE;
-
-    ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), res, &error);
-
-    if (nm_utils_error_is_cancelled(error))
-        goto out;
-
-    if (error)
-        _LOGE("d-bus: failed to request name %s: %s", NM_SUDO_DBUS_BUS_NAME, error->message);
-    else {
-        guint32 ret_val;
-
-        g_variant_get(ret, "(u)", &ret_val);
-        if (ret_val != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-            _LOGW("dbus: request name for %s failed to take name (response %u)",
-                  NM_SUDO_DBUS_BUS_NAME,
-                  ret_val);
-        } else {
-            _LOGD("dbus: request name for %s succeeded", NM_SUDO_DBUS_BUS_NAME);
-            success = TRUE;
-        }
-    }
-
-out:
-    if (success)
-        data->gl->service_registered = TRUE;
-    data->is_waiting = FALSE;
-}
-
-static void
+static gboolean
 _bus_register_service(GlobalData *gl)
 {
     static const GDBusInterfaceVTable interface_vtable = {
         .method_call = _bus_method_call,
     };
-    gs_free_error GError *            error = NULL;
-    BusRegisterServiceRequestNameData data;
-
-    nm_assert(!gl->service_registered);
+    gs_free_error GError *           error = NULL;
+    NMDBusConnectionCallBlockingData data  = {
+        .result = NULL,
+    };
+    gs_unref_variant GVariant *ret = NULL;
+    guint32                    ret_val;
 
     gl->service_regist_id =
         g_dbus_connection_register_object(gl->dbus_connection,
@@ -391,37 +346,49 @@ _bus_register_service(GlobalData *gl)
                                           &error);
     if (gl->service_regist_id == 0) {
         _LOGE("dbus: error registering object %s: %s", NM_SUDO_DBUS_OBJECT_PATH, error->message);
-        return;
+        return FALSE;
     }
 
     _LOGD("dbus: object %s registered", NM_SUDO_DBUS_OBJECT_PATH);
 
-    data = (BusRegisterServiceRequestNameData){
-        .gl         = gl,
-        .is_waiting = TRUE,
-    };
+    /* regardless whether the request is successful, after we start calling
+     * RequestName, we remember that we need to ReleaseName it. */
+    gl->name_requested = TRUE;
 
-    g_dbus_connection_call(
-        gl->dbus_connection,
-        DBUS_SERVICE_DBUS,
-        DBUS_PATH_DBUS,
-        DBUS_INTERFACE_DBUS,
-        "RequestName",
-        g_variant_new("(su)",
-                      NM_SUDO_DBUS_BUS_NAME,
-                      (guint) (DBUS_NAME_FLAG_ALLOW_REPLACEMENT | DBUS_NAME_FLAG_REPLACE_EXISTING)),
-        G_VARIANT_TYPE("(u)"),
-        G_DBUS_CALL_FLAGS_NONE,
-        -1,
-        gl->quit_cancellable,
-        _bus_register_service_request_name_cb,
-        &data);
+    nm_dbus_connection_call_request_name(gl->dbus_connection,
+                                         NM_SUDO_DBUS_BUS_NAME,
+                                         DBUS_NAME_FLAG_ALLOW_REPLACEMENT
+                                             | DBUS_NAME_FLAG_REPLACE_EXISTING,
+                                         10000,
+                                         gl->quit_cancellable,
+                                         nm_dbus_connection_call_blocking_callback,
+                                         &data);
 
     /* Note that with D-Bus activation, the first request will already hit us before RequestName
-     * completes. */
+     * completes. So when we start iterating the main context, the first request may already come
+     * in. */
 
-    while (data.is_waiting)
-        g_main_context_iteration(NULL, TRUE);
+    ret = nm_dbus_connection_call_blocking(&data, &error);
+
+    if (nm_utils_error_is_cancelled(error))
+        return FALSE;
+
+    if (error) {
+        _LOGE("d-bus: failed to request name %s: %s", NM_SUDO_DBUS_BUS_NAME, error->message);
+        return FALSE;
+    }
+
+    g_variant_get(ret, "(u)", &ret_val);
+
+    if (ret_val != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+        _LOGW("dbus: request name for %s failed to take name (response %u)",
+              NM_SUDO_DBUS_BUS_NAME,
+              ret_val);
+        return FALSE;
+    }
+
+    _LOGD("dbus: request name for %s succeeded", NM_SUDO_DBUS_BUS_NAME);
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -506,6 +473,16 @@ _pending_job_register_object(GlobalData *gl, GObject *obj)
 /*****************************************************************************/
 
 static void
+_bus_release_name_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    _nm_unused gs_unref_object GObject *keep_alive_object = user_data;
+
+    g_main_context_wakeup(NULL);
+}
+
+/*****************************************************************************/
+
+static void
 _initial_setup(GlobalData *gl)
 {
     gl->no_auth_for_testing =
@@ -568,36 +545,73 @@ main(int argc, char **argv)
 
     exit_code = EXIT_SUCCESS;
 
-    _bus_register_service(gl);
-    if (!gl->service_registered) {
+    if (!_bus_register_service(gl)) {
         /* We failed to RequestName, but due to D-Bus activation we
          * might have a pending request still (on the unique name).
          * Process it below.
          *
          * Let's fake a shutdown signal, and still process the request below. */
-        exit_code                     = EXIT_FAILURE;
+        if (!g_cancellable_is_cancelled(gl->quit_cancellable))
+            exit_code = EXIT_FAILURE;
         gl->is_shutting_down_quitting = TRUE;
     }
 
     while (TRUE) {
         if (!c_list_is_empty(&gl->pending_jobs_lst_head)) {
             /* we must first reply to all requests. No matter what. */
-        } else {
-            if (gl->is_shutting_down_quitting || gl->is_shutting_down_timeout) {
-                /* we either hit the idle timeout or received SIGTERM. Note that
-                 * if we received an idle-timeout and the very moment afterwards
-                 * a new request, then _bus_method_call() will clear gl->is_shutting_down_timeout
-                 * (via _pending_job_register_object()). */
-                break;
+        } else if (gl->is_shutting_down_quitting || gl->is_shutting_down_timeout) {
+            /* we either hit the idle timeout or received SIGTERM. Note that
+             * if we received an idle-timeout and the very moment afterwards
+             * a new request, then _bus_method_call() will clear gl->is_shutting_down_timeout
+             * (via _pending_job_register_object()). */
+
+            if (gl->name_requested) {
+                gs_unref_object GObject *keep_alive_object = g_object_new(G_TYPE_OBJECT, NULL);
+
+                /* We already requested a name. To exit-on-idle without race, we need to dance.
+                 * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html . */
+
+                gl->name_requested            = FALSE;
+                gl->is_shutting_down_quitting = TRUE;
+
+                _LOGT("shutdown: release-name");
+
+                /* we use the _pending_job_register_object() mechanism to make the loop busy during
+                 * shutdown. */
+                _pending_job_register_object(gl, keep_alive_object);
+
+                r = nm_sd_notify("STOPPING=1");
+                if (r < 0)
+                    _LOGW("shutdown: sd_notifiy(STOPPING=1) failed: %s", nm_strerror_native(-r));
+                else
+                    _LOGT("shutdown: sd_notifiy(STOPPING=1) succeeded");
+
+                g_dbus_connection_call(gl->dbus_connection,
+                                       DBUS_SERVICE_DBUS,
+                                       DBUS_PATH_DBUS,
+                                       DBUS_INTERFACE_DBUS,
+                                       "ReleaseName",
+                                       g_variant_new("(s)", NM_SUDO_DBUS_BUS_NAME),
+                                       G_VARIANT_TYPE("(u)"),
+                                       G_DBUS_CALL_FLAGS_NONE,
+                                       10000,
+                                       NULL,
+                                       _bus_release_name_cb,
+                                       g_steal_pointer(&keep_alive_object));
+                continue;
             }
+
+            break;
         }
 
         g_main_context_iteration(NULL, TRUE);
     }
 
 done:
+    _LOGD("shutdown: cleanup");
+
     gl->is_shutting_down_cleanup = TRUE;
-    _LOGD("exiting...");
+    g_cancellable_cancel(gl->quit_cancellable);
 
     nm_assert(c_list_is_empty(&gl->pending_jobs_lst_head));
 
@@ -609,23 +623,19 @@ done:
         g_dbus_connection_signal_unsubscribe(gl->dbus_connection,
                                              nm_steal_int(&gl->name_owner_changed_id));
     }
-    nm_clear_g_cancellable(&gl->quit_cancellable);
     nm_clear_g_source_inst(&gl->source_sigterm);
     nm_clear_g_source_inst(&gl->source_idle_timeout);
     nm_clear_g_free(&gl->name_owner);
 
-    while (g_main_context_iteration(NULL, FALSE)) {
-        ;
-    }
+    nm_g_main_context_iterate_ready(NULL);
 
     if (gl->dbus_connection) {
         g_dbus_connection_flush_sync(gl->dbus_connection, NULL, NULL);
         g_clear_object(&gl->dbus_connection);
-
-        while (g_main_context_iteration(NULL, FALSE)) {
-            ;
-        }
+        nm_g_main_context_iterate_ready(NULL);
     }
+
+    nm_clear_g_cancellable(&gl->quit_cancellable);
 
     _LOGD("exit (%d)", exit_code);
     return exit_code;

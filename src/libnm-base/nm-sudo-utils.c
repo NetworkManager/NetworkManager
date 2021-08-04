@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include "libnm-glib-aux/nm-io-utils.h"
+
 /*****************************************************************************/
 
 int
@@ -20,13 +22,11 @@ nm_sudo_utils_open_fd(NMSudoGetFDType fd_type, GError **error)
     case NM_SUDO_GET_FD_TYPE_OVSDB_SOCKET:
     {
         struct sockaddr_un sock;
+        int                sock_len;
 
-        memset(&sock, 0, sizeof(sock));
-        sock.sun_family = AF_UNIX;
         G_STATIC_ASSERT_EXPR(NM_STRLEN(NM_OVSDB_SOCKET) + 1 < sizeof(sock.sun_path));
-        if (g_strlcpy(sock.sun_path, NM_OVSDB_SOCKET, sizeof(sock.sun_path))
-            >= sizeof(sock.sun_path))
-            nm_assert_not_reached();
+        sock_len = nm_io_sockaddr_un_set(&sock, FALSE, NM_OVSDB_SOCKET);
+        nm_assert(sock_len > 0);
 
         fd = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
         if (fd < 0) {
@@ -35,9 +35,7 @@ nm_sudo_utils_open_fd(NMSudoGetFDType fd_type, GError **error)
             return -errsv;
         }
 
-        r = connect(fd,
-                    (const struct sockaddr *) &sock,
-                    G_STRUCT_OFFSET(struct sockaddr_un, sun_path) + NM_STRLEN(NM_OVSDB_SOCKET) + 1);
+        r = connect(fd, (const struct sockaddr *) &sock, sock_len);
         if (r != 0) {
             errsv = NM_ERRNO_NATIVE(errno);
             g_set_error(error,

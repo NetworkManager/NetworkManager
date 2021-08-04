@@ -1,4 +1,5 @@
 contrib/fedora/rpm/
+data/NetworkManager-dispatcher.service.in
 data/NetworkManager-wait-online.service.in
 data/NetworkManager.service.in
 data/nm-sudo.service.in
