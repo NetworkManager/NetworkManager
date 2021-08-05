@@ -9298,7 +9298,7 @@ dhcp4_lease_change(NMDevice *self, NMIP4Config *config, gboolean bound)
         return FALSE;
     }
 
-    nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP4_CHANGE, self, NULL, NULL, NULL, NULL);
+    nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP_CHANGE_4, self, NULL, NULL, NULL, NULL);
 
     return TRUE;
 }
@@ -9812,7 +9812,7 @@ dhcp6_lease_change(NMDevice *self)
         return FALSE;
     }
 
-    nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP6_CHANGE, self, NULL, NULL, NULL, NULL);
+    nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP_CHANGE_6, self, NULL, NULL, NULL, NULL);
 
     return TRUE;
 }
@@ -11992,7 +11992,7 @@ activate_stage5_ip_config_result_x(NMDevice *self, int addr_family)
                 /* If IPv6 wasn't the first IP to complete, and DHCP was used,
                  * then ensure dispatcher scripts get the DHCP lease information.
                  */
-                nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP6_CHANGE,
+                nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP_CHANGE_6,
                                           self,
                                           NULL,
                                           NULL,
@@ -12058,7 +12058,7 @@ activate_stage5_ip_config_result_x(NMDevice *self, int addr_family)
          */
         if (priv->dhcp_data_4.client && nm_device_activate_ip4_state_in_conf(self)
             && (nm_device_get_state(self) > NM_DEVICE_STATE_IP_CONFIG)) {
-            nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP4_CHANGE,
+            nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP_CHANGE_4,
                                       self,
                                       NULL,
                                       NULL,
