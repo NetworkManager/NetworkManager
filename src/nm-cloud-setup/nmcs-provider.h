@@ -19,9 +19,11 @@ typedef struct {
     gssize iface_idx;
 
     in_addr_t cidr_addr;
+    in_addr_t gateway;
     guint8    cidr_prefix;
     bool      has_ipv4s : 1;
     bool      has_cidr : 1;
+    bool      has_gateway : 1;
 
     NMIPRoute **iproutes_arr;
     gsize       iproutes_len;
