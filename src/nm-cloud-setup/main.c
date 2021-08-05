@@ -340,11 +340,13 @@ _nmc_mangle_connection(NMDevice *                            device,
             if (entry)
                 g_ptr_array_add(addrs_new, entry);
         }
-
-        gateway = nm_utils_ip4_address_clear_host_address(config_data->cidr_addr,
-                                                          config_data->cidr_prefix);
-        ((guint8 *) &gateway)[3] += 1;
-
+        if (config_data->has_gateway && config_data->gateway) {
+            gateway = config_data->gateway;
+        } else {
+            gateway = nm_utils_ip4_address_clear_host_address(config_data->cidr_addr,
+                                                              config_data->cidr_prefix);
+            ((guint8 *) &gateway)[3] += 1;
+        }
         rt_metric = 10;
         rt_table  = 30400 + config_data->iface_idx;
 
