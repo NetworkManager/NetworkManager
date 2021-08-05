@@ -295,7 +295,8 @@ gboolean nm_l3cfg_add_config(NML3Cfg *             self,
 
 gboolean nm_l3cfg_remove_config(NML3Cfg *self, gconstpointer tag, const NML3ConfigData *ifcfg);
 
-gboolean nm_l3cfg_remove_config_all(NML3Cfg *self, gconstpointer tag, gboolean only_dirty);
+gboolean nm_l3cfg_remove_config_all(NML3Cfg *self, gconstpointer tag);
+gboolean nm_l3cfg_remove_config_all_dirty(NML3Cfg *self, gconstpointer tag);
 
 /*****************************************************************************/
 

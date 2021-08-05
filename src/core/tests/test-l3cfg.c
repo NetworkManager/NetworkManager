@@ -490,7 +490,7 @@ test_l3cfg(gconstpointer test_data)
     if (nmtst_get_rand_one_case_in(3))
         _test_fixture_1_teardown(&test_fixture);
 
-    nm_l3cfg_remove_config_all(l3cfg0, GINT_TO_POINTER('a'), FALSE);
+    nm_l3cfg_remove_config_all(l3cfg0, GINT_TO_POINTER('a'));
 
     if (nmtst_get_rand_one_case_in(3))
         _test_fixture_1_teardown(&test_fixture);
@@ -615,8 +615,7 @@ _test_l3_ipv4ll_signal_notify(NML3Cfg *                   l3cfg,
                 _LOGT("remove address %s that previously passed ACD",
                       _nm_utils_inet4_ntop(tdata->addr_commit_addr, sbuf_addr));
                 if (!nm_l3cfg_remove_config_all(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll),
-                                                TEST_L3_IPV4LL_TAG(tdata, 1),
-                                                FALSE))
+                                                TEST_L3_IPV4LL_TAG(tdata, 1)))
                     g_assert_not_reached();
                 nm_l3cfg_commit_on_idle_schedule(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll));
                 nm_l3cfg_commit_type_unregister(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll),
@@ -766,9 +765,7 @@ test_l3_ipv4ll(gconstpointer test_data)
     _LOGT("poll 1 end");
 
     if (tdata->addr_commit || nmtst_get_rand_bool()) {
-        nm_l3cfg_remove_config_all(nm_l3_ipv4ll_get_l3cfg(l3ipv4ll),
-                                   TEST_L3_IPV4LL_TAG(tdata, 1),
-                                   FALSE);
+        nm_l3cfg_remove_config_all(nm_l3_ipv4ll_get_l3cfg(l3ipv4ll), TEST_L3_IPV4LL_TAG(tdata, 1));
     }
 
     nmtstp_acd_defender_destroy(g_steal_pointer(&acd_defender_1));
