@@ -592,7 +592,7 @@ ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
         return FALSE;
     }
 
-    _LOGT("dhcp-client4: set %p", sd_client);
+    _LOGT("dhcp-client4: set " NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(sd_client));
 
     r = sd_dhcp_client_attach_event(sd_client, NULL, 0);
     if (r < 0) {
