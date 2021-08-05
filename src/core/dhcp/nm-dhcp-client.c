@@ -352,8 +352,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_dhcp_state_to_string,
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_NOOP, "noop"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TERMINATED, "terminated"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TIMEOUT, "timeout"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_UNKNOWN, "unknown"),
-                           NM_UTILS_LOOKUP_ITEM_IGNORE(__NM_DHCP_STATE_MAX), );
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_UNKNOWN, "unknown"), );
 
 static NMDhcpState
 reason_to_state(NMDhcpClient *self, const char *iface, const char *reason)
@@ -497,7 +496,12 @@ nm_dhcp_client_set_state(NMDhcpClient *self,
     }
 
     priv->state = new_state;
-    g_signal_emit(G_OBJECT(self), signals[SIGNAL_STATE_CHANGED], 0, new_state, ip_config, options);
+    g_signal_emit(G_OBJECT(self),
+                  signals[SIGNAL_STATE_CHANGED],
+                  0,
+                  (guint) new_state,
+                  ip_config,
+                  options);
 }
 
 static gboolean
@@ -605,6 +609,20 @@ nm_dhcp_client_accept(NMDhcpClient *self, GError **error)
     }
 
     return TRUE;
+}
+
+gboolean
+nm_dhcp_client_can_accept(NMDhcpClient *self)
+{
+    gboolean can_accept;
+
+    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
+
+    can_accept = !!(NM_DHCP_CLIENT_GET_CLASS(self)->accept);
+
+    nm_assert(can_accept == (!!(NM_DHCP_CLIENT_GET_CLASS(self)->decline)));
+
+    return can_accept;
 }
 
 gboolean
@@ -1382,14 +1400,15 @@ nm_dhcp_client_class_init(NMDhcpClientClass *client_class)
                                                  G_TYPE_OBJECT,
                                                  G_TYPE_HASH_TABLE);
 
-    signals[SIGNAL_PREFIX_DELEGATED] = g_signal_new(NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
-                                                    G_OBJECT_CLASS_TYPE(object_class),
-                                                    G_SIGNAL_RUN_FIRST,
-                                                    0,
-                                                    NULL,
-                                                    NULL,
-                                                    NULL,
-                                                    G_TYPE_NONE,
-                                                    1,
-                                                    G_TYPE_POINTER);
+    signals[SIGNAL_PREFIX_DELEGATED] =
+        g_signal_new(NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
+                     G_OBJECT_CLASS_TYPE(object_class),
+                     G_SIGNAL_RUN_FIRST,
+                     0,
+                     NULL,
+                     NULL,
+                     NULL,
+                     G_TYPE_NONE,
+                     1,
+                     G_TYPE_POINTER /* const NMPlatformIP6Address *prefix */);
 }

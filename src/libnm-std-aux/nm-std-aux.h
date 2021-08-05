@@ -1134,6 +1134,21 @@ nm_ptr_to_uintptr(const void *p)
 #define NM_AF_INET_SIZE  4  /* sizeof (in_addr_t)      */
 #define NM_AF_INET6_SIZE 16 /* sizeof (stuct in6_addr) */
 
+static inline const char *
+nm_utils_addr_family_to_str(int addr_family)
+{
+    switch (addr_family) {
+    case NM_AF_UNSPEC:
+        return "";
+    case NM_AF_INET:
+        return "4";
+    case NM_AF_INET6:
+        return "6";
+    }
+    nm_assert_not_reached();
+    return "?";
+}
+
 static inline char
 nm_utils_addr_family_to_char(int addr_family)
 {
@@ -1152,14 +1167,16 @@ nm_utils_addr_family_to_char(int addr_family)
 #define nm_assert_addr_family(addr_family) \
     nm_assert(NM_IN_SET((addr_family), NM_AF_INET, NM_AF_INET6))
 
-#define NM_IS_IPv4(addr_family)                 \
-    ({                                          \
-        const int _addr_family = (addr_family); \
-                                                \
-        nm_assert_addr_family(_addr_family);    \
-                                                \
-        (_addr_family == NM_AF_INET);           \
+#define _NM_IS_IPv4(uniq, addr_family)                           \
+    ({                                                           \
+        const int NM_UNIQ_T(_addr_family, uniq) = (addr_family); \
+                                                                 \
+        nm_assert_addr_family(NM_UNIQ_T(_addr_family, uniq));    \
+                                                                 \
+        (NM_UNIQ_T(_addr_family, uniq) == NM_AF_INET);           \
     })
+
+#define NM_IS_IPv4(addr_family) _NM_IS_IPv4(NM_UNIQ, addr_family)
 
 static inline size_t
 nm_utils_addr_family_to_size(int addr_family)

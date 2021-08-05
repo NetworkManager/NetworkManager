@@ -448,17 +448,17 @@ dispatcher_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     dispatcher_call_id_free(call_id);
 }
 
-static const char *action_table[] = {[NM_DISPATCHER_ACTION_HOSTNAME]     = NMD_ACTION_HOSTNAME,
-                                     [NM_DISPATCHER_ACTION_PRE_UP]       = NMD_ACTION_PRE_UP,
-                                     [NM_DISPATCHER_ACTION_UP]           = NMD_ACTION_UP,
-                                     [NM_DISPATCHER_ACTION_PRE_DOWN]     = NMD_ACTION_PRE_DOWN,
-                                     [NM_DISPATCHER_ACTION_DOWN]         = NMD_ACTION_DOWN,
-                                     [NM_DISPATCHER_ACTION_VPN_PRE_UP]   = NMD_ACTION_VPN_PRE_UP,
-                                     [NM_DISPATCHER_ACTION_VPN_UP]       = NMD_ACTION_VPN_UP,
-                                     [NM_DISPATCHER_ACTION_VPN_PRE_DOWN] = NMD_ACTION_VPN_PRE_DOWN,
-                                     [NM_DISPATCHER_ACTION_VPN_DOWN]     = NMD_ACTION_VPN_DOWN,
-                                     [NM_DISPATCHER_ACTION_DHCP4_CHANGE] = NMD_ACTION_DHCP4_CHANGE,
-                                     [NM_DISPATCHER_ACTION_DHCP6_CHANGE] = NMD_ACTION_DHCP6_CHANGE,
+static const char *action_table[] = {[NM_DISPATCHER_ACTION_HOSTNAME]      = NMD_ACTION_HOSTNAME,
+                                     [NM_DISPATCHER_ACTION_PRE_UP]        = NMD_ACTION_PRE_UP,
+                                     [NM_DISPATCHER_ACTION_UP]            = NMD_ACTION_UP,
+                                     [NM_DISPATCHER_ACTION_PRE_DOWN]      = NMD_ACTION_PRE_DOWN,
+                                     [NM_DISPATCHER_ACTION_DOWN]          = NMD_ACTION_DOWN,
+                                     [NM_DISPATCHER_ACTION_VPN_PRE_UP]    = NMD_ACTION_VPN_PRE_UP,
+                                     [NM_DISPATCHER_ACTION_VPN_UP]        = NMD_ACTION_VPN_UP,
+                                     [NM_DISPATCHER_ACTION_VPN_PRE_DOWN]  = NMD_ACTION_VPN_PRE_DOWN,
+                                     [NM_DISPATCHER_ACTION_VPN_DOWN]      = NMD_ACTION_VPN_DOWN,
+                                     [NM_DISPATCHER_ACTION_DHCP_CHANGE_4] = NMD_ACTION_DHCP4_CHANGE,
+                                     [NM_DISPATCHER_ACTION_DHCP_CHANGE_6] = NMD_ACTION_DHCP6_CHANGE,
                                      [NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE] =
                                          NMD_ACTION_CONNECTIVITY_CHANGE};
 

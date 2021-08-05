@@ -4751,7 +4751,7 @@ active_connection_parent_active(NMActiveConnection *active,
     NMSettingsConnection *sett_conn;
     NMDevice *            parent;
 
-    g_signal_handlers_disconnect_by_func(active, (GCallback) active_connection_parent_active, self);
+    g_signal_handlers_disconnect_by_func(active, G_CALLBACK(active_connection_parent_active), self);
 
     if (!parent_ac) {
         _LOGW(LOGD_CORE,
@@ -4926,7 +4926,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
             /* We can't realize now; defer until the parent device is ready. */
             g_signal_connect(active,
                              NM_ACTIVE_CONNECTION_PARENT_ACTIVE,
-                             (GCallback) active_connection_parent_active,
+                             G_CALLBACK(active_connection_parent_active),
                              self);
             nm_active_connection_set_parent(active, parent_ac);
         } else {
@@ -6164,7 +6164,7 @@ sleep_devices_add(NMManager *self, NMDevice *device, gboolean suspending)
     g_hash_table_insert(priv->sleep_devices,
                         g_object_ref(device),
                         suspending ? nm_sleep_monitor_inhibit_take(priv->sleep_monitor) : NULL);
-    g_signal_connect(device, "notify::" NM_DEVICE_STATE, (GCallback) device_sleep_cb, self);
+    g_signal_connect(device, "notify::" NM_DEVICE_STATE, G_CALLBACK(device_sleep_cb), self);
     return TRUE;
 }
 

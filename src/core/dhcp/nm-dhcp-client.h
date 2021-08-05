@@ -57,8 +57,6 @@ typedef enum {
     NM_DHCP_STATE_FAIL,       /* failed for some reason */
     NM_DHCP_STATE_TERMINATED, /* client is no longer running */
     NM_DHCP_STATE_NOOP,       /* state is a non operation for NetworkManager */
-    __NM_DHCP_STATE_MAX,
-    NM_DHCP_STATE_MAX = __NM_DHCP_STATE_MAX - 1,
 } NMDhcpState;
 
 const char *nm_dhcp_state_to_string(NMDhcpState state);
@@ -173,6 +171,7 @@ gboolean nm_dhcp_client_start_ip6(NMDhcpClient *            self,
                                   GError **                 error);
 
 gboolean nm_dhcp_client_accept(NMDhcpClient *self, GError **error);
+gboolean nm_dhcp_client_can_accept(NMDhcpClient *self);
 
 gboolean nm_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error);
 

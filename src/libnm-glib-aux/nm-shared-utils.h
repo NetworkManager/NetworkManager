@@ -2304,6 +2304,59 @@ int _nm_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *str
 
 /*****************************************************************************/
 
+/* nm_arr_insert_at() does @arr[@idx] = @value, but first memmove's
+ * the elements @arr[@idx..@len-1] one element up. That means, @arr currently
+ * has @len valid elements, but it must have space for one more element,
+ * which will be overwritten.
+ *
+ * The use case is to have a sorted array (nm_strv_find_binary_search()) and
+ * to insert the element at he desired index. The caller must make sure that
+ * @len is large enough to contain one more element. */
+#define nm_arr_insert_at(arr, len, idx, value)                                           \
+    G_STMT_START                                                                         \
+    {                                                                                    \
+        typeof(*(arr)) *const _arr  = (arr);                                             \
+        typeof(len)           _len  = (len);                                             \
+        typeof(idx)           _idx  = (idx);                                             \
+        const gsize           _len2 = (_len);                                            \
+        const gsize           _idx2 = (_idx);                                            \
+                                                                                         \
+        nm_assert(_arr);                                                                 \
+        nm_assert(_NM_INT_NOT_NEGATIVE(_len));                                           \
+        nm_assert(_NM_INT_NOT_NEGATIVE(_idx));                                           \
+        nm_assert(_idx <= _len);                                                         \
+                                                                                         \
+        if (_idx2 != _len2)                                                              \
+            memmove(&_arr[_idx2 + 1u], &_arr[_idx2], sizeof(_arr[0]) * (_len2 - _idx2)); \
+                                                                                         \
+        _arr[_idx2] = (value);                                                           \
+    }                                                                                    \
+    G_STMT_END
+
+/* nm_arr_remove_at() removes the element at arr[idx], by memmove'ing
+ * the elements from arr[idx+1..len-1] down. All it does is one memmove(),
+ * if there is anything to move. */
+#define nm_arr_remove_at(arr, len, idx)                                                         \
+    G_STMT_START                                                                                \
+    {                                                                                           \
+        typeof(*(arr)) *const _arr  = (arr);                                                    \
+        typeof(len)           _len  = (len);                                                    \
+        typeof(idx)           _idx  = (idx);                                                    \
+        const gsize           _len2 = (_len);                                                   \
+        const gsize           _idx2 = (_idx);                                                   \
+                                                                                                \
+        nm_assert(_arr);                                                                        \
+        nm_assert(_len > 0);                                                                    \
+        nm_assert(_NM_INT_NOT_NEGATIVE(_idx));                                                  \
+        nm_assert(_idx < _len);                                                                 \
+                                                                                                \
+        if (_idx2 != _len2 - 1u)                                                                \
+            memmove(&_arr[_idx2], &_arr[_idx2 + 1u], sizeof(_arr[0]) * ((_len2 - 1u) - _idx2)); \
+    }                                                                                           \
+    G_STMT_END
+
+/*****************************************************************************/
+
 #define NM_UTILS_NSEC_PER_SEC  ((gint64) 1000000000)
 #define NM_UTILS_USEC_PER_SEC  ((gint64) 1000000)
 #define NM_UTILS_MSEC_PER_SEC  ((gint64) 1000)

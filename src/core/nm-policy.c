@@ -322,7 +322,9 @@ ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
 }
 
 static void
-device_ip6_prefix_delegated(NMDevice *device, NMPlatformIP6Address *prefix, gpointer user_data)
+device_ip6_prefix_delegated(NMDevice *                  device,
+                            const NMPlatformIP6Address *prefix,
+                            gpointer                    user_data)
 {
     NMPolicyPrivate *    priv       = user_data;
     NMPolicy *           self       = _PRIV_TO_SELF(priv);
@@ -913,7 +915,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
                 if (wait) {
                     g_signal_connect(info->device,
                                      NM_DEVICE_DNS_LOOKUP_DONE,
-                                     (GCallback) device_dns_lookup_done,
+                                     G_CALLBACK(device_dns_lookup_done),
                                      self);
                     return;
                 }
@@ -2222,30 +2224,30 @@ devices_list_register(NMPolicy *self, NMDevice *device)
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
 
     /* Connect state-changed with _after, so that the handler is invoked after other handlers. */
-    g_signal_connect_after(device, NM_DEVICE_STATE_CHANGED, (GCallback) device_state_changed, priv);
+    g_signal_connect_after(device, NM_DEVICE_STATE_CHANGED, G_CALLBACK(device_state_changed), priv);
     g_signal_connect(device,
                      NM_DEVICE_IP4_CONFIG_CHANGED,
-                     (GCallback) device_ip_config_changed,
+                     G_CALLBACK(device_ip_config_changed),
                      priv);
     g_signal_connect(device,
                      NM_DEVICE_IP6_CONFIG_CHANGED,
-                     (GCallback) device_ip_config_changed,
+                     G_CALLBACK(device_ip_config_changed),
                      priv);
     g_signal_connect(device,
                      NM_DEVICE_IP6_PREFIX_DELEGATED,
-                     (GCallback) device_ip6_prefix_delegated,
+                     G_CALLBACK(device_ip6_prefix_delegated),
                      priv);
     g_signal_connect(device,
                      NM_DEVICE_IP6_SUBNET_NEEDED,
-                     (GCallback) device_ip6_subnet_needed,
+                     G_CALLBACK(device_ip6_subnet_needed),
                      priv);
     g_signal_connect(device,
                      "notify::" NM_DEVICE_AUTOCONNECT,
-                     (GCallback) device_autoconnect_changed,
+                     G_CALLBACK(device_autoconnect_changed),
                      priv);
     g_signal_connect(device,
                      NM_DEVICE_RECHECK_AUTO_ACTIVATE,
-                     (GCallback) device_recheck_auto_activate,
+                     G_CALLBACK(device_recheck_auto_activate),
                      priv);
 }
 
@@ -2800,49 +2802,49 @@ constructed(GObject *object)
 
     g_signal_connect(priv->hostname_manager,
                      "notify::" NM_HOSTNAME_MANAGER_HOSTNAME,
-                     (GCallback) hostname_changed,
+                     G_CALLBACK(hostname_changed),
                      priv);
 
     g_signal_connect(priv->manager,
                      "notify::" NM_MANAGER_SLEEPING,
-                     (GCallback) sleeping_changed,
+                     G_CALLBACK(sleeping_changed),
                      priv);
     g_signal_connect(priv->manager,
                      "notify::" NM_MANAGER_NETWORKING_ENABLED,
-                     (GCallback) sleeping_changed,
+                     G_CALLBACK(sleeping_changed),
                      priv);
     g_signal_connect(priv->manager,
                      NM_MANAGER_INTERNAL_DEVICE_ADDED,
-                     (GCallback) device_added,
+                     G_CALLBACK(device_added),
                      priv);
     g_signal_connect(priv->manager,
                      NM_MANAGER_INTERNAL_DEVICE_REMOVED,
-                     (GCallback) device_removed,
+                     G_CALLBACK(device_removed),
                      priv);
     g_signal_connect(priv->manager,
                      NM_MANAGER_ACTIVE_CONNECTION_ADDED,
-                     (GCallback) active_connection_added,
+                     G_CALLBACK(active_connection_added),
                      priv);
     g_signal_connect(priv->manager,
                      NM_MANAGER_ACTIVE_CONNECTION_REMOVED,
-                     (GCallback) active_connection_removed,
+                     G_CALLBACK(active_connection_removed),
                      priv);
 
     g_signal_connect(priv->settings,
                      NM_SETTINGS_SIGNAL_CONNECTION_ADDED,
-                     (GCallback) connection_added,
+                     G_CALLBACK(connection_added),
                      priv);
     g_signal_connect(priv->settings,
                      NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
-                     (GCallback) connection_updated,
+                     G_CALLBACK(connection_updated),
                      priv);
     g_signal_connect(priv->settings,
                      NM_SETTINGS_SIGNAL_CONNECTION_REMOVED,
-                     (GCallback) connection_removed,
+                     G_CALLBACK(connection_removed),
                      priv);
     g_signal_connect(priv->settings,
                      NM_SETTINGS_SIGNAL_CONNECTION_FLAGS_CHANGED,
-                     (GCallback) connection_flags_changed,
+                     G_CALLBACK(connection_flags_changed),
                      priv);
 
     g_signal_connect(priv->agent_mgr,

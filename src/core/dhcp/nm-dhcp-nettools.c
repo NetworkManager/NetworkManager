@@ -1219,7 +1219,7 @@ ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
         return FALSE;
     }
 
-    _LOGT("dhcp-client4: start %p", (gpointer) priv->client);
+    _LOGT("dhcp-client4: start " NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(priv->client));
 
     nm_dhcp_client_start_timeout(client);
     return TRUE;
@@ -1233,7 +1233,7 @@ stop(NMDhcpClient *client, gboolean release)
 
     NM_DHCP_CLIENT_CLASS(nm_dhcp_nettools_parent_class)->stop(client, release);
 
-    _LOGT("dhcp-client4: stop %p", (gpointer) priv->client);
+    _LOGT("dhcp-client4: stop " NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(priv->client));
 
     priv->probe = n_dhcp4_client_probe_free(priv->probe);
 }
