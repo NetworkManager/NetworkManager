@@ -1238,7 +1238,7 @@ _nmtst_main_loop_quit_on_notify(GObject *object, GParamSpec *pspec, gpointer use
 
     g_main_loop_quit(loop);
 }
-#define nmtst_main_loop_quit_on_notify ((GCallback) _nmtst_main_loop_quit_on_notify)
+#define nmtst_main_loop_quit_on_notify (G_CALLBACK(_nmtst_main_loop_quit_on_notify))
 
 #define nmtst_main_context_iterate_until_full(context, timeout_msec, poll_msec, condition)      \
     ({                                                                                          \

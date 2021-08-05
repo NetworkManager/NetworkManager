@@ -272,7 +272,7 @@ _dns_config_ip_data_new(NMDnsConfigData * data,
     g_signal_connect(ip_config,
                      NM_IS_IP4_CONFIG(ip_config) ? "notify::" NM_IP4_CONFIG_DNS_PRIORITY
                                                  : "notify::" NM_IP6_CONFIG_DNS_PRIORITY,
-                     (GCallback) _ip_config_dns_priority_changed,
+                     G_CALLBACK(_ip_config_dns_priority_changed),
                      ip_data);
 
     _ASSERT_dns_config_ip_data(ip_data);

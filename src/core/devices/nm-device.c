@@ -8266,7 +8266,7 @@ activate_stage1_device_prepare(NMDevice *self)
                 priv->master_ready_id =
                     g_signal_connect(active,
                                      "notify::" NM_ACTIVE_CONNECTION_INT_MASTER_READY,
-                                     (GCallback) master_ready_cb,
+                                     G_CALLBACK(master_ready_cb),
                                      self);
             }
             return;
