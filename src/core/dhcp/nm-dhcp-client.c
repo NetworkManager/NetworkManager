@@ -352,8 +352,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_dhcp_state_to_string,
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_NOOP, "noop"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TERMINATED, "terminated"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TIMEOUT, "timeout"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_UNKNOWN, "unknown"),
-                           NM_UTILS_LOOKUP_ITEM_IGNORE(__NM_DHCP_STATE_MAX), );
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_UNKNOWN, "unknown"), );
 
 static NMDhcpState
 reason_to_state(NMDhcpClient *self, const char *iface, const char *reason)
