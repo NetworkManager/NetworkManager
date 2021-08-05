@@ -62,7 +62,7 @@ test_device_added(void)
     devices = nm_client_get_devices(client);
     g_assert(devices->len == 0);
 
-    g_signal_connect(client, "notify::devices", (GCallback) devices_notify_cb, &notified);
+    g_signal_connect(client, "notify::devices", G_CALLBACK(devices_notify_cb), &notified);
 
     /* Tell the test service to add a new device */
     nmtstc_service_add_device(sinfo, client, "AddWiredDevice", "eth0");
@@ -149,11 +149,11 @@ test_device_added_signal_after_init(void)
     devices = nm_client_get_devices(client);
     g_assert(devices->len == 0);
 
-    g_signal_connect(client, NM_CLIENT_DEVICE_ADDED, (GCallback) device_sai_added_cb, &result);
+    g_signal_connect(client, NM_CLIENT_DEVICE_ADDED, G_CALLBACK(device_sai_added_cb), &result);
 
     g_signal_connect(client,
                      "notify::" NM_CLIENT_DEVICES,
-                     (GCallback) devices_sai_notify_cb,
+                     G_CALLBACK(devices_sai_notify_cb),
                      &result);
 
     /* Tell the test service to add a new device */
@@ -307,10 +307,10 @@ test_wifi_ap_added_removed(void)
     g_variant_get(ret, "(o)", &expected_path);
     g_variant_unref(ret);
 
-    g_signal_connect(wifi, "access-point-added", (GCallback) wifi_ap_added_cb, &info);
+    g_signal_connect(wifi, "access-point-added", G_CALLBACK(wifi_ap_added_cb), &info);
     info.quit_count = 1;
 
-    g_signal_connect(wifi, "notify::access-points", (GCallback) wifi_ap_add_notify_cb, &info);
+    g_signal_connect(wifi, "notify::access-points", G_CALLBACK(wifi_ap_add_notify_cb), &info);
     info.quit_count++;
 
     /* Wait for libnm to find the AP */
@@ -340,10 +340,10 @@ test_wifi_ap_added_removed(void)
     g_assert_no_error(error);
     nm_clear_pointer(&ret, g_variant_unref);
 
-    g_signal_connect(wifi, "access-point-removed", (GCallback) wifi_ap_removed_cb, &info);
+    g_signal_connect(wifi, "access-point-removed", G_CALLBACK(wifi_ap_removed_cb), &info);
     info.quit_count = 1;
 
-    g_signal_connect(wifi, "notify::access-points", (GCallback) wifi_ap_remove_notify_cb, &info);
+    g_signal_connect(wifi, "notify::access-points", G_CALLBACK(wifi_ap_remove_notify_cb), &info);
     info.quit_count++;
 
     /* Wait for libnm to find the AP */
@@ -463,9 +463,9 @@ test_devices_array(void)
     g_assert(ret);
     g_variant_unref(ret);
 
-    g_signal_connect(client, "device-removed", (GCallback) da_device_removed_cb, &info);
+    g_signal_connect(client, "device-removed", G_CALLBACK(da_device_removed_cb), &info);
 
-    g_signal_connect(client, "notify::devices", (GCallback) da_devices_notify_cb, &info);
+    g_signal_connect(client, "notify::devices", G_CALLBACK(da_devices_notify_cb), &info);
     info.quit_count = 2;
 
     /* Wait for libnm to notice the changes */

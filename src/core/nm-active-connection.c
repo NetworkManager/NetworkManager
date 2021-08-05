@@ -208,12 +208,12 @@ _set_settings_connection(NMActiveConnection *self, NMSettingsConnection *sett_co
     if (sett_conn) {
         g_signal_connect(sett_conn,
                          NM_SETTINGS_CONNECTION_UPDATED_INTERNAL,
-                         (GCallback) _settings_connection_updated,
+                         G_CALLBACK(_settings_connection_updated),
                          self);
         if (nm_active_connection_get_activation_type(self) == NM_ACTIVATION_TYPE_EXTERNAL)
             g_signal_connect(sett_conn,
                              NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
-                             (GCallback) _settings_connection_flags_changed,
+                             G_CALLBACK(_settings_connection_flags_changed),
                              self);
     }
 
@@ -851,7 +851,7 @@ nm_active_connection_set_master(NMActiveConnection *self, NMActiveConnection *ma
     priv->master = g_object_ref(master);
     g_signal_connect(priv->master,
                      "notify::" NM_ACTIVE_CONNECTION_STATE,
-                     (GCallback) master_state_cb,
+                     G_CALLBACK(master_state_cb),
                      self);
 
     check_master_ready(self);
@@ -883,7 +883,7 @@ _set_activation_type(NMActiveConnection *self, NMActivationType activation_type)
         if (activation_type == NM_ACTIVATION_TYPE_EXTERNAL)
             g_signal_connect(priv->settings_connection.obj,
                              NM_SETTINGS_CONNECTION_FLAGS_CHANGED,
-                             (GCallback) _settings_connection_flags_changed,
+                             G_CALLBACK(_settings_connection_flags_changed),
                              self);
         else
             g_signal_handlers_disconnect_by_func(priv->settings_connection.obj,
@@ -1018,7 +1018,7 @@ unwatch_parent(NMActiveConnection *self, gboolean unref)
 {
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
-    g_signal_handlers_disconnect_by_func(priv->parent, (GCallback) parent_state_cb, self);
+    g_signal_handlers_disconnect_by_func(priv->parent, G_CALLBACK(parent_state_cb), self);
     if (unref)
         g_object_weak_unref((GObject *) priv->parent, parent_destroyed, self);
     priv->parent = NULL;
@@ -1042,7 +1042,7 @@ nm_active_connection_set_parent(NMActiveConnection *self, NMActiveConnection *pa
     priv->parent = parent;
     g_signal_connect(priv->parent,
                      "notify::" NM_ACTIVE_CONNECTION_STATE,
-                     (GCallback) parent_state_cb,
+                     G_CALLBACK(parent_state_cb),
                      self);
     g_object_weak_ref((GObject *) priv->parent, parent_destroyed, self);
 }
@@ -1522,7 +1522,7 @@ dispose(GObject *object)
     _device_cleanup(self);
 
     if (priv->master) {
-        g_signal_handlers_disconnect_by_func(priv->master, (GCallback) master_state_cb, self);
+        g_signal_handlers_disconnect_by_func(priv->master, G_CALLBACK(master_state_cb), self);
     }
     g_clear_object(&priv->master);
 

@@ -2885,9 +2885,15 @@ nm_l3cfg_remove_config(NML3Cfg *self, gconstpointer tag, const NML3ConfigData *i
 }
 
 gboolean
-nm_l3cfg_remove_config_all(NML3Cfg *self, gconstpointer tag, gboolean only_dirty)
+nm_l3cfg_remove_config_all(NML3Cfg *self, gconstpointer tag)
 {
-    return _l3cfg_remove_config(self, tag, only_dirty, NULL);
+    return _l3cfg_remove_config(self, tag, FALSE, NULL);
+}
+
+gboolean
+nm_l3cfg_remove_config_all_dirty(NML3Cfg *self, gconstpointer tag)
+{
+    return _l3cfg_remove_config(self, tag, TRUE, NULL);
 }
 
 /*****************************************************************************/

@@ -104,11 +104,11 @@ SignalData *add_signal_full(const char *               name,
                             int                        ifindex,
                             const char *               ifname);
 #define add_signal(name, change_type, callback) \
-    add_signal_full(name, change_type, (GCallback) callback, 0, NULL)
+    add_signal_full(name, change_type, G_CALLBACK(callback), 0, NULL)
 #define add_signal_ifindex(name, change_type, callback, ifindex) \
-    add_signal_full(name, change_type, (GCallback) callback, ifindex, NULL)
+    add_signal_full(name, change_type, G_CALLBACK(callback), ifindex, NULL)
 #define add_signal_ifname(name, change_type, callback, ifname) \
-    add_signal_full(name, change_type, (GCallback) callback, 0, ifname)
+    add_signal_full(name, change_type, G_CALLBACK(callback), 0, ifname)
 void _accept_signal(const char *file, int line, const char *func, SignalData *data);
 void
 _accept_signals(const char *file, int line, const char *func, SignalData *data, int min, int max);

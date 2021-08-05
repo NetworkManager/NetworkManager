@@ -5013,7 +5013,7 @@ test_connection_changed_signal(void)
     connection = new_test_connection();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     /* Add new setting */
@@ -5039,7 +5039,7 @@ test_setting_connection_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_con = (NMSettingConnection *) nm_setting_connection_new();
@@ -5075,7 +5075,7 @@ test_setting_bond_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_bond = (NMSettingBond *) nm_setting_bond_new();
@@ -5101,7 +5101,7 @@ test_setting_ip4_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
@@ -5177,7 +5177,7 @@ test_setting_ip6_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
@@ -5244,7 +5244,7 @@ test_setting_vlan_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_vlan = (NMSettingVlan *) nm_setting_vlan_new();
@@ -5279,7 +5279,7 @@ test_setting_vpn_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_vpn = (NMSettingVpn *) nm_setting_vpn_new();
@@ -5306,7 +5306,7 @@ test_setting_wired_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_wired = (NMSettingWired *) nm_setting_wired_new();
@@ -5329,7 +5329,7 @@ test_setting_wireless_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_wifi = (NMSettingWireless *) nm_setting_wireless_new();
@@ -5350,7 +5350,7 @@ test_setting_wireless_security_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new();
@@ -5417,7 +5417,7 @@ test_setting_802_1x_changed_signal(void)
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     (GCallback) test_connection_changed_cb,
+                     G_CALLBACK(test_connection_changed_cb),
                      &changed);
 
     s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
