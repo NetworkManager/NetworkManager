@@ -497,7 +497,12 @@ nm_dhcp_client_set_state(NMDhcpClient *self,
     }
 
     priv->state = new_state;
-    g_signal_emit(G_OBJECT(self), signals[SIGNAL_STATE_CHANGED], 0, new_state, ip_config, options);
+    g_signal_emit(G_OBJECT(self),
+                  signals[SIGNAL_STATE_CHANGED],
+                  0,
+                  (guint) new_state,
+                  ip_config,
+                  options);
 }
 
 static gboolean
@@ -1382,14 +1387,15 @@ nm_dhcp_client_class_init(NMDhcpClientClass *client_class)
                                                  G_TYPE_OBJECT,
                                                  G_TYPE_HASH_TABLE);
 
-    signals[SIGNAL_PREFIX_DELEGATED] = g_signal_new(NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
-                                                    G_OBJECT_CLASS_TYPE(object_class),
-                                                    G_SIGNAL_RUN_FIRST,
-                                                    0,
-                                                    NULL,
-                                                    NULL,
-                                                    NULL,
-                                                    G_TYPE_NONE,
-                                                    1,
-                                                    G_TYPE_POINTER);
+    signals[SIGNAL_PREFIX_DELEGATED] =
+        g_signal_new(NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
+                     G_OBJECT_CLASS_TYPE(object_class),
+                     G_SIGNAL_RUN_FIRST,
+                     0,
+                     NULL,
+                     NULL,
+                     NULL,
+                     G_TYPE_NONE,
+                     1,
+                     G_TYPE_POINTER /* const NMPlatformIP6Address *prefix */);
 }

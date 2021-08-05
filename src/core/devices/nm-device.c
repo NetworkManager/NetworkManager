@@ -9970,7 +9970,7 @@ dhcp6_state_changed(NMDhcpClient *client,
 }
 
 static void
-dhcp6_prefix_delegated(NMDhcpClient *client, NMPlatformIP6Address *prefix, gpointer user_data)
+dhcp6_prefix_delegated(NMDhcpClient *client, const NMPlatformIP6Address *prefix, gpointer user_data)
 {
     NMDevice *self = NM_DEVICE(user_data);
 
@@ -19122,16 +19122,17 @@ nm_device_class_init(NMDeviceClass *klass)
                                                G_TYPE_OBJECT,
                                                G_TYPE_OBJECT);
 
-    signals[IP6_PREFIX_DELEGATED] = g_signal_new(NM_DEVICE_IP6_PREFIX_DELEGATED,
-                                                 G_OBJECT_CLASS_TYPE(object_class),
-                                                 G_SIGNAL_RUN_FIRST,
-                                                 0,
-                                                 NULL,
-                                                 NULL,
-                                                 NULL,
-                                                 G_TYPE_NONE,
-                                                 1,
-                                                 G_TYPE_POINTER);
+    signals[IP6_PREFIX_DELEGATED] =
+        g_signal_new(NM_DEVICE_IP6_PREFIX_DELEGATED,
+                     G_OBJECT_CLASS_TYPE(object_class),
+                     G_SIGNAL_RUN_FIRST,
+                     0,
+                     NULL,
+                     NULL,
+                     NULL,
+                     G_TYPE_NONE,
+                     1,
+                     G_TYPE_POINTER /* const NMPlatformIP6Address *prefix */);
 
     signals[IP6_SUBNET_NEEDED] = g_signal_new(NM_DEVICE_IP6_SUBNET_NEEDED,
                                               G_OBJECT_CLASS_TYPE(object_class),

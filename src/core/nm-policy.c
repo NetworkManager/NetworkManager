@@ -322,7 +322,9 @@ ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
 }
 
 static void
-device_ip6_prefix_delegated(NMDevice *device, NMPlatformIP6Address *prefix, gpointer user_data)
+device_ip6_prefix_delegated(NMDevice *                  device,
+                            const NMPlatformIP6Address *prefix,
+                            gpointer                    user_data)
 {
     NMPolicyPrivate *    priv       = user_data;
     NMPolicy *           self       = _PRIV_TO_SELF(priv);
