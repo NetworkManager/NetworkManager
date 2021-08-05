@@ -1134,6 +1134,21 @@ nm_ptr_to_uintptr(const void *p)
 #define NM_AF_INET_SIZE  4  /* sizeof (in_addr_t)      */
 #define NM_AF_INET6_SIZE 16 /* sizeof (stuct in6_addr) */
 
+static inline const char *
+nm_utils_addr_family_to_str(int addr_family)
+{
+    switch (addr_family) {
+    case NM_AF_UNSPEC:
+        return "";
+    case NM_AF_INET:
+        return "4";
+    case NM_AF_INET6:
+        return "6";
+    }
+    nm_assert_not_reached();
+    return "?";
+}
+
 static inline char
 nm_utils_addr_family_to_char(int addr_family)
 {
