@@ -171,6 +171,7 @@ gboolean nm_dhcp_client_start_ip6(NMDhcpClient *            self,
                                   GError **                 error);
 
 gboolean nm_dhcp_client_accept(NMDhcpClient *self, GError **error);
+gboolean nm_dhcp_client_can_accept(NMDhcpClient *self);
 
 gboolean nm_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error);
 

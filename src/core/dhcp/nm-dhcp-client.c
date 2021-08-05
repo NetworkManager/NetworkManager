@@ -612,6 +612,20 @@ nm_dhcp_client_accept(NMDhcpClient *self, GError **error)
 }
 
 gboolean
+nm_dhcp_client_can_accept(NMDhcpClient *self)
+{
+    gboolean can_accept;
+
+    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
+
+    can_accept = !!(NM_DHCP_CLIENT_GET_CLASS(self)->accept);
+
+    nm_assert(can_accept == (!!(NM_DHCP_CLIENT_GET_CLASS(self)->decline)));
+
+    return can_accept;
+}
+
+gboolean
 nm_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error)
 {
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
