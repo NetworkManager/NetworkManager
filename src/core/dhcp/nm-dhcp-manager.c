@@ -45,11 +45,8 @@ G_DEFINE_TYPE(NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-static void client_state_changed(NMDhcpClient * client,
-                                 NMDhcpState    state,
-                                 GObject *      ip_config,
-                                 GVariant *     options,
-                                 NMDhcpManager *self);
+static void
+client_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_data, NMDhcpManager *self);
 
 /*****************************************************************************/
 
@@ -161,7 +158,7 @@ get_client_for_ifindex(NMDhcpManager *manager, int addr_family, int ifindex)
 static void
 remove_client(NMDhcpManager *self, NMDhcpClient *client)
 {
-    g_signal_handlers_disconnect_by_func(client, client_state_changed, self);
+    g_signal_handlers_disconnect_by_func(client, client_notify, self);
     c_list_unlink(&client->dhcp_client_lst);
 
     /* Stopping the client is left up to the controlling device
@@ -178,13 +175,10 @@ remove_client_unref(NMDhcpManager *self, NMDhcpClient *client)
 }
 
 static void
-client_state_changed(NMDhcpClient * client,
-                     NMDhcpState    state,
-                     GObject *      ip_config,
-                     GVariant *     options,
-                     NMDhcpManager *self)
+client_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_data, NMDhcpManager *self)
 {
-    if (state >= NM_DHCP_STATE_TIMEOUT)
+    if (notify_data->notify_type == NM_DHCP_CLIENT_NOTIFY_TYPE_STATE_CHANGED
+        && notify_data->state_changed.dhcp_state >= NM_DHCP_STATE_TIMEOUT)
         remove_client_unref(self, client);
 }
 
@@ -334,10 +328,7 @@ client_start(NMDhcpManager *           self,
                           NULL);
     nm_assert(client && c_list_is_empty(&client->dhcp_client_lst));
     c_list_link_tail(&priv->dhcp_client_lst_head, &client->dhcp_client_lst);
-    g_signal_connect(client,
-                     NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
-                     G_CALLBACK(client_state_changed),
-                     self);
+    g_signal_connect(client, NM_DHCP_CLIENT_NOTIFY, G_CALLBACK(client_notify), self);
 
     /* unfortunately, our implementations work differently per address-family regarding client-id/DUID.
      *

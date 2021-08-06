@@ -92,24 +92,29 @@ static struct {
 /*****************************************************************************/
 
 static void
-dhcp4_state_changed(NMDhcpClient *client,
-                    NMDhcpState   state,
-                    NMIP4Config * ip4_config,
-                    GHashTable *  options,
-                    gpointer      user_data)
+_dhcp_client_notify_cb(NMDhcpClient *                client,
+                       const NMDhcpClientNotifyData *notify_data,
+                       gpointer                      user_data)
 {
     static NMIP4Config *last_config = NULL;
     NMIP4Config *       existing;
     gs_unref_ptrarray GPtrArray *ip4_dev_route_blacklist = NULL;
     gs_free_error GError *error                          = NULL;
+    NMIP4Config *         ip4_config;
 
-    g_return_if_fail(!ip4_config || NM_IS_IP4_CONFIG(ip4_config));
+    if (!notify_data || notify_data->notify_type != NM_DHCP_CLIENT_NOTIFY_TYPE_STATE_CHANGED)
+        g_return_if_reached();
 
-    _LOGD(LOGD_DHCP4, "new DHCPv4 client state %d", state);
+    nm_assert(!notify_data->state_changed.ip_config
+              || NM_IS_IP4_CONFIG(notify_data->state_changed.ip_config));
 
-    switch (state) {
+    _LOGD(LOGD_DHCP4, "new DHCPv4 client state %d", (int) notify_data->state_changed.dhcp_state);
+
+    switch (notify_data->state_changed.dhcp_state) {
     case NM_DHCP_STATE_BOUND:
     case NM_DHCP_STATE_EXTENDED:
+        ip4_config = NM_IP4_CONFIG(notify_data->state_changed.ip_config);
+
         g_assert(ip4_config);
         g_assert(nm_ip4_config_get_ifindex(ip4_config) == gl.ifindex);
 
@@ -684,8 +689,8 @@ main(int argc, char *argv[])
             g_error("failure to start DHCP: %s", error->message);
 
         g_signal_connect(dhcp4_client,
-                         NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
-                         G_CALLBACK(dhcp4_state_changed),
+                         NM_DHCP_CLIENT_NOTIFY,
+                         G_CALLBACK(_dhcp_client_notify_cb),
                          NULL);
     }
 
