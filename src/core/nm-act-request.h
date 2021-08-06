@@ -38,14 +38,6 @@ NMConnection *nm_act_request_get_applied_connection(NMActRequest *req);
 
 /*****************************************************************************/
 
-struct _NMFirewallConfig;
-
-struct _NMFirewallConfig *nm_act_request_get_shared(NMActRequest *req);
-
-void nm_act_request_set_shared(NMActRequest *req, struct _NMFirewallConfig *rules);
-
-/*****************************************************************************/
-
 /* Secrets handling */
 
 typedef void (*NMActRequestSecretsFunc)(NMActRequest *                req,

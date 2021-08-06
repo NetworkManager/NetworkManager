@@ -14,7 +14,6 @@
 
 #include "nm-act-request.h"
 #include "nm-device-private.h"
-#include "nm-ip4-config.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-wpan.h"

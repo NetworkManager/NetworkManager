@@ -18,8 +18,6 @@ libnm_systemd_core = static_library(
     'src/libsystemd-network/sd-dhcp-lease.c',
     'src/libsystemd-network/sd-dhcp6-client.c',
     'src/libsystemd-network/sd-dhcp6-lease.c',
-    'src/libsystemd-network/sd-ipv4acd.c',
-    'src/libsystemd-network/sd-ipv4ll.c',
     'src/libsystemd-network/sd-lldp.c',
     'src/libsystemd/sd-event/event-util.c',
     'src/libsystemd/sd-event/sd-event.c',

@@ -2276,13 +2276,7 @@ system_unmanaged_devices_changed_cb(NMSettings *settings, GParamSpec *pspec, gpo
 static void
 hostname_changed_cb(NMHostnameManager *hostname_manager, GParamSpec *pspec, NMManager *self)
 {
-    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
-    const char *      hostname;
-
-    hostname = nm_hostname_manager_get_hostname(priv->hostname_manager);
-
     nm_dispatcher_call_hostname(NULL, NULL, NULL);
-    nm_dhcp_manager_set_default_hostname(nm_dhcp_manager_get(), hostname);
 }
 
 /*****************************************************************************/
@@ -2598,8 +2592,6 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
 
     if (out_generated)
         *out_generated = FALSE;
-
-    nm_device_capture_initial_config(device);
 
     if (!nm_device_can_assume_connections(device)) {
         nm_device_assume_state_reset(device);

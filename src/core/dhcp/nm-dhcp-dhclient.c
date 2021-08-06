@@ -333,26 +333,28 @@ dhclient_start(NMDhcpClient *client,
                const char *  mode_opt,
                gboolean      release,
                pid_t *       out_pid,
-               int           prefixes,
                GError **     error)
 {
     NMDhcpDhclient *       self       = NM_DHCP_DHCLIENT(client);
     NMDhcpDhclientPrivate *priv       = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
     gs_unref_ptrarray GPtrArray *argv = NULL;
     pid_t                        pid;
-    gs_free_error GError *local = NULL;
-    const char *          iface;
-    const char *          uuid;
-    const char *          system_bus_address;
-    const char *          dhclient_path;
-    char *                binary_name;
-    gs_free char *        cmd_str                  = NULL;
-    gs_free char *        pid_file                 = NULL;
-    gs_free char *        system_bus_address_env   = NULL;
-    gs_free char *        preferred_leasefile_path = NULL;
-    const int             addr_family              = nm_dhcp_client_get_addr_family(client);
+    gs_free_error GError *    local = NULL;
+    const char *              iface;
+    const char *              uuid;
+    const char *              system_bus_address;
+    const char *              dhclient_path;
+    char *                    binary_name;
+    gs_free char *            cmd_str                  = NULL;
+    gs_free char *            pid_file                 = NULL;
+    gs_free char *            system_bus_address_env   = NULL;
+    gs_free char *            preferred_leasefile_path = NULL;
+    int                       addr_family;
+    const NMDhcpClientConfig *client_config;
 
     g_return_val_if_fail(!priv->pid_file, FALSE);
+    client_config = nm_dhcp_client_get_config(client);
+    addr_family   = client_config->addr_family;
 
     NM_SET_OUT(out_pid, 0);
 
@@ -362,8 +364,8 @@ dhclient_start(NMDhcpClient *client,
         return FALSE;
     }
 
-    iface = nm_dhcp_client_get_iface(client);
-    uuid  = nm_dhcp_client_get_uuid(client);
+    iface = client_config->iface;
+    uuid  = client_config->uuid;
 
     pid_file = g_strdup_printf(NMRUNDIR "/dhclient%s-%s.pid",
                                _addr_family_to_path_part(addr_family),
@@ -409,9 +411,7 @@ dhclient_start(NMDhcpClient *client,
 
     /* Save the DUID to the leasefile dhclient will actually use */
     if (addr_family == AF_INET6) {
-        if (!nm_dhcp_dhclient_save_duid(priv->lease_file,
-                                        nm_dhcp_client_get_client_id(client),
-                                        &local)) {
+        if (!nm_dhcp_dhclient_save_duid(priv->lease_file, client_config->client_id, &local)) {
             nm_utils_error_set(error,
                                NM_UTILS_ERROR_UNKNOWN,
                                "failed to save DUID to '%s': %s",
@@ -434,13 +434,13 @@ dhclient_start(NMDhcpClient *client,
     if (release)
         g_ptr_array_add(argv, (gpointer) "-r");
 
-    if (!release
-        && NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(NM_DHCP_CLIENT(self)),
-                        NM_DHCP_CLIENT_FLAGS_REQUEST_BROADCAST)) {
+    if (!release && client_config->addr_family == AF_INET && client_config->v4.request_broadcast) {
         g_ptr_array_add(argv, (gpointer) "-B");
     }
 
     if (addr_family == AF_INET6) {
+        guint prefixes = client_config->v6.needed_prefixes;
+
         g_ptr_array_add(argv, (gpointer) "-6");
 
         if (prefixes > 0 && nm_streq0(mode_opt, "-S")) {
@@ -513,29 +513,28 @@ dhclient_start(NMDhcpClient *client,
 }
 
 static gboolean
-ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
+ip4_start(NMDhcpClient *client, GError **error)
 {
-    NMDhcpDhclient *       self = NM_DHCP_DHCLIENT(client);
-    NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
-    GBytes *               client_id;
-    gs_unref_bytes GBytes *new_client_id = NULL;
+    NMDhcpDhclient *       self             = NM_DHCP_DHCLIENT(client);
+    NMDhcpDhclientPrivate *priv             = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
+    gs_unref_bytes GBytes *   new_client_id = NULL;
+    const NMDhcpClientConfig *client_config;
 
-    client_id = nm_dhcp_client_get_client_id(client);
+    client_config = nm_dhcp_client_get_config(client);
 
-    priv->conf_file = create_dhclient_config(
-        self,
-        AF_INET,
-        nm_dhcp_client_get_iface(client),
-        nm_dhcp_client_get_uuid(client),
-        client_id,
-        nm_dhcp_client_get_anycast_address(client),
-        nm_dhcp_client_get_hostname(client),
-        nm_dhcp_client_get_timeout(client),
-        NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(client), NM_DHCP_CLIENT_FLAGS_USE_FQDN),
-        nm_dhcp_client_get_hostname_flags(client),
-        nm_dhcp_client_get_mud_url(client),
-        nm_dhcp_client_get_reject_servers(client),
-        &new_client_id);
+    priv->conf_file = create_dhclient_config(self,
+                                             AF_INET,
+                                             client_config->iface,
+                                             client_config->uuid,
+                                             client_config->client_id,
+                                             client_config->anycast_address,
+                                             client_config->hostname,
+                                             client_config->timeout,
+                                             client_config->use_fqdn,
+                                             client_config->hostname_flags,
+                                             client_config->mud_url,
+                                             client_config->reject_servers,
+                                             &new_client_id);
     if (!priv->conf_file) {
         nm_utils_error_set_literal(error,
                                    NM_UTILS_ERROR_UNKNOWN,
@@ -544,36 +543,35 @@ ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
     }
 
     if (new_client_id) {
-        nm_assert(!client_id);
-        nm_dhcp_client_set_client_id(client, new_client_id);
+        nm_assert(!client_config->client_id);
+        nm_dhcp_client_set_effective_client_id(client, new_client_id);
     }
-    return dhclient_start(client, NULL, FALSE, NULL, 0, error);
+    return dhclient_start(client, NULL, FALSE, NULL, error);
 }
 
 static gboolean
-ip6_start(NMDhcpClient *            client,
-          const struct in6_addr *   ll_addr,
-          NMSettingIP6ConfigPrivacy privacy,
-          guint                     needed_prefixes,
-          GError **                 error)
+ip6_start(NMDhcpClient *client, GError **error)
 {
-    NMDhcpDhclient *       self = NM_DHCP_DHCLIENT(client);
-    NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
+    NMDhcpDhclient *          self = NM_DHCP_DHCLIENT(client);
+    NMDhcpDhclientPrivate *   priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
+    const NMDhcpClientConfig *config;
 
-    if (nm_dhcp_client_get_iaid_explicit(client))
+    config = nm_dhcp_client_get_config(client);
+
+    if (config->v6.iaid_explicit)
         _LOGW("dhclient does not support specifying an IAID for DHCPv6, it will be ignored");
 
     priv->conf_file = create_dhclient_config(self,
                                              AF_INET6,
-                                             nm_dhcp_client_get_iface(client),
-                                             nm_dhcp_client_get_uuid(client),
+                                             config->iface,
+                                             config->uuid,
                                              NULL,
-                                             nm_dhcp_client_get_anycast_address(client),
-                                             nm_dhcp_client_get_hostname(client),
-                                             nm_dhcp_client_get_timeout(client),
+                                             config->anycast_address,
+                                             config->hostname,
+                                             config->timeout,
                                              TRUE,
-                                             nm_dhcp_client_get_hostname_flags(client),
-                                             nm_dhcp_client_get_mud_url(client),
+                                             config->hostname_flags,
+                                             config->mud_url,
                                              NULL,
                                              NULL);
     if (!priv->conf_file) {
@@ -583,15 +581,7 @@ ip6_start(NMDhcpClient *            client,
         return FALSE;
     }
 
-    return dhclient_start(client,
-                          NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(NM_DHCP_CLIENT(self)),
-                                       NM_DHCP_CLIENT_FLAGS_INFO_ONLY)
-                              ? "-S"
-                              : "-N",
-                          FALSE,
-                          NULL,
-                          needed_prefixes,
-                          error);
+    return dhclient_start(client, config->v6.needed_prefixes ? "-S" : "-N", FALSE, NULL, error);
 }
 
 static void
@@ -625,7 +615,7 @@ stop(NMDhcpClient *client, gboolean release)
     if (release) {
         pid_t rpid = -1;
 
-        if (dhclient_start(client, NULL, TRUE, &rpid, 0, NULL)) {
+        if (dhclient_start(client, NULL, TRUE, &rpid, NULL)) {
             /* Wait a few seconds for the release to happen */
             nm_dhcp_client_stop_pid(rpid, nm_dhcp_client_get_iface(client));
         }
@@ -635,16 +625,19 @@ stop(NMDhcpClient *client, gboolean release)
 static GBytes *
 get_duid(NMDhcpClient *client)
 {
-    NMDhcpDhclient *       self      = NM_DHCP_DHCLIENT(client);
-    NMDhcpDhclientPrivate *priv      = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
-    GBytes *               duid      = NULL;
-    gs_free char *         leasefile = NULL;
-    GError *               error     = NULL;
+    NMDhcpDhclient *          self = NM_DHCP_DHCLIENT(client);
+    NMDhcpDhclientPrivate *   priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
+    const NMDhcpClientConfig *client_config;
+    GBytes *                  duid      = NULL;
+    gs_free char *            leasefile = NULL;
+    GError *                  error     = NULL;
+
+    client_config = nm_dhcp_client_get_config(client);
 
     /* Look in interface-specific leasefile first for backwards compat */
     leasefile = get_dhclient_leasefile(AF_INET6,
                                        nm_dhcp_client_get_iface(client),
-                                       nm_dhcp_client_get_uuid(client),
+                                       client_config->uuid,
                                        NULL);
     if (leasefile) {
         _LOGD("looking for DUID in '%s'", leasefile);

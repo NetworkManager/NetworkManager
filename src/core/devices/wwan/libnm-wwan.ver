@@ -14,7 +14,6 @@ global:
 	nm_modem_get_control_port;
 	nm_modem_get_device_id;
 	nm_modem_get_driver;
-	nm_modem_get_iid;
 	nm_modem_get_ip_ifindex;
 	nm_modem_get_operator_code;
 	nm_modem_get_path;

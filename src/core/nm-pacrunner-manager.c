@@ -7,15 +7,14 @@
 
 #include "nm-pacrunner-manager.h"
 
-#include "nm-utils.h"
-#include "NetworkManagerUtils.h"
-#include "libnm-platform/nm-platform.h"
-#include "nm-dbus-manager.h"
-#include "nm-proxy-config.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
 #include "c-list/src/c-list.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
+#include "libnm-platform/nm-platform.h"
+
+#include "NetworkManagerUtils.h"
+#include "nm-dbus-manager.h"
+#include "nm-l3-config-data.h"
+#include "nm-utils.h"
 
 #define PACRUNNER_DBUS_SERVICE   "org.pacrunner"
 #define PACRUNNER_DBUS_INTERFACE "org.pacrunner.Manager"
@@ -124,58 +123,48 @@ NM_AUTO_DEFINE_FCN0(NMPacrunnerConfId *, _nm_auto_unref_conf_id, conf_id_unref);
 /*****************************************************************************/
 
 static void
-get_ip_domains(GPtrArray *domains, NMIPConfig *ip_config)
+get_ip_domains(GPtrArray *domains, const NML3ConfigData *l3cd, int addr_family)
 {
     NMDedupMultiIter           ipconf_iter;
     char *                     cidr;
-    guint                      i, num;
+    guint                      num;
+    guint                      i;
     char                       sbuf[NM_UTILS_INET_ADDRSTRLEN];
-    int                        addr_family;
     const NMPlatformIPAddress *address;
-    const NMPlatformIPRoute *  routes;
+    const NMPlatformIPRoute *  route;
+    const char *const *        strv;
 
-    if (!ip_config)
-        return;
-
-    addr_family = nm_ip_config_get_addr_family(ip_config);
-
-    num = nm_ip_config_get_num_searches(ip_config);
+    strv = nm_l3_config_data_get_searches(l3cd, addr_family, &num);
     for (i = 0; i < num; i++)
-        g_ptr_array_add(domains, g_strdup(nm_ip_config_get_search(ip_config, i)));
+        g_ptr_array_add(domains, g_strdup(strv[i]));
 
-    num = nm_ip_config_get_num_domains(ip_config);
+    strv = nm_l3_config_data_get_domains(l3cd, addr_family, &num);
     for (i = 0; i < num; i++)
-        g_ptr_array_add(domains, g_strdup(nm_ip_config_get_domain(ip_config, i)));
+        g_ptr_array_add(domains, g_strdup(strv[i]));
 
-    nm_ip_config_iter_ip_address_for_each (&ipconf_iter, ip_config, &address) {
+    nm_l3_config_data_iter_ip_address_for_each (&ipconf_iter, l3cd, addr_family, &address) {
         cidr = g_strdup_printf("%s/%u",
                                nm_utils_inet_ntop(addr_family, address->address_ptr, sbuf),
                                address->plen);
         g_ptr_array_add(domains, cidr);
     }
 
-    nm_ip_config_iter_ip_route_for_each (&ipconf_iter, ip_config, &routes) {
-        if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(routes))
+    nm_l3_config_data_iter_ip_route_for_each (&ipconf_iter, l3cd, addr_family, &route) {
+        if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route))
             continue;
         cidr = g_strdup_printf("%s/%u",
-                               nm_utils_inet_ntop(addr_family, routes->network_ptr, sbuf),
-                               routes->plen);
+                               nm_utils_inet_ntop(addr_family, route->network_ptr, sbuf),
+                               route->plen);
         g_ptr_array_add(domains, cidr);
     }
 }
 
 static GVariant *
-_make_request_create_proxy_configuration(NMProxyConfig *proxy_config,
-                                         const char *   iface,
-                                         NMIP4Config *  ip4_config,
-                                         NMIP6Config *  ip6_config)
+_make_request_create_proxy_configuration(const char *iface, const NML3ConfigData *l3cd)
 {
     GVariantBuilder     builder;
     NMProxyConfigMethod method;
-    const char *        pac_url;
-    const char *        pac_script;
-
-    nm_assert(NM_IS_PROXY_CONFIG(proxy_config));
+    const char *        s;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 
@@ -183,20 +172,19 @@ _make_request_create_proxy_configuration(NMProxyConfig *proxy_config,
         g_variant_builder_add(&builder, "{sv}", "Interface", g_variant_new_string(iface));
     }
 
-    method = nm_proxy_config_get_method(proxy_config);
+    method = l3cd ? nm_l3_config_data_get_proxy_method(l3cd) : NM_PROXY_CONFIG_METHOD_UNKNOWN;
+
     switch (method) {
     case NM_PROXY_CONFIG_METHOD_AUTO:
         g_variant_builder_add(&builder, "{sv}", "Method", g_variant_new_string("auto"));
 
-        pac_url = nm_proxy_config_get_pac_url(proxy_config);
-        if (pac_url) {
-            g_variant_builder_add(&builder, "{sv}", "URL", g_variant_new_string(pac_url));
-        }
+        s = nm_l3_config_data_get_proxy_pac_url(l3cd);
+        if (s)
+            g_variant_builder_add(&builder, "{sv}", "URL", g_variant_new_string(s));
 
-        pac_script = nm_proxy_config_get_pac_script(proxy_config);
-        if (pac_script) {
-            g_variant_builder_add(&builder, "{sv}", "Script", g_variant_new_string(pac_script));
-        }
+        s = nm_l3_config_data_get_proxy_pac_script(l3cd);
+        if (s)
+            g_variant_builder_add(&builder, "{sv}", "Script", g_variant_new_string(s));
         break;
     case NM_PROXY_CONFIG_METHOD_UNKNOWN:
     case NM_PROXY_CONFIG_METHOD_NONE:
@@ -204,18 +192,19 @@ _make_request_create_proxy_configuration(NMProxyConfig *proxy_config,
         break;
     }
 
-    g_variant_builder_add(&builder,
-                          "{sv}",
-                          "BrowserOnly",
-                          g_variant_new_boolean(nm_proxy_config_get_browser_only(proxy_config)));
+    g_variant_builder_add(
+        &builder,
+        "{sv}",
+        "BrowserOnly",
+        g_variant_new_boolean(l3cd ? !!nm_l3_config_data_get_proxy_browser_only(l3cd) : FALSE));
 
-    if (ip4_config || ip6_config) {
+    if (l3cd) {
         gs_unref_ptrarray GPtrArray *domains = NULL;
 
         domains = g_ptr_array_new_with_free_func(g_free);
 
-        get_ip_domains(domains, NM_IP_CONFIG_CAST(ip4_config));
-        get_ip_domains(domains, NM_IP_CONFIG_CAST(ip6_config));
+        get_ip_domains(domains, l3cd, AF_INET);
+        get_ip_domains(domains, l3cd, AF_INET6);
 
         if (domains->len > 0) {
             g_variant_builder_add(
@@ -356,10 +345,8 @@ _try_start_service_by_name(NMPacrunnerManager *self)
 /**
  * nm_pacrunner_manager_add:
  * @self: the #NMPacrunnerManager
- * @proxy_config: proxy config of the connection
  * @iface: the iface for the connection or %NULL
- * @ip4_config: IP4 config of the connection to extract domain info from
- * @ip6_config: IP6 config of the connection to extract domain info from
+ * @l3cd: the #NML3ConfigData of the connection to extract domain info from
  *
  * Returns: a #NMPacrunnerConfId id. The function cannot
  *  fail and always returns a non NULL pointer. The conf-id may
@@ -367,18 +354,13 @@ _try_start_service_by_name(NMPacrunnerManager *self)
  *  Note that the conf-id keeps the @self instance alive.
  */
 NMPacrunnerConfId *
-nm_pacrunner_manager_add(NMPacrunnerManager *self,
-                         NMProxyConfig *     proxy_config,
-                         const char *        iface,
-                         NMIP4Config *       ip4_config,
-                         NMIP6Config *       ip6_config)
+nm_pacrunner_manager_add(NMPacrunnerManager *self, const char *iface, const NML3ConfigData *l3cd)
 {
     NMPacrunnerManagerPrivate *priv;
     NMPacrunnerConfId *        conf_id;
     gs_free char *             log_msg = NULL;
 
     g_return_val_if_fail(NM_IS_PACRUNNER_MANAGER(self), NULL);
-    g_return_val_if_fail(proxy_config, NULL);
 
     priv = NM_PACRUNNER_MANAGER_GET_PRIVATE(self);
 
@@ -387,8 +369,7 @@ nm_pacrunner_manager_add(NMPacrunnerManager *self,
         .log_id     = ++priv->log_id_counter,
         .refcount   = 1,
         .self       = g_object_ref(self),
-        .parameters = g_variant_ref_sink(
-            _make_request_create_proxy_configuration(proxy_config, iface, ip4_config, ip6_config)),
+        .parameters = g_variant_ref_sink(_make_request_create_proxy_configuration(iface, l3cd)),
     };
     c_list_link_tail(&priv->conf_id_lst_head, &conf_id->conf_id_lst);
 

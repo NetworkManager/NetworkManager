@@ -7,6 +7,7 @@
 #define __NM_IP_CONFIG_H__
 
 #include "nm-dbus-object.h"
+#include "nm-l3cfg.h"
 
 /*****************************************************************************/
 
@@ -22,23 +23,60 @@
 #define NM_IP_CONFIG_L3CFG  "l3cfg"
 #define NM_IP_CONFIG_IS_VPN "is-vpn"
 
-struct _NMIPConfigPrivate;
+struct _NMIPConfigPrivate {
+    NML3Cfg * l3cfg;
+    GVariant *v_address_data;
+    GVariant *v_addresses;
+    GVariant *v_route_data;
+    GVariant *v_routes;
+    gulong    l3cfg_notify_id;
+    bool      is_vpn : 1;
+};
 
 struct _NMIPConfig {
-    NMDBusObject               parent;
-    struct _NMIPConfigPrivate *_priv;
+    NMDBusObject              parent;
+    struct _NMIPConfigPrivate _priv;
 };
 
 typedef struct {
     NMDBusObjectClass parent;
-    gboolean          is_ipv4;
     int               addr_family;
 } NMIPConfigClass;
 
 GType nm_ip_config_get_type(void);
-GType nm_ip4_config_get_type(void);
-GType nm_ip6_config_get_type(void);
 
 NMIPConfig *nm_ip_config_new(int addr_family, NML3Cfg *l3cfg, gboolean is_vpn);
+
+void nm_ip_config_take_and_unexport_on_idle(NMIPConfig *self_take);
+
+/*****************************************************************************/
+
+static inline NML3Cfg *
+nm_ip_config_get_l3cfg(NMIPConfig *self)
+{
+    g_return_val_if_fail(NM_IS_IP_CONFIG(self), NULL);
+
+    return self->_priv.l3cfg;
+}
+
+static inline struct _NMDedupMultiIndex *
+nm_ip_config_get_multi_index(NMIPConfig *self)
+{
+    return nm_l3cfg_get_multi_idx(nm_ip_config_get_l3cfg(self));
+}
+
+static inline int
+nm_ip_config_get_ifindex(NMIPConfig *self)
+{
+    return nm_l3cfg_get_ifindex(nm_ip_config_get_l3cfg(self));
+}
+
+static inline int
+nm_ip_config_get_addr_family(NMIPConfig *self)
+{
+    g_return_val_if_fail(NM_IS_IP_CONFIG(self), AF_UNSPEC);
+
+    return NM_IP_CONFIG_GET_CLASS(self)->addr_family;
+}
 
 #endif /* __NM_IP_CONFIG_H__ */

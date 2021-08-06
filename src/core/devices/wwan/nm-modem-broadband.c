@@ -16,8 +16,7 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
 #include "libnm-platform/nm-platform.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
+#include "nm-l3-config-data.h"
 
 #define NM_MODEM_BROADBAND_MODEM "modem"
 
@@ -961,21 +960,23 @@ set_mm_enabled(NMModem *_self, gboolean enabled)
 /* IPv4 method static */
 
 static gboolean
-static_stage3_ip4_done(NMModemBroadband *self)
+static_stage3_ip4_done(gpointer user_data)
 {
-    GError *        error               = NULL;
-    gs_unref_object NMIP4Config *config = NULL;
-    const char *                 data_port;
-    const char *                 address_string;
-    const char *                 gw_string;
-    guint32                      address_network;
-    guint32                      gw = 0;
-    NMPlatformIP4Address         address;
-    const char **                dns;
-    guint                        i;
-    guint32                      ip4_route_table, ip4_route_metric;
-    NMPlatformIP4Route *         r;
-    guint32                      mtu_n;
+    NMModemBroadband *      self                 = user_data;
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    char                                    sbuf[sizeof(_nm_utils_to_string_buffer)];
+    gs_free_error GError *error = NULL;
+    const char *          data_port;
+    const char *          address_string;
+    const char *          gw_string;
+    guint32               address_network;
+    guint32               gw = 0;
+    NMPlatformIP4Address  address;
+    const char **         dns;
+    int                   ifindex;
+    guint                 i;
+    NMPlatformIP4Route    route;
+    guint32               mtu_n;
 
     g_return_val_if_fail(self->_priv.ipv4_config, FALSE);
     g_return_val_if_fail(self->_priv.bearer, FALSE);
@@ -988,58 +989,72 @@ static_stage3_ip4_done(NMModemBroadband *self)
     address_string = mm_bearer_ip_config_get_address(self->_priv.ipv4_config);
     if (!address_string
         || !nm_utils_parse_inaddr_bin(AF_INET, address_string, NULL, &address_network)) {
-        error =
-            g_error_new(NM_DEVICE_ERROR,
-                        NM_DEVICE_ERROR_INVALID_CONNECTION,
-                        "(%s) retrieving IP4 configuration failed: invalid address given %s%s%s",
-                        nm_modem_get_uid(NM_MODEM(self)),
-                        NM_PRINT_FMT_QUOTE_STRING(address_string));
+        g_set_error(&error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_INVALID_CONNECTION,
+                    "(%s) retrieving IP4 configuration failed: invalid address given %s%s%s",
+                    nm_modem_get_uid(NM_MODEM(self)),
+                    NM_PRINT_FMT_QUOTE_STRING(address_string));
         goto out;
     }
 
     /* Missing gateway not a hard failure */
     gw_string = mm_bearer_ip_config_get_gateway(self->_priv.ipv4_config);
     if (gw_string && !nm_utils_parse_inaddr_bin(AF_INET, gw_string, NULL, &gw)) {
-        error =
-            g_error_new(NM_DEVICE_ERROR,
-                        NM_DEVICE_ERROR_INVALID_CONNECTION,
-                        "(%s) retrieving IP4 configuration failed: invalid gateway address \"%s\"",
-                        nm_modem_get_uid(NM_MODEM(self)),
-                        gw_string);
+        g_set_error(&error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_INVALID_CONNECTION,
+                    "(%s) retrieving IP4 configuration failed: invalid gateway address \"%s\"",
+                    nm_modem_get_uid(NM_MODEM(self)),
+                    gw_string);
         goto out;
     }
 
     data_port = mm_bearer_get_interface(self->_priv.bearer);
     g_return_val_if_fail(data_port, FALSE);
-    config = nm_ip4_config_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
-                               nm_platform_link_get_ifindex(NM_PLATFORM_GET, data_port));
 
-    memset(&address, 0, sizeof(address));
-    address.address      = address_network;
-    address.peer_address = address_network;
-    address.plen         = mm_bearer_ip_config_get_prefix(self->_priv.ipv4_config);
-    address.addr_source  = NM_IP_CONFIG_SOURCE_WWAN;
+    ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, data_port);
+    if (ifindex <= 0) {
+        g_set_error(&error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_INVALID_CONNECTION,
+                    "(%s) data port %s not found",
+                    nm_modem_get_uid(NM_MODEM(self)),
+                    data_port);
+        goto out;
+    }
+
+    l3cd = nm_l3_config_data_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
+                                 ifindex,
+                                 NM_IP_CONFIG_SOURCE_WWAN);
+
+    address = (NMPlatformIP4Address){
+        .address      = address_network,
+        .peer_address = address_network,
+        .plen         = mm_bearer_ip_config_get_prefix(self->_priv.ipv4_config),
+        .addr_source  = NM_IP_CONFIG_SOURCE_WWAN,
+    };
     if (address.plen <= 32)
-        nm_ip4_config_add_address(config, &address);
+        nm_l3_config_data_add_address_4(l3cd, &address);
 
-    _LOGI("  address %s/%d", address_string, address.plen);
+    _LOGI("  address %s", nm_platform_ip4_address_to_string(&address, sbuf, sizeof(sbuf)));
 
-    nm_modem_get_route_parameters(NM_MODEM(self), &ip4_route_table, &ip4_route_metric, NULL, NULL);
-    r = &(NMPlatformIP4Route){
+    route = (NMPlatformIP4Route){
         .rt_source     = NM_IP_CONFIG_SOURCE_WWAN,
         .gateway       = gw,
-        .table_coerced = nm_platform_route_table_coerce(ip4_route_table),
-        .metric        = ip4_route_metric,
+        .table_any     = TRUE,
+        .table_coerced = 0,
+        .metric_any    = TRUE,
+        .metric        = 0,
     };
-    nm_ip4_config_add_route(config, r, NULL);
+    nm_l3_config_data_add_route_4(l3cd, &route);
     _LOGI("  gateway %s", gw_string);
 
-    /* DNS servers */
     dns = mm_bearer_ip_config_get_dns(self->_priv.ipv4_config);
     for (i = 0; dns && dns[i]; i++) {
         if (nm_utils_parse_inaddr_bin(AF_INET, dns[i], NULL, &address_network)
             && address_network > 0) {
-            nm_ip4_config_add_nameserver(config, address_network);
+            nm_l3_config_data_add_nameserver(l3cd, AF_INET, &address_network);
             _LOGI("  DNS %s", dns[i]);
         }
     }
@@ -1047,15 +1062,17 @@ static_stage3_ip4_done(NMModemBroadband *self)
 #if MM_CHECK_VERSION(1, 4, 0)
     mtu_n = mm_bearer_ip_config_get_mtu(self->_priv.ipv4_config);
     if (mtu_n) {
-        nm_ip4_config_set_mtu(config, mtu_n, NM_IP_CONFIG_SOURCE_WWAN);
+        nm_l3_config_data_set_mtu(l3cd, mtu_n);
         _LOGI("  MTU %u", mtu_n);
     }
 #endif
 
 out:
-    g_signal_emit_by_name(self, NM_MODEM_IP4_CONFIG_RESULT, config, error);
-    g_clear_error(&error);
-    return FALSE;
+    if (error)
+        nm_clear_l3cd(&l3cd);
+
+    nm_modem_emit_signal_new_config(NM_MODEM(self), AF_INET, l3cd, FALSE, NULL, error);
+    return G_SOURCE_REMOVE;
 }
 
 static NMActStageReturn
@@ -1069,8 +1086,7 @@ static_stage3_ip4_config_start(NMModem *            modem,
     /* We schedule it in an idle just to follow the same logic as in the
      * generic modem implementation. */
     nm_clear_g_source(&priv->idle_id_ip4);
-    priv->idle_id_ip4 = g_idle_add((GSourceFunc) static_stage3_ip4_done, self);
-
+    priv->idle_id_ip4 = g_idle_add(static_stage3_ip4_done, self);
     return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
@@ -1078,21 +1094,26 @@ static_stage3_ip4_config_start(NMModem *            modem,
 /* IPv6 method static */
 
 static gboolean
-stage3_ip6_done(NMModemBroadband *self)
+stage3_ip6_done(gpointer user_data)
 {
-    GError *             error  = NULL;
-    NMIP6Config *        config = NULL;
-    const char *         data_port;
-    const char *         address_string;
-    NMPlatformIP6Address address;
-    NMModemIPMethod      ip_method;
-    const char **        dns;
-    guint                i;
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    char                                    sbuf[sizeof(_nm_utils_to_string_buffer)];
+    NMModemBroadband *                      self = user_data;
+    gs_free_error GError *    error              = NULL;
+    const char *              data_port;
+    const char *              address_string;
+    NMPlatformIP6Address      address;
+    NMModemIPMethod           ip_method;
+    const char **             dns;
+    guint                     i;
+    gboolean                  do_slaac = TRUE;
+    int                       ifindex;
+    NMUtilsIPv6IfaceId        iid_data;
+    const NMUtilsIPv6IfaceId *iid = NULL;
 
-    g_return_val_if_fail(self->_priv.ipv6_config, FALSE);
+    g_return_val_if_fail(self->_priv.ipv6_config, G_SOURCE_REMOVE);
 
     self->_priv.idle_id_ip6 = 0;
-    memset(&address, 0, sizeof(address));
 
     ip_method = get_bearer_ip_method(self->_priv.ipv6_config);
 
@@ -1100,93 +1121,114 @@ stage3_ip6_done(NMModemBroadband *self)
     if (!address_string) {
         /* DHCP/SLAAC is allowed to skip addresses; other methods require it */
         if (ip_method != NM_MODEM_IP_METHOD_AUTO) {
-            error = g_error_new(NM_DEVICE_ERROR,
-                                NM_DEVICE_ERROR_INVALID_CONNECTION,
-                                "(%s) retrieving IPv6 configuration failed: no address given",
-                                nm_modem_get_uid(NM_MODEM(self)));
+            g_set_error(&error,
+                        NM_DEVICE_ERROR,
+                        NM_DEVICE_ERROR_INVALID_CONNECTION,
+                        "(%s) retrieving IPv6 configuration failed: no address given",
+                        nm_modem_get_uid(NM_MODEM(self)));
         }
         goto out;
     }
 
-    /* Fail if invalid IP address retrieved */
-    if (!inet_pton(AF_INET6, address_string, (void *) &(address.address))) {
-        error = g_error_new(NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_INVALID_CONNECTION,
-                            "(%s) retrieving IPv6 configuration failed: invalid address given '%s'",
-                            nm_modem_get_uid(NM_MODEM(self)),
-                            address_string);
+    address = (NMPlatformIP6Address){};
+
+    if (!inet_pton(AF_INET6, address_string, &address.address)) {
+        g_set_error(&error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_INVALID_CONNECTION,
+                    "(%s) retrieving IPv6 configuration failed: invalid address given '%s'",
+                    nm_modem_get_uid(NM_MODEM(self)),
+                    address_string);
+        goto out;
+    }
+
+    data_port = mm_bearer_get_interface(self->_priv.bearer);
+    g_return_val_if_fail(data_port, G_SOURCE_REMOVE);
+
+    ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, data_port);
+    if (ifindex <= 0) {
+        g_set_error(&error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_INVALID_CONNECTION,
+                    "(%s) data port %s not found",
+                    nm_modem_get_uid(NM_MODEM(self)),
+                    data_port);
         goto out;
     }
 
     _LOGI("IPv6 base configuration:");
 
-    data_port = mm_bearer_get_interface(self->_priv.bearer);
-    g_return_val_if_fail(data_port, FALSE);
-
-    config = nm_ip6_config_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
-                               nm_platform_link_get_ifindex(NM_PLATFORM_GET, data_port));
+    l3cd = nm_l3_config_data_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
+                                 ifindex,
+                                 NM_IP_CONFIG_SOURCE_WWAN);
 
     address.plen = mm_bearer_ip_config_get_prefix(self->_priv.ipv6_config);
-    if (address.plen <= 128)
-        nm_ip6_config_add_address(config, &address);
+    if (address.plen <= 128) {
+        if (IN6_IS_ADDR_LINKLOCAL(&address.address)) {
+            iid_data.id = ((guint64 *) (&address.address.s6_addr))[1];
+            iid         = &iid_data;
+        } else
+            do_slaac = FALSE;
+        nm_l3_config_data_add_address_6(l3cd, &address);
+    }
 
-    _LOGI("  address %s/%d", address_string, address.plen);
+    _LOGI("  address %s (slaac %s)",
+          nm_platform_ip6_address_to_string(&address, sbuf, sizeof(sbuf)),
+          do_slaac ? "enabled" : "disabled");
 
     address_string = mm_bearer_ip_config_get_gateway(self->_priv.ipv6_config);
     if (address_string) {
-        guint32 ip6_route_table, ip6_route_metric;
-
         if (inet_pton(AF_INET6, address_string, &address.address) != 1) {
-            error =
-                g_error_new(NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_INVALID_CONNECTION,
-                            "(%s) retrieving IPv6 configuration failed: invalid gateway given '%s'",
-                            nm_modem_get_uid(NM_MODEM(self)),
-                            address_string);
+            g_set_error(&error,
+                        NM_DEVICE_ERROR,
+                        NM_DEVICE_ERROR_INVALID_CONNECTION,
+                        "(%s) retrieving IPv6 configuration failed: invalid gateway given '%s'",
+                        nm_modem_get_uid(NM_MODEM(self)),
+                        address_string);
             goto out;
         }
 
-        nm_modem_get_route_parameters(NM_MODEM(self),
-                                      NULL,
-                                      NULL,
-                                      &ip6_route_table,
-                                      &ip6_route_metric);
         {
             const NMPlatformIP6Route r = {
                 .rt_source     = NM_IP_CONFIG_SOURCE_WWAN,
                 .gateway       = address.address,
-                .table_coerced = nm_platform_route_table_coerce(ip6_route_table),
-                .metric        = ip6_route_metric,
+                .table_any     = TRUE,
+                .table_coerced = 0,
+                .metric_any    = TRUE,
+                .metric        = 0,
             };
 
             _LOGI("  gateway %s", address_string);
-            nm_ip6_config_add_route(config, &r, NULL);
+            nm_l3_config_data_add_route_6(l3cd, &r);
         }
     } else if (ip_method == NM_MODEM_IP_METHOD_STATIC) {
         /* Gateway required for the 'static' method */
-        error = g_error_new(NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_INVALID_CONNECTION,
-                            "(%s) retrieving IPv6 configuration failed: missing gateway",
-                            nm_modem_get_uid(NM_MODEM(self)));
+        g_set_error(&error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_INVALID_CONNECTION,
+                    "(%s) retrieving IPv6 configuration failed: missing gateway",
+                    nm_modem_get_uid(NM_MODEM(self)));
         goto out;
     }
 
-    /* DNS servers */
     dns = mm_bearer_ip_config_get_dns(self->_priv.ipv6_config);
     for (i = 0; dns && dns[i]; i++) {
         struct in6_addr addr;
 
         if (inet_pton(AF_INET6, dns[i], &addr)) {
-            nm_ip6_config_add_nameserver(config, &addr);
+            nm_l3_config_data_add_nameserver(l3cd, AF_INET6, &addr);
             _LOGI("  DNS %s", dns[i]);
         }
     }
 
 out:
-    nm_modem_emit_ip6_config_result(NM_MODEM(self), config, error);
-    g_clear_object(&config);
-    g_clear_error(&error);
-    return FALSE;
+    if (error) {
+        nm_clear_l3cd(&l3cd);
+        do_slaac = FALSE;
+        iid      = NULL;
+    }
+    nm_modem_emit_signal_new_config(NM_MODEM(self), AF_INET6, l3cd, do_slaac, iid, error);
+    return G_SOURCE_REMOVE;
 }
 
 static NMActStageReturn
@@ -1198,7 +1240,7 @@ stage3_ip6_config_request(NMModem *modem, NMDeviceStateReason *out_failure_reaso
     /* We schedule it in an idle just to follow the same logic as in the
      * generic modem implementation. */
     nm_clear_g_source(&priv->idle_id_ip6);
-    priv->idle_id_ip6 = g_idle_add((GSourceFunc) stage3_ip6_done, self);
+    priv->idle_id_ip6 = g_idle_add(stage3_ip6_done, self);
 
     return NM_ACT_STAGE_RETURN_POSTPONE;
 }

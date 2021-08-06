@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "nm-ip4-config.h"
 #include "devices/nm-device-private.h"
 #include "libnm-platform/nm-platform.h"
 #include "ppp/nm-ppp-manager-call.h"
@@ -34,7 +33,6 @@ typedef struct {
     guint carrier_poll_id;
     int   atm_index;
 
-    /* PPP */
     NMPPPManager *ppp_manager;
 
     /* RFC 2684 bridging (PPPoE over ATM) */
@@ -434,70 +432,80 @@ ppp_ifindex_set(NMPPPManager *ppp_manager, int ifindex, const char *iface, gpoin
 }
 
 static void
-ppp_ip4_config(NMPPPManager *ppp_manager, NMIP4Config *config, gpointer user_data)
+ppp_new_config(NMPPPManager *            ppp_manager,
+               int                       addr_family,
+               const NML3ConfigData *    l3cd,
+               const NMUtilsIPv6IfaceId *iid,
+               gpointer                  user_data)
 {
     NMDevice *device = NM_DEVICE(user_data);
 
-    /* Ignore PPP IP4 events that come in after initial configuration */
-    if (nm_device_activate_ip4_state_in_conf(device))
-        nm_device_activate_schedule_ip_config_result(device, AF_INET, NM_IP_CONFIG_CAST(config));
+    if (addr_family != AF_INET)
+        return;
+
+    if (nm_device_devip_get_state(device, AF_INET) != NM_DEVICE_IP_STATE_PENDING)
+        return;
+
+    nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_READY, l3cd);
 }
 
-static NMActStageReturn
-act_stage3_ip4_config_start(NMDevice *           device,
-                            NMIP4Config **       out_config,
-                            NMDeviceStateReason *out_failure_reason)
+static void
+ppp_manager_clear(NMDeviceAdsl *self)
+{
+    NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
+
+    if (!priv->ppp_manager)
+        return;
+
+    g_signal_handlers_disconnect_by_func(priv->ppp_manager, G_CALLBACK(ppp_state_changed), self);
+    g_signal_handlers_disconnect_by_func(priv->ppp_manager, G_CALLBACK(ppp_ifindex_set), self);
+    g_signal_handlers_disconnect_by_func(priv->ppp_manager, G_CALLBACK(ppp_new_config), self);
+
+    nm_ppp_manager_stop(priv->ppp_manager, NULL, NULL, NULL);
+    g_clear_object(&priv->ppp_manager);
+}
+
+static void
+act_stage3_ip_config(NMDevice *device, int addr_family)
 {
     NMDeviceAdsl *       self = NM_DEVICE_ADSL(device);
     NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
     NMSettingAdsl *      s_adsl;
     NMActRequest *       req;
-    GError *             err = NULL;
-    const char *         ppp_iface;
+    gs_free_error GError *error = NULL;
+    const char *          ppp_iface;
+
+    if (!NM_IS_IPv4(addr_family))
+        return;
+
+    if (nm_device_devip_get_state(device, addr_family) >= NM_DEVICE_IP_STATE_READY)
+        return;
+
+    if (priv->ppp_manager)
+        return;
 
     req = nm_device_get_act_request(device);
-
-    g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
+    g_return_if_fail(req);
 
     s_adsl = nm_device_get_applied_setting(device, NM_TYPE_SETTING_ADSL);
-
-    g_return_val_if_fail(s_adsl, NM_ACT_STAGE_RETURN_FAILURE);
+    g_return_if_fail(s_adsl);
 
     /* PPPoE uses the NAS interface, not the ATM interface */
     if (nm_streq0(nm_setting_adsl_get_protocol(s_adsl), NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
         nm_assert(priv->nas_ifname);
         ppp_iface = priv->nas_ifname;
-
         _LOGD(LOGD_ADSL, "starting PPPoE on br2684 interface %s", priv->nas_ifname);
     } else {
         ppp_iface = nm_device_get_iface(device);
         _LOGD(LOGD_ADSL, "starting PPPoA");
     }
 
-    priv->ppp_manager = nm_ppp_manager_create(ppp_iface, &err);
+    priv->ppp_manager = nm_ppp_manager_create(ppp_iface, &error);
 
-    if (priv->ppp_manager) {
-        nm_ppp_manager_set_route_parameters(priv->ppp_manager,
-                                            nm_device_get_route_table(device, AF_INET),
-                                            nm_device_get_route_metric(device, AF_INET),
-                                            nm_device_get_route_table(device, AF_INET6),
-                                            nm_device_get_route_metric(device, AF_INET6));
-    }
-
-    if (!priv->ppp_manager
-        || !nm_ppp_manager_start(priv->ppp_manager,
-                                 req,
-                                 nm_setting_adsl_get_username(s_adsl),
-                                 30,
-                                 0,
-                                 &err)) {
-        _LOGW(LOGD_ADSL, "PPP failed to start: %s", err->message);
-        g_error_free(err);
-
-        g_clear_object(&priv->ppp_manager);
-
-        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
-        return NM_ACT_STAGE_RETURN_FAILURE;
+    if (!priv->ppp_manager) {
+        _LOGW(LOGD_DEVICE, "PPPoE failed to create manager: %s", error->message);
+        nm_device_devip_set_failed(device, addr_family, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
+        return;
     }
 
     g_signal_connect(priv->ppp_manager,
@@ -509,23 +517,23 @@ act_stage3_ip4_config_start(NMDevice *           device,
                      G_CALLBACK(ppp_ifindex_set),
                      self);
     g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
-                     G_CALLBACK(ppp_ip4_config),
+                     NM_PPP_MANAGER_SIGNAL_NEW_CONFIG,
+                     G_CALLBACK(ppp_new_config),
                      self);
-    return NM_ACT_STAGE_RETURN_POSTPONE;
-}
 
-static NMActStageReturn
-act_stage3_ip_config_start(NMDevice *           device,
-                           int                  addr_family,
-                           gpointer *           out_config,
-                           NMDeviceStateReason *out_failure_reason)
-{
-    if (addr_family == AF_INET)
-        return act_stage3_ip4_config_start(device, (NMIP4Config **) out_config, out_failure_reason);
+    if (!nm_ppp_manager_start(priv->ppp_manager,
+                              req,
+                              nm_setting_adsl_get_username(s_adsl),
+                              30,
+                              0,
+                              &error)) {
+        _LOGW(LOGD_ADSL, "PPP failed to start: %s", error->message);
+        ppp_manager_clear(self);
+        nm_device_devip_set_failed(device, addr_family, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
+        return;
+    }
 
-    return NM_DEVICE_CLASS(nm_device_adsl_parent_class)
-        ->act_stage3_ip_config_start(device, addr_family, out_config, out_failure_reason);
+    nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
 }
 
 static void
@@ -533,14 +541,7 @@ adsl_cleanup(NMDeviceAdsl *self)
 {
     NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
 
-    if (priv->ppp_manager) {
-        g_signal_handlers_disconnect_by_func(priv->ppp_manager,
-                                             G_CALLBACK(ppp_state_changed),
-                                             self);
-        g_signal_handlers_disconnect_by_func(priv->ppp_manager, G_CALLBACK(ppp_ip4_config), self);
-        nm_ppp_manager_stop(priv->ppp_manager, NULL, NULL, NULL);
-        g_clear_object(&priv->ppp_manager);
-    }
+    ppp_manager_clear(self);
 
     g_signal_handlers_disconnect_by_func(nm_device_get_platform(NM_DEVICE(self)),
                                          G_CALLBACK(link_changed_cb),
@@ -699,9 +700,9 @@ nm_device_adsl_class_init(NMDeviceAdslClass *klass)
     device_class->check_connection_compatible = check_connection_compatible;
     device_class->complete_connection         = complete_connection;
 
-    device_class->act_stage2_config          = act_stage2_config;
-    device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
-    device_class->deactivate                 = deactivate;
+    device_class->act_stage2_config    = act_stage2_config;
+    device_class->act_stage3_ip_config = act_stage3_ip_config;
+    device_class->deactivate           = deactivate;
 
     obj_properties[PROP_ATM_INDEX] =
         g_param_spec_int(NM_DEVICE_ADSL_ATM_INDEX,

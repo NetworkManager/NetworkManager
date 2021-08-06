@@ -17,9 +17,6 @@
 #include <linux/if.h>
 #include <linux/rtnetlink.h>
 
-#include "nm-proxy-config.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-active-connection.h"
 #include "NetworkManagerUtils.h"
@@ -34,6 +31,7 @@
 #include "nm-vpn-plugin-info.h"
 #include "nm-vpn-manager.h"
 #include "dns/nm-dns-manager.h"
+#include "nm-l3-config-data.h"
 
 typedef enum {
     /* Only system secrets */
@@ -100,26 +98,25 @@ typedef struct {
 
     NMNetns *netns;
 
-    GPtrArray *ip4_dev_route_blacklist;
+    NML3Cfg *l3cfg;
 
     GDBusProxy *       proxy;
     GCancellable *     cancellable;
     GVariant *         connect_hash;
     guint              connect_timeout;
-    NMProxyConfig *    proxy_config;
     NMPacrunnerConfId *pacrunner_conf_id;
     gboolean           has_ip4;
-    NMIP4Config *      ip4_config;
-    guint32            ip4_internal_gw;
-    guint32            ip4_external_gw;
-    gboolean           has_ip6;
-    NMIP6Config *      ip6_config;
 
-    /* These config instances are passed on to NMDevice and modified by NMDevice.
-     * This pointer is only useful for nm_device_replace_vpn4_config() to clear the
-     * previous configuration. Consider these instances to be owned by NMDevice. */
-    NMIP4Config *last_device_ip4_config;
-    NMIP6Config *last_device_ip6_config;
+    union {
+        struct {
+            const NML3ConfigData *l3cd_6;
+            const NML3ConfigData *l3cd_4;
+        };
+        const NML3ConfigData *l3cd_x[2];
+    };
+    guint32  ip4_internal_gw;
+    guint32  ip4_external_gw;
+    gboolean has_ip6;
 
     struct in6_addr *ip6_internal_gw;
     struct in6_addr *ip6_external_gw;
@@ -351,6 +348,8 @@ fw_call_cleanup(NMVpnConnection *self)
 static void
 remove_parent_device_config(NMVpnConnection *connection, NMDevice *device)
 {
+    /* FIXME(l3cfg) */
+#if 0
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(connection);
 
     if (priv->last_device_ip4_config) {
@@ -362,6 +361,7 @@ remove_parent_device_config(NMVpnConnection *connection, NMDevice *device)
         nm_device_replace_vpn6_config(device, priv->last_device_ip6_config, NULL);
         g_clear_object(&priv->last_device_ip6_config);
     }
+#endif
 }
 
 static void
@@ -514,9 +514,7 @@ _set_vpn_state(NMVpnConnection *             self,
                                     _get_applied_connection(self),
                                     parent_dev,
                                     priv->ip_iface,
-                                    priv->proxy_config,
-                                    priv->ip4_config,
-                                    priv->ip6_config,
+                                    NULL,  //XXX
                                     dispatcher_pre_up_done,
                                     self,
                                     &priv->dispatcher_id)) {
@@ -536,21 +534,19 @@ _set_vpn_state(NMVpnConnection *             self,
                                applied,
                                parent_dev,
                                priv->ip_iface,
-                               priv->proxy_config,
-                               priv->ip4_config,
-                               priv->ip6_config,
+                               NULL,  //XXX
                                NULL,
                                NULL,
                                NULL);
 
-        if (priv->proxy_config) {
-            nm_pacrunner_manager_remove_clear(&priv->pacrunner_conf_id);
-            priv->pacrunner_conf_id = nm_pacrunner_manager_add(nm_pacrunner_manager_get(),
-                                                               priv->proxy_config,
-                                                               priv->ip_iface,
-                                                               priv->ip4_config,
-                                                               priv->ip6_config);
-        }
+        //XXX if (priv->proxy_config) {
+        //XXX     nm_pacrunner_manager_remove_clear(&priv->pacrunner_conf_id);
+        //XXX     priv->pacrunner_conf_id = nm_pacrunner_manager_add(nm_pacrunner_manager_get(),
+        //XXX                                                        priv->proxy_config,
+        //XXX                                                        priv->ip_iface,
+        //XXX                                                        priv->ip4_config,
+        //XXX                                                        priv->ip6_config);
+        //XXX }
         break;
     case STATE_DEACTIVATING:
         applied = _get_applied_connection(self);
@@ -560,18 +556,15 @@ _set_vpn_state(NMVpnConnection *             self,
                                         applied,
                                         parent_dev,
                                         priv->ip_iface,
-                                        priv->proxy_config,
-                                        priv->ip4_config,
-                                        priv->ip6_config);
+                                        NULL  //XXX
+            );
         } else {
             if (!nm_dispatcher_call_vpn(NM_DISPATCHER_ACTION_VPN_PRE_DOWN,
                                         _get_settings_connection(self, FALSE),
                                         applied,
                                         parent_dev,
                                         priv->ip_iface,
-                                        priv->proxy_config,
-                                        priv->ip4_config,
-                                        priv->ip6_config,
+                                        NULL,  //XXX
                                         dispatcher_pre_down_done,
                                         self,
                                         &priv->dispatcher_id)) {
@@ -592,8 +585,6 @@ _set_vpn_state(NMVpnConnection *             self,
                                             _get_applied_connection(self),
                                             parent_dev,
                                             priv->ip_iface,
-                                            NULL,
-                                            NULL,
                                             NULL);
             } else {
                 nm_dispatcher_call_vpn(NM_DISPATCHER_ACTION_VPN_DOWN,
@@ -601,8 +592,6 @@ _set_vpn_state(NMVpnConnection *             self,
                                        _get_applied_connection(self),
                                        parent_dev,
                                        priv->ip_iface,
-                                       NULL,
-                                       NULL,
                                        NULL,
                                        NULL,
                                        NULL,
@@ -678,11 +667,12 @@ device_state_changed(NMActiveConnection *active,
      */
 }
 
-static void
-add_ip4_vpn_gateway_route(NMIP4Config *config,
-                          NMDevice *   parent_device,
-                          in_addr_t    vpn_gw,
-                          NMPlatform * platform)
+//XXX
+_nm_unused static void
+add_ip4_vpn_gateway_route(NML3ConfigData *l3cd,
+                          NMDevice *      parent_device,
+                          in_addr_t       vpn_gw,
+                          NMPlatform *    platform)
 {
     guint32              parent_gw     = 0;
     gboolean             has_parent_gw = FALSE;
@@ -691,11 +681,11 @@ add_ip4_vpn_gateway_route(NMIP4Config *config,
     guint32              route_metric;
     nm_auto_nmpobj const NMPObject *route_resolved = NULL;
 
-    g_return_if_fail(NM_IS_IP4_CONFIG(config));
+    nm_assert(NM_IS_L3_CONFIG_DATA(l3cd));
     g_return_if_fail(NM_IS_DEVICE(parent_device));
     g_return_if_fail(vpn_gw != 0);
 
-    ifindex = nm_ip4_config_get_ifindex(config);
+    ifindex = nm_l3_config_data_get_ifindex(l3cd);
 
     nm_assert(ifindex > 0);
     nm_assert(ifindex == nm_device_get_ip_ifindex(parent_device));
@@ -737,14 +727,15 @@ add_ip4_vpn_gateway_route(NMIP4Config *config,
 
     route_metric = nm_device_get_route_metric(parent_device, AF_INET);
 
-    memset(&route, 0, sizeof(route));
-    route.ifindex   = ifindex;
-    route.network   = vpn_gw;
-    route.plen      = 32;
-    route.gateway   = parent_gw;
-    route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-    route.metric    = route_metric;
-    nm_ip4_config_add_route(config, &route, NULL);
+    route = (NMPlatformIP4Route){
+        .ifindex   = ifindex,
+        .network   = vpn_gw,
+        .plen      = 32,
+        .gateway   = parent_gw,
+        .rt_source = NM_IP_CONFIG_SOURCE_VPN,
+        .metric    = route_metric,
+    };
+    nm_l3_config_data_add_route_4(l3cd, &route);
 
     if (parent_gw) {
         /* Ensure there's a route to the parent device's gateway through the
@@ -752,17 +743,19 @@ add_ip4_vpn_gateway_route(NMIP4Config *config,
          * routes include a subnet that matches the parent device's subnet,
          * the parent device's gateway would get routed through the VPN and fail.
          */
-        memset(&route, 0, sizeof(route));
-        route.network   = parent_gw;
-        route.plen      = 32;
-        route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-        route.metric    = route_metric;
-        nm_ip4_config_add_route(config, &route, NULL);
+        route = (NMPlatformIP4Route){
+            .network   = parent_gw,
+            .plen      = 32,
+            .rt_source = NM_IP_CONFIG_SOURCE_VPN,
+            .metric    = route_metric,
+        };
+        nm_l3_config_data_add_route_4(l3cd, &route);
     }
 }
 
-static void
-add_ip6_vpn_gateway_route(NMIP6Config *          config,
+//XXX
+_nm_unused static void
+add_ip6_vpn_gateway_route(NML3ConfigData *       l3cd,
                           NMDevice *             parent_device,
                           const struct in6_addr *vpn_gw,
                           NMPlatform *           platform)
@@ -774,11 +767,11 @@ add_ip6_vpn_gateway_route(NMIP6Config *          config,
     guint32                route_metric;
     nm_auto_nmpobj const NMPObject *route_resolved = NULL;
 
-    g_return_if_fail(NM_IS_IP6_CONFIG(config));
+    nm_assert(NM_IS_L3_CONFIG_DATA(l3cd));
     g_return_if_fail(NM_IS_DEVICE(parent_device));
     g_return_if_fail(vpn_gw != NULL);
 
-    ifindex = nm_ip6_config_get_ifindex(config);
+    ifindex = nm_l3_config_data_get_ifindex(l3cd);
 
     nm_assert(ifindex > 0);
     nm_assert(ifindex == nm_device_get_ip_ifindex(parent_device));
@@ -820,15 +813,15 @@ add_ip6_vpn_gateway_route(NMIP6Config *          config,
 
     route_metric = nm_device_get_route_metric(parent_device, AF_INET6);
 
-    memset(&route, 0, sizeof(route));
-    route.ifindex = ifindex;
-    route.network = *vpn_gw;
-    route.plen    = 128;
-    if (parent_gw)
-        route.gateway = *parent_gw;
-    route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-    route.metric    = route_metric;
-    nm_ip6_config_add_route(config, &route, NULL);
+    route = (NMPlatformIP6Route){
+        .ifindex   = ifindex,
+        .network   = *vpn_gw,
+        .plen      = 128,
+        .gateway   = (parent_gw ? *parent_gw : in6addr_any),
+        .rt_source = NM_IP_CONFIG_SOURCE_VPN,
+        .metric    = route_metric,
+    };
+    nm_l3_config_data_add_route_6(l3cd, &route);
 
     /* Ensure there's a route to the parent device's gateway through the
      * parent device, since if the VPN claims the default route and the VPN
@@ -836,12 +829,13 @@ add_ip6_vpn_gateway_route(NMIP6Config *          config,
      * the parent device's gateway would get routed through the VPN and fail.
      */
     if (parent_gw && !IN6_IS_ADDR_UNSPECIFIED(parent_gw)) {
-        memset(&route, 0, sizeof(route));
-        route.network   = *parent_gw;
-        route.plen      = 128;
-        route.rt_source = NM_IP_CONFIG_SOURCE_VPN;
-        route.metric    = route_metric;
-        nm_ip6_config_add_route(config, &route, NULL);
+        route = (NMPlatformIP6Route){
+            .network   = *parent_gw,
+            .plen      = 128,
+            .rt_source = NM_IP_CONFIG_SOURCE_VPN,
+            .metric    = route_metric,
+        };
+        nm_l3_config_data_add_route_6(l3cd, &route);
     }
 }
 
@@ -988,14 +982,13 @@ plugin_state_changed(NMVpnConnection *self, NMVpnServiceState new_service_state)
 static void
 print_vpn_config(NMVpnConnection *self)
 {
-    NMVpnConnectionPrivate *    priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    const NMPlatformIP4Address *address4;
-    const NMPlatformIP6Address *address6;
-    char *                      dns_domain = NULL;
-    guint32                     num, i;
-    char                        b1[NM_UTILS_INET_ADDRSTRLEN];
-    char                        b2[NM_UTILS_INET_ADDRSTRLEN];
-    NMDedupMultiIter            ipconf_iter;
+    NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    const char *const *     strv;
+    guint                   num;
+    guint                   i;
+    char                    b1[NM_UTILS_INET_ADDRSTRLEN];
+    char                    sbuf1[sizeof(_nm_utils_to_string_buffer)];
+    NMDedupMultiIter        ipconf_iter;
 
     if (priv->ip4_external_gw) {
         _LOGI("Data: VPN Gateway: %s", _nm_utils_inet4_ntop(priv->ip4_external_gw, b1));
@@ -1005,78 +998,57 @@ print_vpn_config(NMVpnConnection *self)
 
     _LOGI("Data: Tunnel Device: %s%s%s", NM_PRINT_FMT_QUOTE_STRING(priv->ip_iface));
 
-    if (priv->ip4_config) {
-        const NMPlatformIP4Route *route;
+    for (i = 0; i < 2; i++) {
+        const gboolean        IS_IPv4     = (i == 0);
+        const int             addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+        const NML3ConfigData *l3cd        = priv->l3cd_x[IS_IPv4];
+        const NMPObject *     plobj;
+        const guint8 *        p_addrs;
 
-        _LOGI("Data: IPv4 configuration:");
-
-        address4 = nm_ip4_config_get_first_address(priv->ip4_config);
-        nm_assert(address4);
-
-        if (priv->ip4_internal_gw)
-            _LOGI("Data:   Internal Gateway: %s", _nm_utils_inet4_ntop(priv->ip4_internal_gw, b1));
-        _LOGI("Data:   Internal Address: %s",
-              address4 ? _nm_utils_inet4_ntop(address4->address, b1) : "??");
-        _LOGI("Data:   Internal Prefix: %d", address4 ? (int) address4->plen : -1);
-        _LOGI("Data:   Internal Point-to-Point Address: %s",
-              _nm_utils_inet4_ntop(address4->peer_address, b1));
-
-        nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, priv->ip4_config, &route) {
-            _LOGI("Data:   Static Route: %s/%d   Next Hop: %s",
-                  _nm_utils_inet4_ntop(route->network, b1),
-                  route->plen,
-                  _nm_utils_inet4_ntop(route->gateway, b2));
+        if (!l3cd) {
+            _LOGI("Data: No IPv%c configuration", nm_utils_addr_family_to_char(addr_family));
+            continue;
         }
 
-        num = nm_ip4_config_get_num_nameservers(priv->ip4_config);
-        for (i = 0; i < num; i++) {
-            _LOGI("Data:   Internal DNS: %s",
-                  _nm_utils_inet4_ntop(nm_ip4_config_get_nameserver(priv->ip4_config, i), b1));
+        _LOGI("Data: IPv%c configuration:", nm_utils_addr_family_to_char(addr_family));
+
+        nm_l3_config_data_iter_obj_for_each (&ipconf_iter,
+                                             l3cd,
+                                             &plobj,
+                                             NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
+            _LOGI("Data:   Internal Address: %s",
+                  nmp_object_to_string(plobj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof(sbuf1)));
         }
 
-        if (nm_ip4_config_get_num_domains(priv->ip4_config) > 0)
-            dns_domain = (char *) nm_ip4_config_get_domain(priv->ip4_config, 0);
-
-        _LOGI("Data:   DNS Domain: '%s'", dns_domain ?: "(none)");
-    } else
-        _LOGI("Data: No IPv4 configuration");
-
-    if (priv->ip6_config) {
-        const NMPlatformIP6Route *route;
-
-        _LOGI("Data: IPv6 configuration:");
-
-        address6 = nm_ip6_config_get_first_address(priv->ip6_config);
-        nm_assert(address6);
-
-        if (priv->ip6_internal_gw)
-            _LOGI("Data:   Internal Gateway: %s", _nm_utils_inet6_ntop(priv->ip6_internal_gw, b1));
-        _LOGI("Data:   Internal Address: %s", _nm_utils_inet6_ntop(&address6->address, b1));
-        _LOGI("Data:   Internal Prefix: %d", address6->plen);
-        _LOGI("Data:   Internal Point-to-Point Address: %s",
-              _nm_utils_inet6_ntop(&address6->peer_address, b1));
-
-        nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, priv->ip6_config, &route) {
-            _LOGI("Data:   Static Route: %s/%d   Next Hop: %s",
-                  _nm_utils_inet6_ntop(&route->network, b1),
-                  route->plen,
-                  _nm_utils_inet6_ntop(&route->gateway, b2));
+        if (IS_IPv4) {
+            if (priv->ip4_internal_gw)
+                _LOGI("Data:   Internal Gateway: %s",
+                      _nm_utils_inet4_ntop(priv->ip4_internal_gw, b1));
+        } else {
+            if (priv->ip6_internal_gw)
+                _LOGI("Data:   Internal Gateway: %s",
+                      _nm_utils_inet6_ntop(priv->ip6_internal_gw, b1));
         }
 
-        num = nm_ip6_config_get_num_nameservers(priv->ip6_config);
-        for (i = 0; i < num; i++) {
-            _LOGI("Data:   Internal DNS: %s",
-                  _nm_utils_inet6_ntop(nm_ip6_config_get_nameserver(priv->ip6_config, i), b1));
+        nm_l3_config_data_iter_obj_for_each (&ipconf_iter,
+                                             l3cd,
+                                             &plobj,
+                                             NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
+            _LOGI("Data:   Static Route: %s",
+                  nmp_object_to_string(plobj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof(sbuf1)));
         }
 
-        if (nm_ip6_config_get_num_domains(priv->ip6_config) > 0)
-            dns_domain = (char *) nm_ip6_config_get_domain(priv->ip6_config, 0);
+        p_addrs = nm_l3_config_data_get_nameservers(l3cd, addr_family, &num);
+        for (i = 0; i < num; i++, p_addrs += nm_utils_addr_family_to_size(addr_family)) {
+            _LOGI("Data:   Internal DNS: %s", nm_utils_inet_ntop(addr_family, p_addrs, b1));
+        }
 
-        _LOGI("Data:   DNS Domain: '%s'", dns_domain ?: "(none)");
-    } else
-        _LOGI("Data: No IPv6 configuration");
+        strv = nm_l3_config_data_get_domains(l3cd, addr_family, &num);
+        for (i = 0; i < num; i++)
+            _LOGI("Data:   DNS Domain: '%s'", strv[i]);
+    }
 
-    if (priv->banner && strlen(priv->banner)) {
+    if (!nm_str_is_empty(priv->banner)) {
         _LOGI("Data: Login Banner:");
         _LOGI("Data: -----------------------------------------");
         _LOGI("Data: %s", priv->banner);
@@ -1087,62 +1059,63 @@ print_vpn_config(NMVpnConnection *self)
 static void
 apply_parent_device_config(NMVpnConnection *self)
 {
-    NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    NMDevice *   parent_dev      = nm_active_connection_get_device(NM_ACTIVE_CONNECTION(self));
-    int          ifindex;
-    NMIP4Config *vpn4_parent_config = NULL;
-    NMIP6Config *vpn6_parent_config = NULL;
+#if 0
+	NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	NMDevice *parent_dev = nm_active_connection_get_device (NM_ACTIVE_CONNECTION (self));
+	int ifindex;
+	NMIP4Config *vpn4_parent_config = NULL;
+	NMIP6Config *vpn6_parent_config = NULL;
 
-    ifindex = nm_device_get_ip_ifindex(parent_dev);
-    if (ifindex > 0) {
-        /* If the VPN didn't return a network interface, it is a route-based
+	ifindex = nm_device_get_ip_ifindex (parent_dev);
+	if (ifindex > 0) {
+		/* If the VPN didn't return a network interface, it is a route-based
          * VPN (like kernel IPSec) and all IP addressing and routing should
          * be done on the parent interface instead.
          */
-        if (priv->ip4_config) {
-            vpn4_parent_config = nm_ip4_config_new(nm_netns_get_multi_idx(priv->netns), ifindex);
-            if (priv->ip_ifindex <= 0)
-                nm_ip4_config_merge(vpn4_parent_config,
-                                    priv->ip4_config,
-                                    NM_IP_CONFIG_MERGE_NO_DNS,
-                                    0);
-        }
-        if (priv->ip6_config) {
-            vpn6_parent_config = nm_ip6_config_new(nm_netns_get_multi_idx(priv->netns), ifindex);
-            if (priv->ip_ifindex <= 0)
-                nm_ip6_config_merge(vpn6_parent_config,
-                                    priv->ip6_config,
-                                    NM_IP_CONFIG_MERGE_NO_DNS,
-                                    0);
-        }
-    }
+		if (priv->ip4_config) {
+			vpn4_parent_config = nm_ip4_config_new (nm_netns_get_multi_idx (priv->netns),
+			                                        ifindex);
+			if (priv->ip_ifindex <= 0)
+				nm_ip4_config_merge (vpn4_parent_config, priv->ip4_config, NM_IP_CONFIG_MERGE_NO_DNS, 0);
+		}
+		if (priv->ip6_config) {
+			vpn6_parent_config = nm_ip6_config_new (nm_netns_get_multi_idx (priv->netns),
+			                                        ifindex);
+			if (priv->ip_ifindex <= 0)
+				nm_ip6_config_merge (vpn6_parent_config, priv->ip6_config, NM_IP_CONFIG_MERGE_NO_DNS, 0);
+		}
+	}
 
-    /* Add any explicit route to the VPN gateway through the parent device */
-    if (vpn4_parent_config && priv->ip4_external_gw) {
-        add_ip4_vpn_gateway_route(vpn4_parent_config,
-                                  parent_dev,
-                                  priv->ip4_external_gw,
-                                  nm_netns_get_platform(priv->netns));
-    }
-    if (vpn6_parent_config && priv->ip6_external_gw) {
-        add_ip6_vpn_gateway_route(vpn6_parent_config,
-                                  parent_dev,
-                                  priv->ip6_external_gw,
-                                  nm_netns_get_platform(priv->netns));
-    }
+	/* Add any explicit route to the VPN gateway through the parent device */
+	if (   vpn4_parent_config
+	    && priv->ip4_external_gw) {
+		add_ip4_vpn_gateway_route (vpn4_parent_config,
+		                           parent_dev,
+		                           priv->ip4_external_gw,
+		                           nm_netns_get_platform (priv->netns));
+	}
+	if (   vpn6_parent_config
+	    && priv->ip6_external_gw) {
+		add_ip6_vpn_gateway_route (vpn6_parent_config,
+		                           parent_dev,
+		                           priv->ip6_external_gw,
+		                           nm_netns_get_platform (priv->netns));
+	}
 
-    nm_device_replace_vpn4_config(parent_dev, priv->last_device_ip4_config, vpn4_parent_config);
-    g_clear_object(&priv->last_device_ip4_config);
-    priv->last_device_ip4_config = vpn4_parent_config;
+	nm_device_replace_vpn4_config (parent_dev, priv->last_device_ip4_config, vpn4_parent_config);
+	g_clear_object (&priv->last_device_ip4_config);
+	priv->last_device_ip4_config = vpn4_parent_config;
 
-    nm_device_replace_vpn6_config(parent_dev, priv->last_device_ip6_config, vpn6_parent_config);
-    g_clear_object(&priv->last_device_ip6_config);
-    priv->last_device_ip6_config = vpn6_parent_config;
+	nm_device_replace_vpn6_config (parent_dev, priv->last_device_ip6_config, vpn6_parent_config);
+	g_clear_object (&priv->last_device_ip6_config);
+	priv->last_device_ip6_config = vpn6_parent_config;
+#endif
 }
 
 static gboolean
 nm_vpn_connection_apply_config(NMVpnConnection *self)
 {
+#if 0
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     apply_parent_device_config(self);
@@ -1189,16 +1162,15 @@ nm_vpn_connection_apply_config(NMVpnConnection *self)
     _LOGI("VPN connection: (IP Config Get) complete");
     if (priv->vpn_state < STATE_PRE_UP)
         _set_vpn_state(self, STATE_PRE_UP, NM_ACTIVE_CONNECTION_STATE_REASON_NONE, FALSE);
+#endif
     return TRUE;
 }
 
 static void
 _cleanup_failed_config(NMVpnConnection *self)
 {
-    NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
-
-    nm_dbus_object_clear_and_unexport(&priv->ip4_config);
-    nm_dbus_object_clear_and_unexport(&priv->ip6_config);
+    //XXX nm_dbus_object_clear_and_unexport(&priv->ip4_config);
+    //XXX nm_dbus_object_clear_and_unexport(&priv->ip6_config);
 
     _LOGW("VPN connection: did not receive valid IP config information");
     _set_vpn_state(self, STATE_FAILED, NM_ACTIVE_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, FALSE);
@@ -1243,10 +1215,10 @@ nm_vpn_connection_config_maybe_complete(NMVpnConnection *self, gboolean success)
         return;
 
     if (success) {
-        if ((priv->has_ip4 && !priv->ip4_config) || (priv->has_ip6 && !priv->ip6_config)) {
-            /* Need to wait for other config */
-            return;
-        }
+        //XXX if ((priv->has_ip4 && !priv->ip4_config) || (priv->has_ip6 && !priv->ip6_config)) {
+        //XXX     /* Need to wait for other config */
+        //XXX     return;
+        //XXX }
     }
 
     nm_clear_g_source(&priv->connect_timeout);
@@ -1286,26 +1258,23 @@ ip6_addr_from_variant(GVariant *v, struct in6_addr *addr)
 
     g_return_val_if_fail(v, FALSE);
     g_return_val_if_fail(addr, FALSE);
+    nm_assert(g_variant_is_of_type(v, G_VARIANT_TYPE("ay")));
 
-    if (g_variant_is_of_type(v, G_VARIANT_TYPE("ay"))) {
-        bytes = g_variant_get_fixed_array(v, &len, sizeof(guint8));
-        if (len == sizeof(struct in6_addr) && !IN6_IS_ADDR_UNSPECIFIED(bytes)) {
-            memcpy(addr, bytes, len);
-            return TRUE;
-        }
+    bytes = g_variant_get_fixed_array(v, &len, sizeof(guint8));
+    if (len == sizeof(struct in6_addr) && !IN6_IS_ADDR_UNSPECIFIED(bytes)) {
+        memcpy(addr, bytes, len);
+        return TRUE;
     }
     return FALSE;
 }
 
 static struct in6_addr *
-ip6_addr_dup_from_variant(GVariant *v)
+ip6_addr_from_variant_dup(GVariant *v)
 {
-    struct in6_addr *addr;
+    struct in6_addr addr;
 
-    addr = g_malloc0(sizeof(*addr));
-    if (ip6_addr_from_variant(v, addr))
-        return addr;
-    g_free(addr);
+    if (ip6_addr_from_variant(v, &addr))
+        return nm_memdup(&addr, sizeof(addr));
     return NULL;
 }
 
@@ -1356,19 +1325,15 @@ process_generic_config(NMVpnConnection *self, GVariant *dict)
         _notify(self, PROP_BANNER);
     }
 
-    /* Proxy Config */
-    g_clear_object(&priv->proxy_config);
-    priv->proxy_config = nm_proxy_config_new();
+    //XXX if (g_variant_lookup(dict, NM_VPN_PLUGIN_CONFIG_PROXY_PAC, "&s", &str)) {
+    //XXX     nm_proxy_config_set_method(priv->proxy_config, NM_PROXY_CONFIG_METHOD_AUTO);
+    //XXX     nm_proxy_config_set_pac_url(priv->proxy_config, str);
+    //XXX } else
+    //XXX     nm_proxy_config_set_method(priv->proxy_config, NM_PROXY_CONFIG_METHOD_NONE);
 
-    if (g_variant_lookup(dict, NM_VPN_PLUGIN_CONFIG_PROXY_PAC, "&s", &str)) {
-        nm_proxy_config_set_method(priv->proxy_config, NM_PROXY_CONFIG_METHOD_AUTO);
-        nm_proxy_config_set_pac_url(priv->proxy_config, str);
-    } else
-        nm_proxy_config_set_method(priv->proxy_config, NM_PROXY_CONFIG_METHOD_NONE);
-
-    /* User overrides if any from the NMConnection's Proxy settings */
-    nm_proxy_config_merge_setting(priv->proxy_config,
-                                  nm_connection_get_setting_proxy(_get_applied_connection(self)));
+    //XXX /* User overrides if any from the NMConnection's Proxy settings */
+    //XXX nm_proxy_config_merge_setting(priv->proxy_config,
+    //XXX                               nm_connection_get_setting_proxy(_get_applied_connection(self)));
 
     /* External world-visible address of the VPN server */
     priv->ip4_external_gw = 0;
@@ -1377,7 +1342,7 @@ process_generic_config(NMVpnConnection *self, GVariant *dict)
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "u", &u32)) {
         priv->ip4_external_gw = u32;
     } else if (g_variant_lookup(dict, NM_VPN_PLUGIN_CONFIG_EXT_GATEWAY, "@ay", &v)) {
-        priv->ip6_external_gw = ip6_addr_dup_from_variant(v);
+        priv->ip6_external_gw = ip6_addr_from_variant_dup(v);
         g_variant_unref(v);
 
         if (!priv->ip6_external_gw) {
@@ -1414,12 +1379,12 @@ nm_vpn_connection_config_get(NMVpnConnection *self, GVariant *dict)
     priv->has_ip4 = FALSE;
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_CONFIG_HAS_IP4, "b", &b))
         priv->has_ip4 = b;
-    nm_dbus_object_clear_and_unexport(&priv->ip4_config);
+    //XXX nm_dbus_object_clear_and_unexport(&priv->ip4_config);
 
     priv->has_ip6 = FALSE;
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_CONFIG_HAS_IP6, "b", &b))
         priv->has_ip6 = b;
-    nm_dbus_object_clear_and_unexport(&priv->ip6_config);
+    //XXX nm_dbus_object_clear_and_unexport(&priv->ip6_config);
 
     nm_vpn_connection_config_maybe_complete(self, TRUE);
 }
@@ -1469,7 +1434,8 @@ get_route_table(NMVpnConnection *self, int addr_family, gboolean fallback_main)
     return route_table ?: (fallback_main ? RT_TABLE_MAIN : 0);
 }
 
-static gboolean
+//XXX
+_nm_unused static gboolean
 _is_device_vrf(NMVpnConnection *self)
 {
     NMDevice *parent;
@@ -1486,20 +1452,20 @@ _is_device_vrf(NMVpnConnection *self)
 static void
 nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
 {
-    NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    NMPlatformIP4Address    address;
-    guint32                 u32, route_metric;
-    NMSettingIPConfig *     s_ip;
-    NMSettingConnection *   s_con;
-    guint32                 route_table;
-    NMIP4Config *           config;
-    GVariantIter *          iter;
-    const char *            str;
-    GVariant *              v;
-    gboolean                b;
-    int                     ip_ifindex;
-    guint32                 mss           = 0;
-    gboolean                never_default = FALSE;
+    NMVpnConnectionPrivate *priv                 = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    NMPlatformIP4Address                    address;
+    guint32                                 u32, route_metric;
+    NMSettingIPConfig *                     s_ip;
+    NMSettingConnection *                   s_con;
+    guint32                                 route_table;
+    GVariantIter *                          iter;
+    const char *                            str;
+    GVariant *                              v;
+    gboolean                                b;
+    int                                     ip_ifindex;
+    guint32                                 mss           = 0;
+    gboolean                                never_default = FALSE;
 
     g_return_if_fail(dict && g_variant_is_of_type(dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1536,11 +1502,15 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
     if (ip_ifindex <= 0)
         g_return_if_reached();
 
-    config = nm_ip4_config_new(nm_netns_get_multi_idx(priv->netns), ip_ifindex);
-    nm_ip4_config_set_dns_priority(config, NM_DNS_PRIORITY_DEFAULT_VPN);
+    l3cd = nm_l3_config_data_new(nm_netns_get_multi_idx(priv->netns),
+                                 ip_ifindex,
+                                 NM_IP_CONFIG_SOURCE_VPN);
 
-    memset(&address, 0, sizeof(address));
-    address.plen = 24;
+    nm_l3_config_data_set_dns_priority(l3cd, AF_INET, NM_DNS_PRIORITY_DEFAULT_VPN);
+
+    address = (NMPlatformIP4Address){
+        .plen = 24,
+    };
 
     /* Internal address of the VPN subnet's gateway */
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY, "u", &u32))
@@ -1559,23 +1529,22 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
 
     if (address.address && address.plen && address.plen <= 32) {
         address.addr_source = NM_IP_CONFIG_SOURCE_VPN;
-        nm_ip4_config_add_address(config, &address);
+        nm_l3_config_data_add_address_4(l3cd, &address);
     } else {
         _LOGW("invalid IP4 config received!");
-        g_object_unref(config);
         nm_vpn_connection_config_maybe_complete(self, FALSE);
         return;
     }
 
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_DNS, "au", &iter)) {
         while (g_variant_iter_next(iter, "u", &u32))
-            nm_ip4_config_add_nameserver(config, u32);
+            nm_l3_config_data_add_nameserver(l3cd, AF_INET, &u32);
         g_variant_iter_free(iter);
     }
 
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_NBNS, "au", &iter)) {
         while (g_variant_iter_next(iter, "u", &u32))
-            nm_ip4_config_add_wins(config, u32);
+            nm_l3_config_data_add_wins(l3cd, u32);
         g_variant_iter_free(iter);
     }
 
@@ -1583,11 +1552,11 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
         mss = u32;
 
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN, "&s", &str))
-        nm_ip4_config_add_domain(config, str);
+        nm_l3_config_data_add_domain(l3cd, AF_INET, str);
 
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_DOMAINS, "as", &iter)) {
         while (g_variant_iter_next(iter, "&s", &str))
-            nm_ip4_config_add_domain(config, str);
+            nm_l3_config_data_add_domain(l3cd, AF_INET, str);
         g_variant_iter_free(iter);
     }
 
@@ -1599,12 +1568,12 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
     if (nm_setting_ip_config_get_ignore_auto_routes(s_ip)) {
         /* ignore VPN routes */
     } else if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_PRESERVE_ROUTES, "b", &b) && b) {
-        if (priv->ip4_config) {
-            NMDedupMultiIter          ipconf_iter;
+        if (priv->l3cd_4) {
             const NMPlatformIP4Route *route;
+            NMDedupMultiIter          ipconf_iter;
 
-            nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, priv->ip4_config, &route)
-                nm_ip4_config_add_route(config, route, NULL);
+            nm_l3_config_data_iter_ip4_route_for_each (&ipconf_iter, priv->l3cd_4, &route)
+                nm_l3_config_data_add_route_4(l3cd, route);
         }
     } else if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, "aau", &iter)) {
         while (g_variant_iter_next(iter, "@au", &v)) {
@@ -1641,7 +1610,7 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
                     break;
                 }
 
-                nm_ip4_config_add_route(config, &route, NULL);
+                nm_l3_config_data_add_route_4(l3cd, &route);
                 break;
             default:
                 break;
@@ -1655,12 +1624,14 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
         never_default = b;
 
     /* Merge in user overrides from the NMConnection's IPv4 setting */
-    nm_ip4_config_merge_setting(config,
-                                s_ip,
-                                nm_setting_connection_get_mdns(s_con),
-                                nm_setting_connection_get_llmnr(s_con),
-                                route_table,
-                                route_metric);
+    (void) s_con;
+    //XXX
+    //nm_ip4_config_merge_setting (config,
+    //                             s_ip,
+    //                             nm_setting_connection_get_mdns (s_con),
+    //                             nm_setting_connection_get_llmnr (s_con),
+    //                             route_table,
+    //                             route_metric);
 
     if (!never_default && !nm_setting_ip_config_get_never_default(s_ip)) {
         const NMPlatformIP4Route r = {
@@ -1672,45 +1643,47 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
             .mss           = mss,
         };
 
-        nm_ip4_config_add_route(config, &r, NULL);
+        nm_l3_config_data_add_route_4(l3cd, &r);
     }
 
-    nm_clear_pointer(&priv->ip4_dev_route_blacklist, g_ptr_array_unref);
+    //XXX nm_l3_config_data_add_dependent_routes(l3cd,
+    //XXX                                        AF_INET,
+    //XXX                                        route_table,
+    //XXX                                        nm_vpn_connection_get_ip4_route_metric(self),
+    //XXX                                        _is_device_vrf(self));
 
-    nm_ip4_config_add_dependent_routes(config,
-                                       route_table,
-                                       nm_vpn_connection_get_ip4_route_metric(self),
-                                       _is_device_vrf(self),
-                                       &priv->ip4_dev_route_blacklist);
+    //XXX
+#if 0
+	if (priv->ip4_config) {
+		nm_ip4_config_replace (priv->ip4_config, config, NULL);
+		g_object_unref (config);
+	} else {
+		priv->ip4_config = config;
+		nm_dbus_object_export (NM_DBUS_OBJECT (config));
+		g_object_notify ((GObject *) self, NM_ACTIVE_CONNECTION_IP4_CONFIG);
+	}
 
-    if (priv->ip4_config) {
-        nm_ip4_config_replace(priv->ip4_config, config, NULL);
-        g_object_unref(config);
-    } else {
-        priv->ip4_config = config;
-        nm_dbus_object_export(NM_DBUS_OBJECT(config));
-        g_object_notify((GObject *) self, NM_ACTIVE_CONNECTION_IP4_CONFIG);
-    }
-
-    nm_vpn_connection_config_maybe_complete(self, TRUE);
+	nm_vpn_connection_config_maybe_complete (self, TRUE);
+#endif
 }
 
 static void
 nm_vpn_connection_ip6_config_get(NMVpnConnection *self, GVariant *dict)
 {
-    NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    NMPlatformIP6Address    address;
-    guint32                 u32, route_metric;
-    NMSettingIPConfig *     s_ip;
-    guint32                 route_table;
-    NMIP6Config *           config;
-    GVariantIter *          iter;
-    const char *            str;
-    GVariant *              v;
-    gboolean                b;
-    int                     ip_ifindex;
-    guint32                 mss           = 0;
-    gboolean                never_default = FALSE;
+    NMVpnConnectionPrivate *priv                 = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    NMPlatformIP6Address                    address;
+    guint32                                 u32;
+    guint32                                 route_metric;
+    NMSettingIPConfig *                     s_ip;
+    guint32                                 route_table;
+    GVariantIter *                          iter;
+    const char *                            str;
+    GVariant *                              v;
+    gboolean                                b;
+    int                                     ip_ifindex;
+    guint32                                 mss           = 0;
+    gboolean                                never_default = FALSE;
 
     g_return_if_fail(dict && g_variant_is_of_type(dict, G_VARIANT_TYPE_VARDICT));
 
@@ -1734,16 +1707,20 @@ nm_vpn_connection_ip6_config_get(NMVpnConnection *self, GVariant *dict)
     if (ip_ifindex <= 0)
         g_return_if_reached();
 
-    config = nm_ip6_config_new(nm_netns_get_multi_idx(priv->netns), ip_ifindex);
-    nm_ip6_config_set_dns_priority(config, NM_DNS_PRIORITY_DEFAULT_VPN);
+    l3cd = nm_l3_config_data_new(nm_netns_get_multi_idx(priv->netns),
+                                 ip_ifindex,
+                                 NM_IP_CONFIG_SOURCE_VPN);
 
-    memset(&address, 0, sizeof(address));
-    address.plen = 128;
+    nm_l3_config_data_set_dns_priority(l3cd, AF_INET6, NM_DNS_PRIORITY_DEFAULT_VPN);
+
+    address = (NMPlatformIP6Address){
+        .plen = 128,
+    };
 
     /* Internal address of the VPN subnet's gateway */
     nm_clear_g_free(&priv->ip6_internal_gw);
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_INT_GATEWAY, "@ay", &v)) {
-        priv->ip6_internal_gw = ip6_addr_dup_from_variant(v);
+        priv->ip6_internal_gw = ip6_addr_from_variant_dup(v);
         g_variant_unref(v);
     }
 
@@ -1762,10 +1739,9 @@ nm_vpn_connection_ip6_config_get(NMVpnConnection *self, GVariant *dict)
 
     if (!IN6_IS_ADDR_UNSPECIFIED(&address.address) && address.plen && address.plen <= 128) {
         address.addr_source = NM_IP_CONFIG_SOURCE_VPN;
-        nm_ip6_config_add_address(config, &address);
+        nm_l3_config_data_add_address_6(l3cd, &address);
     } else {
         _LOGW("invalid IP6 config received!");
-        g_object_unref(config);
         nm_vpn_connection_config_maybe_complete(self, FALSE);
         return;
     }
@@ -1775,7 +1751,7 @@ nm_vpn_connection_ip6_config_get(NMVpnConnection *self, GVariant *dict)
             struct in6_addr dns;
 
             if (ip6_addr_from_variant(v, &dns))
-                nm_ip6_config_add_nameserver(config, &dns);
+                nm_l3_config_data_add_nameserver(l3cd, AF_INET6, &dns);
             g_variant_unref(v);
         }
         g_variant_iter_free(iter);
@@ -1785,11 +1761,11 @@ nm_vpn_connection_ip6_config_get(NMVpnConnection *self, GVariant *dict)
         mss = u32;
 
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_DOMAIN, "&s", &str))
-        nm_ip6_config_add_domain(config, str);
+        nm_l3_config_data_add_domain(l3cd, AF_INET6, str);
 
     if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_DOMAINS, "as", &iter)) {
         while (g_variant_iter_next(iter, "&s", &str))
-            nm_ip6_config_add_domain(config, str);
+            nm_l3_config_data_add_domain(l3cd, AF_INET6, str);
         g_variant_iter_free(iter);
     }
 
@@ -1800,33 +1776,41 @@ nm_vpn_connection_ip6_config_get(NMVpnConnection *self, GVariant *dict)
     if (nm_setting_ip_config_get_ignore_auto_routes(s_ip)) {
         /* Ignore VPN routes */
     } else if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_PRESERVE_ROUTES, "b", &b) && b) {
-        if (priv->ip6_config) {
-            NMDedupMultiIter          ipconf_iter;
-            const NMPlatformIP6Route *route;
+        if (priv->l3cd_6) {
+            NMDedupMultiIter ipconf_iter;
+            const NMPObject *route;
 
-            nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, priv->ip6_config, &route)
-                nm_ip6_config_add_route(config, route, NULL);
+            nm_l3_config_data_iter_obj_for_each (&ipconf_iter,
+                                                 priv->l3cd_6,
+                                                 &route,
+                                                 NMP_OBJECT_TYPE_IP6_ROUTE)
+                nm_l3_config_data_add_route(l3cd, AF_INET6, route, NULL);
         }
     } else if (g_variant_lookup(dict, NM_VPN_PLUGIN_IP6_CONFIG_ROUTES, "a(ayuayu)", &iter)) {
-        GVariant *dest, *next_hop;
-        guint32   prefix, metric;
+        GVariant *next_hop;
+        GVariant *dest;
+        guint32   prefix;
+        guint32   metric;
 
         while (g_variant_iter_next(iter, "(@ayu@ayu)", &dest, &prefix, &next_hop, &metric)) {
-            NMPlatformIP6Route route;
-
-            memset(&route, 0, sizeof(route));
-
-            if (!ip6_addr_from_variant(dest, &route.network))
-                goto next;
+            _nm_unused gs_unref_variant GVariant *nexT_hop_keep_alive = next_hop;
+            _nm_unused gs_unref_variant GVariant *dest_keep_alive     = dest;
+            NMPlatformIP6Route                    route;
 
             if (prefix > 128)
-                goto next;
+                continue;
 
-            route.plen = prefix;
+            route = (NMPlatformIP6Route){
+                .plen          = prefix,
+                .table_coerced = nm_platform_route_table_coerce(route_table),
+                .metric        = route_metric,
+                .rt_source     = NM_IP_CONFIG_SOURCE_VPN,
+            };
+
+            if (!ip6_addr_from_variant(dest, &route.network))
+                continue;
+
             ip6_addr_from_variant(next_hop, &route.gateway);
-            route.table_coerced = nm_platform_route_table_coerce(route_table);
-            route.metric        = route_metric;
-            route.rt_source     = NM_IP_CONFIG_SOURCE_VPN;
 
             nm_utils_ip6_address_clear_host_address(&route.network, &route.network, route.plen);
 
@@ -1837,14 +1821,10 @@ nm_vpn_connection_ip6_config_get(NMVpnConnection *self, GVariant *dict)
                  * server, we want to use the NM created route instead of whatever
                  * the server provides.
                  */
-                goto next;
+                continue;
             }
 
-            nm_ip6_config_add_route(config, &route, NULL);
-
-next:
-            g_variant_unref(dest);
-            g_variant_unref(next_hop);
+            nm_l3_config_data_add_route_6(l3cd, &route);
         }
         g_variant_iter_free(iter);
     }
@@ -1853,7 +1833,12 @@ next:
         never_default = b;
 
     /* Merge in user overrides from the NMConnection's IPv6 setting */
-    nm_ip6_config_merge_setting(config, s_ip, route_table, route_metric);
+    //XXX
+    (void) s_ip;
+    //nm_ip6_config_merge_setting (config,
+    //                             s_ip,
+    //                             route_table,
+    //                             route_metric);
 
     if (!never_default && !nm_setting_ip_config_get_never_default(s_ip)) {
         const NMPlatformIP6Route r = {
@@ -1865,19 +1850,26 @@ next:
             .mss           = mss,
         };
 
-        nm_ip6_config_add_route(config, &r, NULL);
+        nm_l3_config_data_add_route_6(l3cd, &r);
     }
 
-    nm_ip6_config_add_dependent_routes(config, route_table, route_metric, _is_device_vrf(self));
+    //XXX nm_l3_config_data_add_dependent_routes(l3cd,
+    //XXX                                        AF_INET6,
+    //XXX                                        route_table,
+    //XXX                                        route_metric,
+    //XXX                                        _is_device_vrf(self));
 
-    if (priv->ip6_config) {
-        nm_ip6_config_replace(priv->ip6_config, config, NULL);
-        g_object_unref(config);
-    } else {
-        priv->ip6_config = config;
-        nm_dbus_object_export(NM_DBUS_OBJECT(config));
-        g_object_notify((GObject *) self, NM_ACTIVE_CONNECTION_IP6_CONFIG);
-    }
+    //XXX
+#if 0
+	if (priv->ip6_config) {
+		nm_ip6_config_replace (priv->ip6_config, config, NULL);
+		g_object_unref (config);
+	} else {
+		priv->ip6_config = config;
+		nm_dbus_object_export (NM_DBUS_OBJECT (config));
+		g_object_notify ((GObject *) self, NM_ACTIVE_CONNECTION_IP6_CONFIG);
+	}
+#endif
 
     nm_vpn_connection_config_maybe_complete(self, TRUE);
 }
@@ -2423,28 +2415,12 @@ nm_vpn_connection_get_banner(NMVpnConnection *self)
     return NM_VPN_CONNECTION_GET_PRIVATE(self)->banner;
 }
 
-NMProxyConfig *
-nm_vpn_connection_get_proxy_config(NMVpnConnection *self)
+const NML3ConfigData *
+nm_vpn_connection_get_l3cd(NMVpnConnection *self, int addr_family)
 {
     g_return_val_if_fail(NM_IS_VPN_CONNECTION(self), NULL);
 
-    return NM_VPN_CONNECTION_GET_PRIVATE(self)->proxy_config;
-}
-
-NMIP4Config *
-nm_vpn_connection_get_ip4_config(NMVpnConnection *self)
-{
-    g_return_val_if_fail(NM_IS_VPN_CONNECTION(self), NULL);
-
-    return NM_VPN_CONNECTION_GET_PRIVATE(self)->ip4_config;
-}
-
-NMIP6Config *
-nm_vpn_connection_get_ip6_config(NMVpnConnection *self)
-{
-    g_return_val_if_fail(NM_IS_VPN_CONNECTION(self), NULL);
-
-    return NM_VPN_CONNECTION_GET_PRIVATE(self)->ip6_config;
+    return NM_VPN_CONNECTION_GET_PRIVATE(self)->l3cd_x[NM_IS_IPv4(addr_family)];
 }
 
 static int
@@ -2820,8 +2796,6 @@ dispose(GObject *object)
 
     nm_clear_pointer(&priv->connect_hash, g_variant_unref);
 
-    nm_clear_pointer(&priv->ip4_dev_route_blacklist, g_ptr_array_unref);
-
     nm_clear_g_source(&priv->connect_timeout);
 
     dispatcher_cleanup(self);
@@ -2830,9 +2804,6 @@ dispose(GObject *object)
 
     nm_clear_g_cancellable(&priv->cancellable);
 
-    g_clear_object(&priv->proxy_config);
-    nm_dbus_object_clear_and_unexport(&priv->ip4_config);
-    nm_dbus_object_clear_and_unexport(&priv->ip6_config);
     g_clear_object(&priv->proxy);
     g_clear_object(&priv->plugin_info);
 
@@ -2859,7 +2830,8 @@ finalize(GObject *object)
     g_clear_object(&priv->netns);
 }
 
-static gboolean
+//XXX
+_nm_unused static gboolean
 ip_config_valid(VpnState state)
 {
     return (state == STATE_PRE_UP || state == STATE_ACTIVATED);
@@ -2879,14 +2851,14 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_string(value, priv->banner ?: "");
         break;
     case PROP_IP4_CONFIG:
-        nm_dbus_utils_g_value_set_object_path(value,
-                                              ip_config_valid(priv->vpn_state) ? priv->ip4_config
-                                                                               : NULL);
+        //XXX nm_dbus_utils_g_value_set_object_path(value,
+        //XXX                                       ip_config_valid(priv->vpn_state) ? priv->ip4_config
+        //XXX                                                                        : NULL);
         break;
     case PROP_IP6_CONFIG:
-        nm_dbus_utils_g_value_set_object_path(value,
-                                              ip_config_valid(priv->vpn_state) ? priv->ip6_config
-                                                                               : NULL);
+        //XXX nm_dbus_utils_g_value_set_object_path(value,
+        //XXX                                       ip_config_valid(priv->vpn_state) ? priv->ip6_config
+        //XXX                                                                        : NULL);
         break;
     case PROP_MASTER:
         parent_dev = nm_active_connection_get_device(NM_ACTIVE_CONNECTION(object));

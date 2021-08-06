@@ -13,7 +13,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
 #include "nm-act-request.h"
-#include "nm-ip4-config.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"

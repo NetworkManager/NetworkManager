@@ -20,20 +20,18 @@
 
 /*****************************************************************************/
 
-static NMIP4Config *
-_ip4_config_from_options(int ifindex, const char *iface, GHashTable *options, guint32 route_metric)
+static const NML3ConfigData *
+_ip4_config_from_options(int ifindex, const char *iface, GHashTable *options)
 {
     nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = nm_dedup_multi_index_new();
-    NMIP4Config *                                      config;
+    NML3ConfigData *                                   l3cd;
 
-    config = nm_dhcp_utils_ip4_config_from_options(multi_idx,
-                                                   ifindex,
-                                                   iface,
-                                                   options,
-                                                   RT_TABLE_MAIN,
-                                                   route_metric);
-    g_assert(config);
-    return config;
+    l3cd = nm_dhcp_utils_ip4_config_from_options(multi_idx, ifindex, iface, options);
+    g_assert(NM_IS_L3_CONFIG_DATA(l3cd));
+    g_assert(!nm_l3_config_data_is_sealed(l3cd));
+    if (nmtst_get_rand_bool())
+        nm_l3_config_data_seal(l3cd);
+    return l3cd;
 }
 
 typedef struct {
@@ -74,58 +72,57 @@ static const Option generic_options[] = {
 static void
 test_generic_options(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config = NULL;
-    const NMPlatformIP4Address * address;
-    const NMPlatformIP4Route *   route;
-    guint32                      tmp;
-    const char *                 expected_addr        = "192.168.1.106";
-    const char *                 expected_gw          = "192.168.1.1";
-    const char *                 expected_dns1        = "216.254.95.2";
-    const char *                 expected_dns2        = "216.231.41.2";
-    const char *                 expected_search1     = "foobar.com";
-    const char *                 expected_search2     = "blah.foobar.com";
-    const char *                 expected_route1_dest = "10.1.1.5";
-    const char *                 expected_route1_gw   = "10.1.1.1";
-    const char *                 expected_route2_dest = "100.99.88.56";
-    const char *                 expected_route2_gw   = "10.1.1.1";
+    gs_unref_hashtable GHashTable *options        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
+    const NMPlatformIP4Address *             address;
+    const NMPlatformIP4Route *               route;
+    guint32                                  tmp;
+    const char *                             expected_addr        = "192.168.1.106";
+    const char *                             expected_gw          = "192.168.1.1";
+    const char *                             expected_dns1        = "216.254.95.2";
+    const char *                             expected_dns2        = "216.231.41.2";
+    const char *                             expected_search1     = "foobar.com";
+    const char *                             expected_search2     = "blah.foobar.com";
+    const char *                             expected_route1_dest = "10.1.1.5";
+    const char *                             expected_route1_gw   = "10.1.1.1";
+    const char *                             expected_route2_dest = "100.99.88.56";
+    const char *                             expected_route2_gw   = "10.1.1.1";
+    const char *const *                      strarr;
+    const in_addr_t *                        ia_arr;
+    guint                                    u;
 
-    options    = fill_table(generic_options, NULL);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    options = fill_table(generic_options, NULL);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
 
-    /* IP4 address */
-    g_assert_cmpint(nm_ip4_config_get_num_addresses(ip4_config), ==, 1);
-    address = _nmtst_ip4_config_get_address(ip4_config, 0);
+    g_assert_cmpint(nm_l3_config_data_get_num_addresses(l3cd, AF_INET), ==, 1);
+    address = nmtst_l3_config_data_get_address_at_4(l3cd, 0);
     g_assert(inet_pton(AF_INET, expected_addr, &tmp) > 0);
     g_assert(address->address == tmp);
     g_assert(address->peer_address == tmp);
     g_assert_cmpint(address->plen, ==, 24);
 
-    /* Gateway */
-    g_assert(inet_pton(AF_INET, expected_gw, &tmp) > 0);
-    g_assert(nmtst_ip4_config_get_gateway(ip4_config) == tmp);
+    nmtst_assert_ip_address(AF_INET,
+                            nmtst_l3_config_data_get_best_gateway(l3cd, AF_INET),
+                            expected_gw);
 
-    g_assert_cmpint(nm_ip4_config_get_num_wins(ip4_config), ==, 0);
+    g_assert(!nm_l3_config_data_get_wins(l3cd, &u));
+    g_assert_cmpint(u, ==, 0);
 
-    g_assert_cmpint(nm_ip4_config_get_mtu(ip4_config), ==, 987);
+    g_assert_cmpint(nm_l3_config_data_get_mtu(l3cd), ==, 987);
 
-    /* Domain searches */
-    g_assert_cmpint(nm_ip4_config_get_num_searches(ip4_config), ==, 2);
-    g_assert_cmpstr(nm_ip4_config_get_search(ip4_config, 0), ==, expected_search1);
-    g_assert_cmpstr(nm_ip4_config_get_search(ip4_config, 1), ==, expected_search2);
+    strarr = nm_l3_config_data_get_searches(l3cd, AF_INET, &u);
+    g_assert_cmpint(u, ==, 2);
+    g_assert_cmpstr(strarr[0], ==, expected_search1);
+    g_assert_cmpstr(strarr[1], ==, expected_search2);
 
-    /* DNS servers */
-    g_assert_cmpint(nm_ip4_config_get_num_nameservers(ip4_config), ==, 2);
-    g_assert(inet_pton(AF_INET, expected_dns1, &tmp) > 0);
-    g_assert(nm_ip4_config_get_nameserver(ip4_config, 0) == tmp);
-    g_assert(inet_pton(AF_INET, expected_dns2, &tmp) > 0);
-    g_assert(nm_ip4_config_get_nameserver(ip4_config, 1) == tmp);
+    ia_arr = nm_l3_config_data_get_nameservers(l3cd, AF_INET, &u);
+    g_assert_cmpint(u, ==, 2);
+    nmtst_assert_ip4_address(ia_arr[0], expected_dns1);
+    nmtst_assert_ip4_address(ia_arr[1], expected_dns2);
 
-    /* Routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 3);
 
-    /* Route #1 */
-    route = _nmtst_ip4_config_get_route(ip4_config, 0);
+    route = nmtst_l3_config_data_get_route_at_4(l3cd, 0);
     g_assert(inet_pton(AF_INET, expected_route1_dest, &tmp) > 0);
     g_assert(route->network == tmp);
     g_assert(inet_pton(AF_INET, expected_route1_gw, &tmp) > 0);
@@ -133,69 +130,63 @@ test_generic_options(void)
     g_assert_cmpint(route->plen, ==, 32);
     g_assert_cmpint(route->metric, ==, 0);
 
-    /* Route #2 */
-    route = _nmtst_ip4_config_get_route(ip4_config, 1);
+    route = nmtst_l3_config_data_get_route_at_4(l3cd, 1);
     g_assert(route->network == nmtst_inet4_from_string(expected_route2_dest));
     g_assert(route->gateway == nmtst_inet4_from_string(expected_route2_gw));
     g_assert_cmpint(route->plen, ==, 32);
     g_assert_cmpint(route->metric, ==, 0);
 
-    route = _nmtst_ip4_config_get_route(ip4_config, 2);
+    route = nmtst_l3_config_data_get_route_at_4(l3cd, 2);
     g_assert(route->network == nmtst_inet4_from_string("0.0.0.0"));
     g_assert(route->gateway == nmtst_inet4_from_string("192.168.1.1"));
     g_assert_cmpint(route->plen, ==, 0);
     g_assert_cmpint(route->metric, ==, 0);
-
-    g_hash_table_destroy(options);
 }
 
 static void
 test_wins_options(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config = NULL;
-    const NMPlatformIP4Address * address;
-    guint32                      tmp;
-    const char *                 expected_wins1 = "63.12.199.5";
-    const char *                 expected_wins2 = "150.4.88.120";
-    static const Option          data[] = {{"netbios_name_servers", "63.12.199.5 150.4.88.120"},
+    gs_unref_hashtable GHashTable *options        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
+    const NMPlatformIP4Address *             address;
+    const char *                             expected_wins1 = "63.12.199.5";
+    const char *                             expected_wins2 = "150.4.88.120";
+    static const Option data[] = {{"netbios_name_servers", "63.12.199.5 150.4.88.120"},
                                   {NULL, NULL}};
+    const in_addr_t *   ia_arr;
+    guint               u;
 
-    options    = fill_table(generic_options, NULL);
-    options    = fill_table(data, options);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    options = fill_table(generic_options, NULL);
+    options = fill_table(data, options);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
 
-    /* IP4 address */
-    g_assert_cmpint(nm_ip4_config_get_num_addresses(ip4_config), ==, 1);
-    address = _nmtst_ip4_config_get_address(ip4_config, 0);
+    g_assert_cmpint(nm_l3_config_data_get_num_addresses(l3cd, AF_INET), ==, 1);
+    address = nmtst_l3_config_data_get_address_at_4(l3cd, 0);
     g_assert(address);
-    g_assert_cmpint(nm_ip4_config_get_num_wins(ip4_config), ==, 2);
-    g_assert(inet_pton(AF_INET, expected_wins1, &tmp) > 0);
-    g_assert(nm_ip4_config_get_wins(ip4_config, 0) == tmp);
-    g_assert(inet_pton(AF_INET, expected_wins2, &tmp) > 0);
-    g_assert(nm_ip4_config_get_wins(ip4_config, 1) == tmp);
 
-    g_hash_table_destroy(options);
+    ia_arr = nm_l3_config_data_get_wins(l3cd, &u);
+    g_assert_cmpint(u, ==, 2);
+    nmtst_assert_ip4_address(ia_arr[0], expected_wins1);
+    nmtst_assert_ip4_address(ia_arr[1], expected_wins2);
 }
 
 static void
 test_vendor_option_metered(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config = NULL;
+    gs_unref_hashtable GHashTable *options        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
     static const Option data[] = {{"vendor_encapsulated_options", "ANDROID_METERED"}, {NULL, NULL}};
 
-    options    = fill_table(generic_options, NULL);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
-    g_assert(nm_ip4_config_get_metered(ip4_config) == FALSE);
-    g_hash_table_destroy(options);
-    g_clear_object(&ip4_config);
+    options = fill_table(generic_options, NULL);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
+    g_assert(nm_l3_config_data_get_metered(l3cd) == NM_TERNARY_DEFAULT);
+    nm_clear_pointer(&options, g_hash_table_destroy);
+    nm_clear_l3cd(&l3cd);
 
-    options    = fill_table(generic_options, NULL);
-    options    = fill_table(data, options);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
-    g_assert(nm_ip4_config_get_metered(ip4_config) == TRUE);
-    g_hash_table_destroy(options);
+    options = fill_table(generic_options, NULL);
+    options = fill_table(data, options);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
+    g_assert(nm_l3_config_data_get_metered(l3cd) == TRUE);
 }
 
 static void
@@ -252,18 +243,18 @@ test_parse_search_list(void)
 }
 
 static void
-ip4_test_route(NMIP4Config *ip4_config,
-               guint        route_num,
-               const char * expected_dest,
-               const char * expected_gw,
-               guint        expected_prefix)
+ip4_test_route(const NML3ConfigData *l3cd,
+               guint                 route_num,
+               const char *          expected_dest,
+               const char *          expected_gw,
+               guint                 expected_prefix)
 {
     const NMPlatformIP4Route *route;
     guint32                   tmp;
 
     g_assert(expected_prefix <= 32);
 
-    route = _nmtst_ip4_config_get_route(ip4_config, route_num);
+    route = nmtst_l3_config_data_get_route_at_4(l3cd, route_num);
     g_assert(inet_pton(AF_INET, expected_dest, &tmp) > 0);
     g_assert(route->network == tmp);
     g_assert(inet_pton(AF_INET, expected_gw, &tmp) > 0);
@@ -272,110 +263,105 @@ ip4_test_route(NMIP4Config *ip4_config,
     g_assert_cmpint(route->metric, ==, 0);
 }
 
-static void
-ip4_test_gateway(NMIP4Config *ip4_config, const char *expected_gw)
-{
-    guint32 tmp;
-
-    g_assert_cmpint(nm_ip4_config_get_num_addresses(ip4_config), ==, 1);
-    g_assert(inet_pton(AF_INET, expected_gw, &tmp) > 0);
-    g_assert(nmtst_ip4_config_get_gateway(ip4_config) == tmp);
-}
+#define ip4_test_gateway(l3cd, expected_gw)                                            \
+    G_STMT_START                                                                       \
+    {                                                                                  \
+        const NML3ConfigData *_l3cd = (l3cd);                                          \
+                                                                                       \
+        g_assert_cmpint(nm_l3_config_data_get_num_addresses(_l3cd, AF_INET), ==, 1);   \
+        nmtst_assert_ip_address(AF_INET,                                               \
+                                nmtst_l3_config_data_get_best_gateway(_l3cd, AF_INET), \
+                                expected_gw);                                          \
+    }                                                                                  \
+    G_STMT_END
 
 static void
 test_classless_static_routes_1(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "192.168.10.0";
-    const char *                 expected_route1_gw   = "192.168.1.1";
-    const char *                 expected_route2_dest = "10.0.0.0";
-    const char *                 expected_route2_gw   = "10.17.66.41";
-    static const Option          data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "192.168.10.0";
+    const char *                             expected_route1_gw   = "192.168.1.1";
+    const char *                             expected_route2_dest = "10.0.0.0";
+    const char *                             expected_route2_gw   = "10.17.66.41";
+    static const Option                      data[]               = {
         /* dhclient custom format */
         {"rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 8 10 10 17 66 41"},
         {NULL, NULL}};
 
-    options    = fill_table(generic_options, NULL);
-    options    = fill_table(data, options);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    options = fill_table(generic_options, NULL);
+    options = fill_table(data, options);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
 
     /* IP4 routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-    ip4_test_route(ip4_config, 1, expected_route2_dest, expected_route2_gw, 8);
-    ip4_test_route(ip4_config, 2, "0.0.0.0", "192.168.1.1", 0);
-
-    g_hash_table_destroy(options);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 3);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 24);
+    ip4_test_route(l3cd, 1, expected_route2_dest, expected_route2_gw, 8);
+    ip4_test_route(l3cd, 2, "0.0.0.0", "192.168.1.1", 0);
 }
 
 static void
 test_classless_static_routes_2(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "192.168.10.0";
-    const char *                 expected_route1_gw   = "192.168.1.1";
-    const char *                 expected_route2_dest = "10.0.0.0";
-    const char *                 expected_route2_gw   = "10.17.66.41";
-    static const Option          data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "192.168.10.0";
+    const char *                             expected_route1_gw   = "192.168.1.1";
+    const char *                             expected_route2_dest = "10.0.0.0";
+    const char *                             expected_route2_gw   = "10.17.66.41";
+    static const Option                      data[]               = {
         /* dhcpcd format */
         {"classless_static_routes", "192.168.10.0/24 192.168.1.1 10.0.0.0/8 10.17.66.41"},
         {NULL, NULL}};
 
-    options    = fill_table(generic_options, NULL);
-    options    = fill_table(data, options);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    options = fill_table(generic_options, NULL);
+    options = fill_table(data, options);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
 
     /* IP4 routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-    ip4_test_route(ip4_config, 1, expected_route2_dest, expected_route2_gw, 8);
-    ip4_test_route(ip4_config, 2, "0.0.0.0", expected_route1_gw, 0);
-
-    g_hash_table_destroy(options);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 3);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 24);
+    ip4_test_route(l3cd, 1, expected_route2_dest, expected_route2_gw, 8);
+    ip4_test_route(l3cd, 2, "0.0.0.0", expected_route1_gw, 0);
 }
 
 static void
 test_fedora_dhclient_classless_static_routes(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "129.210.177.128";
-    const char *                 expected_route1_gw   = "192.168.0.113";
-    const char *                 expected_route2_dest = "2.0.0.0";
-    const char *                 expected_route2_gw   = "10.34.255.6";
-    const char *                 expected_gateway     = "192.168.0.113";
-    static const Option          data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "129.210.177.128";
+    const char *                             expected_route1_gw   = "192.168.0.113";
+    const char *                             expected_route2_dest = "2.0.0.0";
+    const char *                             expected_route2_gw   = "10.34.255.6";
+    const char *                             expected_gateway     = "192.168.0.113";
+    static const Option                      data[]               = {
         /* Fedora dhclient format */
         {"classless_static_routes",
          "0 192.168.0.113 25.129.210.177.132 192.168.0.113 7.2 10.34.255.6"},
         {NULL, NULL}};
 
-    options    = fill_table(generic_options, NULL);
-    options    = fill_table(data, options);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    options = fill_table(generic_options, NULL);
+    options = fill_table(data, options);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
 
     /* IP4 routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 25);
-    ip4_test_route(ip4_config, 1, expected_route2_dest, expected_route2_gw, 7);
-    ip4_test_route(ip4_config, 2, "0.0.0.0", expected_route1_gw, 0);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 3);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 25);
+    ip4_test_route(l3cd, 1, expected_route2_dest, expected_route2_gw, 7);
+    ip4_test_route(l3cd, 2, "0.0.0.0", expected_route1_gw, 0);
 
-    /* Gateway */
-    ip4_test_gateway(ip4_config, expected_gateway);
-
-    g_hash_table_destroy(options);
+    ip4_test_gateway(l3cd, expected_gateway);
 }
 
 static void
 test_dhclient_invalid_classless_routes_1(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "192.168.10.0";
-    const char *                 expected_route1_gw   = "192.168.1.1";
-    static const Option          data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "192.168.10.0";
+    const char *                             expected_route1_gw   = "192.168.1.1";
+    static const Option                      data[]               = {
         /* dhclient format */
         {"rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 45 10 17 66 41"},
         {NULL, NULL}};
@@ -384,27 +370,25 @@ test_dhclient_invalid_classless_routes_1(void)
     options = fill_table(data, options);
 
     NMTST_EXPECT_NM_WARN("*ignoring invalid classless static routes*");
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    l3cd = _ip4_config_from_options(1, "eth0", options);
     g_test_assert_expected_messages();
 
     /* IP4 routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 2);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-    ip4_test_route(ip4_config, 1, "0.0.0.0", expected_route1_gw, 0);
-
-    g_hash_table_destroy(options);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 2);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 24);
+    ip4_test_route(l3cd, 1, "0.0.0.0", expected_route1_gw, 0);
 }
 
 static void
 test_dhcpcd_invalid_classless_routes_1(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "10.1.1.5";
-    const char *                 expected_route1_gw   = "10.1.1.1";
-    const char *                 expected_route2_dest = "100.99.88.56";
-    const char *                 expected_route2_gw   = "10.1.1.1";
-    static const Option          data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "10.1.1.5";
+    const char *                             expected_route1_gw   = "10.1.1.1";
+    const char *                             expected_route2_dest = "100.99.88.56";
+    const char *                             expected_route2_gw   = "10.1.1.1";
+    static const Option                      data[]               = {
         /* dhcpcd format */
         {"classless_static_routes", "192.168.10.0/24 192.168.1.1 10.0.adfadf/44 10.17.66.41"},
         {NULL, NULL}};
@@ -413,30 +397,28 @@ test_dhcpcd_invalid_classless_routes_1(void)
     options = fill_table(data, options);
 
     NMTST_EXPECT_NM_WARN("*ignoring invalid classless static routes*");
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    l3cd = _ip4_config_from_options(1, "eth0", options);
     g_test_assert_expected_messages();
 
     /* Test falling back to old-style static routes if the classless static
      * routes are invalid.
      */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 32);
-    ip4_test_route(ip4_config, 1, expected_route2_dest, expected_route2_gw, 32);
-    ip4_test_route(ip4_config, 2, "0.0.0.0", "192.168.1.1", 0);
-
-    g_hash_table_destroy(options);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 3);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 32);
+    ip4_test_route(l3cd, 1, expected_route2_dest, expected_route2_gw, 32);
+    ip4_test_route(l3cd, 2, "0.0.0.0", "192.168.1.1", 0);
 }
 
 static void
 test_dhclient_invalid_classless_routes_2(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "10.1.1.5";
-    const char *                 expected_route1_gw   = "10.1.1.1";
-    const char *                 expected_route2_dest = "100.99.88.56";
-    const char *                 expected_route2_gw   = "10.1.1.1";
-    static const Option          data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "10.1.1.5";
+    const char *                             expected_route1_gw   = "10.1.1.1";
+    const char *                             expected_route2_dest = "100.99.88.56";
+    const char *                             expected_route2_gw   = "10.1.1.1";
+    static const Option                      data[]               = {
         {"rfc3442_classless_static_routes", "45 10 17 66 41 24 192 168 10 192 168 1 1"},
         {NULL, NULL}};
 
@@ -444,30 +426,28 @@ test_dhclient_invalid_classless_routes_2(void)
     options = fill_table(data, options);
 
     NMTST_EXPECT_NM_WARN("*ignoring invalid classless static routes*");
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    l3cd = _ip4_config_from_options(1, "eth0", options);
     g_test_assert_expected_messages();
 
     /* Test falling back to old-style static routes if the classless static
      * routes are invalid.
      */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 32);
-    ip4_test_route(ip4_config, 1, expected_route2_dest, expected_route2_gw, 32);
-    ip4_test_route(ip4_config, 2, "0.0.0.0", "192.168.1.1", 0);
-
-    g_hash_table_destroy(options);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 3);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 32);
+    ip4_test_route(l3cd, 1, expected_route2_dest, expected_route2_gw, 32);
+    ip4_test_route(l3cd, 2, "0.0.0.0", "192.168.1.1", 0);
 }
 
 static void
 test_dhcpcd_invalid_classless_routes_2(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "10.1.1.5";
-    const char *                 expected_route1_gw   = "10.1.1.1";
-    const char *                 expected_route2_dest = "100.99.88.56";
-    const char *                 expected_route2_gw   = "10.1.1.1";
-    static const Option          data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "10.1.1.5";
+    const char *                             expected_route1_gw   = "10.1.1.1";
+    const char *                             expected_route2_dest = "100.99.88.56";
+    const char *                             expected_route2_gw   = "10.1.1.1";
+    static const Option                      data[]               = {
         {"classless_static_routes", "10.0.adfadf/44 10.17.66.41 192.168.10.0/24 192.168.1.1"},
         {NULL, NULL}};
 
@@ -475,7 +455,7 @@ test_dhcpcd_invalid_classless_routes_2(void)
     options = fill_table(data, options);
 
     NMTST_EXPECT_NM_WARN("*ignoring invalid classless static routes*");
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    l3cd = _ip4_config_from_options(1, "eth0", options);
     g_test_assert_expected_messages();
 
     /* Test falling back to old-style static routes if the classless static
@@ -483,22 +463,20 @@ test_dhcpcd_invalid_classless_routes_2(void)
      */
 
     /* Routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 3);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 32);
-    ip4_test_route(ip4_config, 1, expected_route2_dest, expected_route2_gw, 32);
-    ip4_test_route(ip4_config, 2, "0.0.0.0", "192.168.1.1", 0);
-
-    g_hash_table_destroy(options);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 3);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 32);
+    ip4_test_route(l3cd, 1, expected_route2_dest, expected_route2_gw, 32);
+    ip4_test_route(l3cd, 2, "0.0.0.0", "192.168.1.1", 0);
 }
 
 static void
 test_dhclient_invalid_classless_routes_3(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "192.168.10.0";
-    const char *                 expected_route1_gw   = "192.168.1.1";
-    static const Option          data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "192.168.10.0";
+    const char *                             expected_route1_gw   = "192.168.1.1";
+    static const Option                      data[]               = {
         {"rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 32 128 10 17 66 41"},
         {NULL, NULL}};
 
@@ -506,25 +484,23 @@ test_dhclient_invalid_classless_routes_3(void)
     options = fill_table(data, options);
 
     NMTST_EXPECT_NM_WARN("*ignoring invalid classless static routes*");
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    l3cd = _ip4_config_from_options(1, "eth0", options);
     g_test_assert_expected_messages();
 
     /* IP4 routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 2);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-    ip4_test_route(ip4_config, 1, "0.0.0.0", expected_route1_gw, 0);
-
-    g_hash_table_destroy(options);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 2);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 24);
+    ip4_test_route(l3cd, 1, "0.0.0.0", expected_route1_gw, 0);
 }
 
 static void
 test_dhcpcd_invalid_classless_routes_3(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "192.168.10.0";
-    const char *                 expected_route1_gw   = "192.168.1.1";
-    static Option                data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "192.168.10.0";
+    const char *                             expected_route1_gw   = "192.168.1.1";
+    static Option                            data[]               = {
         {"classless_static_routes", "192.168.10.0/24 192.168.1.1 128/32 10.17.66.41"},
         {NULL, NULL}};
 
@@ -532,133 +508,124 @@ test_dhcpcd_invalid_classless_routes_3(void)
     options = fill_table(data, options);
 
     NMTST_EXPECT_NM_WARN("*DHCP provided invalid classless static route*");
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    l3cd = _ip4_config_from_options(1, "eth0", options);
     g_test_assert_expected_messages();
 
     /* IP4 routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 2);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-    ip4_test_route(ip4_config, 1, "0.0.0.0", expected_route1_gw, 0);
-
-    g_hash_table_destroy(options);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 2);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 24);
+    ip4_test_route(l3cd, 1, "0.0.0.0", expected_route1_gw, 0);
 }
 
 static void
 test_dhclient_gw_in_classless_routes(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "192.168.10.0";
-    const char *                 expected_route1_gw   = "192.168.1.1";
-    const char *                 expected_gateway     = "192.2.3.4";
-    static Option                data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "192.168.10.0";
+    const char *                             expected_route1_gw   = "192.168.1.1";
+    const char *                             expected_gateway     = "192.2.3.4";
+    static Option                            data[]               = {
         {"rfc3442_classless_static_routes", "24 192 168 10 192 168 1 1 0 192 2 3 4"},
         {NULL, NULL}};
 
-    options    = fill_table(generic_options, NULL);
-    options    = fill_table(data, options);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    options = fill_table(generic_options, NULL);
+    options = fill_table(data, options);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
 
     /* IP4 routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 2);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-    ip4_test_route(ip4_config, 1, "0.0.0.0", "192.2.3.4", 0);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 2);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 24);
+    ip4_test_route(l3cd, 1, "0.0.0.0", "192.2.3.4", 0);
 
-    /* Gateway */
-    ip4_test_gateway(ip4_config, expected_gateway);
-
-    g_hash_table_destroy(options);
+    ip4_test_gateway(l3cd, expected_gateway);
 }
 
 static void
 test_dhcpcd_gw_in_classless_routes(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config           = NULL;
-    const char *                 expected_route1_dest = "192.168.10.0";
-    const char *                 expected_route1_gw   = "192.168.1.1";
-    const char *                 expected_gateway     = "192.2.3.4";
-    static Option                data[]               = {
+    gs_unref_hashtable GHashTable *options                        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd                 = NULL;
+    const char *                             expected_route1_dest = "192.168.10.0";
+    const char *                             expected_route1_gw   = "192.168.1.1";
+    const char *                             expected_gateway     = "192.2.3.4";
+    static Option                            data[]               = {
         {"classless_static_routes", "192.168.10.0/24 192.168.1.1 0.0.0.0/0 192.2.3.4"},
         {NULL, NULL}};
 
-    options    = fill_table(generic_options, NULL);
-    options    = fill_table(data, options);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    options = fill_table(generic_options, NULL);
+    options = fill_table(data, options);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
 
     /* IP4 routes */
-    g_assert_cmpint(nm_ip4_config_get_num_routes(ip4_config), ==, 2);
-    ip4_test_route(ip4_config, 0, expected_route1_dest, expected_route1_gw, 24);
-    ip4_test_route(ip4_config, 1, "0.0.0.0", "192.2.3.4", 0);
+    g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 2);
+    ip4_test_route(l3cd, 0, expected_route1_dest, expected_route1_gw, 24);
+    ip4_test_route(l3cd, 1, "0.0.0.0", "192.2.3.4", 0);
 
-    /* Gateway */
-    ip4_test_gateway(ip4_config, expected_gateway);
-
-    g_hash_table_destroy(options);
+    ip4_test_gateway(l3cd, expected_gateway);
 }
 
 static void
 test_escaped_domain_searches(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config       = NULL;
-    const char *                 expected_search0 = "host1";
-    const char *                 expected_search1 = "host2";
-    const char *                 expected_search2 = "host3";
+    gs_unref_hashtable GHashTable *options                    = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd             = NULL;
+    const char *                             expected_search0 = "host1";
+    const char *                             expected_search1 = "host2";
+    const char *                             expected_search2 = "host3";
     static const Option data[] = {{"domain_search", "host1\\032host2\\032host3"}, {NULL, NULL}};
+    const char *const * strarr;
+    guint               u;
 
-    options    = fill_table(generic_options, NULL);
-    options    = fill_table(data, options);
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    options = fill_table(generic_options, NULL);
+    options = fill_table(data, options);
+    l3cd    = _ip4_config_from_options(1, "eth0", options);
 
-    /* domain searches */
-    g_assert_cmpint(nm_ip4_config_get_num_searches(ip4_config), ==, 3);
-    g_assert_cmpstr(nm_ip4_config_get_search(ip4_config, 0), ==, expected_search0);
-    g_assert_cmpstr(nm_ip4_config_get_search(ip4_config, 1), ==, expected_search1);
-    g_assert_cmpstr(nm_ip4_config_get_search(ip4_config, 2), ==, expected_search2);
-
-    g_hash_table_destroy(options);
+    strarr = nm_l3_config_data_get_searches(l3cd, AF_INET, &u);
+    g_assert_cmpint(u, ==, 3);
+    g_assert_cmpstr(strarr[0], ==, expected_search0);
+    g_assert_cmpstr(strarr[1], ==, expected_search1);
+    g_assert_cmpstr(strarr[2], ==, expected_search2);
 }
 
 static void
 test_invalid_escaped_domain_searches(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config = NULL;
+    gs_unref_hashtable GHashTable *options        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
     static const Option data[] = {{"domain_search", "host1\\aahost2\\032host3"}, {NULL, NULL}};
+    const char *const * strarr;
+    guint               u;
 
     options = fill_table(generic_options, NULL);
     options = fill_table(data, options);
 
     NMTST_EXPECT_NM_WARN("*invalid domain search*");
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    l3cd = _ip4_config_from_options(1, "eth0", options);
     g_test_assert_expected_messages();
 
-    /* domain searches */
-    g_assert_cmpint(nm_ip4_config_get_num_searches(ip4_config), ==, 0);
-
-    g_hash_table_destroy(options);
+    strarr = nm_l3_config_data_get_searches(l3cd, AF_INET, &u);
+    g_assert_cmpint(u, ==, 0);
+    g_assert(!strarr);
 }
 
 static void
 test_ip4_missing_prefix(const char *ip, guint32 expected_prefix)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config = NULL;
-    const NMPlatformIP4Address * address;
+    gs_unref_hashtable GHashTable *options        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
+    const NMPlatformIP4Address *             address;
 
     options = fill_table(generic_options, NULL);
     g_hash_table_insert(options, "ip_address", (gpointer) ip);
     g_hash_table_remove(options, "subnet_mask");
 
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    l3cd = _ip4_config_from_options(1, "eth0", options);
 
-    g_assert_cmpint(nm_ip4_config_get_num_addresses(ip4_config), ==, 1);
-    address = _nmtst_ip4_config_get_address(ip4_config, 0);
+    g_assert_cmpint(nm_l3_config_data_get_num_addresses(l3cd, AF_INET), ==, 1);
+    address = nmtst_l3_config_data_get_address_at_4(l3cd, 0);
     g_assert(address);
     g_assert_cmpint(address->plen, ==, expected_prefix);
-
-    g_hash_table_destroy(options);
 }
 
 static void
@@ -682,9 +649,9 @@ test_ip4_missing_prefix_8(void)
 static void
 test_ip4_prefix_classless(void)
 {
-    GHashTable *    options;
-    gs_unref_object NMIP4Config *ip4_config = NULL;
-    const NMPlatformIP4Address * address;
+    gs_unref_hashtable GHashTable *options        = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
+    const NMPlatformIP4Address *             address;
 
     /* Ensure that the missing-subnet-mask handler doesn't mangle classless
      * subnet masks at all.  The handler should trigger only if the server
@@ -695,14 +662,12 @@ test_ip4_prefix_classless(void)
     g_hash_table_insert(options, "ip_address", "172.16.54.22");
     g_hash_table_insert(options, "subnet_mask", "255.255.252.0");
 
-    ip4_config = _ip4_config_from_options(1, "eth0", options, 0);
+    l3cd = _ip4_config_from_options(1, "eth0", options);
 
-    g_assert_cmpint(nm_ip4_config_get_num_addresses(ip4_config), ==, 1);
-    address = _nmtst_ip4_config_get_address(ip4_config, 0);
+    g_assert_cmpint(nm_l3_config_data_get_num_addresses(l3cd, AF_INET), ==, 1);
+    address = nmtst_l3_config_data_get_address_at_4(l3cd, 0);
     g_assert(address);
     g_assert_cmpint(address->plen, ==, 22);
-
-    g_hash_table_destroy(options);
 }
 
 #define COMPARE_ID(src, is_str, expected, expected_len)           \

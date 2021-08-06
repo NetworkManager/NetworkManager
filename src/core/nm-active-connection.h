@@ -138,6 +138,9 @@ void nm_active_connection_set_state_fail(NMActiveConnection *          active,
                                          NMActiveConnectionStateReason reason,
                                          const char *                  error_desc);
 
+#define NM_ACTIVATION_STATE_FLAG_IP_READY_X(IS_IPv4) \
+    ((IS_IPv4) ? NM_ACTIVATION_STATE_FLAG_IP4_READY : NM_ACTIVATION_STATE_FLAG_IP6_READY)
+
 NMActivationStateFlags nm_active_connection_get_state_flags(NMActiveConnection *self);
 
 void nm_active_connection_set_state_flags_full(NMActiveConnection *   self,

@@ -8,8 +8,7 @@
 #ifndef __NETWORKMANAGER_DNS_MANAGER_H__
 #define __NETWORKMANAGER_DNS_MANAGER_H__
 
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
+#include "c-list/src/c-list.h"
 #include "nm-setting-connection.h"
 #include "nm-dns-plugin.h"
 
@@ -28,10 +27,12 @@ struct _NMDnsManager;
 
 typedef struct {
     struct _NMDnsConfigData *data;
-    NMIPConfig *             ip_config;
+    gconstpointer            source_tag;
+    const NML3ConfigData *   l3cd;
     CList                    data_lst;
-    CList                    ip_config_lst;
+    CList                    ip_data_lst;
     NMDnsIPConfigType        ip_config_type;
+    int                      addr_family;
     struct {
         const char **search;
         char **      reverse;
@@ -97,9 +98,12 @@ NMDnsManager *nm_dns_manager_get(void);
 void nm_dns_manager_begin_updates(NMDnsManager *self, const char *func);
 void nm_dns_manager_end_updates(NMDnsManager *self, const char *func);
 
-gboolean nm_dns_manager_set_ip_config(NMDnsManager *    self,
-                                      NMIPConfig *      ip_config,
-                                      NMDnsIPConfigType ip_config_type);
+gboolean nm_dns_manager_set_ip_config(NMDnsManager *        self,
+                                      int                   addr_family,
+                                      gconstpointer         source_tag,
+                                      const NML3ConfigData *l3cd,
+                                      NMDnsIPConfigType     ip_config_type,
+                                      gboolean              replace_all);
 
 void nm_dns_manager_set_initial_hostname(NMDnsManager *self, const char *hostname);
 void nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean skip_update);

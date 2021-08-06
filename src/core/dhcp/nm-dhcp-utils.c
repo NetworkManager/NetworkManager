@@ -14,6 +14,7 @@
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-dhcp-utils.h"
+#include "nm-l3-config-data.h"
 #include "nm-utils.h"
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
@@ -24,12 +25,10 @@
 /*****************************************************************************/
 
 static gboolean
-ip4_process_dhcpcd_rfc3442_routes(const char * iface,
-                                  const char * str,
-                                  guint32      route_table,
-                                  guint32      route_metric,
-                                  NMIP4Config *ip4_config,
-                                  guint32 *    gwaddr)
+ip4_process_dhcpcd_rfc3442_routes(const char *    iface,
+                                  const char *    str,
+                                  NML3ConfigData *l3cd,
+                                  guint32 *       gwaddr)
 {
     gs_free const char **routes = NULL;
     const char **        r;
@@ -45,10 +44,9 @@ ip4_process_dhcpcd_rfc3442_routes(const char * iface,
     }
 
     for (r = routes; *r; r += 2) {
-        char *             slash;
-        NMPlatformIP4Route route;
-        int                rt_cidr = 32;
-        guint32            rt_addr, rt_route;
+        char *  slash;
+        int     rt_cidr = 32;
+        guint32 rt_addr, rt_route;
 
         slash = strchr(*r, '/');
         if (slash) {
@@ -89,14 +87,18 @@ ip4_process_dhcpcd_rfc3442_routes(const char * iface,
                    *r,
                    rt_cidr,
                    *(r + 1));
-            memset(&route, 0, sizeof(route));
-            route.network       = nm_utils_ip4_address_clear_host_address(rt_addr, rt_cidr);
-            route.plen          = rt_cidr;
-            route.gateway       = rt_route;
-            route.rt_source     = NM_IP_CONFIG_SOURCE_DHCP;
-            route.metric        = route_metric;
-            route.table_coerced = nm_platform_route_table_coerce(route_table);
-            nm_ip4_config_add_route(ip4_config, &route, NULL);
+
+            nm_l3_config_data_add_route_4(
+                l3cd,
+                &((const NMPlatformIP4Route){
+                    .network    = nm_utils_ip4_address_clear_host_address(rt_addr, rt_cidr),
+                    .plen       = rt_cidr,
+                    .gateway    = rt_route,
+                    .rt_source  = NM_IP_CONFIG_SOURCE_DHCP,
+                    .metric_any = TRUE,
+                    .table_any  = TRUE,
+
+                }));
         }
     }
 
@@ -153,12 +155,10 @@ process_dhclient_rfc3442_route(const char *const **p_octets, NMPlatformIP4Route 
 }
 
 static gboolean
-ip4_process_dhclient_rfc3442_routes(const char * iface,
-                                    const char * str,
-                                    guint32      route_table,
-                                    guint32      route_metric,
-                                    NMIP4Config *ip4_config,
-                                    guint32 *    gwaddr)
+ip4_process_dhclient_rfc3442_routes(const char *    iface,
+                                    const char *    str,
+                                    NML3ConfigData *l3cd,
+                                    guint32 *       gwaddr)
 {
     gs_free const char **octets = NULL;
     const char *const *  o;
@@ -189,9 +189,12 @@ ip4_process_dhclient_rfc3442_routes(const char * iface,
 
             /* normal route */
             route.rt_source     = NM_IP_CONFIG_SOURCE_DHCP;
-            route.metric        = route_metric;
-            route.table_coerced = nm_platform_route_table_coerce(route_table);
-            nm_ip4_config_add_route(ip4_config, &route, NULL);
+            route.table_any     = TRUE;
+            route.table_coerced = 0;
+            route.metric_any    = TRUE;
+            route.metric        = 0;
+
+            nm_l3_config_data_add_route_4(l3cd, &route);
 
             _LOG2I(LOGD_DHCP4,
                    iface,
@@ -206,17 +209,15 @@ ip4_process_dhclient_rfc3442_routes(const char * iface,
 }
 
 static gboolean
-ip4_process_classless_routes(const char * iface,
-                             GHashTable * options,
-                             guint32      route_table,
-                             guint32      route_metric,
-                             NMIP4Config *ip4_config,
-                             guint32 *    gwaddr)
+ip4_process_classless_routes(const char *    iface,
+                             GHashTable *    options,
+                             NML3ConfigData *l3cd,
+                             guint32 *       gwaddr)
 {
     const char *str, *p;
 
     g_return_val_if_fail(options != NULL, FALSE);
-    g_return_val_if_fail(ip4_config != NULL, FALSE);
+    g_return_val_if_fail(l3cd != NULL, FALSE);
 
     *gwaddr = 0;
 
@@ -265,28 +266,14 @@ ip4_process_classless_routes(const char * iface,
 
     if (strchr(str, '/')) {
         /* dhcpcd format */
-        return ip4_process_dhcpcd_rfc3442_routes(iface,
-                                                 str,
-                                                 route_table,
-                                                 route_metric,
-                                                 ip4_config,
-                                                 gwaddr);
+        return ip4_process_dhcpcd_rfc3442_routes(iface, str, l3cd, gwaddr);
     }
 
-    return ip4_process_dhclient_rfc3442_routes(iface,
-                                               str,
-                                               route_table,
-                                               route_metric,
-                                               ip4_config,
-                                               gwaddr);
+    return ip4_process_dhclient_rfc3442_routes(iface, str, l3cd, gwaddr);
 }
 
 static void
-process_classful_routes(const char * iface,
-                        GHashTable * options,
-                        guint32      route_table,
-                        guint32      route_metric,
-                        NMIP4Config *ip4_config)
+process_classful_routes(const char *iface, GHashTable *options, NML3ConfigData *l3cd)
 {
     gs_free const char **searches = NULL;
     const char **        s;
@@ -320,8 +307,10 @@ process_classful_routes(const char * iface,
 
         // FIXME: ensure the IP address and route are sane
 
-        memset(&route, 0, sizeof(route));
-        route.network = rt_addr;
+        route = (NMPlatformIP4Route){
+            .network = rt_addr,
+        };
+
         /* RFC 2132, updated by RFC 3442:
          * The Static Routes option (option 33) does not provide a subnet mask
          * for each route - it is assumed that the subnet mask is implicit in
@@ -333,12 +322,15 @@ process_classful_routes(const char * iface,
         }
         route.gateway       = rt_route;
         route.rt_source     = NM_IP_CONFIG_SOURCE_DHCP;
-        route.metric        = route_metric;
-        route.table_coerced = nm_platform_route_table_coerce(route_table);
+        route.table_any     = TRUE;
+        route.table_coerced = 0;
+        route.metric_any    = TRUE;
+        route.metric        = 0;
 
         route.network = nm_utils_ip4_address_clear_host_address(route.network, route.plen);
 
-        nm_ip4_config_add_route(ip4_config, &route, NULL);
+        nm_l3_config_data_add_route_4(l3cd, &route);
+
         _LOG2I(LOGD_DHCP,
                iface,
                "  static route %s",
@@ -347,7 +339,7 @@ process_classful_routes(const char * iface,
 }
 
 static void
-process_domain_search(const char *iface, const char *str, GFunc add_func, gpointer user_data)
+process_domain_search(int addr_family, const char *iface, const char *str, NML3ConfigData *l3cd)
 {
     gs_free const char **searches  = NULL;
     gs_free char *       unescaped = NULL;
@@ -356,7 +348,7 @@ process_domain_search(const char *iface, const char *str, GFunc add_func, gpoint
     int                  i;
 
     g_return_if_fail(str != NULL);
-    g_return_if_fail(add_func != NULL);
+    nm_assert(l3cd);
 
     unescaped = g_strdup(str);
 
@@ -379,45 +371,42 @@ process_domain_search(const char *iface, const char *str, GFunc add_func, gpoint
     searches = nm_strsplit_set(unescaped, " ");
     for (s = searches; searches && *s; s++) {
         _LOG2I(LOGD_DHCP, iface, "  domain search '%s'", *s);
-        add_func((gpointer) *s, user_data);
+        nm_l3_config_data_add_search(l3cd, addr_family, *s);
     }
 }
 
-static void
-ip4_add_domain_search(gpointer data, gpointer user_data)
-{
-    nm_ip4_config_add_search(NM_IP4_CONFIG(user_data), (const char *) data);
-}
-
-NMIP4Config *
+NML3ConfigData *
 nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
                                       int                ifindex,
                                       const char *       iface,
-                                      GHashTable *       options,
-                                      guint32            route_table,
-                                      guint32            route_metric)
+                                      GHashTable *       options)
 {
-    gs_unref_object NMIP4Config *ip4_config = NULL;
-    guint32                      tmp_addr;
-    in_addr_t                    addr;
-    NMPlatformIP4Address         address;
-    char *                       str         = NULL;
-    gboolean                     gateway_has = FALSE;
-    guint32                      gateway     = 0;
-    guint8                       plen        = 0;
-    char                         sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    guint32                                 tmp_addr;
+    in_addr_t                               addr;
+    NMPlatformIP4Address                    address;
+    char *                                  str         = NULL;
+    gboolean                                gateway_has = FALSE;
+    guint32                                 gateway     = 0;
+    guint8                                  plen        = 0;
+    char                                    sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    guint32                                 now;
 
     g_return_val_if_fail(options != NULL, NULL);
 
-    ip4_config = nm_ip4_config_new(multi_idx, ifindex);
-    memset(&address, 0, sizeof(address));
-    address.timestamp = nm_utils_get_monotonic_timestamp_sec();
+    l3cd = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_DHCP);
+
+    now = nm_utils_get_monotonic_timestamp_sec();
+
+    address = (NMPlatformIP4Address){
+        .timestamp = now,
+    };
 
     str = g_hash_table_lookup(options, "ip_address");
-    if (str && (inet_pton(AF_INET, str, &addr) > 0))
-        _LOG2I(LOGD_DHCP4, iface, "  address %s", str);
-    else
+    if (!str || !nm_utils_parse_inaddr_bin(AF_INET, str, NULL, &addr))
         return NULL;
+
+    _LOG2I(LOGD_DHCP4, iface, "  address %s", str);
 
     str = g_hash_table_lookup(options, "subnet_mask");
     if (str && (inet_pton(AF_INET, str, &tmp_addr) > 0)) {
@@ -433,13 +422,8 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
     /* Routes: if the server returns classless static routes, we MUST ignore
      * the 'static_routes' option.
      */
-    if (!ip4_process_classless_routes(iface,
-                                      options,
-                                      route_table,
-                                      route_metric,
-                                      ip4_config,
-                                      &gateway))
-        process_classful_routes(iface, options, route_table, route_metric, ip4_config);
+    if (!ip4_process_classless_routes(iface, options, l3cd, &gateway))
+        process_classful_routes(iface, options, l3cd);
 
     if (gateway) {
         _LOG2I(LOGD_DHCP4, iface, "  gateway %s", _nm_utils_inet4_ntop(gateway, sbuf));
@@ -453,7 +437,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
             gs_free const char **routers = nm_strsplit_set(str, " ");
             const char **        s;
 
-            for (s = routers; routers && *s; s++) {
+            for (s = routers; *s; s++) {
                 /* FIXME: how to handle multiple routers? */
                 if (inet_pton(AF_INET, *s, &gateway) > 0) {
                     _LOG2I(LOGD_DHCP4, iface, "  gateway %s", *s);
@@ -469,11 +453,13 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
         const NMPlatformIP4Route r = {
             .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
             .gateway       = gateway,
-            .table_coerced = nm_platform_route_table_coerce(route_table),
-            .metric        = route_metric,
+            .table_any     = TRUE,
+            .table_coerced = 0,
+            .metric_any    = TRUE,
+            .metric        = 0,
         };
 
-        nm_ip4_config_add_route(ip4_config, &r, NULL);
+        nm_l3_config_data_add_route_4(l3cd, &r);
     }
 
     str = g_hash_table_lookup(options, "dhcp_lease_time");
@@ -483,7 +469,8 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
     }
 
     address.addr_source = NM_IP_CONFIG_SOURCE_DHCP;
-    nm_ip4_config_add_address(ip4_config, &address);
+
+    nm_l3_config_data_add_address_4(l3cd, &address);
 
     str = g_hash_table_lookup(options, "host_name");
     if (str)
@@ -497,7 +484,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
         for (s = dns; dns && *s; s++) {
             if (inet_pton(AF_INET, *s, &tmp_addr) > 0) {
                 if (tmp_addr) {
-                    nm_ip4_config_add_nameserver(ip4_config, tmp_addr);
+                    nm_l3_config_data_add_nameserver(l3cd, AF_INET, &tmp_addr);
                     _LOG2I(LOGD_DHCP4, iface, "  nameserver '%s'", *s);
                 }
             } else
@@ -512,13 +499,13 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
 
         for (s = domains; domains && *s; s++) {
             _LOG2I(LOGD_DHCP4, iface, "  domain name '%s'", *s);
-            nm_ip4_config_add_domain(ip4_config, *s);
+            nm_l3_config_data_add_domain(l3cd, AF_INET, *s);
         }
     }
 
     str = g_hash_table_lookup(options, "domain_search");
     if (str)
-        process_domain_search(iface, str, ip4_add_domain_search, ip4_config);
+        process_domain_search(AF_INET, iface, str, l3cd);
 
     str = g_hash_table_lookup(options, "netbios_name_servers");
     if (str) {
@@ -528,7 +515,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
         for (s = nbns; nbns && *s; s++) {
             if (inet_pton(AF_INET, *s, &tmp_addr) > 0) {
                 if (tmp_addr) {
-                    nm_ip4_config_add_wins(ip4_config, tmp_addr);
+                    nm_l3_config_data_add_wins(l3cd, tmp_addr);
                     _LOG2I(LOGD_DHCP4, iface, "  wins '%s'", *s);
                 }
             } else
@@ -546,13 +533,13 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
             return NULL;
 
         if (int_mtu > 576)
-            nm_ip4_config_set_mtu(ip4_config, int_mtu, NM_IP_CONFIG_SOURCE_DHCP);
+            nm_l3_config_data_set_mtu(l3cd, int_mtu);
     }
 
     str = g_hash_table_lookup(options, "nis_domain");
     if (str) {
         _LOG2I(LOGD_DHCP4, iface, "  NIS domain '%s'", str);
-        nm_ip4_config_set_nis_domain(ip4_config, str);
+        nm_l3_config_data_add_domain(l3cd, AF_INET, str);
     }
 
     str = g_hash_table_lookup(options, "nis_servers");
@@ -563,7 +550,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
         for (s = nis; nis && *s; s++) {
             if (inet_pton(AF_INET, *s, &tmp_addr) > 0) {
                 if (tmp_addr) {
-                    nm_ip4_config_add_nis_server(ip4_config, tmp_addr);
+                    nm_l3_config_data_add_nis_server(l3cd, tmp_addr);
                     _LOG2I(LOGD_DHCP4, iface, "  nis '%s'", *s);
                 }
             } else
@@ -572,18 +559,19 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
     }
 
     str = g_hash_table_lookup(options, "vendor_encapsulated_options");
-    nm_ip4_config_set_metered(ip4_config, str && strstr(str, "ANDROID_METERED"));
+    if (str && strstr(str, "ANDROID_METERED"))
+        nm_l3_config_data_set_metered(l3cd, TRUE);
 
-    return g_steal_pointer(&ip4_config);
+    str = g_hash_table_lookup(options, "wpad");
+    if (str) {
+        nm_l3_config_data_set_proxy_method(l3cd, NM_PROXY_CONFIG_METHOD_AUTO);
+        nm_l3_config_data_set_proxy_pac_url(l3cd, str);
+    }
+
+    return g_steal_pointer(&l3cd);
 }
 
 /*****************************************************************************/
-
-static void
-ip6_add_domain_search(gpointer data, gpointer user_data)
-{
-    nm_ip6_config_add_search(NM_IP6_CONFIG(user_data), (const char *) data);
-}
 
 NMPlatformIP6Address
 nm_dhcp_utils_ip6_prefix_from_options(GHashTable *options)
@@ -635,25 +623,29 @@ nm_dhcp_utils_ip6_prefix_from_options(GHashTable *options)
     return address;
 }
 
-NMIP6Config *
+NML3ConfigData *
 nm_dhcp_utils_ip6_config_from_options(NMDedupMultiIndex *multi_idx,
                                       int                ifindex,
                                       const char *       iface,
                                       GHashTable *       options,
                                       gboolean           info_only)
 {
-    gs_unref_object NMIP6Config *ip6_config = NULL;
-    struct in6_addr              tmp_addr;
-    NMPlatformIP6Address         address;
-    char *                       str = NULL;
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    struct in6_addr                         tmp_addr;
+    NMPlatformIP6Address                    address;
+    char *                                  str = NULL;
+    guint32                                 now;
 
     g_return_val_if_fail(options != NULL, NULL);
 
-    memset(&address, 0, sizeof(address));
-    address.plen      = 128;
-    address.timestamp = nm_utils_get_monotonic_timestamp_sec();
+    now = nm_utils_get_monotonic_timestamp_sec();
 
-    ip6_config = nm_ip6_config_new(multi_idx, ifindex);
+    address = (NMPlatformIP6Address){
+        .plen      = 128,
+        .timestamp = now,
+    };
+
+    l3cd = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_DHCP);
 
     str = g_hash_table_lookup(options, "max_life");
     if (str) {
@@ -676,7 +668,7 @@ nm_dhcp_utils_ip6_config_from_options(NMDedupMultiIndex *multi_idx,
 
         address.address     = tmp_addr;
         address.addr_source = NM_IP_CONFIG_SOURCE_DHCP;
-        nm_ip6_config_add_address(ip6_config, &address);
+        nm_l3_config_data_add_address_6(l3cd, &address);
         _LOG2I(LOGD_DHCP6, iface, "  address %s", str);
     } else if (info_only == FALSE) {
         /* No address in Managed mode is a hard error */
@@ -695,7 +687,7 @@ nm_dhcp_utils_ip6_config_from_options(NMDedupMultiIndex *multi_idx,
         for (s = dns; dns && *s; s++) {
             if (inet_pton(AF_INET6, *s, &tmp_addr) > 0) {
                 if (!IN6_IS_ADDR_UNSPECIFIED(&tmp_addr)) {
-                    nm_ip6_config_add_nameserver(ip6_config, &tmp_addr);
+                    nm_l3_config_data_add_nameserver(l3cd, AF_INET6, &tmp_addr);
                     _LOG2I(LOGD_DHCP6, iface, "  nameserver '%s'", *s);
                 }
             } else
@@ -705,9 +697,9 @@ nm_dhcp_utils_ip6_config_from_options(NMDedupMultiIndex *multi_idx,
 
     str = g_hash_table_lookup(options, "dhcp6_domain_search");
     if (str)
-        process_domain_search(iface, str, ip6_add_domain_search, ip6_config);
+        process_domain_search(AF_INET6, iface, str, l3cd);
 
-    return g_steal_pointer(&ip6_config);
+    return g_steal_pointer(&l3cd);
 }
 
 char *
@@ -836,6 +828,65 @@ nm_dhcp_utils_get_dhcp6_event_id(GHashTable *lease)
         return NULL;
 
     return g_strdup_printf("%s|%s", iaid, start);
+}
+
+gboolean
+nm_dhcp_utils_merge_new_dhcp6_lease(const NML3ConfigData * l3cd_old,
+                                    const NML3ConfigData * l3cd_new,
+                                    const NML3ConfigData **out_l3cd_merged)
+{
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd_merged = NULL;
+    const NMPlatformIP6Address *            addr;
+    NMDhcpLease *                           lease_old;
+    NMDhcpLease *                           lease_new;
+    NMDedupMultiIter                        iter;
+    const char *                            start;
+    const char *                            iaid;
+
+    nm_assert(out_l3cd_merged);
+    nm_assert(!*out_l3cd_merged);
+
+    if (!l3cd_old)
+        return FALSE;
+    if (!l3cd_new)
+        return FALSE;
+
+    lease_new = nm_l3_config_data_get_dhcp_lease(l3cd_new, AF_INET6);
+    if (!lease_new)
+        return FALSE;
+
+    lease_old = nm_l3_config_data_get_dhcp_lease(l3cd_old, AF_INET6);
+    if (!lease_old)
+        return FALSE;
+
+    start = nm_dhcp_lease_lookup_option(lease_new, "life_starts");
+    if (!start)
+        return FALSE;
+    iaid = nm_dhcp_lease_lookup_option(lease_new, "iaid");
+    if (!iaid)
+        return FALSE;
+
+    if (!nm_streq0(start, nm_dhcp_lease_lookup_option(lease_old, "life_starts")))
+        return FALSE;
+    if (!nm_streq0(iaid, nm_dhcp_lease_lookup_option(lease_old, "iaid")))
+        return FALSE;
+
+    /* If the server sends multiple IPv6 addresses, we receive a state
+     * changed event for each of them. Use the event ID to merge IPv6
+     * addresses from the same transaction into a single configuration.
+     **/
+
+    l3cd_merged = nm_l3_config_data_new_clone(l3cd_old, -1);
+
+    nm_l3_config_data_iter_ip6_address_for_each (&iter, l3cd_new, &addr)
+        nm_l3_config_data_add_address_6(l3cd_merged, addr);
+
+    /* FIXME(l3cfg): Note that we keep the original NMDhcpLease. All we take from the new lease are the
+     * addresses. Maybe this is not right and we should merge the leases too?? */
+    nm_l3_config_data_set_dhcp_lease(l3cd_merged, AF_INET6, lease_old);
+
+    *out_l3cd_merged = nm_l3_config_data_ref_and_seal(g_steal_pointer(&l3cd_merged));
+    return TRUE;
 }
 
 /*****************************************************************************/

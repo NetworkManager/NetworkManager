@@ -7,16 +7,17 @@
 
 #include "nm-ndisc.h"
 
-#include <stdlib.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
 
-#include "nm-setting-ip6-config.h"
-
-#include "nm-ndisc-private.h"
-#include "nm-utils.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-netns.h"
 #include "nm-l3-config-data.h"
+#include "nm-l3cfg.h"
+#include "nm-ndisc-private.h"
+#include "nm-setting-ip6-config.h"
+#include "nm-utils.h"
 
 #define _NMLOG_PREFIX_NAME "ndisc"
 
@@ -35,6 +36,8 @@ struct _NMNDiscPrivate {
     /* this *must* be the first field. */
     NMNDiscDataInternal rdata;
 
+    const NML3ConfigData *l3cd;
+
     char *last_error;
 
     GSource *ra_timeout_source;
@@ -51,37 +54,25 @@ struct _NMNDiscPrivate {
 
     NMUtilsIPv6IfaceId iid;
 
-    /* immutable values: */
-    int                           ifindex;
-    char *                        ifname;
-    char *                        network_id;
-    guint                         max_addresses;
-    NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-    NMUtilsStableType             stable_type;
-    guint32                       ra_timeout;
-    gint32                        router_solicitations;
-    gint32                        router_solicitation_interval;
-    NMNDiscNodeType               node_type;
+    /* immutable values from here on: */
 
-    NMPlatform *platform;
-    NMPNetns *  netns;
+    union {
+        const NMNDiscConfig config;
+        NMNDiscConfig       config_;
+    };
+
+    NMPNetns *netns;
 };
 
 typedef struct _NMNDiscPrivate NMNDiscPrivate;
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PLATFORM,
-                                  PROP_IFINDEX,
-                                  PROP_IFNAME,
-                                  PROP_STABLE_TYPE,
-                                  PROP_NETWORK_ID,
-                                  PROP_ADDR_GEN_MODE,
-                                  PROP_MAX_ADDRESSES,
-                                  PROP_RA_TIMEOUT,
-                                  PROP_ROUTER_SOLICITATIONS,
-                                  PROP_ROUTER_SOLICITATION_INTERVAL,
-                                  PROP_NODE_TYPE, );
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_CONFIG, );
 
-enum { CONFIG_RECEIVED, RA_TIMEOUT_SIGNAL, LAST_SIGNAL };
+enum {
+    CONFIG_RECEIVED,
+    RA_TIMEOUT_SIGNAL,
+    LAST_SIGNAL,
+};
 
 static guint signals[LAST_SIGNAL] = {0};
 
@@ -110,15 +101,10 @@ NML3ConfigData *
 nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
                       int                       ifindex,
                       const NMNDiscData *       rdata,
-                      NMSettingIP6ConfigPrivacy ip6_privacy,
-                      guint32                   route_table,
-                      guint32                   route_metric,
-                      gboolean                  kernel_support_rta_pref,
-                      gboolean                  kernel_support_extended_ifa_flags)
+                      NMSettingIP6ConfigPrivacy ip6_privacy)
 {
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     guint32                                 ifa_flags;
-    guint8                                  plen;
     guint                                   i;
     const gint32                            now_sec = nm_utils_get_monotonic_timestamp_sec();
 
@@ -126,20 +112,11 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
 
     nm_l3_config_data_set_ip6_privacy(l3cd, ip6_privacy);
 
-    /* Check, whether kernel is recent enough to help user space handling RA.
-     * If it's not supported, we have no ipv6-privacy and must add autoconf
-     * addresses as /128. The reason for the /128 is to prevent the kernel
-     * from adding a prefix route for this address. */
-    ifa_flags = 0;
-    if (kernel_support_extended_ifa_flags) {
-        ifa_flags |= IFA_F_NOPREFIXROUTE;
-        if (NM_IN_SET(ip6_privacy,
-                      NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
-                      NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
-            ifa_flags |= IFA_F_MANAGETEMPADDR;
-        plen = 64;
-    } else
-        plen = 128;
+    ifa_flags = IFA_F_NOPREFIXROUTE;
+    if (NM_IN_SET(ip6_privacy,
+                  NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+                  NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
+        ifa_flags |= IFA_F_MANAGETEMPADDR;
 
     for (i = 0; i < rdata->addresses_n; i++) {
         const NMNDiscAddress *ndisc_addr = &rdata->addresses[i];
@@ -148,7 +125,7 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
         a = (NMPlatformIP6Address){
             .ifindex   = ifindex,
             .address   = ndisc_addr->address,
-            .plen      = plen,
+            .plen      = 64,
             .timestamp = now_sec,
             .lifetime  = _nm_ndisc_lifetime_from_expiry(((gint64) now_sec) * 1000,
                                                        ndisc_addr->expiry_msec,
@@ -174,8 +151,10 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
             .plen          = ndisc_route->plen,
             .gateway       = ndisc_route->gateway,
             .rt_source     = NM_IP_CONFIG_SOURCE_NDISC,
-            .table_coerced = nm_platform_route_table_coerce(route_table),
-            .metric        = route_metric,
+            .table_any     = TRUE,
+            .table_coerced = 0,
+            .metric_any    = TRUE,
+            .metric        = 0,
             .rt_pref       = ndisc_route->preference,
         };
         nm_assert((NMIcmpv6RouterPref) r.rt_pref == ndisc_route->preference);
@@ -184,12 +163,13 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
     }
 
     if (rdata->gateways_n > 0) {
-        const NMIcmpv6RouterPref first_pref = rdata->gateways[0].preference;
-        NMPlatformIP6Route       r          = {
+        NMPlatformIP6Route r = {
             .rt_source     = NM_IP_CONFIG_SOURCE_NDISC,
             .ifindex       = ifindex,
-            .table_coerced = nm_platform_route_table_coerce(route_table),
-            .metric        = route_metric,
+            .table_any     = TRUE,
+            .table_coerced = 0,
+            .metric_any    = TRUE,
+            .metric        = 0,
         };
 
         for (i = 0; i < rdata->gateways_n; i++) {
@@ -197,13 +177,6 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
             r.rt_pref = rdata->gateways[i].preference;
             nm_assert((NMIcmpv6RouterPref) r.rt_pref == rdata->gateways[i].preference);
             nm_l3_config_data_add_route_6(l3cd, &r);
-
-            if (first_pref != rdata->gateways[i].preference && !kernel_support_rta_pref) {
-                /* We are unable to configure a router preference. Hence, we skip all gateways
-                 * with a different preference from the first gateway. Note, that the gateways
-                 * are sorted in order of highest to lowest preference. */
-                break;
-            }
         }
     }
 
@@ -311,7 +284,7 @@ nm_ndisc_get_ifindex(NMNDisc *self)
 {
     g_return_val_if_fail(NM_IS_NDISC(self), 0);
 
-    return NM_NDISC_GET_PRIVATE(self)->ifindex;
+    return nm_l3cfg_get_ifindex(NM_NDISC_GET_PRIVATE(self)->config.l3cfg);
 }
 
 const char *
@@ -319,7 +292,7 @@ nm_ndisc_get_ifname(NMNDisc *self)
 {
     g_return_val_if_fail(NM_IS_NDISC(self), NULL);
 
-    return NM_NDISC_GET_PRIVATE(self)->ifname;
+    return NM_NDISC_GET_PRIVATE(self)->config.ifname;
 }
 
 NMNDiscNodeType
@@ -327,7 +300,7 @@ nm_ndisc_get_node_type(NMNDisc *self)
 {
     g_return_val_if_fail(NM_IS_NDISC(self), NM_NDISC_NODE_TYPE_INVALID);
 
-    return NM_NDISC_GET_PRIVATE(self)->node_type;
+    return NM_NDISC_GET_PRIVATE(self)->config.node_type;
 }
 
 /*****************************************************************************/
@@ -387,15 +360,26 @@ _data_complete(NMNDiscDataInternal *data)
     return &data->public;
 }
 
-void
+static void
 nm_ndisc_emit_config_change(NMNDisc *self, NMNDiscConfigMap changed)
 {
+    NMNDiscPrivate *         priv                 = NM_NDISC_GET_PRIVATE(self);
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
+    const NMNDiscData *                      rdata;
+
     _config_changed_log(self, changed);
-    g_signal_emit(self,
-                  signals[CONFIG_RECEIVED],
-                  0,
-                  _data_complete(&NM_NDISC_GET_PRIVATE(self)->rdata),
-                  (guint) changed);
+
+    rdata = _data_complete(&NM_NDISC_GET_PRIVATE(self)->rdata),
+
+    l3cd = nm_l3_config_data_seal(nm_ndisc_data_to_l3cd(nm_l3cfg_get_multi_idx(priv->config.l3cfg),
+                                                        nm_l3cfg_get_ifindex(priv->config.l3cfg),
+                                                        rdata,
+                                                        priv->config.ip6_privacy));
+
+    if (!nm_l3_config_data_equal(priv->l3cd, l3cd))
+        NM_SWAP(&priv->l3cd, &l3cd);
+
+    g_signal_emit(self, signals[CONFIG_RECEIVED], 0, rdata, (guint) changed, priv->l3cd);
 }
 
 /*****************************************************************************/
@@ -475,11 +459,11 @@ complete_address(NMNDisc *ndisc, NMNDiscAddress *addr)
     g_return_val_if_fail(NM_IS_NDISC(ndisc), FALSE);
 
     priv = NM_NDISC_GET_PRIVATE(ndisc);
-    if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
-        if (!nm_utils_ipv6_addr_set_stable_privacy_may_fail(priv->stable_type,
+    if (priv->config.addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
+        if (!nm_utils_ipv6_addr_set_stable_privacy_may_fail(priv->config.stable_type,
                                                             &addr->address,
-                                                            priv->ifname,
-                                                            priv->network_id,
+                                                            priv->config.ifname,
+                                                            priv->config.network_id,
                                                             addr->dad_counter++,
                                                             &error)) {
             _LOGW("complete-address: failed to generate an stable-privacy address: %s",
@@ -604,7 +588,7 @@ nm_ndisc_add_address(NMNDisc *             ndisc,
      * what the kernel does, because it considers *all* addresses (including
      * static and other temporary addresses).
      **/
-    if (rdata->addresses->len >= priv->max_addresses)
+    if (rdata->addresses->len >= priv->config.max_addresses)
         return FALSE;
 
     if (new_item->expiry_msec <= now_msec)
@@ -893,7 +877,7 @@ solicit_timer_start(NMNDisc *ndisc)
         g_random_int() % ((guint32) (NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY * 1000 / 4));
 
     _LOGD("solicit: schedule sending first solicitation (of %d) in %.3f seconds",
-          priv->router_solicitations,
+          priv->config.router_solicitations,
           ((double) delay_msec) / 1000);
 
     priv->solicit_retransmit_time_msec = 0;
@@ -991,30 +975,85 @@ announce_router_solicited(NMNDisc *ndisc)
 /*****************************************************************************/
 
 void
-nm_ndisc_set_config(NMNDisc *     ndisc,
-                    const GArray *addresses,
-                    const GArray *dns_servers,
-                    const GArray *dns_domains)
+nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
 {
-    gboolean changed = FALSE;
-    guint    i;
+    gboolean               changed = FALSE;
+    const struct in6_addr *in6arr;
+    const char *const *    strvarr;
+    NMDedupMultiIter       iter;
+    const NMPObject *      obj;
+    gint64                 now_msec;
+    guint                  len;
+    guint                  i;
 
-    for (i = 0; i < addresses->len; i++) {
-        if (nm_ndisc_add_address(ndisc, &g_array_index(addresses, NMNDiscAddress, i), 0, FALSE))
+    nm_assert(NM_IS_NDISC(ndisc));
+    nm_assert(nm_ndisc_get_node_type(ndisc) == NM_NDISC_NODE_TYPE_ROUTER);
+
+    now_msec = nm_utils_get_monotonic_timestamp_msec();
+
+    nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP6_ADDRESS) {
+        const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
+        guint32                     preferred;
+        guint32                     lifetime;
+        NMNDiscAddress              a;
+
+        if (IN6_IS_ADDR_UNSPECIFIED(&addr->address) || IN6_IS_ADDR_LINKLOCAL(&addr->address))
+            continue;
+
+        if (addr->n_ifa_flags & IFA_F_TENTATIVE || addr->n_ifa_flags & IFA_F_DADFAILED)
+            continue;
+
+        if (addr->plen != 64)
+            continue;
+
+        lifetime = nmp_utils_lifetime_get(addr->timestamp,
+                                          addr->lifetime,
+                                          addr->preferred,
+                                          NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000,
+                                          &preferred);
+        if (!lifetime)
+            continue;
+
+        a = (NMNDiscAddress){
+            .address     = addr->address,
+            .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP, lifetime),
+            .expiry_preferred_msec =
+                _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP, preferred),
+        };
+
+        if (nm_ndisc_add_address(ndisc, &a, now_msec, FALSE))
             changed = TRUE;
     }
 
-    for (i = 0; i < dns_servers->len; i++) {
-        if (nm_ndisc_add_dns_server(ndisc,
-                                    &g_array_index(dns_servers, NMNDiscDNSServer, i),
-                                    G_MININT64))
+    in6arr = NULL;
+    len    = 0;
+    if (l3cd)
+        in6arr = nm_l3_config_data_get_nameservers(l3cd, AF_INET6, &len);
+    for (i = 0; i < len; i++) {
+        NMNDiscDNSServer n;
+
+        n = (NMNDiscDNSServer){
+            .address     = in6arr[i],
+            .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
+                                                        NM_NDISC_ROUTER_LIFETIME),
+        };
+        if (nm_ndisc_add_dns_server(ndisc, &n, G_MININT64))
             changed = TRUE;
     }
 
-    for (i = 0; i < dns_domains->len; i++) {
-        if (nm_ndisc_add_dns_domain(ndisc,
-                                    &g_array_index(dns_domains, NMNDiscDNSDomain, i),
-                                    G_MININT64))
+    strvarr = NULL;
+    len     = 0;
+    if (l3cd)
+        strvarr = nm_l3_config_data_get_searches(l3cd, AF_INET6, &len);
+    for (i = 0; i < len; i++) {
+        NMNDiscDNSDomain n;
+
+        n = (NMNDiscDNSDomain){
+            .domain      = (char *) strvarr[i],
+            .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
+                                                        NM_NDISC_ROUTER_LIFETIME),
+        };
+        if (nm_ndisc_add_dns_domain(ndisc, &n, G_MININT64))
             changed = TRUE;
     }
 
@@ -1055,7 +1094,7 @@ nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
     if (priv->iid.id != iid.id) {
         priv->iid = iid;
 
-        if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)
+        if (priv->config.addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)
             return FALSE;
 
         if (rdata->addresses->len) {
@@ -1094,26 +1133,26 @@ nm_ndisc_start(NMNDisc *ndisc)
     nm_assert(!priv->ra_timeout_source);
 
     _LOGD("starting neighbor discovery for ifindex %d%s",
-          priv->ifindex,
-          priv->node_type == NM_NDISC_NODE_TYPE_HOST ? " (solicit)" : " (announce)");
+          nm_l3cfg_get_ifindex(priv->config.l3cfg),
+          priv->config.node_type == NM_NDISC_NODE_TYPE_HOST ? " (solicit)" : " (announce)");
 
     if (!nm_ndisc_netns_push(ndisc, &netns))
         return;
 
     NM_NDISC_GET_CLASS(ndisc)->start(ndisc);
 
-    if (priv->node_type == NM_NDISC_NODE_TYPE_HOST) {
+    if (priv->config.node_type == NM_NDISC_NODE_TYPE_HOST) {
         G_STATIC_ASSERT_EXPR(NM_RA_TIMEOUT_DEFAULT == 0);
         G_STATIC_ASSERT_EXPR(NM_RA_TIMEOUT_INFINITY == G_MAXINT32);
-        nm_assert(priv->ra_timeout > 0u);
-        nm_assert(priv->ra_timeout <= NM_RA_TIMEOUT_INFINITY);
+        nm_assert(priv->config.ra_timeout > 0u);
+        nm_assert(priv->config.ra_timeout <= NM_RA_TIMEOUT_INFINITY);
 
-        if (priv->ra_timeout < NM_RA_TIMEOUT_INFINITY) {
+        if (priv->config.ra_timeout < NM_RA_TIMEOUT_INFINITY) {
             guint timeout_msec;
 
-            _LOGD("scheduling RA timeout in %u seconds", priv->ra_timeout);
-            if (priv->ra_timeout < G_MAXUINT / 1000u)
-                timeout_msec = priv->ra_timeout * 1000u;
+            _LOGD("scheduling RA timeout in %u seconds", priv->config.ra_timeout);
+            if (priv->config.ra_timeout < G_MAXUINT / 1000u)
+                timeout_msec = priv->config.ra_timeout * 1000u;
             else
                 timeout_msec = G_MAXUINT;
             priv->ra_timeout_source = nm_g_timeout_add_source(timeout_msec, ra_timeout_cb, ndisc);
@@ -1123,8 +1162,8 @@ nm_ndisc_start(NMNDisc *ndisc)
         return;
     }
 
-    nm_assert(priv->ra_timeout == 0u);
-    nm_assert(priv->node_type == NM_NDISC_NODE_TYPE_ROUTER);
+    nm_assert(priv->config.ra_timeout == 0u);
+    nm_assert(priv->config.node_type == NM_NDISC_NODE_TYPE_ROUTER);
     announce_router_initial(ndisc);
 }
 
@@ -1141,7 +1180,7 @@ nm_ndisc_stop(NMNDisc *ndisc)
 
     nm_assert(NM_NDISC_GET_CLASS(ndisc)->stop);
 
-    _LOGD("stopping neighbor discovery for ifindex %d", priv->ifindex);
+    _LOGD("stopping neighbor discovery for ifindex %d", nm_l3cfg_get_ifindex(priv->config.l3cfg));
 
     if (!nm_ndisc_netns_push(ndisc, &netns))
         return;
@@ -1368,7 +1407,7 @@ clean_addresses(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint
         g_array_set_size(rdata->addresses, j);
     }
 
-    if (_array_set_size_max(rdata->gateways, priv->max_addresses))
+    if (_array_set_size_max(rdata->gateways, priv->config.max_addresses))
         *changed |= NM_NDISC_CONFIG_ADDRESSES;
 }
 
@@ -1624,84 +1663,86 @@ nm_ndisc_get_sysctl(NMPlatform *platform,
 /*****************************************************************************/
 
 static void
+_config_clear(NMNDiscConfig *config)
+{
+    g_clear_object(&config->l3cfg);
+    nm_clear_g_free((gpointer *) &config->ifname);
+    nm_clear_g_free((gpointer *) &config->network_id);
+}
+
+static void
+_config_init(NMNDiscConfig *config, const NMNDiscConfig *src)
+{
+    nm_assert(config);
+    g_return_if_fail(src);
+
+    /* we only allow to set @config if it was cleared (or is not yet initialized). */
+    nm_assert(!config->l3cfg);
+    nm_assert(!config->ifname);
+    nm_assert(!config->network_id);
+
+    g_return_if_fail(NM_IS_L3CFG(src->l3cfg));
+
+    *config = *src;
+
+    g_object_ref(config->l3cfg);
+    config->ifname     = g_strdup(config->ifname);
+    config->network_id = g_strdup(config->network_id);
+
+    if (config->max_addresses <= 0)
+        config->max_addresses = _SIZE_MAX_ADDRESSES;
+    else if (config->max_addresses > 3u * _SIZE_MAX_ADDRESSES)
+        config->max_addresses = 3u * _SIZE_MAX_ADDRESSES;
+
+    /* This setter is only used in specific circumstances, and in this case,
+     * we expect that @src only contains valid settings. We thus assert that to
+     * be the case.*/
+    g_return_if_fail(config->ifname && config->ifname[0]);
+    g_return_if_fail(config->network_id);
+    g_return_if_fail(config->stable_type >= NM_UTILS_STABLE_TYPE_UUID
+                     && config->stable_type <= NM_UTILS_STABLE_TYPE_RANDOM);
+    g_return_if_fail(config->addr_gen_mode >= NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64
+                     && config->addr_gen_mode
+                            <= NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY);
+    nm_assert(config->max_addresses >= 0 && config->max_addresses <= G_MAXINT32);
+    G_STATIC_ASSERT_EXPR(G_MAXINT32 == NM_RA_TIMEOUT_INFINITY);
+    g_return_if_fail(config->ra_timeout <= NM_RA_TIMEOUT_INFINITY);
+    g_return_if_fail(config->router_solicitations > 0
+                     && config->router_solicitations <= G_MAXINT32);
+    g_return_if_fail(config->router_solicitation_interval > 0
+                     && config->router_solicitation_interval <= G_MAXINT32);
+    g_return_if_fail(
+        NM_IN_SET(config->node_type, NM_NDISC_NODE_TYPE_HOST, NM_NDISC_NODE_TYPE_ROUTER));
+    g_return_if_fail(NM_IN_SET(config->ip6_privacy,
+                               NM_SETTING_IP6_CONFIG_PRIVACY_DISABLED,
+                               NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR,
+                               NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
+}
+
+/*****************************************************************************/
+
+static void
 dns_domain_free(gpointer data)
 {
     g_free(((NMNDiscDNSDomain *) (data))->domain);
 }
+
+/*****************************************************************************/
 
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMNDisc *       self = NM_NDISC(object);
     NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE(self);
-    int             i;
 
     switch (prop_id) {
-    case PROP_PLATFORM:
+    case PROP_CONFIG:
         /* construct-only */
-        priv->platform = g_value_get_object(value) ?: NM_PLATFORM_GET;
-        if (!priv->platform)
-            g_return_if_reached();
+        _config_init(&priv->config_, g_value_get_pointer(value));
 
-        g_object_ref(priv->platform);
-
-        priv->netns = nm_platform_netns_get(priv->platform);
-        if (priv->netns)
-            g_object_ref(priv->netns);
-
+        priv->netns =
+            nm_g_object_ref(nm_platform_netns_get(nm_l3cfg_get_platform(priv->config.l3cfg)));
         g_return_if_fail(!priv->netns || priv->netns == nmp_netns_get_current());
-        break;
-    case PROP_IFINDEX:
-        /* construct-only */
-        priv->ifindex = g_value_get_int(value);
-        g_return_if_fail(priv->ifindex > 0);
-        break;
-    case PROP_IFNAME:
-        /* construct-only */
-        priv->ifname = g_value_dup_string(value);
-        g_return_if_fail(priv->ifname && priv->ifname[0]);
-        break;
-    case PROP_STABLE_TYPE:
-        /* construct-only */
-        priv->stable_type = g_value_get_int(value);
-        break;
-    case PROP_NETWORK_ID:
-        /* construct-only */
-        priv->network_id = g_value_dup_string(value);
-        g_return_if_fail(priv->network_id);
-        break;
-    case PROP_ADDR_GEN_MODE:
-        /* construct-only */
-        priv->addr_gen_mode = g_value_get_int(value);
-        break;
-    case PROP_MAX_ADDRESSES:
-        /* construct-only */
-        i = g_value_get_int(value);
-        nm_assert(i >= 0);
-        priv->max_addresses = i;
-
-        if (priv->max_addresses <= 0)
-            priv->max_addresses = _SIZE_MAX_ADDRESSES;
-        else if (priv->max_addresses > 3u * _SIZE_MAX_ADDRESSES)
-            priv->max_addresses = 3u * _SIZE_MAX_ADDRESSES;
-        break;
-    case PROP_RA_TIMEOUT:
-        /* construct-only */
-        priv->ra_timeout = g_value_get_uint(value);
-        nm_assert(priv->ra_timeout <= NM_RA_TIMEOUT_INFINITY);
-        break;
-    case PROP_ROUTER_SOLICITATIONS:
-        /* construct-only */
-        priv->router_solicitations = g_value_get_int(value);
-        break;
-    case PROP_ROUTER_SOLICITATION_INTERVAL:
-        /* construct-only */
-        priv->router_solicitation_interval = g_value_get_int(value);
-        break;
-    case PROP_NODE_TYPE:
-        /* construct-only */
-        priv->node_type = g_value_get_int(value);
-        nm_assert(NM_IN_SET(priv->node_type, NM_NDISC_NODE_TYPE_HOST, NM_NDISC_NODE_TYPE_ROUTER));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -1752,9 +1793,6 @@ finalize(GObject *object)
     NMNDiscPrivate *     priv  = NM_NDISC_GET_PRIVATE(ndisc);
     NMNDiscDataInternal *rdata = &priv->rdata;
 
-    g_free(priv->ifname);
-    g_free(priv->network_id);
-
     g_array_unref(rdata->gateways);
     g_array_unref(rdata->addresses);
     g_array_unref(rdata->routes);
@@ -1762,7 +1800,10 @@ finalize(GObject *object)
     g_array_unref(rdata->dns_domains);
 
     g_clear_object(&priv->netns);
-    g_clear_object(&priv->platform);
+
+    _config_clear(&priv->config_);
+
+    nm_clear_l3cd(&priv->l3cd);
 
     G_OBJECT_CLASS(nm_ndisc_parent_class)->finalize(object);
 }
@@ -1778,89 +1819,12 @@ nm_ndisc_class_init(NMNDiscClass *klass)
     object_class->dispose      = dispose;
     object_class->finalize     = finalize;
 
-    obj_properties[PROP_PLATFORM] =
-        g_param_spec_object(NM_NDISC_PLATFORM,
-                            "",
-                            "",
-                            NM_TYPE_PLATFORM,
-                            G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_IFINDEX] =
-        g_param_spec_int(NM_NDISC_IFINDEX,
-                         "",
-                         "",
-                         0,
-                         G_MAXINT,
-                         0,
-                         G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_IFNAME] =
-        g_param_spec_string(NM_NDISC_IFNAME,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_STABLE_TYPE] =
-        g_param_spec_int(NM_NDISC_STABLE_TYPE,
-                         "",
-                         "",
-                         NM_UTILS_STABLE_TYPE_UUID,
-                         NM_UTILS_STABLE_TYPE_RANDOM,
-                         NM_UTILS_STABLE_TYPE_UUID,
-                         G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_NETWORK_ID] =
-        g_param_spec_string(NM_NDISC_NETWORK_ID,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_ADDR_GEN_MODE] =
-        g_param_spec_int(NM_NDISC_ADDR_GEN_MODE,
-                         "",
-                         "",
-                         NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
-                         NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY,
-                         NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
-                         G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_MAX_ADDRESSES] =
-        g_param_spec_int(NM_NDISC_MAX_ADDRESSES,
-                         "",
-                         "",
-                         0,
-                         G_MAXINT32,
-                         NM_NDISC_MAX_ADDRESSES_DEFAULT,
-                         G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    G_STATIC_ASSERT_EXPR(G_MAXINT32 == NM_RA_TIMEOUT_INFINITY);
-    obj_properties[PROP_RA_TIMEOUT] =
-        g_param_spec_uint(NM_NDISC_RA_TIMEOUT,
-                          "",
-                          "",
-                          0,
-                          G_MAXINT32,
-                          0,
-                          G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_ROUTER_SOLICITATIONS] =
-        g_param_spec_int(NM_NDISC_ROUTER_SOLICITATIONS,
-                         "",
-                         "",
-                         1,
-                         G_MAXINT32,
-                         NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT,
-                         G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_ROUTER_SOLICITATION_INTERVAL] =
-        g_param_spec_int(NM_NDISC_ROUTER_SOLICITATION_INTERVAL,
-                         "",
-                         "",
-                         1,
-                         G_MAXINT32,
-                         NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL,
-                         G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_NODE_TYPE] =
-        g_param_spec_int(NM_NDISC_NODE_TYPE,
-                         "",
-                         "",
-                         NM_NDISC_NODE_TYPE_INVALID,
-                         NM_NDISC_NODE_TYPE_ROUTER,
-                         NM_NDISC_NODE_TYPE_INVALID,
-                         G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_CONFIG] =
+        g_param_spec_pointer(NM_NDISC_CONFIG,
+                             "",
+                             "",
+                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
     signals[CONFIG_RECEIVED]   = g_signal_new(NM_NDISC_CONFIG_RECEIVED,
@@ -1871,9 +1835,14 @@ nm_ndisc_class_init(NMNDiscClass *klass)
                                             NULL,
                                             NULL,
                                             G_TYPE_NONE,
-                                            2,
-                                            G_TYPE_POINTER,
-                                            G_TYPE_UINT);
+                                            3,
+                                            G_TYPE_POINTER
+                                            /* (const NMNDiscData *)rdata */,
+                                            G_TYPE_UINT
+                                            /* (guint) changed_i */,
+                                            G_TYPE_POINTER
+                                            /* (const NML3ConfigData *) l3cd */
+    );
     signals[RA_TIMEOUT_SIGNAL] = g_signal_new(NM_NDISC_RA_TIMEOUT_SIGNAL,
                                               G_OBJECT_CLASS_TYPE(klass),
                                               G_SIGNAL_RUN_FIRST,

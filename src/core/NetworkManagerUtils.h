@@ -195,12 +195,11 @@ nm_utils_tfilters_from_tc_setting(NMPlatform *platform, NMSettingTCConfig *s_tc,
 void nm_utils_ip_route_attribute_to_platform(int                addr_family,
                                              NMIPRoute *        s_route,
                                              NMPlatformIPRoute *r,
-                                             guint32            route_table);
+                                             gint64             route_table);
 
 void nm_utils_ip_addresses_to_dbus(int                          addr_family,
                                    const NMDedupMultiHeadEntry *head_entry,
                                    const NMPObject *            best_default_route,
-                                   NMSettingIP6ConfigPrivacy    ipv6_privacy,
                                    GVariant **                  out_address_data,
                                    GVariant **                  out_addresses);
 
@@ -268,6 +267,13 @@ nm_dhcp_lease_lookup_option(NMDhcpLease *lease, const char *option)
 
 NM_AUTO_DEFINE_FCN(NMDhcpLease *, _nm_auto_unref_dhcplease, nm_dhcp_lease_unref);
 #define nm_auto_unref_dhcplease nm_auto(_nm_auto_unref_dhcplease)
+
+/*****************************************************************************/
+
+NMSetting *nm_utils_platform_capture_ip_setting(NMPlatform *platform,
+                                                int         addr_family,
+                                                int         ifindex,
+                                                gboolean    maybe_ipv6_disabled);
 
 /*****************************************************************************/
 

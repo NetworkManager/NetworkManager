@@ -1118,8 +1118,6 @@ ip_route_add(NMPlatform *             platform,
                          (const NMPlatformObject *) route);
     r = NMP_OBJECT_CAST_IP_ROUTE(obj);
 
-    r->is_external = TRUE;
-
     nm_platform_ip_route_normalize(addr_family, r);
 
     switch (addr_family) {

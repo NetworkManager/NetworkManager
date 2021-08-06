@@ -23,17 +23,6 @@ typedef struct _NMLndpNDiscClass NMLndpNDiscClass;
 
 GType nm_lndp_ndisc_get_type(void);
 
-NMNDisc *nm_lndp_ndisc_new(NMPlatform *                  platform,
-                           int                           ifindex,
-                           const char *                  ifname,
-                           NMUtilsStableType             stable_type,
-                           const char *                  network_id,
-                           NMSettingIP6ConfigAddrGenMode addr_gen_mode,
-                           NMNDiscNodeType               node_type,
-                           int                           max_addresses,
-                           int                           router_solicitations,
-                           int                           router_solicitation_interval,
-                           guint32                       ra_timeout,
-                           GError **                     error);
+NMNDisc *nm_lndp_ndisc_new(const NMNDiscConfig *config);
 
 #endif /* __NETWORKMANAGER_LNDP_NDISC_H__ */

@@ -24,7 +24,7 @@ typedef struct _NMFakeRNDiscClass NMFakeNDiscClass;
 
 GType nm_fake_ndisc_get_type(void);
 
-NMNDisc *nm_fake_ndisc_new(int ifindex, const char *ifname);
+NMNDisc *nm_fake_ndisc_new(NML3Cfg *l3cfg);
 
 guint nm_fake_ndisc_add_ra(NMFakeNDisc *    self,
                            guint            seconds,

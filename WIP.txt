@@ -1,0 +1,13 @@
+The following files have changes since the last rebase,
+that need re-review. They probably also don't compile
+and are incomplete:
+
+ > src/core/devices/nm-device.c
+ > src/core/devices/nm-device.h
+ > src/core/nm-iface-helper.c
+ > src/core/nm-ip-config.c
+ > src/core/nm-ip4-config.h
+ > src/core/nm-ip6-config.h
+ > src/core/nm-manager.c
+ > src/core/nm-policy.c
+ > src/core/vpn/nm-vpn-connection.c

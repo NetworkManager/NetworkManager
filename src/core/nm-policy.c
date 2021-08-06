@@ -11,28 +11,31 @@
 #include <unistd.h>
 #include <netdb.h>
 
-#include "NetworkManagerUtils.h"
-#include "nm-act-request.h"
-#include "nm-keep-alive.h"
-#include "devices/nm-device.h"
-#include "nm-setting-ip4-config.h"
-#include "nm-setting-connection.h"
-#include "libnm-platform/nm-platform.h"
-#include "dns/nm-dns-manager.h"
-#include "vpn/nm-vpn-manager.h"
-#include "nm-auth-utils.h"
-#include "nm-firewalld-manager.h"
-#include "nm-dispatcher.h"
-#include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "nm-manager.h"
-#include "settings/nm-settings.h"
-#include "settings/nm-settings-connection.h"
-#include "settings/nm-agent-manager.h"
-#include "nm-dhcp-config.h"
+#include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nmp-object.h"
+
+#include "NetworkManagerUtils.h"
+#include "devices/nm-device.h"
+#include "dns/nm-dns-manager.h"
+#include "nm-act-request.h"
+#include "nm-auth-utils.h"
 #include "nm-config.h"
-#include "nm-netns.h"
+#include "nm-dhcp-config.h"
+#include "nm-dispatcher.h"
+#include "nm-firewalld-manager.h"
 #include "nm-hostname-manager.h"
+#include "nm-keep-alive.h"
+#include "nm-l3-config-data.h"
+#include "nm-manager.h"
+#include "nm-netns.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-utils.h"
+#include "settings/nm-agent-manager.h"
+#include "settings/nm-settings-connection.h"
+#include "settings/nm-settings.h"
+#include "vpn/nm-vpn-manager.h"
 
 /*****************************************************************************/
 
@@ -133,30 +136,6 @@ static void      update_system_hostname(NMPolicy *self, const char *msg);
 static void      schedule_activate_all(NMPolicy *self);
 static void      schedule_activate_check(NMPolicy *self, NMDevice *device);
 static NMDevice *get_default_device(NMPolicy *self, int addr_family);
-
-/*****************************************************************************/
-
-static void
-_dns_manager_set_ip_config(NMDnsManager *    dns_manager,
-                           NMIPConfig *      ip_config,
-                           NMDnsIPConfigType ip_config_type,
-                           NMDevice *        device)
-{
-    if (device && nm_device_sys_iface_state_is_external(device)) {
-        nm_dns_manager_set_ip_config(dns_manager, ip_config, NM_DNS_IP_CONFIG_TYPE_REMOVED);
-        return;
-    }
-
-    if (NM_IN_SET(ip_config_type, NM_DNS_IP_CONFIG_TYPE_DEFAULT, NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE)
-        && device
-        && nm_device_get_route_metric_default(nm_device_get_device_type(device))
-               == NM_VPN_ROUTE_METRIC_DEFAULT) {
-        /* some device types are inherently VPN. */
-        ip_config_type = NM_DNS_IP_CONFIG_TYPE_VPN;
-    }
-
-    nm_dns_manager_set_ip_config(dns_manager, ip_config, ip_config_type);
-}
 
 /*****************************************************************************/
 
@@ -974,7 +953,7 @@ update_default_ac(NMPolicy *self, int addr_family, NMActiveConnection *best)
         nm_active_connection_set_default(best, addr_family, TRUE);
 }
 
-static gpointer
+static const NML3ConfigData *
 get_best_ip_config(NMPolicy *           self,
                    int                  addr_family,
                    const char **        out_ip_iface,
@@ -982,20 +961,21 @@ get_best_ip_config(NMPolicy *           self,
                    NMDevice **          out_device,
                    NMVpnConnection **   out_vpn)
 {
-    NMPolicyPrivate *   priv = NM_POLICY_GET_PRIVATE(self);
-    gpointer            conf, best_conf = NULL;
-    const CList *       tmp_list;
-    NMActiveConnection *ac;
-    guint64             best_metric = G_MAXUINT64;
-    NMVpnConnection *   best_vpn    = NULL;
+    NMPolicyPrivate *     priv      = NM_POLICY_GET_PRIVATE(self);
+    const NML3ConfigData *l3cd_best = NULL;
+    const CList *         tmp_list;
+    NMActiveConnection *  ac;
+    guint64               best_metric = G_MAXUINT64;
+    NMVpnConnection *     best_vpn    = NULL;
 
     nm_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
 
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
-        NMVpnConnection *    candidate;
-        NMVpnConnectionState vpn_state;
-        const NMPObject *    obj;
-        guint32              metric;
+        const NML3ConfigData *l3cd;
+        NMVpnConnection *     candidate;
+        NMVpnConnectionState  vpn_state;
+        const NMPObject *     obj;
+        guint32               metric;
 
         if (!NM_IS_VPN_CONNECTION(ac))
             continue;
@@ -1006,24 +986,18 @@ get_best_ip_config(NMPolicy *           self,
         if (vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
             continue;
 
-        if (addr_family == AF_INET)
-            conf = nm_vpn_connection_get_ip4_config(candidate);
-        else
-            conf = nm_vpn_connection_get_ip6_config(candidate);
-        if (!conf)
+        l3cd = nm_vpn_connection_get_l3cd(candidate, addr_family);
+        if (!l3cd)
             continue;
 
-        if (addr_family == AF_INET)
-            obj = nm_ip4_config_best_default_route_get(conf);
-        else
-            obj = nm_ip6_config_best_default_route_get(conf);
+        obj = nm_l3_config_data_get_best_default_route(l3cd, addr_family);
         if (!obj)
             continue;
 
         metric = NMP_OBJECT_CAST_IPX_ROUTE(obj)->rx.metric;
         if (metric <= best_metric) {
             best_metric = metric;
-            best_conf   = conf;
+            l3cd_best   = l3cd;
             best_vpn    = candidate;
         }
     }
@@ -1033,25 +1007,20 @@ get_best_ip_config(NMPolicy *           self,
         NM_SET_OUT(out_vpn, best_vpn);
         NM_SET_OUT(out_ac, NM_ACTIVE_CONNECTION(best_vpn));
         NM_SET_OUT(out_ip_iface, nm_vpn_connection_get_ip_iface(best_vpn, TRUE));
-        return best_conf;
+        return l3cd_best;
     }
 
     ac = get_best_active_connection(self, addr_family, TRUE);
     if (ac) {
         NMDevice *device = nm_active_connection_get_device(ac);
 
-        nm_assert(device);
-
-        if (addr_family == AF_INET)
-            conf = nm_device_get_ip4_config(device);
-        else
-            conf = nm_device_get_ip6_config(device);
+        nm_assert(NM_IS_DEVICE(device));
 
         NM_SET_OUT(out_device, device);
         NM_SET_OUT(out_vpn, NULL);
         NM_SET_OUT(out_ac, ac);
         NM_SET_OUT(out_ip_iface, nm_device_get_ip_iface(device));
-        return conf;
+        return nm_device_get_l3cd(device, TRUE);
     }
 
     NM_SET_OUT(out_device, NULL);
@@ -1069,8 +1038,6 @@ update_ip4_routing(NMPolicy *self, gboolean force_update)
     NMVpnConnection *   vpn      = NULL;
     NMActiveConnection *best_ac  = NULL;
     const char *        ip_iface = NULL;
-    const CList *       tmp_list;
-    NMActiveConnection *ac;
 
     /* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
      * so we can get (vpn != NULL && best == NULL).
@@ -1088,9 +1055,11 @@ update_ip4_routing(NMPolicy *self, gboolean force_update)
         return;
 
     if (best) {
+        const CList *       tmp_list;
+        NMActiveConnection *ac;
+
         nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
-            if (NM_IS_VPN_CONNECTION(ac) && nm_vpn_connection_get_ip4_config(NM_VPN_CONNECTION(ac))
-                && !nm_active_connection_get_device(ac))
+            if (NM_IS_VPN_CONNECTION(ac) && !nm_active_connection_get_device(ac))
                 nm_active_connection_set_device(ac, best);
         }
     }
@@ -1132,8 +1101,6 @@ update_ip6_routing(NMPolicy *self, gboolean force_update)
     NMVpnConnection *   vpn      = NULL;
     NMActiveConnection *best_ac  = NULL;
     const char *        ip_iface = NULL;
-    NMActiveConnection *ac;
-    const CList *       tmp_list;
 
     /* Note that we might have an IPv6 VPN tunneled over an IPv4-only device,
      * so we can get (vpn != NULL && best == NULL).
@@ -1151,9 +1118,11 @@ update_ip6_routing(NMPolicy *self, gboolean force_update)
         return;
 
     if (best) {
+        const CList *       tmp_list;
+        NMActiveConnection *ac;
+
         nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
-            if (NM_IS_VPN_CONNECTION(ac) && nm_vpn_connection_get_ip6_config(NM_VPN_CONNECTION(ac))
-                && !nm_active_connection_get_device(ac))
+            if (NM_IS_VPN_CONNECTION(ac) && !nm_active_connection_get_device(ac))
                 nm_active_connection_set_device(ac, best);
         }
     }
@@ -1176,25 +1145,38 @@ update_ip6_routing(NMPolicy *self, gboolean force_update)
 static void
 update_ip_dns(NMPolicy *self, int addr_family, NMDevice *changed_device)
 {
-    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-    gpointer         ip_config;
-    const char *     ip_iface = NULL;
-    NMVpnConnection *vpn      = NULL;
-    NMDevice *       device   = NULL;
+    NMPolicyPrivate *     priv = NM_POLICY_GET_PRIVATE(self);
+    const NML3ConfigData *l3cd;
+    const char *          ip_iface = NULL;
+    NMVpnConnection *     vpn      = NULL;
+    NMDevice *            device   = NULL;
 
     nm_assert_addr_family(addr_family);
 
-    ip_config = get_best_ip_config(self, addr_family, &ip_iface, NULL, &device, &vpn);
-    if (ip_config) {
+    l3cd = get_best_ip_config(self, addr_family, &ip_iface, NULL, &device, &vpn);
+    if (l3cd) {
+        NMDnsIPConfigType ip_config_type;
+
+        nm_assert(!device || NM_IS_DEVICE(device));
+        nm_assert(!vpn || NM_IS_VPN_CONNECTION(vpn));
+        nm_assert((!!device) != (!!vpn));
+
         /* Tell the DNS manager this config is preferred by re-adding it with
          * a different IP config type.
          */
-        _dns_manager_set_ip_config(NM_POLICY_GET_PRIVATE(self)->dns_manager,
-                                   ip_config,
-                                   (vpn || (device && nm_device_is_vpn(device)))
-                                       ? NM_DNS_IP_CONFIG_TYPE_VPN
-                                       : NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE,
-                                   device);
+        if (device && nm_device_sys_iface_state_is_external(device))
+            ip_config_type = NM_DNS_IP_CONFIG_TYPE_REMOVED;
+        else if (vpn || (device && nm_device_is_vpn(device)))
+            ip_config_type = NM_DNS_IP_CONFIG_TYPE_VPN;
+        else
+            ip_config_type = NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE;
+
+        nm_dns_manager_set_ip_config(NM_POLICY_GET_PRIVATE(self)->dns_manager,
+                                     addr_family,
+                                     ((gconstpointer) device) ?: ((gconstpointer) vpn),
+                                     l3cd,
+                                     ip_config_type,
+                                     TRUE);
     }
 
     if (addr_family == AF_INET6) {
@@ -1909,9 +1891,7 @@ device_state_changed(NMDevice *          device,
     NMPolicy *            self = _PRIV_TO_SELF(priv);
     NMActiveConnection *  ac;
     NMSettingsConnection *sett_conn = nm_device_get_settings_connection(device);
-    NMIP4Config *         ip4_config;
-    NMIP6Config *         ip6_config;
-    NMSettingConnection * s_con = NULL;
+    NMSettingConnection * s_con     = NULL;
 
     switch (nm_device_state_reason_check(reason)) {
     case NM_DEVICE_STATE_REASON_GSM_SIM_PIN_REQUIRED:
@@ -2013,27 +1993,6 @@ device_state_changed(NMDevice *          device,
             /* Reset auto retries back to default since connection was successful */
             nm_settings_connection_autoconnect_retries_reset(sett_conn);
         }
-
-        /* Add device's new IPv4 and IPv6 configs to DNS */
-
-        nm_dns_manager_begin_updates(priv->dns_manager, __func__);
-
-        ip4_config = nm_device_get_ip4_config(device);
-        if (ip4_config)
-            _dns_manager_set_ip_config(priv->dns_manager,
-                                       NM_IP_CONFIG_CAST(ip4_config),
-                                       NM_DNS_IP_CONFIG_TYPE_DEFAULT,
-                                       device);
-        ip6_config = nm_device_get_ip6_config(device);
-        if (ip6_config)
-            _dns_manager_set_ip_config(priv->dns_manager,
-                                       NM_IP_CONFIG_CAST(ip6_config),
-                                       NM_DNS_IP_CONFIG_TYPE_DEFAULT,
-                                       device);
-
-        update_routing_and_dns(self, FALSE, device);
-
-        nm_dns_manager_end_updates(priv->dns_manager, __func__);
         break;
     case NM_DEVICE_STATE_UNMANAGED:
     case NM_DEVICE_STATE_UNAVAILABLE:
@@ -2135,24 +2094,16 @@ device_state_changed(NMDevice *          device,
 }
 
 static void
-device_ip_config_changed(NMDevice *  device,
-                         NMIPConfig *new_config,
-                         NMIPConfig *old_config,
-                         gpointer    user_data)
+device_l3cd_changed(NMDevice *            device,
+                    const NML3ConfigData *l3cd_old,
+                    const NML3ConfigData *l3cd_new,
+                    gpointer              user_data)
 {
     NMPolicyPrivate *priv = user_data;
     NMPolicy *       self = _PRIV_TO_SELF(priv);
-    int              addr_family;
 
-    nm_assert(new_config || old_config);
-    nm_assert(!new_config || NM_IS_IP_CONFIG(new_config));
-    nm_assert(!old_config || NM_IS_IP_CONFIG(old_config));
-
-    if (new_config) {
-        addr_family = nm_ip_config_get_addr_family(new_config);
-        nm_assert(!old_config || addr_family == nm_ip_config_get_addr_family(old_config));
-    } else
-        addr_family = nm_ip_config_get_addr_family(old_config);
+    nm_assert(!l3cd_new || NM_IS_L3_CONFIG_DATA(l3cd_new));
+    nm_assert(!l3cd_old || NM_IS_L3_CONFIG_DATA(l3cd_old));
 
     nm_dns_manager_begin_updates(priv->dns_manager, __func__);
 
@@ -2161,30 +2112,25 @@ device_ip_config_changed(NMDevice *  device,
      * ignore IP config changes but when the device is in activated state.
      * Prevents unnecessary changes to DNS information.
      */
-    if (nm_device_get_state(device) == NM_DEVICE_STATE_ACTIVATED) {
-        if (old_config != new_config) {
-            if (new_config)
-                _dns_manager_set_ip_config(priv->dns_manager,
-                                           new_config,
-                                           NM_DNS_IP_CONFIG_TYPE_DEFAULT,
-                                           device);
-            if (old_config)
-                nm_dns_manager_set_ip_config(priv->dns_manager,
-                                             old_config,
-                                             NM_DNS_IP_CONFIG_TYPE_REMOVED);
-        }
-        update_ip_dns(self, addr_family, device);
-        if (addr_family == AF_INET)
-            update_ip4_routing(self, TRUE);
-        else
-            update_ip6_routing(self, TRUE);
-        update_system_hostname(self, addr_family == AF_INET ? "ip4 conf" : "ip6 conf");
+    if (nm_device_get_state(device) < NM_DEVICE_STATE_DEACTIVATING) {
+        nm_dns_manager_set_ip_config(priv->dns_manager,
+                                     AF_UNSPEC,
+                                     device,
+                                     l3cd_new,
+                                     NM_DNS_IP_CONFIG_TYPE_DEFAULT,
+                                     TRUE);
+        update_ip_dns(self, AF_INET, device);
+        update_ip_dns(self, AF_INET6, device);
+        update_ip4_routing(self, TRUE);
+        update_ip6_routing(self, TRUE);
+        update_system_hostname(self, "ip conf");
     } else {
-        /* Old configs get removed immediately */
-        if (old_config)
-            nm_dns_manager_set_ip_config(priv->dns_manager,
-                                         old_config,
-                                         NM_DNS_IP_CONFIG_TYPE_REMOVED);
+        nm_dns_manager_set_ip_config(priv->dns_manager,
+                                     AF_UNSPEC,
+                                     device,
+                                     l3cd_old,
+                                     NM_DNS_IP_CONFIG_TYPE_REMOVED,
+                                     TRUE);
     }
 
     nm_dns_manager_end_updates(priv->dns_manager, __func__);
@@ -2225,14 +2171,7 @@ devices_list_register(NMPolicy *self, NMDevice *device)
 
     /* Connect state-changed with _after, so that the handler is invoked after other handlers. */
     g_signal_connect_after(device, NM_DEVICE_STATE_CHANGED, G_CALLBACK(device_state_changed), priv);
-    g_signal_connect(device,
-                     NM_DEVICE_IP4_CONFIG_CHANGED,
-                     G_CALLBACK(device_ip_config_changed),
-                     priv);
-    g_signal_connect(device,
-                     NM_DEVICE_IP6_CONFIG_CHANGED,
-                     G_CALLBACK(device_ip_config_changed),
-                     priv);
+    g_signal_connect(device, NM_DEVICE_L3CD_CHANGED, G_CALLBACK(device_l3cd_changed), priv);
     g_signal_connect(device,
                      NM_DEVICE_IP6_PREFIX_DELEGATED,
                      G_CALLBACK(device_ip6_prefix_delegated),
@@ -2294,51 +2233,26 @@ device_removed(NMManager *manager, NMDevice *device, gpointer user_data)
 /*****************************************************************************/
 
 static void
-vpn_connection_activated(NMPolicy *self, NMVpnConnection *vpn)
+vpn_connection_update_dns(NMPolicy *self, NMVpnConnection *vpn, gboolean remove)
 {
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-    NMIP4Config *    ip4_config;
-    NMIP6Config *    ip6_config;
+    int              IS_IPv4;
 
     nm_dns_manager_begin_updates(priv->dns_manager, __func__);
 
-    ip4_config = nm_vpn_connection_get_ip4_config(vpn);
-    if (ip4_config)
+    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        int                   addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+        const NML3ConfigData *l3cd;
+
+        l3cd = nm_vpn_connection_get_l3cd(vpn, addr_family);
         nm_dns_manager_set_ip_config(priv->dns_manager,
-                                     NM_IP_CONFIG_CAST(ip4_config),
-                                     NM_DNS_IP_CONFIG_TYPE_VPN);
-
-    ip6_config = nm_vpn_connection_get_ip6_config(vpn);
-    if (ip6_config)
-        nm_dns_manager_set_ip_config(priv->dns_manager,
-                                     NM_IP_CONFIG_CAST(ip6_config),
-                                     NM_DNS_IP_CONFIG_TYPE_VPN);
-
-    update_routing_and_dns(self, TRUE, NULL);
-
-    nm_dns_manager_end_updates(priv->dns_manager, __func__);
-}
-
-static void
-vpn_connection_deactivated(NMPolicy *self, NMVpnConnection *vpn)
-{
-    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-    NMIP4Config *    ip4_config;
-    NMIP6Config *    ip6_config;
-
-    nm_dns_manager_begin_updates(priv->dns_manager, __func__);
-
-    ip4_config = nm_vpn_connection_get_ip4_config(vpn);
-    if (ip4_config)
-        nm_dns_manager_set_ip_config(priv->dns_manager,
-                                     NM_IP_CONFIG_CAST(ip4_config),
-                                     NM_DNS_IP_CONFIG_TYPE_REMOVED);
-
-    ip6_config = nm_vpn_connection_get_ip6_config(vpn);
-    if (ip6_config)
-        nm_dns_manager_set_ip_config(priv->dns_manager,
-                                     NM_IP_CONFIG_CAST(ip6_config),
-                                     NM_DNS_IP_CONFIG_TYPE_REMOVED);
+                                     addr_family,
+                                     vpn,
+                                     l3cd,
+                                     remove ? NM_DNS_IP_CONFIG_TYPE_REMOVED
+                                            : NM_DNS_IP_CONFIG_TYPE_VPN,
+                                     TRUE);
+    }
 
     update_routing_and_dns(self, TRUE, NULL);
 
@@ -2352,13 +2266,14 @@ vpn_connection_state_changed(NMVpnConnection *             vpn,
                              NMActiveConnectionStateReason reason,
                              NMPolicy *                    self)
 {
+    /* FIXME(l3cfg): we need to track changes to nm_vpn_connection_get_l3cd(). */
     if (new_state == NM_VPN_CONNECTION_STATE_ACTIVATED)
-        vpn_connection_activated(self, vpn);
+        vpn_connection_update_dns(self, vpn, FALSE);
     else if (new_state >= NM_VPN_CONNECTION_STATE_FAILED) {
         /* Only clean up IP/DNS if the connection ever got past IP_CONFIG */
         if (old_state >= NM_VPN_CONNECTION_STATE_IP_CONFIG_GET
             && old_state <= NM_VPN_CONNECTION_STATE_ACTIVATED)
-            vpn_connection_deactivated(self, vpn);
+            vpn_connection_update_dns(self, vpn, TRUE);
     }
 }
 

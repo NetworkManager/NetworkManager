@@ -19,7 +19,6 @@
 #include "nm-setting-macvlan.h"
 #include "nm-setting-wired.h"
 #include "nm-active-connection.h"
-#include "nm-ip4-config.h"
 #include "nm-utils.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceMacvlan

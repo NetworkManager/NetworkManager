@@ -26,17 +26,7 @@
 #define NM_IS_NDISC_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_NDISC))
 #define NM_NDISC_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_NDISC, NMNDiscClass))
 
-#define NM_NDISC_PLATFORM                     "platform"
-#define NM_NDISC_IFINDEX                      "ifindex"
-#define NM_NDISC_IFNAME                       "ifname"
-#define NM_NDISC_NETWORK_ID                   "network-id"
-#define NM_NDISC_ADDR_GEN_MODE                "addr-gen-mode"
-#define NM_NDISC_STABLE_TYPE                  "stable-type"
-#define NM_NDISC_NODE_TYPE                    "node-type"
-#define NM_NDISC_MAX_ADDRESSES                "max-addresses"
-#define NM_NDISC_RA_TIMEOUT                   "ra-timeout"
-#define NM_NDISC_ROUTER_SOLICITATIONS         "router-solicitations"
-#define NM_NDISC_ROUTER_SOLICITATION_INTERVAL "router-solicitation-interval"
+#define NM_NDISC_CONFIG "config"
 
 #define NM_NDISC_CONFIG_RECEIVED   "config-received"
 #define NM_NDISC_RA_TIMEOUT_SIGNAL "ra-timeout-signal"
@@ -169,6 +159,20 @@ typedef enum {
 #define NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL     600 /* RFC4861, MaxRtrAdvInterval default */
 #define NM_NDISC_ROUTER_LIFETIME                900 /* 1.5 * NM_NDISC_ROUTER_ADVERT_MAX_INTERVAL */
 
+typedef struct {
+    NML3Cfg *                     l3cfg;
+    const char *                  ifname;
+    const char *                  network_id;
+    int                           max_addresses;
+    int                           router_solicitations;
+    int                           router_solicitation_interval;
+    guint32                       ra_timeout;
+    NMUtilsStableType             stable_type;
+    NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+    NMNDiscNodeType               node_type;
+    NMSettingIP6ConfigPrivacy     ip6_privacy;
+} NMNDiscConfig;
+
 struct _NMNDiscPrivate;
 struct _NMNDiscDataInternal;
 
@@ -217,8 +221,6 @@ typedef struct {
 
 GType nm_ndisc_get_type(void);
 
-void nm_ndisc_emit_config_change(NMNDisc *self, NMNDiscConfigMap changed);
-
 int             nm_ndisc_get_ifindex(NMNDisc *self);
 const char *    nm_ndisc_get_ifname(NMNDisc *self);
 NMNDiscNodeType nm_ndisc_get_node_type(NMNDisc *self);
@@ -228,10 +230,7 @@ void     nm_ndisc_start(NMNDisc *ndisc);
 void     nm_ndisc_stop(NMNDisc *ndisc);
 NMNDiscConfigMap
 nm_ndisc_dad_failed(NMNDisc *ndisc, const struct in6_addr *address, gboolean emit_changed_signal);
-void nm_ndisc_set_config(NMNDisc *     ndisc,
-                         const GArray *addresses,
-                         const GArray *dns_servers,
-                         const GArray *dns_domains);
+void nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd);
 
 NMPlatform *nm_ndisc_get_platform(NMNDisc *self);
 NMPNetns *  nm_ndisc_netns_get(NMNDisc *self);
@@ -280,10 +279,6 @@ struct _NML3ConfigData;
 struct _NML3ConfigData *nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
                                               int                       ifindex,
                                               const NMNDiscData *       rdata,
-                                              NMSettingIP6ConfigPrivacy ip6_privacy,
-                                              guint32                   route_table,
-                                              guint32                   route_metric,
-                                              gboolean                  kernel_support_rta_pref,
-                                              gboolean kernel_support_extended_ifa_flags);
+                                              NMSettingIP6ConfigPrivacy ip6_privacy);
 
 #endif /* __NETWORKMANAGER_NDISC_H__ */

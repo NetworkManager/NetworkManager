@@ -11,7 +11,7 @@
 #include "devices/nm-device-private.h"
 #include "nm-modem.h"
 #include "libnm-platform/nm-platform.h"
-#include "nm-ip4-config.h"
+#include "nm-l3-config-data.h"
 
 #define VARIANT_IS_OF_TYPE_BOOLEAN(v) \
     ((v) != NULL && (g_variant_is_of_type((v), G_VARIANT_TYPE_BOOLEAN)))
@@ -47,7 +47,7 @@ typedef struct {
     gboolean modem_online;
     gboolean gprs_attached;
 
-    NMIP4Config *ip4_config;
+    NML3ConfigData *l3cd_4;
 } NMModemOfonoPrivate;
 
 struct _NMModemOfono {
@@ -240,7 +240,7 @@ deactivate_cleanup(NMModem *modem, NMDevice *device, gboolean stop_ppp_manager)
 
     /* TODO: cancel SimpleConnect() if any */
 
-    g_clear_object(&priv->ip4_config);
+    nm_clear_l3cd(&priv->l3cd_4);
 
     NM_MODEM_CLASS(nm_modem_ofono_parent_class)
         ->deactivate_cleanup(modem, device, stop_ppp_manager);
@@ -734,13 +734,13 @@ handle_settings(GVariant *v_dict, gpointer user_data)
 {
     NMModemOfono *       self = NM_MODEM_OFONO(user_data);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
-    NMPlatformIP4Address addr;
+    char                 sbuf[sizeof(_nm_utils_to_string_buffer)];
+    NMPlatformIP4Address address;
     gboolean             ret = FALSE;
     const char *         interface;
     const char *         s;
-    const char **        array, **iter;
+    const char **        array;
     guint32              address_network, gateway_network;
-    guint32              ip4_route_table, ip4_route_metric;
     int                  ifindex;
     GError *             error = NULL;
 
@@ -773,12 +773,14 @@ handle_settings(GVariant *v_dict, gpointer user_data)
     }
 
     ifindex = nm_modem_get_ip_ifindex(NM_MODEM(self));
-    nm_assert(ifindex > 0);
+    g_return_if_fail(ifindex > 0);
 
-    /* TODO: verify handling of ip4_config; check other places it's used... */
-    g_clear_object(&priv->ip4_config);
+    /* TODO: verify handling of l3cd_4; check other places it's used... */
+    nm_clear_l3cd(&priv->l3cd_4);
 
-    priv->ip4_config = nm_ip4_config_new(nm_platform_get_multi_idx(NM_PLATFORM_GET), ifindex);
+    priv->l3cd_4 = nm_l3_config_data_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
+                                         ifindex,
+                                         NM_IP_CONFIG_SOURCE_WWAN);
 
     if (!g_variant_lookup(v_dict, "Address", "&s", &s)) {
         _LOGW("Settings 'Address' missing");
@@ -788,10 +790,12 @@ handle_settings(GVariant *v_dict, gpointer user_data)
         _LOGW("can't convert 'Address' %s to addr", s ?: "");
         goto out;
     }
-    memset(&addr, 0, sizeof(addr));
-    addr.ifindex     = ifindex;
-    addr.address     = address_network;
-    addr.addr_source = NM_IP_CONFIG_SOURCE_WWAN;
+
+    address = (NMPlatformIP4Address){
+        .ifindex     = ifindex,
+        .address     = address_network,
+        .addr_source = NM_IP_CONFIG_SOURCE_WWAN,
+    };
 
     if (!g_variant_lookup(v_dict, "Netmask", "&s", &s)) {
         _LOGW("Settings 'Netmask' missing");
@@ -801,10 +805,10 @@ handle_settings(GVariant *v_dict, gpointer user_data)
         _LOGW("invalid 'Netmask': %s", s ?: "");
         goto out;
     }
-    addr.plen = nm_utils_ip4_netmask_to_prefix(address_network);
+    address.plen = nm_utils_ip4_netmask_to_prefix(address_network);
 
-    _LOGI("Address: %s", nm_platform_ip4_address_to_string(&addr, NULL, 0));
-    nm_ip4_config_add_address(priv->ip4_config, &addr);
+    _LOGI("Address: %s", nm_platform_ip4_address_to_string(&address, sbuf, sizeof(sbuf)));
+    nm_l3_config_data_add_address_4(priv->l3cd_4, &address);
 
     if (!g_variant_lookup(v_dict, "Gateway", "&s", &s) || !s) {
         _LOGW("Settings 'Gateway' missing");
@@ -814,17 +818,18 @@ handle_settings(GVariant *v_dict, gpointer user_data)
         _LOGW("invalid 'Gateway': %s", s);
         goto out;
     }
-    nm_modem_get_route_parameters(NM_MODEM(self), &ip4_route_table, &ip4_route_metric, NULL, NULL);
     {
         const NMPlatformIP4Route r = {
             .rt_source     = NM_IP_CONFIG_SOURCE_WWAN,
             .gateway       = gateway_network,
-            .table_coerced = nm_platform_route_table_coerce(ip4_route_table),
-            .metric        = ip4_route_metric,
+            .table_any     = TRUE,
+            .table_coerced = 0,
+            .metric_any    = TRUE,
+            .metric        = 0,
         };
 
         _LOGI("Gateway: %s", s);
-        nm_ip4_config_add_route(priv->ip4_config, &r, NULL);
+        nm_l3_config_data_add_route_4(priv->l3cd_4, &r);
     }
 
     if (!g_variant_lookup(v_dict, "DomainNameServers", "^a&s", &array)) {
@@ -832,52 +837,49 @@ handle_settings(GVariant *v_dict, gpointer user_data)
         goto out;
     }
     if (array) {
-        for (iter = array; *iter; iter++) {
-            if (nm_utils_parse_inaddr_bin(AF_INET, *iter, NULL, &address_network)
-                && address_network) {
-                _LOGI("DNS: %s", *iter);
-                nm_ip4_config_add_nameserver(priv->ip4_config, address_network);
-            } else {
-                _LOGW("invalid NameServer: %s", *iter);
-            }
-        }
+        gs_free const char **array_free = array;
+        gboolean             any_good   = FALSE;
 
-        if (iter == array) {
+        for (; array[0]; array++) {
+            if (!nm_utils_parse_inaddr_bin(AF_INET, *array, NULL, &address_network)
+                || !address_network) {
+                _LOGW("invalid NameServer: %s", *array);
+                continue;
+            }
+            any_good = TRUE;
+            _LOGI("DNS: %s", *array);
+            nm_l3_config_data_add_nameserver(priv->l3cd_4, AF_INET, &address_network);
+        }
+        if (!any_good) {
             _LOGW("Settings: 'DomainNameServers': none specified");
-            g_free(array);
             goto out;
         }
-        g_free(array);
     }
 
     if (g_variant_lookup(v_dict, "MessageProxy", "&s", &s)) {
         _LOGI("MessageProxy: %s", s);
         if (s && nm_utils_parse_inaddr_bin(AF_INET, s, NULL, &address_network)) {
-            nm_modem_get_route_parameters(NM_MODEM(self),
-                                          &ip4_route_table,
-                                          &ip4_route_metric,
-                                          NULL,
-                                          NULL);
+            const NMPlatformIP4Route mms_route = {
+                .network       = address_network,
+                .plen          = 32,
+                .gateway       = gateway_network,
+                .table_any     = TRUE,
+                .table_coerced = 0,
+                .metric_any    = TRUE,
+                .metric        = 0,
+            };
 
-            {
-                const NMPlatformIP4Route mms_route = {
-                    .network       = address_network,
-                    .plen          = 32,
-                    .gateway       = gateway_network,
-                    .table_coerced = nm_platform_route_table_coerce(ip4_route_table),
-                    .metric        = ip4_route_metric,
-                };
-
-                nm_ip4_config_add_route(priv->ip4_config, &mms_route, NULL);
-            }
-        } else {
+            nm_l3_config_data_add_route_4(priv->l3cd_4, &mms_route);
+        } else
             _LOGW("invalid MessageProxy: %s", s);
-        }
     }
 
     ret = TRUE;
 
 out:
+    if (priv->l3cd_4)
+        nm_l3_config_data_seal(priv->l3cd_4);
+
     if (nm_modem_get_state(NM_MODEM(self)) != NM_MODEM_STATE_CONNECTED) {
         _LOGI("emitting PREPARE_RESULT: %s", ret ? "TRUE" : "FALSE");
         nm_modem_emit_prepare_result(NM_MODEM(self),
@@ -917,20 +919,19 @@ static_stage3_ip4_config_start(NMModem *            modem,
                                NMActRequest *       req,
                                NMDeviceStateReason *out_failure_reason)
 {
-    NMModemOfono *       self  = NM_MODEM_OFONO(modem);
-    NMModemOfonoPrivate *priv  = NM_MODEM_OFONO_GET_PRIVATE(self);
-    GError *             error = NULL;
+    NMModemOfono *       self = NM_MODEM_OFONO(modem);
+    NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
 
-    if (!priv->ip4_config) {
+    if (!priv->l3cd_4) {
         _LOGD("IP4 config not ready(?)");
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
 
     _LOGD("IP4 config is done; setting modem_state -> CONNECTED");
-    g_signal_emit_by_name(self, NM_MODEM_IP4_CONFIG_RESULT, priv->ip4_config, error);
 
-    /* Signal listener takes ownership of the IP4Config */
-    priv->ip4_config = NULL;
+    nm_modem_emit_signal_new_config(NM_MODEM(self), AF_INET, priv->l3cd_4, FALSE, NULL, NULL);
+
+    nm_clear_l3cd(&priv->l3cd_4);
 
     nm_modem_set_state(NM_MODEM(self),
                        NM_MODEM_STATE_CONNECTED,
@@ -1040,7 +1041,7 @@ context_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
      * clear it so that we can gate getting the IP config from oFono
      * on whether or not we have already received them
      */
-    g_clear_object(&priv->ip4_config);
+    nm_clear_l3cd(&priv->l3cd_4);
 
     /* We need to directly query ConnectionContextinteface to get the current
      * property values */
@@ -1258,7 +1259,7 @@ dispose(GObject *object)
         priv->connect_properties = NULL;
     }
 
-    g_clear_object(&priv->ip4_config);
+    nm_clear_l3cd(&priv->l3cd_4);
 
     if (priv->modem_proxy) {
         g_signal_handlers_disconnect_by_data(priv->modem_proxy, self);

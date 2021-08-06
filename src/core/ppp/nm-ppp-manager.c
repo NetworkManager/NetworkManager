@@ -32,8 +32,7 @@
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-act-request.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
+#include "nm-l3-config-data.h"
 #include "nm-dbus-object.h"
 
 #include "nm-pppd-plugin.h"
@@ -62,8 +61,7 @@ GType nm_ppp_manager_get_type(void);
 enum {
     STATE_CHANGED,
     IFINDEX_SET,
-    IP4_CONFIG,
-    IP6_CONFIG,
+    NEW_CONFIG,
     STATS,
 
     LAST_SIGNAL
@@ -91,11 +89,6 @@ typedef struct {
     /* Monitoring */
     int   monitor_fd;
     guint monitor_id;
-
-    guint32 ip4_route_table;
-    guint32 ip4_route_metric;
-    guint32 ip6_route_table;
-    guint32 ip6_route_metric;
 } NMPPPManagerPrivate;
 
 struct _NMPPPManager {
@@ -131,30 +124,19 @@ static void _ppp_manager_stop_cancel(NMPPPManagerStopHandle *handle);
 /*****************************************************************************/
 
 static void
-_ppp_manager_set_route_parameters(NMPPPManager *self,
-                                  guint32       ip4_route_table,
-                                  guint32       ip4_route_metric,
-                                  guint32       ip6_route_table,
-                                  guint32       ip6_route_metric)
+_emit_signal_new_config(NMPPPManager *            self,
+                        int                       addr_family,
+                        const NML3ConfigData *    l3cd,
+                        const NMUtilsIPv6IfaceId *iid)
 {
-    NMPPPManagerPrivate *priv;
+    nm_assert(NM_IS_PPP_MANAGER(self));
+    nm_assert_addr_family(addr_family);
+    nm_assert(NM_IS_L3_CONFIG_DATA(l3cd));
+    nm_assert((!!iid) == (addr_family == AF_INET6));
 
-    g_return_if_fail(NM_IS_PPP_MANAGER(self));
+    nm_l3_config_data_seal(l3cd);
 
-    priv = NM_PPP_MANAGER_GET_PRIVATE(self);
-    if (priv->ip4_route_table != ip4_route_table || priv->ip4_route_metric != ip4_route_metric
-        || priv->ip6_route_table != ip6_route_table || priv->ip6_route_metric != ip6_route_metric) {
-        priv->ip4_route_table  = ip4_route_table;
-        priv->ip4_route_metric = ip4_route_metric;
-        priv->ip6_route_table  = ip6_route_table;
-        priv->ip6_route_metric = ip6_route_metric;
-
-        _LOGT("route-parameters: table-v4: %u, metric-v4: %u, table-v6: %u, metric-v6: %u",
-              priv->ip4_route_table,
-              priv->ip4_route_metric,
-              priv->ip6_route_table,
-              priv->ip6_route_metric);
-    }
+    g_signal_emit(self, signals[NEW_CONFIG], 0, addr_family, l3cd, iid);
 }
 
 /*****************************************************************************/
@@ -510,12 +492,12 @@ impl_ppp_manager_set_ip4_config(NMDBusObject *                     obj,
                                 GDBusMethodInvocation *            invocation,
                                 GVariant *                         parameters)
 {
-    NMPPPManager *       self           = NM_PPP_MANAGER(obj);
-    NMPPPManagerPrivate *priv           = NM_PPP_MANAGER_GET_PRIVATE(self);
-    gs_unref_object NMIP4Config *config = NULL;
-    NMPlatformIP4Address         address;
-    guint32                      u32, mtu;
-    GVariantIter *               iter;
+    NMPPPManager *          self                 = NM_PPP_MANAGER(obj);
+    NMPPPManagerPrivate *   priv                 = NM_PPP_MANAGER_GET_PRIVATE(self);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    NMPlatformIP4Address                    address;
+    guint32                                 u32, mtu;
+    GVariantIter *                          iter;
     gs_unref_variant GVariant *config_dict = NULL;
 
     _LOGI("(IPv4 Config Get) reply received.");
@@ -527,37 +509,41 @@ impl_ppp_manager_set_ip4_config(NMDBusObject *                     obj,
     if (!set_ip_config_common(self, config_dict, &mtu))
         goto out;
 
-    config = nm_ip4_config_new(nm_platform_get_multi_idx(NM_PLATFORM_GET), priv->ifindex);
+    l3cd = nm_l3_config_data_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
+                                 priv->ifindex,
+                                 NM_IP_CONFIG_SOURCE_PPP);
 
-    if (mtu)
-        nm_ip4_config_set_mtu(config, mtu, NM_IP_CONFIG_SOURCE_PPP);
+    nm_l3_config_data_set_mtu(l3cd, mtu);
 
-    memset(&address, 0, sizeof(address));
-    address.plen = 32;
+    address = (NMPlatformIP4Address){
+        .plen = 32,
+    };
 
     if (g_variant_lookup(config_dict, NM_PPP_IP4_CONFIG_ADDRESS, "u", &u32))
         address.address = u32;
+
+    if (g_variant_lookup(config_dict, NM_PPP_IP4_CONFIG_PREFIX, "u", &u32))
+        address.plen = u32;
 
     if (g_variant_lookup(config_dict, NM_PPP_IP4_CONFIG_GATEWAY, "u", &u32)) {
         const NMPlatformIP4Route r = {
             .ifindex       = priv->ifindex,
             .rt_source     = NM_IP_CONFIG_SOURCE_PPP,
             .gateway       = u32,
-            .table_coerced = nm_platform_route_table_coerce(priv->ip4_route_table),
-            .metric        = priv->ip4_route_metric,
+            .table_any     = TRUE,
+            .table_coerced = 0,
+            .metric_any    = TRUE,
+            .metric        = 0,
         };
 
-        nm_ip4_config_add_route(config, &r, NULL);
+        nm_l3_config_data_add_route_4(l3cd, &r);
         address.peer_address = u32;
     } else
         address.peer_address = address.address;
 
-    if (g_variant_lookup(config_dict, NM_PPP_IP4_CONFIG_PREFIX, "u", &u32))
-        address.plen = u32;
-
-    if (address.address && address.plen && address.plen <= 32) {
+    if (address.address && address.plen > 0 && address.plen <= 32) {
         address.addr_source = NM_IP_CONFIG_SOURCE_PPP;
-        nm_ip4_config_add_address(config, &address);
+        nm_l3_config_data_add_address_4(l3cd, &address);
     } else {
         _LOGE("invalid IPv4 address received!");
         goto out;
@@ -565,18 +551,17 @@ impl_ppp_manager_set_ip4_config(NMDBusObject *                     obj,
 
     if (g_variant_lookup(config_dict, NM_PPP_IP4_CONFIG_DNS, "au", &iter)) {
         while (g_variant_iter_next(iter, "u", &u32))
-            nm_ip4_config_add_nameserver(config, u32);
+            nm_l3_config_data_add_nameserver(l3cd, AF_INET, &u32);
         g_variant_iter_free(iter);
     }
 
     if (g_variant_lookup(config_dict, NM_PPP_IP4_CONFIG_WINS, "au", &iter)) {
         while (g_variant_iter_next(iter, "u", &u32))
-            nm_ip4_config_add_wins(config, u32);
+            nm_l3_config_data_add_wins(l3cd, u32);
         g_variant_iter_free(iter);
     }
 
-    /* Push the IP4 config up to the device */
-    g_signal_emit(self, signals[IP4_CONFIG], 0, config);
+    _emit_signal_new_config(self, AF_INET, l3cd, NULL);
 
 out:
     g_dbus_method_invocation_return_value(invocation, NULL);
@@ -620,14 +605,14 @@ impl_ppp_manager_set_ip6_config(NMDBusObject *                     obj,
                                 GDBusMethodInvocation *            invocation,
                                 GVariant *                         parameters)
 {
-    NMPPPManager *       self           = NM_PPP_MANAGER(obj);
-    NMPPPManagerPrivate *priv           = NM_PPP_MANAGER_GET_PRIVATE(self);
-    gs_unref_object NMIP6Config *config = NULL;
-    NMPlatformIP6Address         addr;
-    struct in6_addr              a;
-    NMUtilsIPv6IfaceId           iid       = NM_UTILS_IPV6_IFACE_ID_INIT;
-    gboolean                     has_peer  = FALSE;
-    gs_unref_variant GVariant *config_dict = NULL;
+    NMPPPManager *          self                 = NM_PPP_MANAGER(obj);
+    NMPPPManagerPrivate *   priv                 = NM_PPP_MANAGER_GET_PRIVATE(self);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    NMPlatformIP6Address                    address;
+    struct in6_addr                         a;
+    NMUtilsIPv6IfaceId                      iid      = NM_UTILS_IPV6_IFACE_ID_INIT;
+    gboolean                                has_peer = FALSE;
+    gs_unref_variant GVariant *config_dict           = NULL;
 
     _LOGI("(IPv6 Config Get) reply received.");
 
@@ -638,32 +623,36 @@ impl_ppp_manager_set_ip6_config(NMDBusObject *                     obj,
     if (!set_ip_config_common(self, config_dict, NULL))
         goto out;
 
-    config = nm_ip6_config_new(nm_platform_get_multi_idx(NM_PLATFORM_GET), priv->ifindex);
+    l3cd = nm_l3_config_data_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
+                                 priv->ifindex,
+                                 NM_IP_CONFIG_SOURCE_PPP);
 
-    memset(&addr, 0, sizeof(addr));
-    addr.plen = 64;
+    address = (NMPlatformIP6Address){
+        .plen = 64,
+    };
 
     if (iid_value_to_ll6_addr(config_dict, NM_PPP_IP6_CONFIG_PEER_IID, &a, NULL)) {
         const NMPlatformIP6Route r = {
             .ifindex       = priv->ifindex,
             .rt_source     = NM_IP_CONFIG_SOURCE_PPP,
             .gateway       = a,
-            .table_coerced = nm_platform_route_table_coerce(priv->ip6_route_table),
-            .metric        = priv->ip6_route_metric,
+            .table_any     = TRUE,
+            .table_coerced = 0,
+            .metric_any    = TRUE,
+            .metric        = 0,
         };
 
-        nm_ip6_config_add_route(config, &r, NULL);
-        addr.peer_address = a;
-        has_peer          = TRUE;
+        nm_l3_config_data_add_route_6(l3cd, &r);
+        address.peer_address = a;
+        has_peer             = TRUE;
     }
 
-    if (iid_value_to_ll6_addr(config_dict, NM_PPP_IP6_CONFIG_OUR_IID, &addr.address, &iid)) {
+    if (iid_value_to_ll6_addr(config_dict, NM_PPP_IP6_CONFIG_OUR_IID, &address.address, &iid)) {
         if (!has_peer)
-            addr.peer_address = addr.address;
-        nm_ip6_config_add_address(config, &addr);
+            address.peer_address = address.address;
+        nm_l3_config_data_add_address_6(l3cd, &address);
 
-        /* Push the IPv6 config and interface identifier up to the device */
-        g_signal_emit(self, signals[IP6_CONFIG], 0, &iid, config);
+        _emit_signal_new_config(self, AF_INET6, l3cd, &iid);
     } else
         _LOGE("invalid IPv6 address received!");
 
@@ -1290,12 +1279,8 @@ nm_ppp_manager_init(NMPPPManager *self)
 {
     NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
 
-    priv->ifindex          = -1;
-    priv->monitor_fd       = -1;
-    priv->ip4_route_table  = RT_TABLE_MAIN;
-    priv->ip4_route_metric = 460;
-    priv->ip6_route_table  = RT_TABLE_MAIN;
-    priv->ip6_route_metric = 460;
+    priv->ifindex    = -1;
+    priv->monitor_fd = -1;
 }
 
 static NMPPPManager *
@@ -1414,7 +1399,7 @@ nm_ppp_manager_class_init(NMPPPManagerClass *manager_class)
                                         G_TYPE_INT,
                                         G_TYPE_STRING);
 
-    signals[IP4_CONFIG] = g_signal_new(NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
+    signals[NEW_CONFIG] = g_signal_new(NM_PPP_MANAGER_SIGNAL_NEW_CONFIG,
                                        G_OBJECT_CLASS_TYPE(object_class),
                                        G_SIGNAL_RUN_FIRST,
                                        0,
@@ -1422,20 +1407,10 @@ nm_ppp_manager_class_init(NMPPPManagerClass *manager_class)
                                        NULL,
                                        NULL,
                                        G_TYPE_NONE,
-                                       1,
-                                       G_TYPE_OBJECT);
-
-    signals[IP6_CONFIG] = g_signal_new(NM_PPP_MANAGER_SIGNAL_IP6_CONFIG,
-                                       G_OBJECT_CLASS_TYPE(object_class),
-                                       G_SIGNAL_RUN_FIRST,
-                                       0,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       G_TYPE_NONE,
-                                       2,
-                                       G_TYPE_POINTER,
-                                       G_TYPE_OBJECT);
+                                       3,
+                                       G_TYPE_INT,      /* addr_family */
+                                       G_TYPE_POINTER,  /* (const NML3ConfigData *) */
+                                       G_TYPE_POINTER); /* (const NMUtilsIPv6IfaceId *) */
 
     signals[STATS] = g_signal_new(NM_PPP_MANAGER_SIGNAL_STATS,
                                   G_OBJECT_CLASS_TYPE(object_class),
@@ -1451,9 +1426,8 @@ nm_ppp_manager_class_init(NMPPPManagerClass *manager_class)
 }
 
 const NMPPPOps ppp_ops = {
-    .create               = _ppp_manager_new,
-    .set_route_parameters = _ppp_manager_set_route_parameters,
-    .start                = _ppp_manager_start,
-    .stop                 = _ppp_manager_stop,
-    .stop_cancel          = _ppp_manager_stop_cancel,
+    .create      = _ppp_manager_new,
+    .start       = _ppp_manager_start,
+    .stop        = _ppp_manager_stop,
+    .stop_cancel = _ppp_manager_stop_cancel,
 };

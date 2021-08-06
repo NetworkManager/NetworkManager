@@ -20,8 +20,7 @@
 #include "devices/nm-device-private.h"
 #include "nm-netns.h"
 #include "nm-act-request.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
+#include "nm-l3-config-data.h"
 #include "ppp/nm-ppp-manager-call.h"
 #include "ppp/nm-ppp-status.h"
 
@@ -45,8 +44,7 @@ enum {
     PPP_STATS,
     PPP_FAILED,
     PREPARE_RESULT,
-    IP4_CONFIG_RESULT,
-    IP6_CONFIG_RESULT,
+    NEW_CONFIG,
     AUTH_REQUESTED,
     AUTH_RESULT,
     REMOVED,
@@ -67,18 +65,17 @@ typedef struct _NMModemPrivate {
      * We should rework the code that it's not necessary */
     char *ip_iface;
 
-    int                ip_ifindex;
-    NMModemIPMethod    ip4_method;
-    NMModemIPMethod    ip6_method;
-    NMUtilsIPv6IfaceId iid;
-    NMModemState       state;
-    NMModemState       prev_state; /* revert to this state if enable/disable fails */
-    char *             device_id;
-    char *             sim_id;
-    NMModemIPType      ip_types;
-    char *             sim_operator_id;
-    char *             operator_code;
-    char *             apn;
+    int             ip_ifindex;
+    NMModemIPMethod ip4_method;
+    NMModemIPMethod ip6_method;
+    NMModemState    state;
+    NMModemState    prev_state; /* revert to this state if enable/disable fails */
+    char *          device_id;
+    char *          sim_id;
+    NMModemIPType   ip_types;
+    char *          sim_operator_id;
+    char *          operator_code;
+    char *          apn;
 
     NMPPPManager *ppp_manager;
 
@@ -87,11 +84,6 @@ typedef struct _NMModemPrivate {
     NMActRequestGetSecretsCallId *secrets_id;
 
     guint mm_ip_timeout;
-
-    guint32 ip4_route_table;
-    guint32 ip4_route_metric;
-    guint32 ip6_route_table;
-    guint32 ip6_route_metric;
 
     /* PPP stats */
     guint32 in_bytes;
@@ -179,6 +171,41 @@ nm_modem_state_to_string(NMModemState state)
 }
 
 /*****************************************************************************/
+
+void
+nm_modem_emit_signal_new_config(NMModem *                 self,
+                                int                       addr_family,
+                                const NML3ConfigData *    l3cd,
+                                gboolean                  do_slaac,
+                                const NMUtilsIPv6IfaceId *iid,
+                                GError *                  error)
+{
+    nm_assert(NM_IS_MODEM(self));
+    nm_assert_addr_family(addr_family);
+    nm_assert(!l3cd || NM_IS_L3_CONFIG_DATA(l3cd));
+    nm_assert(!do_slaac || addr_family == AF_INET6);
+    nm_assert(!iid || addr_family == AF_INET6);
+    nm_assert(!error || (!l3cd && !do_slaac && !iid));
+
+    if (error) {
+        do_slaac = FALSE;
+        l3cd     = NULL;
+        iid      = NULL;
+        goto out_emit;
+    }
+
+    if (addr_family == AF_INET6) {
+        do_slaac = !!do_slaac;
+    } else {
+        iid      = NULL;
+        do_slaac = FALSE;
+    }
+    if (l3cd)
+        nm_l3_config_data_seal(l3cd);
+
+out_emit:
+    g_signal_emit(self, signals[NEW_CONFIG], 0, addr_family, l3cd, do_slaac, iid, error);
+}
 
 gboolean
 nm_modem_is_claimed(NMModem *self)
@@ -523,66 +550,73 @@ ppp_ifindex_set(NMPPPManager *ppp_manager, int ifindex, const char *iface, gpoin
 }
 
 static void
-ppp_ip4_config(NMPPPManager *ppp_manager, NMIP4Config *config, gpointer user_data)
-{
-    NMModem *self = NM_MODEM(user_data);
-    guint32  i, num;
-    guint32  bad_dns1       = htonl(0x0A0B0C0D);
-    guint32  good_dns1      = htonl(0x04020201); /* GTE nameserver */
-    guint32  bad_dns2       = htonl(0x0A0B0C0E);
-    guint32  good_dns2      = htonl(0x04020202); /* GTE nameserver */
-    gboolean dns_workaround = FALSE;
-
-    /* Work around a PPP bug (#1732) which causes many mobile broadband
-     * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
-     * Apparently fixed in ppp-2.4.5 but we've had some reports that this is
-     * not the case.
-     *
-     * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=2e09ef6886bbf00bc5a9a641110f801e372ffde6
-     * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=f8191bf07df374f119a07910a79217c7618f113e
-     */
-
-    num = nm_ip4_config_get_num_nameservers(config);
-    if (num == 2) {
-        gboolean found1 = FALSE, found2 = FALSE;
-
-        for (i = 0; i < num; i++) {
-            guint32 ns = nm_ip4_config_get_nameserver(config, i);
-
-            if (ns == bad_dns1)
-                found1 = TRUE;
-            else if (ns == bad_dns2)
-                found2 = TRUE;
-        }
-
-        /* Be somewhat conservative about substitutions; the "bad" nameservers
-         * could actually be valid in some cases, so only substitute if ppp
-         * returns *only* the two bad nameservers.
-         */
-        dns_workaround = (found1 && found2);
-    }
-
-    if (!num || dns_workaround) {
-        _LOGW("compensating for invalid PPP-provided nameservers");
-        nm_ip4_config_reset_nameservers(config);
-        nm_ip4_config_add_nameserver(config, good_dns1);
-        nm_ip4_config_add_nameserver(config, good_dns2);
-    }
-
-    g_signal_emit(self, signals[IP4_CONFIG_RESULT], 0, config, NULL);
-}
-
-static void
-ppp_ip6_config(NMPPPManager *            ppp_manager,
+ppp_new_config(NMPPPManager *            ppp_manager,
+               int                       addr_family,
+               const NML3ConfigData *    l3cd,
                const NMUtilsIPv6IfaceId *iid,
-               NMIP6Config *             config,
                gpointer                  user_data)
 {
-    NMModem *self = NM_MODEM(user_data);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd_modified = NULL;
+    NMModem *                               self          = NM_MODEM(user_data);
+    gboolean                                do_slaac      = FALSE;
 
-    NM_MODEM_GET_PRIVATE(self)->iid = *iid;
+    nm_assert_addr_family(addr_family);
 
-    nm_modem_emit_ip6_config_result(self, config, NULL);
+    if (addr_family == AF_INET6) {
+        if (!l3cd)
+            do_slaac = TRUE;
+        else {
+            do_slaac = !!nm_l3_config_data_get_first_obj(l3cd,
+                                                         NMP_OBJECT_TYPE_IP6_ADDRESS,
+                                                         nmp_object_ip6_address_is_not_link_local);
+        }
+    } else {
+        nm_assert(!iid);
+        iid = NULL;
+
+        if (l3cd) {
+            const in_addr_t  bad_dns1       = htonl(0x0A0B0C0D);
+            const in_addr_t  good_dns1      = htonl(0x04020201); /* GTE nameserver */
+            const in_addr_t  bad_dns2       = htonl(0x0A0B0C0E);
+            const in_addr_t  good_dns2      = htonl(0x04020202); /* GTE nameserver */
+            gboolean         dns_workaround = FALSE;
+            const in_addr_t *addrs;
+            guint            num;
+
+            /* Work around a PPP bug (#1732) which causes many mobile broadband
+             * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
+             * Apparently fixed in ppp-2.4.5 but we've had some reports that this is
+             * not the case.
+             *
+             * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=2e09ef6886bbf00bc5a9a641110f801e372ffde6
+             * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=f8191bf07df374f119a07910a79217c7618f113e
+             */
+
+            addrs = nm_l3_config_data_get_nameservers(l3cd, AF_INET, &num);
+            if (num == 0)
+                dns_workaround = TRUE;
+            else if (num == 2) {
+                /* Be somewhat conservative about substitutions; the "bad" nameservers
+                 * could actually be valid in some cases, so only substitute if ppp
+                 * returns *only* the two bad nameservers.
+                 */
+                dns_workaround = (addrs[0] == bad_dns1 && addrs[1] == bad_dns2)
+                                 || (addrs[1] == bad_dns1 && addrs[0] == bad_dns2);
+            } else
+                dns_workaround = FALSE;
+
+            if (dns_workaround) {
+                _LOGW("compensating for invalid PPP-provided nameservers");
+                l3cd_modified = nm_l3_config_data_new_clone(l3cd, 0);
+                nm_l3_config_data_clear_nameservers(l3cd_modified, AF_INET);
+                nm_l3_config_data_add_nameserver(l3cd_modified, AF_INET, &good_dns1);
+                nm_l3_config_data_add_nameserver(l3cd_modified, AF_INET, &good_dns2);
+                l3cd = nm_l3_config_data_seal(l3cd_modified);
+            }
+        }
+    }
+
+    nm_modem_emit_signal_new_config(self, addr_family, l3cd, do_slaac, iid, NULL);
 }
 
 static void
@@ -679,14 +713,6 @@ ppp_stage3_ip_config_start(NMModem *            self,
 
     priv->ppp_manager = nm_ppp_manager_create(priv->data_port, &error);
 
-    if (priv->ppp_manager) {
-        nm_ppp_manager_set_route_parameters(priv->ppp_manager,
-                                            priv->ip4_route_table,
-                                            priv->ip4_route_metric,
-                                            priv->ip6_route_table,
-                                            priv->ip6_route_metric);
-    }
-
     if (!priv->ppp_manager
         || !nm_ppp_manager_start(priv->ppp_manager,
                                  req,
@@ -710,12 +736,8 @@ ppp_stage3_ip_config_start(NMModem *            self,
                      G_CALLBACK(ppp_ifindex_set),
                      self);
     g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
-                     G_CALLBACK(ppp_ip4_config),
-                     self);
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_IP6_CONFIG,
-                     G_CALLBACK(ppp_ip6_config),
+                     NM_PPP_MANAGER_SIGNAL_NEW_CONFIG,
+                     G_CALLBACK(ppp_new_config),
                      self);
     g_signal_connect(priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_STATS, G_CALLBACK(ppp_stats), self);
 
@@ -747,8 +769,6 @@ nm_modem_stage3_ip4_config_start(NMModem *            self,
 
     connection = nm_act_request_get_applied_connection(req);
     g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
-
-    nm_modem_set_route_parameters_from_device(self, device);
 
     method = nm_utils_get_ip_config_method(connection, AF_INET);
 
@@ -787,9 +807,11 @@ nm_modem_stage3_ip4_config_start(NMModem *            self,
 }
 
 void
-nm_modem_ip4_pre_commit(NMModem *modem, NMDevice *device, NMIP4Config *config)
+nm_modem_ip4_pre_commit(NMModem *modem, NMDevice *device)
 {
-    NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(modem);
+    //XXX
+#if 0
+    NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (modem);
 
     /* If the modem has an ethernet-type data interface (ie, not PPP and thus
      * not point-to-point) and IP config has a /32 prefix, then we assume that
@@ -806,39 +828,10 @@ nm_modem_ip4_pre_commit(NMModem *modem, NMDevice *device, NMIP4Config *config)
                                           IFF_NOARP,
                                           TRUE);
     }
+#endif
 }
 
 /*****************************************************************************/
-
-void
-nm_modem_emit_ip6_config_result(NMModem *self, NMIP6Config *config, GError *error)
-{
-    NMModemPrivate *            priv = NM_MODEM_GET_PRIVATE(self);
-    NMDedupMultiIter            ipconf_iter;
-    const NMPlatformIP6Address *addr;
-    gboolean                    do_slaac = TRUE;
-
-    if (error) {
-        g_signal_emit(self, signals[IP6_CONFIG_RESULT], 0, NULL, FALSE, error);
-        return;
-    }
-
-    if (config) {
-        /* If the IPv6 configuration only included a Link-Local address, then
-         * we have to run SLAAC to get the full IPv6 configuration.
-         */
-        nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, config, &addr) {
-            if (IN6_IS_ADDR_LINKLOCAL(&addr->address)) {
-                if (!priv->iid.id)
-                    priv->iid.id = ((guint64 *) (&addr->address.s6_addr))[1];
-            } else
-                do_slaac = FALSE;
-        }
-    }
-    g_assert(config || do_slaac);
-
-    g_signal_emit(self, signals[IP6_CONFIG_RESULT], 0, config, do_slaac, NULL);
-}
 
 static NMActStageReturn
 stage3_ip6_config_request(NMModem *self, NMDeviceStateReason *out_failure_reason)
@@ -865,8 +858,6 @@ nm_modem_stage3_ip6_config_start(NMModem *            self,
 
     connection = nm_act_request_get_applied_connection(req);
     g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
-
-    nm_modem_set_route_parameters_from_device(self, device);
 
     method = nm_utils_get_ip_config_method(connection, AF_INET6);
 
@@ -1540,82 +1531,6 @@ nm_modem_owns_port(NMModem *self, const char *iface)
     return NM_IN_STRSET(iface, priv->ip_iface, priv->data_port, priv->control_port);
 }
 
-gboolean
-nm_modem_get_iid(NMModem *self, NMUtilsIPv6IfaceId *out_iid)
-{
-    g_return_val_if_fail(NM_IS_MODEM(self), FALSE);
-
-    *out_iid = NM_MODEM_GET_PRIVATE(self)->iid;
-    return TRUE;
-}
-
-/*****************************************************************************/
-
-void
-nm_modem_get_route_parameters(NMModem *self,
-                              guint32 *out_ip4_route_table,
-                              guint32 *out_ip4_route_metric,
-                              guint32 *out_ip6_route_table,
-                              guint32 *out_ip6_route_metric)
-{
-    NMModemPrivate *priv;
-
-    g_return_if_fail(NM_IS_MODEM(self));
-
-    priv = NM_MODEM_GET_PRIVATE(self);
-    NM_SET_OUT(out_ip4_route_table, priv->ip4_route_table);
-    NM_SET_OUT(out_ip4_route_metric, priv->ip4_route_metric);
-    NM_SET_OUT(out_ip6_route_table, priv->ip6_route_table);
-    NM_SET_OUT(out_ip6_route_metric, priv->ip6_route_metric);
-}
-
-void
-nm_modem_set_route_parameters(NMModem *self,
-                              guint32  ip4_route_table,
-                              guint32  ip4_route_metric,
-                              guint32  ip6_route_table,
-                              guint32  ip6_route_metric)
-{
-    NMModemPrivate *priv;
-
-    g_return_if_fail(NM_IS_MODEM(self));
-
-    priv = NM_MODEM_GET_PRIVATE(self);
-    if (priv->ip4_route_table != ip4_route_table || priv->ip4_route_metric != ip4_route_metric
-        || priv->ip6_route_table != ip6_route_table || priv->ip6_route_metric != ip6_route_metric) {
-        priv->ip4_route_table  = ip4_route_table;
-        priv->ip4_route_metric = ip4_route_metric;
-        priv->ip6_route_table  = ip6_route_table;
-        priv->ip6_route_metric = ip6_route_metric;
-
-        _LOGT("route-parameters: table-v4: %u, metric-v4: %u, table-v6: %u, metric-v6: %u",
-              priv->ip4_route_table,
-              priv->ip4_route_metric,
-              priv->ip6_route_table,
-              priv->ip6_route_metric);
-    }
-
-    if (priv->ppp_manager) {
-        nm_ppp_manager_set_route_parameters(priv->ppp_manager,
-                                            priv->ip4_route_table,
-                                            priv->ip4_route_metric,
-                                            priv->ip6_route_table,
-                                            priv->ip6_route_metric);
-    }
-}
-
-void
-nm_modem_set_route_parameters_from_device(NMModem *self, NMDevice *device)
-{
-    g_return_if_fail(NM_IS_DEVICE(device));
-
-    nm_modem_set_route_parameters(self,
-                                  nm_device_get_route_table(device, AF_INET),
-                                  nm_device_get_route_metric(device, AF_INET),
-                                  nm_device_get_route_table(device, AF_INET6),
-                                  nm_device_get_route_metric(device, AF_INET6));
-}
-
 /*****************************************************************************/
 
 void
@@ -1768,11 +1683,7 @@ nm_modem_init(NMModem *self)
     self->_priv = G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_MODEM, NMModemPrivate);
     priv        = self->_priv;
 
-    priv->ip_ifindex       = -1;
-    priv->ip4_route_table  = RT_TABLE_MAIN;
-    priv->ip4_route_metric = 700;
-    priv->ip6_route_table  = RT_TABLE_MAIN;
-    priv->ip6_route_metric = 700;
+    priv->ip_ifindex = -1;
 }
 
 static void
@@ -1946,43 +1857,27 @@ nm_modem_class_init(NMModemClass *klass)
                                        1,
                                        G_TYPE_UINT);
 
-    signals[IP4_CONFIG_RESULT] = g_signal_new(NM_MODEM_IP4_CONFIG_RESULT,
-                                              G_OBJECT_CLASS_TYPE(object_class),
-                                              G_SIGNAL_RUN_FIRST,
-                                              0,
-                                              NULL,
-                                              NULL,
-                                              NULL,
-                                              G_TYPE_NONE,
-                                              2,
-                                              G_TYPE_OBJECT,
-                                              G_TYPE_POINTER);
-
-    /**
-     * NMModem::ip6-config-result:
-     * @modem: the #NMModem  on which the signal is emitted
-     * @config: the #NMIP6Config to apply to the modem's data port
-     * @do_slaac: %TRUE if IPv6 SLAAC should be started
-     * @error: a #GError if any error occurred during IP configuration
-     *
-     * This signal is emitted when IPv6 configuration has completed or failed.
-     * If @error is set the configuration failed.  If @config is set, then
+    /*
+     * This signal is emitted when IP configuration has completed or failed.
+     * If @error is set the configuration failed. If @l3cd is set, then
      * the details should be applied to the data port before any further
-     * configuration (like SLAAC) is done.  @do_slaac indicates whether SLAAC
-     * should be started after applying @config to the data port.
+     * configuration (like SLAAC) is done. @do_slaac indicates whether SLAAC
+     * should be started after applying @l3cd to the data port.
      */
-    signals[IP6_CONFIG_RESULT] = g_signal_new(NM_MODEM_IP6_CONFIG_RESULT,
-                                              G_OBJECT_CLASS_TYPE(object_class),
-                                              G_SIGNAL_RUN_FIRST,
-                                              0,
-                                              NULL,
-                                              NULL,
-                                              NULL,
-                                              G_TYPE_NONE,
-                                              3,
-                                              G_TYPE_OBJECT,
-                                              G_TYPE_BOOLEAN,
-                                              G_TYPE_POINTER);
+    signals[NEW_CONFIG] = g_signal_new(NM_MODEM_NEW_CONFIG,
+                                       G_OBJECT_CLASS_TYPE(object_class),
+                                       G_SIGNAL_RUN_FIRST,
+                                       0,
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       G_TYPE_NONE,
+                                       3,
+                                       G_TYPE_INT,      /* int addr_family */
+                                       G_TYPE_POINTER,  /* const NML3ConfigData *l3cd */
+                                       G_TYPE_BOOLEAN,  /* gboolean do_slaac */
+                                       G_TYPE_POINTER,  /* const NMUtilsIPv6IfaceId *iid */
+                                       G_TYPE_POINTER); /* GError *error */
 
     signals[PREPARE_RESULT] = g_signal_new(NM_MODEM_PREPARE_RESULT,
                                            G_OBJECT_CLASS_TYPE(object_class),

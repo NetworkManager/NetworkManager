@@ -1298,7 +1298,7 @@ void
 nm_utils_ip_route_attribute_to_platform(int                addr_family,
                                         NMIPRoute *        s_route,
                                         NMPlatformIPRoute *r,
-                                        guint32            route_table)
+                                        gint64             route_table)
 {
     GVariant *          variant;
     guint32             table;
@@ -1310,6 +1310,8 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
     nm_assert(s_route);
     nm_assert_addr_family(addr_family);
     nm_assert(r);
+    nm_assert(route_table >= -1);
+    nm_assert(route_table <= (gint64) G_MAXUINT32);
 
 #define GET_ATTR(name, dst, variant_type, type, dflt)                                  \
     G_STMT_START                                                                       \
@@ -1336,10 +1338,16 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
 
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_TABLE, table, UINT32, uint32, 0);
 
-    if (!table && r->type_coerced == nm_platform_route_type_coerce(RTN_LOCAL))
+    if (table != 0)
+        r->table_coerced = nm_platform_route_table_coerce(table);
+    else if (r->type_coerced == nm_platform_route_type_coerce(RTN_LOCAL))
         r->table_coerced = nm_platform_route_table_coerce(RT_TABLE_LOCAL);
+    else if (route_table == 0)
+        r->table_coerced = nm_platform_route_table_coerce(RT_TABLE_MAIN);
+    else if (route_table > 0)
+        r->table_coerced = nm_platform_route_table_coerce(route_table);
     else
-        r->table_coerced = nm_platform_route_table_coerce(table ?: (route_table ?: RT_TABLE_MAIN));
+        r->table_any = TRUE;
 
     if (NM_IS_IPv4(addr_family)) {
         guint8 scope;
@@ -1395,39 +1403,20 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
 
 /*****************************************************************************/
 
-static int
-_addresses_sort_cmp_4(gconstpointer a, gconstpointer b, gpointer user_data)
-{
-    return nm_platform_ip4_address_pretty_sort_cmp(
-        NMP_OBJECT_CAST_IP4_ADDRESS(*((const NMPObject **) a)),
-        NMP_OBJECT_CAST_IP4_ADDRESS(*((const NMPObject **) b)));
-}
-
-static int
-_addresses_sort_cmp_6(gconstpointer a, gconstpointer b, gpointer user_data)
-{
-    return nm_platform_ip6_address_pretty_sort_cmp(
-        NMP_OBJECT_CAST_IP6_ADDRESS(*((const NMPObject **) a)),
-        NMP_OBJECT_CAST_IP6_ADDRESS(*((const NMPObject **) b)),
-        (((NMSettingIP6ConfigPrivacy) GPOINTER_TO_INT(user_data))
-         == NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR));
-}
-
 void
 nm_utils_ip_addresses_to_dbus(int                          addr_family,
                               const NMDedupMultiHeadEntry *head_entry,
                               const NMPObject *            best_default_route,
-                              NMSettingIP6ConfigPrivacy    ipv6_privacy,
                               GVariant **                  out_address_data,
                               GVariant **                  out_addresses)
 {
-    const int       IS_IPv4 = NM_IS_IPv4(addr_family);
-    GVariantBuilder builder_data;
-    GVariantBuilder builder_legacy;
-    char            addr_str[NM_UTILS_INET_ADDRSTRLEN];
-    gs_free const NMPObject **addresses = NULL;
-    guint                     naddr;
-    guint                     i;
+    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
+    GVariantBuilder  builder_data;
+    GVariantBuilder  builder_legacy;
+    char             addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    NMDedupMultiIter iter;
+    const NMPObject *obj;
+    guint            i;
 
     nm_assert_addr_family(addr_family);
 
@@ -1443,19 +1432,11 @@ nm_utils_ip_addresses_to_dbus(int                          addr_family,
     if (!head_entry)
         goto out;
 
-    addresses =
-        (const NMPObject **) nm_dedup_multi_objs_to_array_head(head_entry, NULL, NULL, &naddr);
-
-    nm_assert(addresses && naddr);
-
-    g_qsort_with_data(addresses,
-                      naddr,
-                      sizeof(addresses[0]),
-                      IS_IPv4 ? _addresses_sort_cmp_4 : _addresses_sort_cmp_6,
-                      GINT_TO_POINTER(ipv6_privacy));
-
-    for (i = 0; i < naddr; i++) {
-        const NMPlatformIPXAddress *address = NMP_OBJECT_CAST_IPX_ADDRESS(addresses[i]);
+    i = 0;
+    nm_dedup_multi_iter_init(&iter, head_entry);
+    while (
+        nm_platform_dedup_multi_iter_next_obj(&iter, &obj, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4))) {
+        const NMPlatformIPXAddress *address = NMP_OBJECT_CAST_IPX_ADDRESS(obj);
 
         if (out_address_data) {
             GVariantBuilder addr_builder;
@@ -1527,6 +1508,8 @@ nm_utils_ip_addresses_to_dbus(int                          addr_family,
                             : &in6addr_any));
             }
         }
+
+        i++;
     }
 
 out:
@@ -1650,6 +1633,128 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
 
     NM_SET_OUT(out_route_data, g_variant_builder_end(&builder_data));
     NM_SET_OUT(out_routes, g_variant_builder_end(&builder_legacy));
+}
+
+/*****************************************************************************/
+
+NMSetting *
+nm_utils_platform_capture_ip_setting(NMPlatform *platform,
+                                     int         addr_family,
+                                     int         ifindex,
+                                     gboolean    maybe_ipv6_disabled)
+{
+    const int       IS_IPv4                 = NM_IS_IPv4(addr_family);
+    gs_unref_object NMSettingIPConfig *s_ip = NULL;
+    NMPLookup                          lookup;
+    NMDedupMultiIter                   iter;
+    const NMPObject *                  obj;
+    const char *                       method = NULL;
+    char                               sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    const NMPlatformIPXRoute *         best_default_route = NULL;
+
+    s_ip =
+        NM_SETTING_IP_CONFIG(IS_IPv4 ? nm_setting_ip4_config_new() : nm_setting_ip6_config_new());
+
+    if (ifindex <= 0 || !nm_platform_link_get(platform, ifindex)) {
+        g_object_set(s_ip,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_DISABLED
+                             : NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+                     NULL);
+        return NM_SETTING(g_steal_pointer(&s_ip));
+    }
+
+    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex);
+    nm_platform_iter_obj_for_each (&iter, platform, &lookup, &obj) {
+        const NMPlatformIPXAddress *address          = NMP_OBJECT_CAST_IPX_ADDRESS(obj);
+        nm_auto_unref_ip_address NMIPAddress *s_addr = NULL;
+
+        if (!IS_IPv4) {
+            /* Ignore link-local address. */
+            if (IN6_IS_ADDR_LINKLOCAL(address->ax.address_ptr)) {
+                if (!method)
+                    method = NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
+                continue;
+            }
+        }
+
+        /* Detect dynamic address */
+        if (address->ax.lifetime != NM_PLATFORM_LIFETIME_PERMANENT) {
+            method =
+                IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_AUTO : NM_SETTING_IP6_CONFIG_METHOD_AUTO;
+            continue;
+        }
+
+        /* Static address found. */
+        if (IS_IPv4) {
+            if (!method)
+                method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+        } else {
+            if (NM_IN_STRSET(method, NULL, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL))
+                method = NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
+        }
+
+        s_addr =
+            nm_ip_address_new_binary(addr_family, address->ax.address_ptr, address->ax.plen, NULL);
+
+        if (IS_IPv4) {
+            if (address->a4.label[0]) {
+                nm_ip_address_set_attribute(s_addr,
+                                            NM_IP_ADDRESS_ATTRIBUTE_LABEL,
+                                            g_variant_new_string(address->a4.label));
+            }
+        }
+
+        nm_setting_ip_config_add_address(s_ip, s_addr);
+    }
+
+    if (!method) {
+        /* Use 'disabled/ignore' if the method wasn't previously set */
+        if (IS_IPv4)
+            method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
+        else
+            method = maybe_ipv6_disabled ? NM_SETTING_IP6_CONFIG_METHOD_DISABLED
+                                         : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
+    }
+    g_object_set(s_ip, NM_SETTING_IP_CONFIG_METHOD, method, NULL);
+
+    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), ifindex);
+    nm_platform_iter_obj_for_each (&iter, platform, &lookup, &obj) {
+        const NMPlatformIPXRoute *route           = NMP_OBJECT_CAST_IPX_ROUTE(obj);
+        nm_auto_unref_ip_route NMIPRoute *s_route = NULL;
+
+        if (!IS_IPv4) {
+            /* Ignore link-local route. */
+            if (IN6_IS_ADDR_LINKLOCAL(route->rx.network_ptr))
+                continue;
+        }
+
+        if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route)) {
+            if (!best_default_route)
+                best_default_route = route;
+            continue;
+        }
+
+        s_route = nm_ip_route_new_binary(addr_family,
+                                         route->rx.network_ptr,
+                                         route->rx.plen,
+                                         nm_platform_ip_route_get_gateway(addr_family, &route->rx),
+                                         route->rx.metric,
+                                         NULL);
+        nm_setting_ip_config_add_route(s_ip, s_route);
+    }
+
+    if (best_default_route && nm_setting_ip_config_get_num_addresses(s_ip) > 0) {
+        g_object_set(s_ip,
+                     NM_SETTING_IP_CONFIG_GATEWAY,
+                     nm_utils_inet_ntop(
+                         addr_family,
+                         nm_platform_ip_route_get_gateway(addr_family, &best_default_route->rx),
+                         sbuf),
+                     NULL);
+    }
+
+    return NM_SETTING(g_steal_pointer(&s_ip));
 }
 
 /*****************************************************************************/
