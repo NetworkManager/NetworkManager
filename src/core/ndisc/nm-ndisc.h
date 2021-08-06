@@ -48,6 +48,8 @@ typedef enum {
     NM_NDISC_DHCP_LEVEL_MANAGED
 } NMNDiscDHCPLevel;
 
+const char *nm_ndisc_dhcp_level_to_string(NMNDiscDHCPLevel level);
+
 #define NM_NDISC_INFINITY_U32 ((uint32_t) -1)
 
 /* It's important that this is G_MAXINT64, so that we can meaningfully do

@@ -96,6 +96,16 @@ static gboolean timeout_expire_cb(gpointer user_data);
 
 /*****************************************************************************/
 
+NM_UTILS_LOOKUP_STR_DEFINE(nm_ndisc_dhcp_level_to_string,
+                           NMNDiscDHCPLevel,
+                           NM_UTILS_LOOKUP_DEFAULT("INVALID"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_NDISC_DHCP_LEVEL_UNKNOWN, "unknown"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_NDISC_DHCP_LEVEL_NONE, "none"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_NDISC_DHCP_LEVEL_OTHERCONF, "otherconf"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_NDISC_DHCP_LEVEL_MANAGED, "managed"), );
+
+/*****************************************************************************/
+
 NML3ConfigData *
 nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
                       int                       ifindex,
@@ -1211,21 +1221,6 @@ config_map_to_string(NMNDiscConfigMap map, char *p)
     *p = '\0';
 }
 
-static const char *
-dhcp_level_to_string(NMNDiscDHCPLevel dhcp_level)
-{
-    switch (dhcp_level) {
-    case NM_NDISC_DHCP_LEVEL_NONE:
-        return "none";
-    case NM_NDISC_DHCP_LEVEL_OTHERCONF:
-        return "otherconf";
-    case NM_NDISC_DHCP_LEVEL_MANAGED:
-        return "managed";
-    default:
-        return "INVALID";
-    }
-}
-
 static void
 _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
 {
@@ -1248,7 +1243,7 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
 
     config_map_to_string(changed, changedstr);
     _LOGD("neighbor discovery configuration changed [%s]:", changedstr);
-    _LOGD("  dhcp-level %s", dhcp_level_to_string(priv->rdata.public.dhcp_level));
+    _LOGD("  dhcp-level %s", nm_ndisc_dhcp_level_to_string(priv->rdata.public.dhcp_level));
 
     if (rdata->public.hop_limit)
         _LOGD("  hop limit      : %d", rdata->public.hop_limit);
