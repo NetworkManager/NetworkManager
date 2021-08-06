@@ -209,6 +209,13 @@ typedef uint64_t _nm_bitwise nm_be64_t;
     } while (0)
 #endif
 
+/* This is similar nm_assert_not_reached(), but it's supposed to be used only during
+ * development. Like _XXX_ comments, they can be used as a marker that something still
+ * needs to be done. */
+#define XXX(msg)   \
+    nm_assert(!"X" \
+               "XX error: " msg "")
+
 #define nm_assert_unreachable_val(val) \
     ({                                 \
         nm_assert_not_reached();       \
