@@ -5,12 +5,12 @@
 #include <gio/gunixfdlist.h>
 
 #include "c-list/src/c-list.h"
+#include "libnm-base/nm-sudo-utils.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-logging-base.h"
 #include "libnm-glib-aux/nm-shared-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
-#include "libnm-base/nm-sudo-utils.h"
 
 /* nm-sudo doesn't link with libnm-core nor libnm-base, but these headers
  * can be used independently. */
@@ -37,28 +37,35 @@ typedef struct {
 } PendingJobData;
 
 struct _GlobalData {
-    GCancellable *   quit_cancellable;
     GDBusConnection *dbus_connection;
-    GSource *        source_sigterm;
+    GCancellable *   quit_cancellable;
+
+    GSource *source_sigterm;
 
     CList pending_jobs_lst_head;
 
     GSource *source_idle_timeout;
-    char *   name_owner;
-    guint    name_owner_changed_id;
-    guint    service_regist_id;
-    gint64   start_timestamp_msec;
-    guint32  timeout_msec;
-    bool     name_owner_initialized;
-    bool     name_requested;
+
+    char *name_owner;
+
+    gint64 start_timestamp_msec;
+
+    guint name_owner_changed_id;
+    guint service_regist_id;
+
+    guint32 timeout_msec;
+
+    bool name_owner_initialized;
 
     /* This is controlled by $NM_SUDO_NO_AUTH_FOR_TESTING. It disables authentication
      * of the request, so it is ONLY for testing. */
     bool no_auth_for_testing;
 
-    bool is_shutting_down_quitting;
-    bool is_shutting_down_timeout;
-    bool is_shutting_down_cleanup;
+    bool name_requested;
+    bool reject_new_requests;
+
+    bool shutdown_quitting;
+    bool shutdown_timeout;
 };
 
 /*****************************************************************************/
@@ -134,7 +141,7 @@ _signal_callback_term(gpointer user_data)
     _LOGD("sigterm received (%s)",
           c_list_is_empty(&gl->pending_jobs_lst_head) ? "quit mainloop" : "cancel operations");
 
-    gl->is_shutting_down_quitting = TRUE;
+    gl->shutdown_quitting = TRUE;
     g_cancellable_cancel(gl->quit_cancellable);
     return G_SOURCE_CONTINUE;
 }
@@ -283,7 +290,22 @@ _bus_method_call(GDBusConnection *      connection,
         return;
     }
 
-    _pending_job_register_object(gl, G_OBJECT(invocation));
+    if (gl->reject_new_requests) {
+        /* after the name was released, we must not accept new requests. This new
+         * request was probably targeted against the unique-name. But we already
+         * gave up the well-known name. If we'd accept new request now, they would
+         * keep the service running indefinitely (and thus preventing the service
+         * to restart and serve the well-known name. */
+        _LOGT("dbus: request sender=%s, %s%s, SERVER SHUTTING DOWN",
+              sender,
+              method_name,
+              g_variant_get_type_string(parameters));
+        g_dbus_method_invocation_return_error(invocation,
+                                              G_DBUS_ERROR,
+                                              G_DBUS_ERROR_NO_SERVER,
+                                              "Server is exiting");
+        return;
+    }
 
     _LOGT("dbus: request sender=%s, %s%s",
           sender,
@@ -399,7 +421,8 @@ _idle_timeout_cb(gpointer user_data)
     GlobalData *gl = user_data;
 
     _LOGT("idle-timeout: expired");
-    gl->is_shutting_down_timeout = TRUE;
+    nm_clear_g_source_inst(&gl->source_idle_timeout);
+    gl->shutdown_timeout = TRUE;
     return G_SOURCE_CONTINUE;
 }
 
@@ -408,10 +431,7 @@ _idle_timeout_restart(GlobalData *gl)
 {
     nm_clear_g_source_inst(&gl->source_idle_timeout);
 
-    if (gl->is_shutting_down_quitting)
-        return;
-
-    if (gl->is_shutting_down_cleanup)
+    if (gl->shutdown_quitting)
         return;
 
     if (!c_list_is_empty(&gl->pending_jobs_lst_head))
@@ -457,7 +477,7 @@ _pending_job_register_object(GlobalData *gl, GObject *obj)
     PendingJobData *idle_data;
 
     /* if we just hit the timeout, we can ignore it. */
-    gl->is_shutting_down_timeout = FALSE;
+    gl->shutdown_timeout = FALSE;
 
     if (nm_clear_g_source_inst(&gl->source_idle_timeout))
         _LOGT("idle-timeout: suspend timeout for pending request");
@@ -475,9 +495,57 @@ _pending_job_register_object(GlobalData *gl, GObject *obj)
 static void
 _bus_release_name_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    _nm_unused gs_unref_object GObject *keep_alive_object = user_data;
+    _nm_unused gs_unref_object GObject *keep_alive_object = NULL;
+    GlobalData *                        gl;
 
+    nm_utils_user_data_unpack(user_data, &gl, &keep_alive_object);
+
+    gl->reject_new_requests = TRUE;
     g_main_context_wakeup(NULL);
+}
+
+static gboolean
+_bus_release_name(GlobalData *gl)
+{
+    gs_unref_object GObject *keep_alive_object = NULL;
+    int                      r;
+
+    /* We already requested a name. To exit-on-idle without race, we need to dance.
+     * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html . */
+
+    if (!gl->name_requested)
+        return FALSE;
+
+    gl->name_requested    = FALSE;
+    gl->shutdown_quitting = TRUE;
+
+    _LOGT("shutdown: release-name");
+
+    keep_alive_object = g_object_new(G_TYPE_OBJECT, NULL);
+
+    /* we use the _pending_job_register_object() mechanism to make the loop busy during
+     * shutdown. */
+    _pending_job_register_object(gl, keep_alive_object);
+
+    r = nm_sd_notify("STOPPING=1");
+    if (r < 0)
+        _LOGW("shutdown: sd_notifiy(STOPPING=1) failed: %s", nm_strerror_native(-r));
+    else
+        _LOGT("shutdown: sd_notifiy(STOPPING=1) succeeded");
+
+    g_dbus_connection_call(gl->dbus_connection,
+                           DBUS_SERVICE_DBUS,
+                           DBUS_PATH_DBUS,
+                           DBUS_INTERFACE_DBUS,
+                           "ReleaseName",
+                           g_variant_new("(s)", NM_SUDO_DBUS_BUS_NAME),
+                           G_VARIANT_TYPE("(u)"),
+                           G_DBUS_CALL_FLAGS_NONE,
+                           10000,
+                           NULL,
+                           _bus_release_name_cb,
+                           nm_utils_user_data_pack(gl, g_steal_pointer(&keep_alive_object)));
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -498,6 +566,8 @@ _initial_setup(GlobalData *gl)
     signal(SIGPIPE, SIG_IGN);
     gl->source_sigterm = nm_g_unix_signal_add_source(SIGTERM, _signal_callback_term, gl);
 }
+
+/*****************************************************************************/
 
 int
 main(int argc, char **argv)
@@ -553,55 +623,32 @@ main(int argc, char **argv)
          * Let's fake a shutdown signal, and still process the request below. */
         if (!g_cancellable_is_cancelled(gl->quit_cancellable))
             exit_code = EXIT_FAILURE;
-        gl->is_shutting_down_quitting = TRUE;
+        gl->shutdown_quitting = TRUE;
+
+        if (gl->name_requested) {
+            /* We requested a name, but something went wrong. Below we will release
+             * the name right away. */
+        } else {
+            /* In case we didn't even went as far to request the name. New requests
+             * can only come via the unique name, and as we are shutting down, they
+             * are rejected. */
+            gl->reject_new_requests = TRUE;
+        }
     }
 
     while (TRUE) {
+        if (gl->shutdown_quitting)
+            _bus_release_name(gl);
+
         if (!c_list_is_empty(&gl->pending_jobs_lst_head)) {
             /* we must first reply to all requests. No matter what. */
-        } else if (gl->is_shutting_down_quitting || gl->is_shutting_down_timeout) {
+        } else if (gl->shutdown_quitting || gl->shutdown_timeout) {
             /* we either hit the idle timeout or received SIGTERM. Note that
              * if we received an idle-timeout and the very moment afterwards
-             * a new request, then _bus_method_call() will clear gl->is_shutting_down_timeout
+             * a new request, then _bus_method_call() will clear gl->shutdown_timeout
              * (via _pending_job_register_object()). */
-
-            if (gl->name_requested) {
-                gs_unref_object GObject *keep_alive_object = g_object_new(G_TYPE_OBJECT, NULL);
-
-                /* We already requested a name. To exit-on-idle without race, we need to dance.
-                 * See https://lists.freedesktop.org/archives/dbus/2015-May/016671.html . */
-
-                gl->name_requested            = FALSE;
-                gl->is_shutting_down_quitting = TRUE;
-
-                _LOGT("shutdown: release-name");
-
-                /* we use the _pending_job_register_object() mechanism to make the loop busy during
-                 * shutdown. */
-                _pending_job_register_object(gl, keep_alive_object);
-
-                r = nm_sd_notify("STOPPING=1");
-                if (r < 0)
-                    _LOGW("shutdown: sd_notifiy(STOPPING=1) failed: %s", nm_strerror_native(-r));
-                else
-                    _LOGT("shutdown: sd_notifiy(STOPPING=1) succeeded");
-
-                g_dbus_connection_call(gl->dbus_connection,
-                                       DBUS_SERVICE_DBUS,
-                                       DBUS_PATH_DBUS,
-                                       DBUS_INTERFACE_DBUS,
-                                       "ReleaseName",
-                                       g_variant_new("(s)", NM_SUDO_DBUS_BUS_NAME),
-                                       G_VARIANT_TYPE("(u)"),
-                                       G_DBUS_CALL_FLAGS_NONE,
-                                       10000,
-                                       NULL,
-                                       _bus_release_name_cb,
-                                       g_steal_pointer(&keep_alive_object));
-                continue;
-            }
-
-            break;
+            if (!_bus_release_name(gl))
+                break;
         }
 
         g_main_context_iteration(NULL, TRUE);
@@ -610,7 +657,7 @@ main(int argc, char **argv)
 done:
     _LOGD("shutdown: cleanup");
 
-    gl->is_shutting_down_cleanup = TRUE;
+    gl->shutdown_quitting = TRUE;
     g_cancellable_cancel(gl->quit_cancellable);
 
     nm_assert(c_list_is_empty(&gl->pending_jobs_lst_head));
@@ -623,19 +670,19 @@ done:
         g_dbus_connection_signal_unsubscribe(gl->dbus_connection,
                                              nm_steal_int(&gl->name_owner_changed_id));
     }
-    nm_clear_g_source_inst(&gl->source_sigterm);
-    nm_clear_g_source_inst(&gl->source_idle_timeout);
-    nm_clear_g_free(&gl->name_owner);
-
-    nm_g_main_context_iterate_ready(NULL);
 
     if (gl->dbus_connection) {
         g_dbus_connection_flush_sync(gl->dbus_connection, NULL, NULL);
         g_clear_object(&gl->dbus_connection);
-        nm_g_main_context_iterate_ready(NULL);
     }
 
-    nm_clear_g_cancellable(&gl->quit_cancellable);
+    nm_g_main_context_iterate_ready(NULL);
+
+    nm_clear_g_free(&gl->name_owner);
+
+    nm_clear_g_source_inst(&gl->source_sigterm);
+    nm_clear_g_source_inst(&gl->source_idle_timeout);
+    g_clear_object(&gl->quit_cancellable);
 
     _LOGD("exit (%d)", exit_code);
     return exit_code;

@@ -1901,6 +1901,8 @@ nm_g_main_context_iterate_ready(GMainContext *context)
     }
 }
 
+void nm_g_main_context_iterate_for_msec(GMainContext *context, guint timeout_msec);
+
 /*****************************************************************************/
 
 static inline int
