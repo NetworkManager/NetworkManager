@@ -1191,8 +1191,6 @@ nm_dhcp_client_init(NMDhcpClient *self)
     priv        = G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_DHCP_CLIENT, NMDhcpClientPrivate);
     self->_priv = priv;
 
-    c_list_init(&self->dhcp_client_lst);
-
     priv->pid = -1;
 }
 
@@ -1228,8 +1226,6 @@ dispose(GObject *object)
      * explicitly since we may want to quit NetworkManager but not terminate
      * the DHCP client.
      */
-
-    nm_assert(c_list_is_empty(&self->dhcp_client_lst));
 
     watch_cleanup(self);
     timeout_cleanup(self);

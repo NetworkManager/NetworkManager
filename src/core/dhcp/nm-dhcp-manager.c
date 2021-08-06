@@ -27,7 +27,6 @@
 typedef struct {
     const NMDhcpClientFactory *client_factory;
     char *                     default_hostname;
-    CList                      dhcp_client_lst_head;
 } NMDhcpManagerPrivate;
 
 struct _NMDhcpManager {
@@ -42,11 +41,6 @@ struct _NMDhcpManagerClass {
 G_DEFINE_TYPE(NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
 
 #define NM_DHCP_MANAGER_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDhcpManager, NM_IS_DHCP_MANAGER)
-
-/*****************************************************************************/
-
-static void
-client_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_data, NMDhcpManager *self);
 
 /*****************************************************************************/
 
@@ -136,53 +130,6 @@ _client_factory_get_gtype(const NMDhcpClientFactory *client_factory, int addr_fa
 /*****************************************************************************/
 
 static NMDhcpClient *
-get_client_for_ifindex(NMDhcpManager *manager, int addr_family, int ifindex)
-{
-    NMDhcpManagerPrivate *priv;
-    NMDhcpClient *        client;
-
-    g_return_val_if_fail(NM_IS_DHCP_MANAGER(manager), NULL);
-    g_return_val_if_fail(ifindex > 0, NULL);
-
-    priv = NM_DHCP_MANAGER_GET_PRIVATE(manager);
-
-    c_list_for_each_entry (client, &priv->dhcp_client_lst_head, dhcp_client_lst) {
-        if (nm_dhcp_client_get_ifindex(client) == ifindex
-            && nm_dhcp_client_get_addr_family(client) == addr_family)
-            return client;
-    }
-
-    return NULL;
-}
-
-static void
-remove_client(NMDhcpManager *self, NMDhcpClient *client)
-{
-    g_signal_handlers_disconnect_by_func(client, client_notify, self);
-    c_list_unlink(&client->dhcp_client_lst);
-
-    /* Stopping the client is left up to the controlling device
-     * explicitly since we may want to quit NetworkManager but not terminate
-     * the DHCP client.
-     */
-}
-
-static void
-remove_client_unref(NMDhcpManager *self, NMDhcpClient *client)
-{
-    remove_client(self, client);
-    g_object_unref(client);
-}
-
-static void
-client_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_data, NMDhcpManager *self)
-{
-    if (notify_data->notify_type == NM_DHCP_CLIENT_NOTIFY_TYPE_STATE_CHANGED
-        && notify_data->state_changed.dhcp_state >= NM_DHCP_STATE_TIMEOUT)
-        remove_client_unref(self, client);
-}
-
-static NMDhcpClient *
 client_start(NMDhcpManager *           self,
              int                       addr_family,
              NMDedupMultiIndex *       multi_idx,
@@ -212,10 +159,10 @@ client_start(NMDhcpManager *           self,
              GError **                 error)
 {
     NMDhcpManagerPrivate *priv;
-    NMDhcpClient *        client;
-    gboolean              success = FALSE;
-    gsize                 hwaddr_len;
-    GType                 gtype;
+    gs_unref_object NMDhcpClient *client  = NULL;
+    gboolean                      success = FALSE;
+    gsize                         hwaddr_len;
+    GType                         gtype;
 
     g_return_val_if_fail(NM_IS_DHCP_MANAGER(self), NULL);
     g_return_val_if_fail(iface, NULL);
@@ -263,20 +210,6 @@ client_start(NMDhcpManager *           self,
     }
 
     priv = NM_DHCP_MANAGER_GET_PRIVATE(self);
-
-    /* Kill any old client instance */
-    client = get_client_for_ifindex(self, addr_family, ifindex);
-    if (client) {
-        /* FIXME: we cannot just call synchronously "stop()" and forget about the client.
-         * We need to wait for the client to be fully stopped because most/all clients
-         * cannot quit right away.
-         *
-         * FIXME(shutdown): also fix this during shutdown, to wait for all DHCP clients
-         * to be fully stopped. */
-        remove_client(self, client);
-        nm_dhcp_client_stop(client, FALSE);
-        g_object_unref(client);
-    }
 
     gtype = _client_factory_get_gtype(priv->client_factory, addr_family);
 
@@ -326,9 +259,6 @@ client_start(NMDhcpManager *           self,
                           NM_DHCP_CLIENT_ANYCAST_ADDRESS,
                           anycast_address,
                           NULL);
-    nm_assert(client && c_list_is_empty(&client->dhcp_client_lst));
-    c_list_link_tail(&priv->dhcp_client_lst_head, &client->dhcp_client_lst);
-    g_signal_connect(client, NM_DHCP_CLIENT_NOTIFY, G_CALLBACK(client_notify), self);
 
     /* unfortunately, our implementations work differently per address-family regarding client-id/DUID.
      *
@@ -368,12 +298,10 @@ client_start(NMDhcpManager *           self,
                                            error);
     }
 
-    if (!success) {
-        remove_client_unref(self, client);
+    if (!success)
         return NULL;
-    }
 
-    return g_object_ref(client);
+    return g_steal_pointer(&client);
 }
 
 /* Caller owns a reference to the NMDhcpClient on return */
@@ -579,8 +507,6 @@ nm_dhcp_manager_init(NMDhcpManager *self)
     int                        i;
     const NMDhcpClientFactory *client_factory = NULL;
 
-    c_list_init(&priv->dhcp_client_lst_head);
-
     for (i = 0; i < (int) G_N_ELEMENTS(_nm_dhcp_manager_factories); i++) {
         const NMDhcpClientFactory *f = _nm_dhcp_manager_factories[i];
 
@@ -651,10 +577,6 @@ dispose(GObject *object)
 {
     NMDhcpManager *       self = NM_DHCP_MANAGER(object);
     NMDhcpManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE(self);
-    NMDhcpClient *        client, *client_safe;
-
-    c_list_for_each_entry_safe (client, client_safe, &priv->dhcp_client_lst_head, dhcp_client_lst)
-        remove_client_unref(self, client);
 
     G_OBJECT_CLASS(nm_dhcp_manager_parent_class)->dispose(object);
 

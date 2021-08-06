@@ -84,7 +84,6 @@ struct _NMDhcpClientPrivate;
 typedef struct {
     GObject                      parent;
     struct _NMDhcpClientPrivate *_priv;
-    CList                        dhcp_client_lst;
 } NMDhcpClient;
 
 typedef enum _nm_packed {
