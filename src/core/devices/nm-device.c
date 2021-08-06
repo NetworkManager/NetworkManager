@@ -10522,10 +10522,30 @@ _commit_mtu(NMDevice *self, const NMIP4Config *config)
         }
     }
 
+#define _IP6_MTU_SYS()                                                                         \
+    ({                                                                                         \
+        if (!ip6_mtu_sysctl.initialized) {                                                     \
+            ip6_mtu_sysctl.value       = nm_device_sysctl_ip_conf_get_int_checked(self,        \
+                                                                            AF_INET6,    \
+                                                                            "mtu",       \
+                                                                            10,          \
+                                                                            0,           \
+                                                                            G_MAXUINT32, \
+                                                                            0);          \
+            ip6_mtu_sysctl.initialized = TRUE;                                                 \
+        }                                                                                      \
+        ip6_mtu_sysctl.value;                                                                  \
+    })
+
     if (mtu_desired && NM_DEVICE_GET_CLASS(self)->mtu_force_set && !priv->mtu_force_set_done) {
         priv->mtu_force_set_done = TRUE;
-
         if (mtu_desired == mtu_plat) {
+            if (!priv->mtu_initial && !priv->ip6_mtu_initial) {
+                /* before touching any of the MTU parameters, record the
+                 * original setting to restore on deactivation. */
+                priv->mtu_initial     = mtu_plat;
+                priv->ip6_mtu_initial = _IP6_MTU_SYS();
+            }
             mtu_plat--;
             if (NM_DEVICE_GET_CLASS(self)->set_platform_mtu(self, mtu_desired - 1)) {
                 _LOGD(LOGD_DEVICE, "mtu: force-set MTU to %u", mtu_desired - 1);
@@ -10544,20 +10564,6 @@ _commit_mtu(NMDevice *self, const NMIP4Config *config)
           ip6_mtu == ip6_mtu_orig ? "" : nm_sprintf_buf(sbuf2, " (was %u)", (guint) ip6_mtu_orig),
           ifindex);
 
-#define _IP6_MTU_SYS()                                                                         \
-    ({                                                                                         \
-        if (!ip6_mtu_sysctl.initialized) {                                                     \
-            ip6_mtu_sysctl.value       = nm_device_sysctl_ip_conf_get_int_checked(self,        \
-                                                                            AF_INET6,    \
-                                                                            "mtu",       \
-                                                                            10,          \
-                                                                            0,           \
-                                                                            G_MAXUINT32, \
-                                                                            0);          \
-            ip6_mtu_sysctl.initialized = TRUE;                                                 \
-        }                                                                                      \
-        ip6_mtu_sysctl.value;                                                                  \
-    })
     if ((mtu_desired && mtu_desired != mtu_plat) || (ip6_mtu && ip6_mtu != _IP6_MTU_SYS())) {
         gboolean anticipated_failure = FALSE;
 
