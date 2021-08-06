@@ -19,6 +19,12 @@
 
 #define NM_FIREWALLD_MANAGER_STATE_CHANGED "state-changed"
 
+typedef enum {
+    NM_FIREWALLD_MANAGER_STATE_CHANGED_TYPE_INITIALIZED,
+    NM_FIREWALLD_MANAGER_STATE_CHANGED_TYPE_NAME_OWNER_CHANGED,
+    NM_FIREWALLD_MANAGER_STATE_CHANGED_TYPE_RELOADED,
+} NMFirewalldManagerStateChangedType;
+
 typedef struct _NMFirewalldManagerCallId NMFirewalldManagerCallId;
 
 typedef struct _NMFirewalldManager      NMFirewalldManager;
