@@ -64,21 +64,19 @@ nm_dhcp_dhcpcd_get_path(void)
 }
 
 static gboolean
-ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
+ip4_start(NMDhcpClient *client, GError **error)
 {
-    NMDhcpDhcpcd *    self            = NM_DHCP_DHCPCD(client);
+    NMDhcpDhcpcd *            self = NM_DHCP_DHCPCD(client);
+    const NMDhcpClientConfig *client_config;
     gs_unref_ptrarray GPtrArray *argv = NULL;
     pid_t                        pid;
     GError *                     local;
     gs_free char *               cmd_str = NULL;
-    const char *                 iface;
     const char *                 dhcpcd_path;
-    const char *                 hostname;
 
     pid = nm_dhcp_client_get_pid(client);
     g_return_val_if_fail(pid == -1, FALSE);
-
-    iface = nm_dhcp_client_get_iface(client);
+    client_config = nm_dhcp_client_get_config(client);
 
     dhcpcd_path = nm_dhcp_dhcpcd_get_path();
     if (!dhcpcd_path) {
@@ -115,21 +113,19 @@ ip4_start(NMDhcpClient *client, const char *last_ip4_address, GError **error)
      */
     g_ptr_array_add(argv, (gpointer) "-4");
 
-    hostname = nm_dhcp_client_get_hostname(client);
-
-    if (hostname) {
-        if (NM_FLAGS_HAS(nm_dhcp_client_get_client_flags(client), NM_DHCP_CLIENT_FLAGS_USE_FQDN)) {
+    if (client_config->hostname) {
+        if (client_config->use_fqdn) {
             g_ptr_array_add(argv, (gpointer) "-h");
-            g_ptr_array_add(argv, (gpointer) hostname);
+            g_ptr_array_add(argv, (gpointer) client_config->hostname);
             g_ptr_array_add(argv, (gpointer) "-F");
             g_ptr_array_add(argv, (gpointer) "both");
         } else {
             g_ptr_array_add(argv, (gpointer) "-h");
-            g_ptr_array_add(argv, (gpointer) hostname);
+            g_ptr_array_add(argv, (gpointer) client_config->hostname);
         }
     }
 
-    g_ptr_array_add(argv, (gpointer) iface);
+    g_ptr_array_add(argv, (gpointer) client_config->iface);
     g_ptr_array_add(argv, NULL);
 
     _LOGD("running: %s", (cmd_str = g_strjoinv(" ", (char **) argv->pdata)));

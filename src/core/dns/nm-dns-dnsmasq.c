@@ -19,10 +19,9 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-utils.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
 #include "nm-dbus-manager.h"
 #include "NetworkManagerUtils.h"
+#include "nm-l3-config-data.h"
 
 #define PIDFILE NMRUNDIR "/dnsmasq.pid"
 #define CONFDIR NMCONFDIR "/dnsmasq.d"
@@ -806,20 +805,22 @@ add_global_config(NMDnsDnsmasq *           self,
 static void
 add_ip_config(NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsConfigIPData *ip_data)
 {
-    NMIPConfig *  ip_config = ip_data->ip_config;
-    gconstpointer addr;
-    const char *  iface, *domain;
+    const char *  iface;
+    const char *  domain;
     char          ip_addr_to_string_buf[IP_ADDR_TO_STRING_BUFLEN];
-    int           addr_family;
-    guint         i, j, num;
+    gconstpointer nameservers;
+    guint         num;
+    guint         i;
+    guint         j;
 
-    iface       = nm_platform_link_get_name(NM_PLATFORM_GET, ip_data->data->ifindex);
-    addr_family = nm_ip_config_get_addr_family(ip_config);
+    iface = nm_platform_link_get_name(NM_PLATFORM_GET, ip_data->data->ifindex);
 
-    num = nm_ip_config_get_num_nameservers(ip_config);
+    nameservers = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &num);
     for (i = 0; i < num; i++) {
-        addr = nm_ip_config_get_nameserver(ip_config, i);
-        ip_addr_to_string(addr_family, addr, iface, ip_addr_to_string_buf);
+        gconstpointer addr;
+
+        addr = nm_ip_addr_from_packed_array(ip_data->addr_family, nameservers, i);
+        ip_addr_to_string(ip_data->addr_family, addr, iface, ip_addr_to_string_buf);
 
         if (!ip_data->domains.has_default_route_explicit && ip_data->domains.has_default_route)
             add_dnsmasq_nameserver(self, servers, ip_addr_to_string_buf, NULL);
@@ -846,7 +847,7 @@ add_ip_config(NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsConfigIPD
 static GVariant *
 create_update_args(NMDnsDnsmasq *           self,
                    const NMGlobalDnsConfig *global_config,
-                   const CList *            ip_config_lst_head,
+                   const CList *            ip_data_lst_head,
                    const char *             hostname)
 {
     GVariantBuilder          servers;
@@ -857,7 +858,7 @@ create_update_args(NMDnsDnsmasq *           self,
     if (global_config)
         add_global_config(self, &servers, global_config);
     else {
-        c_list_for_each_entry (ip_data, ip_config_lst_head, ip_config_lst)
+        c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst)
             add_ip_config(self, &servers, ip_data);
     }
 
@@ -1122,7 +1123,7 @@ start_dnsmasq(NMDnsDnsmasq *self, gboolean force_start, GError **error)
 static gboolean
 update(NMDnsPlugin *            plugin,
        const NMGlobalDnsConfig *global_config,
-       const CList *            ip_config_lst_head,
+       const CList *            ip_data_lst_head,
        const char *             hostname,
        GError **                error)
 {
@@ -1134,7 +1135,7 @@ update(NMDnsPlugin *            plugin,
 
     nm_clear_pointer(&priv->set_server_ex_args, g_variant_unref);
     priv->set_server_ex_args =
-        g_variant_ref_sink(create_update_args(self, global_config, ip_config_lst_head, hostname));
+        g_variant_ref_sink(create_update_args(self, global_config, ip_data_lst_head, hostname));
 
     send_dnsmasq_update(self);
     return TRUE;

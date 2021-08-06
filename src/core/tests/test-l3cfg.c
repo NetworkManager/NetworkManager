@@ -22,9 +22,9 @@ _netns_access_l3cfg(NMNetns *netns, int ifindex)
     g_assert(NM_IS_NETNS(netns));
     g_assert(ifindex > 0);
 
-    g_assert(!nm_netns_get_l3cfg(netns, ifindex));
+    g_assert(!nm_netns_l3cfg_get(netns, ifindex));
 
-    l3cfg = nm_netns_access_l3cfg(netns, ifindex);
+    l3cfg = nm_netns_l3cfg_acquire(netns, ifindex);
     g_assert(NM_IS_L3CFG(l3cfg));
     return l3cfg;
 }

@@ -18,16 +18,17 @@
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_CONFIG, NMDhcpConfigClass))
 
 #define NM_DHCP_CONFIG_OPTIONS "options"
+#define NM_DHCP_CONFIG_L3CD    "l3cd"
 
 typedef struct _NMDhcpConfigClass NMDhcpConfigClass;
 
 GType nm_dhcp_config_get_type(void);
 
-NMDhcpConfig *nm_dhcp_config_new(int addr_family);
+NMDhcpConfig *nm_dhcp_config_new(int addr_family, const NML3ConfigData *l3cd);
 
 int nm_dhcp_config_get_addr_family(NMDhcpConfig *self);
 
-void nm_dhcp_config_set_options(NMDhcpConfig *self, GHashTable *options);
+void nm_dhcp_config_set_lease(NMDhcpConfig *self, const NML3ConfigData *l3cd);
 
 const char *nm_dhcp_config_get_option(NMDhcpConfig *self, const char *option);
 

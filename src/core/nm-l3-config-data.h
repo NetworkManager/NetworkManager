@@ -446,6 +446,11 @@ NMSettingConnectionLlmnr nm_l3_config_data_get_llmnr(const NML3ConfigData *self)
 
 gboolean nm_l3_config_data_set_llmnr(NML3ConfigData *self, NMSettingConnectionLlmnr llmnr);
 
+NMSettingConnectionDnsOverTls nm_l3_config_data_get_dns_over_tls(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_dns_over_tls(NML3ConfigData *              self,
+                                            NMSettingConnectionDnsOverTls dns_over_tls);
+
 NMIPRouteTableSyncMode nm_l3_config_data_get_route_table_sync(const NML3ConfigData *self,
                                                               int                   addr_family);
 

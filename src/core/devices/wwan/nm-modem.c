@@ -13,16 +13,16 @@
 #include <linux/if.h>
 #include <linux/rtnetlink.h>
 
-#include "libnm-core-intern/nm-core-internal.h"
-#include "libnm-platform/nm-platform.h"
-#include "nm-setting-connection.h"
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
-#include "nm-netns.h"
+#include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-platform/nm-platform.h"
 #include "nm-act-request.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
+#include "nm-l3-config-data.h"
+#include "nm-netns.h"
+#include "nm-setting-connection.h"
 #include "ppp/nm-ppp-manager-call.h"
+#include "ppp/nm-ppp-mgr.h"
 #include "ppp/nm-ppp-status.h"
 
 /*****************************************************************************/
@@ -45,8 +45,7 @@ enum {
     PPP_STATS,
     PPP_FAILED,
     PREPARE_RESULT,
-    IP4_CONFIG_RESULT,
-    IP6_CONFIG_RESULT,
+    NEW_CONFIG,
     AUTH_REQUESTED,
     AUTH_RESULT,
     REMOVED,
@@ -56,6 +55,11 @@ enum {
 
 static guint signals[LAST_SIGNAL] = {0};
 
+typedef struct {
+    GSource *stage3_on_idle_source;
+    bool     stage3_started : 1;
+} IPData;
+
 typedef struct _NMModemPrivate {
     char *uid;
     char *path;
@@ -63,41 +67,38 @@ typedef struct _NMModemPrivate {
     char *control_port;
     char *data_port;
 
-    /* TODO: ip_iface is solely used for nm_modem_owns_port().
-     * We should rework the code that it's not necessary */
-    char *ip_iface;
-
-    int                ip_ifindex;
-    NMModemIPMethod    ip4_method;
-    NMModemIPMethod    ip6_method;
-    NMUtilsIPv6IfaceId iid;
-    NMModemState       state;
-    NMModemState       prev_state; /* revert to this state if enable/disable fails */
-    char *             device_id;
-    char *             sim_id;
-    NMModemIPType      ip_types;
-    char *             sim_operator_id;
-    char *             operator_code;
-    char *             apn;
+    int             ip_ifindex;
+    NMModemIPMethod ip4_method;
+    NMModemIPMethod ip6_method;
+    NMModemState    state;
+    NMModemState    prev_state; /* revert to this state if enable/disable fails */
+    char *          device_id;
+    char *          sim_id;
+    NMModemIPType   ip_types;
+    char *          sim_operator_id;
+    char *          operator_code;
+    char *          apn;
 
     NMPPPManager *ppp_manager;
+    NMPppMgr *    ppp_mgr;
 
-    NMActRequest *                act_request;
+    NMActRequest *                act_req;
+    NMDevice *                    device;
     guint32                       secrets_tries;
     NMActRequestGetSecretsCallId *secrets_id;
 
     guint mm_ip_timeout;
 
-    guint32 ip4_route_table;
-    guint32 ip4_route_metric;
-    guint32 ip6_route_table;
-    guint32 ip6_route_metric;
-
-    /* PPP stats */
-    guint32 in_bytes;
-    guint32 out_bytes;
-
     bool claimed : 1;
+
+    union {
+        struct {
+            IPData ip_data_6;
+            IPData ip_data_4;
+        };
+        IPData ip_data_x[2];
+    };
+
 } NMModemPrivate;
 
 G_DEFINE_TYPE(NMModem, nm_modem, G_TYPE_OBJECT)
@@ -149,7 +150,7 @@ _nmlog_prefix(char *prefix, NMModem *self)
 
 /*****************************************************************************/
 
-static void _set_ip_ifindex(NMModem *self, int ifindex, const char *ifname);
+static void _set_ip_ifindex(NMModem *self, int ifindex);
 
 /*****************************************************************************/
 /* State/enabled/connected */
@@ -179,6 +180,91 @@ nm_modem_state_to_string(NMModemState state)
 }
 
 /*****************************************************************************/
+
+static NMPlatform *
+_get_platform(NMModem *self)
+{
+    NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
+
+    if (!priv->device)
+        return NULL;
+
+    return nm_device_get_platform(priv->device);
+}
+
+/*****************************************************************************/
+
+void
+nm_modem_emit_signal_new_config(NMModem *                 self,
+                                int                       addr_family,
+                                const NML3ConfigData *    l3cd,
+                                gboolean                  do_auto,
+                                const NMUtilsIPv6IfaceId *iid,
+                                NMDeviceStateReason       failure_reason,
+                                GError *                  error)
+{
+    nm_assert(NM_IS_MODEM(self));
+    nm_assert_addr_family(addr_family);
+    nm_assert(!l3cd || NM_IS_L3_CONFIG_DATA(l3cd));
+    nm_assert(!do_auto || addr_family == AF_INET6);
+    nm_assert(!iid || addr_family == AF_INET6);
+    nm_assert(!error || (!l3cd && !do_auto && !iid));
+
+    if (error) {
+        _LOGD("signal: new-config: IPv%c, failed '%s', %s",
+              nm_utils_addr_family_to_char(addr_family),
+              nm_device_state_reason_to_string_a(failure_reason),
+              error->message);
+    } else {
+        gs_free char *str_to_free = NULL;
+
+        _LOGD(
+            "signal: new-config: IPv%c%s%s%s%s",
+            nm_utils_addr_family_to_char(addr_family),
+            l3cd ? ", has-l3cd" : "",
+            do_auto ? ", do-auto" : "",
+            NM_PRINT_FMT_QUOTED2(iid,
+                                 ", iid=",
+                                 nm_utils_bin2hexstr_a(iid, sizeof(*iid), ':', FALSE, &str_to_free),
+                                 ""));
+    }
+
+    g_signal_emit(self,
+                  signals[NEW_CONFIG],
+                  0,
+                  addr_family,
+                  nm_l3_config_data_seal(l3cd),
+                  do_auto,
+                  iid,
+                  (int) failure_reason,
+                  error);
+}
+
+void
+nm_modem_emit_signal_new_config_success(NMModem *                 self,
+                                        int                       addr_family,
+                                        const NML3ConfigData *    l3cd,
+                                        gboolean                  do_auto,
+                                        const NMUtilsIPv6IfaceId *iid)
+{
+    nm_modem_emit_signal_new_config(self,
+                                    addr_family,
+                                    l3cd,
+                                    do_auto,
+                                    iid,
+                                    NM_DEVICE_STATE_REASON_NONE,
+                                    NULL);
+}
+
+void
+nm_modem_emit_signal_new_config_failure(NMModem *           self,
+                                        int                 addr_family,
+                                        NMDeviceStateReason failure_reason,
+                                        GError *            error)
+{
+    nm_assert(error);
+    nm_modem_emit_signal_new_config(self, addr_family, NULL, FALSE, NULL, failure_reason, error);
+}
 
 gboolean
 nm_modem_is_claimed(NMModem *self)
@@ -240,10 +326,10 @@ nm_modem_set_state(NMModem *self, NMModemState new_state, const char *reason)
     priv->prev_state = NM_MODEM_STATE_UNKNOWN;
 
     if (new_state != old_state) {
-        _LOGI("modem state changed, '%s' --> '%s' (reason: %s)",
+        _LOGD("signal: modem state changed, '%s' --> '%s' (reason: %s%s%s)",
               nm_modem_state_to_string(old_state),
               nm_modem_state_to_string(new_state),
-              reason ?: "none");
+              NM_PRINT_FMT_QUOTE_STRING(reason));
 
         priv->state = new_state;
         _notify(self, PROP_STATE);
@@ -285,7 +371,7 @@ nm_modem_set_mm_enabled(NMModem *self, gboolean enabled)
 
         /* Try to unlock the modem if it's being enabled */
         if (enabled)
-            g_signal_emit(self, signals[AUTH_REQUESTED], 0);
+            nm_modem_emit_auth_requested(self);
         return;
     }
 
@@ -303,7 +389,15 @@ nm_modem_set_mm_enabled(NMModem *self, gboolean enabled)
 void
 nm_modem_emit_removed(NMModem *self)
 {
+    _LOGD("signal: removed");
     g_signal_emit(self, signals[REMOVED], 0);
+}
+
+void
+nm_modem_emit_auth_requested(NMModem *self)
+{
+    _LOGD("signal: auth-requested");
+    g_signal_emit(self, signals[AUTH_REQUESTED], 0);
 }
 
 void
@@ -311,6 +405,9 @@ nm_modem_emit_prepare_result(NMModem *self, gboolean success, NMDeviceStateReaso
 {
     nm_assert(NM_IS_MODEM(self));
 
+    _LOGD("signal: prepare-result: %s (%s)",
+          success ? "success" : "failure",
+          nm_device_state_reason_to_string_a(reason));
     g_signal_emit(self, signals[PREPARE_RESULT], 0, success, (guint) reason);
 }
 
@@ -319,6 +416,7 @@ nm_modem_emit_ppp_failed(NMModem *self, NMDeviceStateReason reason)
 {
     nm_assert(NM_IS_MODEM(self));
 
+    _LOGD("signal: ppp-failed (%s)", nm_device_state_reason_to_string_a(reason));
     g_signal_emit(self, signals[PPP_FAILED], 0, (guint) reason);
 }
 
@@ -372,7 +470,7 @@ nm_modem_get_connection_ip_type(NMModem *self, NMConnection *connection, GError 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     if (s_ip4) {
         method = nm_setting_ip_config_get_method(s_ip4);
-        if (g_strcmp0(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED) == 0)
+        if (nm_streq0(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
             ip4 = FALSE;
         ip4_may_fail = nm_setting_ip_config_get_may_fail(s_ip4);
     }
@@ -487,76 +585,90 @@ nm_modem_get_apn(NMModem *self)
 }
 
 /*****************************************************************************/
-/* IP method PPP */
 
 static void
-ppp_state_changed(NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_data)
+_ppp_mgr_cleanup(NMModem *self)
 {
-    switch (status) {
-    case NM_PPP_STATUS_DISCONNECT:
-        nm_modem_emit_ppp_failed(user_data, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
-        break;
-    case NM_PPP_STATUS_DEAD:
-        nm_modem_emit_ppp_failed(user_data, NM_DEVICE_STATE_REASON_PPP_FAILED);
-        break;
-    default:
-        break;
+    NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
+
+    nm_clear_pointer(&priv->ppp_mgr, nm_ppp_mgr_destroy);
+}
+
+static void
+_ppp_maybe_emit_new_config(NMModem *self, int addr_family)
+{
+    NMModemPrivate *      priv    = NM_MODEM_GET_PRIVATE(self);
+    const int             IS_IPv4 = NM_IS_IPv4(addr_family);
+    const NMPppMgrIPData *ip_data;
+    gboolean              do_auto;
+
+    ip_data = nm_ppp_mgr_get_ip_data(priv->ppp_mgr, addr_family);
+
+    if (!ip_data->ip_received)
+        return;
+
+    if (IS_IPv4)
+        do_auto = FALSE;
+    else {
+        do_auto = !ip_data->l3cd
+                  || (!nm_l3_config_data_get_first_obj(ip_data->l3cd,
+                                                       NMP_OBJECT_TYPE_IP6_ADDRESS,
+                                                       nmp_object_ip6_address_is_not_link_local));
     }
+
+    nm_assert(!IS_IPv4 || !ip_data->ipv6_iid);
+
+    nm_modem_emit_signal_new_config_success(self,
+                                            addr_family,
+                                            ip_data->l3cd,
+                                            do_auto,
+                                            ip_data->ipv6_iid);
 }
 
 static void
-ppp_ifindex_set(NMPPPManager *ppp_manager, int ifindex, const char *iface, gpointer user_data)
+_ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, gpointer user_data)
 {
-    NMModem *self = NM_MODEM(user_data);
+    NMModem *       self = NM_MODEM(user_data);
+    NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
+    int             IS_IPv4;
 
-    nm_assert(ifindex >= 0);
-    nm_assert(NM_MODEM_GET_PRIVATE(self)->ppp_manager == ppp_manager);
+    switch (callback_data->callback_type) {
+    case NM_PPP_MGR_CALLBACK_TYPE_STATE_CHANGED:
 
-    if (ifindex <= 0 && iface) {
-        /* this might happen, if the ifname was already deleted
-         * and we failed to resolve ifindex.
-         *
-         * Forget about the name. */
-        iface = NULL;
+        if (callback_data->data.state >= _NM_PPP_MGR_STATE_FAILED_START) {
+            nm_modem_emit_ppp_failed(self, callback_data->data.reason);
+            return;
+        }
+
+        if (callback_data->data.state >= NM_PPP_MGR_STATE_HAVE_IFINDEX)
+            _set_ip_ifindex(self, callback_data->data.ifindex);
+
+        if (callback_data->data.state >= NM_PPP_MGR_STATE_HAVE_IP_CONFIG) {
+            for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+                if (!priv->ip_data_x[IS_IPv4].stage3_started) {
+                    /* stage3 didn't yet start. We don't emit the IP signal yet.
+                     * We will emit it together with stage3. */
+                    continue;
+                }
+                if (callback_data->data.ip_changed_x[IS_IPv4])
+                    _ppp_maybe_emit_new_config(self, IS_IPv4 ? AF_INET : AF_INET6);
+            }
+        }
+        return;
+
+    case NM_PPP_MGR_CALLBACK_TYPE_STATS_CHANGED:
+        g_signal_emit(self,
+                      signals[PPP_STATS],
+                      0,
+                      (guint) callback_data->data.stats_data->in_bytes,
+                      (guint) callback_data->data.stats_data->out_bytes);
+        return;
     }
-    _set_ip_ifindex(self, ifindex, iface);
+
+    nm_assert_not_reached();
 }
 
-static void
-ppp_ip4_config(NMPPPManager *ppp_manager, NMIP4Config *config, gpointer user_data)
-{
-    NMModem *self = NM_MODEM(user_data);
-
-    g_signal_emit(self, signals[IP4_CONFIG_RESULT], 0, config, NULL);
-}
-
-static void
-ppp_ip6_config(NMPPPManager *            ppp_manager,
-               const NMUtilsIPv6IfaceId *iid,
-               NMIP6Config *             config,
-               gpointer                  user_data)
-{
-    NMModem *self = NM_MODEM(user_data);
-
-    NM_MODEM_GET_PRIVATE(self)->iid = *iid;
-
-    nm_modem_emit_ip6_config_result(self, config, NULL);
-}
-
-static void
-ppp_stats(NMPPPManager *ppp_manager, guint i_in_bytes, guint i_out_bytes, gpointer user_data)
-{
-    NMModem *       self      = NM_MODEM(user_data);
-    NMModemPrivate *priv      = NM_MODEM_GET_PRIVATE(self);
-    guint32         in_bytes  = i_in_bytes;
-    guint32         out_bytes = i_out_bytes;
-
-    if (priv->in_bytes != in_bytes || priv->out_bytes != out_bytes) {
-        priv->in_bytes  = in_bytes;
-        priv->out_bytes = out_bytes;
-        g_signal_emit(self, signals[PPP_STATS], 0, (guint) in_bytes, (guint) out_bytes);
-    }
-}
+/*****************************************************************************/
 
 static gboolean
 port_speed_is_zero(const char *port)
@@ -585,282 +697,107 @@ port_speed_is_zero(const char *port)
     return cfgetospeed(&options) == B0;
 }
 
-static NMActStageReturn
-ppp_stage3_ip_config_start(NMModem *            self,
-                           NMActRequest *       req,
-                           NMDeviceStateReason *out_failure_reason)
+/*****************************************************************************/
+
+static gboolean
+_stage3_ip_config_start_on_idle(NMModem *self, int addr_family)
 {
-    NMModemPrivate *priv          = NM_MODEM_GET_PRIVATE(self);
-    const char *    ppp_name      = NULL;
-    GError *        error         = NULL;
-    guint           ip_timeout    = 30;
-    guint           baud_override = 0;
+    const int       IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMModemPrivate *priv    = NM_MODEM_GET_PRIVATE(self);
+    NMModemIPMethod ip_method;
+    NMConnection *  connection;
+    const char *    method;
+    gs_free_error GError *error = NULL;
+    NMDeviceStateReason   failure_reason;
 
-    g_return_val_if_fail(NM_IS_MODEM(self), NM_ACT_STAGE_RETURN_FAILURE);
-    g_return_val_if_fail(NM_IS_ACT_REQUEST(req), NM_ACT_STAGE_RETURN_FAILURE);
+    nm_clear_g_source_inst(&priv->ip_data_x[IS_IPv4].stage3_on_idle_source);
 
-    /* If we're already running PPP don't restart it; for example, if both
-     * IPv4 and IPv6 are requested, IPv4 gets started first, but we use the
-     * same pppd for both v4 and v6.
-     */
-    if (priv->ppp_manager)
-        return NM_ACT_STAGE_RETURN_POSTPONE;
+    connection = nm_act_request_get_applied_connection(priv->act_req);
+    g_return_val_if_fail(connection, G_SOURCE_CONTINUE);
 
-    if (NM_MODEM_GET_CLASS(self)->get_user_pass) {
-        NMConnection *connection = nm_act_request_get_applied_connection(req);
+    method = nm_utils_get_ip_config_method(connection, addr_family);
 
-        g_assert(connection);
-        if (!NM_MODEM_GET_CLASS(self)->get_user_pass(self, connection, &ppp_name, NULL))
-            return NM_ACT_STAGE_RETURN_FAILURE;
+    if (IS_IPv4 ? NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
+                : NM_IN_STRSET(method,
+                               NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+                               NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
+        nm_modem_emit_signal_new_config_success(self, addr_family, NULL, FALSE, NULL);
+        return G_SOURCE_CONTINUE;
     }
 
-    if (!priv->data_port) {
-        _LOGE("error starting PPP (no data port)");
-        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
-        return NM_ACT_STAGE_RETURN_FAILURE;
+    if (!nm_streq(method,
+                  IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_AUTO
+                          : NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+        failure_reason = NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED;
+        nm_utils_error_set(&error, NM_UTILS_ERROR_UNKNOWN, "ip method unsupported by modem");
+        goto out_failure;
     }
 
-    /* Check if ModemManager requested a specific IP timeout to be used. If 0 reported,
-     * use the default one (30s) */
-    if (priv->mm_ip_timeout > 0) {
-        _LOGI("using modem-specified IP timeout: %u seconds", priv->mm_ip_timeout);
-        ip_timeout = priv->mm_ip_timeout;
+    ip_method = IS_IPv4 ? priv->ip4_method : priv->ip6_method;
+
+    switch (ip_method) {
+    case NM_MODEM_IP_METHOD_PPP:
+        _ppp_maybe_emit_new_config(self, addr_family);
+        return G_SOURCE_CONTINUE;
+    case NM_MODEM_IP_METHOD_STATIC:
+    case NM_MODEM_IP_METHOD_AUTO:
+        NM_MODEM_GET_CLASS(self)->stage3_ip_config_start(self, addr_family, ip_method);
+        return G_SOURCE_CONTINUE;
+    default:
+        failure_reason = NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED;
+        nm_utils_error_set(&error, NM_UTILS_ERROR_UNKNOWN, "modem IP method unsupported");
+        goto out_failure;
     }
 
-    /* Some tty drivers and modems ignore port speed, but pppd requires the
-     * port speed to be > 0 or it exits. If the port speed is 0 pass an
-     * explicit speed to pppd to prevent the exit.
-     * https://bugzilla.redhat.com/show_bug.cgi?id=1281731
-     */
-    if (port_speed_is_zero(priv->data_port))
-        baud_override = 57600;
+    nm_assert_not_reached();
 
-    priv->ppp_manager = nm_ppp_manager_create(priv->data_port, &error);
+out_failure:
+    nm_modem_emit_signal_new_config_failure(self, addr_family, failure_reason, error);
+    return G_SOURCE_CONTINUE;
+}
 
-    if (priv->ppp_manager) {
-        nm_ppp_manager_set_route_parameters(priv->ppp_manager,
-                                            priv->ip4_route_table,
-                                            priv->ip4_route_metric,
-                                            priv->ip6_route_table,
-                                            priv->ip6_route_metric);
+static gboolean
+_stage3_ip_config_start_on_idle_4(gpointer user_data)
+{
+    return _stage3_ip_config_start_on_idle(user_data, AF_INET);
+}
+
+static gboolean
+_stage3_ip_config_start_on_idle_6(gpointer user_data)
+{
+    return _stage3_ip_config_start_on_idle(user_data, AF_INET6);
+}
+
+gboolean
+nm_modem_stage3_ip_config_start(NMModem *self, int addr_family, NMDevice *device)
+{
+    const int       IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMModemPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_MODEM(self), FALSE);
+    g_return_val_if_fail(NM_IS_DEVICE(device), FALSE);
+
+    priv = NM_MODEM_GET_PRIVATE(self);
+
+    g_return_val_if_fail(priv->device == device, FALSE);
+
+    if (priv->ip_data_x[IS_IPv4].stage3_started) {
+        /* we already started. Nothing to do. */
+        return FALSE;
     }
 
-    if (!priv->ppp_manager
-        || !nm_ppp_manager_start(priv->ppp_manager,
-                                 req,
-                                 ppp_name,
-                                 ip_timeout,
-                                 baud_override,
-                                 &error)) {
-        _LOGE("error starting PPP: %s", error->message);
-        g_error_free(error);
-        g_clear_object(&priv->ppp_manager);
-        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
-        return NM_ACT_STAGE_RETURN_FAILURE;
-    }
+    nm_assert(!priv->ppp_mgr
+              || nm_ppp_mgr_get_state(priv->ppp_mgr) >= NM_PPP_MGR_STATE_HAVE_IFINDEX);
 
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
-                     G_CALLBACK(ppp_state_changed),
-                     self);
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_IFINDEX_SET,
-                     G_CALLBACK(ppp_ifindex_set),
-                     self);
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
-                     G_CALLBACK(ppp_ip4_config),
-                     self);
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_IP6_CONFIG,
-                     G_CALLBACK(ppp_ip6_config),
-                     self);
-    g_signal_connect(priv->ppp_manager, NM_PPP_MANAGER_SIGNAL_STATS, G_CALLBACK(ppp_stats), self);
+    priv->ip_data_x[IS_IPv4].stage3_started = TRUE;
 
-    return NM_ACT_STAGE_RETURN_POSTPONE;
+    priv->ip_data_x[IS_IPv4].stage3_on_idle_source = nm_g_idle_add_source(
+        IS_IPv4 ? _stage3_ip_config_start_on_idle_4 : _stage3_ip_config_start_on_idle_6,
+        self);
+    return TRUE;
 }
 
 /*****************************************************************************/
-
-NMActStageReturn
-nm_modem_stage3_ip4_config_start(NMModem *            self,
-                                 NMDevice *           device,
-                                 gboolean *           out_autoip4,
-                                 NMDeviceStateReason *out_failure_reason)
-{
-    NMModemPrivate * priv;
-    NMActRequest *   req;
-    NMConnection *   connection;
-    const char *     method;
-    NMActStageReturn ret;
-
-    _LOGD("ip4_config_start");
-
-    g_return_val_if_fail(NM_IS_MODEM(self), NM_ACT_STAGE_RETURN_FAILURE);
-    g_return_val_if_fail(NM_IS_DEVICE(device), NM_ACT_STAGE_RETURN_FAILURE);
-    nm_assert(out_autoip4 && !*out_autoip4);
-
-    req = nm_device_get_act_request(device);
-    g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
-
-    connection = nm_act_request_get_applied_connection(req);
-    g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
-
-    nm_modem_set_route_parameters_from_device(self, device);
-
-    method = nm_utils_get_ip_config_method(connection, AF_INET);
-
-    /* Only Disabled and Auto methods make sense for WWAN */
-    if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
-        return NM_ACT_STAGE_RETURN_SUCCESS;
-
-    if (!nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-        _LOGE("unhandled WWAN IPv4 method '%s'; will fail", method);
-        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED);
-        return NM_ACT_STAGE_RETURN_FAILURE;
-    }
-
-    priv = NM_MODEM_GET_PRIVATE(self);
-    switch (priv->ip4_method) {
-    case NM_MODEM_IP_METHOD_PPP:
-        ret = ppp_stage3_ip_config_start(self, req, out_failure_reason);
-        break;
-    case NM_MODEM_IP_METHOD_STATIC:
-        _LOGD("MODEM_IP_METHOD_STATIC");
-        ret =
-            NM_MODEM_GET_CLASS(self)->static_stage3_ip4_config_start(self, req, out_failure_reason);
-        break;
-    case NM_MODEM_IP_METHOD_AUTO:
-        _LOGD("MODEM_IP_METHOD_AUTO");
-        *out_autoip4 = TRUE;
-        ret          = NM_ACT_STAGE_RETURN_SUCCESS;
-        break;
-    default:
-        _LOGI("IPv4 configuration disabled");
-        ret = NM_ACT_STAGE_RETURN_IP_FAIL;
-        break;
-    }
-
-    return ret;
-}
-
-void
-nm_modem_ip4_pre_commit(NMModem *modem, NMDevice *device, NMIP4Config *config)
-{
-    NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(modem);
-
-    /* If the modem has an ethernet-type data interface (ie, not PPP and thus
-     * not point-to-point) and IP config has a /32 prefix, then we assume that
-     * ARP will be pointless and we turn it off.
-     */
-    if (priv->ip4_method == NM_MODEM_IP_METHOD_STATIC
-        || priv->ip4_method == NM_MODEM_IP_METHOD_AUTO) {
-        const NMPlatformIP4Address *address = nm_ip4_config_get_first_address(config);
-
-        g_assert(address);
-        if (address->plen == 32)
-            nm_platform_link_change_flags(nm_device_get_platform(device),
-                                          nm_device_get_ip_ifindex(device),
-                                          IFF_NOARP,
-                                          TRUE);
-    }
-}
-
-/*****************************************************************************/
-
-void
-nm_modem_emit_ip6_config_result(NMModem *self, NMIP6Config *config, GError *error)
-{
-    NMModemPrivate *            priv = NM_MODEM_GET_PRIVATE(self);
-    NMDedupMultiIter            ipconf_iter;
-    const NMPlatformIP6Address *addr;
-    gboolean                    do_slaac = TRUE;
-
-    if (error) {
-        g_signal_emit(self, signals[IP6_CONFIG_RESULT], 0, NULL, FALSE, error);
-        return;
-    }
-
-    if (config) {
-        /* If the IPv6 configuration only included a Link-Local address, then
-         * we have to run SLAAC to get the full IPv6 configuration.
-         */
-        nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, config, &addr) {
-            if (IN6_IS_ADDR_LINKLOCAL(&addr->address)) {
-                if (!priv->iid.id)
-                    priv->iid.id = ((guint64 *) (&addr->address.s6_addr))[1];
-            } else
-                do_slaac = FALSE;
-        }
-    }
-    g_assert(config || do_slaac);
-
-    g_signal_emit(self, signals[IP6_CONFIG_RESULT], 0, config, do_slaac, NULL);
-}
-
-static NMActStageReturn
-stage3_ip6_config_request(NMModem *self, NMDeviceStateReason *out_failure_reason)
-{
-    NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-    return NM_ACT_STAGE_RETURN_FAILURE;
-}
-
-NMActStageReturn
-nm_modem_stage3_ip6_config_start(NMModem *            self,
-                                 NMDevice *           device,
-                                 NMDeviceStateReason *out_failure_reason)
-{
-    NMModemPrivate * priv;
-    NMActRequest *   req;
-    NMActStageReturn ret;
-    NMConnection *   connection;
-    const char *     method;
-
-    g_return_val_if_fail(NM_IS_MODEM(self), NM_ACT_STAGE_RETURN_FAILURE);
-
-    req = nm_device_get_act_request(device);
-    g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
-
-    connection = nm_act_request_get_applied_connection(req);
-    g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
-
-    nm_modem_set_route_parameters_from_device(self, device);
-
-    method = nm_utils_get_ip_config_method(connection, AF_INET6);
-
-    /* Only Ignore, Disabled and Auto methods make sense for WWAN */
-    if (NM_IN_STRSET(method,
-                     NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-                     NM_SETTING_IP6_CONFIG_METHOD_DISABLED))
-        return NM_ACT_STAGE_RETURN_IP_DONE;
-
-    if (!nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-        _LOGW("unhandled WWAN IPv6 method '%s'; will fail", method);
-        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-        return NM_ACT_STAGE_RETURN_FAILURE;
-    }
-
-    priv = NM_MODEM_GET_PRIVATE(self);
-    switch (priv->ip6_method) {
-    case NM_MODEM_IP_METHOD_PPP:
-        ret = ppp_stage3_ip_config_start(self, req, out_failure_reason);
-        break;
-    case NM_MODEM_IP_METHOD_STATIC:
-    case NM_MODEM_IP_METHOD_AUTO:
-        /* Both static and DHCP/Auto retrieve a base IP config from the modem
-         * which in the static case is the full config, and the DHCP/Auto case
-         * is just the IPv6LL address to use for SLAAC.
-         */
-        ret = NM_MODEM_GET_CLASS(self)->stage3_ip6_config_request(self, out_failure_reason);
-        break;
-    default:
-        _LOGI("IPv6 configuration disabled");
-        ret = NM_ACT_STAGE_RETURN_IP_FAIL;
-        break;
-    }
-
-    return ret;
-}
 
 guint32
 nm_modem_get_configured_mtu(NMDevice *self, NMDeviceMtuSource *out_source, gboolean *out_force)
@@ -910,7 +847,7 @@ cancel_get_secrets(NMModem *self)
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
 
     if (priv->secrets_id)
-        nm_act_request_cancel_secrets(priv->act_request, priv->secrets_id);
+        nm_act_request_cancel_secrets(priv->act_req, priv->secrets_id);
 }
 
 static void
@@ -934,6 +871,8 @@ modem_secrets_cb(NMActRequest *                req,
     if (error)
         _LOGW("modem-secrets: %s", error->message);
 
+    _LOGD("signal: auth-result: %s%s",
+          NM_PRINT_FMT_QUOTED2(error, "failed: ", error->message, "success"));
     g_signal_emit(self, signals[AUTH_RESULT], 0, error);
 }
 
@@ -950,7 +889,7 @@ nm_modem_get_secrets(NMModem *   self,
 
     if (request_new)
         flags |= NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW;
-    priv->secrets_id = nm_act_request_get_secrets(priv->act_request,
+    priv->secrets_id = nm_act_request_get_secrets(priv->act_req,
                                                   FALSE,
                                                   setting_name,
                                                   flags,
@@ -958,7 +897,7 @@ nm_modem_get_secrets(NMModem *   self,
                                                   modem_secrets_cb,
                                                   self);
     g_return_if_fail(priv->secrets_id);
-    g_signal_emit(self, signals[AUTH_REQUESTED], 0);
+    nm_modem_emit_auth_requested(self);
 }
 
 /*****************************************************************************/
@@ -982,15 +921,18 @@ nm_modem_act_stage1_prepare(NMModem *            self,
     const char *                 setting_name = NULL;
     NMSecretAgentGetSecretsFlags flags        = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
     NMConnection *               connection;
+    NMDevice *                   device;
 
     g_return_val_if_fail(NM_IS_ACT_REQUEST(req), NM_ACT_STAGE_RETURN_FAILURE);
 
-    if (priv->act_request)
-        g_object_unref(priv->act_request);
-    priv->act_request = g_object_ref(req);
+    nm_g_object_ref_set(&priv->act_req, req);
+    device = nm_active_connection_get_device(NM_ACTIVE_CONNECTION(priv->act_req));
+    g_return_val_if_fail(NM_IS_DEVICE(device), NM_ACT_STAGE_RETURN_FAILURE);
 
     connection = nm_act_request_get_applied_connection(req);
     g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
+
+    nm_g_object_ref_set(&priv->device, device);
 
     setting_name = nm_connection_need_secrets(connection, &hints);
     if (!setting_name) {
@@ -1015,24 +957,99 @@ nm_modem_act_stage1_prepare(NMModem *            self,
                                                   modem_secrets_cb,
                                                   self);
     g_return_val_if_fail(priv->secrets_id, NM_ACT_STAGE_RETURN_FAILURE);
-    g_signal_emit(self, signals[AUTH_REQUESTED], 0);
+    nm_modem_emit_auth_requested(self);
     return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
 /*****************************************************************************/
 
-void
-nm_modem_act_stage2_config(NMModem *self)
+NMActStageReturn
+nm_modem_act_stage2_config(NMModem *self, NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
     NMModemPrivate *priv;
+    gboolean        needs_ppp;
 
-    g_return_if_fail(NM_IS_MODEM(self));
+    g_return_val_if_fail(NM_IS_MODEM(self), NM_ACT_STAGE_RETURN_FAILURE);
+    g_return_val_if_fail(NM_IS_DEVICE(device), NM_ACT_STAGE_RETURN_FAILURE);
 
     priv = NM_MODEM_GET_PRIVATE(self);
+
+    g_return_val_if_fail(priv->device == device, NM_ACT_STAGE_RETURN_FAILURE);
+
     /* Clear secrets tries counter since secrets were successfully used
      * already if we get here.
      */
     priv->secrets_tries = 0;
+
+    needs_ppp =
+        (priv->ip4_method == NM_MODEM_IP_METHOD_PPP || priv->ip6_method == NM_MODEM_IP_METHOD_PPP);
+
+    if (needs_ppp && !priv->ppp_mgr) {
+        const char *  ppp_name      = NULL;
+        gs_free_error GError *error = NULL;
+        guint                 ip_timeout;
+        guint                 baud_override;
+        NMActRequest *        req;
+
+        req = nm_device_get_act_request(device);
+        g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
+
+        if (NM_MODEM_GET_CLASS(self)->get_user_pass) {
+            NMConnection *connection = nm_act_request_get_applied_connection(req);
+
+            g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
+            if (!NM_MODEM_GET_CLASS(self)->get_user_pass(self, connection, &ppp_name, NULL))
+                return NM_ACT_STAGE_RETURN_FAILURE;
+        }
+
+        if (!priv->data_port) {
+            _LOGW("error starting PPP (no data port)");
+            NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
+            return NM_ACT_STAGE_RETURN_FAILURE;
+        }
+
+        /* Check if ModemManager requested a specific IP timeout to be used. If 0 reported,
+         * use the default one (30s) */
+        if (priv->mm_ip_timeout > 0) {
+            _LOGI("using modem-specified IP timeout: %u seconds", priv->mm_ip_timeout);
+            ip_timeout = priv->mm_ip_timeout;
+        } else
+            ip_timeout = 30;
+
+        /* Some tty drivers and modems ignore port speed, but pppd requires the
+         * port speed to be > 0 or it exits. If the port speed is 0 pass an
+         * explicit speed to pppd to prevent the exit.
+         * https://bugzilla.redhat.com/show_bug.cgi?id=1281731
+         */
+        if (port_speed_is_zero(priv->data_port))
+            baud_override = 57600;
+        else
+            baud_override = 0;
+
+        priv->ppp_mgr = nm_ppp_mgr_start(&((const NMPppMgrConfig){
+                                             .netns         = nm_device_get_netns(device),
+                                             .parent_iface  = priv->data_port,
+                                             .callback      = _ppp_mgr_callback,
+                                             .user_data     = self,
+                                             .act_req       = req,
+                                             .ppp_username  = ppp_name,
+                                             .timeout_secs  = ip_timeout,
+                                             .baud_override = baud_override,
+                                         }),
+                                         &error);
+        if (!priv->ppp_mgr) {
+            _LOGW("PPP failed to start: %s", error->message);
+            *out_failure_reason = NM_DEVICE_STATE_REASON_PPP_START_FAILED;
+            return NM_ACT_STAGE_RETURN_FAILURE;
+        }
+
+        return NM_ACT_STAGE_RETURN_POSTPONE;
+    }
+
+    if (needs_ppp && nm_ppp_mgr_get_state(priv->ppp_mgr) < NM_PPP_MGR_STATE_HAVE_IFINDEX)
+        return NM_ACT_STAGE_RETURN_POSTPONE;
+
+    return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 /*****************************************************************************/
@@ -1126,27 +1143,26 @@ deactivate_cleanup(NMModem *self, NMDevice *device, gboolean stop_ppp_manager)
 {
     NMModemPrivate *priv;
     int             ifindex;
+    int             IS_IPv4;
 
     g_return_if_fail(NM_IS_MODEM(self));
 
     priv = NM_MODEM_GET_PRIVATE(self);
 
+    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        priv->ip_data_x[IS_IPv4].stage3_started = FALSE;
+        nm_clear_g_source_inst(&priv->ip_data_x[IS_IPv4].stage3_on_idle_source);
+    }
+
     priv->secrets_tries = 0;
 
-    if (priv->act_request) {
+    if (priv->act_req) {
         cancel_get_secrets(self);
-        g_object_unref(priv->act_request);
-        priv->act_request = NULL;
+        g_clear_object(&priv->act_req);
     }
+    g_clear_object(&priv->device);
 
-    priv->in_bytes = priv->out_bytes = 0;
-
-    if (priv->ppp_manager) {
-        g_signal_handlers_disconnect_by_data(priv->ppp_manager, self);
-        if (stop_ppp_manager)
-            nm_ppp_manager_stop(priv->ppp_manager, NULL, NULL, NULL);
-        g_clear_object(&priv->ppp_manager);
-    }
+    _ppp_mgr_cleanup(self);
 
     if (device) {
         g_return_if_fail(NM_IS_DEVICE(device));
@@ -1170,7 +1186,7 @@ deactivate_cleanup(NMModem *self, NMDevice *device, gboolean stop_ppp_manager)
     priv->mm_ip_timeout = 0;
     priv->ip4_method    = NM_MODEM_IP_METHOD_UNKNOWN;
     priv->ip6_method    = NM_MODEM_IP_METHOD_UNKNOWN;
-    _set_ip_ifindex(self, -1, NULL);
+    _set_ip_ifindex(self, -1);
 }
 
 /*****************************************************************************/
@@ -1307,11 +1323,11 @@ nm_modem_device_state_changed(NMModem *self, NMDeviceState new_state, NMDeviceSt
     case NM_DEVICE_STATE_UNAVAILABLE:
     case NM_DEVICE_STATE_FAILED:
     case NM_DEVICE_STATE_DISCONNECTED:
-        if (priv->act_request) {
+        if (priv->act_req) {
             cancel_get_secrets(self);
-            g_object_unref(priv->act_request);
-            priv->act_request = NULL;
+            g_clear_object(&priv->act_req);
         }
+        g_clear_object(&priv->device);
 
         if (was_connected) {
             /* Don't bother warning on FAILED since the modem is already gone */
@@ -1377,19 +1393,14 @@ nm_modem_get_ip_ifindex(NMModem *self)
 }
 
 static void
-_set_ip_ifindex(NMModem *self, int ifindex, const char *ifname)
+_set_ip_ifindex(NMModem *self, int ifindex)
 {
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
 
     nm_assert(ifindex >= -1);
-    nm_assert((ifindex > 0) == !!ifname);
-
-    if (!nm_streq0(priv->ip_iface, ifname)) {
-        g_free(priv->ip_iface);
-        priv->ip_iface = g_strdup(ifname);
-    }
 
     if (priv->ip_ifindex != ifindex) {
+        _LOGD("signal: ifindex changed: %d", ifindex);
         priv->ip_ifindex = ifindex;
         _notify(self, PROP_IP_IFINDEX);
     }
@@ -1477,10 +1488,10 @@ nm_modem_set_data_port(NMModem *       self,
     priv->ip6_method    = ip6_method;
     if (is_ppp) {
         priv->data_port = g_strdup(data_port);
-        _set_ip_ifindex(self, -1, NULL);
+        _set_ip_ifindex(self, -1);
     } else {
         priv->data_port = NULL;
-        _set_ip_ifindex(self, ifindex, data_port);
+        _set_ip_ifindex(self, ifindex);
     }
     return TRUE;
 }
@@ -1488,90 +1499,28 @@ nm_modem_set_data_port(NMModem *       self,
 gboolean
 nm_modem_owns_port(NMModem *self, const char *iface)
 {
-    NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
+    NMModemPrivate *      priv = NM_MODEM_GET_PRIVATE(self);
+    NMPlatform *          platform;
+    const NMPlatformLink *plink;
 
     g_return_val_if_fail(iface != NULL, FALSE);
 
     if (NM_MODEM_GET_CLASS(self)->owns_port)
         return NM_MODEM_GET_CLASS(self)->owns_port(self, iface);
 
-    return NM_IN_STRSET(iface, priv->ip_iface, priv->data_port, priv->control_port);
-}
+    if (NM_IN_STRSET(iface, priv->data_port, priv->control_port))
+        return TRUE;
 
-gboolean
-nm_modem_get_iid(NMModem *self, NMUtilsIPv6IfaceId *out_iid)
-{
-    g_return_val_if_fail(NM_IS_MODEM(self), FALSE);
+    /* FIXME(parent-child-relationship): the whole notion of "owns-port" is wrong.
+     * When we have a name (iface) it must be always clear what this name is (which
+     * domain). Mixing data_port, control_port and devlink names is wrong. Looking
+     * up devlinks by name is also wrong (use ifindex). */
+    if (priv->ip_ifindex > 0 && (platform = _get_platform(self))
+        && (plink = nm_platform_link_get(platform, priv->ip_ifindex))
+        && nm_streq(iface, plink->name))
+        return TRUE;
 
-    *out_iid = NM_MODEM_GET_PRIVATE(self)->iid;
-    return TRUE;
-}
-
-/*****************************************************************************/
-
-void
-nm_modem_get_route_parameters(NMModem *self,
-                              guint32 *out_ip4_route_table,
-                              guint32 *out_ip4_route_metric,
-                              guint32 *out_ip6_route_table,
-                              guint32 *out_ip6_route_metric)
-{
-    NMModemPrivate *priv;
-
-    g_return_if_fail(NM_IS_MODEM(self));
-
-    priv = NM_MODEM_GET_PRIVATE(self);
-    NM_SET_OUT(out_ip4_route_table, priv->ip4_route_table);
-    NM_SET_OUT(out_ip4_route_metric, priv->ip4_route_metric);
-    NM_SET_OUT(out_ip6_route_table, priv->ip6_route_table);
-    NM_SET_OUT(out_ip6_route_metric, priv->ip6_route_metric);
-}
-
-void
-nm_modem_set_route_parameters(NMModem *self,
-                              guint32  ip4_route_table,
-                              guint32  ip4_route_metric,
-                              guint32  ip6_route_table,
-                              guint32  ip6_route_metric)
-{
-    NMModemPrivate *priv;
-
-    g_return_if_fail(NM_IS_MODEM(self));
-
-    priv = NM_MODEM_GET_PRIVATE(self);
-    if (priv->ip4_route_table != ip4_route_table || priv->ip4_route_metric != ip4_route_metric
-        || priv->ip6_route_table != ip6_route_table || priv->ip6_route_metric != ip6_route_metric) {
-        priv->ip4_route_table  = ip4_route_table;
-        priv->ip4_route_metric = ip4_route_metric;
-        priv->ip6_route_table  = ip6_route_table;
-        priv->ip6_route_metric = ip6_route_metric;
-
-        _LOGT("route-parameters: table-v4: %u, metric-v4: %u, table-v6: %u, metric-v6: %u",
-              priv->ip4_route_table,
-              priv->ip4_route_metric,
-              priv->ip6_route_table,
-              priv->ip6_route_metric);
-    }
-
-    if (priv->ppp_manager) {
-        nm_ppp_manager_set_route_parameters(priv->ppp_manager,
-                                            priv->ip4_route_table,
-                                            priv->ip4_route_metric,
-                                            priv->ip6_route_table,
-                                            priv->ip6_route_metric);
-    }
-}
-
-void
-nm_modem_set_route_parameters_from_device(NMModem *self, NMDevice *device)
-{
-    g_return_if_fail(NM_IS_DEVICE(device));
-
-    nm_modem_set_route_parameters(self,
-                                  nm_device_get_route_table(device, AF_INET),
-                                  nm_device_get_route_metric(device, AF_INET),
-                                  nm_device_get_route_table(device, AF_INET6),
-                                  nm_device_get_route_metric(device, AF_INET6));
+    return FALSE;
 }
 
 /*****************************************************************************/
@@ -1593,9 +1542,10 @@ _nm_modem_set_operator_code(NMModem *self, const char *operator_code)
 {
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
 
-    if (g_strcmp0(priv->operator_code, operator_code) != 0) {
+    if (!nm_streq0(priv->operator_code, operator_code)) {
         g_free(priv->operator_code);
         priv->operator_code = g_strdup(operator_code);
+        _LOGD("signal: operator-code changed: %s%s%s", NM_PRINT_FMT_QUOTE_STRING(operator_code));
         _notify(self, PROP_OPERATOR_CODE);
     }
 }
@@ -1605,9 +1555,10 @@ _nm_modem_set_apn(NMModem *self, const char *apn)
 {
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
 
-    if (g_strcmp0(priv->apn, apn) != 0) {
+    if (!nm_streq0(priv->apn, apn)) {
         g_free(priv->apn);
         priv->apn = g_strdup(apn);
+        _LOGD("signal: apn changed: %s%s%s", NM_PRINT_FMT_QUOTE_STRING(apn));
         _notify(self, PROP_APN);
     }
 }
@@ -1726,11 +1677,7 @@ nm_modem_init(NMModem *self)
     self->_priv = G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_MODEM, NMModemPrivate);
     priv        = self->_priv;
 
-    priv->ip_ifindex       = -1;
-    priv->ip4_route_table  = RT_TABLE_MAIN;
-    priv->ip4_route_metric = 700;
-    priv->ip6_route_table  = RT_TABLE_MAIN;
-    priv->ip6_route_metric = 700;
+    priv->ip_ifindex = -1;
 }
 
 static void
@@ -1752,7 +1699,8 @@ dispose(GObject *object)
 {
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(object);
 
-    g_clear_object(&priv->act_request);
+    g_clear_object(&priv->act_req);
+    g_clear_object(&priv->device);
 
     G_OBJECT_CLASS(nm_modem_parent_class)->dispose(object);
 }
@@ -1767,7 +1715,6 @@ finalize(GObject *object)
     g_free(priv->driver);
     g_free(priv->control_port);
     g_free(priv->data_port);
-    g_free(priv->ip_iface);
     g_free(priv->device_id);
     g_free(priv->sim_id);
     g_free(priv->sim_operator_id);
@@ -1790,9 +1737,8 @@ nm_modem_class_init(NMModemClass *klass)
     object_class->dispose      = dispose;
     object_class->finalize     = finalize;
 
-    klass->modem_act_stage1_prepare  = modem_act_stage1_prepare;
-    klass->stage3_ip6_config_request = stage3_ip6_config_request;
-    klass->deactivate_cleanup        = deactivate_cleanup;
+    klass->modem_act_stage1_prepare = modem_act_stage1_prepare;
+    klass->deactivate_cleanup       = deactivate_cleanup;
 
     obj_properties[PROP_UID] =
         g_param_spec_string(NM_MODEM_UID,
@@ -1904,43 +1850,28 @@ nm_modem_class_init(NMModemClass *klass)
                                        1,
                                        G_TYPE_UINT);
 
-    signals[IP4_CONFIG_RESULT] = g_signal_new(NM_MODEM_IP4_CONFIG_RESULT,
-                                              G_OBJECT_CLASS_TYPE(object_class),
-                                              G_SIGNAL_RUN_FIRST,
-                                              0,
-                                              NULL,
-                                              NULL,
-                                              NULL,
-                                              G_TYPE_NONE,
-                                              2,
-                                              G_TYPE_OBJECT,
-                                              G_TYPE_POINTER);
-
-    /**
-     * NMModem::ip6-config-result:
-     * @modem: the #NMModem  on which the signal is emitted
-     * @config: the #NMIP6Config to apply to the modem's data port
-     * @do_slaac: %TRUE if IPv6 SLAAC should be started
-     * @error: a #GError if any error occurred during IP configuration
-     *
-     * This signal is emitted when IPv6 configuration has completed or failed.
-     * If @error is set the configuration failed.  If @config is set, then
+    /*
+     * This signal is emitted when IP configuration has completed or failed.
+     * If @error is set the configuration failed. If @l3cd is set, then
      * the details should be applied to the data port before any further
-     * configuration (like SLAAC) is done.  @do_slaac indicates whether SLAAC
-     * should be started after applying @config to the data port.
+     * configuration (like SLAAC) is done. @do_auto indicates whether DHCPv4/SLAAC
+     * should be started after applying @l3cd to the data port.
      */
-    signals[IP6_CONFIG_RESULT] = g_signal_new(NM_MODEM_IP6_CONFIG_RESULT,
-                                              G_OBJECT_CLASS_TYPE(object_class),
-                                              G_SIGNAL_RUN_FIRST,
-                                              0,
-                                              NULL,
-                                              NULL,
-                                              NULL,
-                                              G_TYPE_NONE,
-                                              3,
-                                              G_TYPE_OBJECT,
-                                              G_TYPE_BOOLEAN,
-                                              G_TYPE_POINTER);
+    signals[NEW_CONFIG] = g_signal_new(NM_MODEM_NEW_CONFIG,
+                                       G_OBJECT_CLASS_TYPE(object_class),
+                                       G_SIGNAL_RUN_FIRST,
+                                       0,
+                                       NULL,
+                                       NULL,
+                                       NULL,
+                                       G_TYPE_NONE,
+                                       3,
+                                       G_TYPE_INT,      /* int addr_family */
+                                       G_TYPE_POINTER,  /* const NML3ConfigData *l3cd */
+                                       G_TYPE_BOOLEAN,  /* gboolean do_auto */
+                                       G_TYPE_POINTER,  /* const NMUtilsIPv6IfaceId *iid */
+                                       G_TYPE_INT,      /* NMDeviceStateReason failure_reason */
+                                       G_TYPE_POINTER); /* GError *error */
 
     signals[PREPARE_RESULT] = g_signal_new(NM_MODEM_PREPARE_RESULT,
                                            G_OBJECT_CLASS_TYPE(object_class),

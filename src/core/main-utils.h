@@ -26,9 +26,6 @@ gboolean nm_main_utils_early_setup(const char *  progname,
                                    gpointer    option_context_hook_data,
                                    const char *summary);
 
-/* The following functions are not implemented inside nm-main-utils.c, instead
- * main.c and nm-iface-helper.c */
-
 void nm_main_config_reload(int signal);
 
 #endif /* __MAIN_UTILS_H__ */

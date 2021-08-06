@@ -318,10 +318,6 @@ typedef enum {
      * IFA_FLAGS attribute. */         \
     guint32 n_ifa_flags;                                                                     \
                                                                                              \
-    /* FIXME(l3cfg): the external marker won't be necessary anymore, because we only
-     * merge addresses we care about, and ignore (don't remove) external addresses. */         \
-    bool external : 1;                                                                       \
-                                                                                             \
     bool use_ip4_broadcast_address : 1;                                                      \
                                                                                              \
     /* Whether the address is should be configured once during assume. This is a meta flag
@@ -470,14 +466,6 @@ typedef union {
      * This field overrides "table_coerced" field. If "table_any" is true, then
      * the "table_coerced" field is ignored (unlike for the metric). */            \
     bool table_any : 1;                                                                   \
-                                                                                          \
-    /* This route is tracked as external route, that is not a route that NetworkManager
-     * actively wants to add, but a route that was added externally. In some cases, such
-     * a route should be ignored.
-     *
-     * Note that unlike most other fields here, this flag only exists inside NetworkManager
-     * and is not reflected on netlink. */   \
-    bool is_external : 1;                                                                 \
                                                                                           \
     /* Whether the route is should be configured once during assume. This is a meta flag
      * that is not honored by NMPlatform (netlink code). Instead, it can be used by the upper

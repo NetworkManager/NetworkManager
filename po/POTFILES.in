@@ -33,7 +33,6 @@ src/core/dns/nm-dns-manager.c
 src/core/main-utils.c
 src/core/main.c
 src/core/nm-config.c
-src/core/nm-iface-helper.c
 src/core/nm-manager.c
 src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c
 src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c

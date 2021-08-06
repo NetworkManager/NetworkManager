@@ -264,8 +264,10 @@ const char *const *nm_global_dns_domain_get_servers(const NMGlobalDnsDomain *dom
 const char *const *nm_global_dns_domain_get_options(const NMGlobalDnsDomain *domain);
 gboolean           nm_global_dns_config_is_internal(const NMGlobalDnsConfig *dns_config);
 gboolean           nm_global_dns_config_is_empty(const NMGlobalDnsConfig *dns_config);
-void nm_global_dns_config_update_checksum(const NMGlobalDnsConfig *dns_config, GChecksum *sum);
-void nm_global_dns_config_free(NMGlobalDnsConfig *dns_config);
+int                nm_global_dns_config_cmp(const NMGlobalDnsConfig *a,
+                                            const NMGlobalDnsConfig *b,
+                                            gboolean                 check_internal);
+void               nm_global_dns_config_free(NMGlobalDnsConfig *dns_config);
 
 NMGlobalDnsConfig *nm_global_dns_config_from_dbus(const GValue *value, GError **error);
 void               nm_global_dns_config_to_dbus(const NMGlobalDnsConfig *dns_config, GValue *value);

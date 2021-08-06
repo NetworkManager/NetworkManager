@@ -15,7 +15,6 @@
 #include "nm-device-private.h"
 #include "settings/nm-settings.h"
 #include "nm-act-request.h"
-#include "nm-ip4-config.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-manager.h"
@@ -85,11 +84,11 @@ parent_mtu_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_data
 static void
 parent_hwaddr_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_data)
 {
-    NMDevice *         device = NM_DEVICE(user_data);
-    NMDeviceVlan *     self   = NM_DEVICE_VLAN(device);
-    NMConnection *     connection;
-    const char *       new_mac, *old_mac;
-    NMSettingIPConfig *s_ip6;
+    NMDevice *    device = NM_DEVICE(user_data);
+    NMDeviceVlan *self   = NM_DEVICE_VLAN(device);
+    NMConnection *connection;
+    const char *  old_mac;
+    const char *  new_mac;
 
     /* Never touch assumed devices */
     if (nm_device_sys_iface_state_is_external_or_assume(device))
@@ -113,13 +112,10 @@ parent_hwaddr_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_d
           NM_PRINT_FMT_QUOTE_STRING(new_mac));
     if (new_mac) {
         nm_device_hw_addr_set(device, new_mac, "vlan-parent", TRUE);
-        nm_device_arp_announce(device);
         /* When changing the hw address the interface is taken down,
          * removing the IPv6 configuration; reapply it.
          */
-        s_ip6 = nm_connection_get_setting_ip6_config(connection);
-        if (s_ip6)
-            nm_device_reactivate_ip_config(device, AF_INET6, s_ip6, s_ip6);
+        nm_device_l3cfg_commit(device, NM_L3_CFG_COMMIT_TYPE_REAPPLY, FALSE);
     }
 }
 
