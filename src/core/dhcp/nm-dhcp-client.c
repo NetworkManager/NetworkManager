@@ -78,6 +78,7 @@ typedef struct _NMDhcpClientPrivate {
     NMDhcpHostnameFlags hostname_flags;
     NMDhcpClientFlags   client_flags;
     bool                iaid_explicit : 1;
+    bool                is_stopped : 1;
 } NMDhcpClientPrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
@@ -774,6 +775,11 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 
     priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
+    if (priv->is_stopped)
+        return;
+
+    priv->is_stopped = TRUE;
+
     /* Kill the DHCP client */
     old_pid = priv->pid;
     NM_DHCP_CLIENT_GET_CLASS(self)->stop(self, release);
@@ -1222,10 +1228,7 @@ dispose(GObject *object)
     NMDhcpClient *       self = NM_DHCP_CLIENT(object);
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
-    /* Stopping the client is left up to the controlling device
-     * explicitly since we may want to quit NetworkManager but not terminate
-     * the DHCP client.
-     */
+    nm_dhcp_client_stop(self, FALSE);
 
     watch_cleanup(self);
     timeout_cleanup(self);
