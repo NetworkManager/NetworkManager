@@ -117,8 +117,9 @@ struct _NML3ConfigData {
         NMIPRouteTableSyncMode route_table_sync_x[2];
     };
 
-    NMSettingConnectionMdns  mdns;
-    NMSettingConnectionLlmnr llmnr;
+    NMSettingConnectionMdns       mdns;
+    NMSettingConnectionLlmnr      llmnr;
+    NMSettingConnectionDnsOverTls dns_over_tls;
 
     NML3ConfigDatFlags flags;
 
@@ -570,6 +571,16 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                                            NULL)));
     }
 
+    if (self->dns_over_tls != NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT) {
+        gs_free char *s = NULL;
+
+        _L("dns-over-tls: %s",
+           (s = _nm_utils_enum_to_str_full(nm_setting_connection_dns_over_tls_get_type(),
+                                           self->dns_over_tls,
+                                           " ",
+                                           NULL)));
+    }
+
     if (self->metered != NM_TERNARY_DEFAULT)
         _L("metered: %s", self->metered ? "yes" : "no");
 
@@ -666,6 +677,7 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
         .multi_idx                     = nm_dedup_multi_index_ref(multi_idx),
         .mdns                          = NM_SETTING_CONNECTION_MDNS_DEFAULT,
         .llmnr                         = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+        .dns_over_tls                  = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT,
         .flags                         = NM_L3_CONFIG_DAT_FLAGS_NONE,
         .metered                       = NM_TERNARY_DEFAULT,
         .proxy_browser_only            = NM_TERNARY_DEFAULT,
@@ -1679,6 +1691,26 @@ nm_l3_config_data_set_llmnr(NML3ConfigData *self, NMSettingConnectionLlmnr llmnr
     return TRUE;
 }
 
+NMSettingConnectionDnsOverTls
+nm_l3_config_data_get_dns_over_tls(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->dns_over_tls;
+}
+
+gboolean
+nm_l3_config_data_set_dns_over_tls(NML3ConfigData *self, NMSettingConnectionDnsOverTls dns_over_tls)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    if (self->dns_over_tls == dns_over_tls)
+        return FALSE;
+
+    self->dns_over_tls = dns_over_tls;
+    return TRUE;
+}
+
 NMIPRouteTableSyncMode
 nm_l3_config_data_get_route_table_sync(const NML3ConfigData *self, int addr_family)
 {
@@ -2125,6 +2157,7 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
     NM_CMP_DIRECT_REF_STRING(a->nis_domain, b->nis_domain);
     NM_CMP_DIRECT(a->mdns, b->mdns);
     NM_CMP_DIRECT(a->llmnr, b->llmnr);
+    NM_CMP_DIRECT(a->dns_over_tls, b->dns_over_tls);
     NM_CMP_DIRECT(a->mtu, b->mtu);
     NM_CMP_DIRECT(a->ip6_mtu, b->ip6_mtu);
     NM_CMP_DIRECT_UNSAFE(a->metered, b->metered);
@@ -3018,6 +3051,9 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
 
     if (self->llmnr == NM_SETTING_CONNECTION_LLMNR_DEFAULT)
         self->llmnr = src->llmnr;
+
+    if (self->dns_over_tls == NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT)
+        self->dns_over_tls = src->dns_over_tls;
 
     self->metered = NM_MAX((NMTernary) self->metered, (NMTernary) src->metered);
 

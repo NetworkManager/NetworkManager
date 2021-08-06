@@ -22,7 +22,6 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "settings/nm-settings.h"
 #include "nm-act-request.h"
-#include "nm-ip4-config.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceIPTunnel
 #include "nm-device-logging.h"

@@ -447,4 +447,10 @@ void _nm_l3cfg_unregister_ipv4ll(NML3Cfg *self);
 
 /*****************************************************************************/
 
+struct _NMIPConfig;
+struct _NMIPConfig *nm_l3cfg_ipconfig_get(NML3Cfg *self, int addr_family);
+struct _NMIPConfig *nm_l3cfg_ipconfig_acquire(NML3Cfg *self, int addr_family);
+
+/*****************************************************************************/
+
 #endif /* __NM_L3CFG_H__ */

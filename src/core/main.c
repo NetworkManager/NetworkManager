@@ -269,16 +269,6 @@ _dbus_manager_init(NMConfig *config)
     if (c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED)
         return nm_dbus_manager_acquire_bus(busmgr, TRUE);
 
-    if (c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED) {
-        /* D-Bus is useless in configure and quit mode -- we're eventually dropping
-         * off and potential clients would have no way of knowing whether we're
-         * finished already or didn't start yet.
-         *
-         * But we still create a nm_dbus_manager_get_dbus_connection() D-Bus connection
-         * so that we can talk to other services like firewalld. */
-        return nm_dbus_manager_acquire_bus(busmgr, FALSE);
-    }
-
     nm_assert(c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD);
     /* in initrd we don't have D-Bus at all. Don't even try to get the G_BUS_TYPE_SYSTEM
      * connection. And of course don't claim the D-Bus name. */

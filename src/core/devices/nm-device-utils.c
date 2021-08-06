@@ -151,10 +151,9 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_device_ip_state_to_string,
                            NMDeviceIPState,
                            NM_UTILS_LOOKUP_DEFAULT_WARN("unknown"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_NONE, "none"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_WAIT, "wait"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_CONF, "conf"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_DONE, "done"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_FAIL, "fail"), );
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_PENDING, "pending"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_READY, "done"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DEVICE_IP_STATE_FAILED, "fail"), );
 
 /*****************************************************************************/
 

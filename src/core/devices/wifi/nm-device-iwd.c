@@ -1642,7 +1642,7 @@ network_connect_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     _LOGI(LOGD_DEVICE | LOGD_WIFI,
           "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  Connected to '%s'.",
           ssid);
-    nm_device_activate_schedule_stage3_ip_config_start(device);
+    nm_device_activate_schedule_stage3_ip_config(device, FALSE);
 
     return;
 
@@ -1721,7 +1721,7 @@ act_start_cb(GObject *source, GAsyncResult *res, gpointer user_data)
     _LOGI(LOGD_DEVICE | LOGD_WIFI,
           "Activation: (wifi) Stage 2 of 5 (Device Configure) successful.  Started '%s'.",
           ssid);
-    nm_device_activate_schedule_stage3_ip_config_start(device);
+    nm_device_activate_schedule_stage3_ip_config(device, FALSE);
 
     return;
 
@@ -2127,7 +2127,7 @@ assumed_connection_progress_to_ip_config(NMDeviceIwd *self, gboolean was_postpon
      * that stage2 is done.
      */
     if (was_postponed)
-        nm_device_activate_schedule_stage3_ip_config_start(NM_DEVICE(self));
+        nm_device_activate_schedule_stage3_ip_config(NM_DEVICE(self), FALSE);
 }
 
 static void

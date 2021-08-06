@@ -997,7 +997,6 @@ fi
 %ghost %attr(755, root, root) %{_sbindir}/ifdown
 %{_libexecdir}/nm-dhcp-helper
 %{_libexecdir}/nm-dispatcher
-%{_libexecdir}/nm-iface-helper
 %{_libexecdir}/nm-initrd-generator
 %{_libexecdir}/nm-daemon-helper
 %{_libexecdir}/nm-sudo
