@@ -487,7 +487,7 @@ name_owner_changed(NMFirewalldManager *self, const char *owner)
     just_initied = !priv->dbus_inited;
 
     priv->dbus_inited  = TRUE;
-    name_owner_changed = nm_strdup_reset(&priv->name_owner, owner);
+    name_owner_changed = nm_utils_strdup_reset(&priv->name_owner, owner);
 
     now_running = _get_running(priv);
 
