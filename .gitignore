@@ -38,6 +38,9 @@ valgrind-*.log
 test-*.log
 test-*.trs
 /.zanata-cache/
+.project
+.cproject
+.settings/
 
 /build/
 
