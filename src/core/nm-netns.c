@@ -126,7 +126,7 @@ _l3cfg_weak_notify(gpointer data, GObject *where_the_object_was)
 }
 
 NML3Cfg *
-nm_netns_get_l3cfg(NMNetns *self, int ifindex)
+nm_netns_l3cfg_get(NMNetns *self, int ifindex)
 {
     NMNetnsPrivate *priv;
 
@@ -139,7 +139,7 @@ nm_netns_get_l3cfg(NMNetns *self, int ifindex)
 }
 
 NML3Cfg *
-nm_netns_access_l3cfg(NMNetns *self, int ifindex)
+nm_netns_l3cfg_acquire(NMNetns *self, int ifindex)
 {
     NMNetnsPrivate *priv;
     L3CfgData *     l3cfg_data;

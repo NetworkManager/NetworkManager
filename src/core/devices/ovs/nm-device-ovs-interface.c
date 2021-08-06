@@ -124,14 +124,19 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
         if (!nm_device_hw_addr_set_cloned(device,
                                           nm_device_get_applied_connection(device),
                                           FALSE)) {
-            nm_device_state_changed(device,
-                                    NM_DEVICE_STATE_FAILED,
-                                    NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+            nm_device_devip_set_failed(device, AF_INET, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+            nm_device_devip_set_failed(device, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
             return;
         }
         nm_device_bring_up(device, TRUE, NULL);
-        nm_device_activate_schedule_stage3_ip_config_start(device);
+
+        nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
+        nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
+        nm_device_activate_schedule_stage3_ip_config(device, FALSE);
+        return;
     }
+
+    nm_device_activate_schedule_stage2_device_config(device, FALSE);
 }
 
 static gboolean
@@ -188,31 +193,43 @@ set_platform_mtu(NMDevice *device, guint32 mtu)
     return NM_DEVICE_CLASS(nm_device_ovs_interface_parent_class)->set_platform_mtu(device, mtu);
 }
 
-static NMActStageReturn
-act_stage3_ip_config_start(NMDevice *           device,
-                           int                  addr_family,
-                           gpointer *           out_config,
-                           NMDeviceStateReason *out_failure_reason)
+static gboolean
+ready_for_ip_config(NMDevice *device)
+{
+    return nm_device_get_ip_ifindex(device) > 0;
+}
+
+static void
+act_stage3_ip_config(NMDevice *device, int addr_family)
 {
     NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
-    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(device);
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
-    if (!_is_internal_interface(device))
-        return NM_ACT_STAGE_RETURN_IP_FAIL;
+    if (!_is_internal_interface(device)) {
+        nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
+        return;
+    }
 
+    /* FIXME(l3cfg): we should create the IP ifindex before stage3 start.
+     *
+     * For now it's here because when the ovs-interface enters stage3, then it's added to the
+     * controller (ovs-port) and the entry is create in the ovsdb. Only after that the kernel
+     * link appears.
+     *
+     * This should change. */
     if (nm_device_get_ip_ifindex(device) <= 0) {
         _LOGT(LOGD_DEVICE, "waiting for link to appear");
         priv->waiting_for_interface = TRUE;
-        return NM_ACT_STAGE_RETURN_POSTPONE;
+        nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
+        return;
     }
 
     if (!nm_device_hw_addr_set_cloned(device, nm_device_get_applied_connection(device), FALSE)) {
-        *out_failure_reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
-        return NM_ACT_STAGE_RETURN_FAILURE;
+        nm_device_devip_set_failed(device, addr_family, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+        return;
     }
 
-    return NM_DEVICE_CLASS(nm_device_ovs_interface_parent_class)
-        ->act_stage3_ip_config_start(device, addr_family, out_config, out_failure_reason);
+    nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
 }
 
 static gboolean
@@ -443,7 +460,8 @@ nm_device_ovs_interface_class_init(NMDeviceOvsInterfaceClass *klass)
     device_class->is_available                        = is_available;
     device_class->check_connection_compatible         = check_connection_compatible;
     device_class->link_changed                        = link_changed;
-    device_class->act_stage3_ip_config_start          = act_stage3_ip_config_start;
+    device_class->act_stage3_ip_config                = act_stage3_ip_config;
+    device_class->ready_for_ip_config                 = ready_for_ip_config;
     device_class->can_unmanaged_external_down         = can_unmanaged_external_down;
     device_class->set_platform_mtu                    = set_platform_mtu;
     device_class->get_configured_mtu                  = nm_device_get_configured_mtu_for_wired;

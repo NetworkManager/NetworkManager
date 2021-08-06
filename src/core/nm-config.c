@@ -529,7 +529,7 @@ nm_config_cmd_line_options_free(NMConfigCmdLineOptions *cli)
 static NMConfigConfigureAndQuitType
 string_to_configure_and_quit(const char *value, GError **error)
 {
-    NMConfigConfigureAndQuitType ret;
+    int v_bool;
 
     if (value == NULL)
         return NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED;
@@ -537,11 +537,18 @@ string_to_configure_and_quit(const char *value, GError **error)
     if (nm_streq(value, "initrd"))
         return NM_CONFIG_CONFIGURE_AND_QUIT_INITRD;
 
-    ret = nm_config_parse_boolean(value, NM_CONFIG_CONFIGURE_AND_QUIT_INVALID);
-    if (ret == NM_CONFIG_CONFIGURE_AND_QUIT_INVALID)
-        g_set_error(error, 1, 0, N_("'%s' is not valid"), value);
+    v_bool = nm_config_parse_boolean(value, -1);
+    if (v_bool == -1) {
+        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, N_("'%s' is not valid"), value);
+        return NM_CONFIG_CONFIGURE_AND_QUIT_INVALID;
+    }
 
-    return ret;
+    if (v_bool) {
+        _LOGW("'[main].configure-and-quit=1' in \"NetworkManager.conf\" is no longer implemented "
+              "and has no effect");
+    }
+
+    return NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED;
 }
 
 static gboolean
@@ -552,11 +559,7 @@ parse_configure_and_quit(const char *option_name,
 {
     NMConfigCmdLineOptions *cli = user_data;
 
-    if (value == NULL)
-        cli->configure_and_quit = NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED;
-    else
-        cli->configure_and_quit = string_to_configure_and_quit(value, error);
-
+    cli->configure_and_quit = string_to_configure_and_quit(value, error);
     if (cli->configure_and_quit == NM_CONFIG_CONFIGURE_AND_QUIT_INVALID) {
         g_prefix_error(error, N_("Bad '%s' option: "), option_name);
         return FALSE;
@@ -1383,16 +1386,13 @@ read_entire_config(const NMConfigCmdLineOptions *cli,
 
         switch (cli->configure_and_quit) {
         case NM_CONFIG_CONFIGURE_AND_QUIT_INVALID:
-            g_assert_not_reached();
+            nm_assert_not_reached();
             break;
         case NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED:
-            /* do nothing */
-            break;
-        case NM_CONFIG_CONFIGURE_AND_QUIT_ENABLED:
-            g_key_file_set_boolean(keyfile,
-                                   NM_CONFIG_KEYFILE_GROUP_MAIN,
-                                   "configure-and-quit",
-                                   TRUE);
+            g_key_file_set_string(keyfile,
+                                  NM_CONFIG_KEYFILE_GROUP_MAIN,
+                                  "configure-and-quit",
+                                  "no");
             break;
         case NM_CONFIG_CONFIGURE_AND_QUIT_INITRD:
             g_key_file_set_string(keyfile,

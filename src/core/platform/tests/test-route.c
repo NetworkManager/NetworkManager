@@ -332,33 +332,30 @@ test_ip4_route(void)
     /* Test route listing */
     routes = nmtstp_ip4_route_get_all(NM_PLATFORM_GET, ifindex);
     memset(rts, 0, sizeof(rts));
-    rts[0].rt_source   = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
-    rts[0].network     = gateway;
-    rts[0].plen        = 32;
-    rts[0].ifindex     = ifindex;
-    rts[0].gateway     = INADDR_ANY;
-    rts[0].metric      = metric;
-    rts[0].mss         = mss;
-    rts[0].is_external = TRUE;
-    rts[0].scope_inv   = nm_platform_route_scope_inv(RT_SCOPE_LINK);
-    rts[1].rt_source   = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
-    rts[1].network     = network;
-    rts[1].plen        = plen;
-    rts[1].ifindex     = ifindex;
-    rts[1].gateway     = gateway;
-    rts[1].metric      = metric;
-    rts[1].mss         = mss;
-    rts[1].scope_inv   = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
-    rts[1].is_external = TRUE;
-    rts[2].rt_source   = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
-    rts[2].network     = 0;
-    rts[2].plen        = 0;
-    rts[2].ifindex     = ifindex;
-    rts[2].gateway     = gateway;
-    rts[2].metric      = metric;
-    rts[2].mss         = mss;
-    rts[2].scope_inv   = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
-    rts[2].is_external = TRUE;
+    rts[0].rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
+    rts[0].network   = gateway;
+    rts[0].plen      = 32;
+    rts[0].ifindex   = ifindex;
+    rts[0].gateway   = INADDR_ANY;
+    rts[0].metric    = metric;
+    rts[0].mss       = mss;
+    rts[0].scope_inv = nm_platform_route_scope_inv(RT_SCOPE_LINK);
+    rts[1].rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
+    rts[1].network   = network;
+    rts[1].plen      = plen;
+    rts[1].ifindex   = ifindex;
+    rts[1].gateway   = gateway;
+    rts[1].metric    = metric;
+    rts[1].mss       = mss;
+    rts[1].scope_inv = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
+    rts[2].rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
+    rts[2].network   = 0;
+    rts[2].plen      = 0;
+    rts[2].ifindex   = ifindex;
+    rts[2].gateway   = gateway;
+    rts[2].metric    = metric;
+    rts[2].mss       = mss;
+    rts[2].scope_inv = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
     g_assert_cmpint(routes->len, ==, 3);
     nmtst_platform_ip4_routes_equal_aptr((const NMPObject *const *) routes->pdata,
                                          rts,
@@ -492,33 +489,30 @@ test_ip6_route(void)
     /* Test route listing */
     routes = nmtstp_ip6_route_get_all(NM_PLATFORM_GET, ifindex);
     memset(rts, 0, sizeof(rts));
-    rts[0].rt_source   = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
-    rts[0].network     = gateway;
-    rts[0].plen        = 128;
-    rts[0].ifindex     = ifindex;
-    rts[0].gateway     = in6addr_any;
-    rts[0].pref_src    = in6addr_any;
-    rts[0].metric      = metric;
-    rts[0].mss         = mss;
-    rts[0].is_external = TRUE;
-    rts[1].rt_source   = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
-    rts[1].network     = network;
-    rts[1].plen        = plen;
-    rts[1].ifindex     = ifindex;
-    rts[1].gateway     = gateway;
-    rts[1].pref_src    = pref_src;
-    rts[1].metric      = metric;
-    rts[1].mss         = mss;
-    rts[1].is_external = TRUE;
-    rts[2].rt_source   = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
-    rts[2].network     = in6addr_any;
-    rts[2].plen        = 0;
-    rts[2].ifindex     = ifindex;
-    rts[2].gateway     = gateway;
-    rts[2].pref_src    = in6addr_any;
-    rts[2].metric      = metric;
-    rts[2].mss         = mss;
-    rts[2].is_external = TRUE;
+    rts[0].rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
+    rts[0].network   = gateway;
+    rts[0].plen      = 128;
+    rts[0].ifindex   = ifindex;
+    rts[0].gateway   = in6addr_any;
+    rts[0].pref_src  = in6addr_any;
+    rts[0].metric    = metric;
+    rts[0].mss       = mss;
+    rts[1].rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
+    rts[1].network   = network;
+    rts[1].plen      = plen;
+    rts[1].ifindex   = ifindex;
+    rts[1].gateway   = gateway;
+    rts[1].pref_src  = pref_src;
+    rts[1].metric    = metric;
+    rts[1].mss       = mss;
+    rts[2].rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
+    rts[2].network   = in6addr_any;
+    rts[2].plen      = 0;
+    rts[2].ifindex   = ifindex;
+    rts[2].gateway   = gateway;
+    rts[2].pref_src  = in6addr_any;
+    rts[2].metric    = metric;
+    rts[2].mss       = mss;
     g_assert_cmpint(routes->len, ==, 3);
     nmtst_platform_ip6_routes_equal_aptr((const NMPObject *const *) routes->pdata,
                                          rts,
@@ -715,7 +709,6 @@ test_ip4_route_options(gconstpointer test_data)
     for (i = 0; i < rts_n; i++) {
         rts_cmp[i] = rts_add[i];
         nm_platform_ip_route_normalize(AF_INET, NM_PLATFORM_IP_ROUTE_CAST(&rts_cmp[i]));
-        rts_cmp[i].is_external = TRUE;
     }
 
     routes = nmtstp_ip4_route_get_all(NM_PLATFORM_GET, IFINDEX);
@@ -887,7 +880,6 @@ test_ip6_route_options(gconstpointer test_data)
     for (i = 0; i < rts_n; i++) {
         rts_cmp[i] = rts_add[i];
         nm_platform_ip_route_normalize(AF_INET6, NM_PLATFORM_IP_ROUTE_CAST(&rts_cmp[i]));
-        rts_cmp[i].is_external = TRUE;
     }
 
     routes = nmtstp_ip6_route_get_all(NM_PLATFORM_GET, IFINDEX);

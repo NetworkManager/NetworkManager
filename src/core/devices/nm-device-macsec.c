@@ -409,7 +409,7 @@ supplicant_iface_state_is_completed(NMDeviceMacsec *self, NMSupplicantInterfaceS
          */
         if (nm_device_get_state(NM_DEVICE(self)) == NM_DEVICE_STATE_CONFIG) {
             _LOGI(LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) successful.");
-            nm_device_activate_schedule_stage3_ip_config_start(NM_DEVICE(self));
+            nm_device_activate_schedule_stage3_ip_config(NM_DEVICE(self), FALSE);
         }
         return;
     }

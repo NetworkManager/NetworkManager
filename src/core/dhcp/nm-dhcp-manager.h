@@ -8,7 +8,6 @@
 #define __NETWORKMANAGER_DHCP_MANAGER_H__
 
 #include "nm-dhcp-client.h"
-#include "nm-ip4-config.h"
 #include "nm-dhcp-config.h"
 
 #define NM_TYPE_DHCP_MANAGER (nm_dhcp_manager_get_type())
@@ -32,51 +31,8 @@ const char *nm_dhcp_manager_get_config(NMDhcpManager *self);
 
 void nm_dhcp_manager_set_default_hostname(NMDhcpManager *manager, const char *hostname);
 
-NMDhcpClient *nm_dhcp_manager_start_ip4(NMDhcpManager *            manager,
-                                        struct _NMDedupMultiIndex *multi_idx,
-                                        const char *               iface,
-                                        int                        ifindex,
-                                        GBytes *                   hwaddr,
-                                        GBytes *                   bcast_hwaddr,
-                                        const char *               uuid,
-                                        guint32                    route_table,
-                                        guint32                    route_metric,
-                                        NMDhcpClientFlags          client_flags,
-                                        gboolean                   send_hostname,
-                                        const char *               dhcp_hostname,
-                                        const char *               dhcp_fqdn,
-                                        NMDhcpHostnameFlags        hostname_flags,
-                                        const char *               mud_url,
-                                        GBytes *                   dhcp_client_id,
-                                        guint32                    timeout,
-                                        const char *               anycast_address,
-                                        const char *               last_ip_address,
-                                        GBytes *                   vendor_class_identifier,
-                                        const char *const *        reject_servers,
-                                        GError **                  error);
-
-NMDhcpClient *nm_dhcp_manager_start_ip6(NMDhcpManager *            manager,
-                                        struct _NMDedupMultiIndex *multi_idx,
-                                        const char *               iface,
-                                        int                        ifindex,
-                                        const struct in6_addr *    ll_addr,
-                                        const char *               uuid,
-                                        guint32                    route_table,
-                                        guint32                    route_metric,
-                                        NMDhcpClientFlags          client_flags,
-                                        gboolean                   send_hostname,
-                                        const char *               dhcp_hostname,
-                                        NMDhcpHostnameFlags        hostname_flags,
-                                        const char *               mud_url,
-                                        GBytes *                   duid,
-                                        gboolean                   enforce_duid,
-                                        guint32                    iaid,
-                                        gboolean                   iaid_explicit,
-                                        guint32                    timeout,
-                                        const char *               anycast_address,
-                                        NMSettingIP6ConfigPrivacy  privacy,
-                                        guint                      needed_prefixes,
-                                        GError **                  error);
+NMDhcpClient *
+nm_dhcp_manager_start_client(NMDhcpManager *manager, NMDhcpClientConfig *config, GError **error);
 
 /* For testing only */
 extern const char *nm_dhcp_helper_path;

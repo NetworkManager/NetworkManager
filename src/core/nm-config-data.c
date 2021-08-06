@@ -929,59 +929,57 @@ nm_global_dns_config_is_empty(const NMGlobalDnsConfig *dns_config)
     return !dns_config->searches && !dns_config->options && !dns_config->domain_list;
 }
 
-void
-nm_global_dns_config_update_checksum(const NMGlobalDnsConfig *dns_config, GChecksum *sum)
+int
+nm_global_dns_config_cmp(const NMGlobalDnsConfig *a,
+                         const NMGlobalDnsConfig *b,
+                         gboolean                 check_internal)
 {
-    NMGlobalDnsDomain *domain;
-    guint              i, j;
-    guint8             v8;
+    guint i;
 
-    g_return_if_fail(dns_config);
-    g_return_if_fail(sum);
+    NM_CMP_SELF(a, b);
 
-    v8 = NM_HASH_COMBINE_BOOLS(guint8,
-                               !dns_config->searches,
-                               !dns_config->options,
-                               !dns_config->domain_list);
-    g_checksum_update(sum, (guchar *) &v8, 1);
+    NM_CMP_RETURN(
+        nm_strv_cmp_n(a->searches ?: NM_STRV_EMPTY(), -1, b->searches ?: NM_STRV_EMPTY(), -1));
 
-    if (dns_config->searches) {
-        for (i = 0; dns_config->searches[i]; i++)
-            g_checksum_update(sum,
-                              (guchar *) dns_config->searches[i],
-                              strlen(dns_config->searches[i]) + 1);
-    }
-    if (dns_config->options) {
-        for (i = 0; dns_config->options[i]; i++)
-            g_checksum_update(sum,
-                              (guchar *) dns_config->options[i],
-                              strlen(dns_config->options[i]) + 1);
-    }
+    NM_CMP_RETURN(
+        nm_strv_cmp_n(a->options ?: NM_STRV_EMPTY(), -1, b->options ?: NM_STRV_EMPTY(), -1));
 
-    if (dns_config->domain_list) {
-        for (i = 0; dns_config->domain_list[i]; i++) {
-            domain = g_hash_table_lookup(dns_config->domains, dns_config->domain_list[i]);
-            nm_assert(domain);
+    NM_CMP_RETURN(nm_strv_cmp_n(a->domain_list ?: NM_STRV_EMPTY_CC(),
+                                -1,
+                                b->domain_list ?: NM_STRV_EMPTY_CC(),
+                                -1));
 
-            v8 = NM_HASH_COMBINE_BOOLS(guint8, !domain->servers, !domain->options);
-            g_checksum_update(sum, (guchar *) &v8, 1);
+    if (a->domain_list) {
+        for (i = 0; a->domain_list[i]; i++) {
+            const NMGlobalDnsDomain *domain_a;
+            const NMGlobalDnsDomain *domain_b;
 
-            g_checksum_update(sum, (guchar *) domain->name, strlen(domain->name) + 1);
+            nm_assert(nm_streq(a->domain_list[i], b->domain_list[i]));
 
-            if (domain->servers) {
-                for (j = 0; domain->servers[j]; j++)
-                    g_checksum_update(sum,
-                                      (guchar *) domain->servers[j],
-                                      strlen(domain->servers[j]) + 1);
-            }
-            if (domain->options) {
-                for (j = 0; domain->options[j]; j++)
-                    g_checksum_update(sum,
-                                      (guchar *) domain->options[j],
-                                      strlen(domain->options[j]) + 1);
-            }
+            domain_a = g_hash_table_lookup(a->domains, a->domain_list[i]);
+            nm_assert(domain_a);
+
+            domain_b = g_hash_table_lookup(b->domains, b->domain_list[i]);
+            nm_assert(domain_b);
+
+            NM_CMP_FIELD_STR0(domain_a, domain_b, name);
+
+            NM_CMP_RETURN(nm_strv_cmp_n(domain_a->servers ?: NM_STRV_EMPTY(),
+                                        -1,
+                                        domain_b->servers ?: NM_STRV_EMPTY(),
+                                        -1));
+
+            NM_CMP_RETURN(nm_strv_cmp_n(domain_a->options ?: NM_STRV_EMPTY(),
+                                        -1,
+                                        domain_b->options ?: NM_STRV_EMPTY(),
+                                        -1));
         }
     }
+
+    if (check_internal)
+        NM_CMP_FIELD(a, b, internal);
+
+    return 0;
 }
 
 static void
