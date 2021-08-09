@@ -178,7 +178,7 @@ nm_uuid_is_valid_nmlegacy(const char *str)
     }
 
     /* While we accept here bogus strings as UUIDs, they must contain only
-     * hexdigits and '-', and they must be eithr 36 or 40 chars long. */
+     * hexdigits and '-', and they must be either 36 or 40 chars long. */
 
     if ((num_dashes == 4) && (p - str == 36))
         return TRUE;
@@ -241,9 +241,12 @@ nm_uuid_is_valid_nm(const char *str,
             nm_assert(strlen(str) < G_N_ELEMENTS(str_lower));
 
             /* normalize first to lower-case. */
-            g_strlcpy(str_lower, str, sizeof(str_lower));
-            for (i = 0; str_lower[i]; i++)
-                str_lower[i] = g_ascii_tolower(str_lower[i]);
+            for (i = 0; str[i]; i++) {
+                nm_assert(i < G_N_ELEMENTS(str_lower));
+                str_lower[i] = g_ascii_tolower(str[i]);
+            }
+            nm_assert(i < G_N_ELEMENTS(str_lower));
+            str_lower[i] = '\0';
 
             /* The namespace UUID is chosen randomly. */
             nm_uuid_generate_from_string(
