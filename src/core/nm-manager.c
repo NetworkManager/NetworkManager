@@ -2867,7 +2867,7 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
         _LOG2D(LOGD_DEVICE,
                device,
                "assume: don't assume due to device state %s",
-               nm_device_state_to_str(state));
+               nm_device_state_to_string(state));
         return FALSE;
     }
 

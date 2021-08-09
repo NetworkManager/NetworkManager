@@ -2059,7 +2059,7 @@ device_state_changed(NMDevice *          device,
                 _LOGD(LOGD_DEVICE,
                       "blocking autoconnect of connection '%s': %s",
                       nm_settings_connection_get_id(sett_conn),
-                      NM_UTILS_LOOKUP_STR_A(nm_device_state_reason_to_str,
+                      NM_UTILS_LOOKUP_STR_A(nm_device_state_reason_to_string,
                                             nm_device_state_reason_check(reason)));
                 nm_settings_connection_autoconnect_blocked_reason_set(sett_conn,
                                                                       blocked_reason,
