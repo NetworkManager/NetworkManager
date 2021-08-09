@@ -123,7 +123,8 @@ detect(NMCSProvider *provider, GTask *task)
 typedef enum {
     GET_CONFIG_FETCH_DONE_TYPE_SUBNET_VPC_CIDR_BLOCK,
     GET_CONFIG_FETCH_DONE_TYPE_PRIVATE_IPV4S,
-    GET_CONFIG_FETCH_DONE_TYPE_NETMASK
+    GET_CONFIG_FETCH_DONE_TYPE_NETMASK,
+    GET_CONFIG_FETCH_DONE_TYPE_GATEWAY,
 } GetConfigFetchDoneType;
 
 static void
@@ -140,6 +141,7 @@ _get_config_fetch_done_cb(NMHttpClient *         http_client,
     in_addr_t                       tmp_addr;
     int                             tmp_prefix;
     in_addr_t                       netmask_bin;
+    in_addr_t                       gateway_bin;
     gs_free const char **           s_addrs = NULL;
     gsize                           i;
     gsize                           len;
@@ -200,6 +202,17 @@ _get_config_fetch_done_cb(NMHttpClient *         http_client,
             config_iface_data->cidr_prefix = nm_utils_ip4_netmask_to_prefix(netmask_bin);
         };
         break;
+
+    case GET_CONFIG_FETCH_DONE_TYPE_GATEWAY:
+
+        if (nm_utils_parse_inaddr_bin(AF_INET,
+                                      g_bytes_get_data(response, NULL),
+                                      NULL,
+                                      &gateway_bin)) {
+            config_iface_data->has_gateway = TRUE;
+            config_iface_data->gateway     = gateway_bin;
+        };
+        break;
     }
 
 out:
@@ -232,6 +245,15 @@ _get_config_fetch_done_cb_netmask(GObject *source, GAsyncResult *result, gpointe
                               result,
                               user_data,
                               GET_CONFIG_FETCH_DONE_TYPE_NETMASK);
+}
+
+static void
+_get_config_fetch_done_cb_gateway(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    _get_config_fetch_done_cb(NM_HTTP_CLIENT(source),
+                              result,
+                              user_data,
+                              GET_CONFIG_FETCH_DONE_TYPE_GATEWAY);
 }
 
 typedef struct {
@@ -277,6 +299,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
         gs_free char *                  uri1 = NULL;
         gs_free char *                  uri2 = NULL;
         gs_free char *                  uri3 = NULL;
+        gs_free char *                  uri4 = NULL;
         const char *                    hwaddr;
 
         if (!g_hash_table_lookup_extended(get_config_data->result_dict,
@@ -353,6 +376,23 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             NULL,
             NULL,
             _get_config_fetch_done_cb_netmask,
+            nm_utils_user_data_pack(get_config_data, hwaddr));
+
+        get_config_data->n_pending++;
+        nm_http_client_poll_get(
+            http_client,
+            (uri4 = _aliyun_uri_interfaces(v_mac_data->path,
+                                           NM_STR_HAS_SUFFIX(v_mac_data->path, "/") ? "" : "/",
+                                           "gateway")),
+            HTTP_TIMEOUT_MS,
+            512 * 1024,
+            10000,
+            1000,
+            NULL,
+            get_config_data->intern_cancellable,
+            NULL,
+            NULL,
+            _get_config_fetch_done_cb_gateway,
             nm_utils_user_data_pack(get_config_data, hwaddr));
     }
 

@@ -410,8 +410,8 @@ ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/syst
               <listitem>
                   <para>Choose a route table 30400 + the index of the interface and
                   add a default route <literal>0.0.0.0/0</literal>. The gateway
-                  is the first IP address in the CIDR subnet block. For
-                  example, we might get a route <literal>"0.0.0.0/0 10.0.0.1 10 table=30400"</literal>.</para>
+                  is the default gateway retrieved from metadata server. For
+                  example, we might get a route <literal>"0.0.0.0/0 10.0.0.253 10 table=30400"</literal>.</para>
               </listitem>
               <listitem>
                   <para>Finally, add a policy routing rule for each address. For example
@@ -419,7 +419,7 @@ ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/syst
               </listitem>
             </itemizedlist>
             With above example, this roughly corresponds for interface <literal>eth0</literal> to
-            <command>nmcli device modify "eth0" ipv4.addresses "10.0.0.150/24,10.0.0.150/24" ipv4.routes "0.0.0.0/0 10.0.0.1 10 table=30400" ipv4.routing-rules "priority 30400 from 10.0.0.150/32 table 30400, priority 30400 from 10.0.0.152/32 table 30400"</command>.
+            <command>nmcli device modify "eth0" ipv4.addresses "10.0.0.150/24,10.0.0.152/24" ipv4.routes "0.0.0.0/0 10.0.0.253 10 table=30400" ipv4.routing-rules "priority 30400 from 10.0.0.150/32 table 30400, priority 30400 from 10.0.0.152/32 table 30400"</command>.
             Note that this replaces the previous addresses, routes and rules with the new information.
             But also note that this only changes the run time configuration of the device. The
             connection profile on disk is not affected.
