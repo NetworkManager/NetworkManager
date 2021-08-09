@@ -2558,8 +2558,8 @@ nm_device_sys_iface_state_set(NMDevice *self, NMDeviceSysIfaceState sys_iface_st
     if (priv->sys_iface_state != sys_iface_state) {
         _LOGT(LOGD_DEVICE,
               "sys-iface-state: %s -> %s",
-              nm_device_sys_iface_state_to_str(priv->sys_iface_state),
-              nm_device_sys_iface_state_to_str(sys_iface_state));
+              nm_device_sys_iface_state_to_string(priv->sys_iface_state),
+              nm_device_sys_iface_state_to_string(sys_iface_state));
         priv->sys_iface_state_ = sys_iface_state;
     }
 
@@ -2909,7 +2909,7 @@ _set_ip_state(NMDevice *self, int addr_family, NMDeviceIPState new_state)
           "ip%c-state: set to %d (%s)",
           nm_utils_addr_family_to_char(addr_family),
           (int) new_state,
-          nm_device_ip_state_to_str(new_state));
+          nm_device_ip_state_to_string(new_state));
 
     priv->ip_state_x_[IS_IPv4] = new_state;
 
@@ -6448,9 +6448,9 @@ slave_state_changed(NMDevice *          slave,
           "slave %s state change %d (%s) -> %d (%s)",
           nm_device_get_iface(slave),
           slave_old_state,
-          nm_device_state_to_str(slave_old_state),
+          nm_device_state_to_string(slave_old_state),
           slave_new_state,
-          nm_device_state_to_str(slave_new_state));
+          nm_device_state_to_string(slave_new_state));
 
     /* Don't try to enslave slaves until the master is ready */
     if (priv->state < NM_DEVICE_STATE_CONFIG)
@@ -7762,7 +7762,8 @@ recheck_available(gpointer user_data)
               now_available ? "" : "not ",
               new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for"
                                                        : "will transition to",
-              nm_device_state_to_str(new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
+              nm_device_state_to_string(new_state == NM_DEVICE_STATE_UNAVAILABLE ? state
+                                                                                 : new_state));
 
         priv->recheck_available.available_reason   = NM_DEVICE_STATE_REASON_NONE;
         priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
@@ -9379,7 +9380,7 @@ dhcp4_fail(NMDevice *self, NMDhcpState dhcp_state)
 
     _LOGD(LOGD_DHCP4,
           "DHCPv4 failed (ip_state %s, was_active %d)",
-          nm_device_ip_state_to_str(priv->ip_state_4),
+          nm_device_ip_state_to_string(priv->ip_state_4),
           priv->dhcp_data_4.was_active);
 
     /* The client is always left running after a failure. */
@@ -9829,7 +9830,7 @@ dhcp6_fail(NMDevice *self, NMDhcpState dhcp_state)
 
     _LOGD(LOGD_DHCP6,
           "DHCPv6 failed (ip_state %s, was_active %d)",
-          nm_device_ip_state_to_str(priv->ip_state_6),
+          nm_device_ip_state_to_string(priv->ip_state_6),
           priv->dhcp_data_6.was_active);
 
     /* The client is always left running after a failure. */
@@ -10626,9 +10627,9 @@ _commit_mtu(NMDevice *self, const NMIP4Config *config)
             _LOGT(LOGD_DEVICE,
                   "mtu: value %u from source '%s' (%u), current source '%s' (%u)%s",
                   (guint) mtu,
-                  nm_device_mtu_source_to_str(source),
+                  nm_device_mtu_source_to_string(source),
                   (guint) source,
-                  nm_device_mtu_source_to_str(priv->mtu_source),
+                  nm_device_mtu_source_to_string(priv->mtu_source),
                   (guint) priv->mtu_source,
                   force ? " (forced)" : "");
         }
@@ -10811,7 +10812,7 @@ nm_device_commit_mtu(NMDevice *self)
     } else
         _LOGT(LOGD_DEVICE,
               "mtu: commit-mtu... skip due to state %s",
-              nm_device_state_to_str(state));
+              nm_device_state_to_string(state));
 }
 
 static void
@@ -15019,7 +15020,7 @@ _set_unmanaged_flags(NMDevice *          self,
           flags,
           NM_PRINT_FMT_QUOTED(allow_state_transition,
                               ", reason ",
-                              nm_device_state_reason_to_str_a(reason),
+                              nm_device_state_reason_to_string_a(reason),
                               transition_state ? ", transition-state" : "",
                               ""));
 
@@ -16032,7 +16033,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
     else
         _LOGD(LOGD_DEVICE,
               "deactivating device (reason '%s') [%d]",
-              nm_device_state_reason_to_str_a(reason),
+              nm_device_state_reason_to_string_a(reason),
               reason);
 
     /* Save whether or not we tried IPv6 for later */
@@ -16526,20 +16527,20 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
         && (state != NM_DEVICE_STATE_UNAVAILABLE || !priv->firmware_missing)) {
         _LOGD(LOGD_DEVICE,
               "state change: %s -> %s (reason '%s', sys-iface-state: '%s'%s)",
-              nm_device_state_to_str(old_state),
-              nm_device_state_to_str(state),
-              nm_device_state_reason_to_str_a(reason),
-              nm_device_sys_iface_state_to_str(priv->sys_iface_state),
+              nm_device_state_to_string(old_state),
+              nm_device_state_to_string(state),
+              nm_device_state_reason_to_string_a(reason),
+              nm_device_sys_iface_state_to_string(priv->sys_iface_state),
               priv->firmware_missing ? ", missing firmware" : "");
         return;
     }
 
     _LOGI(LOGD_DEVICE,
           "state change: %s -> %s (reason '%s', sys-iface-state: '%s')",
-          nm_device_state_to_str(old_state),
-          nm_device_state_to_str(state),
-          nm_device_state_reason_to_str_a(reason),
-          nm_device_sys_iface_state_to_str(priv->sys_iface_state));
+          nm_device_state_to_string(old_state),
+          nm_device_state_to_string(state),
+          nm_device_state_reason_to_string_a(reason),
+          nm_device_sys_iface_state_to_string(priv->sys_iface_state));
 
     /* in order to prevent triggering any callback caused
      * by the device not having any pending action anymore
@@ -16884,8 +16885,8 @@ queued_state_set(gpointer user_data)
 
     _LOGD(LOGD_DEVICE,
           "queue-state[%s, reason:%s, id:%u]: %s",
-          nm_device_state_to_str(priv->queued_state.state),
-          nm_device_state_reason_to_str_a(priv->queued_state.reason),
+          nm_device_state_to_string(priv->queued_state.state),
+          nm_device_state_reason_to_string_a(priv->queued_state.reason),
           priv->queued_state.id,
           "change state");
 
@@ -16897,7 +16898,7 @@ queued_state_set(gpointer user_data)
     new_reason            = priv->queued_state.reason;
 
     nm_device_state_changed(self, new_state, new_reason);
-    nm_device_remove_pending_action(self, nm_device_state_queued_state_to_str(new_state), TRUE);
+    nm_device_remove_pending_action(self, nm_device_state_queued_state_to_string(new_state), TRUE);
 
     return G_SOURCE_REMOVE;
 }
@@ -16914,13 +16915,13 @@ nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason r
     if (priv->queued_state.id && priv->queued_state.state == state) {
         _LOGD(LOGD_DEVICE,
               "queue-state[%s, reason:%s, id:%u]: %s%s%s%s",
-              nm_device_state_to_str(priv->queued_state.state),
-              nm_device_state_reason_to_str_a(priv->queued_state.reason),
+              nm_device_state_to_string(priv->queued_state.state),
+              nm_device_state_reason_to_string_a(priv->queued_state.reason),
               priv->queued_state.id,
               "ignore queuing same state change",
               NM_PRINT_FMT_QUOTED(priv->queued_state.reason != reason,
                                   " (reason differs: ",
-                                  nm_device_state_reason_to_str_a(reason),
+                                  nm_device_state_reason_to_string_a(reason),
                                   ")",
                                   ""));
         return;
@@ -16928,20 +16929,20 @@ nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason r
 
     /* Add pending action for the new state before clearing the queued states, so
      * that we don't accidentally pop all pending states and reach 'startup complete'  */
-    nm_device_add_pending_action(self, nm_device_state_queued_state_to_str(state), TRUE);
+    nm_device_add_pending_action(self, nm_device_state_queued_state_to_string(state), TRUE);
 
     /* We should only ever have one delayed state transition at a time */
     if (priv->queued_state.id) {
         _LOGW(LOGD_DEVICE,
               "queue-state[%s, reason:%s, id:%u]: %s",
-              nm_device_state_to_str(priv->queued_state.state),
-              nm_device_state_reason_to_str_a(priv->queued_state.reason),
+              nm_device_state_to_string(priv->queued_state.state),
+              nm_device_state_reason_to_string_a(priv->queued_state.reason),
               priv->queued_state.id,
               "replace previously queued state change");
         nm_clear_g_source(&priv->queued_state.id);
         nm_device_remove_pending_action(
             self,
-            nm_device_state_queued_state_to_str(priv->queued_state.state),
+            nm_device_state_queued_state_to_string(priv->queued_state.state),
             TRUE);
     }
 
@@ -16951,8 +16952,8 @@ nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason r
 
     _LOGD(LOGD_DEVICE,
           "queue-state[%s, reason:%s, id:%u]: %s",
-          nm_device_state_to_str(state),
-          nm_device_state_reason_to_str_a(reason),
+          nm_device_state_to_string(state),
+          nm_device_state_reason_to_string_a(reason),
           priv->queued_state.id,
           "queue state change");
 }
@@ -16967,14 +16968,15 @@ queued_state_clear(NMDevice *self)
 
     _LOGD(LOGD_DEVICE,
           "queue-state[%s, reason:%s, id:%u]: %s",
-          nm_device_state_to_str(priv->queued_state.state),
-          nm_device_state_reason_to_str_a(priv->queued_state.reason),
+          nm_device_state_to_string(priv->queued_state.state),
+          nm_device_state_reason_to_string_a(priv->queued_state.reason),
           priv->queued_state.id,
           "clear queued state change");
     nm_clear_g_source(&priv->queued_state.id);
-    nm_device_remove_pending_action(self,
-                                    nm_device_state_queued_state_to_str(priv->queued_state.state),
-                                    TRUE);
+    nm_device_remove_pending_action(
+        self,
+        nm_device_state_queued_state_to_string(priv->queued_state.state),
+        TRUE);
 }
 
 NMDeviceState
