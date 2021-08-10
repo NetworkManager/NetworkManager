@@ -36,7 +36,6 @@ enum {
     NLA_STRING, /* NUL terminated character string */
     NLA_FLAG,   /* Flag */
     NLA_NESTED, /* Nested attributes */
-    NLA_NUL_STRING,
     __NLA_TYPE_MAX,
 };
 
