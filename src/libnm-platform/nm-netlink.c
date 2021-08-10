@@ -622,14 +622,17 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
     if (pt->maxlen && len > pt->maxlen)
         return -NME_UNSPEC;
 
-    if (pt->type == NLA_STRING) {
-        const char *data;
+    switch (pt->type) {
+    case NLA_STRING:
+    {
+        const char *data = nla_data(nla);
 
         nm_assert(minlen > 0);
 
-        data = nla_data(nla);
         if (data[len - 1u] != '\0')
             return -NME_UNSPEC;
+        break;
+    }
     }
 
     return 0;
