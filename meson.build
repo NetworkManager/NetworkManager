@@ -6,7 +6,7 @@ project(
 #  - add corresponding NM_VERSION_x_y_z macros in
 #    "src/libnm-core-public/nm-version-macros.h.in"
 #  - update number in configure.ac
-  version: '1.32.8',
+  version: '1.32.9',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
