@@ -598,6 +598,7 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
 {
     const struct nla_policy *pt;
     uint16_t                 minlen;
+    uint16_t                 len;
     int                      type = nla_type(nla);
 
     if (type < 0 || type > maxtype)
@@ -613,10 +614,12 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
     else
         minlen = nla_attr_minlen[pt->type];
 
-    if (nla_len(nla) < minlen)
+    len = nla_len(nla);
+
+    if (len < minlen)
         return -NME_UNSPEC;
 
-    if (pt->maxlen && nla_len(nla) > pt->maxlen)
+    if (pt->maxlen && len > pt->maxlen)
         return -NME_UNSPEC;
 
     if (pt->type == NLA_STRING) {
@@ -625,7 +628,7 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
         nm_assert(minlen > 0);
 
         data = nla_data(nla);
-        if (data[nla_len(nla) - 1] != '\0')
+        if (data[len - 1u] != '\0')
             return -NME_UNSPEC;
     }
 
