@@ -35,15 +35,8 @@ enum {
     NLA_U64,    /* 64 bit integer */
     NLA_STRING, /* NUL terminated character string */
     NLA_FLAG,   /* Flag */
-    NLA_MSECS,  /* Micro seconds (64bit) */
     NLA_NESTED, /* Nested attributes */
-    NLA_NESTED_COMPAT,
     NLA_NUL_STRING,
-    NLA_BINARY,
-    NLA_S8,
-    NLA_S16,
-    NLA_S32,
-    NLA_S64,
     __NLA_TYPE_MAX,
 };
 
