@@ -585,21 +585,20 @@ nla_nest_end(struct nl_msg *msg, struct nlattr *start)
     return _nest_end(msg, start, 0);
 }
 
-static const uint16_t nla_attr_minlen[NLA_TYPE_MAX + 1] = {
+static const uint8_t nla_attr_minlen[NLA_TYPE_MAX + 1] = {
     [NLA_U8]     = sizeof(uint8_t),
     [NLA_U16]    = sizeof(uint16_t),
     [NLA_U32]    = sizeof(uint32_t),
     [NLA_U64]    = sizeof(uint64_t),
     [NLA_STRING] = 1,
-    [NLA_FLAG]   = 0,
 };
 
 static int
 validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *policy)
 {
     const struct nla_policy *pt;
-    unsigned int             minlen = 0;
-    int                      type   = nla_type(nla);
+    uint16_t                 minlen;
+    int                      type = nla_type(nla);
 
     if (type < 0 || type > maxtype)
         return 0;
@@ -611,7 +610,7 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
 
     if (pt->minlen)
         minlen = pt->minlen;
-    else if (pt->type != NLA_UNSPEC)
+    else
         minlen = nla_attr_minlen[pt->type];
 
     if (nla_len(nla) < minlen)
