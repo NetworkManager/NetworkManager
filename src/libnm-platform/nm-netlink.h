@@ -55,10 +55,10 @@ const char *nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
 
 struct nla_policy {
     /* Type of attribute or NLA_UNSPEC */
-    uint16_t type;
+    uint8_t type;
 
     /* Minimal length of payload required */
-    uint16_t minlen;
+    uint8_t minlen;
 
     /* Maximal length of payload allowed */
     uint16_t maxlen;

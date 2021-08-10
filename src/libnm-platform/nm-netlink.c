@@ -597,7 +597,7 @@ static int
 validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *policy)
 {
     const struct nla_policy *pt;
-    uint16_t                 minlen;
+    uint8_t                  minlen;
     uint16_t                 len;
     int                      type = nla_type(nla);
 
@@ -609,7 +609,7 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
     if (pt->type > NLA_TYPE_MAX)
         g_return_val_if_reached(-NME_BUG);
 
-    if (pt->minlen)
+    if (pt->minlen > 0)
         minlen = pt->minlen;
     else
         minlen = nla_attr_minlen[pt->type];
@@ -619,7 +619,7 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
     if (len < minlen)
         return -NME_UNSPEC;
 
-    if (pt->maxlen && len > pt->maxlen)
+    if (pt->maxlen > 0 && len > pt->maxlen)
         return -NME_UNSPEC;
 
     switch (pt->type) {
