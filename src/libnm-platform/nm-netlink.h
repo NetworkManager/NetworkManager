@@ -105,28 +105,24 @@ nla_padlen(int payload)
 
 struct nlattr *nla_reserve(struct nl_msg *msg, int attrtype, int attrlen);
 
-static inline int
+static inline uint16_t
 nla_len(const struct nlattr *nla)
 {
     nm_assert(nla);
     nm_assert(nla->nla_len >= NLA_HDRLEN);
 
-    return ((int) nla->nla_len) - NLA_HDRLEN;
+    return nla->nla_len - ((uint16_t) NLA_HDRLEN);
 }
 
 static inline int
 nla_type(const struct nlattr *nla)
 {
-    nm_assert(nla_len(nla) >= 0);
-
     return nla->nla_type & NLA_TYPE_MASK;
 }
 
 static inline void *
 nla_data(const struct nlattr *nla)
 {
-    nm_assert(nla_len(nla) >= 0);
-
     return &(((char *) nla)[NLA_HDRLEN]);
 }
 
@@ -212,9 +208,7 @@ nla_get_be64(const struct nlattr *nla)
 static inline char *
 nla_get_string(const struct nlattr *nla)
 {
-    nm_assert(nla_len(nla) >= 0);
-
-    return (char *) nla_data(nla);
+    return nla_data(nla);
 }
 
 size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize);
