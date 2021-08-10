@@ -1,4 +1,13 @@
 ===============================================
+NetworkManager-1.32.8
+Overview of changes since NetworkManager-1.32.6
+===============================================
+
+* firewalld: configure zones on "Reloaded" signal.
+* core: fix wrong MTU for bridge interfaces.
+* cloud-setup: fix gateway address for Aliyun cloud.
+
+===============================================
 NetworkManager-1.32.6
 Overview of changes since NetworkManager-1.32.4
 ===============================================
