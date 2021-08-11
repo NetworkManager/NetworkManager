@@ -28,7 +28,7 @@
 
 /*****************************************************************************/
 
-enum { SIGNAL_STATE_CHANGED, SIGNAL_PREFIX_DELEGATED, LAST_SIGNAL };
+enum { SIGNAL_NOTIFY, LAST_SIGNAL };
 
 static guint signals[LAST_SIGNAL] = {0};
 
@@ -78,6 +78,7 @@ typedef struct _NMDhcpClientPrivate {
     NMDhcpHostnameFlags hostname_flags;
     NMDhcpClientFlags   client_flags;
     bool                iaid_explicit : 1;
+    bool                is_stopped : 1;
 } NMDhcpClientPrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
@@ -88,6 +89,33 @@ G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
 
 /* we use pid=-1 for invalid PIDs. Ensure that pid_t can hold negative values. */
 G_STATIC_ASSERT(!(((pid_t) -1) > 0));
+
+/*****************************************************************************/
+
+static void
+_emit_notify(NMDhcpClient *self, const NMDhcpClientNotifyData *notify_data)
+{
+    g_signal_emit(G_OBJECT(self), signals[SIGNAL_NOTIFY], 0, notify_data);
+}
+
+static void
+_emit_notify_state_changed(NMDhcpClient *self,
+                           NMDhcpState   dhcp_state,
+                           NMIPConfig *  ip_config,
+                           GHashTable *  options)
+{
+    const NMDhcpClientNotifyData notify_data = {
+        .notify_type = NM_DHCP_CLIENT_NOTIFY_TYPE_STATE_CHANGED,
+        .state_changed =
+            {
+                .dhcp_state = dhcp_state,
+                .ip_config  = ip_config,
+                .options    = options,
+            },
+    };
+
+    _emit_notify(self, &notify_data);
+}
 
 /*****************************************************************************/
 
@@ -496,12 +524,8 @@ nm_dhcp_client_set_state(NMDhcpClient *self,
     }
 
     priv->state = new_state;
-    g_signal_emit(G_OBJECT(self),
-                  signals[SIGNAL_STATE_CHANGED],
-                  0,
-                  (guint) new_state,
-                  ip_config,
-                  options);
+
+    _emit_notify_state_changed(self, new_state, ip_config, options);
 }
 
 static gboolean
@@ -751,6 +775,11 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 
     priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
+    if (priv->is_stopped)
+        return;
+
+    priv->is_stopped = TRUE;
+
     /* Kill the DHCP client */
     old_pid = priv->pid;
     NM_DHCP_CLIENT_GET_CLASS(self)->stop(self, release);
@@ -873,7 +902,15 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
 void
 nm_dhcp_client_emit_ipv6_prefix_delegated(NMDhcpClient *self, const NMPlatformIP6Address *prefix)
 {
-    g_signal_emit(G_OBJECT(self), signals[SIGNAL_PREFIX_DELEGATED], 0, prefix);
+    const NMDhcpClientNotifyData notify_data = {
+        .notify_type = NM_DHCP_CLIENT_NOTIFY_TYPE_PREFIX_DELEGATED,
+        .prefix_delegated =
+            {
+                .prefix = prefix,
+            },
+    };
+
+    _emit_notify(self, &notify_data);
 }
 
 gboolean
@@ -1160,8 +1197,6 @@ nm_dhcp_client_init(NMDhcpClient *self)
     priv        = G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_DHCP_CLIENT, NMDhcpClientPrivate);
     self->_priv = priv;
 
-    c_list_init(&self->dhcp_client_lst);
-
     priv->pid = -1;
 }
 
@@ -1193,12 +1228,7 @@ dispose(GObject *object)
     NMDhcpClient *       self = NM_DHCP_CLIENT(object);
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
-    /* Stopping the client is left up to the controlling device
-     * explicitly since we may want to quit NetworkManager but not terminate
-     * the DHCP client.
-     */
-
-    nm_assert(c_list_is_empty(&self->dhcp_client_lst));
+    nm_dhcp_client_stop(self, FALSE);
 
     watch_cleanup(self);
     timeout_cleanup(self);
@@ -1387,28 +1417,15 @@ nm_dhcp_client_class_init(NMDhcpClientClass *client_class)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    signals[SIGNAL_STATE_CHANGED] = g_signal_new(NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
-                                                 G_OBJECT_CLASS_TYPE(object_class),
-                                                 G_SIGNAL_RUN_FIRST,
-                                                 0,
-                                                 NULL,
-                                                 NULL,
-                                                 NULL,
-                                                 G_TYPE_NONE,
-                                                 3,
-                                                 G_TYPE_UINT,
-                                                 G_TYPE_OBJECT,
-                                                 G_TYPE_HASH_TABLE);
-
-    signals[SIGNAL_PREFIX_DELEGATED] =
-        g_signal_new(NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
+    signals[SIGNAL_NOTIFY] =
+        g_signal_new(NM_DHCP_CLIENT_NOTIFY,
                      G_OBJECT_CLASS_TYPE(object_class),
                      G_SIGNAL_RUN_FIRST,
                      0,
                      NULL,
                      NULL,
-                     NULL,
+                     g_cclosure_marshal_VOID__POINTER,
                      G_TYPE_NONE,
                      1,
-                     G_TYPE_POINTER /* const NMPlatformIP6Address *prefix */);
+                     G_TYPE_POINTER /* const NMDhcpClientNotifyData *notify_data */);
 }

@@ -185,7 +185,7 @@ typedef struct {
 typedef struct {
     NMDhcpClient *client;
     NMDhcpConfig *config;
-    gulong        state_sigid;
+    gulong        notify_sigid;
     guint         grace_id;
     bool          grace_pending : 1;
     bool          was_active : 1;
@@ -579,7 +579,6 @@ typedef struct _NMDevicePrivate {
         AppliedConfig ip6_config;
         /* Event ID of the current IP6 config from DHCP */
         char *           event_id;
-        gulong           prefix_sigid;
         NMNDiscDHCPLevel mode;
         guint            needed_prefixes;
     } dhcp6;
@@ -2559,8 +2558,8 @@ nm_device_sys_iface_state_set(NMDevice *self, NMDeviceSysIfaceState sys_iface_st
     if (priv->sys_iface_state != sys_iface_state) {
         _LOGT(LOGD_DEVICE,
               "sys-iface-state: %s -> %s",
-              nm_device_sys_iface_state_to_str(priv->sys_iface_state),
-              nm_device_sys_iface_state_to_str(sys_iface_state));
+              nm_device_sys_iface_state_to_string(priv->sys_iface_state),
+              nm_device_sys_iface_state_to_string(sys_iface_state));
         priv->sys_iface_state_ = sys_iface_state;
     }
 
@@ -2910,7 +2909,7 @@ _set_ip_state(NMDevice *self, int addr_family, NMDeviceIPState new_state)
           "ip%c-state: set to %d (%s)",
           nm_utils_addr_family_to_char(addr_family),
           (int) new_state,
-          nm_device_ip_state_to_str(new_state));
+          nm_device_ip_state_to_string(new_state));
 
     priv->ip_state_x_[IS_IPv4] = new_state;
 
@@ -6449,9 +6448,9 @@ slave_state_changed(NMDevice *          slave,
           "slave %s state change %d (%s) -> %d (%s)",
           nm_device_get_iface(slave),
           slave_old_state,
-          nm_device_state_to_str(slave_old_state),
+          nm_device_state_to_string(slave_old_state),
           slave_new_state,
-          nm_device_state_to_str(slave_new_state));
+          nm_device_state_to_string(slave_new_state));
 
     /* Don't try to enslave slaves until the master is ready */
     if (priv->state < NM_DEVICE_STATE_CONFIG)
@@ -7763,7 +7762,8 @@ recheck_available(gpointer user_data)
               now_available ? "" : "not ",
               new_state == NM_DEVICE_STATE_UNAVAILABLE ? "no change required for"
                                                        : "will transition to",
-              nm_device_state_to_str(new_state == NM_DEVICE_STATE_UNAVAILABLE ? state : new_state));
+              nm_device_state_to_string(new_state == NM_DEVICE_STATE_UNAVAILABLE ? state
+                                                                                 : new_state));
 
         priv->recheck_available.available_reason   = NM_DEVICE_STATE_REASON_NONE;
         priv->recheck_available.unavailable_reason = NM_DEVICE_STATE_REASON_NONE;
@@ -9035,7 +9035,7 @@ dhcp4_cleanup(NMDevice *self, CleanupType cleanup_type, gboolean release)
 
     if (priv->dhcp_data_4.client) {
         /* Stop any ongoing DHCP transaction on this device */
-        nm_clear_g_signal_handler(priv->dhcp_data_4.client, &priv->dhcp_data_4.state_sigid);
+        nm_clear_g_signal_handler(priv->dhcp_data_4.client, &priv->dhcp_data_4.notify_sigid);
 
         if (cleanup_type == CLEANUP_TYPE_DECONFIGURE || cleanup_type == CLEANUP_TYPE_REMOVED)
             nm_dhcp_client_stop(priv->dhcp_data_4.client, release);
@@ -9380,7 +9380,7 @@ dhcp4_fail(NMDevice *self, NMDhcpState dhcp_state)
 
     _LOGD(LOGD_DHCP4,
           "DHCPv4 failed (ip_state %s, was_active %d)",
-          nm_device_ip_state_to_str(priv->ip_state_4),
+          nm_device_ip_state_to_string(priv->ip_state_4),
           priv->dhcp_data_4.was_active);
 
     /* The client is always left running after a failure. */
@@ -9436,21 +9436,27 @@ dhcp4_dad_cb(NMDevice *self, NMIP4Config **configs, gboolean success)
 }
 
 static void
-dhcp4_state_changed(NMDhcpClient *client,
-                    NMDhcpState   state,
-                    NMIP4Config * ip4_config,
-                    GHashTable *  options,
-                    gpointer      user_data)
+dhcp4_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_data, NMDevice *self)
 {
-    NMDevice *       self = NM_DEVICE(user_data);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMIP4Config *    manual, **configs;
+    NMIP4Config *    manual;
+    NMIP4Config **   configs;
     NMConnection *   connection;
+    NMDhcpState      state;
+    NMIP4Config *    ip4_config;
+    GHashTable *     options;
 
-    g_return_if_fail(nm_dhcp_client_get_addr_family(client) == AF_INET);
-    g_return_if_fail(!ip4_config || NM_IS_IP4_CONFIG(ip4_config));
+    nm_assert(nm_dhcp_client_get_addr_family(client) == AF_INET);
+    nm_assert(notify_data);
+    nm_assert(notify_data->notify_type == NM_DHCP_CLIENT_NOTIFY_TYPE_STATE_CHANGED);
 
-    _LOGD(LOGD_DHCP4, "new DHCPv4 client state %d", state);
+    state      = notify_data->state_changed.dhcp_state;
+    ip4_config = NM_IP4_CONFIG(notify_data->state_changed.ip_config);
+    options    = notify_data->state_changed.options;
+
+    nm_assert(!ip4_config || NM_IS_IP4_CONFIG(ip4_config));
+
+    _LOGD(LOGD_DHCP4, "new DHCPv4 client state %d", (int) state);
 
     switch (state) {
     case NM_DHCP_STATE_BOUND:
@@ -9601,10 +9607,10 @@ dhcp4_start(NMDevice *self)
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
 
-    priv->dhcp_data_4.state_sigid = g_signal_connect(priv->dhcp_data_4.client,
-                                                     NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
-                                                     G_CALLBACK(dhcp4_state_changed),
-                                                     self);
+    priv->dhcp_data_4.notify_sigid = g_signal_connect(priv->dhcp_data_4.client,
+                                                      NM_DHCP_CLIENT_NOTIFY,
+                                                      G_CALLBACK(dhcp4_notify),
+                                                      self);
 
     if (nm_device_sys_iface_state_is_external_or_assume(self))
         priv->dhcp_data_4.was_active = TRUE;
@@ -9775,8 +9781,7 @@ dhcp6_cleanup(NMDevice *self, CleanupType cleanup_type, gboolean release)
     priv->dhcp_data_6.grace_pending = FALSE;
 
     if (priv->dhcp_data_6.client) {
-        nm_clear_g_signal_handler(priv->dhcp_data_6.client, &priv->dhcp_data_6.state_sigid);
-        nm_clear_g_signal_handler(priv->dhcp_data_6.client, &priv->dhcp6.prefix_sigid);
+        nm_clear_g_signal_handler(priv->dhcp_data_6.client, &priv->dhcp_data_6.notify_sigid);
 
         if (cleanup_type == CLEANUP_TYPE_DECONFIGURE || cleanup_type == CLEANUP_TYPE_REMOVED)
             nm_dhcp_client_stop(priv->dhcp_data_6.client, release);
@@ -9825,7 +9830,7 @@ dhcp6_fail(NMDevice *self, NMDhcpState dhcp_state)
 
     _LOGD(LOGD_DHCP6,
           "DHCPv6 failed (ip_state %s, was_active %d)",
-          nm_device_ip_state_to_str(priv->ip_state_6),
+          nm_device_ip_state_to_string(priv->ip_state_6),
           priv->dhcp_data_6.was_active);
 
     /* The client is always left running after a failure. */
@@ -9876,20 +9881,34 @@ clear_config:
 }
 
 static void
-dhcp6_state_changed(NMDhcpClient *client,
-                    NMDhcpState   state,
-                    NMIP6Config * ip6_config,
-                    GHashTable *  options,
-                    gpointer      user_data)
+dhcp6_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_data, NMDevice *self)
 {
-    NMDevice *       self     = NM_DEVICE(user_data);
     NMDevicePrivate *priv     = NM_DEVICE_GET_PRIVATE(self);
     gs_free char *   event_id = NULL;
+    NMDhcpState      state;
+    NMIP6Config *    ip6_config;
+    GHashTable *     options;
 
-    g_return_if_fail(nm_dhcp_client_get_addr_family(client) == AF_INET6);
-    g_return_if_fail(!ip6_config || NM_IS_IP6_CONFIG(ip6_config));
+    nm_assert(nm_dhcp_client_get_addr_family(client) == AF_INET6);
+    nm_assert(notify_data);
 
-    _LOGD(LOGD_DHCP6, "new DHCPv6 client state %d", state);
+    if (notify_data->notify_type == NM_DHCP_CLIENT_NOTIFY_TYPE_PREFIX_DELEGATED) {
+        /* Just re-emit. The device just contributes the prefix to the
+         * pool in NMPolicy, which decides about subnet allocation
+         * on the shared devices. */
+        g_signal_emit(self, signals[IP6_PREFIX_DELEGATED], 0, notify_data->prefix_delegated.prefix);
+        return;
+    }
+
+    nm_assert(notify_data->notify_type == NM_DHCP_CLIENT_NOTIFY_TYPE_STATE_CHANGED);
+
+    state      = notify_data->state_changed.dhcp_state;
+    ip6_config = NM_IP6_CONFIG(notify_data->state_changed.ip_config);
+    options    = notify_data->state_changed.options;
+
+    nm_assert(!ip6_config || NM_IS_IP6_CONFIG(ip6_config));
+
+    _LOGD(LOGD_DHCP6, "new DHCPv6 client state %d", (int) state);
 
     switch (state) {
     case NM_DHCP_STATE_BOUND:
@@ -9967,17 +9986,6 @@ dhcp6_state_changed(NMDhcpClient *client,
     default:
         break;
     }
-}
-
-static void
-dhcp6_prefix_delegated(NMDhcpClient *client, const NMPlatformIP6Address *prefix, gpointer user_data)
-{
-    NMDevice *self = NM_DEVICE(user_data);
-
-    /* Just re-emit. The device just contributes the prefix to the
-     * pool in NMPolicy, which decides about subnet allocation
-     * on the shared devices. */
-    g_signal_emit(self, signals[IP6_PREFIX_DELEGATED], 0, prefix);
 }
 
 /*****************************************************************************/
@@ -10061,14 +10069,10 @@ dhcp6_start_with_link_ready(NMDevice *self, NMConnection *connection)
         return FALSE;
     }
 
-    priv->dhcp_data_6.state_sigid = g_signal_connect(priv->dhcp_data_6.client,
-                                                     NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED,
-                                                     G_CALLBACK(dhcp6_state_changed),
-                                                     self);
-    priv->dhcp6.prefix_sigid      = g_signal_connect(priv->dhcp_data_6.client,
-                                                NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED,
-                                                G_CALLBACK(dhcp6_prefix_delegated),
-                                                self);
+    priv->dhcp_data_6.notify_sigid = g_signal_connect(priv->dhcp_data_6.client,
+                                                      NM_DHCP_CLIENT_NOTIFY,
+                                                      G_CALLBACK(dhcp6_notify),
+                                                      self);
 
     if (nm_device_sys_iface_state_is_external_or_assume(self))
         priv->dhcp_data_6.was_active = TRUE;
@@ -10623,9 +10627,9 @@ _commit_mtu(NMDevice *self, const NMIP4Config *config)
             _LOGT(LOGD_DEVICE,
                   "mtu: value %u from source '%s' (%u), current source '%s' (%u)%s",
                   (guint) mtu,
-                  nm_device_mtu_source_to_str(source),
+                  nm_device_mtu_source_to_string(source),
                   (guint) source,
-                  nm_device_mtu_source_to_str(priv->mtu_source),
+                  nm_device_mtu_source_to_string(priv->mtu_source),
                   (guint) priv->mtu_source,
                   force ? " (forced)" : "");
         }
@@ -10808,7 +10812,7 @@ nm_device_commit_mtu(NMDevice *self)
     } else
         _LOGT(LOGD_DEVICE,
               "mtu: commit-mtu... skip due to state %s",
-              nm_device_state_to_str(state));
+              nm_device_state_to_string(state));
 }
 
 static void
@@ -15016,7 +15020,7 @@ _set_unmanaged_flags(NMDevice *          self,
           flags,
           NM_PRINT_FMT_QUOTED(allow_state_transition,
                               ", reason ",
-                              nm_device_state_reason_to_str_a(reason),
+                              nm_device_state_reason_to_string_a(reason),
                               transition_state ? ", transition-state" : "",
                               ""));
 
@@ -16029,7 +16033,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
     else
         _LOGD(LOGD_DEVICE,
               "deactivating device (reason '%s') [%d]",
-              nm_device_state_reason_to_str_a(reason),
+              nm_device_state_reason_to_string_a(reason),
               reason);
 
     /* Save whether or not we tried IPv6 for later */
@@ -16523,20 +16527,20 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
         && (state != NM_DEVICE_STATE_UNAVAILABLE || !priv->firmware_missing)) {
         _LOGD(LOGD_DEVICE,
               "state change: %s -> %s (reason '%s', sys-iface-state: '%s'%s)",
-              nm_device_state_to_str(old_state),
-              nm_device_state_to_str(state),
-              nm_device_state_reason_to_str_a(reason),
-              nm_device_sys_iface_state_to_str(priv->sys_iface_state),
+              nm_device_state_to_string(old_state),
+              nm_device_state_to_string(state),
+              nm_device_state_reason_to_string_a(reason),
+              nm_device_sys_iface_state_to_string(priv->sys_iface_state),
               priv->firmware_missing ? ", missing firmware" : "");
         return;
     }
 
     _LOGI(LOGD_DEVICE,
           "state change: %s -> %s (reason '%s', sys-iface-state: '%s')",
-          nm_device_state_to_str(old_state),
-          nm_device_state_to_str(state),
-          nm_device_state_reason_to_str_a(reason),
-          nm_device_sys_iface_state_to_str(priv->sys_iface_state));
+          nm_device_state_to_string(old_state),
+          nm_device_state_to_string(state),
+          nm_device_state_reason_to_string_a(reason),
+          nm_device_sys_iface_state_to_string(priv->sys_iface_state));
 
     /* in order to prevent triggering any callback caused
      * by the device not having any pending action anymore
@@ -16881,8 +16885,8 @@ queued_state_set(gpointer user_data)
 
     _LOGD(LOGD_DEVICE,
           "queue-state[%s, reason:%s, id:%u]: %s",
-          nm_device_state_to_str(priv->queued_state.state),
-          nm_device_state_reason_to_str_a(priv->queued_state.reason),
+          nm_device_state_to_string(priv->queued_state.state),
+          nm_device_state_reason_to_string_a(priv->queued_state.reason),
           priv->queued_state.id,
           "change state");
 
@@ -16894,7 +16898,7 @@ queued_state_set(gpointer user_data)
     new_reason            = priv->queued_state.reason;
 
     nm_device_state_changed(self, new_state, new_reason);
-    nm_device_remove_pending_action(self, nm_device_state_queued_state_to_str(new_state), TRUE);
+    nm_device_remove_pending_action(self, nm_device_state_queued_state_to_string(new_state), TRUE);
 
     return G_SOURCE_REMOVE;
 }
@@ -16911,13 +16915,13 @@ nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason r
     if (priv->queued_state.id && priv->queued_state.state == state) {
         _LOGD(LOGD_DEVICE,
               "queue-state[%s, reason:%s, id:%u]: %s%s%s%s",
-              nm_device_state_to_str(priv->queued_state.state),
-              nm_device_state_reason_to_str_a(priv->queued_state.reason),
+              nm_device_state_to_string(priv->queued_state.state),
+              nm_device_state_reason_to_string_a(priv->queued_state.reason),
               priv->queued_state.id,
               "ignore queuing same state change",
               NM_PRINT_FMT_QUOTED(priv->queued_state.reason != reason,
                                   " (reason differs: ",
-                                  nm_device_state_reason_to_str_a(reason),
+                                  nm_device_state_reason_to_string_a(reason),
                                   ")",
                                   ""));
         return;
@@ -16925,20 +16929,20 @@ nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason r
 
     /* Add pending action for the new state before clearing the queued states, so
      * that we don't accidentally pop all pending states and reach 'startup complete'  */
-    nm_device_add_pending_action(self, nm_device_state_queued_state_to_str(state), TRUE);
+    nm_device_add_pending_action(self, nm_device_state_queued_state_to_string(state), TRUE);
 
     /* We should only ever have one delayed state transition at a time */
     if (priv->queued_state.id) {
         _LOGW(LOGD_DEVICE,
               "queue-state[%s, reason:%s, id:%u]: %s",
-              nm_device_state_to_str(priv->queued_state.state),
-              nm_device_state_reason_to_str_a(priv->queued_state.reason),
+              nm_device_state_to_string(priv->queued_state.state),
+              nm_device_state_reason_to_string_a(priv->queued_state.reason),
               priv->queued_state.id,
               "replace previously queued state change");
         nm_clear_g_source(&priv->queued_state.id);
         nm_device_remove_pending_action(
             self,
-            nm_device_state_queued_state_to_str(priv->queued_state.state),
+            nm_device_state_queued_state_to_string(priv->queued_state.state),
             TRUE);
     }
 
@@ -16948,8 +16952,8 @@ nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason r
 
     _LOGD(LOGD_DEVICE,
           "queue-state[%s, reason:%s, id:%u]: %s",
-          nm_device_state_to_str(state),
-          nm_device_state_reason_to_str_a(reason),
+          nm_device_state_to_string(state),
+          nm_device_state_reason_to_string_a(reason),
           priv->queued_state.id,
           "queue state change");
 }
@@ -16964,14 +16968,15 @@ queued_state_clear(NMDevice *self)
 
     _LOGD(LOGD_DEVICE,
           "queue-state[%s, reason:%s, id:%u]: %s",
-          nm_device_state_to_str(priv->queued_state.state),
-          nm_device_state_reason_to_str_a(priv->queued_state.reason),
+          nm_device_state_to_string(priv->queued_state.state),
+          nm_device_state_reason_to_string_a(priv->queued_state.reason),
           priv->queued_state.id,
           "clear queued state change");
     nm_clear_g_source(&priv->queued_state.id);
-    nm_device_remove_pending_action(self,
-                                    nm_device_state_queued_state_to_str(priv->queued_state.state),
-                                    TRUE);
+    nm_device_remove_pending_action(
+        self,
+        nm_device_state_queued_state_to_string(priv->queued_state.state),
+        TRUE);
 }
 
 NMDeviceState

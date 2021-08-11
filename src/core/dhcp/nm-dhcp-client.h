@@ -44,8 +44,7 @@
 #define NM_DHCP_CLIENT_VENDOR_CLASS_IDENTIFIER "vendor-class-identifier"
 #define NM_DHCP_CLIENT_REJECT_SERVERS          "reject-servers"
 
-#define NM_DHCP_CLIENT_SIGNAL_STATE_CHANGED    "state-changed"
-#define NM_DHCP_CLIENT_SIGNAL_PREFIX_DELEGATED "prefix-delegated"
+#define NM_DHCP_CLIENT_NOTIFY "dhcp-notify"
 
 typedef enum {
     NM_DHCP_STATE_UNKNOWN = 0,
@@ -59,6 +58,25 @@ typedef enum {
     NM_DHCP_STATE_NOOP,       /* state is a non operation for NetworkManager */
 } NMDhcpState;
 
+typedef enum _nm_packed {
+    NM_DHCP_CLIENT_NOTIFY_TYPE_STATE_CHANGED,
+    NM_DHCP_CLIENT_NOTIFY_TYPE_PREFIX_DELEGATED,
+} NMDhcpClientNotifyType;
+
+typedef struct {
+    NMDhcpClientNotifyType notify_type;
+    union {
+        struct {
+            NMIPConfig *ip_config;
+            GHashTable *options;
+            NMDhcpState dhcp_state;
+        } state_changed;
+        struct {
+            const NMPlatformIP6Address *prefix;
+        } prefix_delegated;
+    };
+} NMDhcpClientNotifyData;
+
 const char *nm_dhcp_state_to_string(NMDhcpState state);
 
 struct _NMDhcpClientPrivate;
@@ -66,7 +84,6 @@ struct _NMDhcpClientPrivate;
 typedef struct {
     GObject                      parent;
     struct _NMDhcpClientPrivate *_priv;
-    CList                        dhcp_client_lst;
 } NMDhcpClient;
 
 typedef enum _nm_packed {

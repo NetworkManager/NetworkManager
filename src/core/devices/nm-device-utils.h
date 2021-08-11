@@ -5,11 +5,11 @@
 
 /*****************************************************************************/
 
-const char *nm_device_state_to_str(NMDeviceState state);
-const char *nm_device_state_reason_to_str(NMDeviceStateReason reason);
+const char *nm_device_state_to_string(NMDeviceState state);
+const char *nm_device_state_reason_to_string(NMDeviceStateReason reason);
 
-#define nm_device_state_reason_to_str_a(reason) \
-    NM_UTILS_LOOKUP_STR_A(nm_device_state_reason_to_str, reason)
+#define nm_device_state_reason_to_string_a(reason) \
+    NM_UTILS_LOOKUP_STR_A(nm_device_state_reason_to_string, reason)
 
 static inline NMDeviceStateReason
 nm_device_state_reason_check(NMDeviceStateReason reason)
@@ -41,7 +41,7 @@ nm_device_state_reason_check(NMDeviceStateReason reason)
 #define NM_PENDING_ACTIONPREFIX_QUEUED_STATE_CHANGE "queued-state-change-"
 #define NM_PENDING_ACTIONPREFIX_ACTIVATION          "activation-"
 
-const char *nm_device_state_queued_state_to_str(NMDeviceState state);
+const char *nm_device_state_queued_state_to_string(NMDeviceState state);
 
 /*****************************************************************************/
 
@@ -52,7 +52,7 @@ typedef enum {
     NM_DEVICE_MTU_SOURCE_CONNECTION,
 } NMDeviceMtuSource;
 
-const char *nm_device_mtu_source_to_str(NMDeviceMtuSource mtu_source);
+const char *nm_device_mtu_source_to_string(NMDeviceMtuSource mtu_source);
 
 /*****************************************************************************/
 
@@ -69,7 +69,7 @@ typedef enum _nm_packed {
     NM_DEVICE_SYS_IFACE_STATE_REMOVED,
 } NMDeviceSysIfaceState;
 
-const char *nm_device_sys_iface_state_to_str(NMDeviceSysIfaceState sys_iface_state);
+const char *nm_device_sys_iface_state_to_string(NMDeviceSysIfaceState sys_iface_state);
 
 /*****************************************************************************/
 
@@ -81,7 +81,7 @@ typedef enum {
     NM_DEVICE_IP_STATE_FAIL,
 } NMDeviceIPState;
 
-const char *nm_device_ip_state_to_str(NMDeviceIPState ip_state);
+const char *nm_device_ip_state_to_string(NMDeviceIPState ip_state);
 
 /*****************************************************************************/
 
