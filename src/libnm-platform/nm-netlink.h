@@ -67,18 +67,24 @@ struct nla_policy {
 /*****************************************************************************/
 
 /* static asserts that @tb and @policy are suitable arguments to nla_parse(). */
-#define _nl_static_assert_tb(tb, policy)                                                      \
-    G_STMT_START                                                                              \
-    {                                                                                         \
-        G_STATIC_ASSERT_EXPR(G_N_ELEMENTS(tb) > 0);                                           \
-                                                                                              \
+#if _NM_CC_SUPPORT_GENERIC
+#define _nl_static_assert_tb(tb, policy)                                                   \
+    G_STMT_START                                                                           \
+    {                                                                                      \
+        G_STATIC_ASSERT_EXPR(G_N_ELEMENTS(tb) > 0);                                        \
+                                                                                           \
         /* We allow @policy to be either a C array or NULL. The sizeof()
-         * must either match the expected array size or the sizeof(NULL),
-         * but not both. */                      \
-        G_STATIC_ASSERT_EXPR((sizeof(policy) == G_N_ELEMENTS(tb) * sizeof(struct nla_policy)) \
-                             ^ (sizeof(policy) == sizeof(NULL)));                             \
-    }                                                                                         \
+         * must either match the expected array size or we check that
+         * "policy" has typeof(NULL). This isn't a perfect compile time check,
+         * but good enough. */                   \
+        G_STATIC_ASSERT_EXPR(                                                              \
+            _Generic((policy), typeof(NULL) : 1, default                                   \
+                     : (sizeof(policy) == G_N_ELEMENTS(tb) * sizeof(struct nla_policy)))); \
+    }                                                                                      \
     G_STMT_END
+#else
+#define _nl_static_assert_tb(tb, policy) G_STATIC_ASSERT_EXPR(G_N_ELEMENTS(tb) > 0)
+#endif
 
 /*****************************************************************************/
 
