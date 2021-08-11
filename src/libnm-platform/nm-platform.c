@@ -1748,19 +1748,18 @@ nm_platform_link_get_address(NMPlatform *self, int ifindex, size_t *length)
  * address.
  */
 gboolean
-nm_platform_link_get_permanent_address(NMPlatform *self, int ifindex, guint8 *buf, size_t *length)
+nm_platform_link_get_permanent_address(NMPlatform *self, int ifindex, NMPLinkAddress *out_address)
 {
     _CHECK_SELF(self, klass, FALSE);
 
-    if (length)
-        *length = 0;
+    if (out_address)
+        out_address->len = 0;
 
     g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(buf, FALSE);
-    g_return_val_if_fail(length, FALSE);
+    g_return_val_if_fail(out_address, FALSE);
 
     if (klass->link_get_permanent_address)
-        return klass->link_get_permanent_address(self, ifindex, buf, length);
+        return klass->link_get_permanent_address(self, ifindex, out_address);
     return FALSE;
 }
 

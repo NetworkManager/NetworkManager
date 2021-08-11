@@ -7636,14 +7636,21 @@ nla_put_failure:
 }
 
 static gboolean
-link_get_permanent_address(NMPlatform *platform, int ifindex, guint8 *buf, size_t *length)
+link_get_permanent_address(NMPlatform *platform, int ifindex, NMPLinkAddress *out_address)
 {
     nm_auto_pop_netns NMPNetns *netns = NULL;
+    guint8                      buffer[_NM_UTILS_HWADDR_LEN_MAX];
+    gsize                       len;
 
     if (!nm_platform_netns_push(platform, &netns))
         return FALSE;
 
-    return nmp_utils_ethtool_get_permanent_address(ifindex, buf, length);
+    if (!nmp_utils_ethtool_get_permanent_address(ifindex, buffer, &len))
+        return FALSE;
+    nm_assert(len <= _NM_UTILS_HWADDR_LEN_MAX);
+    memcpy(out_address->data, buffer, len);
+    out_address->len = len;
+    return TRUE;
 }
 
 static int
