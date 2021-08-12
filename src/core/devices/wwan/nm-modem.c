@@ -727,7 +727,7 @@ ppp_stage3_ip_config_start(NMModem *            self,
 NMActStageReturn
 nm_modem_stage3_ip4_config_start(NMModem *            self,
                                  NMDevice *           device,
-                                 NMDeviceClass *      device_class,
+                                 gboolean *           out_autoip4,
                                  NMDeviceStateReason *out_failure_reason)
 {
     NMModemPrivate * priv;
@@ -740,7 +740,7 @@ nm_modem_stage3_ip4_config_start(NMModem *            self,
 
     g_return_val_if_fail(NM_IS_MODEM(self), NM_ACT_STAGE_RETURN_FAILURE);
     g_return_val_if_fail(NM_IS_DEVICE(device), NM_ACT_STAGE_RETURN_FAILURE);
-    g_return_val_if_fail(NM_IS_DEVICE_CLASS(device_class), NM_ACT_STAGE_RETURN_FAILURE);
+    nm_assert(out_autoip4 && !*out_autoip4);
 
     req = nm_device_get_act_request(device);
     g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
@@ -774,7 +774,8 @@ nm_modem_stage3_ip4_config_start(NMModem *            self,
         break;
     case NM_MODEM_IP_METHOD_AUTO:
         _LOGD("MODEM_IP_METHOD_AUTO");
-        ret = device_class->act_stage3_ip_config_start(device, AF_INET, NULL, out_failure_reason);
+        *out_autoip4 = TRUE;
+        ret          = NM_ACT_STAGE_RETURN_SUCCESS;
         break;
     default:
         _LOGI("IPv4 configuration disabled");

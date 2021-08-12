@@ -1004,21 +1004,21 @@ act_stage3_ip_config_start(NMDevice *           device,
                            gpointer *           out_config,
                            NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE(device);
+    NMDeviceBtPrivate *priv    = NM_DEVICE_BT_GET_PRIVATE(device);
+    gboolean           autoip4 = FALSE;
+    NMActStageReturn   ret;
 
-    nm_assert_addr_family(addr_family);
+    if (priv->connect_bt_type != NM_BT_CAPABILITY_DUN)
+        goto out_chain_up;
 
-    if (priv->connect_bt_type == NM_BT_CAPABILITY_DUN) {
-        if (addr_family == AF_INET) {
-            return nm_modem_stage3_ip4_config_start(priv->modem,
-                                                    device,
-                                                    NM_DEVICE_CLASS(nm_device_bt_parent_class),
-                                                    out_failure_reason);
-        } else {
-            return nm_modem_stage3_ip6_config_start(priv->modem, device, out_failure_reason);
-        }
-    }
+    if (!NM_IS_IPv4(addr_family))
+        return nm_modem_stage3_ip6_config_start(priv->modem, device, out_failure_reason);
 
+    ret = nm_modem_stage3_ip4_config_start(priv->modem, device, &autoip4, out_failure_reason);
+    if (ret != NM_ACT_STAGE_RETURN_SUCCESS || !autoip4)
+        return ret;
+
+out_chain_up:
     return NM_DEVICE_CLASS(nm_device_bt_parent_class)
         ->act_stage3_ip_config_start(device, addr_family, out_config, out_failure_reason);
 }
