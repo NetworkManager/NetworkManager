@@ -93,26 +93,33 @@ ppp_ifindex_set(NMPPPManager *ppp_manager, int ifindex, const char *iface, gpoin
 }
 
 static void
-ppp_ip4_config(NMPPPManager *ppp_manager, NMIP4Config *config, gpointer user_data)
+_ppp_ip4_config_handle(NMDevicePpp *self)
 {
-    NMDevice *          device = NM_DEVICE(user_data);
-    NMDevicePpp *       self   = NM_DEVICE_PPP(device);
+    NMDevice *          device = NM_DEVICE(self);
     NMDevicePppPrivate *priv   = NM_DEVICE_PPP_GET_PRIVATE(self);
 
-    _LOGT(LOGD_DEVICE | LOGD_PPP, "received IPv4 config from pppd");
+    if (!priv->ip4_config)
+        return;
 
-    if (nm_device_get_state(device) == NM_DEVICE_STATE_IP_CONFIG) {
-        if (nm_device_activate_ip4_state_in_conf(device)) {
-            nm_device_activate_schedule_ip_config_result(device,
-                                                         AF_INET,
-                                                         NM_IP_CONFIG_CAST(config));
-            return;
-        }
-    } else {
-        if (priv->ip4_config)
-            g_object_unref(priv->ip4_config);
-        priv->ip4_config = g_object_ref(config);
+    if (nm_device_get_state(device) == NM_DEVICE_STATE_IP_CONFIG
+        && nm_device_activate_ip4_state_in_conf(device)) {
+        nm_device_activate_schedule_ip_config_result(
+            device,
+            AF_INET,
+            NM_IP_CONFIG_CAST(g_steal_pointer(&priv->ip4_config)));
+        return;
     }
+}
+
+static void
+ppp_ip4_config(NMPPPManager *ppp_manager, NMIP4Config *config, gpointer user_data)
+{
+    NMDevicePpp *       self = NM_DEVICE_PPP(user_data);
+    NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
+
+    _LOGT(LOGD_DEVICE | LOGD_PPP, "received IPv4 config from pppd");
+    nm_g_object_ref_set(&priv->ip4_config, config);
+    _ppp_ip4_config_handle(self);
 }
 
 static gboolean
@@ -193,6 +200,15 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
+static gboolean
+_schedule_ip_config_result(gpointer user_data)
+{
+    gs_unref_object NMDevicePpp *self = user_data;
+
+    _ppp_ip4_config_handle(self);
+    return G_SOURCE_REMOVE;
+}
+
 static NMActStageReturn
 act_stage3_ip_config_start(NMDevice *           device,
                            int                  addr_family,
@@ -203,13 +219,8 @@ act_stage3_ip_config_start(NMDevice *           device,
         NMDevicePpp *       self = NM_DEVICE_PPP(device);
         NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
 
-        if (priv->ip4_config) {
-            if (out_config)
-                *out_config = g_steal_pointer(&priv->ip4_config);
-            else
-                g_clear_object(&priv->ip4_config);
-            return NM_ACT_STAGE_RETURN_SUCCESS;
-        }
+        if (priv->ip4_config)
+            nm_g_idle_add(_schedule_ip_config_result, g_object_ref(self));
 
         /* Wait IPCP termination */
         return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -256,6 +267,8 @@ deactivate(NMDevice *device)
         nm_ppp_manager_stop(priv->ppp_manager, NULL, NULL, NULL);
         g_clear_object(&priv->ppp_manager);
     }
+
+    g_clear_object(&priv->ip4_config);
 }
 
 static void
