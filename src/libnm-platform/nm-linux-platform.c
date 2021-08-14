@@ -7636,7 +7636,7 @@ nla_put_failure:
 }
 
 static gboolean
-link_get_permanent_address(NMPlatform *platform, int ifindex, NMPLinkAddress *out_address)
+link_get_permanent_address_ethtool(NMPlatform *platform, int ifindex, NMPLinkAddress *out_address)
 {
     nm_auto_pop_netns NMPNetns *netns = NULL;
     guint8                      buffer[_NM_UTILS_HWADDR_LEN_MAX];
@@ -9660,13 +9660,13 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->link_set_user_ipv6ll_enabled = link_set_user_ipv6ll_enabled;
     platform_class->link_set_token               = link_set_token;
 
-    platform_class->link_set_address            = link_set_address;
-    platform_class->link_get_permanent_address  = link_get_permanent_address;
-    platform_class->link_set_mtu                = link_set_mtu;
-    platform_class->link_set_name               = link_set_name;
-    platform_class->link_set_sriov_params_async = link_set_sriov_params_async;
-    platform_class->link_set_sriov_vfs          = link_set_sriov_vfs;
-    platform_class->link_set_bridge_vlans       = link_set_bridge_vlans;
+    platform_class->link_set_address                   = link_set_address;
+    platform_class->link_get_permanent_address_ethtool = link_get_permanent_address_ethtool;
+    platform_class->link_set_mtu                       = link_set_mtu;
+    platform_class->link_set_name                      = link_set_name;
+    platform_class->link_set_sriov_params_async        = link_set_sriov_params_async;
+    platform_class->link_set_sriov_vfs                 = link_set_sriov_vfs;
+    platform_class->link_set_bridge_vlans              = link_set_bridge_vlans;
 
     platform_class->link_get_physical_port_id = link_get_physical_port_id;
     platform_class->link_get_dev_id           = link_get_dev_id;

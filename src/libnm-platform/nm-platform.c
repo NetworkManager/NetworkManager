@@ -1737,7 +1737,7 @@ nm_platform_link_get_address(NMPlatform *self, int ifindex, size_t *length)
 }
 
 /**
- * nm_platform_link_get_permanent_address:
+ * nm_platform_link_get_permanent_address_ethtool:
  * @self: platform instance
  * @ifindex: Interface index
  * @buf: buffer of at least %_NM_UTILS_HWADDR_LEN_MAX bytes, on success
@@ -1748,7 +1748,9 @@ nm_platform_link_get_address(NMPlatform *self, int ifindex, size_t *length)
  * address.
  */
 gboolean
-nm_platform_link_get_permanent_address(NMPlatform *self, int ifindex, NMPLinkAddress *out_address)
+nm_platform_link_get_permanent_address_ethtool(NMPlatform *    self,
+                                               int             ifindex,
+                                               NMPLinkAddress *out_address)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -1758,8 +1760,8 @@ nm_platform_link_get_permanent_address(NMPlatform *self, int ifindex, NMPLinkAdd
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(out_address, FALSE);
 
-    if (klass->link_get_permanent_address)
-        return klass->link_get_permanent_address(self, ifindex, out_address);
+    if (klass->link_get_permanent_address_ethtool)
+        return klass->link_get_permanent_address_ethtool(self, ifindex, out_address);
     return FALSE;
 }
 
