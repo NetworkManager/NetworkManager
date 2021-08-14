@@ -17132,9 +17132,9 @@ nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze)
         return;
     }
 
-    success_read = nm_platform_link_get_permanent_address_ethtool(nm_device_get_platform(self),
-                                                                  ifindex,
-                                                                  &cached_hw_addr_perm);
+    success_read = nm_platform_link_get_permanent_address(nm_device_get_platform(self),
+                                                          pllink,
+                                                          &cached_hw_addr_perm);
     if (success_read && priv->hw_addr_len == cached_hw_addr_perm.len) {
         priv->hw_addr_perm_fake = FALSE;
         priv->hw_addr_perm =

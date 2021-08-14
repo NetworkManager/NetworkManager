@@ -1766,6 +1766,23 @@ nm_platform_link_get_permanent_address_ethtool(NMPlatform *    self,
 }
 
 gboolean
+nm_platform_link_get_permanent_address(NMPlatform *          self,
+                                       const NMPlatformLink *plink,
+                                       NMPLinkAddress *      out_address)
+{
+    _CHECK_SELF(self, klass, FALSE);
+    nm_assert(out_address);
+
+    if (!plink)
+        return FALSE;
+    if (plink->l_perm_address.len > 0) {
+        *out_address = plink->l_perm_address;
+        return TRUE;
+    }
+    return nm_platform_link_get_permanent_address_ethtool(self, plink->ifindex, out_address);
+}
+
+gboolean
 nm_platform_link_supports_carrier_detect(NMPlatform *self, int ifindex)
 {
     _CHECK_SELF(self, klass, FALSE);

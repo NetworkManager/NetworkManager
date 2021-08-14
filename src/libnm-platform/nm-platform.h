@@ -1866,6 +1866,9 @@ gboolean nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, NMUtilsI
 gboolean nm_platform_link_get_permanent_address_ethtool(NMPlatform *    self,
                                                         int             ifindex,
                                                         NMPLinkAddress *out_address);
+gboolean nm_platform_link_get_permanent_address(NMPlatform *          self,
+                                                const NMPlatformLink *plink,
+                                                NMPLinkAddress *      out_address);
 int nm_platform_link_set_address(NMPlatform *self, int ifindex, const void *address, size_t length);
 int nm_platform_link_set_mtu(NMPlatform *self, int ifindex, guint32 mtu);
 gboolean nm_platform_link_set_name(NMPlatform *self, int ifindex, const char *name);
