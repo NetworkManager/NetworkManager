@@ -5287,7 +5287,12 @@ test_write_wired_match(void)
     s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
     nm_connection_add_setting(connection, NM_SETTING(s_ip6));
 
-    g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
+    g_object_set(s_ip6,
+                 NM_SETTING_IP_CONFIG_METHOD,
+                 NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+                 NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                 (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+                 NULL);
 
     /* Match setting */
     s_match = (NMSettingMatch *) nm_setting_match_new();
@@ -5480,7 +5485,12 @@ test_write_ip6_disabled(void)
 
     s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
     nm_connection_add_setting(connection, NM_SETTING(s_ip6));
-    g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_DISABLED, NULL);
+    g_object_set(s_ip6,
+                 NM_SETTING_IP_CONFIG_METHOD,
+                 NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                 NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                 (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+                 NULL);
 
     nmtst_assert_connection_verifies(connection);
 
@@ -5755,6 +5765,8 @@ test_write_wired_static_routes(void)
                  NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                  NM_SETTING_IP_CONFIG_MAY_FAIL,
                  TRUE,
+                 NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                 (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
                  NULL);
 
     nmtst_assert_connection_verifies(connection);
@@ -5834,6 +5846,8 @@ test_write_wired_dhcp_8021x_peap_mschapv2(void)
                  NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                  NM_SETTING_IP_CONFIG_MAY_FAIL,
                  TRUE,
+                 NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                 (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
                  NULL);
 
     /* 802.1x setting */
@@ -6331,6 +6345,8 @@ test_write_wifi_open(void)
                  NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                  NM_SETTING_IP_CONFIG_MAY_FAIL,
                  TRUE,
+                 NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                 (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
                  NULL);
 
     nmtst_assert_connection_verifies(connection);
@@ -6498,6 +6514,8 @@ test_write_wifi_wep(void)
                  NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                  NM_SETTING_IP_CONFIG_MAY_FAIL,
                  TRUE,
+                 NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                 (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
                  NULL);
 
     nmtst_assert_connection_verifies(connection);
@@ -7781,6 +7799,8 @@ test_write_wifi_wpa_then_open(void)
                  NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                  NM_SETTING_IP_CONFIG_MAY_FAIL,
                  TRUE,
+                 NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                 (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
                  NULL);
 
     nmtst_assert_connection_verifies(connection);
@@ -7904,6 +7924,8 @@ test_write_wifi_wpa_then_wep_with_perms(void)
                  NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                  NM_SETTING_IP_CONFIG_MAY_FAIL,
                  TRUE,
+                 NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                 (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
                  NULL);
 
     nmtst_assert_connection_verifies(connection);
@@ -8303,6 +8325,8 @@ test_write_wifi_wep_agent_keys(void)
                  NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                  NM_SETTING_IP_CONFIG_MAY_FAIL,
                  TRUE,
+                 NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                 (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
                  NULL);
 
     /* Wifi setting */
