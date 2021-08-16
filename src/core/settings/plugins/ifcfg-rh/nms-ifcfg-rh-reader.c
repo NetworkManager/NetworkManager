@@ -2250,6 +2250,7 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
     gboolean                           ip6_privacy   = FALSE, ip6_privacy_prefer_public_ip;
     NMSettingIP6ConfigPrivacy          ip6_privacy_val;
     guint32                            route_table;
+    gboolean                           is_disabled;
 
     s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
 
@@ -2376,10 +2377,9 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                  NULL);
 
     /* Don't bother to read IP, DNS and routes when IPv6 is disabled */
-    if (NM_IN_STRSET(method,
-                     NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
-                     NM_SETTING_IP6_CONFIG_METHOD_DISABLED))
-        return NM_SETTING(g_steal_pointer(&s_ip6));
+    is_disabled = NM_IN_STRSET(method,
+                               NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
+                               NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
 
     nm_clear_g_free(&value);
     v = svGetValueStr(ifcfg, "DHCPV6_DUID", &value);
@@ -2439,15 +2439,23 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                       NULL);
 
     list = nm_strsplit_set(value, " ");
-    for (iter = list, i = 0; iter && *iter; iter++, i++) {
-        NMIPAddress *addr = NULL;
+    if (list) {
+        if (is_disabled)
+            PARSE_WARNING("ignore IPv6 addresses with method disabled/ignore");
+        else {
+            for (iter = list, i = 0; *iter; iter++, i++) {
+                nm_auto_unref_ip_address NMIPAddress *addr = NULL;
 
-        if (!parse_full_ip6_address(ifcfg, *iter, i, &addr, error))
-            return NULL;
+                if (!parse_full_ip6_address(ifcfg, *iter, i, &addr, is_disabled ? NULL : error)) {
+                    if (is_disabled)
+                        break;
+                    return NULL;
+                }
 
-        if (!nm_setting_ip_config_add_address(s_ip6, addr))
-            PARSE_WARNING("duplicate IP6 address");
-        nm_ip_address_unref(addr);
+                if (!nm_setting_ip_config_add_address(s_ip6, addr))
+                    PARSE_WARNING("duplicate IP6 address");
+            }
+        }
     }
 
     /* Gateway */
@@ -2463,18 +2471,20 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
         }
         if (v) {
             char *ptr;
+
             if ((ptr = strchr(v, '%')) != NULL)
                 *ptr = '\0'; /* remove %interface prefix if present */
             if (!nm_utils_ipaddr_is_valid(AF_INET6, v)) {
-                g_set_error(error,
-                            NM_SETTINGS_ERROR,
-                            NM_SETTINGS_ERROR_INVALID_CONNECTION,
-                            "Invalid IP6 address '%s'",
-                            v);
-                return NULL;
-            }
-
-            g_object_set(s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, v, NULL);
+                if (!is_disabled) {
+                    g_set_error(error,
+                                NM_SETTINGS_ERROR,
+                                NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                                "Invalid IP6 address '%s'",
+                                v);
+                    return NULL;
+                }
+            } else
+                g_object_set(s_ip6, NM_SETTING_IP_CONFIG_GATEWAY, v, NULL);
         }
     }
 
@@ -2508,11 +2518,17 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
             break;
 
         if (nm_utils_ipaddr_is_valid(AF_INET6, v)) {
+            if (is_disabled) {
+                PARSE_WARNING("ignore DNS server addresses with method disabled/ignore");
+                break;
+            }
             if (!nm_setting_ip_config_add_dns(s_ip6, v))
                 PARSE_WARNING("duplicate DNS server %s", tag);
         } else if (nm_utils_ipaddr_is_valid(AF_INET, v)) {
             /* Ignore IPv4 addresses */
         } else {
+            if (is_disabled)
+                continue;
             g_set_error(error,
                         NM_SETTINGS_ERROR,
                         NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -2541,9 +2557,13 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
 
         searches = nm_strsplit_set(v, " ");
         if (searches) {
-            for (iter = searches; *iter; iter++) {
-                if (!nm_setting_ip_config_add_dns_search(s_ip6, *iter))
-                    PARSE_WARNING("duplicate DNS domain '%s'", *iter);
+            if (is_disabled) {
+                PARSE_WARNING("ignore IPV6_DOMAIN with method disabled/ignore");
+            } else {
+                for (iter = searches; *iter; iter++) {
+                    if (!nm_setting_ip_config_add_dns_search(s_ip6, *iter))
+                        PARSE_WARNING("duplicate DNS domain '%s'", *iter);
+                }
             }
         }
     }

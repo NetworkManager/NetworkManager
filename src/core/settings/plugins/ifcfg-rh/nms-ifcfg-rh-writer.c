@@ -2991,11 +2991,9 @@ write_ip6_setting(NMConnection *connection, shvarFile *ifcfg, GString **out_rout
     g_assert(value);
     if (!strcmp(value, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
         svSetValueStr(ifcfg, "IPV6INIT", "no");
-        return;
     } else if (!strcmp(value, NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
         svSetValueStr(ifcfg, "IPV6_DISABLED", "yes");
         svSetValueStr(ifcfg, "IPV6INIT", "no");
-        return;
     } else if (!strcmp(value, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
         svSetValueStr(ifcfg, "IPV6INIT", "yes");
         svSetValueStr(ifcfg, "IPV6_AUTOCONF", "yes");
