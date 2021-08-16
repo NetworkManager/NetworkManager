@@ -1974,26 +1974,27 @@ make_ip4_setting(shvarFile *ifcfg,
         /* DNS servers
          * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
          */
-        for (i = 1; i <= 10; i++) {
+        for (i = 1; i < 10000; i++) {
             char tag[256];
 
             numbered_tag(tag, "DNS", i);
             nm_clear_g_free(&value);
             v = svGetValueStr(ifcfg, tag, &value);
-            if (v) {
-                if (nm_utils_ipaddr_is_valid(AF_INET, v)) {
-                    if (!nm_setting_ip_config_add_dns(s_ip4, v))
-                        PARSE_WARNING("duplicate DNS server %s", tag);
-                } else if (nm_utils_ipaddr_is_valid(AF_INET6, v)) {
-                    /* Ignore IPv6 addresses */
-                } else {
-                    g_set_error(error,
-                                NM_SETTINGS_ERROR,
-                                NM_SETTINGS_ERROR_INVALID_CONNECTION,
-                                "Invalid DNS server address '%s'",
-                                v);
-                    return NULL;
-                }
+            if (!v)
+                break;
+
+            if (nm_utils_ipaddr_is_valid(AF_INET, v)) {
+                if (!nm_setting_ip_config_add_dns(s_ip4, v))
+                    PARSE_WARNING("duplicate DNS server %s", tag);
+            } else if (nm_utils_ipaddr_is_valid(AF_INET6, v)) {
+                /* Ignore IPv6 addresses */
+            } else {
+                g_set_error(error,
+                            NM_SETTINGS_ERROR,
+                            NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                            "Invalid DNS server address '%s'",
+                            v);
+                return NULL;
             }
         }
 
@@ -2497,16 +2498,14 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
     /* DNS servers
      * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
      */
-    for (i = 1; i <= 10; i++) {
+    for (i = 1; i < 10000; i++) {
         char tag[256];
 
         numbered_tag(tag, "DNS", i);
         nm_clear_g_free(&value);
         v = svGetValueStr(ifcfg, tag, &value);
-        if (!v) {
-            /* all done */
+        if (!v)
             break;
-        }
 
         if (nm_utils_ipaddr_is_valid(AF_INET6, v)) {
             if (!nm_setting_ip_config_add_dns(s_ip6, v))
