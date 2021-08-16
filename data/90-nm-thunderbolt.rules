@@ -1,7 +1,7 @@
 # Do not modify this file, it will get overwritten on updates.
 # To override or extend the rules place a file in /etc/udev/rules.d
 
-ACTION!="add", GOTO="nm_thunderbolt_end"
+ACTION!="add|change|move", GOTO="nm_thunderbolt_end"
 
 # Load he thunderbolt-net driver if we a device of type thunderbolt_xdomain
 # is added.

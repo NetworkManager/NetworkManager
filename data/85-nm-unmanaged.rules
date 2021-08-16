@@ -2,7 +2,7 @@
 # To override or extend the rules place a file in /etc/udev/rules.d
 
 SUBSYSTEM!="net", GOTO="nm_unmanaged_end"
-ACTION!="add|change", GOTO="nm_unmanaged_end"
+ACTION!="add|change|move", GOTO="nm_unmanaged_end"
 
 # VirtualBox host networking. Out-of-tree driver that looks like an ordinary
 # Ethernet. No parent device (lives in /virtual/), no support for ethtool
