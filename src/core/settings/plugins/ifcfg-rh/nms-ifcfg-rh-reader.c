@@ -1987,7 +1987,11 @@ make_ip4_setting(shvarFile *ifcfg,
                 } else if (nm_utils_ipaddr_is_valid(AF_INET6, v)) {
                     /* Ignore IPv6 addresses */
                 } else {
-                    PARSE_WARNING("invalid DNS server address %s", v);
+                    g_set_error(error,
+                                NM_SETTINGS_ERROR,
+                                NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                                "Invalid DNS server address '%s'",
+                                v);
                     return NULL;
                 }
             }
@@ -2510,7 +2514,11 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
         } else if (nm_utils_ipaddr_is_valid(AF_INET, v)) {
             /* Ignore IPv4 addresses */
         } else {
-            PARSE_WARNING("invalid DNS server address %s", v);
+            g_set_error(error,
+                        NM_SETTINGS_ERROR,
+                        NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                        "Invalid DNS server address '%s'",
+                        v);
             return NULL;
         }
     }
