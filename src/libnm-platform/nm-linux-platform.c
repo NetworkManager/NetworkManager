@@ -2305,7 +2305,7 @@ _wireguard_get_device_cb(struct nl_msg *msg, void *arg)
 {
     static const struct nla_policy policy[] = {
         [WGDEVICE_A_IFINDEX]     = {.type = NLA_U32},
-        [WGDEVICE_A_IFNAME]      = {.type = NLA_NUL_STRING, .maxlen = IFNAMSIZ},
+        [WGDEVICE_A_IFNAME]      = {.type = NLA_STRING, .maxlen = IFNAMSIZ},
         [WGDEVICE_A_PRIVATE_KEY] = {},
         [WGDEVICE_A_PUBLIC_KEY]  = {},
         [WGDEVICE_A_FLAGS]       = {.type = NLA_U32},

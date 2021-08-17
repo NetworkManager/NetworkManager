@@ -35,15 +35,7 @@ enum {
     NLA_U64,    /* 64 bit integer */
     NLA_STRING, /* NUL terminated character string */
     NLA_FLAG,   /* Flag */
-    NLA_MSECS,  /* Micro seconds (64bit) */
     NLA_NESTED, /* Nested attributes */
-    NLA_NESTED_COMPAT,
-    NLA_NUL_STRING,
-    NLA_BINARY,
-    NLA_S8,
-    NLA_S16,
-    NLA_S32,
-    NLA_S64,
     __NLA_TYPE_MAX,
 };
 
@@ -63,10 +55,10 @@ const char *nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
 
 struct nla_policy {
     /* Type of attribute or NLA_UNSPEC */
-    uint16_t type;
+    uint8_t type;
 
     /* Minimal length of payload required */
-    uint16_t minlen;
+    uint8_t minlen;
 
     /* Maximal length of payload allowed */
     uint16_t maxlen;
@@ -75,18 +67,24 @@ struct nla_policy {
 /*****************************************************************************/
 
 /* static asserts that @tb and @policy are suitable arguments to nla_parse(). */
-#define _nl_static_assert_tb(tb, policy)                                                      \
-    G_STMT_START                                                                              \
-    {                                                                                         \
-        G_STATIC_ASSERT_EXPR(G_N_ELEMENTS(tb) > 0);                                           \
-                                                                                              \
+#if _NM_CC_SUPPORT_GENERIC
+#define _nl_static_assert_tb(tb, policy)                                                   \
+    G_STMT_START                                                                           \
+    {                                                                                      \
+        G_STATIC_ASSERT_EXPR(G_N_ELEMENTS(tb) > 0);                                        \
+                                                                                           \
         /* We allow @policy to be either a C array or NULL. The sizeof()
-         * must either match the expected array size or the sizeof(NULL),
-         * but not both. */                      \
-        G_STATIC_ASSERT_EXPR((sizeof(policy) == G_N_ELEMENTS(tb) * sizeof(struct nla_policy)) \
-                             ^ (sizeof(policy) == sizeof(NULL)));                             \
-    }                                                                                         \
+         * must either match the expected array size or we check that
+         * "policy" has typeof(NULL). This isn't a perfect compile time check,
+         * but good enough. */                   \
+        G_STATIC_ASSERT_EXPR(                                                              \
+            _Generic((policy), typeof(NULL) : 1, default                                   \
+                     : (sizeof(policy) == G_N_ELEMENTS(tb) * sizeof(struct nla_policy)))); \
+    }                                                                                      \
     G_STMT_END
+#else
+#define _nl_static_assert_tb(tb, policy) G_STATIC_ASSERT_EXPR(G_N_ELEMENTS(tb) > 0)
+#endif
 
 /*****************************************************************************/
 
@@ -112,28 +110,24 @@ nla_padlen(int payload)
 
 struct nlattr *nla_reserve(struct nl_msg *msg, int attrtype, int attrlen);
 
-static inline int
+static inline uint16_t
 nla_len(const struct nlattr *nla)
 {
     nm_assert(nla);
     nm_assert(nla->nla_len >= NLA_HDRLEN);
 
-    return ((int) nla->nla_len) - NLA_HDRLEN;
+    return nla->nla_len - ((uint16_t) NLA_HDRLEN);
 }
 
 static inline int
 nla_type(const struct nlattr *nla)
 {
-    nm_assert(nla_len(nla) >= 0);
-
     return nla->nla_type & NLA_TYPE_MASK;
 }
 
 static inline void *
 nla_data(const struct nlattr *nla)
 {
-    nm_assert(nla_len(nla) >= 0);
-
     return &(((char *) nla)[NLA_HDRLEN]);
 }
 
@@ -219,9 +213,7 @@ nla_get_be64(const struct nlattr *nla)
 static inline char *
 nla_get_string(const struct nlattr *nla)
 {
-    nm_assert(nla_len(nla) >= 0);
-
-    return (char *) nla_data(nla);
+    return nla_data(nla);
 }
 
 size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize);

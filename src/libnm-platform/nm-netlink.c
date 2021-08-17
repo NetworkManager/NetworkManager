@@ -585,21 +585,21 @@ nla_nest_end(struct nl_msg *msg, struct nlattr *start)
     return _nest_end(msg, start, 0);
 }
 
-static const uint16_t nla_attr_minlen[NLA_TYPE_MAX + 1] = {
+static const uint8_t nla_attr_minlen[NLA_TYPE_MAX + 1] = {
     [NLA_U8]     = sizeof(uint8_t),
     [NLA_U16]    = sizeof(uint16_t),
     [NLA_U32]    = sizeof(uint32_t),
     [NLA_U64]    = sizeof(uint64_t),
     [NLA_STRING] = 1,
-    [NLA_FLAG]   = 0,
 };
 
 static int
 validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *policy)
 {
     const struct nla_policy *pt;
-    unsigned int             minlen = 0;
-    int                      type   = nla_type(nla);
+    uint8_t                  minlen;
+    uint16_t                 len;
+    int                      type = nla_type(nla);
 
     if (type < 0 || type > maxtype)
         return 0;
@@ -609,25 +609,30 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
     if (pt->type > NLA_TYPE_MAX)
         g_return_val_if_reached(-NME_BUG);
 
-    if (pt->minlen)
+    if (pt->minlen > 0)
         minlen = pt->minlen;
-    else if (pt->type != NLA_UNSPEC)
+    else
         minlen = nla_attr_minlen[pt->type];
 
-    if (nla_len(nla) < minlen)
+    len = nla_len(nla);
+
+    if (len < minlen)
         return -NME_UNSPEC;
 
-    if (pt->maxlen && nla_len(nla) > pt->maxlen)
+    if (pt->maxlen > 0 && len > pt->maxlen)
         return -NME_UNSPEC;
 
-    if (pt->type == NLA_STRING) {
-        const char *data;
+    switch (pt->type) {
+    case NLA_STRING:
+    {
+        const char *data = nla_data(nla);
 
         nm_assert(minlen > 0);
 
-        data = nla_data(nla);
-        if (data[nla_len(nla) - 1] != '\0')
+        if (data[len - 1u] != '\0')
             return -NME_UNSPEC;
+        break;
+    }
     }
 
     return 0;
