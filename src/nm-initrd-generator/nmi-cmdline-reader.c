@@ -1059,92 +1059,60 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 static void
 reader_parse_ethtool(Reader *reader, char *argument)
 {
-    NMConnection *  connection = NULL;
-    NMSettingWired *s_wired    = NULL;
-    const char *    read       = NULL;
-    const char *    interface  = NULL;
-    gboolean        autoneg    = FALSE;
-    guint           speed      = 0;
+    const char *    interface   = NULL;
+    NMConnection *  connection  = NULL;
+    NMSettingWired *s_wired     = NULL;
+    const char *    autoneg_str = NULL;
+    gboolean        autoneg     = FALSE;
+    const char *    speed_str   = NULL;
+    guint           speed       = 0;
 
     interface = get_word(&argument, ':');
     if (!interface) {
         _LOGW(LOGD_CORE, "Impossible to set rd.ethtool options: invalid format");
         return;
     }
-    if (!*argument)
-        return;
 
-    read = get_word(&argument, ':');
-    if (read) {
-        autoneg = _nm_utils_ascii_str_to_bool(read, -1);
+    if (!*argument) {
+        _LOGW(LOGD_CORE, "Could not find rd.ethtool options to set");
+        return;
+    }
+
+    connection = reader_get_connection(reader, interface, NM_SETTING_WIRED_SETTING_NAME, TRUE);
+    s_wired    = nm_connection_get_setting_wired(connection);
+
+    autoneg_str = get_word(&argument, ':');
+    if (autoneg_str) {
+        autoneg = _nm_utils_ascii_str_to_bool(autoneg_str, -1);
         if (autoneg == -1)
-            _LOGW(LOGD_CORE, "rd.ethtool autoneg was not set, invalid value");
-        else {
-            connection =
-                reader_get_connection(reader, interface, NM_SETTING_WIRED_SETTING_NAME, TRUE);
-            s_wired = nm_connection_get_setting_wired(connection);
-            g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, autoneg, NULL);
-        }
-    }
-    if (!*argument)
-        return;
-
-    read = get_word(&argument, ':');
-    if (read) {
-        speed = _nm_utils_ascii_str_to_int64(read, 10, 0, G_MAXUINT32, -1);
-        if (speed == -1) {
             _LOGW(LOGD_CORE,
-                  "rd.ethtool speed was not set, invalid value. Then, duplex was disregarded.");
-            /* Duplex does not need to be evaluated after, because it can't be set without speed value */
-            return;
-        } else {
-            connection =
-                reader_get_connection(reader, interface, NM_SETTING_WIRED_SETTING_NAME, TRUE);
-            s_wired = nm_connection_get_setting_wired(connection);
-            /* duplex option is available for legacy purposes */
-            /* speed must be always set having duplex set, otherwise it will fail in verifications */
-
-            if (*argument) {
-                /* duplex value was informed, and has a valid value */
-                if (NM_IN_STRSET(argument, "half", "full"))
-                    g_object_set(s_wired,
-                                 NM_SETTING_WIRED_SPEED,
-                                 speed,
-                                 NM_SETTING_WIRED_DUPLEX,
-                                 argument,
-                                 NULL);
-
-                /* duplex value was informed, and does not have a valid value */
-                else {
-                    _LOGW(LOGD_CORE,
-                          "rd.ethtool.duplex has a invalid format, duplex was set as default:full");
-                    g_object_set(s_wired,
-                                 NM_SETTING_WIRED_SPEED,
-                                 speed,
-                                 NM_SETTING_WIRED_DUPLEX,
-                                 "full",
-                                 NULL);
-                }
-            } else {
-                /* duplex value was not informed, then it will have default 'full' value */
-                g_object_set(s_wired,
-                             NM_SETTING_WIRED_SPEED,
-                             speed,
-                             NM_SETTING_WIRED_DUPLEX,
-                             "full",
-                             NULL);
-            }
-
-            /* Duplex does not need to be evaluated alone - it can't be set without speed value */
-            return;
-        }
+                  "Invalid value for rd.ethtool.autoneg, rd.ethtool.autoneg was not set");
+        else
+            g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, autoneg, NULL);
     }
     if (!*argument)
         return;
-    else {
-        /* Duplex does not need to be evaluated, because it can't be set without speed value */
-        _LOGW(LOGD_CORE, "rd.ethtool.duplex needs rd.ethtool.speed value to be set");
+
+    speed_str = get_word(&argument, ':');
+    if (speed_str) {
+        speed = _nm_utils_ascii_str_to_int64(speed_str, 10, 0, G_MAXUINT32, -1);
+        if (speed == -1)
+            _LOGW(LOGD_CORE, "Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
+        else
+            g_object_set(s_wired,
+                         NM_SETTING_WIRED_SPEED,
+                         speed,
+                         NM_SETTING_WIRED_DUPLEX,
+                         "full",
+                         NULL);
     }
+
+    if (!*argument)
+        return;
+    else
+        _LOGW(LOGD_CORE,
+              "Invalid extra argument '%s' for rd.ethtool, this value was not set",
+              argument);
 }
 
 static void
