@@ -147,6 +147,7 @@
             <member><option>nameserver</option></member>
             <member><option>rd.peerdns</option></member>
             <member><option>rd.bootif</option></member>
+            <member><option>rd.ethtool</option></member>
             <member><option>rd.net.timeout.dhcp</option></member>
             <member><option>rd.net.timeout.carrier</option></member>
             <member><option>rd.znet</option></member>
@@ -193,6 +194,21 @@
         partition key <replaceable>PKEY</replaceable>. The partition
         key must be in hexadecimal notation without leading "0x", for
         example "ib.pkey=ib0.8004".
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>NetworkManager supports the 
+        <option>rd.ethtool</option>=<replaceable>INTERFACE</replaceable>:<replaceable>AUTONEG</replaceable>:<replaceable>SPEED</replaceable> 
+        kernel command line option to set up ethtool NIC configuration parameters 
+        <replaceable>AUTONEG</replaceable> and <replaceable>SPEED</replaceable>. 
+        The <replaceable>INTERFACE</replaceable> being configured must be 
+        specified, and the other parameters are optional and can be left blank. 
+        When <replaceable>SPEED</replaceable> is set, duplex mode is 
+        automatically set to 'full'. <replaceable>INTERFACE</replaceable> 
+        accepts string values, <replaceable>AUTONEG</replaceable> accepts 
+        boolean values (true and false / on or off / 0 or 1), and 
+        <replaceable>SPEED</replaceable> accepts positive integer values.
         </para>
       </listitem>
     </itemizedlist>
