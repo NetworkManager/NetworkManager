@@ -188,8 +188,8 @@ _assert_expected_content(NMConnection *connection, const char *filename, const c
         if (G_UNLIKELY(rewrite == 0)) {
             rewrite = (g_getenv("NMTST_IFCFG_RH_UPDATE_EXPECTED")
                        || nm_streq0(g_getenv("NM_TEST_REGENERATE"), "1"))
-                          ? -1
-                          : 1;
+                          ? 1
+                          : -1;
             if (!g_atomic_int_compare_and_exchange(&rewrite_static, 0, rewrite))
                 g_assert_not_reached();
         }
