@@ -316,7 +316,7 @@ nm_ip6_config_capture(NMDedupMultiIndex *       multi_idx,
 
     head_entry = nm_platform_lookup_object(platform, NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex);
     if (head_entry) {
-        nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
+        nmp_cache_iter_for_each_reverse (&iter, head_entry, &plobj) {
             if (!_nm_ip_config_add_obj(priv->multi_idx,
                                        &priv->idx_ip6_addresses_,
                                        ifindex,
@@ -328,11 +328,6 @@ nm_ip6_config_capture(NMDedupMultiIndex *       multi_idx,
                                        NULL))
                 nm_assert_not_reached();
         }
-        head_entry = nm_ip6_config_lookup_addresses(self);
-        nm_assert(head_entry);
-        nm_dedup_multi_head_entry_sort(head_entry,
-                                       sort_captured_addresses,
-                                       GINT_TO_POINTER(use_temporary));
         _notify_addresses(self);
     }
 
