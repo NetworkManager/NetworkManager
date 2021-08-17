@@ -120,4 +120,5 @@ ForEachMacros: ['c_list_for_each',
                 'nm_platform_iter_obj_for_each',
                 'nmp_cache_iter_for_each',
                 'nmp_cache_iter_for_each_link',
+                'nmp_cache_iter_for_each_reverse',
                 ]
