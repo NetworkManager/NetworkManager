@@ -352,8 +352,10 @@ nm_dedup_multi_iter_next(NMDedupMultiIter *iter)
 {
     g_return_val_if_fail(iter, FALSE);
 
-    if (!iter->_next)
+    if (!iter->_next) {
+        iter->current = NULL;
         return FALSE;
+    }
 
     /* we always look ahead for the next. This way, the user
      * may delete the current entry (but no other entries). */
@@ -370,8 +372,10 @@ nm_dedup_multi_iter_prev(NMDedupMultiIter *iter)
 {
     g_return_val_if_fail(iter, FALSE);
 
-    if (!iter->_prev)
+    if (!iter->_prev) {
+        iter->current = NULL;
         return FALSE;
+    }
 
     /* we always look ahead for the prev. This way, the user
      * may delete the current entry (but no other entries). */
