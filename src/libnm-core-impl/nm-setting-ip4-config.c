@@ -967,6 +967,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * format: a comma separated list of addresses
      * description: A list of IPv4 addresses and their prefix length. Multiple addresses
      * can be separated by comma. For example "192.168.1.5/24, 10.1.0.5/24".
+     * The addresses are listed in increasing priority, meaning the last address will
+     * be the primary address.
      * ---end---
      */
     _nm_properties_override_gobj(

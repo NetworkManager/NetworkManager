@@ -778,6 +778,18 @@ nmp_cache_iter_next(NMDedupMultiIter *iter, const NMPObject **out_obj)
 }
 
 static inline gboolean
+nmp_cache_iter_prev(NMDedupMultiIter *iter, const NMPObject **out_obj)
+{
+    gboolean has_prev;
+
+    has_prev = nm_dedup_multi_iter_prev(iter);
+    nm_assert(!has_prev || NMP_OBJECT_IS_VALID(iter->current->obj));
+    if (out_obj)
+        *out_obj = has_prev ? iter->current->obj : NULL;
+    return has_prev;
+}
+
+static inline gboolean
 nmp_cache_iter_next_link(NMDedupMultiIter *iter, const NMPlatformLink **out_obj)
 {
     gboolean has_next;
@@ -791,6 +803,9 @@ nmp_cache_iter_next_link(NMDedupMultiIter *iter, const NMPlatformLink **out_obj)
 
 #define nmp_cache_iter_for_each(iter, head, obj) \
     for (nm_dedup_multi_iter_init((iter), (head)); nmp_cache_iter_next((iter), (obj));)
+
+#define nmp_cache_iter_for_each_reverse(iter, head, obj) \
+    for (nm_dedup_multi_iter_init_reverse((iter), (head)); nmp_cache_iter_prev((iter), (obj));)
 
 #define nmp_cache_iter_for_each_link(iter, head, obj) \
     for (nm_dedup_multi_iter_init((iter), (head)); nmp_cache_iter_next_link((iter), (obj));)

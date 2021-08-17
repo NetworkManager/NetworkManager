@@ -309,8 +309,11 @@ guint nm_dedup_multi_index_dirty_remove_idx(NMDedupMultiIndex *  self,
 /*****************************************************************************/
 
 typedef struct _NMDedupMultiIter {
-    const CList *            _head;
-    const CList *            _next;
+    const CList *_head;
+    union {
+        const CList *_next;
+        const CList *_prev;
+    };
     const NMDedupMultiEntry *current;
 } NMDedupMultiIter;
 
@@ -329,13 +332,30 @@ nm_dedup_multi_iter_init(NMDedupMultiIter *iter, const NMDedupMultiHeadEntry *he
     iter->current = NULL;
 }
 
+static inline void
+nm_dedup_multi_iter_init_reverse(NMDedupMultiIter *iter, const NMDedupMultiHeadEntry *head)
+{
+    g_return_if_fail(iter);
+
+    if (head && !c_list_is_empty(&head->lst_entries_head)) {
+        iter->_head = &head->lst_entries_head;
+        iter->_prev = head->lst_entries_head.prev;
+    } else {
+        iter->_head = NULL;
+        iter->_prev = NULL;
+    }
+    iter->current = NULL;
+}
+
 static inline gboolean
 nm_dedup_multi_iter_next(NMDedupMultiIter *iter)
 {
     g_return_val_if_fail(iter, FALSE);
 
-    if (!iter->_next)
+    if (!iter->_next) {
+        iter->current = NULL;
         return FALSE;
+    }
 
     /* we always look ahead for the next. This way, the user
      * may delete the current entry (but no other entries). */
@@ -344,6 +364,26 @@ nm_dedup_multi_iter_next(NMDedupMultiIter *iter)
         iter->_next = NULL;
     else
         iter->_next = iter->_next->next;
+    return TRUE;
+}
+
+static inline gboolean
+nm_dedup_multi_iter_prev(NMDedupMultiIter *iter)
+{
+    g_return_val_if_fail(iter, FALSE);
+
+    if (!iter->_prev) {
+        iter->current = NULL;
+        return FALSE;
+    }
+
+    /* we always look ahead for the prev. This way, the user
+     * may delete the current entry (but no other entries). */
+    iter->current = c_list_entry(iter->_prev, NMDedupMultiEntry, lst_entries);
+    if (iter->_prev->prev == iter->_head)
+        iter->_prev = NULL;
+    else
+        iter->_prev = iter->_prev->prev;
     return TRUE;
 }
 
