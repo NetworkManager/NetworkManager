@@ -1,4 +1,17 @@
 ===============================================
+NetworkManager-1.32.10
+Overview of changes since NetworkManager-1.32.8
+===============================================
+
+* core: fix the order of IPv6 addresses changing on service restart.
+* initrd: add command line option to configure link autonegotiation
+  and speed.
+* ifcfg-rh: fix crash when parsing invalid DNS address.
+* ifcfg-rh: extend ifup/ifdown scripts to work with connection profile
+  names.
+* udev: also react to "move" (and "change") udev actions in our rules.
+
+===============================================
 NetworkManager-1.32.8
 Overview of changes since NetworkManager-1.32.6
 ===============================================
