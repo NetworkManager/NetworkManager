@@ -2685,12 +2685,11 @@ write_dns_setting(shvarFile *ifcfg, NMConnection *connection, int addr_family)
     }
 }
 
-static gboolean
+static void
 write_ip4_setting(NMConnection *connection,
                   shvarFile *   ifcfg,
                   shvarFile **  out_route_content_svformat,
-                  GString **    out_route_content,
-                  GError **     error)
+                  GString **    out_route_content)
 {
     NMSettingIPConfig *    s_ip4;
     const char *           value;
@@ -2713,7 +2712,7 @@ write_ip4_setting(NMConnection *connection,
 
     s_ip4 = nm_connection_get_setting_ip4_config(connection);
     if (!s_ip4)
-        return TRUE;
+        return;
 
     method = nm_setting_ip_config_get_method(s_ip4);
 
@@ -2722,7 +2721,7 @@ write_ip4_setting(NMConnection *connection,
         method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
     if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
-        return TRUE;
+        return;
 
     num = nm_setting_ip_config_get_num_addresses(s_ip4);
 
@@ -2881,8 +2880,6 @@ write_ip4_setting(NMConnection *connection,
         }
         svSetValueStr(ifcfg, "DHCP_REJECT_SERVERS", str->str);
     }
-
-    return TRUE;
 }
 
 static void
@@ -2968,11 +2965,8 @@ write_ip4_aliases(NMConnection *connection, const char *base_ifcfg_path)
     }
 }
 
-static gboolean
-write_ip6_setting(NMConnection *connection,
-                  shvarFile *   ifcfg,
-                  GString **    out_route6_content,
-                  GError **     error)
+static void
+write_ip6_setting(NMConnection *connection, shvarFile *ifcfg, GString **out_route6_content)
 {
     NMSettingIPConfig *           s_ip6;
     const char *                  value;
@@ -2991,17 +2985,17 @@ write_ip6_setting(NMConnection *connection,
 
     s_ip6 = nm_connection_get_setting_ip6_config(connection);
     if (!s_ip6)
-        return TRUE;
+        return;
 
     value = nm_setting_ip_config_get_method(s_ip6);
     g_assert(value);
     if (!strcmp(value, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
         svSetValueStr(ifcfg, "IPV6INIT", "no");
-        return TRUE;
+        return;
     } else if (!strcmp(value, NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {
         svSetValueStr(ifcfg, "IPV6_DISABLED", "yes");
         svSetValueStr(ifcfg, "IPV6INIT", "no");
-        return TRUE;
+        return;
     } else if (!strcmp(value, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
         svSetValueStr(ifcfg, "IPV6INIT", "yes");
         svSetValueStr(ifcfg, "IPV6_AUTOCONF", "yes");
@@ -3148,8 +3142,6 @@ write_ip6_setting(NMConnection *connection,
     write_res_options(ifcfg, s_ip6, "IPV6_RES_OPTIONS");
 
     NM_SET_OUT(out_route6_content, write_route_file(s_ip6));
-
-    return TRUE;
 }
 
 static void
@@ -3441,15 +3433,12 @@ do_write_construct(NMConnection *                  connection,
     } else
         route_ignore = FALSE;
 
-    if (!write_ip4_setting(connection,
-                           ifcfg,
-                           !route_ignore && route_path_is_svformat ? &route_content_svformat : NULL,
-                           !route_ignore && route_path_is_svformat ? NULL : &route_content,
-                           error))
-        return FALSE;
+    write_ip4_setting(connection,
+                      ifcfg,
+                      !route_ignore && route_path_is_svformat ? &route_content_svformat : NULL,
+                      !route_ignore && route_path_is_svformat ? NULL : &route_content);
 
-    if (!write_ip6_setting(connection, ifcfg, !route_ignore ? &route6_content : NULL, error))
-        return FALSE;
+    write_ip6_setting(connection, ifcfg, !route_ignore ? &route6_content : NULL);
 
     write_ip_routing_rules(connection, ifcfg, route_ignore);
 
