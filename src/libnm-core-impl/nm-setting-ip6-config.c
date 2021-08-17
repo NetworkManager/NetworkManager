@@ -1030,6 +1030,15 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *   that subnet.
      * ---end---
      */
+    /* ---nmcli---
+     * property: addresses
+     * format: a comma separated list of addresses
+     * description: A list of IPv6 addresses and their prefix length. Multiple addresses
+     * can be separated by comma. For example "2001:db8:85a3::8a2e:370:7334/64, 2001:db8:85a3::5/64".
+     * The addresses are listed in increasing priority, meaning the last address will
+     * be the primary address.
+     * ---end---
+     */
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
