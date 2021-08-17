@@ -2262,7 +2262,8 @@ test_carrier_timeout(void)
     g_assert_cmpint(carrier_timeout_sec, ==, 20);
 }
 
-/* Obs1.: this function is implemented as macro, and not as a function, to show g_assert() line on debug */
+/* Obs1.: this function is implemented as macro, and not as a function,
+ * to show the correct line in g_assert() debug */
 #define _ethtool_connection_check_and_get(connection)                                \
     ({                                                                               \
         NMSettingWired *_s_wired    = NULL;                                          \
@@ -2273,7 +2274,7 @@ test_carrier_timeout(void)
         g_assert(nm_connection_get_setting_ip4_config(_connection));                 \
         g_assert(nm_connection_get_setting_ip6_config(_connection));                 \
         _s_wired = nm_connection_get_setting_wired(_connection);                     \
-        g_assert(_s_wired);                                                          \
+        g_assert(NM_IS_SETTING_WIRED(_s_wired));                                     \
                                                                                      \
         _s_wired;                                                                    \
     })
@@ -2293,15 +2294,19 @@ test_rd_ethtool(void)
     g_hash_table_unref(connections);
     g_test_assert_expected_messages();
 
-    ARGV        = NM_MAKE_STRV("rd.ethtool=eth0");
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: Could not find rd.ethtool options to set");
     connections = _parse_cons(ARGV);
     g_assert_cmpint(g_hash_table_size(connections), ==, 0);
     g_hash_table_unref(connections);
+    g_test_assert_expected_messages();
 
-    ARGV        = NM_MAKE_STRV("rd.ethtool=eth0:");
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0:");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: Could not find rd.ethtool options to set");
     connections = _parse_cons(ARGV);
     g_assert_cmpint(g_hash_table_size(connections), ==, 0);
     g_hash_table_unref(connections);
+    g_test_assert_expected_messages();
 
     ARGV = NM_MAKE_STRV("rd.ethtool=::");
     NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
@@ -2347,46 +2352,47 @@ test_rd_ethtool(void)
     g_object_unref(connection);
 
     ARGV = NM_MAKE_STRV("rd.ethtool=eth0:randomstring");
-    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool autoneg was not set, invalid value");
+    NMTST_EXPECT_NM_WARN(
+        "cmdline-reader: Invalid value for rd.ethtool.autoneg, rd.ethtool.autoneg was not set");
     connections = _parse_cons(ARGV);
-    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_test_assert_expected_messages();
     g_hash_table_unref(connections);
 
     ARGV        = NM_MAKE_STRV("rd.ethtool=eth0::");
     connections = _parse_cons(ARGV);
-    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_hash_table_unref(connections);
 
     ARGV = NM_MAKE_STRV("rd.ethtool=eth0::astring");
-    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool speed was not set, invalid value. Then, "
-                         "duplex was disregarded.");
+    NMTST_EXPECT_NM_WARN(
+        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
     connections = _parse_cons(ARGV);
-    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_test_assert_expected_messages();
     g_hash_table_unref(connections);
 
     ARGV = NM_MAKE_STRV("rd.ethtool=eth0::1000000000000000000000000000000000000");
-    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool speed was not set, invalid value. Then, "
-                         "duplex was disregarded.");
+    NMTST_EXPECT_NM_WARN(
+        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
     connections = _parse_cons(ARGV);
-    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_test_assert_expected_messages();
     g_hash_table_unref(connections);
 
     ARGV = NM_MAKE_STRV("rd.ethtool=eth0::0.67");
-    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool speed was not set, invalid value. Then, "
-                         "duplex was disregarded.");
+    NMTST_EXPECT_NM_WARN(
+        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
     connections = _parse_cons(ARGV);
-    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_test_assert_expected_messages();
     g_hash_table_unref(connections);
 
     ARGV = NM_MAKE_STRV("rd.ethtool=eth0::-23");
-    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool speed was not set, invalid value. Then, "
-                         "duplex was disregarded.");
+    NMTST_EXPECT_NM_WARN(
+        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
     connections = _parse_cons(ARGV);
-    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_test_assert_expected_messages();
     g_hash_table_unref(connections);
 
@@ -2406,33 +2412,39 @@ test_rd_ethtool(void)
     g_assert_cmpstr(nm_setting_wired_get_duplex(s_wired), ==, "full");
     g_object_unref(connection);
 
-    ARGV = NM_MAKE_STRV("rd.ethtool=eth0:::half");
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0:::bogus");
     NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: rd.ethtool.duplex needs rd.ethtool.speed value to be set");
+        "cmdline-reader: Invalid extra argument 'bogus' for rd.ethtool, this value was not set");
     connections = _parse_cons(ARGV);
-    g_assert_cmpint(g_hash_table_size(connections), ==, 0);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 1);
     g_test_assert_expected_messages();
     g_hash_table_unref(connections);
 
-    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0::10:half");
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0::10:bogus");
+    NMTST_EXPECT_NM_WARN(
+        "cmdline-reader: Invalid extra argument 'bogus' for rd.ethtool, this value was not set");
     connection = _parse_con(ARGV, "eth0");
     s_wired    = _ethtool_connection_check_and_get(connection);
     g_assert(!nm_setting_wired_get_auto_negotiate(s_wired));
     g_assert_cmpint(nm_setting_wired_get_speed(s_wired), ==, 10);
-    g_assert_cmpstr(nm_setting_wired_get_duplex(s_wired), ==, "half");
+    g_assert_cmpstr(nm_setting_wired_get_duplex(s_wired), ==, "full");
+    g_test_assert_expected_messages();
     g_object_unref(connection);
 
-    ARGV       = NM_MAKE_STRV("rd.ethtool=eth0:on:100:full");
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0:on:100:bogus");
+    NMTST_EXPECT_NM_WARN(
+        "cmdline-reader: Invalid extra argument 'bogus' for rd.ethtool, this value was not set");
     connection = _parse_con(ARGV, "eth0");
     s_wired    = _ethtool_connection_check_and_get(connection);
     g_assert(nm_setting_wired_get_auto_negotiate(s_wired));
     g_assert_cmpint(nm_setting_wired_get_speed(s_wired), ==, 100);
     g_assert_cmpstr(nm_setting_wired_get_duplex(s_wired), ==, "full");
+    g_test_assert_expected_messages();
     g_object_unref(connection);
 
-    ARGV = NM_MAKE_STRV("rd.ethtool=eth0:on:100:anyvalue");
+    ARGV = NM_MAKE_STRV("rd.ethtool=eth0:on:100:bogus");
     NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: rd.ethtool.duplex has a invalid format, duplex was set as default:full");
+        "cmdline-reader: Invalid extra argument 'bogus' for rd.ethtool, this value was not set");
     connection = _parse_con(ARGV, "eth0");
     s_wired    = _ethtool_connection_check_and_get(connection);
     g_assert(nm_setting_wired_get_auto_negotiate(s_wired));
