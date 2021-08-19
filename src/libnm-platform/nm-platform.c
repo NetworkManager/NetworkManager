@@ -349,6 +349,12 @@ static const struct {
             .name                 = "IFLA_BR_VLAN_STATS_ENABLE",
             .desc                 = "IFLA_BR_VLAN_STATS_ENABLE bridge link attribute",
         },
+    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_PERM_ADDRESS] =
+        {
+            .compile_time_default = (IFLA_MAX >= 54 /* IFLA_PERM_ADDRESS */),
+            .name                 = "IFLA_PERM_ADDRESS",
+            .desc                 = "IFLA_PERM_ADDRESS netlink attribute",
+        },
 };
 
 int
@@ -1778,6 +1784,13 @@ nm_platform_link_get_permanent_address(NMPlatform *          self,
     if (plink->l_perm_address.len > 0) {
         *out_address = plink->l_perm_address;
         return TRUE;
+    }
+    if (nm_platform_kernel_support_get_full(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_PERM_ADDRESS,
+                                            FALSE)
+        == NM_OPTION_BOOL_TRUE) {
+        /* kernel supports the netlink API IFLA_PERM_ADDRESS, but we don't have the
+         * address cached. There is no need to fallback to ethtool ioctl. */
+        return FALSE;
     }
     return nm_platform_link_get_permanent_address_ethtool(self, plink->ifindex, out_address);
 }

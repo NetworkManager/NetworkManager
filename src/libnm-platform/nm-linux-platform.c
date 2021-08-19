@@ -3058,6 +3058,15 @@ _new_from_nl_link(NMPlatform *     platform,
     }
 
     if (tb[IFLA_PERM_ADDRESS]) {
+        if (!_nm_platform_kernel_support_detected(
+                NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_PERM_ADDRESS)) {
+            /* support for IFLA_PERM_ADDRESS was added in f74877a5457d34d604dba6dbbb13c4c05bac8b93,
+             * kernel 5.6, 30 March 2020.
+             *
+             * We can only detect support if the attribute is present. A missing attribute
+             * is not conclusive. */
+            _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_PERM_ADDRESS, 1);
+        }
         _nmp_link_address_set(&obj->link.l_perm_address, tb[IFLA_PERM_ADDRESS]);
         perm_address_complete_from_cache = FALSE;
     }
