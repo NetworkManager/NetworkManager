@@ -218,7 +218,7 @@ Code Structure
 
 `./po`- contains text-based portable object file. These .PO files are referenced by GNU gettext as a property file and these files are human readable used for translating purpose.
 
-`./src`- source code for libnm, nmcli, nm-cloud-setup, nmtui…
+[`./src`](src/)- source code for libnm, nmcli, nm-cloud-setup, nmtui…
 
 `./tools`- tools for generating the intermediate files or merging the file.
 
