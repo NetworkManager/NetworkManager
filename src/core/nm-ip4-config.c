@@ -543,7 +543,7 @@ nm_ip4_config_capture(NMDedupMultiIndex *multi_idx, NMPlatform *platform, int if
 
     head_entry = nm_platform_lookup_object(platform, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex);
     if (head_entry) {
-        nmp_cache_iter_for_each_reverse (&iter, head_entry, &plobj) {
+        nmp_cache_iter_for_each (&iter, head_entry, &plobj) {
             if (!_nm_ip_config_add_obj(priv->multi_idx,
                                        &priv->idx_ip4_addresses_,
                                        ifindex,
