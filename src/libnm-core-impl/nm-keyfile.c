@@ -23,7 +23,7 @@
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
-
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-keyfile.h"
 #include "nm-setting-private.h"
@@ -3779,11 +3779,7 @@ nm_keyfile_read(GKeyFile *            keyfile,
             goto out_with_info_error;
     }
 
-    s_con = nm_connection_get_setting_connection(connection);
-    if (!s_con) {
-        s_con = NM_SETTING_CONNECTION(nm_setting_connection_new());
-        nm_connection_add_setting(connection, NM_SETTING(s_con));
-    }
+    s_con = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_CONNECTION);
 
     /* Make sure that we have 'interface-name' even if it was specified in the
      * "wrong" (ie, deprecated) group.

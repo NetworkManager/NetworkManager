@@ -28,6 +28,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-manager.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-platform/nm-platform.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceOlpcMesh
@@ -88,11 +89,7 @@ complete_connection(NMDevice *           device,
 {
     NMSettingOlpcMesh *s_mesh;
 
-    s_mesh = nm_connection_get_setting_olpc_mesh(connection);
-    if (!s_mesh) {
-        s_mesh = (NMSettingOlpcMesh *) nm_setting_olpc_mesh_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_mesh));
-    }
+    s_mesh = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_OLPC_MESH);
 
     if (!nm_setting_olpc_mesh_get_ssid(s_mesh)) {
         gs_unref_bytes GBytes *ssid = NULL;

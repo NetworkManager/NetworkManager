@@ -9,6 +9,7 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nm-editor-bindings.h"
 
@@ -49,17 +50,9 @@ nmt_page_vlan_constructed(GObject *object)
     NmtNewtWidget *   widget, *parent, *id_entry;
     NMConnection *    conn;
 
-    conn   = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(vlan));
-    s_vlan = nm_connection_get_setting_vlan(conn);
-    if (!s_vlan) {
-        nm_connection_add_setting(conn, nm_setting_vlan_new());
-        s_vlan = nm_connection_get_setting_vlan(conn);
-    }
-    s_wired = nm_connection_get_setting_wired(conn);
-    if (!s_wired) {
-        nm_connection_add_setting(conn, nm_setting_wired_new());
-        s_wired = nm_connection_get_setting_wired(conn);
-    }
+    conn    = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(vlan));
+    s_vlan  = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_VLAN);
+    s_wired = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_WIRED);
 
     section = nmt_editor_section_new(_("VLAN"), NULL, TRUE);
     grid    = nmt_editor_section_get_body(section);

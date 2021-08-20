@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 #include <libmm-glib.h>
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
@@ -829,11 +830,7 @@ complete_connection(NMModem *            modem,
     if (MODEM_CAPS_3GPP2(modem_caps)) {
         NMSettingCdma *s_cdma;
 
-        s_cdma = nm_connection_get_setting_cdma(connection);
-        if (!s_cdma) {
-            s_cdma = (NMSettingCdma *) nm_setting_cdma_new();
-            nm_connection_add_setting(connection, NM_SETTING(s_cdma));
-        }
+        s_cdma = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_CDMA);
 
         if (!nm_setting_cdma_get_number(s_cdma))
             g_object_set(G_OBJECT(s_cdma), NM_SETTING_CDMA_NUMBER, "#777", NULL);

@@ -9,6 +9,7 @@
 #include "nm-device-private.h"
 #include "nm-manager.h"
 #include "nm-setting-vrf.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "settings/nm-settings.h"
 
@@ -199,12 +200,7 @@ static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
     NMDeviceVrfPrivate *priv  = NM_DEVICE_VRF_GET_PRIVATE(device);
-    NMSettingVrf *      s_vrf = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VRF);
-
-    if (!s_vrf) {
-        s_vrf = (NMSettingVrf *) nm_setting_vrf_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_vrf);
-    }
+    NMSettingVrf *      s_vrf = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VRF);
 
     if (priv->props.table != nm_setting_vrf_get_table(s_vrf))
         g_object_set(G_OBJECT(s_vrf), NM_SETTING_VRF_TABLE, priv->props.table, NULL);

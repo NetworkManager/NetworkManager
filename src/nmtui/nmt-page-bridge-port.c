@@ -9,6 +9,7 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-bridge-port.h"
 
@@ -35,11 +36,7 @@ nmt_page_bridge_port_constructed(GObject *object)
     NMConnection *       conn;
 
     conn   = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(bridge));
-    s_port = nm_connection_get_setting_bridge_port(conn);
-    if (!s_port) {
-        nm_connection_add_setting(conn, nm_setting_bridge_port_new());
-        s_port = nm_connection_get_setting_bridge_port(conn);
-    }
+    s_port = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_BRIDGE_PORT);
 
     section = nmt_editor_section_new(_("BRIDGE PORT"), NULL, TRUE);
     grid    = nmt_editor_section_get_body(section);

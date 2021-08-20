@@ -33,6 +33,7 @@
 #include "nm-device-ethernet-utils.h"
 #include "settings/nm-settings.h"
 #include "nm-device-factory.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 #include "libnm-udev-aux/nm-udev-utils.h"
@@ -1616,11 +1617,7 @@ complete_connection(NMDevice *           device,
                                   NULL,
                                   TRUE);
 
-        s_veth = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VETH);
-        if (!s_veth) {
-            s_veth = (NMSettingVeth *) nm_setting_veth_new();
-            nm_connection_add_setting(connection, NM_SETTING(s_veth));
-        }
+        s_veth = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VETH);
 
         ifindex = nm_device_get_ip_ifindex(device);
         if (ifindex > 0) {
@@ -1662,11 +1659,7 @@ complete_connection(NMDevice *           device,
     if (s_pppoe && !nm_setting_verify(NM_SETTING(s_pppoe), NULL, error))
         return FALSE;
 
-    s_wired = nm_connection_get_setting_wired(connection);
-    if (!s_wired) {
-        s_wired = (NMSettingWired *) nm_setting_wired_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_wired));
-    }
+    s_wired = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_WIRED);
 
     /* Default to an ethernet-only connection, but if a PPPoE setting was given
      * then PPPoE should be our connection type.
@@ -1780,20 +1773,15 @@ get_s390_subchannels(NMDevice *device)
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMDeviceEthernetPrivate *priv    = NM_DEVICE_ETHERNET_GET_PRIVATE(device);
-    NMSettingWired *         s_wired = nm_connection_get_setting_wired(connection);
-    gboolean                 perm_hw_addr_is_fake;
-    const char *             perm_hw_addr;
-    const char *             mac      = nm_device_get_hw_address(device);
-    const char *             mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
-    GHashTableIter           iter;
-    const char *             key;
-    const char *             value;
-
-    if (!s_wired) {
-        s_wired = (NMSettingWired *) nm_setting_wired_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_wired);
-    }
+    NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(device);
+    NMSettingWired *s_wired = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_WIRED);
+    gboolean        perm_hw_addr_is_fake;
+    const char *    perm_hw_addr;
+    const char *    mac      = nm_device_get_hw_address(device);
+    const char *    mac_prop = NM_SETTING_WIRED_MAC_ADDRESS;
+    GHashTableIter  iter;
+    const char *    key;
+    const char *    value;
 
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_TYPE,

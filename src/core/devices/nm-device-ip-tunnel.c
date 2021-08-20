@@ -18,6 +18,7 @@
 #include "nm-manager.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "settings/nm-settings.h"
 #include "nm-act-request.h"
@@ -416,14 +417,10 @@ complete_connection(NMDevice *           device,
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMDeviceIPTunnel *       self        = NM_DEVICE_IP_TUNNEL(device);
-    NMDeviceIPTunnelPrivate *priv        = NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self);
-    NMSettingIPTunnel *      s_ip_tunnel = nm_connection_get_setting_ip_tunnel(connection);
-
-    if (!s_ip_tunnel) {
-        s_ip_tunnel = (NMSettingIPTunnel *) nm_setting_ip_tunnel_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_ip_tunnel);
-    }
+    NMDeviceIPTunnel *       self = NM_DEVICE_IP_TUNNEL(device);
+    NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self);
+    NMSettingIPTunnel *      s_ip_tunnel =
+        _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_IP_TUNNEL);
 
     if (nm_setting_ip_tunnel_get_mode(s_ip_tunnel) != priv->mode)
         g_object_set(G_OBJECT(s_ip_tunnel), NM_SETTING_IP_TUNNEL_MODE, priv->mode, NULL);

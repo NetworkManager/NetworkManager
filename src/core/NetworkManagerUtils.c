@@ -17,6 +17,7 @@
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-base/nm-net-aux.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils.h"
 #include "nm-setting-connection.h"
@@ -248,11 +249,7 @@ _nm_utils_complete_generic_with_params(NMPlatform *         platform,
     g_assert(fallback_id_prefix);
     g_return_if_fail(ifname_prefix == NULL || ifname == NULL);
 
-    s_con = nm_connection_get_setting_connection(connection);
-    if (!s_con) {
-        s_con = (NMSettingConnection *) nm_setting_connection_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_con));
-    }
+    s_con = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_CONNECTION);
     g_object_set(G_OBJECT(s_con), NM_SETTING_CONNECTION_TYPE, ctype, NULL);
 
     if (!nm_setting_connection_get_uuid(s_con)) {

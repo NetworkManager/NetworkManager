@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
-#include "libnm-core-public/nm-connection.h"
 #include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-libnm-core-utils.h"
@@ -9,6 +8,7 @@
 
 #include "nm-common-macros.h"
 #include "nm-errors.h"
+#include "libnm-core-public/nm-connection.h"
 
 /*****************************************************************************/
 
