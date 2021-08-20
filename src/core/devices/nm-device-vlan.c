@@ -19,6 +19,7 @@
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-manager.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-platform/nmp-object.h"
 #include "libnm-platform/nm-platform-utils.h"
@@ -432,17 +433,12 @@ static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
     NMDeviceVlanPrivate * priv    = NM_DEVICE_VLAN_GET_PRIVATE(device);
-    NMSettingVlan *       s_vlan  = nm_connection_get_setting_vlan(connection);
+    NMSettingVlan *       s_vlan  = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VLAN);
     int                   ifindex = nm_device_get_ifindex(device);
     const NMPlatformLink *plink;
     const NMPObject *     polnk;
     guint                 vlan_id;
     _NMVlanFlags          vlan_flags;
-
-    if (!s_vlan) {
-        s_vlan = (NMSettingVlan *) nm_setting_vlan_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_vlan);
-    }
 
     polnk = nm_platform_link_get_lnk(nm_device_get_platform(device),
                                      ifindex,

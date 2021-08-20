@@ -9,6 +9,7 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-dsl.h"
 #include "nmt-page-ethernet.h"
@@ -83,11 +84,7 @@ nmt_page_dsl_constructed(GObject *object)
     const GSList *     sections, *iter;
 
     conn    = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(dsl));
-    s_pppoe = nm_connection_get_setting_pppoe(conn);
-    if (!s_pppoe) {
-        nm_connection_add_setting(conn, nm_setting_pppoe_new());
-        s_pppoe = nm_connection_get_setting_pppoe(conn);
-    }
+    s_pppoe = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_PPPOE);
 
     section = build_dsl_section(dsl, s_pppoe);
     nmt_editor_page_add_section(NMT_EDITOR_PAGE(dsl), section);

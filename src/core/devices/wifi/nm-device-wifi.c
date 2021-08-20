@@ -17,6 +17,7 @@
 #include "nm-device-wifi-p2p.h"
 #include "nm-wifi-ap.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "devices/nm-device.h"
 #include "devices/nm-device-private.h"
 #include "nm-dbus-manager.h"
@@ -1205,10 +1206,7 @@ complete_connection(NMDevice *           device,
     }
 
     /* Add a wifi setting if one doesn't exist yet */
-    if (!s_wifi) {
-        s_wifi = (NMSettingWireless *) nm_setting_wireless_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_wifi));
-    }
+    s_wifi = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_WIRELESS);
 
     if (ap)
         ssid = nm_wifi_ap_get_ssid(ap);

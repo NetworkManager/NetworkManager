@@ -9,6 +9,7 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-team-port.h"
 
@@ -63,12 +64,8 @@ nmt_page_team_port_constructed(GObject *object)
     NmtNewtWidget *         widget;
     NMConnection *          conn;
 
-    conn   = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(team));
-    s_port = nm_connection_get_setting_team_port(conn);
-    if (!s_port) {
-        nm_connection_add_setting(conn, nm_setting_team_port_new());
-        s_port = nm_connection_get_setting_team_port(conn);
-    }
+    conn         = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(team));
+    s_port       = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_TEAM_PORT);
     priv->s_port = s_port;
 
     section = nmt_editor_section_new(_("TEAM PORT"), NULL, TRUE);
