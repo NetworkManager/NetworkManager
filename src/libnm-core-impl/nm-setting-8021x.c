@@ -2532,9 +2532,6 @@ need_private_key_password(GBytes *               blob,
     if (flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
         return FALSE;
 
-    if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11 && flags == NM_SETTING_SECRET_FLAG_NONE)
-        return FALSE;
-
     /* Private key password is required */
     if (password) {
         if (path)
@@ -2578,15 +2575,13 @@ need_secrets_tls(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
 
         scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme(self);
         if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
-            && !(priv->phase2_ca_cert_password_flags == NM_SETTING_SECRET_FLAG_NONE
-                 || priv->phase2_ca_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+            && !(priv->phase2_ca_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
             && !priv->phase2_ca_cert_password)
             g_ptr_array_add(secrets, NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD);
 
         scheme = nm_setting_802_1x_get_phase2_client_cert_scheme(self);
         if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
-            && !(priv->phase2_client_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED
-                 || priv->phase2_client_cert_password_flags == NM_SETTING_SECRET_FLAG_NONE)
+            && !(priv->phase2_client_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
             && !priv->phase2_client_cert_password)
             g_ptr_array_add(secrets, NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD);
     } else {
@@ -2607,15 +2602,13 @@ need_secrets_tls(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
 
         scheme = nm_setting_802_1x_get_ca_cert_scheme(self);
         if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
-            && !(priv->ca_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED
-                 || priv->ca_cert_password_flags == NM_SETTING_SECRET_FLAG_NONE)
+            && !(priv->ca_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
             && !priv->ca_cert_password)
             g_ptr_array_add(secrets, NM_SETTING_802_1X_CA_CERT_PASSWORD);
 
         scheme = nm_setting_802_1x_get_client_cert_scheme(self);
         if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
-            && !(priv->client_cert_password_flags == NM_SETTING_SECRET_FLAG_NONE
-                 || priv->client_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
+            && !(priv->client_cert_password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
             && !priv->client_cert_password)
             g_ptr_array_add(secrets, NM_SETTING_802_1X_CLIENT_CERT_PASSWORD);
     }
