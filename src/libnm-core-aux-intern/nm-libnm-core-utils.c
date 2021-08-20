@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 
+#include "libnm-core-public/nm-connection.h"
 #include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-libnm-core-utils.h"
@@ -357,4 +358,17 @@ nm_settings_connection_validate_permission_user(const char *item, gssize len)
         return FALSE;
 
     return TRUE;
+}
+
+gpointer
+_nm_connection_ensure_setting(NMConnection *connection, GType gtype)
+{
+    NMSetting *setting;
+
+    setting = (gpointer) nm_connection_get_setting(connection, gtype);
+    if (!setting) {
+        setting = g_object_new(gtype, NULL);
+        nm_connection_add_setting(connection, setting);
+    }
+    return setting;
 }
