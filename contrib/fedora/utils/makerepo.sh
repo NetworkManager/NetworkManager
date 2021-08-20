@@ -88,7 +88,7 @@ if [[ "$FEDPKG" == "" ]]; then
     URL="$(git config --get "remote.$REMOTE.url")"
     if [[ "$URL" = *'pkgs.devel.redhat.com'* ]]; then
         FEDPKG=rhpkg
-    elif [[ "$URL" = *'gitlab.com:redhat/centos-stream'* ]]; then
+    elif [[ "$URL" = *'gitlab.com'*'redhat/centos-stream'* ]]; then
         FEDPKG=centpkg
     elif [[ "$URL" = *'pkgs.fedoraproject.org/'* ]]; then
         FEDPKG=fedpkg
