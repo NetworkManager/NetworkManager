@@ -11537,45 +11537,6 @@ nm_device_activate_stage3_ip_start(NMDevice *self, int addr_family)
     return TRUE;
 }
 
-/*
- * activate_stage3_ip_config_start
- *
- * Begin automatic/manual IP configuration
- *
- */
-static void
-activate_stage3_ip_config_start(NMDevice *self)
-{
-    int ifindex;
-
-    _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_WAIT);
-    _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_WAIT);
-
-    _active_connection_set_state_flags(self, NM_ACTIVATION_STATE_FLAG_LAYER2_READY);
-
-    nm_device_state_changed(self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
-
-    /* Device should be up before we can do anything with it */
-    if ((ifindex = nm_device_get_ip_ifindex(self)) > 0
-        && !nm_platform_link_is_up(nm_device_get_platform(self), ifindex))
-        _LOGW(LOGD_DEVICE,
-              "interface %s not up for IP configuration",
-              nm_device_get_ip_iface(self));
-
-    if (nm_device_activate_ip4_state_in_wait(self)
-        && !nm_device_activate_stage3_ip_start(self, AF_INET))
-        return;
-
-    if (nm_device_activate_ip6_state_in_wait(self)
-        && !nm_device_activate_stage3_ip_start(self, AF_INET6))
-        return;
-
-    /* Proxy */
-    nm_device_set_proxy_config(self, NULL);
-
-    check_ip_state(self, TRUE, TRUE);
-}
-
 static void
 fw_change_zone_cb(NMFirewalldManager *      firewalld_manager,
                   NMFirewalldManagerCallId *call_id,
@@ -11658,20 +11619,19 @@ fw_change_zone(NMDevice *self)
 }
 
 /*
- * nm_device_activate_schedule_stage3_ip_config_start
+ * activate_stage3_ip_config_start
  *
- * Schedule IP configuration start
+ * Begin automatic/manual IP configuration
+ *
  */
-void
-nm_device_activate_schedule_stage3_ip_config_start(NMDevice *self)
+static void
+activate_stage3_ip_config_start(NMDevice *self)
 {
-    NMDevicePrivate *priv;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     int              ifindex;
 
-    g_return_if_fail(NM_IS_DEVICE(self));
-
-    priv = NM_DEVICE_GET_PRIVATE(self);
     g_return_if_fail(priv->act_request.obj);
+
     ifindex = nm_device_get_ip_ifindex(self);
 
     /* Add the interface to the specified firewall zone */
@@ -11691,6 +11651,50 @@ nm_device_activate_schedule_stage3_ip_config_start(NMDevice *self)
     }
 
     nm_assert(ifindex <= 0 || priv->fw_state == FIREWALL_STATE_INITIALIZED);
+
+    _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_WAIT);
+    _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_WAIT);
+
+    _active_connection_set_state_flags(self, NM_ACTIVATION_STATE_FLAG_LAYER2_READY);
+
+    nm_device_state_changed(self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+
+    /* Device should be up before we can do anything with it */
+    if ((ifindex = nm_device_get_ip_ifindex(self)) > 0
+        && !nm_platform_link_is_up(nm_device_get_platform(self), ifindex))
+        _LOGW(LOGD_DEVICE,
+              "interface %s not up for IP configuration",
+              nm_device_get_ip_iface(self));
+
+    if (nm_device_activate_ip4_state_in_wait(self)
+        && !nm_device_activate_stage3_ip_start(self, AF_INET))
+        return;
+
+    if (nm_device_activate_ip6_state_in_wait(self)
+        && !nm_device_activate_stage3_ip_start(self, AF_INET6))
+        return;
+
+    /* Proxy */
+    nm_device_set_proxy_config(self, NULL);
+
+    check_ip_state(self, TRUE, TRUE);
+}
+
+/*
+ * nm_device_activate_schedule_stage3_ip_config_start
+ *
+ * Schedule IP configuration start
+ */
+void
+nm_device_activate_schedule_stage3_ip_config_start(NMDevice *self)
+{
+    NMDevicePrivate *priv;
+
+    g_return_if_fail(NM_IS_DEVICE(self));
+
+    priv = NM_DEVICE_GET_PRIVATE(self);
+
+    g_return_if_fail(priv->act_request.obj);
 
     activation_source_schedule(self, activate_stage3_ip_config_start, AF_INET);
 }
@@ -11754,7 +11758,6 @@ nm_device_activate_schedule_ip_config_timeout(NMDevice *self, int addr_family)
     NMDevicePrivate *priv;
 
     g_return_if_fail(NM_IS_DEVICE(self));
-    g_return_if_fail(NM_IN_SET(addr_family, AF_INET, AF_INET6));
 
     priv = NM_DEVICE_GET_PRIVATE(self);
 
