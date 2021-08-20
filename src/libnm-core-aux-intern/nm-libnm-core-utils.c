@@ -365,7 +365,7 @@ _nm_connection_ensure_setting(NMConnection *connection, GType gtype)
 {
     NMSetting *setting;
 
-    setting = (gpointer) nm_connection_get_setting(connection, gtype);
+    setting = nm_connection_get_setting(connection, gtype);
     if (!setting) {
         setting = g_object_new(gtype, NULL);
         nm_connection_add_setting(connection, setting);
