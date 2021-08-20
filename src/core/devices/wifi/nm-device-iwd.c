@@ -18,6 +18,7 @@
 #include "libnm-glib-aux/nm-ref-string.h"
 #include "nm-iwd-manager.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless-security.h"
@@ -966,7 +967,7 @@ complete_connection(NMDevice *           device,
     gboolean            hidden = FALSE;
     const char *        mode;
 
-    s_wifi = nm_connection_get_setting_wireless(connection);
+    s_wifi = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_WIRELESS);
 
     mode = s_wifi ? nm_setting_wireless_get_mode(s_wifi) : NULL;
 
@@ -1031,12 +1032,6 @@ complete_connection(NMDevice *           device,
         }
 
         ssid = nm_wifi_ap_get_ssid(ap);
-
-        /* Add a wifi setting if one doesn't exist yet */
-        if (!s_wifi) {
-            s_wifi = (NMSettingWireless *) nm_setting_wireless_new();
-            nm_connection_add_setting(connection, NM_SETTING(s_wifi));
-        }
     }
 
     if (ap) {

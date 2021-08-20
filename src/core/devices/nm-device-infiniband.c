@@ -16,6 +16,7 @@
 #include "nm-ip4-config.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
 #define NM_DEVICE_INFINIBAND_IS_PARTITION "is-partition"
@@ -146,11 +147,7 @@ complete_connection(NMDevice *           device,
 {
     NMSettingInfiniband *s_infiniband;
 
-    s_infiniband = nm_connection_get_setting_infiniband(connection);
-    if (!s_infiniband) {
-        s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_infiniband));
-    }
+    s_infiniband = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_INFINIBAND);
 
     nm_utils_complete_generic(
         nm_device_get_platform(device),
@@ -175,15 +172,11 @@ complete_connection(NMDevice *           device,
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMSettingInfiniband *s_infiniband   = nm_connection_get_setting_infiniband(connection);
-    const char *         mac            = nm_device_get_permanent_hw_address(device);
-    const char *         transport_mode = "datagram";
-    int                  ifindex;
-
-    if (!s_infiniband) {
-        s_infiniband = (NMSettingInfiniband *) nm_setting_infiniband_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_infiniband);
-    }
+    NMSettingInfiniband *s_infiniband =
+        _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_INFINIBAND);
+    const char *mac            = nm_device_get_permanent_hw_address(device);
+    const char *transport_mode = "datagram";
+    int         ifindex;
 
     if (mac && !nm_utils_hwaddr_matches(mac, -1, NULL, INFINIBAND_ALEN))
         g_object_set(s_infiniband, NM_SETTING_INFINIBAND_MAC_ADDRESS, mac, NULL);

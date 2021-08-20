@@ -334,20 +334,11 @@ nmt_page_bond_constructed(GObject *object)
     NmtNewtWidget *     widget, *label;
     NMConnection *      conn;
 
-    conn   = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(bond));
-    s_bond = nm_connection_get_setting_bond(conn);
-    if (!s_bond) {
-        nm_connection_add_setting(conn, nm_setting_bond_new());
-        s_bond = nm_connection_get_setting_bond(conn);
-    }
+    conn         = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(bond));
+    s_bond       = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_BOND);
     priv->s_bond = s_bond;
 
-    s_wired = nm_connection_get_setting_wired(conn);
-    if (!s_wired) {
-        nm_connection_add_setting(conn, nm_setting_wired_new());
-        s_wired = nm_connection_get_setting_wired(conn);
-    }
-
+    s_wired = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_WIRED);
     section = nmt_editor_section_new(_("BOND"), NULL, TRUE);
     grid    = nmt_editor_section_get_body(section);
 

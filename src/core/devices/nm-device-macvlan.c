@@ -13,6 +13,7 @@
 #include "settings/nm-settings.h"
 #include "nm-act-request.h"
 #include "nm-manager.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-macvlan.h"
@@ -419,14 +420,10 @@ complete_connection(NMDevice *           device,
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMDeviceMacvlanPrivate *priv      = NM_DEVICE_MACVLAN_GET_PRIVATE(device);
-    NMSettingMacvlan *      s_macvlan = nm_connection_get_setting_macvlan(connection);
-    int                     new_mode;
-
-    if (!s_macvlan) {
-        s_macvlan = (NMSettingMacvlan *) nm_setting_macvlan_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_macvlan);
-    }
+    NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE(device);
+    NMSettingMacvlan *      s_macvlan =
+        _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_MACVLAN);
+    int new_mode;
 
     new_mode = platform_mode_to_setting(priv->props.mode);
     if (new_mode != nm_setting_macvlan_get_mode(s_macvlan))

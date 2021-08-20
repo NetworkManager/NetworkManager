@@ -14,6 +14,7 @@
 #include "nm-device-private.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-ip4-config.h"
 
@@ -79,8 +80,6 @@ complete_connection(NMDevice *           device,
                     NMConnection *const *existing_connections,
                     GError **            error)
 {
-    NMSettingBond *s_bond;
-
     nm_utils_complete_generic(nm_device_get_platform(device),
                               connection,
                               NM_SETTING_BOND_SETTING_NAME,
@@ -91,11 +90,7 @@ complete_connection(NMDevice *           device,
                               NULL,
                               TRUE);
 
-    s_bond = nm_connection_get_setting_bond(connection);
-    if (!s_bond) {
-        s_bond = (NMSettingBond *) nm_setting_bond_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_bond));
-    }
+    _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BOND);
 
     return TRUE;
 }
@@ -168,15 +163,10 @@ static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
     NMDeviceBond * self    = NM_DEVICE_BOND(device);
-    NMSettingBond *s_bond  = nm_connection_get_setting_bond(connection);
+    NMSettingBond *s_bond  = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BOND);
     int            ifindex = nm_device_get_ifindex(device);
     NMBondMode     mode    = NM_BOND_MODE_UNKNOWN;
     const char **  options;
-
-    if (!s_bond) {
-        s_bond = (NMSettingBond *) nm_setting_bond_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_bond);
-    }
 
     /* Read bond options from sysfs and update the Bond setting to match */
     options = nm_setting_bond_get_valid_options(NULL);

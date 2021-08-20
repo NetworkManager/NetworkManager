@@ -20,6 +20,7 @@
 #include "devices/nm-device-private.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-config.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
 #include "nm-ip4-config.h"
@@ -78,8 +79,6 @@ complete_connection(NMDevice *           device,
                     NMConnection *const *existing_connections,
                     GError **            error)
 {
-    NMSettingTeam *s_team;
-
     nm_utils_complete_generic(nm_device_get_platform(device),
                               connection,
                               NM_SETTING_TEAM_SETTING_NAME,
@@ -90,11 +89,7 @@ complete_connection(NMDevice *           device,
                               NULL,
                               TRUE);
 
-    s_team = nm_connection_get_setting_team(connection);
-    if (!s_team) {
-        s_team = (NMSettingTeam *) nm_setting_team_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_team));
-    }
+    _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM);
 
     return TRUE;
 }
@@ -168,14 +163,9 @@ static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
     NMDeviceTeam *       self   = NM_DEVICE_TEAM(device);
-    NMSettingTeam *      s_team = nm_connection_get_setting_team(connection);
+    NMSettingTeam *      s_team = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM);
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
     struct teamdctl *    tdc    = priv->tdc;
-
-    if (!s_team) {
-        s_team = (NMSettingTeam *) nm_setting_team_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_team);
-    }
 
     /* Read the configuration only if not already set */
     if (!priv->config && ensure_teamd_connection(device))
@@ -250,11 +240,7 @@ master_update_slave_connection(NMDevice *    self,
         return FALSE;
     }
 
-    s_port = nm_connection_get_setting_team_port(connection);
-    if (!s_port) {
-        s_port = (NMSettingTeamPort *) nm_setting_team_port_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_port));
-    }
+    s_port = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM_PORT);
 
     g_object_set(G_OBJECT(s_port), NM_SETTING_TEAM_PORT_CONFIG, port_config, NULL);
     g_free(port_config);

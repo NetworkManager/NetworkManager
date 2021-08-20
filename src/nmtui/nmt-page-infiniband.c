@@ -9,6 +9,7 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-infiniband.h"
 #include "nmt-mtu-entry.h"
@@ -46,11 +47,7 @@ nmt_page_infiniband_constructed(GObject *object)
     NMConnection *       conn;
 
     conn = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(infiniband));
-    s_ib = nm_connection_get_setting_infiniband(conn);
-    if (!s_ib) {
-        nm_connection_add_setting(conn, nm_setting_infiniband_new());
-        s_ib = nm_connection_get_setting_infiniband(conn);
-    }
+    s_ib = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_INFINIBAND);
     /* initialize 'transport-mode' if it is NULL */
     if (!nm_setting_infiniband_get_transport_mode(s_ib)) {
         g_object_set(G_OBJECT(s_ib), NM_SETTING_INFINIBAND_TRANSPORT_MODE, "datagram", NULL);

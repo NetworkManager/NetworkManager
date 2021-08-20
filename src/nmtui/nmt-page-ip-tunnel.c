@@ -8,6 +8,7 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-ip-tunnel.h"
 
@@ -102,11 +103,7 @@ nmt_page_ip_tunnel_constructed(GObject *object)
     GClosure *              s2w, *w2s;
 
     conn        = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(ip_tunnel));
-    s_ip_tunnel = nm_connection_get_setting_ip_tunnel(conn);
-    if (!s_ip_tunnel) {
-        nm_connection_add_setting(conn, nm_setting_ip_tunnel_new());
-        s_ip_tunnel = nm_connection_get_setting_ip_tunnel(conn);
-    }
+    s_ip_tunnel = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_IP_TUNNEL);
 
     /* Initialize the mode for new connections */
     if (nm_setting_ip_tunnel_get_mode(s_ip_tunnel) == NM_IP_TUNNEL_MODE_UNKNOWN) {

@@ -18,6 +18,7 @@
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-wpan.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceWpan
@@ -71,13 +72,7 @@ complete_connection(NMDevice *           device,
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMSettingWpan *s_wpan =
-        NM_SETTING_WPAN(nm_connection_get_setting(connection, NM_TYPE_SETTING_WPAN));
-
-    if (!s_wpan) {
-        s_wpan = (NMSettingWpan *) nm_setting_wpan_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_wpan);
-    }
+    _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_WPAN);
 }
 
 static gboolean
