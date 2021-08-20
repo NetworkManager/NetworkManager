@@ -102,7 +102,7 @@ build_supplicant_config(NMConnection * connection,
 
     s_wifi = nm_connection_get_setting_wireless(connection);
     g_assert(s_wifi);
-    success = nm_supplicant_config_add_setting_wireless(config, s_wifi, fixed_freq, &error);
+    success = nm_supplicant_config_add_setting_wireless(config, s_wifi, NULL, fixed_freq, &error);
     g_assert_no_error(error);
     g_assert(success);
 

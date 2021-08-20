@@ -2842,6 +2842,7 @@ supplicant_connection_timeout_cb(gpointer user_data)
 static NMSupplicantConfig *
 build_supplicant_config(NMDeviceWifi *self,
                         NMConnection *connection,
+                        const char *  specific_object,
                         guint32       fixed_freq,
                         GError **     error)
 {
@@ -2852,6 +2853,8 @@ build_supplicant_config(NMDeviceWifi *self,
     NMSettingWirelessSecurityPmf  pmf;
     NMSettingWirelessSecurityFils fils;
     NMTernary                     ap_isolation;
+    NMWifiAP *                    ap;
+    const char *                  address = NULL;
 
     g_return_val_if_fail(priv->sup_iface, NULL);
 
@@ -2867,7 +2870,19 @@ build_supplicant_config(NMDeviceWifi *self,
         _LOGW(LOGD_WIFI, "Supplicant may not support AP mode; connection may time out.");
     }
 
-    if (!nm_supplicant_config_add_setting_wireless(config, s_wireless, fixed_freq, error)) {
+    /* When the user provided a specific-object during ActviateConnection,
+    pass it on to supplicant so that we initially connect to the requested API.
+    */
+    if (specific_object && !nm_streq(specific_object, "/")
+        && (ap = nm_wifi_ap_lookup_for_device(NM_DEVICE(self), specific_object))) {
+        address = nm_wifi_ap_get_address(ap);
+    }
+
+    if (!nm_supplicant_config_add_setting_wireless(config,
+                                                   s_wireless,
+                                                   address,
+                                                   fixed_freq,
+                                                   error)) {
         g_prefix_error(error, "802-11-wireless: ");
         goto error;
     }
@@ -3164,6 +3179,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMActRequest *                      request;
     NMActiveConnection *                master_ac;
     NMDevice *                          master;
+    const char *                        specific_object;
 
     nm_clear_g_source(&priv->sup_timeout_id);
     nm_clear_g_source(&priv->link_timeout_id);
@@ -3227,8 +3243,11 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     if (ap_mode == _NM_802_11_MODE_INFRA)
         set_powersave(device);
 
+    specific_object = nm_active_connection_get_specific_object(NM_ACTIVE_CONNECTION(req));
+
     /* Build up the supplicant configuration */
-    config = build_supplicant_config(self, connection, nm_wifi_ap_get_freq(ap), &error);
+    config =
+        build_supplicant_config(self, connection, specific_object, nm_wifi_ap_get_freq(ap), &error);
     if (!config) {
         _LOGE(LOGD_DEVICE | LOGD_WIFI,
               "Activation: (wifi) couldn't build wireless configuration: %s",

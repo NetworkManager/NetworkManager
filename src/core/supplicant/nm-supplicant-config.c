@@ -468,6 +468,7 @@ nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
 gboolean
 nm_supplicant_config_add_setting_wireless(NMSupplicantConfig *self,
                                           NMSettingWireless * setting,
+                                          const char        * address,
                                           guint32             fixed_freq,
                                           GError **           error)
 {
@@ -542,10 +543,18 @@ nm_supplicant_config_add_setting_wireless(NMSupplicantConfig *self,
             return FALSE;
     }
 
-    bssid = nm_setting_wireless_get_bssid(setting);
-    if (bssid) {
-        if (!nm_supplicant_config_add_option(self, "bssid", bssid, strlen(bssid), NULL, error))
-            return FALSE;
+    if (address) {
+ 		if (!nm_supplicant_config_add_option (self, "bssid",
+		                                      address, strlen (address),
+		                                      NULL,
+		                                      error))
+			return FALSE;
+    } else {
+        bssid = nm_setting_wireless_get_bssid(setting);
+        if (bssid) {
+            if (!nm_supplicant_config_add_option(self, "bssid", bssid, strlen(bssid), NULL, error))
+                return FALSE;
+        }
     }
 
     band    = nm_setting_wireless_get_band(setting);
