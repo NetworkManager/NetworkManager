@@ -11744,11 +11744,14 @@ activate_stage4_ip_config_timeout_6(NMDevice *self)
     activate_stage4_ip_config_timeout_x(self, AF_INET6);
 }
 
+#define activate_stage4_ip_config_timeout_x_fcn(addr_family)       \
+    (NM_IS_IPv4(addr_family) ? activate_stage4_ip_config_timeout_4 \
+                             : activate_stage4_ip_config_timeout_6)
+
 void
 nm_device_activate_schedule_ip_config_timeout(NMDevice *self, int addr_family)
 {
     NMDevicePrivate *priv;
-    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
 
     g_return_if_fail(NM_IS_DEVICE(self));
     g_return_if_fail(NM_IN_SET(addr_family, AF_INET, AF_INET6));
@@ -11758,8 +11761,7 @@ nm_device_activate_schedule_ip_config_timeout(NMDevice *self, int addr_family)
     g_return_if_fail(priv->act_request.obj);
 
     activation_source_schedule(self,
-                               IS_IPv4 ? activate_stage4_ip_config_timeout_4
-                                       : activate_stage4_ip_config_timeout_6,
+                               activate_stage4_ip_config_timeout_x_fcn(addr_family),
                                addr_family);
 }
 
