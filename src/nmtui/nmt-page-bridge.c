@@ -9,10 +9,10 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
-#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-bridge.h"
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-address-list.h"
 #include "nmt-slave-list.h"
 

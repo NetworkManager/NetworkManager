@@ -9,10 +9,10 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
-#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-team.h"
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-slave-list.h"
 
 G_DEFINE_TYPE(NmtPageTeam, nmt_page_team, NMT_TYPE_EDITOR_PAGE_DEVICE)

@@ -9,9 +9,10 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
-#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-dsl.h"
+
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-page-ethernet.h"
 #include "nmt-page-ppp.h"
 #include "nmt-password-fields.h"

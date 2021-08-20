@@ -9,9 +9,10 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
-#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-bridge-port.h"
+
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 G_DEFINE_TYPE(NmtPageBridgePort, nmt_page_bridge_port, NMT_TYPE_EDITOR_PAGE)
 

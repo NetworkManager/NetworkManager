@@ -9,9 +9,10 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
-#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-infiniband.h"
+
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-mtu-entry.h"
 
 G_DEFINE_TYPE(NmtPageInfiniband, nmt_page_infiniband, NMT_TYPE_EDITOR_PAGE_DEVICE)

@@ -8,10 +8,10 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
-#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-ip-tunnel.h"
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-device-entry.h"
 #include "nmt-mtu-entry.h"
 

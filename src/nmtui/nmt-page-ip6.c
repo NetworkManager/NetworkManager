@@ -9,11 +9,12 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
-#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
+
+#include "nmt-page-ip6.h"
 
 #include <stdlib.h>
 
-#include "nmt-page-ip6.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-ip-entry.h"
 #include "nmt-address-list.h"
 #include "nmt-route-editor.h"
