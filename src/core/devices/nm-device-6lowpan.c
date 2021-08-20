@@ -9,6 +9,7 @@
 
 #include "nm-device-private.h"
 #include "settings/nm-settings.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-6lowpan.h"
@@ -221,12 +222,7 @@ static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
     NMSetting6Lowpan *s_6lowpan =
-        NM_SETTING_6LOWPAN(nm_connection_get_setting(connection, NM_TYPE_SETTING_6LOWPAN));
-
-    if (!s_6lowpan) {
-        s_6lowpan = (NMSetting6Lowpan *) nm_setting_6lowpan_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_6lowpan);
-    }
+        _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_6LOWPAN);
 
     g_object_set(
         s_6lowpan,

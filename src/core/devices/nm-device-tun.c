@@ -17,6 +17,7 @@
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-setting-tun.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceTun
@@ -186,11 +187,7 @@ update_connection(NMDevice *device, NMConnection *connection)
         return;
     }
 
-    s_tun = nm_connection_get_setting_tun(connection);
-    if (!s_tun) {
-        s_tun = (NMSettingTun *) nm_setting_tun_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_tun);
-    }
+    s_tun = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TUN);
 
     if (mode != nm_setting_tun_get_mode(s_tun))
         g_object_set(G_OBJECT(s_tun), NM_SETTING_TUN_MODE, (guint) mode, NULL);

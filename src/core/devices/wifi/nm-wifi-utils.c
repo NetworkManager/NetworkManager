@@ -13,6 +13,7 @@
 
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "libnm-base/nm-config-base.h"
 
@@ -679,10 +680,7 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
     }
 
     /* Everything else requires security */
-    if (!s_wsec) {
-        s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_wsec));
-    }
+    s_wsec = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
 
     key_mgmt      = nm_setting_wireless_security_get_key_mgmt(s_wsec);
     auth_alg      = nm_setting_wireless_security_get_auth_alg(s_wsec);

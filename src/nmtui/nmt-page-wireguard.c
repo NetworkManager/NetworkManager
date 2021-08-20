@@ -11,6 +11,7 @@
 
 #include "nmt-page-wireguard.h"
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-device-entry.h"
 #include "nmt-mtu-entry.h"
 #include "nmt-wireguard-peer-list.h"
@@ -51,12 +52,7 @@ nmt_page_wireguard_constructed(GObject *object)
     NMConnection *           conn;
 
     conn        = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(wireguard));
-    s_wireguard = NM_SETTING_WIREGUARD(nm_connection_get_setting(conn, NM_TYPE_SETTING_WIREGUARD));
-    if (!s_wireguard) {
-        nm_connection_add_setting(conn, nm_setting_wireguard_new());
-        s_wireguard =
-            NM_SETTING_WIREGUARD(nm_connection_get_setting(conn, NM_TYPE_SETTING_WIREGUARD));
-    }
+    s_wireguard = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_WIREGUARD);
 
     section = nmt_editor_section_new(_("WireGuard"), NULL, TRUE);
     grid    = nmt_editor_section_get_body(section);

@@ -12,6 +12,7 @@
 
 #include "nmt-page-team.h"
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-slave-list.h"
 
 G_DEFINE_TYPE(NmtPageTeam, nmt_page_team, NMT_TYPE_EDITOR_PAGE_DEVICE)
@@ -111,12 +112,8 @@ nmt_page_team_constructed(GObject *object)
     NmtNewtWidget *     widget;
     NMConnection *      conn;
 
-    conn   = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(team));
-    s_team = nm_connection_get_setting_team(conn);
-    if (!s_team) {
-        nm_connection_add_setting(conn, nm_setting_team_new());
-        s_team = nm_connection_get_setting_team(conn);
-    }
+    conn         = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(team));
+    s_team       = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_TEAM);
     priv->s_team = s_team;
 
     section = nmt_editor_section_new(_("TEAM"), NULL, TRUE);

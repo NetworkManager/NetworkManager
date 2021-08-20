@@ -15,6 +15,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-mac-entry.h"
 #include "nmt-mtu-entry.h"
 
@@ -42,11 +43,7 @@ nmt_page_ethernet_constructed(GObject *object)
     NMConnection *    conn;
 
     conn    = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(ethernet));
-    s_wired = nm_connection_get_setting_wired(conn);
-    if (!s_wired) {
-        nm_connection_add_setting(conn, nm_setting_wired_new());
-        s_wired = nm_connection_get_setting_wired(conn);
-    }
+    s_wired = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_WIRED);
 
     deventry = nmt_editor_page_device_get_device_entry(NMT_EDITOR_PAGE_DEVICE(object));
     g_object_bind_property(s_wired,

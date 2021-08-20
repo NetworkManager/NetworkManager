@@ -14,10 +14,12 @@
 
 #include "libnm-client-aux-extern/nm-default-client.h"
 
+#include "nmt-page-wifi.h"
+
 #include <stdlib.h>
 #include <linux/if_ether.h>
 
-#include "nmt-page-wifi.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-mac-entry.h"
 #include "nmt-mtu-entry.h"
 #include "nmt-password-fields.h"
@@ -164,13 +166,8 @@ nmt_page_wifi_constructed(GObject *object)
     NMConnection *             conn;
 
     conn       = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(wifi));
-    s_wireless = nm_connection_get_setting_wireless(conn);
-    if (!s_wireless) {
-        nm_connection_add_setting(conn, nm_setting_wireless_new());
-        s_wireless = nm_connection_get_setting_wireless(conn);
-    }
-
-    s_wsec = nm_connection_get_setting_wireless_security(conn);
+    s_wireless = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_WIRELESS);
+    s_wsec     = nm_connection_get_setting_wireless_security(conn);
     if (!s_wsec) {
         /* It makes things simpler if we always have a
          * NMSettingWirelessSecurity; we'll hold a ref on one, and add

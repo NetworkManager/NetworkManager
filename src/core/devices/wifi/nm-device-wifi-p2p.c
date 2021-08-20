@@ -15,6 +15,7 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
 #include "nm-act-request.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-ref-string.h"
 #include "nm-ip4-config.h"
@@ -302,10 +303,7 @@ complete_connection(NMDevice *           device,
     }
 
     /* Add a Wi-Fi P2P setting if one doesn't exist yet */
-    if (!s_wifi_p2p) {
-        s_wifi_p2p = NM_SETTING_WIFI_P2P(nm_setting_wifi_p2p_new());
-        nm_connection_add_setting(connection, NM_SETTING(s_wifi_p2p));
-    }
+    s_wifi_p2p = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_WIFI_P2P);
 
     g_object_set(G_OBJECT(s_wifi_p2p), NM_SETTING_WIFI_P2P_PEER, setting_peer, NULL);
 

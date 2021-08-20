@@ -10,9 +10,11 @@
 
 #include "libnm-client-aux-extern/nm-default-client.h"
 
+#include "nmt-page-ip6.h"
+
 #include <stdlib.h>
 
-#include "nmt-page-ip6.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-ip-entry.h"
 #include "nmt-address-list.h"
 #include "nmt-route-editor.h"
@@ -85,14 +87,13 @@ nmt_page_ip6_constructed(GObject *object)
     NMConnection *     conn;
 
     conn  = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(ip6));
-    s_ip6 = nm_connection_get_setting_ip6_config(conn);
-    if (!s_ip6) {
-        s_ip6 = (NMSettingIPConfig *) nm_setting_ip6_config_new();
+    s_ip6 = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_IP6_CONFIG);
+    /* initialize 'method' to auto if it is NULL */
+    if (!nm_setting_ip_config_get_method(s_ip6)) {
         g_object_set(G_OBJECT(s_ip6),
                      NM_SETTING_IP_CONFIG_METHOD,
                      NM_SETTING_IP6_CONFIG_METHOD_AUTO,
                      NULL);
-        nm_connection_add_setting(conn, (NMSetting *) s_ip6);
     }
 
     widget = nmt_newt_popup_new(ip6methods);

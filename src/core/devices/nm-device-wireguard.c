@@ -11,6 +11,7 @@
 #include <linux/fib_rules.h>
 
 #include "nm-setting-wireguard.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-device-private.h"
@@ -1891,16 +1892,10 @@ static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(device);
-    NMSettingWireGuard *      s_wg =
-        NM_SETTING_WIREGUARD(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIREGUARD));
-    const NMPObject *            obj_wg;
+    NMSettingWireGuard *s_wg = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_WIREGUARD);
+    const NMPObject *   obj_wg;
     const NMPObjectLnkWireGuard *olnk_wg;
     guint                        i;
-
-    if (!s_wg) {
-        s_wg = NM_SETTING_WIREGUARD(nm_setting_wireguard_new());
-        nm_connection_add_setting(connection, NM_SETTING(s_wg));
-    }
 
     g_object_set(s_wg,
                  NM_SETTING_WIREGUARD_FWMARK,

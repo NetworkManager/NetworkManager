@@ -14,6 +14,7 @@
 #include "nm-device-private.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceBridge
@@ -145,8 +146,6 @@ complete_connection(NMDevice *           device,
                     NMConnection *const *existing_connections,
                     GError **            error)
 {
-    NMSettingBridge *s_bridge;
-
     nm_utils_complete_generic(nm_device_get_platform(device),
                               connection,
                               NM_SETTING_BRIDGE_SETTING_NAME,
@@ -157,11 +156,7 @@ complete_connection(NMDevice *           device,
                               NULL,
                               TRUE);
 
-    s_bridge = nm_connection_get_setting_bridge(connection);
-    if (!s_bridge) {
-        s_bridge = (NMSettingBridge *) nm_setting_bridge_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_bridge));
-    }
+    _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BRIDGE);
 
     return TRUE;
 }
@@ -576,16 +571,11 @@ static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
     NMDeviceBridge * self     = NM_DEVICE_BRIDGE(device);
-    NMSettingBridge *s_bridge = nm_connection_get_setting_bridge(connection);
+    NMSettingBridge *s_bridge = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BRIDGE);
     int              ifindex  = nm_device_get_ifindex(device);
     const Option *   option;
     gs_free char *   stp = NULL;
     int              stp_value;
-
-    if (!s_bridge) {
-        s_bridge = (NMSettingBridge *) nm_setting_bridge_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_bridge);
-    }
 
     option = master_options;
     nm_assert(nm_streq(option->sysname, "stp_state"));
@@ -690,11 +680,7 @@ master_update_slave_connection(NMDevice *    device,
     g_return_val_if_fail(ifindex_slave > 0, FALSE);
 
     s_con  = nm_connection_get_setting_connection(connection);
-    s_port = nm_connection_get_setting_bridge_port(connection);
-    if (!s_port) {
-        s_port = (NMSettingBridgePort *) nm_setting_bridge_port_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_port));
-    }
+    s_port = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BRIDGE_PORT);
 
     for (option = slave_options; option->name; option++) {
         gs_free char *str = nm_platform_sysctl_slave_get_option(nm_device_get_platform(device),

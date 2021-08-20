@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <linux/if_ether.h>
 
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-bluez-common.h"
 #include "nm-bluez-manager.h"
@@ -273,11 +274,7 @@ complete_connection(NMDevice *           device,
     s_serial = nm_connection_get_setting_serial(connection);
     s_ppp    = nm_connection_get_setting_ppp(connection);
 
-    s_bt = nm_connection_get_setting_bluetooth(connection);
-    if (!s_bt) {
-        s_bt = (NMSettingBluetooth *) nm_setting_bluetooth_new();
-        nm_connection_add_setting(connection, NM_SETTING(s_bt));
-    }
+    s_bt = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BLUETOOTH);
 
     ctype = nm_setting_bluetooth_get_connection_type(s_bt);
     if (ctype) {

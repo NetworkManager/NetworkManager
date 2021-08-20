@@ -17,6 +17,7 @@
 #include "settings/nm-settings.h"
 #include "nm-act-request.h"
 #include "nm-ip4-config.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceVxlan
@@ -399,14 +400,9 @@ complete_connection(NMDevice *           device,
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMDeviceVxlanPrivate *priv    = NM_DEVICE_VXLAN_GET_PRIVATE(device);
-    NMSettingVxlan *      s_vxlan = nm_connection_get_setting_vxlan(connection);
-    char                  sbuf[NM_UTILS_INET_ADDRSTRLEN];
-
-    if (!s_vxlan) {
-        s_vxlan = (NMSettingVxlan *) nm_setting_vxlan_new();
-        nm_connection_add_setting(connection, (NMSetting *) s_vxlan);
-    }
+    NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE(device);
+    NMSettingVxlan *s_vxlan    = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VXLAN);
+    char            sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
     if (priv->props.id != nm_setting_vxlan_get_id(s_vxlan))
         g_object_set(G_OBJECT(s_vxlan), NM_SETTING_VXLAN_ID, priv->props.id, NULL);
