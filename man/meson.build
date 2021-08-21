@@ -55,7 +55,7 @@ foreach man: mans
     output: output,
     command: xsltproc_options + [docbook_xls, '@INPUT@'],
     depend_files: common_ent_file,
-    install: true,
+    install: not libnm_only,
     install_dir: join_paths(nm_mandir, 'man' + man[1]),
   )
 endforeach

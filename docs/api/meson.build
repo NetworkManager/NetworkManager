@@ -52,5 +52,5 @@ gnome.gtkdoc(
   main_xml: 'network-manager-docs.xml',
   src_dir: meson.current_source_dir(),
   content_files: content_files,
-  install: true,
+  install: not libnm_only,
 )

@@ -25,6 +25,7 @@ option('hostname_persist', type: 'combo', choices: ['default', 'suse', 'gentoo',
 option('libaudit', type: 'combo', choices: ['yes', 'yes-disabled-by-default', 'no'], value: 'yes', description: 'Build with audit daemon support. yes-disabled-by-default enables support, but disables it unless explicitly configured via NetworkManager.conf')
 
 # features
+option('libnm-only', type: 'boolean', value: false, description: 'Build *only* libnm')
 option('wext', type: 'boolean', value: true, description: 'Enable or disable Linux Wireless Extensions')
 option('wifi', type: 'boolean', value: true, description: 'enable Wi-Fi support')
 option('iwd', type: 'boolean', value: false, description: 'enable iwd support (experimental)')

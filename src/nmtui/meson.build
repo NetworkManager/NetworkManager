@@ -67,5 +67,5 @@ executable(
   ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
-  install: true,
+  install: not libnm_only,
 )

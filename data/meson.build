@@ -64,7 +64,7 @@ if enable_polkit
     input: policy_in,
     output: '@BASENAME@',
     command: intltool_xml_cmd,
-    install: true,
+    install: not libnm_only,
     install_dir: polkit_gobject_policydir,
   )
 endif

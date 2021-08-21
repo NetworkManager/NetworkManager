@@ -19,7 +19,7 @@ nm_pppd_plugin = shared_module(
     libnm_std_aux,
     libc_siphash,
   ],
-  install: true,
+  install: not libnm_only,
   install_dir: pppd_plugin_dir,
 )
 
@@ -33,6 +33,6 @@ core_plugins += shared_module(
   dependencies: core_plugin_dep,
   link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
-  install: true,
+  install: not libnm_only,
   install_dir: nm_plugindir,
 )

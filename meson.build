@@ -776,6 +776,8 @@ if enable_nm_cloud_setup
   assert(libcurl_dep.found(), 'nm-cloud-setup requires libcurl library. Use -Dnm_cloud_setup=false to disable it')
 endif
 
+libnm_only = get_option('libnm-only')
+
 enable_docs = get_option('docs')
 
 more_asserts = get_option('more_asserts')

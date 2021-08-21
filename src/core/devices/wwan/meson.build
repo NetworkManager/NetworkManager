@@ -19,7 +19,7 @@ libnm_wwan = shared_module(
   ],
   link_args: '-Wl,--version-script,@0@'.format(linker_script),
   link_depends: linker_script,
-  install: true,
+  install: not libnm_only,
   install_dir: nm_plugindir,
 )
 

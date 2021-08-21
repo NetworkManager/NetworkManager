@@ -10,7 +10,7 @@ executable(
   dependencies: glib_dep,
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
-  install: true,
+  install: not libnm_only,
   install_dir: nm_libexecdir,
 )
 
