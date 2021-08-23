@@ -37,6 +37,7 @@ libnm_core_settings_sources = files(
   'nm-setting-adsl.c',
   'nm-setting-bluetooth.c',
   'nm-setting-bond.c',
+  'nm-setting-bond-port.c',
   'nm-setting-bridge-port.c',
   'nm-setting-bridge.c',
   'nm-setting-cdma.c',

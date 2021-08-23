@@ -2531,6 +2531,8 @@ slave_category(NMPlatform *self, int slave)
     switch (nm_platform_link_get_type(self, master)) {
     case NM_LINK_TYPE_BRIDGE:
         return "brport";
+    case NM_LINK_TYPE_BOND:
+        return "bonding_slave";
     default:
         return NULL;
     }

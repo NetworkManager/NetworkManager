@@ -386,4 +386,6 @@ typedef struct {
 
 /****************************************************************************/
 
+#define NM_BOND_PORT_QUEUE_ID_DEF 0
+
 #endif /* __NM_LIBNM_BASE_H__ */

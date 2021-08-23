@@ -114,6 +114,7 @@
 #define DESCRIBE_DOC_NM_SETTING_BLUETOOTH_BDADDR N_("The Bluetooth address of the device.")
 #define DESCRIBE_DOC_NM_SETTING_BLUETOOTH_TYPE N_("Either \"dun\" for Dial-Up Networking connections or \"panu\" for Personal Area Networking connections to devices supporting the NAP profile.")
 #define DESCRIBE_DOC_NM_SETTING_BOND_OPTIONS N_("Dictionary of key/value pairs of bonding options.  Both keys and values must be strings. Option names must contain only alphanumeric characters (ie, [a-zA-Z0-9]).")
+#define DESCRIBE_DOC_NM_SETTING_BOND_PORT_QUEUE_ID N_("The queue ID of this bond port. The maximum value of queue ID is the number of TX queues currently active in device.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_AGEING_TIME N_("The Ethernet MAC address aging time, in seconds.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_FORWARD_DELAY N_("The Spanning Tree Protocol (STP) forwarding delay, in seconds.")
 #define DESCRIBE_DOC_NM_SETTING_BRIDGE_GROUP_ADDRESS N_("If specified, The MAC address of the multicast group this bridge uses for STP. The address must be a link-local address in standard Ethernet MAC address format, ie an address of the form 01:80:C2:00:00:0X, with X in [0, 4..F]. If not specified the default value is 01:80:C2:00:00:00.")

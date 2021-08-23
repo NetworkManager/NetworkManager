@@ -19,6 +19,7 @@
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "nm-manager.h"
+#include "nm-setting-bond-port.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
@@ -1889,6 +1890,26 @@ write_bridge_port_setting(NMConnection *connection, shvarFile *ifcfg, GError **e
 }
 
 static gboolean
+write_bond_port_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
+{
+    NMSettingBondPort *s_port   = NULL;
+    guint16            queue_id = NM_BOND_PORT_QUEUE_ID_DEF;
+
+    s_port = _nm_connection_get_setting_bond_port(connection);
+    if (!s_port)
+        return TRUE;
+
+    queue_id = nm_setting_bond_port_get_queue_id(s_port);
+    if (queue_id
+        != get_setting_default_checked_uint(NM_BOND_PORT_QUEUE_ID_DEF,
+                                            s_port,
+                                            NM_SETTING_BOND_PORT_QUEUE_ID))
+        svSetValueInt64(ifcfg, "BOND_PORT_QUEUE_ID", queue_id);
+
+    return TRUE;
+}
+
+static gboolean
 write_team_port_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
 {
     NMSettingTeamPort *s_port;
@@ -3365,6 +3386,9 @@ do_write_construct(NMConnection *                  connection,
     }
 
     if (!write_bridge_port_setting(connection, ifcfg, error))
+        return FALSE;
+
+    if (!write_bond_port_setting(connection, ifcfg, error))
         return FALSE;
 
     if (!write_team_port_setting(connection, ifcfg, error))

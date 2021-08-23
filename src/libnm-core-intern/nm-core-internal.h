@@ -29,6 +29,7 @@
 #include "nm-setting-adsl.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-bond.h"
+#include "nm-setting-bond-port.h"
 #include "nm-setting-bridge-port.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-cdma.h"
@@ -984,5 +985,7 @@ _nm_variant_attribute_spec_find_binary_search(const NMVariantAttributeSpec *cons
 gboolean _nm_ip_tunnel_mode_is_layer2(NMIPTunnelMode mode);
 
 GPtrArray *_nm_setting_ip_config_get_dns_array(NMSettingIPConfig *setting);
+
+NMSettingBondPort *_nm_connection_get_setting_bond_port(NMConnection *connection);
 
 #endif

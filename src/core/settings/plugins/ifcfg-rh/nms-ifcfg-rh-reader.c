@@ -31,6 +31,7 @@
 #include "nm-setting-ethtool.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-bond.h"
+#include "nm-setting-bond-port.h"
 #include "nm-setting-team.h"
 #include "nm-setting-team-port.h"
 #include "nm-setting-bridge.h"
@@ -5493,6 +5494,37 @@ make_bond_setting(shvarFile *ifcfg, const char *file, GError **error)
     return (NMSetting *) s_bond;
 }
 
+static NMSetting *
+make_bond_port_setting(shvarFile *ifcfg)
+{
+    NMSetting *   s_port        = NULL;
+    gs_free char *value_to_free = NULL;
+    const char *  value;
+    guint32       queue_id = 0;
+
+    g_return_val_if_fail(ifcfg != NULL, FALSE);
+
+    value = svGetValueStr(ifcfg, "BOND_PORT_QUEUE_ID", &value_to_free);
+    if (value) {
+        s_port = nm_setting_bond_port_new();
+        queue_id =
+            _nm_utils_ascii_str_to_uint64(value, 10, 0, G_MAXUINT16, NM_BOND_PORT_QUEUE_ID_DEF);
+        if (errno != 0) {
+            PARSE_WARNING("Invalid bond port queue_id value '%s': error %d", value, errno);
+            nm_clear_g_free(&value_to_free);
+            return s_port;
+        } else {
+            nm_clear_g_free(&value_to_free);
+            nm_g_object_set_property_uint(G_OBJECT(s_port),
+                                          NM_SETTING_BOND_PORT_QUEUE_ID,
+                                          queue_id,
+                                          NULL);
+        }
+    }
+
+    return s_port;
+}
+
 static NMConnection *
 bond_connection_from_ifcfg(const char *file, shvarFile *ifcfg, GError **error)
 {
@@ -6657,6 +6689,10 @@ connection_from_file_full(const char *filename,
         nm_connection_add_setting(connection, setting);
 
     setting = make_bridge_port_setting(main_ifcfg);
+    if (setting)
+        nm_connection_add_setting(connection, setting);
+
+    setting = make_bond_port_setting(main_ifcfg);
     if (setting)
         nm_connection_add_setting(connection, setting);
 
