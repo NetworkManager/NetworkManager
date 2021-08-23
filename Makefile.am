@@ -1172,6 +1172,7 @@ src_libnm_core_impl_lib_h_pub_real = \
 	src/libnm-core-public/nm-setting-8021x.h \
 	src/libnm-core-public/nm-setting-adsl.h \
 	src/libnm-core-public/nm-setting-bluetooth.h \
+	src/libnm-core-public/nm-setting-bond-port.h \
 	src/libnm-core-public/nm-setting-bond.h \
 	src/libnm-core-public/nm-setting-bridge-port.h \
 	src/libnm-core-public/nm-setting-bridge.h \
@@ -1253,6 +1254,7 @@ src_libnm_core_impl_lib_c_settings_real = \
 	src/libnm-core-impl/nm-setting-adsl.c \
 	src/libnm-core-impl/nm-setting-bluetooth.c \
 	src/libnm-core-impl/nm-setting-bond.c \
+	src/libnm-core-impl/nm-setting-bond-port.c \
 	src/libnm-core-impl/nm-setting-bridge-port.c \
 	src/libnm-core-impl/nm-setting-bridge.c \
 	src/libnm-core-impl/nm-setting-cdma.c \
@@ -3412,6 +3414,7 @@ EXTRA_DIST += \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-eth-type \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-main \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-mode-numeric \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-port \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bond-slave-ib \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-bridge-component \
@@ -5086,6 +5089,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-mtu-entry.h \
 	src/nmtui/nmt-page-bond.c \
 	src/nmtui/nmt-page-bond.h \
+	src/nmtui/nmt-page-bond-port.c \
+	src/nmtui/nmt-page-bond-port.h \
 	src/nmtui/nmt-page-bridge.c \
 	src/nmtui/nmt-page-bridge.h \
 	src/nmtui/nmt-page-bridge-port.c \

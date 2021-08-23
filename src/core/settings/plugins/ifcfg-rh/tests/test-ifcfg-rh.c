@@ -9450,6 +9450,73 @@ test_write_bond_slave(void)
 }
 
 static void
+test_read_bond_port(void)
+{
+    gs_unref_object NMConnection *connection = NULL;
+    NMSettingConnection *         s_con      = NULL;
+    NMSettingBondPort *           s_port     = NULL;
+
+    connection =
+        _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-bond-port", NULL, TYPE_ETHERNET, NULL);
+
+    s_con = nm_connection_get_setting_connection(connection);
+    g_assert(s_con);
+    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "bond99");
+    g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
+
+    s_port = _nm_connection_get_setting_bond_port(connection);
+    g_assert(s_port);
+    g_assert_cmpuint(nm_setting_bond_port_get_queue_id(s_port), ==, 1);
+}
+
+static void
+test_write_bond_port(void)
+{
+    nmtst_auto_unlinkfile char *testfile      = NULL;
+    gs_unref_object NMConnection *connection  = NULL;
+    gs_unref_object NMConnection *reread      = NULL;
+    NMSettingConnection *         s_con       = NULL;
+    NMSettingWired *              s_wired     = NULL;
+    NMSettingBondPort *           s_bond_port = NULL;
+
+    connection = nm_simple_connection_new();
+
+    /* Connection setting */
+    s_con = (NMSettingConnection *) nm_setting_connection_new();
+    nm_connection_add_setting(connection, NM_SETTING(s_con));
+
+    g_object_set(s_con,
+                 NM_SETTING_CONNECTION_ID,
+                 "Test Write Bond Port",
+                 NM_SETTING_CONNECTION_UUID,
+                 nm_uuid_generate_random_str_a(),
+                 NM_SETTING_CONNECTION_AUTOCONNECT,
+                 TRUE,
+                 NM_SETTING_CONNECTION_TYPE,
+                 NM_SETTING_WIRED_SETTING_NAME,
+                 NM_SETTING_CONNECTION_MASTER,
+                 "bond0",
+                 NM_SETTING_CONNECTION_SLAVE_TYPE,
+                 NM_SETTING_BOND_SETTING_NAME,
+                 NULL);
+
+    s_wired = (NMSettingWired *) nm_setting_wired_new();
+    nm_connection_add_setting(connection, NM_SETTING(s_wired));
+
+    s_bond_port = NM_SETTING_BOND_PORT(nm_setting_bond_port_new());
+    g_object_set(s_bond_port, NM_SETTING_BOND_PORT_QUEUE_ID, 1, NULL);
+    nm_connection_add_setting(connection, NM_SETTING(s_bond_port));
+
+    nmtst_assert_connection_verifies(connection);
+
+    _writer_new_connection(connection, TEST_SCRATCH_DIR, &testfile);
+
+    reread = _connection_from_file(testfile, NULL, TYPE_ETHERNET, NULL);
+
+    nmtst_assert_connection_equals(connection, TRUE, reread, FALSE);
+}
+
+static void
 test_read_infiniband(void)
 {
     NMConnection *       connection;
@@ -12064,6 +12131,8 @@ main(int argc, char **argv)
     g_test_add_func(TPATH "bond/write-slave", test_write_bond_slave);
     g_test_add_func(TPATH "bond/write-slave-ib", test_write_bond_slave_ib);
     g_test_add_func(TPATH "bond/bonding-opts-numeric-mode", test_read_bond_opts_mode_numeric);
+    g_test_add_func(TPATH "bond/read-bond-port", test_read_bond_port);
+    g_test_add_func(TPATH "bond/write-bond-port", test_write_bond_port);
 
     g_test_add_func(TPATH "bridge/read-master", test_read_bridge_main);
     g_test_add_func(TPATH "bridge/write-master", test_write_bridge_main);

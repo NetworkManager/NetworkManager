@@ -13,6 +13,7 @@ libnm_core_headers = files(
   'nm-setting-adsl.h',
   'nm-setting-bluetooth.h',
   'nm-setting-bond.h',
+  'nm-setting-bond-port.h',
   'nm-setting-bridge-port.h',
   'nm-setting-bridge.h',
   'nm-setting-cdma.h',
