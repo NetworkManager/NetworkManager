@@ -1282,9 +1282,10 @@ _parse_af_inet6(NMPlatform *        platform,
     /* Hack to detect support addrgenmode of the kernel. We only parse
      * netlink messages that we receive from kernel, hence this check
      * is valid. */
-    if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
+    if (!_nm_platform_kernel_support_detected(
+            NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE)) {
         /* IFLA_INET6_ADDR_GEN_MODE was added in kernel 3.17, dated 5 October, 2014. */
-        _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL,
+        _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE,
                                          tb[IFLA_INET6_ADDR_GEN_MODE] ? 1 : -1);
     }
 
@@ -7507,17 +7508,16 @@ link_change_flags(NMPlatform *platform, int ifindex, unsigned flags_mask, unsign
 }
 
 static int
-link_set_user_ipv6ll_enabled(NMPlatform *platform, int ifindex, gboolean enabled)
+link_set_inet6_addr_gen_mode(NMPlatform *platform, int ifindex, guint8 mode)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-    guint8 mode = enabled ? NM_IN6_ADDR_GEN_MODE_NONE : NM_IN6_ADDR_GEN_MODE_EUI64;
-    char   sbuf[100];
+    char                         sbuf[100];
 
     _LOGD("link: change %d: user-ipv6ll: set IPv6 address generation mode to %s",
           ifindex,
           nm_platform_link_inet6_addrgenmode2str(mode, sbuf, sizeof(sbuf)));
 
-    if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
+    if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE)) {
         _LOGD("link: change %d: user-ipv6ll: not supported", ifindex);
         return -NME_PL_OPNOTSUPP;
     }
@@ -9667,7 +9667,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
 
     platform_class->link_change_flags = link_change_flags;
 
-    platform_class->link_set_user_ipv6ll_enabled = link_set_user_ipv6ll_enabled;
+    platform_class->link_set_inet6_addr_gen_mode = link_set_inet6_addr_gen_mode;
     platform_class->link_set_token               = link_set_token;
 
     platform_class->link_set_address                   = link_set_address;

@@ -306,10 +306,10 @@ static const struct {
             .name                 = "EXTENDED_IFA_FLAGS",
             .desc                 = "IPv6 temporary addresses support",
         },
-    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL] =
+    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE] =
         {
             .compile_time_default = TRUE,
-            .name                 = "USER_IPV6LL",
+            .name                 = "IFLA_INET6_ADDR_GEN_MODE",
             .desc                 = "IFLA_INET6_ADDR_GEN_MODE support",
         },
     [NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF] =
@@ -1656,47 +1656,20 @@ nm_platform_link_get_udev_device(NMPlatform *self, int ifindex)
     return obj_cache ? obj_cache->_link.udev.device : NULL;
 }
 
-/**
- * nm_platform_link_get_user_ip6vll_enabled:
- * @self: platform instance
- * @ifindex: Interface index
- *
- * Check whether NM handles IPv6LL address creation for the link.  If the
- * platform or OS doesn't support changing the IPv6LL address mode, this call
- * will fail and return %FALSE.
- *
- * Returns: %TRUE if NM handles the IPv6LL address for @ifindex
- */
-gboolean
-nm_platform_link_get_user_ipv6ll_enabled(NMPlatform *self, int ifindex)
+int
+nm_platform_link_get_inet6_addr_gen_mode(NMPlatform *self, int ifindex)
 {
-    const NMPlatformLink *pllink;
-
-    pllink = nm_platform_link_get(self, ifindex);
-    if (pllink && pllink->inet6_addr_gen_mode_inv)
-        return _nm_platform_uint8_inv(pllink->inet6_addr_gen_mode_inv) == NM_IN6_ADDR_GEN_MODE_NONE;
-    return FALSE;
+    return _nm_platform_link_get_inet6_addr_gen_mode(nm_platform_link_get(self, ifindex));
 }
 
-/**
- * nm_platform_link_set_user_ip6vll_enabled:
- * @self: platform instance
- * @ifindex: Interface index
- *
- * Set whether NM handles IPv6LL address creation for the link.  If the
- * platform or OS doesn't support changing the IPv6LL address mode, this call
- * will fail and return %FALSE.
- *
- * Returns: the negative nm-error on failure.
- */
 int
-nm_platform_link_set_user_ipv6ll_enabled(NMPlatform *self, int ifindex, gboolean enabled)
+nm_platform_link_set_inet6_addr_gen_mode(NMPlatform *self, int ifindex, guint8 mode)
 {
     _CHECK_SELF(self, klass, -NME_BUG);
 
     g_return_val_if_fail(ifindex > 0, -NME_BUG);
 
-    return klass->link_set_user_ipv6ll_enabled(self, ifindex, enabled);
+    return klass->link_set_inet6_addr_gen_mode(self, ifindex, mode);
 }
 
 /**

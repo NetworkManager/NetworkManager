@@ -3145,8 +3145,12 @@ _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
 
         nm_platform_process_events_ensure_link(platform, priv->ip_ifindex, priv->ip_iface);
 
-        if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
-            nm_platform_link_set_user_ipv6ll_enabled(platform, priv->ip_ifindex, TRUE);
+        if (nm_platform_kernel_support_get(
+                NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE)) {
+            nm_platform_link_set_inet6_addr_gen_mode(platform,
+                                                     priv->ip_ifindex,
+                                                     NM_IN6_ADDR_GEN_MODE_NONE);
+        }
 
         if (!nm_platform_link_is_up(platform, priv->ip_ifindex))
             nm_platform_link_change_flags(platform, priv->ip_ifindex, IFF_UP, TRUE);
@@ -6091,8 +6095,10 @@ realize_start_setup(NMDevice *            self,
         if (priv->firmware_version)
             _notify(self, PROP_FIRMWARE_VERSION);
 
-        if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
-            priv->ipv6ll_handle = nm_platform_link_get_user_ipv6ll_enabled(platform, priv->ifindex);
+        if (nm_platform_kernel_support_get(
+                NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE))
+            priv->ipv6ll_handle = (nm_platform_link_get_inet6_addr_gen_mode(platform, priv->ifindex)
+                                   == NM_IN6_ADDR_GEN_MODE_NONE);
 
         if (nm_platform_link_supports_sriov(platform, priv->ifindex))
             capabilities |= NM_DEVICE_CAP_SRIOV;
@@ -11197,21 +11203,23 @@ set_nm_ipv6ll(NMDevice *self, gboolean enable)
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     int              ifindex = nm_device_get_ip_ifindex(self);
 
-    if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
+    if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE))
         return;
 
     priv->ipv6ll_handle = enable;
     if (ifindex > 0) {
-        const char *detail = enable ? "enable" : "disable";
-        int         r;
+        int r;
 
-        _LOGD(LOGD_IP6, "will %s userland IPv6LL", detail);
-        r = nm_platform_link_set_user_ipv6ll_enabled(nm_device_get_platform(self), ifindex, enable);
+        _LOGD(LOGD_IP6, "will %s userland IPv6LL", enable ? "enable" : "disable");
+        r = nm_platform_link_set_inet6_addr_gen_mode(nm_device_get_platform(self),
+                                                     ifindex,
+                                                     enable ? NM_IN6_ADDR_GEN_MODE_NONE
+                                                            : NM_IN6_ADDR_GEN_MODE_EUI64);
         if (r < 0) {
             _NMLOG(NM_IN_SET(r, -NME_PL_NOT_FOUND, -NME_PL_OPNOTSUPP) ? LOGL_DEBUG : LOGL_WARN,
                    LOGD_IP6,
                    "failed to %s userspace IPv6LL address handling (%s)",
-                   detail,
+                   enable ? "enable" : "disable",
                    nm_strerror(r));
         }
 

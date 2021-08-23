@@ -602,28 +602,47 @@ test_bridge_addr(void)
     g_assert(plink);
     g_assert(!nm_platform_link_get_permanent_address(NM_PLATFORM_GET, plink, &hw_perm_addr));
 
-    if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
-        g_assert(!nm_platform_link_get_user_ipv6ll_enabled(NM_PLATFORM_GET, link.ifindex));
+    if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE)) {
+        g_assert_cmpint(nm_platform_link_get_inet6_addr_gen_mode(NM_PLATFORM_GET, link.ifindex),
+                        ==,
+                        NM_IN6_ADDR_GEN_MODE_EUI64);
+        g_assert_cmpint(_nm_platform_link_get_inet6_addr_gen_mode(plink),
+                        ==,
+                        NM_IN6_ADDR_GEN_MODE_EUI64);
         g_assert_cmpint(_nm_platform_uint8_inv(plink->inet6_addr_gen_mode_inv),
                         ==,
                         NM_IN6_ADDR_GEN_MODE_EUI64);
 
         g_assert(NMTST_NM_ERR_SUCCESS(
-            nm_platform_link_set_user_ipv6ll_enabled(NM_PLATFORM_GET, link.ifindex, TRUE)));
-        g_assert(nm_platform_link_get_user_ipv6ll_enabled(NM_PLATFORM_GET, link.ifindex));
+            nm_platform_link_set_inet6_addr_gen_mode(NM_PLATFORM_GET,
+                                                     link.ifindex,
+                                                     NM_IN6_ADDR_GEN_MODE_NONE)));
+        g_assert_cmpint(nm_platform_link_get_inet6_addr_gen_mode(NM_PLATFORM_GET, link.ifindex),
+                        ==,
+                        NM_IN6_ADDR_GEN_MODE_NONE);
         plink = nm_platform_link_get(NM_PLATFORM_GET, link.ifindex);
         g_assert(plink);
         g_assert(!nm_platform_link_get_permanent_address(NM_PLATFORM_GET, plink, &hw_perm_addr));
+        g_assert_cmpint(_nm_platform_link_get_inet6_addr_gen_mode(plink),
+                        ==,
+                        NM_IN6_ADDR_GEN_MODE_NONE);
         g_assert_cmpint(_nm_platform_uint8_inv(plink->inet6_addr_gen_mode_inv),
                         ==,
                         NM_IN6_ADDR_GEN_MODE_NONE);
 
         g_assert(NMTST_NM_ERR_SUCCESS(
-            nm_platform_link_set_user_ipv6ll_enabled(NM_PLATFORM_GET, link.ifindex, FALSE)));
-        g_assert(!nm_platform_link_get_user_ipv6ll_enabled(NM_PLATFORM_GET, link.ifindex));
+            nm_platform_link_set_inet6_addr_gen_mode(NM_PLATFORM_GET,
+                                                     link.ifindex,
+                                                     NM_IN6_ADDR_GEN_MODE_EUI64)));
+        g_assert_cmpint(nm_platform_link_get_inet6_addr_gen_mode(NM_PLATFORM_GET, link.ifindex),
+                        ==,
+                        NM_IN6_ADDR_GEN_MODE_EUI64);
         plink = nm_platform_link_get(NM_PLATFORM_GET, link.ifindex);
         g_assert(plink);
         g_assert(!nm_platform_link_get_permanent_address(NM_PLATFORM_GET, plink, &hw_perm_addr));
+        g_assert_cmpint(_nm_platform_link_get_inet6_addr_gen_mode(plink),
+                        ==,
+                        NM_IN6_ADDR_GEN_MODE_EUI64);
         g_assert_cmpint(_nm_platform_uint8_inv(plink->inet6_addr_gen_mode_inv),
                         ==,
                         NM_IN6_ADDR_GEN_MODE_EUI64);

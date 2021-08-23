@@ -702,7 +702,9 @@ main(int argc, char *argv[])
         guint32           default_ra_timeout;
         int               max_addresses;
 
-        nm_platform_link_set_user_ipv6ll_enabled(NM_PLATFORM_GET, gl.ifindex, TRUE);
+        nm_platform_link_set_inet6_addr_gen_mode(NM_PLATFORM_GET,
+                                                 gl.ifindex,
+                                                 NM_IN6_ADDR_GEN_MODE_NONE);
 
         if (global_opt.stable_id
             && (global_opt.stable_id[0] >= '0' && global_opt.stable_id[0] <= '9')
