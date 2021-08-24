@@ -56,6 +56,7 @@ G_STATIC_ASSERT(_nm_alignof(NMPlatformIPAddress) == _nm_alignof(NMPlatformIPXAdd
 
 G_STATIC_ASSERT(sizeof(((NMPLinkAddress *) NULL)->data) == _NM_UTILS_HWADDR_LEN_MAX);
 G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_address.data) == _NM_UTILS_HWADDR_LEN_MAX);
+G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_perm_address.data) == _NM_UTILS_HWADDR_LEN_MAX);
 G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_broadcast.data) == _NM_UTILS_HWADDR_LEN_MAX);
 
 static const char *
@@ -347,6 +348,12 @@ static const struct {
             .compile_time_default = (IFLA_BR_MAX >= 41 /* IFLA_BR_VLAN_STATS_ENABLED */),
             .name                 = "IFLA_BR_VLAN_STATS_ENABLE",
             .desc                 = "IFLA_BR_VLAN_STATS_ENABLE bridge link attribute",
+        },
+    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_PERM_ADDRESS] =
+        {
+            .compile_time_default = (IFLA_MAX >= 54 /* IFLA_PERM_ADDRESS */),
+            .name                 = "IFLA_PERM_ADDRESS",
+            .desc                 = "IFLA_PERM_ADDRESS netlink attribute",
         },
 };
 
@@ -1736,7 +1743,7 @@ nm_platform_link_get_address(NMPlatform *self, int ifindex, size_t *length)
 }
 
 /**
- * nm_platform_link_get_permanent_address:
+ * nm_platform_link_get_permanent_address_ethtool:
  * @self: platform instance
  * @ifindex: Interface index
  * @buf: buffer of at least %_NM_UTILS_HWADDR_LEN_MAX bytes, on success
@@ -1747,20 +1754,45 @@ nm_platform_link_get_address(NMPlatform *self, int ifindex, size_t *length)
  * address.
  */
 gboolean
-nm_platform_link_get_permanent_address(NMPlatform *self, int ifindex, guint8 *buf, size_t *length)
+nm_platform_link_get_permanent_address_ethtool(NMPlatform *    self,
+                                               int             ifindex,
+                                               NMPLinkAddress *out_address)
 {
     _CHECK_SELF(self, klass, FALSE);
 
-    if (length)
-        *length = 0;
+    if (out_address)
+        out_address->len = 0;
 
     g_return_val_if_fail(ifindex > 0, FALSE);
-    g_return_val_if_fail(buf, FALSE);
-    g_return_val_if_fail(length, FALSE);
+    g_return_val_if_fail(out_address, FALSE);
 
-    if (klass->link_get_permanent_address)
-        return klass->link_get_permanent_address(self, ifindex, buf, length);
+    if (klass->link_get_permanent_address_ethtool)
+        return klass->link_get_permanent_address_ethtool(self, ifindex, out_address);
     return FALSE;
+}
+
+gboolean
+nm_platform_link_get_permanent_address(NMPlatform *          self,
+                                       const NMPlatformLink *plink,
+                                       NMPLinkAddress *      out_address)
+{
+    _CHECK_SELF(self, klass, FALSE);
+    nm_assert(out_address);
+
+    if (!plink)
+        return FALSE;
+    if (plink->l_perm_address.len > 0) {
+        *out_address = plink->l_perm_address;
+        return TRUE;
+    }
+    if (nm_platform_kernel_support_get_full(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_PERM_ADDRESS,
+                                            FALSE)
+        == NM_OPTION_BOOL_TRUE) {
+        /* kernel supports the netlink API IFLA_PERM_ADDRESS, but we don't have the
+         * address cached. There is no need to fallback to ethtool ioctl. */
+        return FALSE;
+    }
+    return nm_platform_link_get_permanent_address_ethtool(self, plink->ifindex, out_address);
 }
 
 gboolean
@@ -5527,6 +5559,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
     gsize       l;
     char        str_addrmode[30];
     char        str_address[_NM_UTILS_HWADDR_LEN_MAX * 3];
+    char        str_perm_address[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char        str_broadcast[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char        str_inet6_token[NM_UTILS_INET_ADDRSTRLEN];
     const char *str_link_type;
@@ -5565,6 +5598,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         parent[0] = 0;
 
     _nmp_link_address_to_string(&link->l_address, str_address);
+    _nmp_link_address_to_string(&link->l_perm_address, str_perm_address);
     _nmp_link_address_to_string(&link->l_broadcast, str_broadcast);
 
     str_link_type = nm_link_type_to_string(link->type);
@@ -5584,6 +5618,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         "%s"      /* is-in-udev */
         "%s%s"    /* addr-gen-mode */
         "%s%s"    /* l_address */
+        "%s%s"    /* l_perm_address */
         "%s%s"    /* l_broadcast */
         "%s%s"    /* inet6_token */
         "%s%s"    /* driver */
@@ -5609,6 +5644,8 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
                                       : "",
         str_address[0] ? " addr " : "",
         str_address[0] ? str_address : "",
+        str_perm_address[0] ? " permaddr " : "",
+        str_perm_address[0] ? str_perm_address : "",
         str_broadcast[0] ? " brd " : "",
         str_broadcast[0] ? str_broadcast : "",
         link->inet6_token.id ? " inet6token " : "",
@@ -7306,6 +7343,9 @@ nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h)
                        obj->l_address.data,
                        NM_MIN(obj->l_address.len, sizeof(obj->l_address.data)));
     nm_hash_update_mem(h,
+                       obj->l_perm_address.data,
+                       NM_MIN(obj->l_perm_address.len, sizeof(obj->l_perm_address.data)));
+    nm_hash_update_mem(h,
                        obj->l_broadcast.data,
                        NM_MIN(obj->l_broadcast.len, sizeof(obj->l_broadcast.data)));
 }
@@ -7325,12 +7365,15 @@ nm_platform_link_cmp(const NMPlatformLink *a, const NMPlatformLink *b)
     NM_CMP_FIELD_BOOL(a, b, initialized);
     NM_CMP_FIELD(a, b, arptype);
     NM_CMP_FIELD(a, b, l_address.len);
+    NM_CMP_FIELD(a, b, l_perm_address.len);
     NM_CMP_FIELD(a, b, l_broadcast.len);
     NM_CMP_FIELD(a, b, inet6_addr_gen_mode_inv);
     NM_CMP_FIELD_STR_INTERNED(a, b, kind);
     NM_CMP_FIELD_STR_INTERNED(a, b, driver);
     if (a->l_address.len)
         NM_CMP_FIELD_MEMCMP_LEN(a, b, l_address.data, a->l_address.len);
+    if (a->l_perm_address.len)
+        NM_CMP_FIELD_MEMCMP_LEN(a, b, l_perm_address.data, a->l_perm_address.len);
     if (a->l_broadcast.len)
         NM_CMP_FIELD_MEMCMP_LEN(a, b, l_broadcast.data, a->l_broadcast.len);
     NM_CMP_FIELD_MEMCMP(a, b, inet6_token);

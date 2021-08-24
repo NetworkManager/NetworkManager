@@ -231,6 +231,9 @@ struct _NMPlatformLink {
     /* IFLA_ADDRESS */
     NMPLinkAddress l_address;
 
+    /* IFLA_PERM_ADDRESS */
+    NMPLinkAddress l_perm_address;
+
     /* IFLA_BROADCAST */
     NMPLinkAddress l_broadcast;
 
@@ -1015,6 +1018,7 @@ typedef enum {
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED,
+    NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_PERM_ADDRESS,
 
     /* this also includes FRA_SPORT_RANGE and FRA_DPORT_RANGE which
      * were added at the same time. */
@@ -1108,10 +1112,9 @@ typedef struct {
     int (*link_set_user_ipv6ll_enabled)(NMPlatform *self, int ifindex, gboolean enabled);
     gboolean (*link_set_token)(NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
 
-    gboolean (*link_get_permanent_address)(NMPlatform *self,
-                                           int         ifindex,
-                                           guint8 *    buf,
-                                           size_t *    length);
+    gboolean (*link_get_permanent_address_ethtool)(NMPlatform *    self,
+                                                   int             ifindex,
+                                                   NMPLinkAddress *out_address);
     int (*link_set_address)(NMPlatform *self, int ifindex, gconstpointer address, size_t length);
     int (*link_set_mtu)(NMPlatform *self, int ifindex, guint32 mtu);
     gboolean (*link_set_name)(NMPlatform *self, int ifindex, const char *name);
@@ -1861,8 +1864,12 @@ struct udev_device *nm_platform_link_get_udev_device(NMPlatform *self, int ifind
 int      nm_platform_link_set_user_ipv6ll_enabled(NMPlatform *self, int ifindex, gboolean enabled);
 gboolean nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
 
-gboolean
-nm_platform_link_get_permanent_address(NMPlatform *self, int ifindex, guint8 *buf, size_t *length);
+gboolean nm_platform_link_get_permanent_address_ethtool(NMPlatform *    self,
+                                                        int             ifindex,
+                                                        NMPLinkAddress *out_address);
+gboolean nm_platform_link_get_permanent_address(NMPlatform *          self,
+                                                const NMPlatformLink *plink,
+                                                NMPLinkAddress *      out_address);
 int nm_platform_link_set_address(NMPlatform *self, int ifindex, const void *address, size_t length);
 int nm_platform_link_set_mtu(NMPlatform *self, int ifindex, guint32 mtu);
 gboolean nm_platform_link_set_name(NMPlatform *self, int ifindex, const char *name);
