@@ -17089,11 +17089,11 @@ nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze)
 {
     NMDevicePrivate *              priv = NM_DEVICE_GET_PRIVATE(self);
     guint8                         buf[_NM_UTILS_HWADDR_LEN_MAX];
-    size_t                         len = 0;
     gboolean                       success_read;
     int                            ifindex;
     const NMPlatformLink *         pllink;
     const NMConfigDeviceStateData *dev_state;
+    NMPLinkAddress                 cached_hw_addr_perm;
 
     if (priv->hw_addr_perm) {
         /* the permanent hardware address is only read once and not
@@ -17132,11 +17132,13 @@ nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze)
         return;
     }
 
-    success_read =
-        nm_platform_link_get_permanent_address(nm_device_get_platform(self), ifindex, buf, &len);
-    if (success_read && priv->hw_addr_len == len) {
+    success_read = nm_platform_link_get_permanent_address(nm_device_get_platform(self),
+                                                          pllink,
+                                                          &cached_hw_addr_perm);
+    if (success_read && priv->hw_addr_len == cached_hw_addr_perm.len) {
         priv->hw_addr_perm_fake = FALSE;
-        priv->hw_addr_perm      = nm_utils_hwaddr_ntoa(buf, len);
+        priv->hw_addr_perm =
+            nm_utils_hwaddr_ntoa(cached_hw_addr_perm.data, cached_hw_addr_perm.len);
         _LOGD(LOGD_DEVICE, "hw-addr: read permanent MAC address '%s'", priv->hw_addr_perm);
         goto notify_and_out;
     }
