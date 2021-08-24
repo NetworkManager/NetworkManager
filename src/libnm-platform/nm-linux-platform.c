@@ -3583,13 +3583,6 @@ rta_multipath_done:;
     obj->ip_route.lock_mtu      = NM_FLAGS_HAS(lock, 1 << RTAX_MTU);
 
     if (!is_v4) {
-        if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF)) {
-            /* Detect support for RTA_PREF by inspecting the netlink message.
-             * RTA_PREF was added in kernel 4.1, dated 21 June, 2015. */
-            _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF,
-                                             tb[RTA_PREF] ? 1 : -1);
-        }
-
         if (tb[RTA_PREF])
             obj->ip6_route.rt_pref = nla_get_u8(tb[RTA_PREF]);
     }

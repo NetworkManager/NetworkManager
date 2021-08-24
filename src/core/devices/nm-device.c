@@ -10856,25 +10856,21 @@ ndisc_config_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int
     }
 
     if (NM_FLAGS_ANY(changed, NM_NDISC_CONFIG_ROUTES | NM_NDISC_CONFIG_GATEWAYS)) {
-        nm_ip6_config_reset_routes_ndisc(
-            (NMIP6Config *) priv->ac_ip6_config.orig,
-            rdata->gateways,
-            rdata->gateways_n,
-            rdata->routes,
-            rdata->routes_n,
-            nm_device_get_route_table(self, AF_INET6),
-            nm_device_get_route_metric(self, AF_INET6),
-            nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF));
+        nm_ip6_config_reset_routes_ndisc((NMIP6Config *) priv->ac_ip6_config.orig,
+                                         rdata->gateways,
+                                         rdata->gateways_n,
+                                         rdata->routes,
+                                         rdata->routes_n,
+                                         nm_device_get_route_table(self, AF_INET6),
+                                         nm_device_get_route_metric(self, AF_INET6));
         if (priv->ac_ip6_config.current) {
-            nm_ip6_config_reset_routes_ndisc(
-                (NMIP6Config *) priv->ac_ip6_config.current,
-                rdata->gateways,
-                rdata->gateways_n,
-                rdata->routes,
-                rdata->routes_n,
-                nm_device_get_route_table(self, AF_INET6),
-                nm_device_get_route_metric(self, AF_INET6),
-                nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF));
+            nm_ip6_config_reset_routes_ndisc((NMIP6Config *) priv->ac_ip6_config.current,
+                                             rdata->gateways,
+                                             rdata->gateways_n,
+                                             rdata->routes,
+                                             rdata->routes_n,
+                                             nm_device_get_route_table(self, AF_INET6),
+                                             nm_device_get_route_metric(self, AF_INET6));
         }
     }
 

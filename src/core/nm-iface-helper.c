@@ -201,15 +201,13 @@ ndisc_config_changed(NMNDisc *          ndisc,
     }
 
     if (NM_FLAGS_ANY(changed, NM_NDISC_CONFIG_ROUTES | NM_NDISC_CONFIG_GATEWAYS)) {
-        nm_ip6_config_reset_routes_ndisc(
-            ndisc_config,
-            rdata->gateways,
-            rdata->gateways_n,
-            rdata->routes,
-            rdata->routes_n,
-            RT_TABLE_MAIN,
-            global_opt.priority_v6,
-            nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF));
+        nm_ip6_config_reset_routes_ndisc(ndisc_config,
+                                         rdata->gateways,
+                                         rdata->gateways_n,
+                                         rdata->routes,
+                                         rdata->routes_n,
+                                         RT_TABLE_MAIN,
+                                         global_opt.priority_v6);
     }
 
     if (changed & NM_NDISC_CONFIG_DHCP_LEVEL) {

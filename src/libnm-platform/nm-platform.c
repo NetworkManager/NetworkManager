@@ -300,12 +300,6 @@ static const struct {
     const char *name;
     const char *desc;
 } _nm_platform_kernel_support_info[_NM_PLATFORM_KERNEL_SUPPORT_NUM] = {
-    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF] =
-        {
-            .compile_time_default = (RTA_MAX >= 20 /* RTA_PREF */),
-            .name                 = "RTA_PREF",
-            .desc                 = "ability to set router preference for IPv6 routes",
-        },
     [NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV] =
         {
             .compile_time_default = (FRA_MAX >= 19 /* FRA_L3MDEV */),

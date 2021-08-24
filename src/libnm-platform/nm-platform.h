@@ -1015,7 +1015,6 @@ typedef void (*NMPlatformAsyncCallback)(GError *error, gpointer user_data);
 /*****************************************************************************/
 
 typedef enum {
-    NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL,
