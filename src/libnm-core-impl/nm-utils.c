@@ -4603,8 +4603,9 @@ nm_utils_check_virtual_device_compatibility(GType virtual_type, GType other_type
 
     if (virtual_type == NM_TYPE_SETTING_BOND) {
         return (other_type == NM_TYPE_SETTING_INFINIBAND || other_type == NM_TYPE_SETTING_WIRED
-                || other_type == NM_TYPE_SETTING_BRIDGE || other_type == NM_TYPE_SETTING_BOND
-                || other_type == NM_TYPE_SETTING_TEAM || other_type == NM_TYPE_SETTING_VLAN);
+                || other_type == NM_TYPE_SETTING_WIRELESS || other_type == NM_TYPE_SETTING_BRIDGE
+                || other_type == NM_TYPE_SETTING_BOND || other_type == NM_TYPE_SETTING_TEAM
+                || other_type == NM_TYPE_SETTING_VLAN);
     } else if (virtual_type == NM_TYPE_SETTING_BRIDGE) {
         return (other_type == NM_TYPE_SETTING_WIRED || other_type == NM_TYPE_SETTING_BOND
                 || other_type == NM_TYPE_SETTING_TEAM || other_type == NM_TYPE_SETTING_VLAN);
