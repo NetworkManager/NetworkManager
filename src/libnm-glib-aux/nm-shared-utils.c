@@ -761,7 +761,7 @@ out:
 
 /*****************************************************************************/
 
-char _nm_utils_to_string_buffer[];
+_nm_thread_local char _nm_utils_to_string_buffer[] = {0};
 
 void
 nm_utils_to_string_buffer_init(char **buf, gsize *len)
