@@ -3279,8 +3279,13 @@ do_write_construct(NMConnection *                  connection,
             return FALSE;
         }
         ifcfg_name = ifcfg_name_free;
-    } else
-        ifcfg_name = "/tmp/ifcfg-dummy";
+    } else {
+        g_set_error(error,
+                    NM_SETTINGS_ERROR,
+                    NM_SETTINGS_ERROR_FAILED,
+                    "No file name given for storing profile to ifcfg-rh");
+        g_return_val_if_reached(FALSE);
+    }
 
     ifcfg = svCreateFile(ifcfg_name);
 
