@@ -3218,10 +3218,11 @@ do_write_construct(NMConnection *                  connection,
                    GError **                       error)
 {
     NMSettingConnection *    s_con;
-    nm_auto_shvar_file_close shvarFile *ifcfg       = NULL;
-    gs_free char *                      ifcfg_name  = NULL;
-    gs_free char *                      route_path  = NULL;
-    gs_free char *                      route6_path = NULL;
+    nm_auto_shvar_file_close shvarFile *ifcfg = NULL;
+    const char *                        ifcfg_name;
+    gs_free char *                      ifcfg_name_free = NULL;
+    gs_free char *                      route_path      = NULL;
+    gs_free char *                      route6_path     = NULL;
     const char *                        type;
     gs_unref_hashtable GHashTable *blobs   = NULL;
     gs_unref_hashtable GHashTable *secrets = NULL;
@@ -3245,11 +3246,7 @@ do_write_construct(NMConnection *                  connection,
 
     if (filename) {
         /* For existing connections, 'filename' should be full path to ifcfg file */
-        ifcfg = svOpenFile(filename, error);
-        if (!ifcfg)
-            return FALSE;
-
-        ifcfg_name = g_strdup(filename);
+        ifcfg_name = filename;
     } else if (ifcfg_dir) {
         gs_free char *escaped = NULL;
         int           i_path;
@@ -3270,21 +3267,22 @@ do_write_construct(NMConnection *                  connection,
             if (g_file_test(path_candidate, G_FILE_TEST_EXISTS))
                 continue;
 
-            ifcfg_name = g_steal_pointer(&path_candidate);
+            ifcfg_name_free = g_steal_pointer(&path_candidate);
             break;
         }
 
-        if (!ifcfg_name) {
+        if (!ifcfg_name_free) {
             g_set_error_literal(error,
                                 NM_SETTINGS_ERROR,
                                 NM_SETTINGS_ERROR_FAILED,
                                 "Failed to find usable ifcfg file name");
             return FALSE;
         }
-
-        ifcfg = svCreateFile(ifcfg_name);
+        ifcfg_name = ifcfg_name_free;
     } else
-        ifcfg = svCreateFile("/tmp/ifcfg-dummy");
+        ifcfg_name = "/tmp/ifcfg-dummy";
+
+    ifcfg = svCreateFile(ifcfg_name);
 
     route_path = utils_get_route_path(svFileGetName(ifcfg));
     if (!route_path) {
