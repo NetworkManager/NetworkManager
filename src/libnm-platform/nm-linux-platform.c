@@ -7511,10 +7511,11 @@ link_set_user_ipv6ll_enabled(NMPlatform *platform, int ifindex, gboolean enabled
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     guint8 mode = enabled ? NM_IN6_ADDR_GEN_MODE_NONE : NM_IN6_ADDR_GEN_MODE_EUI64;
+    char   sbuf[100];
 
     _LOGD("link: change %d: user-ipv6ll: set IPv6 address generation mode to %s",
           ifindex,
-          nm_platform_link_inet6_addrgenmode2str(mode, NULL, 0));
+          nm_platform_link_inet6_addrgenmode2str(mode, sbuf, sizeof(sbuf)));
 
     if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
         _LOGD("link: change %d: user-ipv6ll: not supported", ifindex);
