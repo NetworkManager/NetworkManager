@@ -6915,27 +6915,6 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
 
     msghdr = nlmsg_hdr(msg);
 
-    if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
-        && msghdr->nlmsg_type == RTM_NEWADDR) {
-        /* IFA_FLAGS is set for IPv4 and IPv6 addresses. It was added first to IPv6,
-         * but if we encounter an IPv4 address with IFA_FLAGS, we surely have support. */
-        if (nlmsg_valid_hdr(msghdr, sizeof(struct ifaddrmsg))
-            && NM_IN_SET(((struct ifaddrmsg *) nlmsg_data(msghdr))->ifa_family,
-                         AF_INET,
-                         AF_INET6)) {
-            /* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
-             * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
-             * and IFA_F_NOPREFIXROUTE for IPv6. They were added together in kernel 3.14,
-             * dated 30 March, 2014.
-             *
-             * For IPv4, IFA_F_NOPREFIXROUTE was added later, but there is no easy
-             * way to detect kernel support. */
-            _nm_platform_kernel_support_init(
-                NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS,
-                !!nlmsg_find_attr(msghdr, sizeof(struct ifaddrmsg), IFA_FLAGS) ? 1 : -1);
-        }
-    }
-
     if (!handle_events)
         return;
 

@@ -181,28 +181,22 @@ ndisc_config_changed(NMNDisc *          ndisc,
     }
 
     if (changed & NM_NDISC_CONFIG_ADDRESSES) {
-        guint8  plen;
         guint32 ifa_flags;
 
         /* Check, whether kernel is recent enough to help user space handling RA.
          * If it's not supported, we have no ipv6-privacy and must add autoconf
          * addresses as /128. The reason for the /128 is to prevent the kernel
          * from adding a prefix route for this address. */
-        ifa_flags = 0;
-        if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
-            ifa_flags |= IFA_F_NOPREFIXROUTE;
-            if (NM_IN_SET(global_opt.tempaddr,
-                          NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
-                          NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
-                ifa_flags |= IFA_F_MANAGETEMPADDR;
-            plen = 64;
-        } else
-            plen = 128;
+        ifa_flags = IFA_F_NOPREFIXROUTE;
+        if (NM_IN_SET(global_opt.tempaddr,
+                      NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+                      NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
+            ifa_flags |= IFA_F_MANAGETEMPADDR;
 
         nm_ip6_config_reset_addresses_ndisc(ndisc_config,
                                             rdata->addresses,
                                             rdata->addresses_n,
-                                            plen,
+                                            64,
                                             ifa_flags);
     }
 

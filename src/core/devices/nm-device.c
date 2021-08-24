@@ -10829,34 +10829,28 @@ ndisc_config_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int
         applied_config_init_new(&priv->ac_ip6_config, self, AF_INET6);
 
     if (changed & NM_NDISC_CONFIG_ADDRESSES) {
-        guint8  plen;
         guint32 ifa_flags;
 
         /* Check, whether kernel is recent enough to help user space handling RA.
          * If it's not supported, we have no ipv6-privacy and must add autoconf
          * addresses as /128. The reason for the /128 is to prevent the kernel
          * from adding a prefix route for this address. */
-        ifa_flags = 0;
-        if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
-            ifa_flags |= IFA_F_NOPREFIXROUTE;
-            if (NM_IN_SET(priv->ndisc_use_tempaddr,
-                          NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
-                          NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
-                ifa_flags |= IFA_F_MANAGETEMPADDR;
-            plen = 64;
-        } else
-            plen = 128;
+        ifa_flags = IFA_F_NOPREFIXROUTE;
+        if (NM_IN_SET(priv->ndisc_use_tempaddr,
+                      NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+                      NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
+            ifa_flags |= IFA_F_MANAGETEMPADDR;
 
         nm_ip6_config_reset_addresses_ndisc((NMIP6Config *) priv->ac_ip6_config.orig,
                                             rdata->addresses,
                                             rdata->addresses_n,
-                                            plen,
+                                            64,
                                             ifa_flags);
         if (priv->ac_ip6_config.current) {
             nm_ip6_config_reset_addresses_ndisc((NMIP6Config *) priv->ac_ip6_config.current,
                                                 rdata->addresses,
                                                 rdata->addresses_n,
-                                                plen,
+                                                64,
                                                 ifa_flags);
         }
     }
@@ -11094,15 +11088,6 @@ addrconf6_start(NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
     }
 
     priv->ndisc_use_tempaddr = use_tempaddr;
-
-    if (NM_IN_SET(use_tempaddr,
-                  NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
-                  NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
-        && !nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
-        _LOGW(LOGD_IP6,
-              "The kernel does not support extended IFA_FLAGS needed by NM for "
-              "IPv6 private addresses. This feature is not available");
-    }
 
     /* ensure link local is ready... */
     if (!linklocal6_start(self)) {

@@ -300,12 +300,6 @@ static const struct {
     const char *name;
     const char *desc;
 } _nm_platform_kernel_support_info[_NM_PLATFORM_KERNEL_SUPPORT_NUM] = {
-    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS] =
-        {
-            .compile_time_default = TRUE,
-            .name                 = "EXTENDED_IFA_FLAGS",
-            .desc                 = "IPv6 temporary addresses support",
-        },
     [NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF] =
         {
             .compile_time_default = (RTA_MAX >= 20 /* RTA_PREF */),
@@ -3914,7 +3908,6 @@ nm_platform_ip_address_sync(NMPlatform *self,
     gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
     GPtrArray *                    plat_addresses;
     GHashTable *                   known_subnets = NULL;
-    guint32                        ifa_flags;
     guint                          i_plat;
     guint                          i_know;
     guint                          i;
@@ -4141,10 +4134,6 @@ next_plat:;
     if (IS_IPv4)
         ip4_addr_subnets_destroy_index(known_subnets, known_addresses);
 
-    ifa_flags = nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
-                    ? IFA_F_NOPREFIXROUTE
-                    : 0;
-
     /* Add missing addresses. New addresses are added by kernel with top
      * priority.
      */
@@ -4179,7 +4168,7 @@ next_plat:;
                     nm_platform_ip4_broadcast_address_from_addr(&known_address->a4),
                     lifetime,
                     preferred,
-                    ifa_flags,
+                    IFA_F_NOPREFIXROUTE,
                     known_address->a4.label)) {
                 /* ignore error, for unclear reasons. */
             }
@@ -4191,7 +4180,7 @@ next_plat:;
                                              known_address->a6.peer_address,
                                              lifetime,
                                              preferred,
-                                             ifa_flags | known_address->a6.n_ifa_flags))
+                                             IFA_F_NOPREFIXROUTE | known_address->a6.n_ifa_flags))
                 return FALSE;
         }
     }
