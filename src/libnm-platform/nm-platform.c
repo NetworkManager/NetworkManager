@@ -306,12 +306,6 @@ static const struct {
             .name                 = "EXTENDED_IFA_FLAGS",
             .desc                 = "IPv6 temporary addresses support",
         },
-    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE] =
-        {
-            .compile_time_default = TRUE,
-            .name                 = "IFLA_INET6_ADDR_GEN_MODE",
-            .desc                 = "IFLA_INET6_ADDR_GEN_MODE support",
-        },
     [NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF] =
         {
             .compile_time_default = (RTA_MAX >= 20 /* RTA_PREF */),

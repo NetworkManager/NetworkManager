@@ -1279,16 +1279,6 @@ _parse_af_inet6(NMPlatform *        platform,
         token_valid = TRUE;
     }
 
-    /* Hack to detect support addrgenmode of the kernel. We only parse
-     * netlink messages that we receive from kernel, hence this check
-     * is valid. */
-    if (!_nm_platform_kernel_support_detected(
-            NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE)) {
-        /* IFLA_INET6_ADDR_GEN_MODE was added in kernel 3.17, dated 5 October, 2014. */
-        _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE,
-                                         tb[IFLA_INET6_ADDR_GEN_MODE] ? 1 : -1);
-    }
-
     if (tb[IFLA_INET6_ADDR_GEN_MODE]) {
         i6_addr_gen_mode_inv = _nm_platform_uint8_inv(nla_get_u8(tb[IFLA_INET6_ADDR_GEN_MODE]));
         if (i6_addr_gen_mode_inv == 0) {
@@ -7516,11 +7506,6 @@ link_set_inet6_addr_gen_mode(NMPlatform *platform, int ifindex, guint8 mode)
     _LOGD("link: change %d: user-ipv6ll: set IPv6 address generation mode to %s",
           ifindex,
           nm_platform_link_inet6_addrgenmode2str(mode, sbuf, sizeof(sbuf)));
-
-    if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE)) {
-        _LOGD("link: change %d: user-ipv6ll: not supported", ifindex);
-        return -NME_PL_OPNOTSUPP;
-    }
 
     nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, NULL);
     if (!nlmsg || !_nl_msg_new_link_set_afspec(nlmsg, mode, NULL))

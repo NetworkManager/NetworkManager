@@ -3145,12 +3145,9 @@ _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
 
         nm_platform_process_events_ensure_link(platform, priv->ip_ifindex, priv->ip_iface);
 
-        if (nm_platform_kernel_support_get(
-                NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE)) {
-            nm_platform_link_set_inet6_addr_gen_mode(platform,
-                                                     priv->ip_ifindex,
-                                                     NM_IN6_ADDR_GEN_MODE_NONE);
-        }
+        nm_platform_link_set_inet6_addr_gen_mode(platform,
+                                                 priv->ip_ifindex,
+                                                 NM_IN6_ADDR_GEN_MODE_NONE);
 
         if (!nm_platform_link_is_up(platform, priv->ip_ifindex))
             nm_platform_link_change_flags(platform, priv->ip_ifindex, IFF_UP, TRUE);
@@ -6095,10 +6092,8 @@ realize_start_setup(NMDevice *            self,
         if (priv->firmware_version)
             _notify(self, PROP_FIRMWARE_VERSION);
 
-        if (nm_platform_kernel_support_get(
-                NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE))
-            priv->ipv6ll_handle = (nm_platform_link_get_inet6_addr_gen_mode(platform, priv->ifindex)
-                                   == NM_IN6_ADDR_GEN_MODE_NONE);
+        priv->ipv6ll_handle = (nm_platform_link_get_inet6_addr_gen_mode(platform, priv->ifindex)
+                               == NM_IN6_ADDR_GEN_MODE_NONE);
 
         if (nm_platform_link_supports_sriov(platform, priv->ifindex))
             capabilities |= NM_DEVICE_CAP_SRIOV;
@@ -11202,9 +11197,6 @@ set_nm_ipv6ll(NMDevice *self, gboolean enable)
 {
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     int              ifindex = nm_device_get_ip_ifindex(self);
-
-    if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE))
-        return;
 
     priv->ipv6ll_handle = enable;
     if (ifindex > 0) {

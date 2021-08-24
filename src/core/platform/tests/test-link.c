@@ -602,7 +602,7 @@ test_bridge_addr(void)
     g_assert(plink);
     g_assert(!nm_platform_link_get_permanent_address(NM_PLATFORM_GET, plink, &hw_perm_addr));
 
-    if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE)) {
+    if (nmtstp_is_root_test()) {
         g_assert_cmpint(nm_platform_link_get_inet6_addr_gen_mode(NM_PLATFORM_GET, link.ifindex),
                         ==,
                         NM_IN6_ADDR_GEN_MODE_EUI64);

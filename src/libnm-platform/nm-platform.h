@@ -1016,7 +1016,6 @@ typedef void (*NMPlatformAsyncCallback)(GError *error, gpointer user_data);
 
 typedef enum {
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS,
-    NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE,
@@ -1403,8 +1402,6 @@ _nm_platform_link_get_inet6_addr_gen_mode(const NMPlatformLink *pllink)
 {
     if (!pllink)
         return -ENODEV;
-    if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_INET6_ADDR_GEN_MODE))
-        return -EOPNOTSUPP;
     return _nm_platform_uint8_inv(pllink->inet6_addr_gen_mode_inv);
 }
 
