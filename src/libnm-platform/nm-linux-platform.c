@@ -4068,7 +4068,7 @@ nmp_object_new_from_nl(NMPlatform *    platform,
 /*****************************************************************************/
 
 static gboolean
-_nl_msg_new_link_set_afspec(struct nl_msg *msg, int addr_gen_mode, NMUtilsIPv6IfaceId *iid)
+_nl_msg_new_link_set_afspec(struct nl_msg *msg, int addr_gen_mode, const NMUtilsIPv6IfaceId *iid)
 {
     struct nlattr *af_spec;
     struct nlattr *af_attr;
@@ -4086,11 +4086,9 @@ _nl_msg_new_link_set_afspec(struct nl_msg *msg, int addr_gen_mode, NMUtilsIPv6If
             NLA_PUT_U8(msg, IFLA_INET6_ADDR_GEN_MODE, addr_gen_mode);
 
         if (iid) {
-            struct in6_addr i6_token = {.s6_addr = {
-                                            0,
-                                        }};
+            struct in6_addr i6_token = IN6ADDR_ANY_INIT;
 
-            nm_utils_ipv6_addr_set_interface_identifier(&i6_token, *iid);
+            nm_utils_ipv6_addr_set_interface_identifier(&i6_token, iid);
             NLA_PUT(msg, IFLA_INET6_TOKEN, sizeof(struct in6_addr), &i6_token);
         }
 
@@ -7487,7 +7485,7 @@ link_set_inet6_addr_gen_mode(NMPlatform *platform, int ifindex, guint8 mode)
 }
 
 static gboolean
-link_set_token(NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
+link_set_token(NMPlatform *platform, int ifindex, const NMUtilsIPv6IfaceId *iid)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     char                         sbuf[NM_UTILS_INET_ADDRSTRLEN];
@@ -7497,7 +7495,7 @@ link_set_token(NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
           nm_utils_inet6_interface_identifier_to_token(iid, sbuf));
 
     nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, NULL);
-    if (!nlmsg || !_nl_msg_new_link_set_afspec(nlmsg, -1, &iid))
+    if (!nlmsg || !_nl_msg_new_link_set_afspec(nlmsg, -1, iid))
         g_return_val_if_reached(FALSE);
 
     return (do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);

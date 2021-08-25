@@ -140,9 +140,9 @@ _nm_utils_inet6_is_token(const struct in6_addr *in6addr)
  * token.
  */
 void
-nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *addr, const NMUtilsIPv6IfaceId iid)
+nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *addr, const NMUtilsIPv6IfaceId *iid)
 {
-    memcpy(addr->s6_addr + 8, &iid.id_u8, 8);
+    memcpy(addr->s6_addr + 8, &iid->id_u8, 8);
 }
 
 /**
@@ -198,8 +198,8 @@ nm_utils_ipv6_interface_identifier_get_from_token(NMUtilsIPv6IfaceId *iid, const
  * Returns: the input buffer filled with the id as string.
  */
 const char *
-nm_utils_inet6_interface_identifier_to_token(NMUtilsIPv6IfaceId iid,
-                                             char               buf[static INET6_ADDRSTRLEN])
+nm_utils_inet6_interface_identifier_to_token(const NMUtilsIPv6IfaceId *iid,
+                                             char                      buf[static INET6_ADDRSTRLEN])
 {
     struct in6_addr i6_token = {.s6_addr = {
                                     0,

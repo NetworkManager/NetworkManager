@@ -371,8 +371,8 @@ typedef struct _NMUtilsIPv6IfaceId {
         }                           \
     }
 
-void nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *        addr,
-                                                 const NMUtilsIPv6IfaceId iid);
+void nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *         addr,
+                                                 const NMUtilsIPv6IfaceId *iid);
 
 void nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId *   iid,
                                                       const struct in6_addr *addr);
@@ -380,7 +380,7 @@ void nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId *   iid
 gboolean nm_utils_ipv6_interface_identifier_get_from_token(NMUtilsIPv6IfaceId *iid,
                                                            const char *        token);
 
-const char *nm_utils_inet6_interface_identifier_to_token(NMUtilsIPv6IfaceId iid,
+const char *nm_utils_inet6_interface_identifier_to_token(const NMUtilsIPv6IfaceId *iid,
                                                          char buf[static INET6_ADDRSTRLEN]);
 
 gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,

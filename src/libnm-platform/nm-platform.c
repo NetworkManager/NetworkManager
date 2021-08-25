@@ -1600,7 +1600,7 @@ nm_platform_link_uses_arp(NMPlatform *self, int ifindex)
  * Returns: %TRUE a tokenized identifier was available
  */
 gboolean
-nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid)
+nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, const NMUtilsIPv6IfaceId *iid)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -5602,7 +5602,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         str_broadcast[0] ? str_broadcast : "",
         link->inet6_token.id ? " inet6token " : "",
         link->inet6_token.id
-            ? nm_utils_inet6_interface_identifier_to_token(link->inet6_token, str_inet6_token)
+            ? nm_utils_inet6_interface_identifier_to_token(&link->inet6_token, str_inet6_token)
             : "",
         link->driver ? " driver " : "",
         link->driver ?: "",

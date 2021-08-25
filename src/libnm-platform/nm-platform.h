@@ -1111,7 +1111,7 @@ typedef struct {
                              unsigned    flags_set);
 
     int (*link_set_inet6_addr_gen_mode)(NMPlatform *self, int ifindex, guint8 enabled);
-    gboolean (*link_set_token)(NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
+    gboolean (*link_set_token)(NMPlatform *self, int ifindex, const NMUtilsIPv6IfaceId *iid);
 
     gboolean (*link_get_permanent_address_ethtool)(NMPlatform *    self,
                                                    int             ifindex,
@@ -1870,8 +1870,9 @@ const char *nm_platform_link_get_path(NMPlatform *self, int ifindex);
 
 struct udev_device *nm_platform_link_get_udev_device(NMPlatform *self, int ifindex);
 
-int      nm_platform_link_set_inet6_addr_gen_mode(NMPlatform *self, int ifindex, guint8 mode);
-gboolean nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
+int nm_platform_link_set_inet6_addr_gen_mode(NMPlatform *self, int ifindex, guint8 mode);
+gboolean
+nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, const NMUtilsIPv6IfaceId *iid);
 
 gboolean nm_platform_link_get_permanent_address_ethtool(NMPlatform *    self,
                                                         int             ifindex,

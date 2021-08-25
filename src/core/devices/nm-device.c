@@ -2745,7 +2745,7 @@ nm_device_sysctl_ip_conf_get_int_checked(NMDevice *  self,
 }
 
 static void
-set_ipv6_token(NMDevice *self, NMUtilsIPv6IfaceId iid, const char *token_str)
+set_ipv6_token(NMDevice *self, const NMUtilsIPv6IfaceId *iid, const char *token_str)
 {
     NMPlatform *          platform;
     int                   ifindex;
@@ -2761,7 +2761,7 @@ set_ipv6_token(NMDevice *self, NMUtilsIPv6IfaceId iid, const char *token_str)
     ifindex  = nm_device_get_ip_ifindex(self);
     link     = nm_platform_link_get(platform, ifindex);
 
-    if (link && link->inet6_token.id == iid.id) {
+    if (link && link->inet6_token.id == iid->id) {
         _LOGT(LOGD_DEVICE | LOGD_IP6, "token %s already set", token_str);
         return;
     }
@@ -7346,7 +7346,7 @@ nm_device_generate_connection(NMDevice *self,
                          NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
                          NM_IN6_ADDR_GEN_MODE_EUI64,
                          NM_SETTING_IP6_CONFIG_TOKEN,
-                         nm_utils_inet6_interface_identifier_to_token(pllink->inet6_token, sbuf),
+                         nm_utils_inet6_interface_identifier_to_token(&pllink->inet6_token, sbuf),
                          NULL);
         }
     }
@@ -9259,7 +9259,7 @@ ip_config_merge_and_apply(NMDevice *self, int addr_family, gboolean commit)
 
         if (commit && priv->ndisc_started && ip6_addr_gen_token
             && nm_utils_ipv6_interface_identifier_get_from_token(&iid, ip6_addr_gen_token)) {
-            set_ipv6_token(self, iid, ip6_addr_gen_token);
+            set_ipv6_token(self, &iid, ip6_addr_gen_token);
         }
     }
 
@@ -10360,7 +10360,7 @@ check_and_add_ipv6ll_addr(NMDevice *self)
             _LOGW(LOGD_IP6, "linklocal6: failed to get interface identifier; IPv6 cannot continue");
             return;
         }
-        nm_utils_ipv6_addr_set_interface_identifier(&lladdr, iid);
+        nm_utils_ipv6_addr_set_interface_identifier(&lladdr, &iid);
         addr_type = "EUI-64";
     }
 
@@ -16050,7 +16050,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
 
             nm_platform_ip_route_flush(platform, AF_UNSPEC, ifindex);
             nm_platform_ip_address_flush(platform, AF_UNSPEC, ifindex);
-            set_ipv6_token(self, iid, "::");
+            set_ipv6_token(self, &iid, "::");
 
             if (nm_device_get_applied_setting(self, NM_TYPE_SETTING_TC_CONFIG)) {
                 nm_platform_tfilter_sync(platform, ifindex, NULL);

@@ -498,7 +498,7 @@ complete_address(NMNDisc *ndisc, NMNDiscAddress *addr)
 
     if (addr->address.s6_addr32[2] == 0x0 && addr->address.s6_addr32[3] == 0x0) {
         _LOGD("complete-address: adding an EUI-64 address");
-        nm_utils_ipv6_addr_set_interface_identifier(&addr->address, priv->iid);
+        nm_utils_ipv6_addr_set_interface_identifier(&addr->address, &priv->iid);
         return TRUE;
     }
 
