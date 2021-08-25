@@ -298,6 +298,8 @@ typedef enum {
     NM_UTILS_STABLE_TYPE_RANDOM    = 3,
 } NMUtilsStableType;
 
+#define NM_UTILS_STABLE_TYPE_NONE ((NMUtilsStableType) -1)
+
 NMUtilsStableType nm_utils_stable_id_parse(const char *stable_id,
                                            const char *deviceid,
                                            const char *hwaddr,

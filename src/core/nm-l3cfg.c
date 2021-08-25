@@ -3806,7 +3806,7 @@ nm_l3cfg_commit_type_get(NML3Cfg *self)
  * a certain @commit_type. The "higher" commit type is the used one when calling
  * nm_l3cfg_commit() with %NM_L3_CFG_COMMIT_TYPE_AUTO.
  *
- * Returns: a handle tracking the registration, or %NULL of @commit_type
+ * Returns: a handle tracking the registration, or %NULL if @commit_type
  *   is %NM_L3_CFG_COMMIT_TYPE_NONE.
  */
 NML3CfgCommitTypeHandle *

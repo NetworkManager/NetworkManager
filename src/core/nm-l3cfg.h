@@ -7,6 +7,7 @@
 #include "nm-l3-config-data.h"
 
 #define NM_L3CFG_CONFIG_PRIORITY_IPV4LL 0
+#define NM_L3CFG_CONFIG_PRIORITY_IPV6LL 0
 #define NM_ACD_TIMEOUT_RFC5227_MSEC     9000u
 
 #define NM_TYPE_L3CFG            (nm_l3cfg_get_type())
