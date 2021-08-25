@@ -10333,12 +10333,12 @@ check_and_add_ipv6ll_addr(NMDevice *self)
         const char *      stable_id;
 
         stable_id = _prop_get_connection_stable_id(self, connection, &stable_type);
-        if (!nm_utils_ipv6_addr_set_stable_privacy(stable_type,
-                                                   &lladdr,
-                                                   nm_device_get_iface(self),
-                                                   stable_id,
-                                                   priv->linklocal6_dad_counter++,
-                                                   &error)) {
+        if (!nm_utils_ipv6_addr_set_stable_privacy_may_fail(stable_type,
+                                                            &lladdr,
+                                                            nm_device_get_iface(self),
+                                                            stable_id,
+                                                            priv->linklocal6_dad_counter++,
+                                                            &error)) {
             _LOGW(LOGD_IP6, "linklocal6: failed to generate an address: %s", error->message);
             g_clear_error(&error);
             linklocal6_failed(self);
