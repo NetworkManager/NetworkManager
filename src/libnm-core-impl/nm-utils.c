@@ -4602,25 +4602,41 @@ nm_utils_check_virtual_device_compatibility(GType virtual_type, GType other_type
                          FALSE);
 
     if (virtual_type == NM_TYPE_SETTING_BOND) {
-        return (other_type == NM_TYPE_SETTING_INFINIBAND || other_type == NM_TYPE_SETTING_WIRED
-                || other_type == NM_TYPE_SETTING_WIRELESS || other_type == NM_TYPE_SETTING_BRIDGE
-                || other_type == NM_TYPE_SETTING_BOND || other_type == NM_TYPE_SETTING_TEAM
-                || other_type == NM_TYPE_SETTING_VLAN);
-    } else if (virtual_type == NM_TYPE_SETTING_BRIDGE) {
-        return (other_type == NM_TYPE_SETTING_WIRED || other_type == NM_TYPE_SETTING_BOND
-                || other_type == NM_TYPE_SETTING_TEAM || other_type == NM_TYPE_SETTING_VLAN);
-    } else if (virtual_type == NM_TYPE_SETTING_TEAM) {
-        return (other_type == NM_TYPE_SETTING_WIRED || other_type == NM_TYPE_SETTING_BRIDGE
-                || other_type == NM_TYPE_SETTING_BOND || other_type == NM_TYPE_SETTING_TEAM
-                || other_type == NM_TYPE_SETTING_VLAN);
-    } else if (virtual_type == NM_TYPE_SETTING_VLAN) {
-        return (other_type == NM_TYPE_SETTING_WIRED || other_type == NM_TYPE_SETTING_WIRELESS
-                || other_type == NM_TYPE_SETTING_BRIDGE || other_type == NM_TYPE_SETTING_BOND
-                || other_type == NM_TYPE_SETTING_TEAM || other_type == NM_TYPE_SETTING_VLAN);
-    } else {
-        g_warn_if_reached();
-        return FALSE;
+        return NM_IN_SET(other_type,
+                         NM_TYPE_SETTING_BOND,
+                         NM_TYPE_SETTING_BRIDGE,
+                         NM_TYPE_SETTING_INFINIBAND,
+                         NM_TYPE_SETTING_TEAM,
+                         NM_TYPE_SETTING_VLAN,
+                         NM_TYPE_SETTING_WIRED,
+                         NM_TYPE_SETTING_WIRELESS);
     }
+    if (virtual_type == NM_TYPE_SETTING_BRIDGE) {
+        return NM_IN_SET(other_type,
+                         NM_TYPE_SETTING_BOND,
+                         NM_TYPE_SETTING_TEAM,
+                         NM_TYPE_SETTING_VLAN,
+                         NM_TYPE_SETTING_WIRED);
+    }
+    if (virtual_type == NM_TYPE_SETTING_TEAM) {
+        return NM_IN_SET(other_type,
+                         NM_TYPE_SETTING_BOND,
+                         NM_TYPE_SETTING_BRIDGE,
+                         NM_TYPE_SETTING_TEAM,
+                         NM_TYPE_SETTING_VLAN,
+                         NM_TYPE_SETTING_WIRED);
+    }
+    if (virtual_type == NM_TYPE_SETTING_VLAN) {
+        return NM_IN_SET(other_type,
+                         NM_TYPE_SETTING_BOND,
+                         NM_TYPE_SETTING_BRIDGE,
+                         NM_TYPE_SETTING_TEAM,
+                         NM_TYPE_SETTING_VLAN,
+                         NM_TYPE_SETTING_WIRED,
+                         NM_TYPE_SETTING_WIRELESS);
+    }
+
+    return FALSE;
 }
 
 /*****************************************************************************/
