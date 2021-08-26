@@ -3771,9 +3771,3 @@ nm_connection_default_init(NMConnectionInterface *iface)
                                     G_TYPE_NONE,
                                     0);
 }
-
-NMSettingBondPort *
-_nm_connection_get_setting_bond_port(NMConnection *connection)
-{
-    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_BOND_PORT);
-}

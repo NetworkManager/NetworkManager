@@ -447,7 +447,7 @@ enslave_slave(NMDevice *device, NMDevice *port, NMConnection *connection, gboole
             return FALSE;
         }
 
-        s_port = _nm_connection_get_setting_bond_port(connection);
+        s_port = _nm_connection_get_setting(connection, NM_TYPE_SETTING_BOND_PORT);
 
         commit_port_options(device, port, s_port);
 

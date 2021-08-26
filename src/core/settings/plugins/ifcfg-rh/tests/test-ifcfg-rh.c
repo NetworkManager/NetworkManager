@@ -9464,7 +9464,7 @@ test_read_bond_port(void)
     g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "bond99");
     g_assert_cmpstr(nm_setting_connection_get_slave_type(s_con), ==, NM_SETTING_BOND_SETTING_NAME);
 
-    s_port = _nm_connection_get_setting_bond_port(connection);
+    s_port = _nm_connection_get_setting(connection, NM_TYPE_SETTING_BOND_PORT);
     g_assert(s_port);
     g_assert_cmpuint(nm_setting_bond_port_get_queue_id(s_port), ==, 1);
 }

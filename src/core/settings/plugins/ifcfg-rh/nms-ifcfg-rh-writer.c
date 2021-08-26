@@ -1894,7 +1894,7 @@ write_bond_port_setting(NMConnection *connection, shvarFile *ifcfg)
 {
     NMSettingBondPort *s_port;
 
-    s_port = _nm_connection_get_setting_bond_port(connection);
+    s_port = _nm_connection_get_setting(connection, NM_TYPE_SETTING_BOND_PORT);
     if (s_port)
         svSetValueInt64(ifcfg, "BOND_PORT_QUEUE_ID", nm_setting_bond_port_get_queue_id(s_port));
 }

@@ -986,6 +986,4 @@ gboolean _nm_ip_tunnel_mode_is_layer2(NMIPTunnelMode mode);
 
 GPtrArray *_nm_setting_ip_config_get_dns_array(NMSettingIPConfig *setting);
 
-NMSettingBondPort *_nm_connection_get_setting_bond_port(NMConnection *connection);
-
 #endif
