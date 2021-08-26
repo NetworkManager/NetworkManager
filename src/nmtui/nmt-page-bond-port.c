@@ -9,9 +9,10 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
-#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 #include "nmt-page-bond-port.h"
+
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 
 G_DEFINE_TYPE(NmtPageBondPort, nmt_page_bond_port, NMT_TYPE_EDITOR_PAGE)
 
