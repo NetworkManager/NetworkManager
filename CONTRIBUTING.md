@@ -264,6 +264,35 @@ source code and navigate it. These tools can integrate with editors like `Vim` a
 Miscellaneous
 ---------------------------
 
+### Header Includes
+
+Almost all C source header should include a certain set of default headers.
+That comes from the fact, that (almost) all source should include autotools' `"config.h"`
+as first.
+
+That means, (almost) all our C sources should start with
+```C
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
+#include "$BASE/nm-default$EXTRA.h"
+```
+that is, the first header is one of the several `"*/nm-default*.h"` headers.
+This header ensure that certain headers like [`libnm-std-aux/nm-std-aux.h`](src/libnm-std-aux/nm-std-aux.h)
+and basics like `nm_assert()` and `nm_auto_g_free` are available everywhere.
+
+The second include is the header that belongs to the C source file. This
+is so that header files are self-contained (aside what default dependencies that
+they get and everybody can rely on).
+
+The next includes are system headers with `<>`.
+
+Finally, all other headers from our source tree. Note that all build targets
+have `-I. -I./src/` in their build arguments. So to include a header like
+[`src/libnm-glib-aux/nm-random-utils.h`](src/libnm-glib-aux/nm-random-utils.h)
+you'd do `#include "libnm-glib-aux/nm-random-utils.h"`.
+
+See an example [here](src/core/nm-manager.c#L1).
+
 ### GObject Properties
 
 We use GObjects and GObject Properties in various cases. For example:
