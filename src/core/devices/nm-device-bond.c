@@ -404,7 +404,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 }
 
 static void
-commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *set_port)
+commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *s_port)
 {
     char queue_id_str[IFNAMSIZ + NM_STRLEN(":") + 5 + 100];
 
@@ -417,7 +417,7 @@ commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *se
                sizeof(queue_id_str),
                "%s:%" G_GUINT32_FORMAT,
                nm_device_get_iface(port),
-               set_port ? nm_setting_bond_port_get_queue_id(set_port) : NM_BOND_PORT_QUEUE_ID_DEF);
+               s_port ? nm_setting_bond_port_get_queue_id(s_port) : NM_BOND_PORT_QUEUE_ID_DEF);
 
     nm_platform_sysctl_master_set_option(nm_device_get_platform(bond_device),
                                          nm_device_get_ifindex(bond_device),
