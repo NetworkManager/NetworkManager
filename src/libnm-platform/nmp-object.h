@@ -625,6 +625,20 @@ nmp_object_unref(const NMPObject *obj)
         _changed;                       \
     })
 
+#define nm_clear_nmp_object_up_cast(ptr)                 \
+    ({                                                   \
+        typeof(ptr)   _ptr = (ptr);                      \
+        typeof(*_ptr) _pptr;                             \
+        gboolean      _changed = FALSE;                  \
+                                                         \
+        if (_ptr && (_pptr = *_ptr)) {                   \
+            *_ptr = NULL;                                \
+            nmp_object_unref(NMP_OBJECT_UP_CAST(_pptr)); \
+            _changed = TRUE;                             \
+        }                                                \
+        _changed;                                        \
+    })
+
 static inline gboolean
 nmp_object_ref_set(const NMPObject **pp, const NMPObject *obj)
 {
@@ -638,6 +652,25 @@ nmp_object_ref_set(const NMPObject **pp, const NMPObject *obj)
         nmp_object_ref(obj);
         *pp = obj;
         nmp_object_unref(p);
+        _changed = TRUE;
+    }
+    return _changed;
+}
+
+static inline gboolean
+nmp_object_ref_set_up_cast(gpointer pp, gconstpointer obj)
+{
+    gboolean         _changed = FALSE;
+    const NMPObject *p;
+    gconstpointer *  pp2 = pp;
+
+    nm_assert(!pp2 || !*pp2 || NMP_OBJECT_IS_VALID(NMP_OBJECT_UP_CAST(*pp2)));
+    nm_assert(!obj || NMP_OBJECT_IS_VALID(NMP_OBJECT_UP_CAST(obj)));
+
+    if (pp2 && ((p = *pp2) != obj)) {
+        nmp_object_ref(NMP_OBJECT_UP_CAST(obj));
+        *pp2 = obj;
+        nmp_object_unref(NMP_OBJECT_UP_CAST(p));
         _changed = TRUE;
     }
     return _changed;
