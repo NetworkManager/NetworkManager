@@ -8,47 +8,45 @@
 
 #include "nm-manager.h"
 
-#include <stdlib.h>
 #include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/sendfile.h>
 #include <limits.h>
+#include <stdlib.h>
+#include <sys/sendfile.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#include "libnm-glib-aux/nm-c-list.h"
-
-#include "libnm-core-aux-intern/nm-common-macros.h"
-#include "nm-dbus-manager.h"
-#include "vpn/nm-vpn-manager.h"
-#include "devices/nm-device.h"
-#include "devices/nm-device-generic.h"
-#include "libnm-platform/nm-platform.h"
-#include "libnm-platform/nmp-object.h"
-#include "nm-hostname-manager.h"
-#include "nm-keep-alive.h"
-#include "nm-rfkill-manager.h"
-#include "dhcp/nm-dhcp-manager.h"
-#include "settings/nm-settings.h"
-#include "settings/nm-settings-connection.h"
-#include "nm-auth-utils.h"
-#include "nm-auth-manager.h"
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-factory.h"
-#include "nm-sleep-monitor.h"
-#include "nm-connectivity.h"
-#include "nm-policy.h"
-#include "nm-session-monitor.h"
-#include "nm-act-request.h"
+#include "devices/nm-device-generic.h"
+#include "devices/nm-device.h"
+#include "dhcp/nm-dhcp-manager.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "nm-config.h"
-#include "nm-audit-manager.h"
+#include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nmp-object.h"
 #include "libnm-std-aux/nm-dbus-compat.h"
-#include "nm-checkpoint.h"
+#include "nm-act-request.h"
+#include "nm-audit-manager.h"
+#include "nm-auth-manager.h"
+#include "nm-auth-utils.h"
 #include "nm-checkpoint-manager.h"
+#include "nm-checkpoint.h"
+#include "nm-config.h"
+#include "nm-connectivity.h"
+#include "nm-dbus-manager.h"
 #include "nm-dbus-object.h"
 #include "nm-dispatcher.h"
-#include "NetworkManagerUtils.h"
+#include "nm-hostname-manager.h"
+#include "nm-keep-alive.h"
+#include "nm-policy.h"
+#include "nm-rfkill-manager.h"
+#include "nm-session-monitor.h"
+#include "nm-sleep-monitor.h"
+#include "settings/nm-settings-connection.h"
+#include "settings/nm-settings.h"
+#include "vpn/nm-vpn-manager.h"
 
 #define DEVICE_STATE_PRUNE_RATELIMIT_MAX 100u
 
