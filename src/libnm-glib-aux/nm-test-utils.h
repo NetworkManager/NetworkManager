@@ -2854,4 +2854,20 @@ nmtst_ip_address_new(int addr_family, const char *str)
 
 /*****************************************************************************/
 
+#define nmtst_gbytes_from_arr(...)           \
+    ({                                       \
+        const guint8 _arr[] = {__VA_ARGS__}; \
+                                             \
+        g_bytes_new(_arr, sizeof(_arr));     \
+    })
+
+#define nmtst_gbytes_from_str(str)       \
+    ({                                   \
+        const char *const _str = (str);  \
+                                         \
+        g_bytes_new(_str, strlen(_str)); \
+    })
+
+/*****************************************************************************/
+
 #endif /* __NM_TEST_UTILS_H__ */
