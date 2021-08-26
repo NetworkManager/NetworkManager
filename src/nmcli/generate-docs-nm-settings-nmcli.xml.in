@@ -267,6 +267,11 @@
         <property name="options"
                   description="Dictionary of key/value pairs of bonding options.  Both keys and values must be strings. Option names must contain only alphanumeric characters (ie, [a-zA-Z0-9])." />
     </setting>
+    <setting name="bond-port" >
+        <property name="queue-id"
+                  alias="queue-id"
+                  description="The queue ID of this bond port. The maximum value of queue ID is the number of TX queues currently active in device." />
+    </setting>
     <setting name="bridge" >
         <property name="mac-address"
                   alias="mac"

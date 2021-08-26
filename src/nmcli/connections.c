@@ -874,18 +874,19 @@ const NmcMetaGenericInfo
     "," NM_SETTING_CDMA_SETTING_NAME "," NM_SETTING_BLUETOOTH_SETTING_NAME             \
     "," NM_SETTING_OLPC_MESH_SETTING_NAME "," NM_SETTING_VPN_SETTING_NAME              \
     "," NM_SETTING_INFINIBAND_SETTING_NAME "," NM_SETTING_BOND_SETTING_NAME            \
-    "," NM_SETTING_VLAN_SETTING_NAME "," NM_SETTING_BRIDGE_SETTING_NAME                \
-    "," NM_SETTING_BRIDGE_PORT_SETTING_NAME "," NM_SETTING_TEAM_SETTING_NAME           \
-    "," NM_SETTING_TEAM_PORT_SETTING_NAME "," NM_SETTING_OVS_BRIDGE_SETTING_NAME       \
-    "," NM_SETTING_OVS_INTERFACE_SETTING_NAME "," NM_SETTING_OVS_PATCH_SETTING_NAME    \
-    "," NM_SETTING_OVS_PORT_SETTING_NAME "," NM_SETTING_DCB_SETTING_NAME               \
-    "," NM_SETTING_TUN_SETTING_NAME "," NM_SETTING_IP_TUNNEL_SETTING_NAME              \
-    "," NM_SETTING_MACSEC_SETTING_NAME "," NM_SETTING_MACVLAN_SETTING_NAME             \
-    "," NM_SETTING_VXLAN_SETTING_NAME "," NM_SETTING_VRF_SETTING_NAME                  \
-    "," NM_SETTING_WPAN_SETTING_NAME "," NM_SETTING_6LOWPAN_SETTING_NAME               \
-    "," NM_SETTING_WIREGUARD_SETTING_NAME "," NM_SETTING_PROXY_SETTING_NAME            \
-    "," NM_SETTING_TC_CONFIG_SETTING_NAME "," NM_SETTING_SRIOV_SETTING_NAME            \
-    "," NM_SETTING_ETHTOOL_SETTING_NAME "," NM_SETTING_OVS_DPDK_SETTING_NAME           \
+    "," NM_SETTING_BOND_PORT_SETTING_NAME "," NM_SETTING_VLAN_SETTING_NAME             \
+    "," NM_SETTING_BRIDGE_SETTING_NAME "," NM_SETTING_BRIDGE_PORT_SETTING_NAME         \
+    "," NM_SETTING_TEAM_SETTING_NAME "," NM_SETTING_TEAM_PORT_SETTING_NAME             \
+    "," NM_SETTING_OVS_BRIDGE_SETTING_NAME "," NM_SETTING_OVS_INTERFACE_SETTING_NAME   \
+    "," NM_SETTING_OVS_PATCH_SETTING_NAME "," NM_SETTING_OVS_PORT_SETTING_NAME         \
+    "," NM_SETTING_DCB_SETTING_NAME "," NM_SETTING_TUN_SETTING_NAME                    \
+    "," NM_SETTING_IP_TUNNEL_SETTING_NAME "," NM_SETTING_MACSEC_SETTING_NAME           \
+    "," NM_SETTING_MACVLAN_SETTING_NAME "," NM_SETTING_VXLAN_SETTING_NAME              \
+    "," NM_SETTING_VRF_SETTING_NAME "," NM_SETTING_WPAN_SETTING_NAME                   \
+    "," NM_SETTING_6LOWPAN_SETTING_NAME "," NM_SETTING_WIREGUARD_SETTING_NAME          \
+    "," NM_SETTING_PROXY_SETTING_NAME "," NM_SETTING_TC_CONFIG_SETTING_NAME            \
+    "," NM_SETTING_SRIOV_SETTING_NAME "," NM_SETTING_ETHTOOL_SETTING_NAME              \
+    "," NM_SETTING_OVS_DPDK_SETTING_NAME                                               \
     "," NM_SETTING_HOSTNAME_SETTING_NAME /* NM_SETTING_DUMMY_SETTING_NAME NM_SETTING_WIMAX_SETTING_NAME */
 
 const NmcMetaGenericInfo *const nmc_fields_con_active_details_groups[] = {
@@ -1062,7 +1063,8 @@ usage_connection_add(void)
                  "                  [arp-interval <num>]\n"
                  "                  [arp-ip-target <num>]\n"
                  "                  [lacp-rate slow (0) | fast (1)]\n\n"
-                 "    bond-slave:   master <master (ifname, or connection UUID or name)>\n\n"
+                 "    bond-slave:   master <master (ifname, or connection UUID or name)>\n"
+                 "                  [queue-id <0-65535>]\n\n"
                  "    team:         [config <file>|<raw JSON data>]\n\n"
                  "    team-slave:   master <master (ifname, or connection UUID or name)>\n"
                  "                  [config <file>|<raw JSON data>]\n\n"
@@ -1125,6 +1127,7 @@ usage_connection_add(void)
                  "                  [path-cost <1-65535>]\n"
                  "                  [hairpin yes|no]\n\n"
                  "    team:         [config <file>|<raw JSON data>]\n\n"
+                 "    bond:         [queue-id <0-65535>]\n\n"
                  "  IP_OPTIONS:\n"
                  "                  [ip4 <IPv4 address>] [gw4 <IPv4 gateway>]\n"
                  "                  [ip6 <IPv6 address>] [gw6 <IPv6 gateway>]\n\n"));
@@ -3791,13 +3794,13 @@ prompt_yes_no(gboolean default_yes, char *delim)
     if (!delim)
         delim = "";
 
-    snprintf(prompt,
-             sizeof(prompt),
-             "(%s/%s) [%s]%s ",
-             WORD_YES,
-             WORD_NO,
-             default_yes ? WORD_YES : WORD_NO,
-             delim);
+    g_snprintf(prompt,
+               sizeof(prompt),
+               "(%s/%s) [%s]%s ",
+               WORD_YES,
+               WORD_NO,
+               default_yes ? WORD_YES : WORD_NO,
+               delim);
 
     return prompt;
 }
@@ -6007,6 +6010,8 @@ gen_property_names(const char *text, int state)
             slv_type = NM_SETTING_TEAM_SETTING_NAME;
         else if (nm_streq0(strv[0], NM_SETTING_BRIDGE_PORT_SETTING_NAME))
             slv_type = NM_SETTING_BRIDGE_SETTING_NAME;
+        else if (nm_streq0(strv[0], NM_SETTING_BOND_PORT_SETTING_NAME))
+            slv_type = NM_SETTING_BOND_SETTING_NAME;
         else
             slv_type = NULL;
         valid_settings_slave = nm_meta_setting_info_valid_parts_for_slave_type(slv_type, NULL);

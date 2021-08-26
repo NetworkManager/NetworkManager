@@ -83,6 +83,7 @@ src/libnm-core-impl/nm-setting-6lowpan.c
 src/libnm-core-impl/nm-setting-8021x.c
 src/libnm-core-impl/nm-setting-adsl.c
 src/libnm-core-impl/nm-setting-bluetooth.c
+src/libnm-core-impl/nm-setting-bond-port.c
 src/libnm-core-impl/nm-setting-bond.c
 src/libnm-core-impl/nm-setting-bridge-port.c
 src/libnm-core-impl/nm-setting-bridge.c
@@ -159,6 +160,7 @@ src/nmtui/nmt-edit-connection-list.c
 src/nmtui/nmt-editor-section.c
 src/nmtui/nmt-editor.c
 src/nmtui/nmt-mtu-entry.c
+src/nmtui/nmt-page-bond-port.c
 src/nmtui/nmt-page-bond.c
 src/nmtui/nmt-page-bridge-port.c
 src/nmtui/nmt-page-bridge.c
@@ -179,9 +181,9 @@ src/nmtui/nmt-password-fields.c
 src/nmtui/nmt-route-editor.c
 src/nmtui/nmt-route-table.c
 src/nmtui/nmt-slave-list.c
-src/nmtui/nmt-wireguard-peer-list.c
-src/nmtui/nmt-wireguard-peer-editor.c
 src/nmtui/nmt-widget-list.c
+src/nmtui/nmt-wireguard-peer-editor.c
+src/nmtui/nmt-wireguard-peer-list.c
 src/nmtui/nmtui-connect.c
 src/nmtui/nmtui-edit.c
 src/nmtui/nmtui-hostname.c

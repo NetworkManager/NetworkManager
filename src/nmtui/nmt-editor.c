@@ -26,6 +26,7 @@
 #include "nmt-mtu-entry.h"
 
 #include "nmt-page-bond.h"
+#include "nmt-page-bond-port.h"
 #include "nmt-page-bridge.h"
 #include "nmt-page-bridge-port.h"
 #include "nmt-page-dsl.h"
@@ -387,6 +388,8 @@ nmt_editor_constructed(GObject *object)
             add_sections_for_page(editor, grid, nmt_page_bridge_port_new(priv->edit_connection));
         else if (!strcmp(slave_type, NM_SETTING_TEAM_SETTING_NAME))
             add_sections_for_page(editor, grid, nmt_page_team_port_new(priv->edit_connection));
+        else if (nm_streq(slave_type, NM_SETTING_BOND_SETTING_NAME))
+            add_sections_for_page(editor, grid, nmt_page_bond_port_new(priv->edit_connection));
     } else {
         NmtNewtWidget *section;
 

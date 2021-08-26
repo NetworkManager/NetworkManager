@@ -17,6 +17,7 @@
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-ip4-config.h"
+#include "nm-setting-bond-port.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceBond
 #include "nm-device-logging.h"
@@ -215,11 +216,29 @@ update_connection(NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-master_update_slave_connection(NMDevice *    self,
-                               NMDevice *    slave,
-                               NMConnection *connection,
-                               GError **     error)
+controller_update_port_connection(NMDevice *    self,
+                                  NMDevice *    port,
+                                  NMConnection *connection,
+                                  GError **     error)
 {
+    NMSettingBondPort *s_port;
+    int                ifindex_port = nm_device_get_ifindex(port);
+    uint               queue_id     = NM_BOND_PORT_QUEUE_ID_DEF;
+    gs_free char *     queue_id_str = NULL;
+
+    g_return_val_if_fail(ifindex_port > 0, FALSE);
+
+    s_port = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BOND_PORT);
+
+    queue_id_str =
+        nm_platform_sysctl_slave_get_option(nm_device_get_platform(self), ifindex_port, "queue_id");
+    if (queue_id_str) {
+        queue_id =
+            _nm_utils_ascii_str_to_int64(queue_id_str, 10, 0, 65535, NM_BOND_PORT_QUEUE_ID_DEF);
+        g_object_set(s_port, NM_SETTING_BOND_PORT_QUEUE_ID, queue_id, NULL);
+    } else
+        _LOGW(LOGD_BOND, "failed to read bond port setting '%s'", NM_SETTING_BOND_PORT_QUEUE_ID);
+
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_MASTER,
                  nm_device_get_iface(self),
@@ -384,30 +403,57 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     return ret;
 }
 
-static gboolean
-enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gboolean configure)
+static void
+commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *s_port)
 {
-    NMDeviceBond *self = NM_DEVICE_BOND(device);
+    char queue_id_str[IFNAMSIZ + NM_STRLEN(":") + 5 + 100];
 
-    nm_device_master_check_slave_physical_port(device, slave, LOGD_BOND);
+    /*
+     * The queue-id of bond port is read only, we should modify bond interface using:
+     *    echo "eth1:2" > /sys/class/net/bond0/bonding/queue_id
+     * Kernel allows parital editing, so no need to care about other bond ports.
+     */
+    g_snprintf(queue_id_str,
+               sizeof(queue_id_str),
+               "%s:%" G_GUINT32_FORMAT,
+               nm_device_get_iface(port),
+               s_port ? nm_setting_bond_port_get_queue_id(s_port) : NM_BOND_PORT_QUEUE_ID_DEF);
+
+    nm_platform_sysctl_master_set_option(nm_device_get_platform(bond_device),
+                                         nm_device_get_ifindex(bond_device),
+                                         "queue_id",
+                                         queue_id_str);
+}
+
+static gboolean
+enslave_slave(NMDevice *device, NMDevice *port, NMConnection *connection, gboolean configure)
+{
+    NMDeviceBond *     self = NM_DEVICE_BOND(device);
+    NMSettingBondPort *s_port;
+
+    nm_device_master_check_slave_physical_port(device, port, LOGD_BOND);
 
     if (configure) {
         gboolean success;
 
-        nm_device_take_down(slave, TRUE);
+        nm_device_take_down(port, TRUE);
         success = nm_platform_link_enslave(nm_device_get_platform(device),
                                            nm_device_get_ip_ifindex(device),
-                                           nm_device_get_ip_ifindex(slave));
-        nm_device_bring_up(slave, TRUE, NULL);
+                                           nm_device_get_ip_ifindex(port));
+        nm_device_bring_up(port, TRUE, NULL);
 
         if (!success) {
-            _LOGI(LOGD_BOND, "enslaved bond slave %s: failed", nm_device_get_ip_iface(slave));
+            _LOGI(LOGD_BOND, "assigning bond port %s: failed", nm_device_get_ip_iface(port));
             return FALSE;
         }
 
-        _LOGI(LOGD_BOND, "enslaved bond slave %s", nm_device_get_ip_iface(slave));
+        s_port = _nm_connection_get_setting(connection, NM_TYPE_SETTING_BOND_PORT);
+
+        commit_port_options(device, port, s_port);
+
+        _LOGI(LOGD_BOND, "assigned bond port %s", nm_device_get_ip_iface(port));
     } else
-        _LOGI(LOGD_BOND, "bond slave %s was enslaved", nm_device_get_ip_iface(slave));
+        _LOGI(LOGD_BOND, "bond port %s was assigned", nm_device_get_ip_iface(port));
 
     return TRUE;
 }
@@ -613,7 +659,7 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
     device_class->complete_connection      = complete_connection;
 
     device_class->update_connection              = update_connection;
-    device_class->master_update_slave_connection = master_update_slave_connection;
+    device_class->master_update_slave_connection = controller_update_port_connection;
 
     device_class->create_and_realize = create_and_realize;
     device_class->act_stage1_prepare = act_stage1_prepare;

@@ -1494,7 +1494,7 @@ test_software_detect(gconstpointer user_data)
          * The fix (17af2bce) is included kernel 4.7, dated 24 July, 2016.
          */
         for (i = ifindex_parent + 1; i < ifindex_parent + 100; i++) {
-            snprintf(buf, sizeof(buf), "/sys/class/macvtap/tap%d", i);
+            g_snprintf(buf, sizeof(buf), "/sys/class/macvtap/tap%d", i);
             if (!g_file_test(buf, G_FILE_TEST_IS_SYMLINK))
                 break;
 

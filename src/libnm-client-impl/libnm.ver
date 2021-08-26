@@ -1803,4 +1803,7 @@ libnm_1_34_0 {
 global:
 	nm_ip_routing_rule_get_uid_range;
 	nm_ip_routing_rule_set_uid_range;
+	nm_setting_bond_port_get_queue_id;
+	nm_setting_bond_port_get_type;
+	nm_setting_bond_port_new;
 } libnm_1_32_4;

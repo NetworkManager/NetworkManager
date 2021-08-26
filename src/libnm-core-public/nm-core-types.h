@@ -19,6 +19,7 @@ typedef struct _NMSetting8021x            NMSetting8021x;
 typedef struct _NMSettingAdsl             NMSettingAdsl;
 typedef struct _NMSettingBluetooth        NMSettingBluetooth;
 typedef struct _NMSettingBond             NMSettingBond;
+typedef struct _NMSettingBondPort         NMSettingBondPort;
 typedef struct _NMSettingBridge           NMSettingBridge;
 typedef struct _NMSettingBridgePort       NMSettingBridgePort;
 typedef struct _NMSettingCdma             NMSettingCdma;
