@@ -33,14 +33,22 @@ new contributions already must already agree to that.
 For more details see [RELICENSE.md](RELICENSE.md).
 
 
-Coding Standard
----------------
+Coding Style
+------------
 
-The formatting uses clang-format with clang 11.0. Run
-`./contrib/scripts/nm-code-format.sh -i` to reformat the code
-or call `clang-format` yourself.
-You may also call `./contrib/scripts/nm-code-format-container.sh`
-which runs a Fedora 33 container using podman.
+### clang-format
+
+The formatting is automated using clang-format. Run `./contrib/scripts/nm-code-format.sh -i`
+([[1]](contrib/scripts/nm-code-format.sh)) to reformat the code or run `clang-format` yourself.
+
+You may also call `./contrib/scripts/nm-code-format-container.sh` which runs a
+Fedora container using podman.
+
+As the generated format depends on the version of clang-format, you need to use the
+correct clang-format version. That is basically the version that our [gitlab-ci
+pipeline](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines) uses
+for the "check-tree" test. This is the version from a recent Fedora installation.
+
 You are welcome to not bother and open a merge request with
 wrong formatting, but note that we then will automatically adjust
 your contribution before merging.
@@ -52,6 +60,8 @@ the reformatting commit with git-blame:
 ```
 $ git config --add 'blame.ignoreRevsFile' '.git-blame-ignore-revs'
 ```
+
+### Style
 
 Since our coding style is entirely automated, the following are just
 some details of the style we use:
@@ -70,6 +80,9 @@ some details of the style we use:
   - GOOD: `MyObject *object;`
   - BAD:  `MyObject *object = complex_and_long_init_function(arg1, arg2, arg3);`
 
+* Declare each variable on a separate line:
+  - BAD: `int i, j;`
+
 * 80-cols is a guideline, don't make the code uncomfortable in order to fit in
   less than 80 cols.
 
@@ -77,6 +90,22 @@ some details of the style we use:
   - GOOD: `#define MY_CONSTANT 42`
   - BAD:  `static const unsigned myConstant = 42;`
 
+Additionally, we require to build without compiler warnings for the warnings
+that we enable. Also, our language is C11 with some GCC-isms (like typeof(),
+expression statements, cleanup attribute). In practice, we support various versions
+of GCC and clang. The supported C "dialect", the compilers and
+libc are the one that we can practically build and test in our CI. We don't
+target a theoretical, pure C standard or a libc/compiler that we don't test.
+Patches for making NetworkManager more portable are welcome, if there is a
+practical use and CI tests.
+
+### Checkpatch
+
+We have a [checkpatch.pl](contrib/scripts/checkpatch.pl) script, which is
+also run in our gitlab-ci. Review the warnings, but as these are just heuristics,
+there might be valid reasons to reject them. There is also a
+[git hook](contrib/scripts/checkpatch-git-post-commit-hook) which you can call
+from `.git/hooks/post-commit`.
 
 Unit Tests
 ----------
@@ -90,7 +119,7 @@ files. The unit test fail in that case, to indicate that the generated
 files no longer match what is commited to git.
 You can also automatically regenerate the files by running `NM_TEST_REGENERATE=1 make check`.
 Note that test-client requires working translation.
-See the [comment](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/eee4332e8facfa5ff5940fa1655575d76ca143ea/src/tests/client/test-client.py#L19)
+See the [comment](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/src/tests/client/test-client.py#L14)
 for how to configure it.
 
 
@@ -261,7 +290,7 @@ We use GObjects and GObject Properties in various cases. For example:
   properties. In that case, avoid adding a getter too, the property only needs to be
   writable and you should access it via the C wrapper.
 
-In general, use GObject sparsely and avoid them (unless you need them for one of the
+In general, use GObject properties sparsely and avoid them (unless you need them for one of the
 reasons above).
 
 Almost always add a `#define` for the property name, and use for example
