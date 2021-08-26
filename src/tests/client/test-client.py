@@ -16,28 +16,33 @@ from __future__ import print_function
 # When adjusting the tests, or when making changes to nmcli that intentionally
 # change the output, the expected output must be regenerated.
 #
-#  $ make install
-#    # (step not required every time)
-#    # The test also compare the translated output, hence, the translation
-#    # file must be installed at the configured --prefix.
-#    # You don't need to type `make install` every time, but a suitable version
-#    # of translations must be installed. In practice, the tests only care about
-#    # Polish (pl) translations.
-#    # The important part is that translations work. Test
-#    #  $ LANG=pl_PL.UTF-8 ./src/nmcli/nmcli --version
-#    # also ensure that `locale -a` reports the Polish locale.
-#    #
-#    # How to get that right depends on your distro. First check that
-#    # `LANG=pl_PL.UTF-8 /usr/bin/nmcli --version` gives you Polish output
-#    # and that it works in principle.
-#    # Then install NetworkManager in the configured prefix (make install)
-#    # and verify that ./src/nmcli/nmcli also gives you Polish.
+# For that, you'd setup your system correctly (see below) and then simply:
+#
 #  $ NM_TEST_REGENERATE=1 make check-local-tests-client
-#    # Set NM_TEST_REGENERATE=1 to regenerate all files.
+#    # Or `NM_TEST_REGENERATE=1 make check -j 10`
 #  $ git diff ... ; git add ...
-#    # (optional step)
-#    # Inspect what changed, and whether it makes sense. Then commit changes
-#    # to git.
+#    # The previous step regenerated the expected output. Review the changes
+#    # and consider whether they are correct. Then commit the changes to git.
+#
+# Setup: For regenerating the output, the translations must work. First:
+#
+#  1) LANG=pl_PL.UTF-8 /usr/bin/nmcli --version
+#    # Ensure that Polish output works for the system-installed nmcli.
+#    # If not, you should ensure that `locale -a` reports the Polish
+#    # locale. If that is not the case, how to enable the locale depends on
+#    # your distro.
+#    #
+#    # On Debian, you might do:
+#    #   sed -i 's/^# \(pl_PL.UTF-8 .*\)$/\1/p' /etc/locale.gen
+#    #   locale-gen pl_PL.UTF-8
+#
+#  2) LANG=pl_PL.UTF-8 ./src/nmcli/nmcli --version
+#    # Ensure that the built nmcli has Polish locale working. If not,
+#    # you probably need to first `make install` the application at the
+#    # correct prefix. Take care to configure the build with the desired
+#    # prefix, like `./configure --prefix=/opt/tmp`. Usually, you want to avoid
+#    # using /usr as prefix, because that might overwrite files from your
+#    # package management system.
 #
 ###############################################################################
 #
