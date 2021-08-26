@@ -7180,7 +7180,6 @@ test_write_wired_pppoe(void)
     NMSettingConnection *         s_con;
     NMSettingIPConfig *           s_ip4;
     NMSettingPppoe *              s_pppoe;
-    gs_free_error GError *error = NULL;
 
     connection = nm_simple_connection_new();
 
@@ -7225,7 +7224,6 @@ test_write_vpn(void)
     NMSettingConnection *         s_con;
     NMSettingIPConfig *           s_ip4;
     NMSettingVpn *                s_vpn;
-    gs_free_error GError *error = NULL;
 
     connection = nm_simple_connection_new();
 
@@ -7268,8 +7266,7 @@ test_write_mobile_broadband(gconstpointer data)
     NMSettingIPConfig *           s_ip4;
     NMSettingCdma *               s_cdma;
     NMSettingSerial *             s_serial;
-    gs_free_error GError *error = NULL;
-    gboolean              gsm   = GPOINTER_TO_UINT(data);
+    gboolean                      gsm = GPOINTER_TO_UINT(data);
 
     connection = nm_simple_connection_new();
 
