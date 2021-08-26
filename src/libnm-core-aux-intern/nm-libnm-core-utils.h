@@ -166,6 +166,9 @@ gboolean nm_utils_validate_dhcp4_vendor_class_id(const char *vci, GError **error
 
 gboolean nm_settings_connection_validate_permission_user(const char *item, gssize len);
 
+/*****************************************************************************/
+
 gpointer _nm_connection_ensure_setting(NMConnection *connection, GType gtype);
+gpointer _nm_connection_new_setting(NMConnection *connection, GType gtype);
 
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */

@@ -363,12 +363,18 @@ nm_settings_connection_validate_permission_user(const char *item, gssize len)
 gpointer
 _nm_connection_ensure_setting(NMConnection *connection, GType gtype)
 {
+    return nm_connection_get_setting(connection, gtype)
+               ?: _nm_connection_new_setting(connection, gtype);
+}
+
+gpointer
+_nm_connection_new_setting(NMConnection *connection, GType gtype)
+{
     NMSetting *setting;
 
-    setting = nm_connection_get_setting(connection, gtype);
-    if (!setting) {
-        setting = g_object_new(gtype, NULL);
-        nm_connection_add_setting(connection, setting);
-    }
+    nm_assert(g_type_is_a(gtype, NM_TYPE_SETTING));
+
+    setting = g_object_new(gtype, NULL);
+    nm_connection_add_setting(connection, setting);
     return setting;
 }
