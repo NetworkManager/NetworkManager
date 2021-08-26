@@ -1982,6 +1982,28 @@ nmtst_assert_route_attribute_boolean(NMIPRoute *route, const char *name, gboolea
 #if (defined(__NM_SIMPLE_CONNECTION_H__) && defined(__NM_SETTING_CONNECTION_H__)) \
     || (defined(NM_CONNECTION_H))
 
+#define nmtst_connection_assert_setting(connection, gtype)        \
+    ({                                                            \
+        const GType _gtype = (gtype);                             \
+        gpointer    _ptr;                                         \
+                                                                  \
+        _ptr = nm_connection_get_setting((connection), (_gtype)); \
+        g_assert(NM_IS_SETTING(_ptr));                            \
+        g_assert(G_OBJECT_TYPE(_ptr) == _gtype);                  \
+        _ptr;                                                     \
+    })
+
+#define nmtst_connection_assert_no_setting(connection, gtype)     \
+    G_STMT_START                                                  \
+    {                                                             \
+        const GType _gtype = (gtype);                             \
+        gpointer    _ptr;                                         \
+                                                                  \
+        _ptr = nm_connection_get_setting((connection), (_gtype)); \
+        g_assert(!_ptr);                                          \
+    }                                                             \
+    G_STMT_END
+
 static inline NMConnection *
 nmtst_clone_connection(NMConnection *connection)
 {
