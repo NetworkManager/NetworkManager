@@ -722,11 +722,11 @@ static GArray *
 build_device_hostname_infos(NMPolicy *self)
 {
     NMPolicyPrivate *   priv = NM_POLICY_GET_PRIVATE(self);
-    const CList *       tmp_clist;
+    const CList *       tmp_clist, *tmp_safe;
     NMActiveConnection *ac;
     GArray *            array = NULL;
 
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_clist) {
+    nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_clist, tmp_safe) {
         DeviceHostnameInfo *info;
         NMDevice *          device;
         gboolean            only_from_default;
@@ -957,14 +957,14 @@ static void
 update_default_ac(NMPolicy *self, int addr_family, NMActiveConnection *best)
 {
     NMPolicyPrivate *   priv = NM_POLICY_GET_PRIVATE(self);
-    const CList *       tmp_list;
+    const CList *       tmp_list, *tmp_safe;
     NMActiveConnection *ac;
 
     /* Clear the 'default[6]' flag on all active connections that aren't the new
      * default active connection.  We'll set the new default after; this ensures
      * we don't ever have two marked 'default[6]' simultaneously.
      */
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+    nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
         if (ac != best)
             nm_active_connection_set_default(ac, addr_family, FALSE);
     }
@@ -984,14 +984,14 @@ get_best_ip_config(NMPolicy *           self,
 {
     NMPolicyPrivate *   priv = NM_POLICY_GET_PRIVATE(self);
     gpointer            conf, best_conf = NULL;
-    const CList *       tmp_list;
+    const CList *       tmp_list, *tmp_safe;
     NMActiveConnection *ac;
     guint64             best_metric = G_MAXUINT64;
     NMVpnConnection *   best_vpn    = NULL;
 
     nm_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
 
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+    nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
         NMVpnConnection *    candidate;
         NMVpnConnectionState vpn_state;
         const NMPObject *    obj;
@@ -1069,7 +1069,7 @@ update_ip4_routing(NMPolicy *self, gboolean force_update)
     NMVpnConnection *   vpn      = NULL;
     NMActiveConnection *best_ac  = NULL;
     const char *        ip_iface = NULL;
-    const CList *       tmp_list;
+    const CList *       tmp_list, *tmp_safe;
     NMActiveConnection *ac;
 
     /* Note that we might have an IPv4 VPN tunneled over an IPv6-only device,
@@ -1088,7 +1088,7 @@ update_ip4_routing(NMPolicy *self, gboolean force_update)
         return;
 
     if (best) {
-        nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+        nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
             if (NM_IS_VPN_CONNECTION(ac) && nm_vpn_connection_get_ip4_config(NM_VPN_CONNECTION(ac))
                 && !nm_active_connection_get_device(ac))
                 nm_active_connection_set_device(ac, best);
@@ -1114,10 +1114,10 @@ update_ip6_prefix_delegation(NMPolicy *self)
     NMPolicyPrivate *   priv = NM_POLICY_GET_PRIVATE(self);
     NMDevice *          device;
     NMActiveConnection *ac;
-    const CList *       tmp_list;
+    const CList *       tmp_list, *tmp_safe;
 
     /* There's new default IPv6 connection, try to get a prefix for everyone. */
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+    nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
         device = nm_active_connection_get_device(ac);
         if (device && nm_device_needs_ip6_subnet(device))
             ip6_subnet_from_device(self, get_default_device(self, AF_INET6), device);
@@ -1133,7 +1133,7 @@ update_ip6_routing(NMPolicy *self, gboolean force_update)
     NMActiveConnection *best_ac  = NULL;
     const char *        ip_iface = NULL;
     NMActiveConnection *ac;
-    const CList *       tmp_list;
+    const CList *       tmp_list, *tmp_safe;
 
     /* Note that we might have an IPv6 VPN tunneled over an IPv4-only device,
      * so we can get (vpn != NULL && best == NULL).
@@ -1151,7 +1151,7 @@ update_ip6_routing(NMPolicy *self, gboolean force_update)
         return;
 
     if (best) {
-        nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+        nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
             if (NM_IS_VPN_CONNECTION(ac) && nm_vpn_connection_get_ip6_config(NM_VPN_CONNECTION(ac))
                 && !nm_active_connection_get_device(ac))
                 nm_active_connection_set_device(ac, best);
@@ -1199,10 +1199,10 @@ update_ip_dns(NMPolicy *self, int addr_family, NMDevice *changed_device)
 
     if (addr_family == AF_INET6) {
         NMActiveConnection *ac;
-        const CList *       tmp_list;
+        const CList *       tmp_list, *tmp_safe;
 
         /* Tell devices needing a subnet about the new DNS configuration */
-        nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+        nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
             device = nm_active_connection_get_device(ac);
             if (device && device != changed_device && nm_device_needs_ip6_subnet(device))
                 nm_device_copy_ip6_dns_config(device, get_default_device(self, AF_INET6));
@@ -1648,7 +1648,7 @@ schedule_activate_check(NMPolicy *self, NMDevice *device)
     NMPolicyPrivate *   priv = NM_POLICY_GET_PRIVATE(self);
     ActivateData *      data;
     NMActiveConnection *ac;
-    const CList *       tmp_list;
+    const CList *       tmp_list, *tmp_safe;
 
     if (nm_manager_get_state(priv->manager) == NM_STATE_ASLEEP)
         return;
@@ -1659,7 +1659,7 @@ schedule_activate_check(NMPolicy *self, NMDevice *device)
     if (find_pending_activation(self, device))
         return;
 
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
+    nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
         if (nm_active_connection_get_device(ac) == device)
             return;
     }
