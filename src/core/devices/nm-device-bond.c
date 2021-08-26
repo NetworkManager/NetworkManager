@@ -228,11 +228,7 @@ controller_update_port_connection(NMDevice *    self,
 
     g_return_val_if_fail(ifindex_port > 0, FALSE);
 
-    s_port = _nm_connection_get_setting_bond_port(connection);
-    if (!s_port) {
-        s_port = NM_SETTING_BOND_PORT(nm_setting_bond_port_new());
-        nm_connection_add_setting(connection, NM_SETTING(s_port));
-    }
+    s_port = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BOND_PORT);
 
     queue_id_str =
         nm_platform_sysctl_slave_get_option(nm_device_get_platform(self), ifindex_port, "queue_id");
