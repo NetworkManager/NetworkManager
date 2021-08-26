@@ -1889,24 +1889,14 @@ write_bridge_port_setting(NMConnection *connection, shvarFile *ifcfg, GError **e
     return TRUE;
 }
 
-static gboolean
-write_bond_port_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
+static void
+write_bond_port_setting(NMConnection *connection, shvarFile *ifcfg)
 {
-    NMSettingBondPort *s_port   = NULL;
-    guint16            queue_id = NM_BOND_PORT_QUEUE_ID_DEF;
+    NMSettingBondPort *s_port;
 
     s_port = _nm_connection_get_setting_bond_port(connection);
-    if (!s_port)
-        return TRUE;
-
-    queue_id = nm_setting_bond_port_get_queue_id(s_port);
-    if (queue_id
-        != get_setting_default_checked_uint(NM_BOND_PORT_QUEUE_ID_DEF,
-                                            s_port,
-                                            NM_SETTING_BOND_PORT_QUEUE_ID))
-        svSetValueInt64(ifcfg, "BOND_PORT_QUEUE_ID", queue_id);
-
-    return TRUE;
+    if (s_port)
+        svSetValueInt64(ifcfg, "BOND_PORT_QUEUE_ID", nm_setting_bond_port_get_queue_id(s_port));
 }
 
 static gboolean
@@ -3391,8 +3381,7 @@ do_write_construct(NMConnection *                  connection,
     if (!write_bridge_port_setting(connection, ifcfg, error))
         return FALSE;
 
-    if (!write_bond_port_setting(connection, ifcfg, error))
-        return FALSE;
+    write_bond_port_setting(connection, ifcfg);
 
     if (!write_team_port_setting(connection, ifcfg, error))
         return FALSE;
