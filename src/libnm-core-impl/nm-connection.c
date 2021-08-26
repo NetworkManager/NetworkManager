@@ -1074,6 +1074,7 @@ _nm_connection_detect_slave_type(NMConnection *connection, NMSetting **out_s_por
         const char *      controller_type_name;
     } infos[] = {
         {NM_META_SETTING_TYPE_BRIDGE_PORT, NM_SETTING_BRIDGE_SETTING_NAME},
+        {NM_META_SETTING_TYPE_BOND_PORT, NM_SETTING_BOND_SETTING_NAME},
         {NM_META_SETTING_TYPE_TEAM_PORT, NM_SETTING_TEAM_SETTING_NAME},
         {NM_META_SETTING_TYPE_OVS_PORT, NM_SETTING_OVS_BRIDGE_SETTING_NAME},
         {NM_META_SETTING_TYPE_OVS_INTERFACE, NM_SETTING_OVS_PORT_SETTING_NAME},
@@ -1677,6 +1678,10 @@ _normalize_invalid_slave_port_settings(NMConnection *self)
 
     if (!nm_streq0(slave_type, NM_SETTING_BRIDGE_SETTING_NAME)
         && _nm_connection_remove_setting(self, NM_TYPE_SETTING_BRIDGE_PORT))
+        changed = TRUE;
+
+    if (!nm_streq0(slave_type, NM_SETTING_BOND_SETTING_NAME)
+        && _nm_connection_remove_setting(self, NM_TYPE_SETTING_BOND_PORT))
         changed = TRUE;
 
     if (!nm_streq0(slave_type, NM_SETTING_TEAM_SETTING_NAME)
@@ -3765,4 +3770,10 @@ nm_connection_default_init(NMConnectionInterface *iface)
                                     g_cclosure_marshal_VOID__VOID,
                                     G_TYPE_NONE,
                                     0);
+}
+
+NMSettingBondPort *
+_nm_connection_get_setting_bond_port(NMConnection *connection)
+{
+    return _connection_get_setting_by_meta_type_check(connection, NM_META_SETTING_TYPE_BOND_PORT);
 }

@@ -16,6 +16,7 @@
 #include "nm-setting-adsl.h"
 #include "nm-setting-bluetooth.h"
 #include "nm-setting-bond.h"
+#include "nm-setting-bond-port.h"
 #include "nm-setting-bridge-port.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-cdma.h"
@@ -189,6 +190,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
             .setting_name      = NM_SETTING_BOND_SETTING_NAME,
             .get_setting_gtype = nm_setting_bond_get_type,
+        },
+    [NM_META_SETTING_TYPE_BOND_PORT] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_BOND_PORT,
+            .setting_priority  = NM_SETTING_PRIORITY_AUX,
+            .setting_name      = NM_SETTING_BOND_PORT_SETTING_NAME,
+            .get_setting_gtype = nm_setting_bond_port_get_type,
         },
     [NM_META_SETTING_TYPE_BRIDGE] =
         {
@@ -568,6 +576,7 @@ const NMMetaSettingType nm_meta_setting_types_by_priority[] = {
     NM_META_SETTING_TYPE_SRIOV,
 
     /* NM_SETTING_PRIORITY_AUX  */
+    NM_META_SETTING_TYPE_BOND_PORT,
     NM_META_SETTING_TYPE_BRIDGE_PORT,
     NM_META_SETTING_TYPE_ETHTOOL,
     NM_META_SETTING_TYPE_MATCH,

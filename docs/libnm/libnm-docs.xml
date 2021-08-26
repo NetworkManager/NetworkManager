@@ -315,6 +315,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-8021x.xml"/>
     <xi:include href="xml/nm-setting-adsl.xml"/>
     <xi:include href="xml/nm-setting-bluetooth.xml"/>
+    <xi:include href="xml/nm-setting-bond-port.xml"/>
     <xi:include href="xml/nm-setting-bond.xml"/>
     <xi:include href="xml/nm-setting-bridge-port.xml"/>
     <xi:include href="xml/nm-setting-bridge.xml"/>

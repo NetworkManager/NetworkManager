@@ -5049,6 +5049,18 @@ static const NMMetaPropertyInfo *const property_infos_BOND[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_BOND_PORT
+static const NMMetaPropertyInfo *const property_infos_BOND_PORT[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_BOND_PORT_QUEUE_ID,
+        .is_cli_option =                TRUE,
+        .property_alias =               "queue-id",
+        .prompt =                       N_("Queue ID [0]"),
+        .property_type =                &_pt_gobject_int,
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_BRIDGE
 static const NMMetaPropertyInfo *const property_infos_BRIDGE[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_BRIDGE_MAC_ADDRESS,
@@ -8113,6 +8125,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_ADSL                N_("ADSL connection")
 #define SETTING_PRETTY_NAME_BLUETOOTH           N_("bluetooth connection")
 #define SETTING_PRETTY_NAME_BOND                N_("Bond device")
+#define SETTING_PRETTY_NAME_BOND_PORT           N_("Bond port")
 #define SETTING_PRETTY_NAME_BRIDGE              N_("Bridge device")
 #define SETTING_PRETTY_NAME_BRIDGE_PORT         N_("Bridge port")
 #define SETTING_PRETTY_NAME_CDMA                N_("CDMA mobile broadband connection")
@@ -8217,6 +8230,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
         ),
     ),
+    SETTING_INFO (BOND_PORT),
     SETTING_INFO (BRIDGE,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -8497,6 +8511,11 @@ static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
     NULL,
 };
 
+static const NMMetaSettingValidPartItem *const valid_settings_slave_bond[] = {
+    NM_META_SETTING_VALID_PART_ITEM(BOND_PORT, TRUE),
+    NULL,
+};
+
 static const NMMetaSettingValidPartItem *const valid_settings_slave_bridge[] = {
     NM_META_SETTING_VALID_PART_ITEM(BRIDGE_PORT, TRUE),
     NULL,
@@ -8526,7 +8545,7 @@ nm_meta_setting_info_valid_parts_for_slave_type(const char *slave_type, const ch
     }
     if (nm_streq(slave_type, NM_SETTING_BOND_SETTING_NAME)) {
         NM_SET_OUT(out_slave_name, "bond-slave");
-        return NM_PTRARRAY_EMPTY(const NMMetaSettingValidPartItem *);
+        return valid_settings_slave_bond;
     }
     if (nm_streq(slave_type, NM_SETTING_BRIDGE_SETTING_NAME)) {
         NM_SET_OUT(out_slave_name, "bridge-slave");

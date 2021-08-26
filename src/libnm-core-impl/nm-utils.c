@@ -29,6 +29,7 @@
 #include "nm-setting-private.h"
 #include "nm-crypto.h"
 #include "nm-setting-bond.h"
+#include "nm-setting-bond-port.h"
 #include "nm-setting-bridge.h"
 #include "nm-setting-bridge-port.h"
 #include "nm-setting-infiniband.h"

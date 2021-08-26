@@ -18,6 +18,7 @@ executable(
     'nmt-mac-entry.c',
     'nmt-mtu-entry.c',
     'nmt-page-bond.c',
+    'nmt-page-bond-port.c',
     'nmt-page-bridge.c',
     'nmt-page-bridge-port.c',
     'nmt-page-dsl.c',
