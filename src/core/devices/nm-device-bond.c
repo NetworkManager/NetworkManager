@@ -407,16 +407,10 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     return ret;
 }
 
-/*
- * The queue id format is '$interface_name:$queue_id'
- * The max queue 65535 hold 5 chars.
- */
-#define _MAX_QUEUE_ID_STR_LEN 5 + IFNAMSIZ + 1 + 1
-
 static void
 commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *set_port)
 {
-    char queue_id_str[_MAX_QUEUE_ID_STR_LEN];
+    char queue_id_str[IFNAMSIZ + NM_STRLEN(":") + 5 + 100];
 
     /*
      * The queue-id of bond port is read only, we should modify bond interface using:
@@ -424,7 +418,7 @@ commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *se
      * Kernel allows parital editing, so no need to care about other bond ports.
      */
     g_snprintf(queue_id_str,
-               _MAX_QUEUE_ID_STR_LEN,
+               sizeof(queue_id_str),
                "%s:%" G_GUINT32_FORMAT,
                nm_device_get_iface(port),
                set_port ? nm_setting_bond_port_get_queue_id(set_port) : NM_BOND_PORT_QUEUE_ID_DEF);
