@@ -1253,8 +1253,8 @@ src_libnm_core_impl_lib_c_settings_real = \
 	src/libnm-core-impl/nm-setting-8021x.c \
 	src/libnm-core-impl/nm-setting-adsl.c \
 	src/libnm-core-impl/nm-setting-bluetooth.c \
-	src/libnm-core-impl/nm-setting-bond.c \
 	src/libnm-core-impl/nm-setting-bond-port.c \
+	src/libnm-core-impl/nm-setting-bond.c \
 	src/libnm-core-impl/nm-setting-bridge-port.c \
 	src/libnm-core-impl/nm-setting-bridge.c \
 	src/libnm-core-impl/nm-setting-cdma.c \
@@ -5087,14 +5087,14 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-mac-entry.h \
 	src/nmtui/nmt-mtu-entry.c \
 	src/nmtui/nmt-mtu-entry.h \
-	src/nmtui/nmt-page-bond.c \
-	src/nmtui/nmt-page-bond.h \
 	src/nmtui/nmt-page-bond-port.c \
 	src/nmtui/nmt-page-bond-port.h \
-	src/nmtui/nmt-page-bridge.c \
-	src/nmtui/nmt-page-bridge.h \
+	src/nmtui/nmt-page-bond.c \
+	src/nmtui/nmt-page-bond.h \
 	src/nmtui/nmt-page-bridge-port.c \
 	src/nmtui/nmt-page-bridge-port.h \
+	src/nmtui/nmt-page-bridge.c \
+	src/nmtui/nmt-page-bridge.h \
 	src/nmtui/nmt-page-dsl.c \
 	src/nmtui/nmt-page-dsl.h \
 	src/nmtui/nmt-page-ethernet.c \
@@ -5109,10 +5109,10 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-page-ip6.h \
 	src/nmtui/nmt-page-ppp.c \
 	src/nmtui/nmt-page-ppp.h \
-	src/nmtui/nmt-page-team.c \
-	src/nmtui/nmt-page-team.h \
 	src/nmtui/nmt-page-team-port.c \
 	src/nmtui/nmt-page-team-port.h \
+	src/nmtui/nmt-page-team.c \
+	src/nmtui/nmt-page-team.h \
 	src/nmtui/nmt-page-vlan.c \
 	src/nmtui/nmt-page-vlan.h \
 	src/nmtui/nmt-page-wifi.c \
@@ -5131,12 +5131,12 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-route-table.h \
 	src/nmtui/nmt-slave-list.c \
 	src/nmtui/nmt-slave-list.h \
-	src/nmtui/nmt-wireguard-peer-list.c \
-	src/nmtui/nmt-wireguard-peer-list.h \
-	src/nmtui/nmt-wireguard-peer-editor.c \
-	src/nmtui/nmt-wireguard-peer-editor.h \
 	src/nmtui/nmt-utils.c \
 	src/nmtui/nmt-utils.h \
+	src/nmtui/nmt-wireguard-peer-editor.c \
+	src/nmtui/nmt-wireguard-peer-editor.h \
+	src/nmtui/nmt-wireguard-peer-list.c \
+	src/nmtui/nmt-wireguard-peer-list.h \
 	src/nmtui/nmt-widget-list.c \
 	src/nmtui/nmt-widget-list.h \
 	$(NULL)
