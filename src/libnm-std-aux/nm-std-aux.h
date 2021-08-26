@@ -175,38 +175,40 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 #if NM_MORE_ASSERTS
 #define nm_assert(cond)        \
-    do {                       \
+    ({                         \
         _nm_assert_call(cond); \
-    } while (0)
+        1;                     \
+    })
 #define nm_assert_se(cond)                \
-    do {                                  \
+    ({                                    \
         if (NM_LIKELY(cond)) {            \
             ;                             \
         } else {                          \
             _nm_assert_call(0 && (cond)); \
         }                                 \
-    } while (0)
+        1;                                \
+    })
 #define nm_assert_not_reached()        \
-    do {                               \
+    ({                                 \
         _nm_assert_call_not_reached(); \
-    } while (0)
+        1;                             \
+    })
 #else
 #define nm_assert(cond)  \
-    do {                 \
+    ({                   \
         if (0) {         \
             if (cond) {} \
         }                \
-    } while (0)
+        1;               \
+    })
 #define nm_assert_se(cond)     \
-    do {                       \
+    ({                         \
         if (NM_LIKELY(cond)) { \
             ;                  \
         }                      \
-    } while (0)
-#define nm_assert_not_reached() \
-    do {                        \
-        ;                       \
-    } while (0)
+        1;                     \
+    })
+#define nm_assert_not_reached() ({ 1; })
 #endif
 
 /* This is similar nm_assert_not_reached(), but it's supposed to be used only during
