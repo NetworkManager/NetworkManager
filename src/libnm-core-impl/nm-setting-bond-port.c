@@ -89,11 +89,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("A connection with a '%s' setting must have the slave-type set to '%s'. "
-                          "Instead it is '%s'"),
+                        _("A connection with a '%s' setting must have the slave-type set to '%s'"),
                         NM_SETTING_BOND_PORT_SETTING_NAME,
-                        NM_SETTING_BOND_SETTING_NAME,
-                        slave_type);
+                        NM_SETTING_BOND_SETTING_NAME);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
