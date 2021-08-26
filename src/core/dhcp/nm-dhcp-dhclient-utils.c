@@ -282,7 +282,7 @@ read_interface(const char *line, char *interface, guint size)
     if (ptr[0] == '\0' || strlen(ptr) + 1 > size)
         return FALSE;
 
-    snprintf(interface, size, "%s", ptr);
+    g_snprintf(interface, size, "%s", ptr);
 
     return TRUE;
 }

@@ -423,11 +423,11 @@ commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *se
      *    echo "eth1:2" > /sys/class/net/bond0/bonding/queue_id
      * Kernel allows parital editing, so no need to care about other bond ports.
      */
-    snprintf(queue_id_str,
-             _MAX_QUEUE_ID_STR_LEN,
-             "%s:%" G_GUINT32_FORMAT,
-             nm_device_get_iface(port),
-             set_port ? nm_setting_bond_port_get_queue_id(set_port) : NM_BOND_PORT_QUEUE_ID_DEF);
+    g_snprintf(queue_id_str,
+               _MAX_QUEUE_ID_STR_LEN,
+               "%s:%" G_GUINT32_FORMAT,
+               nm_device_get_iface(port),
+               set_port ? nm_setting_bond_port_get_queue_id(set_port) : NM_BOND_PORT_QUEUE_ID_DEF);
 
     nm_platform_sysctl_master_set_option(nm_device_get_platform(bond_device),
                                          nm_device_get_ifindex(bond_device),

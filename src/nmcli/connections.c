@@ -3794,13 +3794,13 @@ prompt_yes_no(gboolean default_yes, char *delim)
     if (!delim)
         delim = "";
 
-    snprintf(prompt,
-             sizeof(prompt),
-             "(%s/%s) [%s]%s ",
-             WORD_YES,
-             WORD_NO,
-             default_yes ? WORD_YES : WORD_NO,
-             delim);
+    g_snprintf(prompt,
+               sizeof(prompt),
+               "(%s/%s) [%s]%s ",
+               WORD_YES,
+               WORD_NO,
+               default_yes ? WORD_YES : WORD_NO,
+               delim);
 
     return prompt;
 }

@@ -417,7 +417,7 @@ nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
 
     port = nm_setting_macsec_get_port(setting);
     if (port > 0 && port < 65534) {
-        snprintf(buf, sizeof(buf), "%d", port);
+        g_snprintf(buf, sizeof(buf), "%d", port);
         if (!nm_supplicant_config_add_option(self, "macsec_port", buf, -1, NULL, error))
             return FALSE;
     }
