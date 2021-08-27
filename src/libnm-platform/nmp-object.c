@@ -2078,6 +2078,9 @@ nmp_lookup_init_obj_type(NMPLookup *lookup, NMPObjectType obj_type)
     nm_assert(lookup);
 
     switch (obj_type) {
+    default:
+        nm_assert_not_reached();
+        /* fall-through */
     case NMP_OBJECT_TYPE_LINK:
     case NMP_OBJECT_TYPE_IP4_ADDRESS:
     case NMP_OBJECT_TYPE_IP6_ADDRESS:
@@ -2089,9 +2092,6 @@ nmp_lookup_init_obj_type(NMPLookup *lookup, NMPObjectType obj_type)
         _nmp_object_stackinit_from_type(&lookup->selector_obj, obj_type);
         lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_TYPE;
         return _L(lookup);
-    default:
-        nm_assert_not_reached();
-        return NULL;
     }
 }
 
@@ -2106,7 +2106,7 @@ nmp_lookup_init_link_by_ifname(NMPLookup *lookup, const char *ifname)
 
     o = _nmp_object_stackinit_from_type(&lookup->selector_obj, NMP_OBJECT_TYPE_LINK);
     if (g_strlcpy(o->link.name, ifname, sizeof(o->link.name)) >= sizeof(o->link.name))
-        g_return_val_if_reached(NULL);
+        nm_assert_not_reached();
     lookup->cache_id_type = NMP_CACHE_ID_TYPE_LINK_BY_IFNAME;
     return _L(lookup);
 }
