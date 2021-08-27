@@ -616,6 +616,10 @@ typedef union {
 
 #undef __NMPlatformIPRoute_COMMON
 
+#define NM_PLATFORM_IP4_ROUTE_INIT(...) (&((const NMPlatformIP4Route){__VA_ARGS__}))
+
+#define NM_PLATFORM_IP6_ROUTE_INIT(...) (&((const NMPlatformIP6Route){__VA_ARGS__}))
+
 typedef struct {
     /* struct fib_rule_uid_range */
     guint32 start;
