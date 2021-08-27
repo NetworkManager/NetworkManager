@@ -17,6 +17,12 @@ Report issues and send patches via [gitlab.freedesktop.org](https://gitlab.freed
 or our mailing list.
 
 
+Documentation
+-------------
+
+Find the documentation on [our website](https://networkmanager.dev/docs/).
+
+
 Legal
 -----
 
@@ -107,6 +113,46 @@ there might be valid reasons to reject them. There is also a
 [git hook](contrib/scripts/checkpatch-git-post-commit-hook) which you can call
 from `.git/hooks/post-commit`.
 
+
+Building from Source
+--------------------
+
+First see that you have the required build dependencies. For Fedora/RHEL/Centos,
+you can look at [this](contrib/fedora/REQUIRED_PACKAGES)
+script and [here](contrib/debian/REQUIRED_PACKAGES)
+is a script for Debian/Ubuntu.
+
+Both meson and autotools are supported. You may choose whatever you prefer.
+For autotools the common steps are
+
+```
+./autogen.sh $CONFIGURE_OPTIONS
+make -j 8
+# optional: sudo make install
+```
+and for meson it's
+```
+meson build $CONFIGURE_OPTIONS
+ninja -C build
+# optional: sudo meson install
+```
+
+Beware to set the correct `$CONFIGURE_OPTIONS`. In particular, you may
+not want the default installation prefix and not overwrite files in
+`/usr`.
+
+### Fedora
+
+For Fedora/RHEL/CentOS, you can build an RPM from upstream sources with
+```
+   ./contrib/fedora/rpm/build_clean.sh -r
+```
+Pass `--help` to [build_clean.sh](contrib/fedora/rpm/build_clean.sh) for options.
+
+You may also use the [Copr project](https://copr.fedorainfracloud.org/coprs/networkmanager/)
+maintained by the upstream maintainers. There you find builds of latest `main` and stable branches.
+
+
 Unit Tests
 ----------
 
@@ -119,12 +165,47 @@ files. The unit test fail in that case, to indicate that the generated
 files no longer match what is commited to git.
 You can also automatically regenerate the files by running `NM_TEST_REGENERATE=1 make check`.
 Note that test-client requires working translation.
-See the [comment](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/blob/main/src/tests/client/test-client.py#L14)
+See the [comment](src/tests/client/test-client.py#L14)
 for how to configure it.
 
 
-Assertions in NetworkManager code
----------------------------------
+Code Structure
+---------------------------
+
+`./contrib`- Contains a lot of required package, configuration for different platform and environment, build NM from source tree.
+
+`./data`- Contains some configurations and rules.
+
+`./docs`- Contains the generated documentation for libnm and for the D-Bus API.
+
+`./examples`- Some code examples for basic networking operations and status checking.
+
+`./introspection`- XML docs describing various D-Bus interface and their properties.
+
+`./m4`- Contains M4 macros source files for autoconf.
+
+`./man`- NM manual files.
+
+`./po`- contains text-based portable object file. These .PO files are referenced by GNU gettext as a property file and these files are human readable used for translating purpose.
+
+[`./src`](src/)- source code for libnm, nmcli, nm-cloud-setup, nmtui…
+
+`./tools`- tools for generating the intermediate files or merging the file.
+
+Cscope/ctags
+---------------------------
+
+NetworkManager's source code is large. It may be a good idea to use tools like cscope/ctags to index the
+source code and navigate it. These tools can integrate with editors like `Vim` and `Emacs`. See:
+
+- http://cscope.sourceforge.net/cscope_vim_tutorial.html
+- https://www.emacswiki.org/emacs/CScopeAndEmacs
+
+
+Miscellaneous
+---------------------------
+
+### Assertions in NetworkManager code
 
 There are different kind of assertions. Use the one that is appropriate.
 
@@ -196,73 +277,6 @@ For testing, you also want to run NetworkManager with environment variable
 `g_log()` message. NetworkManager won't use these levels for regular logging
 but for assertions.
 
-
-Git Notes (refs/notes/bugs)
----------------------------
-
-We use special tags in commit messages like "Fixes", "cherry picked from" and "Ignore-Backport".
-The [find-backports](contrib/scripts/find-backports) script uses these to find patches that
-should be backported to older branches. Sometimes we don't know a-priory to mark a commit
-with these tags so we can instead use the `bugs` notes.
-
-The git notes reference is called "refs/notes/bugs".
-
-So configure:
-
-```
-$ git config --add 'remote.origin.fetch' 'refs/notes/bugs:refs/notes/bugs'
-$ git config --add 'notes.displayref' 'refs/notes/bugs'
-```
-
-For example, set notes with
-
-```
-$ git notes --ref refs/notes/bugs add -m "(cherry picked from $COMMIT_SHA)" HEAD
-```
-
-You should see the notes in git-log output as well.
-
-To resync our local notes use:
-
-```
-$ git fetch origin refs/notes/bugs:refs/notes/bugs -f
-```
-
-Code Structure
----------------------------
-
-`./contrib`- Contains a lot of required package, configuration for different platform and environment, build NM from source tree.
-
-`./data`- Contains some configurations and rules.
-
-`./docs`- Contains the generated documentation for libnm and for the D-Bus API.
-
-`./examples`- Some code examples for basic networking operations and status checking.
-
-`./introspection`- XML docs describing various D-Bus interface and their properties.
-
-`./m4`- Contains M4 macros source files for autoconf.
-
-`./man`- NM manual files.
-
-`./po`- contains text-based portable object file. These .PO files are referenced by GNU gettext as a property file and these files are human readable used for translating purpose.
-
-[`./src`](src/)- source code for libnm, nmcli, nm-cloud-setup, nmtui…
-
-`./tools`- tools for generating the intermediate files or merging the file.
-
-Cscope/ctags
----------------------------
-
-NetworkManager's source code is large. It may be a good idea to use tools like cscope/ctags to index the
-source code and navigate it. These tools can integrate with editors like `Vim` and `Emacs`. See:
-
-- http://cscope.sourceforge.net/cscope_vim_tutorial.html
-- https://www.emacswiki.org/emacs/CScopeAndEmacs
-
-
-Miscellaneous
----------------------------
 
 ### Header Includes
 
@@ -336,3 +350,33 @@ the property to D-Bus. Don't use that property otherwise and don't register
 a `notify::NM_MANAGER_DEVICES` for your own purpose. The reason is that GObject
 properties are harder to understand and they should be used sparsely and for
 one specific reason.
+
+### Git Notes (refs/notes/bugs)
+
+We use special tags in commit messages like "Fixes", "cherry picked from" and "Ignore-Backport".
+The [find-backports](contrib/scripts/find-backports) script uses these to find patches that
+should be backported to older branches. Sometimes we don't know a-priory to mark a commit
+with these tags so we can instead use the `bugs` notes.
+
+The git notes reference is called "refs/notes/bugs".
+
+So configure:
+
+```
+$ git config --add 'remote.origin.fetch' 'refs/notes/bugs:refs/notes/bugs'
+$ git config --add 'notes.displayref' 'refs/notes/bugs'
+```
+
+For example, set notes with
+
+```
+$ git notes --ref refs/notes/bugs add -m "(cherry picked from $COMMIT_SHA)" HEAD
+```
+
+You should see the notes in git-log output as well.
+
+To resync our local notes use:
+
+```
+$ git fetch origin refs/notes/bugs:refs/notes/bugs -f
+```
