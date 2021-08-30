@@ -74,6 +74,16 @@
         NM_CONNECTION(g_object_ref(_1_connection));                              \
     })
 
+#define _parse_no_con(ARGV)                                        \
+    G_STMT_START                                                   \
+    {                                                              \
+        gs_unref_hashtable GHashTable *_0_connections = NULL;      \
+                                                                   \
+        _0_connections = _parse_cons(ARGV);                        \
+        g_assert_cmpint(g_hash_table_size(_0_connections), ==, 0); \
+    }                                                              \
+    G_STMT_END
+
 /*****************************************************************************/
 
 static void
