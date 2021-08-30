@@ -933,13 +933,10 @@ link_negotiation_set(NMDevice *device)
         _LOGD(LOGD_DEVICE, "set-link: configure auto-negotiation");
     else {
         _LOGD(LOGD_DEVICE,
-              "set-link: configure %snegotiation (%u Mbit%s, %s duplex%s)",
+              "set-link: configure %snegotiation (%u Mbit, %s duplex)",
               autoneg ? "auto-" : "static ",
-              speed ?: link_speed,
-              speed ? "" : "*",
-              duplex ? nm_platform_link_duplex_type_to_string(duplex)
-                     : nm_platform_link_duplex_type_to_string(link_duplex),
-              duplex ? "" : "*");
+              speed,
+              nm_platform_link_duplex_type_to_string(duplex));
     }
 
     if (!priv->ethtool_prev_set) {
