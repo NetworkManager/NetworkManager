@@ -582,6 +582,7 @@ src_libnm_platform_libnm_platform_la_CPPFLAGS = \
 
 src_libnm_platform_libnm_platform_la_SOURCES = \
 	\
+	src/linux-headers/ethtool.h \
 	src/linux-headers/nl802154.h \
 	\
 	src/libnm-platform/nm-linux-platform.c \
