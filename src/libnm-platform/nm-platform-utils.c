@@ -1574,6 +1574,13 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
                              || (!speed && duplex == NM_PLATFORM_LINK_DUPLEX_UNKNOWN),
                          FALSE);
 
+    nm_log_trace(LOGD_PLATFORM,
+                 "ethtool[%d]: set link: autoneg=%d, speed=%d, duplex=%s",
+                 ifindex,
+                 autoneg,
+                 speed,
+                 nm_platform_link_duplex_type_to_string(duplex));
+
     ret = set_link_settings_new(&shandle, autoneg, speed, duplex);
     if (ret != NM_OPTION_BOOL_DEFAULT)
         return ret;
