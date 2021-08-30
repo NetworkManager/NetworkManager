@@ -81,6 +81,7 @@ install \
     systemd-devel \
     teamd-devel \
     util-linux \
+    vala \
     vala-devel \
     valgrind \
     which \
