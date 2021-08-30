@@ -8,7 +8,7 @@
 #
 
 # We're happy to rebuild all containers when one changes.
-.default_tag: &default_tag '2021-07-21.0'
+.default_tag: &default_tag '2021-08-30.0'
 
 
 # The list of all distributions we want to create job for.
@@ -25,9 +25,8 @@ distributions:
       - '32'
       - '33'
       - '34'
-      - 'rawhide'
-    # always:
-    #   - '33'
+      - '35'
+      - '36'
   - name: ubuntu
     tag: *default_tag
     base_type: debian
@@ -43,6 +42,7 @@ distributions:
     versions:
       - '9'
       - '10'
+      - '11'
       - 'testing'
       - 'sid'
   - name: centos
@@ -56,6 +56,7 @@ distributions:
       - '7.9.2009'
       - '8.1.1911'
       - '8.2.2004'
+      - '8.3.2011'
   - name: alpine
     tag: *default_tag
     base_type: alpine
