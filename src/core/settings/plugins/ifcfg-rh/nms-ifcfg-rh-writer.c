@@ -205,18 +205,18 @@ write_object(NMSetting8021x *                s_8021x,
     g_return_val_if_fail(ifcfg != NULL, FALSE);
     g_return_val_if_fail(objtype != NULL, FALSE);
 
-    scheme = (*(objtype->vtable->scheme_func)) (s_8021x);
+    scheme = (*(objtype->vtable->scheme_func))(s_8021x);
     switch (scheme) {
     case NM_SETTING_802_1X_CK_SCHEME_UNKNOWN:
         break;
     case NM_SETTING_802_1X_CK_SCHEME_BLOB:
-        blob = (*(objtype->vtable->blob_func)) (s_8021x);
+        blob = (*(objtype->vtable->blob_func))(s_8021x);
         break;
     case NM_SETTING_802_1X_CK_SCHEME_PATH:
-        value = (*(objtype->vtable->path_func)) (s_8021x);
+        value = (*(objtype->vtable->path_func))(s_8021x);
         break;
     case NM_SETTING_802_1X_CK_SCHEME_PKCS11:
-        value = (*(objtype->vtable->uri_func)) (s_8021x);
+        value = (*(objtype->vtable->uri_func))(s_8021x);
         break;
     default:
         g_set_error(error,
@@ -229,8 +229,8 @@ write_object(NMSetting8021x *                s_8021x,
     /* Set the password for certificate/private key. */
     nm_sprintf_buf(secret_name, "%s_PASSWORD", objtype->ifcfg_rh_key);
     nm_sprintf_buf(secret_flags, "%s_PASSWORD_FLAGS", objtype->ifcfg_rh_key);
-    password = (*(objtype->vtable->passwd_func)) (s_8021x);
-    flags    = (*(objtype->vtable->pwflag_func)) (s_8021x);
+    password = (*(objtype->vtable->passwd_func))(s_8021x);
+    flags    = (*(objtype->vtable->pwflag_func))(s_8021x);
     set_secret(ifcfg, secrets, secret_name, password, secret_flags, flags);
 
     if (!objtype->vtable->format_func)

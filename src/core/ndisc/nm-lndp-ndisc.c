@@ -85,14 +85,14 @@ send_rs(NMNDisc *ndisc, GError **error)
 static NMIcmpv6RouterPref
 _route_preference_coerce(enum ndp_route_preference pref)
 {
-#define _ASSERT_ENUM(v1, v2)                                       \
-    G_STMT_START                                                   \
-    {                                                              \
-        G_STATIC_ASSERT((NMIcmpv6RouterPref) (v1) == (v2));        \
-        G_STATIC_ASSERT((enum ndp_route_preference) (v2) == (v1)); \
-        G_STATIC_ASSERT((gint64) (v1) == (v2));                    \
-        G_STATIC_ASSERT((gint64) (v2) == (v1));                    \
-    }                                                              \
+#define _ASSERT_ENUM(v1, v2)                                      \
+    G_STMT_START                                                  \
+    {                                                             \
+        G_STATIC_ASSERT((NMIcmpv6RouterPref) (v1) == (v2));       \
+        G_STATIC_ASSERT((enum ndp_route_preference)(v2) == (v1)); \
+        G_STATIC_ASSERT((gint64) (v1) == (v2));                   \
+        G_STATIC_ASSERT((gint64) (v2) == (v1));                   \
+    }                                                             \
     G_STMT_END
 
     switch (pref) {

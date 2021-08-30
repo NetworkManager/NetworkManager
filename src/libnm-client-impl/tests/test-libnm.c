@@ -2758,7 +2758,7 @@ test_types(void)
 
     for (i_type = 0; i_type < G_N_ELEMENTS(get_type_fcns); i_type++) {
         nm_auto_unref_gtypeclass GObjectClass *klass_unref = NULL;
-        GType                                  gtype       = (get_type_fcns[i_type]) ();
+        GType                                  gtype       = (get_type_fcns[i_type])();
         GObjectClass *                         klass;
 
         g_assert(g_str_has_prefix(g_type_name(gtype), "NM"));

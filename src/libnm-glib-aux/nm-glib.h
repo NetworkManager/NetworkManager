@@ -572,7 +572,7 @@ _nm_g_value_unset(GValue *value)
 
 /* G_SOURCE_FUNC was added in 2.57.2. */
 #undef G_SOURCE_FUNC
-#define G_SOURCE_FUNC(f) ((GSourceFunc) (void (*)(void)) (f))
+#define G_SOURCE_FUNC(f) ((GSourceFunc) (void (*)(void))(f))
 
 /*****************************************************************************/
 
