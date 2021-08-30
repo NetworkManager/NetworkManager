@@ -2379,11 +2379,11 @@ _nm_settings_connection_register_kf_dbs(NMSettingsConnection *self,
                 priv->seen_bssids_hash = _seen_bssids_hash_new();
 
             entry = _seen_bssid_entry_new_stale_bin(&addr_bin);
+            c_list_link_tail(&priv->seen_bssids_lst_head, &entry->seen_bssids_lst);
             if (!g_hash_table_insert(priv->seen_bssids_hash, entry, entry)) {
                 /* duplicate detected! The @entry key was freed by g_hash_table_insert(). */
                 continue;
             }
-            c_list_link_tail(&priv->seen_bssids_lst_head, &entry->seen_bssids_lst);
             result_len++;
         }
         if (result_len > 0) {
