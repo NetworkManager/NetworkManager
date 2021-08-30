@@ -1508,12 +1508,11 @@ set_link_settings_new(SocketHandle *           shandle,
 
     /* then change the needed ones */
     edata->cmd = ETHTOOL_SLINKSETTINGS;
-    if (autoneg) {
+
+    {
         const guint32 *v_map_supported      = &edata->link_mode_masks[0];
         guint32 *      v_map_advertising    = &edata->link_mode_masks[nwords];
         guint32 *      v_map_lp_advertising = &edata->link_mode_masks[2 * nwords];
-
-        edata->autoneg = AUTONEG_ENABLE;
 
         memcpy(v_map_advertising, v_map_supported, sizeof(guint32) * nwords);
         (void) v_map_lp_advertising;
@@ -1524,6 +1523,8 @@ set_link_settings_new(SocketHandle *           shandle,
             mode = get_baset_mode(speed, duplex);
 
             if (mode == ADVERTISED_INVALID) {
+                if (!autoneg)
+                    goto set_autoneg;
                 nm_log_trace(LOGD_PLATFORM,
                              "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
                              shandle->ifindex,
@@ -1533,6 +1534,8 @@ set_link_settings_new(SocketHandle *           shandle,
             }
 
             if (!(v_map_supported[0] & mode)) {
+                if (!autoneg)
+                    goto set_autoneg;
                 nm_log_trace(LOGD_PLATFORM,
                              "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
                              shandle->ifindex,
@@ -1545,7 +1548,12 @@ set_link_settings_new(SocketHandle *           shandle,
                 v_map_advertising[i] &= ~_nmp_link_mode_all_advertised_modes[i];
             v_map_advertising[0] |= mode;
         }
-    } else {
+    }
+
+set_autoneg:
+    if (autoneg)
+        edata->autoneg = AUTONEG_ENABLE;
+    else {
         edata->autoneg = AUTONEG_DISABLE;
 
         if (speed)
@@ -1593,34 +1601,41 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
 
     /* then change the needed ones */
     edata.cmd = ETHTOOL_SSET;
-    if (autoneg) {
-        edata.autoneg     = AUTONEG_ENABLE;
-        edata.advertising = edata.supported;
-        if (speed != 0) {
-            guint32 mode;
 
-            mode = get_baset_mode(speed, duplex);
+    edata.advertising = edata.supported;
+    if (speed != 0) {
+        guint32 mode;
 
-            if (mode == ADVERTISED_INVALID) {
-                nm_log_trace(LOGD_PLATFORM,
-                             "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
-                             ifindex,
-                             speed,
-                             nm_platform_link_duplex_type_to_string(duplex));
-                return FALSE;
-            }
-            if (!(edata.supported & mode)) {
-                nm_log_trace(LOGD_PLATFORM,
-                             "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
-                             ifindex,
-                             speed,
-                             nm_platform_link_duplex_type_to_string(duplex));
-                return FALSE;
-            }
-            edata.advertising &= ~_nmp_link_mode_all_advertised_modes[0];
-            edata.advertising |= mode;
+        mode = get_baset_mode(speed, duplex);
+
+        if (mode == ADVERTISED_INVALID) {
+            if (!autoneg)
+                goto set_autoneg;
+            nm_log_trace(LOGD_PLATFORM,
+                         "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
+                         ifindex,
+                         speed,
+                         nm_platform_link_duplex_type_to_string(duplex));
+            return FALSE;
         }
-    } else {
+        if (!(edata.supported & mode)) {
+            if (!autoneg)
+                goto set_autoneg;
+            nm_log_trace(LOGD_PLATFORM,
+                         "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
+                         ifindex,
+                         speed,
+                         nm_platform_link_duplex_type_to_string(duplex));
+            return FALSE;
+        }
+        edata.advertising &= ~_nmp_link_mode_all_advertised_modes[0];
+        edata.advertising |= mode;
+    }
+
+set_autoneg:
+    if (autoneg)
+        edata.autoneg = AUTONEG_ENABLE;
+    else {
         edata.autoneg = AUTONEG_DISABLE;
 
         if (speed)
