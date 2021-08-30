@@ -1422,15 +1422,15 @@ set_link_settings_new(SocketHandle *           shandle,
     /* then change the needed ones */
     edata->cmd = ETHTOOL_SLINKSETTINGS;
     if (autoneg) {
+        const guint32 *v_map_supported      = &edata->link_mode_masks[0];
+        guint32 *      v_map_advertising    = &edata->link_mode_masks[nwords];
+        guint32 *      v_map_lp_advertising = &edata->link_mode_masks[2 * nwords];
+
         edata->autoneg = AUTONEG_ENABLE;
 
         /* copy @map_supported to @map_advertising and @map_lp_advertising */
-        memcpy(&edata->link_mode_masks[nwords],
-               &edata->link_mode_masks[0],
-               sizeof(guint32) * nwords);
-        memcpy(&edata->link_mode_masks[nwords * 2],
-               &edata->link_mode_masks[0],
-               sizeof(guint32) * nwords);
+        memcpy(v_map_advertising, v_map_supported, sizeof(guint32) * nwords);
+        memcpy(v_map_lp_advertising, v_map_supported, sizeof(guint32) * nwords);
 
         if (speed != 0) {
             guint32 mode;
@@ -1447,7 +1447,7 @@ set_link_settings_new(SocketHandle *           shandle,
             }
 
             /* We only support BASE-T modes in the first word */
-            if (!(edata->link_mode_masks[0] & mode)) {
+            if (!(v_map_supported[0] & mode)) {
                 nm_log_trace(LOGD_PLATFORM,
                              "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
                              shandle->ifindex,
@@ -1456,9 +1456,8 @@ set_link_settings_new(SocketHandle *           shandle,
                 return FALSE;
             }
 
-            edata->link_mode_masks[nwords] =
-                (edata->link_mode_masks[nwords] & ~BASET_ALL_MODES) | mode;
-            edata->link_mode_masks[nwords * 2] = edata->link_mode_masks[nwords];
+            v_map_advertising[0]    = (v_map_advertising[0] & ~BASET_ALL_MODES) | mode;
+            v_map_lp_advertising[0] = v_map_advertising[0];
         }
     } else {
         edata->autoneg = AUTONEG_DISABLE;
