@@ -82,7 +82,6 @@ install \
     teamd-devel \
     util-linux \
     vala-devel \
-    vala-tools \
     valgrind \
     which \
     "${EXTRA_PACKAGES[@]}"
