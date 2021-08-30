@@ -314,7 +314,7 @@ static NM_UTILS_ENUM2STR_DEFINE(_l3_acd_defend_type_to_string,
                                 NML3AcdDefendType,
                                 NM_UTILS_ENUM2STR(NM_L3_ACD_DEFEND_TYPE_ALWAYS, "always"),
                                 NM_UTILS_ENUM2STR(NM_L3_ACD_DEFEND_TYPE_NEVER, "never"),
-                                NM_UTILS_ENUM2STR(NM_L3_ACD_DEFEND_TYPE_NONE, "none"),
+                                NM_UTILS_ENUM2STR(_NM_L3_ACD_DEFEND_TYPE_NONE, "none"),
                                 NM_UTILS_ENUM2STR(NM_L3_ACD_DEFEND_TYPE_ONCE, "once"), );
 
 static NM_UTILS_LOOKUP_DEFINE(_l3_acd_defend_type_to_nacd,
@@ -1042,7 +1042,7 @@ _acd_data_collect_tracks_data(const AcdData *    acd_data,
                               guint32 *          out_best_acd_timeout_msec,
                               NML3AcdDefendType *out_best_acd_defend_type)
 {
-    NML3AcdDefendType best_acd_defend_type  = NM_L3_ACD_DEFEND_TYPE_NONE;
+    NML3AcdDefendType best_acd_defend_type  = _NM_L3_ACD_DEFEND_TYPE_NONE;
     guint32           best_acd_timeout_msec = G_MAXUINT32;
     guint             n                     = 0;
     guint             i;
@@ -1061,7 +1061,7 @@ _acd_data_collect_tracks_data(const AcdData *    acd_data,
             best_acd_defend_type = acd_track->_priv.acd_defend_type_track;
     }
 
-    nm_assert(n == 0 || best_acd_defend_type > NM_L3_ACD_DEFEND_TYPE_NONE);
+    nm_assert(n == 0 || best_acd_defend_type > _NM_L3_ACD_DEFEND_TYPE_NONE);
     nm_assert(best_acd_defend_type <= NM_L3_ACD_DEFEND_TYPE_ALWAYS);
 
     NM_SET_OUT(out_best_acd_timeout_msec, n > 0 ? best_acd_timeout_msec : 0u);
@@ -1532,8 +1532,8 @@ _l3_acd_data_add(NML3Cfg *             self,
             .n_track_infos_alloc       = 0,
             .acd_event_notify_lst      = C_LIST_INIT(acd_data->acd_event_notify_lst),
             .probing_timestamp_msec    = 0,
-            .acd_defend_type_desired   = NM_L3_ACD_DEFEND_TYPE_NONE,
-            .acd_defend_type_current   = NM_L3_ACD_DEFEND_TYPE_NONE,
+            .acd_defend_type_desired   = _NM_L3_ACD_DEFEND_TYPE_NONE,
+            .acd_defend_type_current   = _NM_L3_ACD_DEFEND_TYPE_NONE,
             .acd_defend_type_is_active = FALSE,
         };
         c_list_link_tail(&self->priv.p->acd_lst_head, &acd_data->acd_lst);
@@ -2469,7 +2469,7 @@ handle_start_defending:
                                       ACD_STATE_CHANGE_MODE_INIT_REAPPLY,
                                       ACD_STATE_CHANGE_MODE_POST_COMMIT));
 
-    nm_assert(acd_data->acd_defend_type_desired > NM_L3_ACD_DEFEND_TYPE_NONE);
+    nm_assert(acd_data->acd_defend_type_desired > _NM_L3_ACD_DEFEND_TYPE_NONE);
     nm_assert(acd_data->acd_defend_type_desired <= NM_L3_ACD_DEFEND_TYPE_ALWAYS);
 
     if (acd_data->acd_defend_type_desired != acd_data->acd_defend_type_current) {
