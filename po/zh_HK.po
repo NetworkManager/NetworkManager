@@ -75,7 +75,7 @@ msgstr ""
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:13
 #, fuzzy
 msgid "Allow control of network connections"
-msgstr "沒有網路連接"
+msgstr "允許控制網路連線"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:14
 msgid "System policy prevents control of network connections"
@@ -84,7 +84,7 @@ msgstr ""
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
 #, fuzzy
 msgid "Allow control of Wi-Fi scans"
-msgstr "沒有網路連接"
+msgstr "允許控制Wi-Fi掃描"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
 msgid "System policy prevents Wi-Fi scans"
@@ -110,7 +110,7 @@ msgstr ""
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:21
 #, fuzzy
 msgid "Modify personal network connections"
-msgstr "沒有網路連接"
+msgstr "修改個人網路連線"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:22
 msgid "System policy prevents modification of personal network settings"
@@ -119,7 +119,7 @@ msgstr ""
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:23
 #, fuzzy
 msgid "Modify network connections for all users"
-msgstr "沒有網路連接"
+msgstr "修改所有用戶的網絡連線"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:24
 msgid "System policy prevents modification of network settings for all users"
