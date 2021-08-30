@@ -923,12 +923,6 @@ link_negotiation_set(NMDevice *device)
         return;
     }
 
-    /* If link negotiation setting are already in place do nothing and return with success */
-    if (!!autoneg == !!link_autoneg && speed == link_speed && duplex == link_duplex) {
-        _LOGD(LOGD_DEVICE, "set-link: link negotiation is already configured");
-        return;
-    }
-
     if (autoneg && !speed && !duplex)
         _LOGD(LOGD_DEVICE, "set-link: configure auto-negotiation");
     else {
