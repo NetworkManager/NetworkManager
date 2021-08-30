@@ -1221,7 +1221,9 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
 
         tag = get_word(&argument, '=');
 
-        if (nm_streq(tag, "net.ifnames"))
+        if (!tag) {
+            /* pass */
+        } else if (nm_streq(tag, "net.ifnames"))
             net_ifnames = !nm_streq(argument, "0");
         else if (nm_streq(tag, "rd.peerdns"))
             reader->ignore_auto_dns = !_nm_utils_ascii_str_to_bool(argument, TRUE);
@@ -1255,7 +1257,9 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
         argument       = argument_clone;
 
         tag = get_word(&argument, '=');
-        if (nm_streq(tag, "ip"))
+        if (!tag) {
+            /* pass */
+        } else if (nm_streq(tag, "ip"))
             reader_parse_ip(reader, sysfs_dir, argument);
         else if (nm_streq(tag, "rd.route")) {
             if (!routes)
