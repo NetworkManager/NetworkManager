@@ -1428,9 +1428,8 @@ set_link_settings_new(SocketHandle *           shandle,
 
         edata->autoneg = AUTONEG_ENABLE;
 
-        /* copy @map_supported to @map_advertising and @map_lp_advertising */
         memcpy(v_map_advertising, v_map_supported, sizeof(guint32) * nwords);
-        memcpy(v_map_lp_advertising, v_map_supported, sizeof(guint32) * nwords);
+        (void) v_map_lp_advertising;
 
         if (speed != 0) {
             guint32 mode;
@@ -1457,7 +1456,6 @@ set_link_settings_new(SocketHandle *           shandle,
             }
 
             v_map_advertising[0]    = (v_map_advertising[0] & ~BASET_ALL_MODES) | mode;
-            v_map_lp_advertising[0] = v_map_advertising[0];
         }
     } else {
         edata->autoneg = AUTONEG_DISABLE;
