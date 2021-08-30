@@ -942,9 +942,20 @@ link_negotiation_set(NMDevice *device)
     if (!priv->ethtool_prev_set) {
         /* remember the values we had before setting it. */
         priv->ethtool_prev_autoneg = link_autoneg;
-        priv->ethtool_prev_speed   = link_speed;
-        priv->ethtool_prev_duplex  = link_duplex;
-        priv->ethtool_prev_set     = TRUE;
+        if (link_autoneg) {
+            /* with autoneg, we only support advertising one speed/duplex. Likewise
+             * our nm_platform_ethtool_get_link_settings() can only return the current
+             * speed/duplex, but not all the modes that we were advertising.
+             *
+             * Do the best we can do: remember to re-enable autoneg, but don't restrict
+             * the mode. */
+            priv->ethtool_prev_speed  = 0;
+            priv->ethtool_prev_duplex = NM_PLATFORM_LINK_DUPLEX_UNKNOWN;
+        } else {
+            priv->ethtool_prev_speed  = link_speed;
+            priv->ethtool_prev_duplex = link_duplex;
+        }
+        priv->ethtool_prev_set = TRUE;
     }
 
     if (!nm_platform_ethtool_set_link_settings(nm_device_get_platform(device),
