@@ -424,7 +424,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                      _param_spec,                                               \
                                      _property_type,                                            \
                                      .to_dbus_data.get_boolean =                                \
-                                         (gboolean(*)(NMSetting *)) (get_fcn),                  \
+                                         (gboolean(*)(NMSetting *))(get_fcn),                   \
                                      __VA_ARGS__);                                              \
     }                                                                                           \
     G_STMT_END
@@ -482,7 +482,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                      _param_spec,                                               \
                                      _property_type,                                            \
                                      .to_dbus_data.get_string =                                 \
-                                         (const char *(*) (NMSetting *) ) (get_fcn),            \
+                                         (const char *(*) (NMSetting *) )(get_fcn),             \
                                      __VA_ARGS__);                                              \
     }                                                                                           \
     G_STMT_END
