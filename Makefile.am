@@ -2662,14 +2662,6 @@ $(src_core_libNetworkManagerTest_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
 
 ###############################################################################
 
-# NetworkManager binary also must contain symbols that are not used by the binary
-# itself, but by the plugins (that are dlopened). We need to explicitly include
-# them during linking.
-networkmanager_undefined_symbols = \
-	nm_sudo_call_get_fd \
-	nm_sudo_utils_open_fd \
-	$(NULL)
-
 noinst_PROGRAMS += src/core/NetworkManager-all-sym
 
 src_core_NetworkManager_all_sym_CPPFLAGS = $(src_core_cppflags)
@@ -2684,7 +2676,6 @@ src_core_NetworkManager_all_sym_LDADD = \
 
 src_core_NetworkManager_all_sym_LDFLAGS = \
 	-rdynamic \
-	$(networkmanager_undefined_symbols:%=-u %) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
@@ -2711,7 +2702,6 @@ src_core_NetworkManager_LDADD = \
 src_core_NetworkManager_LDFLAGS = \
 	-rdynamic \
 	-Wl,--version-script="src/core/NetworkManager.ver" \
-	$(networkmanager_undefined_symbols:%=-u %) \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 

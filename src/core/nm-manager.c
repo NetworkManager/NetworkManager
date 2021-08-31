@@ -44,6 +44,7 @@
 #include "nm-rfkill-manager.h"
 #include "nm-session-monitor.h"
 #include "nm-sleep-monitor.h"
+#include "nm-sudo-call.h"
 #include "settings/nm-settings-connection.h"
 #include "settings/nm-settings.h"
 #include "vpn/nm-vpn-manager.h"
@@ -212,6 +213,13 @@ struct _NMManager {
 
 typedef struct {
     NMDBusObjectClass parent;
+
+#if WITH_OPENVSWITCH
+    /* these fields only serve the purpose to use the symbols.*/
+    void (*_use_symbol_nm_sudo_call_get_fd)(void);
+    void (*_use_symbol_nm_sudo_utils_open_fd)(void);
+#endif
+
 } NMManagerClass;
 
 G_DEFINE_TYPE(NMManager, nm_manager, NM_TYPE_DBUS_OBJECT)
@@ -8527,6 +8535,14 @@ nm_manager_class_init(NMManagerClass *manager_class)
 {
     GObjectClass *     object_class      = G_OBJECT_CLASS(manager_class);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(manager_class);
+
+#if WITH_OPENVSWITCH
+    /* Use the symbols. These symbols are in NetworkManager binary but will be
+     * used by the OVS device plugin. If we don't use the symbol here, it will
+     * be wrongly dropped. */
+    manager_class->_use_symbol_nm_sudo_call_get_fd   = (void (*)(void)) nm_sudo_call_get_fd;
+    manager_class->_use_symbol_nm_sudo_utils_open_fd = (void (*)(void)) nm_sudo_utils_open_fd;
+#endif
 
     dbus_object_class->export_path     = NM_DBUS_EXPORT_PATH_STATIC(NM_DBUS_PATH);
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_manager);
