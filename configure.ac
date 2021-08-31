@@ -851,6 +851,11 @@ if test "${enable_ovs}" != "no"; then
 	fi
 fi
 AM_CONDITIONAL(WITH_OPENVSWITCH, test "${enable_ovs}" = "yes")
+if test "${enable_ovs}" = "yes" ; then
+    AC_DEFINE(WITH_OPENVSWITCH, 1, [Whether we build with OVS plugin])
+else
+    AC_DEFINE(WITH_OPENVSWITCH, 0, [Whether we build with OVS plugin])
+fi
 
 # DHCP client support
 AC_ARG_WITH([dhclient],
