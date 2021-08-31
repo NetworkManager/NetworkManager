@@ -29,6 +29,10 @@ typedef enum _nm_packed {
 } NML3AcdDefendType;
 
 typedef enum _nm_packed {
+    NM_L3CFG_CONFIG_FLAGS_NONE = 0,
+} NML3CfgConfigFlags;
+
+typedef enum _nm_packed {
     NM_L3_ACD_ADDR_STATE_INIT,
     NM_L3_ACD_ADDR_STATE_PROBING,
     NM_L3_ACD_ADDR_STATE_USED,
@@ -291,6 +295,7 @@ gboolean nm_l3cfg_add_config(NML3Cfg *             self,
                              guint32               default_route_penalty_6,
                              NML3AcdDefendType     acd_defend_type,
                              guint32               acd_timeout_msec,
+                             NML3CfgConfigFlags    config_flags,
                              NML3ConfigMergeFlags  merge_flags);
 
 gboolean nm_l3cfg_remove_config(NML3Cfg *self, gconstpointer tag, const NML3ConfigData *ifcfg);

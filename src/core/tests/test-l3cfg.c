@@ -434,6 +434,7 @@ test_l3cfg(gconstpointer test_data)
                             0,
                             tdata->acd_defend_type_a,
                             tdata->acd_timeout_msec_a,
+                            NM_L3CFG_CONFIG_FLAGS_NONE,
                             NM_L3_CONFIG_MERGE_FLAGS_NONE);
     }
 
@@ -595,6 +596,7 @@ _test_l3_ipv4ll_signal_notify(NML3Cfg *                   l3cfg,
                                          0,
                                          NM_L3_ACD_DEFEND_TYPE_ONCE,
                                          nmtst_get_rand_bool() ? tdata->acd_timeout_msec : 0u,
+                                         NM_L3CFG_CONFIG_FLAGS_NONE,
                                          NM_L3_CONFIG_MERGE_FLAGS_NONE))
                     g_assert_not_reached();
                 nm_l3cfg_commit_on_idle_schedule(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll));

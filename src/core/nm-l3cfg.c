@@ -104,6 +104,7 @@ struct _NML3CfgCommitTypeHandle {
 
 typedef struct {
     const NML3ConfigData *l3cd;
+    NML3CfgConfigFlags    config_flags;
     NML3ConfigMergeFlags  merge_flags;
     union {
         struct {
@@ -2710,6 +2711,7 @@ nm_l3cfg_add_config(NML3Cfg *             self,
                     guint32               default_route_penalty_6,
                     NML3AcdDefendType     acd_defend_type,
                     guint32               acd_timeout_msec,
+                    NML3CfgConfigFlags    config_flags,
                     NML3ConfigMergeFlags  merge_flags)
 {
     L3ConfigData *l3_config_data;
@@ -2774,6 +2776,7 @@ nm_l3cfg_add_config(NML3Cfg *             self,
         *l3_config_data = (L3ConfigData){
             .tag_confdata              = tag,
             .l3cd                      = nm_l3_config_data_ref_and_seal(l3cd),
+            .config_flags              = config_flags,
             .merge_flags               = merge_flags,
             .default_route_table_4     = default_route_table_4,
             .default_route_table_6     = default_route_table_6,
@@ -2796,6 +2799,10 @@ nm_l3cfg_add_config(NML3Cfg *             self,
         if (l3_config_data->priority_confdata != priority) {
             l3_config_data->priority_confdata = priority;
             changed                           = TRUE;
+        }
+        if (l3_config_data->config_flags != config_flags) {
+            l3_config_data->config_flags = config_flags;
+            changed                      = TRUE;
         }
         if (l3_config_data->merge_flags != merge_flags) {
             l3_config_data->merge_flags = merge_flags;
