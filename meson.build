@@ -644,6 +644,7 @@ enable_ovs = get_option('ovs')
 if enable_ovs
   assert(jansson_dep.found(), 'jansson is needed for Open vSwitch integration. Use -Dovs=false to disable it')
 endif
+config_h.set10('WITH_OPENVSWITCH', enable_ovs)
 
 # DNS resolv.conf managers
 config_dns_rc_manager_default = get_option('config_dns_rc_manager_default')

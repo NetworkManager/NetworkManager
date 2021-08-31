@@ -224,6 +224,9 @@
 /* Define if you have oFono support (experimental) */
 #mesondefine WITH_OFONO
 
+/* Whether we build with OVS plugin */
+#mesondefine WITH_OPENVSWITCH
+
 /* Define if you have PPP support */
 #mesondefine WITH_PPP
 
@@ -261,3 +264,4 @@
 
 /* Define to 1 if you have history support from -lreadline. */
 #mesondefine HAVE_READLINE_HISTORY
+
