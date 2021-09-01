@@ -51,6 +51,19 @@ nmcs_provider_get_main_context(NMCSProvider *self)
 }
 /*****************************************************************************/
 
+static int
+_result_new_sort_iface_data(gconstpointer pa, gconstpointer pb)
+{
+    const NMCSProviderGetConfigIfaceData *a = *((const NMCSProviderGetConfigIfaceData *const *) pa);
+    const NMCSProviderGetConfigIfaceData *b = *((const NMCSProviderGetConfigIfaceData *const *) pb);
+
+    /* negative iface_idx are sorted to the end. */
+    NM_CMP_DIRECT((a->iface_idx < 0), (b->iface_idx < 0));
+
+    NM_CMP_FIELD(a, b, iface_idx);
+    return 0;
+}
+
 static NMCSProviderGetConfigResult *
 nmcs_provider_get_config_result_new(GHashTable *iface_datas)
 {
@@ -59,6 +72,12 @@ nmcs_provider_get_config_result_new(GHashTable *iface_datas)
     GHashTableIter                        h_iter;
     guint                                 num_valid_ifaces = 0;
     guint                                 num_ipv4s        = 0;
+    GPtrArray *                           ptrarr;
+    guint                                 n_iface_datas;
+
+    n_iface_datas = g_hash_table_size(iface_datas);
+
+    ptrarr = g_ptr_array_sized_new(n_iface_datas + 1u);
 
     g_hash_table_iter_init(&h_iter, iface_datas);
     while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &iface_data)) {
@@ -66,14 +85,41 @@ nmcs_provider_get_config_result_new(GHashTable *iface_datas)
             num_valid_ifaces++;
             num_ipv4s += iface_data->ipv4s_len;
         }
+        g_ptr_array_add(ptrarr, (gpointer) iface_data);
     }
+
+    g_ptr_array_sort(ptrarr, _result_new_sort_iface_data);
+
+    nm_assert(n_iface_datas == ptrarr->len);
+
+    g_ptr_array_add(ptrarr, NULL);
 
     result  = g_new(NMCSProviderGetConfigResult, 1);
     *result = (NMCSProviderGetConfigResult){
-        .iface_datas      = g_hash_table_ref(iface_datas),
+        .iface_datas   = g_hash_table_ref(iface_datas),
+        .n_iface_datas = n_iface_datas,
+        .iface_datas_arr =
+            (const NMCSProviderGetConfigIfaceData **) g_ptr_array_free(ptrarr, FALSE),
         .num_valid_ifaces = num_valid_ifaces,
         .num_ipv4s        = num_ipv4s,
     };
+
+#if NM_MORE_ASSERTS > 5
+    {
+        gsize iface_idx_expected = 0;
+        guint i;
+
+        for (i = 0; i < result->n_iface_datas; i++) {
+            if (result->iface_datas_arr[i]->iface_idx < 0) {
+                nm_assert(result->iface_datas_arr[i]->iface_idx == -1);
+                iface_idx_expected = -1;
+                continue;
+            }
+            nm_assert(result->iface_datas_arr[i]->iface_idx == iface_idx_expected);
+            iface_idx_expected++;
+        }
+    }
+#endif
 
     return result;
 }
@@ -83,6 +129,7 @@ nmcs_provider_get_config_result_free(NMCSProviderGetConfigResult *result)
 {
     if (result) {
         nm_g_hash_table_unref(result->iface_datas);
+        g_free((gpointer) result->iface_datas_arr);
         g_free(result);
     }
 }
