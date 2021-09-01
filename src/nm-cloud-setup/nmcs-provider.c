@@ -49,6 +49,28 @@ nmcs_provider_get_main_context(NMCSProvider *self)
 
     return nm_http_client_get_main_context(NMCS_PROVIDER_GET_PRIVATE(self)->http_client);
 }
+/*****************************************************************************/
+
+static NMCSProviderGetConfigResult *
+nmcs_provider_get_config_result_new(GHashTable *iface_datas)
+{
+    NMCSProviderGetConfigResult *result;
+
+    result  = g_new(NMCSProviderGetConfigResult, 1);
+    *result = (NMCSProviderGetConfigResult){
+        .iface_datas = g_hash_table_ref(iface_datas),
+    };
+    return result;
+}
+
+void
+nmcs_provider_get_config_result_free(NMCSProviderGetConfigResult *result)
+{
+    if (result) {
+        nm_g_hash_table_unref(result->iface_datas);
+        g_free(result);
+    }
+}
 
 /*****************************************************************************/
 
@@ -137,8 +159,8 @@ _get_config_task_maybe_return(NMCSProviderGetConfigTaskData *get_config_data, GE
     } else {
         _LOGD("get-config: success");
         g_task_return_pointer(get_config_data->task,
-                              g_hash_table_ref(get_config_data->result_dict),
-                              (GDestroyNotify) g_hash_table_unref);
+                              nmcs_provider_get_config_result_new(get_config_data->result_dict),
+                              (GDestroyNotify) nmcs_provider_get_config_result_free);
     }
 
     nm_clear_g_signal_handler(g_task_get_cancellable(get_config_data->task),
@@ -217,7 +239,7 @@ nmcs_provider_get_config(NMCSProvider *      self,
     NMCS_PROVIDER_GET_CLASS(self)->get_config(self, get_config_data);
 }
 
-GHashTable *
+NMCSProviderGetConfigResult *
 nmcs_provider_get_config_finish(NMCSProvider *self, GAsyncResult *result, GError **error)
 {
     g_return_val_if_fail(NMCS_IS_PROVIDER(self), FALSE);
