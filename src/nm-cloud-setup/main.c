@@ -438,6 +438,14 @@ _config_one(GCancellable *                     sigterm_cancellable,
         return FALSE;
     }
 
+    if (config_data->iface_idx >= 100) {
+        /* since we use the iface_idx to select a table number, the range is limited from
+         * 0 to 99. Note that the providers are required to provide increasing numbers,
+         * so this means we bail out after the first 100 devices.  */
+        _LOGD("config device %s: skip because number of supported interfaces reached", hwaddr);
+        return FALSE;
+    }
+
     _LOGD("config device %s: configuring \"%s\" (%s)...",
           hwaddr,
           nm_device_get_iface(device) ?: "/unknown/",
