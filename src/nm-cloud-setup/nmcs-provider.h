@@ -10,6 +10,10 @@
 /*****************************************************************************/
 
 typedef struct {
+    /* And it's exactly the same pointer that is also the key for the iface_datas
+     * dictionary. */
+    const char *hwaddr;
+
     in_addr_t *ipv4s_arr;
     gsize      ipv4s_len;
 
@@ -41,13 +45,17 @@ nmcs_provider_get_config_iface_data_is_valid(const NMCSProviderGetConfigIfaceDat
            && ((config_data->has_ipv4s && config_data->has_cidr) || config_data->iproutes_len);
 }
 
-NMCSProviderGetConfigIfaceData *nmcs_provider_get_config_iface_data_new(gboolean was_requested);
+NMCSProviderGetConfigIfaceData *nmcs_provider_get_config_iface_data_create(GHashTable *iface_datas,
+                                                                           gboolean was_requested,
+                                                                           const char *hwaddr);
 
 /*****************************************************************************/
 
 typedef struct {
     /* A dictionary of (const char *) -> (NMCSProviderGetConfigIfaceData *).
-     * This is the per-interface result of get_config(). */
+     * This is the per-interface result of get_config().
+     *
+     * The key is the same pointer as NMCSProviderGetConfigIfaceData's hwaddr. */
     GHashTable *iface_datas;
 
     /* The number of iface_datas that are nmcs_provider_get_config_iface_data_is_valid(). */

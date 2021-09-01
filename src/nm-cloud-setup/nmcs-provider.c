@@ -127,15 +127,25 @@ nmcs_provider_detect_finish(NMCSProvider *self, GAsyncResult *result, GError **e
 /*****************************************************************************/
 
 NMCSProviderGetConfigIfaceData *
-nmcs_provider_get_config_iface_data_new(gboolean was_requested)
+nmcs_provider_get_config_iface_data_create(GHashTable *iface_datas,
+                                           gboolean    was_requested,
+                                           const char *hwaddr)
 {
     NMCSProviderGetConfigIfaceData *iface_data;
 
+    nm_assert(hwaddr);
+
     iface_data  = g_slice_new(NMCSProviderGetConfigIfaceData);
     *iface_data = (NMCSProviderGetConfigIfaceData){
+        .hwaddr        = g_strdup(hwaddr),
         .iface_idx     = -1,
         .was_requested = was_requested,
     };
+
+    /* the has does not own the key (iface_datta->hwaddr), the lifetime of the
+     * key is associated with the iface_data instance. */
+    g_hash_table_replace(iface_datas, (char *) iface_data->hwaddr, iface_data);
+
     return iface_data;
 }
 
@@ -146,6 +156,7 @@ _iface_data_free(gpointer data)
 
     g_free(iface_data->ipv4s_arr);
     g_free(iface_data->iproutes_arr);
+    g_free((char *) iface_data->hwaddr);
 
     nm_g_slice_free(iface_data);
 }
@@ -224,16 +235,13 @@ nmcs_provider_get_config(NMCSProvider *      self,
     *get_config_data = (NMCSProviderGetConfigTaskData){
         .task = nm_g_task_new(self, cancellable, nmcs_provider_get_config, callback, user_data),
         .any  = any,
-        .result_dict = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, _iface_data_free),
+        .result_dict = g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, _iface_data_free),
     };
 
     nmcs_wait_for_objects_register(get_config_data->task);
 
-    for (; hwaddrs && hwaddrs[0]; hwaddrs++) {
-        g_hash_table_insert(get_config_data->result_dict,
-                            g_strdup(hwaddrs[0]),
-                            nmcs_provider_get_config_iface_data_new(TRUE));
-    }
+    for (; hwaddrs && hwaddrs[0]; hwaddrs++)
+        nmcs_provider_get_config_iface_data_create(get_config_data->result_dict, TRUE, hwaddrs[0]);
 
     if (cancellable) {
         gulong cancelled_id;
