@@ -3426,15 +3426,14 @@ _is_reserved_ipv6_iid(const guint8 *iid)
     return FALSE;
 }
 
-static gboolean
-_set_stable_privacy(NMUtilsStableType stable_type,
-                    struct in6_addr * addr,
-                    const char *      ifname,
-                    const char *      network_id,
-                    guint32           dad_counter,
-                    const guint8 *    host_id,
-                    gsize             host_id_len,
-                    GError **         error)
+void
+nm_utils_ipv6_addr_set_stable_privacy_with_host_id(NMUtilsStableType stable_type,
+                                                   struct in6_addr * addr,
+                                                   const char *      ifname,
+                                                   const char *      network_id,
+                                                   guint32           dad_counter,
+                                                   const guint8 *    host_id,
+                                                   gsize             host_id_len)
 {
     nm_auto_free_checksum GChecksum *sum = NULL;
     guint8                           digest[NM_UTILS_CHECKSUM_LENGTH_SHA256];
@@ -3483,30 +3482,29 @@ _set_stable_privacy(NMUtilsStableType stable_type,
     }
 
     memcpy(addr->s6_addr + 8, &digest[0], 8);
-    return TRUE;
 }
 
-gboolean
-nm_utils_ipv6_addr_set_stable_privacy_impl(NMUtilsStableType stable_type,
-                                           struct in6_addr * addr,
-                                           const char *      ifname,
-                                           const char *      network_id,
-                                           guint32           dad_counter,
-                                           guint8 *          host_id,
-                                           gsize             host_id_len,
-                                           GError **         error)
+void
+nm_utils_ipv6_addr_set_stable_privacy(NMUtilsStableType stable_type,
+                                      struct in6_addr * addr,
+                                      const char *      ifname,
+                                      const char *      network_id,
+                                      guint32           dad_counter)
 {
-    return _set_stable_privacy(stable_type,
-                               addr,
-                               ifname,
-                               network_id,
-                               dad_counter,
-                               host_id,
-                               host_id_len,
-                               error);
+    const guint8 *host_id;
+    gsize         host_id_len;
+
+    nm_utils_host_id_get(&host_id, &host_id_len);
+
+    nm_utils_ipv6_addr_set_stable_privacy_with_host_id(stable_type,
+                                                       addr,
+                                                       ifname,
+                                                       network_id,
+                                                       dad_counter,
+                                                       host_id,
+                                                       host_id_len);
 }
 
-#define RFC7217_IDGEN_RETRIES 3
 /**
  * nm_utils_ipv6_addr_set_stable_privacy:
  *
@@ -3516,19 +3514,16 @@ nm_utils_ipv6_addr_set_stable_privacy_impl(NMUtilsStableType stable_type,
  * Returns: %TRUE on success, %FALSE if the address could not be generated.
  */
 gboolean
-nm_utils_ipv6_addr_set_stable_privacy(NMUtilsStableType stable_type,
-                                      struct in6_addr * addr,
-                                      const char *      ifname,
-                                      const char *      network_id,
-                                      guint32           dad_counter,
-                                      GError **         error)
+nm_utils_ipv6_addr_set_stable_privacy_may_fail(NMUtilsStableType stable_type,
+                                               struct in6_addr * addr,
+                                               const char *      ifname,
+                                               const char *      network_id,
+                                               guint32           dad_counter,
+                                               GError **         error)
 {
-    const guint8 *host_id;
-    gsize         host_id_len;
-
     g_return_val_if_fail(network_id, FALSE);
 
-    if (dad_counter >= RFC7217_IDGEN_RETRIES) {
+    if (dad_counter >= NM_STABLE_PRIVACY_RFC7217_IDGEN_RETRIES) {
         g_set_error_literal(error,
                             NM_UTILS_ERROR,
                             NM_UTILS_ERROR_UNKNOWN,
@@ -3536,16 +3531,8 @@ nm_utils_ipv6_addr_set_stable_privacy(NMUtilsStableType stable_type,
         return FALSE;
     }
 
-    nm_utils_host_id_get(&host_id, &host_id_len);
-
-    return _set_stable_privacy(stable_type,
-                               addr,
-                               ifname,
-                               network_id,
-                               dad_counter,
-                               host_id,
-                               host_id_len,
-                               error);
+    nm_utils_ipv6_addr_set_stable_privacy(stable_type, addr, ifname, network_id, dad_counter);
+    return TRUE;
 }
 
 /*****************************************************************************/

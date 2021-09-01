@@ -689,9 +689,11 @@ nm_l3_config_data_ref(const NML3ConfigData *self)
 const NML3ConfigData *
 nm_l3_config_data_ref_and_seal(const NML3ConfigData *self)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
-    ((NML3ConfigData *) self)->is_sealed = TRUE;
-    ((NML3ConfigData *) self)->ref_count++;
+    if (self) {
+        nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+        ((NML3ConfigData *) self)->is_sealed = TRUE;
+        ((NML3ConfigData *) self)->ref_count++;
+    }
     return self;
 }
 
@@ -2373,11 +2375,7 @@ nm_l3_config_data_add_dependent_routes(NML3ConfigData *self,
 /*****************************************************************************/
 
 static void
-_init_from_connection_ip(NML3ConfigData *self,
-                         int             addr_family,
-                         NMConnection *  connection,
-                         guint32         route_table,
-                         guint32         route_metric)
+_init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *connection)
 {
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
     NMSettingIPConfig *s_ip;
@@ -2409,17 +2407,17 @@ _init_from_connection_ip(NML3ConfigData *self,
 
         if (IS_IPv4) {
             r.r4 = (NMPlatformIP4Route){
-                .rt_source     = NM_IP_CONFIG_SOURCE_USER,
-                .gateway       = gateway_bin.addr4,
-                .table_coerced = nm_platform_route_table_coerce(route_table),
-                .metric        = route_metric,
+                .rt_source  = NM_IP_CONFIG_SOURCE_USER,
+                .gateway    = gateway_bin.addr4,
+                .table_any  = TRUE,
+                .metric_any = TRUE,
             };
         } else {
             r.r6 = (NMPlatformIP6Route){
-                .rt_source     = NM_IP_CONFIG_SOURCE_USER,
-                .gateway       = gateway_bin.addr6,
-                .table_coerced = nm_platform_route_table_coerce(route_table),
-                .metric        = route_metric,
+                .rt_source  = NM_IP_CONFIG_SOURCE_USER,
+                .gateway    = gateway_bin.addr6,
+                .table_any  = TRUE,
+                .metric_any = TRUE,
             };
         }
 
@@ -2474,6 +2472,7 @@ _init_from_connection_ip(NML3ConfigData *self,
         NMIPAddr           next_hop_bin;
         gint64             metric64;
         guint32            metric;
+        gboolean           metric_any;
         guint              plen;
 
         nm_assert(nm_ip_route_get_family(s_route) == addr_family);
@@ -2482,11 +2481,14 @@ _init_from_connection_ip(NML3ConfigData *self,
         nm_ip_route_get_next_hop_binary(s_route, &next_hop_bin);
 
         metric64 = nm_ip_route_get_metric(s_route);
-        if (metric64 < 0)
-            metric = route_metric;
-        else
-            metric = metric64;
-        metric = nm_utils_ip_route_metric_normalize(addr_family, metric);
+        if (metric64 < 0) {
+            metric_any = TRUE;
+            metric     = 0;
+        } else {
+            metric_any = FALSE;
+            metric     = metric64;
+            metric     = nm_utils_ip_route_metric_normalize(addr_family, metric);
+        }
 
         plen = nm_ip_route_get_prefix(s_route);
 
@@ -2494,25 +2496,27 @@ _init_from_connection_ip(NML3ConfigData *self,
 
         if (IS_IPv4) {
             r.r4 = (NMPlatformIP4Route){
-                .network   = network_bin.addr4,
-                .plen      = nm_ip_route_get_prefix(s_route),
-                .gateway   = next_hop_bin.addr4,
-                .metric    = metric,
-                .rt_source = NM_IP_CONFIG_SOURCE_USER,
+                .network    = network_bin.addr4,
+                .plen       = nm_ip_route_get_prefix(s_route),
+                .gateway    = next_hop_bin.addr4,
+                .metric_any = metric_any,
+                .metric     = metric,
+                .rt_source  = NM_IP_CONFIG_SOURCE_USER,
             };
             nm_assert(r.r4.plen <= 32);
         } else {
             r.r6 = (NMPlatformIP6Route){
-                .network   = network_bin.addr6,
-                .plen      = nm_ip_route_get_prefix(s_route),
-                .gateway   = next_hop_bin.addr6,
-                .metric    = metric,
-                .rt_source = NM_IP_CONFIG_SOURCE_USER,
+                .network    = network_bin.addr6,
+                .plen       = nm_ip_route_get_prefix(s_route),
+                .gateway    = next_hop_bin.addr6,
+                .metric_any = metric_any,
+                .metric     = metric,
+                .rt_source  = NM_IP_CONFIG_SOURCE_USER,
             };
             nm_assert(r.r6.plen <= 128);
         }
 
-        nm_utils_ip_route_attribute_to_platform(addr_family, s_route, &r.rx, route_table);
+        nm_utils_ip_route_attribute_to_platform(addr_family, s_route, &r.rx, -1);
 
         nm_l3_config_data_add_route(self, addr_family, NULL, &r.rx);
     }
@@ -2551,19 +2555,15 @@ _init_from_connection_ip(NML3ConfigData *self,
 NML3ConfigData *
 nm_l3_config_data_new_from_connection(NMDedupMultiIndex *multi_idx,
                                       int                ifindex,
-                                      NMConnection *     connection,
-                                      guint32            route_table_4,
-                                      guint32            route_table_6,
-                                      guint32            route_metric_4,
-                                      guint32            route_metric_6)
+                                      NMConnection *     connection)
 {
     NML3ConfigData *self;
     NMSettingProxy *s_proxy;
 
     self = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_USER);
 
-    _init_from_connection_ip(self, AF_INET, connection, route_table_4, route_metric_4);
-    _init_from_connection_ip(self, AF_INET6, connection, route_table_6, route_metric_6);
+    _init_from_connection_ip(self, AF_INET, connection);
+    _init_from_connection_ip(self, AF_INET6, connection);
 
     s_proxy = _nm_connection_get_setting(connection, NM_TYPE_SETTING_PROXY);
     if (s_proxy) {
@@ -2919,7 +2919,7 @@ nm_l3_config_data_new_clone(const NML3ConfigData *src, int ifindex)
     if (ifindex <= 0)
         ifindex = src->ifindex;
 
-    self = nm_l3_config_data_new(src->multi_idx, ifindex, NM_IP_CONFIG_SOURCE_UNKNOWN);
+    self = nm_l3_config_data_new(src->multi_idx, ifindex, src->source);
     nm_l3_config_data_merge(self,
                             src,
                             NM_L3_CONFIG_MERGE_FLAGS_CLONE,
