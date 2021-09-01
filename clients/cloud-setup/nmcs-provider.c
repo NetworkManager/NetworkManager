@@ -58,17 +58,21 @@ nmcs_provider_get_config_result_new(GHashTable *iface_datas)
     NMCSProviderGetConfigResult *         result;
     GHashTableIter                        h_iter;
     guint                                 num_valid_ifaces = 0;
+    guint                                 num_ipv4s        = 0;
 
     g_hash_table_iter_init(&h_iter, iface_datas);
     while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &iface_data)) {
-        if (nmcs_provider_get_config_iface_data_is_valid(iface_data))
+        if (nmcs_provider_get_config_iface_data_is_valid(iface_data)) {
             num_valid_ifaces++;
+            num_ipv4s += iface_data->ipv4s_len;
+        }
     }
 
     result  = g_new(NMCSProviderGetConfigResult, 1);
     *result = (NMCSProviderGetConfigResult){
         .iface_datas      = g_hash_table_ref(iface_datas),
         .num_valid_ifaces = num_valid_ifaces,
+        .num_ipv4s        = num_ipv4s,
     };
 
     return result;
