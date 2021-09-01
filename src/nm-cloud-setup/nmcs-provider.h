@@ -63,6 +63,14 @@ typedef struct {
 
     /* the number of IPv4 addresses over all valid iface_datas. */
     guint num_ipv4s;
+
+    guint n_iface_datas;
+
+    /* The sorted value of @iface_datas, sorted by iface_idx.
+     *
+     * Not found entries (iface_idx == -1) are sorted at the end. */
+    const NMCSProviderGetConfigIfaceData *const *iface_datas_arr;
+
 } NMCSProviderGetConfigResult;
 
 void nmcs_provider_get_config_result_free(NMCSProviderGetConfigResult *result);
