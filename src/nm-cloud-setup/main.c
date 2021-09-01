@@ -405,14 +405,15 @@ _nmc_mangle_connection(NMDevice *                            device,
 /*****************************************************************************/
 
 static gboolean
-_config_one(GCancellable *                        sigterm_cancellable,
-            NMClient *                            nmc,
-            const NMCSProviderGetConfigResult *   result,
-            const char *                          hwaddr,
-            const NMCSProviderGetConfigIfaceData *config_data)
+_config_one(GCancellable *                     sigterm_cancellable,
+            NMClient *                         nmc,
+            const NMCSProviderGetConfigResult *result,
+            guint                              idx)
 {
-    gs_unref_object NMDevice *device                 = NULL;
-    gs_unref_object NMConnection *applied_connection = NULL;
+    const NMCSProviderGetConfigIfaceData *config_data = result->iface_datas_arr[idx];
+    const char *                          hwaddr      = config_data->hwaddr;
+    gs_unref_object NMDevice *device                  = NULL;
+    gs_unref_object NMConnection *applied_connection  = NULL;
     guint64                       applied_version_id;
     gs_free_error GError *error = NULL;
     gboolean              changed;
@@ -537,14 +538,11 @@ _config_all(GCancellable *                     sigterm_cancellable,
             NMClient *                         nmc,
             const NMCSProviderGetConfigResult *result)
 {
-    GHashTableIter                        h_iter;
-    const NMCSProviderGetConfigIfaceData *c_config_data;
-    const char *                          c_hwaddr;
-    gboolean                              any_changes = FALSE;
+    gboolean any_changes = FALSE;
+    guint    i;
 
-    g_hash_table_iter_init(&h_iter, result->iface_datas);
-    while (g_hash_table_iter_next(&h_iter, (gpointer *) &c_hwaddr, (gpointer *) &c_config_data)) {
-        if (_config_one(sigterm_cancellable, nmc, result, c_hwaddr, c_config_data))
+    for (i = 0; i < result->n_iface_datas; i++) {
+        if (_config_one(sigterm_cancellable, nmc, result, i))
             any_changes = TRUE;
     }
 
