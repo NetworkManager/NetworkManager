@@ -152,6 +152,18 @@ NM_REF_STRING_UPCAST(const char *str)
     return rstr;
 }
 
+static inline NMRefString *
+nm_ref_string_ref_upcast(const char *str)
+{
+    return nm_ref_string_ref(NM_REF_STRING_UPCAST(str));
+}
+
+static inline void
+nm_ref_string_unref_upcast(const char *str)
+{
+    nm_ref_string_unref(NM_REF_STRING_UPCAST(str));
+}
+
 static inline gboolean
 nm_ref_string_reset_str(NMRefString **ptr, const char *str)
 {
