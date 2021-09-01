@@ -269,7 +269,9 @@ _nmc_skip_connection(NMConnection *connection)
 static gboolean
 _nmc_mangle_connection(NMDevice *                            device,
                        NMConnection *                        connection,
+                       const NMCSProviderGetConfigResult *   result,
                        const NMCSProviderGetConfigIfaceData *config_data,
+                       gboolean *                            out_skipped_single_addr,
                        gboolean *                            out_changed)
 {
     NMSettingIPConfig * s_ip;
@@ -287,6 +289,9 @@ _nmc_mangle_connection(NMDevice *                            device,
     gs_unref_ptrarray GPtrArray *addrs_new  = NULL;
     gs_unref_ptrarray GPtrArray *rules_new  = NULL;
     gs_unref_ptrarray GPtrArray *routes_new = NULL;
+
+    NM_SET_OUT(out_skipped_single_addr, FALSE);
+    NM_SET_OUT(out_changed, FALSE);
 
     if (!nm_streq0(nm_connection_get_connection_type(connection), NM_SETTING_WIRED_SETTING_NAME))
         return FALSE;
@@ -329,7 +334,11 @@ _nmc_mangle_connection(NMDevice *                            device,
         }
     }
 
-    if (config_data->has_ipv4s && config_data->has_cidr) {
+    if (result->num_valid_ifaces <= 1 && result->num_ipv4s <= 1) {
+        /* this setup only has one interface and one IPv4 address (or less).
+         * We don't need to configure policy routing in this case. */
+        NM_SET_OUT(out_skipped_single_addr, TRUE);
+    } else if (config_data->has_ipv4s && config_data->has_cidr) {
         for (i = 0; i < config_data->ipv4s_len; i++) {
             NMIPAddress *entry;
 
@@ -398,6 +407,7 @@ _nmc_mangle_connection(NMDevice *                            device,
 static gboolean
 _config_one(GCancellable *                        sigterm_cancellable,
             NMClient *                            nmc,
+            const NMCSProviderGetConfigResult *   result,
             const char *                          hwaddr,
             const NMCSProviderGetConfigIfaceData *config_data)
 {
@@ -406,6 +416,7 @@ _config_one(GCancellable *                        sigterm_cancellable,
     guint64                       applied_version_id;
     gs_free_error GError *error = NULL;
     gboolean              changed;
+    gboolean              skipped_single_addr;
     gboolean              version_id_changed;
     guint                 try_count;
     gboolean              any_changes = FALSE;
@@ -454,16 +465,30 @@ try_again:
         return any_changes;
     }
 
-    if (!_nmc_mangle_connection(device, applied_connection, config_data, &changed)) {
+    if (!_nmc_mangle_connection(device,
+                                applied_connection,
+                                result,
+                                config_data,
+                                &skipped_single_addr,
+                                &changed)) {
         _LOGD("config device %s: device has no suitable applied connection. Skip", hwaddr);
         return any_changes;
     }
 
     if (!changed) {
-        _LOGD("config device %s: device needs no update to applied connection \"%s\" (%s). Skip",
-              hwaddr,
-              nm_connection_get_id(applied_connection),
-              nm_connection_get_uuid(applied_connection));
+        if (skipped_single_addr) {
+            _LOGD("config device %s: device needs no update to applied connection \"%s\" (%s) "
+                  "because there are not multiple IP addresses. Skip",
+                  hwaddr,
+                  nm_connection_get_id(applied_connection),
+                  nm_connection_get_uuid(applied_connection));
+        } else {
+            _LOGD(
+                "config device %s: device needs no update to applied connection \"%s\" (%s). Skip",
+                hwaddr,
+                nm_connection_get_id(applied_connection),
+                nm_connection_get_uuid(applied_connection));
+        }
         return any_changes;
     }
 
@@ -472,7 +497,7 @@ try_again:
           nm_connection_get_id(applied_connection),
           nm_connection_get_uuid(applied_connection));
 
-    /* we are about to call Reapply(). If if that fails, it counts as if we changed something. */
+    /* we are about to call Reapply(). Even if that fails, it counts as if we changed something. */
     any_changes = TRUE;
 
     if (!nmcs_device_reapply(device,
@@ -519,7 +544,7 @@ _config_all(GCancellable *                     sigterm_cancellable,
 
     g_hash_table_iter_init(&h_iter, result->iface_datas);
     while (g_hash_table_iter_next(&h_iter, (gpointer *) &c_hwaddr, (gpointer *) &c_config_data)) {
-        if (_config_one(sigterm_cancellable, nmc, c_hwaddr, c_config_data))
+        if (_config_one(sigterm_cancellable, nmc, result, c_hwaddr, c_config_data))
             any_changes = TRUE;
     }
 
