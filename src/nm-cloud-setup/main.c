@@ -4,6 +4,8 @@
 
 #include "libnm-client-aux-extern/nm-libnm-aux.h"
 
+#include <linux/rtnetlink.h>
+
 #include "nm-cloud-setup-utils.h"
 #include "nmcs-provider-ec2.h"
 #include "nmcs-provider-gcp.h"
@@ -335,6 +337,8 @@ _nmc_mangle_connection(NMDevice *                            device,
          * We don't need to configure policy routing in this case. */
         NM_SET_OUT(out_skipped_single_addr, TRUE);
     } else if (config_data->has_ipv4s && config_data->has_cidr) {
+        gs_unref_hashtable GHashTable *unique_subnets =
+            g_hash_table_new(nm_direct_hash, g_direct_equal);
         NMIPAddress *    addr_entry;
         NMIPRoute *      route_entry;
         NMIPRoutingRule *rule_entry;
@@ -358,6 +362,38 @@ _nmc_mangle_connection(NMDevice *                            device,
             if (config_data->cidr_prefix < 32)
                 ((guint8 *) &gateway)[3] += 1;
         }
+
+        for (i = 0; i < config_data->ipv4s_len; i++) {
+            in_addr_t a = config_data->ipv4s_arr[i];
+
+            a = nm_utils_ip4_address_clear_host_address(a, config_data->cidr_prefix);
+
+            G_STATIC_ASSERT_EXPR(sizeof(gsize) >= sizeof(in_addr_t));
+            if (g_hash_table_add(unique_subnets, GSIZE_TO_POINTER(a))) {
+                route_entry =
+                    nm_ip_route_new_binary(AF_INET, &a, config_data->cidr_prefix, NULL, 10, NULL);
+                nm_ip_route_set_attribute(route_entry,
+                                          NM_IP_ROUTE_ATTRIBUTE_TABLE,
+                                          g_variant_new_uint32(30200 + config_data->iface_idx));
+                g_ptr_array_add(routes_new, route_entry);
+            }
+
+            rule_entry = nm_ip_routing_rule_new(AF_INET);
+            nm_ip_routing_rule_set_priority(rule_entry, 30200 + config_data->iface_idx);
+            nm_ip_routing_rule_set_from(rule_entry,
+                                        _nm_utils_inet4_ntop(config_data->ipv4s_arr[i], sbuf),
+                                        32);
+            nm_ip_routing_rule_set_table(rule_entry, 30200 + config_data->iface_idx);
+            nm_assert(nm_ip_routing_rule_validate(rule_entry, NULL));
+            g_ptr_array_add(rules_new, rule_entry);
+        }
+
+        rule_entry = nm_ip_routing_rule_new(AF_INET);
+        nm_ip_routing_rule_set_priority(rule_entry, 30350);
+        nm_ip_routing_rule_set_table(rule_entry, RT_TABLE_MAIN);
+        nm_ip_routing_rule_set_suppress_prefixlength(rule_entry, 0);
+        nm_assert(nm_ip_routing_rule_validate(rule_entry, NULL));
+        g_ptr_array_add(rules_new, rule_entry);
 
         route_entry = nm_ip_route_new_binary(AF_INET, &nm_ip_addr_zero, 0, &gateway, 10, NULL);
         nm_ip_route_set_attribute(route_entry,

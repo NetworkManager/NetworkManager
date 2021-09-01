@@ -256,7 +256,9 @@ ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/syst
           Also, if the device is currently not activated in NetworkManager or if the currently
           activated profile has a user-data <literal>org.freedesktop.nm-cloud-setup.skip=yes</literal>,
           it is skipped.</para>
-          <para>Then, the tool will change the runtime configuration of the device.
+          <para>If only one interface and one address is configured, then the tool does nothing
+          and leaves the automatic configuration that was obtained via DHCP.</para>
+          <para>Otherwise, the tool will change the runtime configuration of the device.
             <itemizedlist>
               <listitem>
                 <para>Add static IPv4 addresses for all the configured addresses from <literal>local-ipv4s</literal> with
@@ -267,15 +269,25 @@ ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/syst
                   <para>Choose a route table 30400 + the index of the interface and
                   add a default route <literal>0.0.0.0/0</literal>. The gateway
                   is the first IP address in the CIDR subnet block. For
-                  example, we might get a route <literal>"0.0.0.0/0 172.16.5.1 10 table=30401"</literal>.</para>
+                  example, we might get a route <literal>"0.0.0.0/0 172.16.5.1 10 table=30400"</literal>.</para>
+                  <para>Also choose a route table 30200 + the interface index. This
+                  contains a direct routes to the subnets of this interface.</para>
               </listitem>
               <listitem>
                   <para>Finally, add a policy routing rule for each address. For example
-                  <literal>"priority 30401 from 172.16.5.3/32 table 30401, priority 30401 from 172.16.5.4/32 table 30401"</literal>.</para>
+                  <literal>"priority 30200 from 172.16.5.3/32 table 30200, priority 30200 from 172.16.5.4/32 table 30200"</literal>.
+                  and
+                  <literal>"priority 30400 from 172.16.5.3/32 table 30400, priority 30400 from 172.16.5.4/32 table 30400"</literal>
+                  The 30200+ rules select the table to reach the subnet directly, while the 30400+ rules use the
+                  default route. Also add a rule
+                  <literal>"priority 30350 table main suppress_prefixlength 0"</literal>. This has a priority between
+                  the two previous rules and causes a lookup of routes in the main table while ignoring the default
+                  route. The purpose of this is so that other specific routes in the main table are honored over
+                  the default route in table 30400+.</para>
               </listitem>
             </itemizedlist>
             With above example, this roughly corresponds for interface <literal>eth0</literal> to
-            <command>nmcli device modify "eth0" ipv4.addresses "172.16.5.3/24,172.16.5.4/24" ipv4.routes "0.0.0.0/0 172.16.5.1 10 table=30401" ipv4.routing-rules "priority 30401 from 172.16.5.3/32 table 30401, priority 30401 from 172.16.5.4/32 table 30401"</command>.
+            <command>nmcli device modify "eth0" ipv4.addresses "172.16.5.3/24,172.16.5.4/24" ipv4.routes "172.16.5.0/24 0.0.0.0 10 table=30200, 0.0.0.0/0 172.16.5.1 10 table=30400" ipv4.routing-rules "priority 30200 from 172.16.5.3/32 table 30200, priority 30200 from 172.16.5.4/32 table 30200, priority 20350 table main suppress_prefixlength 0, priority 30400 from 172.16.5.3/32 table 30400, priority 30400 from 172.16.5.4/32 table 30400"</command>.
             Note that this replaces the previous addresses, routes and rules with the new information.
             But also note that this only changes the run time configuration of the device. The
             connection profile on disk is not affected.
@@ -360,14 +372,8 @@ ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/syst
         </listitem>
         <listitem>
           <para>At this point, we have a list of all interfaces (by MAC address) and their configured IPv4 addresses.</para>
-          <para>For each device, we lookup the currently applied connection in NetworkManager. That implies, that the device is currently activated
-          in NetworkManager. If no such device was in NetworkManager, or if the profile has user-data <literal>org.freedesktop.nm-cloud-setup.skip=yes</literal>,
-          we skip the device. Now for each found IP address we add a static address "$ADDR/$SUBNET_PREFIX". Also we configure policy routing
-          by adding a static route "$ADDR/$SUBNET_PREFIX $GATEWAY 10, table=$TABLE" where $GATEWAY is the first IP address in the subnet and table
-          is 30400 plus the interface index. Also we add a policy routing rule "priority $TABLE from $ADDR/32 table $TABLE".</para>
-          <para>The effect is not unlike calling
-          <command>nmcli device modify "$DEVICE" ipv4.addresses "$ADDR/$SUBNET [,...]" ipv4.routes "$ADDR/32 $GATEWAY 10 table=$TABLE" ipv4.routing-rules "priority $TABLE from $ADDR/32 table $TABLE"</command>
-          for all relevant devices and all found addresses.</para>
+          <para>Then the tool configures the system like doing for AWS environment. That is, using source based policy routing
+          with the tables/rules 30200/30400.</para>
         </listitem>
       </itemizedlist>
     </refsect2>
@@ -389,9 +395,10 @@ ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/syst
           of available interface. Interfaces are identified by their MAC address.</para>
         </listitem>
         <listitem>
-          <para>Then for each interface fetch <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/vpc-cidr-block</literal>
-          , <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/private-ipv4s</literal> and
-          <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/netmask</literal>.
+          <para>Then for each interface fetch <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/vpc-cidr-block</literal>,
+          <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/private-ipv4s</literal>,
+          <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/netmask</literal> and
+          <literal>http://100.100.100.200/2016-01-01/meta-data/network/interfaces/macs/$MAC/gateway</literal>.
           Thereby we get a list of private IPv4 addresses, one CIDR subnet block and private IPv4 addresses prefix.</para>
         </listitem>
         <listitem>
@@ -399,31 +406,10 @@ ln -s /etc/systemd/system/timers.target.wants/nm-cloud-setup.timer /usr/lib/syst
           If no ethernet device for the respective MAC address is found, it is skipped.
           Also, if the device is currently not activated in NetworkManager or if the currently
           activated profile has a user-data <literal>org.freedesktop.nm-cloud-setup.skip=yes</literal>,
-          it is skipped.</para>
-          <para>Then, the tool will change the runtime configuration of the device.
-            <itemizedlist>
-              <listitem>
-                <para>Add static IPv4 addresses for all the configured addresses from <literal>private-ipv4s</literal> with
-                prefix length according to <literal>netmask</literal>. For example,
-                we might have here 2 IP addresses like <literal>"10.0.0.150/24,10.0.0.152/24"</literal>.</para>
-              </listitem>
-              <listitem>
-                  <para>Choose a route table 30400 + the index of the interface and
-                  add a default route <literal>0.0.0.0/0</literal>. The gateway
-                  is the default gateway retrieved from metadata server. For
-                  example, we might get a route <literal>"0.0.0.0/0 10.0.0.253 10 table=30400"</literal>.</para>
-              </listitem>
-              <listitem>
-                  <para>Finally, add a policy routing rule for each address. For example
-                  <literal>"priority 30400 from 10.0.0.150/32 table 30400, priority 30400 from 10.0.0.152/32 table 30400"</literal>.</para>
-              </listitem>
-            </itemizedlist>
-            With above example, this roughly corresponds for interface <literal>eth0</literal> to
-            <command>nmcli device modify "eth0" ipv4.addresses "10.0.0.150/24,10.0.0.152/24" ipv4.routes "0.0.0.0/0 10.0.0.253 10 table=30400" ipv4.routing-rules "priority 30400 from 10.0.0.150/32 table 30400, priority 30400 from 10.0.0.152/32 table 30400"</command>.
-            Note that this replaces the previous addresses, routes and rules with the new information.
-            But also note that this only changes the run time configuration of the device. The
-            connection profile on disk is not affected.
-          </para>
+          it is skipped. Also, there is only one interface and one IP address, the tool does nothing.</para>
+          <para>Then the tool configures the system like doing for AWS environment. That is, using source based policy routing
+          with the tables/rules 30200/30400. One difference to AWS is that the gateway is also fetched via metadata instead
+          of using the first IP address in the subnet.</para>
         </listitem>
       </itemizedlist>
     </refsect2>
