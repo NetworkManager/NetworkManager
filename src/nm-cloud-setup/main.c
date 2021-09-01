@@ -395,26 +395,9 @@ _nmc_mangle_connection(NMDevice *                            device,
 
 /*****************************************************************************/
 
-static guint
-_config_data_get_num_valid(const NMCSProviderGetConfigResult *result)
-{
-    const NMCSProviderGetConfigIfaceData *config_data;
-    GHashTableIter                        h_iter;
-    guint                                 n = 0;
-
-    g_hash_table_iter_init(&h_iter, result->iface_datas);
-    while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &config_data)) {
-        if (nmcs_provider_get_config_iface_data_is_valid(config_data))
-            n++;
-    }
-
-    return n;
-}
-
 static gboolean
 _config_one(GCancellable *                        sigterm_cancellable,
             NMClient *                            nmc,
-            gboolean                              is_single_nic,
             const char *                          hwaddr,
             const NMCSProviderGetConfigIfaceData *config_data)
 {
@@ -532,14 +515,11 @@ _config_all(GCancellable *                     sigterm_cancellable,
     GHashTableIter                        h_iter;
     const NMCSProviderGetConfigIfaceData *c_config_data;
     const char *                          c_hwaddr;
-    gboolean                              is_single_nic;
     gboolean                              any_changes = FALSE;
-
-    is_single_nic = (_config_data_get_num_valid(result) <= 1);
 
     g_hash_table_iter_init(&h_iter, result->iface_datas);
     while (g_hash_table_iter_next(&h_iter, (gpointer *) &c_hwaddr, (gpointer *) &c_config_data)) {
-        if (_config_one(sigterm_cancellable, nmc, is_single_nic, c_hwaddr, c_config_data))
+        if (_config_one(sigterm_cancellable, nmc, c_hwaddr, c_config_data))
             any_changes = TRUE;
     }
 
