@@ -99,7 +99,6 @@ typedef struct {
     gssize                          intern_iface_idx;
     gssize                          extern_iface_idx;
     guint                           n_iface_data_pending;
-    const char *                    hwaddr;
 } AzureIfaceData;
 
 static void
@@ -118,6 +117,7 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
     NMCSProviderGetConfigIfaceData *iface_get_config;
     gs_unref_bytes GBytes *response = NULL;
     gs_free_error GError *error     = NULL;
+    gs_free char *        v_hwaddr  = NULL;
     const char *          resp_str  = NULL;
     gsize                 resp_len;
 
@@ -134,8 +134,17 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
     resp_str = g_bytes_get_data(response, &resp_len);
     nm_assert(resp_str[resp_len] == '\0');
 
-    iface_data->iface_get_config =
-        g_hash_table_lookup(get_config_data->result_dict, iface_data->hwaddr);
+    v_hwaddr = nmcs_utils_hwaddr_normalize_gbytes(response);
+    if (!v_hwaddr) {
+        _LOGI("interface[%" G_GSSIZE_FORMAT "]: invalid MAC address returned",
+              iface_data->intern_iface_idx);
+        error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
+                                   "invalid MAC address for index %" G_GSSIZE_FORMAT,
+                                   iface_data->intern_iface_idx);
+        goto out_done;
+    }
+
+    iface_data->iface_get_config = g_hash_table_lookup(get_config_data->result_dict, v_hwaddr);
     iface_get_config = iface_data->iface_get_config;
 
     if (is_ipv4) {
@@ -330,25 +339,24 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         goto out_done;
     }
 
-    if (!g_hash_table_lookup_extended(get_config_data->result_dict,
-                                      v_hwaddr,
-                                      (gpointer *) &iface_data->hwaddr,
-                                      (gpointer *) &iface_data->iface_get_config)) {
+    iface_data->iface_get_config = g_hash_table_lookup(get_config_data->result_dict, v_hwaddr);
+
+    if (!iface_data->iface_get_config) {
         if (!get_config_data->any) {
             _LOGD("get-config: skip fetching meta data for %s (%" G_GSSIZE_FORMAT ")",
                   v_hwaddr,
                   iface_data->intern_iface_idx);
             goto out_done;
         }
-        iface_data->iface_get_config = nmcs_provider_get_config_iface_data_new(FALSE);
-        g_hash_table_insert(get_config_data->result_dict,
-                            (char *) (iface_data->hwaddr = g_steal_pointer(&v_hwaddr)),
-                            iface_data->iface_get_config);
+        iface_data->iface_get_config =
+            nmcs_provider_get_config_iface_data_create(get_config_data->result_dict,
+                                                       FALSE,
+                                                       v_hwaddr);
     } else {
         if (iface_data->iface_get_config->iface_idx >= 0) {
             _LOGI("interface[%" G_GSSIZE_FORMAT "]: duplicate MAC address %s returned",
                   iface_data->intern_iface_idx,
-                  iface_data->hwaddr);
+                  iface_data->iface_get_config->hwaddr);
             error = nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN,
                                        "duplicate MAC address for index %" G_GSSIZE_FORMAT,
                                        iface_data->intern_iface_idx);
@@ -360,7 +368,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     _LOGD("interface[%" G_GSSIZE_FORMAT "]: found a matching device with hwaddr %s",
           iface_data->intern_iface_idx,
-          iface_data->hwaddr);
+          iface_data->iface_get_config->hwaddr);
 
     nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT "/ipv4/ipAddress/", iface_data->intern_iface_idx);
 
@@ -440,7 +448,6 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
             .intern_iface_idx     = intern_iface_idx,
             .extern_iface_idx     = extern_iface_idx_cnt++,
             .n_iface_data_pending = 0,
-            .hwaddr               = NULL,
         };
         g_ptr_array_add(ifaces_arr, iface_data);
     }
