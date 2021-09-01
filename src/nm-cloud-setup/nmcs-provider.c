@@ -54,12 +54,23 @@ nmcs_provider_get_main_context(NMCSProvider *self)
 static NMCSProviderGetConfigResult *
 nmcs_provider_get_config_result_new(GHashTable *iface_datas)
 {
-    NMCSProviderGetConfigResult *result;
+    const NMCSProviderGetConfigIfaceData *iface_data;
+    NMCSProviderGetConfigResult *         result;
+    GHashTableIter                        h_iter;
+    guint                                 num_valid_ifaces = 0;
+
+    g_hash_table_iter_init(&h_iter, iface_datas);
+    while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &iface_data)) {
+        if (nmcs_provider_get_config_iface_data_is_valid(iface_data))
+            num_valid_ifaces++;
+    }
 
     result  = g_new(NMCSProviderGetConfigResult, 1);
     *result = (NMCSProviderGetConfigResult){
-        .iface_datas = g_hash_table_ref(iface_datas),
+        .iface_datas      = g_hash_table_ref(iface_datas),
+        .num_valid_ifaces = num_valid_ifaces,
     };
+
     return result;
 }
 

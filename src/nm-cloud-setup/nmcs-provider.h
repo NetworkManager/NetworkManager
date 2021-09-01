@@ -49,6 +49,9 @@ typedef struct {
     /* A dictionary of (const char *) -> (NMCSProviderGetConfigIfaceData *).
      * This is the per-interface result of get_config(). */
     GHashTable *iface_datas;
+
+    /* The number of iface_datas that are nmcs_provider_get_config_iface_data_is_valid(). */
+    guint num_valid_ifaces;
 } NMCSProviderGetConfigResult;
 
 void nmcs_provider_get_config_result_free(NMCSProviderGetConfigResult *result);
