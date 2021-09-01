@@ -52,6 +52,9 @@ typedef struct {
 
     /* The number of iface_datas that are nmcs_provider_get_config_iface_data_is_valid(). */
     guint num_valid_ifaces;
+
+    /* the number of IPv4 addresses over all valid iface_datas. */
+    guint num_ipv4s;
 } NMCSProviderGetConfigResult;
 
 void nmcs_provider_get_config_result_free(NMCSProviderGetConfigResult *result);
