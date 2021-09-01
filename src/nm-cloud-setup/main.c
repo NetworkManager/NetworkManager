@@ -200,30 +200,30 @@ _nmc_get_device_by_hwaddr(NMClient *nmc, const char *hwaddr)
 /*****************************************************************************/
 
 typedef struct {
-    GMainLoop * main_loop;
-    GHashTable *config_dict;
+    GMainLoop *                  main_loop;
+    NMCSProviderGetConfigResult *result;
 } GetConfigData;
 
 static void
-_get_config_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+_get_config_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 {
-    GetConfigData *    data                    = user_data;
-    gs_unref_hashtable GHashTable *config_dict = NULL;
-    gs_free_error GError *error                = NULL;
+    GetConfigData *                              data                                = user_data;
+    nm_auto_free_nmcs_provider_get_config_result NMCSProviderGetConfigResult *result = NULL;
+    gs_free_error GError *error                                                      = NULL;
 
-    config_dict = nmcs_provider_get_config_finish(NMCS_PROVIDER(source), result, &error);
+    result = nmcs_provider_get_config_finish(NMCS_PROVIDER(source), res, &error);
 
-    if (!config_dict) {
+    if (!result) {
         if (!nm_utils_error_is_cancelled(error))
             _LOGI("failure to get meta data: %s", error->message);
     } else
         _LOGD("meta data received");
 
-    data->config_dict = g_steal_pointer(&config_dict);
+    data->result = g_steal_pointer(&result);
     g_main_loop_quit(data->main_loop);
 }
 
-static GHashTable *
+static NMCSProviderGetConfigResult *
 _get_config(GCancellable *sigterm_cancellable, NMCSProvider *provider, NMClient *nmc)
 {
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
@@ -243,7 +243,7 @@ _get_config(GCancellable *sigterm_cancellable, NMCSProvider *provider, NMClient 
 
     g_main_loop_run(main_loop);
 
-    return data.config_dict;
+    return data.result;
 }
 
 /*****************************************************************************/
@@ -396,13 +396,13 @@ _nmc_mangle_connection(NMDevice *                            device,
 /*****************************************************************************/
 
 static guint
-_config_data_get_num_valid(GHashTable *config_dict)
+_config_data_get_num_valid(const NMCSProviderGetConfigResult *result)
 {
     const NMCSProviderGetConfigIfaceData *config_data;
     GHashTableIter                        h_iter;
     guint                                 n = 0;
 
-    g_hash_table_iter_init(&h_iter, config_dict);
+    g_hash_table_iter_init(&h_iter, result->iface_datas);
     while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &config_data)) {
         if (nmcs_provider_get_config_iface_data_is_valid(config_data))
             n++;
@@ -525,7 +525,9 @@ try_again:
 }
 
 static gboolean
-_config_all(GCancellable *sigterm_cancellable, NMClient *nmc, GHashTable *config_dict)
+_config_all(GCancellable *                     sigterm_cancellable,
+            NMClient *                         nmc,
+            const NMCSProviderGetConfigResult *result)
 {
     GHashTableIter                        h_iter;
     const NMCSProviderGetConfigIfaceData *c_config_data;
@@ -533,9 +535,9 @@ _config_all(GCancellable *sigterm_cancellable, NMClient *nmc, GHashTable *config
     gboolean                              is_single_nic;
     gboolean                              any_changes = FALSE;
 
-    is_single_nic = (_config_data_get_num_valid(config_dict) <= 1);
+    is_single_nic = (_config_data_get_num_valid(result) <= 1);
 
-    g_hash_table_iter_init(&h_iter, config_dict);
+    g_hash_table_iter_init(&h_iter, result->iface_datas);
     while (g_hash_table_iter_next(&h_iter, (gpointer *) &c_hwaddr, (gpointer *) &c_config_data)) {
         if (_config_one(sigterm_cancellable, nmc, is_single_nic, c_hwaddr, c_config_data))
             any_changes = TRUE;
@@ -564,12 +566,12 @@ sigterm_handler(gpointer user_data)
 int
 main(int argc, const char *const *argv)
 {
-    gs_unref_object GCancellable *    sigterm_cancellable     = NULL;
-    nm_auto_destroy_and_unref_gsource GSource *sigterm_source = NULL;
-    gs_unref_object NMCSProvider *provider                    = NULL;
-    gs_unref_object NMClient *nmc                             = NULL;
-    gs_unref_hashtable GHashTable *config_dict                = NULL;
-    gs_free_error GError *error                               = NULL;
+    gs_unref_object GCancellable *    sigterm_cancellable                            = NULL;
+    nm_auto_destroy_and_unref_gsource GSource *sigterm_source                        = NULL;
+    gs_unref_object NMCSProvider *provider                                           = NULL;
+    gs_unref_object NMClient *                   nmc                                 = NULL;
+    nm_auto_free_nmcs_provider_get_config_result NMCSProviderGetConfigResult *result = NULL;
+    gs_free_error GError *error                                                      = NULL;
 
     _nm_logging_enabled_init(g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_LOG")));
 
@@ -614,17 +616,17 @@ main(int argc, const char *const *argv)
         goto done;
     }
 
-    config_dict = _get_config(sigterm_cancellable, provider, nmc);
-    if (!config_dict)
+    result = _get_config(sigterm_cancellable, provider, nmc);
+    if (!result)
         goto done;
 
-    if (_config_all(sigterm_cancellable, nmc, config_dict))
+    if (_config_all(sigterm_cancellable, nmc, result))
         _LOGI("some changes were applied for provider %s", nmcs_provider_get_name(provider));
     else
         _LOGD("no changes were applied for provider %s", nmcs_provider_get_name(provider));
 
 done:
-    nm_clear_pointer(&config_dict, g_hash_table_unref);
+    nm_clear_pointer(&result, nmcs_provider_get_config_result_free);
     g_clear_object(&nmc);
     g_clear_object(&provider);
 

@@ -43,6 +43,24 @@ nmcs_provider_get_config_iface_data_is_valid(const NMCSProviderGetConfigIfaceDat
 
 NMCSProviderGetConfigIfaceData *nmcs_provider_get_config_iface_data_new(gboolean was_requested);
 
+/*****************************************************************************/
+
+typedef struct {
+    /* A dictionary of (const char *) -> (NMCSProviderGetConfigIfaceData *).
+     * This is the per-interface result of get_config(). */
+    GHashTable *iface_datas;
+} NMCSProviderGetConfigResult;
+
+void nmcs_provider_get_config_result_free(NMCSProviderGetConfigResult *result);
+
+NM_AUTO_DEFINE_FCN0(NMCSProviderGetConfigResult *,
+                    _nm_auto_free_nmcs_provider_get_config_result,
+                    nmcs_provider_get_config_result_free);
+#define nm_auto_free_nmcs_provider_get_config_result \
+    nm_auto(_nm_auto_free_nmcs_provider_get_config_result)
+
+/*****************************************************************************/
+
 typedef struct {
     GTask *task;
 
@@ -124,7 +142,7 @@ void nmcs_provider_get_config(NMCSProvider *      provider,
                               GAsyncReadyCallback callback,
                               gpointer            user_data);
 
-GHashTable *
+NMCSProviderGetConfigResult *
 nmcs_provider_get_config_finish(NMCSProvider *provider, GAsyncResult *result, GError **error);
 
 #endif /* __NMCS_PROVIDER_H__ */
