@@ -28,17 +28,15 @@ _nmtstc_auto_service_cleanup(NMTstcServiceInfo **info)
 }
 #define nmtstc_auto_service_cleanup nm_auto(_nmtstc_auto_service_cleanup)
 
-#define NMTSTC_SERVICE_INFO_SETUP(sinfo)                      \
-    NM_PRAGMA_WARNING_DISABLE("-Wunused-variable")            \
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = ({ \
-        NMTstcServiceInfo *_sinfo;                            \
-                                                              \
-        _sinfo = nmtstc_service_init();                       \
-        if (!nmtstc_service_available(_sinfo))                \
-            return;                                           \
-        _sinfo;                                               \
-    });                                                       \
-    NM_PRAGMA_WARNING_REENABLE
+#define NMTSTC_SERVICE_INFO_SETUP(sinfo)                                 \
+    _nm_unused nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = ({ \
+        NMTstcServiceInfo *_sinfo;                                       \
+                                                                         \
+        _sinfo = nmtstc_service_init();                                  \
+        if (!nmtstc_service_available(_sinfo))                           \
+            return;                                                      \
+        _sinfo;                                                          \
+    })
 
 NMDevice *nmtstc_service_add_device(NMTstcServiceInfo *info,
                                     NMClient *         client,

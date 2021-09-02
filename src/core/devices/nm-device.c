@@ -2745,7 +2745,7 @@ nm_device_sysctl_ip_conf_get_int_checked(NMDevice *  self,
 }
 
 static void
-set_ipv6_token(NMDevice *self, NMUtilsIPv6IfaceId iid, const char *token_str)
+set_ipv6_token(NMDevice *self, const NMUtilsIPv6IfaceId *iid, const char *token_str)
 {
     NMPlatform *          platform;
     int                   ifindex;
@@ -2761,7 +2761,7 @@ set_ipv6_token(NMDevice *self, NMUtilsIPv6IfaceId iid, const char *token_str)
     ifindex  = nm_device_get_ip_ifindex(self);
     link     = nm_platform_link_get(platform, ifindex);
 
-    if (link && link->inet6_token.id == iid.id) {
+    if (link && link->inet6_token.id == iid->id) {
         _LOGT(LOGD_DEVICE | LOGD_IP6, "token %s already set", token_str);
         return;
     }
@@ -3145,8 +3145,9 @@ _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
 
         nm_platform_process_events_ensure_link(platform, priv->ip_ifindex, priv->ip_iface);
 
-        if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
-            nm_platform_link_set_user_ipv6ll_enabled(platform, priv->ip_ifindex, TRUE);
+        nm_platform_link_set_inet6_addr_gen_mode(platform,
+                                                 priv->ip_ifindex,
+                                                 NM_IN6_ADDR_GEN_MODE_NONE);
 
         if (!nm_platform_link_is_up(platform, priv->ip_ifindex))
             nm_platform_link_change_flags(platform, priv->ip_ifindex, IFF_UP, TRUE);
@@ -6091,8 +6092,8 @@ realize_start_setup(NMDevice *            self,
         if (priv->firmware_version)
             _notify(self, PROP_FIRMWARE_VERSION);
 
-        if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
-            priv->ipv6ll_handle = nm_platform_link_get_user_ipv6ll_enabled(platform, priv->ifindex);
+        priv->ipv6ll_handle = (nm_platform_link_get_inet6_addr_gen_mode(platform, priv->ifindex)
+                               == NM_IN6_ADDR_GEN_MODE_NONE);
 
         if (nm_platform_link_supports_sriov(platform, priv->ifindex))
             capabilities |= NM_DEVICE_CAP_SRIOV;
@@ -7345,7 +7346,7 @@ nm_device_generate_connection(NMDevice *self,
                          NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
                          NM_IN6_ADDR_GEN_MODE_EUI64,
                          NM_SETTING_IP6_CONFIG_TOKEN,
-                         nm_utils_inet6_interface_identifier_to_token(pllink->inet6_token, sbuf),
+                         nm_utils_inet6_interface_identifier_to_token(&pllink->inet6_token, sbuf),
                          NULL);
         }
     }
@@ -9258,7 +9259,7 @@ ip_config_merge_and_apply(NMDevice *self, int addr_family, gboolean commit)
 
         if (commit && priv->ndisc_started && ip6_addr_gen_token
             && nm_utils_ipv6_interface_identifier_get_from_token(&iid, ip6_addr_gen_token)) {
-            set_ipv6_token(self, iid, ip6_addr_gen_token);
+            set_ipv6_token(self, &iid, ip6_addr_gen_token);
         }
     }
 
@@ -10332,12 +10333,12 @@ check_and_add_ipv6ll_addr(NMDevice *self)
         const char *      stable_id;
 
         stable_id = _prop_get_connection_stable_id(self, connection, &stable_type);
-        if (!nm_utils_ipv6_addr_set_stable_privacy(stable_type,
-                                                   &lladdr,
-                                                   nm_device_get_iface(self),
-                                                   stable_id,
-                                                   priv->linklocal6_dad_counter++,
-                                                   &error)) {
+        if (!nm_utils_ipv6_addr_set_stable_privacy_may_fail(stable_type,
+                                                            &lladdr,
+                                                            nm_device_get_iface(self),
+                                                            stable_id,
+                                                            priv->linklocal6_dad_counter++,
+                                                            &error)) {
             _LOGW(LOGD_IP6, "linklocal6: failed to generate an address: %s", error->message);
             g_clear_error(&error);
             linklocal6_failed(self);
@@ -10359,7 +10360,7 @@ check_and_add_ipv6ll_addr(NMDevice *self)
             _LOGW(LOGD_IP6, "linklocal6: failed to get interface identifier; IPv6 cannot continue");
             return;
         }
-        nm_utils_ipv6_addr_set_interface_identifier(&lladdr, iid);
+        nm_utils_ipv6_addr_set_interface_identifier(&lladdr, &iid);
         addr_type = "EUI-64";
     }
 
@@ -10828,58 +10829,48 @@ ndisc_config_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int
         applied_config_init_new(&priv->ac_ip6_config, self, AF_INET6);
 
     if (changed & NM_NDISC_CONFIG_ADDRESSES) {
-        guint8  plen;
         guint32 ifa_flags;
 
         /* Check, whether kernel is recent enough to help user space handling RA.
          * If it's not supported, we have no ipv6-privacy and must add autoconf
          * addresses as /128. The reason for the /128 is to prevent the kernel
          * from adding a prefix route for this address. */
-        ifa_flags = 0;
-        if (nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
-            ifa_flags |= IFA_F_NOPREFIXROUTE;
-            if (NM_IN_SET(priv->ndisc_use_tempaddr,
-                          NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
-                          NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
-                ifa_flags |= IFA_F_MANAGETEMPADDR;
-            plen = 64;
-        } else
-            plen = 128;
+        ifa_flags = IFA_F_NOPREFIXROUTE;
+        if (NM_IN_SET(priv->ndisc_use_tempaddr,
+                      NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+                      NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR))
+            ifa_flags |= IFA_F_MANAGETEMPADDR;
 
         nm_ip6_config_reset_addresses_ndisc((NMIP6Config *) priv->ac_ip6_config.orig,
                                             rdata->addresses,
                                             rdata->addresses_n,
-                                            plen,
+                                            64,
                                             ifa_flags);
         if (priv->ac_ip6_config.current) {
             nm_ip6_config_reset_addresses_ndisc((NMIP6Config *) priv->ac_ip6_config.current,
                                                 rdata->addresses,
                                                 rdata->addresses_n,
-                                                plen,
+                                                64,
                                                 ifa_flags);
         }
     }
 
     if (NM_FLAGS_ANY(changed, NM_NDISC_CONFIG_ROUTES | NM_NDISC_CONFIG_GATEWAYS)) {
-        nm_ip6_config_reset_routes_ndisc(
-            (NMIP6Config *) priv->ac_ip6_config.orig,
-            rdata->gateways,
-            rdata->gateways_n,
-            rdata->routes,
-            rdata->routes_n,
-            nm_device_get_route_table(self, AF_INET6),
-            nm_device_get_route_metric(self, AF_INET6),
-            nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF));
+        nm_ip6_config_reset_routes_ndisc((NMIP6Config *) priv->ac_ip6_config.orig,
+                                         rdata->gateways,
+                                         rdata->gateways_n,
+                                         rdata->routes,
+                                         rdata->routes_n,
+                                         nm_device_get_route_table(self, AF_INET6),
+                                         nm_device_get_route_metric(self, AF_INET6));
         if (priv->ac_ip6_config.current) {
-            nm_ip6_config_reset_routes_ndisc(
-                (NMIP6Config *) priv->ac_ip6_config.current,
-                rdata->gateways,
-                rdata->gateways_n,
-                rdata->routes,
-                rdata->routes_n,
-                nm_device_get_route_table(self, AF_INET6),
-                nm_device_get_route_metric(self, AF_INET6),
-                nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF));
+            nm_ip6_config_reset_routes_ndisc((NMIP6Config *) priv->ac_ip6_config.current,
+                                             rdata->gateways,
+                                             rdata->gateways_n,
+                                             rdata->routes,
+                                             rdata->routes_n,
+                                             nm_device_get_route_table(self, AF_INET6),
+                                             nm_device_get_route_metric(self, AF_INET6));
         }
     }
 
@@ -11094,15 +11085,6 @@ addrconf6_start(NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
 
     priv->ndisc_use_tempaddr = use_tempaddr;
 
-    if (NM_IN_SET(use_tempaddr,
-                  NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
-                  NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_PUBLIC_ADDR)
-        && !nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)) {
-        _LOGW(LOGD_IP6,
-              "The kernel does not support extended IFA_FLAGS needed by NM for "
-              "IPv6 private addresses. This feature is not available");
-    }
-
     /* ensure link local is ready... */
     if (!linklocal6_start(self)) {
         /* wait for the LL address to show up */
@@ -11197,21 +11179,20 @@ set_nm_ipv6ll(NMDevice *self, gboolean enable)
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     int              ifindex = nm_device_get_ip_ifindex(self);
 
-    if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL))
-        return;
-
     priv->ipv6ll_handle = enable;
     if (ifindex > 0) {
-        const char *detail = enable ? "enable" : "disable";
-        int         r;
+        int r;
 
-        _LOGD(LOGD_IP6, "will %s userland IPv6LL", detail);
-        r = nm_platform_link_set_user_ipv6ll_enabled(nm_device_get_platform(self), ifindex, enable);
+        _LOGD(LOGD_IP6, "will %s userland IPv6LL", enable ? "enable" : "disable");
+        r = nm_platform_link_set_inet6_addr_gen_mode(nm_device_get_platform(self),
+                                                     ifindex,
+                                                     enable ? NM_IN6_ADDR_GEN_MODE_NONE
+                                                            : NM_IN6_ADDR_GEN_MODE_EUI64);
         if (r < 0) {
             _NMLOG(NM_IN_SET(r, -NME_PL_NOT_FOUND, -NME_PL_OPNOTSUPP) ? LOGL_DEBUG : LOGL_WARN,
                    LOGD_IP6,
                    "failed to %s userspace IPv6LL address handling (%s)",
-                   detail,
+                   enable ? "enable" : "disable",
                    nm_strerror(r));
         }
 
@@ -11537,45 +11518,6 @@ nm_device_activate_stage3_ip_start(NMDevice *self, int addr_family)
     return TRUE;
 }
 
-/*
- * activate_stage3_ip_config_start
- *
- * Begin automatic/manual IP configuration
- *
- */
-static void
-activate_stage3_ip_config_start(NMDevice *self)
-{
-    int ifindex;
-
-    _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_WAIT);
-    _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_WAIT);
-
-    _active_connection_set_state_flags(self, NM_ACTIVATION_STATE_FLAG_LAYER2_READY);
-
-    nm_device_state_changed(self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
-
-    /* Device should be up before we can do anything with it */
-    if ((ifindex = nm_device_get_ip_ifindex(self)) > 0
-        && !nm_platform_link_is_up(nm_device_get_platform(self), ifindex))
-        _LOGW(LOGD_DEVICE,
-              "interface %s not up for IP configuration",
-              nm_device_get_ip_iface(self));
-
-    if (nm_device_activate_ip4_state_in_wait(self)
-        && !nm_device_activate_stage3_ip_start(self, AF_INET))
-        return;
-
-    if (nm_device_activate_ip6_state_in_wait(self)
-        && !nm_device_activate_stage3_ip_start(self, AF_INET6))
-        return;
-
-    /* Proxy */
-    nm_device_set_proxy_config(self, NULL);
-
-    check_ip_state(self, TRUE, TRUE);
-}
-
 static void
 fw_change_zone_cb(NMFirewalldManager *      firewalld_manager,
                   NMFirewalldManagerCallId *call_id,
@@ -11658,20 +11600,19 @@ fw_change_zone(NMDevice *self)
 }
 
 /*
- * nm_device_activate_schedule_stage3_ip_config_start
+ * activate_stage3_ip_config_start
  *
- * Schedule IP configuration start
+ * Begin automatic/manual IP configuration
+ *
  */
-void
-nm_device_activate_schedule_stage3_ip_config_start(NMDevice *self)
+static void
+activate_stage3_ip_config_start(NMDevice *self)
 {
-    NMDevicePrivate *priv;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     int              ifindex;
 
-    g_return_if_fail(NM_IS_DEVICE(self));
-
-    priv = NM_DEVICE_GET_PRIVATE(self);
     g_return_if_fail(priv->act_request.obj);
+
     ifindex = nm_device_get_ip_ifindex(self);
 
     /* Add the interface to the specified firewall zone */
@@ -11691,6 +11632,50 @@ nm_device_activate_schedule_stage3_ip_config_start(NMDevice *self)
     }
 
     nm_assert(ifindex <= 0 || priv->fw_state == FIREWALL_STATE_INITIALIZED);
+
+    _set_ip_state(self, AF_INET, NM_DEVICE_IP_STATE_WAIT);
+    _set_ip_state(self, AF_INET6, NM_DEVICE_IP_STATE_WAIT);
+
+    _active_connection_set_state_flags(self, NM_ACTIVATION_STATE_FLAG_LAYER2_READY);
+
+    nm_device_state_changed(self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+
+    /* Device should be up before we can do anything with it */
+    if ((ifindex = nm_device_get_ip_ifindex(self)) > 0
+        && !nm_platform_link_is_up(nm_device_get_platform(self), ifindex))
+        _LOGW(LOGD_DEVICE,
+              "interface %s not up for IP configuration",
+              nm_device_get_ip_iface(self));
+
+    if (nm_device_activate_ip4_state_in_wait(self)
+        && !nm_device_activate_stage3_ip_start(self, AF_INET))
+        return;
+
+    if (nm_device_activate_ip6_state_in_wait(self)
+        && !nm_device_activate_stage3_ip_start(self, AF_INET6))
+        return;
+
+    /* Proxy */
+    nm_device_set_proxy_config(self, NULL);
+
+    check_ip_state(self, TRUE, TRUE);
+}
+
+/*
+ * nm_device_activate_schedule_stage3_ip_config_start
+ *
+ * Schedule IP configuration start
+ */
+void
+nm_device_activate_schedule_stage3_ip_config_start(NMDevice *self)
+{
+    NMDevicePrivate *priv;
+
+    g_return_if_fail(NM_IS_DEVICE(self));
+
+    priv = NM_DEVICE_GET_PRIVATE(self);
+
+    g_return_if_fail(priv->act_request.obj);
 
     activation_source_schedule(self, activate_stage3_ip_config_start, AF_INET);
 }
@@ -11744,22 +11729,23 @@ activate_stage4_ip_config_timeout_6(NMDevice *self)
     activate_stage4_ip_config_timeout_x(self, AF_INET6);
 }
 
+#define activate_stage4_ip_config_timeout_x_fcn(addr_family)       \
+    (NM_IS_IPv4(addr_family) ? activate_stage4_ip_config_timeout_4 \
+                             : activate_stage4_ip_config_timeout_6)
+
 void
 nm_device_activate_schedule_ip_config_timeout(NMDevice *self, int addr_family)
 {
     NMDevicePrivate *priv;
-    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
 
     g_return_if_fail(NM_IS_DEVICE(self));
-    g_return_if_fail(NM_IN_SET(addr_family, AF_INET, AF_INET6));
 
     priv = NM_DEVICE_GET_PRIVATE(self);
 
     g_return_if_fail(priv->act_request.obj);
 
     activation_source_schedule(self,
-                               IS_IPv4 ? activate_stage4_ip_config_timeout_4
-                                       : activate_stage4_ip_config_timeout_6,
+                               activate_stage4_ip_config_timeout_x_fcn(addr_family),
                                addr_family);
 }
 
@@ -16064,7 +16050,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
 
             nm_platform_ip_route_flush(platform, AF_UNSPEC, ifindex);
             nm_platform_ip_address_flush(platform, AF_UNSPEC, ifindex);
-            set_ipv6_token(self, iid, "::");
+            set_ipv6_token(self, &iid, "::");
 
             if (nm_device_get_applied_setting(self, NM_TYPE_SETTING_TC_CONFIG)) {
                 nm_platform_tfilter_sync(platform, ifindex, NULL);

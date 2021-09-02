@@ -1678,8 +1678,7 @@ nm_ip6_config_reset_routes_ndisc(NMIP6Config *         self,
                                  const NMNDiscRoute *  routes,
                                  guint                 routes_n,
                                  guint32               route_table,
-                                 guint32               route_metric,
-                                 gboolean              kernel_support_rta_pref)
+                                 guint32               route_metric)
 {
     NMIP6ConfigPrivate *priv;
     guint               i;
@@ -1735,7 +1734,6 @@ nm_ip6_config_reset_routes_ndisc(NMIP6Config *         self,
             .table_coerced = nm_platform_route_table_coerce(route_table),
             .metric        = route_metric,
         };
-        const NMIcmpv6RouterPref first_pref = gateways[0].preference;
 
         for (i = 0; i < gateways_n; i++) {
             r.gateway = gateways[i].address;
@@ -1753,13 +1751,6 @@ nm_ip6_config_reset_routes_ndisc(NMIP6Config *         self,
                 changed = TRUE;
             new_best_default_route =
                 _nm_ip_config_best_default_route_find_better(new_best_default_route, obj_new);
-
-            if (first_pref != gateways[i].preference && !kernel_support_rta_pref) {
-                /* We are unable to configure a router preference. Hence, we skip all gateways
-                 * with a different preference from the first gateway. Note, that the gateways
-                 * are sorted in order of highest to lowest preference. */
-                break;
-            }
         }
     }
 

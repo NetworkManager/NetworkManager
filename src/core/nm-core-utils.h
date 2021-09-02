@@ -281,21 +281,28 @@ NMUtilsStableType nm_utils_stable_id_parse(const char *stable_id,
 char *nm_utils_stable_id_random(void);
 char *nm_utils_stable_id_generated_complete(const char *msg);
 
-gboolean nm_utils_ipv6_addr_set_stable_privacy_impl(NMUtilsStableType stable_type,
-                                                    struct in6_addr * addr,
-                                                    const char *      ifname,
-                                                    const char *      network_id,
-                                                    guint32           dad_counter,
-                                                    guint8 *          host_id,
-                                                    gsize             host_id_len,
-                                                    GError **         error);
+#define NM_STABLE_PRIVACY_RFC7217_IDGEN_RETRIES 3
 
-gboolean nm_utils_ipv6_addr_set_stable_privacy(NMUtilsStableType id_type,
-                                               struct in6_addr * addr,
-                                               const char *      ifname,
-                                               const char *      network_id,
-                                               guint32           dad_counter,
-                                               GError **         error);
+void nm_utils_ipv6_addr_set_stable_privacy_with_host_id(NMUtilsStableType stable_type,
+                                                        struct in6_addr * addr,
+                                                        const char *      ifname,
+                                                        const char *      network_id,
+                                                        guint32           dad_counter,
+                                                        const guint8 *    host_id,
+                                                        gsize             host_id_len);
+
+void nm_utils_ipv6_addr_set_stable_privacy(NMUtilsStableType stable_type,
+                                           struct in6_addr * addr,
+                                           const char *      ifname,
+                                           const char *      network_id,
+                                           guint32           dad_counter);
+
+gboolean nm_utils_ipv6_addr_set_stable_privacy_may_fail(NMUtilsStableType stable_type,
+                                                        struct in6_addr * addr,
+                                                        const char *      ifname,
+                                                        const char *      network_id,
+                                                        guint32           dad_counter,
+                                                        GError **         error);
 
 char *nm_utils_hw_addr_gen_random_eth(const char *current_mac_address,
                                       const char *generate_mac_address_mask);

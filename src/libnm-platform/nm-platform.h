@@ -616,6 +616,10 @@ typedef union {
 
 #undef __NMPlatformIPRoute_COMMON
 
+#define NM_PLATFORM_IP4_ROUTE_INIT(...) (&((const NMPlatformIP4Route){__VA_ARGS__}))
+
+#define NM_PLATFORM_IP6_ROUTE_INIT(...) (&((const NMPlatformIP6Route){__VA_ARGS__}))
+
 typedef struct {
     /* struct fib_rule_uid_range */
     guint32 start;
@@ -1011,9 +1015,6 @@ typedef void (*NMPlatformAsyncCallback)(GError *error, gpointer user_data);
 /*****************************************************************************/
 
 typedef enum {
-    NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS,
-    NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL,
-    NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_PROTOCOL,
@@ -1109,8 +1110,8 @@ typedef struct {
                              unsigned    flags_mask,
                              unsigned    flags_set);
 
-    int (*link_set_user_ipv6ll_enabled)(NMPlatform *self, int ifindex, gboolean enabled);
-    gboolean (*link_set_token)(NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
+    int (*link_set_inet6_addr_gen_mode)(NMPlatform *self, int ifindex, guint8 enabled);
+    gboolean (*link_set_token)(NMPlatform *self, int ifindex, const NMUtilsIPv6IfaceId *iid);
 
     gboolean (*link_get_permanent_address_ethtool)(NMPlatform *    self,
                                                    int             ifindex,
@@ -1392,6 +1393,14 @@ static inline guint8
 _nm_platform_uint8_inv(guint8 scope)
 {
     return (guint8) ~scope;
+}
+
+static inline int
+_nm_platform_link_get_inet6_addr_gen_mode(const NMPlatformLink *pllink)
+{
+    if (!pllink)
+        return -ENODEV;
+    return _nm_platform_uint8_inv(pllink->inet6_addr_gen_mode_inv);
 }
 
 /**
@@ -1811,7 +1820,7 @@ gboolean    nm_platform_link_is_up(NMPlatform *self, int ifindex);
 gboolean    nm_platform_link_is_connected(NMPlatform *self, int ifindex);
 gboolean    nm_platform_link_uses_arp(NMPlatform *self, int ifindex);
 guint32     nm_platform_link_get_mtu(NMPlatform *self, int ifindex);
-gboolean    nm_platform_link_get_user_ipv6ll_enabled(NMPlatform *self, int ifindex);
+int         nm_platform_link_get_inet6_addr_gen_mode(NMPlatform *self, int ifindex);
 
 gconstpointer nm_platform_link_get_address(NMPlatform *self, int ifindex, size_t *length);
 
@@ -1861,8 +1870,9 @@ const char *nm_platform_link_get_path(NMPlatform *self, int ifindex);
 
 struct udev_device *nm_platform_link_get_udev_device(NMPlatform *self, int ifindex);
 
-int      nm_platform_link_set_user_ipv6ll_enabled(NMPlatform *self, int ifindex, gboolean enabled);
-gboolean nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid);
+int nm_platform_link_set_inet6_addr_gen_mode(NMPlatform *self, int ifindex, guint8 mode);
+gboolean
+nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, const NMUtilsIPv6IfaceId *iid);
 
 gboolean nm_platform_link_get_permanent_address_ethtool(NMPlatform *    self,
                                                         int             ifindex,

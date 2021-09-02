@@ -1279,15 +1279,6 @@ _parse_af_inet6(NMPlatform *        platform,
         token_valid = TRUE;
     }
 
-    /* Hack to detect support addrgenmode of the kernel. We only parse
-     * netlink messages that we receive from kernel, hence this check
-     * is valid. */
-    if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
-        /* IFLA_INET6_ADDR_GEN_MODE was added in kernel 3.17, dated 5 October, 2014. */
-        _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL,
-                                         tb[IFLA_INET6_ADDR_GEN_MODE] ? 1 : -1);
-    }
-
     if (tb[IFLA_INET6_ADDR_GEN_MODE]) {
         i6_addr_gen_mode_inv = _nm_platform_uint8_inv(nla_get_u8(tb[IFLA_INET6_ADDR_GEN_MODE]));
         if (i6_addr_gen_mode_inv == 0) {
@@ -3592,13 +3583,6 @@ rta_multipath_done:;
     obj->ip_route.lock_mtu      = NM_FLAGS_HAS(lock, 1 << RTAX_MTU);
 
     if (!is_v4) {
-        if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF)) {
-            /* Detect support for RTA_PREF by inspecting the netlink message.
-             * RTA_PREF was added in kernel 4.1, dated 21 June, 2015. */
-            _nm_platform_kernel_support_init(NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF,
-                                             tb[RTA_PREF] ? 1 : -1);
-        }
-
         if (tb[RTA_PREF])
             obj->ip6_route.rt_pref = nla_get_u8(tb[RTA_PREF]);
     }
@@ -4084,7 +4068,7 @@ nmp_object_new_from_nl(NMPlatform *    platform,
 /*****************************************************************************/
 
 static gboolean
-_nl_msg_new_link_set_afspec(struct nl_msg *msg, int addr_gen_mode, NMUtilsIPv6IfaceId *iid)
+_nl_msg_new_link_set_afspec(struct nl_msg *msg, int addr_gen_mode, const NMUtilsIPv6IfaceId *iid)
 {
     struct nlattr *af_spec;
     struct nlattr *af_attr;
@@ -4102,11 +4086,9 @@ _nl_msg_new_link_set_afspec(struct nl_msg *msg, int addr_gen_mode, NMUtilsIPv6If
             NLA_PUT_U8(msg, IFLA_INET6_ADDR_GEN_MODE, addr_gen_mode);
 
         if (iid) {
-            struct in6_addr i6_token = {.s6_addr = {
-                                            0,
-                                        }};
+            struct in6_addr i6_token = IN6ADDR_ANY_INIT;
 
-            nm_utils_ipv6_addr_set_interface_identifier(&i6_token, *iid);
+            nm_utils_ipv6_addr_set_interface_identifier(&i6_token, iid);
             NLA_PUT(msg, IFLA_INET6_TOKEN, sizeof(struct in6_addr), &i6_token);
         }
 
@@ -6924,27 +6906,6 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
 
     msghdr = nlmsg_hdr(msg);
 
-    if (!_nm_platform_kernel_support_detected(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
-        && msghdr->nlmsg_type == RTM_NEWADDR) {
-        /* IFA_FLAGS is set for IPv4 and IPv6 addresses. It was added first to IPv6,
-         * but if we encounter an IPv4 address with IFA_FLAGS, we surely have support. */
-        if (nlmsg_valid_hdr(msghdr, sizeof(struct ifaddrmsg))
-            && NM_IN_SET(((struct ifaddrmsg *) nlmsg_data(msghdr))->ifa_family,
-                         AF_INET,
-                         AF_INET6)) {
-            /* see if the nl_msg contains the IFA_FLAGS attribute. If it does,
-             * we assume, that the kernel supports extended flags, IFA_F_MANAGETEMPADDR
-             * and IFA_F_NOPREFIXROUTE for IPv6. They were added together in kernel 3.14,
-             * dated 30 March, 2014.
-             *
-             * For IPv4, IFA_F_NOPREFIXROUTE was added later, but there is no easy
-             * way to detect kernel support. */
-            _nm_platform_kernel_support_init(
-                NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS,
-                !!nlmsg_find_attr(msghdr, sizeof(struct ifaddrmsg), IFA_FLAGS) ? 1 : -1);
-        }
-    }
-
     if (!handle_events)
         return;
 
@@ -7507,19 +7468,14 @@ link_change_flags(NMPlatform *platform, int ifindex, unsigned flags_mask, unsign
 }
 
 static int
-link_set_user_ipv6ll_enabled(NMPlatform *platform, int ifindex, gboolean enabled)
+link_set_inet6_addr_gen_mode(NMPlatform *platform, int ifindex, guint8 mode)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-    guint8 mode = enabled ? NM_IN6_ADDR_GEN_MODE_NONE : NM_IN6_ADDR_GEN_MODE_EUI64;
+    char                         sbuf[100];
 
     _LOGD("link: change %d: user-ipv6ll: set IPv6 address generation mode to %s",
           ifindex,
-          nm_platform_link_inet6_addrgenmode2str(mode, NULL, 0));
-
-    if (!nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL)) {
-        _LOGD("link: change %d: user-ipv6ll: not supported", ifindex);
-        return -NME_PL_OPNOTSUPP;
-    }
+          nm_platform_link_inet6_addrgenmode2str(mode, sbuf, sizeof(sbuf)));
 
     nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, NULL);
     if (!nlmsg || !_nl_msg_new_link_set_afspec(nlmsg, mode, NULL))
@@ -7529,7 +7485,7 @@ link_set_user_ipv6ll_enabled(NMPlatform *platform, int ifindex, gboolean enabled
 }
 
 static gboolean
-link_set_token(NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
+link_set_token(NMPlatform *platform, int ifindex, const NMUtilsIPv6IfaceId *iid)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     char                         sbuf[NM_UTILS_INET_ADDRSTRLEN];
@@ -7539,7 +7495,7 @@ link_set_token(NMPlatform *platform, int ifindex, NMUtilsIPv6IfaceId iid)
           nm_utils_inet6_interface_identifier_to_token(iid, sbuf));
 
     nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, NULL);
-    if (!nlmsg || !_nl_msg_new_link_set_afspec(nlmsg, -1, &iid))
+    if (!nlmsg || !_nl_msg_new_link_set_afspec(nlmsg, -1, iid))
         g_return_val_if_reached(FALSE);
 
     return (do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
@@ -9666,7 +9622,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
 
     platform_class->link_change_flags = link_change_flags;
 
-    platform_class->link_set_user_ipv6ll_enabled = link_set_user_ipv6ll_enabled;
+    platform_class->link_set_inet6_addr_gen_mode = link_set_inet6_addr_gen_mode;
     platform_class->link_set_token               = link_set_token;
 
     platform_class->link_set_address                   = link_set_address;

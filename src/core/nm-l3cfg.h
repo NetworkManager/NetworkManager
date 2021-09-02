@@ -22,7 +22,7 @@
 #define NM_L3CFG_SIGNAL_NOTIFY "l3cfg-notify"
 
 typedef enum _nm_packed {
-    NM_L3_ACD_DEFEND_TYPE_NONE,
+    _NM_L3_ACD_DEFEND_TYPE_NONE,
     NM_L3_ACD_DEFEND_TYPE_NEVER,
     NM_L3_ACD_DEFEND_TYPE_ONCE,
     NM_L3_ACD_DEFEND_TYPE_ALWAYS,
@@ -333,6 +333,8 @@ typedef enum _nm_packed {
 void nm_l3cfg_commit(NML3Cfg *self, NML3CfgCommitType commit_type);
 
 gboolean nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
+
+gboolean nm_l3cfg_commit_on_idle_is_scheduled(NML3Cfg *self);
 
 /*****************************************************************************/
 

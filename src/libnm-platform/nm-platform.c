@@ -300,24 +300,6 @@ static const struct {
     const char *name;
     const char *desc;
 } _nm_platform_kernel_support_info[_NM_PLATFORM_KERNEL_SUPPORT_NUM] = {
-    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS] =
-        {
-            .compile_time_default = TRUE,
-            .name                 = "EXTENDED_IFA_FLAGS",
-            .desc                 = "IPv6 temporary addresses support",
-        },
-    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_USER_IPV6LL] =
-        {
-            .compile_time_default = TRUE,
-            .name                 = "USER_IPV6LL",
-            .desc                 = "IFLA_INET6_ADDR_GEN_MODE support",
-        },
-    [NM_PLATFORM_KERNEL_SUPPORT_TYPE_RTA_PREF] =
-        {
-            .compile_time_default = (RTA_MAX >= 20 /* RTA_PREF */),
-            .name                 = "RTA_PREF",
-            .desc                 = "ability to set router preference for IPv6 routes",
-        },
     [NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV] =
         {
             .compile_time_default = (FRA_MAX >= 19 /* FRA_L3MDEV */),
@@ -1618,7 +1600,7 @@ nm_platform_link_uses_arp(NMPlatform *self, int ifindex)
  * Returns: %TRUE a tokenized identifier was available
  */
 gboolean
-nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, NMUtilsIPv6IfaceId iid)
+nm_platform_link_set_ipv6_token(NMPlatform *self, int ifindex, const NMUtilsIPv6IfaceId *iid)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -1656,47 +1638,20 @@ nm_platform_link_get_udev_device(NMPlatform *self, int ifindex)
     return obj_cache ? obj_cache->_link.udev.device : NULL;
 }
 
-/**
- * nm_platform_link_get_user_ip6vll_enabled:
- * @self: platform instance
- * @ifindex: Interface index
- *
- * Check whether NM handles IPv6LL address creation for the link.  If the
- * platform or OS doesn't support changing the IPv6LL address mode, this call
- * will fail and return %FALSE.
- *
- * Returns: %TRUE if NM handles the IPv6LL address for @ifindex
- */
-gboolean
-nm_platform_link_get_user_ipv6ll_enabled(NMPlatform *self, int ifindex)
+int
+nm_platform_link_get_inet6_addr_gen_mode(NMPlatform *self, int ifindex)
 {
-    const NMPlatformLink *pllink;
-
-    pllink = nm_platform_link_get(self, ifindex);
-    if (pllink && pllink->inet6_addr_gen_mode_inv)
-        return _nm_platform_uint8_inv(pllink->inet6_addr_gen_mode_inv) == NM_IN6_ADDR_GEN_MODE_NONE;
-    return FALSE;
+    return _nm_platform_link_get_inet6_addr_gen_mode(nm_platform_link_get(self, ifindex));
 }
 
-/**
- * nm_platform_link_set_user_ip6vll_enabled:
- * @self: platform instance
- * @ifindex: Interface index
- *
- * Set whether NM handles IPv6LL address creation for the link.  If the
- * platform or OS doesn't support changing the IPv6LL address mode, this call
- * will fail and return %FALSE.
- *
- * Returns: the negative nm-error on failure.
- */
 int
-nm_platform_link_set_user_ipv6ll_enabled(NMPlatform *self, int ifindex, gboolean enabled)
+nm_platform_link_set_inet6_addr_gen_mode(NMPlatform *self, int ifindex, guint8 mode)
 {
     _CHECK_SELF(self, klass, -NME_BUG);
 
     g_return_val_if_fail(ifindex > 0, -NME_BUG);
 
-    return klass->link_set_user_ipv6ll_enabled(self, ifindex, enabled);
+    return klass->link_set_inet6_addr_gen_mode(self, ifindex, mode);
 }
 
 /**
@@ -3947,7 +3902,6 @@ nm_platform_ip_address_sync(NMPlatform *self,
     gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
     GPtrArray *                    plat_addresses;
     GHashTable *                   known_subnets = NULL;
-    guint32                        ifa_flags;
     guint                          i_plat;
     guint                          i_know;
     guint                          i;
@@ -4174,10 +4128,6 @@ next_plat:;
     if (IS_IPv4)
         ip4_addr_subnets_destroy_index(known_subnets, known_addresses);
 
-    ifa_flags = nm_platform_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_EXTENDED_IFA_FLAGS)
-                    ? IFA_F_NOPREFIXROUTE
-                    : 0;
-
     /* Add missing addresses. New addresses are added by kernel with top
      * priority.
      */
@@ -4212,7 +4162,7 @@ next_plat:;
                     nm_platform_ip4_broadcast_address_from_addr(&known_address->a4),
                     lifetime,
                     preferred,
-                    ifa_flags,
+                    IFA_F_NOPREFIXROUTE,
                     known_address->a4.label)) {
                 /* ignore error, for unclear reasons. */
             }
@@ -4224,7 +4174,7 @@ next_plat:;
                                              known_address->a6.peer_address,
                                              lifetime,
                                              preferred,
-                                             ifa_flags | known_address->a6.n_ifa_flags))
+                                             IFA_F_NOPREFIXROUTE | known_address->a6.n_ifa_flags))
                 return FALSE;
         }
     }
@@ -5652,7 +5602,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         str_broadcast[0] ? str_broadcast : "",
         link->inet6_token.id ? " inet6token " : "",
         link->inet6_token.id
-            ? nm_utils_inet6_interface_identifier_to_token(link->inet6_token, str_inet6_token)
+            ? nm_utils_inet6_interface_identifier_to_token(&link->inet6_token, str_inet6_token)
             : "",
         link->driver ? " driver " : "",
         link->driver ?: "",

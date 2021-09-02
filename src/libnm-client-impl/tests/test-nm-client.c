@@ -948,7 +948,7 @@ _test_connection_invalid_find_connections(gpointer element, gpointer needle, gpo
 static void
 test_connection_invalid(void)
 {
-    NMTSTC_SERVICE_INFO_SETUP(my_sinfo)
+    NMTSTC_SERVICE_INFO_SETUP(my_sinfo);
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection *         s_con;
     gs_unref_object NMClient *client = NULL;

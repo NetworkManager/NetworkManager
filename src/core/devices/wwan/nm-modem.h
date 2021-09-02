@@ -210,7 +210,7 @@ void nm_modem_act_stage2_config(NMModem *modem);
 
 NMActStageReturn nm_modem_stage3_ip4_config_start(NMModem *            modem,
                                                   NMDevice *           device,
-                                                  NMDeviceClass *      device_class,
+                                                  gboolean *           out_autoip4,
                                                   NMDeviceStateReason *out_failure_reason);
 
 NMActStageReturn nm_modem_stage3_ip6_config_start(NMModem *            modem,

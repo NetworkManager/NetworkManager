@@ -476,12 +476,12 @@ complete_address(NMNDisc *ndisc, NMNDiscAddress *addr)
 
     priv = NM_NDISC_GET_PRIVATE(ndisc);
     if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
-        if (!nm_utils_ipv6_addr_set_stable_privacy(priv->stable_type,
-                                                   &addr->address,
-                                                   priv->ifname,
-                                                   priv->network_id,
-                                                   addr->dad_counter++,
-                                                   &error)) {
+        if (!nm_utils_ipv6_addr_set_stable_privacy_may_fail(priv->stable_type,
+                                                            &addr->address,
+                                                            priv->ifname,
+                                                            priv->network_id,
+                                                            addr->dad_counter++,
+                                                            &error)) {
             _LOGW("complete-address: failed to generate an stable-privacy address: %s",
                   error->message);
             g_clear_error(&error);
@@ -498,7 +498,7 @@ complete_address(NMNDisc *ndisc, NMNDiscAddress *addr)
 
     if (addr->address.s6_addr32[2] == 0x0 && addr->address.s6_addr32[3] == 0x0) {
         _LOGD("complete-address: adding an EUI-64 address");
-        nm_utils_ipv6_addr_set_interface_identifier(&addr->address, priv->iid);
+        nm_utils_ipv6_addr_set_interface_identifier(&addr->address, &priv->iid);
         return TRUE;
     }
 

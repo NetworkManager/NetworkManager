@@ -138,11 +138,7 @@ NML3ConfigData *nm_l3_config_data_new_clone(const NML3ConfigData *src, int ifind
 
 NML3ConfigData *nm_l3_config_data_new_from_connection(NMDedupMultiIndex *multi_idx,
                                                       int                ifindex,
-                                                      NMConnection *     connection,
-                                                      guint32            route_table_4,
-                                                      guint32            route_table_6,
-                                                      guint32            route_metric_4,
-                                                      guint32            route_metric_6);
+                                                      NMConnection *     connection);
 
 NML3ConfigData *nm_l3_config_data_new_from_platform(NMDedupMultiIndex *       multi_idx,
                                                     int                       ifindex,
