@@ -28,8 +28,22 @@ typedef enum _nm_packed {
     NM_L3_ACD_DEFEND_TYPE_ALWAYS,
 } NML3AcdDefendType;
 
+/**
+ * NML3CfgConfigFlags:
+ * @NM_L3CFG_CONFIG_FLAGS_NONE: no flags, the default.
+ * @NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD: if this merge flag is set,
+ *   the the NML3ConfigData doesn't get merged and it's information won't be
+ *   synced. The only purpose is to run ACD on its IPv4 addresses, but
+ *   regardless whether ACD succeeds/fails, the IP addresses won't be configured.
+ *   The point is to run ACD first (without configuring it), and only
+ *   commit the settings if requested. That can either happen by
+ *   nm_l3cfg_add_config() the same NML3Cfg again (with a different
+ *   tag), or by calling nm_l3cfg_add_config() again with this flag
+ *   cleared (and the same tag).
+ */
 typedef enum _nm_packed {
-    NM_L3CFG_CONFIG_FLAGS_NONE = 0,
+    NM_L3CFG_CONFIG_FLAGS_NONE         = 0,
+    NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD = (1LL << 0),
 } NML3CfgConfigFlags;
 
 typedef enum _nm_packed {

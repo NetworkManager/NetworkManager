@@ -3043,7 +3043,7 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
         for (i = 0; i < l3_config_datas_len; i++) {
             const L3ConfigData *l3cd_data = l3_config_datas_arr[i];
 
-            if (NM_FLAGS_HAS(l3cd_data->merge_flags, NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD))
+            if (NM_FLAGS_HAS(l3cd_data->config_flags, NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD))
                 continue;
 
             hook_data.tag = l3cd_data->tag_confdata;
