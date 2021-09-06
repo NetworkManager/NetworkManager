@@ -2733,43 +2733,59 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                                              src,
                                              &obj,
                                              NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
-            NMPlatformIPXAddress       addr_stack;
-            const NMPlatformIPAddress *addr        = NULL;
+            const NMPlatformIPAddress *a_src = NMP_OBJECT_CAST_IP_ADDRESS(obj);
+            NMPlatformIPXAddress       a;
             NML3ConfigMergeHookResult  hook_result = {
                 .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
             };
+
+#define _ensure_a()                                       \
+    G_STMT_START                                          \
+    {                                                     \
+        if (a_src != &a.ax) {                             \
+            a_src = &a.ax;                                \
+            if (IS_IPv4)                                  \
+                a.a4 = *NMP_OBJECT_CAST_IP4_ADDRESS(obj); \
+            else                                          \
+                a.a6 = *NMP_OBJECT_CAST_IP6_ADDRESS(obj); \
+        }                                                 \
+    }                                                     \
+    G_STMT_END
+
+            nm_assert(a_src->ifindex == self->ifindex);
 
             if (hook_add_obj && !hook_add_obj(src, obj, &hook_result, hook_user_data))
                 continue;
 
             nm_assert(IS_IPv4 || hook_result.ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
+
             if (hook_result.ip4acd_not_ready != NM_OPTION_BOOL_DEFAULT && IS_IPv4
                 && (!!hook_result.ip4acd_not_ready)
-                       != NMP_OBJECT_CAST_IP4_ADDRESS(obj)->ip4acd_not_ready) {
-                addr_stack.a4                  = *NMP_OBJECT_CAST_IP4_ADDRESS(obj);
-                addr_stack.a4.ip4acd_not_ready = (!!hook_result.ip4acd_not_ready);
-                addr                           = &addr_stack.ax;
+                       != ((const NMPlatformIP4Address *) a_src)->ip4acd_not_ready) {
+                _ensure_a();
+                a.a4.ip4acd_not_ready = (!!hook_result.ip4acd_not_ready);
             }
 
             nm_l3_config_data_add_address_full(self,
                                                addr_family,
-                                               addr ? NULL : obj,
-                                               addr,
+                                               a_src == &a.ax ? NULL : obj,
+                                               a_src == &a.ax ? a_src : NULL,
                                                NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
                                                NULL);
         }
+
+#undef _ensure_a
 
         if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES)) {
             nm_l3_config_data_iter_obj_for_each (&iter,
                                                  src,
                                                  &obj,
                                                  NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
-                const NMPlatformIPRoute *r_src = NMP_OBJECT_CAST_IP_ROUTE(obj);
-                NMPlatformIPXRoute       r;
+                const NMPlatformIPRoute * r_src = NMP_OBJECT_CAST_IP_ROUTE(obj);
+                NMPlatformIPXRoute        r;
                 NML3ConfigMergeHookResult hook_result = {
                     .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
                 };
-
 
 #define _ensure_r()                                     \
     G_STMT_START                                        \
@@ -2780,10 +2796,11 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                 r.r4 = *NMP_OBJECT_CAST_IP4_ROUTE(obj); \
             else                                        \
                 r.r6 = *NMP_OBJECT_CAST_IP6_ROUTE(obj); \
-            r.rx.ifindex = self->ifindex;               \
         }                                               \
     }                                                   \
     G_STMT_END
+
+                nm_assert(r_src->ifindex == self->ifindex);
 
                 if (hook_add_obj && !hook_add_obj(src, obj, &hook_result, hook_user_data))
                     continue;
