@@ -6304,6 +6304,7 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         " src %s"
         "%s" /* external */
         "%s" /* ip4acd_not_ready */
+        "%s" /* a_assume_config_once */
         "",
         s_address,
         address->plen,
@@ -6322,7 +6323,8 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         str_label,
         nmp_utils_ip_config_source_to_string(address->addr_source, s_source, sizeof(s_source)),
         address->external ? " ext" : "",
-        address->ip4acd_not_ready ? " ip4acd-not-ready" : "");
+        address->ip4acd_not_ready ? " ip4acd-not-ready" : "",
+        address->a_assume_config_once ? " assume-config-once" : "");
     g_free(str_peer);
     return buf;
 }
@@ -6441,7 +6443,10 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
     g_snprintf(
         buf,
         len,
-        "%s/%d lft %s pref %s%s%s%s%s src %s%s",
+        "%s/%d lft %s pref %s%s%s%s%s src %s"
+        "%s" /* external */
+        "%s" /* a_assume_config_once */
+        "",
         s_address,
         address->plen,
         str_lft_p,
@@ -6451,7 +6456,8 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
         str_dev,
         _to_string_ifa_flags(address->n_ifa_flags, s_flags, sizeof(s_flags)),
         nmp_utils_ip_config_source_to_string(address->addr_source, s_source, sizeof(s_source)),
-        address->external ? " ext" : "");
+        address->external ? " external" : "",
+        address->a_assume_config_once ? " assume-config-once" : "");
     g_free(str_peer);
     return buf;
 }
@@ -6543,6 +6549,7 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         "%s"                                   /* initrwnd */
         "%s"                                   /* mtu */
         "%s"                                   /* is_external */
+        "%s"                                   /* r_assume_config_once */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -6599,7 +6606,8 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
                                                        route->lock_mtu ? "lock " : "",
                                                        route->mtu)
                                       : "",
-        route->is_external ? " (E)" : "");
+        route->is_external ? " is-external" : "",
+        route->r_assume_config_once ? " assume-config-once" : "");
     return buf;
 }
 
@@ -6670,6 +6678,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         "%s"                                   /* mtu */
         "%s"                                   /* pref */
         "%s"                                   /* is_external */
+        "%s"                                   /* r_assume_config_once */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -6730,7 +6739,8 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
             " pref %s",
             nm_icmpv6_router_pref_to_string(route->rt_pref, str_pref2, sizeof(str_pref2)))
                        : "",
-        route->is_external ? " (E)" : "");
+        route->is_external ? " is-external" : "",
+        route->r_assume_config_once ? " assume-config-once" : "");
 
     return buf;
 }
@@ -7866,7 +7876,8 @@ nm_platform_ip4_address_hash_update(const NMPlatformIP4Address *obj, NMHashState
                         NM_HASH_COMBINE_BOOLS(guint8,
                                               obj->external,
                                               obj->use_ip4_broadcast_address,
-                                              obj->ip4acd_not_ready));
+                                              obj->ip4acd_not_ready,
+                                              obj->a_assume_config_once));
     nm_hash_update_strarr(h, obj->label);
 }
 
@@ -7889,6 +7900,7 @@ nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a, const NMPlatformIP4Ad
     NM_CMP_FIELD_STR(a, b, label);
     NM_CMP_FIELD_UNSAFE(a, b, external);
     NM_CMP_FIELD_UNSAFE(a, b, ip4acd_not_ready);
+    NM_CMP_FIELD_UNSAFE(a, b, a_assume_config_once);
     return 0;
 }
 
@@ -7905,7 +7917,7 @@ nm_platform_ip6_address_hash_update(const NMPlatformIP6Address *obj, NMHashState
                         obj->plen,
                         obj->address,
                         obj->peer_address,
-                        NM_HASH_COMBINE_BOOLS(guint8, obj->external));
+                        NM_HASH_COMBINE_BOOLS(guint8, obj->external, obj->a_assume_config_once));
 }
 
 int
@@ -7926,6 +7938,7 @@ nm_platform_ip6_address_cmp(const NMPlatformIP6Address *a, const NMPlatformIP6Ad
     NM_CMP_FIELD(a, b, preferred);
     NM_CMP_FIELD(a, b, n_ifa_flags);
     NM_CMP_FIELD_UNSAFE(a, b, external);
+    NM_CMP_FIELD_UNSAFE(a, b, a_assume_config_once);
     return 0;
 }
 
@@ -8026,7 +8039,7 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                             obj->initrwnd,
                             obj->mtu,
                             obj->r_rtm_flags,
-                            NM_HASH_COMBINE_BOOLS(guint8,
+                            NM_HASH_COMBINE_BOOLS(guint16,
                                                   obj->metric_any,
                                                   obj->table_any,
                                                   obj->lock_window,
@@ -8034,7 +8047,8 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
-                                                  obj->is_external));
+                                                  obj->is_external,
+                                                  obj->r_assume_config_once));
         break;
     }
 }
@@ -8124,8 +8138,10 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         NM_CMP_FIELD(a, b, initcwnd);
         NM_CMP_FIELD(a, b, initrwnd);
         NM_CMP_FIELD(a, b, mtu);
-        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL)
+        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL) {
             NM_CMP_FIELD_UNSAFE(a, b, is_external);
+            NM_CMP_FIELD_UNSAFE(a, b, r_assume_config_once);
+        }
         break;
     }
     return 0;
@@ -8210,7 +8226,7 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                             obj->rt_source,
                             obj->mss,
                             obj->r_rtm_flags,
-                            NM_HASH_COMBINE_BOOLS(guint8,
+                            NM_HASH_COMBINE_BOOLS(guint16,
                                                   obj->metric_any,
                                                   obj->table_any,
                                                   obj->lock_window,
@@ -8218,7 +8234,8 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
-                                                  obj->is_external),
+                                                  obj->is_external,
+                                                  obj->r_assume_config_once),
                             obj->window,
                             obj->cwnd,
                             obj->initcwnd,
@@ -8301,8 +8318,10 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
             NM_CMP_DIRECT(_route_pref_normalize(a->rt_pref), _route_pref_normalize(b->rt_pref));
         else
             NM_CMP_FIELD(a, b, rt_pref);
-        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL)
+        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL) {
             NM_CMP_FIELD_UNSAFE(a, b, is_external);
+            NM_CMP_FIELD_UNSAFE(a, b, r_assume_config_once);
+        }
         break;
     }
     return 0;

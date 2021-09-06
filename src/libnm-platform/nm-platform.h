@@ -329,6 +329,11 @@ typedef enum {
      * flag may indicate that the address is just for tracking purpose only, but the ACD
      * state is not yet ready for the address to be configured. */    \
     bool ip4acd_not_ready : 1;                                                               \
+                                                                                             \
+    /* Whether the address is should be configured once during assume. This is a meta flag
+     * that is not honored by NMPlatform (netlink code). Instead, it can be used by the upper
+     * layers which use NMPlatformIPAddress to track addresses that should be configured. */   \
+    bool a_assume_config_once : 1;                                                           \
     ;
 
 /**
@@ -472,6 +477,11 @@ typedef union {
      * Note that unlike most other fields here, this flag only exists inside NetworkManager
      * and is not reflected on netlink. */   \
     bool is_external : 1;                                                                 \
+                                                                                          \
+    /* Whether the route is should be configured once during assume. This is a meta flag
+     * that is not honored by NMPlatform (netlink code). Instead, it can be used by the upper
+     * layers which use NMPlatformIPRoute to track routes that should be configured. */  \
+    bool r_assume_config_once : 1;                                                        \
                                                                                           \
     /* rtnh_flags
      *
