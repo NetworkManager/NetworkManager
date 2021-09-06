@@ -18,6 +18,17 @@
 
 /*****************************************************************************/
 
+#define ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC ((gint64) 20000)
+
+/* When a ObjStateData becomes a "zombie", we aim to delete it from platform
+ * on the next commit (until it disappears from platform). But we might have
+ * a bug, so that we fail to delete the platform (for example, related to
+ * IPv6 multicast routes). We thus rate limit how often we try to do this,
+ * before giving up. */
+#define ZOMBIE_COUNT_START 5
+
+/*****************************************************************************/
+
 G_STATIC_ASSERT(NM_ACD_TIMEOUT_RFC5227_MSEC == N_ACD_TIMEOUT_RFC5227);
 
 #define ACD_SUPPORTED_ETH_ALEN                  ETH_ALEN
@@ -97,6 +108,57 @@ typedef struct {
 
 G_STATIC_ASSERT(G_STRUCT_OFFSET(AcdData, info.addr) == 0);
 
+typedef struct {
+    const NMPObject *obj;
+
+    CList os_lst;
+
+    /* If we have a timeout pending, we link the instance to
+     * self->priv.p->obj_state_temporary_not_available_lst_head. */
+    CList os_temporary_not_available_lst;
+
+    /* If a NMPObject is no longer to be configured (but was configured
+     * during a previous commit), then we need to remember it so that the
+     * next commit can delete the address/route in kernel. It becomes a zombie. */
+    CList os_zombie_lst;
+
+    /* We might want to configure "obj" in platform, but it's currently not possible.
+     * For example, certain IPv6 routes can only be added after the IPv6 address
+     * becomes non-tentative (*sigh*). In such a case, we need to remember that, and
+     * retry later. If this timestamp is set to a non-zero value, then it means
+     * we tried to configure the obj (at that timestamp) and failed, but we are
+     * waiting to retry.
+     *
+     * See also self->priv.p->obj_state_temporary_not_available_lst_head
+     * and self->priv.p->obj_state_temporary_not_available_timeout_source. */
+    gint64 os_temporary_not_available_timestamp_msec;
+
+    /* When the obj is a zombie (that means, it was previously configured by NML3Cfg, but
+     * now no longer), it needs to be deleted from platform. This ratelimits the time
+     * how often we try that. When the counter reaches zero, we forget about it. */
+    guint8 os_zombie_count;
+
+    /* whether obj is currently in the platform cache or not.
+     * Since "obj" is the NMPObject from the merged NML3ConfigData,
+     * the object in platform has the same ID (but may otherwise not
+     * be identical). */
+    bool os_in_platform : 1;
+
+    /* whether we ever saw the object in platform. */
+    bool os_was_in_platform : 1;
+
+    /* Indicates whether NetworkManager actively tried to configure the object
+     * in platform once. */
+    bool os_nm_configured : 1;
+
+    /* This flag is only used temporarily to do a bulk update and
+     * clear all the ones that are no longer in used. */
+    bool os_dirty : 1;
+    bool os_tna_dirty : 1;
+} ObjStateData;
+
+G_STATIC_ASSERT(G_STRUCT_OFFSET(ObjStateData, obj) == 0);
+
 struct _NML3CfgCommitTypeHandle {
     CList             commit_type_lst;
     NML3CfgCommitType commit_type;
@@ -158,9 +220,11 @@ typedef struct _NML3CfgPrivate {
 
     CList commit_type_lst_head;
 
-    GHashTable *routes_temporary_not_available_hash;
+    GHashTable *obj_state_hash;
 
-    GHashTable *externally_removed_objs_hash;
+    CList obj_state_lst_head;
+    CList obj_state_zombie_lst_head;
+    CList obj_state_temporary_not_available_lst_head;
 
     GHashTable *acd_ipv4_addresses_on_link;
 
@@ -182,39 +246,7 @@ typedef struct _NML3CfgPrivate {
 
     guint64 pseudo_timestamp_counter;
 
-    union {
-        struct {
-            guint externally_removed_objs_cnt_addresses_6;
-            guint externally_removed_objs_cnt_addresses_4;
-        };
-        guint externally_removed_objs_cnt_addresses_x[2];
-    };
-
-    union {
-        struct {
-            guint externally_removed_objs_cnt_routes_6;
-            guint externally_removed_objs_cnt_routes_4;
-        };
-        guint externally_removed_objs_cnt_routes_x[2];
-    };
-
-    union {
-        struct {
-            GPtrArray *last_addresses_6;
-            GPtrArray *last_addresses_4;
-        };
-        GPtrArray *last_addresses_x[2];
-    };
-
-    union {
-        struct {
-            GPtrArray *last_routes_6;
-            GPtrArray *last_routes_4;
-        };
-        GPtrArray *last_routes_x[2];
-    };
-
-    guint routes_temporary_not_available_id;
+    GSource *obj_state_temporary_not_available_timeout_source;
 
     gint8 commit_reentrant_count;
 
@@ -554,157 +586,436 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
 
 /*****************************************************************************/
 
-static guint *
-_l3cfg_externally_removed_objs_counter(NML3Cfg *self, NMPObjectType obj_type)
+#define nm_assert_obj_state(self, obj_state)                                                       \
+    G_STMT_START                                                                                   \
+    {                                                                                              \
+        const NML3Cfg *     _self      = (self);                                                   \
+        const ObjStateData *_obj_state = (obj_state);                                              \
+                                                                                                   \
+        nm_assert(_obj_state);                                                                     \
+        nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(_obj_state->obj),                                  \
+                            NMP_OBJECT_TYPE_IP4_ADDRESS,                                           \
+                            NMP_OBJECT_TYPE_IP6_ADDRESS,                                           \
+                            NMP_OBJECT_TYPE_IP4_ROUTE,                                             \
+                            NMP_OBJECT_TYPE_IP6_ROUTE));                                           \
+        nm_assert(!_obj_state->os_in_platform || _obj_state->os_was_in_platform);                  \
+        nm_assert((_obj_state->os_temporary_not_available_timestamp_msec == 0)                     \
+                  == c_list_is_empty(&_obj_state->os_temporary_not_available_lst));                \
+        if (_self) {                                                                               \
+            nm_assert(_self->priv.p->combined_l3cd_commited);                                      \
+                                                                                                   \
+            if (NM_MORE_ASSERTS > 5) {                                                             \
+                nm_assert(                                                                         \
+                    c_list_contains(&_self->priv.p->obj_state_lst_head, &_obj_state->os_lst));     \
+                nm_assert(                                                                         \
+                    (_obj_state->os_temporary_not_available_timestamp_msec == 0)                   \
+                    || c_list_contains(&_self->priv.p->obj_state_temporary_not_available_lst_head, \
+                                       &_obj_state->os_temporary_not_available_lst));              \
+                nm_assert(_obj_state->os_in_platform                                               \
+                          == (!!nm_platform_lookup_entry(_self->priv.platform,                     \
+                                                         NMP_CACHE_ID_TYPE_OBJECT_TYPE,            \
+                                                         _obj_state->obj)));                       \
+                nm_assert(                                                                         \
+                    c_list_is_empty(&obj_state->os_zombie_lst)                                     \
+                        ? (_obj_state->obj                                                         \
+                           == nm_dedup_multi_entry_get_obj(                                        \
+                               nm_l3_config_data_lookup_obj(_self->priv.p->combined_l3cd_commited, \
+                                                            _obj_state->obj)))                     \
+                        : (!nm_l3_config_data_lookup_obj(_self->priv.p->combined_l3cd_commited,    \
+                                                         _obj_state->obj)));                       \
+            }                                                                                      \
+        }                                                                                          \
+    }                                                                                              \
+    G_STMT_END
+
+static gboolean
+_obj_state_data_get_assume_config_once(const ObjStateData *obj_state)
 {
-    switch (obj_type) {
-    case NMP_OBJECT_TYPE_IP4_ADDRESS:
-        return &self->priv.p->externally_removed_objs_cnt_addresses_4;
-    case NMP_OBJECT_TYPE_IP6_ADDRESS:
-        return &self->priv.p->externally_removed_objs_cnt_addresses_6;
-    case NMP_OBJECT_TYPE_IP4_ROUTE:
-        return &self->priv.p->externally_removed_objs_cnt_routes_4;
-    case NMP_OBJECT_TYPE_IP6_ROUTE:
-        return &self->priv.p->externally_removed_objs_cnt_routes_6;
-    default:
-        return nm_assert_unreachable_val(NULL);
-    }
+    nm_assert_obj_state(NULL, obj_state);
+
+    return nmp_object_get_assume_config_once(obj_state->obj);
+}
+
+static ObjStateData *
+_obj_state_data_new(const NMPObject *obj, gboolean in_platform)
+{
+    ObjStateData *obj_state;
+
+    obj_state  = g_slice_new(ObjStateData);
+    *obj_state = (ObjStateData){
+        .obj                            = nmp_object_ref(obj),
+        .os_in_platform                 = in_platform,
+        .os_was_in_platform             = in_platform,
+        .os_nm_configured               = FALSE,
+        .os_dirty                       = FALSE,
+        .os_temporary_not_available_lst = C_LIST_INIT(obj_state->os_temporary_not_available_lst),
+        .os_zombie_lst                  = C_LIST_INIT(obj_state->os_zombie_lst),
+    };
+    return obj_state;
 }
 
 static void
-_l3cfg_externally_removed_objs_drop(NML3Cfg *self)
+_obj_state_data_free(gpointer data)
 {
-    nm_assert(NM_IS_L3CFG(self));
+    ObjStateData *obj_state = data;
 
-    self->priv.p->externally_removed_objs_cnt_addresses_4 = 0;
-    self->priv.p->externally_removed_objs_cnt_addresses_6 = 0;
-    self->priv.p->externally_removed_objs_cnt_routes_4    = 0;
-    self->priv.p->externally_removed_objs_cnt_routes_6    = 0;
-    if (nm_g_hash_table_size(self->priv.p->externally_removed_objs_hash) > 0)
-        _LOGD("externally-removed: untrack all");
-    nm_clear_pointer(&self->priv.p->externally_removed_objs_hash, g_hash_table_unref);
+    c_list_unlink_stale(&obj_state->os_lst);
+    c_list_unlink_stale(&obj_state->os_temporary_not_available_lst);
+    nmp_object_unref(obj_state->obj);
+    nm_g_slice_free(obj_state);
 }
 
-static void
-_l3cfg_externally_removed_objs_drop_unused(NML3Cfg *self)
+static const char *
+_obj_state_data_to_string(const ObjStateData *obj_state, char *buf, gsize buf_size)
 {
-    GHashTableIter   h_iter;
-    const NMPObject *obj;
-    char             sbuf[sizeof(_nm_utils_to_string_buffer)];
+    const char *buf0     = buf;
+    gint64      now_msec = 0;
+
+    nm_assert(buf);
+    nm_assert(buf_size > 0);
+    nm_assert_obj_state(NULL, obj_state);
+
+    nm_strbuf_append(&buf,
+                     &buf_size,
+                     "[" NM_HASH_OBFUSCATE_PTR_FMT ", %s, ",
+                     NM_HASH_OBFUSCATE_PTR(obj_state),
+                     NMP_OBJECT_GET_CLASS(obj_state->obj)->obj_type_name);
+
+    nmp_object_to_string(obj_state->obj, NMP_OBJECT_TO_STRING_PUBLIC, buf, buf_size);
+    nm_strbuf_seek_end(&buf, &buf_size);
+    nm_strbuf_append_c(&buf, &buf_size, ']');
+
+    if (!c_list_is_empty(&obj_state->os_zombie_lst))
+        nm_strbuf_append(&buf, &buf_size, ", zombie[%u]", obj_state->os_zombie_count);
+
+    if (obj_state->os_nm_configured)
+        nm_strbuf_append_str(&buf, &buf_size, ", nm-configured");
+
+    if (obj_state->os_in_platform) {
+        nm_assert(obj_state->os_was_in_platform);
+        nm_strbuf_append_str(&buf, &buf_size, ", in-platform");
+    } else if (obj_state->os_was_in_platform)
+        nm_strbuf_append_str(&buf, &buf_size, ", was-in-platform");
+
+    if (obj_state->os_temporary_not_available_timestamp_msec > 0) {
+        nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
+        nm_strbuf_append(
+            &buf,
+            &buf_size,
+            ", temporary-not-available-since=%" G_GINT64_FORMAT ".%03d",
+            (now_msec - obj_state->os_temporary_not_available_timestamp_msec) / 1000,
+            (int) ((now_msec - obj_state->os_temporary_not_available_timestamp_msec) % 1000));
+    }
+
+    return buf0;
+}
+
+static gboolean
+_obj_state_data_update(ObjStateData *obj_state, const NMPObject *obj)
+{
+    gboolean changed = FALSE;
+
+    nm_assert_obj_state(NULL, obj_state);
+    nm_assert(obj);
+    nm_assert(nmp_object_id_equal(obj_state->obj, obj));
+
+    obj_state->os_dirty = FALSE;
+
+    if (obj_state->obj != obj) {
+        nm_auto_nmpobj const NMPObject *obj_old = NULL;
+
+        if (!nmp_object_equal(obj_state->obj, obj))
+            changed = TRUE;
+        obj_old        = g_steal_pointer(&obj_state->obj);
+        obj_state->obj = nmp_object_ref(obj);
+    }
+
+    if (!c_list_is_empty(&obj_state->os_zombie_lst)) {
+        c_list_unlink(&obj_state->os_zombie_lst);
+        changed = TRUE;
+    }
+
+    return changed;
+}
+
+/*****************************************************************************/
+
+static void
+_obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboolean in_platform)
+{
+    char          sbuf[sizeof(_nm_utils_to_string_buffer)];
+    ObjStateData *obj_state;
 
     nm_assert(NM_IS_L3CFG(self));
+    nm_assert_is_bool(in_platform);
 
-    if (!self->priv.p->externally_removed_objs_hash)
+    nm_assert(
+        in_platform
+        == (!!nm_platform_lookup_entry(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj)));
+
+    obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
+    if (!obj_state)
         return;
 
-    if (!self->priv.p->combined_l3cd_commited) {
-        _l3cfg_externally_removed_objs_drop(self);
+    if (obj_state->os_in_platform == (!!in_platform))
+        goto out;
+
+    if (!in_platform && !c_list_is_empty(&obj_state->os_zombie_lst)) {
+        /* this is a zombie. We can forget about it.*/
+        obj_state->os_in_platform = FALSE;
+        c_list_unlink(&obj_state->os_zombie_lst);
+        _LOGD("obj-state: zombie gone (untrack): %s",
+              _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+        g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
         return;
     }
 
-    g_hash_table_iter_init(&h_iter, self->priv.p->externally_removed_objs_hash);
-    while (g_hash_table_iter_next(&h_iter, (gpointer *) &obj, NULL)) {
-        if (!nm_l3_config_data_lookup_obj(self->priv.p->combined_l3cd_commited, obj)) {
-            /* The object is no longer tracked in the configuration.
-             * The externally_removed_objs_hash is to prevent adding entires that were
-             * removed externally, so if we don't plan to add the entry, we no longer need to track
-             * it. */
-            _LOGD("externally-removed: untrack %s",
-                  nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-            (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj))))--;
+    nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
+
+    if (in_platform) {
+        obj_state->os_in_platform     = TRUE;
+        obj_state->os_was_in_platform = TRUE;
+        _LOGD("obj-state: appeared in platform: %s",
+              _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+        goto out;
+    }
+
+    obj_state->os_in_platform = FALSE;
+    _LOGD("obj-state: remove from platform: %s",
+          _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+
+out:
+    nm_assert_obj_state(self, obj_state);
+}
+
+static void
+_obj_states_update_all(NML3Cfg *self)
+{
+    static const NMPObjectType obj_types[] = {
+        NMP_OBJECT_TYPE_IP4_ADDRESS,
+        NMP_OBJECT_TYPE_IP6_ADDRESS,
+        NMP_OBJECT_TYPE_IP4_ROUTE,
+        NMP_OBJECT_TYPE_IP6_ROUTE,
+    };
+    char          sbuf[sizeof(_nm_utils_to_string_buffer)];
+    ObjStateData *obj_state;
+    int           i;
+    gboolean      any_dirty = FALSE;
+
+    nm_assert(NM_IS_L3CFG(self));
+
+    c_list_for_each_entry (obj_state, &self->priv.p->obj_state_lst_head, os_lst) {
+        if (!c_list_is_empty(&obj_state->os_zombie_lst)) {
+            /* we can ignore zombies. */
+            continue;
+        }
+        any_dirty           = TRUE;
+        obj_state->os_dirty = TRUE;
+    }
+
+    for (i = 0; i < (int) G_N_ELEMENTS(obj_types); i++) {
+        const NMPObjectType obj_type = obj_types[i];
+        NMDedupMultiIter    o_iter;
+        const NMPObject *   obj;
+
+        if (!self->priv.p->combined_l3cd_commited)
+            continue;
+
+        nm_l3_config_data_iter_obj_for_each (&o_iter,
+                                             self->priv.p->combined_l3cd_commited,
+                                             &obj,
+                                             obj_type) {
+            obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
+            if (!obj_state) {
+                obj_state =
+                    _obj_state_data_new(obj,
+                                        !!nm_platform_lookup_entry(self->priv.platform,
+                                                                   NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+                                                                   obj));
+                c_list_link_tail(&self->priv.p->obj_state_lst_head, &obj_state->os_lst);
+                g_hash_table_add(self->priv.p->obj_state_hash, obj_state);
+                _LOGD("obj-state: track: %s",
+                      _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+                nm_assert_obj_state(self, obj_state);
+                continue;
+            }
+
+            if (_obj_state_data_update(obj_state, obj)) {
+                _LOGD("obj-state: update: %s",
+                      _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+            }
+
+            nm_assert_obj_state(self, obj_state);
+        }
+    }
+
+    if (any_dirty) {
+        GHashTableIter h_iter;
+
+        g_hash_table_iter_init(&h_iter, self->priv.p->obj_state_hash);
+        while (g_hash_table_iter_next(&h_iter, (gpointer *) &obj_state, NULL)) {
+            if (!c_list_is_empty(&obj_state->os_zombie_lst))
+                continue;
+            if (!obj_state->os_dirty)
+                continue;
+
+            if (obj_state->os_in_platform && obj_state->os_nm_configured) {
+                c_list_link_tail(&self->priv.p->obj_state_zombie_lst_head,
+                                 &obj_state->os_zombie_lst);
+                obj_state->os_zombie_count = ZOMBIE_COUNT_START;
+                _LOGD("obj-state: now zombie: %s",
+                      _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+                continue;
+            }
+
+            _LOGD("obj-state: untrack: %s",
+                  _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
             g_hash_table_iter_remove(&h_iter);
         }
     }
 }
 
-static void
-_l3cfg_externally_removed_objs_track(NML3Cfg *self, const NMPObject *obj, gboolean is_removed)
-{
-    char sbuf[1000];
-
-    nm_assert(NM_IS_L3CFG(self));
-
-    if (!self->priv.p->combined_l3cd_commited)
-        return;
-
-    if (!is_removed) {
-        /* the object is still (or again) present. It no longer gets hidden. */
-        if (self->priv.p->externally_removed_objs_hash) {
-            const NMPObject *obj2;
-            gpointer         x_val;
-
-            if (g_hash_table_steal_extended(self->priv.p->externally_removed_objs_hash,
-                                            obj,
-                                            (gpointer *) &obj2,
-                                            &x_val)) {
-                (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj2))))--;
-                _LOGD("externally-removed: untrack %s",
-                      nmp_object_to_string(obj2, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-                nmp_object_unref(obj2);
-            }
-        }
-        return;
-    }
-
-    if (!nm_l3_config_data_lookup_obj(self->priv.p->combined_l3cd_commited, obj)) {
-        /* we don't care about this object, so there is nothing to hide hide */
-        return;
-    }
-
-    if (G_UNLIKELY(!self->priv.p->externally_removed_objs_hash)) {
-        self->priv.p->externally_removed_objs_hash =
-            g_hash_table_new_full((GHashFunc) nmp_object_id_hash,
-                                  (GEqualFunc) nmp_object_id_equal,
-                                  (GDestroyNotify) nmp_object_unref,
-                                  NULL);
-    }
-
-    if (g_hash_table_add(self->priv.p->externally_removed_objs_hash,
-                         (gpointer) nmp_object_ref(obj))) {
-        (*(_l3cfg_externally_removed_objs_counter(self, NMP_OBJECT_GET_TYPE(obj))))++;
-        _LOGD("externally-removed: track %s",
-              nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-    }
-}
-
-static void
-_l3cfg_externally_removed_objs_pickup(NML3Cfg *self, int addr_family)
-{
-    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMDedupMultiIter iter;
-    const NMPObject *obj;
-
-    if (!self->priv.p->combined_l3cd_commited)
-        return;
-
-    nm_l3_config_data_iter_obj_for_each (&iter,
-                                         self->priv.p->combined_l3cd_commited,
-                                         &obj,
-                                         NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
-        if (!nm_platform_lookup_entry(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj))
-            _l3cfg_externally_removed_objs_track(self, obj, TRUE);
-    }
-    nm_l3_config_data_iter_obj_for_each (&iter,
-                                         self->priv.p->combined_l3cd_commited,
-                                         &obj,
-                                         NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
-        if (!nm_platform_lookup_entry(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj))
-            _l3cfg_externally_removed_objs_track(self, obj, TRUE);
-    }
-}
+typedef struct {
+    NML3Cfg *         self;
+    NML3CfgCommitType commit_type;
+} ObjStatesSyncFilterData;
 
 static gboolean
-_l3cfg_externally_removed_objs_filter(/* const NMDedupMultiObj * */ gconstpointer o,
-                                      gpointer                                    user_data)
+_obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer user_data)
 {
-    const NMPObject *obj                          = o;
-    GHashTable *     externally_removed_objs_hash = user_data;
+    char                           sbuf[sizeof(_nm_utils_to_string_buffer)];
+    const NMPObject *              obj              = o;
+    const ObjStatesSyncFilterData *sync_filter_data = user_data;
+    NMPObjectType                  obj_type;
+    ObjStateData *                 obj_state;
 
-    if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ADDRESS
+    nm_assert(sync_filter_data);
+    nm_assert(NM_IS_L3CFG(sync_filter_data->self));
+
+    obj_type = NMP_OBJECT_GET_TYPE(obj);
+
+    if (obj_type == NMP_OBJECT_TYPE_IP4_ADDRESS
         && NMP_OBJECT_CAST_IP4_ADDRESS(obj)->a_acd_not_ready)
         return FALSE;
 
-    return !nm_g_hash_table_contains(externally_removed_objs_hash, obj);
+    obj_state = g_hash_table_lookup(sync_filter_data->self->priv.p->obj_state_hash, &obj);
+
+    nm_assert_obj_state(sync_filter_data->self, obj_state);
+    nm_assert(obj_state->obj == obj);
+    nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
+
+    if (!obj_state->os_nm_configured) {
+        NML3Cfg *self;
+
+        if (sync_filter_data->commit_type == NM_L3_CFG_COMMIT_TYPE_ASSUME
+            && !_obj_state_data_get_assume_config_once(obj_state))
+            return FALSE;
+
+        obj_state->os_nm_configured = TRUE;
+
+        self = sync_filter_data->self;
+        _LOGD("obj-state: configure-first-time: %s",
+              _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+        return TRUE;
+    }
+
+    if (obj_state->os_temporary_not_available_timestamp_msec > 0) {
+        /* we currently try to configure this address (but failed earlier).
+         * Definitely retry. */
+        return TRUE;
+    }
+
+    if (!obj_state->os_in_platform
+        && sync_filter_data->commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY)
+        return FALSE;
+
+    return TRUE;
+}
+
+static void
+_obj_state_zombie_lst_get_prune_lists(NML3Cfg *   self,
+                                      int         addr_family,
+                                      GPtrArray **out_addresses_prune,
+                                      GPtrArray **out_routes_prune)
+{
+    const int           IS_IPv4          = NM_IS_IPv4(addr_family);
+    const NMPObjectType obj_type_route   = NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4);
+    const NMPObjectType obj_type_address = NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4);
+    char                sbuf[sizeof(_nm_utils_to_string_buffer)];
+    ObjStateData *      obj_state;
+    ObjStateData *      obj_state_safe;
+
+    nm_assert(NM_IS_L3CFG(self));
+    nm_assert(out_addresses_prune && !*out_addresses_prune);
+    nm_assert(out_routes_prune && !*out_routes_prune);
+
+    c_list_for_each_entry_safe (obj_state,
+                                obj_state_safe,
+                                &self->priv.p->obj_state_zombie_lst_head,
+                                os_zombie_lst) {
+        NMPObjectType obj_type;
+        GPtrArray **  p_a;
+
+        nm_assert_obj_state(self, obj_state);
+        nm_assert(obj_state->os_zombie_count > 0);
+
+        obj_type = NMP_OBJECT_GET_TYPE(obj_state->obj);
+
+        if (obj_type == obj_type_route)
+            p_a = out_routes_prune;
+        else if (obj_type == obj_type_address)
+            p_a = out_addresses_prune;
+        else
+            continue;
+
+        if (!*p_a)
+            *p_a = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+
+        g_ptr_array_add(*p_a, (gpointer) nmp_object_ref(obj_state->obj));
+
+        if (--obj_state->os_zombie_count == 0) {
+            _LOGD("obj-state: prune zombie (untrack): %s",
+                  _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+            g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
+            continue;
+        }
+        _LOGD("obj-state: prune zombie: %s",
+              _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+    }
+}
+
+static void
+_obj_state_zombie_lst_prune_all(NML3Cfg *self, int addr_family)
+{
+    char          sbuf[sizeof(_nm_utils_to_string_buffer)];
+    ObjStateData *obj_state;
+    ObjStateData *obj_state_safe;
+
+    /* we call this during reapply. Then we delete all the routes/addresses
+     * that are configured, and not only the zombies.
+     *
+     * Still, we need to adjust the os_zombie_count and assume that we
+     * are going to drop them. */
+
+    c_list_for_each_entry_safe (obj_state,
+                                obj_state_safe,
+                                &self->priv.p->obj_state_zombie_lst_head,
+                                os_zombie_lst) {
+        nm_assert_obj_state(self, obj_state);
+        nm_assert(obj_state->os_zombie_count > 0);
+
+        if (NMP_OBJECT_GET_ADDR_FAMILY(obj_state->obj) != addr_family)
+            continue;
+
+        if (--obj_state->os_zombie_count == 0) {
+            _LOGD("obj-state: zombie pruned during reapply (untrack): %s",
+                  _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+            g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
+            continue;
+        }
+        _LOGD("obj-state: zombie pruned during reapply: %s",
+              _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+    }
 }
 
 /*****************************************************************************/
@@ -846,7 +1157,7 @@ _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
     case NMP_OBJECT_TYPE_IP6_ADDRESS:
     case NMP_OBJECT_TYPE_IP4_ROUTE:
     case NMP_OBJECT_TYPE_IP6_ROUTE:
-        _l3cfg_externally_removed_objs_track(self, obj, change_type == NM_PLATFORM_SIGNAL_REMOVED);
+        _obj_states_externally_removed_track(self, obj, change_type != NM_PLATFORM_SIGNAL_REMOVED);
     default:
         break;
     }
@@ -3105,6 +3416,8 @@ out:
             nm_l3_config_data_ref(self->priv.p->combined_l3cd_merged);
         commited_changed = TRUE;
 
+        _obj_states_update_all(self);
+
         _nm_l3cfg_emit_signal_notify_l3cd_changed(self,
                                                   l3cd_commited_old,
                                                   self->priv.p->combined_l3cd_commited,
@@ -3140,75 +3453,45 @@ out:
 
 /*****************************************************************************/
 
-typedef struct {
-    const NMPObject *obj;
-    gint64           timestamp_msec;
-    bool             dirty;
-} RoutesTemporaryNotAvailableData;
-
-static void
-_routes_temporary_not_available_data_free(gpointer user_data)
-{
-    RoutesTemporaryNotAvailableData *data = user_data;
-
-    nmp_object_unref(data->obj);
-    nm_g_slice_free(data);
-}
-
-#define ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC ((gint64) 20000)
-
 static gboolean
 _routes_temporary_not_available_timeout(gpointer user_data)
 {
-    RoutesTemporaryNotAvailableData *data;
-    NML3Cfg *                        self = NM_L3CFG(user_data);
-    GHashTableIter                   iter;
-    gint64                           expiry_threshold_msec;
-    gboolean                         any_expired = FALSE;
-    gint64                           now_msec;
-    gint64                           oldest_msec;
+    NML3Cfg *     self = NM_L3CFG(user_data);
+    ObjStateData *obj_state;
+    gint64        now_msec;
+    gint64        expiry_msec;
 
-    self->priv.p->routes_temporary_not_available_id = 0;
+    nm_clear_g_source_inst(&self->priv.p->obj_state_temporary_not_available_timeout_source);
 
-    if (!self->priv.p->routes_temporary_not_available_hash)
-        return G_SOURCE_REMOVE;
+    obj_state = c_list_first_entry(&self->priv.p->obj_state_temporary_not_available_lst_head,
+                                   ObjStateData,
+                                   os_temporary_not_available_lst);
 
-    /* we check the timeouts again. That is, because we allow to remove
-     * entries from routes_temporary_not_available_hash, without rescheduling
-     * out timeouts. */
+    if (!obj_state)
+        return G_SOURCE_CONTINUE;
 
     now_msec = nm_utils_get_monotonic_timestamp_msec();
 
-    expiry_threshold_msec = now_msec - ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC;
-    oldest_msec           = G_MAXINT64;
+    expiry_msec = obj_state->os_temporary_not_available_timestamp_msec
+                  + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC;
 
-    g_hash_table_iter_init(&iter, self->priv.p->routes_temporary_not_available_hash);
-    while (g_hash_table_iter_next(&iter, (gpointer *) &data, NULL)) {
-        if (data->timestamp_msec >= expiry_threshold_msec) {
-            any_expired = TRUE;
-            break;
-        }
-        if (data->timestamp_msec < oldest_msec)
-            oldest_msec = data->timestamp_msec;
+    if (now_msec < expiry_msec) {
+        /* the timeout is not yet reached. Restart the timer... */
+        self->priv.p->obj_state_temporary_not_available_timeout_source =
+            nm_g_timeout_add_source(expiry_msec - now_msec,
+                                    _routes_temporary_not_available_timeout,
+                                    self);
+        return G_SOURCE_CONTINUE;
     }
 
-    if (any_expired) {
-        /* a route expired. We emit a signal, but we don't schedule it again. That will
-         * only happen if the user calls nm_l3cfg_commit() again. */
-        _nm_l3cfg_emit_signal_notify_simple(
-            self,
-            NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED);
-        return G_SOURCE_REMOVE;
-    }
-
-    if (oldest_msec != G_MAXINT64) {
-        /* we have a timeout still. Reschedule. */
-        self->priv.p->routes_temporary_not_available_id =
-            g_timeout_add(oldest_msec + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC - now_msec,
-                          _routes_temporary_not_available_timeout,
-                          self);
-    }
-    return G_SOURCE_REMOVE;
+    /* One (or several) routes expired. We emit a signal, but we don't schedule it again.
+     * We expect the callers to commit again, which will one last time try to configure
+     * the route. If that again fails, we detect the timeout, log a warning and don't
+     * track the object as not temporary-not-available anymore. */
+    _nm_l3cfg_emit_signal_notify_simple(
+        self,
+        NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED);
+    return G_SOURCE_CONTINUE;
 }
 
 static gboolean
@@ -3216,13 +3499,12 @@ _routes_temporary_not_available_update(NML3Cfg *  self,
                                        int        addr_family,
                                        GPtrArray *routes_temporary_not_available_arr)
 {
-    RoutesTemporaryNotAvailableData *data;
-    GHashTableIter                   iter;
-    gint64                           oldest_msec;
-    gint64                           now_msec;
-    gboolean                         prune_all = FALSE;
-    gboolean                         success   = TRUE;
-    guint                            i;
+    ObjStateData *obj_state;
+    ObjStateData *obj_state_safe;
+    gint64        now_msec;
+    gboolean      prune_all = FALSE;
+    gboolean      success   = TRUE;
+    guint         i;
 
     now_msec = nm_utils_get_monotonic_timestamp_msec();
 
@@ -3231,36 +3513,43 @@ _routes_temporary_not_available_update(NML3Cfg *  self,
         goto out_prune;
     }
 
-    if (self->priv.p->routes_temporary_not_available_hash) {
-        g_hash_table_iter_init(&iter, self->priv.p->routes_temporary_not_available_hash);
-        while (g_hash_table_iter_next(&iter, (gpointer *) &data, NULL)) {
-            if (NMP_OBJECT_GET_ADDR_FAMILY(data->obj) == addr_family)
-                data->dirty = TRUE;
-        }
-    } else {
-        self->priv.p->routes_temporary_not_available_hash =
-            g_hash_table_new_full(nmp_object_indirect_id_hash,
-                                  nmp_object_indirect_id_equal,
-                                  _routes_temporary_not_available_data_free,
-                                  NULL);
+    c_list_for_each_entry (obj_state,
+                           &self->priv.p->obj_state_temporary_not_available_lst_head,
+                           os_temporary_not_available_lst) {
+        nm_assert(obj_state->os_temporary_not_available_timestamp_msec > 0);
+        obj_state->os_tna_dirty = TRUE;
     }
 
     for (i = 0; i < routes_temporary_not_available_arr->len; i++) {
         const NMPObject *o = routes_temporary_not_available_arr->pdata[i];
-        char             sbuf[1024];
+        char             sbuf[sizeof(_nm_utils_to_string_buffer)];
 
         nm_assert(NMP_OBJECT_GET_TYPE(o) == NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
 
-        data = g_hash_table_lookup(self->priv.p->routes_temporary_not_available_hash, &o);
+        obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &o);
 
-        if (data) {
-            if (!data->dirty)
+        if (!obj_state) {
+            /* Hm? We don't track this object? Very odd, a bug? */
+            nm_assert_not_reached();
+            continue;
+        }
+
+        if (obj_state->os_temporary_not_available_timestamp_msec > 0) {
+            nm_assert(obj_state->os_temporary_not_available_timestamp_msec > 0
+                      && obj_state->os_temporary_not_available_timestamp_msec <= now_msec);
+
+            if (!obj_state->os_tna_dirty) {
+                /* Odd, this only can happen if routes_temporary_not_available_arr contains duplicates.
+                 * It should not. */
+                nm_assert_not_reached();
                 continue;
+            }
 
-            nm_assert(data->timestamp_msec > 0 && data->timestamp_msec <= now_msec);
-
-            if (now_msec > data->timestamp_msec + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC) {
-                /* timeout. Could not add this address. */
+            if (now_msec > obj_state->os_temporary_not_available_timestamp_msec
+                               + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC) {
+                /* Timeout. Could not add this address.
+                 *
+                 * For now, keep it obj_state->os_tna_dirty and prune it below. */
                 _LOGW("failure to add IPv%c route: %s",
                       nm_utils_addr_family_to_char(addr_family),
                       nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
@@ -3268,7 +3557,7 @@ _routes_temporary_not_available_update(NML3Cfg *  self,
                 continue;
             }
 
-            data->dirty = FALSE;
+            obj_state->os_tna_dirty = FALSE;
             continue;
         }
 
@@ -3276,41 +3565,34 @@ _routes_temporary_not_available_update(NML3Cfg *  self,
               nm_utils_addr_family_to_char(addr_family),
               nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
 
-        data  = g_slice_new(RoutesTemporaryNotAvailableData);
-        *data = (RoutesTemporaryNotAvailableData){
-            .obj            = nmp_object_ref(o),
-            .timestamp_msec = now_msec,
-            .dirty          = FALSE,
-        };
-        g_hash_table_add(self->priv.p->routes_temporary_not_available_hash, data);
+        obj_state->os_tna_dirty                              = FALSE;
+        obj_state->os_temporary_not_available_timestamp_msec = now_msec;
+        c_list_link_tail(&self->priv.p->obj_state_temporary_not_available_lst_head,
+                         &obj_state->os_temporary_not_available_lst);
     }
 
 out_prune:
-    oldest_msec = G_MAXINT64;
-
-    if (self->priv.p->routes_temporary_not_available_hash) {
-        g_hash_table_iter_init(&iter, self->priv.p->routes_temporary_not_available_hash);
-        while (g_hash_table_iter_next(&iter, (gpointer *) &data, NULL)) {
-            nm_assert(NMP_OBJECT_GET_ADDR_FAMILY(data->obj) == addr_family || !data->dirty);
-            if (!prune_all && !data->dirty) {
-                if (data->timestamp_msec < oldest_msec)
-                    oldest_msec = data->timestamp_msec;
-                continue;
-            }
-            g_hash_table_iter_remove(&iter);
+    c_list_for_each_entry_safe (obj_state,
+                                obj_state_safe,
+                                &self->priv.p->obj_state_temporary_not_available_lst_head,
+                                os_temporary_not_available_lst) {
+        if (prune_all || obj_state->os_tna_dirty) {
+            obj_state->os_temporary_not_available_timestamp_msec = 0;
+            c_list_unlink(&obj_state->os_temporary_not_available_lst);
         }
-        if (oldest_msec != G_MAXINT64)
-            nm_clear_pointer(&self->priv.p->routes_temporary_not_available_hash,
-                             g_hash_table_unref);
     }
 
-    nm_clear_g_source(&self->priv.p->routes_temporary_not_available_id);
-    if (oldest_msec != G_MAXINT64) {
-        nm_assert(oldest_msec + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC < now_msec);
-        self->priv.p->routes_temporary_not_available_id =
-            g_timeout_add(oldest_msec + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC - now_msec,
-                          _routes_temporary_not_available_timeout,
-                          self);
+    nm_clear_g_source_inst(&self->priv.p->obj_state_temporary_not_available_timeout_source);
+
+    obj_state = c_list_first_entry(&self->priv.p->obj_state_temporary_not_available_lst_head,
+                                   ObjStateData,
+                                   os_temporary_not_available_lst);
+    if (obj_state) {
+        self->priv.p->obj_state_temporary_not_available_timeout_source =
+            nm_g_timeout_add_source((obj_state->os_temporary_not_available_timestamp_msec
+                                     + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC - now_msec),
+                                    _routes_temporary_not_available_timeout,
+                                    self);
     }
 
     return success;
@@ -3348,52 +3630,24 @@ _l3_commit_one(NML3Cfg *             self,
           nm_utils_addr_family_to_char(addr_family),
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
 
-    if (changed_combined_l3cd) {
-        /* our combined configuration changed. We may track entries in externally_removed_objs_hash,
-         * which are not longer to be considered by our configuration. We need to forget about them. */
-        _l3cfg_externally_removed_objs_drop_unused(self);
-    }
-
-    if (commit_type == NM_L3_CFG_COMMIT_TYPE_ASSUME) {
-        /* we need to artificially pre-populate the externally remove hash. */
-        _l3cfg_externally_removed_objs_pickup(self, addr_family);
-    }
-
     if (self->priv.p->combined_l3cd_commited) {
-        GHashTable *                   externally_removed_objs_hash;
-        NMDedupMultiFcnSelectPredicate predicate;
-        const NMDedupMultiHeadEntry *  head_entry;
+        const NMDedupMultiHeadEntry * head_entry;
+        const ObjStatesSyncFilterData sync_filter_data = {
+            .self        = self,
+            .commit_type = commit_type,
+        };
 
-        if (commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
-            && self->priv.p->externally_removed_objs_cnt_addresses_x[IS_IPv4] > 0) {
-            predicate                    = _l3cfg_externally_removed_objs_filter;
-            externally_removed_objs_hash = self->priv.p->externally_removed_objs_hash;
-        } else {
-            if (IS_IPv4)
-                predicate = _l3cfg_externally_removed_objs_filter;
-            else
-                predicate = NULL;
-            externally_removed_objs_hash = NULL;
-        }
         head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
                                                    NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
         addresses  = nm_dedup_multi_objs_to_ptr_array_head(head_entry,
-                                                          predicate,
-                                                          externally_removed_objs_hash);
+                                                          _obj_states_sync_filter,
+                                                          (gpointer) &sync_filter_data);
 
-        if (commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
-            && self->priv.p->externally_removed_objs_cnt_routes_x[IS_IPv4] > 0) {
-            predicate                    = _l3cfg_externally_removed_objs_filter;
-            externally_removed_objs_hash = self->priv.p->externally_removed_objs_hash;
-        } else {
-            predicate                    = NULL;
-            externally_removed_objs_hash = NULL;
-        }
         head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
                                                    NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4));
         routes     = nm_dedup_multi_objs_to_ptr_array_head(head_entry,
-                                                       predicate,
-                                                       externally_removed_objs_hash);
+                                                       _obj_states_sync_filter,
+                                                       (gpointer) &sync_filter_data);
 
         route_table_sync =
             nm_l3_config_data_get_route_table_sync(self->priv.p->combined_l3cd_commited,
@@ -3412,13 +3666,9 @@ _l3_commit_one(NML3Cfg *             self,
                                                            addr_family,
                                                            self->priv.ifindex,
                                                            route_table_sync);
-    } else if (commit_type == NM_L3_CFG_COMMIT_TYPE_UPDATE) {
-        addresses_prune = nm_g_ptr_array_ref(self->priv.p->last_addresses_x[IS_IPv4]);
-        routes_prune    = nm_g_ptr_array_ref(self->priv.p->last_routes_x[IS_IPv4]);
-    }
-
-    nm_g_ptr_array_set(&self->priv.p->last_addresses_x[IS_IPv4], addresses);
-    nm_g_ptr_array_set(&self->priv.p->last_routes_x[IS_IPv4], routes);
+        _obj_state_zombie_lst_prune_all(self, addr_family);
+    } else
+        _obj_state_zombie_lst_get_prune_lists(self, addr_family, &addresses_prune, &routes_prune);
 
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ip6_privacy(). */
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ndisc_*(). */
@@ -3503,9 +3753,6 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     self->priv.p->commit_reentrant_count++;
 
     nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
-
-    if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY)
-        _l3cfg_externally_removed_objs_drop(self);
 
     _l3cfg_update_combined_config(self,
                                   TRUE,
@@ -3792,6 +4039,14 @@ nm_l3cfg_init(NML3Cfg *self)
     c_list_init(&self->priv.p->acd_lst_head);
     c_list_init(&self->priv.p->acd_event_notify_lst_head);
     c_list_init(&self->priv.p->commit_type_lst_head);
+    c_list_init(&self->priv.p->obj_state_lst_head);
+    c_list_init(&self->priv.p->obj_state_temporary_not_available_lst_head);
+    c_list_init(&self->priv.p->obj_state_zombie_lst_head);
+
+    self->priv.p->obj_state_hash = g_hash_table_new_full(nmp_object_indirect_id_hash,
+                                                         nmp_object_indirect_id_equal,
+                                                         _obj_state_data_free,
+                                                         NULL);
 }
 
 static void
@@ -3846,15 +4101,12 @@ finalize(GObject *object)
     nm_clear_g_source_inst(&self->priv.p->nacd_source);
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
 
-    nm_clear_pointer(&self->priv.p->last_addresses_4, g_ptr_array_unref);
-    nm_clear_pointer(&self->priv.p->last_addresses_6, g_ptr_array_unref);
-    nm_clear_pointer(&self->priv.p->last_routes_4, g_ptr_array_unref);
-    nm_clear_pointer(&self->priv.p->last_routes_6, g_ptr_array_unref);
+    nm_clear_g_source_inst(&self->priv.p->obj_state_temporary_not_available_timeout_source);
 
-    nm_clear_g_source(&self->priv.p->routes_temporary_not_available_id);
-    nm_clear_pointer(&self->priv.p->routes_temporary_not_available_hash, g_hash_table_unref);
-
-    nm_clear_pointer(&self->priv.p->externally_removed_objs_hash, g_hash_table_unref);
+    nm_clear_pointer(&self->priv.p->obj_state_hash, g_hash_table_destroy);
+    nm_assert(c_list_is_empty(&self->priv.p->obj_state_lst_head));
+    nm_assert(c_list_is_empty(&self->priv.p->obj_state_temporary_not_available_lst_head));
+    nm_assert(c_list_is_empty(&self->priv.p->obj_state_zombie_lst_head));
 
     g_clear_object(&self->priv.netns);
     g_clear_object(&self->priv.platform);
