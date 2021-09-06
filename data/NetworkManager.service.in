@@ -8,6 +8,7 @@ Before=network.target @DISTRO_NETWORK_SERVICE@
 [Service]
 Type=dbus
 BusName=org.freedesktop.NetworkManager
+EnvironmentFile=-/etc/NetworkManager/NetworkManager.env
 ExecReload=/usr/bin/busctl call org.freedesktop.NetworkManager /org/freedesktop/NetworkManager org.freedesktop.NetworkManager Reload u 0
 #ExecReload=/bin/kill -HUP $MAINPID
 ExecStart=@sbindir@/NetworkManager --no-daemon
