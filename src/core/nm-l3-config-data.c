@@ -2761,9 +2761,9 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
 
             if (hook_result.ip4acd_not_ready != NM_OPTION_BOOL_DEFAULT && IS_IPv4
                 && (!!hook_result.ip4acd_not_ready)
-                       != ((const NMPlatformIP4Address *) a_src)->ip4acd_not_ready) {
+                       != ((const NMPlatformIP4Address *) a_src)->a_acd_not_ready) {
                 _ensure_a();
-                a.a4.ip4acd_not_ready = (!!hook_result.ip4acd_not_ready);
+                a.a4.a_acd_not_ready = (!!hook_result.ip4acd_not_ready);
             }
 
             nm_l3_config_data_add_address_full(self,

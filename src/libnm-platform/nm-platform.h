@@ -325,11 +325,6 @@ typedef enum {
                                                                                              \
     bool use_ip4_broadcast_address : 1;                                                      \
                                                                                              \
-    /* Whether the address is ready to be configured. By default, an address is, but this
-     * flag may indicate that the address is just for tracking purpose only, but the ACD
-     * state is not yet ready for the address to be configured. */    \
-    bool ip4acd_not_ready : 1;                                                               \
-                                                                                             \
     /* Whether the address is should be configured once during assume. This is a meta flag
      * that is not honored by NMPlatform (netlink code). Instead, it can be used by the upper
      * layers which use NMPlatformIPAddress to track addresses that should be configured. */   \
@@ -355,6 +350,11 @@ typedef struct {
  **/
 struct _NMPlatformIP4Address {
     __NMPlatformIPAddress_COMMON;
+
+    /* Whether the address is ready to be configured. By default, an address is, but this
+     * flag may indicate that the address is just for tracking purpose only, but the ACD
+     * state is not yet ready for the address to be configured. */
+    bool a_acd_not_ready : 1;
 
     /* The local address IFA_LOCAL. */
     in_addr_t address;

@@ -701,7 +701,7 @@ _l3cfg_externally_removed_objs_filter(/* const NMDedupMultiObj * */ gconstpointe
     GHashTable *     externally_removed_objs_hash = user_data;
 
     if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ADDRESS
-        && NMP_OBJECT_CAST_IP4_ADDRESS(obj)->ip4acd_not_ready)
+        && NMP_OBJECT_CAST_IP4_ADDRESS(obj)->a_acd_not_ready)
         return FALSE;
 
     return !nm_g_hash_table_contains(externally_removed_objs_hash, obj);
