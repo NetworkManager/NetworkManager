@@ -1896,6 +1896,8 @@ make_ip4_setting(shvarFile *ifcfg,
                  svGetValueBoolean(ifcfg, "DHCP_SEND_HOSTNAME", TRUE),
                  NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
                  (int) svGetValueInt64(ifcfg, "IPV4_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
+                 NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
+                 (int) svGetValueInt64(ifcfg, "IPV4_REQUIRED_TIMEOUT", 10, 0, G_MAXINT32, -1),
                  NULL);
 
     nm_clear_g_free(&value);
@@ -2404,6 +2406,8 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                  svGetValueBoolean(ifcfg, "DHCPV6_SEND_HOSTNAME", TRUE),
                  NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
                  (int) svGetValueInt64(ifcfg, "IPV6_DHCP_TIMEOUT", 10, 0, G_MAXINT32, 0),
+                 NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
+                 (int) svGetValueInt64(ifcfg, "IPV6_REQUIRED_TIMEOUT", 10, 0, G_MAXINT32, -1),
                  NM_SETTING_IP6_CONFIG_RA_TIMEOUT,
                  (int) svGetValueInt64(ifcfg, "IPV6_RA_TIMEOUT", 10, 0, G_MAXINT32, 0),
                  NULL);
