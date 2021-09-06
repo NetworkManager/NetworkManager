@@ -2926,10 +2926,10 @@ typedef struct {
 } L3ConfigMergeHookAddObjData;
 
 static gboolean
-_l3_hook_add_addr_cb(const NML3ConfigData *l3cd,
-                     const NMPObject *     obj,
-                     NMTernary *           out_ip4acd_not_ready,
-                     gpointer              user_data)
+_l3_hook_add_obj_cb(const NML3ConfigData *     l3cd,
+                    const NMPObject *          obj,
+                    NML3ConfigMergeHookResult *hook_result,
+                    gpointer                   user_data)
 {
     const L3ConfigMergeHookAddObjData *hook_data = user_data;
     NML3Cfg *                          self      = hook_data->self;
@@ -2937,7 +2937,8 @@ _l3_hook_add_addr_cb(const NML3ConfigData *l3cd,
     in_addr_t                          addr;
     gboolean                           acd_bad = FALSE;
 
-    nm_assert(out_ip4acd_not_ready && *out_ip4acd_not_ready == NM_TERNARY_DEFAULT);
+    nm_assert(hook_result);
+    nm_assert(hook_result->ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
 
     if (NMP_OBJECT_GET_TYPE(obj) != NMP_OBJECT_TYPE_IP4_ADDRESS)
         return TRUE;
@@ -2969,7 +2970,7 @@ _l3_hook_add_addr_cb(const NML3ConfigData *l3cd,
         acd_bad = TRUE;
 
 out:
-    *out_ip4acd_not_ready = acd_bad ? NM_TERNARY_TRUE : NM_TERNARY_FALSE;
+    hook_result->ip4acd_not_ready = acd_bad ? NM_OPTION_BOOL_TRUE : NM_OPTION_BOOL_FALSE;
     return TRUE;
 }
 
@@ -3053,7 +3054,7 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
                                     l3cd_data->default_route_table_x,
                                     l3cd_data->default_route_metric_x,
                                     l3cd_data->default_route_penalty_x,
-                                    _l3_hook_add_addr_cb,
+                                    _l3_hook_add_obj_cb,
                                     &hook_data);
         }
 

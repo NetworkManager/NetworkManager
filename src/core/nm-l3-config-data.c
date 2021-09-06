@@ -2696,7 +2696,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                         const guint32 *       default_route_table_x /* length 2, for IS_IPv4 */,
                         const guint32 *       default_route_metric_x /* length 2, for IS_IPv4 */,
                         const guint32 *       default_route_penalty_x /* length 2, for IS_IPv4 */,
-                        NML3ConfigMergeHookAddObj hook_add_addr,
+                        NML3ConfigMergeHookAddObj hook_add_obj,
                         gpointer                  hook_user_data)
 {
     static const guint32 x_default_route_table_x[2]   = {RT_TABLE_MAIN, RT_TABLE_MAIN};
@@ -2734,19 +2734,22 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                                              &obj,
                                              NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
             NMPlatformIPXAddress       addr_stack;
-            const NMPlatformIPAddress *addr             = NULL;
-            NMTernary                  ip4acd_not_ready = NM_TERNARY_DEFAULT;
+            const NMPlatformIPAddress *addr        = NULL;
+            NML3ConfigMergeHookResult  hook_result = {
+                .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
+            };
 
-            if (hook_add_addr && !hook_add_addr(src, obj, &ip4acd_not_ready, hook_user_data))
+            if (hook_add_obj && !hook_add_obj(src, obj, &hook_result, hook_user_data))
                 continue;
 
-            if (IS_IPv4 && ip4acd_not_ready != NM_TERNARY_DEFAULT
-                && (!!ip4acd_not_ready) != NMP_OBJECT_CAST_IP4_ADDRESS(obj)->ip4acd_not_ready) {
+            nm_assert(IS_IPv4 || hook_result.ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
+            if (hook_result.ip4acd_not_ready != NM_OPTION_BOOL_DEFAULT && IS_IPv4
+                && (!!hook_result.ip4acd_not_ready)
+                       != NMP_OBJECT_CAST_IP4_ADDRESS(obj)->ip4acd_not_ready) {
                 addr_stack.a4                  = *NMP_OBJECT_CAST_IP4_ADDRESS(obj);
-                addr_stack.a4.ip4acd_not_ready = (!!ip4acd_not_ready);
+                addr_stack.a4.ip4acd_not_ready = (!!hook_result.ip4acd_not_ready);
                 addr                           = &addr_stack.ax;
-            } else
-                nm_assert(IS_IPv4 || ip4acd_not_ready == NM_TERNARY_DEFAULT);
+            }
 
             nm_l3_config_data_add_address_full(self,
                                                addr_family,

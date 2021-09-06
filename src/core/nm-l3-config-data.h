@@ -135,10 +135,14 @@ NML3ConfigData *nm_l3_config_data_new_from_platform(NMDedupMultiIndex *       mu
                                                     NMPlatform *              platform,
                                                     NMSettingIP6ConfigPrivacy ipv6_privacy_rfc4941);
 
-typedef gboolean (*NML3ConfigMergeHookAddObj)(const NML3ConfigData *l3cd,
-                                              const NMPObject *     obj,
-                                              NMTernary *           out_ip4acd_not_ready,
-                                              gpointer              user_data);
+typedef struct {
+    NMOptionBool ip4acd_not_ready;
+} NML3ConfigMergeHookResult;
+
+typedef gboolean (*NML3ConfigMergeHookAddObj)(const NML3ConfigData *     l3cd,
+                                              const NMPObject *          obj,
+                                              NML3ConfigMergeHookResult *result,
+                                              gpointer                   user_data);
 
 void nm_l3_config_data_merge(NML3ConfigData *      self,
                              const NML3ConfigData *src,
@@ -146,7 +150,7 @@ void nm_l3_config_data_merge(NML3ConfigData *      self,
                              const guint32 *default_route_table_x /* length 2, for IS_IPv4 */,
                              const guint32 *default_route_metric_x /* length 2, for IS_IPv4 */,
                              const guint32 *default_route_penalty_x /* length 2, for IS_IPv4 */,
-                             NML3ConfigMergeHookAddObj hook_add_addr,
+                             NML3ConfigMergeHookAddObj hook_add_obj,
                              gpointer                  hook_user_data);
 
 GPtrArray *nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self,
