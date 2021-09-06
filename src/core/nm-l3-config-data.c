@@ -2766,6 +2766,10 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                                                  NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
                 const NMPlatformIPRoute *r_src = NMP_OBJECT_CAST_IP_ROUTE(obj);
                 NMPlatformIPXRoute       r;
+                NML3ConfigMergeHookResult hook_result = {
+                    .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
+                };
+
 
 #define _ensure_r()                                     \
     G_STMT_START                                        \
@@ -2780,6 +2784,11 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
         }                                               \
     }                                                   \
     G_STMT_END
+
+                if (hook_add_obj && !hook_add_obj(src, obj, &hook_result, hook_user_data))
+                    continue;
+
+                nm_assert(hook_result.ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
 
                 if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)) {
                     if (r_src->table_any) {

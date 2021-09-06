@@ -2937,41 +2937,51 @@ _l3_hook_add_obj_cb(const NML3ConfigData *     l3cd,
     in_addr_t                          addr;
     gboolean                           acd_bad = FALSE;
 
+    nm_assert(obj);
     nm_assert(hook_result);
     nm_assert(hook_result->ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
 
-    if (NMP_OBJECT_GET_TYPE(obj) != NMP_OBJECT_TYPE_IP4_ADDRESS)
+    switch (NMP_OBJECT_GET_TYPE(obj)) {
+    case NMP_OBJECT_TYPE_IP4_ADDRESS:
+
+        addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
+
+        if (ACD_ADDR_SKIP(addr))
+            goto out_ip4_address;
+
+        acd_data = _l3_acd_data_find(self, addr);
+
+        if (!acd_data) {
+            /* we don't yet track an ACD state for this address. That can only
+             * happened during _l3cfg_update_combined_config() with !to_commit,
+             * where we didn't update the ACD state.
+             *
+             * This means, unless you actually commit, nm_l3cfg_get_combined_l3cd(self, get_commited = FALSE)
+             * won't consider IPv4 addresses ready, that have no known ACD state yet. */
+            nm_assert(self->priv.p->changed_configs_acd_state);
+            acd_bad = TRUE;
+            goto out_ip4_address;
+        }
+
+        nm_assert(_acd_track_data_is_not_dirty(
+            _acd_data_find_track(acd_data, l3cd, obj, hook_data->tag)));
+        if (!NM_IN_SET(acd_data->info.state,
+                       NM_L3_ACD_ADDR_STATE_READY,
+                       NM_L3_ACD_ADDR_STATE_DEFENDING))
+            acd_bad = TRUE;
+
+out_ip4_address:
+        hook_result->ip4acd_not_ready = acd_bad ? NM_OPTION_BOOL_TRUE : NM_OPTION_BOOL_FALSE;
         return TRUE;
 
-    addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
-
-    if (ACD_ADDR_SKIP(addr))
-        goto out;
-
-    acd_data = _l3_acd_data_find(self, addr);
-
-    if (!acd_data) {
-        /* we don't yet track an ACD state for this address. That can only
-         * happend during _l3cfg_update_combined_config() with !to_commit,
-         * where we didn't update the ACD state.
-         *
-         * This means, unless you actually commit, nm_l3cfg_get_combined_l3cd(self, get_commited = FALSE)
-         * won't consider IPv4 addresses ready, that have no known ACD state yet. */
-        nm_assert(self->priv.p->changed_configs_acd_state);
-        acd_bad = TRUE;
-        goto out;
+    default:
+        nm_assert_not_reached();
+        /* fall-through */
+    case NMP_OBJECT_TYPE_IP6_ADDRESS:
+    case NMP_OBJECT_TYPE_IP4_ROUTE:
+    case NMP_OBJECT_TYPE_IP6_ROUTE:
+        return TRUE;
     }
-
-    nm_assert(
-        _acd_track_data_is_not_dirty(_acd_data_find_track(acd_data, l3cd, obj, hook_data->tag)));
-    if (!NM_IN_SET(acd_data->info.state,
-                   NM_L3_ACD_ADDR_STATE_READY,
-                   NM_L3_ACD_ADDR_STATE_DEFENDING))
-        acd_bad = TRUE;
-
-out:
-    hook_result->ip4acd_not_ready = acd_bad ? NM_OPTION_BOOL_TRUE : NM_OPTION_BOOL_FALSE;
-    return TRUE;
 }
 
 static void
