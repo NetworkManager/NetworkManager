@@ -279,10 +279,6 @@ _nmc_mangle_connection(NMDevice *                            device,
     NMConnection *      remote_connection;
     NMSettingIPConfig * remote_s_ip = NULL;
     gsize               i;
-    in_addr_t           gateway;
-    gint64              rt_metric;
-    guint32             rt_table;
-    NMIPRoute *         route_entry;
     gboolean            addrs_changed       = FALSE;
     gboolean            rules_changed       = FALSE;
     gboolean            routes_changed      = FALSE;
@@ -339,47 +335,45 @@ _nmc_mangle_connection(NMDevice *                            device,
          * We don't need to configure policy routing in this case. */
         NM_SET_OUT(out_skipped_single_addr, TRUE);
     } else if (config_data->has_ipv4s && config_data->has_cidr) {
-        for (i = 0; i < config_data->ipv4s_len; i++) {
-            NMIPAddress *entry;
+        NMIPAddress *    addr_entry;
+        NMIPRoute *      route_entry;
+        NMIPRoutingRule *rule_entry;
+        in_addr_t        gateway;
+        char             sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
-            entry = nm_ip_address_new_binary(AF_INET,
-                                             &config_data->ipv4s_arr[i],
-                                             config_data->cidr_prefix,
-                                             NULL);
-            if (entry)
-                g_ptr_array_add(addrs_new, entry);
+        for (i = 0; i < config_data->ipv4s_len; i++) {
+            addr_entry = nm_ip_address_new_binary(AF_INET,
+                                                  &config_data->ipv4s_arr[i],
+                                                  config_data->cidr_prefix,
+                                                  NULL);
+            nm_assert(addr_entry);
+            g_ptr_array_add(addrs_new, addr_entry);
         }
+
         if (config_data->has_gateway && config_data->gateway) {
             gateway = config_data->gateway;
         } else {
             gateway = nm_utils_ip4_address_clear_host_address(config_data->cidr_addr,
                                                               config_data->cidr_prefix);
-            ((guint8 *) &gateway)[3] += 1;
+            if (config_data->cidr_prefix < 32)
+                ((guint8 *) &gateway)[3] += 1;
         }
-        rt_metric = 10;
-        rt_table  = 30400 + config_data->iface_idx;
 
-        route_entry =
-            nm_ip_route_new_binary(AF_INET, &nm_ip_addr_zero, 0, &gateway, rt_metric, NULL);
+        route_entry = nm_ip_route_new_binary(AF_INET, &nm_ip_addr_zero, 0, &gateway, 10, NULL);
         nm_ip_route_set_attribute(route_entry,
                                   NM_IP_ROUTE_ATTRIBUTE_TABLE,
-                                  g_variant_new_uint32(rt_table));
+                                  g_variant_new_uint32(30400 + config_data->iface_idx));
         g_ptr_array_add(routes_new, route_entry);
 
         for (i = 0; i < config_data->ipv4s_len; i++) {
-            NMIPRoutingRule *entry;
-            char             sbuf[NM_UTILS_INET_ADDRSTRLEN];
-
-            entry = nm_ip_routing_rule_new(AF_INET);
-            nm_ip_routing_rule_set_priority(entry, rt_table);
-            nm_ip_routing_rule_set_from(entry,
+            rule_entry = nm_ip_routing_rule_new(AF_INET);
+            nm_ip_routing_rule_set_priority(rule_entry, 30400 + config_data->iface_idx);
+            nm_ip_routing_rule_set_from(rule_entry,
                                         _nm_utils_inet4_ntop(config_data->ipv4s_arr[i], sbuf),
                                         32);
-            nm_ip_routing_rule_set_table(entry, rt_table);
-
-            nm_assert(nm_ip_routing_rule_validate(entry, NULL));
-
-            g_ptr_array_add(rules_new, entry);
+            nm_ip_routing_rule_set_table(rule_entry, 30400 + config_data->iface_idx);
+            nm_assert(nm_ip_routing_rule_validate(rule_entry, NULL));
+            g_ptr_array_add(rules_new, rule_entry);
         }
     }
 
