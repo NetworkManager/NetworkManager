@@ -2923,6 +2923,7 @@ nm_l3cfg_remove_config_all_dirty(NML3Cfg *self, gconstpointer tag)
 typedef struct {
     NML3Cfg *     self;
     gconstpointer tag;
+    bool          assume_config_once;
 } L3ConfigMergeHookAddObjData;
 
 static gboolean
@@ -2940,6 +2941,9 @@ _l3_hook_add_obj_cb(const NML3ConfigData *     l3cd,
     nm_assert(obj);
     nm_assert(hook_result);
     nm_assert(hook_result->ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
+    nm_assert(hook_result->assume_config_once == NM_OPTION_BOOL_DEFAULT);
+
+    hook_result->assume_config_once = hook_data->assume_config_once;
 
     switch (NMP_OBJECT_GET_TYPE(obj)) {
     case NMP_OBJECT_TYPE_IP4_ADDRESS:
@@ -3058,6 +3062,9 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
                 continue;
 
             hook_data.tag = l3cd_data->tag_confdata;
+            hook_data.assume_config_once =
+                NM_FLAGS_HAS(l3cd_data->config_flags, NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE);
+
             nm_l3_config_data_merge(l3cd,
                                     l3cd_data->l3cd,
                                     l3cd_data->merge_flags,

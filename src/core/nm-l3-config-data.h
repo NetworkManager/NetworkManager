@@ -137,6 +137,7 @@ NML3ConfigData *nm_l3_config_data_new_from_platform(NMDedupMultiIndex *       mu
 
 typedef struct {
     NMOptionBool ip4acd_not_ready;
+    NMOptionBool assume_config_once;
 } NML3ConfigMergeHookResult;
 
 typedef gboolean (*NML3ConfigMergeHookAddObj)(const NML3ConfigData *     l3cd,

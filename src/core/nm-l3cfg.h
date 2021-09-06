@@ -40,10 +40,23 @@ typedef enum _nm_packed {
  *   nm_l3cfg_add_config() the same NML3Cfg again (with a different
  *   tag), or by calling nm_l3cfg_add_config() again with this flag
  *   cleared (and the same tag).
+ * @NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE: a commit with
+ *   %NM_L3_CFG_COMMIT_TYPE_ASSUME, means to not remove/add
+ *   addresses that are missing/already exist. The assume mode
+ *   is for taking over a device gracefully after restart, so
+ *   it aims to preserve whatever was configured (or not configured).
+ *   With this flag enabled, the first commit in assume mode will still
+ *   add the addresses/routes. This is necessary for example with IPv6LL.
+ *   Also while assuming a device, we want to configure things
+ *   (like an IPv6 address), so we need to bypass the common
+ *   "don't change" behavior. At least once. If the address/route
+ *   is still not (no longer) configured on the subsequent
+ *   commit, it's not getting added again.
  */
 typedef enum _nm_packed {
-    NM_L3CFG_CONFIG_FLAGS_NONE         = 0,
-    NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD = (1LL << 0),
+    NM_L3CFG_CONFIG_FLAGS_NONE               = 0,
+    NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD       = (1LL << 0),
+    NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE = (1LL << 1),
 } NML3CfgConfigFlags;
 
 typedef enum _nm_packed {
