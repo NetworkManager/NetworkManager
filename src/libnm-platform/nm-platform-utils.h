@@ -22,6 +22,9 @@ gboolean    nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
 
 const char *nm_platform_link_duplex_type_to_string(NMPlatformLinkDuplexType duplex);
 
+extern const guint8  _nmp_link_mode_all_advertised_modes_bits[79];
+extern const guint32 _nmp_link_mode_all_advertised_modes[3];
+
 gboolean nmp_utils_ethtool_get_link_settings(int                       ifindex,
                                              gboolean *                out_autoneg,
                                              guint32 *                 out_speed,

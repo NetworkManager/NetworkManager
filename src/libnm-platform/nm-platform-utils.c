@@ -9,7 +9,6 @@
 
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <linux/ethtool.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include <linux/if.h>
@@ -18,6 +17,7 @@
 #include <fcntl.h>
 #include <libudev.h>
 
+#include "linux-headers/ethtool.h"
 #include "libnm-base/nm-ethtool-base.h"
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-glib-aux/nm-time-utils.h"
@@ -1331,10 +1331,6 @@ nmp_utils_ethtool_get_link_settings(int                       ifindex,
 }
 
 #define ADVERTISED_INVALID 0
-#define BASET_ALL_MODES                                                                 \
-    (ADVERTISED_10baseT_Half | ADVERTISED_10baseT_Full | ADVERTISED_100baseT_Half       \
-     | ADVERTISED_100baseT_Full | ADVERTISED_1000baseT_Half | ADVERTISED_1000baseT_Full \
-     | ADVERTISED_10000baseT_Full)
 
 static guint32
 get_baset_mode(guint32 speed, NMPlatformLinkDuplexType duplex)
@@ -1386,6 +1382,96 @@ platform_link_duplex_type_to_native(NMPlatformLinkDuplexType duplex_type, guint8
     }
 }
 
+const guint8 _nmp_link_mode_all_advertised_modes_bits[] = {
+    ETHTOOL_LINK_MODE_10baseT_Half_BIT,
+    ETHTOOL_LINK_MODE_10baseT_Full_BIT,
+    ETHTOOL_LINK_MODE_100baseT_Half_BIT,
+    ETHTOOL_LINK_MODE_100baseT_Full_BIT,
+    ETHTOOL_LINK_MODE_1000baseT_Half_BIT,
+    ETHTOOL_LINK_MODE_1000baseT_Full_BIT,
+    ETHTOOL_LINK_MODE_10000baseT_Full_BIT,
+    ETHTOOL_LINK_MODE_2500baseX_Full_BIT,
+    ETHTOOL_LINK_MODE_1000baseKX_Full_BIT,
+    ETHTOOL_LINK_MODE_10000baseKX4_Full_BIT,
+    ETHTOOL_LINK_MODE_10000baseKR_Full_BIT,
+    ETHTOOL_LINK_MODE_10000baseR_FEC_BIT,
+    ETHTOOL_LINK_MODE_20000baseMLD2_Full_BIT,
+    ETHTOOL_LINK_MODE_20000baseKR2_Full_BIT,
+    ETHTOOL_LINK_MODE_40000baseKR4_Full_BIT,
+    ETHTOOL_LINK_MODE_40000baseCR4_Full_BIT,
+    ETHTOOL_LINK_MODE_40000baseSR4_Full_BIT,
+    ETHTOOL_LINK_MODE_40000baseLR4_Full_BIT,
+    ETHTOOL_LINK_MODE_56000baseKR4_Full_BIT,
+    ETHTOOL_LINK_MODE_56000baseCR4_Full_BIT,
+    ETHTOOL_LINK_MODE_56000baseSR4_Full_BIT,
+    ETHTOOL_LINK_MODE_56000baseLR4_Full_BIT,
+    ETHTOOL_LINK_MODE_25000baseCR_Full_BIT,
+    /* 32 bit flags start here. */
+    ETHTOOL_LINK_MODE_25000baseKR_Full_BIT,
+    ETHTOOL_LINK_MODE_25000baseSR_Full_BIT,
+    ETHTOOL_LINK_MODE_50000baseCR2_Full_BIT,
+    ETHTOOL_LINK_MODE_50000baseKR2_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseKR4_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseSR4_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseCR4_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseLR4_ER4_Full_BIT,
+    ETHTOOL_LINK_MODE_50000baseSR2_Full_BIT,
+    ETHTOOL_LINK_MODE_1000baseX_Full_BIT,
+    ETHTOOL_LINK_MODE_10000baseCR_Full_BIT,
+    ETHTOOL_LINK_MODE_10000baseSR_Full_BIT,
+    ETHTOOL_LINK_MODE_10000baseLR_Full_BIT,
+    ETHTOOL_LINK_MODE_10000baseLRM_Full_BIT,
+    ETHTOOL_LINK_MODE_10000baseER_Full_BIT,
+    ETHTOOL_LINK_MODE_2500baseT_Full_BIT,
+    ETHTOOL_LINK_MODE_5000baseT_Full_BIT,
+    ETHTOOL_LINK_MODE_50000baseKR_Full_BIT,
+    ETHTOOL_LINK_MODE_50000baseSR_Full_BIT,
+    ETHTOOL_LINK_MODE_50000baseCR_Full_BIT,
+    ETHTOOL_LINK_MODE_50000baseLR_ER_FR_Full_BIT,
+    ETHTOOL_LINK_MODE_50000baseDR_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseKR2_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseSR2_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseCR2_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseLR2_ER2_FR2_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseDR2_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseKR4_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseSR4_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseLR4_ER4_FR4_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseDR4_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseCR4_Full_BIT,
+    ETHTOOL_LINK_MODE_100baseT1_Full_BIT,
+    ETHTOOL_LINK_MODE_1000baseT1_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseKR8_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseSR8_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseLR8_ER8_FR8_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseDR8_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseCR8_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseKR_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseSR_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseLR_ER_FR_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseCR_Full_BIT,
+    ETHTOOL_LINK_MODE_100000baseDR_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseKR2_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseSR2_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseLR2_ER2_FR2_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseDR2_Full_BIT,
+    ETHTOOL_LINK_MODE_200000baseCR2_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseKR4_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseSR4_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseLR4_ER4_FR4_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseDR4_Full_BIT,
+    ETHTOOL_LINK_MODE_400000baseCR4_Full_BIT,
+    ETHTOOL_LINK_MODE_100baseFX_Half_BIT,
+    ETHTOOL_LINK_MODE_100baseFX_Full_BIT,
+};
+
+/* these are the bits from _nmp_link_mode_all_advertised_modes_bits set. */
+const guint32 _nmp_link_mode_all_advertised_modes[] = {
+    0xfffe903fu,
+    0xfff1ffffu,
+    0x0ffffbffu,
+};
+
 static NMOptionBool
 set_link_settings_new(SocketHandle *           shandle,
                       gboolean                 autoneg,
@@ -1396,6 +1482,7 @@ set_link_settings_new(SocketHandle *           shandle,
     gs_free struct ethtool_link_settings *edata = NULL;
     gsize                                 edata_size;
     guint                                 nwords;
+    guint                                 i;
 
     edata0 = (struct ethtool_link_settings){
         .cmd                    = ETHTOOL_GLINKSETTINGS,
@@ -1421,16 +1508,14 @@ set_link_settings_new(SocketHandle *           shandle,
 
     /* then change the needed ones */
     edata->cmd = ETHTOOL_SLINKSETTINGS;
-    if (autoneg) {
-        edata->autoneg = AUTONEG_ENABLE;
 
-        /* copy @map_supported to @map_advertising and @map_lp_advertising */
-        memcpy(&edata->link_mode_masks[nwords],
-               &edata->link_mode_masks[0],
-               sizeof(guint32) * nwords);
-        memcpy(&edata->link_mode_masks[nwords * 2],
-               &edata->link_mode_masks[0],
-               sizeof(guint32) * nwords);
+    {
+        const guint32 *v_map_supported      = &edata->link_mode_masks[0];
+        guint32 *      v_map_advertising    = &edata->link_mode_masks[nwords];
+        guint32 *      v_map_lp_advertising = &edata->link_mode_masks[2 * nwords];
+
+        memcpy(v_map_advertising, v_map_supported, sizeof(guint32) * nwords);
+        (void) v_map_lp_advertising;
 
         if (speed != 0) {
             guint32 mode;
@@ -1438,6 +1523,8 @@ set_link_settings_new(SocketHandle *           shandle,
             mode = get_baset_mode(speed, duplex);
 
             if (mode == ADVERTISED_INVALID) {
+                if (!autoneg)
+                    goto set_autoneg;
                 nm_log_trace(LOGD_PLATFORM,
                              "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
                              shandle->ifindex,
@@ -1446,8 +1533,9 @@ set_link_settings_new(SocketHandle *           shandle,
                 return FALSE;
             }
 
-            /* We only support BASE-T modes in the first word */
-            if (!(edata->link_mode_masks[0] & mode)) {
+            if (!(v_map_supported[0] & mode)) {
+                if (!autoneg)
+                    goto set_autoneg;
                 nm_log_trace(LOGD_PLATFORM,
                              "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
                              shandle->ifindex,
@@ -1456,11 +1544,16 @@ set_link_settings_new(SocketHandle *           shandle,
                 return FALSE;
             }
 
-            edata->link_mode_masks[nwords] =
-                (edata->link_mode_masks[nwords] & ~BASET_ALL_MODES) | mode;
-            edata->link_mode_masks[nwords * 2] = edata->link_mode_masks[nwords];
+            for (i = 0; i < (guint) G_N_ELEMENTS(_nmp_link_mode_all_advertised_modes); i++)
+                v_map_advertising[i] &= ~_nmp_link_mode_all_advertised_modes[i];
+            v_map_advertising[0] |= mode;
         }
-    } else {
+    }
+
+set_autoneg:
+    if (autoneg)
+        edata->autoneg = AUTONEG_ENABLE;
+    else {
         edata->autoneg = AUTONEG_DISABLE;
 
         if (speed)
@@ -1489,6 +1582,13 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
                              || (!speed && duplex == NM_PLATFORM_LINK_DUPLEX_UNKNOWN),
                          FALSE);
 
+    nm_log_trace(LOGD_PLATFORM,
+                 "ethtool[%d]: set link: autoneg=%d, speed=%d, duplex=%s",
+                 ifindex,
+                 autoneg,
+                 speed,
+                 nm_platform_link_duplex_type_to_string(duplex));
+
     ret = set_link_settings_new(&shandle, autoneg, speed, duplex);
     if (ret != NM_OPTION_BOOL_DEFAULT)
         return ret;
@@ -1501,34 +1601,41 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
 
     /* then change the needed ones */
     edata.cmd = ETHTOOL_SSET;
-    if (autoneg) {
-        edata.autoneg = AUTONEG_ENABLE;
-        if (speed == 0)
-            edata.advertising = edata.supported;
-        else {
-            guint32 mode;
 
-            mode = get_baset_mode(speed, duplex);
+    edata.advertising = edata.supported;
+    if (speed != 0) {
+        guint32 mode;
 
-            if (mode == ADVERTISED_INVALID) {
-                nm_log_trace(LOGD_PLATFORM,
-                             "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
-                             ifindex,
-                             speed,
-                             nm_platform_link_duplex_type_to_string(duplex));
-                return FALSE;
-            }
-            if (!(edata.supported & mode)) {
-                nm_log_trace(LOGD_PLATFORM,
-                             "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
-                             ifindex,
-                             speed,
-                             nm_platform_link_duplex_type_to_string(duplex));
-                return FALSE;
-            }
-            edata.advertising = (edata.supported & ~BASET_ALL_MODES) | mode;
+        mode = get_baset_mode(speed, duplex);
+
+        if (mode == ADVERTISED_INVALID) {
+            if (!autoneg)
+                goto set_autoneg;
+            nm_log_trace(LOGD_PLATFORM,
+                         "ethtool[%d]: %uBASE-T %s duplex mode cannot be advertised",
+                         ifindex,
+                         speed,
+                         nm_platform_link_duplex_type_to_string(duplex));
+            return FALSE;
         }
-    } else {
+        if (!(edata.supported & mode)) {
+            if (!autoneg)
+                goto set_autoneg;
+            nm_log_trace(LOGD_PLATFORM,
+                         "ethtool[%d]: device does not support %uBASE-T %s duplex mode",
+                         ifindex,
+                         speed,
+                         nm_platform_link_duplex_type_to_string(duplex));
+            return FALSE;
+        }
+        edata.advertising &= ~_nmp_link_mode_all_advertised_modes[0];
+        edata.advertising |= mode;
+    }
+
+set_autoneg:
+    if (autoneg)
+        edata.autoneg = AUTONEG_ENABLE;
+    else {
         edata.autoneg = AUTONEG_DISABLE;
 
         if (speed)

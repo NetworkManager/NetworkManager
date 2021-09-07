@@ -9,14 +9,13 @@ die() {
 
 EXCLUDE=(
     ":(exclude)src/c-list"
-    ":(exclude)src/c-list"
-    ":(exclude)src/c-list"
     ":(exclude)src/c-rbtree"
     ":(exclude)src/c-siphash"
     ":(exclude)src/c-stdaux"
     ":(exclude)src/libnm-std-aux/unaligned.h"
-    ":(exclude)src/libnm-systemd-shared/src"
     ":(exclude)src/libnm-systemd-core/src"
+    ":(exclude)src/libnm-systemd-shared/src"
+    ":(exclude)src/linux-headers"
     ":(exclude)src/n-acd"
     ":(exclude)src/n-dhcp4"
 )
