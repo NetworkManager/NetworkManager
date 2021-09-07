@@ -6361,12 +6361,15 @@ NM_UTILS_FLAGS2STR_DEFINE(nm_platform_addr_flags2str,
                           NM_UTILS_FLAGS2STR(IFA_F_SECONDARY, "secondary"),
                           NM_UTILS_FLAGS2STR(IFA_F_NODAD, "nodad"),
                           NM_UTILS_FLAGS2STR(IFA_F_OPTIMISTIC, "optimistic"),
+                          NM_UTILS_FLAGS2STR(IFA_F_DADFAILED, "dadfailed"),
                           NM_UTILS_FLAGS2STR(IFA_F_HOMEADDRESS, "homeaddress"),
                           NM_UTILS_FLAGS2STR(IFA_F_DEPRECATED, "deprecated"),
+                          NM_UTILS_FLAGS2STR(IFA_F_TENTATIVE, "tentative"),
                           NM_UTILS_FLAGS2STR(IFA_F_PERMANENT, "permanent"),
                           NM_UTILS_FLAGS2STR(IFA_F_MANAGETEMPADDR, "mngtmpaddr"),
                           NM_UTILS_FLAGS2STR(IFA_F_NOPREFIXROUTE, "noprefixroute"),
-                          NM_UTILS_FLAGS2STR(IFA_F_TENTATIVE, "tentative"), );
+                          NM_UTILS_FLAGS2STR(IFA_F_MCAUTOJOIN, "mcautojoin"),
+                          NM_UTILS_FLAGS2STR(IFA_F_STABLE_PRIVACY, "stable-privacy"), );
 
 NM_UTILS_ENUM2STR_DEFINE(nm_platform_route_scope2str,
                          int,
