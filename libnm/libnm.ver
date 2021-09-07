@@ -1784,3 +1784,8 @@ global:
 	nm_setting_veth_new;
 	nm_utils_print;
 } libnm_1_28_0;
+
+libnm_1_30_8 {
+global:
+	nm_setting_ip_config_get_required_timeout;
+} libnm_1_30_0;

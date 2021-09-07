@@ -117,6 +117,8 @@ reader_create_connection(Reader *                 reader,
                  reader->dhcp_timeout,
                  NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
                  reader->dhcp4_vci,
+                 NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
+                 NMI_IP_REQUIRED_TIMEOUT_MSEC,
                  NULL);
 
     setting = nm_setting_ip6_config_new();
@@ -399,22 +401,25 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
     gs_unref_hashtable GHashTable *ibft = NULL;
     const char *                   tmp;
     const char *                   tmp2;
-    const char *                   kind             = NULL;
-    const char *                   client_ip        = NULL;
-    const char *                   peer             = NULL;
-    const char *                   gateway_ip       = NULL;
-    const char *                   netmask          = NULL;
-    const char *                   client_hostname  = NULL;
-    const char *                   iface_spec       = NULL;
-    const char *                   mtu              = NULL;
-    const char *                   macaddr          = NULL;
-    int                            client_ip_family = AF_UNSPEC;
-    int                            client_ip_prefix = -1;
-    const char *                   dns[2]           = {
-        0,
+    const char *                   kind                       = NULL;
+    const char *                   client_ip                  = NULL;
+    const char *                   peer                       = NULL;
+    const char *                   gateway_ip                 = NULL;
+    const char *                   netmask                    = NULL;
+    const char *                   client_hostname            = NULL;
+    const char *                   iface_spec                 = NULL;
+    const char *                   mtu                        = NULL;
+    const char *                   macaddr                    = NULL;
+    int                            client_ip_family           = AF_UNSPEC;
+    int                            client_ip_prefix           = -1;
+    gboolean                       clear_ip4_required_timeout = TRUE;
+    const char *                   dns[2]                     = {
+        NULL,
+        NULL,
     };
     int dns_addr_family[2] = {
-        0,
+        AF_UNSPEC,
+        AF_UNSPEC,
     };
     int     i;
     GError *error = NULL;
@@ -472,11 +477,15 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         tmp                = get_word(&argument, ':');
         dns_addr_family[0] = get_ip_address_family(tmp, FALSE);
         if (dns_addr_family[0] != AF_UNSPEC) {
-            dns[0]             = tmp;
-            dns[1]             = get_word(&argument, ':');
-            dns_addr_family[1] = get_ip_address_family(dns[1], FALSE);
-            if (*argument)
-                _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);
+            dns[0] = tmp;
+            dns[1] = get_word(&argument, ':');
+            if (dns[1]) {
+                dns_addr_family[1] = get_ip_address_family(dns[1], FALSE);
+                if (dns_addr_family[1] == AF_UNSPEC)
+                    _LOGW(LOGD_CORE, "Ignoring invalid DNS server: '%s'.", dns[1]);
+                if (*argument)
+                    _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);
+            }
         } else {
             mtu     = tmp;
             macaddr = argument;
@@ -671,7 +680,12 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                 g_clear_error(&error);
             }
         }
+    } else {
+        clear_ip4_required_timeout = FALSE;
     }
+
+    if (clear_ip4_required_timeout)
+        g_object_set(s_ip4, NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT, -1, NULL);
 
     if (peer && *peer)
         _LOGW(LOGD_CORE, "Ignoring peer: %s (not implemented)\n", peer);
@@ -698,21 +712,8 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
     for (i = 0; i < 2; i++) {
         if (dns_addr_family[i] == AF_UNSPEC)
             break;
-        if (nm_utils_ipaddr_is_valid(dns_addr_family[i], dns[i])) {
-            switch (dns_addr_family[i]) {
-            case AF_INET:
-                nm_setting_ip_config_add_dns(s_ip4, dns[i]);
-                break;
-            case AF_INET6:
-                nm_setting_ip_config_add_dns(s_ip6, dns[i]);
-                break;
-            default:
-                _LOGW(LOGD_CORE, "Unknown address family: %s", dns[i]);
-                break;
-            }
-        } else {
-            _LOGW(LOGD_CORE, "Invalid name server: %s", dns[i]);
-        }
+        nm_assert(nm_utils_ipaddr_is_valid(dns_addr_family[i], dns[i]));
+        nm_setting_ip_config_add_dns(NM_IS_IPv4(dns_addr_family[i]) ? s_ip4 : s_ip6, dns[i]);
     }
 
     if (mtu && *mtu)
@@ -1059,7 +1060,7 @@ connection_set_needed(NMConnection *connection)
 
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT,
-                 (int) NMI_WAIT_DEVICE_TIMEOUT_MS,
+                 (int) NMI_WAIT_DEVICE_TIMEOUT_MSEC,
                  NULL);
 }
 
