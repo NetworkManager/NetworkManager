@@ -272,11 +272,11 @@ gboolean _nm_connection_ensure_normalized(NMConnection * connection,
 gboolean _nm_connection_remove_setting(NMConnection *connection, GType setting_type);
 
 #if NM_MORE_ASSERTS
-extern const char _nmtst_connection_unchanging_user_data;
-void              nmtst_connection_assert_unchanging(NMConnection *connection);
+extern const char _nm_assert_connection_unchanging_user_data;
+void              nm_assert_connection_unchanging(NMConnection *connection);
 #else
 static inline void
-nmtst_connection_assert_unchanging(NMConnection *connection)
+nm_assert_connection_unchanging(NMConnection *connection)
 {}
 #endif
 
