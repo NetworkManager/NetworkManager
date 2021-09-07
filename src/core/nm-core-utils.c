@@ -2877,10 +2877,11 @@ typedef struct {
     bool    timestamp_is_good : 1;
 } HostIdData;
 
+static const HostIdData *volatile host_id_static;
+
 static const HostIdData *
 _host_id_get(void)
 {
-    static const HostIdData *volatile host_id_static;
     const HostIdData *host_id;
 
 again:
@@ -2939,6 +2940,78 @@ gint64
 nm_utils_host_id_get_timestamp_ns(void)
 {
     return _host_id_get()->timestamp_ns;
+}
+
+static GArray *   nmtst_host_id_stack = NULL;
+static GMutex     nmtst_host_id_lock;
+const HostIdData *nmtst_host_id_static_0 = NULL;
+
+void
+nmtst_utils_host_id_push(const guint8 *host_id,
+                         gssize        host_id_len,
+                         gboolean      is_good,
+                         const gint64 *timestamp_ns)
+{
+    NM_G_MUTEX_LOCKED(&nmtst_host_id_lock);
+    gs_free char *str1_to_free = NULL;
+    HostIdData *  h;
+
+    g_assert(host_id_len >= -1);
+
+    if (host_id_len < 0)
+        host_id_len = host_id ? strlen((const char *) host_id) : 0;
+
+    nm_log_dbg(LOGD_CORE,
+               "nmtst: host-id push: \"%s\" (%zu), is-good=%d, timestamp=%" G_GINT64_FORMAT "%s",
+               nm_utils_buf_utf8safe_escape(host_id,
+                                            host_id_len,
+                                            NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                            &str1_to_free),
+               (gsize) host_id_len,
+               !!is_good,
+               timestamp_ns ? *timestamp_ns : 0,
+               timestamp_ns ? "" : " (not-good)");
+
+    if (!nmtst_host_id_stack) {
+        nmtst_host_id_stack    = g_array_new(FALSE, FALSE, sizeof(HostIdData));
+        nmtst_host_id_static_0 = g_atomic_pointer_get(&host_id_static);
+    }
+
+    h = nm_g_array_append_new(nmtst_host_id_stack, HostIdData);
+
+    *h = (HostIdData){
+        .host_id           = nm_memdup(host_id, host_id_len),
+        .host_id_len       = host_id_len,
+        .timestamp_ns      = timestamp_ns ? *timestamp_ns : 0,
+        .is_good           = is_good,
+        .timestamp_is_good = !!timestamp_ns,
+    };
+
+    g_atomic_pointer_set(&host_id_static, h);
+}
+
+void
+nmtst_utils_host_id_pop(void)
+{
+    NM_G_MUTEX_LOCKED(&nmtst_host_id_lock);
+    HostIdData *h;
+
+    g_assert(nmtst_host_id_stack);
+    g_assert(nmtst_host_id_stack->len > 0);
+
+    nm_log_dbg(LOGD_CORE, "nmtst: host-id pop");
+
+    h = &g_array_index(nmtst_host_id_stack, HostIdData, nmtst_host_id_stack->len - 1);
+
+    g_free((char *) h->host_id);
+    g_array_set_size(nmtst_host_id_stack, nmtst_host_id_stack->len - 1u);
+
+    if (!g_atomic_pointer_compare_and_exchange(
+            &host_id_static,
+            h,
+            nmtst_host_id_stack->len == 0u ? nmtst_host_id_static_0
+                                           : nm_g_array_last(nmtst_host_id_stack, HostIdData)))
+        g_assert_not_reached();
 }
 
 /*****************************************************************************/

@@ -247,6 +247,33 @@ const char *const *   nm_utils_proc_cmdline_split(void);
 gboolean nm_utils_host_id_get(const guint8 **out_host_id, gsize *out_host_id_len);
 gint64   nm_utils_host_id_get_timestamp_ns(void);
 
+void nmtst_utils_host_id_push(const guint8 *host_id,
+                              gssize        host_id_len,
+                              gboolean      is_good,
+                              const gint64 *timestamp_ns);
+
+void nmtst_utils_host_id_pop(void);
+
+static inline void
+_nmtst_auto_utils_host_id_context_pop(const char *const *unused)
+{
+    nmtst_utils_host_id_pop();
+}
+
+#define _NMTST_UTILS_HOST_ID_CONTEXT(uniq, host_id)                      \
+    _nm_unused            nm_auto(_nmtst_auto_utils_host_id_context_pop) \
+        const char *const NM_UNIQ_T(_host_id_context_, uniq) = ({        \
+            const gint64 _timestamp_ns = 1631000672;                     \
+                                                                         \
+            nmtst_utils_host_id_push((const guint8 *) "" host_id "",     \
+                                     NM_STRLEN(host_id),                 \
+                                     TRUE,                               \
+                                     &_timestamp_ns);                    \
+            "" host_id "";                                               \
+        })
+
+#define NMTST_UTILS_HOST_ID_CONTEXT(host_id) _NMTST_UTILS_HOST_ID_CONTEXT(NM_UNIQ, host_id)
+
 /*****************************************************************************/
 
 int nm_utils_arp_type_detect_from_hwaddrlen(gsize hwaddr_len);
