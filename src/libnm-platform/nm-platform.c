@@ -3657,7 +3657,7 @@ _addr_array_clean_expired(int          addr_family,
         }
 #endif
 
-        if (!NM_IS_IPv4(addr_family) && NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TEMPORARY)) {
+        if (!NM_IS_IPv4(addr_family) && NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_SECONDARY)) {
             /* temporary addresses are never added explicitly by NetworkManager but
              * kernel adds them via mngtempaddr flag.
              *
@@ -4262,7 +4262,7 @@ nm_platform_ip_address_get_prune_list(NMPlatform *self,
 
         if (!IS_IPv4) {
             if (exclude_ipv6_temporary_addrs
-                && NM_FLAGS_HAS(NMP_OBJECT_CAST_IP_ADDRESS(obj)->n_ifa_flags, IFA_F_TEMPORARY))
+                && NM_FLAGS_HAS(NMP_OBJECT_CAST_IP_ADDRESS(obj)->n_ifa_flags, IFA_F_SECONDARY))
                 continue;
         }
 
@@ -6356,6 +6356,8 @@ NM_UTILS_ENUM2STR_DEFINE(nm_platform_link_inet6_addrgenmode2str,
                          NM_UTILS_ENUM2STR(NM_IN6_ADDR_GEN_MODE_STABLE_PRIVACY, "stable-privacy"),
                          NM_UTILS_ENUM2STR(NM_IN6_ADDR_GEN_MODE_RANDOM, "random"), );
 
+G_STATIC_ASSERT(IFA_F_SECONDARY == IFA_F_TEMPORARY);
+
 NM_UTILS_FLAGS2STR_DEFINE(nm_platform_addr_flags2str,
                           unsigned,
                           NM_UTILS_FLAGS2STR(IFA_F_SECONDARY, "secondary"),
@@ -7812,20 +7814,20 @@ nm_platform_ip6_address_pretty_sort_cmp(const NMPlatformIP6Address *a1,
     NM_CMP_DIRECT(_address_pretty_sort_get_prio_6(&a2->address),
                   _address_pretty_sort_get_prio_6(&a1->address));
 
-    ipv6_privacy1 = NM_FLAGS_ANY(a1->n_ifa_flags, IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY);
-    ipv6_privacy2 = NM_FLAGS_ANY(a2->n_ifa_flags, IFA_F_MANAGETEMPADDR | IFA_F_TEMPORARY);
+    ipv6_privacy1 = NM_FLAGS_ANY(a1->n_ifa_flags, IFA_F_MANAGETEMPADDR | IFA_F_SECONDARY);
+    ipv6_privacy2 = NM_FLAGS_ANY(a2->n_ifa_flags, IFA_F_MANAGETEMPADDR | IFA_F_SECONDARY);
     if (ipv6_privacy1 || ipv6_privacy2) {
         gboolean public1 = TRUE;
         gboolean public2 = TRUE;
 
         if (ipv6_privacy1) {
-            if (a1->n_ifa_flags & IFA_F_TEMPORARY)
+            if (a1->n_ifa_flags & IFA_F_SECONDARY)
                 public1 = prefer_temp;
             else
                 public1 = !prefer_temp;
         }
         if (ipv6_privacy2) {
-            if (a2->n_ifa_flags & IFA_F_TEMPORARY)
+            if (a2->n_ifa_flags & IFA_F_SECONDARY)
                 public2 = prefer_temp;
             else
                 public2 = !prefer_temp;
