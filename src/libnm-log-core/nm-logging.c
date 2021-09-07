@@ -75,6 +75,7 @@ G_STATIC_ASSERT(sizeof(NMLogDomain) >= sizeof(guint64));
 /*****************************************************************************/
 
 typedef enum {
+    LOG_BACKEND_NONE,
     LOG_BACKEND_GLIB,
     LOG_BACKEND_SYSLOG,
     LOG_BACKEND_JOURNAL,
@@ -794,6 +795,8 @@ _nm_log_impl(const char *file,
     case LOG_BACKEND_SYSLOG:
         syslog(nm_log_level_desc[level].syslog_level, MESSAGE_FMT, MESSAGE_ARG(g->prefix, tv, msg));
         break;
+    case LOG_BACKEND_NONE:
+        break;
     default:
         g_log(syslog_identifier_domain(g->syslog_identifier),
               nm_log_level_desc[level].g_log_level,
@@ -867,6 +870,8 @@ nm_log_handler(const char *log_domain, GLogLevelFlags level, const char *message
         g_printerr("%s%s\n", gl.imm.prefix, message ?: "");
 
     switch (gl.imm.log_backend) {
+    case LOG_BACKEND_NONE:
+        break;
 #if SYSTEMD_JOURNAL
     case LOG_BACKEND_JOURNAL:
     {
@@ -980,8 +985,11 @@ nm_logging_init(const char *logging_backend, gboolean debug)
 
     G_LOCK(log);
 
+    if (nm_streq(logging_backend, NM_LOG_CONFIG_BACKEND_NONE)) {
+        x_log_backend = LOG_BACKEND_NONE;
+    } else
 #if SYSTEMD_JOURNAL
-    if (!nm_streq(logging_backend, NM_LOG_CONFIG_BACKEND_SYSLOG)) {
+        if (!nm_streq(logging_backend, NM_LOG_CONFIG_BACKEND_SYSLOG)) {
         x_log_backend = LOG_BACKEND_JOURNAL;
 
         /* We only log the monotonic-timestamp with structured logging (journal).
@@ -1017,7 +1025,7 @@ nm_logging_init(const char *logging_backend, gboolean debug)
                    "config: ignore deprecated logging backend 'debug', fallback to '%s'",
                    logging_backend);
 
-    if (nm_streq(logging_backend, NM_LOG_CONFIG_BACKEND_SYSLOG)) {
+    if (NM_IN_STRSET(logging_backend, NM_LOG_CONFIG_BACKEND_SYSLOG, NM_LOG_CONFIG_BACKEND_NONE)) {
         /* good */
     } else if (nm_streq(logging_backend, NM_LOG_CONFIG_BACKEND_JOURNAL)) {
 #if !SYSTEMD_JOURNAL
