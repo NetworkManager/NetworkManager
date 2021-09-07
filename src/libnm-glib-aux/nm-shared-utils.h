@@ -2097,6 +2097,28 @@ nm_g_array_unref(GArray *arr)
         g_array_unref(arr);
 }
 
+#define nm_g_array_first(arr, type)   \
+    ({                                \
+        GArray *const _arr = (arr);   \
+        guint         _len;           \
+                                      \
+        nm_assert(_arr);              \
+        _len = _arr->len;             \
+        nm_assert(_len > 0);          \
+        &g_array_index(arr, type, 0); \
+    })
+
+#define nm_g_array_last(arr, type)            \
+    ({                                        \
+        GArray *const _arr = (arr);           \
+        guint         _len;                   \
+                                              \
+        nm_assert(_arr);                      \
+        _len = _arr->len;                     \
+        nm_assert(_len > 0);                  \
+        &g_array_index(arr, type, _len - 1u); \
+    })
+
 #define nm_g_array_append_new(arr, type)   \
     ({                                     \
         GArray *const _arr = (arr);        \
