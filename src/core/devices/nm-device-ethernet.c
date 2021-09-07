@@ -923,31 +923,33 @@ link_negotiation_set(NMDevice *device)
         return;
     }
 
-    /* If link negotiation setting are already in place do nothing and return with success */
-    if (!!autoneg == !!link_autoneg && speed == link_speed && duplex == link_duplex) {
-        _LOGD(LOGD_DEVICE, "set-link: link negotiation is already configured");
-        return;
-    }
-
     if (autoneg && !speed && !duplex)
         _LOGD(LOGD_DEVICE, "set-link: configure auto-negotiation");
     else {
         _LOGD(LOGD_DEVICE,
-              "set-link: configure %snegotiation (%u Mbit%s, %s duplex%s)",
+              "set-link: configure %snegotiation (%u Mbit, %s duplex)",
               autoneg ? "auto-" : "static ",
-              speed ?: link_speed,
-              speed ? "" : "*",
-              duplex ? nm_platform_link_duplex_type_to_string(duplex)
-                     : nm_platform_link_duplex_type_to_string(link_duplex),
-              duplex ? "" : "*");
+              speed,
+              nm_platform_link_duplex_type_to_string(duplex));
     }
 
     if (!priv->ethtool_prev_set) {
         /* remember the values we had before setting it. */
         priv->ethtool_prev_autoneg = link_autoneg;
-        priv->ethtool_prev_speed   = link_speed;
-        priv->ethtool_prev_duplex  = link_duplex;
-        priv->ethtool_prev_set     = TRUE;
+        if (link_autoneg) {
+            /* with autoneg, we only support advertising one speed/duplex. Likewise
+             * our nm_platform_ethtool_get_link_settings() can only return the current
+             * speed/duplex, but not all the modes that we were advertising.
+             *
+             * Do the best we can do: remember to re-enable autoneg, but don't restrict
+             * the mode. */
+            priv->ethtool_prev_speed  = 0;
+            priv->ethtool_prev_duplex = NM_PLATFORM_LINK_DUPLEX_UNKNOWN;
+        } else {
+            priv->ethtool_prev_speed  = link_speed;
+            priv->ethtool_prev_duplex = link_duplex;
+        }
+        priv->ethtool_prev_set = TRUE;
     }
 
     if (!nm_platform_ethtool_set_link_settings(nm_device_get_platform(device),

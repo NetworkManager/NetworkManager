@@ -582,6 +582,7 @@ src_libnm_platform_libnm_platform_la_CPPFLAGS = \
 
 src_libnm_platform_libnm_platform_la_SOURCES = \
 	\
+	src/linux-headers/ethtool.h \
 	src/linux-headers/nl802154.h \
 	\
 	src/libnm-platform/nm-linux-platform.c \
@@ -649,6 +650,8 @@ src_libnm_platform_tests_test_nm_platform_LDFLAGS = \
 
 src_libnm_platform_tests_test_nm_platform_LDADD = \
 	src/libnm-platform/libnm-platform.la \
+	src/libnm-udev-aux/libnm-udev-aux.la \
+	src/libnm-base/libnm-base.la \
 	src/libnm-log-core/libnm-log-core.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \

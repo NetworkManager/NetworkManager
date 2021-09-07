@@ -5,6 +5,7 @@
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-platform/nmp-netns.h"
+#include "libnm-platform/nm-platform-utils.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
 
@@ -103,6 +104,44 @@ test_use_symbols(void)
 
 /*****************************************************************************/
 
+static void
+test_nmp_link_mode_all_advertised_modes_bits(void)
+{
+    guint32 flags[(SCHAR_MAX + 1) / 32];
+    guint   max_bit;
+    int     i;
+
+    memset(flags, 0, sizeof(flags));
+
+    max_bit = 0;
+    for (i = 0; i < (int) G_N_ELEMENTS(_nmp_link_mode_all_advertised_modes_bits); i++) {
+        if (i > 0) {
+            g_assert_cmpint(_nmp_link_mode_all_advertised_modes_bits[i - 1],
+                            <,
+                            _nmp_link_mode_all_advertised_modes_bits[i]);
+        }
+        g_assert_cmpint(_nmp_link_mode_all_advertised_modes_bits[i], <, SCHAR_MAX);
+        g_assert_cmpint(_nmp_link_mode_all_advertised_modes_bits[i] / 32, <, G_N_ELEMENTS(flags));
+        flags[_nmp_link_mode_all_advertised_modes_bits[i] / 32] |=
+            (1u << (_nmp_link_mode_all_advertised_modes_bits[i] % 32u));
+        max_bit = NM_MAX(max_bit, _nmp_link_mode_all_advertised_modes_bits[i]);
+    }
+
+    g_assert_cmpint((max_bit + 31u) / 32u, ==, G_N_ELEMENTS(_nmp_link_mode_all_advertised_modes));
+
+    for (i = 0; i < (int) G_N_ELEMENTS(_nmp_link_mode_all_advertised_modes); i++) {
+        if (flags[i] != _nmp_link_mode_all_advertised_modes[i]) {
+            g_error("_nmp_link_mode_all_advertised_modes[%d] should be 0x%0x but is 0x%0x "
+                    "(according to the bits in _nmp_link_mode_all_advertised_modes_bits)",
+                    i,
+                    flags[i],
+                    _nmp_link_mode_all_advertised_modes[i]);
+        }
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -111,6 +150,8 @@ main(int argc, char **argv)
     nmtst_init(&argc, &argv, TRUE);
 
     g_test_add_func("/nm-platform/test_use_symbols", test_use_symbols);
+    g_test_add_func("/nm-platform/test_nmp_link_mode_all_advertised_modes_bits",
+                    test_nmp_link_mode_all_advertised_modes_bits);
 
     return g_test_run();
 }
