@@ -98,7 +98,8 @@
       <varlistentry>
         <term><option>--debug</option> | <option>-d</option></term>
         <listitem><para>Do not daemonize, and direct log output to the
-        controlling terminal in addition to syslog.
+        standard error, in addition to the logging backend specified
+        in configuration (journal or syslog).
         </para></listitem>
       </varlistentry>
       <varlistentry>
