@@ -7,6 +7,10 @@
 
 #include "nm-platform-utils.h"
 
+/* <linux/mii.h> includes <linux/ethtool.h>. We thus need to include
+ * our copy first and violate the common order of includes. */
+#include "linux-headers/ethtool.h"
+
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/sockios.h>
@@ -17,7 +21,6 @@
 #include <fcntl.h>
 #include <libudev.h>
 
-#include "linux-headers/ethtool.h"
 #include "libnm-base/nm-ethtool-base.h"
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-glib-aux/nm-time-utils.h"
