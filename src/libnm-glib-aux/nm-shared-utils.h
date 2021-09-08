@@ -18,6 +18,7 @@ typedef enum _nm_packed {
     NM_OPTION_BOOL_TRUE    = 1,
 } NMOptionBool;
 
+#define nm_assert_is_bool(value)    nm_assert(NM_IN_SET((value), 0, 1))
 #define nm_assert_is_ternary(value) nm_assert(NM_IN_SET((value), -1, 0, 1))
 
 /*****************************************************************************/
