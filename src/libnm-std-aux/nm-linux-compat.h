@@ -16,7 +16,7 @@
 #include <linux/const.h>
 
 #ifndef __KERNEL_DIV_ROUND_UP
-#define __KERNEL_DIV_ROUND_UP(n, d) (((n) + (d) -1) / (d))
+    #define __KERNEL_DIV_ROUND_UP(n, d) (((n) + (d) -1) / (d))
 #endif
 
 #include "linux-headers/ethtool.h"
