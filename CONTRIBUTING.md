@@ -305,6 +305,10 @@ have `-I. -I./src/` in their build arguments. So to include a header like
 [`src/libnm-glib-aux/nm-random-utils.h`](src/libnm-glib-aux/nm-random-utils.h)
 you'd do `#include "libnm-glib-aux/nm-random-utils.h"`.
 
+Note that there are exceptions. For example, `src/libnm-std-aux/nm-linux-compat.h`](src/libnm-std-aux/nm-linux-compat.h)
+may need to be included before system headers as it is supposed to include headers
+from `src/linux-headers`](src/linux-headers).
+
 See an example [here](src/core/nm-manager.c#L1).
 
 ### GObject Properties

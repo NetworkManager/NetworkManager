@@ -371,6 +371,7 @@ src_libnm_std_aux_libnm_std_aux_la_SOURCES = \
 	src/libnm-std-aux/c-list-util.h \
 	src/libnm-std-aux/nm-dbus-compat.h \
 	src/libnm-std-aux/nm-default-std.h \
+	src/libnm-std-aux/nm-linux-compat.h \
 	src/libnm-std-aux/nm-networkmanager-compilation.h \
 	src/libnm-std-aux/nm-std-aux.h \
 	src/libnm-std-aux/nm-std-utils.c \
