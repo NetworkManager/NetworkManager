@@ -323,7 +323,7 @@ load_eni_ifaces(NMSIfupdownPlugin *self)
                       NM_PRINT_FMT_QUOTED(local, " (", local->message, ")", ""));
                 sd = NULL;
             } else {
-                nmtst_connection_assert_unchanging(connection);
+                nm_assert_connection_unchanging(connection);
                 uuid = nm_connection_get_uuid(connection);
 
                 if (!storage)

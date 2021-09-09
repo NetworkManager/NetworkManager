@@ -175,7 +175,7 @@ void _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate 
 NMSettingPriority _nm_setting_get_base_type_priority(NMSetting *setting);
 int               _nm_setting_compare_priority(gconstpointer a, gconstpointer b);
 
-int _nmtst_nm_setting_sort(NMSetting *a, NMSetting *b);
+int _nm_setting_sort_for_nm_assert(NMSetting *a, NMSetting *b);
 
 /*****************************************************************************/
 

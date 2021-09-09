@@ -593,7 +593,8 @@ _l3cd_config_add(NML3IPv4LL *self)
                              0,
                              NM_L3_ACD_DEFEND_TYPE_ONCE,
                              self->reg_timeout_msec,
-                             NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD))
+                             NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD,
+                             NM_L3_CONFIG_MERGE_FLAGS_NONE))
         nm_assert_not_reached();
 
     self->l3cfg_commit_handle = nm_l3cfg_commit_type_register(self->l3cfg,

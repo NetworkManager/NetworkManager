@@ -51,6 +51,7 @@ libNetworkManagerBase = static_library(
     'nm-netns.c',
     'nm-l3-config-data.c',
     'nm-l3-ipv4ll.c',
+    'nm-l3-ipv6ll.c',
     'nm-l3cfg.c',
     'nm-ip-config.c',
     'nm-ip4-config.c',

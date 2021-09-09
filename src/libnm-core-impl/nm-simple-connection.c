@@ -161,7 +161,7 @@ dispose(GObject *object)
 
 #if NM_MORE_ASSERTS
     g_signal_handlers_disconnect_by_data(object,
-                                         (gpointer) &_nmtst_connection_unchanging_user_data);
+                                         (gpointer) &_nm_assert_connection_unchanging_user_data);
 #endif
 
     nm_connection_clear_secrets(connection);

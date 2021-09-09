@@ -2115,23 +2115,23 @@ _nm_connection_ensure_normalized(NMConnection * connection,
 
 #if NM_MORE_ASSERTS
 static void
-_nmtst_connection_unchanging_changed_cb(NMConnection *connection, gpointer user_data)
+_nm_assert_connection_unchanging_changed_cb(NMConnection *connection, gpointer user_data)
 {
     nm_assert_not_reached();
 }
 
 static void
-_nmtst_connection_unchanging_secrets_updated_cb(NMConnection *connection,
-                                                const char *  setting_name,
-                                                gpointer      user_data)
+_nm_assert_connection_unchanging_secrets_updated_cb(NMConnection *connection,
+                                                    const char *  setting_name,
+                                                    gpointer      user_data)
 {
     nm_assert_not_reached();
 }
 
-const char _nmtst_connection_unchanging_user_data = 0;
+const char _nm_assert_connection_unchanging_user_data = 0;
 
 void
-nmtst_connection_assert_unchanging(NMConnection *connection)
+nm_assert_connection_unchanging(NMConnection *connection)
 {
     if (!connection)
         return;
@@ -2144,7 +2144,7 @@ nmtst_connection_assert_unchanging(NMConnection *connection)
                               0,
                               NULL,
                               NULL,
-                              (gpointer) &_nmtst_connection_unchanging_user_data)
+                              (gpointer) &_nm_assert_connection_unchanging_user_data)
         != 0) {
         /* avoid connecting the assertion handler multiple times. */
         return;
@@ -2152,16 +2152,16 @@ nmtst_connection_assert_unchanging(NMConnection *connection)
 
     g_signal_connect(connection,
                      NM_CONNECTION_CHANGED,
-                     G_CALLBACK(_nmtst_connection_unchanging_changed_cb),
-                     (gpointer) &_nmtst_connection_unchanging_user_data);
+                     G_CALLBACK(_nm_assert_connection_unchanging_changed_cb),
+                     (gpointer) &_nm_assert_connection_unchanging_user_data);
     g_signal_connect(connection,
                      NM_CONNECTION_SECRETS_CLEARED,
-                     G_CALLBACK(_nmtst_connection_unchanging_changed_cb),
-                     (gpointer) &_nmtst_connection_unchanging_user_data);
+                     G_CALLBACK(_nm_assert_connection_unchanging_changed_cb),
+                     (gpointer) &_nm_assert_connection_unchanging_user_data);
     g_signal_connect(connection,
                      NM_CONNECTION_SECRETS_UPDATED,
-                     G_CALLBACK(_nmtst_connection_unchanging_secrets_updated_cb),
-                     (gpointer) &_nmtst_connection_unchanging_user_data);
+                     G_CALLBACK(_nm_assert_connection_unchanging_secrets_updated_cb),
+                     (gpointer) &_nm_assert_connection_unchanging_user_data);
 }
 #endif
 
@@ -2338,7 +2338,7 @@ nm_connection_need_secrets(NMConnection *connection, GPtrArray **hints)
         if (!setting)
             continue;
 
-        nm_assert(!setting_before || _nmtst_nm_setting_sort(setting_before, setting) < 0);
+        nm_assert(!setting_before || _nm_setting_sort_for_nm_assert(setting_before, setting) < 0);
         nm_assert(!setting_before || _nm_setting_compare_priority(setting_before, setting) <= 0);
         setting_before = setting;
 
@@ -2660,7 +2660,7 @@ nm_connection_is_type(NMConnection *connection, const char *type)
 }
 
 int
-_nmtst_nm_setting_sort(NMSetting *a, NMSetting *b)
+_nm_setting_sort_for_nm_assert(NMSetting *a, NMSetting *b)
 {
     g_assert(NM_IS_SETTING(a));
     g_assert(NM_IS_SETTING(b));
@@ -2727,7 +2727,7 @@ nm_connection_get_settings(NMConnection *connection, guint *out_length)
         NMSetting *setting = priv->settings[nm_meta_setting_types_by_priority[i]];
 
         if (setting) {
-            nm_assert(j == 0 || _nmtst_nm_setting_sort(arr[j - 1], setting) < 0);
+            nm_assert(j == 0 || _nm_setting_sort_for_nm_assert(arr[j - 1], setting) < 0);
             arr[j++] = setting;
         }
     }

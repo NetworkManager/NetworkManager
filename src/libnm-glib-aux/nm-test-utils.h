@@ -1458,6 +1458,19 @@ next:;
 
 /*****************************************************************************/
 
+/* uses an expression statement to copy and return @arg. The use is for functions
+ * like nmtst_inet4_from_string(), which return a static (thread-local) variable.
+ * If you use such a statement twice, the result will be overwritten. The macro
+ * prevents that. */
+#define NMTST_COPY(arg)           \
+    ({                            \
+        typeof(arg) _arg = (arg); \
+                                  \
+        _arg;                     \
+    })
+
+/*****************************************************************************/
+
 #define __define_nmtst_static(NUM, SIZE)                                   \
     static inline const char *nmtst_static_##SIZE##_##NUM(const char *str) \
     {                                                                      \

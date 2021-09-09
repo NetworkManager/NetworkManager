@@ -18,6 +18,7 @@ typedef enum _nm_packed {
     NM_OPTION_BOOL_TRUE    = 1,
 } NMOptionBool;
 
+#define nm_assert_is_bool(value)    nm_assert(NM_IN_SET((value), 0, 1))
 #define nm_assert_is_ternary(value) nm_assert(NM_IN_SET((value), -1, 0, 1))
 
 /*****************************************************************************/
@@ -2095,6 +2096,28 @@ nm_g_array_unref(GArray *arr)
     if (arr)
         g_array_unref(arr);
 }
+
+#define nm_g_array_first(arr, type)   \
+    ({                                \
+        GArray *const _arr = (arr);   \
+        guint         _len;           \
+                                      \
+        nm_assert(_arr);              \
+        _len = _arr->len;             \
+        nm_assert(_len > 0);          \
+        &g_array_index(arr, type, 0); \
+    })
+
+#define nm_g_array_last(arr, type)            \
+    ({                                        \
+        GArray *const _arr = (arr);           \
+        guint         _len;                   \
+                                              \
+        nm_assert(_arr);                      \
+        _len = _arr->len;                     \
+        nm_assert(_len > 0);                  \
+        &g_array_index(arr, type, _len - 1u); \
+    })
 
 #define nm_g_array_append_new(arr, type)   \
     ({                                     \
