@@ -317,8 +317,6 @@ typedef enum {
      * IFA_FLAGS attribute. */         \
     guint32 n_ifa_flags;                                                                     \
                                                                                              \
-    guint8 plen;                                                                             \
-                                                                                             \
     /* FIXME(l3cfg): the external marker won't be necessary anymore, because we only
      * merge addresses we care about, and ignore (don't remove) external addresses. */         \
     bool external : 1;                                                                       \
@@ -329,6 +327,8 @@ typedef enum {
      * that is not honored by NMPlatform (netlink code). Instead, it can be used by the upper
      * layers which use NMPlatformIPAddress to track addresses that should be configured. */   \
     bool a_assume_config_once : 1;                                                           \
+                                                                                             \
+    guint8 plen;                                                                             \
     ;
 
 /**
@@ -531,8 +531,7 @@ typedef union {
      * it means RTN_UNSPEC otherwise the type value is preserved.
      * */                                                                          \
     guint8 type_coerced;                                                                  \
-                                                                                          \
-    /*end*/
+    ;
 
 typedef struct {
     __NMPlatformIPRoute_COMMON;
