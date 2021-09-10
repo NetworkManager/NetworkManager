@@ -112,7 +112,7 @@ nms_ifcfg_rh_storage_new_connection(NMSIfcfgRHPlugin *     plugin,
 
     nm_assert(NM_IS_CONNECTION(connection_take));
     nm_assert(_nm_connection_verify(connection_take, NULL) == NM_SETTING_VERIFY_SUCCESS);
-    nmtst_connection_assert_unchanging(connection_take);
+    nm_assert_connection_unchanging(connection_take);
 
     self             = _storage_new(plugin, nm_connection_get_uuid(connection_take), filename);
     self->connection = connection_take;

@@ -327,7 +327,7 @@ test_nm_ip6_config_addresses_sort(void)
              0,
              0,
              0,
-             IFA_F_TEMPORARY);
+             IFA_F_SECONDARY);
     ADDR_ADD("2607:f0d0:1002:51::8",
              NULL,
              64,
@@ -336,7 +336,7 @@ test_nm_ip6_config_addresses_sort(void)
              0,
              0,
              0,
-             IFA_F_TEMPORARY);
+             IFA_F_SECONDARY);
     ADDR_ADD("2607:f0d0:1002:51::0",
              NULL,
              64,
@@ -345,7 +345,7 @@ test_nm_ip6_config_addresses_sort(void)
              0,
              0,
              0,
-             IFA_F_TEMPORARY);
+             IFA_F_SECONDARY);
     ADDR_ADD("fec0::1", NULL, 128, 0, NM_IP_CONFIG_SOURCE_KERNEL, 0, 0, 0, 0);
     ADDR_ADD("fe80::208:74ff:feda:625c", NULL, 128, 0, NM_IP_CONFIG_SOURCE_KERNEL, 0, 0, 0, 0);
     ADDR_ADD("fe80::208:74ff:feda:625d", NULL, 128, 0, NM_IP_CONFIG_SOURCE_KERNEL, 0, 0, 0, 0);
@@ -374,7 +374,7 @@ test_nm_ip6_config_addresses_sort(void)
              0,
              0,
              0,
-             IFA_F_TEMPORARY);
+             IFA_F_SECONDARY);
     ADDR_ADD("2607:f0d0:1002:51::4", NULL, 64, 0, NM_IP_CONFIG_SOURCE_USER, 0, 0, 0, 0);
     ADDR_ADD("2607:f0d0:1002:51::5", NULL, 64, 0, NM_IP_CONFIG_SOURCE_USER, 0, 0, 0, 0);
     ADDR_ADD("2607:f0d0:1002:51::8",
@@ -385,7 +385,7 @@ test_nm_ip6_config_addresses_sort(void)
              0,
              0,
              0,
-             IFA_F_TEMPORARY);
+             IFA_F_SECONDARY);
     ADDR_ADD("2607:f0d0:1002:51::0",
              NULL,
              64,
@@ -394,7 +394,7 @@ test_nm_ip6_config_addresses_sort(void)
              0,
              0,
              0,
-             IFA_F_TEMPORARY);
+             IFA_F_SECONDARY);
     ADDR_ADD("2607:f0d0:1002:51::6",
              NULL,
              64,

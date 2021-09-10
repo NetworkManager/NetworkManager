@@ -152,7 +152,7 @@ test_nm_meta_setting_types_by_priority(void)
         for (j = 0; j < i; j++) {
             NMSetting *other = arr->pdata[j];
 
-            if (_nmtst_nm_setting_sort(other, setting) >= 0) {
+            if (_nm_setting_sort_for_nm_assert(other, setting) >= 0) {
                 g_error("sort order for nm_meta_setting_types_by_priority[%d vs %d] is wrong: %s "
                         "should be before %s",
                         j,

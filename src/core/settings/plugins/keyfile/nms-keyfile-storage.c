@@ -168,7 +168,7 @@ nms_keyfile_storage_new_connection(NMSKeyfilePlugin *     plugin,
     nm_assert(filename && filename[0] == '/');
     nm_assert(storage_type >= NMS_KEYFILE_STORAGE_TYPE_RUN
               && storage_type <= _NMS_KEYFILE_STORAGE_TYPE_LIB_LAST);
-    nmtst_connection_assert_unchanging(connection_take);
+    nm_assert_connection_unchanging(connection_take);
 
     self = _storage_new(plugin,
                         nm_connection_get_uuid(connection_take),

@@ -2,8 +2,11 @@
 
 #include "src/core/nm-default-daemon.h"
 
+#include <linux/if_addr.h>
+
 #include "nm-l3cfg.h"
 #include "nm-l3-ipv4ll.h"
+#include "nm-l3-ipv6ll.h"
 #include "nm-netns.h"
 #include "libnm-platform/nm-platform.h"
 
@@ -434,6 +437,7 @@ test_l3cfg(gconstpointer test_data)
                             0,
                             tdata->acd_defend_type_a,
                             tdata->acd_timeout_msec_a,
+                            NM_L3CFG_CONFIG_FLAGS_NONE,
                             NM_L3_CONFIG_MERGE_FLAGS_NONE);
     }
 
@@ -595,6 +599,7 @@ _test_l3_ipv4ll_signal_notify(NML3Cfg *                   l3cfg,
                                          0,
                                          NM_L3_ACD_DEFEND_TYPE_ONCE,
                                          nmtst_get_rand_bool() ? tdata->acd_timeout_msec : 0u,
+                                         NM_L3CFG_CONFIG_FLAGS_NONE,
                                          NM_L3_CONFIG_MERGE_FLAGS_NONE))
                     g_assert_not_reached();
                 nm_l3cfg_commit_on_idle_schedule(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll));
@@ -778,6 +783,276 @@ test_l3_ipv4ll(gconstpointer test_data)
 
 /*****************************************************************************/
 
+#define _LLADDR_TEST1 "fe80::dd5a:8a44:48bc:3ad"
+#define _LLADDR_TEST2 "fe80::878b:938e:46f9:4807"
+
+typedef struct {
+    const TestFixture1 *f;
+    NML3Cfg *           l3cfg0;
+    NML3IPv6LL *        l3ipv6ll;
+    int                 step;
+    int                 ipv6ll_callback_step;
+    bool                steps_done : 1;
+    const NMPObject *   lladdr0;
+} TestL3IPv6LLData;
+
+static const NMPlatformIP6Address *
+_test_l3_ipv6ll_find_lladdr(TestL3IPv6LLData *tdata, int ifindex)
+{
+    const NMPlatformIP6Address *found = NULL;
+    NMDedupMultiIter            iter;
+    const NMPObject *           obj;
+    NMPLookup                   lookup;
+
+    g_assert(tdata);
+
+    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex);
+    nm_platform_iter_obj_for_each (&iter, tdata->f->platform, &lookup, &obj) {
+        const NMPlatformIP6Address *a = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
+
+        if (!IN6_IS_ADDR_LINKLOCAL(&a->address))
+            continue;
+
+        if (!found)
+            found = a;
+        else
+            g_assert_not_reached();
+    }
+
+    return found;
+}
+
+static const NMPObject *
+_test_l3_ipv6ll_find_lladdr_wait(TestL3IPv6LLData *tdata, int ifindex)
+{
+    const NMPObject *obj = NULL;
+
+    nmtst_main_context_iterate_until_assert(NULL, 3000, ({
+                                                const NMPlatformIP6Address *a;
+
+                                                a = _test_l3_ipv6ll_find_lladdr(tdata, ifindex);
+                                                if (a
+                                                    && !NM_FLAGS_HAS(a->n_ifa_flags,
+                                                                     IFA_F_TENTATIVE))
+                                                    obj = NMP_OBJECT_UP_CAST(a);
+                                                obj;
+                                            }));
+
+    return obj;
+}
+
+static const NMPlatformIP6Address *
+_test_l3_ipv6ll_find_inet6(TestL3IPv6LLData *tdata, const struct in6_addr *addr)
+{
+    const NMPlatformIP6Address *a;
+
+    a = nmtstp_platform_ip6_address_find(nm_l3cfg_get_platform(tdata->l3cfg0),
+                                         nmtst_get_rand_bool() ? 0 : tdata->f->ifindex0,
+                                         addr);
+    if (a) {
+        g_assert_cmpint(a->ifindex, ==, tdata->f->ifindex0);
+        g_assert_cmpmem(addr, sizeof(*addr), &a->address, sizeof(a->address));
+    }
+
+    g_assert(a
+             == nm_platform_ip6_address_get(nm_l3cfg_get_platform(tdata->l3cfg0),
+                                            tdata->f->ifindex0,
+                                            addr));
+
+    return a;
+}
+
+static void
+_test_l3_ipv6ll_signal_notify(NML3Cfg *                   l3cfg,
+                              const NML3ConfigNotifyData *notify_data,
+                              TestL3IPv6LLData *          tdata)
+{
+    g_assert_cmpint(tdata->step, >=, 1);
+    g_assert_cmpint(tdata->step, <=, 2);
+}
+
+static void
+_test_l3_ipv6ll_callback_changed(NML3IPv6LL *           ipv6ll,
+                                 NML3IPv6LLState        state,
+                                 const struct in6_addr *lladdr,
+                                 gpointer               user_data)
+{
+    TestL3IPv6LLData *          tdata = user_data;
+    int                         step  = tdata->ipv6ll_callback_step++;
+    const NMPlatformIP6Address *a1;
+
+    g_assert_cmpint(tdata->step, ==, 1);
+    g_assert(!tdata->steps_done);
+
+    switch (step) {
+    case 0:
+        if (NM_IN_SET(tdata->f->test_idx, 1, 2, 4)) {
+            g_assert_cmpint(state, ==, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS);
+            g_assert_cmpstr(nmtst_inet6_to_string(lladdr), ==, _LLADDR_TEST1);
+        } else if (NM_IN_SET(tdata->f->test_idx, 3)) {
+            g_assert_cmpint(state, ==, NM_L3_IPV6LL_STATE_READY);
+            g_assert(
+                IN6_ARE_ADDR_EQUAL(lladdr, &NMP_OBJECT_CAST_IP6_ADDRESS(tdata->lladdr0)->address));
+            tdata->steps_done = TRUE;
+        } else
+            g_assert_not_reached();
+        break;
+    case 1:
+        if (NM_IN_SET(tdata->f->test_idx, 1, 2)) {
+            g_assert_cmpint(state, ==, NM_L3_IPV6LL_STATE_READY);
+            g_assert_cmpstr(nmtst_inet6_to_string(lladdr), ==, _LLADDR_TEST1);
+            a1 = _test_l3_ipv6ll_find_inet6(tdata, lladdr);
+            g_assert(a1);
+            g_assert(!NM_FLAGS_HAS(a1->n_ifa_flags, IFA_F_TENTATIVE));
+            tdata->steps_done = TRUE;
+        } else if (NM_IN_SET(tdata->f->test_idx, 4)) {
+            g_assert_cmpint(state, ==, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS);
+            g_assert_cmpstr(nmtst_inet6_to_string(lladdr), ==, _LLADDR_TEST2);
+        } else
+            g_assert_not_reached();
+        break;
+    case 2:
+        if (NM_IN_SET(tdata->f->test_idx, 4)) {
+            g_assert_cmpint(state, ==, NM_L3_IPV6LL_STATE_READY);
+            g_assert_cmpstr(nmtst_inet6_to_string(lladdr), ==, _LLADDR_TEST2);
+            a1 = _test_l3_ipv6ll_find_inet6(tdata, lladdr);
+            g_assert(a1);
+            g_assert(!NM_FLAGS_HAS(a1->n_ifa_flags, IFA_F_TENTATIVE));
+            tdata->steps_done = TRUE;
+        } else
+            g_assert_not_reached();
+        break;
+    default:
+        g_assert_not_reached();
+    }
+}
+
+static void
+test_l3_ipv6ll(gconstpointer test_data)
+{
+    NMTST_UTILS_HOST_ID_CONTEXT("l3-ipv6ll");
+    const int                                      TEST_IDX     = GPOINTER_TO_INT(test_data);
+    nm_auto(_test_fixture_1_teardown) TestFixture1 test_fixture = {};
+    gs_unref_object NML3Cfg *l3cfg0                             = NULL;
+    TestL3IPv6LLData         tdata_stack                        = {
+        .step       = 0,
+        .steps_done = FALSE,
+    };
+    TestL3IPv6LLData *const tdata = &tdata_stack;
+    char                    sbuf1[sizeof(_nm_utils_to_string_buffer)];
+    int                     r;
+
+    _LOGD("test start (/l3-ipv6ll/%d)", TEST_IDX);
+
+    if (nmtst_test_quick()) {
+        gs_free char *msg =
+            g_strdup_printf("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n",
+                            g_get_prgname() ?: "test-l3-ipv6ll");
+
+        g_test_skip(msg);
+        return;
+    }
+
+    tdata->f = _test_fixture_1_setup(&test_fixture, TEST_IDX);
+
+    if (NM_IN_SET(tdata->f->test_idx, 4)) {
+        _LOGD("add conflicting IPv6LL on other interface...");
+        r = nm_platform_link_change_flags(tdata->f->platform, tdata->f->ifindex1, IFF_UP, FALSE);
+        g_assert_cmpint(r, >=, 0);
+
+        r = nm_platform_link_set_inet6_addr_gen_mode(tdata->f->platform,
+                                                     tdata->f->ifindex1,
+                                                     NM_IN6_ADDR_GEN_MODE_NONE);
+        g_assert_cmpint(r, >=, 0);
+
+        r = nm_platform_link_change_flags(tdata->f->platform, tdata->f->ifindex1, IFF_UP, TRUE);
+        g_assert_cmpint(r, >=, 0);
+
+        nmtstp_ip6_address_add(tdata->f->platform,
+                               -1,
+                               tdata->f->ifindex1,
+                               *nmtst_inet6_from_string(_LLADDR_TEST1),
+                               64,
+                               in6addr_any,
+                               NM_PLATFORM_LIFETIME_PERMANENT,
+                               NM_PLATFORM_LIFETIME_PERMANENT,
+                               0);
+
+        _LOGD("wait for IPv6 LL address...");
+        tdata->lladdr0 =
+            nmp_object_ref(_test_l3_ipv6ll_find_lladdr_wait(tdata, tdata->f->ifindex1));
+    } else if (NM_IN_SET(tdata->f->test_idx, 2, 3)) {
+        _LOGD("wait for IPv6 LL address...");
+        tdata->lladdr0 =
+            nmp_object_ref(_test_l3_ipv6ll_find_lladdr_wait(tdata, tdata->f->ifindex0));
+    }
+
+    if (tdata->lladdr0) {
+        _LOGD("got IPv6 LL address %s",
+              nmp_object_to_string(tdata->lladdr0,
+                                   NMP_OBJECT_TO_STRING_PUBLIC,
+                                   sbuf1,
+                                   sizeof(sbuf1)));
+    }
+
+    l3cfg0        = _netns_access_l3cfg(tdata->f->netns, tdata->f->ifindex0);
+    tdata->l3cfg0 = l3cfg0;
+
+    g_signal_connect(tdata->l3cfg0,
+                     NM_L3CFG_SIGNAL_NOTIFY,
+                     G_CALLBACK(_test_l3_ipv6ll_signal_notify),
+                     tdata);
+
+    tdata->l3ipv6ll = nm_l3_ipv6ll_new_stable_privacy(tdata->l3cfg0,
+                                                      NM_IN_SET(tdata->f->test_idx, 3),
+                                                      NM_UTILS_STABLE_TYPE_UUID,
+                                                      tdata->f->ifname0,
+                                                      "b6a5b934-c649-43dc-a524-3dfdb74f9419",
+                                                      _test_l3_ipv6ll_callback_changed,
+                                                      tdata);
+
+    g_assert(nm_l3_ipv6ll_get_l3cfg(tdata->l3ipv6ll) == tdata->l3cfg0);
+    g_assert_cmpint(nm_l3_ipv6ll_get_ifindex(tdata->l3ipv6ll), ==, tdata->f->ifindex0);
+
+    tdata->step = 1;
+    nmtst_main_context_iterate_until_assert(NULL, 7000, tdata->steps_done);
+
+    g_assert_cmpint(tdata->step, ==, 1);
+    if (NM_IN_SET(tdata->f->test_idx, 3))
+        g_assert_cmpint(tdata->ipv6ll_callback_step, ==, 1);
+    else if (NM_IN_SET(tdata->f->test_idx, 4))
+        g_assert_cmpint(tdata->ipv6ll_callback_step, ==, 3);
+    else
+        g_assert_cmpint(tdata->ipv6ll_callback_step, ==, 2);
+    g_assert(tdata->steps_done);
+
+    tdata->step = 2;
+    nmtst_main_context_iterate_until(NULL, nmtst_get_rand_uint32() % 1000, FALSE);
+
+    g_assert_cmpint(tdata->step, ==, 2);
+    if (NM_IN_SET(tdata->f->test_idx, 3))
+        g_assert_cmpint(tdata->ipv6ll_callback_step, ==, 1);
+    else if (NM_IN_SET(tdata->f->test_idx, 4))
+        g_assert_cmpint(tdata->ipv6ll_callback_step, ==, 3);
+    else
+        g_assert_cmpint(tdata->ipv6ll_callback_step, ==, 2);
+    g_assert(tdata->steps_done);
+    g_assert(tdata->steps_done);
+
+    tdata->step       = 0;
+    tdata->steps_done = FALSE;
+
+    g_signal_handlers_disconnect_by_func(tdata->l3cfg0,
+                                         G_CALLBACK(_test_l3_ipv6ll_signal_notify),
+                                         tdata);
+
+    nm_l3_ipv6ll_destroy(tdata->l3ipv6ll);
+
+    nm_clear_nmp_object(&tdata->lladdr0);
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = nm_linux_platform_setup;
 
 void
@@ -795,4 +1070,8 @@ _nmtstp_setup_tests(void)
     g_test_add_data_func("/l3cfg/4", GINT_TO_POINTER(4), test_l3cfg);
     g_test_add_data_func("/l3-ipv4ll/1", GINT_TO_POINTER(1), test_l3_ipv4ll);
     g_test_add_data_func("/l3-ipv4ll/2", GINT_TO_POINTER(2), test_l3_ipv4ll);
+    g_test_add_data_func("/l3-ipv6ll/1", GINT_TO_POINTER(1), test_l3_ipv6ll);
+    g_test_add_data_func("/l3-ipv6ll/2", GINT_TO_POINTER(2), test_l3_ipv6ll);
+    g_test_add_data_func("/l3-ipv6ll/3", GINT_TO_POINTER(3), test_l3_ipv6ll);
+    g_test_add_data_func("/l3-ipv6ll/4", GINT_TO_POINTER(4), test_l3_ipv6ll);
 }

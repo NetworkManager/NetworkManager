@@ -1352,7 +1352,7 @@ _connection_changed_track(NMSettings *       self,
               || (_nm_connection_verify(connection, NULL) == NM_SETTING_VERIFY_SUCCESS));
     nm_assert(!connection || nm_streq0(uuid, nm_connection_get_uuid(connection)));
 
-    nmtst_connection_assert_unchanging(connection);
+    nm_assert_connection_unchanging(connection);
 
     sett_conn_entry =
         _sett_conn_entries_get(self, uuid) ?: _sett_conn_entries_create_and_add(self, uuid);

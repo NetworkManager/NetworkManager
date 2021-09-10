@@ -7,6 +7,7 @@
 #include "nm-l3-config-data.h"
 
 #define NM_L3CFG_CONFIG_PRIORITY_IPV4LL 0
+#define NM_L3CFG_CONFIG_PRIORITY_IPV6LL 0
 #define NM_ACD_TIMEOUT_RFC5227_MSEC     9000u
 
 #define NM_TYPE_L3CFG            (nm_l3cfg_get_type())
@@ -27,6 +28,37 @@ typedef enum _nm_packed {
     NM_L3_ACD_DEFEND_TYPE_ONCE,
     NM_L3_ACD_DEFEND_TYPE_ALWAYS,
 } NML3AcdDefendType;
+
+/**
+ * NML3CfgConfigFlags:
+ * @NM_L3CFG_CONFIG_FLAGS_NONE: no flags, the default.
+ * @NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD: if this merge flag is set,
+ *   the the NML3ConfigData doesn't get merged and it's information won't be
+ *   synced. The only purpose is to run ACD on its IPv4 addresses, but
+ *   regardless whether ACD succeeds/fails, the IP addresses won't be configured.
+ *   The point is to run ACD first (without configuring it), and only
+ *   commit the settings if requested. That can either happen by
+ *   nm_l3cfg_add_config() the same NML3Cfg again (with a different
+ *   tag), or by calling nm_l3cfg_add_config() again with this flag
+ *   cleared (and the same tag).
+ * @NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE: a commit with
+ *   %NM_L3_CFG_COMMIT_TYPE_ASSUME, means to not remove/add
+ *   addresses that are missing/already exist. The assume mode
+ *   is for taking over a device gracefully after restart, so
+ *   it aims to preserve whatever was configured (or not configured).
+ *   With this flag enabled, the first commit in assume mode will still
+ *   add the addresses/routes. This is necessary for example with IPv6LL.
+ *   Also while assuming a device, we want to configure things
+ *   (like an IPv6 address), so we need to bypass the common
+ *   "don't change" behavior. At least once. If the address/route
+ *   is still not (no longer) configured on the subsequent
+ *   commit, it's not getting added again.
+ */
+typedef enum _nm_packed {
+    NM_L3CFG_CONFIG_FLAGS_NONE               = 0,
+    NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD       = (1LL << 0),
+    NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE = (1LL << 1),
+} NML3CfgConfigFlags;
 
 typedef enum _nm_packed {
     NM_L3_ACD_ADDR_STATE_INIT,
@@ -291,6 +323,7 @@ gboolean nm_l3cfg_add_config(NML3Cfg *             self,
                              guint32               default_route_penalty_6,
                              NML3AcdDefendType     acd_defend_type,
                              guint32               acd_timeout_msec,
+                             NML3CfgConfigFlags    config_flags,
                              NML3ConfigMergeFlags  merge_flags);
 
 gboolean nm_l3cfg_remove_config(NML3Cfg *self, gconstpointer tag, const NML3ConfigData *ifcfg);

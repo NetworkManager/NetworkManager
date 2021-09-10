@@ -1104,6 +1104,14 @@ _l3_config_data_add_obj(NMDedupMultiIndex *     multi_idx,
                     obj_new_stackinit.ip_address.addr_source = obj_old->ip_address.addr_source;
                     modified                                 = TRUE;
                 }
+
+                /* OR assume_config_once flag */
+                if (obj_new->ip_address.a_assume_config_once
+                    && !obj_old->ip_address.a_assume_config_once) {
+                    obj_new = nmp_object_stackinit_obj(&obj_new_stackinit, obj_new);
+                    obj_new_stackinit.ip_address.a_assume_config_once = TRUE;
+                    modified                                          = TRUE;
+                }
                 break;
             case NMP_OBJECT_TYPE_IP4_ROUTE:
             case NMP_OBJECT_TYPE_IP6_ROUTE:
@@ -1112,6 +1120,14 @@ _l3_config_data_add_obj(NMDedupMultiIndex *     multi_idx,
                     obj_new = nmp_object_stackinit_obj(&obj_new_stackinit, obj_new);
                     obj_new_stackinit.ip_route.rt_source = obj_old->ip_route.rt_source;
                     modified                             = TRUE;
+                }
+
+                /* OR assume_config_once flag */
+                if (obj_new->ip_route.r_assume_config_once
+                    && !obj_old->ip_route.r_assume_config_once) {
+                    obj_new = nmp_object_stackinit_obj(&obj_new_stackinit, obj_new);
+                    obj_new_stackinit.ip_route.r_assume_config_once = TRUE;
+                    modified                                        = TRUE;
                 }
                 break;
             default:
@@ -2696,7 +2712,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                         const guint32 *       default_route_table_x /* length 2, for IS_IPv4 */,
                         const guint32 *       default_route_metric_x /* length 2, for IS_IPv4 */,
                         const guint32 *       default_route_penalty_x /* length 2, for IS_IPv4 */,
-                        NML3ConfigMergeHookAddObj hook_add_addr,
+                        NML3ConfigMergeHookAddObj hook_add_obj,
                         gpointer                  hook_user_data)
 {
     static const guint32 x_default_route_table_x[2]   = {RT_TABLE_MAIN, RT_TABLE_MAIN};
@@ -2733,36 +2749,67 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                                              src,
                                              &obj,
                                              NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4)) {
-            NMPlatformIPXAddress       addr_stack;
-            const NMPlatformIPAddress *addr             = NULL;
-            NMTernary                  ip4acd_not_ready = NM_TERNARY_DEFAULT;
+            const NMPlatformIPAddress *a_src = NMP_OBJECT_CAST_IP_ADDRESS(obj);
+            NMPlatformIPXAddress       a;
+            NML3ConfigMergeHookResult  hook_result = {
+                .ip4acd_not_ready   = NM_OPTION_BOOL_DEFAULT,
+                .assume_config_once = NM_OPTION_BOOL_DEFAULT,
+            };
 
-            if (hook_add_addr && !hook_add_addr(src, obj, &ip4acd_not_ready, hook_user_data))
+#define _ensure_a()                                       \
+    G_STMT_START                                          \
+    {                                                     \
+        if (a_src != &a.ax) {                             \
+            a_src = &a.ax;                                \
+            if (IS_IPv4)                                  \
+                a.a4 = *NMP_OBJECT_CAST_IP4_ADDRESS(obj); \
+            else                                          \
+                a.a6 = *NMP_OBJECT_CAST_IP6_ADDRESS(obj); \
+        }                                                 \
+    }                                                     \
+    G_STMT_END
+
+            nm_assert(a_src->ifindex == self->ifindex);
+
+            if (hook_add_obj && !hook_add_obj(src, obj, &hook_result, hook_user_data))
                 continue;
 
-            if (IS_IPv4 && ip4acd_not_ready != NM_TERNARY_DEFAULT
-                && (!!ip4acd_not_ready) != NMP_OBJECT_CAST_IP4_ADDRESS(obj)->ip4acd_not_ready) {
-                addr_stack.a4                  = *NMP_OBJECT_CAST_IP4_ADDRESS(obj);
-                addr_stack.a4.ip4acd_not_ready = (!!ip4acd_not_ready);
-                addr                           = &addr_stack.ax;
-            } else
-                nm_assert(IS_IPv4 || ip4acd_not_ready == NM_TERNARY_DEFAULT);
+            nm_assert(IS_IPv4 || hook_result.ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
+
+            if (hook_result.ip4acd_not_ready != NM_OPTION_BOOL_DEFAULT && IS_IPv4
+                && (!!hook_result.ip4acd_not_ready)
+                       != ((const NMPlatformIP4Address *) a_src)->a_acd_not_ready) {
+                _ensure_a();
+                a.a4.a_acd_not_ready = (!!hook_result.ip4acd_not_ready);
+            }
+
+            if (hook_result.assume_config_once != NM_OPTION_BOOL_DEFAULT
+                && (!!hook_result.assume_config_once) != a_src->a_assume_config_once) {
+                _ensure_a();
+                a.ax.a_assume_config_once = (!!hook_result.assume_config_once);
+            }
 
             nm_l3_config_data_add_address_full(self,
                                                addr_family,
-                                               addr ? NULL : obj,
-                                               addr,
+                                               a_src == &a.ax ? NULL : obj,
+                                               a_src == &a.ax ? a_src : NULL,
                                                NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
                                                NULL);
         }
+
+#undef _ensure_a
 
         if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_ROUTES)) {
             nm_l3_config_data_iter_obj_for_each (&iter,
                                                  src,
                                                  &obj,
                                                  NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4)) {
-                const NMPlatformIPRoute *r_src = NMP_OBJECT_CAST_IP_ROUTE(obj);
-                NMPlatformIPXRoute       r;
+                const NMPlatformIPRoute * r_src = NMP_OBJECT_CAST_IP_ROUTE(obj);
+                NMPlatformIPXRoute        r;
+                NML3ConfigMergeHookResult hook_result = {
+                    .ip4acd_not_ready   = NM_OPTION_BOOL_DEFAULT,
+                    .assume_config_once = NM_OPTION_BOOL_DEFAULT,
+                };
 
 #define _ensure_r()                                     \
     G_STMT_START                                        \
@@ -2773,10 +2820,22 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                 r.r4 = *NMP_OBJECT_CAST_IP4_ROUTE(obj); \
             else                                        \
                 r.r6 = *NMP_OBJECT_CAST_IP6_ROUTE(obj); \
-            r.rx.ifindex = self->ifindex;               \
         }                                               \
     }                                                   \
     G_STMT_END
+
+                nm_assert(r_src->ifindex == self->ifindex);
+
+                if (hook_add_obj && !hook_add_obj(src, obj, &hook_result, hook_user_data))
+                    continue;
+
+                nm_assert(hook_result.ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
+
+                if (hook_result.assume_config_once != NM_OPTION_BOOL_DEFAULT
+                    && (!!hook_result.assume_config_once) != r_src->r_assume_config_once) {
+                    _ensure_r();
+                    r.rx.r_assume_config_once = (!!hook_result.assume_config_once);
+                }
 
                 if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)) {
                     if (r_src->table_any) {
