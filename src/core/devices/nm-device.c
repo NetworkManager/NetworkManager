@@ -4514,7 +4514,7 @@ concheck_cb(NMConnectivity *           connectivity,
     seq = handle->seq;
 
     _LOGT(LOGD_CONCHECK,
-          "connectivity: [Ipv%c] complete check (seq:%llu, state:%s)",
+          "connectivity: [IPv%c] complete check (seq:%llu, state:%s)",
           nm_utils_addr_family_to_char(handle->addr_family),
           (long long unsigned) handle->seq,
           nm_connectivity_state_to_string(state));
