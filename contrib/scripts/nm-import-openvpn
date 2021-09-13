@@ -299,6 +299,7 @@ vpn2nm = {
   ["tls-cipher"]        = { nm_opt="tls-cipher",       func=handle_generic_unquote, tbl=g_vpn_data },
   ["tls-client"]        = { nm_opt="client",           func=set_bool,               tbl={} },
   ["tls-remote"]        = { nm_opt="tls-remote",       func=handle_generic_unquote, tbl=g_vpn_data },
+  ["tls-crypt"]         = { nm_opt="tls-crypt",        func=handle_path,            tbl=g_vpn_data },
   ["tun-ipv6"]          = { nm_opt="tun-ipv6",         func=handle_yes,             tbl=g_vpn_data },
   ["tun-mtu"]           = { nm_opt="tunnel-mtu",       func=handle_generic,         tbl=g_vpn_data },
   ["verify-x509-name"]  = { nm_opt="verify-x509-name", func=handle_verify_x509_name,tbl=g_vpn_data },
@@ -367,6 +368,7 @@ function read_and_convert(in_file)
   -- set 'connection-type'
   g_vpn_data["connection-type"] = "tls"
   have_sk = g_switches["secret"] ~= nil
+  -- TODO tls-crypt?
   have_ca = g_vpn_data["ca"] ~= nil
   have_certs = ve_ca and g_vpn_data["cert"] and g_vpn_data["key"]
   if g_switches["auth-user-pass"] then
@@ -377,6 +379,7 @@ function read_and_convert(in_file)
     end
   elseif have_certs then g_vpn_data["connection-type"] = "tls"
   elseif have_sk then g_vpn_data["connection-type"] = "static-key"
+  -- TODO tls-crypt?
   end
   return true
 end
