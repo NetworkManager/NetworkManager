@@ -2403,6 +2403,11 @@ _ovsdb_connect_idle(gpointer user_data, GCancellable *cancellable)
     priv = NM_OVSDB_GET_PRIVATE(self);
 
     fd = nm_sudo_utils_open_fd(NM_SUDO_GET_FD_TYPE_OVSDB_SOCKET, &error);
+    if (fd == -ENOENT) {
+        _LOGT("connect: opening %s failed (\"%s\")", NM_OVSDB_SOCKET, error->message);
+        ovsdb_disconnect(self, FALSE, FALSE);
+        return;
+    }
     if (fd < 0) {
         _LOGT("connect: opening %s failed (\"%s\"). Retry with nm-sudo",
               NM_OVSDB_SOCKET,
