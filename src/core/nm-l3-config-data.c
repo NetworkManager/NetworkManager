@@ -879,7 +879,7 @@ nm_l3_config_data_lookup_address_6(const NML3ConfigData *self, const struct in6_
 
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
-    /* this works only, because the primary key for a Ipv6 address is the
+    /* this works only, because the primary key for a IPv6 address is the
      * ifindex and the "struct in6_addr". */
     nmp_object_stackinit_id_ip6_address(&obj_stack, self->ifindex, addr);
 
