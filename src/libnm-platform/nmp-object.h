@@ -1106,7 +1106,7 @@ nmp_object_link_get_ifname(const NMPObject *obj)
 }
 
 static inline gboolean
-nmp_object_ip_route_is_best_defaut_route(const NMPObject *obj)
+nmp_object_ip_route_is_best_default_route(const NMPObject *obj)
 {
     const NMPlatformIPRoute *r = NMP_OBJECT_CAST_IP_ROUTE(obj);
 

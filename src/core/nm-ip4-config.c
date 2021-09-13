@@ -408,11 +408,11 @@ _nm_ip_config_best_default_route_find_better(const NMPObject *obj_cur, const NMP
                                NMP_OBJECT_TYPE_IP4_ROUTE,
                                NMP_OBJECT_TYPE_IP6_ROUTE))
               || NMP_OBJECT_GET_TYPE(obj_cur) == NMP_OBJECT_GET_TYPE(obj_cmp));
-    nm_assert(!obj_cur || nmp_object_ip_route_is_best_defaut_route(obj_cur));
+    nm_assert(!obj_cur || nmp_object_ip_route_is_best_default_route(obj_cur));
 
     /* assumes that @obj_cur is already the best default route (or NULL). It checks whether
      * @obj_cmp is also a default route and returns the best of both. */
-    if (obj_cmp && nmp_object_ip_route_is_best_defaut_route(obj_cmp)) {
+    if (obj_cmp && nmp_object_ip_route_is_best_default_route(obj_cmp)) {
         guint32 metric_cur, metric_cmp;
 
         if (!obj_cur)
