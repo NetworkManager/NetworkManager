@@ -11,7 +11,12 @@ cleanup() {
     local IDX="$1"
 
     pkill -F "/tmp/nm-dnsmasq-d_$IDX.pid" dnsmasq &>/dev/null || :
-    : > "/tmp/nm-dnsmasq-d_$IDX.pid"
+    rm -rf "/tmp/nm-dnsmasq-d_$IDX.pid"
+
+    pkill -F "/tmp/nm-radvd-d_$IDX.pid" radvd &>/dev/null || :
+    rm -rf "/tmp/nm-radvd-d_$IDX.pid"
+
+    rm -rf "/tmp/nm-radvd-d_$IDX.conf"
 
     ip link del "d_$IDX" &>/dev/null || :
 }
@@ -25,6 +30,7 @@ setup() {
     ip link set "d_$IDX" up
 
     ip addr add "192.168.$((120 + $IDX)).1/23" dev "d_$IDX"
+    ip addr add "192:168:$((120 + IDX))::1/64" dev "d_$IDX"
 
     dnsmasq \
         --conf-file=/dev/null \
@@ -37,6 +43,22 @@ setup() {
         --listen-address="192.168.$((120 + $IDX)).1" \
         --dhcp-range="192.168.$((120 + $IDX)).100,192.168.$((120 + $IDX)).150" \
         --no-ping \
+        &
+
+    cat <<EOF > "/tmp/nm-radvd-d_$IDX.conf"
+interface d_$IDX
+{
+        AdvSendAdvert on;
+        prefix 192:168:$((120 + IDX))::/64
+        {
+                AdvOnLink on;
+        };
+
+};
+EOF
+    radvd \
+        --config "/tmp/nm-radvd-d_$IDX.conf" \
+        --pidfile "/tmp/nm-radvd-d_$IDX.pid" \
         &
 }
 
