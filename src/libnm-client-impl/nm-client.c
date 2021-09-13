@@ -5904,7 +5904,7 @@ nm_client_load_connections(NMClient *    client,
         return FALSE;
     }
 
-    g_variant_get(ret, "(b^as)", NULL, &failures);
+    g_variant_get(ret, "(b^as)", NULL, failures);
 
     return TRUE;
 }
