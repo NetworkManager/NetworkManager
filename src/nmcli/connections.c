@@ -9261,10 +9261,11 @@ do_connection_reload(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 static void
 do_connection_load(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    GError *             error     = NULL;
-    gs_free const char **filenames = NULL;
-    gs_strfreev char **  failures  = NULL;
-    int                  i;
+    GError *           error       = NULL;
+    gs_strfreev char **filenames   = NULL;
+    gs_strfreev char **failures    = NULL;
+    gs_free char *     current_dir = NULL;
+    int                i;
 
     next_arg(nmc, &argc, &argv, NULL);
     if (argc == 0) {
@@ -9278,7 +9279,24 @@ do_connection_load(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
         return;
     }
 
-    filenames = (const char **) nm_strv_dup(argv, argc, FALSE);
+    filenames = nm_strv_dup(argv, argc, TRUE);
+
+    current_dir = g_get_current_dir();
+    if (filenames && current_dir && current_dir[0] == '/' && current_dir[1] != '/') {
+        for (i = 0; filenames[i]; i++) {
+            char *f = filenames[i];
+
+            if (f[0] == '\0' || f[0] == '/')
+                continue;
+
+            /* Don't use g_canonicalize_filename(), because we want to keep
+             * the argv argument closely to what the user provided. We will get
+             * that path back as "failures" below, so don't perform additional
+             * normalization except prepending the $PWD. */
+            filenames[i] = g_build_filename(current_dir, f, NULL);
+            g_free(f);
+        }
+    }
 
     nm_client_load_connections(nmc->client, (char **) filenames, &failures, NULL, &error);
     if (error) {
