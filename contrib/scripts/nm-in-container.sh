@@ -82,7 +82,7 @@ bind_files() {
     H=~
 
     for f in ~/.gitconfig* ~/.vim* ; do
-        test -f "$f" || continue
+        test -e "$f" || continue
         f2="${f#$H/}"
         [[ "$f2" = .viminf* ]] && continue
         [[ "$f2" = *.tmp ]] && continue
@@ -118,6 +118,18 @@ EOF
 alias m="make -j 8"
 alias n="ninja -C build"
 
+alias l='ls -l --color=auto'
+
+nm_run_gdb() {
+    systemctl stop NetworkManager.service
+    gdb --args "\${1:-/opt/test/sbin/NetworkManager}" --debug
+}
+
+nm_run_normal() {
+    systemctl stop NetworkManager.service
+    "\${1:-/opt/test/sbin/NetworkManager}" --debug 2>&1 | tee /tmp/nm-log.txt
+}
+
 . /usr/share/git-core/contrib/completion/git-prompt.sh
 PS1="\[\\033[01;36m\]\u@\h\[\\033[00m\]:\\t:\[\\033[01;34m\]\w\\\$(__git_ps1 \\" \[\\033[01;36m\](%s)\[\\033[00m\]\\")\[\\033[00m\]\$ "
 
@@ -146,14 +158,17 @@ managed=1
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-bash_history" 600
+NM-log
+NM-log /tmp/nm-log.txt
 cd $BASEDIR_NM
+journalctl | NM-log
 nm-env-prepare.sh
+nm_run_gdb
+nm_run_normal
 systemctl status NetworkManager
 systemctl stop NetworkManager
 systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
 systemctl stop NetworkManager; gdb --args /opt/test/sbin/NetworkManager --debug
-NM-log
-NM-log /tmp/nm-log.txt
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-gdbinit"
@@ -190,6 +205,7 @@ RUN dnf install -y \\
     glib2-doc \\
     gnutls-devel \\
     gobject-introspection-devel \\
+    grc \\
     gtk-doc \\
     intltool \\
     iproute \\
@@ -241,6 +257,15 @@ COPY data-90-my.conf /etc/NetworkManager/conf.d/90-my.conf
 COPY data-bash_history /root/.bash_history
 COPY data-gdbinit /root/.gdbinit
 COPY data-gdb_history /root/.gdb_history
+
+# Generate a stable machine id.
+RUN echo "10001000100010001000100010001000" > /etc/machine-id
+
+# Generate a fixed (version 1) secret key.
+RUN mkdir -p /var/lib/NetworkManager
+RUN chmod 700 /var/lib/NetworkManager
+RUN echo -n "nm-in-container-secret-key" > /var/lib/NetworkManager/secret_key
+RUN chmod 600 /var/lib/NetworkManager/secret_key
 
 RUN sed 's/.*RateLimitBurst=.*/RateLimitBurst=0/' /etc/systemd/journald.conf -i
 
