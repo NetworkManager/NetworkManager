@@ -24,7 +24,7 @@ do_cleanup() {
 do_setup() {
     local IDX="$1"
 
-    cleanup "$IDX"
+    do_cleanup "$IDX"
 
     ip link add "net$IDX" type veth peer "d_$IDX"
     ip link set "d_$IDX" up
@@ -63,8 +63,8 @@ EOF
 }
 
 do_redo() {
-    cleanup "$1"
-    setup "$1"
+    do_cleanup "$1"
+    do_setup "$1"
 }
 
 ###############################################################################

@@ -18,7 +18,7 @@ set -e
 #
 # It bind mounts the current working directory inside the container.
 # You can run `make install` and run tests.
-# There is a script nm-env-prepare to generate a net1 interface for testing.
+# There is a script nm-env-prepare.sh to generate a net1 interface for testing.
 ###############################################################################
 
 BASE_IMAGE="${BASE_IMAGE:-fedora:latest}"
@@ -63,6 +63,12 @@ trap cleanup EXIT
 
 ###############################################################################
 
+tmp_file() {
+    cat > "$1"
+    CLEANUP_FILES+=( "$1" )
+    test -z "$2" || chmod "$2" "$1"
+}
+
 bind_files() {
     VARIABLE_NAME="$1"
 
@@ -90,7 +96,7 @@ create_dockerfile() {
     cp "$BASEDIR_NM/contrib/scripts/NM-log" "$BASEDIR/data-NM-log"
     CLEANUP_FILES+=( "$BASEDIR/data-NM-log" )
 
-    cat <<EOF >  "$BASEDIR/data-motd"
+    cat <<EOF | tmp_file "$BASEDIR/data-motd"
 *** nm-in-container:
 
 find NetworkManager bind mounted at $BASEDIR_NM
@@ -101,7 +107,46 @@ Configure NetworkManager with
 Test with:
   \$ systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
 EOF
-    CLEANUP_FILES+=( "$BASEDIR/data-motd" )
+
+    cat <<EOF | tmp_file "$BASEDIR/data-bashrc.my"
+alias m="make -j 8"
+alias n="ninja -C build"
+
+. /usr/share/git-core/contrib/completion/git-prompt.sh
+PS1="\[\\033[01;36m\]\u@\h\[\\033[00m\]:\\t:\[\\033[01;34m\]\w\\\$(__git_ps1 \\" \[\\033[01;36m\](%s)\[\\033[00m\]\\")\[\\033[00m\]\$ "
+
+if test "\$SHOW_MOTD" != 0; then
+  cat /etc/motd
+  export SHOW_MOTD=0
+fi
+EOF
+
+    cat <<EOF | tmp_file "$BASEDIR/data-90-my.conf"
+[main]
+no-auto-default=*
+debug=RLIMIT_CORE,fatal-warnings
+
+[logging]
+level=TRACE
+domains=ALL,VPN_PLUGIN:TRACE
+
+[device-managed-0]
+match-device=interface-name:d_*,interface-name:tap*
+managed=0
+
+[device-managed-1]
+match-device=interface-name:net*
+managed=1
+EOF
+
+    cat <<EOF | tmp_file "$BASEDIR/data-bash_history" 600
+cd $BASEDIR_NM
+nm-env-prepare.sh
+systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
+systemctl stop NetworkManager; gdb --args /opt/test/sbin/NetworkManager --debug
+NM-log
+NM-log /tmp/nm-log.txt
+EOF
 
     cat <<EOF > "$DOCKERFILE"
 FROM $BASE_IMAGE
@@ -175,33 +220,13 @@ RUN dnf clean all
 COPY data-NM-log "/usr/bin/NM-log"
 COPY data-nm-env-prepare.sh "/usr/bin/nm-env-prepare.sh"
 COPY data-motd /etc/motd
+COPY data-bashrc.my /etc/bashrc.my
+COPY data-90-my.conf /etc/NetworkManager/conf.d/90-my.conf
+COPY data-bash_history /root/.bash_history
 
 RUN sed 's/.*RateLimitBurst=.*/RateLimitBurst=0/' /etc/systemd/journald.conf -i
 
-RUN echo -e '[logging]\nlevel=TRACE\ndomains=ALL,VPN_PLUGIN:TRACE\n' >> /etc/NetworkManager/conf.d/90-my.conf
-RUN echo -e '[main]\nno-auto-default=*\ndebug=RLIMIT_CORE,fatal-warnings\n' >> /etc/NetworkManager/conf.d/90-my.conf
-RUN echo -e '[device-managed-0]\nmatch-device=interface-name:d_*,interface-name:tap*\nmanaged=0\n' >> /etc/NetworkManager/conf.d/90-my.conf
-RUN echo -e '[device-managed-1]\nmatch-device=interface-name:net*\nmanaged=1\n' >> /etc/NetworkManager/conf.d/90-my.conf
-
 RUN rm -rf /etc/NetworkManager/system-connections/*
-
-RUN echo 'cd $BASEDIR_NM' >> /root/.bash_history
-RUN echo 'nm-env-prepare.sh setup --idx 1' >> /root/.bash_history
-RUN echo 'systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt' >> /root/.bash_history
-RUN echo 'NM-log' >> /root/.bash_history
-RUN echo 'NM-log /tmp/nm-log.txt' >> /root/.bash_history
-RUN chmod 600 /root/.bash_history
-
-RUN echo 'alias m="make -j 8"' >> /etc/bashrc.my
-RUN echo 'alias n="ninja -C build"' >> /etc/bashrc.my
-RUN echo '' >> /etc/bashrc.my
-RUN echo '. /usr/share/git-core/contrib/completion/git-prompt.sh' >> /etc/bashrc.my
-RUN echo 'PS1="\[\\033[01;36m\]\u@\h\[\\033[00m\]:\\t:\[\\033[01;34m\]\w\\\$(__git_ps1 \\" \[\\033[01;36m\](%s)\[\\033[00m\]\\")\[\\033[00m\]\$ "' >> /etc/bashrc.my
-RUN echo '' >> /etc/bashrc.my
-RUN echo 'if test "\$SHOW_MOTD" != 0; then' >> /etc/bashrc.my
-RUN echo '  cat /etc/motd' >> /etc/bashrc.my
-RUN echo '  export SHOW_MOTD=0' >> /etc/bashrc.my
-RUN echo 'fi' >> /etc/bashrc.my
 
 RUN echo -e '\n. /etc/bashrc.my\n' >> /etc/bashrc
 EOF
@@ -210,7 +235,7 @@ EOF
 ###############################################################################
 
 container_image_exists() {
-    podman image exists my:nm || return 1
+    podman image exists "$1" || return 1
 }
 
 container_exists() {
