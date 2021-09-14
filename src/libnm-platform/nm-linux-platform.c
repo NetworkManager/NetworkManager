@@ -8850,7 +8850,79 @@ qdisc_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformQdisc *qdisc)
     return -NME_UNSPEC;
 }
 
-/*****************************************************************************/
+static int
+tc_delete(NMPlatform *platform, int nlmsgtype, int ifindex, guint32 parent, gboolean log_error)
+{
+    WaitForNlResponseResult      seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+    gs_free char *               errmsg     = NULL;
+    int                          nle;
+    char                         s_buf[256];
+    const char *                 log_tag;
+    nm_auto_nlmsg struct nl_msg *msg = NULL;
+    const struct tcmsg           tcm = {
+        .tcm_ifindex = ifindex,
+        .tcm_parent  = parent,
+    };
+
+    switch (nlmsgtype) {
+    case RTM_DELQDISC:
+        log_tag = "do-delete-qdisc";
+        break;
+    case RTM_DELTFILTER:
+        log_tag = "do-delete-tfilter";
+        break;
+    default:
+        nm_assert_not_reached();
+        log_tag = "do-delete-tc";
+    }
+
+    msg = nlmsg_alloc_simple(nlmsgtype, NMP_NLM_FLAG_F_ECHO);
+
+    if (nlmsg_append_struct(msg, &tcm) < 0)
+        goto nla_put_failure;
+
+    event_handler_read_netlink(platform, FALSE);
+
+    nle = _nl_send_nlmsg(platform,
+                         msg,
+                         &seq_result,
+                         &errmsg,
+                         DELAYED_ACTION_RESPONSE_TYPE_VOID,
+                         NULL);
+    if (nle < 0) {
+        _NMLOG(log_error ? LOGL_ERR : LOGL_DEBUG,
+               "%s: failed sending netlink request \"%s\" (%d)",
+               log_tag,
+               nm_strerror(nle),
+               -nle);
+        return -NME_PL_NETLINK;
+    }
+
+    delayed_action_handle_all(platform, FALSE);
+
+    nm_assert(seq_result);
+
+    _NMLOG((seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK || !log_error) ? LOGL_DEBUG
+                                                                                 : LOGL_WARN,
+           "%s: %s",
+           log_tag,
+           wait_for_nl_response_to_string(seq_result, errmsg, s_buf, sizeof(s_buf)));
+
+    if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
+        return 0;
+    if (seq_result < 0)
+        return seq_result;
+    return -NME_UNSPEC;
+
+nla_put_failure:
+    g_return_val_if_reached(-NME_UNSPEC);
+}
+
+static int
+qdisc_delete(NMPlatform *platform, int ifindex, guint32 parent, gboolean log_error)
+{
+    return tc_delete(platform, RTM_DELQDISC, ifindex, parent, log_error);
+}
 
 static int
 tfilter_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformTfilter *tfilter)
@@ -8891,6 +8963,12 @@ tfilter_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformTfilter *tf
         return 0;
 
     return -NME_UNSPEC;
+}
+
+static int
+tfilter_delete(NMPlatform *platform, int ifindex, guint32 parent, gboolean log_error)
+{
+    return tc_delete(platform, RTM_DELTFILTER, ifindex, parent, log_error);
 }
 
 /*****************************************************************************/
@@ -9687,8 +9765,10 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
 
     platform_class->routing_rule_add = routing_rule_add;
 
-    platform_class->qdisc_add   = qdisc_add;
-    platform_class->tfilter_add = tfilter_add;
+    platform_class->qdisc_add      = qdisc_add;
+    platform_class->qdisc_delete   = qdisc_delete;
+    platform_class->tfilter_add    = tfilter_add;
+    platform_class->tfilter_delete = tfilter_delete;
 
     platform_class->process_events = process_events;
 }

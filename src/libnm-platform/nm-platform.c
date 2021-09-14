@@ -5295,6 +5295,15 @@ nm_platform_qdisc_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc
     return klass->qdisc_add(self, flags, qdisc);
 }
 
+int
+nm_platform_qdisc_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error)
+{
+    _CHECK_SELF(self, klass, -NME_BUG);
+
+    _LOG3D("deleting a qdisc: parent 0x%08x", parent);
+    return klass->qdisc_delete(self, ifindex, parent, log_error);
+}
+
 /**
  * nm_platform_qdisc_sync:
  * @self: the #NMPlatform instance
@@ -5396,6 +5405,15 @@ nm_platform_tfilter_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformTfi
 
     _LOG3D("adding or updating a tfilter: %s", nm_platform_tfilter_to_string(tfilter, NULL, 0));
     return klass->tfilter_add(self, flags, tfilter);
+}
+
+int
+nm_platform_tfilter_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error)
+{
+    _CHECK_SELF(self, klass, -NME_BUG);
+
+    _LOG3D("deleting a tfilter: parent 0x%08x", parent);
+    return klass->tfilter_delete(self, ifindex, parent, log_error);
 }
 
 /**

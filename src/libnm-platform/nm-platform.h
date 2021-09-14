@@ -1266,8 +1266,10 @@ typedef struct {
                             const NMPlatformRoutingRule *routing_rule);
 
     int (*qdisc_add)(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc *qdisc);
+    int (*qdisc_delete)(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
 
     int (*tfilter_add)(NMPlatform *self, NMPNlmFlags flags, const NMPlatformTfilter *tfilter);
+    int (*tfilter_delete)(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -2219,10 +2221,12 @@ int nm_platform_routing_rule_add(NMPlatform *                 self,
                                  NMPNlmFlags                  flags,
                                  const NMPlatformRoutingRule *routing_rule);
 
-int      nm_platform_qdisc_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc *qdisc);
+int nm_platform_qdisc_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc *qdisc);
+int nm_platform_qdisc_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
 gboolean nm_platform_qdisc_sync(NMPlatform *self, int ifindex, GPtrArray *known_qdiscs);
 
 int nm_platform_tfilter_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformTfilter *tfilter);
+int nm_platform_tfilter_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
 gboolean nm_platform_tfilter_sync(NMPlatform *self, int ifindex, GPtrArray *known_tfilters);
 
 const char *nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len);
