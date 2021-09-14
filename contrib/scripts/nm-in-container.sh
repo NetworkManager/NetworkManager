@@ -3,15 +3,43 @@
 set -e
 
 ###############################################################################
+# Script to create a podman container for testing NetworkManager.
+#
+# Commands:
+#  - build: build a new image, named "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" ("nm:nm")
+#  - run: start the container and tag it "$CONTAINER_NAME_NAME" ("nm")
+#  - exec: run bash inside the container
+#  - stop: stop the container
+#  - clean: delete the container and the image.
+#
+# Options:
+#  --no-cleanup: don't delete the CONTAINERFILE and other artifacts
+#  --stop: only has effect with "run". It will stop the container afterwards.
+#
+# It bind mounts the current working directory inside the container.
+# You can run `make install` and run tests.
+# There is a script nm-env-prepare to generate a net1 interface for testing.
+###############################################################################
 
 BASE_IMAGE="${BASE_IMAGE:-fedora:latest}"
 
 BASEDIR_NM="$(readlink -f "$(dirname "$(readlink -f "$0")")/../..")"
 BASEDIR="$BASEDIR_NM/contrib/scripts/nm-in-container.d"
 
-CONTAINER_NAME_REPOSITORY=${CONTAINER_NAME_REPOSITORY:-my}
+CONTAINER_NAME_REPOSITORY=${CONTAINER_NAME_REPOSITORY:-nm}
 CONTAINER_NAME_TAG=${CONTAINER_NAME_TAG:-nm}
 CONTAINER_NAME_NAME=${CONTAINER_NAME_NAME:-nm}
+
+###############################################################################
+
+usage() {
+    cat <<EOF
+$0: build|run|exec|stop|clean [--no-cleanup] [--stop]
+EOF
+    echo
+    awk '/^####*$/{ if(on) exit; on=1} { if (on) { if (on==2) print(substr($0,3)); on=2; } }' "$BASH_SOURCE"
+    echo
+}
 
 ###############################################################################
 
@@ -152,8 +180,8 @@ RUN sed 's/.*RateLimitBurst=.*/RateLimitBurst=0/' /etc/systemd/journald.conf -i
 
 RUN echo -e '[logging]\nlevel=TRACE\ndomains=ALL,VPN_PLUGIN:TRACE\n' >> /etc/NetworkManager/conf.d/90-my.conf
 RUN echo -e '[main]\nno-auto-default=*\ndebug=RLIMIT_CORE,fatal-warnings\n' >> /etc/NetworkManager/conf.d/90-my.conf
-RUN echo -e '[device-veths-1]\nmatch-device=interface-name:d_*\nmanaged=0\n' >> /etc/NetworkManager/conf.d/90-my.conf
-RUN echo -e '[device-veths-2]\nmatch-device=interface-name:net*\nmanaged=1\n' >> /etc/NetworkManager/conf.d/90-my.conf
+RUN echo -e '[device-managed-0]\nmatch-device=interface-name:d_*,interface-name:tap*\nmanaged=0\n' >> /etc/NetworkManager/conf.d/90-my.conf
+RUN echo -e '[device-managed-1]\nmatch-device=interface-name:net*\nmanaged=1\n' >> /etc/NetworkManager/conf.d/90-my.conf
 
 RUN rm -rf /etc/NetworkManager/system-connections/*
 
@@ -176,14 +204,6 @@ RUN echo '  export SHOW_MOTD=0' >> /etc/bashrc.my
 RUN echo 'fi' >> /etc/bashrc.my
 
 RUN echo -e '\n. /etc/bashrc.my\n' >> /etc/bashrc
-EOF
-}
-
-###############################################################################
-
-usage() {
-    cat <<EOF
-$0: build|run|exec|clean [--no-cleanup]
 EOF
 }
 
@@ -241,10 +261,20 @@ do_run() {
 do_exec() {
     do_run
     podman exec --workdir "$BASEDIR_NM" -it "$CONTAINER_NAME_NAME" bash
+
+    if [ "$DO_STOP" = 1 ]; then
+        do_stop
+    fi
+}
+
+do_stop() {
+    container_is_running "$CONTAINER_NAME_NAME" || return 0
+    podman stop "$CONTAINER_NAME_NAME"
 }
 
 ###############################################################################
 
+DO_STOP=0
 CMD=exec
 for (( i=1 ; i<="$#" ; )) ; do
     c="${@:$i:1}"
@@ -253,7 +283,10 @@ for (( i=1 ; i<="$#" ; )) ; do
         --no-cleanup)
             DO_CLEANUP=0
             ;;
-        build|run|exec|clean)
+        --stop)
+            DO_STOP=1
+            ;;
+        build|run|exec|stop|clean)
             CMD=$c
             ;;
         -h|--help)
@@ -272,11 +305,4 @@ test "$UID" != 0 || die "cannot run as root"
 
 ###############################################################################
 
-case "$CMD" in
-    clean|build|run|exec)
-        do_$CMD
-        ;;
-    *)
-        die "missing command, one of build|run|exec|clean"
-        ;;
-esac
+do_$CMD

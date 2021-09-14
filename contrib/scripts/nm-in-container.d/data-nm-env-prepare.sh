@@ -7,7 +7,7 @@ die() {
     exit 1
 }
 
-cleanup() {
+do_cleanup() {
     local IDX="$1"
 
     pkill -F "/tmp/nm-dnsmasq-d_$IDX.pid" dnsmasq &>/dev/null || :
@@ -21,7 +21,7 @@ cleanup() {
     ip link del "d_$IDX" &>/dev/null || :
 }
 
-setup() {
+do_setup() {
     local IDX="$1"
 
     cleanup "$IDX"
@@ -62,13 +62,20 @@ EOF
         &
 }
 
+do_redo() {
+    cleanup "$1"
+    setup "$1"
+}
+
+###############################################################################
+
 IDX=1
-CMD=
+CMD=redo
 for (( i=1 ; i<="$#" ; )) ; do
     c="${@:$i:1}"
     i=$((i+1))
     case "$c" in
-        setup|cleanup)
+        redo|setup|cleanup)
             CMD="$c"
             ;;
         --idx|-i)
@@ -82,6 +89,4 @@ for (( i=1 ; i<="$#" ; )) ; do
     esac
 done
 
-test "$CMD" != "" || die "missing command (setup|cleanup)"
-
-$CMD "$IDX"
+do_$CMD "$IDX"
