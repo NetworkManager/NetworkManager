@@ -8486,10 +8486,7 @@ tc_commit(NMDevice *self)
     qdiscs   = nm_utils_qdiscs_from_tc_setting(platform, s_tc, ip_ifindex);
     tfilters = nm_utils_tfilters_from_tc_setting(platform, s_tc, ip_ifindex);
 
-    if (!nm_platform_qdisc_sync(platform, ip_ifindex, qdiscs))
-        return FALSE;
-
-    if (!nm_platform_tfilter_sync(platform, ip_ifindex, tfilters))
+    if (!nm_platform_tc_sync(platform, ip_ifindex, qdiscs, tfilters))
         return FALSE;
 
     return TRUE;
@@ -16054,8 +16051,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
             set_ipv6_token(self, &iid, "::");
 
             if (nm_device_get_applied_setting(self, NM_TYPE_SETTING_TC_CONFIG)) {
-                nm_platform_tfilter_sync(platform, ifindex, NULL);
-                nm_platform_qdisc_sync(platform, ifindex, NULL);
+                nm_platform_tc_sync(platform, ifindex, NULL, NULL);
             }
         }
     }

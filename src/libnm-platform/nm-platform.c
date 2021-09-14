@@ -5304,94 +5304,6 @@ nm_platform_qdisc_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean
     return klass->qdisc_delete(self, ifindex, parent, log_error);
 }
 
-/**
- * nm_platform_qdisc_sync:
- * @self: the #NMPlatform instance
- * @ifindex: the ifindex where to configure the qdiscs.
- * @known_qdiscs: the list of qdiscs (#NMPObject).
- *
- * The function promises not to take any reference to the qdisc
- * instances from @known_qdiscs, nor to keep them around after
- * the function returns. This is important, because it allows the
- * caller to pass NMPlatformQdisc instances which "kind" string
- * have a limited lifetime.
- *
- * Returns: %TRUE on success.
- */
-gboolean
-nm_platform_qdisc_sync(NMPlatform *self, int ifindex, GPtrArray *known_qdiscs)
-{
-    gs_unref_ptrarray GPtrArray *plat_qdiscs = NULL;
-    NMPLookup                    lookup;
-    guint                        i;
-    gboolean                     success            = TRUE;
-    gs_unref_hashtable GHashTable *known_qdiscs_idx = NULL;
-
-    nm_assert(NM_IS_PLATFORM(self));
-    nm_assert(ifindex > 0);
-
-    known_qdiscs_idx =
-        g_hash_table_new((GHashFunc) nmp_object_id_hash, (GEqualFunc) nmp_object_id_equal);
-    if (known_qdiscs) {
-        for (i = 0; i < known_qdiscs->len; i++) {
-            const NMPObject *q = g_ptr_array_index(known_qdiscs, i);
-
-            if (!g_hash_table_insert(known_qdiscs_idx, (gpointer) q, (gpointer) q)) {
-                _LOGW("duplicate qdisc %s", nm_platform_qdisc_to_string(&q->qdisc, NULL, 0));
-                return FALSE;
-            }
-        }
-    }
-
-    plat_qdiscs =
-        nm_platform_lookup_clone(self,
-                                 nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_QDISC, ifindex),
-                                 NULL,
-                                 NULL);
-    if (plat_qdiscs) {
-        for (i = 0; i < plat_qdiscs->len; i++) {
-            const NMPObject *p = g_ptr_array_index(plat_qdiscs, i);
-            const NMPObject *k;
-
-            /* look up known qdisc with same parent */
-            k = g_hash_table_lookup(known_qdiscs_idx, p);
-
-            if (k) {
-                const NMPlatformQdisc *qdisc_k = NMP_OBJECT_CAST_QDISC(k);
-                const NMPlatformQdisc *qdisc_p = NMP_OBJECT_CAST_QDISC(p);
-
-                /* check other fields */
-                if (nm_platform_qdisc_cmp_full(qdisc_k, qdisc_p, FALSE) != 0
-                    || (qdisc_k->handle != qdisc_p->handle && qdisc_k != 0)) {
-                    k = NULL;
-                }
-            }
-
-            if (k) {
-                g_hash_table_remove(known_qdiscs_idx, k);
-            } else {
-                /* can't delete qdisc with zero handle */
-                if (TC_H_MAJ(p->qdisc.handle) != 0) {
-                    success &= nm_platform_object_delete(self, p);
-                }
-            }
-        }
-    }
-
-    if (known_qdiscs) {
-        for (i = 0; i < known_qdiscs->len; i++) {
-            const NMPObject *q = g_ptr_array_index(known_qdiscs, i);
-
-            if (g_hash_table_contains(known_qdiscs_idx, q)) {
-                success &=
-                    (nm_platform_qdisc_add(self, NMP_NLM_FLAG_ADD, NMP_OBJECT_CAST_QDISC(q)) >= 0);
-            }
-        }
-    }
-
-    return success;
-}
-
 /*****************************************************************************/
 
 int
@@ -5417,54 +5329,48 @@ nm_platform_tfilter_delete(NMPlatform *self, int ifindex, guint32 parent, gboole
 }
 
 /**
- * nm_platform_qdisc_sync:
+ * nm_platform_tc_sync:
  * @self: the #NMPlatform instance
- * @ifindex: the ifindex where to configure the qdiscs.
+ * @ifindex: the ifindex where to configure qdiscs and filters.
+ * @known_qdiscs: the list of qdiscs (#NMPObject).
  * @known_tfilters: the list of tfilters (#NMPObject).
  *
- * The function promises not to take any reference to the tfilter
- * instances from @known_tfilters, nor to keep them around after
- * the function returns. This is important, because it allows the
- * caller to pass NMPlatformTfilter instances which "kind" string
- * have a limited lifetime.
+ * The function promises not to take any reference to the
+ * instances from @known_qdiscs and @known_tfilters, nor to
+ * keep them around after the function returns. This is important,
+ * because it allows the caller to pass NMPlatformQdisc and
+ * NMPlatformTfilter instances which "kind" string have a limited
+ * lifetime.
  *
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_tfilter_sync(NMPlatform *self, int ifindex, GPtrArray *known_tfilters)
+nm_platform_tc_sync(NMPlatform *self,
+                    int         ifindex,
+                    GPtrArray * known_qdiscs,
+                    GPtrArray * known_tfilters)
 {
-    gs_unref_ptrarray GPtrArray *plat_tfilters = NULL;
-    NMPLookup                    lookup;
-    guint                        i;
-    gboolean                     success              = TRUE;
-    gs_unref_hashtable GHashTable *known_tfilters_idx = NULL;
+    guint    i;
+    gboolean success = TRUE;
 
     nm_assert(NM_IS_PLATFORM(self));
     nm_assert(ifindex > 0);
 
-    known_tfilters_idx =
-        g_hash_table_new((GHashFunc) nmp_object_id_hash, (GEqualFunc) nmp_object_id_equal);
+    nm_platform_qdisc_delete(self, ifindex, TC_H_ROOT, FALSE);
+    nm_platform_qdisc_delete(self, ifindex, TC_H_INGRESS, FALSE);
 
-    if (known_tfilters) {
-        for (i = 0; i < known_tfilters->len; i++) {
-            const NMPObject *q = g_ptr_array_index(known_tfilters, i);
+    /* At this point we can only have a root default qdisc
+     * (which can't be deleted). Ensure it doesn't have any
+     * filters attached.
+     */
+    nm_platform_tfilter_delete(self, ifindex, TC_H_ROOT, FALSE);
 
-            g_hash_table_insert(known_tfilters_idx, (gpointer) q, (gpointer) q);
-        }
-    }
+    if (known_qdiscs) {
+        for (i = 0; i < known_qdiscs->len; i++) {
+            const NMPObject *q = g_ptr_array_index(known_qdiscs, i);
 
-    plat_tfilters =
-        nm_platform_lookup_clone(self,
-                                 nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_TFILTER, ifindex),
-                                 NULL,
-                                 NULL);
-
-    if (plat_tfilters) {
-        for (i = 0; i < plat_tfilters->len; i++) {
-            const NMPObject *q = g_ptr_array_index(plat_tfilters, i);
-
-            if (!g_hash_table_lookup(known_tfilters_idx, q))
-                success &= nm_platform_object_delete(self, q);
+            success &=
+                (nm_platform_qdisc_add(self, NMP_NLM_FLAG_ADD, NMP_OBJECT_CAST_QDISC(q)) >= 0);
         }
     }
 

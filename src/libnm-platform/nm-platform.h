@@ -2223,11 +2223,12 @@ int nm_platform_routing_rule_add(NMPlatform *                 self,
 
 int nm_platform_qdisc_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc *qdisc);
 int nm_platform_qdisc_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
-gboolean nm_platform_qdisc_sync(NMPlatform *self, int ifindex, GPtrArray *known_qdiscs);
-
 int nm_platform_tfilter_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformTfilter *tfilter);
 int nm_platform_tfilter_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
-gboolean nm_platform_tfilter_sync(NMPlatform *self, int ifindex, GPtrArray *known_tfilters);
+gboolean nm_platform_tc_sync(NMPlatform *self,
+                             int         ifindex,
+                             GPtrArray * known_qdiscs,
+                             GPtrArray * known_tfilters);
 
 const char *nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_bridge_to_string(const NMPlatformLnkBridge *lnk, char *buf, gsize len);
