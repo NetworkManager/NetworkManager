@@ -90,8 +90,8 @@ bind_files() {
 
 create_dockerfile() {
 
-    DOCKERFILE="$1"
-    BASE_IMAGE="$2"
+    local CONTAINERFILE="$1"
+    local BASE_IMAGE="$2"
 
     cp "$BASEDIR_NM/contrib/scripts/NM-log" "$BASEDIR/data-NM-log"
     CLEANUP_FILES+=( "$BASEDIR/data-NM-log" )
@@ -142,13 +142,24 @@ EOF
     cat <<EOF | tmp_file "$BASEDIR/data-bash_history" 600
 cd $BASEDIR_NM
 nm-env-prepare.sh
+systemctl status NetworkManager
+systemctl stop NetworkManager
 systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
 systemctl stop NetworkManager; gdb --args /opt/test/sbin/NetworkManager --debug
 NM-log
 NM-log /tmp/nm-log.txt
 EOF
 
-    cat <<EOF > "$DOCKERFILE"
+    cat <<EOF | tmp_file "$BASEDIR/data-gdbinit"
+set history save
+set history filename ~/.gdb_history
+EOF
+
+    cat <<EOF | tmp_file "$BASEDIR/data-gdb_history" 600
+run --debug 2>&1 | tee /tmp/nm-log.txt
+EOF
+
+    cat <<EOF | tmp_file "$CONTAINERFILE"
 FROM $BASE_IMAGE
 
 ENTRYPOINT ["/sbin/init"]
@@ -199,7 +210,6 @@ RUN dnf install -y \\
     python3-devel \\
     python3-gobject \\
     python3-pip \\
-    python3-pip \\
     radvd \\
     readline-devel \\
     rpm-build \\
@@ -213,9 +223,9 @@ RUN dnf install -y \\
     vim \\
     which
 
-RUN pip install gdbgui
+RUN dnf debuginfo-install --skip-broken \$(ldd /usr/sbin/NetworkManager | sed -n 's/.* => \\(.*\\) (0x[0-9A-Fa-f]*)$/\1/p' | xargs -n1 readlink -f) -y
+
 RUN systemctl enable NetworkManager
-RUN dnf clean all
 
 COPY data-NM-log "/usr/bin/NM-log"
 COPY data-nm-env-prepare.sh "/usr/bin/nm-env-prepare.sh"
@@ -223,6 +233,8 @@ COPY data-motd /etc/motd
 COPY data-bashrc.my /etc/bashrc.my
 COPY data-90-my.conf /etc/NetworkManager/conf.d/90-my.conf
 COPY data-bash_history /root/.bash_history
+COPY data-gdbinit /root/.gdbinit
+COPY data-gdb_history /root/.gdb_history
 
 RUN sed 's/.*RateLimitBurst=.*/RateLimitBurst=0/' /etc/systemd/journald.conf -i
 
@@ -257,10 +269,9 @@ do_clean() {
 do_build() {
     container_image_exists "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" && return 0
 
-    DOCKERFILE="$(mktemp --tmpdir="$BASEDIR" dockerfile.XXXXXX)"
-    CLEANUP_FILES+=($DOCKERFILE)
-    create_dockerfile "$DOCKERFILE" "$BASE_IMAGE"
-    podman build --tag "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" -f "$DOCKERFILE"
+    CONTAINERFILE="$BASEDIR/containerfile"
+    create_dockerfile "$CONTAINERFILE" "$BASE_IMAGE"
+    podman build --tag "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" -f "$CONTAINERFILE"
 }
 
 do_run() {
