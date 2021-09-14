@@ -15,6 +15,8 @@ set -e
 # Options:
 #  --no-cleanup: don't delete the CONTAINERFILE and other artifacts
 #  --stop: only has effect with "run". It will stop the container afterwards.
+#  -- [COMMAND]: with command "exec", provide a command to run in the container.
+#    Defaults to "bash".
 #
 # It bind mounts the current working directory inside the container.
 # You can run `make install` and run tests.
@@ -44,7 +46,11 @@ EOF
 ###############################################################################
 
 die() {
-    printf "%s\n" "$*" >&2
+    (
+        echo -n -e "\033[31m"
+        printf "%s" "$*"
+        echo -e "\033[0m"
+    ) >&2
     exit 1
 }
 
@@ -296,7 +302,13 @@ do_run() {
 
 do_exec() {
     do_run
-    podman exec --workdir "$BASEDIR_NM" -it "$CONTAINER_NAME_NAME" bash
+
+    local EXTRA_ARGS=("$@")
+    if [ "${#EXTRA_ARGS[@]}" = 0 ]; then
+        EXTRA_ARGS=('bash')
+    fi
+
+    podman exec --workdir "$BASEDIR_NM" -it "$CONTAINER_NAME_NAME" "${EXTRA_ARGS[@]}"
 
     if [ "$DO_STOP" = 1 ]; then
         do_stop
@@ -312,6 +324,7 @@ do_stop() {
 
 DO_STOP=0
 CMD=exec
+EXTRA_ARGS=()
 for (( i=1 ; i<="$#" ; )) ; do
     c="${@:$i:1}"
     i=$((i+1))
@@ -325,12 +338,17 @@ for (( i=1 ; i<="$#" ; )) ; do
         build|run|exec|stop|clean)
             CMD=$c
             ;;
+        --)
+            EXTRA_ARGS=( "${@:$i}" )
+            break
+            ;;
         -h|--help)
             usage
             exit 0
             ;;
         *)
-            die "invalid argument #$i: $c"
+            usage
+            die "invalid argument: $c"
             ;;
     esac
 done
@@ -339,6 +357,10 @@ done
 
 test "$UID" != 0 || die "cannot run as root"
 
+if test $CMD != exec && test "${#EXTRA_ARGS[@]}" != 0 ; then
+    die "Extra arguments are only allowed with exec command"
+fi
+
 ###############################################################################
 
-do_$CMD
+do_$CMD "${EXTRA_ARGS[@]}"
