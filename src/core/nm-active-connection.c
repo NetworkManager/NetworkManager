@@ -678,6 +678,7 @@ nm_active_connection_set_device(NMActiveConnection *self, NMDevice *device)
 {
     NMActiveConnectionPrivate *priv;
     gs_unref_object NMDevice *old_device = NULL;
+    NMMetered                 old_metered, new_metered;
 
     g_return_val_if_fail(NM_IS_ACTIVE_CONNECTION(self), FALSE);
     g_return_val_if_fail(!device || NM_IS_DEVICE(device), FALSE);
@@ -695,6 +696,8 @@ nm_active_connection_set_device(NMActiveConnection *self, NMDevice *device)
           device);
 
     old_device = priv->device ? g_object_ref(priv->device) : NULL;
+
+    old_metered = old_device ? nm_device_get_metered(old_device) : NM_METERED_UNKNOWN;
     _device_cleanup(self);
 
     if (device) {
@@ -730,7 +733,11 @@ nm_active_connection_set_device(NMActiveConnection *self, NMDevice *device)
     }
     _notify(self, PROP_INT_DEVICE);
 
+    new_metered = priv->device ? nm_device_get_metered(priv->device) : NM_METERED_UNKNOWN;
+
     g_signal_emit(self, signals[DEVICE_CHANGED], 0, priv->device, old_device);
+    if (new_metered != old_metered)
+        g_signal_emit(self, signals[DEVICE_METERED_CHANGED], 0, new_metered);
 
     _notify(self, PROP_DEVICES);
 
