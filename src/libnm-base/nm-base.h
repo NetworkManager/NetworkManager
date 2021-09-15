@@ -13,6 +13,11 @@
 
 #define _NM_MAX_CLIENT_ID_LEN (sizeof(guint32) + 128)
 
+enum {
+    NM_DNS_PRIORITY_DEFAULT_NORMAL = 100,
+    NM_DNS_PRIORITY_DEFAULT_VPN    = 50,
+};
+
 /*****************************************************************************/
 
 typedef enum {

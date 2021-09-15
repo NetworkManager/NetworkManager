@@ -21,11 +21,6 @@ typedef enum {
     NM_DNS_IP_CONFIG_TYPE_VPN,
 } NMDnsIPConfigType;
 
-enum {
-    NM_DNS_PRIORITY_DEFAULT_NORMAL = 100,
-    NM_DNS_PRIORITY_DEFAULT_VPN    = 50,
-};
-
 /*****************************************************************************/
 
 struct _NMDnsConfigData;
