@@ -591,6 +591,8 @@ _l3cd_config_add(NML3IPv4LL *self)
                              NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
                              0,
                              0,
+                             NM_DNS_PRIORITY_DEFAULT_NORMAL,
+                             NM_DNS_PRIORITY_DEFAULT_NORMAL,
                              NM_L3_ACD_DEFEND_TYPE_ONCE,
                              self->reg_timeout_msec,
                              NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD,

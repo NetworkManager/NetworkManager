@@ -189,6 +189,13 @@ typedef struct {
         };
         guint32 default_route_penalty_x[2];
     };
+    union {
+        struct {
+            int default_dns_priority_6;
+            int default_dns_priority_4;
+        };
+        int default_dns_priority_x[2];
+    };
     gconstpointer     tag_confdata;
     guint64           pseudo_timestamp_confdata;
     int               priority_confdata;
@@ -3020,6 +3027,8 @@ nm_l3cfg_add_config(NML3Cfg *             self,
                     guint32               default_route_metric_6,
                     guint32               default_route_penalty_4,
                     guint32               default_route_penalty_6,
+                    int                   default_dns_priority_4,
+                    int                   default_dns_priority_6,
                     NML3AcdDefendType     acd_defend_type,
                     guint32               acd_timeout_msec,
                     NML3CfgConfigFlags    config_flags,
@@ -3095,6 +3104,8 @@ nm_l3cfg_add_config(NML3Cfg *             self,
             .default_route_metric_6    = default_route_metric_6,
             .default_route_penalty_4   = default_route_penalty_4,
             .default_route_penalty_6   = default_route_penalty_6,
+            .default_dns_priority_4    = default_dns_priority_4,
+            .default_dns_priority_6    = default_dns_priority_6,
             .acd_defend_type_confdata  = acd_defend_type,
             .acd_timeout_msec_confdata = acd_timeout_msec,
             .priority_confdata         = priority,
@@ -3142,6 +3153,14 @@ nm_l3cfg_add_config(NML3Cfg *             self,
         if (l3_config_data->default_route_penalty_6 != default_route_penalty_6) {
             l3_config_data->default_route_penalty_6 = default_route_penalty_6;
             changed                                 = TRUE;
+        }
+        if (l3_config_data->default_dns_priority_4 != default_dns_priority_4) {
+            l3_config_data->default_dns_priority_4 = default_dns_priority_4;
+            changed                                = TRUE;
+        }
+        if (l3_config_data->default_dns_priority_6 != default_dns_priority_6) {
+            l3_config_data->default_dns_priority_6 = default_dns_priority_6;
+            changed                                = TRUE;
         }
         if (l3_config_data->acd_defend_type_confdata != acd_defend_type) {
             l3_config_data->acd_defend_type_confdata = acd_defend_type;
@@ -3382,6 +3401,7 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
                                     l3cd_data->default_route_table_x,
                                     l3cd_data->default_route_metric_x,
                                     l3cd_data->default_route_penalty_x,
+                                    l3cd_data->default_dns_priority_x,
                                     _l3_hook_add_obj_cb,
                                     &hook_data);
         }

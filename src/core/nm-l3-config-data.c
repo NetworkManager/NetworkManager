@@ -2712,6 +2712,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                         const guint32 *       default_route_table_x /* length 2, for IS_IPv4 */,
                         const guint32 *       default_route_metric_x /* length 2, for IS_IPv4 */,
                         const guint32 *       default_route_penalty_x /* length 2, for IS_IPv4 */,
+                        const int *           default_dns_priority_x /* length 2, for IS_IPv4 */,
                         NML3ConfigMergeHookAddObj hook_add_obj,
                         gpointer                  hook_user_data)
 {
@@ -2719,6 +2720,8 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
     static const guint32 x_default_route_metric_x[2]  = {NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
                                                         NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4};
     static const guint32 x_default_route_penalty_x[2] = {0, 0};
+    static const int     x_default_dns_priority_x[2]  = {NM_DNS_PRIORITY_DEFAULT_NORMAL,
+                                                    NM_DNS_PRIORITY_DEFAULT_NORMAL};
     NMDedupMultiIter     iter;
     const NMPObject *    obj;
     int                  IS_IPv4;
@@ -2732,6 +2735,8 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
         default_route_metric_x = x_default_route_metric_x;
     if (!default_route_penalty_x)
         default_route_penalty_x = x_default_route_penalty_x;
+    if (!default_dns_priority_x)
+        default_dns_priority_x = x_default_dns_priority_x;
 
     nm_assert(default_route_table_x[0] != 0);
     nm_assert(default_route_table_x[1] != 0);
@@ -2893,7 +2898,12 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
 
         if (!NM_FLAGS_ANY(self->flags, has_dns_priority_flag)
             && NM_FLAGS_ANY(src->flags, has_dns_priority_flag)) {
-            self->dns_priority_x[IS_IPv4] = src->dns_priority_x[IS_IPv4];
+            int p = src->dns_priority_x[IS_IPv4];
+
+            if (p == 0 && !NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE))
+                p = default_dns_priority_x[IS_IPv4];
+
+            self->dns_priority_x[IS_IPv4] = p;
             self->flags |= has_dns_priority_flag;
         }
 
@@ -2982,6 +2992,7 @@ nm_l3_config_data_new_clone(const NML3ConfigData *src, int ifindex)
     nm_l3_config_data_merge(self,
                             src,
                             NM_L3_CONFIG_MERGE_FLAGS_CLONE,
+                            NULL,
                             NULL,
                             NULL,
                             NULL,

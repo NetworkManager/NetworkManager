@@ -414,6 +414,8 @@ _lladdr_handle_changed(NML3IPv6LL *self)
                                 NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
                                 0,
                                 0,
+                                NM_DNS_PRIORITY_DEFAULT_NORMAL,
+                                NM_DNS_PRIORITY_DEFAULT_NORMAL,
                                 NM_L3_ACD_DEFEND_TYPE_ALWAYS,
                                 0,
                                 NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE,
