@@ -7,17 +7,17 @@ die() {
     exit 1
 }
 
-EXCLUDE=(
-    ":(exclude)src/c-list"
-    ":(exclude)src/c-rbtree"
-    ":(exclude)src/c-siphash"
-    ":(exclude)src/c-stdaux"
-    ":(exclude)src/libnm-std-aux/unaligned.h"
-    ":(exclude)src/libnm-systemd-core/src"
-    ":(exclude)src/libnm-systemd-shared/src"
-    ":(exclude)src/linux-headers"
-    ":(exclude)src/n-acd"
-    ":(exclude)src/n-dhcp4"
+EXCLUDE_PATHS_TOPLEVEL=(
+    "src/c-list"
+    "src/c-rbtree"
+    "src/c-siphash"
+    "src/c-stdaux"
+    "src/libnm-std-aux/unaligned.h"
+    "src/libnm-systemd-core/src"
+    "src/libnm-systemd-shared/src"
+    "src/linux-headers"
+    "src/n-acd"
+    "src/n-dhcp4"
 )
 
 NM_ROOT="$(git rev-parse --show-toplevel)" || die "not inside a git repository"
@@ -32,14 +32,15 @@ if ! command -v clang-format &> /dev/null; then
 fi
 
 if test -n "$NM_PREFIX"; then
-    _EXCLUDE=()
-    for e in "${EXCLUDE[@]}"; do
-        REGEX='^:\(exclude\)'"$NM_PREFIX"'([^/].*)$'
+    EXCLUDE_PATHS=()
+    for e in "${EXCLUDE_PATHS_TOPLEVEL[@]}"; do
+        REGEX="^$NM_PREFIX([^/].*)$"
         if [[ "$e" =~ $REGEX ]]; then
-            _EXCLUDE+=(":(exclude)${BASH_REMATCH[1]}")
+            EXCLUDE_PATHS+=("${BASH_REMATCH[1]}")
         fi
     done
-    EXCLUDE=("${_EXCLUDE[@]}")
+else
+    EXCLUDE_PATHS=("${EXCLUDE_PATHS_TOPLEVEL[@]}")
 fi
 
 FILES=()
@@ -48,7 +49,7 @@ SHOW_FILENAMES=0
 TEST_ONLY=1
 
 usage() {
-    printf "Usage: %s [OPTION]... [FILE]...\n" $(basename $0)
+    printf "Usage: %s [OPTION]... [FILE]...\n" "$(basename "$0")"
     printf "Reformat source files using NetworkManager's code-style.\n\n"
     printf "If no file is given the script runs on the whole codebase.\n"
     printf "If no flag is given no file is touch but errors are reported.\n\n"
@@ -58,6 +59,24 @@ usage() {
     printf "    -h                 Print this help message\n"
     printf "    --show-filenames   Only print the filenames that would be checked\n"
     printf "    --                 Separate options from filenames/directories\n"
+}
+
+g_ls_files() {
+    local OLD_IFS="$IFS"
+    local pattern="$1"
+    shift
+
+    IFS=$'\n'
+    for f in $(git ls-files -- "$pattern") ; do
+        local found=1
+        local p
+        for p; do
+            [[ "$f" = "$p/"* ]] && found=
+            [[ "$f" = "$p" ]] && found=
+        done
+        test -n "$found" && printf '%s\n' "$f"
+    done
+    IFS="$OLD_IFS"
 }
 
 HAD_DASHDASH=0
@@ -91,7 +110,9 @@ while (( $# )); do
         esac
     fi
     if [ -d "$1" ]; then
-        FILES+=( $(git ls-files -- "${1}/*.[hc]" "${EXCLUDE[@]}" ) )
+        while IFS='' read -r line;
+            do FILES+=("$line")
+        done < <(g_ls_files "${1}/*.[hc]" "${EXCLUDE_PATHS[@]}")
     elif [ -f "$1" ]; then
         FILES+=("$1")
     else
@@ -104,7 +125,9 @@ while (( $# )); do
 done
 
 if [ $HAS_EXPLICIT_FILES = 0 ]; then
-    FILES=( $(git ls-files -- '*.[ch]' "${EXCLUDE[@]}")  )
+    while IFS='' read -r line; do
+        FILES+=("$line")
+    done < <(g_ls_files '*.[ch]' "${EXCLUDE_PATHS[@]}")
 fi
 
 if [ $SHOW_FILENAMES = 1 ]; then
@@ -125,11 +148,11 @@ if [ $TEST_ONLY = 1 ]; then
     # Only in case of an error, we iterate over the files one by one
     # until we find the first invalid file.
     for f in "${FILES[@]}"; do
-        [ -f $f ] || die "Error: file \"$f\" does not exist (or is not a regular file)"
+        [ -f "$f" ] || die "Error: file \"$f\" does not exist (or is not a regular file)"
     done
     clang-format "${FLAGS_TEST[@]}" "${FILES[@]}" &>/dev/null && exit 0
     for f in "${FILES[@]}"; do
-        [ -f $f ] || die "Error: file \"$f\" does not exist (or is not a regular file)"
+        [ -f "$f" ] || die "Error: file \"$f\" does not exist (or is not a regular file)"
         if ! clang-format "${FLAGS_TEST[@]}" "$f" &>/dev/null; then
             FF="$(mktemp)"
             trap 'rm -f "$FF"' EXIT
