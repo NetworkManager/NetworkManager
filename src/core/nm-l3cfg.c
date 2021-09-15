@@ -111,6 +111,13 @@ G_STATIC_ASSERT(G_STRUCT_OFFSET(AcdData, info.addr) == 0);
 typedef struct {
     const NMPObject *obj;
 
+    /* Whether obj is currently in the platform cache or not.
+     * Since "obj" is the NMPObject from the merged NML3ConfigData,
+     * the object in platform has the same ID (but may otherwise not
+     * be identical). If this is not NULL, then currently the object
+     * is configured in kernel. */
+    const NMPObject *os_plobj;
+
     CList os_lst;
 
     /* If we have a timeout pending, we link the instance to
@@ -137,12 +144,6 @@ typedef struct {
      * now no longer), it needs to be deleted from platform. This ratelimits the time
      * how often we try that. When the counter reaches zero, we forget about it. */
     guint8 os_zombie_count;
-
-    /* whether obj is currently in the platform cache or not.
-     * Since "obj" is the NMPObject from the merged NML3ConfigData,
-     * the object in platform has the same ID (but may otherwise not
-     * be identical). */
-    bool os_in_platform : 1;
 
     /* whether we ever saw the object in platform. */
     bool os_was_in_platform : 1;
@@ -605,7 +606,7 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
                             NMP_OBJECT_TYPE_IP6_ADDRESS,                                           \
                             NMP_OBJECT_TYPE_IP4_ROUTE,                                             \
                             NMP_OBJECT_TYPE_IP6_ROUTE));                                           \
-        nm_assert(!_obj_state->os_in_platform || _obj_state->os_was_in_platform);                  \
+        nm_assert(!_obj_state->os_plobj || _obj_state->os_was_in_platform);                        \
         nm_assert((_obj_state->os_temporary_not_available_timestamp_msec == 0)                     \
                   == c_list_is_empty(&_obj_state->os_temporary_not_available_lst));                \
         if (_self) {                                                                               \
@@ -618,10 +619,10 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
                     (_obj_state->os_temporary_not_available_timestamp_msec == 0)                   \
                     || c_list_contains(&_self->priv.p->obj_state_temporary_not_available_lst_head, \
                                        &_obj_state->os_temporary_not_available_lst));              \
-                nm_assert(_obj_state->os_in_platform                                               \
-                          == (!!nm_platform_lookup_entry(_self->priv.platform,                     \
-                                                         NMP_CACHE_ID_TYPE_OBJECT_TYPE,            \
-                                                         _obj_state->obj)));                       \
+                nm_assert(_obj_state->os_plobj                                                     \
+                          == nm_platform_lookup_obj(_self->priv.platform,                          \
+                                                    NMP_CACHE_ID_TYPE_OBJECT_TYPE,                 \
+                                                    _obj_state->obj));                             \
                 nm_assert(                                                                         \
                     c_list_is_empty(&obj_state->os_zombie_lst)                                     \
                         ? (_obj_state->obj                                                         \
@@ -644,15 +645,15 @@ _obj_state_data_get_assume_config_once(const ObjStateData *obj_state)
 }
 
 static ObjStateData *
-_obj_state_data_new(const NMPObject *obj, gboolean in_platform)
+_obj_state_data_new(const NMPObject *obj, const NMPObject *plobj)
 {
     ObjStateData *obj_state;
 
     obj_state  = g_slice_new(ObjStateData);
     *obj_state = (ObjStateData){
         .obj                            = nmp_object_ref(obj),
-        .os_in_platform                 = in_platform,
-        .os_was_in_platform             = in_platform,
+        .os_plobj                       = nmp_object_ref(plobj),
+        .os_was_in_platform             = !!plobj,
         .os_nm_configured               = FALSE,
         .os_dirty                       = FALSE,
         .os_temporary_not_available_lst = C_LIST_INIT(obj_state->os_temporary_not_available_lst),
@@ -698,7 +699,7 @@ _obj_state_data_to_string(const ObjStateData *obj_state, char *buf, gsize buf_si
     if (obj_state->os_nm_configured)
         nm_strbuf_append_str(&buf, &buf_size, ", nm-configured");
 
-    if (obj_state->os_in_platform) {
+    if (obj_state->os_plobj) {
         nm_assert(obj_state->os_was_in_platform);
         nm_strbuf_append_str(&buf, &buf_size, ", in-platform");
     } else if (obj_state->os_was_in_platform)
@@ -758,18 +759,23 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
 
     nm_assert(
         in_platform
-        == (!!nm_platform_lookup_entry(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj)));
+            ? (obj
+               == nm_platform_lookup_obj(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj))
+            : (!nm_platform_lookup_obj(self->priv.platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj)));
 
     obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
     if (!obj_state)
         return;
 
-    if (obj_state->os_in_platform == (!!in_platform))
+    if (!in_platform)
+        obj = NULL;
+
+    if (obj_state->os_plobj == obj)
         goto out;
 
     if (!in_platform && !c_list_is_empty(&obj_state->os_zombie_lst)) {
         /* this is a zombie. We can forget about it.*/
-        obj_state->os_in_platform = FALSE;
+        nm_clear_nmp_object(&obj_state->os_plobj);
         c_list_unlink(&obj_state->os_zombie_lst);
         _LOGD("obj-state: zombie gone (untrack): %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
@@ -780,14 +786,14 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
     nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
 
     if (in_platform) {
-        obj_state->os_in_platform     = TRUE;
+        obj_state->os_plobj           = nmp_object_ref(obj);
         obj_state->os_was_in_platform = TRUE;
         _LOGD("obj-state: appeared in platform: %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
         goto out;
     }
 
-    obj_state->os_in_platform = FALSE;
+    nm_clear_nmp_object(&obj_state->os_plobj);
     _LOGD("obj-state: remove from platform: %s",
           _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
 
@@ -836,9 +842,9 @@ _obj_states_update_all(NML3Cfg *self)
             if (!obj_state) {
                 obj_state =
                     _obj_state_data_new(obj,
-                                        !!nm_platform_lookup_entry(self->priv.platform,
-                                                                   NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-                                                                   obj));
+                                        nm_platform_lookup_obj(self->priv.platform,
+                                                               NMP_CACHE_ID_TYPE_OBJECT_TYPE,
+                                                               obj));
                 c_list_link_tail(&self->priv.p->obj_state_lst_head, &obj_state->os_lst);
                 g_hash_table_add(self->priv.p->obj_state_hash, obj_state);
                 _LOGD("obj-state: track: %s",
@@ -866,7 +872,7 @@ _obj_states_update_all(NML3Cfg *self)
             if (!obj_state->os_dirty)
                 continue;
 
-            if (obj_state->os_in_platform && obj_state->os_nm_configured) {
+            if (obj_state->os_plobj && obj_state->os_nm_configured) {
                 c_list_link_tail(&self->priv.p->obj_state_zombie_lst_head,
                                  &obj_state->os_zombie_lst);
                 obj_state->os_zombie_count = ZOMBIE_COUNT_START;
@@ -932,8 +938,7 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
         return TRUE;
     }
 
-    if (!obj_state->os_in_platform
-        && sync_filter_data->commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY)
+    if (!obj_state->os_plobj && sync_filter_data->commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY)
         return FALSE;
 
     return TRUE;
