@@ -11,15 +11,21 @@
 typedef struct _NML3IPv6LL NML3IPv6LL;
 
 typedef enum _nm_packed {
-
-    /* NONE is not actually used by NML3IPv6LL. This is a bogus placeholder
-     * state for external users. */
-    NM_L3_IPV6LL_STATE_NONE,
-
     NM_L3_IPV6LL_STATE_STARTING,
     NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS,
     NM_L3_IPV6LL_STATE_READY,
     NM_L3_IPV6LL_STATE_DAD_FAILED,
+
+    /* The following flags are not actually use by NML3IPv6LL. They exist for
+     * convenience of the users, to encode additional states. */
+
+    /* IPv6LL is disabled */
+    NM_L3_IPV6LL_STATE_NONE,
+
+    /* We want to do IPv6LL, but something is missing so we cannot even create
+     * a NML3IPv6LL instance. For example, no NML3Cfg instance or no interface name. */
+    NM_L3_IPV6LL_STATE_DEFUNCT,
+
 } NML3IPv6LLState;
 
 const char *nm_l3_ipv6ll_state_to_string(NML3IPv6LLState state);
