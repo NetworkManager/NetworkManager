@@ -505,6 +505,7 @@ typedef struct _NMDevicePrivate {
     NMDeviceStageState stage1_sriov_state : 3;
 
     bool ip_config_started : 1;
+    bool tc_committed : 1;
 
     char *current_stable_id;
 
@@ -8516,13 +8517,14 @@ activate_stage2_device_config(NMDevice *self)
         _ethtool_state_set(self);
 
     if (!nm_device_sys_iface_state_is_external_or_assume(self)) {
-        if (!tc_commit(self)) {
-            _LOGW(LOGD_IP6, "failed applying traffic control rules");
+        if (!priv->tc_committed && !tc_commit(self)) {
+            _LOGW(LOGD_DEVICE, "failed applying traffic control rules");
             nm_device_state_changed(self,
                                     NM_DEVICE_STATE_FAILED,
                                     NM_DEVICE_STATE_REASON_CONFIG_FAILED);
             return;
         }
+        priv->tc_committed = TRUE;
     }
 
     _routing_rules_sync(self, NM_TERNARY_TRUE);
@@ -16055,6 +16057,8 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
             }
         }
     }
+
+    priv->tc_committed = FALSE;
 
     _routing_rules_sync(self,
                         cleanup_type == CLEANUP_TYPE_KEEP ? NM_TERNARY_DEFAULT : NM_TERNARY_FALSE);
