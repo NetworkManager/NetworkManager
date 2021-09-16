@@ -2318,11 +2318,9 @@ test_rd_ethtool(void)
     NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
     _ethtool_check_inval("rd.ethtool=");
 
-    NMTST_EXPECT_NM_WARN("cmdline-reader: Could not find rd.ethtool options to set");
-    _ethtool_check_inval("rd.ethtool=eth0");
+    _ethtool_check("rd.ethtool=eth0", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN("cmdline-reader: Could not find rd.ethtool options to set");
-    _ethtool_check_inval("rd.ethtool=eth0:");
+    _ethtool_check("rd.ethtool=eth0:", FALSE, 0);
 
     NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
     _ethtool_check_inval("rd.ethtool=::");
@@ -2407,9 +2405,7 @@ test_rd_ethtool(void)
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:off"), FALSE, 0);
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:100", "rd.ethtool=eth0:on"), TRUE, 0);
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:100", "rd.ethtool=eth0:off"), FALSE, 0);
-
-    NMTST_EXPECT_NM_WARN("cmdline-reader: Could not find rd.ethtool options to set");
-    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:"), FALSE, 100);
+    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:"), FALSE, 0);
 }
 
 /*****************************************************************************/

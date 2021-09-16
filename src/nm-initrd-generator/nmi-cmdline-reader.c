@@ -1187,11 +1187,6 @@ reader_parse_ethtool(Reader *reader, char *argument)
         return;
     }
 
-    if (!*argument) {
-        _LOGW(LOGD_CORE, "Could not find rd.ethtool options to set");
-        return;
-    }
-
     autoneg_str = get_word(&argument, ':');
     speed_str   = get_word(&argument, ':');
 
