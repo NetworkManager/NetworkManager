@@ -2403,10 +2403,10 @@ test_rd_ethtool(void)
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:0", "rd.ethtool=eth0:off"), FALSE, 0);
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:0", "rd.ethtool=eth0:on"), TRUE, 0);
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:0", "rd.ethtool=eth0:off"), FALSE, 0);
-    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:on"), TRUE, 100);
-    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:off"), FALSE, 100);
-    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:100", "rd.ethtool=eth0:on"), TRUE, 100);
-    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:100", "rd.ethtool=eth0:off"), FALSE, 100);
+    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:on"), TRUE, 0);
+    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:off"), FALSE, 0);
+    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:100", "rd.ethtool=eth0:on"), TRUE, 0);
+    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:100", "rd.ethtool=eth0:off"), FALSE, 0);
 
     NMTST_EXPECT_NM_WARN("cmdline-reader: Could not find rd.ethtool options to set");
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:"), FALSE, 100);
