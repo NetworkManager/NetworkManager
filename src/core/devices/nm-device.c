@@ -11641,7 +11641,8 @@ activate_stage3_ip_config_start(NMDevice *self)
     nm_device_state_changed(self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
     /* Device should be up before we can do anything with it */
-    if ((ifindex = nm_device_get_ip_ifindex(self)) > 0
+    if (!nm_device_sys_iface_state_is_external(self)
+        && (ifindex = nm_device_get_ip_ifindex(self)) > 0
         && !nm_platform_link_is_up(nm_device_get_platform(self), ifindex))
         _LOGW(LOGD_DEVICE,
               "interface %s not up for IP configuration",
