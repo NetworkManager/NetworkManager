@@ -4,6 +4,8 @@
 
 #include "libnm-client-aux-extern/nm-libnm-aux.h"
 
+#include <linux/rtnetlink.h>
+
 #include "nm-cloud-setup-utils.h"
 #include "nmcs-provider-ec2.h"
 #include "nmcs-provider-gcp.h"
@@ -200,30 +202,30 @@ _nmc_get_device_by_hwaddr(NMClient *nmc, const char *hwaddr)
 /*****************************************************************************/
 
 typedef struct {
-    GMainLoop * main_loop;
-    GHashTable *config_dict;
+    GMainLoop *                  main_loop;
+    NMCSProviderGetConfigResult *result;
 } GetConfigData;
 
 static void
-_get_config_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+_get_config_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 {
-    GetConfigData *    data                    = user_data;
-    gs_unref_hashtable GHashTable *config_dict = NULL;
-    gs_free_error GError *error                = NULL;
+    GetConfigData *                              data                                = user_data;
+    nm_auto_free_nmcs_provider_get_config_result NMCSProviderGetConfigResult *result = NULL;
+    gs_free_error GError *error                                                      = NULL;
 
-    config_dict = nmcs_provider_get_config_finish(NMCS_PROVIDER(source), result, &error);
+    result = nmcs_provider_get_config_finish(NMCS_PROVIDER(source), res, &error);
 
-    if (!config_dict) {
+    if (!result) {
         if (!nm_utils_error_is_cancelled(error))
             _LOGI("failure to get meta data: %s", error->message);
     } else
         _LOGD("meta data received");
 
-    data->config_dict = g_steal_pointer(&config_dict);
+    data->result = g_steal_pointer(&result);
     g_main_loop_quit(data->main_loop);
 }
 
-static GHashTable *
+static NMCSProviderGetConfigResult *
 _get_config(GCancellable *sigterm_cancellable, NMCSProvider *provider, NMClient *nmc)
 {
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
@@ -243,7 +245,7 @@ _get_config(GCancellable *sigterm_cancellable, NMCSProvider *provider, NMClient 
 
     g_main_loop_run(main_loop);
 
-    return data.config_dict;
+    return data.result;
 }
 
 /*****************************************************************************/
@@ -269,7 +271,9 @@ _nmc_skip_connection(NMConnection *connection)
 static gboolean
 _nmc_mangle_connection(NMDevice *                            device,
                        NMConnection *                        connection,
+                       const NMCSProviderGetConfigResult *   result,
                        const NMCSProviderGetConfigIfaceData *config_data,
+                       gboolean *                            out_skipped_single_addr,
                        gboolean *                            out_changed)
 {
     NMSettingIPConfig * s_ip;
@@ -277,16 +281,15 @@ _nmc_mangle_connection(NMDevice *                            device,
     NMConnection *      remote_connection;
     NMSettingIPConfig * remote_s_ip = NULL;
     gsize               i;
-    in_addr_t           gateway;
-    gint64              rt_metric;
-    guint32             rt_table;
-    NMIPRoute *         route_entry;
     gboolean            addrs_changed       = FALSE;
     gboolean            rules_changed       = FALSE;
     gboolean            routes_changed      = FALSE;
     gs_unref_ptrarray GPtrArray *addrs_new  = NULL;
     gs_unref_ptrarray GPtrArray *rules_new  = NULL;
     gs_unref_ptrarray GPtrArray *routes_new = NULL;
+
+    NM_SET_OUT(out_skipped_single_addr, FALSE);
+    NM_SET_OUT(out_changed, FALSE);
 
     if (!nm_streq0(nm_connection_get_connection_type(connection), NM_SETTING_WIRED_SETTING_NAME))
         return FALSE;
@@ -329,48 +332,84 @@ _nmc_mangle_connection(NMDevice *                            device,
         }
     }
 
-    if (config_data->has_ipv4s && config_data->has_cidr) {
-        for (i = 0; i < config_data->ipv4s_len; i++) {
-            NMIPAddress *entry;
+    if (result->num_valid_ifaces <= 1 && result->num_ipv4s <= 1) {
+        /* this setup only has one interface and one IPv4 address (or less).
+         * We don't need to configure policy routing in this case. */
+        NM_SET_OUT(out_skipped_single_addr, TRUE);
+    } else if (config_data->has_ipv4s && config_data->has_cidr) {
+        gs_unref_hashtable GHashTable *unique_subnets =
+            g_hash_table_new(nm_direct_hash, g_direct_equal);
+        NMIPAddress *    addr_entry;
+        NMIPRoute *      route_entry;
+        NMIPRoutingRule *rule_entry;
+        in_addr_t        gateway;
+        char             sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
-            entry = nm_ip_address_new_binary(AF_INET,
-                                             &config_data->ipv4s_arr[i],
-                                             config_data->cidr_prefix,
-                                             NULL);
-            if (entry)
-                g_ptr_array_add(addrs_new, entry);
+        for (i = 0; i < config_data->ipv4s_len; i++) {
+            addr_entry = nm_ip_address_new_binary(AF_INET,
+                                                  &config_data->ipv4s_arr[i],
+                                                  config_data->cidr_prefix,
+                                                  NULL);
+            nm_assert(addr_entry);
+            g_ptr_array_add(addrs_new, addr_entry);
         }
+
         if (config_data->has_gateway && config_data->gateway) {
             gateway = config_data->gateway;
         } else {
             gateway = nm_utils_ip4_address_clear_host_address(config_data->cidr_addr,
                                                               config_data->cidr_prefix);
-            ((guint8 *) &gateway)[3] += 1;
+            if (config_data->cidr_prefix < 32)
+                ((guint8 *) &gateway)[3] += 1;
         }
-        rt_metric = 10;
-        rt_table  = 30400 + config_data->iface_idx;
 
-        route_entry =
-            nm_ip_route_new_binary(AF_INET, &nm_ip_addr_zero, 0, &gateway, rt_metric, NULL);
+        for (i = 0; i < config_data->ipv4s_len; i++) {
+            in_addr_t a = config_data->ipv4s_arr[i];
+
+            a = nm_utils_ip4_address_clear_host_address(a, config_data->cidr_prefix);
+
+            G_STATIC_ASSERT_EXPR(sizeof(gsize) >= sizeof(in_addr_t));
+            if (g_hash_table_add(unique_subnets, GSIZE_TO_POINTER(a))) {
+                route_entry =
+                    nm_ip_route_new_binary(AF_INET, &a, config_data->cidr_prefix, NULL, 10, NULL);
+                nm_ip_route_set_attribute(route_entry,
+                                          NM_IP_ROUTE_ATTRIBUTE_TABLE,
+                                          g_variant_new_uint32(30200 + config_data->iface_idx));
+                g_ptr_array_add(routes_new, route_entry);
+            }
+
+            rule_entry = nm_ip_routing_rule_new(AF_INET);
+            nm_ip_routing_rule_set_priority(rule_entry, 30200 + config_data->iface_idx);
+            nm_ip_routing_rule_set_from(rule_entry,
+                                        _nm_utils_inet4_ntop(config_data->ipv4s_arr[i], sbuf),
+                                        32);
+            nm_ip_routing_rule_set_table(rule_entry, 30200 + config_data->iface_idx);
+            nm_assert(nm_ip_routing_rule_validate(rule_entry, NULL));
+            g_ptr_array_add(rules_new, rule_entry);
+        }
+
+        rule_entry = nm_ip_routing_rule_new(AF_INET);
+        nm_ip_routing_rule_set_priority(rule_entry, 30350);
+        nm_ip_routing_rule_set_table(rule_entry, RT_TABLE_MAIN);
+        nm_ip_routing_rule_set_suppress_prefixlength(rule_entry, 0);
+        nm_assert(nm_ip_routing_rule_validate(rule_entry, NULL));
+        g_ptr_array_add(rules_new, rule_entry);
+
+        route_entry = nm_ip_route_new_binary(AF_INET, &nm_ip_addr_zero, 0, &gateway, 10, NULL);
         nm_ip_route_set_attribute(route_entry,
                                   NM_IP_ROUTE_ATTRIBUTE_TABLE,
-                                  g_variant_new_uint32(rt_table));
+                                  g_variant_new_uint32(30400 + config_data->iface_idx));
         g_ptr_array_add(routes_new, route_entry);
 
         for (i = 0; i < config_data->ipv4s_len; i++) {
-            NMIPRoutingRule *entry;
-            char             sbuf[NM_UTILS_INET_ADDRSTRLEN];
-
-            entry = nm_ip_routing_rule_new(AF_INET);
-            nm_ip_routing_rule_set_priority(entry, rt_table);
-            nm_ip_routing_rule_set_from(entry,
+            rule_entry = nm_ip_routing_rule_new(AF_INET);
+            nm_ip_routing_rule_set_priority(rule_entry, 30400 + config_data->iface_idx);
+            nm_ip_routing_rule_set_from(rule_entry,
                                         _nm_utils_inet4_ntop(config_data->ipv4s_arr[i], sbuf),
                                         32);
-            nm_ip_routing_rule_set_table(entry, rt_table);
-
-            nm_assert(nm_ip_routing_rule_validate(entry, NULL));
-
-            g_ptr_array_add(rules_new, entry);
+            nm_ip_routing_rule_set_table(rule_entry, 30400 + config_data->iface_idx);
+            nm_assert(nm_ip_routing_rule_validate(rule_entry, NULL));
+            g_ptr_array_add(rules_new, rule_entry);
         }
     }
 
@@ -395,34 +434,20 @@ _nmc_mangle_connection(NMDevice *                            device,
 
 /*****************************************************************************/
 
-static guint
-_config_data_get_num_valid(GHashTable *config_dict)
-{
-    const NMCSProviderGetConfigIfaceData *config_data;
-    GHashTableIter                        h_iter;
-    guint                                 n = 0;
-
-    g_hash_table_iter_init(&h_iter, config_dict);
-    while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &config_data)) {
-        if (nmcs_provider_get_config_iface_data_is_valid(config_data))
-            n++;
-    }
-
-    return n;
-}
-
 static gboolean
-_config_one(GCancellable *                        sigterm_cancellable,
-            NMClient *                            nmc,
-            gboolean                              is_single_nic,
-            const char *                          hwaddr,
-            const NMCSProviderGetConfigIfaceData *config_data)
+_config_one(GCancellable *                     sigterm_cancellable,
+            NMClient *                         nmc,
+            const NMCSProviderGetConfigResult *result,
+            guint                              idx)
 {
-    gs_unref_object NMDevice *device                 = NULL;
-    gs_unref_object NMConnection *applied_connection = NULL;
+    const NMCSProviderGetConfigIfaceData *config_data = result->iface_datas_arr[idx];
+    const char *                          hwaddr      = config_data->hwaddr;
+    gs_unref_object NMDevice *device                  = NULL;
+    gs_unref_object NMConnection *applied_connection  = NULL;
     guint64                       applied_version_id;
     gs_free_error GError *error = NULL;
     gboolean              changed;
+    gboolean              skipped_single_addr;
     gboolean              version_id_changed;
     guint                 try_count;
     gboolean              any_changes = FALSE;
@@ -440,6 +465,14 @@ _config_one(GCancellable *                        sigterm_cancellable,
 
     if (!nmcs_provider_get_config_iface_data_is_valid(config_data)) {
         _LOGD("config device %s: skip because meta data not successfully fetched", hwaddr);
+        return FALSE;
+    }
+
+    if (config_data->iface_idx >= 100) {
+        /* since we use the iface_idx to select a table number, the range is limited from
+         * 0 to 99. Note that the providers are required to provide increasing numbers,
+         * so this means we bail out after the first 100 devices.  */
+        _LOGD("config device %s: skip because number of supported interfaces reached", hwaddr);
         return FALSE;
     }
 
@@ -471,16 +504,30 @@ try_again:
         return any_changes;
     }
 
-    if (!_nmc_mangle_connection(device, applied_connection, config_data, &changed)) {
+    if (!_nmc_mangle_connection(device,
+                                applied_connection,
+                                result,
+                                config_data,
+                                &skipped_single_addr,
+                                &changed)) {
         _LOGD("config device %s: device has no suitable applied connection. Skip", hwaddr);
         return any_changes;
     }
 
     if (!changed) {
-        _LOGD("config device %s: device needs no update to applied connection \"%s\" (%s). Skip",
-              hwaddr,
-              nm_connection_get_id(applied_connection),
-              nm_connection_get_uuid(applied_connection));
+        if (skipped_single_addr) {
+            _LOGD("config device %s: device needs no update to applied connection \"%s\" (%s) "
+                  "because there are not multiple IP addresses. Skip",
+                  hwaddr,
+                  nm_connection_get_id(applied_connection),
+                  nm_connection_get_uuid(applied_connection));
+        } else {
+            _LOGD(
+                "config device %s: device needs no update to applied connection \"%s\" (%s). Skip",
+                hwaddr,
+                nm_connection_get_id(applied_connection),
+                nm_connection_get_uuid(applied_connection));
+        }
         return any_changes;
     }
 
@@ -489,7 +536,7 @@ try_again:
           nm_connection_get_id(applied_connection),
           nm_connection_get_uuid(applied_connection));
 
-    /* we are about to call Reapply(). If if that fails, it counts as if we changed something. */
+    /* we are about to call Reapply(). Even if that fails, it counts as if we changed something. */
     any_changes = TRUE;
 
     if (!nmcs_device_reapply(device,
@@ -525,19 +572,15 @@ try_again:
 }
 
 static gboolean
-_config_all(GCancellable *sigterm_cancellable, NMClient *nmc, GHashTable *config_dict)
+_config_all(GCancellable *                     sigterm_cancellable,
+            NMClient *                         nmc,
+            const NMCSProviderGetConfigResult *result)
 {
-    GHashTableIter                        h_iter;
-    const NMCSProviderGetConfigIfaceData *c_config_data;
-    const char *                          c_hwaddr;
-    gboolean                              is_single_nic;
-    gboolean                              any_changes = FALSE;
+    gboolean any_changes = FALSE;
+    guint    i;
 
-    is_single_nic = (_config_data_get_num_valid(config_dict) <= 1);
-
-    g_hash_table_iter_init(&h_iter, config_dict);
-    while (g_hash_table_iter_next(&h_iter, (gpointer *) &c_hwaddr, (gpointer *) &c_config_data)) {
-        if (_config_one(sigterm_cancellable, nmc, is_single_nic, c_hwaddr, c_config_data))
+    for (i = 0; i < result->n_iface_datas; i++) {
+        if (_config_one(sigterm_cancellable, nmc, result, i))
             any_changes = TRUE;
     }
 
@@ -564,12 +607,12 @@ sigterm_handler(gpointer user_data)
 int
 main(int argc, const char *const *argv)
 {
-    gs_unref_object GCancellable *    sigterm_cancellable     = NULL;
-    nm_auto_destroy_and_unref_gsource GSource *sigterm_source = NULL;
-    gs_unref_object NMCSProvider *provider                    = NULL;
-    gs_unref_object NMClient *nmc                             = NULL;
-    gs_unref_hashtable GHashTable *config_dict                = NULL;
-    gs_free_error GError *error                               = NULL;
+    gs_unref_object GCancellable *    sigterm_cancellable                            = NULL;
+    nm_auto_destroy_and_unref_gsource GSource *sigterm_source                        = NULL;
+    gs_unref_object NMCSProvider *provider                                           = NULL;
+    gs_unref_object NMClient *                   nmc                                 = NULL;
+    nm_auto_free_nmcs_provider_get_config_result NMCSProviderGetConfigResult *result = NULL;
+    gs_free_error GError *error                                                      = NULL;
 
     _nm_logging_enabled_init(g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_LOG")));
 
@@ -614,17 +657,17 @@ main(int argc, const char *const *argv)
         goto done;
     }
 
-    config_dict = _get_config(sigterm_cancellable, provider, nmc);
-    if (!config_dict)
+    result = _get_config(sigterm_cancellable, provider, nmc);
+    if (!result)
         goto done;
 
-    if (_config_all(sigterm_cancellable, nmc, config_dict))
+    if (_config_all(sigterm_cancellable, nmc, result))
         _LOGI("some changes were applied for provider %s", nmcs_provider_get_name(provider));
     else
         _LOGD("no changes were applied for provider %s", nmcs_provider_get_name(provider));
 
 done:
-    nm_clear_pointer(&config_dict, g_hash_table_unref);
+    nm_clear_pointer(&result, nmcs_provider_get_config_result_free);
     g_clear_object(&nmc);
     g_clear_object(&provider);
 
