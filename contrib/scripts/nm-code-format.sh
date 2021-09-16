@@ -46,7 +46,7 @@ fi
 FILES=()
 HAS_EXPLICIT_FILES=0
 SHOW_FILENAMES=0
-TEST_ONLY=1
+TEST_ONLY=0
 
 usage() {
     printf "Usage: %s [OPTION]... [FILE]...\n" "$(basename "$0")"
@@ -54,10 +54,10 @@ usage() {
     printf "If no file is given the script runs on the whole codebase.\n"
     printf "If no flag is given no file is touch but errors are reported.\n\n"
     printf "OPTIONS:\n"
-    printf "    -i                 Reformat files\n"
-    printf "    -n                 Only check the files (this is the default)\n"
+    printf "    -i                 Reformat files (this is the default)\n"
+    printf "    -n|--dry-run       Only check the files (contrary to \"-i\")\n"
     printf "    -h                 Print this help message\n"
-    printf "    --show-filenames   Only print the filenames that would be checked\n"
+    printf "    --show-filenames   Only print the filenames that would be checked/formatted\n"
     printf "    --                 Separate options from filenames/directories\n"
 }
 
@@ -92,7 +92,7 @@ while (( $# )); do
                 shift
                 continue
                 ;;
-            -n)
+            -n|--dry-run)
                 TEST_ONLY=1
                 shift
                 continue
