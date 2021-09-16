@@ -2315,14 +2315,14 @@ test_carrier_timeout(void)
 static void
 test_rd_ethtool(void)
 {
-    NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: interface unspecified. Ignore");
     _ethtool_check_inval("rd.ethtool=");
 
     _ethtool_check("rd.ethtool=eth0", FALSE, 0);
 
     _ethtool_check("rd.ethtool=eth0:", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: interface unspecified. Ignore");
     _ethtool_check_inval("rd.ethtool=::");
 
     _ethtool_check("rd.ethtool=eth0:on", TRUE, 0);
@@ -2346,61 +2346,48 @@ test_rd_ethtool(void)
                          "without setting speed");
     _ethtool_check("rd.ethtool=eth0:0", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid value for rd.ethtool.autoneg, rd.ethtool.autoneg was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg invalid. Must be boolean or empty");
     _ethtool_check("rd.ethtool=eth0:randomstring", FALSE, 0);
 
     _ethtool_check("rd.ethtool=eth0::", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: speed invalid. Must be an integer or empty");
     _ethtool_check("rd.ethtool=eth0::astring", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: speed invalid. Must be an integer or empty");
     _ethtool_check("rd.ethtool=eth0::1000000000000000000000000000000000000", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: speed invalid. Must be an integer or empty");
     _ethtool_check("rd.ethtool=eth0::0.67", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: speed invalid. Must be an integer or empty");
     _ethtool_check("rd.ethtool=eth0::-23", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: speed invalid. Must be an integer or empty");
     _ethtool_check("rd.ethtool=eth0::-23:", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid extra argument ':' for rd.ethtool, this value was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: speed invalid. Must be an integer or empty");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: extra argument ignored");
     _ethtool_check("rd.ethtool=eth0::-23::", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid extra argument ':foo' for rd.ethtool, this value was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: speed invalid. Must be an integer or empty");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: extra argument ignored");
     _ethtool_check("rd.ethtool=eth0::-23::foo", FALSE, 0);
 
     _ethtool_check("rd.ethtool=eth0:1:10", TRUE, 10);
 
     _ethtool_check("rd.ethtool=eth0::100", FALSE, 100);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid extra argument 'bogus' for rd.ethtool, this value was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: extra argument ignored");
     _ethtool_check("rd.ethtool=eth0:::bogus", FALSE, 0);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid extra argument 'bogus' for rd.ethtool, this value was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: extra argument ignored");
     _ethtool_check("rd.ethtool=eth0::10:bogus", FALSE, 10);
 
-    NMTST_EXPECT_NM_WARN(
-        "cmdline-reader: Invalid extra argument 'bogus' for rd.ethtool, this value was not set");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: extra argument ignored");
     _ethtool_check("rd.ethtool=eth0:on:100:bogus", TRUE, 100);
 
-    NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: interface unspecified. Ignore");
     _ethtool_check_inval("rd.ethtool=:::");
 
     NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "

@@ -1183,7 +1183,7 @@ reader_parse_ethtool(Reader *reader, char *argument)
 
     interface = get_word(&argument, ':');
     if (!interface) {
-        _LOGW(LOGD_CORE, "Impossible to set rd.ethtool options: invalid format");
+        _LOGW(LOGD_CORE, "rd.ethtool: interface unspecified. Ignore");
         return;
     }
 
@@ -1194,15 +1194,14 @@ reader_parse_ethtool(Reader *reader, char *argument)
     if (autoneg_str) {
         autoneg = _nm_utils_ascii_str_to_bool(autoneg_str, -1);
         if (autoneg == -1)
-            _LOGW(LOGD_CORE,
-                  "Invalid value for rd.ethtool.autoneg, rd.ethtool.autoneg was not set");
+            _LOGW(LOGD_CORE, "rd.ethtool: autoneg invalid. Must be boolean or empty");
     }
 
     speed = 0;
     if (speed_str) {
         speed = _nm_utils_ascii_str_to_int64(speed_str, 10, 0, G_MAXUINT32, 0);
         if (errno)
-            _LOGW(LOGD_CORE, "Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
+            _LOGW(LOGD_CORE, "rd.ethtool: speed invalid. Must be an integer or empty");
     }
 
     if (speed == 0 && autoneg == FALSE) {
@@ -1227,9 +1226,7 @@ reader_parse_ethtool(Reader *reader, char *argument)
     }
 
     if (*argument)
-        _LOGW(LOGD_CORE,
-              "Invalid extra argument '%s' for rd.ethtool, this value was not set",
-              argument);
+        _LOGW(LOGD_CORE, "rd.ethtool: extra argument ignored");
 }
 
 static void
