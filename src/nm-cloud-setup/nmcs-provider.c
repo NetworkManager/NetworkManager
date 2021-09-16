@@ -49,6 +49,90 @@ nmcs_provider_get_main_context(NMCSProvider *self)
 
     return nm_http_client_get_main_context(NMCS_PROVIDER_GET_PRIVATE(self)->http_client);
 }
+/*****************************************************************************/
+
+static int
+_result_new_sort_iface_data(gconstpointer pa, gconstpointer pb)
+{
+    const NMCSProviderGetConfigIfaceData *a = *((const NMCSProviderGetConfigIfaceData *const *) pa);
+    const NMCSProviderGetConfigIfaceData *b = *((const NMCSProviderGetConfigIfaceData *const *) pb);
+
+    /* negative iface_idx are sorted to the end. */
+    NM_CMP_DIRECT((a->iface_idx < 0), (b->iface_idx < 0));
+
+    NM_CMP_FIELD(a, b, iface_idx);
+    return 0;
+}
+
+static NMCSProviderGetConfigResult *
+nmcs_provider_get_config_result_new(GHashTable *iface_datas)
+{
+    const NMCSProviderGetConfigIfaceData *iface_data;
+    NMCSProviderGetConfigResult *         result;
+    GHashTableIter                        h_iter;
+    guint                                 num_valid_ifaces = 0;
+    guint                                 num_ipv4s        = 0;
+    GPtrArray *                           ptrarr;
+    guint                                 n_iface_datas;
+
+    n_iface_datas = g_hash_table_size(iface_datas);
+
+    ptrarr = g_ptr_array_sized_new(n_iface_datas + 1u);
+
+    g_hash_table_iter_init(&h_iter, iface_datas);
+    while (g_hash_table_iter_next(&h_iter, NULL, (gpointer *) &iface_data)) {
+        if (nmcs_provider_get_config_iface_data_is_valid(iface_data)) {
+            num_valid_ifaces++;
+            num_ipv4s += iface_data->ipv4s_len;
+        }
+        g_ptr_array_add(ptrarr, (gpointer) iface_data);
+    }
+
+    g_ptr_array_sort(ptrarr, _result_new_sort_iface_data);
+
+    nm_assert(n_iface_datas == ptrarr->len);
+
+    g_ptr_array_add(ptrarr, NULL);
+
+    result  = g_new(NMCSProviderGetConfigResult, 1);
+    *result = (NMCSProviderGetConfigResult){
+        .iface_datas   = g_hash_table_ref(iface_datas),
+        .n_iface_datas = n_iface_datas,
+        .iface_datas_arr =
+            (const NMCSProviderGetConfigIfaceData **) g_ptr_array_free(ptrarr, FALSE),
+        .num_valid_ifaces = num_valid_ifaces,
+        .num_ipv4s        = num_ipv4s,
+    };
+
+#if NM_MORE_ASSERTS > 5
+    {
+        gsize iface_idx_expected = 0;
+        guint i;
+
+        for (i = 0; i < result->n_iface_datas; i++) {
+            if (result->iface_datas_arr[i]->iface_idx < 0) {
+                nm_assert(result->iface_datas_arr[i]->iface_idx == -1);
+                iface_idx_expected = -1;
+                continue;
+            }
+            nm_assert(result->iface_datas_arr[i]->iface_idx == iface_idx_expected);
+            iface_idx_expected++;
+        }
+    }
+#endif
+
+    return result;
+}
+
+void
+nmcs_provider_get_config_result_free(NMCSProviderGetConfigResult *result)
+{
+    if (result) {
+        nm_g_hash_table_unref(result->iface_datas);
+        g_free((gpointer) result->iface_datas_arr);
+        g_free(result);
+    }
+}
 
 /*****************************************************************************/
 
@@ -90,15 +174,25 @@ nmcs_provider_detect_finish(NMCSProvider *self, GAsyncResult *result, GError **e
 /*****************************************************************************/
 
 NMCSProviderGetConfigIfaceData *
-nmcs_provider_get_config_iface_data_new(gboolean was_requested)
+nmcs_provider_get_config_iface_data_create(GHashTable *iface_datas,
+                                           gboolean    was_requested,
+                                           const char *hwaddr)
 {
     NMCSProviderGetConfigIfaceData *iface_data;
 
+    nm_assert(hwaddr);
+
     iface_data  = g_slice_new(NMCSProviderGetConfigIfaceData);
     *iface_data = (NMCSProviderGetConfigIfaceData){
+        .hwaddr        = g_strdup(hwaddr),
         .iface_idx     = -1,
         .was_requested = was_requested,
     };
+
+    /* the has does not own the key (iface_datta->hwaddr), the lifetime of the
+     * key is associated with the iface_data instance. */
+    g_hash_table_replace(iface_datas, (char *) iface_data->hwaddr, iface_data);
+
     return iface_data;
 }
 
@@ -109,6 +203,7 @@ _iface_data_free(gpointer data)
 
     g_free(iface_data->ipv4s_arr);
     g_free(iface_data->iproutes_arr);
+    g_free((char *) iface_data->hwaddr);
 
     nm_g_slice_free(iface_data);
 }
@@ -137,8 +232,8 @@ _get_config_task_maybe_return(NMCSProviderGetConfigTaskData *get_config_data, GE
     } else {
         _LOGD("get-config: success");
         g_task_return_pointer(get_config_data->task,
-                              g_hash_table_ref(get_config_data->result_dict),
-                              (GDestroyNotify) g_hash_table_unref);
+                              nmcs_provider_get_config_result_new(get_config_data->result_dict),
+                              (GDestroyNotify) nmcs_provider_get_config_result_free);
     }
 
     nm_clear_g_signal_handler(g_task_get_cancellable(get_config_data->task),
@@ -187,16 +282,13 @@ nmcs_provider_get_config(NMCSProvider *      self,
     *get_config_data = (NMCSProviderGetConfigTaskData){
         .task = nm_g_task_new(self, cancellable, nmcs_provider_get_config, callback, user_data),
         .any  = any,
-        .result_dict = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, _iface_data_free),
+        .result_dict = g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, _iface_data_free),
     };
 
     nmcs_wait_for_objects_register(get_config_data->task);
 
-    for (; hwaddrs && hwaddrs[0]; hwaddrs++) {
-        g_hash_table_insert(get_config_data->result_dict,
-                            g_strdup(hwaddrs[0]),
-                            nmcs_provider_get_config_iface_data_new(TRUE));
-    }
+    for (; hwaddrs && hwaddrs[0]; hwaddrs++)
+        nmcs_provider_get_config_iface_data_create(get_config_data->result_dict, TRUE, hwaddrs[0]);
 
     if (cancellable) {
         gulong cancelled_id;
@@ -217,7 +309,7 @@ nmcs_provider_get_config(NMCSProvider *      self,
     NMCS_PROVIDER_GET_CLASS(self)->get_config(self, get_config_data);
 }
 
-GHashTable *
+NMCSProviderGetConfigResult *
 nmcs_provider_get_config_finish(NMCSProvider *self, GAsyncResult *result, GError **error)
 {
     g_return_val_if_fail(NMCS_IS_PROVIDER(self), FALSE);

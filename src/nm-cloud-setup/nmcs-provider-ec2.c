@@ -122,14 +122,13 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
                           gboolean      is_local_ipv4)
 {
     NMCSProviderGetConfigTaskData *get_config_data;
-    const char *                   hwaddr = NULL;
     gs_unref_bytes GBytes *response       = NULL;
     gs_free_error GError *          error = NULL;
     NMCSProviderGetConfigIfaceData *config_iface_data;
     in_addr_t                       tmp_addr;
     int                             tmp_prefix;
 
-    nm_utils_user_data_unpack(user_data, &get_config_data, &hwaddr);
+    nm_utils_user_data_unpack(user_data, &get_config_data, &config_iface_data);
 
     nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
 
@@ -138,8 +137,6 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
 
     if (error)
         goto out;
-
-    config_iface_data = g_hash_table_lookup(get_config_data->result_dict, hwaddr);
 
     if (is_local_ipv4) {
         gs_free const char **s_addrs = NULL;
@@ -236,22 +233,20 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
         NMCSProviderGetConfigIfaceData *config_iface_data;
         gs_free char *                  uri1 = NULL;
         gs_free char *                  uri2 = NULL;
-        const char *                    hwaddr;
 
-        if (!g_hash_table_lookup_extended(get_config_data->result_dict,
-                                          v_hwaddr,
-                                          (gpointer *) &hwaddr,
-                                          (gpointer *) &config_iface_data)) {
+        config_iface_data = g_hash_table_lookup(get_config_data->result_dict, v_hwaddr);
+
+        if (!config_iface_data) {
             if (!get_config_data->any) {
                 _LOGD("get-config: skip fetching meta data for %s (%s)",
                       v_hwaddr,
                       v_mac_data->path);
                 continue;
             }
-            config_iface_data = nmcs_provider_get_config_iface_data_new(FALSE);
-            g_hash_table_insert(get_config_data->result_dict,
-                                (char *) (hwaddr = g_strdup(v_hwaddr)),
-                                config_iface_data);
+            config_iface_data =
+                nmcs_provider_get_config_iface_data_create(get_config_data->result_dict,
+                                                           FALSE,
+                                                           v_hwaddr);
         }
 
         nm_assert(config_iface_data->iface_idx == -1);
@@ -260,7 +255,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
 
         _LOGD("get-config: start fetching meta data for #%" G_GSSIZE_FORMAT ", %s (%s)",
               config_iface_data->iface_idx,
-              hwaddr,
+              config_iface_data->hwaddr,
               v_mac_data->path);
 
         get_config_data->n_pending++;
@@ -278,7 +273,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             NULL,
             NULL,
             _get_config_fetch_done_cb_subnet_ipv4_cidr_block,
-            nm_utils_user_data_pack(get_config_data, hwaddr));
+            nm_utils_user_data_pack(get_config_data, config_iface_data));
 
         get_config_data->n_pending++;
         nm_http_client_poll_get(
@@ -295,7 +290,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             NULL,
             NULL,
             _get_config_fetch_done_cb_local_ipv4s,
-            nm_utils_user_data_pack(get_config_data, hwaddr));
+            nm_utils_user_data_pack(get_config_data, config_iface_data));
     }
 
     _nmcs_provider_get_config_task_maybe_return(get_config_data, NULL);
