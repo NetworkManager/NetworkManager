@@ -17,5 +17,5 @@ CHANGED_FILES=$(git log --pretty='' --name-only -n1 | grep -E '\.c$|\.h$' | tr '
 echo $CHANGED_FILES
 
 if [ -x "$FORMATTER" ] && [ ! -z "$CHANGED_FILES" ]; then
-    "$FORMATTER" "${CHANGED_FILES}"
+    "$FORMATTER" -n "${CHANGED_FILES}"
 fi
