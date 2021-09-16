@@ -185,7 +185,7 @@ NM_IS_L3_CONFIG_DATA(const NML3ConfigData *self)
      *
      * Additionally, also call nm_l3_config_data_get_ifindex(), which does more
      * checks during nm_assert(). */
-    nm_assert(nm_l3_config_data_get_ifindex(self) > 0);
+    nm_assert(!self || nm_l3_config_data_get_ifindex(self) > 0);
     return !!self;
 }
 
