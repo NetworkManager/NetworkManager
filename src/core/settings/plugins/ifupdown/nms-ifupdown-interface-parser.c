@@ -112,7 +112,7 @@ _recursive_ifparser(if_parser *parser, const char *eni_file, int quiet)
     /* Check if interfaces file exists and open it */
     if (!g_file_test(eni_file, G_FILE_TEST_EXISTS)) {
         if (!quiet)
-            _LOGW("interfaces file %s doesn't exist", eni_file);
+            _LOGI("interfaces file %s doesn't exist", eni_file);
         return;
     }
     inp = fopen(eni_file, "re");
