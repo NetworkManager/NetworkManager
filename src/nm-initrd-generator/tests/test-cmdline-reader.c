@@ -2423,7 +2423,7 @@ test_rd_ethtool(void)
     NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
                          "without setting speed");
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:100", "rd.ethtool=eth0:off"), FALSE, 0);
-    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:"), FALSE, 0);
+    _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:"), FALSE, 100);
 }
 
 /*****************************************************************************/

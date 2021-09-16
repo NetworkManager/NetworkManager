@@ -1210,20 +1210,21 @@ reader_parse_ethtool(Reader *reader, char *argument)
               "rd.ethtool: autoneg ignored. Cannot disable autoneg without setting speed");
     }
 
-    if (autoneg == -1)
-        autoneg = FALSE;
-
     connection = reader_get_connection(reader, interface, NM_SETTING_WIRED_SETTING_NAME, TRUE);
-    s_wired    = nm_connection_get_setting_wired(connection);
 
-    g_object_set(s_wired,
-                 NM_SETTING_WIRED_AUTO_NEGOTIATE,
-                 (gboolean) autoneg,
-                 NM_SETTING_WIRED_SPEED,
-                 speed,
-                 NM_SETTING_WIRED_DUPLEX,
-                 speed == 0 ? NULL : "full",
-                 NULL);
+    if (autoneg != -1 || speed != 0) {
+        if (autoneg == -1)
+            autoneg = FALSE;
+        s_wired = nm_connection_get_setting_wired(connection);
+        g_object_set(s_wired,
+                     NM_SETTING_WIRED_AUTO_NEGOTIATE,
+                     (gboolean) autoneg,
+                     NM_SETTING_WIRED_SPEED,
+                     speed,
+                     NM_SETTING_WIRED_DUPLEX,
+                     speed == 0 ? NULL : "full",
+                     NULL);
+    }
 
     if (*argument)
         _LOGW(LOGD_CORE,
