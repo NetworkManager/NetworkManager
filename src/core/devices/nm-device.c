@@ -11965,7 +11965,7 @@ activate_stage5_ip_config_result_x(NMDevice *self, int addr_family)
     g_return_if_fail(ip_ifindex);
 
     if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex)
-        && !nm_device_sys_iface_state_is_external_or_assume(self)) {
+        && !nm_device_sys_iface_state_is_external(self)) {
         nm_platform_link_change_flags(nm_device_get_platform(self), ip_ifindex, IFF_UP, TRUE);
         if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex))
             _LOGW(LOGD_DEVICE,
