@@ -2330,14 +2330,20 @@ test_rd_ethtool(void)
     _ethtool_check("rd.ethtool=eth0:on::", TRUE, 0);
     _ethtool_check("rd.ethtool=eth0:on:0:", TRUE, 0);
 
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
+                         "without setting speed");
     _ethtool_check("rd.ethtool=eth0:off", FALSE, 0);
 
     _ethtool_check("rd.ethtool=eth0:true", TRUE, 0);
 
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
+                         "without setting speed");
     _ethtool_check("rd.ethtool=eth0:false", FALSE, 0);
 
     _ethtool_check("rd.ethtool=eth0:1", TRUE, 0);
 
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
+                         "without setting speed");
     _ethtool_check("rd.ethtool=eth0:0", FALSE, 0);
 
     NMTST_EXPECT_NM_WARN(
@@ -2397,13 +2403,25 @@ test_rd_ethtool(void)
     NMTST_EXPECT_NM_WARN("cmdline-reader: Impossible to set rd.ethtool options: invalid format");
     _ethtool_check_inval("rd.ethtool=:::");
 
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
+                         "without setting speed");
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:0", "rd.ethtool=eth0:on"), TRUE, 0);
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
+                         "without setting speed");
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
+                         "without setting speed");
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:0", "rd.ethtool=eth0:off"), FALSE, 0);
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:0", "rd.ethtool=eth0:on"), TRUE, 0);
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
+                         "without setting speed");
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:0", "rd.ethtool=eth0:off"), FALSE, 0);
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:on"), TRUE, 0);
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
+                         "without setting speed");
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:off"), FALSE, 0);
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:100", "rd.ethtool=eth0:on"), TRUE, 0);
+    NMTST_EXPECT_NM_WARN("cmdline-reader: rd.ethtool: autoneg ignored. Cannot disable autoneg "
+                         "without setting speed");
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:on:100", "rd.ethtool=eth0:off"), FALSE, 0);
     _ethtool_check_v(NM_MAKE_STRV("rd.ethtool=eth0:off:100", "rd.ethtool=eth0:"), FALSE, 0);
 }

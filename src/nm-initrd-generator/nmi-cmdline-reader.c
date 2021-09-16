@@ -1205,6 +1205,11 @@ reader_parse_ethtool(Reader *reader, char *argument)
             _LOGW(LOGD_CORE, "Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
     }
 
+    if (speed == 0 && autoneg == FALSE) {
+        _LOGW(LOGD_CORE,
+              "rd.ethtool: autoneg ignored. Cannot disable autoneg without setting speed");
+    }
+
     if (autoneg == -1)
         autoneg = FALSE;
 
