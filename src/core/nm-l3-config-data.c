@@ -700,8 +700,10 @@ nm_l3_config_data_ref_and_seal(const NML3ConfigData *self)
 const NML3ConfigData *
 nm_l3_config_data_seal(const NML3ConfigData *self)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
-    ((NML3ConfigData *) self)->is_sealed = TRUE;
+    if (self) {
+        nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+        ((NML3ConfigData *) self)->is_sealed = TRUE;
+    }
     return self;
 }
 
