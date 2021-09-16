@@ -670,6 +670,7 @@ _obj_state_data_free(gpointer data)
     c_list_unlink_stale(&obj_state->os_lst);
     c_list_unlink_stale(&obj_state->os_temporary_not_available_lst);
     nmp_object_unref(obj_state->obj);
+    nmp_object_unref(obj_state->os_plobj);
     nm_g_slice_free(obj_state);
 }
 
@@ -786,7 +787,7 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
     nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
 
     if (in_platform) {
-        obj_state->os_plobj           = nmp_object_ref(obj);
+        nmp_object_ref_set(&obj_state->os_plobj, obj);
         obj_state->os_was_in_platform = TRUE;
         _LOGD("obj-state: appeared in platform: %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
