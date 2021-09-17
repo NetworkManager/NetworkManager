@@ -202,7 +202,7 @@ test_qdisc_tbf(void)
 
 /*****************************************************************************/
 
-NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
+NMTstpSetupFunc const _nmtstp_setup_platform_func = nm_linux_platform_setup;
 
 void
 _nmtstp_init_tests(int *argc, char ***argv)
@@ -213,10 +213,8 @@ _nmtstp_init_tests(int *argc, char ***argv)
 void
 _nmtstp_setup_tests(void)
 {
-    if (nmtstp_is_root_test()) {
-        nmtstp_env1_add_test_func("/link/qdisc/1", test_qdisc1, TRUE);
-        nmtstp_env1_add_test_func("/link/qdisc/fq_codel", test_qdisc_fq_codel, TRUE);
-        nmtstp_env1_add_test_func("/link/qdisc/sfq", test_qdisc_sfq, TRUE);
-        nmtstp_env1_add_test_func("/link/qdisc/tbf", test_qdisc_tbf, TRUE);
-    }
+    nmtstp_env1_add_test_func("/link/qdisc/1", test_qdisc1, TRUE);
+    nmtstp_env1_add_test_func("/link/qdisc/fq_codel", test_qdisc_fq_codel, TRUE);
+    nmtstp_env1_add_test_func("/link/qdisc/sfq", test_qdisc_sfq, TRUE);
+    nmtstp_env1_add_test_func("/link/qdisc/tbf", test_qdisc_tbf, TRUE);
 }

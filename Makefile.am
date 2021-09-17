@@ -4180,7 +4180,6 @@ check_programs += \
 	src/core/platform/tests/test-platform-general \
 	src/core/platform/tests/test-route-fake \
 	src/core/platform/tests/test-route-linux \
-	src/core/platform/tests/test-tc-fake \
 	src/core/platform/tests/test-tc-linux \
 	$(NULL)
 
@@ -4235,11 +4234,6 @@ src_core_platform_tests_test_route_linux_SOURCES = src/core/platform/tests/test-
 src_core_platform_tests_test_route_linux_CPPFLAGS = $(src_core_tests_cppflags_linux)
 src_core_platform_tests_test_route_linux_LDFLAGS = $(src_core_platform_tests_ldflags)
 src_core_platform_tests_test_route_linux_LDADD = $(src_core_platform_tests_libadd)
-
-src_core_platform_tests_test_tc_fake_SOURCES = src/core/platform/tests/test-tc.c
-src_core_platform_tests_test_tc_fake_CPPFLAGS = $(src_core_tests_cppflags_fake)
-src_core_platform_tests_test_tc_fake_LDFLAGS = $(src_core_platform_tests_ldflags)
-src_core_platform_tests_test_tc_fake_LDADD = $(src_core_platform_tests_libadd)
 
 src_core_platform_tests_test_tc_linux_SOURCES = src/core/platform/tests/test-tc.c
 src_core_platform_tests_test_tc_linux_CPPFLAGS = $(src_core_tests_cppflags_linux)
