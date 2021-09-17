@@ -25,6 +25,7 @@
 #define NM_PLATFORM_NETNS_SUPPORT "netns-support"
 #define NM_PLATFORM_USE_UDEV      "use-udev"
 #define NM_PLATFORM_LOG_WITH_PTR  "log-with-ptr"
+#define NM_PLATFORM_CACHE_TC      "cache-tc"
 
 /*****************************************************************************/
 
@@ -1449,6 +1450,7 @@ nm_platform_route_type_uncoerce(guint8 type_coerced)
 
 gboolean nm_platform_get_use_udev(NMPlatform *self);
 gboolean nm_platform_get_log_with_ptr(NMPlatform *self);
+gboolean nm_platform_get_cache_tc(NMPlatform *self);
 
 NMPNetns *nm_platform_netns_get(NMPlatform *self);
 gboolean  nm_platform_netns_push(NMPlatform *self, NMPNetns **netns);

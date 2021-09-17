@@ -176,12 +176,14 @@ enum {
     PROP_NETNS_SUPPORT,
     PROP_USE_UDEV,
     PROP_LOG_WITH_PTR,
+    PROP_CACHE_TC,
     LAST_PROP,
 };
 
 typedef struct _NMPlatformPrivate {
     bool use_udev : 1;
     bool log_with_ptr : 1;
+    bool cache_tc : 1;
 
     guint              ip4_dev_route_blacklist_check_id;
     guint              ip4_dev_route_blacklist_gc_timeout_id;
@@ -210,6 +212,12 @@ gboolean
 nm_platform_get_log_with_ptr(NMPlatform *self)
 {
     return NM_PLATFORM_GET_PRIVATE(self)->log_with_ptr;
+}
+
+gboolean
+nm_platform_get_cache_tc(NMPlatform *self)
+{
+    return NM_PLATFORM_GET_PRIVATE(self)->cache_tc;
 }
 
 /*****************************************************************************/
@@ -8861,6 +8869,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         /* construct-only */
         priv->log_with_ptr = g_value_get_boolean(value);
         break;
+    case PROP_CACHE_TC:
+        /* construct-only */
+        priv->cache_tc = g_value_get_boolean(value);
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -8944,6 +8956,15 @@ nm_platform_class_init(NMPlatformClass *platform_class)
                              "",
                              "",
                              TRUE,
+                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+    g_object_class_install_property(
+        object_class,
+        PROP_CACHE_TC,
+        g_param_spec_boolean(NM_PLATFORM_CACHE_TC,
+                             "",
+                             "",
+                             FALSE,
                              G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
 #define SIGNAL(signal, signal_id, method)                                                \

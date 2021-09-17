@@ -1709,5 +1709,5 @@ nm_platform_get()
 void
 nm_linux_platform_setup(void)
 {
-    nm_platform_setup(nm_linux_platform_new(FALSE, FALSE));
+    nm_platform_setup(nm_linux_platform_new(FALSE, FALSE, TRUE));
 }

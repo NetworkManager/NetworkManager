@@ -3880,6 +3880,9 @@ _new_from_nl_qdisc(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
     const struct tcmsg *tcm;
     nm_auto_nmpobj NMPObject *obj = NULL;
 
+    if (!nm_platform_get_cache_tc(platform))
+        return NULL;
+
     if (nlmsg_parse_arr(nlh, sizeof(*tcm), tb, policy) < 0)
         return NULL;
 
@@ -3980,7 +3983,7 @@ _new_from_nl_qdisc(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
 }
 
 static NMPObject *
-_new_from_nl_tfilter(struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_tfilter(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
         [TCA_KIND] = {.type = NLA_STRING},
@@ -3988,6 +3991,9 @@ _new_from_nl_tfilter(struct nlmsghdr *nlh, gboolean id_only)
     struct nlattr *     tb[G_N_ELEMENTS(policy)];
     NMPObject *         obj = NULL;
     const struct tcmsg *tcm;
+
+    if (!nm_platform_get_cache_tc(platform))
+        return NULL;
 
     if (nlmsg_parse_arr(nlh, sizeof(*tcm), tb, policy) < 0)
         return NULL;
@@ -4059,7 +4065,7 @@ nmp_object_new_from_nl(NMPlatform *    platform,
     case RTM_NEWTFILTER:
     case RTM_DELTFILTER:
     case RTM_GETTFILTER:
-        return _new_from_nl_tfilter(msghdr, id_only);
+        return _new_from_nl_tfilter(platform, msghdr, id_only);
     default:
         return NULL;
     }
@@ -9466,7 +9472,7 @@ constructed(GObject *_object)
         priv->udev_client = nm_udev_client_new(NM_MAKE_STRV("net"), handle_udev_event, platform);
     }
 
-    _LOGD("create (%s netns, %s, %s udev)",
+    _LOGD("create (%s netns, %s, %s udev, %s tc-cache)",
           !platform->_netns ? "ignore" : "use",
           !platform->_netns && nmp_netns_is_initial()
               ? "initial netns"
@@ -9477,7 +9483,8 @@ constructed(GObject *_object)
                                        nmp_netns_get_current(),
                                        nmp_netns_get_current() == nmp_netns_get_initial() ? "/main"
                                                                                           : "")),
-          nm_platform_get_use_udev(platform) ? "use" : "no");
+          nm_platform_get_use_udev(platform) ? "use" : "no",
+          nm_platform_get_cache_tc(platform) ? "use" : "no");
 
     priv->genl = nl_socket_alloc();
     g_assert(priv->genl);
@@ -9523,9 +9530,13 @@ constructed(GObject *_object)
                                     RTNLGRP_IPV6_IFADDR,
                                     RTNLGRP_IPV6_ROUTE,
                                     RTNLGRP_LINK,
-                                    RTNLGRP_TC,
                                     0);
     g_assert(!nle);
+
+    if (nm_platform_get_cache_tc(platform)) {
+        nle = nl_socket_add_memberships(priv->nlh, RTNLGRP_TC, 0);
+        nm_assert(!nle);
+    }
 
     fd = nl_socket_get_fd(priv->nlh);
 
@@ -9610,7 +9621,7 @@ path_is_read_only_fs(const char *path)
 }
 
 NMPlatform *
-nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support)
+nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support, gboolean cache_tc)
 {
     gboolean use_udev = FALSE;
 
@@ -9624,6 +9635,8 @@ nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support)
                         use_udev,
                         NM_PLATFORM_NETNS_SUPPORT,
                         netns_support,
+                        NM_PLATFORM_CACHE_TC,
+                        cache_tc,
                         NULL);
 }
 
