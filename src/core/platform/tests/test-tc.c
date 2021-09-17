@@ -202,7 +202,7 @@ test_qdisc_tbf(void)
 
 /*****************************************************************************/
 
-NMTstpSetupFunc const _nmtstp_setup_platform_func = nm_linux_platform_setup;
+NMTstpSetupFunc const _nmtstp_setup_platform_func = nm_linux_platform_setup_with_tc_cache;
 
 void
 _nmtstp_init_tests(int *argc, char ***argv)

@@ -277,6 +277,7 @@ NMPlatform *nm_platform_get(void);
 #define NM_PLATFORM_GET (nm_platform_get())
 
 void nm_linux_platform_setup(void);
+void nm_linux_platform_setup_with_tc_cache(void);
 
 /*****************************************************************************/
 
