@@ -4288,6 +4288,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform *           self,
     CList *                      iter;
     NMPlatformIP4Route           rt_local4;
     NMPlatformIP6Route           rt_local6;
+    NMPlatformIP6Route           rt_mcast6;
     const NMPlatformLink *       pllink;
     const NMPlatformLnkVrf *     lnk_vrf;
     guint32                      local_table;
@@ -4312,6 +4313,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform *           self,
 
     rt_local4.plen = 0;
     rt_local6.plen = 0;
+    rt_mcast6.plen = 0;
 
     routes_prune = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
 
@@ -4400,6 +4402,43 @@ nm_platform_ip_route_get_prune_list(NMPlatform *           self,
 
                     if (nm_platform_ip6_route_cmp(&rt->r6,
                                                   &rt_local6,
+                                                  NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+                        == 0)
+                        continue;
+                }
+
+                /* Kernels < 5.11 add a route like:
+                 *
+                 * unicast ff00::/8 dev $IFACE proto boot scope global metric 256 pref medium
+                 *
+                 * to allow sending and receiving IPv6 multicast traffic. Don't remove it.
+                 * Since kernel 5.11 the route looks like:
+                 *
+                 * multicast ff00::/8 dev $IFACE proto kernel metric 256 pref medium
+                 *
+                 * As NM ignores routes with rtm_type multicast, there is no need for the code
+                 * below on newer kernels.
+                 */
+                if (nm_platform_ip_route_get_effective_table(&rt->rx) == local_table
+                    && rt->rx.plen == 8 && rt->rx.rt_source == NM_IP_CONFIG_SOURCE_RTPROT_BOOT
+                    && rt->rx.metric == 256 && rt->r6.rt_pref == NM_ICMPV6_ROUTER_PREF_MEDIUM
+                    && IN6_IS_ADDR_UNSPECIFIED(&rt->r6.gateway)) {
+                    if (rt_mcast6.plen == 0) {
+                        rt_mcast6 = (NMPlatformIP6Route){
+                            .ifindex       = ifindex,
+                            .type_coerced  = nm_platform_route_type_coerce(RTN_UNICAST),
+                            .plen          = 8,
+                            .rt_source     = NM_IP_CONFIG_SOURCE_RTPROT_BOOT,
+                            .metric        = 256,
+                            .table_coerced = nm_platform_route_table_coerce(local_table),
+                            .rt_pref       = NM_ICMPV6_ROUTER_PREF_MEDIUM,
+                            .gateway       = IN6ADDR_ANY_INIT,
+                            .network = {{{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}},
+                        };
+                    }
+
+                    if (nm_platform_ip6_route_cmp(&rt->r6,
+                                                  &rt_mcast6,
                                                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
                         == 0)
                         continue;
