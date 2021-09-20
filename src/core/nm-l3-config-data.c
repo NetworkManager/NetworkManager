@@ -1315,9 +1315,16 @@ const NMPObject *
 nm_l3_config_data_get_best_default_route(const NML3ConfigData *self, int addr_family)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
-    nm_assert_addr_family(addr_family);
 
-    return self->best_default_route_x[NM_IS_IPv4(addr_family)];
+    switch (addr_family) {
+    case AF_INET:
+        return self->best_default_route_4;
+    case AF_INET6:
+        return self->best_default_route_6;
+    case AF_UNSPEC:
+        return self->best_default_route_4 ?: self->best_default_route_6;
+    }
+    return nm_assert_unreachable_val(NULL);
 }
 
 /*****************************************************************************/
