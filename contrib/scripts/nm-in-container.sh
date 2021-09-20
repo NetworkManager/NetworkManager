@@ -120,6 +120,12 @@ alias n="ninja -C build"
 
 alias l='ls -l --color=auto'
 
+Clean() {
+    systemctl stop NetworkManager
+    rm -i -rf /run/NetworkManager
+    nm-env-prepare.sh
+}
+
 nm_run_gdb() {
     systemctl stop NetworkManager.service
     gdb --args "\${1:-/opt/test/sbin/NetworkManager}" --debug
@@ -316,10 +322,18 @@ do_run() {
         podman start "$CONTAINER_NAME_NAME"
     else
         bind_files BIND_FILES
+
+        BIND_NM_CI=()
+        if [ -d "$BASEDIR_NM/.git/NetworkManager-ci" ] ; then
+            DIR="$(readlink -f "$BASEDIR_NM/.git/NetworkManager-ci")"
+            BIND_NM_CI=(-v "$DIR:$DIR:Z")
+        fi
+
         podman run --privileged \
             --name "$CONTAINER_NAME_NAME" \
             -d \
             -v "$BASEDIR_NM:$BASEDIR_NM:Z" \
+            "${BIND_NM_CI[@]}" \
             "${BIND_FILES[@]}" \
             "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG"
     fi
