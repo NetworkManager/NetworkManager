@@ -126,6 +126,12 @@ Clean() {
     nm-env-prepare.sh
 }
 
+Cat-Timestamp() {
+    while IFS=$'\n' read line; do
+        printf "[%s]: %s\n" "$(date '+%s.%N')" "$line"
+    done
+}
+
 nm_run_gdb() {
     systemctl stop NetworkManager.service
     gdb --args "\${1:-/opt/test/sbin/NetworkManager}" --debug
@@ -138,6 +144,7 @@ nm_run_normal() {
 
 . /usr/share/git-core/contrib/completion/git-prompt.sh
 PS1="\[\\033[01;36m\]\u@\h\[\\033[00m\]:\\t:\[\\033[01;34m\]\w\\\$(__git_ps1 \\" \[\\033[01;36m\](%s)\[\\033[00m\]\\")\[\\033[00m\]\$ "
+export GIT_PS1_SHOWDIRTYSTATE=1
 
 if test "\$SHOW_MOTD" != 0; then
   cat /etc/motd
@@ -159,18 +166,22 @@ match-device=interface-name:d_*,interface-name:tap*
 managed=0
 
 [device-managed-1]
-match-device=interface-name:net*
+match-device=interface-name:net*,interface-name:eth*
 managed=1
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-bash_history" 600
 NM-log
 NM-log /tmp/nm-log.txt
+behave -f html --stop ./features/scenarios/vrf.feature
+behave -f html --stop -t ipv4_method_static_with_IP ./features/scenarios/ipv4.feature
 cd $BASEDIR_NM
 journalctl | NM-log
 nm-env-prepare.sh
+nm-env-prepare.sh --prefix eth -i 4
 nm_run_gdb
 nm_run_normal
+for i in {1..9}; do nm-env-prepare.sh --prefix eth -i \$i; done
 systemctl status NetworkManager
 systemctl stop NetworkManager
 systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
@@ -183,7 +194,13 @@ set history filename ~/.gdb_history
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-gdb_history" 600
+run
 run --debug 2>&1 | tee /tmp/nm-log.txt
+EOF
+
+    cat <<EOF | tmp_file "$BASEDIR/data-behaverc" 600
+[behave.formatters]
+html = behave_html_formatter:HTMLFormatter
 EOF
 
     cat <<EOF | tmp_file "$CONTAINERFILE"
@@ -197,6 +214,7 @@ RUN dnf install -y \\
     NetworkManager \\
     audit-libs-devel \\
     bash-completion \\
+    bind-utils \\
     bluez-libs-devel \\
     cscope \\
     dbus-devel \\
@@ -234,10 +252,14 @@ RUN dnf install -y \\
     ppp \\
     ppp-devel \\
     procps \\
+    python3-behave \\
     python3-dbus \\
     python3-devel \\
     python3-gobject \\
+    python3-pexpect \\
     python3-pip \\
+    python3-pyte \\
+    python3-pyyaml \\
     radvd \\
     readline-devel \\
     rpm-build \\
@@ -253,6 +275,9 @@ RUN dnf install -y \\
 
 RUN dnf debuginfo-install --skip-broken \$(ldd /usr/sbin/NetworkManager | sed -n 's/.* => \\(.*\\) (0x[0-9A-Fa-f]*)$/\1/p' | xargs -n1 readlink -f) -y
 
+RUN pip3 install --user \\
+    behave_html_formatter
+
 RUN systemctl enable NetworkManager
 
 COPY data-NM-log "/usr/bin/NM-log"
@@ -263,6 +288,7 @@ COPY data-90-my.conf /etc/NetworkManager/conf.d/90-my.conf
 COPY data-bash_history /root/.bash_history
 COPY data-gdbinit /root/.gdbinit
 COPY data-gdb_history /root/.gdb_history
+COPY data-behaverc /root/.behaverc
 
 # Generate a stable machine id.
 RUN echo "10001000100010001000100010001000" > /etc/machine-id
