@@ -266,6 +266,15 @@ nm_ndisc_dad_addr_is_fail_candidate(NMPlatform *platform, const NMPObject *obj)
 
 /*****************************************************************************/
 
+void nm_ndisc_get_sysctl(NMPlatform *platform,
+                         const char *ifname,
+                         int *       out_max_addresses,
+                         int *       out_router_solicitations,
+                         int *       out_router_solicitation_interval,
+                         guint32 *   out_default_ra_timeout);
+
+/*****************************************************************************/
+
 struct _NML3ConfigData;
 
 struct _NML3ConfigData *nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,

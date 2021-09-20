@@ -36,11 +36,4 @@ NMNDisc *nm_lndp_ndisc_new(NMPlatform *                  platform,
                            guint32                       ra_timeout,
                            GError **                     error);
 
-void nm_lndp_ndisc_get_sysctl(NMPlatform *platform,
-                              const char *ifname,
-                              int *       out_max_addresses,
-                              int *       out_router_solicitations,
-                              int *       out_router_solicitation_interval,
-                              guint32 *   out_default_ra_timeout);
-
 #endif /* __NETWORKMANAGER_LNDP_NDISC_H__ */

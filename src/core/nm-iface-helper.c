@@ -708,12 +708,12 @@ main(int argc, char *argv[])
             stable_id   = &global_opt.stable_id[2];
         }
 
-        nm_lndp_ndisc_get_sysctl(NM_PLATFORM_GET,
-                                 global_opt.ifname,
-                                 &max_addresses,
-                                 &router_solicitations,
-                                 &router_solicitation_interval,
-                                 &default_ra_timeout);
+        nm_ndisc_get_sysctl(NM_PLATFORM_GET,
+                            global_opt.ifname,
+                            &max_addresses,
+                            &router_solicitations,
+                            &router_solicitation_interval,
+                            &default_ra_timeout);
 
         ndisc = nm_lndp_ndisc_new(NM_PLATFORM_GET,
                                   gl.ifindex,

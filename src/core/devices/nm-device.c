@@ -11048,12 +11048,12 @@ addrconf6_start(NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
     else
         node_type = NM_NDISC_NODE_TYPE_HOST;
 
-    nm_lndp_ndisc_get_sysctl(nm_device_get_platform(self),
-                             nm_device_get_ip_iface(self),
-                             &max_addresses,
-                             &router_solicitations,
-                             &router_solicitation_interval,
-                             &default_ra_timeout);
+    nm_ndisc_get_sysctl(nm_device_get_platform(self),
+                        nm_device_get_ip_iface(self),
+                        &max_addresses,
+                        &router_solicitations,
+                        &router_solicitation_interval,
+                        &default_ra_timeout);
 
     if (node_type == NM_NDISC_NODE_TYPE_ROUTER)
         ra_timeout = 0u;
