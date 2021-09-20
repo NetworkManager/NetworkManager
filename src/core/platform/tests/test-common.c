@@ -37,7 +37,9 @@ gboolean
 nmtstp_is_root_test(void)
 {
     g_assert(_nmtstp_setup_platform_func);
-    return _nmtstp_setup_platform_func == nm_linux_platform_setup;
+    return NM_IN_SET(_nmtstp_setup_platform_func,
+                     nm_linux_platform_setup,
+                     nm_linux_platform_setup_with_tc_cache);
 }
 
 gboolean

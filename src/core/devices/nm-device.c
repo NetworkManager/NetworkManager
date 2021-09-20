@@ -505,6 +505,7 @@ typedef struct _NMDevicePrivate {
     NMDeviceStageState stage1_sriov_state : 3;
 
     bool ip_config_started : 1;
+    bool tc_committed : 1;
 
     char *current_stable_id;
 
@@ -8486,10 +8487,7 @@ tc_commit(NMDevice *self)
     qdiscs   = nm_utils_qdiscs_from_tc_setting(platform, s_tc, ip_ifindex);
     tfilters = nm_utils_tfilters_from_tc_setting(platform, s_tc, ip_ifindex);
 
-    if (!nm_platform_qdisc_sync(platform, ip_ifindex, qdiscs))
-        return FALSE;
-
-    if (!nm_platform_tfilter_sync(platform, ip_ifindex, tfilters))
+    if (!nm_platform_tc_sync(platform, ip_ifindex, qdiscs, tfilters))
         return FALSE;
 
     return TRUE;
@@ -8519,13 +8517,14 @@ activate_stage2_device_config(NMDevice *self)
         _ethtool_state_set(self);
 
     if (!nm_device_sys_iface_state_is_external_or_assume(self)) {
-        if (!tc_commit(self)) {
-            _LOGW(LOGD_IP6, "failed applying traffic control rules");
+        if (!priv->tc_committed && !tc_commit(self)) {
+            _LOGW(LOGD_DEVICE, "failed applying traffic control rules");
             nm_device_state_changed(self,
                                     NM_DEVICE_STATE_FAILED,
                                     NM_DEVICE_STATE_REASON_CONFIG_FAILED);
             return;
         }
+        priv->tc_committed = TRUE;
     }
 
     _routing_rules_sync(self, NM_TERNARY_TRUE);
@@ -16054,11 +16053,12 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
             set_ipv6_token(self, &iid, "::");
 
             if (nm_device_get_applied_setting(self, NM_TYPE_SETTING_TC_CONFIG)) {
-                nm_platform_tfilter_sync(platform, ifindex, NULL);
-                nm_platform_qdisc_sync(platform, ifindex, NULL);
+                nm_platform_tc_sync(platform, ifindex, NULL, NULL);
             }
         }
     }
+
+    priv->tc_committed = FALSE;
 
     _routing_rules_sync(self,
                         cleanup_type == CLEANUP_TYPE_KEEP ? NM_TERNARY_DEFAULT : NM_TERNARY_FALSE);

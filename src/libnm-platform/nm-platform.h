@@ -25,6 +25,7 @@
 #define NM_PLATFORM_NETNS_SUPPORT "netns-support"
 #define NM_PLATFORM_USE_UDEV      "use-udev"
 #define NM_PLATFORM_LOG_WITH_PTR  "log-with-ptr"
+#define NM_PLATFORM_CACHE_TC      "cache-tc"
 
 /*****************************************************************************/
 
@@ -1266,8 +1267,10 @@ typedef struct {
                             const NMPlatformRoutingRule *routing_rule);
 
     int (*qdisc_add)(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc *qdisc);
+    int (*qdisc_delete)(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
 
     int (*tfilter_add)(NMPlatform *self, NMPNlmFlags flags, const NMPlatformTfilter *tfilter);
+    int (*tfilter_delete)(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -1447,6 +1450,7 @@ nm_platform_route_type_uncoerce(guint8 type_coerced)
 
 gboolean nm_platform_get_use_udev(NMPlatform *self);
 gboolean nm_platform_get_log_with_ptr(NMPlatform *self);
+gboolean nm_platform_get_cache_tc(NMPlatform *self);
 
 NMPNetns *nm_platform_netns_get(NMPlatform *self);
 gboolean  nm_platform_netns_push(NMPlatform *self, NMPNetns **netns);
@@ -2219,11 +2223,14 @@ int nm_platform_routing_rule_add(NMPlatform *                 self,
                                  NMPNlmFlags                  flags,
                                  const NMPlatformRoutingRule *routing_rule);
 
-int      nm_platform_qdisc_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc *qdisc);
-gboolean nm_platform_qdisc_sync(NMPlatform *self, int ifindex, GPtrArray *known_qdiscs);
-
+int nm_platform_qdisc_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc *qdisc);
+int nm_platform_qdisc_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
 int nm_platform_tfilter_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformTfilter *tfilter);
-gboolean nm_platform_tfilter_sync(NMPlatform *self, int ifindex, GPtrArray *known_tfilters);
+int nm_platform_tfilter_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
+gboolean nm_platform_tc_sync(NMPlatform *self,
+                             int         ifindex,
+                             GPtrArray * known_qdiscs,
+                             GPtrArray * known_tfilters);
 
 const char *nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len);
 const char *nm_platform_lnk_bridge_to_string(const NMPlatformLnkBridge *lnk, char *buf, gsize len);
