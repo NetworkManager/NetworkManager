@@ -873,6 +873,26 @@ nm_l3_config_data_lookup_obj(const NML3ConfigData *self, const NMPObject *obj)
     return nm_dedup_multi_index_lookup_obj(self->multi_idx, idx, obj);
 }
 
+const NMPlatformIP4Address *
+nm_l3_config_data_lookup_address_4(const NML3ConfigData *self,
+                                   in_addr_t             addr,
+                                   guint8                plen,
+                                   in_addr_t             peer_addr)
+{
+    const NMDedupMultiEntry *head;
+    NMPObject                obj_stack;
+
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    nmp_object_stackinit_id_ip4_address(&obj_stack, self->ifindex, addr, plen, peer_addr);
+
+    head = nm_l3_config_data_lookup_obj(self, &obj_stack);
+    if (!head)
+        return NULL;
+
+    return NMP_OBJECT_CAST_IP4_ADDRESS(head->obj);
+}
+
 const NMPlatformIP6Address *
 nm_l3_config_data_lookup_address_6(const NML3ConfigData *self, const struct in6_addr *addr)
 {

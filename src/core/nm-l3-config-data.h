@@ -222,6 +222,11 @@ const NMDedupMultiIdxType *nm_l3_config_data_lookup_index(const NML3ConfigData *
 const NMDedupMultiEntry *nm_l3_config_data_lookup_obj(const NML3ConfigData *self,
                                                       const NMPObject *     obj);
 
+const NMPlatformIP4Address *nm_l3_config_data_lookup_address_4(const NML3ConfigData *self,
+                                                               in_addr_t             addr,
+                                                               guint8                plen,
+                                                               in_addr_t             peer_addr);
+
 const NMPlatformIP6Address *nm_l3_config_data_lookup_address_6(const NML3ConfigData * self,
                                                                const struct in6_addr *addr);
 
