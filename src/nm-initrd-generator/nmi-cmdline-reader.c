@@ -1173,60 +1173,60 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 static void
 reader_parse_ethtool(Reader *reader, char *argument)
 {
-    const char *    interface   = NULL;
-    NMConnection *  connection  = NULL;
-    NMSettingWired *s_wired     = NULL;
-    const char *    autoneg_str = NULL;
-    gboolean        autoneg     = FALSE;
-    const char *    speed_str   = NULL;
-    guint           speed       = 0;
+    NMConnection *  connection;
+    NMSettingWired *s_wired;
+    const char *    autoneg_str;
+    const char *    speed_str;
+    const char *    interface;
+    int             autoneg;
+    guint           speed;
 
     interface = get_word(&argument, ':');
     if (!interface) {
-        _LOGW(LOGD_CORE, "Impossible to set rd.ethtool options: invalid format");
+        _LOGW(LOGD_CORE, "rd.ethtool: interface unspecified. Ignore");
         return;
     }
-
-    if (!*argument) {
-        _LOGW(LOGD_CORE, "Could not find rd.ethtool options to set");
-        return;
-    }
-
-    connection = reader_get_connection(reader, interface, NM_SETTING_WIRED_SETTING_NAME, TRUE);
-    s_wired    = nm_connection_get_setting_wired(connection);
 
     autoneg_str = get_word(&argument, ':');
+    speed_str   = get_word(&argument, ':');
+
+    autoneg = -1;
     if (autoneg_str) {
         autoneg = _nm_utils_ascii_str_to_bool(autoneg_str, -1);
         if (autoneg == -1)
-            _LOGW(LOGD_CORE,
-                  "Invalid value for rd.ethtool.autoneg, rd.ethtool.autoneg was not set");
-        else
-            g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, autoneg, NULL);
+            _LOGW(LOGD_CORE, "rd.ethtool: autoneg invalid. Must be boolean or empty");
     }
-    if (!*argument)
-        return;
 
-    speed_str = get_word(&argument, ':');
+    speed = 0;
     if (speed_str) {
-        speed = _nm_utils_ascii_str_to_int64(speed_str, 10, 0, G_MAXUINT32, -1);
-        if (speed == -1)
-            _LOGW(LOGD_CORE, "Invalid value for rd.ethtool.speed, rd.ethtool.speed was not set");
-        else
-            g_object_set(s_wired,
-                         NM_SETTING_WIRED_SPEED,
-                         speed,
-                         NM_SETTING_WIRED_DUPLEX,
-                         "full",
-                         NULL);
+        speed = _nm_utils_ascii_str_to_int64(speed_str, 10, 0, G_MAXUINT32, 0);
+        if (errno)
+            _LOGW(LOGD_CORE, "rd.ethtool: speed invalid. Must be an integer or empty");
     }
 
-    if (!*argument)
-        return;
-    else
+    if (speed == 0 && autoneg == FALSE) {
         _LOGW(LOGD_CORE,
-              "Invalid extra argument '%s' for rd.ethtool, this value was not set",
-              argument);
+              "rd.ethtool: autoneg ignored. Cannot disable autoneg without setting speed");
+    }
+
+    connection = reader_get_connection(reader, interface, NM_SETTING_WIRED_SETTING_NAME, TRUE);
+
+    if (autoneg != -1 || speed != 0) {
+        if (autoneg == -1)
+            autoneg = FALSE;
+        s_wired = nm_connection_get_setting_wired(connection);
+        g_object_set(s_wired,
+                     NM_SETTING_WIRED_AUTO_NEGOTIATE,
+                     (gboolean) autoneg,
+                     NM_SETTING_WIRED_SPEED,
+                     speed,
+                     NM_SETTING_WIRED_DUPLEX,
+                     speed == 0 ? NULL : "full",
+                     NULL);
+    }
+
+    if (*argument)
+        _LOGW(LOGD_CORE, "rd.ethtool: extra argument ignored");
 }
 
 static void
