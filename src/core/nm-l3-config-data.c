@@ -1963,6 +1963,7 @@ _dedup_multi_index_cmp(const NML3ConfigData *a, const NML3ConfigData *b, NMPObje
     NMDedupMultiIter             iter_b;
 
     NM_CMP_SELF(h_a, h_b);
+
     NM_CMP_DIRECT(h_a->len, h_b->len);
 
     nm_assert(h_a->len > 0);

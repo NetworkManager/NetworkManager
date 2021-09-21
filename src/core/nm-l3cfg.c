@@ -3235,11 +3235,11 @@ _l3cfg_remove_config(NML3Cfg *             self,
 }
 
 gboolean
-nm_l3cfg_remove_config(NML3Cfg *self, gconstpointer tag, const NML3ConfigData *ifcfg)
+nm_l3cfg_remove_config(NML3Cfg *self, gconstpointer tag, const NML3ConfigData *l3cd)
 {
-    nm_assert(ifcfg);
+    nm_assert(l3cd);
 
-    return _l3cfg_remove_config(self, tag, FALSE, ifcfg);
+    return _l3cfg_remove_config(self, tag, FALSE, l3cd);
 }
 
 gboolean
