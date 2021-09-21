@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2021-08-30.0-15503e4652cd'
-  UBUNTU_TAG:  '2021-08-30.0-b6e85e3de80a'
-  DEBIAN_TAG:  '2021-08-30.0-b6e85e3de80a'
-  CENTOS_TAG:  '2021-08-30.0-15503e4652cd'
-  ALPINE_TAG:  '2021-08-30.0-8bd67c08dbfb'
+  FEDORA_TAG:  '2021-08-30.0-7ff339b89ca1'
+  UBUNTU_TAG:  '2021-08-30.0-432f46c6a3a4'
+  DEBIAN_TAG:  '2021-08-30.0-432f46c6a3a4'
+  CENTOS_TAG:  '2021-08-30.0-7ff339b89ca1'
+  ALPINE_TAG:  '2021-08-30.0-20e22c5d34b7'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -131,6 +131,26 @@ fedora:34@container-prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: '34'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+
+fedora:35@container-prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '35'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+
+fedora:36@container-prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '36'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
 
@@ -403,6 +423,24 @@ fedora:34@container-clean:
     FDO_DISTRIBUTION_VERSION: '34'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
 
+fedora:35@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '35'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+
+fedora:36@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '36'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+
 ubuntu:16.04@container-clean:
   extends:
     - .container-clean
@@ -648,6 +686,28 @@ t_fedora:34:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:34@container-prep"
+
+t_fedora:35:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+  variables:
+    FDO_DISTRIBUTION_VERSION: '35'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "fedora:35@container-prep"
+  when: manual
+
+t_fedora:36:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+  variables:
+    FDO_DISTRIBUTION_VERSION: '36'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "fedora:36@container-prep"
+  when: manual
 
 t_ubuntu:16.04:
   extends:

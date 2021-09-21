@@ -23,8 +23,8 @@ distributions:
       - '32'
       - '33'
       - '34'
-      #- '35'
-      #- '36'
+      - '35'
+      - '36'
   - name: ubuntu
     tag: *default_tag
     base_type: debian
