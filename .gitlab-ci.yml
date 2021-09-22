@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2021-07-12.0-f3bd83023528'
-  UBUNTU_TAG:  '2021-07-12.0-ceca385e1904'
-  DEBIAN_TAG:  '2021-07-12.0-ceca385e1904'
-  CENTOS_TAG:  '2021-07-12.0-f3bd83023528'
-  ALPINE_TAG:  '2021-07-12.0-a623f8d1b2f8'
+  FEDORA_TAG:  '2021-07-12.0-ce2fde13c082'
+  UBUNTU_TAG:  '2021-07-12.0-03cf2b545306'
+  DEBIAN_TAG:  '2021-07-12.0-03cf2b545306'
+  CENTOS_TAG:  '2021-07-12.0-ce2fde13c082'
+  ALPINE_TAG:  '2021-07-12.0-deabecd7cba6'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -83,26 +83,6 @@ variables:
 
 # Build a container for each distribution + version. The ci-templates
 # will re-use the containers if the tag doesn't change.
-
-fedora:28@container-prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '28'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-fedora:29@container-prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '29'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
 
 fedora:30@container-prep:
   extends:
@@ -368,24 +348,6 @@ alpine:latest@container-prep:
   only:
     - schedules
 
-fedora:28@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '28'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
-fedora:29@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '29'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-
 fedora:30@container-clean:
   extends:
     - .container-clean
@@ -612,28 +574,6 @@ alpine:latest@container-clean:
 #                                                               #
 #################################################################
 
-
-t_fedora:28:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-  variables:
-    FDO_DISTRIBUTION_VERSION: '28'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "fedora:28@container-prep"
-  when: manual
-
-t_fedora:29:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-  variables:
-    FDO_DISTRIBUTION_VERSION: '29'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "fedora:29@container-prep"
-  when: manual
 
 t_fedora:30:
   extends:
