@@ -12,6 +12,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   no longer sets a negative, exclusive "dns-priority". This plays
   better with common split DNS setups that use systemd-resolved.
   Adjust the "dns-priority" to your liking after import yourself.
+* NetworkManager no longer listens for netlink events for traffic
+  control objects (qdiscs and filters).
 
 The following changes were backported to 1.32.x releases between 1.32.0
 and 1.32.6 are also present in NetworkManager-1.32:
@@ -55,6 +57,12 @@ and 1.32.6 are also present in NetworkManager-1.32:
 * dhcp: handle filename/bootfile_name DHCP option and write it to
   device state file for initrd/kickstart.
 * initrd: add "ib.pkey=" command line option
+
+- 1.32.12:
+* Preserve the IPv6 ff00::/8 route added by kernel in the local
+  table, necessary for multicast communication.
+* cloud-setup: use suppress_prefixlength rule to honor
+  non-default-routes in the main table.
 
 =============================================
 NetworkManager-1.32
