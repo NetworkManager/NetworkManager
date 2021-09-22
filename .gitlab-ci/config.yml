@@ -18,8 +18,6 @@ distributions:
     tag: *default_tag
     base_type: fedora
     versions:
-      - '28'
-      - '29'
       - '30'
       - '31'
       - '32'
