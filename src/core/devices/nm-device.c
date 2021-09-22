@@ -17809,7 +17809,7 @@ hostname_dns_lookup_callback(GObject *source, GAsyncResult *result, gpointer use
               valid ? "" : " (invalid)");
 
         if (!valid)
-            g_clear_pointer(&resolver->hostname, g_free);
+            nm_clear_g_free(&resolver->hostname);
     }
 
     nm_clear_g_cancellable(&resolver->cancellable);
