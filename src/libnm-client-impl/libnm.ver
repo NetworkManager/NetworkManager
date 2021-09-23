@@ -1785,6 +1785,10 @@ global:
 	nm_utils_print;
 } libnm_1_28_0;
 
+libnm_1_30_8 {
+	#nm_setting_ip_config_get_required_timeout@libnm_1_30_8;
+} libnm_1_30_0;
+
 libnm_1_32_0 {
 global:
 	nm_ethtool_optname_is_pause;

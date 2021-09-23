@@ -8832,3 +8832,9 @@ NM_BACKPORT_SYMBOL(libnm_1_10_14,
                    (NMSettingConnection * setting),
                    (setting));
 NM_BACKPORT_SYMBOL(libnm_1_10_14, GType, nm_setting_connection_mdns_get_type, (void), ());
+
+NM_BACKPORT_SYMBOL(libnm_1_30_8,
+                   int,
+                   nm_setting_ip_config_get_required_timeout,
+                   (NMSettingIPConfig * setting),
+                   (setting));
