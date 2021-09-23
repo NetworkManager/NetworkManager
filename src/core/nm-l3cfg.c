@@ -2900,6 +2900,73 @@ nm_l3cfg_get_acd_addr_info(NML3Cfg *self, in_addr_t addr)
 
 /*****************************************************************************/
 
+gboolean
+nm_l3cfg_check_ready(NML3Cfg *self, const NML3ConfigData *l3cd, NML3CfgCheckReadyFlags flags)
+{
+    NMDedupMultiIter iter;
+    const NMPObject *obj;
+
+    nm_assert(NM_IS_L3CFG(self));
+
+    if (!l3cd)
+        return TRUE;
+
+    if (NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY)) {
+        nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS) {
+            const NML3AcdAddrInfo *addr_info;
+
+            addr_info = nm_l3cfg_get_acd_addr_info(self, NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address);
+
+            if (!addr_info) {
+                /* We don't track the this address? That's odd. Not ready. */
+                return FALSE;
+            }
+
+            if (addr_info->state <= NM_L3_ACD_ADDR_STATE_PROBING) {
+                /* Still probing. Not ready. */
+                return FALSE;
+            }
+
+            /* we only care that we don't have ACD still pending. Otherwise we are ready,
+             * including if we have no addr_info about this address or the address is in use. */
+        }
+    }
+
+    if (NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY)) {
+        nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP6_ADDRESS) {
+            ObjStateData *obj_state;
+
+            obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
+
+            if (!obj_state) {
+                /* Hm, we don't track this object? That is odd. Not ready. */
+                return FALSE;
+            }
+
+            if (!obj_state->os_nm_configured && !obj_state->os_plobj) {
+                /* We didn't (yet) configure this address and it also is not in platform.
+                 * Not ready. */
+                return FALSE;
+            }
+
+            if (obj_state->os_plobj
+                && NM_FLAGS_HAS(NMP_OBJECT_CAST_IP6_ADDRESS(obj_state->os_plobj)->n_ifa_flags,
+                                IFA_F_TENTATIVE)) {
+                /* The address is configured in kernel, but still tentative. Not ready. */
+                return FALSE;
+            }
+
+            /* This address is ready. Even if it is not (not anymore) configured in kernel (as
+             * indicated by obj_state->os_plobj). We apparently did configure it once, and
+             * it's no longer tentative. This address are good. */
+        }
+    }
+
+    return TRUE;
+}
+
+/*****************************************************************************/
+
 static gboolean
 _l3_commit_on_idle_cb(gpointer user_data)
 {
