@@ -11043,7 +11043,7 @@ addrconf6_start(NMDevice *self, NMSettingIP6ConfigPrivacy use_tempaddr)
     g_assert(s_ip6);
 
     if (nm_streq(nm_device_get_effective_ip_config_method(self, AF_INET6),
-                 NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+                 NM_SETTING_IP6_CONFIG_METHOD_SHARED))
         node_type = NM_NDISC_NODE_TYPE_ROUTER;
     else
         node_type = NM_NDISC_NODE_TYPE_HOST;
