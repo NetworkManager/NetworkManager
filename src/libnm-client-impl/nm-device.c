@@ -80,9 +80,14 @@ enum {
     _PROPERTY_O_IDX_NUM,
 };
 
+enum {
+    PROPERTY_AO_IDX_AVAILABLE_CONNECTIONS,
+    _PROPERTY_AO_IDX_NUM,
+};
+
 typedef struct _NMDevicePrivate {
     NMLDBusPropertyO  property_o[_PROPERTY_O_IDX_NUM];
-    NMLDBusPropertyAO available_connections;
+    NMLDBusPropertyAO property_ao[_PROPERTY_AO_IDX_NUM];
     GPtrArray *       lldp_neighbors;
     char *            driver;
     char *            driver_version;
@@ -509,7 +514,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device = NML_DBUS_META_IFACE_INIT
         NML_DBUS_META_PROPERTY_INIT_AO_PROP("AvailableConnections",
                                             PROP_AVAILABLE_CONNECTIONS,
                                             NMDevicePrivate,
-                                            available_connections,
+                                            property_ao[PROPERTY_AO_IDX_AVAILABLE_CONNECTIONS],
                                             nm_remote_connection_get_type,
                                             .is_always_ready = TRUE),
         NML_DBUS_META_PROPERTY_INIT_U("Capabilities",
@@ -614,9 +619,7 @@ nm_device_class_init(NMDeviceClass *klass)
     _NM_OBJECT_CLASS_INIT_PRIV_PTR_INDIRECT(nm_object_class, NMDevice);
 
     _NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_N(nm_object_class, NMDevicePrivate, property_o);
-    _NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1(nm_object_class,
-                                               NMDevicePrivate,
-                                               available_connections);
+    _NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_N(nm_object_class, NMDevicePrivate, property_ao);
 
     klass->connection_compatible = connection_compatible;
 
@@ -1652,7 +1655,7 @@ nm_device_get_available_connections(NMDevice *device)
     g_return_val_if_fail(NM_IS_DEVICE(device), NULL);
 
     return nml_dbus_property_ao_get_objs_as_ptrarray(
-        &NM_DEVICE_GET_PRIVATE(device)->available_connections);
+        &NM_DEVICE_GET_PRIVATE(device)->property_ao[PROPERTY_AO_IDX_AVAILABLE_CONNECTIONS]);
 }
 
 static const char *
