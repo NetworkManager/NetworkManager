@@ -10,7 +10,7 @@
 
 /*****************************************************************************/
 
-/* FIXME(next): ensure that NML3IPv6LL generates the same stable privacy addresses
+/* FIXME(l3cfg): ensure that NML3IPv6LL generates the same stable privacy addresses
  *  as previous implementation. */
 
 /*****************************************************************************/
