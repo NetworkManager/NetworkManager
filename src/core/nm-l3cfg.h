@@ -137,7 +137,9 @@ typedef enum {
     /* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
      * It re-emits the platform signal.
      * Contrary to NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE, this even
-     * is re-emitted synchronously. */
+     * is re-emitted synchronously. You probably want to hook to the on-idle signal,
+     * unless you need to catch all intermediate changes too. Note that this
+     * event is not re-entrant safe (so beware what you are doing). */
     NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
 
     /* NML3Cfg hooks to the NMPlatform signals for link, addresses and routes.
