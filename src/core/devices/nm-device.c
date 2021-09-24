@@ -12914,12 +12914,12 @@ reapply_cb(NMDevice *             self,
                                audit_args,
                                subject,
                                local->message);
-        g_dbus_method_invocation_take_error(context, local);
-        local = NULL;
-    } else {
-        nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_REAPPLY, self, TRUE, audit_args, subject, NULL);
-        g_dbus_method_invocation_return_value(context, NULL);
+        g_dbus_method_invocation_take_error(context, g_steal_pointer(&local));
+        return;
     }
+
+    nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_REAPPLY, self, TRUE, audit_args, subject, NULL);
+    g_dbus_method_invocation_return_value(context, NULL);
 }
 
 static void
