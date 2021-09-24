@@ -10,7 +10,7 @@
     <releaseinfo>
       for libnm &version;
       The latest version of this documentation can be found on-line at
-      <ulink url="https://developer.gnome.org/libnm/stable/">https://developer.gnome.org/libnm/stable/</ulink>.
+      <ulink url="https://networkmanager.dev/docs/libnm/latest/">https://networkmanager.dev/docs/libnm/latest/</ulink>.
     </releaseinfo>
 
     <copyright>
@@ -56,7 +56,7 @@
         management service. NetworkManager supports a wide variety of network
         configuration scenarios, hardware devices and protocol families. Most of
         the functionality is exposed on a
-        <ulink url="https://developer.gnome.org/NetworkManager/stable/spec.html">D-Bus API</ulink>,
+        <ulink url="https://networkmanager.dev/docs/api/latest/spec.html">D-Bus API</ulink>,
         allowing other tools to use the functionality provided by NetworkManager.
       </para>
       <para>
@@ -103,7 +103,7 @@
         </para>
         <para>
           An alternative to use of libnm is the use of the
-          <ulink url="https://developer.gnome.org/NetworkManager/stable/spec.html">D-Bus API</ulink>
+          <ulink url="https://networkmanager.dev/docs/api/latest/spec.html">D-Bus API</ulink>,
           directly.  This gives you larger flexibility and reduces the overhead of linking
           with the libnm library. This makes sense if your task is simple and you have a good
           D-Bus library at your disposal. Activating a particular connection profile

@@ -11,7 +11,7 @@
 # add-connection.py, which only supports NM 1.0 and later.
 #
 # Configuration settings are described at
-# https://developer.gnome.org/NetworkManager/1.0/ref-settings.html
+# https://networkmanager.dev/docs/api/latest/ref-settings.html
 #
 
 import socket, struct, dbus, uuid
