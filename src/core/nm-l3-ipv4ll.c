@@ -602,7 +602,7 @@ _l3cd_config_add(NML3IPv4LL *self)
     self->l3cfg_commit_handle = nm_l3cfg_commit_type_register(self->l3cfg,
                                                               NM_L3_CFG_COMMIT_TYPE_ASSUME,
                                                               self->l3cfg_commit_handle);
-    nm_l3cfg_commit_on_idle_schedule(self->l3cfg);
+    nm_l3cfg_commit_on_idle_schedule(self->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
 }
 
 static gboolean
@@ -624,7 +624,7 @@ _l3cd_config_remove(NML3IPv4LL *self)
         nm_assert_not_reached();
 
     nm_l3cfg_commit_type_unregister(self->l3cfg, g_steal_pointer(&self->l3cfg_commit_handle));
-    nm_l3cfg_commit_on_idle_schedule(self->l3cfg);
+    nm_l3cfg_commit_on_idle_schedule(self->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
     return TRUE;
 }
 
@@ -1028,7 +1028,7 @@ nm_l3_ipv4ll_unref(NML3IPv4LL *self)
             nm_assert_not_reached();
 
         nm_l3cfg_commit_type_unregister(self->l3cfg, g_steal_pointer(&self->l3cfg_commit_handle));
-        nm_l3cfg_commit_on_idle_schedule(self->l3cfg);
+        nm_l3cfg_commit_on_idle_schedule(self->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
     } else
         nm_assert(!self->l3cfg_commit_handle);
 

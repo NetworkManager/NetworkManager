@@ -433,7 +433,7 @@ _lladdr_handle_changed(NML3IPv6LL *self)
                                                               self->l3cfg_commit_handle);
 
     if (changed)
-        nm_l3cfg_commit_on_idle_schedule(self->l3cfg);
+        nm_l3cfg_commit_on_idle_schedule(self->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
 
     if (!self->emit_changed_idle_source) {
         _LOGT("schedule changed signal on idle");

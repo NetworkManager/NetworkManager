@@ -367,7 +367,7 @@ typedef enum _nm_packed {
 
 void nm_l3cfg_commit(NML3Cfg *self, NML3CfgCommitType commit_type);
 
-gboolean nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self);
+gboolean nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type);
 
 gboolean nm_l3cfg_commit_on_idle_is_scheduled(NML3Cfg *self);
 

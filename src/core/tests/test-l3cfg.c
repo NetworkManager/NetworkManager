@@ -606,7 +606,8 @@ _test_l3_ipv4ll_signal_notify(NML3Cfg *                   l3cfg,
                                          NM_L3CFG_CONFIG_FLAGS_NONE,
                                          NM_L3_CONFIG_MERGE_FLAGS_NONE))
                     g_assert_not_reached();
-                nm_l3cfg_commit_on_idle_schedule(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll));
+                nm_l3cfg_commit_on_idle_schedule(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll),
+                                                 NM_L3_CFG_COMMIT_TYPE_AUTO);
 
                 tdata->l3cfg_commit_type_1 =
                     nm_l3cfg_commit_type_register(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll),
@@ -626,7 +627,8 @@ _test_l3_ipv4ll_signal_notify(NML3Cfg *                   l3cfg,
                 if (!nm_l3cfg_remove_config_all(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll),
                                                 TEST_L3_IPV4LL_TAG(tdata, 1)))
                     g_assert_not_reached();
-                nm_l3cfg_commit_on_idle_schedule(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll));
+                nm_l3cfg_commit_on_idle_schedule(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll),
+                                                 NM_L3_CFG_COMMIT_TYPE_AUTO);
                 nm_l3cfg_commit_type_unregister(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll),
                                                 g_steal_pointer(&tdata->l3cfg_commit_type_1));
             }

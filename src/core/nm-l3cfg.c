@@ -256,6 +256,8 @@ typedef struct _NML3CfgPrivate {
 
     GSource *obj_state_temporary_not_available_timeout_source;
 
+    NML3CfgCommitType commit_on_idle_type;
+
     gint8 commit_reentrant_count;
 
     bool commit_type_update_sticky : 1;
@@ -1616,7 +1618,7 @@ _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_d
     switch (start_timer) {
     case NM_TERNARY_FALSE:
         _l3_changed_configs_set_dirty(self);
-        nm_l3cfg_commit_on_idle_schedule(self);
+        nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
         break;
     case NM_TERNARY_TRUE:
         self->priv.p->nacd_instance_ensure_retry =
@@ -2124,7 +2126,7 @@ _nm_printf(5, 6) static void _l3_acd_data_state_set_full(NML3Cfg *        self,
         /* The availability of an address just changed (and we are instructed to
          * trigger a new commit). Do it. */
         _l3_changed_configs_set_dirty(self);
-        nm_l3cfg_commit_on_idle_schedule(self);
+        nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
     }
 }
 
@@ -2970,27 +2972,46 @@ nm_l3cfg_check_ready(NML3Cfg *self, const NML3ConfigData *l3cd, NML3CfgCheckRead
 static gboolean
 _l3_commit_on_idle_cb(gpointer user_data)
 {
+    NML3CfgCommitType commit_type;
+
     NML3Cfg *self = user_data;
 
-    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
+    commit_type = self->priv.p->commit_on_idle_type;
 
-    _LOGT("commit on idle");
-    _l3_commit(self, NM_L3_CFG_COMMIT_TYPE_AUTO, TRUE);
+    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
+    self->priv.p->commit_on_idle_type = NM_L3_CFG_COMMIT_TYPE_AUTO;
+
+    _l3_commit(self, commit_type, TRUE);
     return G_SOURCE_REMOVE;
 }
 
 gboolean
-nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self)
+nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
 {
+    char sbuf_commit_type[50];
+
     nm_assert(NM_IS_L3CFG(self));
+    nm_assert(NM_IN_SET(commit_type,
+                        NM_L3_CFG_COMMIT_TYPE_AUTO,
+                        NM_L3_CFG_COMMIT_TYPE_ASSUME,
+                        NM_L3_CFG_COMMIT_TYPE_UPDATE,
+                        NM_L3_CFG_COMMIT_TYPE_REAPPLY));
 
-    if (self->priv.p->commit_on_idle_source)
+    if (self->priv.p->commit_on_idle_source) {
+        if (self->priv.p->commit_on_idle_type < commit_type) {
+            _LOGT("commit on idle (scheduled) (update to %s)",
+                  _l3_cfg_commit_type_to_string(commit_type,
+                                                sbuf_commit_type,
+                                                sizeof(sbuf_commit_type)));
+            self->priv.p->commit_on_idle_type = commit_type;
+        }
         return FALSE;
+    }
 
-    _LOGT("commit on idle (scheduled)");
-    self->priv.p->commit_on_idle_source =
-        nm_g_idle_source_new(G_PRIORITY_DEFAULT, _l3_commit_on_idle_cb, self, NULL);
-    g_source_attach(self->priv.p->commit_on_idle_source, NULL);
+    _LOGT("commit on idle (scheduled) (%s)",
+          _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
+    self->priv.p->commit_on_idle_source = nm_g_idle_add_source(_l3_commit_on_idle_cb, self);
+    self->priv.p->commit_on_idle_type   = commit_type;
     return TRUE;
 }
 
@@ -3797,8 +3818,10 @@ _l3_commit_one(NML3Cfg *             self,
 static void
 _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 {
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old             = NULL;
-    gboolean                                 commit_type_detected = FALSE;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old = NULL;
+    NML3CfgCommitType                        commit_type_auto;
+    gboolean                                 commit_type_from_auto = FALSE;
+    gboolean                                 is_sticky_update      = FALSE;
     char                                     sbuf_ct[30];
     gboolean                                 changed_combined_l3cd;
 
@@ -3811,49 +3834,49 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
                         NM_L3_CFG_COMMIT_TYPE_REAPPLY));
     nm_assert(self->priv.p->commit_reentrant_count == 0);
 
-    switch (commit_type) {
-    case NM_L3_CFG_COMMIT_TYPE_AUTO:
-        /* if in "AUTO" mode we currently have commit-type "UPDATE", that
-         * causes also the following update to still be "UPDATE". Either
-         * the same commit */
-        commit_type_detected = TRUE;
-        commit_type          = nm_l3cfg_commit_type_get(self);
-        if (commit_type == NM_L3_CFG_COMMIT_TYPE_UPDATE)
-            self->priv.p->commit_type_update_sticky = TRUE;
-        else if (self->priv.p->commit_type_update_sticky) {
-            self->priv.p->commit_type_update_sticky = FALSE;
-            commit_type                             = NM_L3_CFG_COMMIT_TYPE_UPDATE;
-        }
-        break;
-    case NM_L3_CFG_COMMIT_TYPE_ASSUME:
-        break;
-    case NM_L3_CFG_COMMIT_TYPE_REAPPLY:
-    case NM_L3_CFG_COMMIT_TYPE_UPDATE:
-        self->priv.p->commit_type_update_sticky = FALSE;
-        break;
-    case NM_L3_CFG_COMMIT_TYPE_NONE:
-        break;
+    /* The actual commit type is always the maximum of what is requested
+     * and what is registered via nm_l3cfg_commit_type_register(). */
+    commit_type_auto = nm_l3cfg_commit_type_get(self);
+    if (commit_type == NM_L3_CFG_COMMIT_TYPE_AUTO || commit_type_auto > commit_type) {
+        commit_type_from_auto = TRUE;
+        commit_type           = commit_type_auto;
     }
 
-    _LOGT("commit %s%s%s",
+    /* UPDATE and higher are sticky. That means, when do perform such a commit
+     * type, then the next one will at least be of level "UPDATE". The idea is
+     * that if the current commit adds an address, then the following needs
+     * to do at least "UPDATE" level to remove it again. Even if in the meantime
+     * the "UPDATE" is unregistered (nm_l3cfg_commit_type_unregister()). */
+    if (commit_type < NM_L3_CFG_COMMIT_TYPE_UPDATE) {
+        if (self->priv.p->commit_type_update_sticky) {
+            self->priv.p->commit_type_update_sticky = FALSE;
+            commit_type                             = NM_L3_CFG_COMMIT_TYPE_UPDATE;
+            is_sticky_update                        = TRUE;
+        }
+    } else
+        self->priv.p->commit_type_update_sticky = TRUE;
+
+    _LOGT("commit %s%s%s%s",
           _l3_cfg_commit_type_to_string(commit_type, sbuf_ct, sizeof(sbuf_ct)),
-          commit_type_detected ? " (auto)" : "",
+          commit_type_from_auto ? " (auto)" : "",
+          is_sticky_update ? " (sticky-update)" : "",
           is_idle ? " (idle handler)" : "");
 
-    if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE)
+    nm_assert(commit_type > NM_L3_CFG_COMMIT_TYPE_AUTO);
+
+    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
+    self->priv.p->commit_on_idle_type = NM_L3_CFG_COMMIT_TYPE_AUTO;
+
+    if (commit_type <= NM_L3_CFG_COMMIT_TYPE_NONE)
         return;
 
     self->priv.p->commit_reentrant_count++;
-
-    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
 
     _l3cfg_update_combined_config(self,
                                   TRUE,
                                   commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY,
                                   &l3cd_old,
                                   &changed_combined_l3cd);
-
-    /* FIXME(l3cfg): handle items currently not configurable in kernel. */
 
     _l3_commit_one(self, AF_INET, commit_type, changed_combined_l3cd, l3cd_old);
     _l3_commit_one(self, AF_INET6, commit_type, changed_combined_l3cd, l3cd_old);
