@@ -8,7 +8,7 @@
 # This example starts or stops a wifi hotspot
 #
 # Configuration settings are described at
-# https://developer.gnome.org/NetworkManager/1.0/ref-settings.html
+# https://networkmanager.dev/docs/api/latest/ref-settings.html
 #
 
 import dbus, sys, time

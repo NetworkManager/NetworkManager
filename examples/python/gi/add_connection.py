@@ -10,7 +10,7 @@
 #
 # Documentation links:
 # https://developer.gnome.org/libnm/1.0/
-# https://developer.gnome.org/NetworkManager/1.0/ref-settings.html
+# https://networkmanager.dev/docs/api/latest/ref-settings.html
 #
 
 import gi

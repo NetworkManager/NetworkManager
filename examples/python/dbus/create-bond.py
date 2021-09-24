@@ -8,7 +8,7 @@
 # This example configures a Bond from ethernet devices and activates it
 #
 # NetworkManager D-Bus API:
-# https://developer.gnome.org/NetworkManager/stable/spec.html
+# https://networkmanager.dev/docs/api/latest/spec.html
 #
 
 import dbus, sys, uuid

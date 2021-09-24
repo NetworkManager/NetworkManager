@@ -18,7 +18,7 @@ require 'ipaddr'
 # details
 #
 # Configuration settings are described here:
-# https://developer.gnome.org/NetworkManager/1.0/ref-settings.html
+# https://networkmanager.dev/docs/api/latest/ref-settings.html
 #
 
 # Helper functions
