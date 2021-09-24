@@ -1337,12 +1337,6 @@ nm_l3cfg_get_acd_is_pending(NML3Cfg *self)
     return self->priv.p->acd_is_pending;
 }
 
-static gboolean
-_acd_track_data_is_not_dirty(const NML3AcdAddrTrackInfo *acd_track)
-{
-    return acd_track && !acd_track->_priv.acd_dirty_track;
-}
-
 static void
 _acd_track_data_clear(NML3AcdAddrTrackInfo *acd_track)
 {
@@ -3348,6 +3342,7 @@ typedef struct {
     NML3Cfg *     self;
     gconstpointer tag;
     bool          assume_config_once;
+    bool          to_commit;
 } L3ConfigMergeHookAddObjData;
 
 static gboolean
@@ -3379,24 +3374,38 @@ _l3_hook_add_obj_cb(const NML3ConfigData *     l3cd,
 
         acd_data = _l3_acd_data_find(self, addr);
 
-        if (!acd_data) {
-            /* we don't yet track an ACD state for this address. That can only
-             * happened during _l3cfg_update_combined_config() with !to_commit,
-             * where we didn't update the ACD state.
-             *
-             * This means, unless you actually commit, nm_l3cfg_get_combined_l3cd(self, get_commited = FALSE)
-             * won't consider IPv4 addresses ready, that have no known ACD state yet. */
+        if (!hook_data->to_commit) {
             nm_assert(self->priv.p->changed_configs_acd_state);
+            /* We don't do an actual commit in _l3cfg_update_combined_config(). That means our acd-data
+             * is not up to date. Check whether we have no acd_data ready, and if not, consider the address
+             * as not ready. It cannot be ready until the next commit starts ACD. */
+            if (!acd_data) {
+                acd_bad = TRUE;
+                goto out_ip4_address;
+            }
+            nm_assert(({
+                NML3AcdAddrTrackInfo *_ti =
+                    _acd_data_find_track(acd_data, l3cd, obj, hook_data->tag);
+
+                !_ti || _ti->_priv.acd_dirty_track;
+            }));
+        } else {
+            /* If we commit, we called _l3_acd_data_add_all(), thus our acd_data must be present
+             * and not dirty. */
+            nm_assert(({
+                NML3AcdAddrTrackInfo *_ti =
+                    _acd_data_find_track(acd_data, l3cd, obj, hook_data->tag);
+
+                _ti && !_ti->_priv.acd_dirty_track;
+            }));
+        }
+
+        if (!NM_IN_SET(acd_data->info.state,
+                       NM_L3_ACD_ADDR_STATE_READY,
+                       NM_L3_ACD_ADDR_STATE_DEFENDING)) {
             acd_bad = TRUE;
             goto out_ip4_address;
         }
-
-        nm_assert(_acd_track_data_is_not_dirty(
-            _acd_data_find_track(acd_data, l3cd, obj, hook_data->tag)));
-        if (!NM_IN_SET(acd_data->info.state,
-                       NM_L3_ACD_ADDR_STATE_READY,
-                       NM_L3_ACD_ADDR_STATE_DEFENDING))
-            acd_bad = TRUE;
 
 out_ip4_address:
         hook_result->ip4acd_not_ready = acd_bad ? NM_OPTION_BOOL_TRUE : NM_OPTION_BOOL_FALSE;
@@ -3472,7 +3481,8 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
 
     if (l3_config_datas_len > 0) {
         L3ConfigMergeHookAddObjData hook_data = {
-            .self = self,
+            .self      = self,
+            .to_commit = to_commit,
         };
 
         l3cd = nm_l3_config_data_new(nm_platform_get_multi_idx(self->priv.platform),
