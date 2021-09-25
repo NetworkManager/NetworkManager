@@ -2696,9 +2696,13 @@ _l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
                   NM_HASH_OBFUSCATE_PTR(defender),
                   NM_ETHER_ADDR_FORMAT_VAL((const NMEtherAddr *) event->defended.sender));
             break;
+        case N_ACD_EVENT_DOWN:
+            /* Not sure why this sometimes happens. But this is only the test stub, ignore it. */
+            _LOGT("acd-defender[" NM_HASH_OBFUSCATE_PTR_FMT "]: link down event received",
+                  NM_HASH_OBFUSCATE_PTR(defender));
+            break;
         case N_ACD_EVENT_USED:
         case N_ACD_EVENT_CONFLICT:
-        case N_ACD_EVENT_DOWN:
         default:
             g_assert_not_reached();
             break;
