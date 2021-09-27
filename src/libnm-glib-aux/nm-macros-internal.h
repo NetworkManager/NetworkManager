@@ -890,6 +890,12 @@ nm_g_variant_take_ref(GVariant *v)
     return v;
 }
 
+static inline gboolean
+nm_g_variant_equal(GVariant *a, GVariant *b)
+{
+    return (a == b) || (a && b && g_variant_equal(a, b));
+}
+
 /*****************************************************************************/
 
 #define NM_DIV_ROUND_UP(x, y)     \
