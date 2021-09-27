@@ -269,6 +269,8 @@ nm_l3cfg_get_ifname(const NML3Cfg *self, gboolean get_next)
     return nmp_object_link_get_ifname(nm_l3cfg_get_plobj(self, get_next));
 }
 
+gboolean nm_l3cfg_is_vrf(const NML3Cfg *self);
+
 static inline NMNetns *
 nm_l3cfg_get_netns(const NML3Cfg *self)
 {

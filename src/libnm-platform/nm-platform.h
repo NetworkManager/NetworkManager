@@ -2422,6 +2422,14 @@ struct _NMDedupMultiIndex *nm_platform_get_multi_idx(NMPlatform *self);
 
 /*****************************************************************************/
 
+NMPlatformIP4Route *nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
+                                                                  int                 ifindex,
+                                                                  guint32             route_table,
+                                                                  guint32             route_metric,
+                                                                  NMPlatformIP4Route *dst);
+
+/*****************************************************************************/
+
 gboolean nm_platform_ip_address_match(int                        addr_family,
                                       const NMPlatformIPAddress *addr,
                                       NMPlatformMatchFlags       match_flag);

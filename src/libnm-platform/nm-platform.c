@@ -8578,6 +8578,57 @@ nm_platform_ip4_address_addr_to_hash(NMPlatform *self, int ifindex)
 
 /*****************************************************************************/
 
+NMPlatformIP4Route *
+nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
+                                              int                         ifindex,
+                                              guint32                     route_table,
+                                              guint32                     route_metric,
+                                              NMPlatformIP4Route *        dst)
+{
+    in_addr_t network_4;
+
+    /* When you add an IPv4 address (without "noprefixroute" flag), then kernel will
+     * automatically add a device route for the IPv4 subnet. This function generates
+     * such a route for the given address. */
+
+    nm_assert(addr);
+    nm_assert(addr->plen <= 32);
+    if (addr->plen == 0)
+        return NULL;
+
+    if (addr->plen == 0)
+        return NULL;
+
+    network_4 = nm_utils_ip4_address_clear_host_address(addr->peer_address, addr->plen);
+
+    if (nm_utils_ip4_address_is_zeronet(network_4)) {
+        /* Kernel doesn't add device-routes for destinations that
+         * start with 0.x.y.z. Skip them. */
+        return NULL;
+    }
+
+    if (addr->plen == 32 && addr->address == addr->peer_address) {
+        /* Kernel doesn't add device-routes for /32 addresses unless
+         * they have a peer. */
+        return NULL;
+    }
+
+    *dst = (NMPlatformIP4Route){
+        .ifindex       = ifindex,
+        .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
+        .network       = network_4,
+        .plen          = addr->plen,
+        .pref_src      = addr->address,
+        .table_coerced = nm_platform_route_table_coerce(route_table),
+        .metric        = route_metric,
+        .scope_inv     = nm_platform_route_scope_inv(NM_RT_SCOPE_LINK),
+    };
+
+    nm_platform_ip_route_normalize(AF_INET, (NMPlatformIPRoute *) dst);
+
+    return dst;
+}
+
 const char *
 nm_platform_signal_change_type_to_string(NMPlatformSignalChangeType change_type)
 {

@@ -385,6 +385,17 @@ static NM_UTILS_LOOKUP_DEFINE(_l3_acd_addr_state_to_string,
 
 /*****************************************************************************/
 
+gboolean
+nm_l3cfg_is_vrf(const NML3Cfg *self)
+{
+    const NMPlatformLink *pllink;
+
+    pllink = nm_l3cfg_get_pllink(self, TRUE);
+    return pllink && pllink->type == NM_LINK_TYPE_VRF;
+}
+
+/*****************************************************************************/
+
 static const char *
 _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
                                  char *                      sbuf,
@@ -3509,6 +3520,28 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
                                     _l3_hook_add_obj_cb,
                                     &hook_data);
         }
+
+        for (i = 0; i < l3_config_datas_len; i++) {
+            const L3ConfigData *l3cd_data = l3_config_datas_arr[i];
+            int                 IS_IPv4;
+
+            if (NM_FLAGS_HAS(l3cd_data->config_flags, NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD))
+                continue;
+
+            for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+                /* FIXME(l3cfg): VRF needs to be treated specially. */
+                nm_assert(!nm_l3cfg_is_vrf(self));
+
+                nm_l3_config_data_add_dependent_device_routes(
+                    l3cd,
+                    IS_IPv4 ? AF_INET : AF_INET6,
+                    l3cd_data->default_route_table_x[IS_IPv4],
+                    l3cd_data->default_route_metric_x[IS_IPv4],
+                    l3cd_data->l3cd);
+            }
+        }
+
+        nm_l3_config_data_add_dependent_onlink_routes(l3cd, AF_UNSPEC);
 
         nm_assert(l3cd);
         nm_assert(nm_l3_config_data_get_ifindex(l3cd) == self->priv.ifindex);

@@ -158,11 +158,13 @@ void nm_l3_config_data_merge(NML3ConfigData *      self,
 GPtrArray *nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self,
                                                         gboolean              is_vrf);
 
-void nm_l3_config_data_add_dependent_routes(NML3ConfigData *self,
-                                            int             addr_family,
-                                            guint32         route_table,
-                                            guint32         route_metric,
-                                            gboolean        is_vrf);
+void nm_l3_config_data_add_dependent_onlink_routes(NML3ConfigData *self, int addr_family);
+
+void nm_l3_config_data_add_dependent_device_routes(NML3ConfigData *      self,
+                                                   int                   addr_family,
+                                                   guint32               route_table,
+                                                   guint32               route_metric,
+                                                   const NML3ConfigData *source);
 
 /*****************************************************************************/
 
