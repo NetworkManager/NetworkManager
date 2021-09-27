@@ -217,7 +217,6 @@ enum {
 static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct _NML3CfgPrivate {
-    GArray *property_emit_list;
     GArray *l3_config_datas;
 
     NML3IPv4LL *ipv4ll;
@@ -310,8 +309,6 @@ G_DEFINE_TYPE(NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 static void _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle);
-
-static void _property_emit_notify(NML3Cfg *self, NML3CfgPropertyEmitType emit_type);
 
 static void _nm_l3cfg_emit_signal_notify_acd_event_all(NML3Cfg *self);
 
@@ -1146,11 +1143,6 @@ _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags)
     _nm_l3cfg_emit_signal_notify(self, &notify_data);
 
     _nm_l3cfg_emit_signal_notify_acd_event_all(self);
-
-    if (NM_FLAGS_ANY(obj_type_flags, nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP4_ROUTE)))
-        _property_emit_notify(self, NM_L3CFG_PROPERTY_EMIT_TYPE_IP4_ROUTE);
-    if (NM_FLAGS_ANY(obj_type_flags, nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP6_ROUTE)))
-        _property_emit_notify(self, NM_L3CFG_PROPERTY_EMIT_TYPE_IP6_ROUTE);
 }
 
 void
@@ -1196,146 +1188,6 @@ _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
     _nm_l3cfg_emit_signal_notify(self, &notify_data);
 
     nm_assert(NMP_OBJECT_IS_VALID(obj));
-}
-
-/*****************************************************************************/
-
-typedef struct {
-    GObject *               target_obj;
-    const GParamSpec *      target_property;
-    NML3CfgPropertyEmitType emit_type;
-} PropertyEmitData;
-
-static void
-_property_emit_notify(NML3Cfg *self, NML3CfgPropertyEmitType emit_type)
-{
-    gs_free PropertyEmitData *collected_heap = NULL;
-    PropertyEmitData *        collected      = NULL;
-    PropertyEmitData *        emit_data;
-    guint                     num;
-    guint                     i;
-    guint                     j;
-
-    if (!self->priv.p->property_emit_list)
-        return;
-
-    num       = 0;
-    emit_data = &g_array_index(self->priv.p->property_emit_list, PropertyEmitData, 0);
-    for (i = 0; i < self->priv.p->property_emit_list->len; i++, emit_data++) {
-        if (emit_data->emit_type == emit_type) {
-            collected = emit_data;
-            num++;
-        }
-    }
-
-    if (num == 0)
-        return;
-
-    if (num == 1) {
-        g_object_notify_by_pspec(collected->target_obj, (GParamSpec *) collected->target_property);
-        return;
-    }
-
-    if (num < 300u / sizeof(*collected))
-        collected = g_alloca(sizeof(PropertyEmitData) * num);
-    else {
-        collected_heap = g_new(PropertyEmitData, num);
-        collected      = collected_heap;
-    }
-
-    emit_data = &g_array_index(self->priv.p->property_emit_list, PropertyEmitData, 0);
-    for (i = 0, j = 0; i < self->priv.p->property_emit_list->len; i++, emit_data++) {
-        if (emit_data->emit_type == emit_type) {
-            collected[j++] = *emit_data;
-            g_object_ref(collected->target_obj);
-        }
-    }
-
-    nm_assert(j == num);
-
-    for (i = 0; i < num; i++) {
-        g_object_notify_by_pspec(collected[i].target_obj,
-                                 (GParamSpec *) collected[i].target_property);
-        if (i > 0)
-            g_object_unref(collected[i].target_obj);
-    }
-}
-
-void
-nm_l3cfg_property_emit_register(NML3Cfg *               self,
-                                GObject *               target_obj,
-                                const GParamSpec *      target_property,
-                                NML3CfgPropertyEmitType emit_type)
-{
-    PropertyEmitData *emit_data;
-    guint             i;
-
-    nm_assert(NM_IS_L3CFG(self));
-    nm_assert(G_IS_OBJECT(target_obj));
-    nm_assert(target_property);
-    nm_assert(NM_IN_SET(emit_type,
-                        NM_L3CFG_PROPERTY_EMIT_TYPE_IP4_ROUTE,
-                        NM_L3CFG_PROPERTY_EMIT_TYPE_IP6_ROUTE));
-    nm_assert(target_property
-              == nm_g_object_class_find_property_from_gtype(G_OBJECT_TYPE(target_obj),
-                                                            target_property->name));
-
-    if (!self->priv.p->property_emit_list)
-        self->priv.p->property_emit_list = g_array_new(FALSE, FALSE, sizeof(PropertyEmitData));
-    else {
-        emit_data = &g_array_index(self->priv.p->property_emit_list, PropertyEmitData, 0);
-        for (i = 0; i < self->priv.p->property_emit_list->len; i++, emit_data++) {
-            if (emit_data->target_obj != target_obj
-                || emit_data->target_property != target_property)
-                continue;
-            nm_assert(emit_data->emit_type == emit_type);
-            emit_data->emit_type = emit_type;
-            return;
-        }
-    }
-
-    emit_data  = nm_g_array_append_new(self->priv.p->property_emit_list, PropertyEmitData);
-    *emit_data = (PropertyEmitData){
-        .target_obj      = target_obj,
-        .target_property = target_property,
-        .emit_type       = emit_type,
-    };
-}
-
-void
-nm_l3cfg_property_emit_unregister(NML3Cfg *         self,
-                                  GObject *         target_obj,
-                                  const GParamSpec *target_property)
-{
-    PropertyEmitData *emit_data;
-    guint             i;
-
-    nm_assert(NM_IS_L3CFG(self));
-    nm_assert(G_IS_OBJECT(target_obj));
-    nm_assert(!target_property
-              || target_property
-                     == nm_g_object_class_find_property_from_gtype(G_OBJECT_TYPE(target_obj),
-                                                                   target_property->name));
-
-    if (!self->priv.p->property_emit_list)
-        return;
-
-    for (i = self->priv.p->property_emit_list->len; i > 0; i--) {
-        emit_data = &g_array_index(self->priv.p->property_emit_list, PropertyEmitData, i);
-
-        if (emit_data->target_obj != target_obj)
-            continue;
-        if (target_property && emit_data->target_property != target_property)
-            continue;
-
-        g_array_remove_index_fast(self->priv.p->property_emit_list, i);
-
-        if (target_property) {
-            /* if a target-property is given, we don't have another entry in
-             * the list. */
-            return;
-        }
-    }
 }
 
 /*****************************************************************************/
@@ -4246,8 +4098,6 @@ finalize(GObject *object)
     nm_assert(c_list_is_empty(&self->priv.p->commit_type_lst_head));
 
     nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
-
-    nm_assert(nm_g_array_len(self->priv.p->property_emit_list) == 0u);
 
     _l3_acd_data_prune(self, TRUE);
 

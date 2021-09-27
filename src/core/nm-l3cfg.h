@@ -293,23 +293,6 @@ void _nm_l3cfg_emit_signal_notify(NML3Cfg *self, const NML3ConfigNotifyData *not
 
 /*****************************************************************************/
 
-typedef enum {
-    NM_L3CFG_PROPERTY_EMIT_TYPE_ANY,
-    NM_L3CFG_PROPERTY_EMIT_TYPE_IP4_ROUTE,
-    NM_L3CFG_PROPERTY_EMIT_TYPE_IP6_ROUTE,
-} NML3CfgPropertyEmitType;
-
-void nm_l3cfg_property_emit_register(NML3Cfg *               self,
-                                     GObject *               target_obj,
-                                     const GParamSpec *      target_property,
-                                     NML3CfgPropertyEmitType emit_type);
-
-void nm_l3cfg_property_emit_unregister(NML3Cfg *         self,
-                                       GObject *         target_obj,
-                                       const GParamSpec *target_property);
-
-/*****************************************************************************/
-
 void nm_l3cfg_mark_config_dirty(NML3Cfg *self, gconstpointer tag, gboolean dirty);
 
 gboolean nm_l3cfg_add_config(NML3Cfg *             self,
