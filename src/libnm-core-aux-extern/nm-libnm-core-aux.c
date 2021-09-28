@@ -457,10 +457,15 @@ _nm_ip_route_to_string(NMIPRoute *route, NMStrBuf *strbuf)
     next_hop = nm_ip_route_get_next_hop(route);
     metric   = nm_ip_route_get_metric(route);
 
-    nm_str_buf_append_printf(strbuf,
-                             "%s/%u",
-                             nm_ip_route_get_dest(route),
-                             nm_ip_route_get_prefix(route));
+    if (NM_IN_STRSET(nm_ip_route_get_dest(route), "0.0.0.0", "::")
+        && nm_ip_route_get_prefix(route) == 0) {
+        nm_str_buf_append_printf(strbuf, "default");
+    } else {
+        nm_str_buf_append_printf(strbuf,
+                                 "%s/%u",
+                                 nm_ip_route_get_dest(route),
+                                 nm_ip_route_get_prefix(route));
+    }
 
     if (next_hop) {
         nm_str_buf_append_printf(strbuf, " via %s", next_hop);
