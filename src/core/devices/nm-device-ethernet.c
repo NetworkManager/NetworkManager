@@ -14,37 +14,38 @@
 #include <libudev.h>
 #include <linux/if_ether.h>
 
-#include "libnm-glib-aux/nm-uuid.h"
-#include "nm-device-private.h"
-#include "nm-act-request.h"
 #include "NetworkManagerUtils.h"
-#include "supplicant/nm-supplicant-manager.h"
-#include "supplicant/nm-supplicant-interface.h"
-#include "supplicant/nm-supplicant-config.h"
-#include "ppp/nm-ppp-manager.h"
-#include "ppp/nm-ppp-manager-call.h"
-#include "ppp/nm-ppp-status.h"
-#include "libnm-platform/nm-platform.h"
-#include "libnm-platform/nm-platform-utils.h"
-#include "nm-dcb.h"
-#include "settings/nm-settings-connection.h"
-#include "nm-config.h"
-#include "nm-device-ethernet-utils.h"
-#include "settings/nm-settings.h"
-#include "nm-device-factory.h"
+#include "NetworkManagerUtils.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "NetworkManagerUtils.h"
+#include "libnm-glib-aux/nm-uuid.h"
+#include "libnm-platform/nm-platform-utils.h"
+#include "libnm-platform/nm-platform.h"
 #include "libnm-udev-aux/nm-udev-utils.h"
+#include "nm-act-request.h"
+#include "nm-config.h"
+#include "nm-dcb.h"
+#include "nm-device-ethernet-utils.h"
+#include "nm-device-factory.h"
+#include "nm-device-private.h"
 #include "nm-device-veth.h"
+#include "nm-manager.h"
+#include "ppp/nm-ppp-manager-call.h"
+#include "ppp/nm-ppp-manager.h"
+#include "ppp/nm-ppp-status.h"
+#include "settings/nm-settings-connection.h"
+#include "settings/nm-settings.h"
+#include "supplicant/nm-supplicant-config.h"
+#include "supplicant/nm-supplicant-interface.h"
+#include "supplicant/nm-supplicant-manager.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceEthernet
 #include "nm-device-logging.h"
 
 /*****************************************************************************/
 
-#define PPPOE_RECONNECT_DELAY 7
-#define PPPOE_ENCAP_OVERHEAD  8 /* 2 bytes for PPP, 6 for PPPoE */
+#define PPPOE_RECONNECT_DELAY_MSEC 7000
+#define PPPOE_ENCAP_OVERHEAD       8 /* 2 bytes for PPP, 6 for PPPoE */
 
 #define SUPPLICANT_LNK_TIMEOUT_SEC 15
 
@@ -94,10 +95,12 @@ typedef struct _NMDeviceEthernetPrivate {
 
     NMActRequestGetSecretsCallId *wired_secrets_id;
 
-    /* PPPoE */
-    NMPPPManager *ppp_manager;
-    gint32        last_pppoe_time;
-    guint         pppoe_wait_id;
+    struct {
+        NMPPPManager *        ppp_manager;
+        GSource *             wait_source;
+        gint64                last_pppoe_time_msec;
+        const NML3ConfigData *l3cd_4;
+    } ppp_data;
 
     /* DCB */
     DcbWait dcb_wait;
@@ -111,6 +114,10 @@ typedef struct _NMDeviceEthernetPrivate {
 
     bool ethtool_prev_set : 1;
     bool ethtool_prev_autoneg : 1;
+
+    bool stage2_ready_dcb : 1;
+
+    bool stage2_ready_ppp : 1;
 
 } NMDeviceEthernetPrivate;
 
@@ -467,27 +474,25 @@ wired_auth_cond_fail(NMDeviceEthernet *self, NMDeviceStateReason reason)
     NMDeviceEthernetPrivate *priv   = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
     NMDevice *               device = NM_DEVICE(self);
 
-    if (wired_auth_is_optional(self)) {
-        _LOGI(
-            LOGD_DEVICE | LOGD_ETHER,
-            "Activation: (ethernet) 802.1X authentication is optional, continuing after a failure");
-        if (NM_IN_SET(nm_device_get_state(device),
-                      NM_DEVICE_STATE_CONFIG,
-                      NM_DEVICE_STATE_NEED_AUTH))
-            nm_device_activate_schedule_stage3_ip_config(device, FALSE);
-
-        if (!priv->supplicant.auth_state_id) {
-            priv->supplicant.auth_state_id =
-                g_signal_connect(priv->supplicant.iface,
-                                 "notify::" NM_SUPPLICANT_INTERFACE_AUTH_STATE,
-                                 G_CALLBACK(supplicant_auth_state_changed),
-                                 self);
-        }
+    if (!wired_auth_is_optional(self)) {
+        supplicant_interface_release(self);
+        nm_device_state_changed(NM_DEVICE(self), NM_DEVICE_STATE_FAILED, reason);
         return;
     }
 
-    supplicant_interface_release(self);
-    nm_device_state_changed(NM_DEVICE(self), NM_DEVICE_STATE_FAILED, reason);
+    _LOGI(LOGD_DEVICE | LOGD_ETHER,
+          "Activation: (ethernet) 802.1X authentication is optional, continuing after a failure");
+
+    if (NM_IN_SET(nm_device_get_state(device), NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH))
+        nm_device_activate_schedule_stage2_device_config(device, FALSE);
+
+    if (!priv->supplicant.auth_state_id) {
+        priv->supplicant.auth_state_id =
+            g_signal_connect(priv->supplicant.iface,
+                             "notify::" NM_SUPPLICANT_INTERFACE_AUTH_STATE,
+                             G_CALLBACK(supplicant_auth_state_changed),
+                             self);
+    }
 }
 
 static void
@@ -645,12 +650,12 @@ supplicant_iface_state_is_completed(NMDeviceEthernet *self, NMSupplicantInterfac
         nm_clear_g_source(&priv->supplicant.con_timeout_id);
 
         /* If this is the initial association during device activation,
-         * schedule the next activation stage.
+         * schedule the activation stage again to proceed.
          */
         if (nm_device_get_state(NM_DEVICE(self)) == NM_DEVICE_STATE_CONFIG) {
             _LOGI(LOGD_DEVICE | LOGD_ETHER,
                   "Activation: (ethernet) Stage 2 of 5 (Device Configure) successful.");
-            nm_device_activate_schedule_stage3_ip_config(NM_DEVICE(self), FALSE);
+            nm_device_activate_schedule_stage2_device_config(NM_DEVICE(self), FALSE);
         }
         return;
     }
@@ -968,11 +973,11 @@ pppoe_reconnect_delay(gpointer user_data)
     NMDeviceEthernet *       self = NM_DEVICE_ETHERNET(user_data);
     NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
 
-    priv->pppoe_wait_id   = 0;
-    priv->last_pppoe_time = 0;
+    nm_clear_g_source_inst(&priv->ppp_data.wait_source);
+    priv->ppp_data.last_pppoe_time_msec = 0;
     _LOGI(LOGD_DEVICE, "PPPoE reconnect delay complete, resuming connection...");
     nm_device_activate_schedule_stage1_device_prepare(NM_DEVICE(self), FALSE);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static NMActStageReturn
@@ -1013,21 +1018,24 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
      * at least for additional NM_SHUTDOWN_TIMEOUT_MS seconds because
      * otherwise after restart the device won't work for the first seconds.
      */
-    if (priv->last_pppoe_time != 0) {
-        gint32 delay = nm_utils_get_monotonic_timestamp_sec() - priv->last_pppoe_time;
+    if (priv->ppp_data.last_pppoe_time_msec != 0) {
+        gint64 delay =
+            nm_utils_get_monotonic_timestamp_msec() - priv->ppp_data.last_pppoe_time_msec;
 
-        if (delay < PPPOE_RECONNECT_DELAY
+        if (delay < PPPOE_RECONNECT_DELAY_MSEC
             && nm_device_get_applied_setting(device, NM_TYPE_SETTING_PPPOE)) {
-            if (priv->pppoe_wait_id == 0) {
+            if (!priv->ppp_data.wait_source) {
                 _LOGI(LOGD_DEVICE,
-                      "delaying PPPoE reconnect for %d seconds to ensure peer is ready...",
-                      delay);
-                priv->pppoe_wait_id = g_timeout_add_seconds(delay, pppoe_reconnect_delay, self);
+                      "delaying PPPoE reconnect for %d.%03d seconds to ensure peer is ready...",
+                      (int) (delay / 1000),
+                      (int) (delay % 1000));
+                priv->ppp_data.wait_source =
+                    nm_g_timeout_add_source(delay, pppoe_reconnect_delay, self);
             }
             return NM_ACT_STAGE_RETURN_POSTPONE;
         }
-        nm_clear_g_source(&priv->pppoe_wait_id);
-        priv->last_pppoe_time = 0;
+        nm_clear_g_source_inst(&priv->ppp_data.wait_source);
+        priv->ppp_data.last_pppoe_time_msec = 0;
     }
 
     return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -1104,7 +1112,6 @@ carrier_changed(NMSupplicantInterface *iface, GParamSpec *pspec, NMDeviceEtherne
 }
 
 /*****************************************************************************/
-/* PPPoE */
 
 static void
 ppp_state_changed(NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_data)
@@ -1126,15 +1133,38 @@ ppp_state_changed(NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_d
 }
 
 static void
+ppp_stage3_ready(NMDevice *device)
+{
+    NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(device);
+
+    nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_READY, priv->ppp_data.l3cd_4);
+}
+
+static void
 ppp_ifindex_set(NMPPPManager *ppp_manager, int ifindex, const char *iface, gpointer user_data)
 {
-    NMDevice *device = NM_DEVICE(user_data);
+    NMDeviceEthernet *       self     = NM_DEVICE_ETHERNET(user_data);
+    NMDevice *               device   = NM_DEVICE(self);
+    NMDeviceEthernetPrivate *priv     = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
+    gs_free char *           old_name = NULL;
+    gs_free_error GError *error       = NULL;
 
-    if (!nm_device_set_ip_ifindex(device, ifindex)) {
+    if (!nm_device_take_over_link(device, ifindex, &old_name, &error)) {
+        _LOGW(LOGD_DEVICE | LOGD_PPP,
+              "could not take control of link %d: %s",
+              ifindex,
+              error->message);
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+        return;
     }
+
+    if (old_name)
+        nm_manager_remove_device(NM_MANAGER_GET, old_name, NM_DEVICE_TYPE_PPP);
+
+    priv->stage2_ready_ppp = TRUE;
+    nm_device_activate_schedule_stage2_device_config(device, FALSE);
 }
 
 static void
@@ -1144,15 +1174,19 @@ ppp_new_config(NMPPPManager *            ppp_manager,
                const NMUtilsIPv6IfaceId *iid,
                gpointer                  user_data)
 {
-    NMDevice *device = NM_DEVICE(user_data);
+    NMDeviceEthernet *       self   = NM_DEVICE_ETHERNET(user_data);
+    NMDevice *               device = NM_DEVICE(self);
+    NMDeviceEthernetPrivate *priv   = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
 
     if (addr_family != AF_INET)
         return;
 
-    if (nm_device_devip_get_state(device, AF_INET) != NM_DEVICE_IP_STATE_PENDING)
-        return;
+    _LOGT(LOGD_DEVICE | LOGD_PPP, "received IPv4 config from pppd");
 
-    nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_READY, l3cd);
+    nm_l3_config_data_reset(&priv->ppp_data.l3cd_4, l3cd);
+
+    if (nm_device_devip_get_state(device, AF_INET) == NM_DEVICE_IP_STATE_PENDING)
+        ppp_stage3_ready(device);
 }
 
 static void
@@ -1160,95 +1194,24 @@ ppp_manager_clear(NMDeviceEthernet *self)
 {
     NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
 
-    if (!priv->ppp_manager)
-        return;
+    priv->stage2_ready_ppp = FALSE;
 
-    g_signal_handlers_disconnect_by_func(priv->ppp_manager, G_CALLBACK(ppp_state_changed), self);
-    g_signal_handlers_disconnect_by_func(priv->ppp_manager, G_CALLBACK(ppp_ifindex_set), self);
-    g_signal_handlers_disconnect_by_func(priv->ppp_manager, G_CALLBACK(ppp_new_config), self);
+    if (priv->ppp_data.ppp_manager) {
+        g_signal_handlers_disconnect_by_func(priv->ppp_data.ppp_manager,
+                                             G_CALLBACK(ppp_state_changed),
+                                             self);
+        g_signal_handlers_disconnect_by_func(priv->ppp_data.ppp_manager,
+                                             G_CALLBACK(ppp_ifindex_set),
+                                             self);
+        g_signal_handlers_disconnect_by_func(priv->ppp_data.ppp_manager,
+                                             G_CALLBACK(ppp_new_config),
+                                             self);
 
-    nm_ppp_manager_stop(priv->ppp_manager, NULL, NULL, NULL);
-    g_clear_object(&priv->ppp_manager);
-}
-
-static void
-act_stage3_ip_config(NMDevice *device, int addr_family)
-{
-    NMDeviceEthernet *       self = NM_DEVICE_ETHERNET(device);
-    NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
-    NMSettingConnection *    s_con;
-    const char *             connection_type;
-    int                      ifindex;
-    NMSettingPppoe *         s_pppoe;
-    NMActRequest *           req;
-    gs_free_error GError *error = NULL;
-
-    ifindex = nm_device_get_ifindex(device);
-    if (ifindex <= 0) {
-        nm_device_devip_set_failed(device,
-                                   addr_family,
-                                   NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
-        return;
+        nm_ppp_manager_stop(priv->ppp_data.ppp_manager, NULL, NULL, NULL);
+        g_clear_object(&priv->ppp_data.ppp_manager);
     }
 
-    if (!NM_IS_IPv4(addr_family))
-        return;
-
-    s_con = nm_device_get_applied_setting(device, NM_TYPE_SETTING_CONNECTION);
-    g_return_if_fail(s_con);
-
-    connection_type = nm_setting_connection_get_connection_type(s_con);
-    if (!nm_streq(connection_type, NM_SETTING_PPPOE_SETTING_NAME)) {
-        nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
-        return;
-    }
-
-    if (nm_device_devip_get_state(device, addr_family) >= NM_DEVICE_IP_STATE_READY)
-        return;
-
-    if (priv->ppp_manager)
-        return;
-
-    req = nm_device_get_act_request(device);
-    g_return_if_fail(req);
-
-    s_pppoe = nm_device_get_applied_setting(device, NM_TYPE_SETTING_PPPOE);
-    g_return_if_fail(s_pppoe);
-
-    priv->ppp_manager = nm_ppp_manager_create(nm_device_get_iface(device), &error);
-
-    if (!priv->ppp_manager) {
-        _LOGW(LOGD_DEVICE, "PPPoE failed to create manager: %s", error->message);
-        nm_device_devip_set_failed(device, addr_family, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
-        return;
-    }
-
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
-                     G_CALLBACK(ppp_state_changed),
-                     self);
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_IFINDEX_SET,
-                     G_CALLBACK(ppp_ifindex_set),
-                     self);
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_NEW_CONFIG,
-                     G_CALLBACK(ppp_new_config),
-                     self);
-
-    if (!nm_ppp_manager_start(priv->ppp_manager,
-                              req,
-                              nm_setting_pppoe_get_username(s_pppoe),
-                              30,
-                              0,
-                              &error)) {
-        _LOGW(LOGD_DEVICE, "PPPoE failed to start: %s", error->message);
-        ppp_manager_clear(self);
-        nm_device_devip_set_failed(device, addr_family, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
-        return;
-    }
-
-    nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
+    nm_clear_l3cd(&priv->ppp_data.l3cd_4);
 }
 
 /*****************************************************************************/
@@ -1396,7 +1359,7 @@ dcb_state(NMDevice *device, gboolean timeout)
             nm_clear_g_source(&priv->dcb_timeout_id);
             priv->dcb_handle_carrier_changes = FALSE;
             priv->dcb_wait                   = DCB_WAIT_UNKNOWN;
-            nm_device_activate_schedule_stage3_ip_config(device, FALSE);
+            nm_device_activate_schedule_stage2_device_config(device, FALSE);
         }
         break;
     default:
@@ -1452,71 +1415,32 @@ found:
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceEthernet *       self = (NMDeviceEthernet *) device;
+    NMDeviceEthernet *       self = NM_DEVICE_ETHERNET(device);
     NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
+    NMConnection *           connection;
     NMSettingConnection *    s_con;
     const char *             connection_type;
-    gboolean                 do_postpone = FALSE;
     NMSettingDcb *           s_dcb;
+    NMActRequest *           req;
 
-    s_con = nm_device_get_applied_setting(device, NM_TYPE_SETTING_CONNECTION);
+    connection = nm_device_get_applied_connection(device);
+    g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
 
+    s_con = _nm_connection_get_setting(connection, NM_TYPE_SETTING_CONNECTION);
     g_return_val_if_fail(s_con, NM_ACT_STAGE_RETURN_FAILURE);
 
     nm_clear_g_source(&priv->dcb_timeout_id);
     priv->dcb_handle_carrier_changes = FALSE;
 
-    /* 802.1x has to run before any IP configuration since the 802.1x auth
-     * process opens the port up for normal traffic.
-     */
     connection_type = nm_setting_connection_get_connection_type(s_con);
-    if (nm_streq(connection_type, NM_SETTING_WIRED_SETTING_NAME)) {
-        NMSetting8021x *security;
 
-        security = nm_device_get_applied_setting(device, NM_TYPE_SETTING_802_1X);
+    if (!priv->stage2_ready_ppp && nm_streq(connection_type, NM_SETTING_PPPOE_SETTING_NAME)) {
+        gs_free_error GError *error = NULL;
+        NMSettingPppoe *      s_pppoe;
+        NMSettingPpp *        s_ppp;
 
-        if (security) {
-            /* FIXME: for now 802.1x is mutually exclusive with DCB */
-            if (!nm_device_has_carrier(NM_DEVICE(self))) {
-                _LOGD(LOGD_DEVICE | LOGD_ETHER,
-                      "delay supplicant initialization until carrier goes up");
-                priv->carrier_id = g_signal_connect(self,
-                                                    "notify::" NM_DEVICE_CARRIER,
-                                                    G_CALLBACK(carrier_changed),
-                                                    self);
-                return NM_ACT_STAGE_RETURN_POSTPONE;
-            }
-
-            return supplicant_check_secrets_needed(self, out_failure_reason);
-        }
-    }
-
-    wake_on_lan_enable(device);
-
-    /* DCB and FCoE setup */
-    s_dcb = nm_device_get_applied_setting(device, NM_TYPE_SETTING_DCB);
-    if (s_dcb) {
-        /* lldpad really really wants the carrier to be up */
-        if (nm_platform_link_is_connected(nm_device_get_platform(device),
-                                          nm_device_get_ifindex(device))) {
-            if (!dcb_enable(device)) {
-                NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
-                return NM_ACT_STAGE_RETURN_FAILURE;
-            }
-        } else {
-            _LOGD(LOGD_DCB, "waiting for carrier (preenable up)");
-            priv->dcb_wait       = DCB_WAIT_CARRIER_PREENABLE_UP;
-            priv->dcb_timeout_id = g_timeout_add_seconds(4, dcb_carrier_timeout, device);
-        }
-
-        priv->dcb_handle_carrier_changes = TRUE;
-        do_postpone                      = TRUE;
-    }
-
-    /* PPPoE setup */
-    if (nm_connection_is_type(nm_device_get_applied_connection(device),
-                              NM_SETTING_PPPOE_SETTING_NAME)) {
-        NMSettingPpp *s_ppp;
+        if (priv->ppp_data.ppp_manager)
+            return NM_ACT_STAGE_RETURN_POSTPONE;
 
         s_ppp = nm_device_get_applied_setting(device, NM_TYPE_SETTING_PPP);
         if (s_ppp) {
@@ -1538,19 +1462,142 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                                          mxu + PPPOE_ENCAP_OVERHEAD);
             }
         }
+
+        req = nm_device_get_act_request(device);
+        g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
+
+        s_pppoe = _nm_connection_get_setting(connection, NM_TYPE_SETTING_PPPOE);
+        g_return_val_if_fail(s_pppoe, NM_ACT_STAGE_RETURN_FAILURE);
+
+        priv->ppp_data.ppp_manager = nm_ppp_manager_create(nm_device_get_iface(device), &error);
+
+        if (!priv->ppp_data.ppp_manager) {
+            _LOGW(LOGD_DEVICE, "PPPoE failed to create manager: %s", error->message);
+            *out_failure_reason = NM_DEVICE_STATE_REASON_PPP_START_FAILED;
+            return NM_ACT_STAGE_RETURN_FAILURE;
+        }
+
+        g_signal_connect(priv->ppp_data.ppp_manager,
+                         NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
+                         G_CALLBACK(ppp_state_changed),
+                         self);
+        g_signal_connect(priv->ppp_data.ppp_manager,
+                         NM_PPP_MANAGER_SIGNAL_IFINDEX_SET,
+                         G_CALLBACK(ppp_ifindex_set),
+                         self);
+        g_signal_connect(priv->ppp_data.ppp_manager,
+                         NM_PPP_MANAGER_SIGNAL_NEW_CONFIG,
+                         G_CALLBACK(ppp_new_config),
+                         self);
+
+        if (!nm_ppp_manager_start(priv->ppp_data.ppp_manager,
+                                  req,
+                                  nm_setting_pppoe_get_username(s_pppoe),
+                                  30,
+                                  0,
+                                  &error)) {
+            _LOGW(LOGD_DEVICE, "PPPoE failed to start: %s", error->message);
+            ppp_manager_clear(self);
+            *out_failure_reason = NM_DEVICE_STATE_REASON_PPP_START_FAILED;
+            return NM_ACT_STAGE_RETURN_FAILURE;
+        }
+
+        return NM_ACT_STAGE_RETURN_POSTPONE;
     }
 
-    return do_postpone ? NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_SUCCESS;
+    priv->stage2_ready_ppp = TRUE;
+
+    /* 802.1x has to run before any IP configuration since the 802.1x auth
+     * process opens the port up for normal traffic.
+     */
+    if (nm_streq(connection_type, NM_SETTING_WIRED_SETTING_NAME)) {
+        NMSetting8021x *security;
+
+        security = nm_device_get_applied_setting(device, NM_TYPE_SETTING_802_1X);
+
+        if (security) {
+            /* FIXME: we always return from this. stage2 must be re-entrant, and
+             * process all the necessary steps. Just returning for 8021x is wrong. */
+            if (!nm_device_has_carrier(NM_DEVICE(self))) {
+                _LOGD(LOGD_DEVICE | LOGD_ETHER,
+                      "delay supplicant initialization until carrier goes up");
+                priv->carrier_id = g_signal_connect(self,
+                                                    "notify::" NM_DEVICE_CARRIER,
+                                                    G_CALLBACK(carrier_changed),
+                                                    self);
+                return NM_ACT_STAGE_RETURN_POSTPONE;
+            }
+
+            return supplicant_check_secrets_needed(self, out_failure_reason);
+        }
+    }
+
+    wake_on_lan_enable(device);
+
+    /* DCB and FCoE setup */
+    s_dcb = nm_device_get_applied_setting(device, NM_TYPE_SETTING_DCB);
+    if (!priv->stage2_ready_dcb && s_dcb) {
+        /* lldpad really really wants the carrier to be up */
+        if (nm_platform_link_is_connected(nm_device_get_platform(device),
+                                          nm_device_get_ifindex(device))) {
+            if (!dcb_enable(device)) {
+                NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_DCB_FCOE_FAILED);
+                return NM_ACT_STAGE_RETURN_FAILURE;
+            }
+        } else {
+            _LOGD(LOGD_DCB, "waiting for carrier (preenable up)");
+            priv->dcb_wait       = DCB_WAIT_CARRIER_PREENABLE_UP;
+            priv->dcb_timeout_id = g_timeout_add_seconds(4, dcb_carrier_timeout, device);
+        }
+
+        priv->dcb_handle_carrier_changes = TRUE;
+        return NM_ACT_STAGE_RETURN_POSTPONE;
+    }
+
+    return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static guint32
 get_configured_mtu(NMDevice *device, NMDeviceMtuSource *out_source, gboolean *out_force)
 {
+    NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(device);
+
     /* MTU only set for plain ethernet */
-    if (NM_DEVICE_ETHERNET_GET_PRIVATE(device)->ppp_manager)
+    if (priv->ppp_data.ppp_manager)
         return 0;
 
     return nm_device_get_configured_mtu_for_wired(device, out_source, out_force);
+}
+
+static void
+act_stage3_ip_config(NMDevice *device, int addr_family)
+{
+    NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(device);
+
+    if (!priv->ppp_data.ppp_manager)
+        return;
+
+    if (!NM_IS_IPv4(addr_family)) {
+        /* TODO: IPv6 is not implemented/handled. */
+        return;
+    }
+
+    switch (nm_device_devip_get_state(device, addr_family)) {
+    case NM_DEVICE_IP_STATE_NONE:
+        if (priv->ppp_data.l3cd_4) {
+            ppp_stage3_ready(device);
+            return;
+        }
+        nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
+        return;
+    case NM_DEVICE_IP_STATE_PENDING:
+        nm_assert(!priv->ppp_data.l3cd_4);
+        return;
+    case NM_DEVICE_IP_STATE_FAILED:
+    case NM_DEVICE_IP_STATE_READY:
+        return;
+    }
+    nm_assert_not_reached();
 }
 
 static void
@@ -1562,7 +1609,7 @@ deactivate(NMDevice *device)
     GError *                 error = NULL;
     int                      ifindex;
 
-    nm_clear_g_source(&priv->pppoe_wait_id);
+    nm_clear_g_source_inst(&priv->ppp_data.wait_source);
     nm_clear_g_signal_handler(self, &priv->carrier_id);
 
     ppp_manager_clear(self);
@@ -1572,6 +1619,7 @@ deactivate(NMDevice *device)
     priv->dcb_wait = DCB_WAIT_UNKNOWN;
     nm_clear_g_source(&priv->dcb_timeout_id);
     priv->dcb_handle_carrier_changes = FALSE;
+    priv->stage2_ready_dcb           = FALSE;
 
     /* Tear down DCB/FCoE if it was enabled */
     s_dcb = nm_device_get_applied_setting(device, NM_TYPE_SETTING_DCB);
@@ -1584,7 +1632,7 @@ deactivate(NMDevice *device)
 
     /* Set last PPPoE connection time */
     if (nm_device_get_applied_setting(device, NM_TYPE_SETTING_PPPOE))
-        priv->last_pppoe_time = nm_utils_get_monotonic_timestamp_sec();
+        priv->ppp_data.last_pppoe_time_msec = nm_utils_get_monotonic_timestamp_msec();
 
     ifindex = nm_device_get_ifindex(device);
     if (ifindex > 0 && priv->ethtool_prev_set) {
@@ -1946,7 +1994,7 @@ dispose(GObject *object)
 
     supplicant_interface_release(self);
 
-    nm_clear_g_source(&priv->pppoe_wait_id);
+    nm_clear_g_source_inst(&priv->ppp_data.wait_source);
 
     nm_clear_g_source(&priv->dcb_timeout_id);
 
