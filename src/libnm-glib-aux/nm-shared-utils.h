@@ -1745,14 +1745,15 @@ nm_g_source_attach(GSource *source, GMainContext *context)
 static inline void
 nm_g_idle_add(GSourceFunc func, gpointer user_data)
 {
-    /* g_idle_add() is discouraged because it relies on the guint source ids.
+    /* g_idle_add() is discouraged because it relies on the guint source IDs.
      *
      * Usually, you would want to use nm_g_idle_add_source() which returns a GSource*
      * instance.
      *
-     * However, if you don't care to ever call g_source_remove() on the source id, then
-     * g_idle_add() is fine. But our checkpatch script would complain about it. nm_g_idle_add(),
-     * is the solution because it intentionally ignores the guint source id. */
+     * However, if you don't care to ever call g_source_remove() on the source ID, then
+     * g_idle_add() is fine. But our checkpatch script would complain about it. In
+     * that case use nm_g_idle_add(), which makes it clear that you really want to
+     * use g_idle_add() and ignore the source ID. */
     g_idle_add(func, user_data);
 }
 
