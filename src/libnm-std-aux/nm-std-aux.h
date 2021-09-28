@@ -845,6 +845,19 @@ nm_close(int fd)
     return r;
 }
 
+static inline bool
+nm_clear_fd(int *p_fd)
+{
+    int fd;
+
+    if (!p_fd || (fd = *p_fd) < 0)
+        return false;
+
+    *p_fd = -1;
+    nm_close(fd);
+    return true;
+}
+
 /*****************************************************************************/
 
 /* Note: @value is only evaluated when *out_val is present.
