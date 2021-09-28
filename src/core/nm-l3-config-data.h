@@ -453,6 +453,11 @@ gboolean nm_l3_config_data_set_route_table_sync(NML3ConfigData *       self,
                                                 int                    addr_family,
                                                 NMIPRouteTableSyncMode route_table_sync);
 
+NMTernary nm_l3_config_data_get_never_default(const NML3ConfigData *self, int addr_family);
+
+gboolean
+nm_l3_config_data_set_never_default(NML3ConfigData *self, int addr_family, NMTernary never_default);
+
 NMTernary nm_l3_config_data_get_metered(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_metered(NML3ConfigData *self, NMTernary metered);

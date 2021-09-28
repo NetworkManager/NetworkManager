@@ -131,6 +131,14 @@ struct _NML3ConfigData {
     guint32 ndisc_reachable_time_msec_val;
     guint32 ndisc_retrans_timer_msec_val;
 
+    union {
+        struct {
+            NMOptionBool never_default_6;
+            NMOptionBool never_default_4;
+        };
+        NMOptionBool never_default_x[2];
+    };
+
     NMTernary metered : 3;
 
     NMTernary proxy_browser_only : 3;
@@ -537,6 +545,9 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                    options[i].value_str);
             }
         }
+
+        if (self->never_default_x[IS_IPv4] != NM_OPTION_BOOL_DEFAULT)
+            _L("never-default: %s", self->never_default_x[IS_IPv4] ? "yes" : "no");
     }
 
     if (self->mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT) {
@@ -661,6 +672,8 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
         .proxy_method                  = NM_PROXY_CONFIG_METHOD_UNKNOWN,
         .route_table_sync_4            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
         .route_table_sync_6            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
+        .never_default_6               = NM_OPTION_BOOL_DEFAULT,
+        .never_default_4               = NM_OPTION_BOOL_DEFAULT,
         .source                        = source,
         .ip6_privacy                   = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN,
         .ndisc_hop_limit_set           = FALSE,
@@ -1667,6 +1680,29 @@ nm_l3_config_data_set_route_table_sync(NML3ConfigData *       self,
 }
 
 NMTernary
+nm_l3_config_data_get_never_default(const NML3ConfigData *self, int addr_family)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return NM_TERNARY_FROM_OPTION_BOOL(self->never_default_x[NM_IS_IPv4(addr_family)]);
+}
+
+gboolean
+nm_l3_config_data_set_never_default(NML3ConfigData *self, int addr_family, NMTernary never_default)
+{
+    const int          IS_IPv4 = NM_IS_IPv4(addr_family);
+    const NMOptionBool v       = NM_TERNARY_TO_OPTION_BOOL(never_default);
+
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    if (self->never_default_x[IS_IPv4] == v)
+        return FALSE;
+
+    self->never_default_x[IS_IPv4] = v;
+    return TRUE;
+}
+
+NMTernary
 nm_l3_config_data_get_metered(const NML3ConfigData *self)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
@@ -2033,6 +2069,7 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
             NM_CMP_DIRECT(a->dns_priority_x[IS_IPv4], b->dns_priority_x[IS_IPv4]);
 
         NM_CMP_DIRECT(a->route_table_sync_x[IS_IPv4], b->route_table_sync_x[IS_IPv4]);
+        NM_CMP_DIRECT(a->never_default_x[IS_IPv4], b->never_default_x[IS_IPv4]);
     }
 
     NM_CMP_RETURN(_garray_inaddr_cmp(a->wins, b->wins, AF_INET));
@@ -2385,6 +2422,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
 {
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
     NMSettingIPConfig *s_ip;
+    gboolean           never_default;
     guint              naddresses;
     guint              nroutes;
     guint              nnameservers;
@@ -2405,8 +2443,11 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
     if (!s_ip)
         return;
 
-    if (!nm_setting_ip_config_get_never_default(s_ip)
-        && (gateway_str = nm_setting_ip_config_get_gateway(s_ip))
+    never_default = nm_setting_ip_config_get_never_default(s_ip);
+
+    nm_l3_config_data_set_never_default(self, addr_family, !!never_default);
+
+    if (!never_default && (gateway_str = nm_setting_ip_config_get_gateway(s_ip))
         && inet_pton(addr_family, gateway_str, &gateway_bin) == 1
         && !nm_ip_addr_is_null(addr_family, &gateway_bin)) {
         NMPlatformIPXRoute r;
@@ -2899,6 +2940,9 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
 
         if (self->route_table_sync_x[IS_IPv4] == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
             self->route_table_sync_x[IS_IPv4] = src->route_table_sync_x[IS_IPv4];
+
+        if (self->never_default_x[IS_IPv4] == NM_OPTION_BOOL_DEFAULT)
+            self->never_default_x[IS_IPv4] = src->never_default_x[IS_IPv4];
     }
 
     if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DNS)) {

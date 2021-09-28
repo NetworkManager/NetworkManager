@@ -335,7 +335,10 @@ typedef enum _nm_packed {
     /* ASSUME means to keep any pre-existing extra routes/addresses, while
      * also not adding routes/addresses that are not present yet. This is to
      * gracefully take over after restart, where the existing IP configuration
-     * should not change. */
+     * should not change.
+     *
+     * The flag NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE can make certain addresses/
+     * routes commitable also during "assume". */
     NM_L3_CFG_COMMIT_TYPE_ASSUME,
 
     /* UPDATE means to add new addresses/routes, while also removing addresses/routes
