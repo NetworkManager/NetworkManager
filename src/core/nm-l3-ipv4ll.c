@@ -601,7 +601,8 @@ _l3cd_config_add(NML3IPv4LL *self)
 
     self->l3cfg_commit_handle = nm_l3cfg_commit_type_register(self->l3cfg,
                                                               NM_L3_CFG_COMMIT_TYPE_ASSUME,
-                                                              self->l3cfg_commit_handle);
+                                                              self->l3cfg_commit_handle,
+                                                              "ipv4ll");
     nm_l3cfg_commit_on_idle_schedule(self->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
 }
 

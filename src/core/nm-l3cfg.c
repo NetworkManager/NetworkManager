@@ -3811,6 +3811,7 @@ nm_l3cfg_commit_type_get(NML3Cfg *self)
  * @commit_type: the commit type to register
  * @existing_handle: instead of being a new registration, update an existing handle.
  *   This may be %NULL, which is like having no previous registration.
+ * @source: the source of the commit type, for logging.
  *
  * NML3Cfg needs to know whether it is in charge of an interface (and how "much").
  * By default, it is not in charge, but various users can register themself with
@@ -3823,11 +3824,14 @@ nm_l3cfg_commit_type_get(NML3Cfg *self)
 NML3CfgCommitTypeHandle *
 nm_l3cfg_commit_type_register(NML3Cfg *                self,
                               NML3CfgCommitType        commit_type,
-                              NML3CfgCommitTypeHandle *existing_handle)
+                              NML3CfgCommitTypeHandle *existing_handle,
+                              const char *             source)
 {
     NML3CfgCommitTypeHandle *handle;
     NML3CfgCommitTypeHandle *h;
     gboolean                 linked;
+    NML3CfgCommitTypeHandle *ret = NULL;
+    char                     buf[64];
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(NM_IN_SET(commit_type,
@@ -3841,20 +3845,23 @@ nm_l3cfg_commit_type_register(NML3Cfg *                self,
     if (existing_handle) {
         if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE) {
             nm_l3cfg_commit_type_unregister(self, existing_handle);
-            return NULL;
+            goto out;
         }
-        if (existing_handle->commit_type == commit_type)
-            return existing_handle;
+        if (existing_handle->commit_type == commit_type) {
+            ret = existing_handle;
+            goto out;
+        }
         c_list_unlink_stale(&existing_handle->commit_type_lst);
         handle = existing_handle;
     } else {
         if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE)
-            return NULL;
-        handle              = g_slice_new(NML3CfgCommitTypeHandle);
-        handle->commit_type = commit_type;
+            goto out;
+        handle = g_slice_new(NML3CfgCommitTypeHandle);
         if (c_list_is_empty(&self->priv.p->commit_type_lst_head))
             g_object_ref(self);
     }
+
+    handle->commit_type = commit_type;
 
     linked = FALSE;
     c_list_for_each_entry (h, &self->priv.p->commit_type_lst_head, commit_type_lst) {
@@ -3867,7 +3874,15 @@ nm_l3cfg_commit_type_register(NML3Cfg *                self,
     if (!linked)
         c_list_link_tail(&self->priv.p->commit_type_lst_head, &handle->commit_type_lst);
 
-    return handle;
+    ret = handle;
+out:
+    _LOGT("commit type register (type \"%s\", source \"%s\", existing " NM_HASH_OBFUSCATE_PTR_FMT
+          ") -> " NM_HASH_OBFUSCATE_PTR_FMT "",
+          _l3_cfg_commit_type_to_string(commit_type, buf, sizeof(buf)),
+          source,
+          NM_HASH_OBFUSCATE_PTR(existing_handle),
+          NM_HASH_OBFUSCATE_PTR(ret));
+    return ret;
 }
 
 void
@@ -3879,6 +3894,8 @@ nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle)
         return;
 
     nm_assert(c_list_contains(&self->priv.p->commit_type_lst_head, &handle->commit_type_lst));
+
+    _LOGT("commit type unregister " NM_HASH_OBFUSCATE_PTR_FMT "", NM_HASH_OBFUSCATE_PTR(handle));
 
     c_list_unlink_stale(&handle->commit_type_lst);
     if (c_list_is_empty(&self->priv.p->commit_type_lst_head))

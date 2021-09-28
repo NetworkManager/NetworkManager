@@ -371,7 +371,8 @@ test_l3cfg(gconstpointer test_data)
 
     g_signal_connect(l3cfg0, NM_L3CFG_SIGNAL_NOTIFY, G_CALLBACK(_test_l3cfg_signal_notify), tdata);
 
-    commit_type_1 = nm_l3cfg_commit_type_register(l3cfg0, NM_L3_CFG_COMMIT_TYPE_UPDATE, NULL);
+    commit_type_1 =
+        nm_l3cfg_commit_type_register(l3cfg0, NM_L3_CFG_COMMIT_TYPE_UPDATE, NULL, "test1");
 
     if (!nmtst_get_rand_one_case_in(4)) {
         commit_type_2 =
@@ -379,7 +380,8 @@ test_l3cfg(gconstpointer test_data)
                                           nmtst_rand_select(NM_L3_CFG_COMMIT_TYPE_NONE,
                                                             NM_L3_CFG_COMMIT_TYPE_ASSUME,
                                                             NM_L3_CFG_COMMIT_TYPE_UPDATE),
-                                          NULL);
+                                          NULL,
+                                          "test2");
     } else
         commit_type_2 = NULL;
 
@@ -612,7 +614,8 @@ _test_l3_ipv4ll_signal_notify(NML3Cfg *                   l3cfg,
                 tdata->l3cfg_commit_type_1 =
                     nm_l3cfg_commit_type_register(nm_l3_ipv4ll_get_l3cfg(tdata->l3ipv4ll),
                                                   NM_L3_CFG_COMMIT_TYPE_UPDATE,
-                                                  tdata->l3cfg_commit_type_1);
+                                                  tdata->l3cfg_commit_type_1,
+                                                  "test");
             }
         } else if (nm_l3_ipv4ll_get_state(tdata->l3ipv4ll) != NM_L3_IPV4LL_STATE_DEFENDING
                    && tdata->ready_seen > 0) {

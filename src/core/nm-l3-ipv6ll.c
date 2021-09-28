@@ -430,7 +430,8 @@ _lladdr_handle_changed(NML3IPv6LL *self)
     self->l3cfg_commit_handle = nm_l3cfg_commit_type_register(self->l3cfg,
                                                               l3cd ? NM_L3_CFG_COMMIT_TYPE_ASSUME
                                                                    : NM_L3_CFG_COMMIT_TYPE_NONE,
-                                                              self->l3cfg_commit_handle);
+                                                              self->l3cfg_commit_handle,
+                                                              "ipv6ll");
 
     if (changed)
         nm_l3cfg_commit_on_idle_schedule(self->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);

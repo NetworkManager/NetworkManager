@@ -384,7 +384,8 @@ typedef struct _NML3CfgCommitTypeHandle NML3CfgCommitTypeHandle;
 
 NML3CfgCommitTypeHandle *nm_l3cfg_commit_type_register(NML3Cfg *                self,
                                                        NML3CfgCommitType        commit_type,
-                                                       NML3CfgCommitTypeHandle *existing_handle);
+                                                       NML3CfgCommitTypeHandle *existing_handle,
+                                                       const char *             source);
 
 void nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle);
 
