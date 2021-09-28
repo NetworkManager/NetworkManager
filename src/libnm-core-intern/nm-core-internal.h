@@ -172,17 +172,17 @@ NM_VLAN_FLAGS_CAST(_NMVlanFlags v)
 static inline NMTernary
 NM_TERNARY_FROM_OPTION_BOOL(NMOptionBool v)
 {
-    nm_assert(NM_IN_SET(v, NM_OPTION_BOOL_DEFAULT, NM_OPTION_BOOL_TRUE, NM_OPTION_BOOL_FALSE));
+    nm_assert_is_ternary(v);
 
-    return (NMTernary) v;
+    return (int) v;
 }
 
 static inline NMOptionBool
 NM_TERNARY_TO_OPTION_BOOL(NMTernary v)
 {
-    nm_assert(NM_IN_SET(v, NM_TERNARY_DEFAULT, NM_TERNARY_TRUE, NM_TERNARY_FALSE));
+    nm_assert_is_ternary(v);
 
-    return (NMOptionBool) v;
+    return (int) v;
 }
 
 /*****************************************************************************/
