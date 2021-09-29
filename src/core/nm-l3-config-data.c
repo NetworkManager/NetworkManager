@@ -2613,10 +2613,10 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
     }
 
     idx = 0;
-    while ((idx = nm_setting_ip_config_next_valid_dns_option(s_ip, i)) >= 0) {
+    while ((idx = nm_setting_ip_config_next_valid_dns_option(s_ip, idx)) >= 0) {
         nm_l3_config_data_add_dns_option(self,
                                          addr_family,
-                                         nm_setting_ip_config_get_dns_option(s_ip, i));
+                                         nm_setting_ip_config_get_dns_option(s_ip, idx));
         idx++;
     }
 
