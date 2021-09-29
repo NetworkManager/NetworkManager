@@ -512,6 +512,17 @@ nm_l3_config_data_get_dns_options(const NML3ConfigData *self, int addr_family, g
 gboolean
 nm_l3_config_data_get_dns_priority(const NML3ConfigData *self, int addr_family, int *out_prio);
 
+static inline int
+nm_l3_config_data_get_dns_priority_or_default(const NML3ConfigData *self, int addr_family)
+{
+    int v;
+
+    nm_assert_addr_family(addr_family);
+    if (!self || !nm_l3_config_data_get_dns_priority(self, addr_family, &v))
+        return 0;
+    return v;
+}
+
 gboolean
 nm_l3_config_data_set_dns_priority(NML3ConfigData *self, int addr_family, int dns_priority);
 

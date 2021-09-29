@@ -1394,9 +1394,14 @@ _check_and_add_domain(GPtrArray **p_arr, const char *domain)
 gconstpointer
 nm_l3_config_data_get_nameservers(const NML3ConfigData *self, int addr_family, guint *out_len)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+    nm_assert(!self || _NM_IS_L3_CONFIG_DATA(self, TRUE));
     nm_assert_addr_family(addr_family);
     nm_assert(out_len);
+
+    if (!self) {
+        *out_len = 0;
+        return NULL;
+    }
 
     return _garray_inaddr_get(self->nameservers_x[NM_IS_IPv4(addr_family)], out_len);
 }
@@ -1430,7 +1435,13 @@ nm_l3_config_data_clear_nameservers(NML3ConfigData *self, int addr_family)
 const in_addr_t *
 nm_l3_config_data_get_wins(const NML3ConfigData *self, guint *out_len)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+    nm_assert(!self || _NM_IS_L3_CONFIG_DATA(self, TRUE));
+    nm_assert(out_len);
+
+    if (!self) {
+        *out_len = 0;
+        return NULL;
+    }
 
     return _garray_inaddr_get(self->wins, out_len);
 }
@@ -1478,9 +1489,14 @@ nm_l3_config_data_set_nis_domain(NML3ConfigData *self, const char *nis_domain)
 const char *const *
 nm_l3_config_data_get_domains(const NML3ConfigData *self, int addr_family, guint *out_len)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+    nm_assert(!self || _NM_IS_L3_CONFIG_DATA(self, TRUE));
     nm_assert_addr_family(addr_family);
     nm_assert(out_len);
+
+    if (!self) {
+        *out_len = 0;
+        return NULL;
+    }
 
     return nm_strv_ptrarray_get_unsafe(self->domains_x[NM_IS_IPv4(addr_family)], out_len);
 }
@@ -1497,9 +1513,14 @@ nm_l3_config_data_add_domain(NML3ConfigData *self, int addr_family, const char *
 const char *const *
 nm_l3_config_data_get_searches(const NML3ConfigData *self, int addr_family, guint *out_len)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+    nm_assert(!self || _NM_IS_L3_CONFIG_DATA(self, TRUE));
     nm_assert_addr_family(addr_family);
     nm_assert(out_len);
+
+    if (!self) {
+        *out_len = 0;
+        return NULL;
+    }
 
     return nm_strv_ptrarray_get_unsafe(self->searches_x[NM_IS_IPv4(addr_family)], out_len);
 }
@@ -1550,9 +1571,14 @@ nm_l3_config_data_add_dns_option(NML3ConfigData *self, int addr_family, const ch
 const char *const *
 nm_l3_config_data_get_dns_options(const NML3ConfigData *self, int addr_family, guint *out_len)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+    nm_assert(!self || _NM_IS_L3_CONFIG_DATA(self, TRUE));
     nm_assert_addr_family(addr_family);
     nm_assert(out_len);
+
+    if (!self) {
+        *out_len = 0;
+        return NULL;
+    }
 
     return nm_strv_ptrarray_get_unsafe(self->dns_options_x[NM_IS_IPv4(addr_family)], out_len);
 }
