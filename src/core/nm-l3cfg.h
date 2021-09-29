@@ -320,7 +320,25 @@ gboolean nm_l3cfg_remove_config_all_dirty(NML3Cfg *self, gconstpointer tag);
 
 /*****************************************************************************/
 
-/* The numeric values of the enum matters: higher number mean more "important".
+/* DOC(l3cfg:commit-type):
+ *
+ * The major idea of NML3Cfg is that independent parties can register configuration
+ * (NML3ConfigData via nm_l3cfg_add_config()), and then nm_l3cfg_commit() will
+ * actually configure it. Usually we would not call the synchronous nm_l3cfg_commit(),
+ * but instead nm_l3cfg_commit_on_idle_schedule().
+ *
+ * We have different levels of "how much" we should sync during commit. That is
+ * NML3CfgCommitType. Since independent parties should be able to work together,
+ * they can only ask for their minimal required commit-type level. That means,
+ * during commit we will commit with the highest level of how much one of the
+ * users request the commit. To request a commit level, users can call
+ * nm_l3cfg_commit_type_register(). nm_l3cfg_commit_on_idle_schedule() also
+ * accepts a one-time commit-type argument.
+ *
+ * This is related to NMDevice's sys_iface_state, which we use to control whether
+ * to touch/assume/manage the interface.
+ *
+ * The numeric values of the enum matters: higher number mean more "important".
  * E.g. "assume" tries to preserve the most settings, while "reapply" forces
  * all configuration to match. */
 typedef enum _nm_packed {

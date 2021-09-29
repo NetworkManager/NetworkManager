@@ -2842,6 +2842,20 @@ _l3_commit_on_idle_cb(gpointer user_data)
     return G_SOURCE_REMOVE;
 }
 
+/* DOC(l3cfg:commit-type):
+ *
+ * Usually we don't want to call the synchronous nm_l3cfg_commit(), because
+ * that has side effects and might not be safe to do (depending on the current
+ * circumstances in which commit is called). The usually proper thing to do
+ * is schedule a commit on an idle handler. Use this function.
+ *
+ * During commit, the actually used commit-type (that is, the level of "how much"
+ * will be synced) is determined by users who register their desired commit
+ * type via nm_l3cfg_commit_type_register(), where always the "maxium" is used.
+ *
+ * nm_l3cfg_commit() and nm_l3cfg_commit_on_idle_schedule() also accept an additional
+ * commit_type argument. This acts like a one-shot registration.
+ */
 gboolean
 nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
 {
@@ -2856,6 +2870,7 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
 
     if (self->priv.p->commit_on_idle_source) {
         if (self->priv.p->commit_on_idle_type < commit_type) {
+            /* For multiple calls, we collect the maximum "commit-type". */
             _LOGT("commit on idle (scheduled) (update to %s)",
                   _l3_cfg_commit_type_to_string(commit_type,
                                                 sbuf_commit_type,
@@ -3730,14 +3745,15 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     nm_assert(self->priv.p->commit_reentrant_count == 0);
 
     /* The actual commit type is always the maximum of what is requested
-     * and what is registered via nm_l3cfg_commit_type_register(). */
+     * and what is registered via nm_l3cfg_commit_type_register(), combined
+     * with the ad-hoc requested @commit_type argument. */
     commit_type_auto = nm_l3cfg_commit_type_get(self);
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_AUTO || commit_type_auto > commit_type) {
         commit_type_from_auto = TRUE;
         commit_type           = commit_type_auto;
     }
 
-    /* UPDATE and higher are sticky. That means, when do perform such a commit
+    /* Levels UPDATE and higher are sticky. That means, when do perform such a commit
      * type, then the next one will at least be of level "UPDATE". The idea is
      * that if the current commit adds an address, then the following needs
      * to do at least "UPDATE" level to remove it again. Even if in the meantime
@@ -3784,6 +3800,7 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     _nm_l3cfg_emit_signal_notify_simple(self, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT);
 }
 
+/* See DOC(l3cfg:commit-type) */
 void
 nm_l3cfg_commit(NML3Cfg *self, NML3CfgCommitType commit_type)
 {
