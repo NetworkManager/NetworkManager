@@ -1439,7 +1439,7 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
         const char *key  = attrs[i].name;
         GVariant *  val2 = attrs[i].value_ptr;
 
-        if (!nm_ip_route_attribute_validate(key, val2, route->family, NULL, NULL))
+        if (!nm_ip_route_attribute_validate(key, val2, route->family, NULL, error))
             return FALSE;
     }
 
