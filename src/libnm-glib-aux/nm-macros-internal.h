@@ -1174,6 +1174,25 @@ _NM_IN_STRSET_EVAL_op_streq_ascii_case(const char *x1, const char *x)
 
 /*****************************************************************************/
 
+static inline int
+nm_memcmp_n(gconstpointer p1, gsize len1, gconstpointer p2, gsize len2, gsize element_size)
+{
+    nm_assert(element_size > 0);
+
+    NM_CMP_DIRECT(len1, len2);
+    if (len1 > 0)
+        NM_CMP_DIRECT_MEMCMP(p1, p2, len1 * element_size);
+    return 0;
+}
+
+static inline int
+nm_memeq_n(gconstpointer p1, gsize len1, gconstpointer p2, gsize len2, gsize element_size)
+{
+    return nm_memcmp_n(p1, len1, p2, len2, element_size) == 0;
+}
+
+/*****************************************************************************/
+
 /* like g_memdup(). The difference is that the @size argument is of type
  * gsize, while g_memdup() has type guint. Since, the size of container types
  * like GArray is guint as well, this means trying to g_memdup() an
