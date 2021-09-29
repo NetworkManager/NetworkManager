@@ -2330,7 +2330,28 @@ int _nm_strv_cmp_n(const char *const *strv1, gssize len1, const char *const *str
 #define nm_strv_cmp_n(strv1, len1, strv2, len2) \
     _nm_strv_cmp_n(NM_CAST_STRV_CC(strv1), (len1), NM_CAST_STRV_CC(strv2), (len2))
 
-#define nm_strv_equal(strv1, strv2) (nm_strv_cmp_n((strv1), -1, (strv2), -1) == 0)
+/* This is like nm_strv_cmp_n(). The difference is that a NULL strv array (strv=NULL,len=-1)
+ * is treated the same as an empty one (with len=0). */
+#define nm_strv_cmp_n_null(strv1, len1, strv2, len2)              \
+    ({                                                            \
+        const char *const *const _strv1 = NM_CAST_STRV_CC(strv1); \
+        const char *const *const _strv2 = NM_CAST_STRV_CC(strv2); \
+        const gssize             _len1  = (len1);                 \
+        const gssize             _len2  = (len2);                 \
+                                                                  \
+        _nm_strv_cmp_n(_strv1,                                    \
+                       (_len1 >= 0 ? _len1 : (_strv1 ? -1 : 0)),  \
+                       _strv2,                                    \
+                       (_len2 >= 0 ? _len2 : (_strv2 ? -1 : 0))); \
+    })
+
+#define nm_strv_equal_n(strv1, len1, strv2, len2) \
+    (nm_strv_cmp_n((strv1), (len1), (strv2), (len2)) == 0)
+
+#define nm_strv_equal(strv1, strv2) nm_strv_equal_n((strv1), -1, (strv2), -1)
+
+#define nm_strv_equal_n_null(strv1, len1, strv2, len2) \
+    (nm_strv_cmp_n_null((strv1), (len1), (strv2), (len2)) == 0)
 
 /*****************************************************************************/
 
