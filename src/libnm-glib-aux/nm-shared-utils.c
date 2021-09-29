@@ -559,6 +559,12 @@ nm_g_variant_singleton_u_0(void)
 }
 
 GVariant *
+nm_g_variant_singleton_i_0(void)
+{
+    return _variant_singleton_get(g_variant_new_int32(0));
+}
+
+GVariant *
 nm_g_variant_singleton_b(gboolean value)
 {
     return value ? _variant_singleton_get(g_variant_new_boolean(TRUE))
@@ -600,6 +606,24 @@ _variant_singleton_get_array_init(GVariant **p_singleton, const char *variant_ty
         nm_assert(g_variant_is_of_type(_v, G_VARIANT_TYPE("a" variant_type "")));    \
         _v;                                                                          \
     })
+
+GVariant *
+nm_g_variant_singleton_au(void)
+{
+    return _variant_singleton_get_array("u");
+}
+
+GVariant *
+nm_g_variant_singleton_aay(void)
+{
+    return _variant_singleton_get_array("ay");
+}
+
+GVariant *
+nm_g_variant_singleton_as(void)
+{
+    return _variant_singleton_get_array("s");
+}
 
 GVariant *
 nm_g_variant_singleton_aLsvI(void)
