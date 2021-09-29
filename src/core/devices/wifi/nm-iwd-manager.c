@@ -49,6 +49,7 @@ typedef struct {
     NMDeviceIwd        *last_agent_call_device;
     char               *last_state_dir;
     char               *warned_state_dir;
+    bool                netconfig_enabled;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -1469,6 +1470,15 @@ get_daemon_info_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
             nm_clear_g_free(&priv->last_state_dir);
             priv->last_state_dir = g_variant_dup_string(value, NULL);
+        } else if (nm_streq(key, "NetworkConfigurationEnabled")) {
+            if (!g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)) {
+                _LOGE("Daemon.GetInfo property %s is typed '%s' instead of 'b'",
+                      key,
+                      g_variant_get_type_string(value));
+                goto next;
+            }
+
+            priv->netconfig_enabled = g_variant_get_boolean(value);
         }
 
 next:
@@ -1542,6 +1552,8 @@ got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
 
         if (priv->agent_id)
             register_agent(self);
+
+        priv->netconfig_enabled = false; /* Assume false until GetInfo() results come in */
 
         daemon = g_dbus_object_manager_get_interface(object_manager,
                                                      "/net/connman/iwd", /* IWD 1.15+ */
@@ -1637,6 +1649,14 @@ nm_iwd_manager_get_dbus_interface(NMIwdManager *self, const char *path, const ch
     interface = g_dbus_object_manager_get_interface(priv->object_manager, path, name);
 
     return interface ? G_DBUS_PROXY(interface) : NULL;
+}
+
+gboolean
+nm_iwd_manager_get_netconfig_enabled(NMIwdManager *self)
+{
+    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+
+    return priv->netconfig_enabled;
 }
 
 /*****************************************************************************/
