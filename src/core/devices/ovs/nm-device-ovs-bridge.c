@@ -66,13 +66,10 @@ get_generic_capabilities(NMDevice *device)
     return NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
-static NMActStageReturn
-act_stage3_ip_config_start(NMDevice *           device,
-                           int                  addr_family,
-                           gpointer *           out_config,
-                           NMDeviceStateReason *out_failure_reason)
+static void
+act_stage3_ip_config(NMDevice *device, int addr_family)
 {
-    return NM_ACT_STAGE_RETURN_IP_FAIL;
+    nm_device_devip_set_failed(device, addr_family, NM_DEVICE_STATE_REASON_IP_METHOD_UNSUPPORTED);
 }
 
 static gboolean
@@ -154,7 +151,7 @@ nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
     device_class->create_and_realize                  = create_and_realize;
     device_class->unrealize                           = unrealize;
     device_class->get_generic_capabilities            = get_generic_capabilities;
-    device_class->act_stage3_ip_config_start          = act_stage3_ip_config_start;
+    device_class->act_stage3_ip_config                = act_stage3_ip_config;
     device_class->enslave_slave                       = enslave_slave;
     device_class->release_slave                       = release_slave;
     device_class->can_reapply_change_ovs_external_ids = TRUE;

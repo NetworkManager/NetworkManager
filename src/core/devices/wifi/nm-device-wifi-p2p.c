@@ -14,18 +14,18 @@
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-private.h"
-#include "nm-act-request.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-ref-string.h"
-#include "nm-ip4-config.h"
+#include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nmp-object.h"
+#include "nm-act-request.h"
+#include "nm-l3-config-data.h"
 #include "nm-manager.h"
 #include "nm-manager.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
 #include "nm-wifi-p2p-peer.h"
-#include "libnm-platform/nm-platform.h"
-#include "libnm-platform/nmp-object.h"
 #include "settings/nm-settings.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceWifiP2P
@@ -552,13 +552,11 @@ remove_all_peers(NMDeviceWifiP2P *self)
 
 /*****************************************************************************/
 
-static NMActStageReturn
-act_stage3_ip_config_start(NMDevice *           device,
-                           int                  addr_family,
-                           gpointer *           out_config,
-                           NMDeviceStateReason *out_failure_reason)
+static void
+act_stage3_ip_config(NMDevice *device, int addr_family)
 {
-    NMDeviceWifiP2PPrivate *priv = NM_DEVICE_WIFI_P2P_GET_PRIVATE(device);
+    NMDeviceWifiP2PPrivate *priv    = NM_DEVICE_WIFI_P2P_GET_PRIVATE(device);
+    const int               IS_IPv4 = NM_IS_IPv4(addr_family);
     gboolean                indicate_addressing_running;
     NMConnection *          connection;
     const char *            method;
@@ -568,30 +566,30 @@ act_stage3_ip_config_start(NMDevice *           device,
     method = nm_utils_get_ip_config_method(connection, addr_family);
 
     /* We may have an address assigned by the group owner */
-    if (NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) && priv->group_iface
+    if (IS_IPv4 && NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) && priv->group_iface
         && !nm_supplicant_interface_get_p2p_group_owner(priv->group_iface)) {
         in_addr_t addr;
         guint8    plen;
 
         if (nm_supplicant_interface_get_p2p_assigned_addr(priv->group_iface, &addr, &plen)) {
-            NMPlatformIP4Address address = {
+            nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
+            NMPlatformIP4Address                    address = {
                 .addr_source = NM_IP_CONFIG_SOURCE_DHCP,
             };
-            gs_unref_object NMIP4Config *ip4_config = NULL;
 
             nm_platform_ip4_address_set_addr(&address, addr, plen);
 
-            ip4_config = nm_device_ip4_config_new(device);
-            nm_ip4_config_add_address(ip4_config, &address);
+            l3cd = nm_device_create_l3_config_data(device, NM_IP_CONFIG_SOURCE_DHCP);
+            nm_l3_config_data_add_address_4(l3cd, &address);
 
-            nm_device_set_dev2_ip_config(device, AF_INET, NM_IP_CONFIG(ip4_config));
+            nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_READY, l3cd);
 
             /* This just disables the addressing indicator. */
             method = NM_SETTING_IP4_CONFIG_METHOD_DISABLED;
         }
     }
 
-    if (addr_family == AF_INET)
+    if (IS_IPv4)
         indicate_addressing_running = NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
     else {
         indicate_addressing_running = NM_IN_STRSET(method,
@@ -603,9 +601,6 @@ act_stage3_ip_config_start(NMDevice *           device,
         nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(device),
                                                      nm_device_get_ip_ifindex(device),
                                                      TRUE);
-
-    return NM_DEVICE_CLASS(nm_device_wifi_p2p_parent_class)
-        ->act_stage3_ip_config_start(device, addr_family, out_config, out_failure_reason);
 }
 
 static void
@@ -757,7 +752,7 @@ check_group_iface_ready(NMDeviceWifiP2P *self)
     nm_clear_g_source(&priv->sup_timeout_id);
     update_disconnect_on_connection_peer_missing(self);
 
-    nm_device_activate_schedule_stage3_ip_config_start(NM_DEVICE(self));
+    nm_device_activate_schedule_stage3_ip_config(NM_DEVICE(self), FALSE);
 }
 
 static void
@@ -1286,11 +1281,11 @@ nm_device_wifi_p2p_class_init(NMDeviceWifiP2PClass *klass)
     device_class->check_connection_compatible = check_connection_compatible;
     device_class->complete_connection         = complete_connection;
 
-    device_class->act_stage1_prepare         = act_stage1_prepare;
-    device_class->act_stage2_config          = act_stage2_config;
-    device_class->get_configured_mtu         = get_configured_mtu;
-    device_class->get_auto_ip_config_method  = get_auto_ip_config_method;
-    device_class->act_stage3_ip_config_start = act_stage3_ip_config_start;
+    device_class->act_stage1_prepare        = act_stage1_prepare;
+    device_class->act_stage2_config         = act_stage2_config;
+    device_class->get_configured_mtu        = get_configured_mtu;
+    device_class->get_auto_ip_config_method = get_auto_ip_config_method;
+    device_class->act_stage3_ip_config      = act_stage3_ip_config;
 
     device_class->deactivate        = deactivate;
     device_class->unmanaged_on_quit = unmanaged_on_quit;

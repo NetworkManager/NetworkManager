@@ -7,7 +7,7 @@
 
 #include "nm-device-ppp.h"
 
-#include "nm-ip4-config.h"
+#include "nm-l3-config-data.h"
 #include "nm-act-request.h"
 #include "nm-device-factory.h"
 #include "nm-device-private.h"
@@ -24,8 +24,9 @@
 /*****************************************************************************/
 
 typedef struct _NMDevicePppPrivate {
-    NMPPPManager *ppp_manager;
-    NMIP4Config * ip4_config;
+    NMPPPManager *        ppp_manager;
+    const NML3ConfigData *l3cd_4;
+    bool                  stage2_ready_ppp : 1;
 } NMDevicePppPrivate;
 
 struct _NMDevicePpp {
@@ -48,6 +49,8 @@ get_generic_capabilities(NMDevice *device)
     return NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
+/*****************************************************************************/
+
 static void
 ppp_state_changed(NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_data)
 {
@@ -68,12 +71,21 @@ ppp_state_changed(NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_d
 }
 
 static void
+ppp_stage3_ready(NMDevice *device)
+{
+    NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(device);
+
+    nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_READY, priv->l3cd_4);
+}
+
+static void
 ppp_ifindex_set(NMPPPManager *ppp_manager, int ifindex, const char *iface, gpointer user_data)
 {
-    NMDevice *    device        = NM_DEVICE(user_data);
-    NMDevicePpp * self          = NM_DEVICE_PPP(device);
-    gs_free char *old_name      = NULL;
-    gs_free_error GError *error = NULL;
+    NMDevicePpp *       self     = NM_DEVICE_PPP(user_data);
+    NMDevice *          device   = NM_DEVICE(self);
+    NMDevicePppPrivate *priv     = NM_DEVICE_PPP_GET_PRIVATE(self);
+    gs_free char *      old_name = NULL;
+    gs_free_error GError *error  = NULL;
 
     if (!nm_device_take_over_link(device, ifindex, &old_name, &error)) {
         _LOGW(LOGD_DEVICE | LOGD_PPP,
@@ -89,38 +101,54 @@ ppp_ifindex_set(NMPPPManager *ppp_manager, int ifindex, const char *iface, gpoin
     if (old_name)
         nm_manager_remove_device(NM_MANAGER_GET, old_name, NM_DEVICE_TYPE_PPP);
 
-    nm_device_activate_schedule_stage3_ip_config_start(device);
+    priv->stage2_ready_ppp = TRUE;
+    nm_device_activate_schedule_stage2_device_config(device, FALSE);
 }
 
 static void
-_ppp_ip4_config_handle(NMDevicePpp *self)
+ppp_new_config(NMPPPManager *            ppp_manager,
+               int                       addr_family,
+               const NML3ConfigData *    l3cd,
+               const NMUtilsIPv6IfaceId *iid,
+               gpointer                  user_data)
 {
+    NMDevicePpp *       self   = NM_DEVICE_PPP(user_data);
     NMDevice *          device = NM_DEVICE(self);
     NMDevicePppPrivate *priv   = NM_DEVICE_PPP_GET_PRIVATE(self);
 
-    if (!priv->ip4_config)
+    if (addr_family != AF_INET)
         return;
 
-    if (nm_device_get_state(device) == NM_DEVICE_STATE_IP_CONFIG
-        && nm_device_activate_ip4_state_in_conf(device)) {
-        nm_device_activate_schedule_ip_config_result(
-            device,
-            AF_INET,
-            NM_IP_CONFIG_CAST(g_steal_pointer(&priv->ip4_config)));
-        return;
-    }
+    _LOGT(LOGD_DEVICE | LOGD_PPP, "received IPv4 config from pppd");
+
+    nm_l3_config_data_reset(&priv->l3cd_4, l3cd);
+
+    if (nm_device_devip_get_state(device, AF_INET) == NM_DEVICE_IP_STATE_PENDING)
+        ppp_stage3_ready(device);
 }
 
 static void
-ppp_ip4_config(NMPPPManager *ppp_manager, NMIP4Config *config, gpointer user_data)
+ppp_manager_clear(NMDevicePpp *self)
 {
-    NMDevicePpp *       self = NM_DEVICE_PPP(user_data);
     NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
 
-    _LOGT(LOGD_DEVICE | LOGD_PPP, "received IPv4 config from pppd");
-    nm_g_object_ref_set(&priv->ip4_config, config);
-    _ppp_ip4_config_handle(self);
+    priv->stage2_ready_ppp = FALSE;
+
+    if (priv->ppp_manager) {
+        g_signal_handlers_disconnect_by_func(priv->ppp_manager,
+                                             G_CALLBACK(ppp_state_changed),
+                                             self);
+        g_signal_handlers_disconnect_by_func(priv->ppp_manager, G_CALLBACK(ppp_ifindex_set), self);
+        g_signal_handlers_disconnect_by_func(priv->ppp_manager, G_CALLBACK(ppp_new_config), self);
+
+        nm_ppp_manager_stop(priv->ppp_manager, NULL, NULL, NULL);
+        g_clear_object(&priv->ppp_manager);
+    }
+
+    nm_clear_l3cd(&priv->l3cd_4);
 }
+
+/*****************************************************************************/
 
 static gboolean
 check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
@@ -149,85 +177,84 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
     NMSettingPppoe *    s_pppoe;
     NMActRequest *      req;
-    GError *            error = NULL;
 
-    req = nm_device_get_act_request(device);
-    g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
+    if (!priv->stage2_ready_ppp) {
+        gs_free_error GError *error = NULL;
 
-    s_pppoe = nm_device_get_applied_setting(device, NM_TYPE_SETTING_PPPOE);
-    g_return_val_if_fail(s_pppoe, NM_ACT_STAGE_RETURN_FAILURE);
+        if (priv->ppp_manager)
+            return NM_ACT_STAGE_RETURN_POSTPONE;
 
-    g_clear_object(&priv->ip4_config);
+        req = nm_device_get_act_request(device);
+        g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
 
-    priv->ppp_manager = nm_ppp_manager_create(nm_setting_pppoe_get_parent(s_pppoe), &error);
+        s_pppoe = nm_device_get_applied_setting(device, NM_TYPE_SETTING_PPPOE);
+        g_return_val_if_fail(s_pppoe, NM_ACT_STAGE_RETURN_FAILURE);
 
-    if (priv->ppp_manager) {
-        nm_ppp_manager_set_route_parameters(priv->ppp_manager,
-                                            nm_device_get_route_table(device, AF_INET),
-                                            nm_device_get_route_metric(device, AF_INET),
-                                            nm_device_get_route_table(device, AF_INET6),
-                                            nm_device_get_route_metric(device, AF_INET6));
-    }
+        priv->ppp_manager = nm_ppp_manager_create(nm_setting_pppoe_get_parent(s_pppoe), &error);
 
-    if (!priv->ppp_manager
-        || !nm_ppp_manager_start(priv->ppp_manager,
-                                 req,
-                                 nm_setting_pppoe_get_username(s_pppoe),
-                                 30,
-                                 0,
-                                 &error)) {
-        _LOGW(LOGD_DEVICE | LOGD_PPP, "PPPoE failed to start: %s", error->message);
-        g_error_free(error);
+        if (!priv->ppp_manager) {
+            _LOGW(LOGD_DEVICE | LOGD_PPP, "PPPoE failed to start: %s", error->message);
+            *out_failure_reason = NM_DEVICE_STATE_REASON_PPP_START_FAILED;
+            return NM_ACT_STAGE_RETURN_FAILURE;
+        }
 
-        g_clear_object(&priv->ppp_manager);
+        g_signal_connect(priv->ppp_manager,
+                         NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
+                         G_CALLBACK(ppp_state_changed),
+                         self);
+        g_signal_connect(priv->ppp_manager,
+                         NM_PPP_MANAGER_SIGNAL_IFINDEX_SET,
+                         G_CALLBACK(ppp_ifindex_set),
+                         self);
+        g_signal_connect(priv->ppp_manager,
+                         NM_PPP_MANAGER_SIGNAL_NEW_CONFIG,
+                         G_CALLBACK(ppp_new_config),
+                         self);
 
-        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_PPP_START_FAILED);
-        return NM_ACT_STAGE_RETURN_FAILURE;
-    }
+        if (!nm_ppp_manager_start(priv->ppp_manager,
+                                  req,
+                                  nm_setting_pppoe_get_username(s_pppoe),
+                                  30,
+                                  0,
+                                  &error)) {
+            _LOGW(LOGD_DEVICE | LOGD_PPP, "PPPoE failed to start: %s", error->message);
+            ppp_manager_clear(self);
+            *out_failure_reason = NM_DEVICE_STATE_REASON_PPP_START_FAILED;
+            return NM_ACT_STAGE_RETURN_FAILURE;
+        }
 
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_STATE_CHANGED,
-                     G_CALLBACK(ppp_state_changed),
-                     self);
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_IFINDEX_SET,
-                     G_CALLBACK(ppp_ifindex_set),
-                     self);
-    g_signal_connect(priv->ppp_manager,
-                     NM_PPP_MANAGER_SIGNAL_IP4_CONFIG,
-                     G_CALLBACK(ppp_ip4_config),
-                     self);
-    return NM_ACT_STAGE_RETURN_POSTPONE;
-}
-
-static gboolean
-_schedule_ip_config_result(gpointer user_data)
-{
-    gs_unref_object NMDevicePpp *self = user_data;
-
-    _ppp_ip4_config_handle(self);
-    return G_SOURCE_REMOVE;
-}
-
-static NMActStageReturn
-act_stage3_ip_config_start(NMDevice *           device,
-                           int                  addr_family,
-                           gpointer *           out_config,
-                           NMDeviceStateReason *out_failure_reason)
-{
-    if (addr_family == AF_INET) {
-        NMDevicePpp *       self = NM_DEVICE_PPP(device);
-        NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
-
-        if (priv->ip4_config)
-            nm_g_idle_add(_schedule_ip_config_result, g_object_ref(self));
-
-        /* Wait IPCP termination */
         return NM_ACT_STAGE_RETURN_POSTPONE;
     }
 
-    return NM_DEVICE_CLASS(nm_device_ppp_parent_class)
-        ->act_stage3_ip_config_start(device, addr_family, out_config, out_failure_reason);
+    return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+static void
+act_stage3_ip_config(NMDevice *device, int addr_family)
+{
+    NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(device);
+
+    if (!NM_IS_IPv4(addr_family)) {
+        /* TODO: IPv6 is not implemented/handled. */
+        return;
+    }
+
+    switch (nm_device_devip_get_state(device, addr_family)) {
+    case NM_DEVICE_IP_STATE_NONE:
+        if (priv->l3cd_4) {
+            ppp_stage3_ready(device);
+            return;
+        }
+        nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
+        return;
+    case NM_DEVICE_IP_STATE_PENDING:
+        nm_assert(!priv->l3cd_4);
+        return;
+    case NM_DEVICE_IP_STATE_FAILED:
+    case NM_DEVICE_IP_STATE_READY:
+        return;
+    }
+    nm_assert_not_reached();
 }
 
 static gboolean
@@ -260,16 +287,12 @@ create_and_realize(NMDevice *             device,
 static void
 deactivate(NMDevice *device)
 {
-    NMDevicePpp *       self = NM_DEVICE_PPP(device);
-    NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
+    NMDevicePpp *self = NM_DEVICE_PPP(device);
 
-    if (priv->ppp_manager) {
-        nm_ppp_manager_stop(priv->ppp_manager, NULL, NULL, NULL);
-        g_clear_object(&priv->ppp_manager);
-    }
-
-    g_clear_object(&priv->ip4_config);
+    ppp_manager_clear(self);
 }
+
+/*****************************************************************************/
 
 static void
 nm_device_ppp_init(NMDevicePpp *self)
@@ -278,10 +301,9 @@ nm_device_ppp_init(NMDevicePpp *self)
 static void
 dispose(GObject *object)
 {
-    NMDevicePpp *       self = NM_DEVICE_PPP(object);
-    NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
+    NMDevicePpp *self = NM_DEVICE_PPP(object);
 
-    g_clear_object(&priv->ip4_config);
+    ppp_manager_clear(self);
 
     G_OBJECT_CLASS(nm_device_ppp_parent_class)->dispose(object);
 }
@@ -306,7 +328,7 @@ nm_device_ppp_class_init(NMDevicePppClass *klass)
     device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_PPP);
 
     device_class->act_stage2_config           = act_stage2_config;
-    device_class->act_stage3_ip_config_start  = act_stage3_ip_config_start;
+    device_class->act_stage3_ip_config        = act_stage3_ip_config;
     device_class->check_connection_compatible = check_connection_compatible;
     device_class->create_and_realize          = create_and_realize;
     device_class->deactivate                  = deactivate;

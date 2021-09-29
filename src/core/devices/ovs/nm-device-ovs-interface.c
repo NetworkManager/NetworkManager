@@ -119,19 +119,7 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
         return;
 
     priv->waiting_for_interface = FALSE;
-
-    if (nm_device_get_state(device) == NM_DEVICE_STATE_IP_CONFIG) {
-        if (!nm_device_hw_addr_set_cloned(device,
-                                          nm_device_get_applied_connection(device),
-                                          FALSE)) {
-            nm_device_state_changed(device,
-                                    NM_DEVICE_STATE_FAILED,
-                                    NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-            return;
-        }
-        nm_device_bring_up(device, TRUE, NULL);
-        nm_device_activate_schedule_stage3_ip_config_start(device);
-    }
+    nm_device_activate_schedule_stage2_device_config(device, FALSE);
 }
 
 static gboolean
@@ -189,16 +177,13 @@ set_platform_mtu(NMDevice *device, guint32 mtu)
 }
 
 static NMActStageReturn
-act_stage3_ip_config_start(NMDevice *           device,
-                           int                  addr_family,
-                           gpointer *           out_config,
-                           NMDeviceStateReason *out_failure_reason)
+act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
     NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
-    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(device);
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     if (!_is_internal_interface(device))
-        return NM_ACT_STAGE_RETURN_IP_FAIL;
+        return NM_ACT_STAGE_RETURN_SUCCESS;
 
     if (nm_device_get_ip_ifindex(device) <= 0) {
         _LOGT(LOGD_DEVICE, "waiting for link to appear");
@@ -211,8 +196,7 @@ act_stage3_ip_config_start(NMDevice *           device,
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
 
-    return NM_DEVICE_CLASS(nm_device_ovs_interface_parent_class)
-        ->act_stage3_ip_config_start(device, addr_family, out_config, out_failure_reason);
+    return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static gboolean
@@ -443,7 +427,7 @@ nm_device_ovs_interface_class_init(NMDeviceOvsInterfaceClass *klass)
     device_class->is_available                        = is_available;
     device_class->check_connection_compatible         = check_connection_compatible;
     device_class->link_changed                        = link_changed;
-    device_class->act_stage3_ip_config_start          = act_stage3_ip_config_start;
+    device_class->act_stage2_config                   = act_stage2_config;
     device_class->can_unmanaged_external_down         = can_unmanaged_external_down;
     device_class->set_platform_mtu                    = set_platform_mtu;
     device_class->get_configured_mtu                  = nm_device_get_configured_mtu_for_wired;

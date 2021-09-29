@@ -9,16 +9,16 @@
 
 #include <arpa/inet.h>
 #include <netinet/icmp6.h>
-/* stdarg.h included because of a bug in ndp.h */
 #include <stdarg.h>
 #include <ndp.h>
 
-#include "libnm-glib-aux/nm-str-buf.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
-#include "nm-ndisc-private.h"
 #include "NetworkManagerUtils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-netns.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
+#include "nm-l3cfg.h"
+#include "nm-ndisc-private.h"
 
 #define _NMLOG_PREFIX_NAME "ndisc-lndp"
 
@@ -669,72 +669,39 @@ nm_lndp_ndisc_init(NMLndpNDisc *lndp_ndisc)
 {}
 
 NMNDisc *
-nm_lndp_ndisc_new(NMPlatform *                  platform,
-                  int                           ifindex,
-                  const char *                  ifname,
-                  NMUtilsStableType             stable_type,
-                  const char *                  network_id,
-                  NMSettingIP6ConfigAddrGenMode addr_gen_mode,
-                  NMNDiscNodeType               node_type,
-                  int                           max_addresses,
-                  int                           router_solicitations,
-                  int                           router_solicitation_interval,
-                  guint32                       ra_timeout,
-                  GError **                     error)
+nm_lndp_ndisc_new(const NMNDiscConfig *config)
 {
     nm_auto_pop_netns NMPNetns *netns = NULL;
-    NMNDisc *                   ndisc;
-    NMLndpNDiscPrivate *        priv;
-    int                         errsv;
+    gs_unref_object NMNDisc *ndisc    = NULL;
+    NMLndpNDiscPrivate *     priv;
+    int                      errsv;
 
-    g_return_val_if_fail(NM_IS_PLATFORM(platform), NULL);
-    g_return_val_if_fail(!error || !*error, NULL);
-    g_return_val_if_fail(network_id, NULL);
+    g_return_val_if_fail(config, NULL);
+    g_return_val_if_fail(NM_IS_L3CFG(config->l3cfg), NULL);
+    g_return_val_if_fail(config->network_id, NULL);
 
-    if (!nm_platform_netns_push(platform, &netns))
-        return NULL;
+    if (!nm_platform_netns_push(nm_l3cfg_get_platform(config->l3cfg), &netns)) {
+        /* The inability to change the name space is also considered
+         * a fatal error. We have a FD open to the file descriptor, and
+         * it's unclear how to handle (or recover from) a failure to setns(). */
+        g_return_val_if_reached(NULL);
+    }
 
-    ndisc = g_object_new(NM_TYPE_LNDP_NDISC,
-                         NM_NDISC_PLATFORM,
-                         platform,
-                         NM_NDISC_STABLE_TYPE,
-                         (int) stable_type,
-                         NM_NDISC_IFINDEX,
-                         ifindex,
-                         NM_NDISC_IFNAME,
-                         ifname,
-                         NM_NDISC_NETWORK_ID,
-                         network_id,
-                         NM_NDISC_ADDR_GEN_MODE,
-                         (int) addr_gen_mode,
-                         NM_NDISC_NODE_TYPE,
-                         (int) node_type,
-                         NM_NDISC_MAX_ADDRESSES,
-                         max_addresses,
-                         NM_NDISC_ROUTER_SOLICITATIONS,
-                         router_solicitations,
-                         NM_NDISC_ROUTER_SOLICITATION_INTERVAL,
-                         router_solicitation_interval,
-                         NM_NDISC_RA_TIMEOUT,
-                         (guint) ra_timeout,
-                         NULL);
+    ndisc = g_object_new(NM_TYPE_LNDP_NDISC, NM_NDISC_CONFIG, config, NULL);
 
     priv = NM_LNDP_NDISC_GET_PRIVATE(ndisc);
 
     errsv = ndp_open(&priv->ndp);
 
     if (errsv != 0) {
-        errsv = nm_errno_native(errsv);
-        g_set_error(error,
-                    NM_UTILS_ERROR,
-                    NM_UTILS_ERROR_UNKNOWN,
-                    "failure creating libndp socket: %s (%d)",
-                    nm_strerror_native(errsv),
-                    errsv);
-        g_object_unref(ndisc);
-        return NULL;
+        /* This is serious. It might be ENOMEM or the inability to open (or modify)
+         * a file descriptor. In all cases there is not much reason trying to recover
+         * from that. File descriptors are a basic resource, that we just require (just
+         * like memory). */
+        g_return_val_if_reached(NULL);
     }
-    return ndisc;
+
+    return g_steal_pointer(&ndisc);
 }
 
 static void
@@ -754,8 +721,9 @@ nm_lndp_ndisc_class_init(NMLndpNDiscClass *klass)
     NMNDiscClass *ndisc_class  = NM_NDISC_CLASS(klass);
 
     object_class->dispose = dispose;
-    ndisc_class->start    = start;
-    ndisc_class->stop     = stop;
-    ndisc_class->send_rs  = send_rs;
-    ndisc_class->send_ra  = send_ra;
+
+    ndisc_class->start   = start;
+    ndisc_class->stop    = stop;
+    ndisc_class->send_rs = send_rs;
+    ndisc_class->send_ra = send_ra;
 }

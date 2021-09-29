@@ -54,10 +54,8 @@ void     nm_vpn_connection_disconnect(NMVpnConnection *             self,
                                       NMActiveConnectionStateReason reason,
                                       gboolean                      quitting);
 
-NMProxyConfig *nm_vpn_connection_get_proxy_config(NMVpnConnection *self);
+const NML3ConfigData *nm_vpn_connection_get_l3cd(NMVpnConnection *self, int addr_family);
 
-NMIP4Config *    nm_vpn_connection_get_ip4_config(NMVpnConnection *self);
-NMIP6Config *    nm_vpn_connection_get_ip6_config(NMVpnConnection *self);
 const char *     nm_vpn_connection_get_ip_iface(NMVpnConnection *self, gboolean fallback_device);
 int              nm_vpn_connection_get_ip_ifindex(NMVpnConnection *self, gboolean fallback_device);
 guint32          nm_vpn_connection_get_ip4_internal_gateway(NMVpnConnection *self);

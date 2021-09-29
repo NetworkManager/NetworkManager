@@ -54,8 +54,6 @@ libNetworkManagerBase = static_library(
     'nm-l3-ipv6ll.c',
     'nm-l3cfg.c',
     'nm-ip-config.c',
-    'nm-ip4-config.c',
-    'nm-ip6-config.c',
   ),
   dependencies: [
     core_default_dep,
@@ -93,7 +91,6 @@ endif
 libNetworkManager = static_library(
   'NetworkManager',
   sources: files(
-    'devices/nm-acd-manager.c',
     'devices/nm-device-6lowpan.c',
     'devices/nm-device-bond.c',
     'devices/nm-device-bridge.c',
@@ -169,7 +166,6 @@ libNetworkManager = static_library(
     'nm-manager.c',
     'nm-pacrunner-manager.c',
     'nm-policy.c',
-    'nm-proxy-config.c',
     'nm-rfkill-manager.c',
     'nm-session-monitor.c',
     'nm-sleep-monitor.c',

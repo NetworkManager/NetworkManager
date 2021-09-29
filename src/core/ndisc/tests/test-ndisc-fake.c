@@ -11,23 +11,28 @@
 #include "ndisc/nm-fake-ndisc.h"
 
 #include "platform/nm-fake-platform.h"
+#include "nm-netns.h"
 
-#include "nm-test-utils-core.h"
+#include "platform/tests/test-common.h"
 
 /*****************************************************************************/
 
 static NMFakeNDisc *
 ndisc_new(void)
 {
-    NMNDisc *          ndisc;
-    const int          ifindex = 1;
-    const char *       ifname  = nm_platform_link_get_name(NM_PLATFORM_GET, ifindex);
-    NMUtilsIPv6IfaceId iid     = {};
+    gs_unref_object NML3Cfg *l3cfg = NULL;
+    NMNDisc *                ndisc;
+    const int                ifindex = 1;
+    NMUtilsIPv6IfaceId       iid;
 
-    ndisc        = nm_fake_ndisc_new(ifindex, ifname);
+    l3cfg = nm_netns_access_l3cfg(NM_NETNS_GET, ifindex);
+
+    ndisc = nm_fake_ndisc_new(l3cfg);
+    g_assert(ndisc);
+
+    memset(&iid, 0, sizeof(iid));
     iid.id_u8[7] = 1;
     nm_ndisc_set_iid(ndisc, iid);
-    g_assert(ndisc);
 
     return NM_FAKE_NDISC(ndisc);
 }
@@ -140,9 +145,15 @@ typedef struct {
 /*****************************************************************************/
 
 static void
-test_simple_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int, TestData *data)
+test_simple_changed(NMNDisc *             ndisc,
+                    const NMNDiscData *   rdata,
+                    guint                 changed_i,
+                    const NML3ConfigData *l3cd,
+                    TestData *            data)
 {
-    NMNDiscConfigMap changed = changed_int;
+    NMNDiscConfigMap changed = changed_i;
+
+    _LOGT("test_simple: callback (counter=%u)", data->counter);
 
     switch (data->counter++) {
     case 0:
@@ -206,9 +217,11 @@ test_simple(void)
 
     g_signal_connect(ndisc, NM_NDISC_CONFIG_RECEIVED, G_CALLBACK(test_simple_changed), &data);
 
+    _LOGT("test_simple: start");
     nm_ndisc_start(NM_NDISC(ndisc));
     nmtst_main_loop_run_assert(data.loop, 15000);
     g_assert_cmpint(data.counter, ==, 2);
+    _LOGT("test_simple: done");
 }
 
 /*****************************************************************************/
@@ -221,9 +234,13 @@ test_everything_rs_sent(NMNDisc *ndisc, TestData *data)
 }
 
 static void
-test_everything_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int, TestData *data)
+test_everything_changed(NMNDisc *             ndisc,
+                        const NMNDiscData *   rdata,
+                        guint                 changed_i,
+                        const NML3ConfigData *l3cd,
+                        TestData *            data)
 {
-    NMNDiscConfigMap changed = changed_int;
+    NMNDiscConfigMap changed = changed_i;
 
     if (data->counter == 0) {
         g_assert_cmpint(data->rs_counter, ==, 1);
@@ -342,12 +359,13 @@ test_everything(void)
 }
 
 static void
-test_preference_order_cb(NMNDisc *          ndisc,
-                         const NMNDiscData *rdata,
-                         guint              changed_int,
-                         TestData *         data)
+test_preference_order_cb(NMNDisc *             ndisc,
+                         const NMNDiscData *   rdata,
+                         guint                 changed_i,
+                         const NML3ConfigData *l3cd,
+                         TestData *            data)
 {
-    NMNDiscConfigMap changed = changed_int;
+    NMNDiscConfigMap changed = changed_i;
 
     if (data->counter == 1) {
         g_assert_cmpint(changed,
@@ -434,12 +452,13 @@ test_preference_order(void)
 }
 
 static void
-test_preference_changed_cb(NMNDisc *          ndisc,
-                           const NMNDiscData *rdata,
-                           guint              changed_int,
-                           TestData *         data)
+test_preference_changed_cb(NMNDisc *             ndisc,
+                           const NMNDiscData *   rdata,
+                           guint                 changed_i,
+                           const NML3ConfigData *l3cd,
+                           TestData *            data)
 {
-    NMNDiscConfigMap changed = changed_int;
+    NMNDiscConfigMap changed = changed_i;
 
     if (data->counter == 1) {
         g_assert_cmpint(changed,
@@ -576,10 +595,11 @@ test_preference_changed(void)
 /*****************************************************************************/
 
 static void
-_test_dns_solicit_loop_changed(NMNDisc *          ndisc,
-                               const NMNDiscData *rdata,
-                               guint              changed_int,
-                               TestData *         data)
+_test_dns_solicit_loop_changed(NMNDisc *             ndisc,
+                               const NMNDiscData *   rdata,
+                               guint                 changed_i,
+                               const NML3ConfigData *l3cd,
+                               TestData *            data)
 {
     data->counter++;
 }

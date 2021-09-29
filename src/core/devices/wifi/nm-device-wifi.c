@@ -32,7 +32,6 @@
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
 #include "nm-setting-ip4-config.h"
-#include "nm-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-auth-utils.h"
@@ -135,6 +134,8 @@ typedef struct {
     bool scan_explicit_requested : 1;
     bool ssid_found : 1;
     bool hidden_probe_scan_warn : 1;
+
+    bool addressing_running_indicated : 1;
 
 } NMDeviceWifiPrivate;
 
@@ -389,6 +390,22 @@ nm_device_wifi_scanning_prohibited_track(NMDeviceWifi *self,
     }
 
     _scan_notify_allowed(self, NM_TERNARY_DEFAULT);
+}
+
+/*****************************************************************************/
+
+static void
+_indicate_addressing_running_reset(NMDeviceWifi *self)
+{
+    NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
+
+    if (!priv->addressing_running_indicated)
+        return;
+
+    priv->addressing_running_indicated = FALSE;
+    nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(NM_DEVICE(self)),
+                                                 nm_device_get_ifindex(NM_DEVICE(self)),
+                                                 FALSE);
 }
 
 /*****************************************************************************/
@@ -932,8 +949,7 @@ deactivate(NMDevice *device)
     if (!wake_on_wlan_restore(self))
         _LOGW(LOGD_DEVICE | LOGD_WIFI, "Cannot unconfigure WoWLAN.");
 
-    /* Clear any critical protocol notification in the Wi-Fi stack */
-    nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(device), ifindex, FALSE);
+    _indicate_addressing_running_reset(self);
 
     /* Ensure we're in infrastructure mode after deactivation; some devices
      * (usually older ones) don't scan well in adhoc mode.
@@ -2478,7 +2494,7 @@ supplicant_iface_state(NMDeviceWifi *             self,
                   priv->mode == _NM_802_11_MODE_AP ? "Started Wi-Fi Hotspot"
                                                    : "Connected to wireless network",
                   (ssid_str = _nm_utils_ssid_to_string_gbytes(ssid)));
-            nm_device_activate_schedule_stage3_ip_config_start(device);
+            nm_device_activate_schedule_stage3_ip_config(device, FALSE);
         } else if (devstate == NM_DEVICE_STATE_ACTIVATED)
             periodic_update(self);
         break;
@@ -3263,20 +3279,24 @@ out_fail:
     return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
-static NMActStageReturn
-act_stage3_ip_config_start(NMDevice *           device,
-                           int                  addr_family,
-                           gpointer *           out_config,
-                           NMDeviceStateReason *out_failure_reason)
+static void
+act_stage3_ip_config(NMDevice *device, int addr_family)
 {
-    gboolean      indicate_addressing_running;
-    NMConnection *connection;
-    const char *  method;
+    NMDeviceWifi *       self = NM_DEVICE_WIFI(device);
+    NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
+    const char *         method;
+    gboolean             indicate_addressing_running;
 
-    connection = nm_device_get_applied_connection(device);
+    if (priv->addressing_running_indicated)
+        return;
 
-    method = nm_utils_get_ip_config_method(connection, addr_family);
-    if (addr_family == AF_INET)
+    /* we always set the flag, even if we don't indicate it below. The reason
+     * is that we always want to *clear* the flag after we are done (as we don't
+     * know whether it isn't already set on the interface).  */
+    priv->addressing_running_indicated = TRUE;
+
+    method = nm_utils_get_ip_config_method(nm_device_get_applied_connection(device), addr_family);
+    if (NM_IS_IPv4(addr_family))
         indicate_addressing_running = NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
     else {
         indicate_addressing_running = NM_IN_STRSET(method,
@@ -3284,13 +3304,11 @@ act_stage3_ip_config_start(NMDevice *           device,
                                                    NM_SETTING_IP6_CONFIG_METHOD_DHCP);
     }
 
-    if (indicate_addressing_running)
+    if (indicate_addressing_running) {
         nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(device),
                                                      nm_device_get_ip_ifindex(device),
                                                      TRUE);
-
-    return NM_DEVICE_CLASS(nm_device_wifi_parent_class)
-        ->act_stage3_ip_config_start(device, addr_family, out_config, out_failure_reason);
+    }
 }
 
 static guint32
@@ -3299,77 +3317,6 @@ get_configured_mtu(NMDevice *device, NMDeviceMtuSource *out_source, gboolean *ou
     return nm_device_get_configured_mtu_from_connection(device,
                                                         NM_TYPE_SETTING_WIRELESS,
                                                         out_source);
-}
-
-static gboolean
-is_static_wep(NMConnection *connection)
-{
-    NMSettingWirelessSecurity *s_wsec;
-    const char *               str;
-
-    g_return_val_if_fail(connection != NULL, FALSE);
-
-    s_wsec = nm_connection_get_setting_wireless_security(connection);
-    if (!s_wsec)
-        return FALSE;
-
-    str = nm_setting_wireless_security_get_key_mgmt(s_wsec);
-    if (g_strcmp0(str, "none") != 0)
-        return FALSE;
-
-    str = nm_setting_wireless_security_get_auth_alg(s_wsec);
-    if (g_strcmp0(str, "leap") == 0)
-        return FALSE;
-
-    return TRUE;
-}
-
-static NMActStageReturn
-act_stage4_ip_config_timeout(NMDevice *           device,
-                             int                  addr_family,
-                             NMDeviceStateReason *out_failure_reason)
-{
-    NMDeviceWifi *       self = NM_DEVICE_WIFI(device);
-    NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
-    NMConnection *       connection;
-    NMSettingIPConfig *  s_ip;
-    gboolean             may_fail;
-
-    connection = nm_device_get_applied_connection(device);
-    s_ip       = nm_connection_get_setting_ip_config(connection, addr_family);
-    may_fail   = nm_setting_ip_config_get_may_fail(s_ip);
-
-    if (priv->mode == _NM_802_11_MODE_AP)
-        goto call_parent;
-
-    if (may_fail || !is_static_wep(connection)) {
-        /* Not static WEP or failure allowed; let superclass handle it */
-        goto call_parent;
-    }
-
-    /* If IP configuration times out and it's a static WEP connection, that
-     * usually means the WEP key is wrong.  WEP's Open System auth mode has
-     * no provision for figuring out if the WEP key is wrong, so you just have
-     * to wait for DHCP to fail to figure it out.  For all other Wi-Fi security
-     * types (open, WPA, 802.1x, etc) if the secrets/certs were wrong the
-     * connection would have failed before IP configuration.
-     *
-     * Activation failed, we must have bad encryption key */
-    _LOGW(LOGD_DEVICE | LOGD_WIFI,
-          "Activation: (wifi) could not get IP configuration for connection '%s'.",
-          nm_connection_get_id(connection));
-
-    if (!handle_auth_or_fail(self, NULL, TRUE)) {
-        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
-        return NM_ACT_STAGE_RETURN_FAILURE;
-    }
-
-    _LOGI(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi) asking for new secrets");
-    return NM_ACT_STAGE_RETURN_POSTPONE;
-
-call_parent:
-    return NM_DEVICE_CLASS(nm_device_wifi_parent_class)
-        ->act_stage4_ip_config_timeout(device, addr_family, out_failure_reason);
 }
 
 static void
@@ -3383,8 +3330,7 @@ activation_success_handler(NMDevice *device)
     req = nm_device_get_act_request(device);
     g_assert(req);
 
-    /* Clear any critical protocol notification in the wifi stack */
-    nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(device), ifindex, FALSE);
+    _indicate_addressing_running_reset(self);
 
     /* There should always be a current AP, either a fake one because we haven't
      * seen a scan result for the activated AP yet, or a real one from the
@@ -3484,19 +3430,13 @@ device_state_changed(NMDevice *          device,
             nm_supplicant_interface_disconnect(priv->sup_iface);
         break;
     case NM_DEVICE_STATE_IP_CHECK:
-        /* Clear any critical protocol notification in the wifi stack */
-        nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(device),
-                                                     nm_device_get_ifindex(device),
-                                                     FALSE);
+        _indicate_addressing_running_reset(self);
         break;
     case NM_DEVICE_STATE_ACTIVATED:
         activation_success_handler(device);
         break;
     case NM_DEVICE_STATE_FAILED:
-        /* Clear any critical protocol notification in the wifi stack */
-        nm_platform_wifi_indicate_addressing_running(nm_device_get_platform(device),
-                                                     nm_device_get_ifindex(device),
-                                                     FALSE);
+        _indicate_addressing_running_reset(self);
         break;
     case NM_DEVICE_STATE_DISCONNECTED:
         break;
@@ -3803,17 +3743,16 @@ nm_device_wifi_class_init(NMDeviceWifiClass *klass)
     device_class->get_guessed_metered         = get_guessed_metered;
     device_class->set_enabled                 = set_enabled;
 
-    device_class->act_stage1_prepare           = act_stage1_prepare;
-    device_class->act_stage2_config            = act_stage2_config;
-    device_class->get_configured_mtu           = get_configured_mtu;
-    device_class->act_stage3_ip_config_start   = act_stage3_ip_config_start;
-    device_class->act_stage4_ip_config_timeout = act_stage4_ip_config_timeout;
-    device_class->deactivate_async             = deactivate_async;
-    device_class->deactivate                   = deactivate;
-    device_class->deactivate_reset_hw_addr     = deactivate_reset_hw_addr;
-    device_class->unmanaged_on_quit            = unmanaged_on_quit;
-    device_class->can_reapply_change           = can_reapply_change;
-    device_class->reapply_connection           = reapply_connection;
+    device_class->act_stage1_prepare       = act_stage1_prepare;
+    device_class->act_stage2_config        = act_stage2_config;
+    device_class->get_configured_mtu       = get_configured_mtu;
+    device_class->act_stage3_ip_config     = act_stage3_ip_config;
+    device_class->deactivate_async         = deactivate_async;
+    device_class->deactivate               = deactivate;
+    device_class->deactivate_reset_hw_addr = deactivate_reset_hw_addr;
+    device_class->unmanaged_on_quit        = unmanaged_on_quit;
+    device_class->can_reapply_change       = can_reapply_change;
+    device_class->reapply_connection       = reapply_connection;
 
     device_class->state_changed = device_state_changed;
 

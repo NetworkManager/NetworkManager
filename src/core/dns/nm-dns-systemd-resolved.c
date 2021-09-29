@@ -21,10 +21,9 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-utils.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
 #include "nm-dbus-manager.h"
 #include "nm-manager.h"
+#include "nm-l3-config-data.h"
 #include "nm-setting-connection.h"
 #include "devices/nm-device.h"
 #include "NetworkManagerUtils.h"
@@ -230,40 +229,42 @@ static gboolean
 update_add_ip_config(NMDnsSystemdResolved *self,
                      GVariantBuilder *     dns,
                      GVariantBuilder *     domains,
-                     NMDnsConfigIPData *   data)
+                     NMDnsConfigIPData *   ip_data)
 {
-    int         addr_family;
-    gsize       addr_size;
-    guint       i, n;
-    gboolean    is_routing;
-    const char *domain;
-    gboolean    has_config = FALSE;
+    gsize         addr_size;
+    guint         n;
+    guint         i;
+    gboolean      is_routing;
+    const char *  domain;
+    gboolean      has_config = FALSE;
+    gconstpointer nameservers;
 
-    addr_family = nm_ip_config_get_addr_family(data->ip_config);
-    addr_size   = nm_utils_addr_family_to_size(addr_family);
+    addr_size = nm_utils_addr_family_to_size(ip_data->addr_family);
 
-    if ((!data->domains.search || !data->domains.search[0])
-        && !data->domains.has_default_route_exclusive && !data->domains.has_default_route)
+    if ((!ip_data->domains.search || !ip_data->domains.search[0])
+        && !ip_data->domains.has_default_route_exclusive && !ip_data->domains.has_default_route)
         return FALSE;
 
-    n = nm_ip_config_get_num_nameservers(data->ip_config);
+    nameservers = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &n);
     for (i = 0; i < n; i++) {
         g_variant_builder_open(dns, G_VARIANT_TYPE("(iay)"));
-        g_variant_builder_add(dns, "i", addr_family);
+        g_variant_builder_add(dns, "i", ip_data->addr_family);
         g_variant_builder_add_value(
             dns,
-            nm_g_variant_new_ay(nm_ip_config_get_nameserver(data->ip_config, i), addr_size));
+            nm_g_variant_new_ay(nm_ip_addr_from_packed_array(ip_data->addr_family, nameservers, i),
+                                addr_size));
         g_variant_builder_close(dns);
         has_config = TRUE;
     }
 
-    if (!data->domains.has_default_route_explicit && data->domains.has_default_route_exclusive) {
+    if (!ip_data->domains.has_default_route_explicit
+        && ip_data->domains.has_default_route_exclusive) {
         g_variant_builder_add(domains, "(sb)", ".", TRUE);
         has_config = TRUE;
     }
-    if (data->domains.search) {
-        for (i = 0; data->domains.search[i]; i++) {
-            domain = nm_utils_parse_dns_domain(data->domains.search[i], &is_routing);
+    if (ip_data->domains.search) {
+        for (i = 0; ip_data->domains.search[i]; i++) {
+            domain = nm_utils_parse_dns_domain(ip_data->domains.search[i], &is_routing);
             g_variant_builder_add(domains, "(sb)", domain[0] ? domain : ".", is_routing);
             has_config = TRUE;
         }
@@ -304,17 +305,16 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     g_variant_builder_open(&domains, G_VARIANT_TYPE("a(sb)"));
 
     c_list_for_each_entry (elem, &ic->configs_lst_head, lst) {
-        NMDnsConfigIPData *data      = elem->data;
-        NMIPConfig *       ip_config = data->ip_config;
+        NMDnsConfigIPData *ip_data = elem->data;
 
-        has_config |= update_add_ip_config(self, &dns, &domains, data);
+        has_config |= update_add_ip_config(self, &dns, &domains, ip_data);
 
-        if (data->domains.has_default_route)
+        if (ip_data->domains.has_default_route)
             has_default_route = TRUE;
 
-        if (NM_IS_IP4_CONFIG(ip_config)) {
-            mdns  = NM_MAX(mdns, nm_ip4_config_mdns_get(NM_IP4_CONFIG(ip_config)));
-            llmnr = NM_MAX(llmnr, nm_ip4_config_llmnr_get(NM_IP4_CONFIG(ip_config)));
+        if (NM_IS_IPv4(ip_data->addr_family)) {
+            mdns  = NM_MAX(mdns, nm_l3_config_data_get_mdns(ip_data->l3cd));
+            llmnr = NM_MAX(llmnr, nm_l3_config_data_get_llmnr(ip_data->l3cd));
         }
     }
 
@@ -508,7 +508,7 @@ start_resolve:
 static gboolean
 update(NMDnsPlugin *            plugin,
        const NMGlobalDnsConfig *global_config,
-       const CList *            ip_config_lst_head,
+       const CList *            ip_data_lst_head,
        const char *             hostname,
        GError **                error)
 {
@@ -526,11 +526,11 @@ update(NMDnsPlugin *            plugin,
     interfaces =
         g_hash_table_new_full(nm_direct_hash, NULL, NULL, (GDestroyNotify) _interface_config_free);
 
-    c_list_for_each_entry (ip_data, ip_config_lst_head, ip_config_lst) {
+    c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst) {
         InterfaceConfig *ic = NULL;
 
         ifindex = ip_data->data->ifindex;
-        nm_assert(ifindex == nm_ip_config_get_ifindex(ip_data->ip_config));
+        nm_assert(ifindex == nm_l3_config_data_get_ifindex(ip_data->l3cd));
 
         ic = g_hash_table_lookup(interfaces, GINT_TO_POINTER(ifindex));
         if (!ic) {

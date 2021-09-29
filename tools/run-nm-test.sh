@@ -362,7 +362,6 @@ if [ $HAS_ERRORS -eq 0 ]; then
     # valgrind doesn't support setns syscall and spams the logfile.
     # hack around it...
     case "$TEST_NAME" in
-        'test-acd' | \
         'test-address-linux' | \
         'test-cleanup-linux' | \
         'test-config' | \

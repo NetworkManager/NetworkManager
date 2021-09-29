@@ -240,7 +240,6 @@ test-*.trs
 /src/core/NetworkManager-all-sym
 /src/core/NetworkManager.ver
 /src/core/devices/bluetooth/tests/nm-bt-test
-/src/core/devices/tests/test-acd
 /src/core/devices/tests/test-lldp
 /src/core/devices/wifi/tests/test-devices-wifi
 /src/core/devices/wwan/tests/test-service-providers
@@ -406,6 +405,7 @@ test-*.trs
 /src/NetworkManager
 /src/NetworkManager-all-sym
 /src/NetworkManager.ver
+/src/core/devices/tests/test-acd
 /src/core/initrd/nm-initrd-generator
 /src/core/initrd/tests/test-cmdline-reader
 /src/core/initrd/tests/test-dt-reader
