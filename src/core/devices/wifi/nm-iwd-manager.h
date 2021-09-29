@@ -51,4 +51,6 @@ NMSettingsConnection *nm_iwd_manager_get_ap_mirror_connection(NMIwdManager *self
 GDBusProxy *
 nm_iwd_manager_get_dbus_interface(NMIwdManager *self, const char *path, const char *name);
 
+gboolean nm_iwd_manager_get_netconfig_enabled(NMIwdManager *self);
+
 #endif /* __NETWORKMANAGER_IWD_MANAGER_H__ */
