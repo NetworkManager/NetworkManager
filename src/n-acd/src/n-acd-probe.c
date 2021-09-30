@@ -420,7 +420,7 @@ int n_acd_probe_handle_timeout(NAcdProbe *probe) {
 
                         r = n_acd_send(probe->acd, &probe->ip, NULL);
                         if (r) {
-                                if (r != -N_ACD_E_DROPPED)
+                                if (r != N_ACD_E_DROPPED)
                                         return r;
 
                                 /*
@@ -475,7 +475,7 @@ int n_acd_probe_handle_timeout(NAcdProbe *probe) {
 
                 r = n_acd_send(probe->acd, &probe->ip, &probe->ip);
                 if (r) {
-                        if (r != -N_ACD_E_DROPPED)
+                        if (r != N_ACD_E_DROPPED)
                                 return r;
 
                         /*
@@ -595,7 +595,7 @@ int n_acd_probe_handle_packet(NAcdProbe *probe, struct ether_arp *packet, bool h
                         if (!rate_limited) {
                                 r = n_acd_send(probe->acd, &probe->ip, &probe->ip);
                                 if (r) {
-                                        if (r != -N_ACD_E_DROPPED)
+                                        if (r != N_ACD_E_DROPPED)
                                                 return r;
 
                                         if (probe->defend == N_ACD_DEFEND_ONCE) {
@@ -604,7 +604,7 @@ int n_acd_probe_handle_packet(NAcdProbe *probe, struct ether_arp *packet, bool h
                                         }
                                 }
 
-                                if (r != -N_ACD_E_DROPPED)
+                                if (r != N_ACD_E_DROPPED)
                                         probe->last_defend = now;
                         }
 
