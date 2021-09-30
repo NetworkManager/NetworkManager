@@ -604,46 +604,51 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
 
 /*****************************************************************************/
 
-#define nm_assert_obj_state(self, obj_state)                                                       \
-    G_STMT_START                                                                                   \
-    {                                                                                              \
-        const NML3Cfg *     _self      = (self);                                                   \
-        const ObjStateData *_obj_state = (obj_state);                                              \
-                                                                                                   \
-        nm_assert(_obj_state);                                                                     \
-        nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(_obj_state->obj),                                  \
-                            NMP_OBJECT_TYPE_IP4_ADDRESS,                                           \
-                            NMP_OBJECT_TYPE_IP6_ADDRESS,                                           \
-                            NMP_OBJECT_TYPE_IP4_ROUTE,                                             \
-                            NMP_OBJECT_TYPE_IP6_ROUTE));                                           \
-        nm_assert(!_obj_state->os_plobj || _obj_state->os_was_in_platform);                        \
-        nm_assert((_obj_state->os_temporary_not_available_timestamp_msec == 0)                     \
-                  == c_list_is_empty(&_obj_state->os_temporary_not_available_lst));                \
-        if (_self) {                                                                               \
-            nm_assert(_self->priv.p->combined_l3cd_commited);                                      \
-                                                                                                   \
-            if (NM_MORE_ASSERTS > 5) {                                                             \
-                nm_assert(                                                                         \
-                    c_list_contains(&_self->priv.p->obj_state_lst_head, &_obj_state->os_lst));     \
-                nm_assert(                                                                         \
-                    (_obj_state->os_temporary_not_available_timestamp_msec == 0)                   \
-                    || c_list_contains(&_self->priv.p->obj_state_temporary_not_available_lst_head, \
-                                       &_obj_state->os_temporary_not_available_lst));              \
-                nm_assert(_obj_state->os_plobj                                                     \
-                          == nm_platform_lookup_obj(_self->priv.platform,                          \
-                                                    NMP_CACHE_ID_TYPE_OBJECT_TYPE,                 \
-                                                    _obj_state->obj));                             \
-                nm_assert(                                                                         \
-                    c_list_is_empty(&obj_state->os_zombie_lst)                                     \
-                        ? (_obj_state->obj                                                         \
-                           == nm_dedup_multi_entry_get_obj(                                        \
-                               nm_l3_config_data_lookup_obj(_self->priv.p->combined_l3cd_commited, \
-                                                            _obj_state->obj)))                     \
-                        : (!nm_l3_config_data_lookup_obj(_self->priv.p->combined_l3cd_commited,    \
-                                                         _obj_state->obj)));                       \
-            }                                                                                      \
-        }                                                                                          \
-    }                                                                                              \
+#define nm_assert_obj_state(self, obj_state)                                                      \
+    G_STMT_START                                                                                  \
+    {                                                                                             \
+        if (NM_MORE_ASSERTS > 0) {                                                                \
+            const NML3Cfg *     _self      = (self);                                              \
+            const ObjStateData *_obj_state = (obj_state);                                         \
+                                                                                                  \
+            nm_assert(_obj_state);                                                                \
+            nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(_obj_state->obj),                             \
+                                NMP_OBJECT_TYPE_IP4_ADDRESS,                                      \
+                                NMP_OBJECT_TYPE_IP6_ADDRESS,                                      \
+                                NMP_OBJECT_TYPE_IP4_ROUTE,                                        \
+                                NMP_OBJECT_TYPE_IP6_ROUTE));                                      \
+            nm_assert(!_obj_state->os_plobj || _obj_state->os_was_in_platform);                   \
+            nm_assert((_obj_state->os_temporary_not_available_timestamp_msec == 0)                \
+                      == c_list_is_empty(&_obj_state->os_temporary_not_available_lst));           \
+            if (_self) {                                                                          \
+                if (c_list_is_empty(&_obj_state->os_zombie_lst)) {                                \
+                    nm_assert(_self->priv.p->combined_l3cd_commited);                             \
+                                                                                                  \
+                    if (NM_MORE_ASSERTS > 5) {                                                    \
+                        nm_assert(c_list_contains(&_self->priv.p->obj_state_lst_head,             \
+                                                  &_obj_state->os_lst));                          \
+                        nm_assert((_obj_state->os_temporary_not_available_timestamp_msec == 0)    \
+                                  || c_list_contains(                                             \
+                                      &_self->priv.p->obj_state_temporary_not_available_lst_head, \
+                                      &_obj_state->os_temporary_not_available_lst));              \
+                        nm_assert(_obj_state->os_plobj                                            \
+                                  == nm_platform_lookup_obj(_self->priv.platform,                 \
+                                                            NMP_CACHE_ID_TYPE_OBJECT_TYPE,        \
+                                                            _obj_state->obj));                    \
+                        nm_assert(                                                                \
+                            c_list_is_empty(&obj_state->os_zombie_lst)                            \
+                                ? (_obj_state->obj                                                \
+                                   == nm_dedup_multi_entry_get_obj(nm_l3_config_data_lookup_obj(  \
+                                       _self->priv.p->combined_l3cd_commited,                     \
+                                       _obj_state->obj)))                                         \
+                                : (!nm_l3_config_data_lookup_obj(                                 \
+                                    _self->priv.p->combined_l3cd_commited,                        \
+                                    _obj_state->obj)));                                           \
+                    }                                                                             \
+                }                                                                                 \
+            }                                                                                     \
+        }                                                                                         \
+    }                                                                                             \
     G_STMT_END
 
 static gboolean
