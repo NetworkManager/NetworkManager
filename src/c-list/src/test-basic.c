@@ -160,10 +160,46 @@ static void test_splice(void) {
 
 static void test_flush(void) {
         CList e1 = C_LIST_INIT(e1), e2 = C_LIST_INIT(e2);
+        CList list1 = C_LIST_INIT(list1), list2 = C_LIST_INIT(list2);
 
+        c_list_link_tail(&list2, &e1);
+        c_list_link_tail(&list2, &e2);
+
+        assert(c_list_is_linked(&e1));
+        assert(c_list_is_linked(&e2));
+
+        c_list_flush(&list1);
+        c_list_flush(&list2);
+
+        assert(!c_list_is_linked(&e1));
+        assert(!c_list_is_linked(&e2));
+}
+
+static void test_macros(void) {
+        /* Verify `c_list_entry()` evaluates arguments only once. */
         {
-                __attribute__((__cleanup__(c_list_flush))) CList list1 = C_LIST_INIT(list1);
-                __attribute__((__cleanup__(c_list_flush))) CList list2 = C_LIST_INIT(list2);
+                struct TestList {
+                        int a;
+                        CList link;
+                        int b;
+                } list = { .link = C_LIST_INIT(list.link) };
+                CList *p[2] = { &list.link, NULL };
+                unsigned int i = 0;
+
+                assert(i == 0);
+                assert(c_list_entry(p[i++], struct TestList, link) == &list);
+                assert(i == 1);
+        }
+}
+
+#if defined(__GNUC__) || defined(__clang__)
+static void test_gnu(void) {
+        CList e1 = C_LIST_INIT(e1), e2 = C_LIST_INIT(e2);
+
+        /* Test `c_list_flush()` in combination with cleanup attributes. */
+        {
+                __attribute((cleanup(c_list_flush))) CList list1 = C_LIST_INIT(list1);
+                __attribute((cleanup(c_list_flush))) CList list2 = C_LIST_INIT(list2);
 
                 c_list_link_tail(&list2, &e1);
                 c_list_link_tail(&list2, &e2);
@@ -175,11 +211,17 @@ static void test_flush(void) {
         assert(!c_list_is_linked(&e1));
         assert(!c_list_is_linked(&e2));
 }
+#else
+static void test_gnu(void) {
+}
+#endif
 
-int main(int argc, char **argv) {
+int main(void) {
         test_iterators();
         test_swap();
         test_splice();
         test_flush();
+        test_macros();
+        test_gnu();
         return 0;
 }

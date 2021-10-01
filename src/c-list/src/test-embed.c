@@ -23,7 +23,8 @@ static void test_entry(void) {
         Entry e2 = { .foo = 2 * 7, .bar = 2 * 11 };
         Entry e3 = { .foo = 3 * 7, .bar = 3 * 11 };
         Entry e4 = { .foo = 4 * 7, .bar = 4 * 11 };
-        Entry *e, *safe;
+        Entry *e;
+        CList *iter, *safe;
         size_t i;
 
         /* verify c_list_entry() works as expected (even with NULL) */
@@ -47,7 +48,8 @@ static void test_entry(void) {
         assert(c_list_last_entry(&list, Entry, link)->bar == 2 * 11);
 
         i = 0;
-        c_list_for_each_entry(e, &list, link) {
+        c_list_for_each(iter, &list) {
+                e = c_list_entry(iter, Entry, link);
                 assert(i != 0 || e == &e1);
                 assert(i != 1 || e == &e2);
                 assert(i < 2);
@@ -64,6 +66,63 @@ static void test_entry(void) {
         assert(c_list_first_entry(&list, Entry, link)->bar == 1 * 11);
         assert(c_list_last_entry(&list, Entry, link)->foo == 4 * 7);
         assert(c_list_last_entry(&list, Entry, link)->bar == 4 * 11);
+
+        i = 0;
+        c_list_for_each(iter, &list) {
+                e = c_list_entry(iter, Entry, link);
+                assert(i != 0 || e == &e1);
+                assert(i != 1 || e == &e2);
+                assert(i != 2 || e == &e3);
+                assert(i != 3 || e == &e4);
+                assert(i < 4);
+                ++i;
+        }
+        assert(i == 4);
+
+        assert(!c_list_is_empty(&list));
+        assert(c_list_is_linked(&e1.link));
+        assert(c_list_is_linked(&e2.link));
+        assert(c_list_is_linked(&e3.link));
+        assert(c_list_is_linked(&e4.link));
+
+        /* remove via safe iterator */
+
+        i = 0;
+        c_list_for_each_safe(iter, safe, &list) {
+                e = c_list_entry(iter, Entry, link);
+                assert(i != 0 || e == &e1);
+                assert(i != 1 || e == &e2);
+                assert(i != 2 || e == &e3);
+                assert(i != 3 || e == &e4);
+                assert(i < 4);
+                ++i;
+                c_list_unlink(&e->link);
+        }
+        assert(i == 4);
+
+        assert(c_list_is_empty(&list));
+        assert(!c_list_is_linked(&e1.link));
+        assert(!c_list_is_linked(&e2.link));
+        assert(!c_list_is_linked(&e3.link));
+        assert(!c_list_is_linked(&e4.link));
+}
+
+#if defined(__GNUC__) || defined(__clang__)
+static void test_entry_gnu(void) {
+        CList list = C_LIST_INIT(list);
+        Entry e1 = { .foo = 1 * 7, .bar = 1 * 11 };
+        Entry e2 = { .foo = 2 * 7, .bar = 2 * 11 };
+        Entry e3 = { .foo = 3 * 7, .bar = 3 * 11 };
+        Entry e4 = { .foo = 4 * 7, .bar = 4 * 11 };
+        Entry *e, *safe;
+        size_t i;
+
+        /* link entries and verify list state */
+
+        c_list_link_tail(&list, &e1.link);
+        c_list_link_tail(&list, &e2.link);
+        c_list_link_tail(&list, &e3.link);
+        c_list_link_tail(&list, &e4.link);
 
         i = 0;
         c_list_for_each_entry(e, &list, link) {
@@ -102,8 +161,13 @@ static void test_entry(void) {
         assert(!c_list_is_linked(&e3.link));
         assert(!c_list_is_linked(&e4.link));
 }
+#else
+static void test_entry_gnu(void) {
+}
+#endif
 
-int main(int argc, char **argv) {
+int main(void) {
         test_entry();
+        test_entry_gnu();
         return 0;
 }

@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include <stdint.h>
 
 typedef struct CList CList;
 
@@ -50,9 +51,42 @@ struct CList {
 /**
  * c_list_init() - initialize list entry
  * @what:               list entry to initialize
+ *
+ * Return: @what is returned.
  */
-static inline void c_list_init(CList *what) {
+static inline CList *c_list_init(CList *what) {
         *what = (CList)C_LIST_INIT(*what);
+        return what;
+}
+
+/**
+ * c_list_entry_offset() - get parent container of list entry
+ * @what:               list entry, or NULL
+ * @offset:             offset of the list member in its surrounding type
+ *
+ * If the list entry @what is embedded into a surrounding structure, this will
+ * turn the list entry pointer @what into a pointer to the parent container
+ * (sometimes called container_of(3)). Use the `c_list_entry()` macro for an
+ * easier API.
+ *
+ * If @what is NULL, this will also return NULL.
+ *
+ * Return: Pointer to parent container, or NULL.
+ */
+static inline void *c_list_entry_offset(const CList *what, size_t offset) {
+        if (what) {
+            /*
+             * We allow calling "c_list_entry()" on the list head, which is
+             * commonly a plain CList struct. The returned entry pointer is
+             * thus invalid. For instance, this is used by the
+             * c_list_for_each_entry*() macros. Gcc correctly warns about that
+             * with "-Warray-bounds". However, as long as the value is never
+             * dereferenced, this is fine. We explicitly use integer arithmetic
+             * to circumvent the Gcc warning.
+             */
+            return (void *)(((uintptr_t)(void *)what) - offset);
+        }
+        return NULL;
 }
 
 /**
@@ -70,8 +104,7 @@ static inline void c_list_init(CList *what) {
  * Return: Pointer to parent container, or NULL.
  */
 #define c_list_entry(_what, _t, _m) \
-        ((_t *)(void *)(((unsigned long)(void *)(_what) ?: \
-                         offsetof(_t, _m)) - offsetof(_t, _m)))
+        ((_t *)c_list_entry_offset((_what), offsetof(_t, _m)))
 
 /**
  * c_list_is_linked() - check whether an entry is linked
@@ -306,32 +339,47 @@ static inline CList *c_list_last(CList *list) {
  *               state.
  */
 
+/* direct/raw iterators */
+
 #define c_list_for_each(_iter, _list)                                           \
         for (_iter = (_list)->next;                                             \
              (_iter) != (_list);                                                \
              _iter = (_iter)->next)
-
-#define c_list_for_each_entry(_iter, _list, _m)                                 \
-        for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m);       \
-             &(_iter)->_m != (_list);                                           \
-             _iter = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m))
 
 #define c_list_for_each_safe(_iter, _safe, _list)                               \
         for (_iter = (_list)->next, _safe = (_iter)->next;                      \
              (_iter) != (_list);                                                \
              _iter = (_safe), _safe = (_safe)->next)
 
+#define c_list_for_each_continue(_iter, _list)                                  \
+        for (_iter = (_iter) ? (_iter)->next : (_list)->next;                   \
+             (_iter) != (_list);                                                \
+             _iter = (_iter)->next)
+
+#define c_list_for_each_safe_continue(_iter, _safe, _list)                      \
+        for (_iter = (_iter) ? (_iter)->next : (_list)->next,                   \
+             _safe = (_iter)->next;                                             \
+             (_iter) != (_list);                                                \
+             _iter = (_safe), _safe = (_safe)->next)
+
+#define c_list_for_each_safe_unlink(_iter, _safe, _list)                        \
+        for (_iter = (_list)->next, _safe = (_iter)->next;                      \
+             c_list_init(_iter) != (_list);                                     \
+             _iter = (_safe), _safe = (_safe)->next)
+
+/* c_list_entry() based iterators */
+
+#define c_list_for_each_entry(_iter, _list, _m)                                 \
+        for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m);       \
+             &(_iter)->_m != (_list);                                           \
+             _iter = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m))
+
 #define c_list_for_each_entry_safe(_iter, _safe, _list, _m)                     \
         for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m),       \
              _safe = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m);    \
              &(_iter)->_m != (_list);                                           \
              _iter = (_safe),                                                   \
-             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))    \
-
-#define c_list_for_each_continue(_iter, _list)                                  \
-        for (_iter = (_iter) ? (_iter)->next : (_list)->next;                   \
-             (_iter) != (_list);                                                \
-             _iter = (_iter)->next)
+             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))
 
 #define c_list_for_each_entry_continue(_iter, _list, _m)                        \
         for (_iter = c_list_entry((_iter) ? (_iter)->_m.next : (_list)->next,   \
@@ -340,12 +388,6 @@ static inline CList *c_list_last(CList *list) {
              &(_iter)->_m != (_list);                                           \
              _iter = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m))
 
-#define c_list_for_each_safe_continue(_iter, _safe, _list)                      \
-        for (_iter = (_iter) ? (_iter)->next : (_list)->next,                   \
-             _safe = (_iter)->next;                                             \
-             (_iter) != (_list);                                                \
-             _iter = (_safe), _safe = (_safe)->next)
-
 #define c_list_for_each_entry_safe_continue(_iter, _safe, _list, _m)            \
         for (_iter = c_list_entry((_iter) ? (_iter)->_m.next : (_list)->next,   \
                                   __typeof__(*_iter),                           \
@@ -353,20 +395,14 @@ static inline CList *c_list_last(CList *list) {
              _safe = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m);    \
              &(_iter)->_m != (_list);                                           \
              _iter = (_safe),                                                   \
-             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))    \
-
-#define c_list_for_each_safe_unlink(_iter, _safe, _list)                        \
-        for (_iter = (_list)->next, _safe = (_iter)->next;                      \
-             ((*_iter = (CList)C_LIST_INIT(*_iter)), (_iter) != (_list));       \
-             _iter = (_safe), _safe = (_safe)->next)
+             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))
 
 #define c_list_for_each_entry_safe_unlink(_iter, _safe, _list, _m)              \
         for (_iter = c_list_entry((_list)->next, __typeof__(*_iter), _m),       \
              _safe = c_list_entry((_iter)->_m.next, __typeof__(*_iter), _m);    \
-             (((_iter)->_m = (CList)C_LIST_INIT((_iter)->_m)),                  \
-              &(_iter)->_m != (_list));                                         \
+             c_list_init(&(_iter)->_m) != (_list);                              \
              _iter = (_safe),                                                   \
-             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))    \
+             _safe = c_list_entry((_safe)->_m.next, __typeof__(*_iter), _m))
 
 /**
  * c_list_flush() - flush all entries from a list
@@ -402,8 +438,8 @@ static inline void c_list_flush(CList *list) {
  *
  * Return: Number of items in @list.
  */
-static inline unsigned long c_list_length(const CList *list) {
-        unsigned long n = 0;
+static inline size_t c_list_length(const CList *list) {
+        size_t n = 0;
         const CList *iter;
 
         c_list_for_each(iter, list)
