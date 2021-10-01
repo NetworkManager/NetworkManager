@@ -18,6 +18,10 @@ do_cleanup() {
     pkill -F "/tmp/nm-radvd-$PEER_PREFIX$IDX.pid" radvd &>/dev/null || :
     rm -rf "/tmp/nm-radvd-$PEER_PREFIX$IDX.pid"
 
+    pkill -F "/tmp/nm-pppoe-$PEER_PREFIX$IDX.pid" pppoe-server &>/dev/null || :
+    rm -rf "/tmp/nm-pppoe-$PEER_PREFIX$IDX.pid"
+    rm -rf "/tmp/nm-pppoe-allip-$PEER_PREFIX$IDX"
+
     rm -rf "/tmp/nm-radvd-$PEER_PREFIX$IDX.conf"
 
     ip link del "$PEER_PREFIX$IDX" &>/dev/null || :
@@ -33,8 +37,14 @@ do_setup() {
     ip link add "$NAME_PREFIX$IDX" type veth peer "$PEER_PREFIX$IDX"
     ip link set "$PEER_PREFIX$IDX" up
 
-    ip addr add "192.168.$((120 + $IDX)).1/23" dev "$PEER_PREFIX$IDX"
+    ip addr add "192.168.$((120 + IDX)).1/23" dev "$PEER_PREFIX$IDX"
     ip addr add "192:168:$((120 + IDX))::1/64" dev "$PEER_PREFIX$IDX"
+
+    # PPPoE inside the rootless container is not actually working, because
+    # /dev/ppp is not accessible. Still start it, so that we at least can
+    # test how far it goes...
+    echo "192.168.$((120 + $IDX)).180-200" > "/tmp/nm-pppoe-allip-$PEER_PREFIX$IDX"
+    pppoe-server -X "/tmp/nm-pppoe-$PEER_PREFIX$IDX.pid" -S isp -C isp -L "192.168.$((120 + IDX)).1" -p "/tmp/nm-pppoe-allip-$PEER_PREFIX$IDX" -I "$PEER_PREFIX$IDX" &
 
     dnsmasq \
         --conf-file=/dev/null \

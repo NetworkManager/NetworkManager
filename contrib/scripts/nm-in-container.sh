@@ -181,11 +181,13 @@ nm-env-prepare.sh
 nm-env-prepare.sh --prefix eth -i 4
 nm_run_gdb
 nm_run_normal
+nmcli device connect net1
+nmcli connection add type pppoe con-name ppp-net1 ifname ppp-net1 pppoe.parent net1 service isp username test password networkmanager autoconnect no
 for i in {1..9}; do nm-env-prepare.sh --prefix eth -i \$i; done
 systemctl status NetworkManager
 systemctl stop NetworkManager
 systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
-systemctl stop NetworkManager; gdb --args /opt/test/sbin/NetworkManager --debug
+systemctl stop NetworkManager; gdb -ex run --args /opt/test/sbin/NetworkManager --debug
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-gdbinit"
@@ -245,6 +247,7 @@ RUN dnf install -y \\
     make \\
     meson \\
     meson \\
+    mlocate \\
     mobile-broadband-provider-info-devel \\
     newt-devel \\
     nss-devel \\
@@ -262,6 +265,7 @@ RUN dnf install -y \\
     python3-pyyaml \\
     radvd \\
     readline-devel \\
+    rp-pppoe \\
     rpm-build \\
     strace \\
     systemd \\
@@ -304,6 +308,8 @@ RUN sed 's/.*RateLimitBurst=.*/RateLimitBurst=0/' /etc/systemd/journald.conf -i
 RUN rm -rf /etc/NetworkManager/system-connections/*
 
 RUN echo -e '\n. /etc/bashrc.my\n' >> /etc/bashrc
+
+RUN updatedb
 EOF
 }
 
