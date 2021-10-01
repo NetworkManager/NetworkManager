@@ -425,7 +425,7 @@ static void test_destructors(void) {
         }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, _c_unused_ char **argv) {
         test_misc(argc);
         test_destructors();
         return 0;
