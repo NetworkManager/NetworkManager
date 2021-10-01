@@ -19,3 +19,30 @@ jobs:
       with:
         m32: 1
         valgrind: 1
+
+  ci-msvc:
+    name: CI with MSVC
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2016, windows-latest]
+
+    steps:
+    - name: Fetch Sources
+      uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install Python Dependencies
+      run: pip install meson ninja
+    - name: Prepare MSVC
+      uses: bus1/cabuild/action/msdevshell@v1
+      with:
+        architecture: x64
+    - name: Prepare Build
+      run: meson setup build
+    - name: Run Build
+      run: meson compile -v -C build
+    - name: Run Test Suite
+      run: meson test -v -C build
