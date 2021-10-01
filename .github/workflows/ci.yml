@@ -1,0 +1,33 @@
+name: Continuous Integration
+
+on:
+  push:
+  pull_request:
+  schedule:
+  - cron:  '0 0 * * *'
+
+jobs:
+  ci:
+    name: CI with Default Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Fetch Sources
+      uses: actions/checkout@v2
+    - name: Run through C-Util CI
+      uses: c-util/automation/src/ci-c-util@v1
+      with:
+        m32: 1
+        valgrind: 1
+
+  ci-ptrace:
+    name: Reduced CI with PTrace
+    runs-on: ubuntu-latest
+    env:
+      CRBTREE_TEST_PTRACE: '1'
+
+    steps:
+    - name: Fetch Sources
+      uses: actions/checkout@v2
+    - name: Run through C-Util CI
+      uses: c-util/automation/src/ci-c-util@v1
