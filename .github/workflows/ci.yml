@@ -1,0 +1,50 @@
+name: Continuous Integration
+
+on:
+  push:
+  pull_request:
+  schedule:
+  - cron:  '0 0 * * *'
+
+jobs:
+  ci:
+    name: CI with Default Configuration
+    runs-on: ubuntu-latest
+
+    steps:
+    #
+    # Prepare CI
+    #
+    # We cannot use the github-action of the `ci-c-util` project, because we
+    # need privileges in the container. Therefore, fetch the CI sources and
+    # build the container manually.
+    #
+    - name: Fetch CI
+      uses: actions/checkout@v2
+      with:
+        repository: c-util/automation
+        ref: v1
+        path: automation
+    - name: Build CI
+      working-directory: automation/src/ci-c-util
+      run: docker build --tag ci-c-util:v1 .
+
+    #
+    # Run CI
+    #
+    # Take the CI image we built and run the CI with the default project
+    # configuration. We do not use valgrind, since it falls-over with bpf(2)
+    # syscalls.
+    #
+    - name: Fetch Sources
+      uses: actions/checkout@v2
+      with:
+        path: source
+    - name: Run through C-Util CI
+      run: |
+        docker run \
+                --privileged \
+                -v "$(pwd)/source:/github/workspace" \
+                "ci-c-util:v1" \
+                "--m32=1" \
+                "--source=/github/workspace"
