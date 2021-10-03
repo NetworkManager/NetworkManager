@@ -1813,4 +1813,6 @@ global:
 	nm_setting_bond_port_get_queue_id;
 	nm_setting_bond_port_get_type;
 	nm_setting_bond_port_new;
+	nm_setting_connection_get_dns_over_tls;
+	nm_setting_connection_dns_over_tls_get_type;
 } libnm_1_32_4;

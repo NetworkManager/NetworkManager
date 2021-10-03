@@ -64,6 +64,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_LLDP,
                              PROP_MDNS,
                              PROP_LLMNR,
+                             PROP_DNS_OVER_TLS,
                              PROP_STABLE_ID,
                              PROP_AUTH_RETRIES,
                              PROP_WAIT_DEVICE_TIMEOUT,
@@ -88,6 +89,7 @@ typedef struct {
     gint32                               auth_retries;
     gint32                               mdns;
     gint32                               llmnr;
+    gint32                               dns_over_tls;
     gint32                               wait_device_timeout;
     gint32                               lldp;
     guint32                              gateway_ping_timeout;
@@ -977,6 +979,23 @@ nm_setting_connection_get_llmnr(NMSettingConnection *setting)
     return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->llmnr;
 }
 
+/**
+ * nm_setting_connection_get_dns_over_tls:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:dns-over-tls property of the setting.
+ *
+ * Since: 1.34
+ **/
+NMSettingConnectionDnsOverTls
+nm_setting_connection_get_dns_over_tls(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting),
+                         NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->dns_over_tls;
+}
+
 static void
 _set_error_missing_base_setting(GError **error, const char *type)
 {
@@ -1313,6 +1332,20 @@ after_interface_name:
                        "%s.%s: ",
                        NM_SETTING_CONNECTION_SETTING_NAME,
                        NM_SETTING_CONNECTION_LLMNR);
+        return FALSE;
+    }
+
+    if (priv->dns_over_tls < (int) NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT
+        || priv->dns_over_tls > (int) NM_SETTING_CONNECTION_DNS_OVER_TLS_YES) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("value %d is not valid"),
+                    priv->dns_over_tls);
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_CONNECTION_SETTING_NAME,
+                       NM_SETTING_CONNECTION_DNS_OVER_TLS);
         return FALSE;
     }
 
@@ -1668,6 +1701,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_LLMNR:
         g_value_set_int(value, priv->llmnr);
         break;
+    case PROP_DNS_OVER_TLS:
+        g_value_set_int(value, priv->dns_over_tls);
+        break;
     case PROP_WAIT_DEVICE_TIMEOUT:
         g_value_set_int(value, priv->wait_device_timeout);
         break;
@@ -1779,6 +1815,9 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_LLMNR:
         priv->llmnr = g_value_get_int(value);
+        break;
+    case PROP_DNS_OVER_TLS:
+        priv->dns_over_tls = g_value_get_int(value);
         break;
     case PROP_WAIT_DEVICE_TIMEOUT:
         priv->wait_device_timeout = g_value_get_int(value);
@@ -2539,6 +2578,34 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                              NM_SETTING_PARAM_NONE,
                                              NMSettingConnectionPrivate,
                                              llmnr);
+
+    /**
+     * NMSettingConnection:dns-over-tls:
+     *
+     * Whether DNSOverTls (dns-over-tls) is enabled for the connection.
+     * DNSOverTls is a technology which uses TLS to encrypt dns traffic.
+     *
+     * The permitted values are: "yes" (2) use DNSOverTls and disabled fallback,
+     * "opportunistic" (1) use DNSOverTls but allow fallback to unencrypted resolution,
+     * "no" (0) don't ever use DNSOverTls.
+     * If unspecified "default" depends on the plugin used. Systemd-resolved
+     * uses global setting.
+     *
+     * This feature requires a plugin which supports DNSOverTls. Otherwise, the
+     * setting has no effect. One such plugin is dns-systemd-resolved.
+     *
+     * Since: 1.34
+     **/
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_DNS_OVER_TLS,
+                                             PROP_DNS_OVER_TLS,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingConnectionPrivate,
+                                             dns_over_tls);
 
     /**
      * NMSettingConnection:wait-device-timeout:
