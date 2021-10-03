@@ -704,7 +704,22 @@ const char *nmp_object_to_string(const NMPObject *     obj,
                                  char *                buf,
                                  gsize                 buf_size);
 void        nmp_object_hash_update(const NMPObject *obj, NMHashState *h);
-int         nmp_object_cmp(const NMPObject *obj1, const NMPObject *obj2);
+
+typedef enum {
+    NMP_OBJECT_CMP_FLAGS_NONE = 0,
+
+    /* Warning: this flag is currently only implemented for certain object types
+     * (address and routes). */
+    NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX = (1llu << 0),
+} NMPObjectCmpFlags;
+
+int nmp_object_cmp_full(const NMPObject *obj1, const NMPObject *obj2, NMPObjectCmpFlags flags);
+
+static inline int
+nmp_object_cmp(const NMPObject *obj1, const NMPObject *obj2)
+{
+    return nmp_object_cmp_full(obj1, obj2, NMP_OBJECT_CMP_FLAGS_NONE);
+}
 
 static inline gboolean
 nmp_object_equal(const NMPObject *obj1, const NMPObject *obj2)

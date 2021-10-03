@@ -1198,9 +1198,11 @@ _vt_cmd_obj_hash_update_lnk_wireguard(const NMPObject *obj, NMHashState *h)
 }
 
 int
-nmp_object_cmp(const NMPObject *obj1, const NMPObject *obj2)
+nmp_object_cmp_full(const NMPObject *obj1, const NMPObject *obj2, NMPObjectCmpFlags flags)
 {
-    const NMPClass *klass1, *klass2;
+    const NMPClass *klass1;
+    const NMPClass *klass2;
+    NMPObject       obj_stackcopy;
 
     NM_CMP_SELF(obj1, obj2);
 
@@ -1213,6 +1215,22 @@ nmp_object_cmp(const NMPObject *obj1, const NMPObject *obj2)
     if (klass1 != klass2) {
         nm_assert(klass1->obj_type != klass2->obj_type);
         return klass1->obj_type < klass2->obj_type ? -1 : 1;
+    }
+
+    if (NM_FLAGS_HAS(flags, NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX)) {
+        if (!NM_IN_SET(klass1,
+                       nmp_class_from_type(NMP_OBJECT_TYPE_IP4_ADDRESS),
+                       nmp_class_from_type(NMP_OBJECT_TYPE_IP6_ADDRESS),
+                       nmp_class_from_type(NMP_OBJECT_TYPE_IP4_ROUTE),
+                       nmp_class_from_type(NMP_OBJECT_TYPE_IP6_ROUTE))) {
+            /* This flag is currently only implemented for certain types.
+             * That is, because we just create a stack copy, and that naive
+             * approach only knows for types where we know that it works. */
+        } else if (obj1->obj_with_ifindex.ifindex != obj2->obj_with_ifindex.ifindex) {
+            nmp_object_stackinit(&obj_stackcopy, klass1->obj_type, &obj2->obj_with_ifindex);
+            obj_stackcopy.obj_with_ifindex.ifindex = obj1->obj_with_ifindex.ifindex;
+            obj2                                   = &obj_stackcopy;
+        }
     }
 
     if (klass1->cmd_obj_cmp)
