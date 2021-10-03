@@ -2017,12 +2017,23 @@ nm_l3_config_data_set_dhcp_lease_from_options(NML3ConfigData *self,
 /*****************************************************************************/
 
 static int
-_dedup_multi_index_cmp(const NML3ConfigData *a, const NML3ConfigData *b, NMPObjectType obj_type)
+_dedup_multi_index_cmp(const NML3ConfigData *a,
+                       const NML3ConfigData *b,
+                       NMPObjectType         obj_type,
+                       gboolean              ignore_ifindex)
 {
     const NMDedupMultiHeadEntry *h_a = nm_l3_config_data_lookup_objs(a, obj_type);
     const NMDedupMultiHeadEntry *h_b = nm_l3_config_data_lookup_objs(b, obj_type);
     NMDedupMultiIter             iter_a;
     NMDedupMultiIter             iter_b;
+
+    /* We handle ignore_index via NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX flag, which is
+     * only implemented for certain types. */
+    nm_assert(NM_IN_SET(obj_type,
+                        NMP_OBJECT_TYPE_IP4_ADDRESS,
+                        NMP_OBJECT_TYPE_IP6_ADDRESS,
+                        NMP_OBJECT_TYPE_IP4_ROUTE,
+                        NMP_OBJECT_TYPE_IP6_ROUTE));
 
     NM_CMP_SELF(h_a, h_b);
 
@@ -2048,7 +2059,10 @@ _dedup_multi_index_cmp(const NML3ConfigData *a, const NML3ConfigData *b, NMPObje
         have_b = nm_platform_dedup_multi_iter_next_obj(&iter_b, &obj_b, obj_type);
         nm_assert(have_b);
 
-        NM_CMP_RETURN(nmp_object_cmp(obj_a, obj_b));
+        NM_CMP_RETURN(nmp_object_cmp_full(obj_a,
+                                          obj_b,
+                                          ignore_ifindex ? NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX
+                                                         : NMP_OBJECT_CMP_FLAGS_NONE));
     }
 }
 
@@ -2057,25 +2071,30 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
                            const NML3ConfigData *b,
                            NML3ConfigCmpFlags    cmp_flags)
 {
-    int IS_IPv4;
+    int      IS_IPv4;
+    gboolean ignore_ifindex;
 
     NM_CMP_SELF(a, b);
 
-    if (!NM_FLAGS_HAS(cmp_flags, NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX))
+    ignore_ifindex = NM_FLAGS_HAS(cmp_flags, NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX);
+
+    if (!ignore_ifindex)
         NM_CMP_DIRECT(a->ifindex, b->ifindex);
 
     NM_CMP_DIRECT(a->flags, b->flags);
 
-    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP4_ADDRESS));
-    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP6_ADDRESS));
-    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP4_ROUTE));
-    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP6_ROUTE));
+    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP4_ADDRESS, ignore_ifindex));
+    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP6_ADDRESS, ignore_ifindex));
+    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP4_ROUTE, ignore_ifindex));
+    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP6_ROUTE, ignore_ifindex));
 
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
         const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
 
-        NM_CMP_RETURN(
-            nmp_object_cmp(a->best_default_route_x[IS_IPv4], b->best_default_route_x[IS_IPv4]));
+        NM_CMP_RETURN(nmp_object_cmp_full(a->best_default_route_x[IS_IPv4],
+                                          b->best_default_route_x[IS_IPv4],
+                                          ignore_ifindex ? NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX
+                                                         : NMP_OBJECT_CMP_FLAGS_NONE));
 
         NM_CMP_RETURN(
             _garray_inaddr_cmp(a->nameservers_x[IS_IPv4], b->nameservers_x[IS_IPv4], addr_family));
@@ -2822,21 +2841,24 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
     G_STMT_START                                          \
     {                                                     \
         if (a_src != &a.ax) {                             \
-            a_src = &a.ax;                                \
             if (IS_IPv4)                                  \
                 a.a4 = *NMP_OBJECT_CAST_IP4_ADDRESS(obj); \
             else                                          \
                 a.a6 = *NMP_OBJECT_CAST_IP6_ADDRESS(obj); \
+            a_src = &a.ax;                                \
         }                                                 \
     }                                                     \
     G_STMT_END
-
-            nm_assert(a_src->ifindex == self->ifindex);
 
             if (hook_add_obj && !hook_add_obj(src, obj, &hook_result, hook_user_data))
                 continue;
 
             nm_assert(IS_IPv4 || hook_result.ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
+
+            if (a_src->ifindex != self->ifindex) {
+                _ensure_a();
+                a.ax.ifindex = self->ifindex;
+            }
 
             if (hook_result.ip4acd_not_ready != NM_OPTION_BOOL_DEFAULT && IS_IPv4
                 && (!!hook_result.ip4acd_not_ready)
@@ -2877,21 +2899,24 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
     G_STMT_START                                        \
     {                                                   \
         if (r_src != &r.rx) {                           \
-            r_src = &r.rx;                              \
             if (IS_IPv4)                                \
                 r.r4 = *NMP_OBJECT_CAST_IP4_ROUTE(obj); \
             else                                        \
                 r.r6 = *NMP_OBJECT_CAST_IP6_ROUTE(obj); \
+            r_src = &r.rx;                              \
         }                                               \
     }                                                   \
     G_STMT_END
-
-                nm_assert(r_src->ifindex == self->ifindex);
 
                 if (hook_add_obj && !hook_add_obj(src, obj, &hook_result, hook_user_data))
                     continue;
 
                 nm_assert(hook_result.ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
+
+                if (r_src->ifindex != self->ifindex) {
+                    _ensure_r();
+                    r.rx.ifindex = self->ifindex;
+                }
 
                 if (hook_result.assume_config_once != NM_OPTION_BOOL_DEFAULT
                     && (!!hook_result.assume_config_once) != r_src->r_assume_config_once) {
@@ -3059,7 +3084,12 @@ nm_l3_config_data_new_clone(const NML3ConfigData *src, int ifindex)
                             NULL,
                             NULL);
 
-    nm_assert(nm_l3_config_data_cmp_full(src, self, NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX) == 0);
+    nm_assert(nm_l3_config_data_cmp_full(src,
+                                         self,
+                                         src->ifindex != ifindex
+                                             ? NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX
+                                             : NM_L3_CONFIG_CMP_FLAGS_NONE)
+              == 0);
     nm_assert(nm_l3_config_data_get_ifindex(self) == ifindex);
 
     return self;
