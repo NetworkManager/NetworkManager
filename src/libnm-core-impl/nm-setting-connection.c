@@ -2596,6 +2596,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.34
      **/
+    /* ---ifcfg-rh---
+     * property: dns-over-tls
+     * variable: DNS_OVER_TLS(+)
+     * values: yes,no,opportunistic
+     * default: missing variable means global default
+     * description: Whether or not DNSOverTls is enabled for the connection
+     * ---end---
+     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_CONNECTION_DNS_OVER_TLS,

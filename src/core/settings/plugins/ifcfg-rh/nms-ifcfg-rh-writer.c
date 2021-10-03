@@ -2087,6 +2087,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
     gint32                        vint32;
     NMSettingConnectionMdns       mdns;
     NMSettingConnectionLlmnr      llmnr;
+    NMSettingConnectionDnsOverTls dns_over_tls;
     guint32                       vuint32;
     const char *                  tmp, *mud_url;
 
@@ -2269,6 +2270,14 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
     llmnr = nm_setting_connection_get_llmnr(s_con);
     if (llmnr != NM_SETTING_CONNECTION_LLMNR_DEFAULT) {
         svSetValueEnum(ifcfg, "LLMNR", nm_setting_connection_llmnr_get_type(), llmnr);
+    }
+
+    dns_over_tls = nm_setting_connection_get_dns_over_tls(s_con);
+    if (dns_over_tls != NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT) {
+        svSetValueEnum(ifcfg,
+                       "DNS_OVER_TLS",
+                       nm_setting_connection_dns_over_tls_get_type(),
+                       dns_over_tls);
     }
 }
 
