@@ -1198,6 +1198,29 @@ _prop_get_connection_llmnr(NMDevice *self)
                                                        NM_SETTING_CONNECTION_LLMNR_DEFAULT);
 }
 
+static NMSettingConnectionDnsOverTls
+_prop_get_connection_dns_over_tls(NMDevice *self)
+{
+    NMConnection *                connection;
+    NMSettingConnectionDnsOverTls dns_over_tls = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
+
+    g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
+
+    connection = nm_device_get_applied_connection(self);
+    if (connection)
+        dns_over_tls = nm_setting_connection_get_dns_over_tls(
+            nm_connection_get_setting_connection(connection));
+    if (dns_over_tls != NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT)
+        return dns_over_tls;
+
+    return nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                       NM_CON_DEFAULT("connection.dns-over-tls"),
+                                                       self,
+                                                       NM_SETTING_CONNECTION_DNS_OVER_TLS_NO,
+                                                       NM_SETTING_CONNECTION_DNS_OVER_TLS_YES,
+                                                       NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
+}
+
 static guint32
 _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
 {
@@ -8996,6 +9019,7 @@ ensure_con_ip_config(NMDevice *self, int addr_family)
                                     nm_connection_get_setting_ip4_config(connection),
                                     _prop_get_connection_mdns(self),
                                     _prop_get_connection_llmnr(self),
+                                    _prop_get_connection_dns_over_tls(self),
                                     nm_device_get_route_table(self, addr_family),
                                     nm_device_get_route_metric(self, addr_family));
     } else {
@@ -9500,6 +9524,7 @@ dhcp4_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_data, NM
                                         nm_connection_get_setting_ip4_config(connection),
                                         NM_SETTING_CONNECTION_MDNS_DEFAULT,
                                         NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+                                        NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT,
                                         nm_device_get_route_table(self, AF_INET),
                                         nm_device_get_route_metric(self, AF_INET));
 
@@ -11314,6 +11339,7 @@ act_stage3_ip_config_start(NMDevice *           self,
                                             nm_connection_get_setting_ip4_config(connection),
                                             NM_SETTING_CONNECTION_MDNS_DEFAULT,
                                             NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+                                            NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT,
                                             nm_device_get_route_table(self, AF_INET),
                                             nm_device_get_route_metric(self, AF_INET));
                 configs    = g_new0(NMIP4Config *, 2);
@@ -12500,6 +12526,7 @@ nm_device_reactivate_ip_config(NMDevice *         self,
                                     s_ip_new,
                                     _prop_get_connection_mdns(self),
                                     _prop_get_connection_llmnr(self),
+                                    _prop_get_connection_dns_over_tls(self),
                                     nm_device_get_route_table(self, AF_INET),
                                     nm_device_get_route_metric(self, AF_INET));
     } else {
@@ -12633,7 +12660,8 @@ can_reapply_change(NMDevice *  self,
                                                  NM_SETTING_CONNECTION_METERED,
                                                  NM_SETTING_CONNECTION_LLDP,
                                                  NM_SETTING_CONNECTION_MDNS,
-                                                 NM_SETTING_CONNECTION_LLMNR);
+                                                 NM_SETTING_CONNECTION_LLMNR,
+                                                 NM_SETTING_CONNECTION_DNS_OVER_TLS);
     }
 
     if (NM_IN_STRSET(setting_name,

@@ -286,14 +286,15 @@ free_pending_updates(NMDnsSystemdResolved *self)
 static gboolean
 prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
 {
-    GVariantBuilder          dns;
-    GVariantBuilder          domains;
-    NMCListElem *            elem;
-    NMSettingConnectionMdns  mdns     = NM_SETTING_CONNECTION_MDNS_DEFAULT;
-    NMSettingConnectionLlmnr llmnr    = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
-    const char *             mdns_arg = NULL, *llmnr_arg = NULL;
-    gboolean                 has_config        = FALSE;
-    gboolean                 has_default_route = FALSE;
+    GVariantBuilder               dns;
+    GVariantBuilder               domains;
+    NMCListElem *                 elem;
+    NMSettingConnectionMdns       mdns         = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+    NMSettingConnectionLlmnr      llmnr        = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
+    NMSettingConnectionDnsOverTls dns_over_tls = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
+    const char *                  mdns_arg = NULL, *llmnr_arg = NULL, *dns_over_tls_arg = NULL;
+    gboolean                      has_config        = FALSE;
+    gboolean                      has_default_route = FALSE;
 
     g_variant_builder_init(&dns, G_VARIANT_TYPE("(ia(iay))"));
     g_variant_builder_add(&dns, "i", ic->ifindex);
@@ -315,6 +316,8 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
         if (NM_IS_IP4_CONFIG(ip_config)) {
             mdns  = NM_MAX(mdns, nm_ip4_config_mdns_get(NM_IP4_CONFIG(ip_config)));
             llmnr = NM_MAX(llmnr, nm_ip4_config_llmnr_get(NM_IP4_CONFIG(ip_config)));
+            dns_over_tls =
+                NM_MAX(dns_over_tls, nm_ip4_config_dns_over_tls_get(NM_IP4_CONFIG(ip_config)));
         }
     }
 
@@ -353,7 +356,24 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     }
     nm_assert(llmnr_arg);
 
-    if (!nm_str_is_empty(mdns_arg) || !nm_str_is_empty(llmnr_arg))
+    switch (dns_over_tls) {
+    case NM_SETTING_CONNECTION_DNS_OVER_TLS_NO:
+        dns_over_tls_arg = "no";
+        break;
+    case NM_SETTING_CONNECTION_DNS_OVER_TLS_OPPORTUNISTIC:
+        dns_over_tls_arg = "opportunistic";
+        break;
+    case NM_SETTING_CONNECTION_DNS_OVER_TLS_YES:
+        dns_over_tls_arg = "yes";
+        break;
+    case NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT:
+        dns_over_tls_arg = "";
+        break;
+    }
+    nm_assert(dns_over_tls_arg);
+
+    if (!nm_str_is_empty(mdns_arg) || !nm_str_is_empty(llmnr_arg)
+        || !nm_str_is_empty(dns_over_tls_arg))
         has_config = TRUE;
 
     _request_item_append(self, "SetLinkDomains", ic->ifindex, g_variant_builder_end(&domains));
@@ -370,6 +390,10 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
                          ic->ifindex,
                          g_variant_new("(is)", ic->ifindex, llmnr_arg ?: ""));
     _request_item_append(self, "SetLinkDNS", ic->ifindex, g_variant_builder_end(&dns));
+    _request_item_append(self,
+                         "SetLinkDNSOverTLS",
+                         ic->ifindex,
+                         g_variant_new("(is)", ic->ifindex, dns_over_tls_arg ?: ""));
 
     return has_config;
 }
