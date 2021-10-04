@@ -1,7 +1,7 @@
 #!/usr/bin/perl -n
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# Copyright (C) 2018 Red Hat, Inc.
+# Copyright (C) 2018,2021 Red Hat, Inc.
 #
 
 # $ perldoc checkpatch.pl for eye-pleasing view of the manual:
@@ -50,6 +50,7 @@ our $line_no;
 our $indent;
 our $check_is_todo;
 our $expect_spdx;
+our $subdir;
 
 sub new_hunk
 {
@@ -61,7 +62,8 @@ sub new_file
 {
 	$expect_spdx = 0;
 	$check_is_todo = 1;
-	$filename = shift;
+	$filename = $subdir // '';
+	$filename .= shift;
 	@functions_seen = ();
 }
 
@@ -140,6 +142,7 @@ if ($is_patch) {
 	/^(Reverts|Fixes): *(.*)/ and check_commit ($2, 1);
 	/This reverts commit/ and next;
 	/cherry picked from/ and next;
+	/^git-subtree-dir: (.*)/ and $subdir = "$1/";
 	/\bcommit (.*)/ and check_commit ($1, 0);
 	next;
 } else {
@@ -291,7 +294,7 @@ F<CONTRIBUTING>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2018 Red Hat
+Copyright (C) 2018,2021 Red Hat
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
