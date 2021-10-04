@@ -145,7 +145,7 @@ _get_config_fetch_done_cb(NMHttpClient *  http_client,
     }
 
     iface_data->iface_get_config = g_hash_table_lookup(get_config_data->result_dict, v_hwaddr);
-    iface_get_config = iface_data->iface_get_config;
+    iface_get_config             = iface_data->iface_get_config;
 
     if (is_ipv4) {
         char      tmp_addr_str[NM_UTILS_INET_ADDRSTRLEN];
