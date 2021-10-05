@@ -1786,6 +1786,8 @@ global:
 } libnm_1_28_0;
 
 libnm_1_30_8 {
+	#nm_ip_address_dup@libnm_1_30_8;
+	#nm_ip_route_dup@libnm_1_30_8;
 	#nm_setting_ip_config_get_required_timeout@libnm_1_30_8;
 } libnm_1_30_0;
 
