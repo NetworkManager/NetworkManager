@@ -8838,3 +8838,11 @@ NM_BACKPORT_SYMBOL(libnm_1_30_8,
                    nm_setting_ip_config_get_required_timeout,
                    (NMSettingIPConfig * setting),
                    (setting));
+
+NM_BACKPORT_SYMBOL(libnm_1_30_8,
+                   NMIPAddress *,
+                   nm_ip_address_dup,
+                   (NMIPAddress * address),
+                   (address));
+
+NM_BACKPORT_SYMBOL(libnm_1_30_8, NMIPRoute *, nm_ip_route_dup, (NMIPRoute * route), (route));
