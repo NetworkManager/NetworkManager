@@ -30,8 +30,9 @@ n
     <!--
         Slaves:
 
-        Array of object paths representing devices which are currently enslaved to
-        this device.
+        DEPRECATED. Use the "Ports" property in
+        "org.freedesktop.NetworkManager.Device" instead which exists since
+        version NetworkManager 1.34.0.
     -->
     <property name="Slaves" type="ao" access="read"/>
 

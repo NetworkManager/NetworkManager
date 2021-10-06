@@ -290,7 +290,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDevice,
                              PROP_STATISTICS_RX_BYTES,
                              PROP_IP4_CONNECTIVITY,
                              PROP_IP6_CONNECTIVITY,
-                             PROP_INTERFACE_FLAGS, );
+                             PROP_INTERFACE_FLAGS,
+                             PROP_PORTS, );
 
 typedef struct _NMDevicePrivate {
     bool in_state_changed;
@@ -710,6 +711,8 @@ typedef struct _NMDevicePrivate {
     bool mtu_force_set_done : 1;
 
     NMOptionBool promisc_reset;
+
+    GVariant *ports_variant; /* Array of port devices D-Bus path */
 } NMDevicePrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDevice, nm_device, NM_TYPE_DBUS_OBJECT)
@@ -6795,8 +6798,8 @@ nm_device_slave_notify_enslave(NMDevice *self, gboolean success)
 
             priv->is_enslaved = TRUE;
 
-            _notify(self, PROP_MASTER);
-            _notify(priv->master, PROP_SLAVES);
+            nm_clear_pointer(&priv->ports_variant, g_variant_unref);
+            nm_gobject_notify_together(self, PROP_MASTER, PROP_PORTS, PROP_SLAVES);
         } else if (activating) {
             _LOGW(LOGD_DEVICE,
                   "Activation: connection '%s' could not be enslaved",
@@ -6860,8 +6863,8 @@ nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
 
     if (priv->is_enslaved) {
         priv->is_enslaved = FALSE;
-        _notify(self, PROP_MASTER);
-        _notify(priv->master, PROP_SLAVES);
+        nm_clear_pointer(&priv->ports_variant, g_variant_unref);
+        nm_gobject_notify_together(self, PROP_MASTER, PROP_PORTS, PROP_SLAVES);
     }
 }
 
@@ -18031,6 +18034,37 @@ _activation_func_to_string(ActivationHandleFunc func)
     g_return_val_if_reached("unknown");
 }
 
+static GVariant *
+_device_get_ports_variant(NMDevice *device)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(device);
+    SlaveInfo *      info;
+    GVariantBuilder  builder;
+    gboolean         any = FALSE;
+
+    if (priv->ports_variant)
+        return priv->ports_variant;
+
+    c_list_for_each_entry (info, &priv->slaves, lst_slave) {
+        const char *path;
+
+        if (!NM_DEVICE_GET_PRIVATE(info->slave)->is_enslaved)
+            continue;
+        path = nm_dbus_object_get_path(NM_DBUS_OBJECT(info->slave));
+        if (!path)
+            continue;
+        if (!any) {
+            any = TRUE;
+            g_variant_builder_init(&builder, G_VARIANT_TYPE("ao"));
+        }
+        g_variant_builder_add(&builder, "o", path);
+    }
+    priv->ports_variant = any ? g_variant_ref_sink(g_variant_builder_end(&builder))
+                              : g_variant_ref(nm_g_variant_singleton_ao());
+
+    return priv->ports_variant;
+}
+
 /*****************************************************************************/
 
 static void
@@ -18197,29 +18231,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_boolean(value, nm_device_is_real(self));
         break;
     case PROP_SLAVES:
-    {
-        CList *slave_iter;
-        char **slave_list;
-        gsize  i, n;
-
-        n          = c_list_length(&priv->slaves);
-        slave_list = g_new(char *, n + 1);
-        i          = 0;
-        c_list_for_each (slave_iter, &priv->slaves) {
-            SlaveInfo * info = c_list_entry(slave_iter, SlaveInfo, lst_slave);
-            const char *path;
-
-            if (!NM_DEVICE_GET_PRIVATE(info->slave)->is_enslaved)
-                continue;
-            path = nm_dbus_object_get_path(NM_DBUS_OBJECT(info->slave));
-            if (path)
-                slave_list[i++] = g_strdup(path);
-        }
-        nm_assert(i <= n);
-        slave_list[i] = NULL;
-        g_value_take_boxed(value, slave_list);
+    case PROP_PORTS:
+        g_value_set_variant(value, _device_get_ports_variant(self));
         break;
-    }
     case PROP_STATISTICS_REFRESH_RATE_MS:
         g_value_set_uint(value, priv->stats.refresh_rate_ms);
         break;
@@ -18601,6 +18615,8 @@ finalize(GObject *object)
     nm_dbus_track_obj_path_deinit(&priv->parent_device);
     nm_dbus_track_obj_path_deinit(&priv->act_request);
 
+    nm_g_variant_unref(priv->ports_variant);
+
     G_OBJECT_CLASS(nm_device_parent_class)->finalize(object);
 
     /* for testing, NMDeviceTest does not invoke NMDevice::constructed,
@@ -18719,9 +18735,8 @@ static const NMDBusInterfaceInfoExtended interface_info_device = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("InterfaceFlags",
                                                            "u",
                                                            NM_DEVICE_INTERFACE_FLAGS),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("HwAddress",
-                                                           "s",
-                                                           NM_DEVICE_HW_ADDRESS), ), ),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("HwAddress", "s", NM_DEVICE_HW_ADDRESS),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Ports", "ao", NM_DEVICE_PORTS), ), ),
 };
 
 static const NMDBusInterfaceInfoExtended interface_info_device_statistics = {
@@ -19016,11 +19031,18 @@ nm_device_class_init(NMDeviceClass *klass)
                                                      "",
                                                      FALSE,
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_SLAVES] = g_param_spec_boxed(NM_DEVICE_SLAVES,
-                                                     "",
-                                                     "",
-                                                     G_TYPE_STRV,
-                                                     G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_SLAVES] = g_param_spec_variant(NM_DEVICE_SLAVES,
+                                                       "",
+                                                       "",
+                                                       G_VARIANT_TYPE("ao"),
+                                                       NULL,
+                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_PORTS]  = g_param_spec_variant(NM_DEVICE_PORTS,
+                                                      "",
+                                                      "",
+                                                      G_VARIANT_TYPE("ao"),
+                                                      NULL,
+                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_STATISTICS_REFRESH_RATE_MS] =
         g_param_spec_uint(NM_DEVICE_STATISTICS_REFRESH_RATE_MS,
