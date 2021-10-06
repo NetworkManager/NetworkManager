@@ -14,6 +14,11 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   Adjust the "dns-priority" to your liking after import yourself.
 * NetworkManager no longer listens for netlink events for traffic
   control objects (qdiscs and filters).
+* core: add internal nm-sudo service for separating privileges and have
+  a way to drop capabilities from NetworkManager daemon.
+* bond: add support for setting queue-id of bond port.
+* nmtui: add support for WireGuard profiles.
+* nmcli: add aliases `nmcli device up|down` beside connect|disconnect.
 
 The following changes were backported to 1.32.x releases between 1.32.0
 and 1.32.12 are also present in NetworkManager-1.32:
