@@ -1536,6 +1536,7 @@ GVariant *nm_g_variant_singleton_as(void);
 GVariant *nm_g_variant_singleton_aLsvI(void);
 GVariant *nm_g_variant_singleton_aLsaLsvII(void);
 GVariant *nm_g_variant_singleton_aaLsvI(void);
+GVariant *nm_g_variant_singleton_ao(void);
 
 static inline void
 nm_g_variant_unref_floating(GVariant *var)
