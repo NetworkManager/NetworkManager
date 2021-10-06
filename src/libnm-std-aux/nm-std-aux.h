@@ -1007,15 +1007,15 @@ _nm_auto_fclose(FILE **pfd)
  * Returns: *p_val and sets *p_val to zero the same time.
  *   Accepts %NULL, in which case also numeric 0 will be returned.
  */
-#define nm_steal_int(p_val)                   \
-    ({                                        \
-        typeof(p_val) const _p_val = (p_val); \
-        typeof(*_p_val)     _val   = 0;       \
-                                              \
-        if (_p_val && (_val = *_p_val)) {     \
-            *_p_val = 0;                      \
-        }                                     \
-        _val;                                 \
+#define nm_steal_int(p_val)                      \
+    ({                                           \
+        typeof(p_val) const _p_val = (p_val);    \
+        typeof(*_p_val)     _val   = 0;          \
+                                                 \
+        if (_p_val && ((_val = *_p_val) != 0)) { \
+            *_p_val = 0;                         \
+        }                                        \
+        _val;                                    \
     })
 
 static inline int
