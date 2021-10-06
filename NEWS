@@ -16,13 +16,31 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   control objects (qdiscs and filters).
 
 The following changes were backported to 1.32.x releases between 1.32.0
-and 1.32.6 are also present in NetworkManager-1.32:
+and 1.32.12 are also present in NetworkManager-1.32:
 
 - 1.32.12:
-* Preserve the IPv6 ff00::/8 route added by kernel in the local
-  table, necessary for multicast communication.
+* Fix wrong order of addresses when restarting NetworkManager.
+* Preserve the IPv6 ff00::/8 route added by kernel in the local table,
+  necessary for multicast communication.
+* Fix emitting the signal for changed metered status of devices.
+* Fix applying the ethtool autonegotiation and speed settings.
+* initrd: fix crash parsing plain '=' without key.
 * cloud-setup: use suppress_prefixlength rule to honor
   non-default-routes in the main table.
+
+- 1.32.10:
+* core: fix the order of IPv6 addresses changing on service restart.
+* initrd: add command line option to configure link autonegotiation
+  and speed.
+* ifcfg-rh: fix crash when parsing invalid DNS address.
+* ifcfg-rh: extend ifup/ifdown scripts to work with connection profile
+  names.
+* udev: also react to "move" (and "change") udev actions in our rules.
+
+- 1.32.8:
+* firewalld: configure zones on "Reloaded" signal.
+* core: fix wrong MTU for bridge interfaces.
+* cloud-setup: fix gateway address for Aliyun cloud.
 
 - 1.32.6:
 * core: fix adding stale local routes when address changes.
