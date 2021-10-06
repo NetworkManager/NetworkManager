@@ -97,27 +97,13 @@ nm_dbus_utils_get_property(GObject *obj, const char *signature, const char *prop
 void
 nm_dbus_utils_g_value_set_object_path(GValue *value, gpointer object)
 {
-    const char *path;
-
-    g_return_if_fail(!object || NM_IS_DBUS_OBJECT(object));
-
-    if (object && (path = nm_dbus_object_get_path(object)))
-        g_value_set_string(value, path);
-    else
-        g_value_set_string(value, NULL);
+    g_value_set_string(value, object ? nm_dbus_object_get_path(object) : NULL);
 }
 
 void
 nm_dbus_utils_g_value_set_object_path_still_exported(GValue *value, gpointer object)
 {
-    const char *path;
-
-    g_return_if_fail(!object || NM_IS_DBUS_OBJECT(object));
-
-    if (object && (path = nm_dbus_object_get_path_still_exported(object)))
-        g_value_set_string(value, path);
-    else
-        g_value_set_string(value, "/");
+    g_value_set_string(value, object ? nm_dbus_object_get_path_still_exported(object) : "/");
 }
 
 void
