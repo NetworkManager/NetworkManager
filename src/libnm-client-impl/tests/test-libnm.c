@@ -2837,6 +2837,11 @@ test_nml_dbus_meta(void)
 
         g_assert((mif->n_dbus_properties > 0) == (!!mif->dbus_properties));
 
+        if (nm_streq(mif->dbus_iface_name, "org.freedesktop.NetworkManager.Device"))
+            g_assert(nm_streq(
+                mif->dbus_properties[_NML_DEVICE_META_PROPERTY_INDEX_PORTS].dbus_property_name,
+                "Ports"));
+
         if (mif->interface_prio == NML_DBUS_META_INTERFACE_PRIO_NONE) {
             g_assert(!mif->get_type_fcn);
             g_assert(!mif->obj_properties);

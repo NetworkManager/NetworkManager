@@ -17,13 +17,8 @@
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_SLAVES, );
 
-typedef struct {
-    NMLDBusPropertyAO slaves;
-} NMDeviceOvsPortPrivate;
-
 struct _NMDeviceOvsPort {
-    NMDevice               parent;
-    NMDeviceOvsPortPrivate _priv;
+    NMDevice parent;
 };
 
 struct _NMDeviceOvsPortClass {
@@ -48,14 +43,13 @@ G_DEFINE_TYPE(NMDeviceOvsPort, nm_device_ovs_port, NM_TYPE_DEVICE)
  * copy used by the device, and must not be modified.
  *
  * Since: 1.14
+ *
+ * Deprecated: 1.34 Use nm_device_get_ports() instead.
  **/
 const GPtrArray *
 nm_device_ovs_port_get_slaves(NMDeviceOvsPort *device)
 {
-    g_return_val_if_fail(NM_IS_DEVICE_OVS_PORT(device), FALSE);
-
-    return nml_dbus_property_ao_get_objs_as_ptrarray(
-        &NM_DEVICE_OVS_PORT_GET_PRIVATE(device)->slaves);
+    return nm_device_get_ports(NM_DEVICE(device));
 }
 
 static const char *
@@ -123,29 +117,23 @@ static void
 nm_device_ovs_port_init(NMDeviceOvsPort *device)
 {}
 
-const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ovsport =
-    NML_DBUS_META_IFACE_INIT_PROP(NM_DBUS_INTERFACE_DEVICE_OVS_PORT,
-                                  nm_device_ovs_port_get_type,
-                                  NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
-                                  NML_DBUS_META_IFACE_DBUS_PROPERTIES(
-                                      NML_DBUS_META_PROPERTY_INIT_AO_PROP("Slaves",
-                                                                          PROP_SLAVES,
-                                                                          NMDeviceOvsPort,
-                                                                          _priv.slaves,
-                                                                          nm_device_get_type), ), );
+const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ovsport = NML_DBUS_META_IFACE_INIT_PROP(
+    NM_DBUS_INTERFACE_DEVICE_OVS_PORT,
+    nm_device_ovs_port_get_type,
+    NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
+    NML_DBUS_META_IFACE_DBUS_PROPERTIES(
+        NML_DBUS_META_PROPERTY_INIT_FCN("Slaves",
+                                        PROP_SLAVES,
+                                        "ao",
+                                        _nm_device_notify_update_prop_ports), ), );
 
 static void
 nm_device_ovs_port_class_init(NMDeviceOvsPortClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
-    NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
-    NMDeviceClass *device_class    = NM_DEVICE_CLASS(klass);
+    GObjectClass * object_class = G_OBJECT_CLASS(klass);
+    NMDeviceClass *device_class = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;
-
-    _NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT(nm_object_class, NMDeviceOvsPort);
-
-    _NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1(nm_object_class, NMDeviceOvsPortPrivate, slaves);
 
     device_class->get_type_description  = get_type_description;
     device_class->connection_compatible = connection_compatible;
@@ -166,4 +154,6 @@ nm_device_ovs_port_class_init(NMDeviceOvsPortClass *klass)
 
     _nml_dbus_meta_class_init_with_properties(object_class,
                                               &_nml_dbus_meta_iface_nm_device_ovsport);
+
+    device_class->slaves_param_spec = obj_properties[PROP_SLAVES];
 }

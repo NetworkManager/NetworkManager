@@ -398,16 +398,16 @@ typedef struct {
 #define NML_DBUS_META_PROPERTY_INIT_AY(...) \
     _NML_DBUS_META_PROPERTY_INIT_DEFAULT("ay", GBytes *, __VA_ARGS__)
 
-#define NML_DBUS_META_PROPERTY_INIT_O(v_dbus_property_name,                                          \
-                                      v_obj_properties_idx,                                          \
-                                      v_container,                                                   \
-                                      v_field)                                                       \
-    NML_DBUS_META_PROPERTY_INIT(                                                                     \
-        v_dbus_property_name,                                                                        \
-        "o",                                                                                         \
-        v_obj_properties_idx,                                                                        \
-        .prop_struct_offset     = NM_STRUCT_OFFSET_ENSURE_TYPE(NMRefString *, v_container, v_field), \
-        .notify_update_prop     = _nml_dbus_notify_update_prop_o)
+#define NML_DBUS_META_PROPERTY_INIT_O(v_dbus_property_name,                                      \
+                                      v_obj_properties_idx,                                      \
+                                      v_container,                                               \
+                                      v_field)                                                   \
+    NML_DBUS_META_PROPERTY_INIT(                                                                 \
+        v_dbus_property_name,                                                                    \
+        "o",                                                                                     \
+        v_obj_properties_idx,                                                                    \
+        .prop_struct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(NMRefString *, v_container, v_field), \
+        .notify_update_prop = _nml_dbus_notify_update_prop_o)
 
 #define NML_DBUS_META_PROPERTY_INIT_O_PROP(v_dbus_property_name,                  \
                                            v_obj_properties_idx,                  \
@@ -439,22 +439,22 @@ typedef struct {
         .extra.property_vtable_ao = &(                                             \
             (const NMLDBusPropertVTableAO){.get_o_type_fcn = (v_get_o_type_fcn), ##__VA_ARGS__}))
 
-#define NML_DBUS_META_PROPERTY_INIT_FCN(v_dbus_property_name,                     \
-                                        v_obj_properties_idx,                     \
-                                        v_dbus_type,                              \
-                                        v_notify_update_prop,                     \
-                                        ...)                                      \
-    NML_DBUS_META_PROPERTY_INIT(v_dbus_property_name,                             \
-                                v_dbus_type,                                      \
-                                v_obj_properties_idx,                             \
-                                .notify_update_prop     = (v_notify_update_prop), \
+#define NML_DBUS_META_PROPERTY_INIT_FCN(v_dbus_property_name,                 \
+                                        v_obj_properties_idx,                 \
+                                        v_dbus_type,                          \
+                                        v_notify_update_prop,                 \
+                                        ...)                                  \
+    NML_DBUS_META_PROPERTY_INIT(v_dbus_property_name,                         \
+                                v_dbus_type,                                  \
+                                v_obj_properties_idx,                         \
+                                .notify_update_prop = (v_notify_update_prop), \
                                 ##__VA_ARGS__)
 
 #define NML_DBUS_META_PROPERTY_INIT_IGNORE(v_dbus_property_name, v_dbus_type) \
     NML_DBUS_META_PROPERTY_INIT(v_dbus_property_name,                         \
                                 v_dbus_type,                                  \
                                 0,                                            \
-                                .notify_update_prop     = _nml_dbus_notify_update_prop_ignore)
+                                .notify_update_prop = _nml_dbus_notify_update_prop_ignore)
 
 /* "TODO" is like "IGNORE". The difference is that we don't plan to ever implement "IGNORE", but
  * "TODO" is something we should add support for. */
@@ -828,7 +828,14 @@ struct _NMDeviceClass {
     const char *(*get_type_description)(NMDevice *device);
 
     GType (*get_setting_type)(NMDevice *device);
+
+    /* Slaves was originally part of some subtypes of NMDevice. It was deprecated and
+    * a new NMDevice::ports property was added. When that property changes, we need
+    * to notify about the subclass' respective property. This is the property. */
+    const GParamSpec *slaves_param_spec;
 };
+
+#define _NML_DEVICE_META_PROPERTY_INDEX_PORTS 27
 
 /*****************************************************************************/
 
@@ -1032,6 +1039,12 @@ _nm_device_notify_update_prop_hw_address(NMClient *              client,
                                          const NMLDBusMetaIface *meta_iface,
                                          guint                   dbus_property_idx,
                                          GVariant *              value);
+
+NMLDBusNotifyUpdatePropFlags _nm_device_notify_update_prop_ports(NMClient *              client,
+                                                                 NMLDBusObject *         dbobj,
+                                                                 const NMLDBusMetaIface *meta_iface,
+                                                                 guint     dbus_property_idx,
+                                                                 GVariant *value);
 
 /*****************************************************************************/
 
