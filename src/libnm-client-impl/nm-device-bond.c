@@ -19,7 +19,6 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_CARRIER, PROP_SLAVES, );
 
 typedef struct {
     NMLDBusPropertyAO slaves;
-    char *            hw_address;
     bool              carrier;
 } NMDeviceBondPrivate;
 
@@ -125,16 +124,6 @@ nm_device_bond_init(NMDeviceBond *device)
 {}
 
 static void
-finalize(GObject *object)
-{
-    NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE(object);
-
-    g_free(priv->hw_address);
-
-    G_OBJECT_CLASS(nm_device_bond_parent_class)->finalize(object);
-}
-
-static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
     NMDeviceBond *device = NM_DEVICE_BOND(object);
@@ -176,7 +165,6 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
     NMDeviceClass *device_class    = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;
-    object_class->finalize     = finalize;
 
     _NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT(nm_object_class, NMDeviceBond);
 
