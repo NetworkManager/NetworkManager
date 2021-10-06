@@ -36,14 +36,14 @@ test_dhcp_create(void)
 static void
 test_lldp_create(void)
 {
-    sd_lldp *lldp = NULL;
-    int      r;
+    sd_lldp_rx *lldp = NULL;
+    int         r;
 
-    r = sd_lldp_new(&lldp);
+    r = sd_lldp_rx_new(&lldp);
     g_assert(r == 0);
     g_assert(lldp);
 
-    sd_lldp_unref(lldp);
+    sd_lldp_rx_unref(lldp);
 }
 
 /*****************************************************************************/

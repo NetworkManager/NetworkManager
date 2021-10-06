@@ -32,7 +32,7 @@
 /*****************************************************************************/
 
 struct _NMLldpListener {
-    sd_lldp *   lldp_handle;
+    sd_lldp_rx *lldp_handle;
     GHashTable *lldp_neighbors;
     GVariant *  variant;
 
@@ -711,9 +711,9 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                             g_variant_new_uint32(unaligned_read_be16(data8));
                     break;
                 }
-            } else if (memcmp(oui, SD_LLDP_OUI_MUD, sizeof(oui)) == 0) {
+            } else if (memcmp(oui, SD_LLDP_OUI_IANA, sizeof(oui)) == 0) {
                 switch (subtype) {
-                case SD_LLDP_OUI_SUBTYPE_MUD_USAGE_DESCRIPTION:
+                case SD_LLDP_OUI_IANA_SUBTYPE_MUD:
                     if (!v_mud_url) {
                         gs_free char *s_free = NULL;
                         const char *  s;
@@ -884,12 +884,14 @@ handle_changed:
 }
 
 static void
-lldp_event_handler(sd_lldp *lldp, sd_lldp_event_t event, sd_lldp_neighbor *n, void *userdata)
+lldp_event_handler(sd_lldp_rx *lldp, sd_lldp_rx_event_t event, sd_lldp_neighbor *n, void *userdata)
 {
-    process_lldp_neighbor(
-        userdata,
-        n,
-        !NM_IN_SET(event, SD_LLDP_EVENT_ADDED, SD_LLDP_EVENT_UPDATED, SD_LLDP_EVENT_REFRESHED));
+    process_lldp_neighbor(userdata,
+                          n,
+                          !NM_IN_SET(event,
+                                     SD_LLDP_RX_EVENT_ADDED,
+                                     SD_LLDP_RX_EVENT_UPDATED,
+                                     SD_LLDP_RX_EVENT_REFRESHED));
 }
 
 /*****************************************************************************/
@@ -934,14 +936,14 @@ nm_lldp_listener_new(int                  ifindex,
                      GError **            error)
 {
     NMLldpListener *self = NULL;
-    sd_lldp *       lldp_handle;
+    sd_lldp_rx *    lldp_handle;
     int             r;
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(!error || !*error, FALSE);
     g_return_val_if_fail(notify_callback, FALSE);
 
-    r = sd_lldp_new(&lldp_handle);
+    r = sd_lldp_rx_new(&lldp_handle);
     if (r < 0) {
         g_set_error_literal(error,
                             NM_DEVICE_ERROR,
@@ -950,7 +952,7 @@ nm_lldp_listener_new(int                  ifindex,
         return FALSE;
     }
 
-    r = sd_lldp_set_ifindex(lldp_handle, ifindex);
+    r = sd_lldp_rx_set_ifindex(lldp_handle, ifindex);
     if (r < 0) {
         g_set_error_literal(error,
                             NM_DEVICE_ERROR,
@@ -959,7 +961,7 @@ nm_lldp_listener_new(int                  ifindex,
         goto fail_handle;
     }
 
-    r = sd_lldp_set_neighbors_max(lldp_handle, MAX_NEIGHBORS);
+    r = sd_lldp_rx_set_neighbors_max(lldp_handle, MAX_NEIGHBORS);
     nm_assert(r == 0);
 
     self  = g_slice_new(NMLldpListener);
@@ -969,19 +971,19 @@ nm_lldp_listener_new(int                  ifindex,
         .notify_user_data = notify_user_data,
     };
 
-    r = sd_lldp_set_callback(lldp_handle, lldp_event_handler, self);
+    r = sd_lldp_rx_set_callback(lldp_handle, lldp_event_handler, self);
     if (r < 0) {
         g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "set callback failed");
         goto fail_handle;
     }
 
-    r = sd_lldp_attach_event(lldp_handle, NULL, 0);
+    r = sd_lldp_rx_attach_event(lldp_handle, NULL, 0);
     if (r < 0) {
         g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "attach event failed");
         goto fail_attached;
     }
 
-    r = sd_lldp_start(lldp_handle);
+    r = sd_lldp_rx_start(lldp_handle);
     if (r < 0) {
         g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "start failed");
         goto fail_attached;
@@ -997,11 +999,11 @@ nm_lldp_listener_new(int                  ifindex,
     return self;
 
 fail_attached:
-    sd_lldp_detach_event(lldp_handle);
+    sd_lldp_rx_detach_event(lldp_handle);
 fail_handle:
     if (self)
         nm_g_slice_free(self);
-    sd_lldp_unref(lldp_handle);
+    sd_lldp_rx_unref(lldp_handle);
     return NULL;
 }
 
@@ -1010,9 +1012,9 @@ nm_lldp_listener_destroy(NMLldpListener *self)
 {
     g_return_if_fail(self);
 
-    sd_lldp_stop(self->lldp_handle);
-    sd_lldp_detach_event(self->lldp_handle);
-    sd_lldp_unref(self->lldp_handle);
+    sd_lldp_rx_stop(self->lldp_handle);
+    sd_lldp_rx_detach_event(self->lldp_handle);
+    sd_lldp_rx_unref(self->lldp_handle);
 
     nm_clear_g_source_inst(&self->ratelimit_source);
 

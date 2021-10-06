@@ -11,9 +11,26 @@
 #define _const_ __attribute__((__const__))
 #define _pure_ __attribute__((__pure__))
 #define _section_(x) __attribute__((__section__(x)))
+#define _packed_ __attribute__((__packed__))
 #define _used_ __attribute__((__used__))
 #define _unused_ __attribute__((__unused__))
 #define _cleanup_(x) __attribute__((__cleanup__(x)))
+#define _likely_(x) (__builtin_expect(!!(x), 1))
+#define _unlikely_(x) (__builtin_expect(!!(x), 0))
+#if __GNUC__ >= 7
+#define _fallthrough_ __attribute__((__fallthrough__))
+#else
+#define _fallthrough_
+#endif
+/* Define C11 noreturn without <stdnoreturn.h> and even on older gcc
+ * compiler versions */
+#ifndef _noreturn_
+#if __STDC_VERSION__ >= 201112L
+#define _noreturn_ _Noreturn
+#else
+#define _noreturn_ __attribute__((__noreturn__))
+#endif
+#endif
 
 #define XSTRINGIFY(x) #x
 #define STRINGIFY(x) XSTRINGIFY(x)
@@ -34,7 +51,14 @@
 #define CONCATENATE(x, y) XCONCATENATE(x, y)
 
 #ifdef SD_BOOT
-#define assert(expr) do {} while (false)
+        #ifdef NDEBUG
+                #define assert(expr)
+                #define assert_not_reached() __builtin_unreachable()
+        #else
+                void efi_assert(const char *expr, const char *file, unsigned line, const char *function) _noreturn_;
+                #define assert(expr) ({ _likely_(expr) ? VOID_0 : efi_assert(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); })
+                #define assert_not_reached() efi_assert("Code should not be reached", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+        #endif
 #endif
 
 #if defined(static_assert)
@@ -70,12 +94,29 @@
                 UNIQ_T(A, aq) > UNIQ_T(B, bq) ? UNIQ_T(A, aq) : UNIQ_T(B, bq); \
         })
 
-/* evaluates to (void) if _A or _B are not constant or of different types */
+#define IS_UNSIGNED_INTEGER_TYPE(type) \
+        (__builtin_types_compatible_p(typeof(type), unsigned char) ||   \
+         __builtin_types_compatible_p(typeof(type), unsigned short) ||  \
+         __builtin_types_compatible_p(typeof(type), unsigned) ||        \
+         __builtin_types_compatible_p(typeof(type), unsigned long) ||   \
+         __builtin_types_compatible_p(typeof(type), unsigned long long))
+
+#define IS_SIGNED_INTEGER_TYPE(type) \
+        (__builtin_types_compatible_p(typeof(type), signed char) ||   \
+         __builtin_types_compatible_p(typeof(type), signed short) ||  \
+         __builtin_types_compatible_p(typeof(type), signed) ||        \
+         __builtin_types_compatible_p(typeof(type), signed long) ||   \
+         __builtin_types_compatible_p(typeof(type), signed long long))
+
+/* Evaluates to (void) if _A or _B are not constant or of different types (being integers of different sizes
+ * is also OK as long as the signedness matches) */
 #define CONST_MAX(_A, _B) \
         (__builtin_choose_expr(                                         \
                 __builtin_constant_p(_A) &&                             \
                 __builtin_constant_p(_B) &&                             \
-                __builtin_types_compatible_p(typeof(_A), typeof(_B)),   \
+                (__builtin_types_compatible_p(typeof(_A), typeof(_B)) || \
+                 (IS_UNSIGNED_INTEGER_TYPE(_A) && IS_UNSIGNED_INTEGER_TYPE(_B)) || \
+                 (IS_SIGNED_INTEGER_TYPE(_A) && IS_SIGNED_INTEGER_TYPE(_B))), \
                 ((_A) > (_B)) ? (_A) : (_B),                            \
                 VOID_0))
 
@@ -216,3 +257,10 @@
                 (ptr) = NULL;                   \
                 _ptr_;                          \
         })
+
+/*
+ * STRLEN - return the length of a string literal, minus the trailing NUL byte.
+ *          Contrary to strlen(), this is a constant expression.
+ * @x: a string literal.
+ */
+#define STRLEN(x) (sizeof(""x"") - sizeof(typeof(x[0])))

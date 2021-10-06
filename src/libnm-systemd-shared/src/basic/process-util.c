@@ -31,7 +31,6 @@
 #include "fd-util.h"
 #include "fileio.h"
 #include "fs-util.h"
-#include "ioprio.h"
 #include "locale-util.h"
 #include "log.h"
 #include "macro.h"
@@ -1264,7 +1263,7 @@ int safe_fork_full(
 
         pid_t original_pid, pid;
         sigset_t saved_ss, ss;
-        _cleanup_(restore_sigsetp) sigset_t *saved_ssp = NULL;
+        _unused_ _cleanup_(restore_sigsetp) sigset_t *saved_ssp = NULL;
         bool block_signals = false, block_all = false;
         int prio, r;
 
@@ -1511,6 +1510,24 @@ int set_oom_score_adjust(int value) {
 
         return write_string_file("/proc/self/oom_score_adj", t,
                                  WRITE_STRING_FILE_VERIFY_ON_FAILURE|WRITE_STRING_FILE_DISABLE_BUFFER);
+}
+
+int get_oom_score_adjust(int *ret) {
+        _cleanup_free_ char *t;
+        int r, a;
+
+        r = read_virtual_file("/proc/self/oom_score_adj", SIZE_MAX, &t, NULL);
+        if (r < 0)
+                return r;
+
+        delete_trailing_chars(t, WHITESPACE);
+
+        assert_se(safe_atoi(t, &a) >= 0);
+        assert_se(oom_score_adjust_is_valid(a));
+
+        if (ret)
+                *ret = a;
+        return 0;
 }
 
 int pidfd_get_pid(int fd, pid_t *ret) {

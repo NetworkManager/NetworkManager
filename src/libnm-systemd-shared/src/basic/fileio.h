@@ -2,15 +2,11 @@
 #pragma once
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#if 0 /* NM_IGNORED */
-#include <sys/fcntl.h>
-#else /* NM_IGNORED */
-#include <fcntl.h>
-#endif /* NM_IGNORED */
 #include <sys/types.h>
 
 #include "macro.h"
@@ -19,17 +15,18 @@
 #define LONG_LINE_MAX (1U*1024U*1024U)
 
 typedef enum {
-        WRITE_STRING_FILE_CREATE                = 1 << 0,
-        WRITE_STRING_FILE_TRUNCATE              = 1 << 1,
-        WRITE_STRING_FILE_ATOMIC                = 1 << 2,
-        WRITE_STRING_FILE_AVOID_NEWLINE         = 1 << 3,
-        WRITE_STRING_FILE_VERIFY_ON_FAILURE     = 1 << 4,
-        WRITE_STRING_FILE_VERIFY_IGNORE_NEWLINE = 1 << 5,
-        WRITE_STRING_FILE_SYNC                  = 1 << 6,
-        WRITE_STRING_FILE_DISABLE_BUFFER        = 1 << 7,
-        WRITE_STRING_FILE_NOFOLLOW              = 1 << 8,
-        WRITE_STRING_FILE_MKDIR_0755            = 1 << 9,
-        WRITE_STRING_FILE_MODE_0600             = 1 << 10,
+        WRITE_STRING_FILE_CREATE                     = 1 << 0,
+        WRITE_STRING_FILE_TRUNCATE                   = 1 << 1,
+        WRITE_STRING_FILE_ATOMIC                     = 1 << 2,
+        WRITE_STRING_FILE_AVOID_NEWLINE              = 1 << 3,
+        WRITE_STRING_FILE_VERIFY_ON_FAILURE          = 1 << 4,
+        WRITE_STRING_FILE_VERIFY_IGNORE_NEWLINE      = 1 << 5,
+        WRITE_STRING_FILE_SYNC                       = 1 << 6,
+        WRITE_STRING_FILE_DISABLE_BUFFER             = 1 << 7,
+        WRITE_STRING_FILE_NOFOLLOW                   = 1 << 8,
+        WRITE_STRING_FILE_MKDIR_0755                 = 1 << 9,
+        WRITE_STRING_FILE_MODE_0600                  = 1 << 10,
+        WRITE_STRING_FILE_SUPPRESS_REDUNDANT_VIRTUAL = 1 << 11,
 
         /* And before you wonder, why write_string_file_atomic_label_ts() is a separate function instead of just one
            more flag here: it's about linking: we don't want to pull -lselinux into all users of write_string_file()
@@ -71,6 +68,7 @@ static inline int read_full_file(const char *filename, char **ret_contents, size
         return read_full_file_full(AT_FDCWD, filename, UINT64_MAX, SIZE_MAX, 0, NULL, ret_contents, ret_size);
 }
 
+int read_virtual_file_fd(int fd, size_t max_size, char **ret_contents, size_t *ret_size);
 int read_virtual_file(const char *filename, size_t max_size, char **ret_contents, size_t *ret_size);
 static inline int read_full_virtual_file(const char *filename, char **ret_contents, size_t *ret_size) {
         return read_virtual_file(filename, SIZE_MAX, ret_contents, ret_size);
@@ -92,14 +90,6 @@ int xfopenat(int dir_fd, const char *path, const char *mode, int flags, FILE **r
 
 int search_and_fopen(const char *path, const char *mode, const char *root, const char **search, FILE **ret, char **ret_path);
 int search_and_fopen_nulstr(const char *path, const char *mode, const char *root, const char *search, FILE **ret, char **ret_path);
-
-int chase_symlinks_and_fopen_unlocked(
-                const char *path,
-                const char *root,
-                unsigned chase_flags,
-                const char *open_flags,
-                FILE **ret_file,
-                char **ret_path);
 
 int fflush_and_check(FILE *f);
 int fflush_sync_and_check(FILE *f);
@@ -129,4 +119,4 @@ int safe_fgetc(FILE *f, char *ret);
 
 int warn_file_is_world_accessible(const char *filename, struct stat *st, const char *unit, unsigned line);
 
-int rename_and_apply_smack_floor_label(const char *temp_path, const char *dest_path);
+int fopen_mode_to_flags(const char *mode);
