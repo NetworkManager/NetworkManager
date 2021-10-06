@@ -18,15 +18,23 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 The following changes were backported to 1.32.x releases between 1.32.0
 and 1.32.6 are also present in NetworkManager-1.32:
 
-- 1.32.2:
-* hostname: prefer IPv4 addresses for reverse DNS lookup.
-* dhcp: ignore unauthenticated FORCERENEW messages with
-  internal, systemd-based DHCPv4 plugin (CVE-2020-13529).
-  This plugin is not used, unless the undocumented dhcp=systemd
-  option was set.
-* cloud-setup: preserve IP addresses, routes and rules from
-  currently active connection profile.
-* Various bugfixes and performance improvements.
+- 1.32.12:
+* Preserve the IPv6 ff00::/8 route added by kernel in the local
+  table, necessary for multicast communication.
+* cloud-setup: use suppress_prefixlength rule to honor
+  non-default-routes in the main table.
+
+- 1.32.6:
+* core: fix adding stale local routes when address changes.
+* initrd: tag generated profiles with origin in user data.
+* core: introduce "allowed-connections" option to disallow
+  profiles on a device. This allows to filter out profiles
+  that originate from initrd.
+* core: introduce "keep-configuration" device option to forcefully
+  activate a profile on start.
+* dhcp: handle filename/bootfile_name DHCP option and write it to
+  device state file for initrd/kickstart.
+* initrd: add "ib.pkey=" command line option
 
 - 1.32.4:
 * core: remove stale entries from "seen-bssids" and "timestamp"
@@ -46,23 +54,15 @@ and 1.32.6 are also present in NetworkManager-1.32:
 * nmcli: show DNS SEARCH field in device information.
 * cloud-setup: add support for Aliyun cloud.
 
-- 1.32.6:
-* core: fix adding stale local routes when address changes.
-* initrd: tag generated profiles with origin in user data.
-* core: introduce "allowed-connections" option to disallow
-  profiles on a device. This allows to filter out profiles
-  that originate from initrd.
-* core: introduce "keep-configuration" device option to forcefully
-  activate a profile on start.
-* dhcp: handle filename/bootfile_name DHCP option and write it to
-  device state file for initrd/kickstart.
-* initrd: add "ib.pkey=" command line option
-
-- 1.32.12:
-* Preserve the IPv6 ff00::/8 route added by kernel in the local
-  table, necessary for multicast communication.
-* cloud-setup: use suppress_prefixlength rule to honor
-  non-default-routes in the main table.
+- 1.32.2:
+* hostname: prefer IPv4 addresses for reverse DNS lookup.
+* dhcp: ignore unauthenticated FORCERENEW messages with
+  internal, systemd-based DHCPv4 plugin (CVE-2020-13529).
+  This plugin is not used, unless the undocumented dhcp=systemd
+  option was set.
+* cloud-setup: preserve IP addresses, routes and rules from
+  currently active connection profile.
+* Various bugfixes and performance improvements.
 
 =============================================
 NetworkManager-1.32
