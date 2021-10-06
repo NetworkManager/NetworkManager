@@ -72,11 +72,19 @@ $ git config --add 'blame.ignoreRevsFile' '.git-blame-ignore-revs'
 Since our coding style is entirely automated, the following are just
 some details of the style we use:
 
-* Indent with 4 spaces. (_no_ tabs).
+* Use cleanup functions (`gs_free`, `gs_*`, `nm_auto*`) to let a stack
+  variable own a resource instead of explicit free. Combine them with
+  `g_steal_pointer()` to transfer ownership and with clear functions
+  (`g_clear_object()`, `nm_clear_g_free()`, `nm_clear*()`) to destroy
+  the resource early.
 
-* Have no space between the function name and the opening '('.
-  - GOOD: `g_strdup(x)`
-  - BAD:  `g_strdup (x)`
+* Use `GSource` instances instead of the source IDs from `g_idle_add()`, `g_timeout_add()`,
+  etc. Possibly use `nm_g_idle_add_source()`, `nm_g_timeout_add_source()`, etc.
+  and combine with `nm_clear_g_source_inst()`.
+
+* Don't use `GDBusProxy` or `GDBusObjectManager`. Use plain `GDBusConnection`.
+
+* Indent with spaces. (_no_ tabs).
 
 * C-style comments
   - GOOD: `f(x);  /* comment */`
@@ -89,9 +97,6 @@ some details of the style we use:
 * Declare each variable on a separate line:
   - BAD: `int i, j;`
 
-* 80-cols is a guideline, don't make the code uncomfortable in order to fit in
-  less than 80 cols.
-
 * Constants are CAPS_WITH_UNDERSCORES and use the preprocessor.
   - GOOD: `#define MY_CONSTANT 42`
   - BAD:  `static const unsigned myConstant = 42;`
@@ -99,11 +104,11 @@ some details of the style we use:
 Additionally, we require to build without compiler warnings for the warnings
 that we enable. Also, our language is C11 with some GCC-isms (like typeof(),
 expression statements, cleanup attribute). In practice, we support various versions
-of GCC and clang. The supported C "dialect", the compilers and
-libc are the one that we can practically build and test in our CI. We don't
-target a theoretical, pure C standard or a libc/compiler that we don't test.
+of GCC and clang. The supported C "dialect", compilers and libc are those that we
+can practically build and test in our CI. We don't target a theoretical, pure C11/POSIX
+standard or a libc/compiler that we cannot test.
 Patches for making NetworkManager more portable are welcome, if there is a
-practical use and CI tests.
+practical use and CI tests. Glibc and musl libc are supported.
 
 ### Checkpatch
 
