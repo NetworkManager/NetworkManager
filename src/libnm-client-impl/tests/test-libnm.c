@@ -3068,7 +3068,7 @@ check_dbus_properties:
                 pspec = mif->obj_properties[mpr->obj_properties_idx];
             }
 
-            if (mpr->use_notify_update_prop) {
+            if (mpr->notify_update_prop) {
                 g_assert(mpr->notify_update_prop);
             } else {
                 if (klass)
@@ -3129,7 +3129,7 @@ check_dbus_properties:
 
                 g_assert_cmpstr(expected_property_name, ==, pspec->name);
 
-                if (!mpr->use_notify_update_prop) {
+                if (!mpr->notify_update_prop) {
                     for (p_expected_type_2 = &expected_types[0];
                          p_expected_type_2 < &expected_types[G_N_ELEMENTS(expected_types)];
                          p_expected_type_2++) {

@@ -339,26 +339,22 @@ typedef struct {
     const char *        dbus_property_name;
     const GVariantType *dbus_type;
 
+    NMLDBusNotifyUpdatePropFlags (*notify_update_prop)(NMClient *              client,
+                                                       NMLDBusObject *         dbobj,
+                                                       const NMLDBusMetaIface *meta_iface,
+                                                       guint                   dbus_property_idx,
+                                                       GVariant *              value);
+
     guint16 prop_struct_offset;
 
     guint8 obj_properties_idx;
 
-    bool use_notify_update_prop : 1;
-
     bool obj_property_no_reverse_idx : 1;
 
     union {
-        union {
-            const NMLDBusPropertVTableO * property_vtable_o;
-            const NMLDBusPropertVTableAO *property_vtable_ao;
-        } extra;
-
-        NMLDBusNotifyUpdatePropFlags (*notify_update_prop)(NMClient *              client,
-                                                           NMLDBusObject *         dbobj,
-                                                           const NMLDBusMetaIface *meta_iface,
-                                                           guint     dbus_property_idx,
-                                                           GVariant *value);
-    };
+        const NMLDBusPropertVTableO * property_vtable_o;
+        const NMLDBusPropertVTableAO *property_vtable_ao;
+    } extra;
 
 } NMLDBusMetaProperty;
 
@@ -411,7 +407,6 @@ typedef struct {
         "o",                                                                                         \
         v_obj_properties_idx,                                                                        \
         .prop_struct_offset     = NM_STRUCT_OFFSET_ENSURE_TYPE(NMRefString *, v_container, v_field), \
-        .use_notify_update_prop = TRUE,                                                              \
         .notify_update_prop     = _nml_dbus_notify_update_prop_o)
 
 #define NML_DBUS_META_PROPERTY_INIT_O_PROP(v_dbus_property_name,                  \
@@ -452,7 +447,6 @@ typedef struct {
     NML_DBUS_META_PROPERTY_INIT(v_dbus_property_name,                             \
                                 v_dbus_type,                                      \
                                 v_obj_properties_idx,                             \
-                                .use_notify_update_prop = TRUE,                   \
                                 .notify_update_prop     = (v_notify_update_prop), \
                                 ##__VA_ARGS__)
 
@@ -460,7 +454,6 @@ typedef struct {
     NML_DBUS_META_PROPERTY_INIT(v_dbus_property_name,                         \
                                 v_dbus_type,                                  \
                                 0,                                            \
-                                .use_notify_update_prop = TRUE,               \
                                 .notify_update_prop     = _nml_dbus_notify_update_prop_ignore)
 
 /* "TODO" is like "IGNORE". The difference is that we don't plan to ever implement "IGNORE", but

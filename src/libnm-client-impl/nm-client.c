@@ -2407,7 +2407,7 @@ _obj_handle_dbus_prop_changes(NMClient *           self,
         value = NULL;
     }
 
-    if (meta_property->use_notify_update_prop) {
+    if (meta_property->notify_update_prop) {
         notify_update_prop_flags =
             meta_property->notify_update_prop(self, dbobj, meta_iface, dbus_property_idx, value);
         if (notify_update_prop_flags == NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE)
