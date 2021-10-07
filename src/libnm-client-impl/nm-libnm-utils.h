@@ -303,7 +303,7 @@ const GPtrArray *nml_dbus_property_ao_get_objs_as_ptrarray(NMLDBusPropertyAO *pr
 
 gboolean nml_dbus_property_ao_is_ready(const NMLDBusPropertyAO *pr_ao);
 
-void nml_dbus_property_ao_clear(NMLDBusPropertyAO *pr_ao, NMClient *client);
+gboolean nml_dbus_property_ao_clear(NMLDBusPropertyAO *pr_ao, NMClient *client);
 
 void nml_dbus_property_ao_clear_many(NMLDBusPropertyAO *pr_ao, guint len, NMClient *self);
 

@@ -2266,9 +2266,11 @@ nml_dbus_property_ao_notify(NMClient *              self,
     return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 }
 
-void
+gboolean
 nml_dbus_property_ao_clear(NMLDBusPropertyAO *pr_ao, NMClient *self)
 {
+    gboolean changed_prop = FALSE;
+
     _ASSERT_pr_ao(pr_ao);
 
     if (!pr_ao->owner_dbobj) {
@@ -2281,7 +2283,6 @@ nml_dbus_property_ao_clear(NMLDBusPropertyAO *pr_ao, NMClient *self)
         nm_assert(!pr_ao->is_changed);
     } else {
         PropertyAOData *pr_ao_data;
-        gboolean        changed_prop = FALSE;
 
         nm_assert(NM_IS_CLIENT(self));
         nm_assert(pr_ao->data_lst_head.next);
@@ -2329,6 +2330,8 @@ nml_dbus_property_ao_clear(NMLDBusPropertyAO *pr_ao, NMClient *self)
     }
 
     nm_clear_pointer(&pr_ao->arr, g_ptr_array_unref);
+
+    return changed_prop;
 }
 
 void
