@@ -2118,7 +2118,7 @@ nml_dbus_property_ao_notify_watch_cb(NMClient *self, gpointer obj_watcher)
     _ASSERT_pr_ao(pr_ao);
 }
 
-static NMLDBusNotifyUpdatePropFlags
+NMLDBusNotifyUpdatePropFlags
 nml_dbus_property_ao_notify(NMClient *              self,
                             NMLDBusPropertyAO *     pr_ao,
                             NMLDBusObject *         dbobj,

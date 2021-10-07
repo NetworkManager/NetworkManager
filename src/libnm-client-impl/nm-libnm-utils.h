@@ -328,6 +328,13 @@ NMLDBusNotifyUpdatePropFlags _nml_dbus_notify_update_prop_o(NMClient *          
                                                             guint     dbus_property_idx,
                                                             GVariant *value);
 
+NMLDBusNotifyUpdatePropFlags nml_dbus_property_ao_notify(NMClient *              self,
+                                                         NMLDBusPropertyAO *     pr_ao,
+                                                         NMLDBusObject *         dbobj,
+                                                         const NMLDBusMetaIface *meta_iface,
+                                                         guint                   dbus_property_idx,
+                                                         GVariant *              value);
+
 typedef struct {
     const char *        dbus_property_name;
     const GVariantType *dbus_type;
