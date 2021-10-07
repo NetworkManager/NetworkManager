@@ -29,7 +29,7 @@ typedef struct {
     GHashTable *     l3cfgs;
     GHashTable *     shared_ips;
     CList            l3cfg_signal_pending_lst_head;
-    guint            signal_pending_idle_id;
+    GSource *        signal_pending_idle_source;
 } NMNetnsPrivate;
 
 struct _NMNetns {
@@ -189,7 +189,7 @@ _platform_signal_on_idle_cb(gpointer user_data)
     L3CfgData *              l3cfg_data;
     CList                    work_list;
 
-    priv->signal_pending_idle_id = 0;
+    nm_clear_g_source_inst(&priv->signal_pending_idle_source);
 
     /* we emit all queued signals together. However, we don't want to hook the
      * main loop for longer than the currently queued elements.
@@ -210,7 +210,7 @@ _platform_signal_on_idle_cb(gpointer user_data)
             nm_steal_int(&l3cfg_data->signal_pending_obj_type_flags));
     }
 
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -235,8 +235,9 @@ _platform_signal_cb(NMPlatform *  platform,
 
     if (c_list_is_empty(&l3cfg_data->signal_pending_lst)) {
         c_list_link_tail(&priv->l3cfg_signal_pending_lst_head, &l3cfg_data->signal_pending_lst);
-        if (priv->signal_pending_idle_id == 0)
-            priv->signal_pending_idle_id = g_idle_add(_platform_signal_on_idle_cb, self);
+        if (!priv->signal_pending_idle_source)
+            priv->signal_pending_idle_source =
+                nm_g_idle_add_source(_platform_signal_on_idle_cb, self);
     }
 
     _nm_l3cfg_notify_platform_change(l3cfg_data->l3cfg,
@@ -460,7 +461,7 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(&priv->l3cfg_signal_pending_lst_head));
     nm_assert(!priv->shared_ips);
 
-    nm_clear_g_source(&priv->signal_pending_idle_id);
+    nm_clear_g_source_inst(&priv->signal_pending_idle_source);
 
     if (priv->platform)
         g_signal_handlers_disconnect_by_data(priv->platform, &priv->_self_signal_user_data);
