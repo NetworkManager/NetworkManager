@@ -252,4 +252,16 @@ nm_dbus_connection_call_blocking_callback(GObject *source, GAsyncResult *res, gp
 
 GVariant *nm_dbus_connection_call_blocking(NMDBusConnectionCallBlockingData *data, GError **error);
 
+/*****************************************************************************/
+
+static inline gboolean
+nm_g_variant_tuple_get_u(GVariant *v, guint32 *out_u)
+{
+    if (g_variant_is_of_type(v, G_VARIANT_TYPE("(u)"))) {
+        g_variant_get(v, "(u)", out_u);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 #endif /* __NM_DBUS_AUX_H__ */
