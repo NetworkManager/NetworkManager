@@ -1783,7 +1783,7 @@ nm_g_timeout_add_source(guint timeout_msec, GSourceFunc func, gpointer user_data
 }
 
 static inline GSource *
-nm_g_timeout_add_source_seconds(guint timeout_sec, GSourceFunc func, gpointer user_data)
+nm_g_timeout_add_seconds_source(guint timeout_sec, GSourceFunc func, gpointer user_data)
 {
     /* A convenience function to attach a new timeout source to the default GMainContext.
      * In that sense it's very similar to g_timeout_add_seconds() except that it returns a

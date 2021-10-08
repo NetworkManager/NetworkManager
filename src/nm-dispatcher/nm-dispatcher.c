@@ -553,7 +553,7 @@ script_dispatch(ScriptInfo *script)
 
     script->watch_source = nm_g_child_watch_add_source(script->pid, script_watch_cb, script);
     script->timeout_source =
-        nm_g_timeout_add_source_seconds(SCRIPT_TIMEOUT, script_timeout_cb, script);
+        nm_g_timeout_add_seconds_source(SCRIPT_TIMEOUT, script_timeout_cb, script);
     if (!script->wait)
         request->num_scripts_nowait++;
     return TRUE;
