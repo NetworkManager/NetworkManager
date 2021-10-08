@@ -315,6 +315,9 @@ gboolean nm_ip_addr_set_from_untrusted(int           addr_family,
                                        gsize         src_len,
                                        int *         out_addr_family);
 
+gboolean
+nm_ip_addr_set_from_variant(int addr_family, gpointer dst, GVariant *variant, int *out_addr_family);
+
 static inline gboolean
 nm_ip4_addr_is_localhost(in_addr_t addr4)
 {

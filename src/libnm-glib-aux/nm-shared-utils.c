@@ -99,6 +99,29 @@ nm_ip_addr_set_from_untrusted(int           addr_family,
     return TRUE;
 }
 
+gboolean
+nm_ip_addr_set_from_variant(int addr_family, gpointer dst, GVariant *variant, int *out_addr_family)
+{
+    gconstpointer bytes;
+    gsize         len;
+
+    g_return_val_if_fail(dst, FALSE);
+    g_return_val_if_fail(variant, FALSE);
+
+    /* This function always expects IP addressea a byte arrays ("ay"). Note that
+     * several NetworkManager API uses "u" (32 bit unsigned intergers) for IPv4 addresses.
+     * So this function won't work in those cases.
+     *
+     * Btw, using "u" for IPv4 address messes badly with the endianness (host
+     * vs network byte order). Don't do that.
+     */
+    g_return_val_if_fail(g_variant_is_of_type(variant, G_VARIANT_TYPE("ay")), FALSE);
+
+    bytes = g_variant_get_fixed_array(variant, &len, sizeof(guint8));
+
+    return nm_ip_addr_set_from_untrusted(addr_family, dst, bytes, len, out_addr_family);
+}
+
 /*****************************************************************************/
 
 G_STATIC_ASSERT(ETH_ALEN == sizeof(struct ether_addr));
