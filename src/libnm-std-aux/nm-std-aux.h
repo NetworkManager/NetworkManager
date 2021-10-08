@@ -26,7 +26,16 @@
 #define _nm_alignof(type)      __alignof(type)
 #define _nm_alignas(type)      _nm_align(_nm_alignof(type))
 #define _nm_deprecated(msg)    __attribute__((__deprecated__(msg)))
-#define nm_auto(fcn)           __attribute__((__cleanup__(fcn)))
+
+#if defined(__clang__) && __clang_major__ == 13
+/* Clang 13 can emit -Wunused-but-set-variable warning for cleanup variables
+ * that are only assigned (never used otherwise). Hack around */
+#define _nm_auto_extra _nm_unused
+#else
+#define _nm_auto_extra
+#endif
+
+#define nm_auto(fcn) _nm_auto_extra __attribute__((__cleanup__(fcn)))
 
 #define _nm_nil
 
