@@ -13,17 +13,26 @@
 
 /*****************************************************************************/
 
-#define _nm_packed        __attribute__((__packed__))
-#define _nm_unused        __attribute__((__unused__))
-#define _nm_used          __attribute__((__used__))
-#define _nm_pure          __attribute__((__pure__))
-#define _nm_const         __attribute__((__const__))
-#define _nm_printf(a, b)  __attribute__((__format__(__printf__, a, b)))
-#define _nm_align(s)      __attribute__((__aligned__(s)))
-#define _nm_section(s)    __attribute__((__section__(s)))
-#define _nm_alignof(type) __alignof(type)
-#define _nm_alignas(type) _nm_align(_nm_alignof(type))
-#define nm_auto(fcn)      __attribute__((__cleanup__(fcn)))
+#define _nm_packed             __attribute__((__packed__))
+#define _nm_unused             __attribute__((__unused__))
+#define _nm_used               __attribute__((__used__))
+#define _nm_pure               __attribute__((__pure__))
+#define _nm_const              __attribute__((__const__))
+#define _nm_printf(a, b)       __attribute__((__format__(__printf__, a, b)))
+#define _nm_align(s)           __attribute__((__aligned__(s)))
+#define _nm_section(s)         __attribute__((__section__(s)))
+#define _nm_alignof(type)      __alignof(type)
+#define _nm_alignas(type)      _nm_align(_nm_alignof(type))
+
+#if defined(__clang__) && __clang_major__ == 13
+/* Clang 13 can emit -Wunused-but-set-variable warning for cleanup variables
+ * that are only assigned (never used otherwise). Hack around */
+#define _nm_auto_extra _nm_unused
+#else
+#define _nm_auto_extra
+#endif
+
+#define nm_auto(fcn) _nm_auto_extra __attribute__((__cleanup__(fcn)))
 
 /* This is required to make LTO working.
  *
