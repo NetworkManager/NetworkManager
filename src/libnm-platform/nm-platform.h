@@ -2143,7 +2143,7 @@ nm_platform_ip6_address_sync(NMPlatform *self,
 
 gboolean nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex);
 
-static inline gconstpointer
+static inline gpointer
 nm_platform_ip_address_get_peer_address(int addr_family, const NMPlatformIPAddress *addr)
 {
     nm_assert_addr_family(addr_family);
