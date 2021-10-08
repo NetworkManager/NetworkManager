@@ -2118,6 +2118,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/arphrd-list.h \
 	src/libnm-systemd-shared/sd-adapt-shared/blockdev-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/build.h \
+	src/libnm-systemd-shared/sd-adapt-shared/chase-symlinks.h \
 	src/libnm-systemd-shared/sd-adapt-shared/copy.h \
 	src/libnm-systemd-shared/sd-adapt-shared/def.h \
 	src/libnm-systemd-shared/sd-adapt-shared/dhcp-server-internal.h \
@@ -2130,6 +2131,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/locale-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/memfd-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/missing_fs.h \
+	src/libnm-systemd-shared/sd-adapt-shared/missing_ioprio.h \
 	src/libnm-systemd-shared/sd-adapt-shared/missing_keyctl.h \
 	src/libnm-systemd-shared/sd-adapt-shared/missing_magic.h \
 	src/libnm-systemd-shared/sd-adapt-shared/missing_network.h \
@@ -2143,6 +2145,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/os-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/raw-clone.h \
 	src/libnm-systemd-shared/sd-adapt-shared/rlimit-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/sync-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/sysctl-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/terminal-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/unaligned.h \
@@ -2182,6 +2185,8 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/hostname-util.h \
 	src/libnm-systemd-shared/src/basic/in-addr-util.c \
 	src/libnm-systemd-shared/src/basic/in-addr-util.h \
+	src/libnm-systemd-shared/src/basic/inotify-util.c \
+	src/libnm-systemd-shared/src/basic/inotify-util.h \
 	src/libnm-systemd-shared/src/basic/io-util.c \
 	src/libnm-systemd-shared/src/basic/io-util.h \
 	src/libnm-systemd-shared/src/basic/list.h \
@@ -2305,11 +2310,11 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-network.c \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-option.c \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-protocol.h \
-	src/libnm-systemd-core/src/libsystemd-network/lldp-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/lldp-neighbor.c \
 	src/libnm-systemd-core/src/libsystemd-network/lldp-neighbor.h \
 	src/libnm-systemd-core/src/libsystemd-network/lldp-network.c \
 	src/libnm-systemd-core/src/libsystemd-network/lldp-network.h \
+	src/libnm-systemd-core/src/libsystemd-network/lldp-rx-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/network-common.c \
 	src/libnm-systemd-core/src/libsystemd-network/network-common.h \
 	src/libnm-systemd-core/src/libsystemd-network/network-internal.c \
@@ -2320,7 +2325,7 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp6-lease.c \
 	src/libnm-systemd-core/src/libsystemd-network/sd-ipv4acd.c \
 	src/libnm-systemd-core/src/libsystemd-network/sd-ipv4ll.c \
-	src/libnm-systemd-core/src/libsystemd-network/sd-lldp.c \
+	src/libnm-systemd-core/src/libsystemd-network/sd-lldp-rx.c \
 	src/libnm-systemd-core/src/libsystemd/sd-event/event-source.h \
 	src/libnm-systemd-core/src/libsystemd/sd-event/event-util.c \
 	src/libnm-systemd-core/src/libsystemd/sd-event/event-util.h \
@@ -2339,6 +2344,7 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/systemd/sd-id128.h \
 	src/libnm-systemd-core/src/systemd/sd-ipv4acd.h \
 	src/libnm-systemd-core/src/systemd/sd-ipv4ll.h \
+	src/libnm-systemd-core/src/systemd/sd-lldp-rx.h \
 	src/libnm-systemd-core/src/systemd/sd-lldp.h \
 	src/libnm-systemd-core/src/systemd/sd-ndisc.h \
 	$(NULL)

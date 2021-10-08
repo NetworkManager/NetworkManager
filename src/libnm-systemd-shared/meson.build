@@ -19,6 +19,7 @@ libnm_systemd_shared = static_library(
     'src/basic/hexdecoct.c',
     'src/basic/hostname-util.c',
     'src/basic/in-addr-util.c',
+    'src/basic/inotify-util.c',
     'src/basic/io-util.c',
     'src/basic/memory-util.c',
     'src/basic/mempool.c',

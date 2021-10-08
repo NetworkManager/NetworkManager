@@ -4,13 +4,41 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "env-file.h"
 #include "macro.h"
 #include "strv.h"
 
+typedef enum GetHostnameFlags {
+        GET_HOSTNAME_ALLOW_NONE       = 1 << 0, /* accepts "(none)". */
+        GET_HOSTNAME_ALLOW_LOCALHOST  = 1 << 1, /* accepts "localhost" or friends. */
+        GET_HOSTNAME_FALLBACK_DEFAULT = 1 << 2, /* use default hostname if no hostname is set. */
+        GET_HOSTNAME_SHORT            = 1 << 3, /* kills the FQDN part if present. */
+} GetHostnameFlags;
+
+int gethostname_full(GetHostnameFlags flags, char **ret);
+static inline int gethostname_strict(char **ret) {
+        return gethostname_full(0, ret);
+}
+
+static inline char* gethostname_malloc(void) {
+        char *s;
+
+        if (gethostname_full(GET_HOSTNAME_ALLOW_LOCALHOST | GET_HOSTNAME_FALLBACK_DEFAULT, &s) < 0)
+                return NULL;
+
+        return s;
+}
+
+static inline char* gethostname_short_malloc(void) {
+        char *s;
+
+        if (gethostname_full(GET_HOSTNAME_ALLOW_LOCALHOST | GET_HOSTNAME_FALLBACK_DEFAULT | GET_HOSTNAME_SHORT, &s) < 0)
+                return NULL;
+
+        return s;
+}
+
 char* get_default_hostname(void);
-char* gethostname_malloc(void);
-char* gethostname_short_malloc(void);
-int gethostname_strict(char **ret);
 
 bool valid_ldh_char(char c) _const_;
 
@@ -32,4 +60,8 @@ static inline bool is_gateway_hostname(const char *hostname) {
 static inline bool is_outbound_hostname(const char *hostname) {
         /* This tries to identify the valid syntaxes for the our synthetic "outbound" host. */
         return STRCASE_IN_SET(hostname, "_outbound", "_outbound.");
+}
+
+static inline int get_pretty_hostname(char **ret) {
+        return parse_env_file(NULL, "/etc/machine-info", "PRETTY_HOSTNAME", ret);
 }

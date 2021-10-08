@@ -32,6 +32,7 @@ typedef enum CGroupController {
         CGROUP_CONTROLLER_BPF_DEVICES,
         CGROUP_CONTROLLER_BPF_FOREIGN,
         CGROUP_CONTROLLER_BPF_SOCKET_BIND,
+        CGROUP_CONTROLLER_BPF_RESTRICT_NETWORK_INTERFACES,
 
         _CGROUP_CONTROLLER_MAX,
         _CGROUP_CONTROLLER_INVALID = -EINVAL,
@@ -53,6 +54,7 @@ typedef enum CGroupMask {
         CGROUP_MASK_BPF_DEVICES = CGROUP_CONTROLLER_TO_MASK(CGROUP_CONTROLLER_BPF_DEVICES),
         CGROUP_MASK_BPF_FOREIGN = CGROUP_CONTROLLER_TO_MASK(CGROUP_CONTROLLER_BPF_FOREIGN),
         CGROUP_MASK_BPF_SOCKET_BIND = CGROUP_CONTROLLER_TO_MASK(CGROUP_CONTROLLER_BPF_SOCKET_BIND),
+        CGROUP_MASK_BPF_RESTRICT_NETWORK_INTERFACES = CGROUP_CONTROLLER_TO_MASK(CGROUP_CONTROLLER_BPF_RESTRICT_NETWORK_INTERFACES),
 
         /* All real cgroup v1 controllers */
         CGROUP_MASK_V1 = CGROUP_MASK_CPU|CGROUP_MASK_CPUACCT|CGROUP_MASK_BLKIO|CGROUP_MASK_MEMORY|CGROUP_MASK_DEVICES|CGROUP_MASK_PIDS,
@@ -61,7 +63,7 @@ typedef enum CGroupMask {
         CGROUP_MASK_V2 = CGROUP_MASK_CPU|CGROUP_MASK_CPUSET|CGROUP_MASK_IO|CGROUP_MASK_MEMORY|CGROUP_MASK_PIDS,
 
         /* All cgroup v2 BPF pseudo-controllers */
-        CGROUP_MASK_BPF = CGROUP_MASK_BPF_FIREWALL|CGROUP_MASK_BPF_DEVICES|CGROUP_MASK_BPF_FOREIGN|CGROUP_MASK_BPF_SOCKET_BIND,
+        CGROUP_MASK_BPF = CGROUP_MASK_BPF_FIREWALL|CGROUP_MASK_BPF_DEVICES|CGROUP_MASK_BPF_FOREIGN|CGROUP_MASK_BPF_SOCKET_BIND|CGROUP_MASK_BPF_RESTRICT_NETWORK_INTERFACES,
 
         _CGROUP_MASK_ALL = CGROUP_CONTROLLER_TO_MASK(_CGROUP_CONTROLLER_MAX) - 1
 } CGroupMask;
@@ -172,6 +174,7 @@ typedef enum CGroupFlags {
 typedef int (*cg_kill_log_func_t)(pid_t pid, int sig, void *userdata);
 
 int cg_kill(const char *controller, const char *path, int sig, CGroupFlags flags, Set *s, cg_kill_log_func_t kill_log, void *userdata);
+int cg_kill_kernel_sigkill(const char *controller, const char *path);
 int cg_kill_recursive(const char *controller, const char *path, int sig, CGroupFlags flags, Set *s, cg_kill_log_func_t kill_log, void *userdata);
 
 int cg_split_spec(const char *spec, char **ret_controller, char **ret_path);
@@ -272,6 +275,7 @@ int cg_kernel_controllers(Set **controllers);
 
 bool cg_ns_supported(void);
 bool cg_freezer_supported(void);
+bool cg_kill_supported(void);
 
 int cg_all_unified(void);
 int cg_hybrid_unified(void);

@@ -189,22 +189,6 @@ static inline void strncpy_exact(char *buf, const char *src, size_t buf_len) {
 }
 REENABLE_WARNING;
 
-/* Like startswith(), but operates on arbitrary memory blocks */
-static inline void *memory_startswith(const void *p, size_t sz, const char *token) {
-        assert(token);
-
-        size_t n = strlen(token);
-        if (sz < n)
-                return NULL;
-
-        assert(p);
-
-        if (memcmp(p, token, n) != 0)
-                return NULL;
-
-        return (uint8_t*) p + n;
-}
-
 /* Like startswith_no_case(), but operates on arbitrary memory blocks.
  * It works only for ASCII strings.
  */
@@ -242,3 +226,5 @@ int string_contains_word_strv(const char *string, const char *separators, char *
 static inline int string_contains_word(const char *string, const char *separators, const char *word) {
         return string_contains_word_strv(string, separators, STRV_MAKE(word), NULL);
 }
+
+bool streq_skip_trailing_chars(const char *s1, const char *s2, const char *ok);
