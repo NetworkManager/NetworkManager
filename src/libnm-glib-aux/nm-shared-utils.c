@@ -643,6 +643,12 @@ nm_g_variant_singleton_aaLsvI(void)
     return _variant_singleton_get_array("a{sv}");
 }
 
+GVariant *
+nm_g_variant_singleton_ao(void)
+{
+    return _variant_singleton_get_array("o");
+}
+
 /*****************************************************************************/
 
 GHashTable *

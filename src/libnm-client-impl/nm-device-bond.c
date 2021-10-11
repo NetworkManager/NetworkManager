@@ -18,8 +18,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_CARRIER, PROP_SLAVES, );
 
 typedef struct {
-    NMLDBusPropertyAO slaves;
-    bool              carrier;
+    bool carrier;
 } NMDeviceBondPrivate;
 
 struct _NMDeviceBond {
@@ -82,13 +81,13 @@ nm_device_bond_get_carrier(NMDeviceBond *device)
  * Returns: (element-type NMDevice): the #GPtrArray containing
  * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
+ *
+ * Deprecated: 1.34 Use nm_device_get_ports() instead.
  **/
 const GPtrArray *
 nm_device_bond_get_slaves(NMDeviceBond *device)
 {
-    g_return_val_if_fail(NM_IS_DEVICE_BOND(device), FALSE);
-
-    return nml_dbus_property_ao_get_objs_as_ptrarray(&NM_DEVICE_BOND_GET_PRIVATE(device)->slaves);
+    return nm_device_get_ports(NM_DEVICE(device));
 }
 
 static gboolean
@@ -151,11 +150,10 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_bond = NML_DBUS_META_IFACE
                                         0,
                                         "s",
                                         _nm_device_notify_update_prop_hw_address),
-        NML_DBUS_META_PROPERTY_INIT_AO_PROP("Slaves",
-                                            PROP_SLAVES,
-                                            NMDeviceBond,
-                                            _priv.slaves,
-                                            nm_device_get_type), ), );
+        NML_DBUS_META_PROPERTY_INIT_FCN("Slaves",
+                                        PROP_SLAVES,
+                                        "ao",
+                                        _nm_device_notify_update_prop_ports), ), );
 
 static void
 nm_device_bond_class_init(NMDeviceBondClass *klass)
@@ -167,8 +165,6 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
     object_class->get_property = get_property;
 
     _NM_OBJECT_CLASS_INIT_PRIV_PTR_DIRECT(nm_object_class, NMDeviceBond);
-
-    _NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1(nm_object_class, NMDeviceBondPrivate, slaves);
 
     device_class->connection_compatible = connection_compatible;
     device_class->get_setting_type      = get_setting_type;
@@ -196,4 +192,6 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     _nml_dbus_meta_class_init_with_properties(object_class, &_nml_dbus_meta_iface_nm_device_bond);
+
+    device_class->slaves_param_spec = obj_properties[PROP_SLAVES];
 }

@@ -45,6 +45,7 @@
 #define NM_DEVICE_PHYSICAL_PORT_ID      "physical-port-id"
 #define NM_DEVICE_MTU                   "mtu"
 #define NM_DEVICE_HW_ADDRESS            "hw-address"
+#define NM_DEVICE_PORTS                 "ports"
 
 /* "perm-hw-address" is exposed on D-Bus both for NMDeviceEthernet
  * and NMDeviceWifi. */
