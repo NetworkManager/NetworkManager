@@ -1277,7 +1277,7 @@ finalize(GObject *object)
     g_free(priv->auth_dialog);
     g_strfreev(priv->aliases);
     g_free(priv->filename);
-    g_hash_table_unref(priv->keys);
+    nm_g_hash_table_unref(priv->keys);
 
     nm_clear_pointer(&priv->keyfile, g_key_file_unref);
 
