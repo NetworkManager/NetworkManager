@@ -3870,6 +3870,12 @@ nm_l3cfg_commit_type_register(NML3Cfg *                self,
                         NM_L3_CFG_COMMIT_TYPE_NONE,
                         NM_L3_CFG_COMMIT_TYPE_ASSUME,
                         NM_L3_CFG_COMMIT_TYPE_UPDATE));
+
+    /* It would be easy (and maybe convenient) to allow that @existing_handle
+     * can currently be registered on another NML3Cfg instance. But then we couldn't
+     * do this assertion, and it seems error prone to allow arbitrary handles where
+     * we cannot check whether it is valid. So if @existing_handle is given, it
+     * must be tracked by @self (and only by @self). */
     nm_assert(
         !existing_handle
         || c_list_contains(&self->priv.p->commit_type_lst_head, &existing_handle->commit_type_lst));
@@ -4040,7 +4046,7 @@ _nm_l3cfg_unregister_ipv4ll(NML3Cfg *self)
 {
     nm_assert(NM_IS_L3CFG(self));
 
-    /* we don't own the refernce to "self->priv.p->ipv4ll", but
+    /* we don't own the reference to "self->priv.p->ipv4ll", but
      * when that instance gets destroyed, we get called back to
      * forget about it. Basically, it's like a weak pointer. */
 

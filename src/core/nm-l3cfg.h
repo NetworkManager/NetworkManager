@@ -407,6 +407,16 @@ NML3CfgCommitTypeHandle *nm_l3cfg_commit_type_register(NML3Cfg *                
 
 void nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle);
 
+static inline gboolean
+nm_l3cfg_commit_type_clear(NML3Cfg *self, NML3CfgCommitTypeHandle **handle)
+{
+    if (!handle || !*handle)
+        return FALSE;
+
+    nm_l3cfg_commit_type_unregister(self, g_steal_pointer(handle));
+    return TRUE;
+}
+
 /*****************************************************************************/
 
 const NML3ConfigData *nm_l3cfg_get_combined_l3cd(NML3Cfg *self, gboolean get_commited);
