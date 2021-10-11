@@ -463,7 +463,7 @@ send_updates(NMDnsSystemdResolved *self)
 
     priv->send_updates_waiting = FALSE;
 
-    _LOGT("send-updates: start %lu requests", c_list_length(&priv->request_queue_lst_head));
+    _LOGT("send-updates: start %zu requests", c_list_length(&priv->request_queue_lst_head));
 
     c_list_for_each_entry (request_item, &priv->request_queue_lst_head, request_queue_lst) {
         gs_free char *ss = NULL;
