@@ -61,7 +61,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDevice,
                              PROP_IP4_CONNECTIVITY,
                              PROP_IP6_CONNECTIVITY,
                              PROP_INTERFACE_FLAGS,
-                             PROP_HW_ADDRESS, );
+                             PROP_HW_ADDRESS,
+                             PROP_PORTS, );
 
 enum {
     STATE_CHANGED,
@@ -80,9 +81,15 @@ enum {
     _PROPERTY_O_IDX_NUM,
 };
 
+enum {
+    PROPERTY_AO_IDX_AVAILABLE_CONNECTIONS,
+    PROPERTY_AO_IDX_PORTS,
+    _PROPERTY_AO_IDX_NUM,
+};
+
 typedef struct _NMDevicePrivate {
     NMLDBusPropertyO  property_o[_PROPERTY_O_IDX_NUM];
-    NMLDBusPropertyAO available_connections;
+    NMLDBusPropertyAO property_ao[_PROPERTY_AO_IDX_NUM];
     GPtrArray *       lldp_neighbors;
     char *            driver;
     char *            driver_version;
@@ -109,6 +116,7 @@ typedef struct _NMDevicePrivate {
     bool              real;
 
     bool hw_address_is_new : 1;
+    bool ports_is_new : 1;
 
     guint32 old_state;
 
@@ -457,6 +465,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_HW_ADDRESS:
         g_value_set_string(value, nm_device_get_hw_address(device));
         break;
+    case PROP_PORTS:
+        g_value_take_boxed(value, _nm_utils_copy_object_array(nm_device_get_ports(device)));
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -509,7 +520,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device = NML_DBUS_META_IFACE_INIT
         NML_DBUS_META_PROPERTY_INIT_AO_PROP("AvailableConnections",
                                             PROP_AVAILABLE_CONNECTIONS,
                                             NMDevicePrivate,
-                                            available_connections,
+                                            property_ao[PROPERTY_AO_IDX_AVAILABLE_CONNECTIONS],
                                             nm_remote_connection_get_type,
                                             .is_always_ready = TRUE),
         NML_DBUS_META_PROPERTY_INIT_U("Capabilities",
@@ -588,6 +599,15 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device = NML_DBUS_META_IFACE_INIT
                                       PROP_PHYSICAL_PORT_ID,
                                       NMDevicePrivate,
                                       physical_port_id),
+        NML_DBUS_META_PROPERTY_INIT_FCN(
+            "Ports",
+            PROP_PORTS,
+            "ao",
+            _nm_device_notify_update_prop_ports,
+            .prop_struct_offset =
+                G_STRUCT_OFFSET(NMDevicePrivate, property_ao[PROPERTY_AO_IDX_PORTS]),
+            .extra.property_vtable_ao =
+                &((const NMLDBusPropertVTableAO){.get_o_type_fcn = (nm_device_get_type)})),
         NML_DBUS_META_PROPERTY_INIT_B("Real", PROP_REAL, NMDevicePrivate, real),
         NML_DBUS_META_PROPERTY_INIT_IGNORE("State", "u"),
         NML_DBUS_META_PROPERTY_INIT_FCN("StateReason",
@@ -595,6 +615,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device = NML_DBUS_META_IFACE_INIT
                                         "(uu)",
                                         _notify_update_prop_state_reason),
         NML_DBUS_META_PROPERTY_INIT_S("Udi", PROP_UDI, NMDevicePrivate, udi), ),
+
     .base_struct_offset = G_STRUCT_OFFSET(NMDevice, _priv), );
 
 static void
@@ -614,9 +635,7 @@ nm_device_class_init(NMDeviceClass *klass)
     _NM_OBJECT_CLASS_INIT_PRIV_PTR_INDIRECT(nm_object_class, NMDevice);
 
     _NM_OBJECT_CLASS_INIT_PROPERTY_O_FIELDS_N(nm_object_class, NMDevicePrivate, property_o);
-    _NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_1(nm_object_class,
-                                               NMDevicePrivate,
-                                               available_connections);
+    _NM_OBJECT_CLASS_INIT_PROPERTY_AO_FIELDS_N(nm_object_class, NMDevicePrivate, property_ao);
 
     klass->connection_compatible = connection_compatible;
 
@@ -1034,6 +1053,20 @@ nm_device_class_init(NMDeviceClass *klass)
                             NULL,
                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
+    /**
+     * NMDevice:ports:
+     *
+     * The port devices of the controller device. For devices that cannot be
+     * controllers this is likely to be always empty.
+     *
+     * Since: 1.34
+     **/
+    obj_properties[PROP_PORTS] = g_param_spec_boxed(NM_DEVICE_PORTS,
+                                                    "",
+                                                    "",
+                                                    G_TYPE_PTR_ARRAY,
+                                                    G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
     _nml_dbus_meta_class_init_with_properties(object_class, &_nml_dbus_meta_iface_nm_device);
 
     /**
@@ -1241,6 +1274,27 @@ nm_device_get_type_description(NMDevice *device)
     return _nml_coerce_property_str_not_empty(priv->type_description);
 }
 
+/**
+ * nm_device_get_ports:
+ * @device: a #NMDevice
+ *
+ * Gets the devices currently set as port of @device.
+ *
+ * Returns: (element-type NMDevice): the #GPtrArray containing #NMDevices that
+ * are slaves of @device. This is the internal copy used by the device and
+ * must not be modified.
+ *
+ * Since: 1.34
+ **/
+const GPtrArray *
+nm_device_get_ports(NMDevice *device)
+{
+    g_return_val_if_fail(NM_IS_DEVICE(device), NULL);
+
+    return nml_dbus_property_ao_get_objs_as_ptrarray(
+        &NM_DEVICE_GET_PRIVATE(device)->property_ao[PROPERTY_AO_IDX_PORTS]);
+}
+
 NMLDBusNotifyUpdatePropFlags
 _nm_device_notify_update_prop_hw_address(NMClient *              client,
                                          NMLDBusObject *         dbobj,
@@ -1303,6 +1357,48 @@ nm_device_get_hw_address(NMDevice *device)
     nm_assert(!nm_streq0(priv->hw_address, ""));
 
     return priv->hw_address;
+}
+
+NMLDBusNotifyUpdatePropFlags
+_nm_device_notify_update_prop_ports(NMClient *              client,
+                                    NMLDBusObject *         dbobj,
+                                    const NMLDBusMetaIface *meta_iface,
+                                    guint                   dbus_property_idx,
+                                    GVariant *              value)
+{
+    const NMLDBusMetaProperty *meta_property =
+        &_nml_dbus_meta_iface_nm_device.dbus_properties[_NML_DEVICE_META_PROPERTY_INDEX_PORTS];
+    NMLDBusNotifyUpdatePropFlags notify_update_prop_flags;
+    NMDevice *                   self = NM_DEVICE(dbobj->nmobj);
+    NMDevicePrivate *            priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDeviceClass *              klass;
+    gboolean                     is_new = (meta_iface == &_nml_dbus_meta_iface_nm_device);
+
+    nm_assert(nm_streq(meta_property->dbus_property_name, "Ports"));
+
+    if (!is_new && priv->ports_is_new) {
+        /* once the instance is marked to honor the new property, the
+         * changed signal for the old variant gets ignored. */
+        goto out;
+    }
+    priv->ports_is_new = is_new;
+
+    notify_update_prop_flags =
+        nml_dbus_property_ao_notify(client,
+                                    &priv->property_ao[PROPERTY_AO_IDX_PORTS],
+                                    dbobj,
+                                    &_nml_dbus_meta_iface_nm_device,
+                                    _NML_DEVICE_META_PROPERTY_INDEX_PORTS,
+                                    value);
+    if (notify_update_prop_flags == NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE)
+        goto out;
+    nm_assert(notify_update_prop_flags == NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY);
+
+    klass = NM_DEVICE_GET_CLASS(self);
+    if (klass->slaves_param_spec)
+        _nm_client_queue_notify_object(client, self, klass->slaves_param_spec);
+out:
+    return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 }
 
 /**
@@ -1652,7 +1748,7 @@ nm_device_get_available_connections(NMDevice *device)
     g_return_val_if_fail(NM_IS_DEVICE(device), NULL);
 
     return nml_dbus_property_ao_get_objs_as_ptrarray(
-        &NM_DEVICE_GET_PRIVATE(device)->available_connections);
+        &NM_DEVICE_GET_PRIVATE(device)->property_ao[PROPERTY_AO_IDX_AVAILABLE_CONNECTIONS]);
 }
 
 static const char *
