@@ -2834,13 +2834,17 @@ nm_l3cfg_check_ready(NML3Cfg *self, const NML3ConfigData *l3cd, NML3CfgCheckRead
 static gboolean
 _l3_commit_on_idle_cb(gpointer user_data)
 {
-    NML3CfgCommitType commit_type;
-
-    NML3Cfg *self = user_data;
+    _nm_unused gs_unref_object NML3Cfg *self_keep_alive = NULL;
+    NML3Cfg *                           self            = user_data;
+    NML3CfgCommitType                   commit_type;
 
     commit_type = self->priv.p->commit_on_idle_type;
 
-    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
+    if (nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source))
+        self_keep_alive = self;
+    else
+        nm_assert_not_reached();
+
     self->priv.p->commit_on_idle_type = NM_L3_CFG_COMMIT_TYPE_AUTO;
 
     _l3_commit(self, commit_type, TRUE);
@@ -2889,6 +2893,10 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
     self->priv.p->commit_on_idle_source = nm_g_idle_add_source(_l3_commit_on_idle_cb, self);
     self->priv.p->commit_on_idle_type   = commit_type;
+
+    /* While we have an idle update scheduled, we need to keep the instance alive. */
+    g_object_ref(self);
+
     return TRUE;
 }
 
@@ -3733,7 +3741,8 @@ _l3_commit_one(NML3Cfg *             self,
 static void
 _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 {
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old = NULL;
+    _nm_unused gs_unref_object NML3Cfg *self_keep_alive = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old   = NULL;
     NML3CfgCommitType                        commit_type_auto;
     gboolean                                 commit_type_from_auto = FALSE;
     gboolean                                 is_sticky_update      = FALSE;
@@ -3780,7 +3789,8 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 
     nm_assert(commit_type > NM_L3_CFG_COMMIT_TYPE_AUTO);
 
-    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
+    if (nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source))
+        self_keep_alive = self;
     self->priv.p->commit_on_idle_type = NM_L3_CFG_COMMIT_TYPE_AUTO;
 
     if (commit_type <= NM_L3_CFG_COMMIT_TYPE_NONE)
@@ -4136,7 +4146,7 @@ finalize(GObject *object)
 
     nm_assert(c_list_is_empty(&self->priv.p->commit_type_lst_head));
 
-    nm_clear_g_source_inst(&self->priv.p->commit_on_idle_source);
+    nm_assert(!self->priv.p->commit_on_idle_source);
 
     _l3_acd_data_prune(self, TRUE);
 
