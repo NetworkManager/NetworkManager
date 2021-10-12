@@ -135,6 +135,7 @@ typedef struct {
     NML3AcdDefendType acd_defend_type_a;
 
     TestL3cfgNotifyType notify_type;
+    guint               pre_commit_event_count;
     guint               post_commit_event_count;
     guint               general_event_count;
     guint               general_event_flags;
@@ -154,6 +155,7 @@ _test_l3cfg_data_set_notify_type(TestL3cfgData *tdata, TestL3cfgNotifyType notif
     g_assert(tdata);
 
     tdata->notify_type             = notify_type;
+    tdata->pre_commit_event_count  = 0;
     tdata->post_commit_event_count = 0;
     tdata->general_event_count     = 0;
     tdata->general_event_flags     = 0;
@@ -212,6 +214,10 @@ _test_l3cfg_signal_notify(NML3Cfg *                   l3cfg,
     case TEST_L3CFG_NOTIFY_TYPE_COMMIT_1:
         g_assert_cmpint(tdata->post_commit_event_count, ==, 0);
         switch (notify_data->notify_type) {
+        case NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT:
+            g_assert_cmpint(tdata->pre_commit_event_count, ==, 0);
+            tdata->pre_commit_event_count++;
+            return;
         case NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT:
             tdata->post_commit_event_count++;
             return;
@@ -258,6 +264,7 @@ _test_l3cfg_signal_notify(NML3Cfg *                   l3cfg,
             1 + 2 + (tdata->add_addr4_101 ? (tdata->has_addr4_101 ? 1 : 3) : 0);
 
         if (NM_IN_SET(notify_data->notify_type,
+                      NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT,
                       NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE,
                       NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE))
             return;
@@ -453,6 +460,7 @@ test_l3cfg(gconstpointer test_data)
 
     _test_l3cfg_data_set_notify_type(tdata, TEST_L3CFG_NOTIFY_TYPE_COMMIT_1);
     nm_l3cfg_commit(l3cfg0, NM_L3_CFG_COMMIT_TYPE_REAPPLY);
+    g_assert_cmpint(tdata->pre_commit_event_count, ==, 1);
     g_assert_cmpint(tdata->post_commit_event_count, ==, 1);
     _test_l3cfg_data_set_notify_type(tdata, TEST_L3CFG_NOTIFY_TYPE_NONE);
 

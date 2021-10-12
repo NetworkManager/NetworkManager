@@ -345,6 +345,7 @@ static NM_UTILS_ENUM2STR_DEFINE(
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED, "l3cd-changed"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE, "platform-change"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE, "platform-change-on-idle"),
+    NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT, "pre-commit"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT, "post-commit"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
                       "routes-temporary-not-available-expired"),
@@ -683,6 +684,7 @@ _obj_state_data_free(gpointer data)
     ObjStateData *obj_state = data;
 
     c_list_unlink_stale(&obj_state->os_lst);
+    c_list_unlink_stale(&obj_state->os_zombie_lst);
     c_list_unlink_stale(&obj_state->os_temporary_not_available_lst);
     nmp_object_unref(obj_state->obj);
     nmp_object_unref(obj_state->os_plobj);
@@ -3409,9 +3411,6 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
                 continue;
 
             for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
-                /* FIXME(l3cfg): VRF needs to be treated specially. */
-                nm_assert(!nm_l3cfg_is_vrf(self));
-
                 nm_l3_config_data_add_dependent_device_routes(
                     l3cd,
                     IS_IPv4 ? AF_INET : AF_INET6,
@@ -3536,13 +3535,15 @@ _routes_temporary_not_available_update(NML3Cfg *  self,
                                        int        addr_family,
                                        GPtrArray *routes_temporary_not_available_arr)
 {
-    ObjStateData *obj_state;
-    ObjStateData *obj_state_safe;
-    gint64        now_msec;
-    gboolean      prune_all = FALSE;
-    gboolean      success   = TRUE;
-    guint         i;
+    ObjStateData *  obj_state;
+    ObjStateData *  obj_state_safe;
+    gint64          now_msec;
+    gboolean        prune_all = FALSE;
+    gboolean        success   = TRUE;
+    guint           i;
+    const NMPClass *klass;
 
+    klass    = nmp_class_from_type(NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
     now_msec = nm_utils_get_monotonic_timestamp_msec();
 
     if (nm_g_ptr_array_len(routes_temporary_not_available_arr) <= 0) {
@@ -3553,8 +3554,10 @@ _routes_temporary_not_available_update(NML3Cfg *  self,
     c_list_for_each_entry (obj_state,
                            &self->priv.p->obj_state_temporary_not_available_lst_head,
                            os_temporary_not_available_lst) {
-        nm_assert(obj_state->os_temporary_not_available_timestamp_msec > 0);
-        obj_state->os_tna_dirty = TRUE;
+        if (NMP_OBJECT_GET_CLASS(obj_state->obj) == klass) {
+            nm_assert(obj_state->os_temporary_not_available_timestamp_msec > 0);
+            obj_state->os_tna_dirty = TRUE;
+        }
     }
 
     for (i = 0; i < routes_temporary_not_available_arr->len; i++) {
@@ -3614,8 +3617,10 @@ out_prune:
                                 &self->priv.p->obj_state_temporary_not_available_lst_head,
                                 os_temporary_not_available_lst) {
         if (prune_all || obj_state->os_tna_dirty) {
-            obj_state->os_temporary_not_available_timestamp_msec = 0;
-            c_list_unlink(&obj_state->os_temporary_not_available_lst);
+            if (NMP_OBJECT_GET_CLASS(obj_state->obj) == klass) {
+                obj_state->os_temporary_not_available_timestamp_msec = 0;
+                c_list_unlink(&obj_state->os_temporary_not_available_lst);
+            }
         }
     }
 
@@ -3803,6 +3808,8 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
                                   commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY,
                                   &l3cd_old,
                                   &changed_combined_l3cd);
+
+    _nm_l3cfg_emit_signal_notify_simple(self, NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT);
 
     _l3_commit_one(self, AF_INET, commit_type, changed_combined_l3cd, l3cd_old);
     _l3_commit_one(self, AF_INET6, commit_type, changed_combined_l3cd, l3cd_old);

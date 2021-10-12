@@ -130,6 +130,12 @@ typedef enum {
 
     NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT,
 
+    /* emitted before the merged l3cd is committed to platform.
+     *
+     * This event also gets emitted "under unsafe circumstances".
+     * See NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED. */
+    NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT,
+
     /* emitted at the end of nm_l3cfg_platform_commit(). This signals also that
      * nm_l3cfg_is_ready() might have switched to TRUE. */
     NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT,
