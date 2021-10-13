@@ -6798,8 +6798,10 @@ nm_device_slave_notify_enslave(NMDevice *self, gboolean success)
 
             priv->is_enslaved = TRUE;
 
-            nm_clear_pointer(&priv->ports_variant, g_variant_unref);
-            nm_gobject_notify_together(self, PROP_MASTER, PROP_PORTS, PROP_SLAVES);
+            _notify(self, PROP_MASTER);
+
+            nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->master)->ports_variant, g_variant_unref);
+            nm_gobject_notify_together(priv->master, PROP_PORTS, PROP_SLAVES);
         } else if (activating) {
             _LOGW(LOGD_DEVICE,
                   "Activation: connection '%s' could not be enslaved",
@@ -6863,8 +6865,11 @@ nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
 
     if (priv->is_enslaved) {
         priv->is_enslaved = FALSE;
-        nm_clear_pointer(&priv->ports_variant, g_variant_unref);
-        nm_gobject_notify_together(self, PROP_MASTER, PROP_PORTS, PROP_SLAVES);
+
+        _notify(self, PROP_MASTER);
+
+        nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->master)->ports_variant, g_variant_unref);
+        nm_gobject_notify_together(priv->master, PROP_PORTS, PROP_SLAVES);
     }
 }
 
