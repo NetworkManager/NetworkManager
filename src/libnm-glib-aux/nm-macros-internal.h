@@ -1595,4 +1595,22 @@ NM_AUTO_DEFINE_FCN_VOID0(GMutex *, _nm_auto_unlock_g_mutex, g_mutex_unlock);
 
 /*****************************************************************************/
 
+static inline GObject *
+nm_g_object_freeze_notify(gpointer obj)
+{
+    if (obj)
+        g_object_freeze_notify(obj);
+    return obj;
+}
+
+static inline void
+nm_g_object_thaw_notify_clear(GObject **p_obj)
+{
+    nm_clear_pointer(p_obj, g_object_thaw_notify);
+}
+
+#define nm_auto_g_object_thaw_notify nm_auto(nm_g_object_thaw_notify_clear)
+
+/*****************************************************************************/
+
 #endif /* __NM_MACROS_INTERNAL_H__ */
