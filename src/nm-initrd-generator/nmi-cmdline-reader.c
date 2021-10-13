@@ -443,6 +443,8 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                          "on"
                          "any",
                          "dhcp6",
+                         "dhcp,dhcp6",
+                         "dhcp6,dhcp",
                          "auto",
                          "auto6",
                          "link6",
@@ -631,6 +633,16 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                          NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
                          NULL);
         }
+    } else if (NM_IN_STRSET(kind, "dhcp,dhcp6", "dhcp6,dhcp")) {
+        /* Both DHCPv4 and IPv6 autoconf are enabled, and
+         * each of them is tried for at least IP_REQUIRED_TIMEOUT_MSEC,
+         * even if the other one completes before.
+         */
+        clear_ip4_required_timeout = FALSE;
+        g_object_set(s_ip6,
+                     NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
+                     NMI_IP_REQUIRED_TIMEOUT_MSEC,
+                     NULL);
     } else if (nm_streq0(kind, "link6")) {
         g_object_set(s_ip6,
                      NM_SETTING_IP_CONFIG_METHOD,

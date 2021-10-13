@@ -300,7 +300,7 @@ test_dhcp_timeout(void)
 static void
 test_if_auto_with_mtu(void)
 {
-    const char *const *ARGV                  = NM_MAKE_STRV("ip=eth0:auto:1666", "=");
+    const char *const *ARGV                  = NM_MAKE_STRV("ip=eth0:dhcp,dhcp6:1666", "=");
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection *         s_con;
     NMSettingWired *              s_wired;
@@ -324,11 +324,17 @@ test_if_auto_with_mtu(void)
     g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
     g_assert(!nm_setting_ip_config_get_ignore_auto_dns(s_ip4));
     g_assert_cmpint(nm_setting_ip_config_get_dhcp_timeout(s_ip4), ==, 90);
+    g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip4),
+                    ==,
+                    NMI_IP_REQUIRED_TIMEOUT_MSEC);
 
     s_ip6 = nm_connection_get_setting_ip6_config(connection);
     g_assert(s_ip6);
     g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6), ==, NM_SETTING_IP6_CONFIG_METHOD_AUTO);
     g_assert(!nm_setting_ip_config_get_ignore_auto_dns(s_ip6));
+    g_assert_cmpint(nm_setting_ip_config_get_required_timeout(s_ip6),
+                    ==,
+                    NMI_IP_REQUIRED_TIMEOUT_MSEC);
 }
 
 static void
