@@ -36,6 +36,7 @@
 
 /* define a variable, so that we can compare the operation with pointer equality. */
 static const char *const DBUS_OP_SET_LINK_DEFAULT_ROUTE = "SetLinkDefaultRoute";
+static const char *const DBUS_OP_SET_LINK_DNS_OVER_TLS  = "SetLinkDNSOverTLS";
 
 /*****************************************************************************/
 
@@ -86,7 +87,12 @@ typedef struct {
     bool             try_start_blocked : 1;
     bool             dbus_initied : 1;
     bool             send_updates_waiting : 1;
-    NMTernary        has_link_default_route : 3;
+    /* These two variables ensure that the log is not spammed with
+     * API (not) supported messages.
+     * They can be removed when no distro uses systemd-resolved < v240 anymore
+     */
+    NMTernary has_link_default_route : 3;
+    NMTernary has_link_dns_over_tls : 3;
 } NMDnsSystemdResolvedPrivate;
 
 struct _NMDnsSystemdResolved {
@@ -201,15 +207,25 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
             priv->has_link_default_route = NM_TERNARY_TRUE;
             _LOGD("systemd-resolved support for SetLinkDefaultRoute(): API supported");
         }
+        if (request_item->operation == DBUS_OP_SET_LINK_DNS_OVER_TLS
+            && priv->has_link_dns_over_tls == NM_TERNARY_DEFAULT) {
+            priv->has_link_dns_over_tls = NM_TERNARY_TRUE;
+            _LOGD("systemd-resolved support for SetLinkDNSOverTLS(): API supported");
+        }
         priv->send_updates_warn_ratelimited = FALSE;
         return;
     }
 
-    if (request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
-        && nm_g_error_matches(error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD)) {
-        if (priv->has_link_default_route == NM_TERNARY_DEFAULT) {
+    if (nm_g_error_matches(error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD)) {
+        if (priv->has_link_default_route == NM_TERNARY_DEFAULT
+            && request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE) {
             priv->has_link_default_route = NM_TERNARY_FALSE;
             _LOGD("systemd-resolved support for SetLinkDefaultRoute(): API not supported");
+        }
+        if (priv->has_link_dns_over_tls == NM_TERNARY_DEFAULT
+            && request_item->operation == DBUS_OP_SET_LINK_DNS_OVER_TLS) {
+            priv->has_link_dns_over_tls = NM_TERNARY_FALSE;
+            _LOGD("systemd-resolved support for SetLinkDNSOverTLS(): API not supported");
         }
         return;
     }
@@ -391,7 +407,7 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
                          g_variant_new("(is)", ic->ifindex, llmnr_arg ?: ""));
     _request_item_append(self, "SetLinkDNS", ic->ifindex, g_variant_builder_end(&dns));
     _request_item_append(self,
-                         "SetLinkDNSOverTLS",
+                         DBUS_OP_SET_LINK_DNS_OVER_TLS,
                          ic->ifindex,
                          g_variant_new("(is)", ic->ifindex, dns_over_tls_arg ?: ""));
 
@@ -492,10 +508,13 @@ send_updates(NMDnsSystemdResolved *self)
     c_list_for_each_entry (request_item, &priv->request_queue_lst_head, request_queue_lst) {
         gs_free char *ss = NULL;
 
-        if (request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
-            && priv->has_link_default_route == NM_TERNARY_FALSE) {
+        if ((request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
+             && priv->has_link_default_route == NM_TERNARY_FALSE)
+            || (request_item->operation == DBUS_OP_SET_LINK_DNS_OVER_TLS
+                && priv->has_link_dns_over_tls == NM_TERNARY_FALSE)) {
             /* The "SetLinkDefaultRoute" API is only supported since v240.
-             * We detected that it is not supported, and skip the call. There
+             * The "SetLinkDNSOverTLS" API is only supported since v239.
+             * We detected whether they are supported, and skip the calls. There
              * is no special workaround, because in this case we rely on systemd-resolved
              * to do the right thing automatically. */
             continue;
@@ -625,8 +644,10 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
     if (owner) {
         priv->try_start_blocked    = FALSE;
         priv->send_updates_waiting = TRUE;
-    } else
+    } else {
         priv->has_link_default_route = NM_TERNARY_DEFAULT;
+        priv->has_link_dns_over_tls  = NM_TERNARY_DEFAULT;
+    }
 
     send_updates(self);
 }
@@ -942,6 +963,7 @@ nm_dns_systemd_resolved_init(NMDnsSystemdResolved *self)
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
 
     priv->has_link_default_route = NM_TERNARY_DEFAULT;
+    priv->has_link_dns_over_tls  = NM_TERNARY_DEFAULT;
 
     c_list_init(&priv->request_queue_lst_head);
     c_list_init(&priv->handle_lst_head);
