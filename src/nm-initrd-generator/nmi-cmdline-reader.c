@@ -496,11 +496,12 @@ _parse_ip_method(const char *kind)
 
     /* only certain combinations are allowed... those are listed
      * and mapped to a canonical value.
-     *
-     * For the moment, these map all to "auto". This might be revisited
-     * in the future to add new kinds like "dhcp+local6". */
+     */
     if (_strv_is_same_unordered(strv, "dhcp", "dhcp6"))
-        return "auto";
+        return "dhcp4+auto6";
+    /* For the moment, this maps to "auto". This might be revisited
+     * in the future to add new kinds like "dhcp+local6"
+     */
     if (_strv_is_same_unordered(strv, "dhcp", "local6"))
         return "auto";
 
@@ -744,6 +745,16 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
                          NM_SETTING_IP4_CONFIG_METHOD_DISABLED,
                          NULL);
         }
+    } else if (nm_streq(kind, "dhcp4+auto6")) {
+        /* Both DHCPv4 and IPv6 autoconf are enabled, and
+         * each of them is tried for at least IP_REQUIRED_TIMEOUT_MSEC,
+         * even if the other one completes before.
+         */
+        clear_ip4_required_timeout = FALSE;
+        g_object_set(s_ip6,
+                     NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT,
+                     NMI_IP_REQUIRED_TIMEOUT_MSEC,
+                     NULL);
     } else if (nm_streq(kind, "link6")) {
         g_object_set(s_ip6,
                      NM_SETTING_IP_CONFIG_METHOD,
