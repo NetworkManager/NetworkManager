@@ -471,7 +471,7 @@ _nm_sriov_vf_attribute_validate_all(const NMSriovVF *vf, GError **error)
  * @vf: the #NMSriovVF
  * @vlan_id: the VLAN id
  *
- * Adds a VLAN to the VF.
+ * Adds a VLAN to the VF. Currently kernel only supports one VLAN per VF.
  *
  * Returns: %TRUE if the VLAN was added; %FALSE if it already existed
  *
@@ -535,7 +535,8 @@ vlan_id_compare(gconstpointer a, gconstpointer b, gpointer user_data)
  * @vf: the #NMSriovVF
  * @length: (out) (allow-none): on return, the number of VLANs configured
  *
- * Returns the VLANs currently configured on the VF.
+ * Returns the VLANs currently configured on the VF. Currently kernel only
+ * supports one VLAN per VF.
  *
  * Returns: (transfer none) (array length=length): a list of VLAN ids configured on the VF.
  *
