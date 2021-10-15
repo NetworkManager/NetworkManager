@@ -634,6 +634,15 @@ make_connection_setting(const char *file,
         PARSE_WARNING("invalid LLMNR setting");
     g_object_set(s_con, NM_SETTING_CONNECTION_LLMNR, i_val, NULL);
 
+    i_val = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
+    if (!svGetValueEnum(ifcfg,
+                        "DNS_OVER_TLS",
+                        nm_setting_connection_dns_over_tls_get_type(),
+                        &i_val,
+                        NULL))
+        PARSE_WARNING("invalid DNS_OVER_TLS setting");
+    g_object_set(s_con, NM_SETTING_CONNECTION_DNS_OVER_TLS, i_val, NULL);
+
     return NM_SETTING(s_con);
 }
 

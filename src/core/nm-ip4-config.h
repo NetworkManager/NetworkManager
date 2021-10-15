@@ -124,12 +124,13 @@ gboolean nm_ip4_config_commit(const NMIP4Config *    self,
                               NMPlatform *           platform,
                               NMIPRouteTableSyncMode route_table_sync);
 
-void       nm_ip4_config_merge_setting(NMIP4Config *            self,
-                                       NMSettingIPConfig *      setting,
-                                       NMSettingConnectionMdns  mdns,
-                                       NMSettingConnectionLlmnr llmnr,
-                                       guint32                  route_table,
-                                       guint32                  route_metric);
+void       nm_ip4_config_merge_setting(NMIP4Config *                 self,
+                                       NMSettingIPConfig *           setting,
+                                       NMSettingConnectionMdns       mdns,
+                                       NMSettingConnectionLlmnr      llmnr,
+                                       NMSettingConnectionDnsOverTls dns_over_tls,
+                                       guint32                       route_table,
+                                       guint32                       route_metric);
 NMSetting *nm_ip4_config_create_setting(const NMIP4Config *self);
 
 void         nm_ip4_config_merge(NMIP4Config *        dst,
@@ -161,6 +162,8 @@ NMSettingConnectionMdns  nm_ip4_config_mdns_get(const NMIP4Config *self);
 void                     nm_ip4_config_mdns_set(NMIP4Config *self, NMSettingConnectionMdns mdns);
 NMSettingConnectionLlmnr nm_ip4_config_llmnr_get(const NMIP4Config *self);
 void                     nm_ip4_config_llmnr_set(NMIP4Config *self, NMSettingConnectionLlmnr llmnr);
+NMSettingConnectionDnsOverTls nm_ip4_config_dns_over_tls_get(const NMIP4Config *self);
+void nm_ip4_config_dns_over_tls_set(NMIP4Config *self, NMSettingConnectionDnsOverTls dns_over_tls);
 
 void nm_ip4_config_set_config_flags(NMIP4Config *self, NMIPConfigFlags flags, NMIPConfigFlags mask);
 NMIPConfigFlags nm_ip4_config_get_config_flags(const NMIP4Config *self);

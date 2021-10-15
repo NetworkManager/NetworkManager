@@ -1659,6 +1659,7 @@ nm_vpn_connection_ip4_config_get(NMVpnConnection *self, GVariant *dict)
                                 s_ip,
                                 nm_setting_connection_get_mdns(s_con),
                                 nm_setting_connection_get_llmnr(s_con),
+                                nm_setting_connection_get_dns_over_tls(s_con),
                                 route_table,
                                 route_metric);
 
