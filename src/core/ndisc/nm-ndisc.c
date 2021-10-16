@@ -23,6 +23,9 @@
 #define RFC7559_IRT ((gint32) 4)    /* RFC7559, Initial Retransmission Time, in seconds */
 #define RFC7559_MRT ((gint32) 3600) /* RFC7559, Maximum Retransmission Time, in seconds */
 
+#define NM_NDISC_PRE_EXPIRY_TIME_MSEC          60000
+#define NM_NDISC_PRE_EXPIRY_MIN_LIFETIME_MSEC 120000
+
 #define _SIZE_MAX_GATEWAYS    100u
 #define _SIZE_MAX_ADDRESSES   100u
 #define _SIZE_MAX_ROUTES      1000u
@@ -44,6 +47,7 @@ struct _NMNDiscPrivate {
     gint32 last_ra;
 
     gint32 solicit_retransmit_time_msec;
+    gint64 last_rs_msec;
 
     GSource *solicit_timer_source;
 
@@ -840,6 +844,8 @@ solicit_timer_cb(gpointer user_data)
     else {
         _LOGT("solicit: router solicitation sent");
         nm_clear_g_free(&priv->last_error);
+
+        priv->last_rs_msec = nm_utils_get_monotonic_timestamp_msec();
     }
 
     /* https://tools.ietf.org/html/rfc4861#section-6.3.7 describes how to send solicitations:
@@ -1501,33 +1507,6 @@ check_timestamps(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap changed)
                                                                      ndisc);
     }
 
-    /* When we receive an RA, we don't disable solicitations entirely. Instead,
-     * we set the interval the maximum (RFC7559_MRT).
-     *
-     * This contradicts https://tools.ietf.org/html/rfc7559#section-2.1, which says
-     * that we SHOULD stop sending RS if we receive an RA -- but only on a multicast
-     * capable link and if the RA has a valid router lifetime.
-     *
-     * But we really want to recover from a dead router on the network, so we
-     * don't want to cease sending RS entirely.
-     *
-     * But we only re-schedule the timer if the current interval is not already
-     * "RFC7559_MRT * 1000". Otherwise, we already have a slow interval counter
-     * pending. */
-    if (priv->solicit_retransmit_time_msec != RFC7559_MRT * 1000) {
-        gint32 timeout_msec;
-
-        priv->solicit_retransmit_time_msec = RFC7559_MRT * 1000;
-        timeout_msec = solicit_retransmit_time_jitter(priv->solicit_retransmit_time_msec);
-
-        _LOGD("solicit: schedule sending next (slow) solicitation in about %.3f seconds",
-              ((double) timeout_msec) / 1000);
-
-        nm_clear_g_source_inst(&priv->solicit_timer_source);
-        priv->solicit_timer_source =
-            nm_g_timeout_add_source_approx(timeout_msec, 0, solicit_timer_cb, ndisc);
-    }
-
     if (changed != NM_NDISC_CONFIG_NONE)
         nm_ndisc_emit_config_change(ndisc, changed);
 }
@@ -1539,14 +1518,105 @@ timeout_expire_cb(gpointer user_data)
     return G_SOURCE_CONTINUE;
 }
 
+/* Calculate the earliest time where some part of the advertised data is about
+ * to expire.
+ *
+ * Entities are considered about to expire NM_NDISC_PRE_EXPIRY_TIME_MSEC before
+ * their expiration time.
+ *
+ * However, data which has a lifetime (as calculated from the time the last
+ * RS has been sent) shorter than NM_NDISC_PRE_EXPIRY_MIN_LIFETIME_MSEC, is
+ * ignored. This is because when we send out RSs because some data is about
+ * to expire, and the received RAs neither extend the lifetime nor remove
+ * the offending data, the data would be considered about to expire again,
+ * triggering more RS in an endless loop until it expired for good.
+ */
+
+static void
+_calc_pre_expiry_rs_msec_worker(gint64 *earliest_expiry_msec, gint64 last_rs_msec, gint64 expiry_msec)
+{
+    if (expiry_msec == NM_NDISC_EXPIRY_INFINITY)
+        return;
+
+    if (expiry_msec < last_rs_msec + NM_NDISC_PRE_EXPIRY_MIN_LIFETIME_MSEC)
+        return;
+
+    *earliest_expiry_msec = NM_MIN(*earliest_expiry_msec, expiry_msec);
+}
+
+static gint64
+calc_pre_expiry_rs_msec(NMNDisc *ndisc)
+{
+    NMNDiscPrivate      *priv         = NM_NDISC_GET_PRIVATE(ndisc);
+    NMNDiscDataInternal *rdata       = &priv->rdata;
+    gint64               expiry_msec = NM_NDISC_EXPIRY_INFINITY;
+    guint                i;
+
+    for (i = 0; i < rdata->gateways->len; i++) {
+        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
+                                        priv->last_rs_msec,
+                                        g_array_index(rdata->gateways, NMNDiscGateway, i).expiry_msec);
+    }
+
+    for (i = 0; i < rdata->addresses->len; i++) {
+        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
+                                        priv->last_rs_msec,
+                                        g_array_index(rdata->addresses, NMNDiscAddress, 0).expiry_msec);
+    }
+
+    for (i = 0; i < rdata->routes->len; i++) {
+        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
+                                        priv->last_rs_msec,
+                                        g_array_index(rdata->routes, NMNDiscRoute, 0).expiry_msec);
+    }
+
+    for (i = 0; i < rdata->dns_servers->len; i++) {
+        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
+                                        priv->last_rs_msec,
+                                        g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0).expiry_msec);
+    }
+
+    for (i = 0; i < rdata->dns_domains->len; i++) {
+        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
+                                        priv->last_rs_msec,
+                                        g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0).expiry_msec);
+    }
+
+    return expiry_msec - solicit_retransmit_time_jitter(NM_NDISC_PRE_EXPIRY_TIME_MSEC);
+}
+
 void
 nm_ndisc_ra_received(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap changed)
 {
     NMNDiscPrivate *priv = NM_NDISC_GET_PRIVATE(ndisc);
+    gint64          pre_expiry_msec;
+    gint32          timeout_msec;
 
     nm_clear_g_source_inst(&priv->ra_timeout_source);
     nm_clear_g_free(&priv->last_error);
     check_timestamps(ndisc, now_msec, changed);
+
+    /* When we receive an RA, we don't disable solicitations.
+     *
+     * This contradicts https://tools.ietf.org/html/rfc7559#section-2.1, which
+     * says that we SHOULD stop sending RS if we receive an RA -- but only on
+     * a multicast capable link and if the RA has a valid router lifetime.
+     *
+     * But there are routers out in the wild that won't send unsolicited RAs.
+     * So we begin sending out RS again when entities are about to expire.
+     */
+    pre_expiry_msec = NM_CLAMP(calc_pre_expiry_rs_msec(ndisc),
+                               priv->last_rs_msec + RFC7559_IRT*1000,
+                               priv->last_rs_msec + RFC7559_MRT*1000);
+    timeout_msec = NM_CLAMP(pre_expiry_msec - now_msec, (gint64)0, (gint64)G_MAXINT32);
+
+    _LOGD("solicit: schedule sending next (slow) solicitation in about %.3f seconds",
+              ((double) timeout_msec) / 1000);
+
+    priv->solicit_retransmit_time_msec = 0;
+    nm_clear_g_source_inst(&priv->solicit_timer_source);
+    priv->solicit_timer_source =
+        nm_g_timeout_add_source_approx(timeout_msec, 0, solicit_timer_cb, ndisc);
 }
 
 void
