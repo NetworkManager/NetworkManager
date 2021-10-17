@@ -6008,9 +6008,10 @@ config_changed(NMConfig *          config,
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    if (priv->state <= NM_DEVICE_STATE_DISCONNECTED || priv->state > NM_DEVICE_STATE_ACTIVATED) {
+    if (priv->state <= NM_DEVICE_STATE_DISCONNECTED || priv->state >= NM_DEVICE_STATE_ACTIVATED) {
         priv->ignore_carrier = nm_config_data_get_ignore_carrier(config_data, self);
-        if (NM_FLAGS_HAS(changes, NM_CONFIG_CHANGE_VALUES))
+        if (NM_FLAGS_HAS(changes, NM_CONFIG_CHANGE_VALUES)
+            && !nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))
             device_init_static_sriov_num_vfs(self);
     }
 }
