@@ -56,6 +56,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_AUTH_RETRIES         "auth-retries"
 #define NM_SETTING_CONNECTION_MDNS                 "mdns"
 #define NM_SETTING_CONNECTION_LLMNR                "llmnr"
+#define NM_SETTING_CONNECTION_DNS_OVER_TLS         "dns-over-tls"
 #define NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT  "wait-device-timeout"
 #define NM_SETTING_CONNECTION_MUD_URL              "mud-url"
 
@@ -127,6 +128,24 @@ typedef enum {
     NM_SETTING_CONNECTION_LLMNR_YES     = 2,
 } NMSettingConnectionLlmnr;
 
+/**
+ * NMSettingConnectionDnsOverTls:
+ * @NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT: default value
+ * @NM_SETTING_CONNECTION_DNS_OVER_TLS_NO: disable DNSOverTls
+ * @NM_SETTING_CONNECTION_DNS_OVER_TLS_OPPORTUNISTIC: enable opportunistic mode
+ * @NM_SETTING_CONNECTION_DNS_OVER_TLS_YES: enable strict mode
+ *
+ * #NMSettingConnectionDnsOverTls values indicate whether DNSOverTls should be enabled.
+ *
+ * Since: 1.34
+ */
+typedef enum {
+    NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT       = -1,
+    NM_SETTING_CONNECTION_DNS_OVER_TLS_NO            = 0,
+    NM_SETTING_CONNECTION_DNS_OVER_TLS_OPPORTUNISTIC = 1,
+    NM_SETTING_CONNECTION_DNS_OVER_TLS_YES           = 2,
+} NMSettingConnectionDnsOverTls;
+
 typedef struct _NMSettingConnectionClass NMSettingConnectionClass;
 
 GType nm_setting_connection_get_type(void);
@@ -193,6 +212,8 @@ NM_AVAILABLE_IN_1_12
 NMSettingConnectionMdns nm_setting_connection_get_mdns(NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_14
 NMSettingConnectionLlmnr nm_setting_connection_get_llmnr(NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_34
+NMSettingConnectionDnsOverTls nm_setting_connection_get_dns_over_tls(NMSettingConnection *setting);
 
 NM_AVAILABLE_IN_1_20
 gint32 nm_setting_connection_get_wait_device_timeout(NMSettingConnection *setting);

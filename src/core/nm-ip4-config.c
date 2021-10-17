@@ -287,27 +287,28 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMIP4Config,
                              PROP_DNS_PRIORITY, );
 
 typedef struct {
-    bool                     metered : 1;
-    bool                     never_default : 1;
-    guint32                  mtu;
-    int                      ifindex;
-    NMIPConfigSource         mtu_source;
-    int                      dns_priority;
-    NMSettingConnectionMdns  mdns;
-    NMSettingConnectionLlmnr llmnr;
-    GArray *                 nameservers;
-    GPtrArray *              domains;
-    GPtrArray *              searches;
-    GPtrArray *              dns_options;
-    GArray *                 nis;
-    char *                   nis_domain;
-    GArray *                 wins;
-    GVariant *               address_data_variant;
-    GVariant *               addresses_variant;
-    GVariant *               route_data_variant;
-    GVariant *               routes_variant;
-    NMDedupMultiIndex *      multi_idx;
-    const NMPObject *        best_default_route;
+    bool                          metered : 1;
+    bool                          never_default : 1;
+    guint32                       mtu;
+    int                           ifindex;
+    NMIPConfigSource              mtu_source;
+    int                           dns_priority;
+    NMSettingConnectionMdns       mdns;
+    NMSettingConnectionLlmnr      llmnr;
+    NMSettingConnectionDnsOverTls dns_over_tls;
+    GArray *                      nameservers;
+    GPtrArray *                   domains;
+    GPtrArray *                   searches;
+    GPtrArray *                   dns_options;
+    GArray *                      nis;
+    char *                        nis_domain;
+    GArray *                      wins;
+    GVariant *                    address_data_variant;
+    GVariant *                    addresses_variant;
+    GVariant *                    route_data_variant;
+    GVariant *                    routes_variant;
+    NMDedupMultiIndex *           multi_idx;
+    const NMPObject *             best_default_route;
     union {
         NMIPConfigDedupMultiIdxType idx_ip4_addresses_;
         NMDedupMultiIdxType         idx_ip4_addresses;
@@ -747,12 +748,13 @@ nm_ip4_config_commit(const NMIP4Config *    self,
 }
 
 void
-nm_ip4_config_merge_setting(NMIP4Config *            self,
-                            NMSettingIPConfig *      setting,
-                            NMSettingConnectionMdns  mdns,
-                            NMSettingConnectionLlmnr llmnr,
-                            guint32                  route_table,
-                            guint32                  route_metric)
+nm_ip4_config_merge_setting(NMIP4Config *                 self,
+                            NMSettingIPConfig *           setting,
+                            NMSettingConnectionMdns       mdns,
+                            NMSettingConnectionLlmnr      llmnr,
+                            NMSettingConnectionDnsOverTls dns_over_tls,
+                            guint32                       route_table,
+                            guint32                       route_metric)
 {
     guint       naddresses, nroutes, nnameservers, nsearches;
     int         i, priority;
@@ -868,6 +870,7 @@ nm_ip4_config_merge_setting(NMIP4Config *            self,
 
     nm_ip4_config_mdns_set(self, mdns);
     nm_ip4_config_llmnr_set(self, llmnr);
+    nm_ip4_config_dns_over_tls_set(self, dns_over_tls);
 
     nm_ip4_config_set_never_default(self, nm_setting_ip_config_get_never_default(setting));
 
@@ -1112,6 +1115,10 @@ nm_ip4_config_merge(NMIP4Config *        dst,
     /* LLMNR */
     nm_ip4_config_llmnr_set(dst,
                             NM_MAX(nm_ip4_config_llmnr_get(src), nm_ip4_config_llmnr_get(dst)));
+    /* dns_over_tls */
+    nm_ip4_config_dns_over_tls_set(
+        dst,
+        NM_MAX(nm_ip4_config_dns_over_tls_get(src), nm_ip4_config_dns_over_tls_get(dst)));
 
     g_object_thaw_notify(G_OBJECT(dst));
 }
@@ -1357,6 +1364,10 @@ nm_ip4_config_subtract(NMIP4Config *      dst,
     if (nm_ip4_config_llmnr_get(src) == nm_ip4_config_llmnr_get(dst))
         nm_ip4_config_llmnr_set(dst, NM_SETTING_CONNECTION_LLMNR_DEFAULT);
 
+    /* dns_over_tls */
+    if (nm_ip4_config_dns_over_tls_get(src) == nm_ip4_config_dns_over_tls_get(dst))
+        nm_ip4_config_dns_over_tls_set(dst, NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
+
     g_object_thaw_notify(G_OBJECT(dst));
 }
 
@@ -1466,6 +1477,7 @@ skip_routes:
     /* ignore WINS */
     /* ignore mdns */
     /* ignore LLMNR */
+    /* ignore dns_over_tls */
 
     if (update_dst)
         g_object_thaw_notify(G_OBJECT(dst));
@@ -1775,6 +1787,11 @@ nm_ip4_config_replace(NMIP4Config *dst, const NMIP4Config *src, gboolean *releva
     if (src_priv->llmnr != dst_priv->llmnr) {
         dst_priv->llmnr      = src_priv->llmnr;
         has_relevant_changes = TRUE;
+    }
+
+    if (src_priv->dns_over_tls != dst_priv->dns_over_tls) {
+        dst_priv->dns_over_tls = src_priv->dns_over_tls;
+        has_relevant_changes   = TRUE;
     }
 
     /* DNS priority */
@@ -2521,6 +2538,18 @@ nm_ip4_config_llmnr_set(NMIP4Config *self, NMSettingConnectionLlmnr llmnr)
     NM_IP4_CONFIG_GET_PRIVATE(self)->llmnr = llmnr;
 }
 
+NMSettingConnectionDnsOverTls
+nm_ip4_config_dns_over_tls_get(const NMIP4Config *self)
+{
+    return NM_IP4_CONFIG_GET_PRIVATE(self)->dns_over_tls;
+}
+
+void
+nm_ip4_config_dns_over_tls_set(NMIP4Config *self, NMSettingConnectionDnsOverTls dns_over_tls)
+{
+    NM_IP4_CONFIG_GET_PRIVATE(self)->dns_over_tls = dns_over_tls;
+}
+
 /*****************************************************************************/
 
 NMIPConfigFlags
@@ -2901,6 +2930,10 @@ nm_ip4_config_hash(const NMIP4Config *self, GChecksum *sum, gboolean dns_only)
     if (val != NM_SETTING_CONNECTION_LLMNR_DEFAULT)
         g_checksum_update(sum, (const guint8 *) &val, sizeof(val));
 
+    val = nm_ip4_config_dns_over_tls_get(self);
+    if (val != NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT)
+        g_checksum_update(sum, (const guint8 *) &val, sizeof(val));
+
     /* FIXME(ip-config-checksum): the DNS priority should be considered relevant
      * and added into the checksum as well, but this can't be done right now
      * because in the DNS manager we rely on the fact that an empty
@@ -3095,14 +3128,15 @@ nm_ip4_config_init(NMIP4Config *self)
     nm_ip_config_dedup_multi_idx_type_init((NMIPConfigDedupMultiIdxType *) &priv->idx_ip4_routes,
                                            NMP_OBJECT_TYPE_IP4_ROUTE);
 
-    priv->mdns        = NM_SETTING_CONNECTION_MDNS_DEFAULT;
-    priv->llmnr       = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
-    priv->nameservers = g_array_new(FALSE, FALSE, sizeof(guint32));
-    priv->domains     = g_ptr_array_new_with_free_func(g_free);
-    priv->searches    = g_ptr_array_new_with_free_func(g_free);
-    priv->dns_options = g_ptr_array_new_with_free_func(g_free);
-    priv->nis         = g_array_new(FALSE, TRUE, sizeof(guint32));
-    priv->wins        = g_array_new(FALSE, TRUE, sizeof(guint32));
+    priv->mdns         = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+    priv->llmnr        = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
+    priv->dns_over_tls = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
+    priv->nameservers  = g_array_new(FALSE, FALSE, sizeof(guint32));
+    priv->domains      = g_ptr_array_new_with_free_func(g_free);
+    priv->searches     = g_ptr_array_new_with_free_func(g_free);
+    priv->dns_options  = g_ptr_array_new_with_free_func(g_free);
+    priv->nis          = g_array_new(FALSE, TRUE, sizeof(guint32));
+    priv->wins         = g_array_new(FALSE, TRUE, sizeof(guint32));
 }
 
 NMIP4Config *
