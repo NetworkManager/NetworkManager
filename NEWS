@@ -17,6 +17,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * core: add internal nm-sudo service for separating privileges and have
   a way to drop capabilities from NetworkManager daemon.
 * bond: add support for setting queue-id of bond port.
+* dns: support configuring DNS over TLS (DoT) with systemd-resolved.
 * nmtui: add support for WireGuard profiles.
 * nmcli: add aliases `nmcli device up|down` beside connect|disconnect.
 
