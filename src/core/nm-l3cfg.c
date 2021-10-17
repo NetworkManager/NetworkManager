@@ -3696,9 +3696,9 @@ _l3_commit_ndisc_params(NML3Cfg *self, NML3CfgCommitType commit_type)
     gboolean              retrans_set   = FALSE;
     gboolean              reachable_set = FALSE;
     gboolean              hop_limit_set = FALSE;
-    guint32               reachable;
-    guint32               retrans;
-    int                   hop_limit;
+    guint32               reachable     = 0;
+    guint32               retrans       = 0;
+    int                   hop_limit     = 0;
     const char *          ifname;
 
     if (commit_type < NM_L3_CFG_COMMIT_TYPE_UPDATE) {
