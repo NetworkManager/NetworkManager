@@ -2767,38 +2767,51 @@ nm_l3cfg_get_acd_addr_info(NML3Cfg *self, in_addr_t addr)
 /*****************************************************************************/
 
 gboolean
-nm_l3cfg_check_ready(NML3Cfg *self, const NML3ConfigData *l3cd, NML3CfgCheckReadyFlags flags)
+nm_l3cfg_check_ready(NML3Cfg *              self,
+                     const NML3ConfigData * l3cd,
+                     int                    addr_family,
+                     NML3CfgCheckReadyFlags flags,
+                     gboolean *             acd_used)
 {
     NMDedupMultiIter iter;
     const NMPObject *obj;
 
     nm_assert(NM_IS_L3CFG(self));
+    nm_assert_addr_family_or_unspec(addr_family);
+
+    NM_SET_OUT(acd_used, FALSE);
 
     if (!l3cd)
         return TRUE;
 
-    if (NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY)) {
+    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET)
+        && NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY)) {
+        gboolean pending = FALSE;
+
         nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS) {
             const NML3AcdAddrInfo *addr_info;
 
             addr_info = nm_l3cfg_get_acd_addr_info(self, NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address);
-
             if (!addr_info) {
                 /* We don't track the this address? That's odd. Not ready. */
-                return FALSE;
+                pending = TRUE;
+            } else {
+                if (addr_info->state <= NM_L3_ACD_ADDR_STATE_PROBING) {
+                    /* Still probing. Not ready. */
+                    pending = TRUE;
+                } else if (addr_info->state == NM_L3_ACD_ADDR_STATE_USED) {
+                    NM_SET_OUT(acd_used, TRUE);
+                }
             }
-
-            if (addr_info->state <= NM_L3_ACD_ADDR_STATE_PROBING) {
-                /* Still probing. Not ready. */
-                return FALSE;
-            }
-
             /* we only care that we don't have ACD still pending. Otherwise we are ready,
              * including if we have no addr_info about this address or the address is in use. */
         }
+        if (pending)
+            return FALSE;
     }
 
-    if (NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY)) {
+    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6)
+        && NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY)) {
         nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP6_ADDRESS) {
             ObjStateData *obj_state;
 

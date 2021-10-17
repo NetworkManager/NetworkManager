@@ -397,8 +397,11 @@ typedef enum {
     NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY = (1ull << 1),
 } NML3CfgCheckReadyFlags;
 
-gboolean
-nm_l3cfg_check_ready(NML3Cfg *self, const NML3ConfigData *l3cd, NML3CfgCheckReadyFlags flags);
+gboolean nm_l3cfg_check_ready(NML3Cfg *              self,
+                              const NML3ConfigData * l3cd,
+                              int                    addr_family,
+                              NML3CfgCheckReadyFlags flags,
+                              gboolean *             acd_used);
 
 /*****************************************************************************/
 
