@@ -1792,7 +1792,10 @@ nm_l3_config_data_set_ip6_mtu(NML3ConfigData *self, guint32 ip6_mtu)
 NMSettingIP6ConfigPrivacy
 nm_l3_config_data_get_ip6_privacy(const NML3ConfigData *self)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+    nm_assert(!self || _NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    if (!self)
+        return NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
 
     return self->ip6_privacy;
 }
@@ -1894,7 +1897,7 @@ nm_l3_config_data_set_proxy_pac_script(NML3ConfigData *self, const char *value)
 gboolean
 nm_l3_config_data_get_ndisc_hop_limit(const NML3ConfigData *self, int *out_val)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
     if (!self->ndisc_hop_limit_set) {
         NM_SET_OUT(out_val, 0);
@@ -1917,7 +1920,7 @@ nm_l3_config_data_set_ndisc_hop_limit(NML3ConfigData *self, int val)
 gboolean
 nm_l3_config_data_get_ndisc_reachable_time_msec(const NML3ConfigData *self, guint32 *out_val)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
     if (!self->ndisc_reachable_time_msec_set) {
         NM_SET_OUT(out_val, 0);
@@ -1940,7 +1943,7 @@ nm_l3_config_data_set_ndisc_reachable_time_msec(NML3ConfigData *self, guint32 va
 gboolean
 nm_l3_config_data_get_ndisc_retrans_timer_msec(const NML3ConfigData *self, guint32 *out_val)
 {
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
     if (!self->ndisc_retrans_timer_msec_set) {
         NM_SET_OUT(out_val, 0);
@@ -2230,7 +2233,7 @@ nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self, gboolea
     const NMPObject *            my_addr_obj;
     NMDedupMultiIter             iter;
 
-    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
 
     /* For IPv6 slaac, we explicitly add the device-routes (onlink).
      * As we don't do that for IPv4 and manual IPv6 addresses. Add them here
