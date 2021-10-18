@@ -51,6 +51,8 @@ struct _NML3IPv6LL {
      * with the configuration. */
     const NML3ConfigData *l3cd;
 
+    guint32 route_table;
+
     /* "assume" means that we first look whether there is any suitable
      * IPv6 address on the device, and in that case, try to use that
      * instead of generating a new one. Otherwise, we always try to
@@ -410,7 +412,7 @@ _lladdr_handle_changed(NML3IPv6LL *self)
                                 l3cd,
                                 NM_L3CFG_CONFIG_PRIORITY_IPV6LL,
                                 0,
-                                0,
+                                self->route_table,
                                 NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4,
                                 NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
                                 0,
@@ -624,6 +626,7 @@ _nm_l3_ipv6ll_new(NML3Cfg *                 l3cfg,
                   const char *              ifname,
                   const char *              network_id,
                   const NMUtilsIPv6IfaceId *token_iid,
+                  guint32                   route_table,
                   NML3IPv6LLNotifyFcn       notify_fcn,
                   gpointer                  user_data)
 {
@@ -647,6 +650,7 @@ _nm_l3_ipv6ll_new(NML3Cfg *                 l3cfg,
         .cur_lladdr_obj          = NULL,
         .cur_lladdr              = IN6ADDR_ANY_INIT,
         .assume                  = assume,
+        .route_table             = route_table,
         .addrgen =
             {
                 .stable_type = stable_type,

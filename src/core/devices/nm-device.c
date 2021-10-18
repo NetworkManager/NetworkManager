@@ -10563,13 +10563,15 @@ _dev_ipll6_start(NMDevice *self)
         const char *      stable_id;
 
         stable_id = _prop_get_connection_stable_id(self, connection, &stable_type);
-        priv->ipll_data_6.v6.ipv6ll = nm_l3_ipv6ll_new_stable_privacy(priv->l3cfg,
-                                                                      assume,
-                                                                      stable_type,
-                                                                      ifname,
-                                                                      stable_id,
-                                                                      _dev_ipll6_state_change_cb,
-                                                                      self);
+        priv->ipll_data_6.v6.ipv6ll =
+            nm_l3_ipv6ll_new_stable_privacy(priv->l3cfg,
+                                            assume,
+                                            stable_type,
+                                            ifname,
+                                            stable_id,
+                                            nm_device_get_route_table(self, AF_INET6),
+                                            _dev_ipll6_state_change_cb,
+                                            self);
     } else {
         NMUtilsIPv6IfaceId iid;
 
@@ -10579,7 +10581,12 @@ _dev_ipll6_start(NMDevice *self)
         }
 
         priv->ipll_data_6.v6.ipv6ll =
-            nm_l3_ipv6ll_new_token(priv->l3cfg, assume, &iid, _dev_ipll6_state_change_cb, self);
+            nm_l3_ipv6ll_new_token(priv->l3cfg,
+                                   assume,
+                                   &iid,
+                                   nm_device_get_route_table(self, AF_INET6),
+                                   _dev_ipll6_state_change_cb,
+                                   self);
     }
 
     llstate = nm_l3_ipv6ll_get_state(priv->ipll_data_6.v6.ipv6ll, &lladdr);
