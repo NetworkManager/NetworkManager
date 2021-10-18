@@ -1405,8 +1405,8 @@ _mgr_configs_data_construct(NMDnsManager *self)
             if (ip_data->ip_config_type == NM_DNS_IP_CONFIG_TYPE_VPN
                 && nm_l3_config_data_get_never_default(ip_data->l3cd, ip_data->addr_family)
                        == NM_TERNARY_FALSE
-                && !nm_l3_config_data_get_searches(ip_data->l3cd, ip_data->addr_family, NULL)
-                && !nm_l3_config_data_get_domains(ip_data->l3cd, ip_data->addr_family, NULL))
+                && !nm_l3_config_data_get_searches(ip_data->l3cd, ip_data->addr_family, &num)
+                && !nm_l3_config_data_get_domains(ip_data->l3cd, ip_data->addr_family, &num))
                 add_wildcard = TRUE;
         }
 
