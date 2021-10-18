@@ -16705,6 +16705,15 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
 
     _notify(self, PROP_STATE);
     _notify(self, PROP_STATE_REASON);
+    g_signal_emit(self,
+                  signals[STATE_CHANGED],
+                  0,
+                  (guint) state,
+                  (guint) old_state,
+                  (guint) reason);
+
+    /* Only tell the clients of the change once we dealt with the state
+     * change internally. That is, policy finished the DNS update and such. */
     nm_dbus_object_emit_signal(NM_DBUS_OBJECT(self),
                                &interface_info_device,
                                &signal_info_state_changed,
@@ -16712,12 +16721,6 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                                (guint32) state,
                                (guint32) old_state,
                                (guint32) reason);
-    g_signal_emit(self,
-                  signals[STATE_CHANGED],
-                  0,
-                  (guint) state,
-                  (guint) old_state,
-                  (guint) reason);
 
     /* Post-process the event after internal notification */
 
