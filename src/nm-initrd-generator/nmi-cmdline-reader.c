@@ -1337,6 +1337,8 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
 
         if (!tag) {
             /* pass */
+        } else if (nm_streq(tag, "rd.not_generate_nm_connection_profile")) {
+            return reader_destroy(reader, FALSE);
         } else if (nm_streq(tag, "net.ifnames"))
             net_ifnames = !nm_streq(argument, "0");
         else if (nm_streq(tag, "rd.peerdns"))
