@@ -3997,7 +3997,7 @@ _l3_commit_one(NML3Cfg *             self,
     }
 
     if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
-        route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_ALL;
+        route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN;
 
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY) {
         addresses_prune = nm_platform_ip_address_get_prune_list(self->priv.platform,
