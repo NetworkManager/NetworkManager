@@ -1025,6 +1025,7 @@ test_l3_ipv6ll(gconstpointer test_data)
                                                       NM_UTILS_STABLE_TYPE_UUID,
                                                       tdata->f->ifname0,
                                                       "b6a5b934-c649-43dc-a524-3dfdb74f9419",
+                                                      0,
                                                       _test_l3_ipv6ll_callback_changed,
                                                       tdata);
 
