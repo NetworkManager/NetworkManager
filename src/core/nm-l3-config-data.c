@@ -2489,6 +2489,7 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData *      self,
                     .network       = *a6,
                     .plen          = plen,
                 };
+
                 nm_platform_ip_route_normalize(addr_family, &rx.rx);
                 nm_l3_config_data_add_route(self, addr_family, NULL, &rx.rx);
             }
