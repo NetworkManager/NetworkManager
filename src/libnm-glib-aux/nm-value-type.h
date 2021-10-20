@@ -16,7 +16,13 @@ typedef enum _nm_packed {
     NM_VALUE_TYPE_UINT32 = 6,
     NM_VALUE_TYPE_UINT   = 7,
     NM_VALUE_TYPE_UINT64 = 8,
-    NM_VALUE_TYPE_STRING = 9,
+
+    /* Flags are for G_TYPE_FLAGS. That is, internally they are tracked
+     * as a guint, they have a g_param_spec_flags() property and they are
+     * serialized on D-Bus as "u". */
+    NM_VALUE_TYPE_FLAGS = 9,
+
+    NM_VALUE_TYPE_STRING = 10,
 } NMValueType;
 
 /*****************************************************************************/
@@ -92,6 +98,7 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
         NM_CMP_DIRECT(*((const guint32 *) p_a), *((const guint32 *) p_b));
         return 0;
     case NM_VALUE_TYPE_UINT:
+    case NM_VALUE_TYPE_FLAGS:
         NM_CMP_DIRECT(*((const guint *) p_a), *((const guint *) p_b));
         return 0;
     case NM_VALUE_TYPE_UINT64:
@@ -133,6 +140,7 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
         (*((guint32 *) dst) = *((const guint32 *) src));
         return;
     case NM_VALUE_TYPE_UINT:
+    case NM_VALUE_TYPE_FLAGS:
         (*((guint *) dst) = *((const guint *) src));
         return;
     case NM_VALUE_TYPE_UINT64:
@@ -186,7 +194,8 @@ nm_value_type_get_from_variant(NMValueType value_type,
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
-        /* "int" and "uint" also does not have a defined variant type, because it's not
+    case NM_VALUE_TYPE_FLAGS:
+        /* These types don't have a defined variant type, because it's not
          * clear how many bits we would need. */
 
         /* fall-through */
@@ -219,7 +228,8 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
-        /* "int" and "uint" also does not have a defined variant type, because it's not
+    case NM_VALUE_TYPE_FLAGS:
+        /* These types don't have a defined variant type, because it's not
          * clear how many bits we would need. */
 
         /* fall-through */
@@ -250,7 +260,8 @@ nm_value_type_get_variant_type(NMValueType value_type)
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
-        /* "int" and "uint" also does not have a defined variant type, because it's not
+    case NM_VALUE_TYPE_FLAGS:
+        /* These types don't have a defined variant type, because it's not
          * clear how many bits we would need. */
 
         /* fall-through */

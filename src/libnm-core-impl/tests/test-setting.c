@@ -4490,6 +4490,24 @@ test_setting_metadata(void)
                 g_assert_cmpint(pspec->maximum, <=, (guint64) G_MAXUINT32);
 
                 can_set_including_default = TRUE;
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_FLAGS) {
+                const GParamSpecFlags *pspec;
+
+                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_flags);
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "u"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(g_type_is_a(sip->param_spec->value_type, G_TYPE_FLAGS));
+                g_assert(sip->param_spec->value_type != G_TYPE_FLAGS);
+
+                pspec = NM_G_PARAM_SPEC_CAST_FLAGS(sip->param_spec);
+                g_assert_cmpint(pspec->flags_class->mask, !=, 0);
+                g_assert_cmpint(pspec->default_value,
+                                ==,
+                                pspec->flags_class->mask & pspec->default_value);
+
+                can_set_including_default = TRUE;
             } else if (sip->property_type->direct_type == NM_VALUE_TYPE_STRING) {
                 if (sip->property_type == &nm_sett_info_propert_type_direct_mac_address) {
                     g_assert(g_variant_type_equal(sip->property_type->dbus_type, "ay"));

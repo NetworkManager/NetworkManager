@@ -1450,6 +1450,14 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
         ((const _c_type *) _param_spec);                                     \
     })
 
+#define _NM_G_PARAM_SPEC_CAST_IS_A(param_spec, _value_type, _c_type)                  \
+    ({                                                                                \
+        const GParamSpec *const _param_spec = (param_spec);                           \
+                                                                                      \
+        nm_assert(!_param_spec || g_type_is_a(_param_spec->value_type, _value_type)); \
+        ((const _c_type *) _param_spec);                                              \
+    })
+
 #define NM_G_PARAM_SPEC_CAST_BOOLEAN(param_spec) \
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_BOOLEAN, GParamSpecBoolean)
 #define NM_G_PARAM_SPEC_CAST_INT(param_spec) \
@@ -1458,6 +1466,8 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_UINT, GParamSpecUInt)
 #define NM_G_PARAM_SPEC_CAST_UINT64(param_spec) \
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_UINT64, GParamSpecUInt64)
+#define NM_G_PARAM_SPEC_CAST_FLAGS(param_spec) \
+    _NM_G_PARAM_SPEC_CAST_IS_A(param_spec, G_TYPE_FLAGS, GParamSpecFlags)
 #define NM_G_PARAM_SPEC_CAST_STRING(param_spec) \
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_STRING, GParamSpecString)
 
@@ -1469,6 +1479,8 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
     (NM_G_PARAM_SPEC_CAST_UINT(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 #define NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(param_spec) \
     (NM_G_PARAM_SPEC_CAST_UINT64(NM_ENSURE_NOT_NULL(param_spec))->default_value)
+#define NM_G_PARAM_SPEC_GET_DEFAULT_FLAGS(param_spec) \
+    (NM_G_PARAM_SPEC_CAST_FLAGS(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 #define NM_G_PARAM_SPEC_GET_DEFAULT_STRING(param_spec) \
     (NM_G_PARAM_SPEC_CAST_STRING(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 
