@@ -615,6 +615,16 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
     return TRUE;
 }
 
+static gboolean
+ready_for_ip_config(NMDevice *device)
+{
+    /* Tell NMDevice to only run device-specific IP
+     * configuration (devip) and skip other methods
+     * (manual, dhcp, etc).
+     */
+    return FALSE;
+}
+
 /*****************************************************************************/
 
 static void
@@ -823,6 +833,7 @@ nm_device_modem_class_init(NMDeviceModemClass *klass)
     device_class->get_ip_iface_identifier     = get_ip_iface_identifier;
     device_class->get_configured_mtu          = nm_modem_get_configured_mtu;
     device_class->get_dhcp_timeout_for_device = get_dhcp_timeout_for_device;
+    device_class->ready_for_ip_config         = ready_for_ip_config;
 
     device_class->state_changed = device_state_changed;
 
