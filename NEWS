@@ -20,6 +20,11 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * dns: support configuring DNS over TLS (DoT) with systemd-resolved.
 * nmtui: add support for WireGuard profiles.
 * nmcli: add aliases `nmcli device up|down` beside connect|disconnect.
+* conscious language: Deprecate 'Device.Slaves' D-Bus property in favor of new
+  'Device.Ports' property. Depracate 'nm_device_*_get_slaves()' in favor of
+  'nm_device_get_ports()' in libnm.
+* nmcli: invoking nmcli command without arguments will now show 'default'
+  instead of null address in route4 or route6 section.
 
 The following changes were backported to 1.32.x releases between 1.32.0
 and 1.32.12 are also present in NetworkManager-1.32:
