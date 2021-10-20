@@ -371,6 +371,7 @@ nm_value_type_to_json(NMValueType value_type, GString *gstr, gconstpointer p_fie
         nm_json_gstr_append_int64(gstr, *((const gint32 *) p_field));
         return;
     case NM_VALUE_TYPE_INT:
+    case NM_VALUE_TYPE_ENUM:
         nm_json_gstr_append_int64(gstr, *((const int *) p_field));
         return;
     case NM_VALUE_TYPE_INT64:
@@ -408,6 +409,7 @@ nm_value_type_from_json(const NMJsonVt * vt,
     case NM_VALUE_TYPE_INT32:
         return (nm_jansson_json_as_int32(vt, elem, out_val) > 0);
     case NM_VALUE_TYPE_INT:
+    case NM_VALUE_TYPE_ENUM:
         return (nm_jansson_json_as_int(vt, elem, out_val) > 0);
     case NM_VALUE_TYPE_INT64:
         return (nm_jansson_json_as_int64(vt, elem, out_val) > 0);

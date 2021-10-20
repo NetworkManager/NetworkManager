@@ -22,7 +22,10 @@ typedef enum _nm_packed {
      * serialized on D-Bus as "u". */
     NM_VALUE_TYPE_FLAGS = 9,
 
-    NM_VALUE_TYPE_STRING = 10,
+    /* G_TYPE_ENUM */
+    NM_VALUE_TYPE_ENUM = 10,
+
+    NM_VALUE_TYPE_STRING = 11,
 } NMValueType;
 
 /*****************************************************************************/
@@ -89,6 +92,7 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
         NM_CMP_DIRECT(*((const gint32 *) p_a), *((const gint32 *) p_b));
         return 0;
     case NM_VALUE_TYPE_INT:
+    case NM_VALUE_TYPE_ENUM:
         NM_CMP_DIRECT(*((const int *) p_a), *((const int *) p_b));
         return 0;
     case NM_VALUE_TYPE_INT64:
@@ -131,6 +135,7 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
         (*((gint32 *) dst) = *((const gint32 *) src));
         return;
     case NM_VALUE_TYPE_INT:
+    case NM_VALUE_TYPE_ENUM:
         (*((int *) dst) = *((const int *) src));
         return;
     case NM_VALUE_TYPE_INT64:
@@ -194,6 +199,7 @@ nm_value_type_get_from_variant(NMValueType value_type,
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
+    case NM_VALUE_TYPE_ENUM:
     case NM_VALUE_TYPE_FLAGS:
         /* These types don't have a defined variant type, because it's not
          * clear how many bits we would need. */
@@ -228,6 +234,7 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
+    case NM_VALUE_TYPE_ENUM:
     case NM_VALUE_TYPE_FLAGS:
         /* These types don't have a defined variant type, because it's not
          * clear how many bits we would need. */
@@ -260,6 +267,7 @@ nm_value_type_get_variant_type(NMValueType value_type)
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
+    case NM_VALUE_TYPE_ENUM:
     case NM_VALUE_TYPE_FLAGS:
         /* These types don't have a defined variant type, because it's not
          * clear how many bits we would need. */

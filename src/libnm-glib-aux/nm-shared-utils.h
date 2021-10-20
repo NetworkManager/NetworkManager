@@ -1466,6 +1466,8 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_UINT, GParamSpecUInt)
 #define NM_G_PARAM_SPEC_CAST_UINT64(param_spec) \
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_UINT64, GParamSpecUInt64)
+#define NM_G_PARAM_SPEC_CAST_ENUM(param_spec) \
+    _NM_G_PARAM_SPEC_CAST_IS_A(param_spec, G_TYPE_ENUM, GParamSpecEnum)
 #define NM_G_PARAM_SPEC_CAST_FLAGS(param_spec) \
     _NM_G_PARAM_SPEC_CAST_IS_A(param_spec, G_TYPE_FLAGS, GParamSpecFlags)
 #define NM_G_PARAM_SPEC_CAST_STRING(param_spec) \
@@ -1479,6 +1481,8 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
     (NM_G_PARAM_SPEC_CAST_UINT(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 #define NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(param_spec) \
     (NM_G_PARAM_SPEC_CAST_UINT64(NM_ENSURE_NOT_NULL(param_spec))->default_value)
+#define NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(param_spec) \
+    (NM_G_PARAM_SPEC_CAST_ENUM(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 #define NM_G_PARAM_SPEC_GET_DEFAULT_FLAGS(param_spec) \
     (NM_G_PARAM_SPEC_CAST_FLAGS(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 #define NM_G_PARAM_SPEC_GET_DEFAULT_STRING(param_spec) \
