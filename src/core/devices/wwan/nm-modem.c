@@ -1865,7 +1865,7 @@ nm_modem_class_init(NMModemClass *klass)
                                        NULL,
                                        NULL,
                                        G_TYPE_NONE,
-                                       3,
+                                       6,
                                        G_TYPE_INT,      /* int addr_family */
                                        G_TYPE_POINTER,  /* const NML3ConfigData *l3cd */
                                        G_TYPE_BOOLEAN,  /* gboolean do_auto */
