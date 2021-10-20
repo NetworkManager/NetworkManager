@@ -48,21 +48,21 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingDcb,
                              PROP_PRIORITY_TRAFFIC_CLASS, );
 
 typedef struct {
-    char *            app_fcoe_mode;
-    guint             pfc[8];
-    guint             priority_group_id[8];
-    guint             priority_group_bandwidth[8];
-    guint             priority_bandwidth[8];
-    guint             priority_strict[8];
-    guint             priority_traffic_class[8];
-    int               app_fcoe_priority;
-    int               app_iscsi_priority;
-    int               app_fip_priority;
-    NMSettingDcbFlags app_fcoe_flags;
-    NMSettingDcbFlags app_iscsi_flags;
-    NMSettingDcbFlags app_fip_flags;
-    NMSettingDcbFlags pfc_flags;
-    NMSettingDcbFlags priority_group_flags;
+    char * app_fcoe_mode;
+    guint  pfc[8];
+    guint  priority_group_id[8];
+    guint  priority_group_bandwidth[8];
+    guint  priority_bandwidth[8];
+    guint  priority_strict[8];
+    guint  priority_traffic_class[8];
+    guint  app_fcoe_flags;
+    guint  app_iscsi_flags;
+    guint  app_fip_flags;
+    guint  pfc_flags;
+    guint  priority_group_flags;
+    gint32 app_fcoe_priority;
+    gint32 app_iscsi_priority;
+    gint32 app_fip_priority;
 } NMSettingDcbPrivate;
 
 /**
@@ -765,35 +765,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingDcbPrivate *priv    = NM_SETTING_DCB_GET_PRIVATE(setting);
 
     switch (prop_id) {
-    case PROP_APP_FCOE_FLAGS:
-        g_value_set_flags(value, priv->app_fcoe_flags);
-        break;
-    case PROP_APP_FCOE_PRIORITY:
-        g_value_set_int(value, priv->app_fcoe_priority);
-        break;
-    case PROP_APP_FCOE_MODE:
-        g_value_set_string(value, priv->app_fcoe_mode);
-        break;
-    case PROP_APP_ISCSI_FLAGS:
-        g_value_set_flags(value, priv->app_iscsi_flags);
-        break;
-    case PROP_APP_ISCSI_PRIORITY:
-        g_value_set_int(value, priv->app_iscsi_priority);
-        break;
-    case PROP_APP_FIP_FLAGS:
-        g_value_set_flags(value, priv->app_fip_flags);
-        break;
-    case PROP_APP_FIP_PRIORITY:
-        g_value_set_int(value, priv->app_fip_priority);
-        break;
-    case PROP_PFC_FLAGS:
-        g_value_set_flags(value, priv->pfc_flags);
-        break;
     case PROP_PRIORITY_FLOW_CONTROL:
         SET_GVALUE_FROM_ARRAY(value, priv->pfc);
-        break;
-    case PROP_PRIORITY_GROUP_FLAGS:
-        g_value_set_flags(value, priv->priority_group_flags);
         break;
     case PROP_PRIORITY_GROUP_ID:
         SET_GVALUE_FROM_ARRAY(value, priv->priority_group_id);
@@ -811,7 +784,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         SET_GVALUE_FROM_ARRAY(value, priv->priority_traffic_class);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -822,36 +795,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMSettingDcbPrivate *priv = NM_SETTING_DCB_GET_PRIVATE(object);
 
     switch (prop_id) {
-    case PROP_APP_FCOE_FLAGS:
-        priv->app_fcoe_flags = g_value_get_flags(value);
-        break;
-    case PROP_APP_FCOE_PRIORITY:
-        priv->app_fcoe_priority = g_value_get_int(value);
-        break;
-    case PROP_APP_FCOE_MODE:
-        g_free(priv->app_fcoe_mode);
-        priv->app_fcoe_mode = g_value_dup_string(value);
-        break;
-    case PROP_APP_ISCSI_FLAGS:
-        priv->app_iscsi_flags = g_value_get_flags(value);
-        break;
-    case PROP_APP_ISCSI_PRIORITY:
-        priv->app_iscsi_priority = g_value_get_int(value);
-        break;
-    case PROP_APP_FIP_FLAGS:
-        priv->app_fip_flags = g_value_get_flags(value);
-        break;
-    case PROP_APP_FIP_PRIORITY:
-        priv->app_fip_priority = g_value_get_int(value);
-        break;
-    case PROP_PFC_FLAGS:
-        priv->pfc_flags = g_value_get_flags(value);
-        break;
     case PROP_PRIORITY_FLOW_CONTROL:
         SET_ARRAY_FROM_GVALUE(value, priv->pfc);
-        break;
-    case PROP_PRIORITY_GROUP_FLAGS:
-        priv->priority_group_flags = g_value_get_flags(value);
         break;
     case PROP_PRIORITY_GROUP_ID:
         SET_ARRAY_FROM_GVALUE(value, priv->priority_group_id);
@@ -869,7 +814,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         SET_ARRAY_FROM_GVALUE(value, priv->priority_traffic_class);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -878,13 +823,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_dcb_init(NMSettingDcb *self)
-{
-    NMSettingDcbPrivate *priv = NM_SETTING_DCB_GET_PRIVATE(self);
-
-    priv->app_fcoe_priority  = -1;
-    priv->app_fip_priority   = -1;
-    priv->app_iscsi_priority = -1;
-}
+{}
 
 /**
  * nm_setting_dcb_new:
@@ -900,16 +839,6 @@ nm_setting_dcb_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingDcbPrivate *priv = NM_SETTING_DCB_GET_PRIVATE(object);
-
-    g_free(priv->app_fcoe_mode);
-
-    G_OBJECT_CLASS(nm_setting_dcb_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_dcb_class_init(NMSettingDcbClass *klass)
 {
     GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
@@ -920,7 +849,6 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
-    object_class->finalize     = finalize;
 
     setting_class->verify = verify;
 
@@ -939,13 +867,15 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * example: DCB_APP_FCOE_ENABLE=yes DCB_APP_FCOE_ADVERTISE=yes
      * ---end---
      */
-    obj_properties[PROP_APP_FCOE_FLAGS] =
-        g_param_spec_flags(NM_SETTING_DCB_APP_FCOE_FLAGS,
-                           "",
-                           "",
-                           NM_TYPE_SETTING_DCB_FLAGS,
-                           NM_SETTING_DCB_FLAG_NONE,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_flags(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_DCB_APP_FCOE_FLAGS,
+                                             PROP_APP_FCOE_FLAGS,
+                                             NM_TYPE_SETTING_DCB_FLAGS,
+                                             NM_SETTING_DCB_FLAG_NONE,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingDcbPrivate,
+                                             app_fcoe_flags);
 
     /**
      * NMSettingDcb:app-fcoe-priority:
@@ -961,14 +891,16 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * description: Priority of FCoE frames.
      * ---end---
      */
-    obj_properties[PROP_APP_FCOE_PRIORITY] =
-        g_param_spec_int(NM_SETTING_DCB_APP_FCOE_PRIORITY,
-                         "",
-                         "",
-                         -1,
-                         7,
-                         -1,
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_DCB_APP_FCOE_PRIORITY,
+                                             PROP_APP_FCOE_PRIORITY,
+                                             -1,
+                                             7,
+                                             -1,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingDcbPrivate,
+                                             app_fcoe_priority);
 
     /**
      * NMSettingDcb:app-fcoe-mode:
@@ -987,12 +919,13 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * description: FCoE controller mode.
      * ---end---
      */
-    obj_properties[PROP_APP_FCOE_MODE] =
-        g_param_spec_string(NM_SETTING_DCB_APP_FCOE_MODE,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_DCB_APP_FCOE_MODE,
+                                              PROP_APP_FCOE_MODE,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingDcbPrivate,
+                                              app_fcoe_mode);
 
     /**
      * NMSettingDcb:app-iscsi-flags:
@@ -1008,13 +941,15 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * description: iSCSI flags.
      * ---end---
      */
-    obj_properties[PROP_APP_ISCSI_FLAGS] =
-        g_param_spec_flags(NM_SETTING_DCB_APP_ISCSI_FLAGS,
-                           "",
-                           "",
-                           NM_TYPE_SETTING_DCB_FLAGS,
-                           NM_SETTING_DCB_FLAG_NONE,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_flags(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_DCB_APP_ISCSI_FLAGS,
+                                             PROP_APP_ISCSI_FLAGS,
+                                             NM_TYPE_SETTING_DCB_FLAGS,
+                                             NM_SETTING_DCB_FLAG_NONE,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingDcbPrivate,
+                                             app_iscsi_flags);
 
     /**
      * NMSettingDcb:app-iscsi-priority:
@@ -1030,14 +965,16 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * description: Priority of iSCSI frames.
      * ---end---
      */
-    obj_properties[PROP_APP_ISCSI_PRIORITY] =
-        g_param_spec_int(NM_SETTING_DCB_APP_ISCSI_PRIORITY,
-                         "",
-                         "",
-                         -1,
-                         7,
-                         -1,
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_DCB_APP_ISCSI_PRIORITY,
+                                             PROP_APP_ISCSI_PRIORITY,
+                                             -1,
+                                             7,
+                                             -1,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingDcbPrivate,
+                                             app_iscsi_priority);
 
     /**
      * NMSettingDcb:app-fip-flags:
@@ -1053,13 +990,15 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * description: FIP flags.
      * ---end---
      */
-    obj_properties[PROP_APP_FIP_FLAGS] =
-        g_param_spec_flags(NM_SETTING_DCB_APP_FIP_FLAGS,
-                           "",
-                           "",
-                           NM_TYPE_SETTING_DCB_FLAGS,
-                           NM_SETTING_DCB_FLAG_NONE,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_flags(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_DCB_APP_FIP_FLAGS,
+                                             PROP_APP_FIP_FLAGS,
+                                             NM_TYPE_SETTING_DCB_FLAGS,
+                                             NM_SETTING_DCB_FLAG_NONE,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingDcbPrivate,
+                                             app_fip_flags);
 
     /**
      * NMSettingDcb:app-fip-priority:
@@ -1075,14 +1014,16 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * description: Priority of FIP frames.
      * ---end---
      */
-    obj_properties[PROP_APP_FIP_PRIORITY] =
-        g_param_spec_int(NM_SETTING_DCB_APP_FIP_PRIORITY,
-                         "",
-                         "",
-                         -1,
-                         7,
-                         -1,
-                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_DCB_APP_FIP_PRIORITY,
+                                             PROP_APP_FIP_PRIORITY,
+                                             -1,
+                                             7,
+                                             -1,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingDcbPrivate,
+                                             app_fip_priority);
 
     /**
      * NMSettingDcb:priority-flow-control-flags:
@@ -1098,12 +1039,15 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * description: Priority flow control flags.
      * ---end---
      */
-    obj_properties[PROP_PFC_FLAGS] = g_param_spec_flags(NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS,
-                                                        "",
-                                                        "",
-                                                        NM_TYPE_SETTING_DCB_FLAGS,
-                                                        NM_SETTING_DCB_FLAG_NONE,
-                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_flags(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_DCB_PRIORITY_FLOW_CONTROL_FLAGS,
+                                             PROP_PFC_FLAGS,
+                                             NM_TYPE_SETTING_DCB_FLAGS,
+                                             NM_SETTING_DCB_FLAG_NONE,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingDcbPrivate,
+                                             pfc_flags);
 
     /**
      * NMSettingDcb:priority-flow-control: (type GArray(gboolean))
@@ -1144,13 +1088,15 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * description: Priority groups flags.
      * ---end---
      */
-    obj_properties[PROP_PRIORITY_GROUP_FLAGS] =
-        g_param_spec_flags(NM_SETTING_DCB_PRIORITY_GROUP_FLAGS,
-                           "",
-                           "",
-                           NM_TYPE_SETTING_DCB_FLAGS,
-                           NM_SETTING_DCB_FLAG_NONE,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_flags(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_DCB_PRIORITY_GROUP_FLAGS,
+                                             PROP_PRIORITY_GROUP_FLAGS,
+                                             NM_TYPE_SETTING_DCB_FLAGS,
+                                             NM_SETTING_DCB_FLAG_NONE,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingDcbPrivate,
+                                             priority_group_flags);
 
     /**
      * NMSettingDcb:priority-group-id: (type GArray(guint))

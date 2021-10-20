@@ -375,31 +375,13 @@ _nm_setting_class_commit(NMSettingClass *            setting_class,
         nm_assert(p->param_spec);
 
         vtype = p->param_spec->value_type;
-        if (vtype == G_TYPE_BOOLEAN)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_BOOLEAN,
-                .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full = TRUE);
-        else if (vtype == G_TYPE_UCHAR)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_BYTE,
-                .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full = TRUE);
-        else if (vtype == G_TYPE_INT)
+        if (vtype == G_TYPE_INT)
             p->property_type = &nm_sett_info_propert_type_plain_i;
         else if (vtype == G_TYPE_UINT)
             p->property_type = &nm_sett_info_propert_type_plain_u;
         else if (vtype == G_TYPE_INT64)
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
                 G_VARIANT_TYPE_INT64,
-                .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full = TRUE);
-        else if (vtype == G_TYPE_UINT64)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_UINT64,
                 .compare_fcn       = _nm_setting_property_compare_fcn_default,
                 .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
                 .from_dbus_is_full = TRUE);
@@ -427,14 +409,7 @@ _nm_setting_class_commit(NMSettingClass *            setting_class,
                 .compare_fcn       = _nm_setting_property_compare_fcn_default,
                 .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
                 .from_dbus_is_full = TRUE);
-        else if (vtype == G_TYPE_BYTES) {
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_BYTESTRING,
-                .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES,
-                .compare_fcn                = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn              = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full          = TRUE);
-        } else if (g_type_is_a(vtype, G_TYPE_ENUM)) {
+        else if (g_type_is_a(vtype, G_TYPE_ENUM)) {
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
                 G_VARIANT_TYPE_INT32,
                 .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM,
@@ -1234,9 +1209,6 @@ _nm_setting_property_to_dbus_fcn_gprop(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_n
     switch (property_info->property_type->typdata_to_dbus.gprop_type) {
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
         return g_dbus_gvalue_to_gvariant(&prop_value, property_info->property_type->dbus_type);
-    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
-        nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_BYTES));
-        return nm_g_bytes_to_variant_ay(g_value_get_boxed(&prop_value));
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM:
         return nm_g_variant_maybe_singleton_i(g_value_get_enum(&prop_value));
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS:

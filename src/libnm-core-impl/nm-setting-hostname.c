@@ -34,9 +34,9 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingHostname,
 struct _NMSettingHostname {
     NMSetting parent;
     int       priority;
-    NMTernary from_dhcp;
-    NMTernary from_dns_lookup;
-    NMTernary only_from_default;
+    int       from_dhcp;
+    int       from_dns_lookup;
+    int       only_from_default;
 };
 
 struct _NMSettingHostnameClass {
@@ -124,62 +124,8 @@ nm_setting_hostname_get_only_from_default(NMSettingHostname *setting)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingHostname *self = NM_SETTING_HOSTNAME(object);
-
-    switch (prop_id) {
-    case PROP_PRIORITY:
-        g_value_set_int(value, self->priority);
-        break;
-    case PROP_FROM_DHCP:
-        g_value_set_enum(value, self->from_dhcp);
-        break;
-    case PROP_FROM_DNS_LOOKUP:
-        g_value_set_enum(value, self->from_dns_lookup);
-        break;
-    case PROP_ONLY_FROM_DEFAULT:
-        g_value_set_enum(value, self->only_from_default);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingHostname *self = NM_SETTING_HOSTNAME(object);
-
-    switch (prop_id) {
-    case PROP_PRIORITY:
-        self->priority = g_value_get_int(value);
-        break;
-    case PROP_FROM_DHCP:
-        self->from_dhcp = g_value_get_enum(value);
-        break;
-    case PROP_FROM_DNS_LOOKUP:
-        self->from_dns_lookup = g_value_get_enum(value);
-        break;
-    case PROP_ONLY_FROM_DEFAULT:
-        self->only_from_default = g_value_get_enum(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_hostname_init(NMSettingHostname *setting)
-{
-    setting->from_dhcp         = NM_TERNARY_DEFAULT;
-    setting->from_dns_lookup   = NM_TERNARY_DEFAULT;
-    setting->only_from_default = NM_TERNARY_DEFAULT;
-}
+{}
 
 /**
  * nm_setting_hostname_new:
@@ -199,11 +145,12 @@ nm_setting_hostname_new(void)
 static void
 nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     /**
      * NMSettingHostname:priority
@@ -234,13 +181,16 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      * example: HOSTNAME_PRIORITY=50
      * ---end---
      */
-    obj_properties[PROP_PRIORITY] = g_param_spec_int(NM_SETTING_HOSTNAME_PRIORITY,
-                                                     "",
-                                                     "",
-                                                     G_MININT32,
-                                                     G_MAXINT32,
-                                                     0,
-                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_HOSTNAME_PRIORITY,
+                                             PROP_PRIORITY,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             0,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingHostname,
+                                             priority);
 
     /**
      * NMSettingHostname:from-dhcp
@@ -262,13 +212,13 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      * example: HOSTNAME_FROM_DHCP=0,1
      * ---end---
      */
-    obj_properties[PROP_FROM_DHCP] = g_param_spec_enum(
-        NM_SETTING_HOSTNAME_FROM_DHCP,
-        "",
-        "",
-        NM_TYPE_TERNARY,
-        NM_TERNARY_DEFAULT,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_HOSTNAME_FROM_DHCP,
+                                                    PROP_FROM_DHCP,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE,
+                                                    NMSettingHostname,
+                                                    from_dhcp);
 
     /**
      * NMSettingHostname:from-dns-lookup
@@ -291,13 +241,13 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      * example: HOSTNAME_FROM_DNS_LOOKUP=0,1
      * ---end---
      */
-    obj_properties[PROP_FROM_DNS_LOOKUP] = g_param_spec_enum(
-        NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
-        "",
-        "",
-        NM_TYPE_TERNARY,
-        NM_TERNARY_DEFAULT,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_HOSTNAME_FROM_DNS_LOOKUP,
+                                                    PROP_FROM_DNS_LOOKUP,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE,
+                                                    NMSettingHostname,
+                                                    from_dns_lookup);
 
     /**
      * NMSettingHostname:only-from-default
@@ -325,15 +275,19 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      * example: HOSTNAME_ONLY_FROM_DEFAULT=0,1
      * ---end---
      */
-    obj_properties[PROP_ONLY_FROM_DEFAULT] = g_param_spec_enum(
-        NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT,
-        "",
-        "",
-        NM_TYPE_TERNARY,
-        NM_TERNARY_DEFAULT,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT,
+                                                    PROP_ONLY_FROM_DEFAULT,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE,
+                                                    NMSettingHostname,
+                                                    only_from_default);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_HOSTNAME, NULL, NULL, 0);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_HOSTNAME,
+                             NULL,
+                             properties_override,
+                             0);
 }

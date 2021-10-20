@@ -771,6 +771,27 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
 
 /*****************************************************************************/
 
+#define _nm_setting_property_define_direct_ternary_enum(properties_override,  \
+                                                        obj_properties,       \
+                                                        prop_name,            \
+                                                        prop_id,              \
+                                                        param_flags,          \
+                                                        private_struct_type,  \
+                                                        private_struct_field, \
+                                                        ...)                  \
+    _nm_setting_property_define_direct_enum((properties_override),            \
+                                            (obj_properties),                 \
+                                            prop_name,                        \
+                                            (prop_id),                        \
+                                            NM_TYPE_TERNARY,                  \
+                                            NM_TERNARY_DEFAULT,               \
+                                            (param_flags),                    \
+                                            private_struct_type,              \
+                                            private_struct_field,             \
+                                            __VA_ARGS__)
+
+/*****************************************************************************/
+
 #define _nm_setting_property_define_direct_flags(properties_override,                           \
                                                  obj_properties,                                \
                                                  prop_name,                                     \

@@ -148,55 +148,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingOlpcMesh *setting = NM_SETTING_OLPC_MESH(object);
-
-    switch (prop_id) {
-    case PROP_SSID:
-        g_value_set_boxed(value, nm_setting_olpc_mesh_get_ssid(setting));
-        break;
-    case PROP_CHANNEL:
-        g_value_set_uint(value, nm_setting_olpc_mesh_get_channel(setting));
-        break;
-    case PROP_DHCP_ANYCAST_ADDRESS:
-        g_value_set_string(value, nm_setting_olpc_mesh_get_dhcp_anycast_address(setting));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingOlpcMeshPrivate *priv = NM_SETTING_OLPC_MESH_GET_PRIVATE(object);
-
-    switch (prop_id) {
-    case PROP_SSID:
-        if (priv->ssid)
-            g_bytes_unref(priv->ssid);
-        priv->ssid = g_value_dup_boxed(value);
-        break;
-    case PROP_CHANNEL:
-        priv->channel = g_value_get_uint(value);
-        break;
-    case PROP_DHCP_ANYCAST_ADDRESS:
-        g_free(priv->dhcp_anycast_addr);
-        priv->dhcp_anycast_addr =
-            _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
-
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_olpc_mesh_init(NMSettingOlpcMesh *setting)
 {}
 
@@ -214,17 +165,6 @@ nm_setting_olpc_mesh_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingOlpcMeshPrivate *priv = NM_SETTING_OLPC_MESH_GET_PRIVATE(object);
-
-    if (priv->ssid)
-        g_bytes_unref(priv->ssid);
-
-    G_OBJECT_CLASS(nm_setting_olpc_mesh_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
 {
     GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
@@ -233,9 +173,8 @@ nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingOlpcMeshPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
@@ -244,26 +183,29 @@ nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
      *
      * SSID of the mesh network to join.
      **/
-    obj_properties[PROP_SSID] = g_param_spec_boxed(NM_SETTING_OLPC_MESH_SSID,
-                                                   "",
-                                                   "",
-                                                   G_TYPE_BYTES,
-                                                   G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                       | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_bytes(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_OLPC_MESH_SSID,
+                                             PROP_SSID,
+                                             NM_SETTING_PARAM_INFERRABLE,
+                                             NMSettingOlpcMeshPrivate,
+                                             ssid);
 
     /**
      * NMSettingOlpcMesh:channel:
      *
      * Channel on which the mesh network to join is located.
      **/
-    obj_properties[PROP_CHANNEL] =
-        g_param_spec_uint(NM_SETTING_OLPC_MESH_CHANNEL,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT32,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_OLPC_MESH_CHANNEL,
+                                              PROP_CHANNEL,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingOlpcMeshPrivate,
+                                              channel);
 
     /**
      * NMSettingOlpcMesh:dhcp-anycast-address:
