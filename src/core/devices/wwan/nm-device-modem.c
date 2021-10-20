@@ -39,6 +39,7 @@ typedef struct {
     char *                    apn;
     bool                      rf_enabled : 1;
     NMDeviceStageState        stage1_state : 3;
+    NMDeviceStageState        stage2_state : 3;
 } NMDeviceModemPrivate;
 
 struct _NMDeviceModem {
@@ -193,7 +194,9 @@ modem_new_config(NMModem *                 modem,
 static void
 ip_ifindex_changed_cb(NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-    NMDevice *device = NM_DEVICE(user_data);
+    NMDevice *            device = NM_DEVICE(user_data);
+    NMDeviceModem *       self   = NM_DEVICE_MODEM(device);
+    NMDeviceModemPrivate *priv   = NM_DEVICE_MODEM_GET_PRIVATE(self);
 
     if (!nm_device_is_activating(device))
         return;
@@ -210,6 +213,11 @@ ip_ifindex_changed_cb(NMModem *modem, GParamSpec *pspec, gpointer user_data)
      * RA handling code to run before NM is ready.
      */
     nm_device_sysctl_ip_conf_set(device, AF_INET6, "disable_ipv6", "1");
+
+    if (priv->stage2_state == NM_DEVICE_STAGE_STATE_PENDING) {
+        priv->stage2_state = NM_DEVICE_STAGE_STATE_COMPLETED;
+        nm_device_activate_schedule_stage2_device_config(device, FALSE);
+    }
 }
 
 static void
@@ -457,6 +465,7 @@ deactivate(NMDevice *device)
 
     nm_modem_deactivate(priv->modem, device);
     priv->stage1_state = NM_DEVICE_STAGE_STATE_INIT;
+    priv->stage2_state = NM_DEVICE_STAGE_STATE_INIT;
 }
 
 /*****************************************************************************/
@@ -516,9 +525,19 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    return nm_modem_act_stage2_config(NM_DEVICE_MODEM_GET_PRIVATE(device)->modem,
-                                      device,
-                                      out_failure_reason);
+    NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(device);
+
+    if (priv->stage2_state == NM_DEVICE_STAGE_STATE_INIT) {
+        priv->stage2_state = NM_DEVICE_STAGE_STATE_PENDING;
+        return nm_modem_act_stage2_config(NM_DEVICE_MODEM_GET_PRIVATE(device)->modem,
+                                          device,
+                                          out_failure_reason);
+    }
+    if (priv->stage2_state == NM_DEVICE_STAGE_STATE_PENDING)
+        return NM_ACT_STAGE_RETURN_POSTPONE;
+
+    nm_assert(priv->stage2_state == NM_DEVICE_STAGE_STATE_COMPLETED);
+    return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static void
