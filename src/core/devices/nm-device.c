@@ -11443,14 +11443,13 @@ get_ip_method_auto(NMDevice *self, int addr_family)
 }
 
 static void
-activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
+activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const char *method)
 {
     const int        IS_IPv4 = NM_IS_IPv4(addr_family);
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceClass *  klass   = NM_DEVICE_GET_CLASS(self);
     NMConnection *   connection;
     int              ip_ifindex;
-    const char *     method;
 
     if (nm_device_sys_iface_state_is_external(self))
         goto out;
@@ -11459,15 +11458,6 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
     g_return_if_fail(connection);
 
     ip_ifindex = nm_device_get_ip_ifindex(self);
-
-    if (ip_ifindex > 0 && !nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex)
-        && !nm_device_sys_iface_state_is_external(self)) {
-        nm_platform_link_change_flags(nm_device_get_platform(self), ip_ifindex, IFF_UP, TRUE);
-        if (!nm_platform_link_is_up(nm_device_get_platform(self), ip_ifindex))
-            _LOGW(LOGD_DEVICE,
-                  "interface %s not up for IP configuration",
-                  nm_device_get_ip_iface(self));
-    }
 
     if (connection_ip_method_requires_carrier(connection, addr_family, NULL)
         && nm_device_is_master(self) && !priv->carrier) {
@@ -11499,19 +11489,8 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
         priv->ip_data_x[IS_IPv4].wait_for_ports = FALSE;
     }
 
-    method = nm_device_get_effective_ip_config_method(self, addr_family);
-
-    if (nm_streq(method,
-                 IS_IPv4 ? NM_SETTING_IP4_CONFIG_METHOD_AUTO : NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-        /* "auto" usually means DHCPv6 or autoconf6, but it doesn't have to be. Subclasses
-         * can overwrite it. For example, you cannot run DHCPv4 on PPP/WireGuard links. */
-        method = klass->get_ip_method_auto(self, addr_family);
-    }
-
     if (klass->ready_for_ip_config && !klass->ready_for_ip_config(self))
         goto out_devip;
-
-    _dev_ipmanual_start(self);
 
     if (IS_IPv4) {
         if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
@@ -11565,21 +11544,6 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family)
                 }
             }
         } else {
-            /* Ensure the MTU makes sense. If it was below 1280 the kernel would not
-             * expose any ipv6 sysctls or allow presence of any addresses on the interface,
-             * including LL, which * would make it impossible to autoconfigure MTU to a
-             * correct value. */
-            _commit_mtu(self);
-
-            /* Any method past this point requires an IPv6LL address. Use NM-controlled
-             * IPv6LL if this is not an assumed connection, since assumed connections
-             * will already have IPv6 set up.
-             */
-            _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_NONE);
-
-            /* Re-enable IPv6 on the interface */
-            nm_device_sysctl_ip_conf_set(self, AF_INET6, "accept_ra", "0");
-            _dev_sysctl_set_disable_ipv6(self, FALSE);
             _dev_ipll6_start(self);
 
             if (NM_IN_STRSET(method, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
@@ -11688,8 +11652,11 @@ fw_change_zone(NMDevice *self)
 static void
 activate_stage3_ip_config(NMDevice *self)
 {
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
+    NMDeviceClass *  klass = NM_DEVICE_GET_CLASS(self);
     int              ifindex;
+    const char *     ipv4_method;
+    const char *     ipv6_method;
 
     /* stage3 is different from stage1+2.
      *
@@ -11764,8 +11731,46 @@ activate_stage3_ip_config(NMDevice *self)
                   nm_device_get_ip_iface(self));
     }
 
-    activate_stage3_ip_config_for_addr_family(self, AF_INET);
-    activate_stage3_ip_config_for_addr_family(self, AF_INET6);
+    ipv4_method = nm_device_get_effective_ip_config_method(self, AF_INET);
+    if (nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+        /* "auto" usually means DHCPv4 or autoconf6, but it doesn't have to be. Subclasses
+         * can overwrite it. For example, you cannot run DHCPv4 on PPP/WireGuard links. */
+        ipv4_method = klass->get_ip_method_auto(self, AF_INET);
+    }
+
+    ipv6_method = nm_device_get_effective_ip_config_method(self, AF_INET6);
+    if (nm_streq(ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+        ipv6_method = klass->get_ip_method_auto(self, AF_INET6);
+    }
+
+    if (!nm_device_sys_iface_state_is_external(self)
+        && (!klass->ready_for_ip_config || klass->ready_for_ip_config(self))) {
+        if (priv->ipmanual_data.state_6 == NM_DEVICE_IP_STATE_NONE
+            && !NM_IN_STRSET(ipv6_method,
+                             NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                             NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) {
+            /* Ensure the MTU makes sense. If it was below 1280 the kernel would not
+             * expose any ipv6 sysctls or allow presence of any addresses on the interface,
+             * including LL, which * would make it impossible to autoconfigure MTU to a
+             * correct value. */
+            _commit_mtu(self);
+
+            /* Any method past this point requires an IPv6LL address. Use NM-controlled
+             * IPv6LL if this is not an assumed connection, since assumed connections
+             * will already have IPv6 set up.
+             */
+            _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_NONE);
+
+            /* Re-enable IPv6 on the interface */
+            nm_device_sysctl_ip_conf_set(self, AF_INET6, "accept_ra", "0");
+            _dev_sysctl_set_disable_ipv6(self, FALSE);
+        }
+
+        _dev_ipmanual_start(self);
+    }
+
+    activate_stage3_ip_config_for_addr_family(self, AF_INET, ipv4_method);
+    activate_stage3_ip_config_for_addr_family(self, AF_INET6, ipv6_method);
 }
 
 void
