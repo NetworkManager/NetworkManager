@@ -3889,6 +3889,7 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
             _dev_unamanged_check_external_down(self, TRUE);
         _dev_ipmanual_check_ready(self);
         update_external_connection(self);
+        nm_device_queue_recheck_assume(self);
         return;
 
     case _NM_L3_CONFIG_NOTIFY_TYPE_NUM:
