@@ -2977,7 +2977,7 @@ nm_strdup_reset_take(char **dst, char *src)
     char *old;
 
     nm_assert(dst);
-    nm_assert(src != *dst);
+    nm_assert(!src || src != *dst);
 
     if (nm_streq0(*dst, src)) {
         if (src)
