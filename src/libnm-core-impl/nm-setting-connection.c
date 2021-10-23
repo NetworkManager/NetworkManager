@@ -1860,15 +1860,6 @@ finalize(GObject *object)
 {
     NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(object);
 
-    g_free(priv->id);
-    g_free(priv->uuid);
-    g_free(priv->stable_id);
-    g_free(priv->interface_name);
-    g_free(priv->type);
-    g_free(priv->zone);
-    g_free(priv->master);
-    g_free(priv->slave_type);
-    g_free(priv->mud_url);
     nm_clear_pointer(&priv->permissions, g_array_unref);
     nm_clear_pointer(&priv->secondaries, g_array_unref);
 

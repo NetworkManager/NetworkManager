@@ -3990,9 +3990,8 @@ constructed(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMSetting *       self  = NM_SETTING(object);
-    NMSettingPrivate *priv  = NM_SETTING_GET_PRIVATE(self);
-    NMSettingClass *  klass = NM_SETTING_GET_CLASS(self);
+    NMSetting *       self = NM_SETTING(object);
+    NMSettingPrivate *priv = NM_SETTING_GET_PRIVATE(self);
 
     if (priv->gendata) {
         g_free(priv->gendata->names);
@@ -4003,8 +4002,7 @@ finalize(GObject *object)
 
     G_OBJECT_CLASS(nm_setting_parent_class)->finalize(object);
 
-    if (klass->finalize_direct)
-        _finalize_direct(self);
+    _finalize_direct(self);
 }
 
 static void

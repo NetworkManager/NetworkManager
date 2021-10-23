@@ -591,18 +591,6 @@ nm_setting_ip4_config_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE(object);
-
-    g_free(priv->dhcp_client_id);
-    g_free(priv->dhcp_fqdn);
-    g_free(priv->dhcp_vendor_class_identifier);
-
-    G_OBJECT_CLASS(nm_setting_ip4_config_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
 {
     GObjectClass *          object_class            = G_OBJECT_CLASS(klass);
@@ -614,7 +602,6 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
-    object_class->finalize     = finalize;
 
     setting_class->verify = verify;
 

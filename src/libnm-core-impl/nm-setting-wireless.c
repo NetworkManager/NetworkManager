@@ -1370,8 +1370,6 @@ finalize(GObject *object)
 
     if (priv->ssid)
         g_bytes_unref(priv->ssid);
-    g_free(priv->bssid);
-    g_free(priv->device_mac_address);
     g_free(priv->cloned_mac_address);
     g_free(priv->generate_mac_address_mask);
     g_array_unref(priv->mac_address_blacklist);

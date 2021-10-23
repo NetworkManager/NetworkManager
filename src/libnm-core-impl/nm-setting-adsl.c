@@ -336,19 +336,6 @@ nm_setting_adsl_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingAdslPrivate *priv = NM_SETTING_ADSL_GET_PRIVATE(object);
-
-    g_free(priv->username);
-    g_free(priv->password);
-    g_free(priv->protocol);
-    g_free(priv->encapsulation);
-
-    G_OBJECT_CLASS(nm_setting_adsl_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_adsl_class_init(NMSettingAdslClass *klass)
 {
     GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
@@ -359,7 +346,6 @@ nm_setting_adsl_class_init(NMSettingAdslClass *klass)
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
-    object_class->finalize     = finalize;
 
     setting_class->verify         = verify;
     setting_class->verify_secrets = verify_secrets;

@@ -1569,9 +1569,7 @@ finalize(GObject *object)
 {
     NMSettingBridgePrivate *priv = NM_SETTING_BRIDGE_GET_PRIVATE(object);
 
-    g_free(priv->mac_address);
     g_free(priv->multicast_router);
-    g_free(priv->group_address);
     g_free(priv->vlan_protocol);
     g_ptr_array_unref(priv->vlans);
 

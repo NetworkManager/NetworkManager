@@ -220,7 +220,6 @@ finalize(GObject *object)
 
     if (priv->ssid)
         g_bytes_unref(priv->ssid);
-    g_free(priv->dhcp_anycast_addr);
 
     G_OBJECT_CLASS(nm_setting_olpc_mesh_parent_class)->finalize(object);
 }

@@ -633,21 +633,6 @@ nm_setting_ip_tunnel_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingIPTunnel *       setting = NM_SETTING_IP_TUNNEL(object);
-    NMSettingIPTunnelPrivate *priv    = NM_SETTING_IP_TUNNEL_GET_PRIVATE(setting);
-
-    g_free(priv->parent);
-    g_free(priv->local);
-    g_free(priv->remote);
-    g_free(priv->input_key);
-    g_free(priv->output_key);
-
-    G_OBJECT_CLASS(nm_setting_ip_tunnel_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
 {
     GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
@@ -658,7 +643,6 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
-    object_class->finalize     = finalize;
 
     setting_class->verify = verify;
 

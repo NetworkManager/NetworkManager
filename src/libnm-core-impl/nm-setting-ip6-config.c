@@ -584,18 +584,6 @@ nm_setting_ip6_config_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingIP6Config *       self = NM_SETTING_IP6_CONFIG(object);
-    NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE(self);
-
-    g_free(priv->token);
-    g_free(priv->dhcp_duid);
-
-    G_OBJECT_CLASS(nm_setting_ip6_config_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
 {
     GObjectClass *          object_class            = G_OBJECT_CLASS(klass);
@@ -607,7 +595,6 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
-    object_class->finalize     = finalize;
 
     setting_class->verify = verify;
 

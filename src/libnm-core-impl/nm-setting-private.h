@@ -103,21 +103,6 @@ struct _NMSettingClass {
                                guint /* NMSettingParseFlags */ parse_flags,
                                GError **                       error);
 
-    union {
-        gpointer padding[1];
-        struct {
-            /* Whether NMSetting.finalize() calls _nm_setting_property_finalize_direct(). Subclasses
-             * need to be aware of that, and currently this is opt-in.
-             *
-             * The only reason because subclasses need to be aware of this, is that they
-             * otherwise might clear the properties already and leave dangling pointers.
-             *
-             * Eventually all setting classes should stop touching their direct properties
-             * during finalize, and always let NMSetting.finalize() handle them. */
-            bool finalize_direct : 1;
-        };
-    };
-
     const struct _NMMetaSettingInfo *setting_info;
 };
 
