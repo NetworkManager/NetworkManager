@@ -4647,19 +4647,19 @@ check_done:;
                 g_object_get_property(G_OBJECT(setting), sip->name, &val);
 
                 if (sip->param_spec->value_type == G_TYPE_STRING) {
+                    const char *exp_default_value = NULL;
                     const char *default_value;
 
                     default_value = ((const GParamSpecString *) sip->param_spec)->default_value;
-                    if (default_value) {
-                        /* having a string property with a default != NULL is really ugly. They
-                         * should be best avoided... */
-                        if (meta_type == NM_META_SETTING_TYPE_DCB
-                            && nm_streq(sip->name, NM_SETTING_DCB_APP_FCOE_MODE)) {
-                            /* Whitelist the properties that have a non-NULL default value. */
-                            g_assert_cmpstr(default_value, ==, NM_SETTING_DCB_FCOE_MODE_FABRIC);
-                        } else
-                            g_assert_not_reached();
+
+                    /* having a string property with a default != NULL is really ugly. They
+                     * should be best avoided... Only one property is known to have a non-NULL
+                     * default. Assert that this stays. */
+                    if (meta_type == NM_META_SETTING_TYPE_DCB
+                        && nm_streq(sip->name, NM_SETTING_DCB_APP_FCOE_MODE)) {
+                        exp_default_value = NM_SETTING_DCB_FCOE_MODE_FABRIC;
                     }
+                    g_assert_cmpstr(default_value, ==, exp_default_value);
 
                     if (nm_streq(sip->name, NM_SETTING_NAME))
                         g_assert_cmpstr(g_value_get_string(&val), ==, msi->setting_name);
