@@ -732,6 +732,8 @@ Preferably use nmcli instead.
 	-Dpppd_plugin_dir="%{_libdir}/pppd/%{ppp_version}" \
 	-Dpppd="%{_sbindir}/pppd" \
 	-Dppp=true \
+%else
+	-Dppp=false \
 %endif
 %if %{with firewalld_zone}
 	-Dfirewalld_zone=true \
@@ -875,6 +877,8 @@ autoreconf --install --force
 	--enable-ppp=yes \
 	--with-pppd="%{_sbindir}/pppd" \
 	--with-pppd-plugin-dir="%{_libdir}/pppd/%{ppp_version}" \
+%else
+	--enable-ppp=yes \
 %endif
 %if %{with firewalld_zone}
 	--enable-firewalld-zone=yes \
