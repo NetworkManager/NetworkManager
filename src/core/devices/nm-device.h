@@ -71,16 +71,17 @@
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
-#define NM_DEVICE_DNS_LOOKUP_DONE       "dns-lookup-done"
-#define NM_DEVICE_L3CD_CHANGED          "l3cd-changed"
-#define NM_DEVICE_IP6_PREFIX_DELEGATED  "ip6-prefix-delegated"
-#define NM_DEVICE_IP6_SUBNET_NEEDED     "ip6-subnet-needed"
-#define NM_DEVICE_REMOVED               "removed"
-#define NM_DEVICE_RECHECK_AUTO_ACTIVATE "recheck-auto-activate"
-#define NM_DEVICE_RECHECK_ASSUME        "recheck-assume"
-#define NM_DEVICE_STATE_CHANGED         "state-changed"
-#define NM_DEVICE_LINK_INITIALIZED      "link-initialized"
-#define NM_DEVICE_AUTOCONNECT_ALLOWED   "autoconnect-allowed"
+#define NM_DEVICE_DNS_LOOKUP_DONE          "dns-lookup-done"
+#define NM_DEVICE_L3CD_CHANGED             "l3cd-changed"
+#define NM_DEVICE_IP6_PREFIX_DELEGATED     "ip6-prefix-delegated"
+#define NM_DEVICE_IP6_SUBNET_NEEDED        "ip6-subnet-needed"
+#define NM_DEVICE_REMOVED                  "removed"
+#define NM_DEVICE_RECHECK_AUTO_ACTIVATE    "recheck-auto-activate"
+#define NM_DEVICE_RECHECK_ASSUME           "recheck-assume"
+#define NM_DEVICE_STATE_CHANGED            "state-changed"
+#define NM_DEVICE_LINK_INITIALIZED         "link-initialized"
+#define NM_DEVICE_AUTOCONNECT_ALLOWED      "autoconnect-allowed"
+#define NM_DEVICE_PLATFORM_ADDRESS_CHANGED "platform-address-changed"
 
 #define NM_DEVICE_STATISTICS_REFRESH_RATE_MS "refresh-rate-ms"
 #define NM_DEVICE_STATISTICS_TX_BYTES        "tx-bytes"

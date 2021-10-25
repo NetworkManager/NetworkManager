@@ -2131,6 +2131,8 @@ device_l3cd_changed(NMDevice *            device,
         update_ip_dns(self, AF_INET6, device);
         update_ip4_routing(self, TRUE);
         update_ip6_routing(self, TRUE);
+        /* FIXME: since we already monitor platform addresses changes,
+         * this is probably no longer necessary? */
         update_system_hostname(self, "ip conf");
     } else {
         nm_dns_manager_set_ip_config(priv->dns_manager,
@@ -2142,6 +2144,19 @@ device_l3cd_changed(NMDevice *            device,
     }
 
     nm_dns_manager_end_updates(priv->dns_manager, __func__);
+}
+
+static void
+device_platform_address_changed(NMDevice *device, gpointer user_data)
+{
+    NMPolicyPrivate *priv = user_data;
+    NMPolicy *       self = _PRIV_TO_SELF(priv);
+    NMDeviceState    state;
+
+    state = nm_device_get_state(device);
+    if (state > NM_DEVICE_STATE_DISCONNECTED && state < NM_DEVICE_STATE_DEACTIVATING) {
+        update_system_hostname(self, "address changed");
+    }
 }
 
 /*****************************************************************************/
@@ -2180,6 +2195,10 @@ devices_list_register(NMPolicy *self, NMDevice *device)
     /* Connect state-changed with _after, so that the handler is invoked after other handlers. */
     g_signal_connect_after(device, NM_DEVICE_STATE_CHANGED, G_CALLBACK(device_state_changed), priv);
     g_signal_connect(device, NM_DEVICE_L3CD_CHANGED, G_CALLBACK(device_l3cd_changed), priv);
+    g_signal_connect(device,
+                     NM_DEVICE_PLATFORM_ADDRESS_CHANGED,
+                     G_CALLBACK(device_platform_address_changed),
+                     priv);
     g_signal_connect(device,
                      NM_DEVICE_IP6_PREFIX_DELEGATED,
                      G_CALLBACK(device_ip6_prefix_delegated),
