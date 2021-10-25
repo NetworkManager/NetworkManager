@@ -324,6 +324,7 @@ enum {
     RECHECK_AUTO_ACTIVATE,
     RECHECK_ASSUME,
     DNS_LOOKUP_DONE,
+    PLATFORM_ADDRESS_CHANGED,
     LAST_SIGNAL,
 };
 static guint signals[LAST_SIGNAL] = {0};
@@ -3887,6 +3888,13 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
                              | nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP4_ADDRESS)
                              | nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP6_ADDRESS)))
             _dev_unamanged_check_external_down(self, TRUE);
+
+        if (NM_FLAGS_ANY(notify_data->platform_change_on_idle.obj_type_flags,
+                         nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP4_ADDRESS)
+                             | nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP6_ADDRESS))) {
+            g_signal_emit(self, signals[PLATFORM_ADDRESS_CHANGED], 0);
+        }
+
         _dev_ipmanual_check_ready(self);
         update_external_connection(self);
         nm_device_queue_recheck_assume(self);
@@ -17875,6 +17883,16 @@ nm_device_class_init(NMDeviceClass *klass)
                                             NULL,
                                             G_TYPE_NONE,
                                             0);
+
+    signals[PLATFORM_ADDRESS_CHANGED] = g_signal_new(NM_DEVICE_PLATFORM_ADDRESS_CHANGED,
+                                                     G_OBJECT_CLASS_TYPE(object_class),
+                                                     G_SIGNAL_RUN_FIRST,
+                                                     0,
+                                                     NULL,
+                                                     NULL,
+                                                     NULL,
+                                                     G_TYPE_NONE,
+                                                     0);
 }
 
 /* Connection defaults from plugins */
