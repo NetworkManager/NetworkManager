@@ -3980,6 +3980,18 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
 
     if (priv->l3cfg) {
         if (ip_ifindex_new <= 0 || ip_ifindex_new != nm_l3cfg_get_ifindex(priv->l3cfg)) {
+            const NML3ConfigData *l3cd_old;
+
+            if (ip_ifindex_new <= 0) {
+                /* The ifindex was reset. Send a last L3CD_CHANGED
+                 * signal with a NULL l3cd so that the old one can
+                 * be removed from the DNS manager.
+                 */
+                l3cd_old = nm_l3cfg_get_combined_l3cd(priv->l3cfg, TRUE);
+                if (l3cd_old)
+                    g_signal_emit(self, signals[L3CD_CHANGED], 0, l3cd_old, NULL);
+            }
+
             g_signal_handlers_disconnect_by_func(priv->l3cfg,
                                                  G_CALLBACK(_dev_l3_cfg_notify_cb),
                                                  self);
