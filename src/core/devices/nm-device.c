@@ -16565,6 +16565,60 @@ nm_device_clear_dns_lookup_data(NMDevice *self)
         nm_clear_pointer(&priv->hostname_resolver_x[i], _hostname_resolver_free);
 }
 
+static GInetAddress *
+get_address_for_hostname_dns_lookup(NMDevice *self, int addr_family)
+{
+    const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMPLookup                    lookup;
+    const NMDedupMultiHeadEntry *head_entry;
+    const NMDedupMultiEntry *    iter;
+    const guint8 *               addr6_ll    = NULL;
+    const guint8 *               addr6_nonll = NULL;
+    int                          ifindex;
+
+    ifindex = nm_device_get_ip_ifindex(self);
+    if (ifindex <= 0)
+        return NULL;
+
+    /* FIXME(l3cfg): now we lookup the address from platform. Should we instead look
+     *   it up from NML3Cfg? That is, take an address that we want to configure as
+     *   opposed to an address that is configured? */
+    head_entry = nm_platform_lookup(
+        nm_device_get_platform(self),
+        nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex));
+
+    if (head_entry) {
+        c_list_for_each_entry (iter, &head_entry->lst_entries_head, lst_entries) {
+            const NMPlatformIPAddress *addr = NMP_OBJECT_CAST_IP_ADDRESS(iter->obj);
+
+            if (IS_IPv4) {
+                return g_inet_address_new_from_bytes(addr->address_ptr, G_SOCKET_FAMILY_IPV4);
+            }
+
+            /* For IPv6 prefer, in order:
+             * - !link-local, !deprecated
+             * - !link-local, deprecated
+             * - link-local
+             */
+
+            if (!IN6_IS_ADDR_LINKLOCAL(addr->address_ptr)) {
+                if (!(addr->n_ifa_flags & IFA_F_DEPRECATED)) {
+                    return g_inet_address_new_from_bytes(addr->address_ptr, G_SOCKET_FAMILY_IPV6);
+                }
+                addr6_nonll = addr->address_ptr;
+                continue;
+            }
+
+            addr6_ll = addr->address_ptr;
+        }
+
+        if (addr6_nonll || addr6_ll)
+            return g_inet_address_new_from_bytes(addr6_nonll ?: addr6_ll, G_SOCKET_FAMILY_IPV6);
+    }
+
+    return NULL;
+}
+
 /* return value is valid only immediately */
 const char *
 nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean *out_wait)
@@ -16573,12 +16627,10 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
     NMDevicePrivate * priv;
     HostnameResolver *resolver;
     const char *      method;
-    int               ifindex;
     gboolean          address_changed         = FALSE;
     gs_unref_object GInetAddress *new_address = NULL;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NULL);
-
     priv = NM_DEVICE_GET_PRIVATE(self);
 
     /* If the device is not supposed to have addresses,
@@ -16618,31 +16670,7 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
 
     /* Determine the most suitable address of the interface
      * and whether it changed from the previous lookup */
-    ifindex = nm_device_get_ip_ifindex(self);
-    if (ifindex > 0) {
-        NMPLookup                    lookup;
-        const NMDedupMultiHeadEntry *head_entry;
-        const NMDedupMultiEntry *    iter;
-
-        /* FIXME(l3cfg): now we lookup the address from platform. Should we instead look
-         *   it up from NML3Cfg? That is, take an address that we want to configure as
-         *   opposed to an address that is configured? */
-        head_entry = nm_platform_lookup(
-            nm_device_get_platform(self),
-            nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex));
-
-        if (head_entry) {
-            c_list_for_each_entry (iter, &head_entry->lst_entries_head, lst_entries) {
-                const NMPlatformIPAddress *addr = NMP_OBJECT_CAST_IP_ADDRESS(iter->obj);
-
-                new_address = g_inet_address_new_from_bytes(addr->address_ptr,
-                                                            IS_IPv4 ? G_SOCKET_FAMILY_IPV4
-                                                                    : G_SOCKET_FAMILY_IPV6);
-                break;
-            }
-        }
-    }
-
+    new_address = get_address_for_hostname_dns_lookup(self, addr_family);
     if (new_address && resolver->address) {
         if (!g_inet_address_equal(new_address, resolver->address))
             address_changed = TRUE;
