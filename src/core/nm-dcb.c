@@ -258,7 +258,8 @@ _fcoe_setup(const char *  iface,
 
     flags = nm_setting_dcb_get_app_fcoe_flags(s_dcb);
     if (flags & NM_SETTING_DCB_FLAG_ENABLE) {
-        const char *mode = nm_setting_dcb_get_app_fcoe_mode(s_dcb);
+        const char *mode =
+            nm_setting_dcb_get_app_fcoe_mode(s_dcb) ?: NM_SETTING_DCB_FCOE_MODE_FABRIC;
 
         if (!do_helper(NULL, FCOEADM, run_func, user_data, error, "-m %s -c %s", mode, iface))
             return FALSE;

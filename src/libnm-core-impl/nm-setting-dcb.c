@@ -607,17 +607,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                         error))
         return FALSE;
 
-    if (!priv->app_fcoe_mode) {
-        g_set_error_literal(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                            _("property missing"));
-        g_prefix_error(error, "%s.%s: ", NM_SETTING_DCB_SETTING_NAME, NM_SETTING_DCB_APP_FCOE_MODE);
-        return FALSE;
-    }
-
-    if (strcmp(priv->app_fcoe_mode, NM_SETTING_DCB_FCOE_MODE_FABRIC)
-        && strcmp(priv->app_fcoe_mode, NM_SETTING_DCB_FCOE_MODE_VN2VN)) {
+    if (!NM_IN_STRSET(priv->app_fcoe_mode,
+                      NULL,
+                      NM_SETTING_DCB_FCOE_MODE_FABRIC,
+                      NM_SETTING_DCB_FCOE_MODE_VN2VN)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -888,7 +881,6 @@ nm_setting_dcb_init(NMSettingDcb *self)
 {
     NMSettingDcbPrivate *priv = NM_SETTING_DCB_GET_PRIVATE(self);
 
-    priv->app_fcoe_mode      = g_strdup(NM_SETTING_DCB_FCOE_MODE_FABRIC);
     priv->app_fcoe_priority  = -1;
     priv->app_fip_priority   = -1;
     priv->app_iscsi_priority = -1;
@@ -982,7 +974,10 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
      * NMSettingDcb:app-fcoe-mode:
      *
      * The FCoE controller mode; either %NM_SETTING_DCB_FCOE_MODE_FABRIC
-     * (default) or %NM_SETTING_DCB_FCOE_MODE_VN2VN.
+     * or %NM_SETTING_DCB_FCOE_MODE_VN2VN.
+     *
+     * Since 1.34, %NULL is the default and means %NM_SETTING_DCB_FCOE_MODE_FABRIC.
+     * Before 1.34, %NULL was rejected as invalid and the default was %NM_SETTING_DCB_FCOE_MODE_FABRIC.
      **/
     /* ---ifcfg-rh---
      * property: app-fcoe-mode
@@ -996,7 +991,7 @@ nm_setting_dcb_class_init(NMSettingDcbClass *klass)
         g_param_spec_string(NM_SETTING_DCB_APP_FCOE_MODE,
                             "",
                             "",
-                            NM_SETTING_DCB_FCOE_MODE_FABRIC,
+                            NULL,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**

@@ -4647,24 +4647,17 @@ check_done:;
                 g_object_get_property(G_OBJECT(setting), sip->name, &val);
 
                 if (sip->param_spec->value_type == G_TYPE_STRING) {
-                    const char *exp_default_value = NULL;
-                    const char *default_value;
-
-                    default_value = ((const GParamSpecString *) sip->param_spec)->default_value;
-
-                    /* having a string property with a default != NULL is really ugly. They
-                     * should be best avoided... Only one property is known to have a non-NULL
-                     * default. Assert that this stays. */
-                    if (meta_type == NM_META_SETTING_TYPE_DCB
-                        && nm_streq(sip->name, NM_SETTING_DCB_APP_FCOE_MODE)) {
-                        exp_default_value = NM_SETTING_DCB_FCOE_MODE_FABRIC;
-                    }
-                    g_assert_cmpstr(default_value, ==, exp_default_value);
+                    /* String properties should all have a default value of NULL. Otherwise,
+                     * it's ugly. */
+                    g_assert_cmpstr(((const GParamSpecString *) sip->param_spec)->default_value,
+                                    ==,
+                                    NULL);
+                    g_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(sip->param_spec));
 
                     if (nm_streq(sip->name, NM_SETTING_NAME))
                         g_assert_cmpstr(g_value_get_string(&val), ==, msi->setting_name);
                     else
-                        g_assert_cmpstr(g_value_get_string(&val), ==, default_value);
+                        g_assert_cmpstr(g_value_get_string(&val), ==, NULL);
                 }
 
                 if (NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS))
