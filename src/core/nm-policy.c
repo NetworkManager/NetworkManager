@@ -2120,7 +2120,7 @@ device_l3cd_changed(NMDevice *            device,
      * now.
      */
     state = nm_device_get_state(device);
-    if (state > NM_DEVICE_STATE_DISCONNECTED && state < NM_DEVICE_STATE_DEACTIVATING) {
+    if (l3cd_new && state > NM_DEVICE_STATE_DISCONNECTED && state < NM_DEVICE_STATE_DEACTIVATING) {
         nm_dns_manager_set_ip_config(priv->dns_manager,
                                      AF_UNSPEC,
                                      device,
