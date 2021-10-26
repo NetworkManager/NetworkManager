@@ -2988,6 +2988,33 @@ EXTRA_DIST += \
 	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/target0/index \
 	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/target0/lun \
 	src/nm-initrd-generator/tests/sysfs-bad-ipaddr/firmware/ibft/target0/port \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/class/net/eth0/address \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/target0/port \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/target0/flags \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/target0/nic-assoc \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/target0/lun \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/target0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/target0/target-name \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/target0/index \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/target0/chap-type \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/acpi_header/oem_id \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/acpi_header/oem_table_id \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/acpi_header/signature \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/initiator/initiator-name \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/initiator/flags \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/initiator/index \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/vlan \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/gateway \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/prefix-len \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/flags \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/hostname \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/primary-dns \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/dhcp \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/ip-addr \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/subnet-mask \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/index \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/origin \
+	src/nm-initrd-generator/tests/sysfs-dhcp-and-static/firmware/ibft/ethernet0/mac \
 	src/nm-initrd-generator/tests/sysfs-dhcp/class/net/eth0/address \
 	src/nm-initrd-generator/tests/sysfs-dhcp/class/net/eth1/address \
 	src/nm-initrd-generator/tests/sysfs-dhcp/firmware/ibft/ethernet0/gateway \

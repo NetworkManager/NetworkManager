@@ -84,6 +84,13 @@ test_read_ibft_dhcp(void)
     g_assert(s_ip4);
     g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
+    g_assert_cmpint(nm_setting_ip_config_get_num_dns(s_ip4), ==, 2);
+    g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip4, 0), ==, "10.16.255.2");
+    g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip4, 1), ==, "10.16.255.3");
+
+    g_assert_cmpint(nm_setting_ip_config_get_num_addresses(s_ip4), ==, 0);
+    g_assert_cmpstr(nm_setting_ip_config_get_gateway(s_ip4), ==, NULL);
+
     s_ip6 = nm_connection_get_setting_ip6_config(connection);
     g_assert(s_ip6);
     g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6),
@@ -153,6 +160,67 @@ test_read_ibft_static(void)
                     ==,
                     NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
 
+    g_object_unref(connection);
+}
+
+static void
+test_read_ibft_dhcp_and_static(void)
+{
+    NMConnection *       connection;
+    NMSettingConnection *s_con;
+    NMSettingWired *     s_wired;
+    NMSettingIPConfig *  s_ip4;
+    NMSettingIPConfig *  s_ip6;
+    GError *             error = NULL;
+    const char *         mac_address;
+    const char *         expected_mac_address = "52:54:00:12:34:a1";
+    NMIPAddress *        ip4_addr;
+
+    connection =
+        read_connection(TEST_INITRD_DIR "/sysfs-dhcp-and-static", expected_mac_address, &error);
+    g_assert_no_error(error);
+
+    nmtst_assert_connection_verifies_without_normalization(connection);
+
+    g_assert(!nm_connection_get_setting_vlan(connection));
+
+    s_con = nm_connection_get_setting_connection(connection);
+    g_assert(s_con);
+    g_assert_cmpstr(nm_setting_connection_get_connection_type(s_con),
+                    ==,
+                    NM_SETTING_WIRED_SETTING_NAME);
+    g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "iBFT Connection 0");
+    g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, NULL);
+    g_assert_cmpint(nm_setting_connection_get_timestamp(s_con), ==, 0);
+    g_assert(nm_setting_connection_get_autoconnect(s_con));
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    g_assert(s_wired);
+    mac_address = nm_setting_wired_get_mac_address(s_wired);
+    g_assert(mac_address);
+    g_assert(nm_utils_hwaddr_matches(mac_address, -1, expected_mac_address, -1));
+    g_assert_cmpint(nm_setting_wired_get_mtu(s_wired), ==, 0);
+
+    s_ip4 = nm_connection_get_setting_ip4_config(connection);
+    g_assert(s_ip4);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip4), ==, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+
+    g_assert_cmpint(nm_setting_ip_config_get_num_dns(s_ip4), ==, 1);
+    g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip4, 0), ==, "192.168.51.1");
+
+    g_assert_cmpint(nm_setting_ip_config_get_num_addresses(s_ip4), ==, 1);
+    ip4_addr = nm_setting_ip_config_get_address(s_ip4, 0);
+    g_assert(ip4_addr);
+    g_assert_cmpstr(nm_ip_address_get_address(ip4_addr), ==, "192.168.51.101");
+    g_assert_cmpint(nm_ip_address_get_prefix(ip4_addr), ==, 24);
+
+    g_assert_cmpstr(nm_setting_ip_config_get_gateway(s_ip4), ==, "192.168.51.1");
+
+    s_ip6 = nm_connection_get_setting_ip6_config(connection);
+    g_assert(s_ip6);
+    g_assert_cmpstr(nm_setting_ip_config_get_method(s_ip6),
+                    ==,
+                    NM_SETTING_IP6_CONFIG_METHOD_DISABLED);
     g_object_unref(connection);
 }
 
@@ -284,6 +352,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/ibft", test_read_ibft);
     g_test_add_func("/initrd/ibft/dhcp", test_read_ibft_dhcp);
     g_test_add_func("/initrd/ibft/static", test_read_ibft_static);
+    g_test_add_func("/initrd/ibft/dhcp-and-static", test_read_ibft_dhcp_and_static);
     g_test_add_func("/initrd/ibft/vlan", test_read_ibft_vlan);
     g_test_add_data_func("/initrd/ibft/bad-ipaddr-read",
                          TEST_INITRD_DIR "/sysfs-bad-ipaddr",
