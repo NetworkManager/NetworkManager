@@ -247,12 +247,6 @@ dbus_emit_state_changed(gpointer user_data)
 static void
 emit_state_changed(NMActiveConnection *self, guint state, guint reason)
 {
-    nm_dbus_object_emit_signal(NM_DBUS_OBJECT(self),
-                               &interface_info_active_connection,
-                               &signal_info_state_changed,
-                               "(uu)",
-                               (guint32) state,
-                               (guint32) reason);
     g_signal_emit(self, signals[STATE_CHANGED], 0, state, reason);
     g_idle_add(dbus_emit_state_changed, g_object_ref(self));
 }
