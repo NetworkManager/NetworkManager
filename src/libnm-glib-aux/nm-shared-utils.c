@@ -672,6 +672,27 @@ nm_g_variant_singleton_ao(void)
     return _variant_singleton_get_array("o");
 }
 
+GVariant *
+nm_g_variant_maybe_singleton_i(gint32 value)
+{
+    /* Warning: this function always returns a non-floating reference
+     * that must be consumed (and later unrefed) by the caller.
+     *
+     * The instance is either a singleton instance or a newly created
+     * instance.
+     *
+     * The idea of this is that common values (zero) can use the immutable
+     * singleton/flyweight instance and avoid allocating a new instance in
+     * the (presumable) common case.
+     */
+    switch (value) {
+    case 0:
+        return g_variant_ref(nm_g_variant_singleton_i_0());
+    default:
+        return g_variant_take_ref(g_variant_new_int32(value));
+    }
+}
+
 /*****************************************************************************/
 
 GHashTable *
