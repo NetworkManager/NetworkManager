@@ -15082,7 +15082,7 @@ static void
 ip6_managed_setup(NMDevice *self)
 {
     _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_NONE);
-    _dev_sysctl_set_disable_ipv6(self, TRUE);
+    _dev_sysctl_set_disable_ipv6(self, FALSE);
     nm_device_sysctl_ip_conf_set(self, AF_INET6, "accept_ra", "0");
     nm_device_sysctl_ip_conf_set(self, AF_INET6, "use_tempaddr", "0");
     nm_device_sysctl_ip_conf_set(self, AF_INET6, "forwarding", "0");
