@@ -115,7 +115,7 @@ parent_hwaddr_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_d
         /* When changing the hw address the interface is taken down,
          * removing the IPv6 configuration; reapply it.
          */
-        nm_device_l3cfg_commit(device, NM_L3_CFG_COMMIT_TYPE_REAPPLY, FALSE);
+        nm_device_l3cfg_commit(device, NM_L3_CFG_COMMIT_TYPE_UPDATE, FALSE);
     }
 }
 
