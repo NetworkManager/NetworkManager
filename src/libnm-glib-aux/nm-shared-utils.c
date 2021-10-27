@@ -538,7 +538,7 @@ nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len)
 }
 
 GVariant *
-nm_utils_gbytes_to_variant_ay(GBytes *bytes)
+nm_utils_gbytes_to_variant_ay(const GBytes *bytes)
 {
     const guint8 *p = NULL;
     gsize         l = 0;
@@ -546,7 +546,7 @@ nm_utils_gbytes_to_variant_ay(GBytes *bytes)
     if (!bytes) {
         /* for convenience, accept NULL to return an empty variant */
     } else
-        p = g_bytes_get_data(bytes, &l);
+        p = g_bytes_get_data((GBytes *) bytes, &l);
 
     return nm_g_variant_new_ay(p, l);
 }
