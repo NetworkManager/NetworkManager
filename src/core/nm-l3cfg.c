@@ -1570,6 +1570,7 @@ _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_d
     }
     nm_clear_g_source_inst(&self->priv.p->nacd_source);
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
+    nm_clear_g_source_inst(&self->priv.p->nacd_event_down_source);
 
     if (c_list_is_empty(&self->priv.p->acd_lst_head))
         start_timer = NM_TERNARY_DEFAULT;
@@ -4472,6 +4473,7 @@ finalize(GObject *object)
     nm_clear_pointer(&self->priv.p->nacd, n_acd_unref);
     nm_clear_g_source_inst(&self->priv.p->nacd_source);
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
+    nm_clear_g_source_inst(&self->priv.p->nacd_event_down_source);
 
     nm_clear_g_source_inst(&self->priv.p->obj_state_temporary_not_available_timeout_source);
 
