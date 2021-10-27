@@ -509,6 +509,16 @@ nm_g_bytes_new_from_str(const char *str)
     return g_bytes_new_take(nm_memdup(str, l + 1u), l);
 }
 
+GBytes *
+nm_g_bytes_new_from_variant_ay(GVariant *var)
+{
+    if (!var)
+        return NULL;
+    if (!g_variant_is_of_type(var, G_VARIANT_TYPE_BYTESTRING))
+        g_return_val_if_reached(NULL);
+    return g_variant_get_data_as_bytes(var);
+}
+
 /**
  * nm_utils_gbytes_equal_mem:
  * @bytes: (allow-none): a #GBytes array to compare. Note that
