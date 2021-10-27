@@ -594,13 +594,13 @@ _cert_impl_set(NMSetting8021x *        setting,
      * property to the same PKCS#12 data.
      */
     if (cert && p_client_cert && format == NM_CRYPTO_FILE_FORMAT_PKCS12
-        && !nm_gbytes_equal0(cert, *p_client_cert)) {
+        && !nm_g_bytes_equal0(cert, *p_client_cert)) {
         g_bytes_unref(*p_client_cert);
         *p_client_cert = g_bytes_ref(cert);
     } else
         notify_client_cert = PROP_0;
 
-    if (p_cert && !nm_gbytes_equal0(cert, *p_cert)) {
+    if (p_cert && !nm_g_bytes_equal0(cert, *p_cert)) {
         g_bytes_unref(*p_cert);
         *p_cert = g_steal_pointer(&cert);
     } else

@@ -123,7 +123,7 @@ _assert_gbytes(GBytes *bytes, gconstpointer data, gssize len)
     if (!len)
         g_assert(!bytes);
 
-    g_assert(nm_utils_gbytes_equal_mem(bytes, data, len));
+    g_assert(nm_g_bytes_equal_mem(bytes, data, len));
 }
 
 static GKeyFile *
@@ -350,7 +350,7 @@ _test_8021x_cert_check(NMConnection *         con,
         }
 
         g_assert(blob);
-        g_assert(nm_utils_gbytes_equal_mem(blob, value, val_len));
+        g_assert(nm_g_bytes_equal_mem(blob, value, val_len));
 
         kval = g_key_file_get_string(keyfile, "802-1x", "ca-cert", NULL);
         g_assert(kval);

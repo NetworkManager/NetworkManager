@@ -268,7 +268,7 @@ nm_wifi_p2p_peer_set_wfd_ies(NMWifiP2PPeer *peer, GBytes *wfd_ies)
 
     priv = NM_WIFI_P2P_PEER_GET_PRIVATE(peer);
 
-    if (nm_gbytes_equal0(priv->wfd_ies, wfd_ies))
+    if (nm_g_bytes_equal0(priv->wfd_ies, wfd_ies))
         return FALSE;
 
     wfd_ies_old   = g_steal_pointer(&priv->wfd_ies);
@@ -509,7 +509,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_string(value, priv->serial);
         break;
     case PROP_WFD_IES:
-        g_value_take_variant(value, nm_utils_gbytes_to_variant_ay(priv->wfd_ies));
+        g_value_take_variant(value, nm_g_bytes_to_variant_ay(priv->wfd_ies));
         break;
     case PROP_HW_ADDRESS:
         g_value_set_string(value, priv->address);

@@ -599,20 +599,20 @@ nm_utils_is_separator(const char c)
 
 /*****************************************************************************/
 
-GBytes *nm_gbytes_get_empty(void);
+GBytes *nm_g_bytes_get_empty(void);
 
 GBytes *nm_g_bytes_new_from_str(const char *str);
 GBytes *nm_g_bytes_new_from_variant_ay(GVariant *var);
 
 static inline gboolean
-nm_gbytes_equal0(const GBytes *a, const GBytes *b)
+nm_g_bytes_equal0(const GBytes *a, const GBytes *b)
 {
     return a == b || (a && b && g_bytes_equal(a, b));
 }
 
-gboolean nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len);
+gboolean nm_g_bytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len);
 
-GVariant *nm_utils_gbytes_to_variant_ay(const GBytes *bytes);
+GVariant *nm_g_bytes_to_variant_ay(const GBytes *bytes);
 
 GHashTable *nm_strdict_clone(GHashTable *src);
 

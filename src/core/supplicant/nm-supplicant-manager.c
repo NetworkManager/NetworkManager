@@ -244,8 +244,7 @@ nm_supplicant_manager_set_wfd_ies(NMSupplicantManager *self, GBytes *wfd_ies)
 
     g_variant_builder_add(&params, "s", NM_WPAS_DBUS_INTERFACE);
     g_variant_builder_add(&params, "s", "WFDIEs");
-    g_variant_builder_add_value(&params,
-                                g_variant_new_variant(nm_utils_gbytes_to_variant_ay(wfd_ies)));
+    g_variant_builder_add_value(&params, g_variant_new_variant(nm_g_bytes_to_variant_ay(wfd_ies)));
 
     g_dbus_connection_call(priv->dbus_connection,
                            priv->name_owner->str,

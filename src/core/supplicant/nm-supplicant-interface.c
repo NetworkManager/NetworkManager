@@ -696,7 +696,7 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
         } else
             arr_len = 0;
 
-        if (!nm_utils_gbytes_equal_mem(bss_info->ssid, arr_data, arr_len)) {
+        if (!nm_g_bytes_equal_mem(bss_info->ssid, arr_data, arr_len)) {
             _nm_unused gs_unref_bytes GBytes *old_free = g_steal_pointer(&bss_info->ssid);
 
             bss_info->ssid = (arr_len == 0) ? NULL : g_bytes_new(arr_data, arr_len);
@@ -970,7 +970,7 @@ _peer_info_properties_changed(NMSupplicantInterface *self,
     v_v = nm_g_variant_lookup_value(properties, "IEs", G_VARIANT_TYPE_BYTESTRING);
     if (v_v) {
         arr_data = g_variant_get_fixed_array(v_v, &arr_len, 1);
-        if (!nm_utils_gbytes_equal_mem(peer_info->ies, arr_data, arr_len)) {
+        if (!nm_g_bytes_equal_mem(peer_info->ies, arr_data, arr_len)) {
             _nm_unused gs_unref_bytes GBytes *old_free = g_steal_pointer(&peer_info->ies);
 
             peer_info->ies = g_bytes_new(arr_data, arr_len);
@@ -2308,7 +2308,7 @@ assoc_add_network_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             self,
             NM_WPAS_DBUS_IFACE_INTERFACE,
             "AddBlob",
-            g_variant_new("(s@ay)", blob_name, nm_utils_gbytes_to_variant_ay(blob_data)),
+            g_variant_new("(s@ay)", blob_name, nm_g_bytes_to_variant_ay(blob_data)),
             G_VARIANT_TYPE("()"),
             G_DBUS_CALL_FLAGS_NONE,
             DBUS_TIMEOUT_MSEC,
@@ -2612,7 +2612,7 @@ nm_supplicant_interface_request_scan(NMSupplicantInterface *                  se
         g_variant_builder_init(&ssids_builder, G_VARIANT_TYPE_BYTESTRING_ARRAY);
         for (i = 0; i < ssids_len; i++) {
             nm_assert(ssids[i]);
-            g_variant_builder_add(&ssids_builder, "@ay", nm_utils_gbytes_to_variant_ay(ssids[i]));
+            g_variant_builder_add(&ssids_builder, "@ay", nm_g_bytes_to_variant_ay(ssids[i]));
         }
         g_variant_builder_add(&builder, "{sv}", "SSIDs", g_variant_builder_end(&ssids_builder));
     }

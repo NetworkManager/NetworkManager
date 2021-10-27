@@ -1063,7 +1063,7 @@ _nm_setting_property_to_dbus_fcn_gprop(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_n
         return g_dbus_gvalue_to_gvariant(&prop_value, property_info->property_type->dbus_type);
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_BYTES));
-        return nm_utils_gbytes_to_variant_ay(g_value_get_boxed(&prop_value));
+        return nm_g_bytes_to_variant_ay(g_value_get_boxed(&prop_value));
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM:
         return g_variant_new_int32(g_value_get_enum(&prop_value));
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS:

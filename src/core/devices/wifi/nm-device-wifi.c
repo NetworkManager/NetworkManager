@@ -322,7 +322,7 @@ _scan_request_ssids_track(NMDeviceWifiPrivate *priv, const GPtrArray *ssids)
     now_msec = nm_utils_get_monotonic_timestamp_msec();
 
     if (!priv->scan_request_ssids_hash)
-        priv->scan_request_ssids_hash = g_hash_table_new(nm_pgbytes_hash, nm_pgbytes_equal);
+        priv->scan_request_ssids_hash = g_hash_table_new(nm_pg_bytes_hash, nm_pg_bytes_equal);
 
     /* Do a little dance. New elements shall keep their order as in @ssids, but all
      * new elements should be sorted in the list preexisting elements of the list.
@@ -1569,7 +1569,7 @@ _scan_request_ssids_build_hidden(NMDeviceWifi *self,
     if (ssids) {
         if (ssids->len < max_scan_ssids) {
             /* Add wildcard SSID using a static wildcard SSID used for every scan */
-            g_ptr_array_insert(ssids, 0, g_bytes_ref(nm_gbytes_get_empty()));
+            g_ptr_array_insert(ssids, 0, g_bytes_ref(nm_g_bytes_get_empty()));
         }
         if (ssids->len >= max_scan_ssids) {
             /* there is no more space. Use what we have. */
@@ -1590,10 +1590,10 @@ _scan_request_ssids_build_hidden(NMDeviceWifi *self,
     if (!ssids) {
         ssids = g_ptr_array_new_full(max_scan_ssids, (GDestroyNotify) g_bytes_unref);
         /* Add wildcard SSID using a static wildcard SSID used for every scan */
-        g_ptr_array_insert(ssids, 0, g_bytes_ref(nm_gbytes_get_empty()));
+        g_ptr_array_insert(ssids, 0, g_bytes_ref(nm_g_bytes_get_empty()));
     }
 
-    unique_ssids = g_hash_table_new(nm_gbytes_hash, nm_gbytes_equal);
+    unique_ssids = g_hash_table_new(nm_g_bytes_hash, nm_g_bytes_equal);
     for (i = 1; i < ssids->len; i++) {
         if (!g_hash_table_add(unique_ssids, ssids->pdata[i]))
             nm_assert_not_reached();

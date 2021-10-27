@@ -477,7 +477,7 @@ truncate:
 /*****************************************************************************/
 
 GBytes *
-nm_gbytes_get_empty(void)
+nm_g_bytes_get_empty(void)
 {
     static GBytes *bytes = NULL;
     GBytes *       b;
@@ -520,7 +520,7 @@ nm_g_bytes_new_from_variant_ay(GVariant *var)
 }
 
 /**
- * nm_utils_gbytes_equal_mem:
+ * nm_g_bytes_equal_mem:
  * @bytes: (allow-none): a #GBytes array to compare. Note that
  *   %NULL is treated like an #GBytes array of length zero.
  * @mem_data: the data pointer with @mem_len bytes
@@ -530,7 +530,7 @@ nm_g_bytes_new_from_variant_ay(GVariant *var)
  *   special case, a %NULL @bytes is treated like an empty array.
  */
 gboolean
-nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len)
+nm_g_bytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len)
 {
     gconstpointer p;
     gsize         l;
@@ -548,7 +548,7 @@ nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len)
 }
 
 GVariant *
-nm_utils_gbytes_to_variant_ay(const GBytes *bytes)
+nm_g_bytes_to_variant_ay(const GBytes *bytes)
 {
     const guint8 *p = NULL;
     gsize         l = 0;
