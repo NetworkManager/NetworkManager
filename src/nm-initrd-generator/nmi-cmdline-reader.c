@@ -1401,9 +1401,10 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
             }
             if (argument && *argument)
                 _LOGW(LOGD_CORE, "Ignoring extra: '%s'.", argument);
-        } else if (nm_streq(tag, "rd.iscsi.ibft") && _nm_utils_ascii_str_to_bool(argument, TRUE))
+        } else if ((nm_streq(tag, "rd.iscsi.ibft") || nm_streq(tag, "rd.iscsi.firmware"))
+                   && _nm_utils_ascii_str_to_bool(argument, TRUE)) {
             reader_read_all_connections_from_fw(reader, sysfs_dir);
-        else if (nm_streq(tag, "rd.bootif"))
+        } else if (nm_streq(tag, "rd.bootif"))
             ignore_bootif = !_nm_utils_ascii_str_to_bool(argument, TRUE);
         else if (nm_streq(tag, "rd.neednet"))
             neednet = _nm_utils_ascii_str_to_bool(argument, TRUE);
