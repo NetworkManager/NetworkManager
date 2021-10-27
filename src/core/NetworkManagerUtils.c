@@ -28,6 +28,7 @@
 
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nm-linux-platform.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "nm-auth-utils.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
@@ -1747,6 +1748,12 @@ nm_utils_platform_capture_ip_setting(NMPlatform *platform,
         if (NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route)) {
             if (!best_default_route)
                 best_default_route = route;
+            continue;
+        }
+
+        if (route->rx.rt_source
+            != nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER)) {
+            /* Ignore routes provided by external sources */
             continue;
         }
 
