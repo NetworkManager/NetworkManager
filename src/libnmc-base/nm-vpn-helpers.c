@@ -746,7 +746,7 @@ fail_invalid_secret:
         GPtrArray *        data_addr        = is_v4 ? data_addr_v4 : data_addr_v6;
         GPtrArray *        data_dns_search2 = data_dns_search;
 
-        if (data_dns && !data_addr) {
+        if (!data_addr) {
             /* When specifying "DNS", we also require an "Address" for the same address
              * family. That is because a NMSettingIPConfig cannot have @method_disabled
              * and DNS settings at the same time.
