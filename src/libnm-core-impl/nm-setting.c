@@ -776,6 +776,14 @@ _nm_setting_property_get_property_direct(GObject *   object,
         g_value_set_string(value, *p_val);
         return;
     }
+    case NM_VALUE_TYPE_BYTES:
+    {
+        const GBytes *const *p_val =
+            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+
+        g_value_set_boxed(value, *p_val);
+        return;
+    }
     default:
         goto out_fail;
     }
@@ -887,6 +895,19 @@ _nm_setting_property_set_property_direct(GObject *     object,
                 g_value_get_string(value)))
             return;
         goto out_notify;
+    case NM_VALUE_TYPE_BYTES:
+    {
+        GBytes **p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        GBytes * v;
+        _nm_unused gs_unref_bytes GBytes *old = NULL;
+
+        v = g_value_get_boxed(value);
+        if (nm_g_bytes_equal0(*p_val, v))
+            return;
+        old    = *p_val;
+        *p_val = v ? g_bytes_ref(v) : NULL;
+        goto out_notify;
+    }
     default:
         goto out_fail;
     }
@@ -995,6 +1016,11 @@ _init_direct(NMSetting *setting)
                 *((const char *const *)
                       _nm_setting_get_private(setting, sett_info, property_info->direct_offset))));
             break;
+        case NM_VALUE_TYPE_BYTES:
+            nm_assert(!(
+                *((const GBytes *const *)
+                      _nm_setting_get_private(setting, sett_info, property_info->direct_offset))));
+            break;
         default:
             nm_assert_not_reached();
             break;
@@ -1036,6 +1062,14 @@ _finalize_direct(NMSetting *setting)
                 _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
 
             nm_clear_g_free(p_val);
+            break;
+        }
+        case NM_VALUE_TYPE_BYTES:
+        {
+            GBytes **p_val =
+                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+
+            nm_clear_pointer(p_val, g_bytes_unref);
             break;
         }
         default:
@@ -1135,6 +1169,21 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
         if (!val[0])
             return g_variant_ref(nm_g_variant_singleton_s_empty());
         return g_variant_new_string(val);
+    }
+    case NM_VALUE_TYPE_BYTES:
+    {
+        const GBytes *val;
+
+        /* Bytes have always NULL as default. Setting "including_default" has no defined meaning
+         * (but it could have). */
+        nm_assert(!property_info->to_dbus_including_default);
+
+        val = *((const GBytes *const *) _nm_setting_get_private(setting,
+                                                                sett_info,
+                                                                property_info->direct_offset));
+        if (!val)
+            return NULL;
+        return nm_g_bytes_to_variant_ay(val);
     }
     default:
         return nm_assert_unreachable_val(NULL);
@@ -1455,6 +1504,23 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
         if (!_property_direct_set_string(property_info, p_val, v))
             goto out_unchanged;
 
+        goto out_notify;
+    }
+    case NM_VALUE_TYPE_BYTES:
+    {
+        gs_unref_bytes GBytes *v = NULL;
+        GBytes **              p_val;
+
+        if (!g_variant_is_of_type(value, G_VARIANT_TYPE_BYTESTRING))
+            goto out_error_wrong_dbus_type;
+
+        v = nm_g_bytes_new_from_variant_ay(value);
+
+        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        if (nm_g_bytes_equal0(*p_val, v))
+            goto out_unchanged;
+
+        NM_SWAP(p_val, &v);
         goto out_notify;
     }
     default:
@@ -2361,6 +2427,8 @@ _nm_setting_property_compare_fcn_direct(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_
         return *((const guint *) p_a) == *((const guint *) p_b);
     case NM_VALUE_TYPE_STRING:
         return nm_streq0(*((const char *const *) p_a), *((const char *const *) p_b));
+    case NM_VALUE_TYPE_BYTES:
+        return nm_g_bytes_equal0(*((const GBytes *const *) p_a), *((const GBytes *const *) p_b));
     default:
         return nm_assert_unreachable_val(TRUE);
     }
@@ -3416,6 +3484,15 @@ const NMSettInfoPropertType nm_sett_info_propert_type_direct_uint64 =
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_string =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
                                         .direct_type   = NM_VALUE_TYPE_STRING,
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+                                        .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,
+                                        .from_dbus_is_full                = TRUE,
+                                        .from_dbus_direct_allow_transform = TRUE);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_direct_bytes =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BYTESTRING,
+                                        .direct_type   = NM_VALUE_TYPE_BYTES,
                                         .compare_fcn   = _nm_setting_property_compare_fcn_direct,
                                         .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,
