@@ -627,11 +627,12 @@ typedef struct _NMDevicePrivate {
     };
 
     struct {
-        NMNDisc *       ndisc;
-        GSource *       ndisc_grace_source;
-        gulong          ndisc_changed_id;
-        gulong          ndisc_timeout_id;
-        NMDeviceIPState state;
+        NMNDisc *             ndisc;
+        GSource *             ndisc_grace_source;
+        gulong                ndisc_changed_id;
+        gulong                ndisc_timeout_id;
+        NMDeviceIPState       state;
+        const NML3ConfigData *l3cd;
     } ipac6_data;
 
     union {
@@ -822,6 +823,8 @@ static gboolean
 _dev_ipac6_grace_period_start(NMDevice *self, guint32 timeout_sec, gboolean force_restart);
 
 static void _dev_ipac6_start(NMDevice *self);
+
+static void _dev_ipac6_set_state(NMDevice *self, NMDeviceIPState state);
 
 static void _dev_unamanged_check_external_down(NMDevice *self, gboolean only_if_unmanaged);
 
@@ -3893,6 +3896,20 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
                          nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP4_ADDRESS)
                              | nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP6_ADDRESS))) {
             g_signal_emit(self, signals[PLATFORM_ADDRESS_CHANGED], 0);
+        }
+
+        /* Check if AC6 addresses completed DAD */
+        if (NM_FLAGS_ANY(notify_data->platform_change_on_idle.obj_type_flags,
+                         nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP6_ADDRESS))
+            && priv->ipac6_data.state == NM_DEVICE_IP_STATE_PENDING && priv->ipac6_data.l3cd
+            && nm_l3cfg_check_ready(l3cfg,
+                                    priv->ipac6_data.l3cd,
+                                    AF_INET6,
+                                    NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY,
+                                    NULL)) {
+            nm_clear_l3cd(&priv->ipac6_data.l3cd);
+            _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
+            _dev_ip_state_check_async(self, AF_INET6);
         }
 
         _dev_ipmanual_check_ready(self);
@@ -11081,17 +11098,23 @@ _dev_ipac6_ndisc_config_changed(NMNDisc *             ndisc,
                                 const NML3ConfigData *l3cd,
                                 NMDevice *            self)
 {
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
     _dev_ipac6_grace_period_start(self, 0, TRUE);
 
     _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_AC_6, l3cd, FALSE);
 
-    _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
+    nm_l3_config_data_unref(priv->ipac6_data.l3cd);
+    priv->ipac6_data.l3cd = nm_l3_config_data_ref(l3cd);
 
     _dev_ipdhcp6_set_dhcp_level(self, rdata->dhcp_level);
 
     _dev_l3_cfg_commit(self, FALSE);
 
     _dev_ip_state_check_async(self, AF_INET6);
+
+    /* wait that addresses are committed to platform and
+     * become non-tentative before declaring AC6 is ready.*/
 }
 
 static void
@@ -11307,6 +11330,7 @@ _dev_ipac6_cleanup(NMDevice *self)
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     nm_clear_g_source_inst(&priv->ipac6_data.ndisc_grace_source);
+    nm_clear_l3cd(&priv->ipac6_data.l3cd);
 
     nm_clear_g_signal_handler(priv->ipac6_data.ndisc, &priv->ipac6_data.ndisc_changed_id);
     nm_clear_g_signal_handler(priv->ipac6_data.ndisc, &priv->ipac6_data.ndisc_timeout_id);
