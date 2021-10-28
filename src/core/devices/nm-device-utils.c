@@ -267,7 +267,18 @@ resolve_addr_resolved_cb(NMDnsSystemdResolved *                   resolved,
         _LOG2D(info, "error resolving via systemd-resolved: %s", error->message);
 
         dbus_error = g_dbus_error_get_remote_error(error);
-        if (nm_streq0(dbus_error, "org.freedesktop.resolve1.DnsError.NXDOMAIN")) {
+        if (NM_STR_HAS_PREFIX(dbus_error, "org.freedesktop.resolve1.")) {
+            /* systemd-resolved is enabled but it couldn't resolve the
+             * address via DNS.  Don't fall back to spawning the helper,
+             * because the helper will possibly ask again to
+             * systemd-resolved (via /etc/resolv.conf), potentially using
+             * other protocols than DNS or returning synthetic results.
+             *
+             * Consider the error as the final indication that the address
+             * can't be resolved.
+             *
+             * See: https://www.freedesktop.org/wiki/Software/systemd/resolved/#commonerrors
+             */
             resolve_addr_complete(info, NULL, g_error_copy(error));
             return;
         }
