@@ -11098,23 +11098,43 @@ _dev_ipac6_ndisc_config_changed(NMNDisc *             ndisc,
                                 const NML3ConfigData *l3cd,
                                 NMDevice *            self)
 {
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
+    gboolean         ready = TRUE;
+    NMDedupMultiIter iter;
+    const NMPObject *obj;
 
     _dev_ipac6_grace_period_start(self, 0, TRUE);
 
     _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_AC_6, l3cd, FALSE);
 
-    nm_l3_config_data_unref(priv->ipac6_data.l3cd);
-    priv->ipac6_data.l3cd = nm_l3_config_data_ref(l3cd);
+    nm_clear_l3cd(&priv->ipac6_data.l3cd);
+
+    /* wait that addresses are committed to platform and
+     * become non-tentative before declaring AC6 is ready.*/
+    nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP6_ADDRESS) {
+        const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
+        const NMPlatformIP6Address *plat_addr;
+
+        plat_addr = nm_platform_ip6_address_get(nm_device_get_platform(self),
+                                                nm_device_get_ip_ifindex(self),
+                                                &addr->address);
+        if (!plat_addr || (plat_addr->n_ifa_flags & IFA_F_TENTATIVE)) {
+            ready = FALSE;
+            break;
+        }
+    }
+
+    if (ready) {
+        _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
+    } else {
+        priv->ipac6_data.l3cd = nm_l3_config_data_ref(l3cd);
+    }
 
     _dev_ipdhcp6_set_dhcp_level(self, rdata->dhcp_level);
 
     _dev_l3_cfg_commit(self, FALSE);
 
     _dev_ip_state_check_async(self, AF_INET6);
-
-    /* wait that addresses are committed to platform and
-     * become non-tentative before declaring AC6 is ready.*/
 }
 
 static void
