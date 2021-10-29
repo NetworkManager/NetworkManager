@@ -248,10 +248,9 @@ extern const NMIPAddr nm_ip_addr_zero;
 static inline int
 nm_ip_addr_cmp(int addr_family, gconstpointer a, gconstpointer b)
 {
-    nm_assert(a);
-    nm_assert(b);
-
-    return memcmp(a, b, nm_utils_addr_family_to_size(addr_family));
+    NM_CMP_SELF(a, b);
+    NM_CMP_DIRECT_MEMCMP(a, b, nm_utils_addr_family_to_size(addr_family));
+    return 0;
 }
 
 static inline gboolean
