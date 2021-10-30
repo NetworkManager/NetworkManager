@@ -100,14 +100,17 @@ get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec
         g_value_set_variant(value, priv->v_address_data);
         break;
     case PROP_IP_GATEWAY:
-        if (priv->v_gateway.addr) {
+        if (priv->v_gateway.best_default_route) {
+            const NMIPAddr *gateway;
+
+            gateway = nm_platform_ip_route_get_gateway(
+                addr_family,
+                NMP_OBJECT_CAST_IP_ROUTE(priv->v_gateway.best_default_route));
             g_value_set_variant(
                 value,
-                g_variant_new_string(
-                    nm_utils_inet_ntop(addr_family, priv->v_gateway.addr, sbuf_addr)));
-        } else {
+                g_variant_new_string(nm_utils_inet_ntop(addr_family, gateway, sbuf_addr)));
+        } else
             g_value_set_variant(value, nm_g_variant_singleton_s_empty());
-        }
         break;
     case PROP_IP_ROUTE_DATA:
         g_value_set_variant(value, priv->v_route_data);
@@ -212,7 +215,6 @@ finalize(GObject *object)
     nm_g_variant_unref(priv->v_route_data);
     nm_g_variant_unref(priv->v_routes);
 
-    g_free(priv->v_gateway.addr);
     nmp_object_unref(priv->v_gateway.best_default_route);
 
     nm_l3_config_data_unref(priv->l3cd);
@@ -763,21 +765,17 @@ _handle_platform_change(NMIPConfig *self, guint32 obj_type_flags, gboolean is_in
             }
         }
 
-        if (nmp_object_ref_set(&priv->v_gateway.best_default_route, best_default_route)) {
-            gconstpointer gateway_next_hop;
-
-            gateway_next_hop = priv->v_gateway.best_default_route
-                                   ? nm_platform_ip_route_get_gateway(
-                                       addr_family,
-                                       NMP_OBJECT_CAST_IP_ROUTE(priv->v_gateway.best_default_route))
-                                   : NULL;
-
-            if (!nm_ip_addr_equal(addr_family, priv->v_gateway.addr, gateway_next_hop)) {
-                g_free(priv->v_gateway.addr);
-                priv->v_gateway.addr =
-                    g_memdup(gateway_next_hop, nm_utils_addr_family_to_size(addr_family));
+        if (priv->v_gateway.best_default_route != best_default_route) {
+            if (!nm_ip_addr_equal(
+                    addr_family,
+                    nm_platform_ip_route_get_gateway(
+                        addr_family,
+                        NMP_OBJECT_CAST_IP_ROUTE(priv->v_gateway.best_default_route)),
+                    nm_platform_ip_route_get_gateway(addr_family,
+                                                     NMP_OBJECT_CAST_IP_ROUTE(best_default_route))))
                 best_default_route_changed = TRUE;
-            }
+
+            nmp_object_ref_set(&priv->v_gateway.best_default_route, best_default_route);
         }
     }
 
