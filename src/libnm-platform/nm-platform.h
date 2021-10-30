@@ -2176,7 +2176,9 @@ static inline gconstpointer
 nm_platform_ip_route_get_gateway(int addr_family, const NMPlatformIPRoute *route)
 {
     nm_assert_addr_family(addr_family);
-    nm_assert(route);
+
+    if (!route)
+        return NULL;
 
     if (NM_IS_IPv4(addr_family))
         return &((NMPlatformIP4Route *) route)->gateway;
