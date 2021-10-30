@@ -26,6 +26,21 @@
 #define _nm_alignof(type)      __alignof(type)
 #define _nm_alignas(type)      _nm_align(_nm_alignof(type))
 #define _nm_deprecated(msg)    __attribute__((__deprecated__(msg)))
+#define _nm_retain
+
+#if defined(__clang__) && defined(__has_attribute)
+#if __has_attribute(__retain__)
+/* __attribute__((__retain__)) is supported in clang 13+, but is warned about
+ * as an unknown attribute in older versions. We assume older versions are used
+ * together with linkers that do not require the attribute.
+ *
+ * Ideally __has_attribute(__retain__) would be checked in other compilers as
+ * well, but it is broken in GCC (bug 99587). Limit it to clang for now, as it
+ * is only known to be needed for linking lld. */
+#undef _nm_retain
+#define _nm_retain __attribute__((__retain__))
+#endif
+#endif
 
 #if defined(__clang__) && __clang_major__ == 13
 /* Clang 13 can emit -Wunused-but-set-variable warning for cleanup variables

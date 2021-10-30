@@ -195,16 +195,16 @@ const char *nm_config_data_get_iwd_config_path(const NMConfigData *self);
 extern const char *__start_connection_defaults[];
 extern const char *__stop_connection_defaults[];
 
-#define NM_CON_DEFAULT_NOP(name)                              \
-    static const char *NM_UNIQ_T(connection_default, NM_UNIQ) \
-        _nm_used       _nm_section("connection_defaults") = "" name
+#define NM_CON_DEFAULT_NOP(name)                                   \
+    static const char *     NM_UNIQ_T(connection_default, NM_UNIQ) \
+        _nm_used _nm_retain _nm_section("connection_defaults") = "" name
 
-#define NM_CON_DEFAULT(name)                                                                \
-    ({                                                                                      \
-        static const char *__con_default_prop _nm_used _nm_section("connection_defaults") = \
-            "" name;                                                                        \
-                                                                                            \
-        name;                                                                               \
+#define NM_CON_DEFAULT(name)                                                   \
+    ({                                                                         \
+        static const char *__con_default_prop _nm_used _nm_retain _nm_section( \
+            "connection_defaults") = "" name;                                  \
+                                                                               \
+        name;                                                                  \
     })
 
 const char *nm_config_data_get_connection_default(const NMConfigData *self,
