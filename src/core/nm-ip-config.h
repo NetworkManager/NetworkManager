@@ -31,7 +31,6 @@ struct _NMIPConfigPrivate {
     GVariant *            v_routes;
     struct {
         const NMPObject *best_default_route;
-        NMIPAddr *       addr;
     } v_gateway;
     gulong l3cfg_notify_id;
 };
