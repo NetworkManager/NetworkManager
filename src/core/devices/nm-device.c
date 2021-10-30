@@ -3071,8 +3071,15 @@ _dev_ip_state_check(NMDevice *self, int addr_family)
     NMDeviceIPState  ip_state;
     NMDeviceIPState  ip_state_other;
     NMDeviceIPState  combinedip_state;
-    NMTernary        may_fail       = NM_TERNARY_DEFAULT;
-    NMTernary        may_fail_other = NM_TERNARY_DEFAULT;
+    NMTernary        may_fail                 = NM_TERNARY_DEFAULT;
+    NMTernary        may_fail_other           = NM_TERNARY_DEFAULT;
+    gboolean         disabled_or_ignore       = FALSE;
+    gboolean         disabled_or_ignore_other = FALSE;
+
+    if (priv->ip_data_x[IS_IPv4].is_disabled || priv->ip_data_x[IS_IPv4].is_ignore)
+        disabled_or_ignore = TRUE;
+    if (priv->ip_data_x[!IS_IPv4].is_disabled || priv->ip_data_x[!IS_IPv4].is_ignore)
+        disabled_or_ignore_other = TRUE;
 
     /* State handling in NMDevice:
      *
@@ -3142,7 +3149,7 @@ _dev_ip_state_check(NMDevice *self, int addr_family)
         goto got_ip_state;
     }
 
-    if (priv->ip_data_x[IS_IPv4].is_disabled || priv->ip_data_x[IS_IPv4].is_ignore) {
+    if (disabled_or_ignore) {
         ip_state = NM_DEVICE_IP_STATE_READY;
         goto got_ip_state;
     }
@@ -3270,7 +3277,7 @@ got_ip_state:
     if (ip_state == NM_DEVICE_IP_STATE_READY && ip_state_other == NM_DEVICE_IP_STATE_READY)
         combinedip_state = NM_DEVICE_IP_STATE_READY;
     else if (ip_state == NM_DEVICE_IP_STATE_READY && ip_state_other == NM_DEVICE_IP_STATE_PENDING
-             && (priv->ip_data_x[IS_IPv4].is_disabled || priv->ip_data_x[IS_IPv4].is_ignore)) {
+             && disabled_or_ignore) {
         /* This IP method is disabled/ignore, but the other family is still pending.
          * Regardless of ipvx.may-fail, this means that we always require the other IP family
          * to get ready too. */
@@ -3293,10 +3300,20 @@ got_ip_state:
     else if (ip_state == NM_DEVICE_IP_STATE_FAILED
              && !_prop_get_ipvx_may_fail_cached(self, addr_family, &may_fail))
         combinedip_state = NM_DEVICE_IP_STATE_FAILED;
-    else if (ip_state == NM_DEVICE_IP_STATE_FAILED && ip_state_other == NM_DEVICE_IP_STATE_FAILED) {
-        /* If both IP states fail, then it's a failure for good. may-fail does not mean that
-         * both families may fail, instead it means that at least one family must succeed. */
-        combinedip_state = NM_DEVICE_IP_STATE_FAILED;
+    else if ((ip_state == NM_DEVICE_IP_STATE_FAILED
+              || (ip_state == NM_DEVICE_IP_STATE_READY && disabled_or_ignore))
+             && (ip_state_other == NM_DEVICE_IP_STATE_FAILED
+                 || (ip_state_other = NM_DEVICE_IP_STATE_READY && disabled_or_ignore_other))) {
+        /* If both IP states failed, or one failed and the other is disabled
+         * then it's a failure. may-fail does not mean that both families may
+         * fail, instead it means that at least one family must succeed. */
+        if (nm_device_sys_iface_state_is_external_or_assume(self)) {
+            _dev_ip_state_set_state(self, AF_INET, NM_DEVICE_IP_STATE_READY, "assumed");
+            _dev_ip_state_set_state(self, AF_INET6, NM_DEVICE_IP_STATE_READY, "assumed");
+            combinedip_state = NM_DEVICE_IP_STATE_READY;
+        } else {
+            combinedip_state = NM_DEVICE_IP_STATE_FAILED;
+        }
     } else {
         if (priv->ip_data.state == NM_DEVICE_IP_STATE_NONE)
             combinedip_state = NM_DEVICE_IP_STATE_PENDING;
