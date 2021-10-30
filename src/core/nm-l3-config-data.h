@@ -451,6 +451,7 @@ NMSettingConnectionDnsOverTls nm_l3_config_data_get_dns_over_tls(const NML3Confi
 gboolean nm_l3_config_data_set_dns_over_tls(NML3ConfigData *              self,
                                             NMSettingConnectionDnsOverTls dns_over_tls);
 
+
 NMIPRouteTableSyncMode nm_l3_config_data_get_route_table_sync(const NML3ConfigData *self,
                                                               int                   addr_family);
 
@@ -474,6 +475,10 @@ gboolean nm_l3_config_data_set_mtu(NML3ConfigData *self, guint32 mtu);
 guint32 nm_l3_config_data_get_ip6_mtu(const NML3ConfigData *self);
 
 gboolean nm_l3_config_data_set_ip6_mtu(NML3ConfigData *self, guint32 ip6_mtu);
+
+NMUtilsIPv6IfaceId nm_l3_config_data_get_ip6_token(const NML3ConfigData *self);
+
+gboolean nm_l3_config_data_set_ip6_token(NML3ConfigData *self, NMUtilsIPv6IfaceId ipv6_token);
 
 const in_addr_t *nm_l3_config_data_get_wins(const NML3ConfigData *self, guint *out_len);
 

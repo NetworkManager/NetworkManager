@@ -120,6 +120,7 @@ struct _NML3ConfigData {
     NMSettingConnectionMdns       mdns;
     NMSettingConnectionLlmnr      llmnr;
     NMSettingConnectionDnsOverTls dns_over_tls;
+    NMUtilsIPv6IfaceId            ip6_token;
 
     NML3ConfigDatFlags flags;
 
@@ -579,6 +580,11 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                                            self->dns_over_tls,
                                            " ",
                                            NULL)));
+    }
+
+    if (self->ip6_token.id != 0) {
+        _L("ipv6-token: %s",
+           nm_utils_inet6_interface_identifier_to_token(&self->ip6_token, sbuf_addr));
     }
 
     if (self->metered != NM_TERNARY_DEFAULT)
@@ -1849,6 +1855,26 @@ nm_l3_config_data_set_ip6_privacy(NML3ConfigData *self, NMSettingIP6ConfigPrivac
     return TRUE;
 }
 
+NMUtilsIPv6IfaceId
+nm_l3_config_data_get_ip6_token(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->ip6_token;
+}
+
+gboolean
+nm_l3_config_data_set_ip6_token(NML3ConfigData *self, NMUtilsIPv6IfaceId ipv6_token)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    if (self->ip6_token.id == ipv6_token.id)
+        return FALSE;
+
+    self->ip6_token.id = ipv6_token.id;
+    return TRUE;
+}
+
 NMProxyConfigMethod
 nm_l3_config_data_get_proxy_method(const NML3ConfigData *self)
 {
@@ -2158,6 +2184,7 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
     NM_CMP_DIRECT(a->mdns, b->mdns);
     NM_CMP_DIRECT(a->llmnr, b->llmnr);
     NM_CMP_DIRECT(a->dns_over_tls, b->dns_over_tls);
+    NM_CMP_DIRECT(a->ip6_token.id, b->ip6_token.id);
     NM_CMP_DIRECT(a->mtu, b->mtu);
     NM_CMP_DIRECT(a->ip6_mtu, b->ip6_mtu);
     NM_CMP_DIRECT_UNSAFE(a->metered, b->metered);
@@ -3055,6 +3082,9 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
 
     if (self->dns_over_tls == NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT)
         self->dns_over_tls = src->dns_over_tls;
+
+    if (self->ip6_token.id == 0)
+        self->ip6_token.id = src->ip6_token.id;
 
     self->metered = NM_MAX((NMTernary) self->metered, (NMTernary) src->metered);
 
