@@ -6122,7 +6122,8 @@ carrier_changed(NMDevice *self, gboolean carrier)
                 nm_device_update_dynamic_ip_setup(self);
             /* If needed, also resume IP configuration that is
              * waiting for carrier. */
-            nm_device_activate_schedule_stage3_ip_config(self, FALSE);
+            if (priv->state == NM_DEVICE_STATE_IP_CONFIG)
+                nm_device_activate_schedule_stage3_ip_config(self, FALSE);
             return;
         }
         /* fall-through and change state of device */
