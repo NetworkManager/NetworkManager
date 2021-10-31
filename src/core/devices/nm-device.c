@@ -2839,50 +2839,6 @@ nm_device_sysctl_ip_conf_get_int_checked(NMDevice *  self,
                                                       fallback);
 }
 
-static void
-set_ipv6_token(NMDevice *self, const NMUtilsIPv6IfaceId *iid, const char *token_str)
-{
-    NMPlatform *          platform;
-    int                   ifindex;
-    const NMPlatformLink *link;
-    char                  buf[32];
-    gint64                val;
-
-    /* Setting the kernel token is not strictly necessary as the
-     * IPv6 address is generated in userspace. However it is
-     * convenient so that users can see the token with iproute
-     * ('ip token'). */
-    platform = nm_device_get_platform(self);
-    ifindex  = nm_device_get_ip_ifindex(self);
-    link     = nm_platform_link_get(platform, ifindex);
-
-    if (link && link->inet6_token.id == iid->id) {
-        _LOGT(LOGD_DEVICE | LOGD_IP6, "token %s already set", token_str);
-        return;
-    }
-
-    /* The kernel allows setting a token only when 'accept_ra'
-     * is 1: temporarily flip it if necessary; unfortunately
-     * this will also generate an additional Router Solicitation
-     * from kernel. */
-    val = nm_device_sysctl_ip_conf_get_int_checked(self,
-                                                   AF_INET6,
-                                                   "accept_ra",
-                                                   10,
-                                                   G_MININT32,
-                                                   G_MAXINT32,
-                                                   1);
-    if (val != 1)
-        nm_device_sysctl_ip_conf_set(self, AF_INET6, "accept_ra", "1");
-
-    nm_platform_link_set_ipv6_token(platform, ifindex, iid);
-
-    if (val != 1) {
-        nm_sprintf_buf(buf, "%d", (int) val);
-        nm_device_sysctl_ip_conf_set(self, AF_INET6, "accept_ra", buf);
-    }
-}
-
 gboolean
 nm_device_sysctl_ip_conf_set(NMDevice *  self,
                              int         addr_family,
@@ -4672,6 +4628,7 @@ get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
  * @self: an #NMDevice
  * @iid: where to place the interface identifier
  * @ignore_token: force creation of a non-tokenized address
+ * @out_is_token: on return, whether the identifier is tokenized
  *
  * Return the interface's identifier for the EUI64 address generation mode.
  * It's either a manually set token or and identifier generated in a
@@ -4683,12 +4640,17 @@ get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
  * Returns: #TRUE if the @iid could be set
  */
 static gboolean
-nm_device_get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *iid, gboolean ignore_token)
+nm_device_get_ip_iface_identifier(NMDevice *          self,
+                                  NMUtilsIPv6IfaceId *iid,
+                                  gboolean            ignore_token,
+                                  gboolean *          out_is_token)
 {
     NMSettingIP6Config *s_ip6;
     const char *        token = NULL;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
+
+    NM_SET_OUT(out_is_token, FALSE);
 
     if (!ignore_token) {
         s_ip6 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
@@ -4696,6 +4658,8 @@ nm_device_get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *iid, gbool
         g_return_val_if_fail(s_ip6, FALSE);
 
         token = nm_setting_ip6_config_get_token(s_ip6);
+        if (token)
+            NM_SET_OUT(out_is_token, TRUE);
     }
     if (token)
         return nm_utils_ipv6_interface_identifier_get_from_token(iid, token);
@@ -6470,7 +6434,7 @@ device_link_changed(gpointer user_data)
     }
 
     if (priv->ipac6_data.ndisc && pllink->inet6_token.id) {
-        if (nm_ndisc_set_iid(priv->ipac6_data.ndisc, pllink->inet6_token))
+        if (nm_ndisc_set_iid(priv->ipac6_data.ndisc, pllink->inet6_token, TRUE))
             _LOGD(LOGD_DEVICE, "IPv6 tokenized identifier present on device %s", priv->iface);
     }
 
@@ -10631,7 +10595,7 @@ _dev_ipll6_start(NMDevice *self)
     } else {
         NMUtilsIPv6IfaceId iid;
 
-        if (!nm_device_get_ip_iface_identifier(self, &iid, TRUE)) {
+        if (!nm_device_get_ip_iface_identifier(self, &iid, TRUE, NULL)) {
             _LOGW(LOGD_IP6, "linklocal6: failed to get interface identifier; IPv6 cannot continue");
             goto out_fail;
         }
@@ -11241,6 +11205,7 @@ _dev_ipac6_start(NMDevice *self)
     guint32             ra_timeout;
     guint32             default_ra_timeout;
     NMUtilsIPv6IfaceId  iid;
+    gboolean            is_token;
 
     if (priv->ipac6_data.state == NM_DEVICE_IP_STATE_NONE) {
         if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR)) {
@@ -11322,9 +11287,9 @@ _dev_ipac6_start(NMDevice *self)
                              self);
     }
 
-    if (nm_device_get_ip_iface_identifier(self, &iid, FALSE)) {
+    if (nm_device_get_ip_iface_identifier(self, &iid, FALSE, &is_token)) {
         _LOGD_ipac6("using the device EUI-64 identifier");
-        nm_ndisc_set_iid(priv->ipac6_data.ndisc, iid);
+        nm_ndisc_set_iid(priv->ipac6_data.ndisc, iid, is_token);
     } else {
         /* Don't abort the addrconf at this point -- if ndisc needs the iid
          * it will notice this itself. */
@@ -15040,12 +15005,10 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
 
         /* Take out any entries in the routing table and any IP address the device had. */
         if (ifindex > 0) {
-            NMPlatform *       platform = nm_device_get_platform(self);
-            NMUtilsIPv6IfaceId iid      = {};
+            NMPlatform *platform = nm_device_get_platform(self);
 
             nm_platform_ip_route_flush(platform, AF_UNSPEC, ifindex);
             nm_platform_ip_address_flush(platform, AF_UNSPEC, ifindex);
-            set_ipv6_token(self, &iid, "::");
 
             if (nm_device_get_applied_setting(self, NM_TYPE_SETTING_TC_CONFIG)) {
                 nm_platform_tc_sync(platform, ifindex, NULL, NULL);

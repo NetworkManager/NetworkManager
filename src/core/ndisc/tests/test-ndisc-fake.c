@@ -32,7 +32,7 @@ ndisc_new(void)
 
     memset(&iid, 0, sizeof(iid));
     iid.id_u8[7] = 1;
-    nm_ndisc_set_iid(ndisc, iid);
+    nm_ndisc_set_iid(ndisc, iid, FALSE);
 
     return NM_FAKE_NDISC(ndisc);
 }

@@ -225,7 +225,7 @@ int             nm_ndisc_get_ifindex(NMNDisc *self);
 const char *    nm_ndisc_get_ifname(NMNDisc *self);
 NMNDiscNodeType nm_ndisc_get_node_type(NMNDisc *self);
 
-gboolean nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid);
+gboolean nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid, gboolean is_token);
 void     nm_ndisc_start(NMNDisc *ndisc);
 void     nm_ndisc_stop(NMNDisc *ndisc);
 NMNDiscConfigMap
@@ -279,6 +279,7 @@ struct _NML3ConfigData;
 struct _NML3ConfigData *nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
                                               int                       ifindex,
                                               const NMNDiscData *       rdata,
-                                              NMSettingIP6ConfigPrivacy ip6_privacy);
+                                              NMSettingIP6ConfigPrivacy ip6_privacy,
+                                              NMUtilsIPv6IfaceId *      token);
 
 #endif /* __NETWORKMANAGER_NDISC_H__ */
