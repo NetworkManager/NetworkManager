@@ -3938,6 +3938,68 @@ set:
                                    ip6_privacy_to_str(ip6_privacy));
 }
 
+static void
+_l3_commit_ip6_token(NML3Cfg *self, NML3CfgCommitType commit_type)
+{
+    NMUtilsIPv6IfaceId    token;
+    const NMPlatformLink *pllink;
+    int                   val;
+
+    if (commit_type < NM_L3_CFG_COMMIT_TYPE_UPDATE || !self->priv.p->combined_l3cd_commited)
+        token.id = 0;
+    else
+        token = nm_l3_config_data_get_ip6_token(self->priv.p->combined_l3cd_commited);
+
+    pllink = nm_l3cfg_get_pllink(self, TRUE);
+    if (!pllink || pllink->inet6_token.id == token.id)
+        return;
+
+    if (_LOGT_ENABLED()) {
+        struct in6_addr addr     = {};
+        struct in6_addr addr_old = {};
+        char            addr_str[INET6_ADDRSTRLEN];
+        char            addr_str_old[INET6_ADDRSTRLEN];
+
+        nm_utils_ipv6_addr_set_interface_identifier(&addr, &token);
+        nm_utils_ipv6_addr_set_interface_identifier(&addr_old, &pllink->inet6_token);
+
+        _LOGT("commit-ip6-token: set value %s (was %s)",
+              inet_ntop(AF_INET6, &addr, addr_str, INET6_ADDRSTRLEN),
+              inet_ntop(AF_INET6, &addr_old, addr_str_old, INET6_ADDRSTRLEN));
+    }
+
+    /* The kernel allows setting a token only when 'accept_ra'
+     * is 1: temporarily flip it if necessary; unfortunately
+     * this will also generate an additional Router Solicitation
+     * from kernel. */
+    val = nm_platform_sysctl_ip_conf_get_int_checked(self->priv.platform,
+                                                     AF_INET6,
+                                                     pllink->name,
+                                                     "accept_ra",
+                                                     10,
+                                                     G_MININT32,
+                                                     G_MAXINT32,
+                                                     1);
+
+    if (val != 1) {
+        nm_platform_sysctl_ip_conf_set(self->priv.platform,
+                                       AF_INET6,
+                                       pllink->name,
+                                       "accept_ra",
+                                       "1");
+    }
+
+    nm_platform_link_set_ipv6_token(self->priv.platform, self->priv.ifindex, &token);
+
+    if (val != 1) {
+        nm_platform_sysctl_ip_conf_set_int64(self->priv.platform,
+                                             AF_INET6,
+                                             pllink->name,
+                                             "accept_ra",
+                                             val);
+    }
+}
+
 static gboolean
 _l3_commit_one(NML3Cfg *             self,
                int                   addr_family,
@@ -3995,6 +4057,7 @@ _l3_commit_one(NML3Cfg *             self,
     if (!IS_IPv4) {
         _l3_commit_ip6_privacy(self, commit_type);
         _l3_commit_ndisc_params(self, commit_type);
+        _l3_commit_ip6_token(self, commit_type);
     }
 
     if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
