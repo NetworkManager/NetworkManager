@@ -84,7 +84,7 @@ main(int argc, char **argv)
     }
 
     iid.id_u8[7] = 1;
-    nm_ndisc_set_iid(ndisc, iid);
+    nm_ndisc_set_iid(ndisc, iid, FALSE);
     nm_ndisc_start(ndisc);
     g_main_loop_run(loop);
 

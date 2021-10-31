@@ -57,6 +57,7 @@ struct _NMNDiscPrivate {
     GSource *timeout_expire_source;
 
     NMUtilsIPv6IfaceId iid;
+    gboolean           iid_is_token;
 
     /* immutable values from here on: */
 
@@ -105,7 +106,8 @@ NML3ConfigData *
 nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
                       int                       ifindex,
                       const NMNDiscData *       rdata,
-                      NMSettingIP6ConfigPrivacy ip6_privacy)
+                      NMSettingIP6ConfigPrivacy ip6_privacy,
+                      NMUtilsIPv6IfaceId *      token)
 {
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     guint32                                 ifa_flags;
@@ -195,6 +197,8 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex *       multi_idx,
     nm_l3_config_data_set_ndisc_retrans_timer_msec(l3cd, rdata->retrans_timer_ms);
 
     nm_l3_config_data_set_ip6_mtu(l3cd, rdata->mtu);
+    if (token)
+        nm_l3_config_data_set_ip6_token(l3cd, *token);
 
     return g_steal_pointer(&l3cd);
 }
@@ -375,10 +379,12 @@ nm_ndisc_emit_config_change(NMNDisc *self, NMNDiscConfigMap changed)
 
     rdata = _data_complete(&NM_NDISC_GET_PRIVATE(self)->rdata),
 
-    l3cd = nm_l3_config_data_seal(nm_ndisc_data_to_l3cd(nm_l3cfg_get_multi_idx(priv->config.l3cfg),
-                                                        nm_l3cfg_get_ifindex(priv->config.l3cfg),
-                                                        rdata,
-                                                        priv->config.ip6_privacy));
+    l3cd = nm_ndisc_data_to_l3cd(nm_l3cfg_get_multi_idx(priv->config.l3cfg),
+                                 nm_l3cfg_get_ifindex(priv->config.l3cfg),
+                                 rdata,
+                                 priv->config.ip6_privacy,
+                                 priv->iid_is_token ? &priv->iid : NULL);
+    l3cd = nm_l3_config_data_seal(l3cd);
 
     if (!nm_l3_config_data_equal(priv->l3cd, l3cd))
         NM_SWAP(&priv->l3cd, &l3cd);
@@ -1084,15 +1090,16 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
  * Returns: %TRUE if addresses need to be regenerated, %FALSE otherwise.
  **/
 gboolean
-nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid)
+nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid, gboolean is_token)
 {
     NMNDiscPrivate *     priv;
     NMNDiscDataInternal *rdata;
 
     g_return_val_if_fail(NM_IS_NDISC(ndisc), FALSE);
 
-    priv  = NM_NDISC_GET_PRIVATE(ndisc);
-    rdata = &priv->rdata;
+    priv               = NM_NDISC_GET_PRIVATE(ndisc);
+    priv->iid_is_token = is_token;
+    rdata              = &priv->rdata;
 
     if (priv->iid.id != iid.id) {
         priv->iid = iid;
