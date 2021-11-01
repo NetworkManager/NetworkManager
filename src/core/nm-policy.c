@@ -2143,6 +2143,7 @@ device_ip_config_changed(NMDevice *  device,
     NMPolicyPrivate *priv = user_data;
     NMPolicy *       self = _PRIV_TO_SELF(priv);
     int              addr_family;
+    NMDeviceState    state;
 
     nm_assert(new_config || old_config);
     nm_assert(!new_config || NM_IS_IP_CONFIG(new_config));
@@ -2161,7 +2162,8 @@ device_ip_config_changed(NMDevice *  device,
      * ignore IP config changes but when the device is in activated state.
      * Prevents unnecessary changes to DNS information.
      */
-    if (nm_device_get_state(device) == NM_DEVICE_STATE_ACTIVATED) {
+    state = nm_device_get_state(device);
+    if (state > NM_DEVICE_STATE_IP_CONFIG && state <= NM_DEVICE_STATE_ACTIVATED) {
         if (old_config != new_config) {
             if (new_config)
                 _dns_manager_set_ip_config(priv->dns_manager,
