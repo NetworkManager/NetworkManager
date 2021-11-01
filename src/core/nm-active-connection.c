@@ -31,15 +31,14 @@ typedef struct _NMActiveConnectionPrivate {
 
     char *pending_activation_id;
 
-    NMActivationStateFlags        state_flags;
-    NMActiveConnectionState       state;
-    NMActiveConnectionStateReason reason;
+    NMActivationStateFlags state_flags;
 
-    bool is_default : 1;
-    bool is_default6 : 1;
-    bool state_set : 1;
-    bool vpn : 1;
-    bool master_ready : 1;
+    NMActiveConnectionState state;
+    bool                    is_default : 1;
+    bool                    is_default6 : 1;
+    bool                    state_set : 1;
+    bool                    vpn : 1;
+    bool                    master_ready : 1;
 
     NMActivationType activation_type : 3;
 
@@ -227,28 +226,16 @@ nm_active_connection_get_state(NMActiveConnection *self)
     return NM_ACTIVE_CONNECTION_GET_PRIVATE(self)->state;
 }
 
-static int
-dbus_emit_state_changed(gpointer user_data)
+static void
+emit_state_changed(NMActiveConnection *self, guint state, guint reason)
 {
-    NMActiveConnection *       self = NM_ACTIVE_CONNECTION(user_data);
-    NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
-
     nm_dbus_object_emit_signal(NM_DBUS_OBJECT(self),
                                &interface_info_active_connection,
                                &signal_info_state_changed,
                                "(uu)",
-                               (guint32) priv->state,
-                               (guint32) priv->reason);
-
-    g_object_unref(self);
-    return G_SOURCE_REMOVE;
-}
-
-static void
-emit_state_changed(NMActiveConnection *self, guint state, guint reason)
-{
+                               (guint32) state,
+                               (guint32) reason);
     g_signal_emit(self, signals[STATE_CHANGED], 0, state, reason);
-    g_idle_add(dbus_emit_state_changed, g_object_ref(self));
 }
 
 void
@@ -263,7 +250,6 @@ nm_active_connection_set_state(NMActiveConnection *          self,
     g_return_if_fail(priv->state != NM_ACTIVE_CONNECTION_STATE_DEACTIVATED
                      || new_state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED);
 
-    priv->reason = reason;
     if (priv->state == new_state)
         return;
 
@@ -286,8 +272,8 @@ nm_active_connection_set_state(NMActiveConnection *          self,
     old_state       = priv->state;
     priv->state     = new_state;
     priv->state_set = TRUE;
-    _notify(self, PROP_STATE);
     emit_state_changed(self, new_state, reason);
+    _notify(self, PROP_STATE);
 
     check_master_ready(self);
 
