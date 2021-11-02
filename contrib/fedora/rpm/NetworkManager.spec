@@ -197,6 +197,7 @@ Source6: 70-nm-connectivity.conf
 #Patch1: 0001-some.patch
 
 Requires(post): systemd
+Requires(post): systemd-udev
 Requires(post): /usr/sbin/update-alternatives
 Requires(preun): systemd
 Requires(preun): /usr/sbin/update-alternatives
