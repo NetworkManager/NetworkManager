@@ -139,6 +139,8 @@ typedef enum {
      * their relative order matters: higher numbers in this enum means more
      * important (and during merge overwrites other settings). */
 
+    L3_CONFIG_DATA_TYPE_MANUALIP,
+
     L3_CONFIG_DATA_TYPE_LL_4,
     L3_CONFIG_DATA_TYPE_LL_6,
 
@@ -180,8 +182,6 @@ typedef enum {
                                                    \
         _t;                                        \
     })
-
-    L3_CONFIG_DATA_TYPE_MANUALIP,
 
     _L3_CONFIG_DATA_TYPE_NUM,
     _L3_CONFIG_DATA_TYPE_NONE,
