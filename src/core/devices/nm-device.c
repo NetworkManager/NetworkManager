@@ -9965,7 +9965,6 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
 
         if (!notify_data->lease_update.l3cd) {
             _LOGT_ipdhcp(addr_family, "lease lost");
-            _dev_ipdhcpx_handle_fail(self, addr_family, "lease lost");
             return;
         }
 
