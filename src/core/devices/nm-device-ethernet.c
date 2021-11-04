@@ -479,6 +479,7 @@ wired_auth_cond_fail(NMDeviceEthernet *self, NMDeviceStateReason reason)
 
     _LOGI(LOGD_DEVICE | LOGD_ETHER,
           "Activation: (ethernet) 802.1X authentication is optional, continuing after a failure");
+    priv->supplicant.ready = TRUE;
 
     if (NM_IN_SET(nm_device_get_state(device), NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH))
         nm_device_activate_schedule_stage2_device_config(device, FALSE);
