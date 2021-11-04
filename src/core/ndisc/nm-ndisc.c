@@ -23,7 +23,7 @@
 #define RFC7559_IRT ((gint32) 4)    /* RFC7559, Initial Retransmission Time, in seconds */
 #define RFC7559_MRT ((gint32) 3600) /* RFC7559, Maximum Retransmission Time, in seconds */
 
-#define NM_NDISC_PRE_EXPIRY_TIME_MSEC          60000
+#define NM_NDISC_PRE_EXPIRY_TIME_MSEC         60000
 #define NM_NDISC_PRE_EXPIRY_MIN_LIFETIME_MSEC 120000
 
 #define _SIZE_MAX_GATEWAYS    100u
@@ -1533,7 +1533,9 @@ timeout_expire_cb(gpointer user_data)
  */
 
 static void
-_calc_pre_expiry_rs_msec_worker(gint64 *earliest_expiry_msec, gint64 last_rs_msec, gint64 expiry_msec)
+_calc_pre_expiry_rs_msec_worker(gint64 *earliest_expiry_msec,
+                                gint64  last_rs_msec,
+                                gint64  expiry_msec)
 {
     if (expiry_msec == NM_NDISC_EXPIRY_INFINITY)
         return;
@@ -1547,21 +1549,23 @@ _calc_pre_expiry_rs_msec_worker(gint64 *earliest_expiry_msec, gint64 last_rs_mse
 static gint64
 calc_pre_expiry_rs_msec(NMNDisc *ndisc)
 {
-    NMNDiscPrivate      *priv         = NM_NDISC_GET_PRIVATE(ndisc);
+    NMNDiscPrivate *     priv        = NM_NDISC_GET_PRIVATE(ndisc);
     NMNDiscDataInternal *rdata       = &priv->rdata;
     gint64               expiry_msec = NM_NDISC_EXPIRY_INFINITY;
     guint                i;
 
     for (i = 0; i < rdata->gateways->len; i++) {
-        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
-                                        priv->last_rs_msec,
-                                        g_array_index(rdata->gateways, NMNDiscGateway, i).expiry_msec);
+        _calc_pre_expiry_rs_msec_worker(
+            &expiry_msec,
+            priv->last_rs_msec,
+            g_array_index(rdata->gateways, NMNDiscGateway, i).expiry_msec);
     }
 
     for (i = 0; i < rdata->addresses->len; i++) {
-        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
-                                        priv->last_rs_msec,
-                                        g_array_index(rdata->addresses, NMNDiscAddress, 0).expiry_msec);
+        _calc_pre_expiry_rs_msec_worker(
+            &expiry_msec,
+            priv->last_rs_msec,
+            g_array_index(rdata->addresses, NMNDiscAddress, 0).expiry_msec);
     }
 
     for (i = 0; i < rdata->routes->len; i++) {
@@ -1571,15 +1575,17 @@ calc_pre_expiry_rs_msec(NMNDisc *ndisc)
     }
 
     for (i = 0; i < rdata->dns_servers->len; i++) {
-        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
-                                        priv->last_rs_msec,
-                                        g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0).expiry_msec);
+        _calc_pre_expiry_rs_msec_worker(
+            &expiry_msec,
+            priv->last_rs_msec,
+            g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0).expiry_msec);
     }
 
     for (i = 0; i < rdata->dns_domains->len; i++) {
-        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
-                                        priv->last_rs_msec,
-                                        g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0).expiry_msec);
+        _calc_pre_expiry_rs_msec_worker(
+            &expiry_msec,
+            priv->last_rs_msec,
+            g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0).expiry_msec);
     }
 
     return expiry_msec - solicit_retransmit_time_jitter(NM_NDISC_PRE_EXPIRY_TIME_MSEC);
@@ -1606,12 +1612,12 @@ nm_ndisc_ra_received(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap changed)
      * So we begin sending out RS again when entities are about to expire.
      */
     pre_expiry_msec = NM_CLAMP(calc_pre_expiry_rs_msec(ndisc),
-                               priv->last_rs_msec + RFC7559_IRT*1000,
-                               priv->last_rs_msec + RFC7559_MRT*1000);
-    timeout_msec = NM_CLAMP(pre_expiry_msec - now_msec, (gint64)0, (gint64)G_MAXINT32);
+                               priv->last_rs_msec + RFC7559_IRT * 1000,
+                               priv->last_rs_msec + RFC7559_MRT * 1000);
+    timeout_msec    = NM_CLAMP(pre_expiry_msec - now_msec, (gint64) 0, (gint64) G_MAXINT32);
 
     _LOGD("solicit: schedule sending next (slow) solicitation in about %.3f seconds",
-              ((double) timeout_msec) / 1000);
+          ((double) timeout_msec) / 1000);
 
     priv->solicit_retransmit_time_msec = 0;
     nm_clear_g_source_inst(&priv->solicit_timer_source);
