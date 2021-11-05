@@ -11398,6 +11398,14 @@ _dev_sysctl_restore_ip6_properties(NMDevice *self)
 static void
 _dev_sysctl_set_disable_ipv6(NMDevice *self, gboolean do_disable)
 {
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    /* If we previously set addrgenmode=none, we are managing
+     * IPv6 in user space and we should not disable it. */
+    if (do_disable && priv->addrgenmode6_data.previous_mode_has
+        && priv->addrgenmode6_data.previous_mode_val == NM_IN6_ADDR_GEN_MODE_NONE)
+        return;
+
     nm_device_sysctl_ip_conf_set(self, AF_INET6, "disable_ipv6", do_disable ? "1" : "0");
 }
 
