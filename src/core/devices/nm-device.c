@@ -3259,7 +3259,7 @@ got_ip_state:
     else if ((ip_state == NM_DEVICE_IP_STATE_FAILED
               || (ip_state == NM_DEVICE_IP_STATE_READY && disabled_or_ignore))
              && (ip_state_other == NM_DEVICE_IP_STATE_FAILED
-                 || (ip_state_other = NM_DEVICE_IP_STATE_READY && disabled_or_ignore_other))) {
+                 || (ip_state_other == NM_DEVICE_IP_STATE_READY && disabled_or_ignore_other))) {
         /* If both IP states failed, or one failed and the other is disabled
          * then it's a failure. may-fail does not mean that both families may
          * fail, instead it means that at least one family must succeed. */
