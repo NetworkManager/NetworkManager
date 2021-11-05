@@ -11442,24 +11442,26 @@ _dev_addrgenmode6_set(NMDevice *self, guint8 addr_gen_mode)
              nm_platform_link_inet6_addrgenmode2str(addr_gen_mode, sbuf, sizeof(sbuf)),
              (cur_addr_gen_mode == addr_gen_mode) ? " (already set)" : "");
 
-    if (cur_addr_gen_mode == addr_gen_mode)
-        return;
-
-    r = nm_platform_link_set_inet6_addr_gen_mode(nm_device_get_platform(self),
-                                                 ifindex,
-                                                 addr_gen_mode);
-    if (r < 0) {
-        _NMLOG_ip(NM_IN_SET(r, -NME_PL_NOT_FOUND, -NME_PL_OPNOTSUPP) ? LOGL_DEBUG : LOGL_WARN,
-                  AF_INET6,
-                  "addrgenmode6: failed to set %s: (%s)",
-                  nm_platform_link_inet6_addrgenmode2str(addr_gen_mode, sbuf, sizeof(sbuf)),
-                  nm_strerror(r));
+    if (cur_addr_gen_mode != addr_gen_mode) {
+        r = nm_platform_link_set_inet6_addr_gen_mode(nm_device_get_platform(self),
+                                                     ifindex,
+                                                     addr_gen_mode);
+        if (r < 0) {
+            _NMLOG_ip(NM_IN_SET(r, -NME_PL_NOT_FOUND, -NME_PL_OPNOTSUPP) ? LOGL_DEBUG : LOGL_WARN,
+                      AF_INET6,
+                      "addrgenmode6: failed to set %s: (%s)",
+                      nm_platform_link_inet6_addrgenmode2str(addr_gen_mode, sbuf, sizeof(sbuf)),
+                      nm_strerror(r));
+        } else {
+            priv->addrgenmode6_data.previous_mode_val = addr_gen_mode;
+        }
     }
 
     if (addr_gen_mode == NM_IN6_ADDR_GEN_MODE_NONE) {
         gs_free char *value = NULL;
 
-        /* Bounce IPv6 to ensure the kernel stops IPv6LL address generation */
+        /* Bounce IPv6 to ensure the kernel stops IPv6LL address and temporary
+         * address generation */
         _LOGD_ip(AF_INET6,
                  "addrgenmode6: toggle disable_ipv6 sysctl after disabling addr-gen-mode");
         value = nm_device_sysctl_ip_conf_get(self, AF_INET6, "disable_ipv6");
