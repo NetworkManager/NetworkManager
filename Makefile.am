@@ -3985,6 +3985,8 @@ if WITH_IWD
 src_core_devices_wifi_libnm_wifi_base_la_SOURCES += \
 	src/core/devices/wifi/nm-device-iwd.c \
 	src/core/devices/wifi/nm-device-iwd.h \
+	src/core/devices/wifi/nm-device-iwd-p2p.c \
+	src/core/devices/wifi/nm-device-iwd-p2p.h \
 	src/core/devices/wifi/nm-iwd-manager.c \
 	src/core/devices/wifi/nm-iwd-manager.h \
 	$(NULL)

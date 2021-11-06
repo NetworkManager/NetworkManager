@@ -14,6 +14,8 @@
 #include "nm-device-wifi-p2p.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-iwd.h"
+#include "nm-device-iwd-p2p.h"
+#include "nm-iwd-manager.h"
 #include "settings/nm-settings-connection.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-config.h"
@@ -63,6 +65,17 @@ p2p_device_created(NMDeviceWifi *device, NMDeviceWifiP2P *p2p_device, NMDeviceFa
     nm_log_info(LOGD_PLATFORM | LOGD_WIFI,
                 "Wi-Fi P2P device controlled by interface %s created",
                 nm_device_get_iface(NM_DEVICE(device)));
+
+    g_signal_emit_by_name(self, NM_DEVICE_FACTORY_DEVICE_ADDED, p2p_device);
+}
+
+static void
+iwd_p2p_device_added(NMIwdManager *   iwd,
+                     NMDeviceIwdP2P * p2p_device,
+                     const char *     phy_name,
+                     NMDeviceFactory *self)
+{
+    nm_log_info(LOGD_PLATFORM | LOGD_WIFI, "Wi-Fi P2P device added on %s", phy_name);
 
     g_signal_emit_by_name(self, NM_DEVICE_FACTORY_DEVICE_ADDED, p2p_device);
 }
@@ -135,8 +148,23 @@ create_device(NMDeviceFactory *     factory,
         return device;
     }
 #if WITH_IWD
-    else if (!g_ascii_strcasecmp(backend, "iwd"))
+    else if (!g_ascii_strcasecmp(backend, "iwd")) {
+        NMIwdManager *iwd = nm_iwd_manager_get();
+
+        if (!g_signal_handler_find(iwd,
+                                   G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA,
+                                   0,
+                                   0,
+                                   NULL,
+                                   G_CALLBACK(iwd_p2p_device_added),
+                                   factory))
+            g_signal_connect(iwd,
+                             NM_IWD_MANAGER_P2P_DEVICE_ADDED,
+                             G_CALLBACK(iwd_p2p_device_added),
+                             factory);
+
         return nm_device_iwd_new(iface);
+    }
 #endif
 
     nm_log_warn(LOGD_PLATFORM | LOGD_WIFI,
