@@ -4,6 +4,7 @@ iwd_sources = files()
 if enable_iwd
   iwd_sources += files(
     'nm-device-iwd.c',
+    'nm-device-iwd-p2p.c',
     'nm-iwd-manager.c',
   )
 endif
