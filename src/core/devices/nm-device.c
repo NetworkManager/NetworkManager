@@ -3924,6 +3924,8 @@ _dev_l3_cfg_commit_type_reset(NMDevice *self)
 do_set:
     priv->l3cfg_commit_type =
         nm_l3cfg_commit_type_register(priv->l3cfg, commit_type, priv->l3cfg_commit_type, "device");
+    if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE)
+        nm_l3cfg_commit_type_reset_update(priv->l3cfg);
 }
 
 /*****************************************************************************/
