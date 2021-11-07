@@ -426,6 +426,8 @@ nm_l3cfg_commit_type_clear(NML3Cfg *self, NML3CfgCommitTypeHandle **handle)
     return TRUE;
 }
 
+void nm_l3cfg_commit_type_reset_update(NML3Cfg *self);
+
 /*****************************************************************************/
 
 const NML3ConfigData *nm_l3cfg_get_combined_l3cd(NML3Cfg *self, gboolean get_commited);
