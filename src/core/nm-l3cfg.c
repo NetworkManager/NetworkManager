@@ -11,6 +11,7 @@
 
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-platform/nm-platform.h"
+#include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nmp-object.h"
 #include "nm-netns.h"
 #include "n-acd/src/n-acd.h"
@@ -866,6 +867,8 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
 {
     char          sbuf[sizeof(_nm_utils_to_string_buffer)];
     ObjStateData *obj_state;
+    NMPObjectType obj_type;
+    gboolean      is_expired = FALSE;
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert_is_bool(in_platform);
@@ -880,6 +883,26 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
     if (!obj_state)
         return;
 
+    obj_type = NMP_OBJECT_GET_TYPE(obj);
+
+    if (obj_type == NMP_OBJECT_TYPE_IP4_ADDRESS || obj_type == NMP_OBJECT_TYPE_IP6_ADDRESS) {
+        const NMPlatformIPXAddress *address =  NMP_OBJECT_CAST_IPX_ADDRESS(obj);
+        gint32                      now     = nm_utils_get_monotonic_timestamp_sec();
+
+        _LOGW("obj-state: lifetime of %s is %u",
+              _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)),
+              nmp_utils_lifetime_rebase_relative_time_on_now(address->ax.timestamp,
+                                                             address->ax.lifetime,
+                                                             now));
+
+        if (nmp_utils_lifetime_rebase_relative_time_on_now(address->ax.timestamp, address->ax.lifetime, now) == 0) {
+            /* The address was removed by kernel because the lifetime
+             * expired. This should not prevent us to add the same
+             * address again. */
+             is_expired = TRUE;
+        }
+    }
+
     if (!in_platform)
         obj = NULL;
 
@@ -891,6 +914,14 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
         nm_clear_nmp_object(&obj_state->os_plobj);
         c_list_unlink(&obj_state->os_zombie_lst);
         _LOGD("obj-state: zombie gone (untrack): %s",
+              _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+        g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
+        return;
+    }
+
+    if (!in_platform && is_expired) {
+        nm_clear_nmp_object(&obj_state->os_plobj);
+        _LOGW("obj-state: object expired (untrack): %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
         g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
         return;
@@ -1014,15 +1045,21 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
     const ObjStatesSyncFilterData *sync_filter_data = user_data;
     NMPObjectType                  obj_type;
     ObjStateData *                 obj_state;
+    NML3Cfg *                      self = sync_filter_data->self;
 
     nm_assert(sync_filter_data);
     nm_assert(NM_IS_L3CFG(sync_filter_data->self));
 
     obj_type = NMP_OBJECT_GET_TYPE(obj);
 
+    _LOGW("obj-state sync filter: %s",
+          nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+
     if (obj_type == NMP_OBJECT_TYPE_IP4_ADDRESS
-        && NMP_OBJECT_CAST_IP4_ADDRESS(obj)->a_acd_not_ready)
+        && NMP_OBJECT_CAST_IP4_ADDRESS(obj)->a_acd_not_ready) {
+        _LOGE("  - acd not ready");
         return FALSE;
+    }
 
     obj_state = g_hash_table_lookup(sync_filter_data->self->priv.p->obj_state_hash, &obj);
 
@@ -1031,15 +1068,14 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
     nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
 
     if (!obj_state->os_nm_configured) {
-        NML3Cfg *self;
-
         if (sync_filter_data->commit_type == NM_L3_CFG_COMMIT_TYPE_ASSUME
-            && !_obj_state_data_get_assume_config_once(obj_state))
+            && !_obj_state_data_get_assume_config_once(obj_state)) {
+            _LOGE("  - wrong assume state");
             return FALSE;
+        }
 
         obj_state->os_nm_configured = TRUE;
 
-        self = sync_filter_data->self;
         _LOGD("obj-state: configure-first-time: %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
         return TRUE;
@@ -1051,8 +1087,10 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
         return TRUE;
     }
 
-    if (!obj_state->os_plobj && sync_filter_data->commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY)
+    if (!obj_state->os_plobj && sync_filter_data->commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY) {
+        _LOGE("  - removed externally");
         return FALSE;
+    }
 
     return TRUE;
 }
@@ -3404,7 +3442,8 @@ _l3_hook_add_obj_cb(const NML3ConfigData *     l3cd,
 
         if (!NM_IN_SET(acd_data->info.state,
                        NM_L3_ACD_ADDR_STATE_READY,
-                       NM_L3_ACD_ADDR_STATE_DEFENDING)) {
+                       NM_L3_ACD_ADDR_STATE_DEFENDING,
+                       NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED)) {
             acd_bad = TRUE;
             goto out_ip4_address;
         }
