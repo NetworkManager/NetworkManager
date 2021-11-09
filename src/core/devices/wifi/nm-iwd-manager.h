@@ -19,7 +19,7 @@
 #define NM_IWD_DEVICE_INTERFACE        "net.connman.iwd.Device"
 #define NM_IWD_NETWORK_INTERFACE       "net.connman.iwd.Network"
 #define NM_IWD_AGENT_INTERFACE         "net.connman.iwd.Agent"
-#define NM_IWD_WSC_INTERFACE           "net.connman.iwd.WiFiSimpleConfiguration"
+#define NM_IWD_WSC_INTERFACE           "net.connman.iwd.SimpleConfiguration"
 #define NM_IWD_KNOWN_NETWORK_INTERFACE "net.connman.iwd.KnownNetwork"
 #define NM_IWD_SIGNAL_AGENT_INTERFACE  "net.connman.iwd.SignalLevelAgent"
 #define NM_IWD_AP_INTERFACE            "net.connman.iwd.AccessPoint"
