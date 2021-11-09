@@ -37,9 +37,9 @@ nmt_page_ppp_init(NmtPagePpp *ppp)
 {}
 
 static gboolean
-transform_lcp_echo_properties_to_checkbox(GBinding *    binding,
+transform_lcp_echo_properties_to_checkbox(GBinding     *binding,
                                           const GValue *from_value,
-                                          GValue *      to_value,
+                                          GValue       *to_value,
                                           gpointer      user_data)
 {
     NMSettingPpp *s_ppp = NM_SETTING_PPP(g_binding_get_source(binding));
@@ -54,12 +54,12 @@ transform_lcp_echo_properties_to_checkbox(GBinding *    binding,
 }
 
 static gboolean
-transform_checkbox_to_lcp_echo_interval(GBinding *    binding,
+transform_checkbox_to_lcp_echo_interval(GBinding     *binding,
                                         const GValue *from_value,
-                                        GValue *      to_value,
+                                        GValue       *to_value,
                                         gpointer      user_data)
 {
-    NmtPagePpp *       ppp  = user_data;
+    NmtPagePpp        *ppp  = user_data;
     NmtPagePppPrivate *priv = NMT_PAGE_PPP_GET_PRIVATE(ppp);
 
     if (g_value_get_boolean(from_value))
@@ -71,12 +71,12 @@ transform_checkbox_to_lcp_echo_interval(GBinding *    binding,
 }
 
 static gboolean
-transform_checkbox_to_lcp_echo_failure(GBinding *    binding,
+transform_checkbox_to_lcp_echo_failure(GBinding     *binding,
                                        const GValue *from_value,
-                                       GValue *      to_value,
+                                       GValue       *to_value,
                                        gpointer      user_data)
 {
-    NmtPagePpp *       ppp  = user_data;
+    NmtPagePpp        *ppp  = user_data;
     NmtPagePppPrivate *priv = NMT_PAGE_PPP_GET_PRIVATE(ppp);
 
     if (g_value_get_boolean(from_value))
@@ -90,15 +90,15 @@ transform_checkbox_to_lcp_echo_failure(GBinding *    binding,
 static void
 nmt_page_ppp_constructed(GObject *object)
 {
-    NmtPagePpp *       ppp  = NMT_PAGE_PPP(object);
+    NmtPagePpp        *ppp  = NMT_PAGE_PPP(object);
     NmtPagePppPrivate *priv = NMT_PAGE_PPP_GET_PRIVATE(ppp);
-    NmtEditorSection * section;
-    NmtEditorGrid *    grid;
-    NMSettingPpp *     s_ppp;
-    NmtNewtWidget *    widget, *use_mppe;
-    NmtNewtGrid *      auth_grid, *mppe_grid;
-    NmtNewtSection *   auth_section, *mppe_section;
-    NMConnection *     conn;
+    NmtEditorSection  *section;
+    NmtEditorGrid     *grid;
+    NMSettingPpp      *s_ppp;
+    NmtNewtWidget     *widget, *use_mppe;
+    NmtNewtGrid       *auth_grid, *mppe_grid;
+    NmtNewtSection    *auth_section, *mppe_section;
+    NMConnection      *conn;
 
     conn  = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(ppp));
     s_ppp = nm_connection_get_setting_ppp(conn);

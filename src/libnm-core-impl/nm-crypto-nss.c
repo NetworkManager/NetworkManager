@@ -28,7 +28,7 @@ NM_PRAGMA_WARNING_REENABLE
 static gboolean
 _get_cipher_info(NMCryptoCipherType cipher,
                  CK_MECHANISM_TYPE *out_cipher_mech,
-                 guint8 *           out_real_iv_len)
+                 guint8            *out_real_iv_len)
 {
     static const CK_MECHANISM_TYPE cipher_mechs[] = {
         [NM_CRYPTO_CIPHER_DES_EDE3_CBC] = CKM_DES3_CBC_PAD,
@@ -87,21 +87,21 @@ _nm_crypto_init(GError **error)
 
 guint8 *
 _nmtst_crypto_decrypt(NMCryptoCipherType cipher,
-                      const guint8 *     data,
+                      const guint8      *data,
                       gsize              data_len,
-                      const guint8 *     iv,
+                      const guint8      *iv,
                       gsize              iv_len,
-                      const guint8 *     key,
+                      const guint8      *key,
                       gsize              key_len,
-                      gsize *            out_len,
-                      GError **          error)
+                      gsize             *out_len,
+                      GError           **error)
 {
     CK_MECHANISM_TYPE                    cipher_mech;
-    PK11SlotInfo *                       slot = NULL;
+    PK11SlotInfo                        *slot = NULL;
     SECItem                              key_item;
-    PK11SymKey *                         sym_key   = NULL;
-    SECItem *                            sec_param = NULL;
-    PK11Context *                        ctx       = NULL;
+    PK11SymKey                          *sym_key   = NULL;
+    SECItem                             *sec_param = NULL;
+    PK11Context                         *ctx       = NULL;
     nm_auto_clear_secret_ptr NMSecretPtr output    = {0};
     SECStatus                            s;
     gboolean                             success       = FALSE;
@@ -258,23 +258,23 @@ out:
 
 guint8 *
 _nmtst_crypto_encrypt(NMCryptoCipherType cipher,
-                      const guint8 *     data,
+                      const guint8      *data,
                       gsize              data_len,
-                      const guint8 *     iv,
+                      const guint8      *iv,
                       gsize              iv_len,
-                      const guint8 *     key,
+                      const guint8      *key,
                       gsize              key_len,
-                      gsize *            out_len,
-                      GError **          error)
+                      gsize             *out_len,
+                      GError           **error)
 {
     SECStatus                            ret;
     CK_MECHANISM_TYPE                    cipher_mech = CKM_DES3_CBC_PAD;
-    PK11SlotInfo *                       slot        = NULL;
+    PK11SlotInfo                        *slot        = NULL;
     SECItem                              key_item = {.data = (unsigned char *) key, .len = key_len};
     SECItem                              iv_item  = {.data = (unsigned char *) iv, .len = iv_len};
-    PK11SymKey *                         sym_key  = NULL;
-    SECItem *                            sec_param     = NULL;
-    PK11Context *                        ctx           = NULL;
+    PK11SymKey                          *sym_key  = NULL;
+    SECItem                             *sec_param     = NULL;
+    PK11Context                         *ctx           = NULL;
     nm_auto_clear_secret_ptr NMSecretPtr padded_buf    = {0};
     nm_auto_clear_secret_ptr NMSecretPtr output        = {0};
     int                                  encrypted_len = 0, i;
@@ -409,7 +409,7 @@ _nm_crypto_verify_pkcs12(const guint8 *data, gsize data_len, const char *passwor
 {
     SEC_PKCS12DecoderContext *p12ctx = NULL;
     SECItem                   pw     = {0};
-    PK11SlotInfo *            slot   = NULL;
+    PK11SlotInfo             *slot   = NULL;
     SECStatus                 s;
     gboolean                  success = FALSE;
 
@@ -513,8 +513,8 @@ gboolean
 _nm_crypto_verify_pkcs8(const guint8 *data,
                         gsize         data_len,
                         gboolean      is_encrypted,
-                        const char *  password,
-                        GError **     error)
+                        const char   *password,
+                        GError      **error)
 {
     g_return_val_if_fail(data != NULL, FALSE);
 

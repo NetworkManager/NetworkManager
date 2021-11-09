@@ -12,13 +12,13 @@
 
 NML3ConfigData *nm_dhcp_utils_ip4_config_from_options(struct _NMDedupMultiIndex *multi_idx,
                                                       int                        ifindex,
-                                                      const char *               iface,
-                                                      GHashTable *               options);
+                                                      const char                *iface,
+                                                      GHashTable                *options);
 
 NML3ConfigData *nm_dhcp_utils_ip6_config_from_options(struct _NMDedupMultiIndex *multi_idx,
                                                       int                        ifindex,
-                                                      const char *               iface,
-                                                      GHashTable *               options,
+                                                      const char                *iface,
+                                                      GHashTable                *options,
                                                       gboolean                   info_only);
 
 NMPlatformIP6Address nm_dhcp_utils_ip6_prefix_from_options(GHashTable *options);
@@ -31,12 +31,12 @@ gboolean nm_dhcp_utils_get_leasefile_path(int         addr_family,
                                           const char *plugin_name,
                                           const char *iface,
                                           const char *uuid,
-                                          char **     out_leasefile_path);
+                                          char      **out_leasefile_path);
 
 char *nm_dhcp_utils_get_dhcp6_event_id(GHashTable *lease);
 
-gboolean nm_dhcp_utils_merge_new_dhcp6_lease(const NML3ConfigData * l3cd_old,
-                                             const NML3ConfigData * l3cd_new,
+gboolean nm_dhcp_utils_merge_new_dhcp6_lease(const NML3ConfigData  *l3cd_old,
+                                             const NML3ConfigData  *l3cd_new,
                                              const NML3ConfigData **out_l3cd_merged);
 
 /*****************************************************************************/
@@ -66,6 +66,6 @@ gboolean nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, guint16 
 gboolean nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_len);
 gboolean nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val);
 gboolean nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *out_val);
-char **  nm_dhcp_lease_data_parse_search_list(const guint8 *data, gsize n_data);
+char   **nm_dhcp_lease_data_parse_search_list(const guint8 *data, gsize n_data);
 
 #endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */

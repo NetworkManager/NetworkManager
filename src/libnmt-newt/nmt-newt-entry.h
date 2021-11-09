@@ -41,7 +41,7 @@ typedef enum {
 NmtNewtWidget *nmt_newt_entry_new(int width, NmtNewtEntryFlags flags);
 
 void nmt_newt_entry_set_filter(NmtNewtEntry *entry, NmtNewtEntryFilter filter, gpointer user_data);
-void nmt_newt_entry_set_validator(NmtNewtEntry *        entry,
+void nmt_newt_entry_set_validator(NmtNewtEntry         *entry,
                                   NmtNewtEntryValidator validator,
                                   gpointer              user_data);
 

@@ -62,7 +62,7 @@ G_DEFINE_TYPE(NMDnsMasqManager, nm_dnsmasq_manager, G_TYPE_OBJECT)
 static void
 dm_watch_cb(GPid pid, int status, gpointer user_data)
 {
-    NMDnsMasqManager *       manager = NM_DNSMASQ_MANAGER(user_data);
+    NMDnsMasqManager        *manager = NM_DNSMASQ_MANAGER(user_data);
     NMDnsMasqManagerPrivate *priv    = NM_DNSMASQ_MANAGER_GET_PRIVATE(manager);
     guint                    err;
 
@@ -86,23 +86,23 @@ dm_watch_cb(GPid pid, int status, gpointer user_data)
 }
 
 static GPtrArray *
-create_dm_cmd_line(const char *          iface,
+create_dm_cmd_line(const char           *iface,
                    const NML3ConfigData *l3cd,
-                   const char *          pidfile,
+                   const char           *pidfile,
                    gboolean              announce_android_metered,
-                   GError **             error)
+                   GError              **error)
 {
-    gs_unref_ptrarray GPtrArray *cmd = NULL;
-    nm_auto_free_gstring GString *s  = NULL;
+    gs_unref_ptrarray GPtrArray  *cmd = NULL;
+    nm_auto_free_gstring GString *s   = NULL;
     char                          first[INET_ADDRSTRLEN];
     char                          last[INET_ADDRSTRLEN];
     char                          listen_address_s[INET_ADDRSTRLEN];
     char                          sbuf_addr[INET_ADDRSTRLEN];
-    gs_free char *                error_desc = NULL;
-    const char *                  dm_binary;
-    const NMPlatformIP4Address *  listen_address;
-    const in_addr_t *             ipv4arr;
-    const char *const *           strarr;
+    gs_free char                 *error_desc = NULL;
+    const char                   *dm_binary;
+    const NMPlatformIP4Address   *listen_address;
+    const in_addr_t              *ipv4arr;
+    const char *const            *strarr;
     guint                         n;
     guint                         i;
 
@@ -208,10 +208,10 @@ create_dm_cmd_line(const char *          iface,
 static void
 kill_existing_by_pidfile(const char *pidfile)
 {
-    char *      contents = NULL;
+    char       *contents = NULL;
     pid_t       pid;
     char        proc_path[250];
-    char *      cmdline_contents = NULL;
+    char       *cmdline_contents = NULL;
     guint64     start_time;
     const char *exe;
 
@@ -242,14 +242,14 @@ out:
 }
 
 gboolean
-nm_dnsmasq_manager_start(NMDnsMasqManager *    manager,
+nm_dnsmasq_manager_start(NMDnsMasqManager     *manager,
                          const NML3ConfigData *l3cd,
                          gboolean              announce_android_metered,
-                         GError **             error)
+                         GError              **error)
 {
     gs_unref_ptrarray GPtrArray *dm_cmd  = NULL;
-    gs_free char *               cmd_str = NULL;
-    NMDnsMasqManagerPrivate *    priv;
+    gs_free char                *cmd_str = NULL;
+    NMDnsMasqManagerPrivate     *priv;
 
     g_return_val_if_fail(NM_IS_DNSMASQ_MANAGER(manager), FALSE);
     g_return_val_if_fail(!error || !*error, FALSE);
@@ -315,7 +315,7 @@ nm_dnsmasq_manager_init(NMDnsMasqManager *manager)
 NMDnsMasqManager *
 nm_dnsmasq_manager_new(const char *iface)
 {
-    NMDnsMasqManager *       manager;
+    NMDnsMasqManager        *manager;
     NMDnsMasqManagerPrivate *priv;
 
     manager = g_object_new(NM_TYPE_DNSMASQ_MANAGER, NULL);

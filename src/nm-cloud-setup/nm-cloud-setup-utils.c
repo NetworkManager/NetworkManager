@@ -113,7 +113,7 @@ _wait_for_objects_iterate_until_done_idle_cb(gpointer user_data)
 gboolean
 nmcs_wait_for_objects_iterate_until_done(GMainContext *context, int timeout_msec)
 {
-    nm_auto_unref_gmainloop GMainLoop *loop                   = g_main_loop_new(context, FALSE);
+    nm_auto_unref_gmainloop GMainLoop         *loop           = g_main_loop_new(context, FALSE);
     nm_auto_destroy_and_unref_gsource GSource *timeout_source = NULL;
     WaitForObjectsData                         data;
     gboolean                                   has_more_objects;
@@ -167,11 +167,11 @@ nmcs_wait_for_objects_iterate_until_done(GMainContext *context, int timeout_msec
 /*****************************************************************************/
 
 typedef struct {
-    GTask *                     task;
-    GSource *                   source_timeout;
-    GSource *                   source_next_poll;
-    GMainContext *              context;
-    GCancellable *              internal_cancellable;
+    GTask                      *task;
+    GSource                    *source_timeout;
+    GSource                    *source_next_poll;
+    GMainContext               *context;
+    GCancellable               *internal_cancellable;
     NMCSUtilsPollProbeStartFcn  probe_start_fcn;
     NMCSUtilsPollProbeFinishFcn probe_finish_fcn;
     gpointer                    probe_user_data;
@@ -220,7 +220,7 @@ static gboolean _poll_start_cb(gpointer user_data);
 static void
 _poll_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    PollTaskData *             poll_task_data = user_data;
+    PollTaskData                     *poll_task_data = user_data;
     _nm_unused gs_unref_object GTask *task =
         poll_task_data->task; /* balance ref from _poll_start_cb() */
     gs_free_error GError *error = NULL;
@@ -291,7 +291,7 @@ static void
 _poll_cancelled_cb(GObject *object, gpointer user_data)
 {
     PollTaskData *poll_task_data = user_data;
-    GError *      error          = NULL;
+    GError       *error          = NULL;
 
     nm_clear_g_signal_handler(g_task_get_cancellable(poll_task_data->task),
                               &poll_task_data->cancellable_id);
@@ -330,7 +330,7 @@ nmcs_utils_poll(int                         poll_timeout_ms,
                 NMCSUtilsPollProbeStartFcn  probe_start_fcn,
                 NMCSUtilsPollProbeFinishFcn probe_finish_fcn,
                 gpointer                    probe_user_data,
-                GCancellable *              cancellable,
+                GCancellable               *cancellable,
                 GAsyncReadyCallback         callback,
                 gpointer                    user_data)
 {
@@ -400,7 +400,7 @@ nmcs_utils_poll(int                         poll_timeout_ms,
 gboolean
 nmcs_utils_poll_finish(GAsyncResult *result, gpointer *probe_user_data, GError **error)
 {
-    GTask *       task;
+    GTask        *task;
     PollTaskData *poll_task_data;
 
     g_return_val_if_fail(nm_g_task_is_valid(result, NULL, nmcs_utils_poll), FALSE);
@@ -422,7 +422,7 @@ char *
 nmcs_utils_hwaddr_normalize(const char *hwaddr, gssize len)
 {
     gs_free char *hwaddr_clone = NULL;
-    char *        hw;
+    char         *hw;
     guint8        buf[ETH_ALEN];
     gsize         l;
 
@@ -474,11 +474,11 @@ gboolean
 nmcs_utils_ipaddr_normalize_bin(int         addr_family,
                                 const char *addr,
                                 gssize      len,
-                                int *       out_addr_family,
+                                int        *out_addr_family,
                                 gpointer    out_addr_bin)
 {
     gs_free char *addr_clone = NULL;
-    char *        ad;
+    char         *ad;
     gsize         l;
 
     nm_assert(len >= -1);
@@ -620,7 +620,7 @@ nmcs_utils_uri_complete_interned(const char *uri)
 
 gboolean
 nmcs_setting_ip_replace_ipv4_addresses(NMSettingIPConfig *s_ip,
-                                       NMIPAddress **     entries_arr,
+                                       NMIPAddress      **entries_arr,
                                        guint              entries_len)
 {
     gboolean any_changes = FALSE;
@@ -667,7 +667,7 @@ nmcs_setting_ip_replace_ipv4_addresses(NMSettingIPConfig *s_ip,
 
 gboolean
 nmcs_setting_ip_replace_ipv4_routes(NMSettingIPConfig *s_ip,
-                                    NMIPRoute **       entries_arr,
+                                    NMIPRoute        **entries_arr,
                                     guint              entries_len)
 {
     gboolean any_changes = FALSE;
@@ -713,7 +713,7 @@ nmcs_setting_ip_replace_ipv4_routes(NMSettingIPConfig *s_ip,
 
 gboolean
 nmcs_setting_ip_replace_ipv4_rules(NMSettingIPConfig *s_ip,
-                                   NMIPRoutingRule ** entries_arr,
+                                   NMIPRoutingRule  **entries_arr,
                                    guint              entries_len)
 {
     gboolean any_changes = FALSE;
@@ -758,9 +758,9 @@ nmcs_setting_ip_replace_ipv4_rules(NMSettingIPConfig *s_ip,
 /*****************************************************************************/
 
 typedef struct {
-    GMainLoop *   main_loop;
+    GMainLoop    *main_loop;
     NMConnection *connection;
-    GError *      error;
+    GError       *error;
     guint64       version_id;
 } DeviceGetAppliedConnectionData;
 
@@ -777,14 +777,14 @@ _nmcs_device_get_applied_connection_cb(GObject *source, GAsyncResult *result, gp
 }
 
 NMConnection *
-nmcs_device_get_applied_connection(NMDevice *    device,
+nmcs_device_get_applied_connection(NMDevice     *device,
                                    GCancellable *cancellable,
-                                   guint64 *     version_id,
-                                   GError **     error)
+                                   guint64      *version_id,
+                                   GError      **error)
 {
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
     DeviceGetAppliedConnectionData     data      = {
-        .main_loop = main_loop,
+                 .main_loop = main_loop,
     };
 
     nm_device_get_applied_connection_async(device,
@@ -805,7 +805,7 @@ nmcs_device_get_applied_connection(NMDevice *    device,
 
 typedef struct {
     GMainLoop *main_loop;
-    GError *   error;
+    GError    *error;
 } DeviceReapplyData;
 
 static void
@@ -818,16 +818,16 @@ _nmcs_device_reapply_cb(GObject *source, GAsyncResult *result, gpointer user_dat
 }
 
 gboolean
-nmcs_device_reapply(NMDevice *    device,
+nmcs_device_reapply(NMDevice     *device,
                     GCancellable *sigterm_cancellable,
                     NMConnection *connection,
                     guint64       version_id,
-                    gboolean *    out_version_id_changed,
-                    GError **     error)
+                    gboolean     *out_version_id_changed,
+                    GError      **error)
 {
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(NULL, FALSE);
     DeviceReapplyData                  data      = {
-        .main_loop = main_loop,
+                              .main_loop = main_loop,
     };
 
     nm_device_reapply_async(device,

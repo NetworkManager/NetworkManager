@@ -20,7 +20,7 @@
 #include "nm-setting-ip4-config.h"
 
 typedef struct {
-    char *         value;
+    char          *value;
     guint32        len;
     NMSupplOptType type;
 } ConfigOption;
@@ -28,8 +28,8 @@ typedef struct {
 /*****************************************************************************/
 
 typedef struct {
-    GHashTable *   config;
-    GHashTable *   blobs;
+    GHashTable    *config;
+    GHashTable    *blobs;
     NMSupplCapMask capabilities;
     guint32        ap_scan;
     bool           fast_required : 1;
@@ -63,7 +63,7 @@ NMSupplicantConfig *
 nm_supplicant_config_new(NMSupplCapMask capabilities)
 {
     NMSupplicantConfigPrivate *priv;
-    NMSupplicantConfig *       self;
+    NMSupplicantConfig        *self;
 
     self = g_object_new(NM_TYPE_SUPPLICANT_CONFIG, NULL);
     priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE(self);
@@ -96,16 +96,16 @@ nm_supplicant_config_init(NMSupplicantConfig *self)
 
 static gboolean
 nm_supplicant_config_add_option_with_type(NMSupplicantConfig *self,
-                                          const char *        key,
-                                          const char *        value,
+                                          const char         *key,
+                                          const char         *value,
                                           gint32              len,
                                           NMSupplOptType      opt_type,
-                                          const char *        display_value,
-                                          GError **           error)
+                                          const char         *display_value,
+                                          GError            **error)
 {
     NMSupplicantConfigPrivate *priv;
-    ConfigOption *             old_opt;
-    ConfigOption *             opt;
+    ConfigOption              *old_opt;
+    ConfigOption              *opt;
     NMSupplOptType             type;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), FALSE);
@@ -124,7 +124,7 @@ nm_supplicant_config_add_option_with_type(NMSupplicantConfig *self,
         type = nm_supplicant_settings_verify_setting(key, value, len);
         if (type == NM_SUPPL_OPT_TYPE_INVALID) {
             gs_free char *str_free = NULL;
-            const char *  str;
+            const char   *str;
 
             str = nm_utils_buf_utf8safe_escape(value,
                                                len,
@@ -178,11 +178,11 @@ nm_supplicant_config_add_option_with_type(NMSupplicantConfig *self,
 
 static gboolean
 nm_supplicant_config_add_option(NMSupplicantConfig *self,
-                                const char *        key,
-                                const char *        value,
+                                const char         *key,
+                                const char         *value,
                                 gint32              len,
-                                const char *        display_value,
-                                GError **           error)
+                                const char         *display_value,
+                                GError            **error)
 {
     return nm_supplicant_config_add_option_with_type(self,
                                                      key,
@@ -195,16 +195,16 @@ nm_supplicant_config_add_option(NMSupplicantConfig *self,
 
 static gboolean
 nm_supplicant_config_add_blob(NMSupplicantConfig *self,
-                              const char *        key,
-                              GBytes *            value,
-                              const char *        blobid,
-                              GError **           error)
+                              const char         *key,
+                              GBytes             *value,
+                              const char         *blobid,
+                              GError            **error)
 {
     NMSupplicantConfigPrivate *priv;
-    ConfigOption *             old_opt;
-    ConfigOption *             opt;
+    ConfigOption              *old_opt;
+    ConfigOption              *opt;
     NMSupplOptType             type;
-    const guint8 *             data;
+    const guint8              *data;
     gsize                      data_len;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), FALSE);
@@ -256,14 +256,14 @@ nm_supplicant_config_add_blob(NMSupplicantConfig *self,
 
 static gboolean
 nm_supplicant_config_add_blob_for_connection(NMSupplicantConfig *self,
-                                             GBytes *            field,
-                                             const char *        name,
-                                             const char *        con_uid,
-                                             GError **           error)
+                                             GBytes             *field,
+                                             const char         *name,
+                                             const char         *con_uid,
+                                             GError            **error)
 {
     if (field && g_bytes_get_size(field)) {
         gs_free char *uid = NULL;
-        char *        p;
+        char         *p;
 
         uid = g_strdup_printf("%s-%s", con_uid, name);
         for (p = uid; *p; p++) {
@@ -317,8 +317,8 @@ nm_supplicant_config_to_variant(NMSupplicantConfig *self)
     NMSupplicantConfigPrivate *priv;
     GVariantBuilder            builder;
     GHashTableIter             iter;
-    ConfigOption *             option;
-    const char *               key;
+    ConfigOption              *option;
+    const char                *key;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), NULL);
 
@@ -364,8 +364,8 @@ wifi_freqs_to_string(gboolean bg_band)
 {
     static const char *str_2ghz = NULL;
     static const char *str_5ghz = NULL;
-    const char **      f_p;
-    const char *       f;
+    const char       **f_p;
+    const char        *f;
 
     f_p = bg_band ? &str_2ghz : &str_5ghz;
 
@@ -374,7 +374,7 @@ again:
 
     if (G_UNLIKELY(!f)) {
         nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(400, FALSE);
-        const guint *            freqs;
+        const guint             *freqs;
         int                      i;
 
         freqs = bg_band ? nm_utils_wifi_2ghz_freqs() : nm_utils_wifi_5ghz_freqs();
@@ -397,8 +397,8 @@ again:
 
 gboolean
 nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
-                                        NMSettingMacsec *   setting,
-                                        GError **           error)
+                                        NMSettingMacsec    *setting,
+                                        GError            **error)
 {
     const char *value;
     char        buf[32];
@@ -467,16 +467,16 @@ nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
 
 gboolean
 nm_supplicant_config_add_setting_wireless(NMSupplicantConfig *self,
-                                          NMSettingWireless * setting,
+                                          NMSettingWireless  *setting,
                                           guint32             fixed_freq,
-                                          GError **           error)
+                                          GError            **error)
 {
     NMSupplicantConfigPrivate *priv;
     gboolean                   is_adhoc, is_ap, is_mesh;
-    const char *               mode, *band;
+    const char                *mode, *band;
     guint32                    channel;
-    GBytes *                   ssid;
-    const char *               bssid;
+    GBytes                    *ssid;
+    const char                *bssid;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), FALSE);
     g_return_val_if_fail(setting != NULL, FALSE);
@@ -584,9 +584,9 @@ nm_supplicant_config_add_setting_wireless(NMSupplicantConfig *self,
 gboolean
 nm_supplicant_config_add_bgscan(NMSupplicantConfig *self, NMConnection *connection, GError **error)
 {
-    NMSettingWireless *        s_wifi;
+    NMSettingWireless         *s_wifi;
     NMSettingWirelessSecurity *s_wsec;
-    const char *               bgscan;
+    const char                *bgscan;
 
     s_wifi = nm_connection_get_setting_wireless(connection);
     g_assert(s_wifi);
@@ -632,11 +632,11 @@ nm_supplicant_config_add_bgscan(NMSupplicantConfig *self, NMConnection *connecti
 
 static gboolean
 add_string_val(NMSupplicantConfig *self,
-               const char *        field,
-               const char *        name,
+               const char         *field,
+               const char         *name,
                gboolean            ucase,
-               const char *        display_value,
-               GError **           error)
+               const char         *display_value,
+               GError            **error)
 {
     if (field) {
         gs_free char *value = NULL;
@@ -671,7 +671,7 @@ add_string_val(NMSupplicantConfig *self,
                                                                                           \
         if (nm_setting_##setting_name##_get_num_##field_plural(_setting)) {               \
             const char _separator = (separator);                                          \
-            GString *  _str       = g_string_new(NULL);                                   \
+            GString   *_str       = g_string_new(NULL);                                   \
             guint      _k, _n;                                                            \
                                                                                           \
             _n = nm_setting_##setting_name##_get_num_##field_plural(_setting);            \
@@ -727,10 +727,10 @@ wep128_passphrase_hash(const char *input, gsize input_len, guint8 *digest /* 13 
 
 static gboolean
 add_wep_key(NMSupplicantConfig *self,
-            const char *        key,
-            const char *        name,
+            const char         *key,
+            const char         *name,
             NMWepKeyType        wep_type,
-            GError **           error)
+            GError            **error)
 {
     gsize key_len;
 
@@ -801,19 +801,19 @@ add_wep_key(NMSupplicantConfig *self,
 }
 
 gboolean
-nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *          self,
-                                                   NMSettingWirelessSecurity *   setting,
-                                                   NMSetting8021x *              setting_8021x,
-                                                   const char *                  con_uuid,
+nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig           *self,
+                                                   NMSettingWirelessSecurity    *setting,
+                                                   NMSetting8021x               *setting_8021x,
+                                                   const char                   *con_uuid,
                                                    guint32                       mtu,
                                                    NMSettingWirelessSecurityPmf  pmf,
                                                    NMSettingWirelessSecurityFils fils,
-                                                   GError **                     error)
+                                                   GError                      **error)
 {
-    NMSupplicantConfigPrivate *priv             = NM_SUPPLICANT_CONFIG_GET_PRIVATE(self);
+    NMSupplicantConfigPrivate    *priv          = NM_SUPPLICANT_CONFIG_GET_PRIVATE(self);
     nm_auto_free_gstring GString *key_mgmt_conf = NULL;
-    const char *                  key_mgmt, *auth_alg;
-    const char *                  psk;
+    const char                   *key_mgmt, *auth_alg;
+    const char                   *psk;
     gboolean                      set_pmf, wps_disabled;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), FALSE);
@@ -1056,10 +1056,10 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
     /* WEP keys if required */
     if (nm_streq(key_mgmt, "none")) {
         NMWepKeyType wep_type = nm_setting_wireless_security_get_wep_key_type(setting);
-        const char * wep0     = nm_setting_wireless_security_get_wep_key(setting, 0);
-        const char * wep1     = nm_setting_wireless_security_get_wep_key(setting, 1);
-        const char * wep2     = nm_setting_wireless_security_get_wep_key(setting, 2);
-        const char * wep3     = nm_setting_wireless_security_get_wep_key(setting, 3);
+        const char  *wep0     = nm_setting_wireless_security_get_wep_key(setting, 0);
+        const char  *wep1     = nm_setting_wireless_security_get_wep_key(setting, 1);
+        const char  *wep2     = nm_setting_wireless_security_get_wep_key(setting, 2);
+        const char  *wep3     = nm_setting_wireless_security_get_wep_key(setting, 3);
 
         if (!add_wep_key(self, wep0, "wep_key0", wep_type, error))
             return FALSE;
@@ -1148,18 +1148,18 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
 }
 
 static gboolean
-add_pkcs11_uri_with_pin(NMSupplicantConfig *       self,
-                        const char *               name,
-                        const char *               uri,
-                        const char *               pin,
+add_pkcs11_uri_with_pin(NMSupplicantConfig        *self,
+                        const char                *name,
+                        const char                *uri,
+                        const char                *pin,
                         const NMSettingSecretFlags pin_flags,
-                        GError **                  error)
+                        GError                   **error)
 {
     gs_strfreev char **split     = NULL;
-    gs_free char *     tmp       = NULL;
-    gs_free char *     tmp_log   = NULL;
-    gs_free char *     pin_qattr = NULL;
-    char *             escaped   = NULL;
+    gs_free char      *tmp       = NULL;
+    gs_free char      *tmp_log   = NULL;
+    gs_free char      *pin_qattr = NULL;
+    char              *escaped   = NULL;
 
     if (uri == NULL)
         return TRUE;
@@ -1195,25 +1195,25 @@ add_pkcs11_uri_with_pin(NMSupplicantConfig *       self,
 
 gboolean
 nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
-                                       NMSetting8021x *    setting,
-                                       const char *        con_uuid,
+                                       NMSetting8021x     *setting,
+                                       const char         *con_uuid,
                                        guint32             mtu,
                                        gboolean            wired,
-                                       GError **           error)
+                                       GError            **error)
 {
-    NMSupplicantConfigPrivate *priv;
-    char *                     tmp;
-    const char *               peapver, *value, *path;
-    gboolean                   added;
-    GString *                  phase1, *phase2;
-    GBytes *                   bytes;
-    gboolean                   fast = FALSE;
-    guint32                    i, num_eap;
-    gboolean                   fast_provisoning_allowed = FALSE;
-    const char *               ca_path_override = NULL, *ca_cert_override = NULL;
-    guint32                    frag, hdrs;
-    gs_free char *             frag_str = NULL;
-    NMSetting8021xAuthFlags    phase1_auth_flags;
+    NMSupplicantConfigPrivate    *priv;
+    char                         *tmp;
+    const char                   *peapver, *value, *path;
+    gboolean                      added;
+    GString                      *phase1, *phase2;
+    GBytes                       *bytes;
+    gboolean                      fast = FALSE;
+    guint32                       i, num_eap;
+    gboolean                      fast_provisoning_allowed = FALSE;
+    const char                   *ca_path_override = NULL, *ca_cert_override = NULL;
+    guint32                       frag, hdrs;
+    gs_free char                 *frag_str = NULL;
+    NMSetting8021xAuthFlags       phase1_auth_flags;
     nm_auto_free_gstring GString *eap_str = NULL;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), FALSE);

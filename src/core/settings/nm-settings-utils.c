@@ -88,9 +88,9 @@ void
 nm_sett_util_storages_add_take(NMSettUtilStorages *storages,
                                gpointer storage_take_p /* NMSettingsStorage *, take reference */)
 {
-    NMSettingsStorage *          storage_take = storage_take_p;
+    NMSettingsStorage           *storage_take = storage_take_p;
     NMSettUtilStorageByUuidHead *sbuh;
-    const char *                 uuid;
+    const char                  *uuid;
 
     nm_assert(storage_take);
     nm_assert(c_list_is_empty(&storage_take->_storage_lst));
@@ -125,9 +125,9 @@ gpointer /* NMSettingsStorage * */
 nm_sett_util_storages_steal(NMSettUtilStorages *storages,
                             gpointer            storage_p /* NMSettingsStorage **/)
 {
-    NMSettingsStorage *          storage = storage_p;
+    NMSettingsStorage           *storage = storage_p;
     NMSettUtilStorageByUuidHead *sbuh;
-    const char *                 uuid;
+    const char                  *uuid;
 
     nm_assert(storage);
     nm_assert(nm_sett_util_storages_lookup_by_filename(storages,

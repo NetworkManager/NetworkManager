@@ -107,7 +107,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_adsl = NML_DBUS_META_IFACE
 static void
 nm_device_adsl_class_init(NMDeviceAdslClass *adsl_class)
 {
-    GObjectClass * object_class = G_OBJECT_CLASS(adsl_class);
+    GObjectClass  *object_class = G_OBJECT_CLASS(adsl_class);
     NMDeviceClass *device_class = NM_DEVICE_CLASS(adsl_class);
 
     object_class->get_property = get_property;

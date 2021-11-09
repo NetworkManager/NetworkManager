@@ -242,7 +242,7 @@ typedef struct _NML3CfgPrivate {
 
     CList acd_event_notify_lst_head;
 
-    NAcd *   nacd;
+    NAcd    *nacd;
     GSource *nacd_source;
 
     GSource *nacd_event_down_source;
@@ -342,17 +342,17 @@ static void _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is
 static void _nm_l3cfg_emit_signal_notify_acd_event_all(NML3Cfg *self);
 
 static gboolean _acd_has_valid_link(const NMPObject *obj,
-                                    const guint8 **  out_addr_bin,
-                                    gboolean *       out_acd_not_supported);
+                                    const guint8   **out_addr_bin,
+                                    gboolean        *out_acd_not_supported);
 
 static void
 _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_data_notify);
 
-static void _l3_acd_data_state_change(NML3Cfg *          self,
-                                      AcdData *          acd_data,
+static void _l3_acd_data_state_change(NML3Cfg           *self,
+                                      AcdData           *acd_data,
                                       AcdStateChangeMode mode,
                                       const NMEtherAddr *sender,
-                                      gint64 *           p_now_msec);
+                                      gint64            *p_now_msec);
 
 static AcdData *_l3_acd_data_find(NML3Cfg *self, in_addr_t addr);
 
@@ -424,7 +424,7 @@ nm_l3cfg_ipconfig_get(NML3Cfg *self, int addr_family)
 static void
 _ipconfig_toggle_notify(gpointer data, GObject *object, gboolean is_last_ref)
 {
-    NML3Cfg *   self     = NM_L3CFG(data);
+    NML3Cfg    *self     = NM_L3CFG(data);
     NMIPConfig *ipconfig = NM_IP_CONFIG(object);
 
     if (!is_last_ref) {
@@ -492,13 +492,13 @@ nm_l3cfg_is_vrf(const NML3Cfg *self)
 
 static const char *
 _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
-                                 char *                      sbuf,
+                                 char                       *sbuf,
                                  gsize                       sbuf_size)
 {
     char      sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
     char      sbuf100[100];
     char      sbufobf[NM_HASH_OBFUSCATE_PTR_STR_BUF_SIZE];
-    char *    s = sbuf;
+    char     *s = sbuf;
     gsize     l = sbuf_size;
     in_addr_t addr4;
 
@@ -586,7 +586,7 @@ _nm_l3cfg_emit_signal_notify_simple(NML3Cfg *self, NML3ConfigNotifyType notify_t
 }
 
 static void
-_nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg *             self,
+_nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
                                           const NML3ConfigData *l3cd_old,
                                           const NML3ConfigData *l3cd_new,
                                           gboolean              commited)
@@ -615,7 +615,7 @@ _l3_changed_configs_set_dirty(NML3Cfg *self)
 /*****************************************************************************/
 
 static void
-_l3_acd_ipv4_addresses_on_link_update(NML3Cfg * self,
+_l3_acd_ipv4_addresses_on_link_update(NML3Cfg  *self,
                                       in_addr_t addr,
                                       gboolean  add /* or else remove */)
 {
@@ -673,7 +673,7 @@ static NAcdProbe *
 _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gpointer user_data)
 {
     nm_auto(n_acd_probe_config_freep) NAcdProbeConfig *probe_config = NULL;
-    NAcdProbe *                                        probe;
+    NAcdProbe                                         *probe;
     int                                                r;
 
     nm_assert(self);
@@ -705,7 +705,7 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
     G_STMT_START                                                                                  \
     {                                                                                             \
         if (NM_MORE_ASSERTS > 0) {                                                                \
-            const NML3Cfg *     _self      = (self);                                              \
+            const NML3Cfg      *_self      = (self);                                              \
             const ObjStateData *_obj_state = (obj_state);                                         \
                                                                                                   \
             nm_assert(_obj_state);                                                                \
@@ -943,7 +943,7 @@ _obj_states_update_all(NML3Cfg *self)
     for (i = 0; i < (int) G_N_ELEMENTS(obj_types); i++) {
         const NMPObjectType obj_type = obj_types[i];
         NMDedupMultiIter    o_iter;
-        const NMPObject *   obj;
+        const NMPObject    *obj;
 
         if (!self->priv.p->combined_l3cd_commited)
             continue;
@@ -1003,7 +1003,7 @@ _obj_states_update_all(NML3Cfg *self)
 }
 
 typedef struct {
-    NML3Cfg *         self;
+    NML3Cfg          *self;
     NML3CfgCommitType commit_type;
 } ObjStatesSyncFilterData;
 
@@ -1011,11 +1011,11 @@ static gboolean
 _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer user_data)
 {
     char                           sbuf[sizeof(_nm_utils_to_string_buffer)];
-    const NMPObject *              obj              = o;
+    const NMPObject               *obj              = o;
     const ObjStatesSyncFilterData *sync_filter_data = user_data;
     NMPObjectType                  obj_type;
-    ObjStateData *                 obj_state;
-    NML3Cfg *                      self;
+    ObjStateData                  *obj_state;
+    NML3Cfg                       *self;
 
     nm_assert(sync_filter_data);
     nm_assert(NM_IS_L3CFG(sync_filter_data->self));
@@ -1059,7 +1059,7 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
 }
 
 static void
-_obj_state_zombie_lst_get_prune_lists(NML3Cfg *   self,
+_obj_state_zombie_lst_get_prune_lists(NML3Cfg    *self,
                                       int         addr_family,
                                       GPtrArray **out_addresses_prune,
                                       GPtrArray **out_routes_prune)
@@ -1068,8 +1068,8 @@ _obj_state_zombie_lst_get_prune_lists(NML3Cfg *   self,
     const NMPObjectType obj_type_route   = NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4);
     const NMPObjectType obj_type_address = NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4);
     char                sbuf[sizeof(_nm_utils_to_string_buffer)];
-    ObjStateData *      obj_state;
-    ObjStateData *      obj_state_safe;
+    ObjStateData       *obj_state;
+    ObjStateData       *obj_state_safe;
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(out_addresses_prune && !*out_addresses_prune);
@@ -1080,7 +1080,7 @@ _obj_state_zombie_lst_get_prune_lists(NML3Cfg *   self,
                                 &self->priv.p->obj_state_zombie_lst_head,
                                 os_zombie_lst) {
         NMPObjectType obj_type;
-        GPtrArray **  p_a;
+        GPtrArray   **p_a;
 
         nm_assert_obj_state(self, obj_state);
         nm_assert(obj_state->os_zombie_count > 0);
@@ -1150,16 +1150,16 @@ static void
 _load_link(NML3Cfg *self, gboolean initial)
 {
     nm_auto_nmpobj const NMPObject *obj_old = NULL;
-    const NMPObject *               obj;
-    const char *                    ifname;
-    const char *                    ifname_old;
+    const NMPObject                *obj;
+    const char                     *ifname;
+    const char                     *ifname_old;
     gboolean                        nacd_changed;
     gboolean                        nacd_new_valid;
     gboolean                        nacd_old_valid;
-    const guint8 *                  nacd_old_addr = NULL;
-    const guint8 *                  nacd_new_addr = NULL;
+    const guint8                   *nacd_old_addr = NULL;
+    const guint8                   *nacd_new_addr = NULL;
     gboolean                        nacd_link_now_up;
-    AcdData *                       acd_data;
+    AcdData                        *acd_data;
 
     if (initial) {
         obj = nm_platform_link_get_obj(self->priv.platform, self->priv.ifindex, TRUE);
@@ -1249,9 +1249,9 @@ _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags)
 }
 
 void
-_nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
+_nm_l3cfg_notify_platform_change(NML3Cfg                   *self,
                                  NMPlatformSignalChangeType change_type,
-                                 const NMPObject *          obj)
+                                 const NMPObject           *obj)
 {
     NML3ConfigNotifyData notify_data;
     NMPObjectType        obj_type;
@@ -1324,9 +1324,9 @@ _acd_data_free(AcdData *acd_data)
 }
 
 static guint
-_acd_data_collect_tracks_data(const AcdData *    acd_data,
+_acd_data_collect_tracks_data(const AcdData     *acd_data,
                               NMTernary          dirty_selector,
-                              guint32 *          out_best_acd_timeout_msec,
+                              guint32           *out_best_acd_timeout_msec,
                               NML3AcdDefendType *out_best_acd_defend_type)
 {
     NML3AcdDefendType best_acd_defend_type  = _NM_L3_ACD_DEFEND_TYPE_NONE;
@@ -1357,9 +1357,9 @@ _acd_data_collect_tracks_data(const AcdData *    acd_data,
 }
 
 static NML3AcdAddrTrackInfo *
-_acd_data_find_track(const AcdData *       acd_data,
+_acd_data_find_track(const AcdData        *acd_data,
                      const NML3ConfigData *l3cd,
-                     const NMPObject *     obj,
+                     const NMPObject      *obj,
                      gconstpointer         tag)
 {
     guint i;
@@ -1378,11 +1378,11 @@ _acd_data_find_track(const AcdData *       acd_data,
 
 static gboolean
 _acd_has_valid_link(const NMPObject *obj,
-                    const guint8 **  out_addr_bin,
-                    gboolean *       out_acd_not_supported)
+                    const guint8   **out_addr_bin,
+                    gboolean        *out_acd_not_supported)
 {
     const NMPlatformLink *link;
-    const guint8 *        addr_bin;
+    const guint8         *addr_bin;
     gsize                 addr_len;
 
     if (!obj) {
@@ -1437,8 +1437,8 @@ _l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
     while (TRUE) {
         NMEtherAddr        sender_addr_data;
         const NMEtherAddr *sender_addr;
-        AcdData *          acd_data;
-        NAcdEvent *        event;
+        AcdData           *acd_data;
+        NAcdEvent         *event;
 
         if (!self->priv.p->nacd) {
             /* In the loop we emit signals, where *anything* might happen.
@@ -1612,8 +1612,8 @@ static NAcd *
 _l3_acd_nacd_instance_ensure(NML3Cfg *self, gboolean *out_acd_not_supported)
 {
     nm_auto(n_acd_config_freep) NAcdConfig *config = NULL;
-    nm_auto(n_acd_unrefp) NAcd *            nacd   = NULL;
-    const guint8 *                          addr_bin;
+    nm_auto(n_acd_unrefp) NAcd             *nacd   = NULL;
+    const guint8                           *addr_bin;
     gboolean                                acd_not_supported;
     gboolean                                valid;
     int                                     fd;
@@ -1677,11 +1677,11 @@ failed_create_acd:
 }
 
 static NAcdProbe *
-_l3_acd_nacd_instance_create_probe(NML3Cfg *    self,
+_l3_acd_nacd_instance_create_probe(NML3Cfg     *self,
                                    in_addr_t    addr,
                                    guint32      timeout_msec,
                                    gpointer     user_data,
-                                   gboolean *   out_acd_not_supported,
+                                   gboolean    *out_acd_not_supported,
                                    const char **out_failure_reason)
 {
     gboolean   acd_not_supported;
@@ -1777,17 +1777,17 @@ _l3_acd_data_defendconflict_warning_ratelimited(AcdData *acd_data, gint64 *p_now
 }
 
 static void
-_l3_acd_data_add(NML3Cfg *             self,
+_l3_acd_data_add(NML3Cfg              *self,
                  const NML3ConfigData *l3cd,
-                 const NMPObject *     obj,
+                 const NMPObject      *obj,
                  gconstpointer         tag,
                  NML3AcdDefendType     acd_defend_type,
                  guint32               acd_timeout_msec)
 {
     in_addr_t             addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
     NML3AcdAddrTrackInfo *acd_track;
-    AcdData *             acd_data;
-    const char *          track_mode;
+    AcdData              *acd_data;
+    const char           *track_mode;
     char                  sbuf100[100];
 
     if (ACD_ADDR_SKIP(addr))
@@ -1873,7 +1873,7 @@ _l3_acd_data_add(NML3Cfg *             self,
 }
 
 static void
-_l3_acd_data_add_all(NML3Cfg *                  self,
+_l3_acd_data_add_all(NML3Cfg                   *self,
                      const L3ConfigData *const *infos,
                      guint                      infos_len,
                      gboolean                   reapply)
@@ -1895,7 +1895,7 @@ _l3_acd_data_add_all(NML3Cfg *                  self,
     for (i_info = 0; i_info < infos_len; i_info++) {
         const L3ConfigData *info = infos[i_info];
         NMDedupMultiIter    iter;
-        const NMPObject *   obj;
+        const NMPObject    *obj;
 
         nm_l3_config_data_iter_obj_for_each (&iter, info->l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS) {
             _l3_acd_data_add(self,
@@ -1977,7 +1977,7 @@ _nm_l3cfg_emit_signal_notify_acd_event(NML3Cfg *self, AcdData *acd_data)
 {
     gs_free NML3AcdAddrTrackInfo *track_infos_clone = NULL;
     NML3ConfigNotifyData          notify_data;
-    NML3AcdAddrInfo *             info;
+    NML3AcdAddrInfo              *info;
     guint                         i;
 
     nm_assert(acd_data);
@@ -1986,7 +1986,7 @@ _nm_l3cfg_emit_signal_notify_acd_event(NML3Cfg *self, AcdData *acd_data)
 
     notify_data.notify_type = NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT;
     notify_data.acd_event   = (typeof(notify_data.acd_event)){
-        .info = acd_data->info,
+          .info = acd_data->info,
     };
 
     /* we need to clone the track-data, because the callee is allowed to add/remove
@@ -2030,7 +2030,7 @@ static void
 _nm_l3cfg_emit_signal_notify_acd_event_all(NML3Cfg *self)
 {
     gs_unref_object NML3Cfg *self_keep_alive = NULL;
-    AcdData *                acd_data;
+    AcdData                 *acd_data;
 
     while ((acd_data = c_list_first_entry(&self->priv.p->acd_event_notify_lst_head,
                                           AcdData,
@@ -2042,11 +2042,11 @@ _nm_l3cfg_emit_signal_notify_acd_event_all(NML3Cfg *self)
     }
 }
 
-_nm_printf(5, 6) static void _l3_acd_data_state_set_full(NML3Cfg *        self,
-                                                         AcdData *        acd_data,
+_nm_printf(5, 6) static void _l3_acd_data_state_set_full(NML3Cfg         *self,
+                                                         AcdData         *acd_data,
                                                          NML3AcdAddrState state,
                                                          gboolean         allow_commit,
-                                                         const char *     format,
+                                                         const char      *format,
                                                          ...)
 {
     NML3AcdAddrState old_state;
@@ -2092,8 +2092,8 @@ _nm_printf(5, 6) static void _l3_acd_data_state_set_full(NML3Cfg *        self,
 }
 
 static void
-_l3_acd_data_state_set(NML3Cfg *        self,
-                       AcdData *        acd_data,
+_l3_acd_data_state_set(NML3Cfg         *self,
+                       AcdData         *acd_data,
                        NML3AcdAddrState state,
                        gboolean         allow_commit)
 {
@@ -2101,17 +2101,17 @@ _l3_acd_data_state_set(NML3Cfg *        self,
 }
 
 static void
-_l3_acd_data_state_change(NML3Cfg *          self,
-                          AcdData *          acd_data,
+_l3_acd_data_state_change(NML3Cfg           *self,
+                          AcdData           *acd_data,
                           AcdStateChangeMode state_change_mode,
                           const NMEtherAddr *sender_addr,
-                          gint64 *           p_now_msec)
+                          gint64            *p_now_msec)
 
 {
     guint32           acd_timeout_msec;
     NML3AcdDefendType acd_defend_type;
     gint64            now_msec;
-    const char *      log_reason;
+    const char       *log_reason;
     char              sbuf256[256];
     char              sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
 
@@ -2647,7 +2647,7 @@ handle_start_probing:
     if (TRUE) {
         const NML3AcdAddrState                orig_state = acd_data->info.state;
         nm_auto(n_acd_probe_freep) NAcdProbe *probe      = NULL;
-        const char *                          failure_reason;
+        const char                           *failure_reason;
         gboolean                              acd_not_supported;
 
         nm_assert(NM_IN_SET(acd_data->info.state,
@@ -2767,7 +2767,7 @@ handle_start_defending:
 
     if (!acd_data->nacd_probe) {
         const char *failure_reason;
-        NAcdProbe * probe;
+        NAcdProbe  *probe;
 
         if (acd_data->acd_data_timeout_source) {
             /* we already failed to create a probe. We are ratelimited to retry, but
@@ -2864,11 +2864,11 @@ nm_l3cfg_get_acd_addr_info(NML3Cfg *self, in_addr_t addr)
 /*****************************************************************************/
 
 gboolean
-nm_l3cfg_check_ready(NML3Cfg *              self,
-                     const NML3ConfigData * l3cd,
+nm_l3cfg_check_ready(NML3Cfg               *self,
+                     const NML3ConfigData  *l3cd,
                      int                    addr_family,
                      NML3CfgCheckReadyFlags flags,
-                     gboolean *             acd_used)
+                     gboolean              *acd_used)
 {
     NMDedupMultiIter iter;
     const NMPObject *obj;
@@ -2947,7 +2947,7 @@ static gboolean
 _l3_commit_on_idle_cb(gpointer user_data)
 {
     _nm_unused gs_unref_object NML3Cfg *self_keep_alive = NULL;
-    NML3Cfg *                           self            = user_data;
+    NML3Cfg                            *self            = user_data;
     NML3CfgCommitType                   commit_type;
 
     commit_type = self->priv.p->commit_on_idle_type;
@@ -3026,7 +3026,7 @@ nm_l3cfg_commit_on_idle_is_scheduled(NML3Cfg *self)
     (&g_array_index((l3_config_datas), L3ConfigData, (idx)))
 
 static gssize
-_l3_config_datas_find_next(GArray *              l3_config_datas,
+_l3_config_datas_find_next(GArray               *l3_config_datas,
                            guint                 start_idx,
                            gconstpointer         needle_tag,
                            const NML3ConfigData *needle_l3cd)
@@ -3107,7 +3107,7 @@ nm_l3cfg_mark_config_dirty(NML3Cfg *self, gconstpointer tag, gboolean dirty)
 }
 
 gboolean
-nm_l3cfg_add_config(NML3Cfg *             self,
+nm_l3cfg_add_config(NML3Cfg              *self,
                     gconstpointer         tag,
                     gboolean              replace_same_tag,
                     const NML3ConfigData *l3cd,
@@ -3273,7 +3273,7 @@ nm_l3cfg_add_config(NML3Cfg *             self,
 }
 
 static gboolean
-_l3cfg_remove_config(NML3Cfg *             self,
+_l3cfg_remove_config(NML3Cfg              *self,
                      gconstpointer         tag,
                      gboolean              only_dirty,
                      const NML3ConfigData *l3cd)
@@ -3343,7 +3343,7 @@ nm_l3cfg_remove_config_all_dirty(NML3Cfg *self, gconstpointer tag)
 /*****************************************************************************/
 
 typedef struct {
-    NML3Cfg *     self;
+    NML3Cfg      *self;
     gconstpointer tag;
     bool          assume_config_once;
     bool          to_commit;
@@ -3351,14 +3351,14 @@ typedef struct {
 } L3ConfigMergeHookAddObjData;
 
 static gboolean
-_l3_hook_add_obj_cb(const NML3ConfigData *     l3cd,
-                    const NMPObject *          obj,
+_l3_hook_add_obj_cb(const NML3ConfigData      *l3cd,
+                    const NMPObject           *obj,
                     NML3ConfigMergeHookResult *hook_result,
                     gpointer                   user_data)
 {
     const L3ConfigMergeHookAddObjData *hook_data = user_data;
-    NML3Cfg *                          self      = hook_data->self;
-    AcdData *                          acd_data;
+    NML3Cfg                           *self      = hook_data->self;
+    AcdData                           *acd_data;
     in_addr_t                          addr;
     gboolean                           acd_bad = FALSE;
 
@@ -3430,21 +3430,21 @@ out_ip4_address:
 }
 
 static void
-_l3cfg_update_combined_config(NML3Cfg *              self,
+_l3cfg_update_combined_config(NML3Cfg               *self,
                               gboolean               to_commit,
                               gboolean               reapply,
                               const NML3ConfigData **out_old /* transfer reference */,
-                              gboolean *             out_changed_combined_l3cd)
+                              gboolean              *out_changed_combined_l3cd)
 {
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_commited_old = NULL;
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old          = NULL;
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd               = NULL;
-    gs_free const L3ConfigData **l3_config_datas_free          = NULL;
-    const L3ConfigData **        l3_config_datas_arr;
-    guint                        l3_config_datas_len;
-    guint                        i;
-    gboolean                     merged_changed   = FALSE;
-    gboolean                     commited_changed = FALSE;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd_commited_old    = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old             = NULL;
+    nm_auto_unref_l3cd_init NML3ConfigData  *l3cd                 = NULL;
+    gs_free const L3ConfigData             **l3_config_datas_free = NULL;
+    const L3ConfigData                     **l3_config_datas_arr;
+    guint                                    l3_config_datas_len;
+    guint                                    i;
+    gboolean                                 merged_changed   = FALSE;
+    gboolean                                 commited_changed = FALSE;
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(!out_old || !*out_old);
@@ -3608,7 +3608,7 @@ out:
 static gboolean
 _routes_temporary_not_available_timeout(gpointer user_data)
 {
-    NML3Cfg *     self = NM_L3CFG(user_data);
+    NML3Cfg      *self = NM_L3CFG(user_data);
     ObjStateData *obj_state;
     gint64        now_msec;
     gint64        expiry_msec;
@@ -3647,12 +3647,12 @@ _routes_temporary_not_available_timeout(gpointer user_data)
 }
 
 static gboolean
-_routes_temporary_not_available_update(NML3Cfg *  self,
+_routes_temporary_not_available_update(NML3Cfg   *self,
                                        int        addr_family,
                                        GPtrArray *routes_temporary_not_available_arr)
 {
-    ObjStateData *  obj_state;
-    ObjStateData *  obj_state_safe;
+    ObjStateData   *obj_state;
+    ObjStateData   *obj_state_safe;
     gint64          now_msec;
     gboolean        prune_all = FALSE;
     gboolean        success   = TRUE;
@@ -3783,7 +3783,7 @@ _l3_commit_ndisc_params(NML3Cfg *self, NML3CfgCommitType commit_type)
     guint32               reachable     = 0;
     guint32               retrans       = 0;
     int                   hop_limit     = 0;
-    const char *          ifname;
+    const char           *ifname;
 
     if (commit_type < NM_L3_CFG_COMMIT_TYPE_UPDATE) {
         self->priv.p->ndisc_reachable_time_msec_set = FALSE;
@@ -3841,7 +3841,7 @@ _l3_commit_ip6_privacy(NML3Cfg *self, NML3CfgCommitType commit_type)
 {
     NMSettingIP6ConfigPrivacy ip6_privacy;
     NMSettingIP6ConfigPrivacy ip6_privacy_set_before;
-    const char *              ifname;
+    const char               *ifname;
 
     if (commit_type < NM_L3_CFG_COMMIT_TYPE_UPDATE)
         ip6_privacy = NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN;
@@ -4008,13 +4008,13 @@ _l3_commit_ip6_token(NML3Cfg *self, NML3CfgCommitType commit_type)
 }
 
 static gboolean
-_l3_commit_one(NML3Cfg *             self,
+_l3_commit_one(NML3Cfg              *self,
                int                   addr_family,
                NML3CfgCommitType     commit_type,
                gboolean              changed_combined_l3cd,
                const NML3ConfigData *l3cd_old)
 {
-    const int         IS_IPv4                                       = NM_IS_IPv4(addr_family);
+    const int                    IS_IPv4                            = NM_IS_IPv4(addr_family);
     gs_unref_ptrarray GPtrArray *addresses                          = NULL;
     gs_unref_ptrarray GPtrArray *routes                             = NULL;
     gs_unref_ptrarray GPtrArray *addresses_prune                    = NULL;
@@ -4038,7 +4038,7 @@ _l3_commit_one(NML3Cfg *             self,
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
 
     if (self->priv.p->combined_l3cd_commited) {
-        const NMDedupMultiHeadEntry * head_entry;
+        const NMDedupMultiHeadEntry  *head_entry;
         const ObjStatesSyncFilterData sync_filter_data = {
             .self        = self,
             .commit_type = commit_type,
@@ -4115,8 +4115,8 @@ _l3_commit_one(NML3Cfg *             self,
 static void
 _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 {
-    _nm_unused gs_unref_object NML3Cfg *self_keep_alive = NULL;
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old   = NULL;
+    _nm_unused gs_unref_object NML3Cfg      *self_keep_alive = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old        = NULL;
     NML3CfgCommitType                        commit_type_auto;
     gboolean                                 commit_type_from_auto = FALSE;
     gboolean                                 is_sticky_update      = FALSE;
@@ -4240,10 +4240,10 @@ nm_l3cfg_commit_type_get(NML3Cfg *self)
  *   is %NM_L3_CFG_COMMIT_TYPE_NONE.
  */
 NML3CfgCommitTypeHandle *
-nm_l3cfg_commit_type_register(NML3Cfg *                self,
+nm_l3cfg_commit_type_register(NML3Cfg                 *self,
                               NML3CfgCommitType        commit_type,
                               NML3CfgCommitTypeHandle *existing_handle,
-                              const char *             source)
+                              const char              *source)
 {
     NML3CfgCommitTypeHandle *handle;
     NML3CfgCommitTypeHandle *h;
@@ -4373,7 +4373,7 @@ gboolean
 nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self)
 {
     const NML3ConfigData *l3cd;
-    const NMPObject *     plat_obj;
+    const NMPObject      *plat_obj;
     NMPLookup             plat_lookup;
     NMDedupMultiIter      iter;
 
@@ -4395,7 +4395,7 @@ nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self)
 
     nm_platform_iter_obj_for_each (&iter, self->priv.platform, &plat_lookup, &plat_obj) {
         const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS(plat_obj);
-        const NMDedupMultiEntry *   l3cd_entry;
+        const NMDedupMultiEntry    *l3cd_entry;
 
         if (!NM_FLAGS_HAS(plat_addr->n_ifa_flags, IFA_F_TENTATIVE)
             || NM_FLAGS_ANY(plat_addr->n_ifa_flags, IFA_F_DADFAILED | IFA_F_OPTIMISTIC))

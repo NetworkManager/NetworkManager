@@ -46,14 +46,14 @@ _assert_hints_has(GPtrArray *hints, const char *item)
 static NMConnection *
 make_tls_connection(const char *detail, NMSetting8021xCKScheme scheme)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSetting8021x *     s_8021x;
-    NMSettingWired *     s_wired;
-    NMSettingIP4Config * s_ip4;
-    char *               uuid;
+    NMSetting8021x      *s_8021x;
+    NMSettingWired      *s_wired;
+    NMSettingIP4Config  *s_ip4;
+    char                *uuid;
     gboolean             success;
-    GError *             error = NULL;
+    GError              *error = NULL;
 
     connection = nm_simple_connection_new();
 
@@ -129,8 +129,8 @@ static void
 test_need_tls_secrets_path(void)
 {
     NMConnection *connection;
-    const char *  setting_name;
-    GPtrArray *   hints = NULL;
+    const char   *setting_name;
+    GPtrArray    *hints = NULL;
 
     connection = make_tls_connection("need-tls-secrets-path-key", NM_SETTING_802_1X_CK_SCHEME_PATH);
 
@@ -155,8 +155,8 @@ static void
 test_need_tls_secrets_blob(void)
 {
     NMConnection *connection;
-    const char *  setting_name;
-    GPtrArray *   hints = NULL;
+    const char   *setting_name;
+    GPtrArray    *hints = NULL;
 
     connection = make_tls_connection("need-tls-secrets-blob-key", NM_SETTING_802_1X_CK_SCHEME_BLOB);
 
@@ -180,14 +180,14 @@ test_need_tls_secrets_blob(void)
 static NMConnection *
 make_tls_phase2_connection(const char *detail, NMSetting8021xCKScheme scheme)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSetting8021x *     s_8021x;
-    NMSettingWired *     s_wired;
-    NMSettingIP4Config * s_ip4;
-    char *               uuid;
+    NMSetting8021x      *s_8021x;
+    NMSettingWired      *s_wired;
+    NMSettingIP4Config  *s_ip4;
+    char                *uuid;
     gboolean             success;
-    GError *             error = NULL;
+    GError              *error = NULL;
 
     connection = nm_simple_connection_new();
 
@@ -264,8 +264,8 @@ static void
 test_need_tls_phase2_secrets_path(void)
 {
     NMConnection *connection;
-    const char *  setting_name;
-    GPtrArray *   hints = NULL;
+    const char   *setting_name;
+    GPtrArray    *hints = NULL;
 
     connection = make_tls_phase2_connection("need-tls-phase2-secrets-path-key",
                                             NM_SETTING_802_1X_CK_SCHEME_PATH);
@@ -291,8 +291,8 @@ static void
 test_need_tls_phase2_secrets_blob(void)
 {
     NMConnection *connection;
-    const char *  setting_name;
-    GPtrArray *   hints = NULL;
+    const char   *setting_name;
+    GPtrArray    *hints = NULL;
 
     connection = make_tls_phase2_connection("need-tls-phase2-secrets-blob-key",
                                             NM_SETTING_802_1X_CK_SCHEME_BLOB);
@@ -317,13 +317,13 @@ test_need_tls_phase2_secrets_blob(void)
 static NMConnection *
 wifi_connection_new(void)
 {
-    NMConnection *             connection;
-    NMSettingConnection *      s_con;
-    NMSettingWireless *        s_wifi;
+    NMConnection              *connection;
+    NMSettingConnection       *s_con;
+    NMSettingWireless         *s_wifi;
     NMSettingWirelessSecurity *s_wsec;
     unsigned char              tmpssid[] = {0x31, 0x33, 0x33, 0x37};
-    char *                     uuid;
-    GBytes *                   ssid;
+    char                      *uuid;
+    GBytes                    *ssid;
 
     connection = nm_simple_connection_new();
     g_assert(connection);
@@ -386,13 +386,13 @@ build_wep_secrets(const char *wepkey)
 static void
 test_update_secrets_wifi_single_setting(void)
 {
-    NMConnection *             connection;
+    NMConnection              *connection;
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 secrets;
-    GError *                   error = NULL;
+    GVariant                  *secrets;
+    GError                    *error = NULL;
     gboolean                   success;
-    const char *               wepkey = "11111111111111111111111111";
-    const char *               tmp;
+    const char                *wepkey = "11111111111111111111111111";
+    const char                *tmp;
 
     /* Test update with a hashed setting of 802-11-wireless secrets */
 
@@ -420,14 +420,14 @@ test_update_secrets_wifi_single_setting(void)
 static void
 test_update_secrets_wifi_full_hash(void)
 {
-    NMConnection *             connection;
+    NMConnection              *connection;
     NMSettingWirelessSecurity *s_wsec;
     GVariantBuilder            builder;
-    GVariant *                 all;
-    GError *                   error = NULL;
+    GVariant                  *all;
+    GError                    *error = NULL;
     gboolean                   success;
-    const char *               wepkey = "11111111111111111111111111";
-    const char *               tmp;
+    const char                *wepkey = "11111111111111111111111111";
+    const char                *tmp;
 
     /* Test update with a hashed connection containing only 802-11-wireless
      * setting and secrets.
@@ -464,10 +464,10 @@ static void
 test_update_secrets_wifi_bad_setting_name(void)
 {
     NMConnection *connection;
-    GVariant *    secrets;
-    GError *      error = NULL;
+    GVariant     *secrets;
+    GError       *error = NULL;
     gboolean      success;
-    const char *  wepkey = "11111111111111111111111111";
+    const char   *wepkey = "11111111111111111111111111";
 
     /* Test that passing an invalid setting name to
      * nm_connection_update_secrets() fails with the correct error.
@@ -489,12 +489,12 @@ test_update_secrets_wifi_bad_setting_name(void)
 static void
 test_update_secrets_whole_connection(void)
 {
-    NMConnection *             connection;
+    NMConnection              *connection;
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 secrets;
-    GError *                   error = NULL;
+    GVariant                  *secrets;
+    GError                    *error = NULL;
     gboolean                   success;
-    const char *               wepkey = "11111111111111111111111111";
+    const char                *wepkey = "11111111111111111111111111";
 
     /* Test calling nm_connection_update_secrets() with an entire hashed
      * connection including non-secrets.
@@ -527,8 +527,8 @@ static void
 test_update_secrets_whole_connection_empty_hash(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    GVariant *                    secrets;
-    GError *                      error = NULL;
+    GVariant                     *secrets;
+    GError                       *error = NULL;
     gboolean                      success;
 
     /* Test that updating secrets with an empty connection hash returns success */
@@ -550,15 +550,15 @@ test_update_secrets_whole_connection_empty_hash(void)
 static void
 test_update_secrets_whole_connection_bad_setting(void)
 {
-    NMConnection *             connection;
+    NMConnection              *connection;
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 secrets, *copy, *setting_hash;
-    const char *               setting_name;
+    GVariant                  *secrets, *copy, *setting_hash;
+    const char                *setting_name;
     GVariantBuilder            conn_builder;
     GVariantIter               conn_iter;
-    GError *                   error = NULL;
+    GError                    *error = NULL;
     gboolean                   success;
-    const char *               wepkey = "11111111111111111111111111";
+    const char                *wepkey = "11111111111111111111111111";
 
     /* Test that sending a hashed connection containing an invalid setting
      * name fails with the right error.
@@ -601,8 +601,8 @@ static void
 test_update_secrets_whole_connection_empty_base_setting(void)
 {
     NMConnection *connection;
-    GVariant *    secrets, *setting;
-    GError *      error = NULL;
+    GVariant     *secrets, *setting;
+    GError       *error = NULL;
     gboolean      success;
 
     /* Test that a hashed connection which does not have any hashed secrets
@@ -632,10 +632,10 @@ static void
 test_update_secrets_null_setting_name_with_setting_hash(void)
 {
     NMConnection *connection;
-    GVariant *    secrets;
-    GError *      error = NULL;
+    GVariant     *secrets;
+    GError       *error = NULL;
     gboolean      success;
-    const char *  wepkey = "11111111111111111111111111";
+    const char   *wepkey = "11111111111111111111111111";
 
     /* Ensure that a NULL setting name and only a hashed setting fails */
 

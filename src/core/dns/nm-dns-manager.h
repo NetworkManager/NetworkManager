@@ -28,14 +28,14 @@ struct _NMDnsManager;
 typedef struct {
     struct _NMDnsConfigData *data;
     gconstpointer            source_tag;
-    const NML3ConfigData *   l3cd;
+    const NML3ConfigData    *l3cd;
     CList                    data_lst;
     CList                    ip_data_lst;
     NMDnsIPConfigType        ip_config_type;
     int                      addr_family;
     struct {
         const char **search;
-        char **      reverse;
+        char       **reverse;
 
         /* Whether "search" explicitly contains a default route "~"
          * or "". It is redundant information, but for faster lookup. */
@@ -98,7 +98,7 @@ NMDnsManager *nm_dns_manager_get(void);
 void nm_dns_manager_begin_updates(NMDnsManager *self, const char *func);
 void nm_dns_manager_end_updates(NMDnsManager *self, const char *func);
 
-gboolean nm_dns_manager_set_ip_config(NMDnsManager *        self,
+gboolean nm_dns_manager_set_ip_config(NMDnsManager         *self,
                                       int                   addr_family,
                                       gconstpointer         source_tag,
                                       const NML3ConfigData *l3cd,

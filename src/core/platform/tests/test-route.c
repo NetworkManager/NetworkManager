@@ -51,7 +51,7 @@ _wait_for_ipv4_addr_device_route(NMPlatform *platform,
 }
 
 static void
-_wait_for_ipv6_addr_non_tentative(NMPlatform *           platform,
+_wait_for_ipv6_addr_non_tentative(NMPlatform            *platform,
                                   gint64                 timeout_msec,
                                   int                    ifindex,
                                   guint                  addr_n,
@@ -83,17 +83,17 @@ _wait_for_ipv6_addr_non_tentative(NMPlatform *           platform,
 }
 
 static void
-ip4_route_callback(NMPlatform *              platform,
+ip4_route_callback(NMPlatform               *platform,
                    int                       obj_type_i,
                    int                       ifindex,
                    const NMPlatformIP4Route *received,
                    int                       change_type_i,
-                   SignalData *              data)
+                   SignalData               *data)
 {
     const NMPObjectType              obj_type    = obj_type_i;
     const NMPlatformSignalChangeType change_type = change_type_i;
     NMPObject                        o_id;
-    nm_auto_nmpobj NMPObject *o_id_p = nmp_object_new(NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
+    nm_auto_nmpobj NMPObject        *o_id_p = nmp_object_new(NMP_OBJECT_TYPE_IP4_ROUTE, NULL);
 
     g_assert_cmpint(obj_type, ==, NMP_OBJECT_TYPE_IP4_ROUTE);
     g_assert(received);
@@ -119,17 +119,17 @@ ip4_route_callback(NMPlatform *              platform,
 }
 
 static void
-ip6_route_callback(NMPlatform *              platform,
+ip6_route_callback(NMPlatform               *platform,
                    int                       obj_type_i,
                    int                       ifindex,
                    const NMPlatformIP6Route *received,
                    int                       change_type_i,
-                   SignalData *              data)
+                   SignalData               *data)
 {
     const NMPObjectType              obj_type    = obj_type_i;
     const NMPlatformSignalChangeType change_type = change_type_i;
     NMPObject                        o_id;
-    nm_auto_nmpobj NMPObject *o_id_p = nmp_object_new(NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
+    nm_auto_nmpobj NMPObject        *o_id_p = nmp_object_new(NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 
     g_assert_cmpint(obj_type, ==, NMP_OBJECT_TYPE_IP6_ROUTE);
     g_assert(received);
@@ -244,16 +244,16 @@ static void
 test_ip4_route(void)
 {
     int                ifindex       = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
-    SignalData *       route_added   = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
+    SignalData        *route_added   = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
                                          NM_PLATFORM_SIGNAL_ADDED,
                                          ip4_route_callback);
-    SignalData *       route_changed = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
+    SignalData        *route_changed = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
                                            NM_PLATFORM_SIGNAL_CHANGED,
                                            ip4_route_callback);
-    SignalData *       route_removed = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
+    SignalData        *route_removed = add_signal(NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
                                            NM_PLATFORM_SIGNAL_REMOVED,
                                            ip4_route_callback);
-    GPtrArray *        routes;
+    GPtrArray         *routes;
     NMPlatformIP4Route rts[3];
     in_addr_t          network;
     guint8             plen = 24;
@@ -388,16 +388,16 @@ static void
 test_ip6_route(void)
 {
     int                ifindex       = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
-    SignalData *       route_added   = add_signal(NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
+    SignalData        *route_added   = add_signal(NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
                                          NM_PLATFORM_SIGNAL_ADDED,
                                          ip6_route_callback);
-    SignalData *       route_changed = add_signal(NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
+    SignalData        *route_changed = add_signal(NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
                                            NM_PLATFORM_SIGNAL_CHANGED,
                                            ip6_route_callback);
-    SignalData *       route_removed = add_signal(NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
+    SignalData        *route_removed = add_signal(NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
                                            NM_PLATFORM_SIGNAL_REMOVED,
                                            ip6_route_callback);
-    GPtrArray *        routes;
+    GPtrArray         *routes;
     NMPlatformIP6Route rts[3];
     struct in6_addr    network;
     guint8             plen = 64;
@@ -546,9 +546,9 @@ test_ip6_route(void)
 static void
 test_ip4_route_get(void)
 {
-    int            ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
-    in_addr_t      a;
-    int            result;
+    int                       ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
+    in_addr_t                 a;
+    int                       result;
     nm_auto_nmpobj NMPObject *route = NULL;
     const NMPlatformIP4Route *r;
 
@@ -620,8 +620,8 @@ test_ip4_zero_gateway(void)
 static void
 test_ip4_route_options(gconstpointer test_data)
 {
-    const int         TEST_IDX = GPOINTER_TO_INT(test_data);
-    const int         IFINDEX  = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
+    const int TEST_IDX = GPOINTER_TO_INT(test_data);
+    const int IFINDEX  = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     gs_unref_ptrarray GPtrArray *routes = NULL;
 #define RTS_MAX 3
     NMPlatformIP4Route   rts_add[RTS_MAX] = {};
@@ -650,13 +650,13 @@ test_ip4_route_options(gconstpointer test_data)
         break;
     case 2:
         addr[addr_n++]   = ((NMPlatformIP4Address){
-            .ifindex      = IFINDEX,
-            .address      = nmtst_inet4_from_string("172.16.1.5"),
-            .peer_address = nmtst_inet4_from_string("172.16.1.5"),
-            .plen         = 24,
-            .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
-            .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
-            .n_ifa_flags  = 0,
+              .ifindex      = IFINDEX,
+              .address      = nmtst_inet4_from_string("172.16.1.5"),
+              .peer_address = nmtst_inet4_from_string("172.16.1.5"),
+              .plen         = 24,
+              .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
+              .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
+              .n_ifa_flags  = 0,
         });
         rts_add[rts_n++] = ((NMPlatformIP4Route){
             .ifindex   = IFINDEX,
@@ -731,9 +731,9 @@ test_ip4_route_options(gconstpointer test_data)
 static void
 test_ip6_route_get(void)
 {
-    int                    ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
-    const struct in6_addr *a;
-    int                    result;
+    int                       ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
+    const struct in6_addr    *a;
+    int                       result;
     nm_auto_nmpobj NMPObject *route = NULL;
     const NMPlatformIP6Route *r;
 
@@ -776,8 +776,8 @@ test_ip6_route_get(void)
 static void
 test_ip6_route_options(gconstpointer test_data)
 {
-    const int         TEST_IDX = GPOINTER_TO_INT(test_data);
-    const int         IFINDEX  = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
+    const int TEST_IDX = GPOINTER_TO_INT(test_data);
+    const int IFINDEX  = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     gs_unref_ptrarray GPtrArray *routes = NULL;
 #define RTS_MAX 3
     NMPlatformIP6Route   rts_add[RTS_MAX]             = {};
@@ -807,13 +807,13 @@ test_ip6_route_options(gconstpointer test_data)
         break;
     case 2:
         addr[addr_n++]   = ((NMPlatformIP6Address){
-            .ifindex      = IFINDEX,
-            .address      = *nmtst_inet6_from_string("2000::2"),
-            .plen         = 128,
-            .peer_address = in6addr_any,
-            .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
-            .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
-            .n_ifa_flags  = 0,
+              .ifindex      = IFINDEX,
+              .address      = *nmtst_inet6_from_string("2000::2"),
+              .plen         = 128,
+              .peer_address = in6addr_any,
+              .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
+              .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
+              .n_ifa_flags  = 0,
         });
         rts_add[rts_n++] = ((NMPlatformIP6Route){
             .ifindex   = IFINDEX,
@@ -827,13 +827,13 @@ test_ip6_route_options(gconstpointer test_data)
         break;
     case 3:
         addr[addr_n++]   = ((NMPlatformIP6Address){
-            .ifindex      = IFINDEX,
-            .address      = *nmtst_inet6_from_string("2001:db8:8086::5"),
-            .plen         = 128,
-            .peer_address = in6addr_any,
-            .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
-            .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
-            .n_ifa_flags  = 0,
+              .ifindex      = IFINDEX,
+              .address      = *nmtst_inet6_from_string("2001:db8:8086::5"),
+              .plen         = 128,
+              .peer_address = in6addr_any,
+              .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
+              .preferred    = NM_PLATFORM_LIFETIME_PERMANENT,
+              .n_ifa_flags  = 0,
         });
         rts_add[rts_n++] = ((NMPlatformIP6Route){
             .ifindex   = IFINDEX,
@@ -915,7 +915,7 @@ test_ip(gconstpointer test_data)
     char                  ifname[IFNAMSIZ];
     char                  ifname2[IFNAMSIZ];
     char                  s1[NM_UTILS_INET_ADDRSTRLEN];
-    NMPlatform *          platform = NM_PLATFORM_GET;
+    NMPlatform           *platform = NM_PLATFORM_GET;
     const int             EX_      = -1;
     struct {
         int ifindex;
@@ -957,7 +957,7 @@ test_ip(gconstpointer test_data)
     order_len = 0;
     for (try = 0; try < 5 * G_N_ELEMENTS(order_idx); try++) {
         NMPObject                    o;
-        NMPlatformIP4Route *         r;
+        NMPlatformIP4Route          *r;
         guint                        idx;
         const NMDedupMultiHeadEntry *head_entry;
         NMPLookup                    lookup;
@@ -1044,8 +1044,8 @@ _rule_find_by_priority(NMPlatform *platform, guint32 priority)
 {
     const NMDedupMultiHeadEntry *head_entry;
     NMDedupMultiIter             iter;
-    const NMPObject *            o;
-    const NMPObject *            obj = NULL;
+    const NMPObject             *o;
+    const NMPObject             *obj = NULL;
     NMPLookup                    lookup;
 
     nmp_lookup_init_obj_type(&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
@@ -1120,9 +1120,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-            .addr_family              = AF_INET,
-            .priority                 = PROBE_PRORITY,
-            .suppress_ifgroup_inverse = ~((guint32) 1245),
+                 .addr_family              = AF_INET,
+                 .priority                 = PROBE_PRORITY,
+                 .suppress_ifgroup_inverse = ~((guint32) 1245),
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1135,9 +1135,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-            .addr_family                = AF_INET,
-            .priority                   = PROBE_PRORITY,
-            .suppress_prefixlen_inverse = ~((guint32) 1245),
+                 .addr_family                = AF_INET,
+                 .priority                   = PROBE_PRORITY,
+                 .suppress_prefixlen_inverse = ~((guint32) 1245),
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1150,9 +1150,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-            .addr_family = AF_INET,
-            .priority    = PROBE_PRORITY,
-            .l3mdev      = TRUE,
+                 .addr_family = AF_INET,
+                 .priority    = PROBE_PRORITY,
+                 .l3mdev      = TRUE,
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1164,14 +1164,14 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-            .addr_family = AF_INET,
-            .priority    = PROBE_PRORITY,
-            .uid_range =
+                 .addr_family = AF_INET,
+                 .priority    = PROBE_PRORITY,
+                 .uid_range =
                 {
-                    .start = 0,
-                    .end   = 0,
+                         .start = 0,
+                         .end   = 0,
                 },
-            .uid_range_has = TRUE,
+                 .uid_range_has = TRUE,
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1183,9 +1183,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-            .addr_family = AF_INET,
-            .priority    = PROBE_PRORITY,
-            .protocol    = 30,
+                 .addr_family = AF_INET,
+                 .priority    = PROBE_PRORITY,
+                 .protocol    = 30,
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1197,9 +1197,9 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
     {
         nm_auto_nmpobj const NMPObject *obj = NULL;
         const NMPlatformRoutingRule     rr  = {
-            .addr_family = AF_INET,
-            .priority    = PROBE_PRORITY,
-            .ip_proto    = 30,
+                 .addr_family = AF_INET,
+                 .priority    = PROBE_PRORITY,
+                 .ip_proto    = 30,
         };
 
         obj = _rule_check_kernel_support_one(platform, &rr);
@@ -1269,7 +1269,7 @@ _rr_rand_choose_u32(guint32 p)
 static const NMPObject *
 _rule_create_random(NMPlatform *platform)
 {
-    NMPObject *            obj;
+    NMPObject             *obj;
     NMPlatformRoutingRule *rr;
     guint32                p;
     int                    addr_size;
@@ -1312,7 +1312,7 @@ _rule_create_random(NMPlatform *platform)
 
     for (i = 0; i < 2; i++) {
         NMIPAddr *p_addr = i ? &rr->src : &rr->dst;
-        guint8 *  p_len  = i ? &rr->src_len : &rr->dst_len;
+        guint8   *p_len  = i ? &rr->src_len : &rr->dst_len;
 
         p = nmtst_get_rand_uint32();
         if ((p % 1000u) < 100) {
@@ -1535,11 +1535,11 @@ _rule_fuzzy_equal(const NMPObject *obj, const NMPObject *obj_comp, int op_type)
 static void
 test_rule(gconstpointer test_data)
 {
-    const int         TEST_IDX                = GPOINTER_TO_INT(test_data);
-    const gboolean    TEST_SYNC               = (TEST_IDX == 4);
+    const int                    TEST_IDX     = GPOINTER_TO_INT(test_data);
+    const gboolean               TEST_SYNC    = (TEST_IDX == 4);
     gs_unref_ptrarray GPtrArray *objs         = NULL;
     gs_unref_ptrarray GPtrArray *objs_initial = NULL;
-    NMPlatform *                 platform     = NM_PLATFORM_GET;
+    NMPlatform                  *platform     = NM_PLATFORM_GET;
     guint                        i, j, n;
     int                          r;
     gboolean                     had_an_issue_exist = FALSE;
@@ -1555,7 +1555,7 @@ test_rule(gconstpointer test_data)
 
     for (i = 6; i > 0; i--) {
         gs_unref_ptrarray GPtrArray *objs_extern = NULL;
-        const NMPObject *            obj;
+        const NMPObject             *obj;
 
         objs_extern = nmtstp_platform_routing_rules_get_all(platform, AF_UNSPEC);
 
@@ -1759,7 +1759,7 @@ again:
                 NMPLookup                    lookup;
                 const NMDedupMultiHeadEntry *head_entry;
                 NMDedupMultiIter             iter;
-                const NMPObject *            o;
+                const NMPObject             *o;
 
                 g_print(">>> failing... errno=%d, rule=%s\n",
                         r,

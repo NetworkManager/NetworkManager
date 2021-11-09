@@ -41,11 +41,11 @@ get_type_description(NMDevice *device)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
     /* The port will be added to ovsdb when an interface is enslaved,
      * because there's no such thing like an empty port. */
@@ -90,10 +90,10 @@ add_iface_cb(GError *error, gpointer user_data)
 static gboolean
 enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gboolean configure)
 {
-    NMDeviceOvsPort *   self      = NM_DEVICE_OVS_PORT(device);
+    NMDeviceOvsPort    *self      = NM_DEVICE_OVS_PORT(device);
     NMActiveConnection *ac_port   = NULL;
     NMActiveConnection *ac_bridge = NULL;
-    NMDevice *          bridge_device;
+    NMDevice           *bridge_device;
 
     if (!configure)
         return TRUE;
@@ -177,7 +177,7 @@ static void
 nm_device_ovs_port_class_init(NMDeviceOvsPortClass *klass)
 {
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_device_ovs_port);
 

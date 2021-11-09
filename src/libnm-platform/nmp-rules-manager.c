@@ -127,7 +127,7 @@ typedef struct {
 /*****************************************************************************/
 
 static void _rules_data_untrack(NMPRulesManager *self,
-                                RulesData *      rules_data,
+                                RulesData       *rules_data,
                                 gboolean         remove_user_tag_data,
                                 gboolean         make_owned_by_us);
 
@@ -192,7 +192,7 @@ _rules_data_destroy(gpointer data)
 static const RulesData *
 _rules_obj_get_best_data(RulesObjData *obj_data)
 {
-    RulesData *      rules_data;
+    RulesData       *rules_data;
     const RulesData *rd_best = NULL;
 
     c_list_for_each_entry (rules_data, &obj_data->obj_lst_head, obj_lst) {
@@ -308,16 +308,16 @@ _rules_data_lookup(GHashTable *by_data, const NMPObject *obj, gconstpointer user
  *   The purpose here is to set this to %NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG.
  */
 void
-nmp_rules_manager_track(NMPRulesManager *            self,
+nmp_rules_manager_track(NMPRulesManager             *self,
                         const NMPlatformRoutingRule *routing_rule,
                         gint32                       track_priority,
                         gconstpointer                user_tag,
                         gconstpointer                user_tag_untrack)
 {
     NMPObject         obj_stack;
-    const NMPObject * p_obj_stack;
-    RulesData *       rules_data;
-    RulesObjData *    obj_data;
+    const NMPObject  *p_obj_stack;
+    RulesData        *rules_data;
+    RulesObjData     *obj_data;
     RulesUserTagData *user_tag_data;
     gboolean          changed = FALSE;
     guint32           track_priority_val;
@@ -415,7 +415,7 @@ nmp_rules_manager_track(NMPRulesManager *            self,
 
 static void
 _rules_data_untrack(NMPRulesManager *self,
-                    RulesData *      rules_data,
+                    RulesData       *rules_data,
                     gboolean         remove_user_tag_data,
                     gboolean         make_owned_by_us)
 {
@@ -465,13 +465,13 @@ _rules_data_untrack(NMPRulesManager *self,
 }
 
 void
-nmp_rules_manager_untrack(NMPRulesManager *            self,
+nmp_rules_manager_untrack(NMPRulesManager             *self,
                           const NMPlatformRoutingRule *routing_rule,
                           gconstpointer                user_tag)
 {
     NMPObject        obj_stack;
     const NMPObject *p_obj_stack;
-    RulesData *      rules_data;
+    RulesData       *rules_data;
 
     g_return_if_fail(NMP_IS_RULES_MANAGER(self));
     g_return_if_fail(routing_rule);
@@ -491,7 +491,7 @@ nmp_rules_manager_untrack(NMPRulesManager *            self,
 void
 nmp_rules_manager_set_dirty(NMPRulesManager *self, gconstpointer user_tag)
 {
-    RulesData *       rules_data;
+    RulesData        *rules_data;
     RulesUserTagData *user_tag_data;
 
     g_return_if_fail(NMP_IS_RULES_MANAGER(self));
@@ -513,8 +513,8 @@ nmp_rules_manager_untrack_all(NMPRulesManager *self,
                               gconstpointer    user_tag,
                               gboolean         all /* or only dirty */)
 {
-    RulesData *       rules_data;
-    RulesData *       rules_data_safe;
+    RulesData        *rules_data;
+    RulesData        *rules_data_safe;
     RulesUserTagData *user_tag_data;
 
     g_return_if_fail(NMP_IS_RULES_MANAGER(self));
@@ -543,12 +543,12 @@ nmp_rules_manager_sync(NMPRulesManager *self, gboolean keep_deleted_rules)
 {
     const NMDedupMultiHeadEntry *pl_head_entry;
     NMDedupMultiIter             pl_iter;
-    const NMPObject *            plobj;
+    const NMPObject             *plobj;
     gs_unref_ptrarray GPtrArray *rules_to_delete = NULL;
-    RulesObjData *               obj_data;
+    RulesObjData                *obj_data;
     GHashTableIter               h_iter;
     guint                        i;
-    const RulesData *            rd_best;
+    const RulesData             *rd_best;
 
     g_return_if_fail(NMP_IS_RULES_MANAGER(self));
 
@@ -644,7 +644,7 @@ nmp_rules_manager_sync(NMPRulesManager *self, gboolean keep_deleted_rules)
 
 void
 nmp_rules_manager_track_from_platform(NMPRulesManager *self,
-                                      NMPlatform *     platform,
+                                      NMPlatform      *platform,
                                       int              addr_family,
                                       gint32           tracking_priority,
                                       gconstpointer    user_tag)
@@ -652,7 +652,7 @@ nmp_rules_manager_track_from_platform(NMPRulesManager *self,
     NMPLookup                    lookup;
     const NMDedupMultiHeadEntry *head_entry;
     NMDedupMultiIter             iter;
-    const NMPObject *            o;
+    const NMPObject             *o;
 
     g_return_if_fail(NMP_IS_RULES_MANAGER(self));
 

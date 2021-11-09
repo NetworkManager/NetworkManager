@@ -52,7 +52,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES(NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(
                                                                    NM_SETTING_CDMA_SETTING_NAME))
 
 G_MODULE_EXPORT NMDeviceFactory *
-                nm_device_factory_create(GError **error)
+nm_device_factory_create(GError **error)
 {
     return g_object_new(NM_TYPE_WWAN_FACTORY, NULL);
 }
@@ -62,9 +62,9 @@ G_MODULE_EXPORT NMDeviceFactory *
 static void
 modem_added_cb(NMModemManager *manager, NMModem *modem, gpointer user_data)
 {
-    NMWwanFactory * self             = NM_WWAN_FACTORY(user_data);
+    NMWwanFactory            *self   = NM_WWAN_FACTORY(user_data);
     gs_unref_object NMDevice *device = NULL;
-    const char *              driver;
+    const char               *driver;
 
     if (nm_modem_is_claimed(modem))
         return;
@@ -89,11 +89,11 @@ modem_added_cb(NMModemManager *manager, NMModem *modem, gpointer user_data)
 }
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     g_return_val_if_fail(plink, NULL);
     g_return_val_if_fail(plink->type == NM_LINK_TYPE_WWAN_NET, NULL);
@@ -104,7 +104,7 @@ create_device(NMDeviceFactory *     factory,
 static void
 start(NMDeviceFactory *factory)
 {
-    NMWwanFactory *       self = NM_WWAN_FACTORY(factory);
+    NMWwanFactory        *self = NM_WWAN_FACTORY(factory);
     NMWwanFactoryPrivate *priv = NM_WWAN_FACTORY_GET_PRIVATE(self);
 
     priv->mm = g_object_ref(nm_modem_manager_get());
@@ -121,7 +121,7 @@ nm_wwan_factory_init(NMWwanFactory *self)
 static void
 dispose(GObject *object)
 {
-    NMWwanFactory *       self = NM_WWAN_FACTORY(object);
+    NMWwanFactory        *self = NM_WWAN_FACTORY(object);
     NMWwanFactoryPrivate *priv = NM_WWAN_FACTORY_GET_PRIVATE(self);
 
     if (priv->mm)
@@ -135,7 +135,7 @@ dispose(GObject *object)
 static void
 nm_wwan_factory_class_init(NMWwanFactoryClass *klass)
 {
-    GObjectClass *        object_class  = G_OBJECT_CLASS(klass);
+    GObjectClass         *object_class  = G_OBJECT_CLASS(klass);
     NMDeviceFactoryClass *factory_class = NM_DEVICE_FACTORY_CLASS(klass);
 
     object_class->dispose = dispose;

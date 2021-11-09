@@ -29,7 +29,7 @@ typedef enum {
 } NMSIfcfgKeyTypeFlags;
 
 typedef struct {
-    const char *         key_name;
+    const char          *key_name;
     NMSIfcfgKeyTypeFlags key_flags;
 } NMSIfcfgKeyTypeInfo;
 
@@ -50,7 +50,7 @@ nms_ifcfg_well_known_key_find_info_flags(const char *key)
 
 /*****************************************************************************/
 
-gboolean nms_ifcfg_rh_utils_parse_unhandled_spec(const char * unhandled_spec,
+gboolean nms_ifcfg_rh_utils_parse_unhandled_spec(const char  *unhandled_spec,
                                                  const char **out_unmanaged_spec,
                                                  const char **out_unrecognized_spec);
 
@@ -127,7 +127,7 @@ _nms_ifcfg_rh_utils_numbered_tag(char *buf, gsize buf_len, const char *tag_name,
 gboolean nms_ifcfg_rh_utils_is_numbered_tag_impl(const char *key,
                                                  const char *tag,
                                                  gsize       tag_len,
-                                                 gint64 *    out_idx);
+                                                 gint64     *out_idx);
 
 static inline gboolean
 nms_ifcfg_rh_utils_is_numbered_tag(const char *key, const char *tag, gint64 *out_idx)
@@ -158,7 +158,7 @@ nms_ifcfg_rh_utils_get_ethtool_name(NMEthtoolID ethtool_id)
     return _nm_ethtool_ifcfg_names[ethtool_id];
 }
 
-const NMEthtoolData *nms_ifcfg_rh_utils_get_ethtool_by_name(const char *  name,
+const NMEthtoolData *nms_ifcfg_rh_utils_get_ethtool_by_name(const char   *name,
                                                             NMEthtoolType ethtool_type);
 
 #endif /* _UTILS_H_ */

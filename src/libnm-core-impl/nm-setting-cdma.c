@@ -29,9 +29,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_NUMBER,
                                   PROP_MTU, );
 
 typedef struct {
-    char *               number;
-    char *               username;
-    char *               password;
+    char                *number;
+    char                *username;
+    char                *password;
     guint32              mtu;
     NMSettingSecretFlags password_flags;
 } NMSettingCdmaPrivate;
@@ -177,7 +177,7 @@ static GPtrArray *
 need_secrets(NMSetting *setting)
 {
     NMSettingCdmaPrivate *priv    = NM_SETTING_CDMA_GET_PRIVATE(setting);
-    GPtrArray *           secrets = NULL;
+    GPtrArray            *secrets = NULL;
 
     if (!nm_str_is_empty(priv->password))
         return NULL;
@@ -214,9 +214,9 @@ nm_setting_cdma_new(void)
 static void
 nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingCdmaPrivate));
 

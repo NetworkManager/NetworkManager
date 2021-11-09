@@ -15,7 +15,7 @@ typedef struct {
 } NMEditorConnectionTypeData;
 
 NMEditorConnectionTypeData **nm_editor_utils_get_connection_type_list(void);
-NMEditorConnectionTypeData * nm_editor_utils_get_connection_type_data(NMConnection *conn);
+NMEditorConnectionTypeData  *nm_editor_utils_get_connection_type_data(NMConnection *conn);
 
 NMConnection *nm_editor_utils_create_connection(GType type, NMConnection *master, NMClient *client);
 

@@ -32,11 +32,11 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT,
                                   PROP_FLAGS, );
 
 typedef struct {
-    char *         parent;
-    char *         local;
-    char *         remote;
-    char *         input_key;
-    char *         output_key;
+    char          *parent;
+    char          *local;
+    char          *remote;
+    char          *input_key;
+    char          *output_key;
     guint          ttl;
     guint          tos;
     guint          encapsulation_limit;
@@ -505,7 +505,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingIPTunnel *       setting = NM_SETTING_IP_TUNNEL(object);
+    NMSettingIPTunnel        *setting = NM_SETTING_IP_TUNNEL(object);
     NMSettingIPTunnelPrivate *priv    = NM_SETTING_IP_TUNNEL_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -557,7 +557,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingIPTunnel *       setting = NM_SETTING_IP_TUNNEL(object);
+    NMSettingIPTunnel        *setting = NM_SETTING_IP_TUNNEL(object);
     NMSettingIPTunnelPrivate *priv    = NM_SETTING_IP_TUNNEL_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -635,9 +635,9 @@ nm_setting_ip_tunnel_new(void)
 static void
 nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingIPTunnelPrivate));
 

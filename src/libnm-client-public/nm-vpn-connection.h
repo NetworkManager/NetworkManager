@@ -37,7 +37,7 @@ typedef struct _NMVpnConnectionClass NMVpnConnectionClass;
 GType nm_vpn_connection_get_type(void);
 
 NMVpnConnectionState nm_vpn_connection_get_vpn_state(NMVpnConnection *vpn);
-const char *         nm_vpn_connection_get_banner(NMVpnConnection *vpn);
+const char          *nm_vpn_connection_get_banner(NMVpnConnection *vpn);
 
 G_END_DECLS
 

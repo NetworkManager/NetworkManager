@@ -98,10 +98,10 @@ typedef struct {
     char *ip_iface;
     int   ifindex;
 
-    NMActRequest *                act_req;
-    GDBusMethodInvocation *       pending_secrets_context;
+    NMActRequest                 *act_req;
+    GDBusMethodInvocation        *pending_secrets_context;
     NMActRequestGetSecretsCallId *secrets_id;
-    const char *                  secrets_setting_name;
+    const char                   *secrets_setting_name;
 
     guint ppp_watch_id;
     guint ppp_timeout_handler;
@@ -134,8 +134,8 @@ G_DEFINE_TYPE(NMPPPManager, nm_ppp_manager, NM_TYPE_DBUS_OBJECT)
 
 static void _ppp_cleanup(NMPPPManager *self);
 
-static NMPPPManagerStopHandle *_ppp_manager_stop(NMPPPManager *           self,
-                                                 GCancellable *           cancellable,
+static NMPPPManagerStopHandle *_ppp_manager_stop(NMPPPManager            *self,
+                                                 GCancellable            *cancellable,
                                                  NMPPPManagerStopCallback callback,
                                                  gpointer                 user_data);
 
@@ -144,9 +144,9 @@ static void _ppp_manager_stop_cancel(NMPPPManagerStopHandle *handle);
 /*****************************************************************************/
 
 static void
-_emit_signal_new_config(NMPPPManager *            self,
+_emit_signal_new_config(NMPPPManager             *self,
                         int                       addr_family,
-                        const NML3ConfigData *    l3cd,
+                        const NML3ConfigData     *l3cd,
                         const NMUtilsIPv6IfaceId *iid)
 {
     nm_assert(NM_IS_PPP_MANAGER(self));
@@ -164,9 +164,9 @@ _emit_signal_new_config(NMPPPManager *            self,
 static gboolean
 monitor_cb(gpointer user_data)
 {
-    NMPPPManager *       self = NM_PPP_MANAGER(user_data);
+    NMPPPManager        *self = NM_PPP_MANAGER(user_data);
     NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
-    const char *         ifname;
+    const char          *ifname;
     int                  errsv;
 
     ifname = nm_platform_link_get_name(NM_PLATFORM_GET, priv->ifindex);
@@ -174,7 +174,7 @@ monitor_cb(gpointer user_data)
     if (ifname) {
         struct ppp_stats stats = {};
         struct ifreq     req   = {
-            .ifr_data = (caddr_t) &stats,
+                  .ifr_data = (caddr_t) &stats,
         };
 
         nm_utils_ifname_cpy(req.ifr_name, ifname);
@@ -232,14 +232,14 @@ cancel_get_secrets(NMPPPManager *self)
 
 static gboolean
 extract_details_from_connection(NMConnection *connection,
-                                const char *  secrets_setting_name,
-                                const char ** username,
-                                const char ** password,
-                                GError **     error)
+                                const char   *secrets_setting_name,
+                                const char  **username,
+                                const char  **password,
+                                GError      **error)
 {
     NMSettingConnection *s_con;
-    NMSetting *          setting;
-    const char *         setting_name;
+    NMSetting           *setting;
+    const char          *setting_name;
 
     g_return_val_if_fail(connection != NULL, FALSE);
     g_return_val_if_fail(username != NULL, FALSE);
@@ -292,18 +292,18 @@ extract_details_from_connection(NMConnection *connection,
 }
 
 static void
-ppp_secrets_cb(NMActRequest *                req,
+ppp_secrets_cb(NMActRequest                 *req,
                NMActRequestGetSecretsCallId *call_id,
-               NMSettingsConnection *        settings_connection, /* unused (we pass NULL here) */
-               GError *                      error,
+               NMSettingsConnection         *settings_connection, /* unused (we pass NULL here) */
+               GError                       *error,
                gpointer                      user_data)
 {
-    NMPPPManager *       self     = NM_PPP_MANAGER(user_data);
+    NMPPPManager        *self     = NM_PPP_MANAGER(user_data);
     NMPPPManagerPrivate *priv     = NM_PPP_MANAGER_GET_PRIVATE(self);
-    const char *         username = NULL;
-    const char *         password = NULL;
-    GError *             local    = NULL;
-    NMConnection *       applied_connection;
+    const char          *username = NULL;
+    const char          *password = NULL;
+    GError              *local    = NULL;
+    NMConnection        *applied_connection;
 
     g_return_if_fail(priv->pending_secrets_context != NULL);
     g_return_if_fail(req == priv->act_req);
@@ -346,22 +346,22 @@ out:
 }
 
 static void
-impl_ppp_manager_need_secrets(NMDBusObject *                     obj,
+impl_ppp_manager_need_secrets(NMDBusObject                      *obj,
                               const NMDBusInterfaceInfoExtended *interface_info,
-                              const NMDBusMethodInfoExtended *   method_info,
-                              GDBusConnection *                  connection,
-                              const char *                       sender,
-                              GDBusMethodInvocation *            invocation,
-                              GVariant *                         parameters)
+                              const NMDBusMethodInfoExtended    *method_info,
+                              GDBusConnection                   *connection,
+                              const char                        *sender,
+                              GDBusMethodInvocation             *invocation,
+                              GVariant                          *parameters)
 {
-    NMPPPManager *       self = NM_PPP_MANAGER(obj);
-    NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
-    NMConnection *       applied_connection;
-    const char *         username = NULL;
-    const char *         password = NULL;
-    guint32              tries;
+    NMPPPManager                *self = NM_PPP_MANAGER(obj);
+    NMPPPManagerPrivate         *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
+    NMConnection                *applied_connection;
+    const char                  *username = NULL;
+    const char                  *password = NULL;
+    guint32                      tries;
     gs_unref_ptrarray GPtrArray *hints = NULL;
-    GError *                     error = NULL;
+    GError                      *error = NULL;
     NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
     nm_active_connection_clear_secrets(NM_ACTIVE_CONNECTION(priv->act_req));
@@ -412,13 +412,13 @@ impl_ppp_manager_need_secrets(NMDBusObject *                     obj,
 }
 
 static void
-impl_ppp_manager_set_state(NMDBusObject *                     obj,
+impl_ppp_manager_set_state(NMDBusObject                      *obj,
                            const NMDBusInterfaceInfoExtended *interface_info,
-                           const NMDBusMethodInfoExtended *   method_info,
-                           GDBusConnection *                  connection,
-                           const char *                       sender,
-                           GDBusMethodInvocation *            invocation,
-                           GVariant *                         parameters)
+                           const NMDBusMethodInfoExtended    *method_info,
+                           GDBusConnection                   *connection,
+                           const char                        *sender,
+                           GDBusMethodInvocation             *invocation,
+                           GVariant                          *parameters)
 {
     NMPPPManager *self = NM_PPP_MANAGER(obj);
     guint32       ppp_state;
@@ -435,19 +435,19 @@ impl_ppp_manager_set_state(NMDBusObject *                     obj,
 }
 
 static void
-impl_ppp_manager_set_ifindex(NMDBusObject *                     obj,
+impl_ppp_manager_set_ifindex(NMDBusObject                      *obj,
                              const NMDBusInterfaceInfoExtended *interface_info,
-                             const NMDBusMethodInfoExtended *   method_info,
-                             GDBusConnection *                  connection,
-                             const char *                       sender,
-                             GDBusMethodInvocation *            invocation,
-                             GVariant *                         parameters)
+                             const NMDBusMethodInfoExtended    *method_info,
+                             GDBusConnection                   *connection,
+                             const char                        *sender,
+                             GDBusMethodInvocation             *invocation,
+                             GVariant                          *parameters)
 {
-    NMPPPManager *  self                           = NM_PPP_MANAGER(obj);
-    gs_unref_object NMPPPManager *self_keep_alive  = NULL;
-    NMPPPManagerPrivate *         priv             = NM_PPP_MANAGER_GET_PRIVATE(self);
-    const NMPlatformLink *        plink            = NULL;
-    nm_auto_nmpobj const NMPObject *obj_keep_alive = NULL;
+    NMPPPManager                   *self            = NM_PPP_MANAGER(obj);
+    gs_unref_object NMPPPManager   *self_keep_alive = NULL;
+    NMPPPManagerPrivate            *priv            = NM_PPP_MANAGER_GET_PRIVATE(self);
+    const NMPlatformLink           *plink           = NULL;
+    nm_auto_nmpobj const NMPObject *obj_keep_alive  = NULL;
     gint32                          ifindex;
 
     g_variant_get(parameters, "(i)", &ifindex);
@@ -494,8 +494,8 @@ static gboolean
 set_ip_config_common(NMPPPManager *self, GVariant *config_dict, guint32 *out_mtu)
 {
     NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
-    NMConnection *       applied_connection;
-    NMSettingPpp *       s_ppp;
+    NMConnection        *applied_connection;
+    NMSettingPpp        *s_ppp;
 
     if (priv->ifindex <= 0)
         return FALSE;
@@ -515,21 +515,21 @@ set_ip_config_common(NMPPPManager *self, GVariant *config_dict, guint32 *out_mtu
 }
 
 static void
-impl_ppp_manager_set_ip4_config(NMDBusObject *                     obj,
+impl_ppp_manager_set_ip4_config(NMDBusObject                      *obj,
                                 const NMDBusInterfaceInfoExtended *interface_info,
-                                const NMDBusMethodInfoExtended *   method_info,
-                                GDBusConnection *                  connection,
-                                const char *                       sender,
-                                GDBusMethodInvocation *            invocation,
-                                GVariant *                         parameters)
+                                const NMDBusMethodInfoExtended    *method_info,
+                                GDBusConnection                   *connection,
+                                const char                        *sender,
+                                GDBusMethodInvocation             *invocation,
+                                GVariant                          *parameters)
 {
-    NMPPPManager *          self                 = NM_PPP_MANAGER(obj);
-    NMPPPManagerPrivate *   priv                 = NM_PPP_MANAGER_GET_PRIVATE(self);
+    NMPPPManager                           *self = NM_PPP_MANAGER(obj);
+    NMPPPManagerPrivate                    *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     NMPlatformIP4Address                    address;
     guint32                                 u32, mtu;
-    GVariantIter *                          iter;
-    gs_unref_variant GVariant *config_dict = NULL;
+    GVariantIter                           *iter;
+    gs_unref_variant GVariant              *config_dict = NULL;
 
     _LOGI("(IPv4 Config Get) reply received.");
 
@@ -602,9 +602,9 @@ out:
  * returns the IID.
  */
 static gboolean
-iid_value_to_ll6_addr(GVariant *          dict,
-                      const char *        prop,
-                      struct in6_addr *   out_addr,
+iid_value_to_ll6_addr(GVariant           *dict,
+                      const char         *prop,
+                      struct in6_addr    *out_addr,
                       NMUtilsIPv6IfaceId *out_iid)
 {
     guint64 iid;
@@ -628,22 +628,22 @@ iid_value_to_ll6_addr(GVariant *          dict,
 }
 
 static void
-impl_ppp_manager_set_ip6_config(NMDBusObject *                     obj,
+impl_ppp_manager_set_ip6_config(NMDBusObject                      *obj,
                                 const NMDBusInterfaceInfoExtended *interface_info,
-                                const NMDBusMethodInfoExtended *   method_info,
-                                GDBusConnection *                  connection,
-                                const char *                       sender,
-                                GDBusMethodInvocation *            invocation,
-                                GVariant *                         parameters)
+                                const NMDBusMethodInfoExtended    *method_info,
+                                GDBusConnection                   *connection,
+                                const char                        *sender,
+                                GDBusMethodInvocation             *invocation,
+                                GVariant                          *parameters)
 {
-    NMPPPManager *          self                 = NM_PPP_MANAGER(obj);
-    NMPPPManagerPrivate *   priv                 = NM_PPP_MANAGER_GET_PRIVATE(self);
+    NMPPPManager                           *self = NM_PPP_MANAGER(obj);
+    NMPPPManagerPrivate                    *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     NMPlatformIP6Address                    address;
     struct in6_addr                         a;
-    NMUtilsIPv6IfaceId                      iid      = NM_UTILS_IPV6_IFACE_ID_INIT;
-    gboolean                                has_peer = FALSE;
-    gs_unref_variant GVariant *config_dict           = NULL;
+    NMUtilsIPv6IfaceId                      iid         = NM_UTILS_IPV6_IFACE_ID_INIT;
+    gboolean                                has_peer    = FALSE;
+    gs_unref_variant GVariant              *config_dict = NULL;
 
     _LOGI("(IPv6 Config Get) reply received.");
 
@@ -724,7 +724,7 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
 static void
 ppp_watch_cb(GPid pid, int status, gpointer user_data)
 {
-    NMPPPManager *       self = NM_PPP_MANAGER(user_data);
+    NMPPPManager        *self = NM_PPP_MANAGER(user_data);
     NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
     int                  err;
     const long long      lpid = (long long) pid;
@@ -770,19 +770,19 @@ pppd_timed_out(gpointer data)
 }
 
 static GPtrArray *
-create_pppd_cmd_line(NMPPPManager *  self,
-                     NMSettingPpp *  setting,
+create_pppd_cmd_line(NMPPPManager   *self,
+                     NMSettingPpp   *setting,
                      NMSettingPppoe *pppoe,
-                     NMSettingAdsl * adsl,
-                     const char *    ppp_name,
+                     NMSettingAdsl  *adsl,
+                     const char     *ppp_name,
                      guint           baud_override,
                      gboolean        ip4_enabled,
                      gboolean        ip6_enabled,
-                     GError **       err)
+                     GError        **err)
 {
-    NMPPPManagerPrivate *priv        = NM_PPP_MANAGER_GET_PRIVATE(self);
-    const char *         pppd_binary = NULL;
-    gs_unref_ptrarray GPtrArray *cmd = NULL;
+    NMPPPManagerPrivate         *priv        = NM_PPP_MANAGER_GET_PRIVATE(self);
+    const char                  *pppd_binary = NULL;
+    gs_unref_ptrarray GPtrArray *cmd         = NULL;
     gboolean                     ppp_debug;
 
     g_return_val_if_fail(setting != NULL, NULL);
@@ -988,22 +988,22 @@ pppoe_fill_defaults(NMSettingPpp *setting)
 static gboolean
 _ppp_manager_start(NMPPPManager *self,
                    NMActRequest *req,
-                   const char *  ppp_name,
+                   const char   *ppp_name,
                    guint32       timeout_secs,
                    guint         baud_override,
-                   GError **     err)
+                   GError      **err)
 {
-    NMPPPManagerPrivate *priv;
-    NMConnection *       connection;
-    NMSettingPpp *       s_ppp;
+    NMPPPManagerPrivate          *priv;
+    NMConnection                 *connection;
+    NMSettingPpp                 *s_ppp;
     gs_unref_object NMSettingPpp *s_ppp_free = NULL;
-    NMSettingPppoe *              pppoe_setting;
-    NMSettingAdsl *               adsl_setting;
-    gs_unref_ptrarray GPtrArray *ppp_cmd = NULL;
-    gs_free char *               cmd_str = NULL;
-    struct stat                  st;
-    gboolean                     ip6_enabled;
-    gboolean                     ip4_enabled;
+    NMSettingPppoe               *pppoe_setting;
+    NMSettingAdsl                *adsl_setting;
+    gs_unref_ptrarray GPtrArray  *ppp_cmd = NULL;
+    gs_free char                 *cmd_str = NULL;
+    struct stat                   st;
+    gboolean                      ip6_enabled;
+    gboolean                      ip4_enabled;
 
     g_return_val_if_fail(NM_IS_PPP_MANAGER(self), FALSE);
     g_return_val_if_fail(NM_IS_ACT_REQUEST(req), FALSE);
@@ -1119,7 +1119,7 @@ _ppp_cleanup(NMPPPManager *self)
 /*****************************************************************************/
 
 struct _NMPPPManagerStopHandle {
-    NMPPPManager *           self;
+    NMPPPManager            *self;
     NMPPPManagerStopCallback callback;
     gpointer                 user_data;
 
@@ -1193,13 +1193,13 @@ _stop_cancelled_cb(GCancellable *cancellable, gpointer user_data)
 }
 
 static NMPPPManagerStopHandle *
-_ppp_manager_stop(NMPPPManager *           self,
-                  GCancellable *           cancellable,
+_ppp_manager_stop(NMPPPManager            *self,
+                  GCancellable            *cancellable,
                   NMPPPManagerStopCallback callback,
                   gpointer                 user_data)
 {
-    NMPPPManagerPrivate *   priv = NM_PPP_MANAGER_GET_PRIVATE(self);
-    NMDBusObject *          dbus = NM_DBUS_OBJECT(self);
+    NMPPPManagerPrivate    *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
+    NMDBusObject           *dbus = NM_DBUS_OBJECT(self);
     NMPPPManagerStopHandle *handle;
 
     if (nm_dbus_object_is_exported(dbus))
@@ -1328,7 +1328,7 @@ _ppp_manager_new(const char *iface)
 static void
 dispose(GObject *object)
 {
-    NMPPPManager *       self = (NMPPPManager *) object;
+    NMPPPManager        *self = (NMPPPManager *) object;
     NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE(self);
 
     /* we expect the user to first stop the manager. As fallback,
@@ -1390,7 +1390,7 @@ static const NMDBusInterfaceInfoExtended interface_info_ppp = {
 static void
 nm_ppp_manager_class_init(NMPPPManagerClass *manager_class)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(manager_class);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(manager_class);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(manager_class);
 
     object_class->dispose      = dispose;

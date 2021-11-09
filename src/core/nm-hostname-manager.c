@@ -55,12 +55,12 @@
 NM_GOBJECT_PROPERTIES_DEFINE(NMHostnameManager, PROP_HOSTNAME, );
 
 typedef struct {
-    char *        current_hostname;
+    char         *current_hostname;
     GFileMonitor *monitor;
     GFileMonitor *dhcp_monitor;
     gulong        monitor_id;
     gulong        dhcp_monitor_id;
-    GDBusProxy *  hostnamed_proxy;
+    GDBusProxy   *hostnamed_proxy;
 } NMHostnameManagerPrivate;
 
 struct _NMHostnameManager {
@@ -103,9 +103,9 @@ _file_monitor_new(const char *path)
 static char *
 read_hostname_gentoo(const char *path)
 {
-    gs_free char *     contents  = NULL;
+    gs_free char      *contents  = NULL;
     gs_strfreev char **all_lines = NULL;
-    const char *       tmp;
+    const char        *tmp;
     guint              i;
 
     if (!g_file_get_contents(path, &contents, NULL, NULL))
@@ -129,7 +129,7 @@ read_hostname_gentoo(const char *path)
 static char *
 read_hostname_slackware(const char *path)
 {
-    gs_free char *     contents  = NULL;
+    gs_free char      *contents  = NULL;
     gs_strfreev char **all_lines = NULL;
     guint              i         = 0;
 
@@ -152,7 +152,7 @@ static gboolean
 hostname_is_dynamic(void)
 {
     GIOChannel *channel;
-    char *      str     = NULL;
+    char       *str     = NULL;
     gboolean    dynamic = FALSE;
 
     channel = g_io_channel_new_file(CONF_DHCP, "r", NULL);
@@ -188,7 +188,7 @@ static void
 _set_hostname(NMHostnameManager *self, const char *hostname)
 {
     NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
-    char *                    old_hostname;
+    char                     *old_hostname;
 
     hostname = nm_str_not_empty(hostname);
 
@@ -210,7 +210,7 @@ static void
 _set_hostname_read_file(NMHostnameManager *self)
 {
     NMHostnameManagerPrivate *priv     = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
-    gs_free char *            hostname = NULL;
+    gs_free char             *hostname = NULL;
 
     if (priv->hostnamed_proxy) {
         /* read-hostname returns the current hostname with hostnamed. */
@@ -239,10 +239,10 @@ _set_hostname_read_file(NMHostnameManager *self)
 static void
 set_transient_hostname_done(GObject *object, GAsyncResult *res, gpointer user_data)
 {
-    GDBusProxy *     proxy                  = G_DBUS_PROXY(object);
-    gs_unref_variant GVariant *result       = NULL;
-    gs_free_error GError *         error    = NULL;
-    gs_free char *                 hostname = NULL;
+    GDBusProxy                    *proxy    = G_DBUS_PROXY(object);
+    gs_unref_variant GVariant     *result   = NULL;
+    gs_free_error GError          *error    = NULL;
+    gs_free char                  *hostname = NULL;
     NMHostnameManagerSetHostnameCb cb;
     gpointer                       cb_user_data;
 
@@ -260,8 +260,8 @@ set_transient_hostname_done(GObject *object, GAsyncResult *res, gpointer user_da
 }
 
 void
-nm_hostname_manager_set_transient_hostname(NMHostnameManager *            self,
-                                           const char *                   hostname,
+nm_hostname_manager_set_transient_hostname(NMHostnameManager             *self,
+                                           const char                    *hostname,
                                            NMHostnameManagerSetHostnameCb cb,
                                            gpointer                       user_data)
 {
@@ -290,7 +290,7 @@ gboolean
 nm_hostname_manager_get_transient_hostname(NMHostnameManager *self, char **hostname)
 {
     NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
-    GVariant *                v_hostname;
+    GVariant                 *v_hostname;
 
     if (!priv->hostnamed_proxy)
         return FALSE;
@@ -310,17 +310,17 @@ nm_hostname_manager_get_transient_hostname(NMHostnameManager *self, char **hostn
 gboolean
 nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname)
 {
-    NMHostnameManagerPrivate *priv;
-    char *                    hostname_eol;
-    gboolean                  ret;
-    gs_free_error GError *error     = NULL;
-    const char *          file      = HOSTNAME_FILE;
-    gs_free char *        link_path = NULL;
-    gs_unref_variant GVariant *var  = NULL;
+    NMHostnameManagerPrivate  *priv;
+    char                      *hostname_eol;
+    gboolean                   ret;
+    gs_free_error GError      *error     = NULL;
+    const char                *file      = HOSTNAME_FILE;
+    gs_free char              *link_path = NULL;
+    gs_unref_variant GVariant *var       = NULL;
     struct stat                file_stat;
 #if HAVE_SELINUX
     gboolean fcon_was_set = FALSE;
-    char *   fcon_prev    = NULL;
+    char    *fcon_prev    = NULL;
 #endif
 
     g_return_val_if_fail(NM_IS_HOSTNAME_MANAGER(self), FALSE);
@@ -365,7 +365,7 @@ nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname
         handle = selabel_open(SELABEL_CTX_FILE, NULL, 0);
         if (handle) {
             mode_t st_mode = 0;
-            char * fcon    = NULL;
+            char  *fcon    = NULL;
 
             if (stat(file, &file_stat) == 0)
                 st_mode = file_stat.st_mode;
@@ -406,12 +406,12 @@ nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname
 
 static void
 hostnamed_properties_changed(GDBusProxy *proxy,
-                             GVariant *  changed_properties,
-                             char **     invalidated_properties,
+                             GVariant   *changed_properties,
+                             char      **invalidated_properties,
                              gpointer    user_data)
 {
-    NMHostnameManager *       self     = user_data;
-    NMHostnameManagerPrivate *priv     = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+    NMHostnameManager         *self    = user_data;
+    NMHostnameManagerPrivate  *priv    = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
     gs_unref_variant GVariant *variant = NULL;
 
     variant = g_dbus_proxy_get_cached_property(priv->hostnamed_proxy, "StaticHostname");
@@ -422,9 +422,9 @@ hostnamed_properties_changed(GDBusProxy *proxy,
 /*****************************************************************************/
 
 static void
-_file_monitors_file_changed_cb(GFileMonitor *    monitor,
-                               GFile *           file,
-                               GFile *           other_file,
+_file_monitors_file_changed_cb(GFileMonitor     *monitor,
+                               GFile            *file,
+                               GFile            *other_file,
                                GFileMonitorEvent event_type,
                                gpointer          user_data)
 {
@@ -453,9 +453,9 @@ static void
 _file_monitors_setup(NMHostnameManager *self)
 {
     NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
-    GFileMonitor *            monitor;
-    const char *              path      = HOSTNAME_FILE;
-    gs_free char *            link_path = NULL;
+    GFileMonitor             *monitor;
+    const char               *path      = HOSTNAME_FILE;
+    gs_free char             *link_path = NULL;
     struct stat               file_stat;
 
     _file_monitors_clear(self);
@@ -517,11 +517,11 @@ nm_hostname_manager_init(NMHostnameManager *self)
 static void
 constructed(GObject *object)
 {
-    NMHostnameManager *       self = NM_HOSTNAME_MANAGER(object);
+    NMHostnameManager        *self = NM_HOSTNAME_MANAGER(object);
     NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
-    GDBusProxy *              proxy;
-    GVariant *                variant;
-    gs_free_error GError *error = NULL;
+    GDBusProxy               *proxy;
+    GVariant                 *variant;
+    gs_free_error GError     *error = NULL;
 
     proxy = g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,
                                           0,
@@ -560,7 +560,7 @@ constructed(GObject *object)
 static void
 dispose(GObject *object)
 {
-    NMHostnameManager *       self = NM_HOSTNAME_MANAGER(object);
+    NMHostnameManager        *self = NM_HOSTNAME_MANAGER(object);
     NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
 
     if (priv->hostnamed_proxy) {

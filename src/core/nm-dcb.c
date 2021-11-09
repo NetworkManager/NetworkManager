@@ -18,12 +18,12 @@ do_helper(const char *iface,
           guint       which,
           DcbFunc     run_func,
           gpointer    user_data,
-          GError **   error,
+          GError    **error,
           const char *fmt,
           ...)
 {
     gs_free const char **split   = NULL;
-    gs_free char *       cmdline = NULL;
+    gs_free char        *cmdline = NULL;
     gs_free const char **argv    = NULL;
     gsize                i;
     gsize                u;
@@ -70,7 +70,7 @@ _dcb_enable(const char *iface,
             gboolean    enable,
             DcbFunc     run_func,
             gpointer    user_data,
-            GError **   error)
+            GError    **error)
 {
     if (enable)
         return do_helper(iface, DCBTOOL, run_func, user_data, error, "dcb on");
@@ -114,11 +114,11 @@ _dcb_enable(const char *iface,
     G_STMT_END
 
 gboolean
-_dcb_setup(const char *  iface,
+_dcb_setup(const char   *iface,
            NMSettingDcb *s_dcb,
            DcbFunc       run_func,
            gpointer      user_data,
-           GError **     error)
+           GError      **error)
 {
     NMSettingDcbFlags flags;
     guint             i;
@@ -246,11 +246,11 @@ _dcb_cleanup(const char *iface, DcbFunc run_func, gpointer user_data, GError **e
 }
 
 gboolean
-_fcoe_setup(const char *  iface,
+_fcoe_setup(const char   *iface,
             NMSettingDcb *s_dcb,
             DcbFunc       run_func,
             gpointer      user_data,
-            GError **     error)
+            GError      **error)
 {
     NMSettingDcbFlags flags;
 
@@ -283,8 +283,8 @@ run_helper(char **argv, guint which, gpointer user_data, GError **error)
     const char *helper_path;
     int         exit_status = 0;
     gboolean    success;
-    char *      errmsg = NULL, *outmsg = NULL;
-    char *      cmdline;
+    char       *errmsg = NULL, *outmsg = NULL;
+    char       *cmdline;
 
     helper_path = nm_utils_find_helper((which == DCBTOOL) ? "dcbtool" : "fcoeadm", NULL, error);
     if (!helper_path)

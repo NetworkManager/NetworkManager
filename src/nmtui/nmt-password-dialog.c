@@ -23,8 +23,8 @@ G_DEFINE_TYPE(NmtPasswordDialog, nmt_password_dialog, NMT_TYPE_NEWT_FORM)
     (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_PASSWORD_DIALOG, NmtPasswordDialogPrivate))
 
 typedef struct {
-    char *     request_id;
-    char *     prompt;
+    char      *request_id;
+    char      *prompt;
     GPtrArray *secrets;
     GPtrArray *entries;
 
@@ -60,7 +60,7 @@ NmtNewtForm *
 nmt_password_dialog_new(const char *request_id,
                         const char *title,
                         const char *prompt,
-                        GPtrArray * secrets)
+                        GPtrArray  *secrets)
 {
     return g_object_new(NMT_TYPE_PASSWORD_DIALOG,
                         "request-id",
@@ -111,11 +111,11 @@ maybe_save_input_and_exit(NmtNewtWidget *widget, gpointer dialog)
 static void
 nmt_password_dialog_constructed(GObject *object)
 {
-    NmtPasswordDialog *       dialog = NMT_PASSWORD_DIALOG(object);
+    NmtPasswordDialog        *dialog = NMT_PASSWORD_DIALOG(object);
     NmtPasswordDialogPrivate *priv   = NMT_PASSWORD_DIALOG_GET_PRIVATE(dialog);
-    NmtNewtWidget *           widget;
-    NmtNewtGrid *             grid, *secret_grid;
-    NmtNewtButtonBox *        bbox;
+    NmtNewtWidget            *widget;
+    NmtNewtGrid              *grid, *secret_grid;
+    NmtNewtButtonBox         *bbox;
     int                       i;
 
     widget = nmt_newt_grid_new();
@@ -187,10 +187,10 @@ nmt_password_dialog_finalize(GObject *object)
 }
 
 static void
-nmt_password_dialog_set_property(GObject *     object,
+nmt_password_dialog_set_property(GObject      *object,
                                  guint         prop_id,
                                  const GValue *value,
-                                 GParamSpec *  pspec)
+                                 GParamSpec   *pspec)
 {
     NmtPasswordDialogPrivate *priv = NMT_PASSWORD_DIALOG_GET_PRIVATE(object);
 

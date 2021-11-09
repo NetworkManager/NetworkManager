@@ -34,7 +34,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE(NMSettingBond, PROP_OPTIONS, );
 
 typedef struct {
-    GHashTable *       options;
+    GHashTable        *options;
     NMUtilsNamedValue *options_idx_cache;
 } NMSettingBondPrivate;
 
@@ -95,7 +95,7 @@ static const char *const valid_options_lst[] = {
 };
 
 typedef struct {
-    const char *       val;
+    const char        *val;
     NMBondOptionType   opt_type;
     guint              min;
     guint              max;
@@ -449,8 +449,8 @@ _ensure_options_idx_cache(NMSettingBondPrivate *priv)
 gboolean
 nm_setting_bond_get_option(NMSettingBond *setting,
                            guint32        idx,
-                           const char **  out_name,
-                           const char **  out_value)
+                           const char   **out_name,
+                           const char   **out_value)
 {
     NMSettingBondPrivate *priv;
     guint                 len;
@@ -778,17 +778,17 @@ _nm_setting_bond_get_option_type(NMSettingBond *setting, const char *name)
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingBond *          self = NM_SETTING_BOND(setting);
-    NMSettingBondPrivate *   priv = NM_SETTING_BOND_GET_PRIVATE(setting);
+    NMSettingBond           *self = NM_SETTING_BOND(setting);
+    NMSettingBondPrivate    *priv = NM_SETTING_BOND_GET_PRIVATE(setting);
     int                      miimon;
     int                      arp_interval;
     int                      num_grat_arp;
     int                      num_unsol_na;
     int                      peer_notif_delay;
-    const char *             mode_str;
-    const char *             arp_ip_target = NULL;
-    const char *             lacp_rate;
-    const char *             primary;
+    const char              *mode_str;
+    const char              *arp_ip_target = NULL;
+    const char              *lacp_rate;
+    const char              *primary;
     NMBondMode               bond_mode;
     guint                    i;
     const NMUtilsNamedValue *n;
@@ -1062,7 +1062,7 @@ static gboolean
 options_equal_asym(NMSettingBond *s_bond, NMSettingBond *s_bond2, NMSettingCompareFlags flags)
 {
     GHashTableIter iter;
-    const char *   key, *value;
+    const char    *key, *value;
 
     g_hash_table_iter_init(&iter, NM_SETTING_BOND_GET_PRIVATE(s_bond)->options);
     while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value)) {
@@ -1169,9 +1169,9 @@ finalize(GObject *object)
 static void
 nm_setting_bond_class_init(NMSettingBondClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingBondPrivate));
 

@@ -26,14 +26,14 @@
 /*****************************************************************************/
 
 static gboolean
-validate_opt(const char *   detail,
-             GVariant *     config,
-             const char *   key,
+validate_opt(const char    *detail,
+             GVariant      *config,
+             const char    *key,
              NMSupplOptType val_type,
              gconstpointer  expected)
 {
-    char *       config_key;
-    GVariant *   config_value;
+    char        *config_key;
+    GVariant    *config_value;
     gboolean     found = FALSE;
     GVariantIter iter;
 
@@ -86,17 +86,17 @@ validate_opt(const char *   detail,
 }
 
 static GVariant *
-build_supplicant_config(NMConnection * connection,
+build_supplicant_config(NMConnection  *connection,
                         guint          mtu,
                         guint          fixed_freq,
                         NMSupplCapMask capabilities)
 {
     gs_unref_object NMSupplicantConfig *config = NULL;
-    gs_free_error GError *     error           = NULL;
-    NMSettingWireless *        s_wifi;
-    NMSettingWirelessSecurity *s_wsec;
-    NMSetting8021x *           s_8021x;
-    gboolean                   success;
+    gs_free_error GError               *error  = NULL;
+    NMSettingWireless                  *s_wifi;
+    NMSettingWirelessSecurity          *s_wsec;
+    NMSetting8021x                     *s_8021x;
+    gboolean                            success;
 
     config = nm_supplicant_config_new(capabilities);
 
@@ -136,11 +136,11 @@ build_supplicant_config(NMConnection * connection,
 static NMConnection *
 new_basic_connection(const char *id, GBytes *ssid, const char *bssid_str)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSettingWireless *  s_wifi;
-    NMSettingIPConfig *  s_ip4;
-    gs_free char *       uuid = nm_utils_uuid_generate();
+    NMSettingWireless   *s_wifi;
+    NMSettingIPConfig   *s_ip4;
+    gs_free char        *uuid = nm_utils_uuid_generate();
 
     connection = nm_simple_connection_new();
 
@@ -183,13 +183,13 @@ new_basic_connection(const char *id, GBytes *ssid, const char *bssid_str)
 static void
 test_wifi_open(void)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_unref_variant GVariant *config_dict   = NULL;
-    gboolean                   success;
-    GError *                   error       = NULL;
-    const unsigned char        ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
-    gs_unref_bytes GBytes *ssid            = g_bytes_new(ssid_data, sizeof(ssid_data));
-    const char *           bssid_str       = "11:22:33:44:55:66";
+    gs_unref_object NMConnection *connection  = NULL;
+    gs_unref_variant GVariant    *config_dict = NULL;
+    gboolean                      success;
+    GError                       *error = NULL;
+    const unsigned char    ssid_data[]  = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
+    gs_unref_bytes GBytes *ssid         = g_bytes_new(ssid_data, sizeof(ssid_data));
+    const char            *bssid_str    = "11:22:33:44:55:66";
 
     connection = new_basic_connection("Test Wifi Open", ssid, bssid_str);
     success    = nm_connection_verify(connection, &error);
@@ -216,24 +216,24 @@ test_wifi_open(void)
 }
 
 static void
-test_wifi_wep_key(const char *         detail,
+test_wifi_wep_key(const char          *detail,
                   gboolean             test_bssid,
                   NMWepKeyType         wep_type,
-                  const char *         key_data,
+                  const char          *key_data,
                   const unsigned char *expected,
                   size_t               expected_size)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_unref_variant GVariant *config_dict   = NULL;
-    NMSettingWirelessSecurity *s_wsec;
-    gboolean                   success;
-    GError *                   error       = NULL;
-    const unsigned char        ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
-    gs_unref_bytes GBytes *ssid            = g_bytes_new(ssid_data, sizeof(ssid_data));
-    const char *           bssid_str       = "11:22:33:44:55:66";
-    gs_unref_bytes GBytes *wep_key_bytes   = g_bytes_new(expected, expected_size);
-    const char *           bgscan_data     = "simple:30:-70:86400";
-    gs_unref_bytes GBytes *bgscan          = g_bytes_new(bgscan_data, strlen(bgscan_data));
+    gs_unref_object NMConnection *connection  = NULL;
+    gs_unref_variant GVariant    *config_dict = NULL;
+    NMSettingWirelessSecurity    *s_wsec;
+    gboolean                      success;
+    GError                       *error  = NULL;
+    const unsigned char    ssid_data[]   = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
+    gs_unref_bytes GBytes *ssid          = g_bytes_new(ssid_data, sizeof(ssid_data));
+    const char            *bssid_str     = "11:22:33:44:55:66";
+    gs_unref_bytes GBytes *wep_key_bytes = g_bytes_new(expected, expected_size);
+    const char            *bgscan_data   = "simple:30:-70:86400";
+    gs_unref_bytes GBytes *bgscan        = g_bytes_new(bgscan_data, strlen(bgscan_data));
 
     connection = new_basic_connection("Test Wifi WEP Key", ssid, test_bssid ? bssid_str : NULL);
 
@@ -287,17 +287,17 @@ test_wifi_wep_key(const char *         detail,
 static void
 test_wifi_wep(void)
 {
-    const char *        key1            = "12345";
+    const char         *key1            = "12345";
     const unsigned char key1_expected[] = {0x31, 0x32, 0x33, 0x34, 0x35};
-    const char *        key2            = "ascii test$$$";
+    const char         *key2            = "ascii test$$$";
     const unsigned char key2_expected[] =
         {0x61, 0x73, 0x63, 0x69, 0x69, 0x20, 0x74, 0x65, 0x73, 0x74, 0x24, 0x24, 0x24};
-    const char *        key3            = "abcdef1234";
+    const char         *key3            = "abcdef1234";
     const unsigned char key3_expected[] = {0xab, 0xcd, 0xef, 0x12, 0x34};
-    const char *        key4            = "96aec785c6392675f87f592972";
+    const char         *key4            = "96aec785c6392675f87f592972";
     const unsigned char key4_expected[] =
         {0x96, 0xae, 0xc7, 0x85, 0xc6, 0x39, 0x26, 0x75, 0xf8, 0x7f, 0x59, 0x29, 0x72};
-    const char *        key5 = "r34lly l33t w3p p4ssphr4s3 for t3st1ng";
+    const char         *key5 = "r34lly l33t w3p p4ssphr4s3 for t3st1ng";
     const unsigned char key5_expected[] =
         {0xce, 0x68, 0x8b, 0x35, 0xf6, 0x0a, 0x2b, 0xbf, 0xc9, 0x8f, 0xed, 0x10, 0xda};
 
@@ -349,22 +349,22 @@ test_wifi_wep(void)
 }
 
 static void
-test_wifi_wpa_psk(const char *                 detail,
+test_wifi_wpa_psk(const char                  *detail,
                   NMSupplOptType               key_type,
-                  const char *                 key_data,
-                  const unsigned char *        expected,
+                  const char                  *key_data,
+                  const unsigned char         *expected,
                   size_t                       expected_size,
                   NMSettingWirelessSecurityPmf pmf)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_unref_variant GVariant *config_dict   = NULL;
-    NMSettingWirelessSecurity *s_wsec;
-    gboolean                   success;
-    GError *                   error       = NULL;
-    const unsigned char        ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
-    gs_unref_bytes GBytes *ssid            = g_bytes_new(ssid_data, sizeof(ssid_data));
-    const char *           bssid_str       = "11:22:33:44:55:66";
-    gs_unref_bytes GBytes *wpa_psk_bytes   = g_bytes_new(expected, expected_size);
+    gs_unref_object NMConnection *connection  = NULL;
+    gs_unref_variant GVariant    *config_dict = NULL;
+    NMSettingWirelessSecurity    *s_wsec;
+    gboolean                      success;
+    GError                       *error  = NULL;
+    const unsigned char    ssid_data[]   = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
+    gs_unref_bytes GBytes *ssid          = g_bytes_new(ssid_data, sizeof(ssid_data));
+    const char            *bssid_str     = "11:22:33:44:55:66";
+    gs_unref_bytes GBytes *wpa_psk_bytes = g_bytes_new(expected, expected_size);
 
     connection = new_basic_connection("Test Wifi WPA PSK", ssid, bssid_str);
 
@@ -461,15 +461,15 @@ test_wifi_wpa_psk(const char *                 detail,
 static void
 test_wifi_sae_psk(const char *psk)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_unref_variant GVariant *config_dict   = NULL;
-    NMSettingWirelessSecurity *s_wsec;
-    gboolean                   success;
-    GError *                   error       = NULL;
-    const unsigned char        ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
-    gs_unref_bytes GBytes *ssid            = g_bytes_new(ssid_data, sizeof(ssid_data));
-    const char *           bssid_str       = "11:22:33:44:55:66";
-    int                    short_psk       = strlen(psk) < 8;
+    gs_unref_object NMConnection *connection  = NULL;
+    gs_unref_variant GVariant    *config_dict = NULL;
+    NMSettingWirelessSecurity    *s_wsec;
+    gboolean                      success;
+    GError                       *error = NULL;
+    const unsigned char    ssid_data[]  = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
+    gs_unref_bytes GBytes *ssid         = g_bytes_new(ssid_data, sizeof(ssid_data));
+    const char            *bssid_str    = "11:22:33:44:55:66";
+    int                    short_psk    = strlen(psk) < 8;
 
     connection = new_basic_connection("Test Wifi SAE", ssid, bssid_str);
 
@@ -537,12 +537,12 @@ test_wifi_sae(void)
 static void
 test_wifi_wpa_psk_types(void)
 {
-    const char *        key1 = "d4721e911461d3cdef9793858e977fcda091779243abb7316c2f11605a160893";
+    const char         *key1 = "d4721e911461d3cdef9793858e977fcda091779243abb7316c2f11605a160893";
     const unsigned char key1_expected[] = {0xd4, 0x72, 0x1e, 0x91, 0x14, 0x61, 0xd3, 0xcd,
                                            0xef, 0x97, 0x93, 0x85, 0x8e, 0x97, 0x7f, 0xcd,
                                            0xa0, 0x91, 0x77, 0x92, 0x43, 0xab, 0xb7, 0x31,
                                            0x6c, 0x2f, 0x11, 0x60, 0x5a, 0x16, 0x08, 0x93};
-    const char *        key2            = "r34lly l33t wp4 p4ssphr4s3 for t3st1ng";
+    const char         *key2            = "r34lly l33t wp4 p4ssphr4s3 for t3st1ng";
 
     test_wifi_wpa_psk("wifi-wpa-psk-hex",
                       NM_SUPPL_OPT_TYPE_BYTES,
@@ -565,16 +565,16 @@ test_wifi_wpa_psk_types(void)
 }
 
 static NMConnection *
-generate_wifi_eap_connection(const char *                  id,
-                             GBytes *                      ssid,
-                             const char *                  bssid_str,
+generate_wifi_eap_connection(const char                   *id,
+                             GBytes                       *ssid,
+                             const char                   *bssid_str,
                              NMSettingWirelessSecurityFils fils)
 {
-    NMConnection *             connection = NULL;
+    NMConnection              *connection = NULL;
     NMSettingWirelessSecurity *s_wsec;
-    NMSetting8021x *           s_8021x;
+    NMSetting8021x            *s_8021x;
     gboolean                   success;
-    GError *                   error = NULL;
+    GError                    *error = NULL;
 
     connection = new_basic_connection(id, ssid, bssid_str);
 
@@ -625,11 +625,11 @@ generate_wifi_eap_connection(const char *                  id,
 static NMConnection *
 generate_wifi_eap_suite_b_192_connection(const char *id, GBytes *ssid, const char *bssid_str)
 {
-    NMConnection *             connection = NULL;
+    NMConnection              *connection = NULL;
     NMSettingWirelessSecurity *s_wsec;
-    NMSetting8021x *           s_8021x;
+    NMSetting8021x            *s_8021x;
     gboolean                   success;
-    GError *                   error = NULL;
+    GError                    *error = NULL;
 
     connection = new_basic_connection(id, ssid, bssid_str);
 
@@ -669,12 +669,12 @@ generate_wifi_eap_suite_b_192_connection(const char *id, GBytes *ssid, const cha
 static void
 test_wifi_eap_locked_bssid(void)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_unref_variant GVariant *config_dict   = NULL;
-    const unsigned char        ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
-    gs_unref_bytes GBytes *ssid            = g_bytes_new(ssid_data, sizeof(ssid_data));
-    const char *           bssid_str       = "11:22:33:44:55:66";
-    guint32                mtu             = 1100;
+    gs_unref_object NMConnection *connection  = NULL;
+    gs_unref_variant GVariant    *config_dict = NULL;
+    const unsigned char    ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
+    gs_unref_bytes GBytes *ssid        = g_bytes_new(ssid_data, sizeof(ssid_data));
+    const char            *bssid_str   = "11:22:33:44:55:66";
+    guint32                mtu         = 1100;
 
     connection = generate_wifi_eap_connection("Test Wifi EAP-TLS Locked",
                                               ssid,
@@ -716,13 +716,13 @@ test_wifi_eap_locked_bssid(void)
 static void
 test_wifi_eap_unlocked_bssid(void)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_unref_variant GVariant *config_dict   = NULL;
-    const unsigned char        ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
-    gs_unref_bytes GBytes *ssid            = g_bytes_new(ssid_data, sizeof(ssid_data));
-    const char *           bgscan_data     = "simple:30:-65:300";
-    gs_unref_bytes GBytes *bgscan          = g_bytes_new(bgscan_data, strlen(bgscan_data));
-    guint32                mtu             = 1100;
+    gs_unref_object NMConnection *connection  = NULL;
+    gs_unref_variant GVariant    *config_dict = NULL;
+    const unsigned char    ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
+    gs_unref_bytes GBytes *ssid        = g_bytes_new(ssid_data, sizeof(ssid_data));
+    const char            *bgscan_data = "simple:30:-65:300";
+    gs_unref_bytes GBytes *bgscan      = g_bytes_new(bgscan_data, strlen(bgscan_data));
+    guint32                mtu         = 1100;
 
     connection = generate_wifi_eap_connection("Test Wifi EAP-TLS Unlocked",
                                               ssid,
@@ -768,13 +768,13 @@ test_wifi_eap_unlocked_bssid(void)
 static void
 test_wifi_eap_fils_disabled(void)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_unref_variant GVariant *config_dict   = NULL;
-    const unsigned char        ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
-    gs_unref_bytes GBytes *ssid            = g_bytes_new(ssid_data, sizeof(ssid_data));
-    const char *           bgscan_data     = "simple:30:-65:300";
-    gs_unref_bytes GBytes *bgscan          = g_bytes_new(bgscan_data, strlen(bgscan_data));
-    guint32                mtu             = 1100;
+    gs_unref_object NMConnection *connection  = NULL;
+    gs_unref_variant GVariant    *config_dict = NULL;
+    const unsigned char    ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
+    gs_unref_bytes GBytes *ssid        = g_bytes_new(ssid_data, sizeof(ssid_data));
+    const char            *bgscan_data = "simple:30:-65:300";
+    gs_unref_bytes GBytes *bgscan      = g_bytes_new(bgscan_data, strlen(bgscan_data));
+    guint32                mtu         = 1100;
 
     connection = generate_wifi_eap_connection("Test Wifi FILS disabled",
                                               ssid,
@@ -824,12 +824,12 @@ test_wifi_eap_fils_disabled(void)
 static void
 test_wifi_eap_suite_b_generation(void)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_unref_variant GVariant *config_dict   = NULL;
-    const unsigned char        ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
-    gs_unref_bytes GBytes *ssid            = g_bytes_new(ssid_data, sizeof(ssid_data));
-    const char *           bssid_str       = "11:22:33:44:55:66";
-    guint32                mtu             = 1100;
+    gs_unref_object NMConnection *connection  = NULL;
+    gs_unref_variant GVariant    *config_dict = NULL;
+    const unsigned char    ssid_data[] = {0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44};
+    gs_unref_bytes GBytes *ssid        = g_bytes_new(ssid_data, sizeof(ssid_data));
+    const char            *bssid_str   = "11:22:33:44:55:66";
+    guint32                mtu         = 1100;
 
     connection = generate_wifi_eap_suite_b_192_connection("EAP-TLS Suite B 192", ssid, bssid_str);
 

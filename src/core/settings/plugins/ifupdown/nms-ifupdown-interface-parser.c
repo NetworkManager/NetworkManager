@@ -55,8 +55,8 @@ static void
 add_data(if_parser *parser, const char *key, const char *data)
 {
     if_block *last_block;
-    if_data * ifd;
-    char *    idx;
+    if_data  *ifd;
+    char     *idx;
     gsize     l_key, l_data;
 
     last_block = c_list_last_entry(&parser->block_lst_head, if_block, block_lst);
@@ -250,11 +250,11 @@ _recursive_ifparser(if_parser *parser, const char *eni_file, int quiet)
 static void
 _ifparser_source(if_parser *parser, const char *path, const char *en_dir, int quiet, int dir)
 {
-    char *      abs_path;
+    char       *abs_path;
     const char *item;
     wordexp_t   we;
-    GDir *      source_dir;
-    GError *    error = NULL;
+    GDir       *source_dir;
+    GError     *error = NULL;
     uint        i;
 
     if (g_path_is_absolute(path))

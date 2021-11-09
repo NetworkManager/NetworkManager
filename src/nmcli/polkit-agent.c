@@ -43,7 +43,7 @@ gboolean
 nmc_polkit_agent_init(NmCli *nmc, gboolean for_session, GError **error)
 {
     NMPolkitListener *listener;
-    GDBusConnection * dbus_connection = NULL;
+    GDBusConnection  *dbus_connection = NULL;
 
     g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
 

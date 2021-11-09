@@ -43,8 +43,8 @@ nmt_page_ip_tunnel_init(NmtPageIPTunnel *ip_tunnel)
 static void
 mode_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-    NMSettingIPTunnel *     s_ip_tunnel = NM_SETTING_IP_TUNNEL(object);
-    NmtPageIPTunnel *       ip_tunnel   = NMT_PAGE_IP_TUNNEL(user_data);
+    NMSettingIPTunnel      *s_ip_tunnel = NM_SETTING_IP_TUNNEL(object);
+    NmtPageIPTunnel        *ip_tunnel   = NMT_PAGE_IP_TUNNEL(user_data);
     NmtPageIPTunnelPrivate *priv        = NMT_PAGE_IP_TUNNEL_GET_PRIVATE(ip_tunnel);
     NMIPTunnelMode          mode;
     gboolean                enable_keys;
@@ -93,14 +93,14 @@ add_offset(GBinding *binding, const GValue *from_value, GValue *to_value, gpoint
 static void
 nmt_page_ip_tunnel_constructed(GObject *object)
 {
-    NmtPageIPTunnel *       ip_tunnel = NMT_PAGE_IP_TUNNEL(object);
+    NmtPageIPTunnel        *ip_tunnel = NMT_PAGE_IP_TUNNEL(object);
     NmtPageIPTunnelPrivate *priv      = NMT_PAGE_IP_TUNNEL_GET_PRIVATE(ip_tunnel);
-    NmtEditorSection *      section;
-    NmtEditorGrid *         grid;
-    NMSettingIPTunnel *     s_ip_tunnel;
-    NmtNewtWidget *         widget, *parent;
-    NMConnection *          conn;
-    GClosure *              s2w, *w2s;
+    NmtEditorSection       *section;
+    NmtEditorGrid          *grid;
+    NMSettingIPTunnel      *s_ip_tunnel;
+    NmtNewtWidget          *widget, *parent;
+    NMConnection           *conn;
+    GClosure               *s2w, *w2s;
 
     conn        = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(ip_tunnel));
     s_ip_tunnel = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_IP_TUNNEL);

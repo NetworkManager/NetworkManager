@@ -172,8 +172,8 @@ nm_main_utils_ensure_not_running_pidfile(const char *pidfile)
     gs_free char *proc_cmdline = NULL;
     gsize         len          = 0;
     long          pid;
-    const char *  process_name;
-    const char *  prgname = g_get_prgname();
+    const char   *process_name;
+    const char   *prgname = g_get_prgname();
 
     g_return_if_fail(prgname);
 
@@ -219,20 +219,20 @@ nm_main_utils_ensure_root()
 }
 
 gboolean
-nm_main_utils_early_setup(const char *  progname,
-                          int *         argc,
-                          char **       argv[],
+nm_main_utils_early_setup(const char   *progname,
+                          int          *argc,
+                          char        **argv[],
                           GOptionEntry *options,
                           void (*option_context_hook)(gpointer user_data, GOptionContext *opt_ctx),
                           gpointer    option_context_hook_data,
                           const char *summary)
 {
     GOptionContext *opt_ctx = NULL;
-    GError *        error   = NULL;
+    GError         *error   = NULL;
     gboolean        success = FALSE;
     int             i;
-    const char *    opt_fmt_log_level = NULL, *opt_fmt_log_domains = NULL;
-    const char **   opt_loc_log_level = NULL, **opt_loc_log_domains = NULL;
+    const char     *opt_fmt_log_level = NULL, *opt_fmt_log_domains = NULL;
+    const char    **opt_loc_log_level = NULL, **opt_loc_log_domains = NULL;
 
     /* Make GIO ignore the remote VFS service; otherwise it tries to use the
      * session bus to contact the remote service, and NM shouldn't ever be

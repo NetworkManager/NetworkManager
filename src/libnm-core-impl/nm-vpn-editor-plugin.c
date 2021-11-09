@@ -141,7 +141,7 @@ void
 nm_vpn_editor_plugin_set_plugin_info(NMVpnEditorPlugin *plugin, NMVpnPluginInfo *plugin_info)
 {
     NMVpnEditorPluginInterface *interface;
-    NMVpnEditorPluginPrivate *  priv;
+    NMVpnEditorPluginPrivate   *priv;
 
     g_return_if_fail(NM_IS_VPN_EDITOR_PLUGIN(plugin));
 
@@ -192,7 +192,7 @@ nm_vpn_editor_plugin_set_plugin_info(NMVpnEditorPlugin *plugin, NMVpnPluginInfo 
 gsize
 nm_vpn_editor_plugin_get_vt(NMVpnEditorPlugin *plugin, NMVpnEditorPluginVT *vt, gsize vt_size)
 {
-    const NMVpnEditorPluginVT * p_vt      = NULL;
+    const NMVpnEditorPluginVT  *p_vt      = NULL;
     gsize                       p_vt_size = 0;
     NMVpnEditorPluginInterface *interface;
 
@@ -218,23 +218,23 @@ nm_vpn_editor_plugin_get_vt(NMVpnEditorPlugin *plugin, NMVpnEditorPluginVT *vt, 
 /*****************************************************************************/
 
 static NMVpnEditorPlugin *
-_nm_vpn_editor_plugin_load(const char *              plugin_name,
+_nm_vpn_editor_plugin_load(const char               *plugin_name,
                            gboolean                  do_file_checks,
-                           const char *              check_service,
+                           const char               *check_service,
                            int                       check_owner,
                            NMUtilsCheckFilePredicate check_file,
                            gpointer                  user_data,
-                           GError **                 error)
+                           GError                  **error)
 {
-    void *                   dl_module = NULL;
-    gboolean                 loaded_before;
-    NMVpnEditorPluginFactory factory                        = NULL;
+    void                              *dl_module = NULL;
+    gboolean                           loaded_before;
+    NMVpnEditorPluginFactory           factory              = NULL;
     gs_unref_object NMVpnEditorPlugin *editor_plugin        = NULL;
-    gs_free char *                     plugin_filename_free = NULL;
-    const char *                       plugin_filename;
-    gs_free_error GError *factory_error = NULL;
-    gs_free char *        plug_name     = NULL;
-    gs_free char *        plug_service  = NULL;
+    gs_free char                      *plugin_filename_free = NULL;
+    const char                        *plugin_filename;
+    gs_free_error GError              *factory_error = NULL;
+    gs_free char                      *plug_name     = NULL;
+    gs_free char                      *plug_service  = NULL;
 
     g_return_val_if_fail(plugin_name && *plugin_name, NULL);
 
@@ -385,12 +385,12 @@ _nm_vpn_editor_plugin_load(const char *              plugin_name,
  * Since: 1.2
  */
 NMVpnEditorPlugin *
-nm_vpn_editor_plugin_load_from_file(const char *              plugin_name,
-                                    const char *              check_service,
+nm_vpn_editor_plugin_load_from_file(const char               *plugin_name,
+                                    const char               *check_service,
                                     int                       check_owner,
                                     NMUtilsCheckFilePredicate check_file,
                                     gpointer                  user_data,
-                                    GError **                 error)
+                                    GError                  **error)
 {
     return _nm_vpn_editor_plugin_load(plugin_name,
                                       TRUE,
@@ -484,9 +484,9 @@ nm_vpn_editor_plugin_import(NMVpnEditorPlugin *plugin, const char *path, GError 
 
 gboolean
 nm_vpn_editor_plugin_export(NMVpnEditorPlugin *plugin,
-                            const char *       path,
-                            NMConnection *     connection,
-                            GError **          error)
+                            const char        *path,
+                            NMConnection      *connection,
+                            GError           **error)
 {
     g_return_val_if_fail(NM_IS_VPN_EDITOR_PLUGIN(plugin), FALSE);
 

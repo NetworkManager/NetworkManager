@@ -13,7 +13,7 @@ typedef void (*NMLldpListenerNotify)(NMLldpListener *self, gpointer user_data);
 NMLldpListener *nm_lldp_listener_new(int                  ifindex,
                                      NMLldpListenerNotify notify_callback,
                                      gpointer             notify_user_data,
-                                     GError **            error);
+                                     GError             **error);
 void            nm_lldp_listener_destroy(NMLldpListener *self);
 
 int       nm_lldp_listener_get_ifindex(NMLldpListener *self);

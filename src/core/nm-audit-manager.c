@@ -30,7 +30,7 @@ typedef enum _nm_packed {
 } AuditBackend;
 
 typedef struct {
-    const char *    name;
+    const char     *name;
     AuditBackend    backends;
     bool            need_encoding;
     NMValueType     value_type;
@@ -84,9 +84,9 @@ NM_DEFINE_SINGLETON_GETTER(NMAuditManager, nm_audit_manager_get, NM_TYPE_AUDIT_M
 /*****************************************************************************/
 
 static void
-_audit_field_init_string(AuditField * field,
-                         const char * name,
-                         const char * str,
+_audit_field_init_string(AuditField  *field,
+                         const char  *name,
+                         const char  *str,
                          gboolean     need_encoding,
                          AuditBackend backends)
 {
@@ -165,10 +165,10 @@ build_message(NMStrBuf *strbuf, AuditBackend backend, GPtrArray *fields)
 
 static void
 nm_audit_log(NMAuditManager *self,
-             GPtrArray *     fields,
-             const char *    file,
+             GPtrArray      *fields,
+             const char     *file,
              guint           line,
-             const char *    func,
+             const char     *func,
              gboolean        success)
 {
     nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(0, FALSE);
@@ -210,23 +210,23 @@ nm_audit_log(NMAuditManager *self,
 
 static void
 _audit_log_helper(NMAuditManager *self,
-                  GPtrArray *     fields,
-                  const char *    file,
+                  GPtrArray      *fields,
+                  const char     *file,
                   guint           line,
-                  const char *    func,
-                  const char *    op,
+                  const char     *func,
+                  const char     *op,
                   gboolean        result,
                   gpointer        subject_context,
-                  const char *    reason)
+                  const char     *reason)
 {
-    AuditField      op_field;
-    AuditField      pid_field;
-    AuditField      uid_field;
-    AuditField      result_field;
-    AuditField      reason_field;
-    gulong          pid;
-    gulong          uid;
-    NMAuthSubject * subject                     = NULL;
+    AuditField                     op_field;
+    AuditField                     pid_field;
+    AuditField                     uid_field;
+    AuditField                     result_field;
+    AuditField                     reason_field;
+    gulong                         pid;
+    gulong                         uid;
+    NMAuthSubject                 *subject      = NULL;
     gs_unref_object NMAuthSubject *subject_free = NULL;
 
     _audit_field_init_string(&op_field, "op", op, FALSE, BACKEND_ALL);
@@ -284,16 +284,16 @@ nm_audit_manager_audit_enabled(NMAuditManager *self)
 }
 
 void
-_nm_audit_manager_log_connection_op(NMAuditManager *      self,
-                                    const char *          file,
+_nm_audit_manager_log_connection_op(NMAuditManager       *self,
+                                    const char           *file,
                                     guint                 line,
-                                    const char *          func,
-                                    const char *          op,
+                                    const char           *func,
+                                    const char           *op,
                                     NMSettingsConnection *connection,
                                     gboolean              result,
-                                    const char *          args,
+                                    const char           *args,
                                     gpointer              subject_context,
-                                    const char *          reason)
+                                    const char           *reason)
 {
     gs_unref_ptrarray GPtrArray *fields = NULL;
     AuditField                   uuid_field;
@@ -330,14 +330,14 @@ _nm_audit_manager_log_connection_op(NMAuditManager *      self,
 
 void
 _nm_audit_manager_log_generic_op(NMAuditManager *self,
-                                 const char *    file,
+                                 const char     *file,
                                  guint           line,
-                                 const char *    func,
-                                 const char *    op,
-                                 const char *    arg,
+                                 const char     *func,
+                                 const char     *op,
+                                 const char     *arg,
                                  gboolean        result,
                                  gpointer        subject_context,
-                                 const char *    reason)
+                                 const char     *reason)
 {
     gs_unref_ptrarray GPtrArray *fields = NULL;
     AuditField                   arg_field;
@@ -355,15 +355,15 @@ _nm_audit_manager_log_generic_op(NMAuditManager *self,
 
 void
 _nm_audit_manager_log_device_op(NMAuditManager *self,
-                                const char *    file,
+                                const char     *file,
                                 guint           line,
-                                const char *    func,
-                                const char *    op,
-                                NMDevice *      device,
+                                const char     *func,
+                                const char     *op,
+                                NMDevice       *device,
                                 gboolean        result,
-                                const char *    args,
+                                const char     *args,
                                 gpointer        subject_context,
-                                const char *    reason)
+                                const char     *reason)
 {
     gs_unref_ptrarray GPtrArray *fields = NULL;
     AuditField                   interface_field;
@@ -402,7 +402,7 @@ static void
 init_auditd(NMAuditManager *self)
 {
     NMAuditManagerPrivate *priv = NM_AUDIT_MANAGER_GET_PRIVATE(self);
-    NMConfigData *         data = nm_config_get_data(priv->config);
+    NMConfigData          *data = nm_config_get_data(priv->config);
     int                    errsv;
 
     if (nm_config_data_get_value_boolean(data,
@@ -427,11 +427,11 @@ init_auditd(NMAuditManager *self)
 }
 
 static void
-config_changed_cb(NMConfig *          config,
-                  NMConfigData *      config_data,
+config_changed_cb(NMConfig           *config,
+                  NMConfigData       *config_data,
                   NMConfigChangeFlags changes,
-                  NMConfigData *      old_data,
-                  NMAuditManager *    self)
+                  NMConfigData       *old_data,
+                  NMAuditManager     *self)
 {
     if (NM_FLAGS_HAS(changes, NM_CONFIG_CHANGE_VALUES))
         init_auditd(self);
@@ -461,7 +461,7 @@ static void
 dispose(GObject *object)
 {
 #if HAVE_LIBAUDIT
-    NMAuditManager *       self = NM_AUDIT_MANAGER(object);
+    NMAuditManager        *self = NM_AUDIT_MANAGER(object);
     NMAuditManagerPrivate *priv = NM_AUDIT_MANAGER_GET_PRIVATE(self);
 
     if (priv->config) {

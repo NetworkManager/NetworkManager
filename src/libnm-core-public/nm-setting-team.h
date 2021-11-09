@@ -48,24 +48,24 @@ NMTeamLinkWatcher *nm_team_link_watcher_new_nsna_ping(int         init_wait,
                                                       int         interval,
                                                       int         missed_max,
                                                       const char *target_host,
-                                                      GError **   error);
+                                                      GError    **error);
 NM_AVAILABLE_IN_1_12
 NMTeamLinkWatcher *nm_team_link_watcher_new_arp_ping(int                           init_wait,
                                                      int                           interval,
                                                      int                           missed_max,
-                                                     const char *                  target_host,
-                                                     const char *                  source_host,
+                                                     const char                   *target_host,
+                                                     const char                   *source_host,
                                                      NMTeamLinkWatcherArpPingFlags flags,
-                                                     GError **                     error);
+                                                     GError                      **error);
 NM_AVAILABLE_IN_1_16
 NMTeamLinkWatcher *nm_team_link_watcher_new_arp_ping2(int                           init_wait,
                                                       int                           interval,
                                                       int                           missed_max,
                                                       int                           vlanid,
-                                                      const char *                  target_host,
-                                                      const char *                  source_host,
+                                                      const char                   *target_host,
+                                                      const char                   *source_host,
                                                       NMTeamLinkWatcherArpPingFlags flags,
-                                                      GError **                     error);
+                                                      GError                      **error);
 NM_AVAILABLE_IN_1_12
 void nm_team_link_watcher_ref(NMTeamLinkWatcher *watcher);
 NM_AVAILABLE_IN_1_12
@@ -203,7 +203,7 @@ gboolean nm_setting_team_add_link_watcher(NMSettingTeam *setting, NMTeamLinkWatc
 NM_AVAILABLE_IN_1_12
 void nm_setting_team_remove_link_watcher(NMSettingTeam *setting, guint idx);
 NM_AVAILABLE_IN_1_12
-gboolean nm_setting_team_remove_link_watcher_by_value(NMSettingTeam *    setting,
+gboolean nm_setting_team_remove_link_watcher_by_value(NMSettingTeam     *setting,
                                                       NMTeamLinkWatcher *link_watcher);
 NM_AVAILABLE_IN_1_12
 void nm_setting_team_clear_link_watchers(NMSettingTeam *setting);

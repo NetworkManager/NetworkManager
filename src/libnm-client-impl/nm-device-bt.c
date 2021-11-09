@@ -21,7 +21,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_NAME, PROP_BT_CAPABILITIES, );
 
 typedef struct {
-    char *  name;
+    char   *name;
     guint32 bt_capabilities;
 } NMDeviceBtPrivate;
 
@@ -96,7 +96,7 @@ static NMBluetoothCapabilities
 get_connection_bt_type(NMConnection *connection)
 {
     NMSettingBluetooth *s_bt;
-    const char *        bt_type;
+    const char         *bt_type;
 
     s_bt = nm_connection_get_setting_bluetooth(connection);
     if (!s_bt)
@@ -116,8 +116,8 @@ get_connection_bt_type(NMConnection *connection)
 static gboolean
 connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
-    NMSettingBluetooth *    s_bt;
-    const char *            hw_addr, *setting_addr;
+    NMSettingBluetooth     *s_bt;
+    const char             *hw_addr, *setting_addr;
     NMBluetoothCapabilities dev_caps;
     NMBluetoothCapabilities bt_type;
 
@@ -235,7 +235,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_bluetooth = NML_DBUS_META_
 static void
 nm_device_bt_class_init(NMDeviceBtClass *bt_class)
 {
-    GObjectClass * object_class = G_OBJECT_CLASS(bt_class);
+    GObjectClass  *object_class = G_OBJECT_CLASS(bt_class);
     NMDeviceClass *device_class = NM_DEVICE_CLASS(bt_class);
 
     object_class->get_property = get_property;

@@ -195,7 +195,7 @@ __nmtst_g_test_skip(const char *msg)
 
 /* g_test_add_data_func_full() is only available since glib 2.34. Add a compatibility wrapper. */
 static inline void
-__g_test_add_data_func_full(const char *   testpath,
+__g_test_add_data_func_full(const char    *testpath,
                             gpointer       test_data,
                             GTestDataFunc  test_func,
                             GDestroyNotify data_free_func)
@@ -311,7 +311,7 @@ _nm_g_ptr_array_insert(GPtrArray *array, int index_, gpointer data)
 static inline gboolean
 _g_key_file_save_to_file(GKeyFile *key_file, const char *filename, GError **error)
 {
-    char *   contents;
+    char    *contents;
     gboolean success;
     gsize    length;
 
@@ -484,7 +484,7 @@ _nm_g_variant_new_take_string(char *string)
 #if !GLIB_CHECK_VERSION(2, 38, 0)
 _nm_printf(1, 2) static inline GVariant *_nm_g_variant_new_printf(const char *format_string, ...)
 {
-    char *  string;
+    char   *string;
     va_list ap;
 
     g_return_val_if_fail(format_string, NULL);
@@ -650,10 +650,10 @@ _g_atomic_pointer_compare_and_exchange(void **atomic, void *oldval, void *newval
 
 #if !GLIB_CHECK_VERSION(2, 58, 0)
 static inline gboolean
-g_hash_table_steal_extended(GHashTable *  hash_table,
+g_hash_table_steal_extended(GHashTable   *hash_table,
                             gconstpointer lookup_key,
-                            gpointer *    stolen_key,
-                            gpointer *    stolen_value)
+                            gpointer     *stolen_key,
+                            gpointer     *stolen_value)
 {
     g_assert(stolen_key);
     g_assert(stolen_value);

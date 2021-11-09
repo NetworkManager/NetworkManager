@@ -49,11 +49,11 @@ get_type_description(NMDevice *device)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
     /* The actual backing resources will be created once an interface is
      * added to a port of ours, since there can be neither an empty port nor
@@ -71,7 +71,7 @@ get_generic_capabilities(NMDevice *device)
 static gboolean
 is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
-    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     return nm_ovsdb_is_ready(priv->ovsdb);
@@ -80,7 +80,7 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 static gboolean
 can_auto_connect(NMDevice *device, NMSettingsConnection *sett_conn, char **specific_object)
 {
-    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     return nm_ovsdb_is_ready(priv->ovsdb);
@@ -154,7 +154,7 @@ _is_internal_interface(NMDevice *device)
 static void
 set_platform_mtu_cb(GError *error, gpointer user_data)
 {
-    NMDevice *            device = user_data;
+    NMDevice             *device = user_data;
     NMDeviceOvsInterface *self   = NM_DEVICE_OVS_INTERFACE(device);
 
     if (error && !g_error_matches(error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING)) {
@@ -170,7 +170,7 @@ set_platform_mtu_cb(GError *error, gpointer user_data)
 static gboolean
 set_platform_mtu(NMDevice *device, guint32 mtu)
 {
-    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     /*
@@ -202,7 +202,7 @@ ready_for_ip_config(NMDevice *device)
 static void
 act_stage3_ip_config(NMDevice *device, int addr_family)
 {
-    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     if (!_is_internal_interface(device)) {
@@ -241,15 +241,15 @@ can_unmanaged_external_down(NMDevice *self)
 static void
 deactivate(NMDevice *device)
 {
-    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     priv->waiting_for_interface = FALSE;
 }
 
 typedef struct {
-    NMDeviceOvsInterface *     self;
-    GCancellable *             cancellable;
+    NMDeviceOvsInterface      *self;
+    GCancellable              *cancellable;
     NMDeviceDeactivateCallback callback;
     gpointer                   callback_user_data;
     gulong                     link_changed_id;
@@ -275,14 +275,14 @@ deactivate_invoke_cb(DeactivateData *data, GError *error)
 }
 
 static void
-deactivate_link_changed_cb(NMPlatform *    platform,
+deactivate_link_changed_cb(NMPlatform     *platform,
                            int             obj_type_i,
                            int             ifindex,
                            NMPlatformLink *info,
                            int             change_type_i,
                            DeactivateData *data)
 {
-    NMDeviceOvsInterface *           self        = data->self;
+    NMDeviceOvsInterface            *self        = data->self;
     const NMPlatformSignalChangeType change_type = change_type_i;
 
     if (change_type == NM_PLATFORM_SIGNAL_REMOVED
@@ -297,7 +297,7 @@ deactivate_link_changed_cb(NMPlatform *    platform,
 static gboolean
 deactivate_link_timeout(gpointer user_data)
 {
-    DeactivateData *      data = user_data;
+    DeactivateData       *data = user_data;
     NMDeviceOvsInterface *self = data->self;
 
     _LOGT(LOGD_DEVICE, "deactivate: timeout waiting link removal");
@@ -317,7 +317,7 @@ deactivate_cancelled_cb(GCancellable *cancellable, gpointer user_data)
 static void
 deactivate_cb_on_idle(gpointer user_data, GCancellable *cancellable)
 {
-    DeactivateData *data                  = user_data;
+    DeactivateData       *data            = user_data;
     gs_free_error GError *cancelled_error = NULL;
 
     g_cancellable_set_error_if_cancelled(data->cancellable, &cancelled_error);
@@ -325,14 +325,14 @@ deactivate_cb_on_idle(gpointer user_data, GCancellable *cancellable)
 }
 
 static void
-deactivate_async(NMDevice *                 device,
-                 GCancellable *             cancellable,
+deactivate_async(NMDevice                  *device,
+                 GCancellable              *cancellable,
                  NMDeviceDeactivateCallback callback,
                  gpointer                   callback_user_data)
 {
-    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
-    DeactivateData *             data;
+    DeactivateData              *data;
 
     _LOGT(LOGD_CORE, "deactivate: start async");
 
@@ -419,7 +419,7 @@ nm_device_ovs_interface_init(NMDeviceOvsInterface *self)
 static void
 dispose(GObject *object)
 {
-    NMDeviceOvsInterface *       self = NM_DEVICE_OVS_INTERFACE(object);
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(object);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     if (priv->ovsdb) {
@@ -437,9 +437,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_ovs_interface = {
 static void
 nm_device_ovs_interface_class_init(NMDeviceOvsInterfaceClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->dispose = dispose;
 

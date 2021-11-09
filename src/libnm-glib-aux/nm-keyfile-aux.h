@@ -13,13 +13,13 @@ typedef struct _NMKeyFileDB NMKeyFileDB;
 typedef void (*NMKeyFileDBLogFcn)(NMKeyFileDB *self,
                                   int          syslog_level,
                                   gpointer     user_data,
-                                  const char * fmt,
+                                  const char  *fmt,
                                   ...) G_GNUC_PRINTF(4, 5);
 
 typedef void (*NMKeyFileDBGotDirtyFcn)(NMKeyFileDB *self, gpointer user_data);
 
-NMKeyFileDB *nm_key_file_db_new(const char *           filename,
-                                const char *           group,
+NMKeyFileDB *nm_key_file_db_new(const char            *filename,
+                                const char            *group,
                                 NMKeyFileDBLogFcn      log_fcn,
                                 NMKeyFileDBGotDirtyFcn got_dirty_fcn,
                                 gpointer               user_data);
@@ -43,8 +43,8 @@ void nm_key_file_db_remove_key(NMKeyFileDB *self, const char *key);
 
 void nm_key_file_db_set_value(NMKeyFileDB *self, const char *key, const char *value);
 
-void nm_key_file_db_set_string_list(NMKeyFileDB *      self,
-                                    const char *       key,
+void nm_key_file_db_set_string_list(NMKeyFileDB       *self,
+                                    const char        *key,
                                     const char *const *value,
                                     gssize             len);
 

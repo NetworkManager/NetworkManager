@@ -46,7 +46,7 @@ typedef void (*NMVpnIterFunc)(const char *key, const char *value, gpointer user_
 
 GType nm_setting_vpn_get_type(void);
 
-NMSetting * nm_setting_vpn_new(void);
+NMSetting  *nm_setting_vpn_new(void);
 const char *nm_setting_vpn_get_service_type(NMSettingVpn *setting);
 const char *nm_setting_vpn_get_user_name(NMSettingVpn *setting);
 gboolean    nm_setting_vpn_get_persistent(NMSettingVpn *setting);

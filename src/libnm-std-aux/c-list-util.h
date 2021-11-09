@@ -31,7 +31,7 @@ static inline int
 c_list_length_is(const CList *list, unsigned long check_len)
 {
     unsigned long n = 0;
-    const CList * iter;
+    const CList  *iter;
 
     c_list_for_each (iter, list) {
         ++n;

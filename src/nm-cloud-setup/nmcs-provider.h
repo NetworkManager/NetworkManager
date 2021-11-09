@@ -125,8 +125,8 @@ typedef struct {
 
 typedef struct {
     GObjectClass parent;
-    const char * _name;
-    const char * _env_provider_enabled;
+    const char  *_name;
+    const char  *_env_provider_enabled;
 
     void (*detect)(NMCSProvider *self, GTask *task);
 
@@ -145,8 +145,8 @@ GMainContext *nmcs_provider_get_main_context(NMCSProvider *provider);
 
 /*****************************************************************************/
 
-void nmcs_provider_detect(NMCSProvider *      provider,
-                          GCancellable *      cancellable,
+void nmcs_provider_detect(NMCSProvider       *provider,
+                          GCancellable       *cancellable,
                           GAsyncReadyCallback callback,
                           gpointer            user_data);
 
@@ -155,12 +155,12 @@ gboolean nmcs_provider_detect_finish(NMCSProvider *provider, GAsyncResult *resul
 /*****************************************************************************/
 
 void _nmcs_provider_get_config_task_maybe_return(NMCSProviderGetConfigTaskData *get_config_data,
-                                                 GError *                       error_take);
+                                                 GError                        *error_take);
 
-void nmcs_provider_get_config(NMCSProvider *      provider,
+void nmcs_provider_get_config(NMCSProvider       *provider,
                               gboolean            any,
-                              const char *const * hwaddrs,
-                              GCancellable *      cancellable,
+                              const char *const  *hwaddrs,
+                              GCancellable       *cancellable,
                               GAsyncReadyCallback callback,
                               gpointer            user_data);
 

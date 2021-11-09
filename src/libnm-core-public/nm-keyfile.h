@@ -71,19 +71,19 @@ typedef struct _NMKeyfileHandlerData NMKeyfileHandlerData;
  *
  * Since: 1.30
  */
-typedef gboolean (*NMKeyfileReadHandler)(GKeyFile *            keyfile,
-                                         NMConnection *        connection,
+typedef gboolean (*NMKeyfileReadHandler)(GKeyFile             *keyfile,
+                                         NMConnection         *connection,
                                          NMKeyfileHandlerType  handler_type,
                                          NMKeyfileHandlerData *handler_data,
-                                         void *                user_data);
+                                         void                 *user_data);
 
 NM_AVAILABLE_IN_1_30
-NMConnection *nm_keyfile_read(GKeyFile *            keyfile,
-                              const char *          base_dir,
+NMConnection *nm_keyfile_read(GKeyFile             *keyfile,
+                              const char           *base_dir,
                               NMKeyfileHandlerFlags handler_flags,
                               NMKeyfileReadHandler  handler,
-                              void *                user_data,
-                              GError **             error);
+                              void                 *user_data,
+                              GError              **error);
 
 /**
  * NMKeyfileWriteHandler:
@@ -112,18 +112,18 @@ NMConnection *nm_keyfile_read(GKeyFile *            keyfile,
  *
  * Since: 1.30
  */
-typedef gboolean (*NMKeyfileWriteHandler)(NMConnection *        connection,
-                                          GKeyFile *            keyfile,
+typedef gboolean (*NMKeyfileWriteHandler)(NMConnection         *connection,
+                                          GKeyFile             *keyfile,
                                           NMKeyfileHandlerType  handler_type,
                                           NMKeyfileHandlerData *handler_data,
-                                          void *                user_data);
+                                          void                 *user_data);
 
 NM_AVAILABLE_IN_1_30
-GKeyFile *nm_keyfile_write(NMConnection *        connection,
+GKeyFile *nm_keyfile_write(NMConnection         *connection,
                            NMKeyfileHandlerFlags handler_flags,
                            NMKeyfileWriteHandler handler,
-                           void *                user_data,
-                           GError **             error);
+                           void                 *user_data,
+                           GError              **error);
 
 /*****************************************************************************/
 
@@ -132,10 +132,10 @@ void nm_keyfile_handler_data_fail_with_error(NMKeyfileHandlerData *handler_data,
 
 NM_AVAILABLE_IN_1_30
 void nm_keyfile_handler_data_get_context(const NMKeyfileHandlerData *handler_data,
-                                         const char **               out_kf_group_name,
-                                         const char **               out_kf_key_name,
-                                         NMSetting **                out_cur_setting,
-                                         const char **               out_cur_property_name);
+                                         const char                **out_kf_group_name,
+                                         const char                **out_kf_key_name,
+                                         NMSetting                 **out_cur_setting,
+                                         const char                **out_cur_property_name);
 
 /**
  * NMKeyfileWarnSeverity:
@@ -157,8 +157,8 @@ typedef enum {
 
 NM_AVAILABLE_IN_1_30
 void nm_keyfile_handler_data_warn_get(const NMKeyfileHandlerData *handler_data,
-                                      const char **               out_message,
-                                      NMKeyfileWarnSeverity *     out_severity);
+                                      const char                **out_message,
+                                      NMKeyfileWarnSeverity      *out_severity);
 
 G_END_DECLS
 

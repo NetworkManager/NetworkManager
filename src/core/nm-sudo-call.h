@@ -8,7 +8,7 @@
 typedef void (*NMSudoCallGetFDCallback)(int fd_take, GError *error, gpointer user_data);
 
 void nm_sudo_call_get_fd(NMSudoGetFDType         fd_type,
-                         GCancellable *          cancellable,
+                         GCancellable           *cancellable,
                          NMSudoCallGetFDCallback callback,
                          gpointer                user_data);
 

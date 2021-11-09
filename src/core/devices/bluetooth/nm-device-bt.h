@@ -33,15 +33,15 @@ GType nm_device_bt_get_type(void);
 struct _NMBluezManager;
 
 NMDeviceBt *nm_device_bt_new(struct _NMBluezManager *bz_mgr,
-                             const char *            dbus_path,
-                             const char *            bdaddr,
-                             const char *            name,
+                             const char             *dbus_path,
+                             const char             *bdaddr,
+                             const char             *name,
                              NMBluetoothCapabilities capabilities);
 
-gboolean _nm_device_bt_for_same_device(NMDeviceBt *            device,
-                                       const char *            dbus_path,
-                                       const char *            bdaddr,
-                                       const char *            name,
+gboolean _nm_device_bt_for_same_device(NMDeviceBt             *device,
+                                       const char             *dbus_path,
+                                       const char             *bdaddr,
+                                       const char             *name,
                                        NMBluetoothCapabilities capabilities);
 
 NMBluetoothCapabilities nm_device_bt_get_capabilities(NMDeviceBt *device);

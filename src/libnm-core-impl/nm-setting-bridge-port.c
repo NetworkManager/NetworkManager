@@ -318,7 +318,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (connection) {
         NMSettingConnection *s_con;
-        const char *         slave_type;
+        const char          *slave_type;
 
         s_con = nm_connection_get_setting_connection(connection);
         if (!s_con) {
@@ -451,9 +451,9 @@ finalize(GObject *object)
 static void
 nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingBridgePortPrivate));
 

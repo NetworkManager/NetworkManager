@@ -48,8 +48,8 @@ _connection_new_from_dbus_strict(GVariant *dict, gboolean normalize)
     gs_unref_object NMConnection *con_n_0 = NULL;
     gs_unref_object NMConnection *con_n_s = NULL;
     gs_unref_object NMConnection *con_n_e = NULL;
-    gs_free_error GError *error           = NULL;
-    guint                 i;
+    gs_free_error GError         *error   = NULL;
+    guint                         i;
 
     g_assert(g_variant_is_of_type(dict, NM_VARIANT_TYPE_CONNECTION));
 
@@ -128,7 +128,7 @@ test_nm_meta_setting_types_by_priority(void)
     for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
         const NMMetaSettingType  meta_type = nm_meta_setting_types_by_priority[i];
         const NMMetaSettingInfo *setting_info;
-        NMSetting *              setting;
+        NMSetting               *setting;
 
         g_assert(_NM_INT_NOT_NEGATIVE(meta_type));
         g_assert(meta_type < _NM_META_SETTING_TYPE_NUM);
@@ -203,7 +203,7 @@ compare_blob_data(const char *test, const char *key_path, GBytes *key)
 {
     gs_free char *contents = NULL;
     gsize         len      = 0;
-    GError *      error    = NULL;
+    GError       *error    = NULL;
     gboolean      success;
 
     g_assert(key && g_bytes_get_size(key) > 0);
@@ -237,13 +237,13 @@ check_scheme_path(GBytes *value, const char *path)
 static void
 test_private_key_import(const char *path, const char *password, NMSetting8021xCKScheme scheme)
 {
-    NMSetting8021x *       s_8021x;
+    NMSetting8021x        *s_8021x;
     gboolean               success;
     NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
     NMSetting8021xCKFormat tmp_fmt;
-    GError *               error   = NULL;
-    GBytes *               tmp_key = NULL, *client_cert = NULL;
-    const char *           pw;
+    GError                *error   = NULL;
+    GBytes                *tmp_key = NULL, *client_cert = NULL;
+    const char            *pw;
 
     s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
     g_assert(s_8021x);
@@ -293,7 +293,7 @@ static void
 _do_test_connection_uuid(NMConnection *con, const char *uuid, const char *expected_uuid)
 {
     NMSettingConnection *s_con;
-    gs_free char *       uuid_old = NULL;
+    gs_free char        *uuid_old = NULL;
     gboolean             success;
     gboolean             is_normalized;
     char                 uuid_normalized[37];
@@ -407,17 +407,17 @@ test_connection_uuid(void)
 /*****************************************************************************/
 
 static void
-test_phase2_private_key_import(const char *           path,
-                               const char *           password,
+test_phase2_private_key_import(const char            *path,
+                               const char            *password,
                                NMSetting8021xCKScheme scheme)
 {
-    NMSetting8021x *       s_8021x;
+    NMSetting8021x        *s_8021x;
     gboolean               success;
     NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
     NMSetting8021xCKFormat tmp_fmt;
-    GError *               error   = NULL;
-    GBytes *               tmp_key = NULL, *client_cert = NULL;
-    const char *           pw;
+    GError                *error   = NULL;
+    GBytes                *tmp_key = NULL, *client_cert = NULL;
+    const char            *pw;
 
     s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
     g_assert(s_8021x);
@@ -465,11 +465,11 @@ test_phase2_private_key_import(const char *           path,
 static void
 test_wrong_password_keeps_data(const char *path, const char *password)
 {
-    NMSetting8021x *       s_8021x;
+    NMSetting8021x        *s_8021x;
     gboolean               success;
     NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
-    GError *               error  = NULL;
-    const char *           pw;
+    GError                *error  = NULL;
+    const char            *pw;
 
     s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
     g_assert(s_8021x);
@@ -506,11 +506,11 @@ test_wrong_password_keeps_data(const char *path, const char *password)
 static void
 test_clear_private_key(const char *path, const char *password)
 {
-    NMSetting8021x *       s_8021x;
+    NMSetting8021x        *s_8021x;
     gboolean               success;
     NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
-    GError *               error  = NULL;
-    const char *           pw;
+    GError                *error  = NULL;
+    const char            *pw;
 
     s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
     g_assert(s_8021x);
@@ -547,11 +547,11 @@ test_clear_private_key(const char *path, const char *password)
 static void
 test_wrong_phase2_password_keeps_data(const char *path, const char *password)
 {
-    NMSetting8021x *       s_8021x;
+    NMSetting8021x        *s_8021x;
     gboolean               success;
     NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
-    GError *               error  = NULL;
-    const char *           pw;
+    GError                *error  = NULL;
+    const char            *pw;
 
     s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
     g_assert(s_8021x);
@@ -588,11 +588,11 @@ test_wrong_phase2_password_keeps_data(const char *path, const char *password)
 static void
 test_clear_phase2_private_key(const char *path, const char *password)
 {
-    NMSetting8021x *       s_8021x;
+    NMSetting8021x        *s_8021x;
     gboolean               success;
     NMSetting8021xCKFormat format = NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
-    GError *               error  = NULL;
-    const char *           pw;
+    GError                *error  = NULL;
+    const char            *pw;
 
     s_8021x = (NMSetting8021x *) nm_setting_802_1x_new();
     g_assert(s_8021x);
@@ -683,8 +683,8 @@ static void
 _test_verify_options(gboolean expected_result, const char *const *options)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingBond *               s_bond;
-    const char *const *           option;
+    NMSettingBond                *s_bond;
+    const char *const            *option;
 
     g_assert(NM_PTRARRAY_LEN(options) % 2 == 0);
 
@@ -777,7 +777,7 @@ static void
 test_bond_compare_options(gboolean exp_res, const char **opts1, const char **opts2)
 {
     gs_unref_object NMSettingBond *s_bond1 = NULL, *s_bond2 = NULL;
-    const char **                  p;
+    const char                   **p;
 
     s_bond1 = (NMSettingBond *) nm_setting_bond_new();
     g_assert(s_bond1);
@@ -830,10 +830,10 @@ static void
 test_bond_normalize_options(const char **opts1, const char **opts2)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingBond *               s_bond;
-    GError *                      error = NULL;
+    NMSettingBond                *s_bond;
+    GError                       *error = NULL;
     gboolean                      success;
-    const char **                 p;
+    const char                  **p;
     int                           num = 0;
 
     create_bond_connection(&con, &s_bond);
@@ -880,7 +880,7 @@ static void
 test_dummy_normalize(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
+    NMSettingConnection          *s_con;
 
     connection = nm_simple_connection_new();
     s_con      = NM_SETTING_CONNECTION(nm_setting_connection_new());
@@ -911,7 +911,7 @@ static void
 test_dcb_flags_valid(void)
 {
     gs_unref_object NMSettingDcb *s_dcb = NULL;
-    GError *                      error = NULL;
+    GError                       *error = NULL;
     gboolean                      success;
     guint                         i;
 
@@ -969,7 +969,7 @@ static void
 test_dcb_flags_invalid(void)
 {
     gs_unref_object NMSettingDcb *s_dcb = NULL;
-    GError *                      error = NULL;
+    GError                       *error = NULL;
     gboolean                      success;
 
     s_dcb = (NMSettingDcb *) nm_setting_dcb_new();
@@ -1039,7 +1039,7 @@ static void
 test_dcb_app_priorities(void)
 {
     gs_unref_object NMSettingDcb *s_dcb = NULL;
-    GError *                      error = NULL;
+    GError                       *error = NULL;
     gboolean                      success;
 
     s_dcb = (NMSettingDcb *) nm_setting_dcb_new();
@@ -1107,7 +1107,7 @@ static void
 test_dcb_priorities_valid(void)
 {
     gs_unref_object NMSettingDcb *s_dcb = NULL;
-    GError *                      error = NULL;
+    GError                       *error = NULL;
     gboolean                      success;
     guint                         i;
 
@@ -1166,7 +1166,7 @@ static void
 test_dcb_bandwidth_sums(void)
 {
     gs_unref_object NMSettingDcb *s_dcb = NULL;
-    GError *                      error = NULL;
+    GError                       *error = NULL;
     gboolean                      success;
 
     s_dcb = (NMSettingDcb *) nm_setting_dcb_new();
@@ -1225,17 +1225,17 @@ _test_team_config_sync(const char *team_config,
                        int         notify_peers_interval,
                        int         mcast_rejoin_count,
                        int         mcast_rejoin_interval,
-                       char *      runner,
-                       char *      runner_hwaddr_policy,        /* activebackup */
-                       GPtrArray * runner_tx_hash,              /* lacp, loadbalance */
-                       char *      runner_tx_balancer,          /* lacp, loadbalance */
+                       char       *runner,
+                       char       *runner_hwaddr_policy,        /* activebackup */
+                       GPtrArray  *runner_tx_hash,              /* lacp, loadbalance */
+                       char       *runner_tx_balancer,          /* lacp, loadbalance */
                        int         runner_tx_balancer_interval, /* lacp, loadbalance */
                        gboolean    runner_active,               /* lacp */
                        gboolean    runner_fast_rate,            /* lacp */
                        int         runner_sys_prio,             /* lacp */
                        int         runner_min_ports,            /* lacp */
-                       char *      runner_agg_select_policy,    /* lacp */
-                       GPtrArray * link_watchers)
+                       char       *runner_agg_select_policy,    /* lacp */
+                       GPtrArray  *link_watchers)
 {
     gs_unref_object NMSettingTeam *s_team = NULL;
     guint                          i, j;
@@ -1634,7 +1634,7 @@ _test_team_port_config_sync(const char *team_port_config,
                             gboolean    sticky,
                             int         lacp_prio,
                             int         lacp_key,
-                            GPtrArray * link_watchers)
+                            GPtrArray  *link_watchers)
 {
     gs_unref_object NMSettingTeamPort *s_team_port = NULL;
     guint                              i, j;
@@ -1812,8 +1812,8 @@ test_team_setting(void)
         G_VARIANT_TYPE_VARDICT,
         "{'config': <'{\"link_watch\": {\"name\": \"ethtool\"}}'>, 'interface-name': <'nm-team'>, "
         "'link-watchers': <[{'name': <'ethtool'>}]>}");
-    gs_free_error GError *error             = NULL;
-    gs_unref_object NMSetting *     setting = NULL;
+    gs_free_error GError                              *error   = NULL;
+    gs_unref_object NMSetting                         *setting = NULL;
     nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher1 =
         nm_team_link_watcher_new_nsna_ping(1, 3, 4, "bbb", NULL);
     nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher2 =
@@ -1939,16 +1939,16 @@ _setting_ethtool_get_feature(NMSettingEthtool *s_ethtool, const char *opt_name)
 static void
 test_ethtool_features(void)
 {
-    gs_unref_object NMConnection *con       = NULL;
-    gs_unref_object NMConnection *con2      = NULL;
-    gs_unref_object NMConnection *con3      = NULL;
-    gs_unref_variant GVariant *variant      = NULL;
-    gs_free_error GError *error             = NULL;
+    gs_unref_object NMConnection   *con     = NULL;
+    gs_unref_object NMConnection   *con2    = NULL;
+    gs_unref_object NMConnection   *con3    = NULL;
+    gs_unref_variant GVariant      *variant = NULL;
+    gs_free_error GError           *error   = NULL;
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    NMSettingConnection *           s_con;
-    NMSettingEthtool *              s_ethtool;
-    NMSettingEthtool *              s_ethtool2;
-    NMSettingEthtool *              s_ethtool3;
+    NMSettingConnection            *s_con;
+    NMSettingEthtool               *s_ethtool;
+    NMSettingEthtool               *s_ethtool2;
+    NMSettingEthtool               *s_ethtool3;
 
     con = nmtst_create_minimal_connection("ethtool-1", NULL, NM_SETTING_WIRED_SETTING_NAME, &s_con);
     s_ethtool = NM_SETTING_ETHTOOL(nm_setting_ethtool_new());
@@ -2024,16 +2024,16 @@ test_ethtool_features(void)
 static void
 test_ethtool_coalesce(void)
 {
-    gs_unref_object NMConnection *con       = NULL;
-    gs_unref_object NMConnection *con2      = NULL;
-    gs_unref_object NMConnection *con3      = NULL;
-    gs_unref_variant GVariant *variant      = NULL;
-    gs_free_error GError *error             = NULL;
+    gs_unref_object NMConnection   *con     = NULL;
+    gs_unref_object NMConnection   *con2    = NULL;
+    gs_unref_object NMConnection   *con3    = NULL;
+    gs_unref_variant GVariant      *variant = NULL;
+    gs_free_error GError           *error   = NULL;
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    NMSettingConnection *           s_con;
-    NMSettingEthtool *              s_ethtool;
-    NMSettingEthtool *              s_ethtool2;
-    NMSettingEthtool *              s_ethtool3;
+    NMSettingConnection            *s_con;
+    NMSettingEthtool               *s_ethtool;
+    NMSettingEthtool               *s_ethtool2;
+    NMSettingEthtool               *s_ethtool3;
     guint32                         u32;
 
     con       = nmtst_create_minimal_connection("ethtool-coalesce",
@@ -2120,16 +2120,16 @@ test_ethtool_coalesce(void)
 static void
 test_ethtool_ring(void)
 {
-    gs_unref_object NMConnection *con       = NULL;
-    gs_unref_object NMConnection *con2      = NULL;
-    gs_unref_object NMConnection *con3      = NULL;
-    gs_unref_variant GVariant *variant      = NULL;
-    gs_free_error GError *error             = NULL;
+    gs_unref_object NMConnection   *con     = NULL;
+    gs_unref_object NMConnection   *con2    = NULL;
+    gs_unref_object NMConnection   *con3    = NULL;
+    gs_unref_variant GVariant      *variant = NULL;
+    gs_free_error GError           *error   = NULL;
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    NMSettingConnection *           s_con;
-    NMSettingEthtool *              s_ethtool;
-    NMSettingEthtool *              s_ethtool2;
-    NMSettingEthtool *              s_ethtool3;
+    NMSettingConnection            *s_con;
+    NMSettingEthtool               *s_ethtool;
+    NMSettingEthtool               *s_ethtool2;
+    NMSettingEthtool               *s_ethtool3;
     guint32                         out_value;
 
     con       = nmtst_create_minimal_connection("ethtool-ring",
@@ -2214,16 +2214,16 @@ test_ethtool_ring(void)
 static void
 test_ethtool_pause(void)
 {
-    gs_unref_object NMConnection *con       = NULL;
-    gs_unref_object NMConnection *con2      = NULL;
-    gs_unref_object NMConnection *con3      = NULL;
-    gs_unref_variant GVariant *variant      = NULL;
-    gs_free_error GError *error             = NULL;
+    gs_unref_object NMConnection   *con     = NULL;
+    gs_unref_object NMConnection   *con2    = NULL;
+    gs_unref_object NMConnection   *con3    = NULL;
+    gs_unref_variant GVariant      *variant = NULL;
+    gs_free_error GError           *error   = NULL;
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    NMSettingConnection *           s_con;
-    NMSettingEthtool *              s_ethtool;
-    NMSettingEthtool *              s_ethtool2;
-    NMSettingEthtool *              s_ethtool3;
+    NMSettingConnection            *s_con;
+    NMSettingEthtool               *s_ethtool;
+    NMSettingEthtool               *s_ethtool2;
+    NMSettingEthtool               *s_ethtool3;
     gboolean                        out_value;
 
     con       = nmtst_create_minimal_connection("ethtool-pause",
@@ -2311,8 +2311,8 @@ static void
 test_sriov_vf(void)
 {
     NMSriovVF *vf1, *vf2;
-    GError *   error = NULL;
-    char *     str;
+    GError    *error = NULL;
+    char      *str;
 
     vf1 = nm_sriov_vf_new(1);
     nm_sriov_vf_set_attribute(vf1,
@@ -2369,10 +2369,10 @@ test_sriov_vf_dup(void)
 static void
 test_sriov_vf_vlan(void)
 {
-    NMSriovVF *   vf;
-    const guint * vlan_ids;
+    NMSriovVF    *vf;
+    const guint  *vlan_ids;
     guint         num;
-    GError *      error = NULL;
+    GError       *error = NULL;
     gs_free char *str   = NULL;
 
     vf = nm_sriov_vf_new(19);
@@ -2430,10 +2430,10 @@ static void
 test_sriov_setting(void)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingSriov *              s_sriov = NULL;
-    NMSriovVF *                   vf1, *vf2, *vf3;
-    GError *                      error = NULL;
+    NMSettingConnection          *s_con;
+    NMSettingSriov               *s_sriov = NULL;
+    NMSriovVF                    *vf1, *vf2, *vf3;
+    GError                       *error = NULL;
     gboolean                      success;
 
     con = nm_simple_connection_new();
@@ -2491,7 +2491,7 @@ typedef struct {
 static void
 _test_sriov_parse_vlan_one(const char *string, gboolean exp_res, VlanData *data, guint data_length)
 {
-    NMSriovVF *  vf;
+    NMSriovVF   *vf;
     gboolean     res;
     guint        i, num_vlans;
     const guint *vlan_ids;
@@ -2550,9 +2550,9 @@ static void
 test_bridge_vlans(void)
 {
     NMBridgeVlan *v1, *v2;
-    GError *      error = NULL;
+    GError       *error = NULL;
     guint16       vid_start, vid_end;
-    char *        str;
+    char         *str;
 
     v1 = nm_bridge_vlan_from_str("1 foobar", &error);
     nmtst_assert_no_success(v1, error);
@@ -2641,8 +2641,8 @@ static void
 _test_verify_options_bridge(gboolean expected_result, const char *const *options)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingBridge *             s_bridge;
-    const char *const *           option;
+    NMSettingBridge              *s_bridge;
+    const char *const            *option;
 
     g_assert(NM_PTRARRAY_LEN(options) % 2 == 0);
 
@@ -2729,9 +2729,9 @@ static void
 test_tc_config_qdisc(void)
 {
     NMTCQdisc *qdisc1, *qdisc2;
-    char *     str;
-    GError *   error = NULL;
-    GVariant * variant;
+    char      *str;
+    GError    *error = NULL;
+    GVariant  *variant;
 
     qdisc1 = nm_tc_qdisc_new("fq_codel", TC_H_ROOT, &error);
     nmtst_assert_success(qdisc1, error);
@@ -2844,8 +2844,8 @@ static void
 test_tc_config_action(void)
 {
     NMTCAction *action1, *action2;
-    char *      str;
-    GError *    error = NULL;
+    char       *str;
+    GError     *error = NULL;
 
     action1 = nm_tc_action_new("drop", &error);
     nmtst_assert_success(action1, error);
@@ -2897,10 +2897,10 @@ test_tc_config_action(void)
 static void
 test_tc_config_tfilter_matchall_sdata(void)
 {
-    NMTCAction * action1;
+    NMTCAction  *action1;
     NMTCTfilter *tfilter1, *tfilter2;
-    char *       str;
-    GError *     error = NULL;
+    char        *str;
+    GError      *error = NULL;
 
     tfilter1 = nm_tc_tfilter_new("matchall", TC_H_MAKE(0x1234u << 16, 0x0000u), &error);
     nmtst_assert_success(tfilter1, error);
@@ -2948,12 +2948,12 @@ test_tc_config_tfilter_matchall_sdata(void)
 static void
 test_tc_config_tfilter_matchall_mirred(void)
 {
-    NMTCAction *       action;
-    NMTCTfilter *      tfilter1;
-    GError *           error      = NULL;
+    NMTCAction        *action;
+    NMTCTfilter       *tfilter1;
+    GError            *error      = NULL;
     gs_strfreev char **attr_names = NULL;
-    gs_free char *     str;
-    GVariant *         variant;
+    gs_free char      *str;
+    GVariant          *variant;
 
     tfilter1 =
         nm_utils_tc_tfilter_from_str("parent ffff: matchall action mirred ingress mirror dev eth0",
@@ -2995,8 +2995,8 @@ static void
 test_tc_config_setting_valid(void)
 {
     gs_unref_object NMSettingTCConfig *s_tc = NULL;
-    NMTCQdisc *                        qdisc1, *qdisc2;
-    GError *                           error = NULL;
+    NMTCQdisc                         *qdisc1, *qdisc2;
+    GError                            *error = NULL;
 
     s_tc = (NMSettingTCConfig *) nm_setting_tc_config_new();
 
@@ -3028,12 +3028,12 @@ test_tc_config_setting_duplicates(void)
 {
     gs_unref_ptrarray GPtrArray *qdiscs   = NULL;
     gs_unref_ptrarray GPtrArray *tfilters = NULL;
-    NMSettingConnection *        s_con;
-    NMConnection *               con;
-    NMSetting *                  s_tc;
-    NMTCQdisc *                  qdisc;
-    NMTCTfilter *                tfilter;
-    GError *                     error = NULL;
+    NMSettingConnection         *s_con;
+    NMConnection                *con;
+    NMSetting                   *s_tc;
+    NMTCQdisc                   *qdisc;
+    NMTCTfilter                 *tfilter;
+    GError                      *error = NULL;
 
     con = nmtst_create_minimal_connection("dummy", NULL, NM_SETTING_DUMMY_SETTING_NAME, &s_con);
     g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "dummy1", NULL);
@@ -3088,12 +3088,12 @@ static void
 test_tc_config_dbus(void)
 {
     NMConnection *connection1, *connection2;
-    NMSetting *   s_tc;
-    NMTCQdisc *   qdisc1, *qdisc2;
-    NMTCTfilter * tfilter1, *tfilter2;
-    NMTCAction *  action;
-    GVariant *    dbus, *tc_dbus, *var1, *var2;
-    GError *      error = NULL;
+    NMSetting    *s_tc;
+    NMTCQdisc    *qdisc1, *qdisc2;
+    NMTCTfilter  *tfilter1, *tfilter2;
+    NMTCAction   *action;
+    GVariant     *dbus, *tc_dbus, *var1, *var2;
+    GError       *error = NULL;
     gboolean      success;
 
     connection1 =
@@ -3183,13 +3183,13 @@ test_tc_config_dbus(void)
 static void
 _rndt_wired_add_s390_options(NMSettingWired *s_wired, char **out_keyfile_entries)
 {
-    gsize                n_opts;
-    gsize                i, j;
-    const char *const *  option_names;
-    gs_free const char **opt_keys  = NULL;
-    gs_strfreev char **  opt_vals  = NULL;
-    gs_free bool *       opt_found = NULL;
-    GString *            keyfile_entries;
+    gsize                         n_opts;
+    gsize                         i, j;
+    const char *const            *option_names;
+    gs_free const char          **opt_keys  = NULL;
+    gs_strfreev char            **opt_vals  = NULL;
+    gs_free bool                 *opt_found = NULL;
+    GString                      *keyfile_entries;
     nm_auto_free_gstring GString *str_tmp = NULL;
 
     option_names = nm_setting_wired_get_valid_s390_options(nmtst_get_rand_bool() ? NULL : s_wired);
@@ -3288,9 +3288,9 @@ _rndt_wg_peers_create(void)
         NMWireGuardPeer *peer;
         guint8           public_key_buf[NM_WIREGUARD_PUBLIC_KEY_LEN];
         guint8           preshared_key_buf[NM_WIREGUARD_SYMMETRIC_KEY_LEN];
-        gs_free char *   public_key    = NULL;
-        gs_free char *   preshared_key = NULL;
-        gs_free char *   s_endpoint    = NULL;
+        gs_free char    *public_key    = NULL;
+        gs_free char    *preshared_key = NULL;
+        gs_free char    *s_endpoint    = NULL;
         guint            i_aip, n_aip;
 
         /* we don't bother to create a valid curve25519 public key. Of course, libnm cannot
@@ -3358,11 +3358,11 @@ _rndt_wg_peers_to_keyfile(GPtrArray *wg_peers, gboolean strict, char **out_str)
     nm_gstring_prepare(&gstr);
     for (i = 0; i < wg_peers->len; i++) {
         const NMWireGuardPeer *peer                   = wg_peers->pdata[i];
-        gs_free char *         s_endpoint             = NULL;
-        gs_free char *         s_preshared_key        = NULL;
-        gs_free char *         s_preshared_key_flags  = NULL;
-        gs_free char *         s_persistent_keepalive = NULL;
-        gs_free char *         s_allowed_ips          = NULL;
+        gs_free char          *s_endpoint             = NULL;
+        gs_free char          *s_preshared_key        = NULL;
+        gs_free char          *s_preshared_key_flags  = NULL;
+        gs_free char          *s_persistent_keepalive = NULL;
+        gs_free char          *s_allowed_ips          = NULL;
 
         if (nm_wireguard_peer_get_endpoint(peer))
             s_endpoint = g_strdup_printf("endpoint=%s\n", nm_wireguard_peer_get_endpoint(peer));
@@ -3421,7 +3421,7 @@ _rndt_wg_peers_to_keyfile(GPtrArray *wg_peers, gboolean strict, char **out_str)
 
 static void
 _rndt_wg_peers_assert_equal(NMSettingWireGuard *s_wg,
-                            GPtrArray *         peers,
+                            GPtrArray          *peers,
                             gboolean            consider_persistent_secrets,
                             gboolean            consider_all_secrets,
                             gboolean            expect_no_secrets)
@@ -3476,8 +3476,8 @@ _rndt_wg_peers_fix_secrets(NMSettingWireGuard *s_wg, GPtrArray *peers)
     g_assert_cmpint(peers->len, ==, nm_setting_wireguard_get_peers_len(s_wg));
 
     for (i = 0; i < peers->len; i++) {
-        const NMWireGuardPeer *a                      = peers->pdata[i];
-        const NMWireGuardPeer *b                      = nm_setting_wireguard_get_peer(s_wg, i);
+        const NMWireGuardPeer                *a       = peers->pdata[i];
+        const NMWireGuardPeer                *b       = nm_setting_wireguard_get_peer(s_wg, i);
         nm_auto_unref_wgpeer NMWireGuardPeer *b_clone = NULL;
 
         g_assert(a);
@@ -3538,23 +3538,23 @@ test_roundtrip_conversion(gconstpointer test_data)
         nmtst_rand_select(NM_SETTING_SECRET_FLAG_NONE,
                           NM_SETTING_SECRET_FLAG_NOT_SAVED,
                           NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-    const guint       WG_LISTEN_PORT = nmtst_rand_select(0u, nmtst_get_rand_uint32() % 0x10000);
-    const guint       WG_FWMARK      = nmtst_rand_select(0u, nmtst_get_rand_uint32());
-    gs_unref_ptrarray GPtrArray *kf_data_arr      = g_ptr_array_new_with_free_func(g_free);
-    gs_unref_ptrarray GPtrArray *        wg_peers = NULL;
+    const guint WG_LISTEN_PORT = nmtst_rand_select(0u, nmtst_get_rand_uint32() % 0x10000);
+    const guint WG_FWMARK      = nmtst_rand_select(0u, nmtst_get_rand_uint32());
+    gs_unref_ptrarray GPtrArray         *kf_data_arr = g_ptr_array_new_with_free_func(g_free);
+    gs_unref_ptrarray GPtrArray         *wg_peers    = NULL;
     const NMConnectionSerializationFlags dbus_serialization_flags[] = {
         NM_CONNECTION_SERIALIZE_ALL,
         NM_CONNECTION_SERIALIZE_WITH_NON_SECRET,
         NM_CONNECTION_SERIALIZE_WITH_SECRETS,
     };
-    guint           dbus_serialization_flags_idx;
-    gs_unref_object NMConnection *con = NULL;
-    gs_free_error GError *error       = NULL;
-    gs_free char *        tmp_str     = NULL;
-    guint                 kf_data_idx;
-    NMSettingConnection * s_con = NULL;
-    NMSettingWired *      s_eth = NULL;
-    NMSettingWireGuard *  s_wg  = NULL;
+    guint                         dbus_serialization_flags_idx;
+    gs_unref_object NMConnection *con     = NULL;
+    gs_free_error GError         *error   = NULL;
+    gs_free char                 *tmp_str = NULL;
+    guint                         kf_data_idx;
+    NMSettingConnection          *s_con = NULL;
+    NMSettingWired               *s_eth = NULL;
+    NMSettingWireGuard           *s_wg  = NULL;
     union {
         struct {
             NMSettingIPConfig *s_6;
@@ -3849,8 +3849,8 @@ test_roundtrip_conversion(gconstpointer test_data)
     /* check that reading any of kf_data_arr yields the same result that we expect. */
     for (kf_data_idx = 0; kf_data_idx < kf_data_arr->len; kf_data_idx++) {
         gs_unref_object NMConnection *con2   = NULL;
-        NMSettingWireGuard *          s_wg2  = NULL;
-        NMSettingWired *              s_eth2 = NULL;
+        NMSettingWireGuard           *s_wg2  = NULL;
+        NMSettingWired               *s_eth2 = NULL;
 
         con2 = nmtst_create_connection_from_keyfile(kf_data_arr->pdata[kf_data_idx],
                                                     "/no/where/file.nmconnection");
@@ -3918,9 +3918,9 @@ test_roundtrip_conversion(gconstpointer test_data)
          dbus_serialization_flags_idx++) {
         NMConnectionSerializationFlags flag =
             dbus_serialization_flags[dbus_serialization_flags_idx];
-        gs_unref_variant GVariant *con_var  = NULL;
-        gs_unref_object NMConnection *con2  = NULL;
-        NMSettingWireGuard *          s_wg2 = NULL;
+        gs_unref_variant GVariant    *con_var = NULL;
+        gs_unref_object NMConnection *con2    = NULL;
+        NMSettingWireGuard           *s_wg2   = NULL;
 
         con_var = nm_connection_to_dbus(con, flag);
         g_assert(g_variant_is_of_type(con_var, NM_VARIANT_TYPE_CONNECTION));
@@ -3963,12 +3963,12 @@ test_roundtrip_conversion(gconstpointer test_data)
 static NMIPRoutingRule *
 _rr_from_str_get_impl(const char *str, const char *const *aliases)
 {
-    nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr = NULL;
-    gs_free_error GError *       error                = NULL;
-    gboolean                     vbool;
-    int                          addr_family;
-    int                          i;
-    NMIPRoutingRuleAsStringFlags to_string_flags;
+    nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr    = NULL;
+    gs_free_error GError                          *error = NULL;
+    gboolean                                       vbool;
+    int                                            addr_family;
+    int                                            i;
+    NMIPRoutingRuleAsStringFlags                   to_string_flags;
 
     rr = nm_ip_routing_rule_from_string(str,
                                         NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE,
@@ -3985,10 +3985,10 @@ _rr_from_str_get_impl(const char *str, const char *const *aliases)
         to_string_flags = NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6;
 
     for (i = 0; TRUE; i++) {
-        nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr2  = NULL;
-        gs_free char *                                 str1 = NULL;
-        gs_unref_variant GVariant *variant1                 = NULL;
-        const char *               cstr1;
+        nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr2      = NULL;
+        gs_free char                                  *str1     = NULL;
+        gs_unref_variant GVariant                     *variant1 = NULL;
+        const char                                    *cstr1;
 
         switch (i) {
         case 0:
@@ -4084,7 +4084,7 @@ test_routing_rule(gconstpointer test_data)
     nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr1 = NULL;
     gboolean                                       success;
     char                                           ifname_buf[16];
-    gs_free_error GError *error = NULL;
+    gs_free_error GError                          *error = NULL;
 
     _rr_from_str("priority 5 from 0.0.0.0 table 1", "  from 0.0.0.0  priority  5 lookup 1 ");
     _rr_from_str("priority 5 from 0.0.0.0/0 table 4");
@@ -4190,7 +4190,7 @@ test_parse_tc_handle(void)
     G_STMT_START                                                                \
     {                                                                           \
         gs_free_error GError *_error  = NULL;                                   \
-        GError **             _perror = nmtst_get_rand_bool() ? &_error : NULL; \
+        GError              **_perror = nmtst_get_rand_bool() ? &_error : NULL; \
         guint32               _v;                                               \
         const guint32         _v_exp = (exp);                                   \
                                                                                 \
@@ -4247,12 +4247,12 @@ test_parse_tc_handle(void)
 static void
 test_empty_setting(void)
 {
-    gs_unref_object NMConnection *con  = NULL;
-    gs_unref_object NMConnection *con2 = NULL;
-    NMSettingBluetooth *          s_bt;
-    NMSettingGsm *                s_gsm;
-    nm_auto_unref_keyfile GKeyFile *kf = NULL;
-    gs_free_error GError *error        = NULL;
+    gs_unref_object NMConnection   *con  = NULL;
+    gs_unref_object NMConnection   *con2 = NULL;
+    NMSettingBluetooth             *s_bt;
+    NMSettingGsm                   *s_gsm;
+    nm_auto_unref_keyfile GKeyFile *kf    = NULL;
+    gs_free_error GError           *error = NULL;
 
     con = nmtst_create_minimal_connection("bt-empty-gsm",
                                           "dca3192a-f2dc-48eb-b806-d0ff788f122c",
@@ -4307,7 +4307,7 @@ _PROP_IDX_OWNER(GHashTable *h_property_types, const NMSettInfoPropertType *prope
     const NMSettInfoSetting *sett_info_settings = nmtst_sett_info_settings();
     const NMSettInfoSetting *sis;
     const NMMetaSettingInfo *msi;
-    GArray *                 arr;
+    GArray                  *arr;
     guint                    idx;
     NMMetaSettingType        meta_type;
     guint                    prop_idx;
@@ -4341,8 +4341,8 @@ _PROP_IDX_OWNER(GHashTable *h_property_types, const NMSettInfoPropertType *prope
 static void
 test_setting_metadata(void)
 {
-    const NMSettInfoSetting *sett_info_settings = nmtst_sett_info_settings();
-    NMMetaSettingType        meta_type;
+    const NMSettInfoSetting       *sett_info_settings = nmtst_sett_info_settings();
+    NMMetaSettingType              meta_type;
     gs_unref_hashtable GHashTable *h_property_types = NULL;
 
     G_STATIC_ASSERT(_NM_META_SETTING_TYPE_NUM == NM_META_SETTING_TYPE_UNKNOWN);
@@ -4351,7 +4351,7 @@ test_setting_metadata(void)
         g_hash_table_new_full(nm_direct_hash, NULL, NULL, (GDestroyNotify) g_array_unref);
 
     for (meta_type = 0; meta_type < _NM_META_SETTING_TYPE_NUM; meta_type++) {
-        const NMMetaSettingInfo *msi                   = &nm_meta_setting_infos[meta_type];
+        const NMMetaSettingInfo                 *msi   = &nm_meta_setting_infos[meta_type];
         nm_auto_unref_gtypeclass NMSettingClass *klass = NULL;
         GType                                    gtype;
 
@@ -4382,17 +4382,17 @@ test_setting_metadata(void)
     g_assert(sett_info_settings);
 
     for (meta_type = 0; meta_type < _NM_META_SETTING_TYPE_NUM; meta_type++) {
-        const NMSettInfoSetting *sis                = &sett_info_settings[meta_type];
-        const NMMetaSettingInfo *msi                = &nm_meta_setting_infos[meta_type];
+        const NMSettInfoSetting       *sis          = &sett_info_settings[meta_type];
+        const NMMetaSettingInfo       *msi          = &nm_meta_setting_infos[meta_type];
         gs_unref_hashtable GHashTable *h_properties = NULL;
         GType                          gtype;
-        gs_unref_object NMSetting *setting = NULL;
-        guint                      prop_idx;
-        gs_free GParamSpec **property_specs = NULL;
-        guint                n_property_specs;
-        guint                n_param_spec;
-        guint                i;
-        guint                j;
+        gs_unref_object NMSetting     *setting = NULL;
+        guint                          prop_idx;
+        gs_free GParamSpec           **property_specs = NULL;
+        guint                          n_property_specs;
+        guint                          n_param_spec;
+        guint                          i;
+        guint                          j;
 
         g_assert(sis);
 
@@ -4427,7 +4427,7 @@ test_setting_metadata(void)
 
         for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
             const NMSettInfoProperty *sip = &sis->property_infos[prop_idx];
-            GArray *                  property_types_data;
+            GArray                   *property_types_data;
             guint                     prop_idx_val;
             gboolean                  can_set_including_default = FALSE;
 
@@ -4892,7 +4892,7 @@ static void
 test_setting_connection_secondaries_verify(void)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingConnection *         s_con;
+    NMSettingConnection          *s_con;
     guint                         i_run;
     guint                         i_word;
 
@@ -4900,7 +4900,7 @@ test_setting_connection_secondaries_verify(void)
     nmtst_connection_normalize(con);
 
     for (i_run = 0; i_run < 100; i_run++) {
-        guint             word_len            = nmtst_get_rand_word_length(NULL);
+        guint                        word_len = nmtst_get_rand_word_length(NULL);
         gs_unref_ptrarray GPtrArray *arr      = NULL;
         gs_unref_ptrarray GPtrArray *arr_norm = NULL;
         gboolean                     was_normalized;
@@ -4930,10 +4930,10 @@ test_setting_connection_secondaries_verify(void)
     G_STMT_START                                                                               \
     {                                                                                          \
         NMSettingConnection *const _s_con    = (s_con);                                        \
-        const char *const *        _expected = (expected);                                     \
-        GArray *                   _secondaries;                                               \
+        const char *const         *_expected = (expected);                                     \
+        GArray                    *_secondaries;                                               \
         const guint                _expected_len = NM_PTRARRAY_LEN(_expected);                 \
-        gs_strfreev char **        _sec_strv     = NULL;                                       \
+        gs_strfreev char         **_sec_strv     = NULL;                                       \
         guint                      _i;                                                         \
                                                                                                \
         g_assert(_expected);                                                                   \
@@ -5011,8 +5011,8 @@ static void
 test_6lowpan_1(void)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSetting6Lowpan *            s_6low;
-    gs_free char *                value = NULL;
+    NMSetting6Lowpan             *s_6low;
+    gs_free char                 *value = NULL;
 
     con = nmtst_create_minimal_connection("test-sec", NULL, NM_SETTING_6LOWPAN_SETTING_NAME, NULL);
 

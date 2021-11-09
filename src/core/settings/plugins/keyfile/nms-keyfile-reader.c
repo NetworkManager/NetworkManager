@@ -23,10 +23,10 @@ _fmt_warn(const NMKeyfileHandlerData *handler_data, char **out_message)
     const char *message = _nm_keyfile_handler_data_warn_get_message(handler_data);
 
     if (group) {
-        NMSetting * setting       = handler_data->cur_setting;
+        NMSetting  *setting       = handler_data->cur_setting;
         const char *property_name = handler_data->cur_property;
         const char *setting_name  = setting ? nm_setting_get_name(setting) : NULL;
-        char *      res;
+        char       *res;
 
         if (setting_name) {
             if (property_name && !strcmp(group, setting_name))
@@ -51,18 +51,18 @@ typedef struct {
 } ReadInfo;
 
 static gboolean
-_handler_read(GKeyFile *            keyfile,
-              NMConnection *        connection,
+_handler_read(GKeyFile             *keyfile,
+              NMConnection         *connection,
               NMKeyfileHandlerType  handler_type,
               NMKeyfileHandlerData *handler_data,
-              void *                user_data)
+              void                 *user_data)
 {
     const ReadInfo *read_info = user_data;
 
     if (handler_type == NM_KEYFILE_HANDLER_TYPE_WARN) {
         const NMKeyfileHandlerDataWarn *warn_data = &handler_data->warn;
         NMLogLevel                      level;
-        char *                          message_free = NULL;
+        char                           *message_free = NULL;
 
         if (!read_info->verbose)
             return TRUE;
@@ -90,21 +90,21 @@ _handler_read(GKeyFile *            keyfile,
 }
 
 NMConnection *
-nms_keyfile_reader_from_keyfile(GKeyFile *  key_file,
+nms_keyfile_reader_from_keyfile(GKeyFile   *key_file,
                                 const char *filename,
                                 const char *base_dir,
                                 const char *profile_dir,
                                 gboolean    verbose,
-                                GError **   error)
+                                GError    **error)
 {
     NMConnection *connection;
     ReadInfo      read_info = {
-        .verbose = verbose,
+             .verbose = verbose,
     };
     gs_free char *base_dir_free         = NULL;
     gs_free char *profile_filename_free = NULL;
     gs_free char *filename_id           = NULL;
-    const char *  profile_filename      = NULL;
+    const char   *profile_filename      = NULL;
 
     nm_assert(filename && filename[0]);
     nm_assert(!base_dir || base_dir[0] == '/');
@@ -154,19 +154,19 @@ nms_keyfile_reader_from_keyfile(GKeyFile *  key_file,
 }
 
 NMConnection *
-nms_keyfile_reader_from_file(const char * full_filename,
-                             const char * profile_dir,
+nms_keyfile_reader_from_file(const char  *full_filename,
+                             const char  *profile_dir,
                              struct stat *out_stat,
-                             NMTernary *  out_is_nm_generated,
-                             NMTernary *  out_is_volatile,
-                             NMTernary *  out_is_external,
-                             char **      out_shadowed_storage,
-                             NMTernary *  out_shadowed_owned,
-                             GError **    error)
+                             NMTernary   *out_is_nm_generated,
+                             NMTernary   *out_is_volatile,
+                             NMTernary   *out_is_external,
+                             char       **out_shadowed_storage,
+                             NMTernary   *out_shadowed_owned,
+                             GError     **error)
 {
     nm_auto_unref_keyfile GKeyFile *key_file     = NULL;
-    NMConnection *                  connection   = NULL;
-    GError *                        verify_error = NULL;
+    NMConnection                   *connection   = NULL;
+    GError                         *verify_error = NULL;
 
     nm_assert(full_filename && full_filename[0] == '/');
     nm_assert(!profile_dir || profile_dir[0] == '/');

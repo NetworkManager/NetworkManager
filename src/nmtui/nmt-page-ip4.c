@@ -44,7 +44,7 @@ nmt_page_ip4_init(NmtPageIP4 *ip4)
 static void
 edit_routes(NmtNewtButton *button, gpointer user_data)
 {
-    NMSetting *  s_ip4 = user_data;
+    NMSetting   *s_ip4 = user_data;
     NmtNewtForm *form;
 
     form = nmt_route_editor_new(s_ip4);
@@ -53,13 +53,13 @@ edit_routes(NmtNewtButton *button, gpointer user_data)
 }
 
 static gboolean
-ip4_routes_transform_to_description(GBinding *    binding,
+ip4_routes_transform_to_description(GBinding     *binding,
                                     const GValue *source_value,
-                                    GValue *      target_value,
+                                    GValue       *target_value,
                                     gpointer      user_data)
 {
     GPtrArray *routes;
-    char *     text;
+    char      *text;
 
     routes = g_value_get_boxed(source_value);
     if (!routes || !routes->len)
@@ -77,13 +77,13 @@ ip4_routes_transform_to_description(GBinding *    binding,
 static void
 nmt_page_ip4_constructed(GObject *object)
 {
-    NmtPageIP4 *       ip4 = NMT_PAGE_IP4(object);
+    NmtPageIP4        *ip4 = NMT_PAGE_IP4(object);
     gboolean           show_by_default;
-    NmtEditorSection * section;
-    NmtEditorGrid *    grid;
+    NmtEditorSection  *section;
+    NmtEditorGrid     *grid;
     NMSettingIPConfig *s_ip4;
-    NmtNewtWidget *    widget, *button;
-    NMConnection *     conn;
+    NmtNewtWidget     *widget, *button;
+    NMConnection      *conn;
 
     conn  = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(ip4));
     s_ip4 = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_IP4_CONFIG);

@@ -68,8 +68,8 @@ NMConfigData *nm_config_get_data_orig(NMConfig *config);
 #define NM_CONFIG_GET_DATA      (nm_config_get_data(nm_config_get()))
 #define NM_CONFIG_GET_DATA_ORIG (nm_config_get_data_orig(nm_config_get()))
 
-const char *                 nm_config_get_log_level(NMConfig *config);
-const char *                 nm_config_get_log_domains(NMConfig *config);
+const char                  *nm_config_get_log_level(NMConfig *config);
+const char                  *nm_config_get_log_domains(NMConfig *config);
 NMConfigConfigureAndQuitType nm_config_get_configure_and_quit(NMConfig *config);
 gboolean                     nm_config_get_is_debug(NMConfig *config);
 
@@ -86,7 +86,7 @@ void nm_config_set_values(NMConfig *self,
 NMConfigCmdLineOptions *nm_config_cmd_line_options_new(gboolean first_start);
 void                    nm_config_cmd_line_options_free(NMConfigCmdLineOptions *cli);
 void                    nm_config_cmd_line_options_add_to_entries(NMConfigCmdLineOptions *cli,
-                                                                  GOptionContext *        opt_ctx);
+                                                                  GOptionContext         *opt_ctx);
 
 gboolean nm_config_get_no_auto_default_for_device(NMConfig *config, NMDevice *device);
 void     nm_config_set_no_auto_default_for_device(NMConfig *config, NMDevice *device);
@@ -107,31 +107,31 @@ int nm_config_parse_boolean(const char *str, int default_value);
 
 GKeyFile *nm_config_create_keyfile(void);
 int       nm_config_keyfile_get_boolean(const GKeyFile *keyfile,
-                                        const char *    section,
-                                        const char *    key,
+                                        const char     *section,
+                                        const char     *key,
                                         int             default_value);
 gint64    nm_config_keyfile_get_int64(const GKeyFile *keyfile,
-                                      const char *    section,
-                                      const char *    key,
+                                      const char     *section,
+                                      const char     *key,
                                       guint           base,
                                       gint64          min,
                                       gint64          max,
                                       gint64          fallback);
-char *    nm_config_keyfile_get_value(const GKeyFile *      keyfile,
-                                      const char *          section,
-                                      const char *          key,
+char     *nm_config_keyfile_get_value(const GKeyFile       *keyfile,
+                                      const char           *section,
+                                      const char           *key,
                                       NMConfigGetValueFlags flags);
-void      nm_config_keyfile_set_string_list(GKeyFile *         keyfile,
-                                            const char *       group,
-                                            const char *       key,
+void      nm_config_keyfile_set_string_list(GKeyFile          *keyfile,
+                                            const char        *group,
+                                            const char        *key,
                                             const char *const *strv,
                                             gssize             len);
 gboolean  nm_config_keyfile_has_global_dns_config(GKeyFile *keyfile, gboolean internal);
 
 GSList *nm_config_get_match_spec(const GKeyFile *keyfile,
-                                 const char *    group,
-                                 const char *    key,
-                                 gboolean *      out_has_key);
+                                 const char     *group,
+                                 const char     *key,
+                                 gboolean       *out_has_key);
 
 void _nm_config_sort_groups(char **groups, gsize ngroups);
 
@@ -175,22 +175,22 @@ struct _NMConfigDeviceStateData {
 };
 
 NMConfigDeviceStateData *nm_config_device_state_load(int ifindex);
-GHashTable *             nm_config_device_state_load_all(void);
+GHashTable              *nm_config_device_state_load_all(void);
 gboolean                 nm_config_device_state_write(int                            ifindex,
                                                       NMConfigDeviceStateManagedType managed,
-                                                      const char *                   perm_hw_addr_fake,
-                                                      const char *                   connection_uuid,
+                                                      const char                    *perm_hw_addr_fake,
+                                                      const char                    *connection_uuid,
                                                       NMTernary                      nm_owned,
                                                       guint32                        route_metric_default_aspired,
                                                       guint32                        route_metric_default_effective,
-                                                      const char *                   next_server,
-                                                      const char *                   root_path,
-                                                      const char *                   dhcp_bootfile);
+                                                      const char                    *next_server,
+                                                      const char                    *root_path,
+                                                      const char                    *dhcp_bootfile);
 
 void nm_config_device_state_prune_stale(GHashTable *preserve_ifindexes,
                                         NMPlatform *preserve_in_platform);
 
-const GHashTable *             nm_config_device_state_get_all(NMConfig *self);
+const GHashTable              *nm_config_device_state_get_all(NMConfig *self);
 const NMConfigDeviceStateData *nm_config_device_state_get(NMConfig *self, int ifindex);
 
 const char *const *nm_config_get_warnings(NMConfig *config);

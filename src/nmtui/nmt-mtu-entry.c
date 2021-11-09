@@ -75,9 +75,9 @@ mtu_validator(NmtNewtEntry *entry, const char *text, gpointer user_data)
 }
 
 static gboolean
-mtu_transform_to_text(GBinding *    binding,
+mtu_transform_to_text(GBinding     *binding,
                       const GValue *source_value,
-                      GValue *      target_value,
+                      GValue       *target_value,
                       gpointer      user_data)
 {
     int mtu = g_value_get_int(source_value);
@@ -93,8 +93,8 @@ static void
 nmt_mtu_entry_init(NmtMtuEntry *entry)
 {
     NmtMtuEntryPrivate *priv = NMT_MTU_ENTRY_GET_PRIVATE(entry);
-    NmtNewtGrid *       grid = NMT_NEWT_GRID(entry);
-    NmtNewtWidget *     real_entry, *label;
+    NmtNewtGrid        *grid = NMT_NEWT_GRID(entry);
+    NmtNewtWidget      *real_entry, *label;
 
     real_entry  = nmt_newt_entry_numeric_new(10, 0, 65535);
     priv->entry = NMT_NEWT_ENTRY(real_entry);

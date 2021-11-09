@@ -39,15 +39,15 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_AUTO_CONFIG,
                                   PROP_MTU, );
 
 typedef struct {
-    char *               number; /* For dialing, duh */
-    char *               username;
-    char *               password;
-    char *               device_id;
-    char *               sim_id;
-    char *               sim_operator_id;
-    char *               apn;        /* NULL for dynamic */
-    char *               network_id; /* for manual registration or NULL for automatic */
-    char *               pin;
+    char                *number; /* For dialing, duh */
+    char                *username;
+    char                *password;
+    char                *device_id;
+    char                *sim_id;
+    char                *sim_operator_id;
+    char                *apn;        /* NULL for dynamic */
+    char                *network_id; /* for manual registration or NULL for automatic */
+    char                *pin;
     NMSettingSecretFlags password_flags;
     NMSettingSecretFlags pin_flags;
     guint32              mtu;
@@ -463,7 +463,7 @@ static GPtrArray *
 need_secrets(NMSetting *setting)
 {
     NMSettingGsmPrivate *priv    = NM_SETTING_GSM_GET_PRIVATE(setting);
-    GPtrArray *          secrets = NULL;
+    GPtrArray           *secrets = NULL;
 
     if (priv->password && *priv->password)
         return NULL;
@@ -538,7 +538,7 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE(object);
-    char *               tmp;
+    char                *tmp;
 
     switch (prop_id) {
     case PROP_AUTO_CONFIG:
@@ -644,9 +644,9 @@ finalize(GObject *object)
 static void
 nm_setting_gsm_class_init(NMSettingGsmClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingGsmPrivate));
 

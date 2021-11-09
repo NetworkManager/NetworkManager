@@ -68,11 +68,11 @@ static NMCSProviderGetConfigResult *
 nmcs_provider_get_config_result_new(GHashTable *iface_datas)
 {
     const NMCSProviderGetConfigIfaceData *iface_data;
-    NMCSProviderGetConfigResult *         result;
+    NMCSProviderGetConfigResult          *result;
     GHashTableIter                        h_iter;
     guint                                 num_valid_ifaces = 0;
     guint                                 num_ipv4s        = 0;
-    GPtrArray *                           ptrarr;
+    GPtrArray                            *ptrarr;
     guint                                 n_iface_datas;
 
     n_iface_datas = g_hash_table_size(iface_datas);
@@ -137,13 +137,13 @@ nmcs_provider_get_config_result_free(NMCSProviderGetConfigResult *result)
 /*****************************************************************************/
 
 void
-nmcs_provider_detect(NMCSProvider *      self,
-                     GCancellable *      cancellable,
+nmcs_provider_detect(NMCSProvider       *self,
+                     GCancellable       *cancellable,
                      GAsyncReadyCallback callback,
                      gpointer            user_data)
 {
     gs_unref_object GTask *task = NULL;
-    const char *           env;
+    const char            *env;
 
     g_return_if_fail(NMCS_IS_PROVIDER(self));
     g_return_if_fail(!cancellable || G_IS_CANCELLABLE(cancellable));
@@ -251,7 +251,7 @@ _get_config_task_maybe_return(NMCSProviderGetConfigTaskData *get_config_data, GE
 
 void
 _nmcs_provider_get_config_task_maybe_return(NMCSProviderGetConfigTaskData *get_config_data,
-                                            GError *                       error_take)
+                                            GError                        *error_take)
 {
     nm_assert(!error_take || !nm_utils_error_is_cancelled(error_take));
     _get_config_task_maybe_return(get_config_data, error_take);
@@ -264,10 +264,10 @@ _get_config_cancelled_cb(GObject *object, gpointer user_data)
 }
 
 void
-nmcs_provider_get_config(NMCSProvider *      self,
+nmcs_provider_get_config(NMCSProvider       *self,
                          gboolean            any,
-                         const char *const * hwaddrs,
-                         GCancellable *      cancellable,
+                         const char *const  *hwaddrs,
+                         GCancellable       *cancellable,
                          GAsyncReadyCallback callback,
                          gpointer            user_data)
 {
@@ -351,7 +351,7 @@ nmcs_provider_init(NMCSProvider *self)
 static void
 dispose(GObject *object)
 {
-    NMCSProvider *       self = NMCS_PROVIDER(object);
+    NMCSProvider        *self = NMCS_PROVIDER(object);
     NMCSProviderPrivate *priv = NMCS_PROVIDER_GET_PRIVATE(self);
 
     g_clear_object(&priv->http_client);

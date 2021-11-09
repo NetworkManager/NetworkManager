@@ -24,9 +24,9 @@ show_connection(NMConnection *connection)
 {
     NMSettingConnection *s_con;
     guint64              timestamp;
-    char *               timestamp_str;
+    char                *timestamp_str;
     char                 timestamp_real_str[64];
-    const char *         val1, *val2, *val3, *val4, *val5;
+    const char          *val1, *val2, *val3, *val4, *val5;
 
     s_con = nm_connection_get_setting_connection(connection);
     if (s_con) {
@@ -55,8 +55,8 @@ show_connection(NMConnection *connection)
 int
 main(int argc, char *argv[])
 {
-    NMClient *       client;
-    GError *         error = NULL;
+    NMClient        *client;
+    GError          *error = NULL;
     const GPtrArray *connections;
     int              i;
 

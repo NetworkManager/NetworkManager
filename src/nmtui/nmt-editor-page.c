@@ -22,7 +22,7 @@ G_DEFINE_ABSTRACT_TYPE(NmtEditorPage, nmt_editor_page, G_TYPE_OBJECT)
 
 typedef struct {
     NMConnection *connection;
-    GSList *      sections;
+    GSList       *sections;
 
 } NmtEditorPagePrivate;
 

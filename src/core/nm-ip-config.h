@@ -23,12 +23,12 @@
 #define NM_IP_CONFIG_L3CFG "l3cfg"
 
 struct _NMIPConfigPrivate {
-    NML3Cfg *             l3cfg;
+    NML3Cfg              *l3cfg;
     const NML3ConfigData *l3cd;
-    GVariant *            v_address_data;
-    GVariant *            v_addresses;
-    GVariant *            v_route_data;
-    GVariant *            v_routes;
+    GVariant             *v_address_data;
+    GVariant             *v_addresses;
+    GVariant             *v_route_data;
+    GVariant             *v_routes;
     struct {
         const NMPObject *best_default_route;
     } v_gateway;

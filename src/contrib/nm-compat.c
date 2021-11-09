@@ -22,7 +22,7 @@ _get_keys(NMSettingVpn *setting, gboolean is_secrets, guint *out_length)
 {
     guint        len;
     const char **keys = NULL;
-    GPtrArray *  a;
+    GPtrArray   *a;
 
     nm_assert(NM_IS_SETTING_VPN(setting));
 

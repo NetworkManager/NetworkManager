@@ -33,11 +33,11 @@ _netns_access_l3cfg(NMNetns *netns, int ifindex)
 
 typedef struct {
     int                test_idx;
-    NMPlatform *       platform;
-    NMNetns *          netns;
+    NMPlatform        *platform;
+    NMNetns           *netns;
     NMDedupMultiIndex *multiidx;
-    const char *       ifname0;
-    const char *       ifname1;
+    const char        *ifname0;
+    const char        *ifname1;
     NMPLinkAddress     hwaddr0;
     NMPLinkAddress     hwaddr1;
     int                ifindex0;
@@ -163,9 +163,9 @@ _test_l3cfg_data_set_notify_type(TestL3cfgData *tdata, TestL3cfgNotifyType notif
 }
 
 static void
-_test_l3cfg_signal_notify(NML3Cfg *                   l3cfg,
+_test_l3cfg_signal_notify(NML3Cfg                    *l3cfg,
                           const NML3ConfigNotifyData *notify_data,
-                          TestL3cfgData *             tdata)
+                          TestL3cfgData              *tdata)
 {
     guint i;
 
@@ -327,13 +327,13 @@ test_l3cfg(gconstpointer test_data)
     const int                                      TEST_IDX = GPOINTER_TO_INT(test_data);
     const guint32                                  ACD_TIMEOUT_BASE_MSEC = 1000;
     nm_auto(_test_fixture_1_teardown) TestFixture1 test_fixture          = {};
-    const TestFixture1 *                           f;
-    NML3CfgCommitTypeHandle *                      commit_type_1;
-    NML3CfgCommitTypeHandle *                      commit_type_2;
-    gs_unref_object NML3Cfg *l3cfg0                      = NULL;
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_a      = NULL;
-    TestL3cfgData                            tdata_stack = {
-        .f = NULL,
+    const TestFixture1                            *f;
+    NML3CfgCommitTypeHandle                       *commit_type_1;
+    NML3CfgCommitTypeHandle                       *commit_type_2;
+    gs_unref_object NML3Cfg                       *l3cfg0      = NULL;
+    nm_auto_unref_l3cd const NML3ConfigData       *l3cd_a      = NULL;
+    TestL3cfgData                                  tdata_stack = {
+                                         .f = NULL,
     };
     TestL3cfgData *const tdata = &tdata_stack;
 
@@ -519,10 +519,10 @@ test_l3cfg(gconstpointer test_data)
 #define L3IPV4LL_ACD_TIMEOUT_MSEC 1500u
 
 typedef struct {
-    const TestFixture1 *     f;
+    const TestFixture1      *f;
     NML3CfgCommitTypeHandle *l3cfg_commit_type_1;
     guint                    acd_timeout_msec;
-    NML3IPv4LL *             l3ipv4ll;
+    NML3IPv4LL              *l3ipv4ll;
     bool                     has_addr4_101;
     gint8                    ready_seen;
     gint8                    addr_commit;
@@ -541,8 +541,8 @@ static void
 _test_l3_ipv4ll_maybe_add_addr_4(const TestL3IPv4LLData *tdata,
                                  int                     ifindex,
                                  guint                   one_case_in_num,
-                                 bool *                  has_addr,
-                                 const char *            addr)
+                                 bool                   *has_addr,
+                                 const char             *addr)
 {
     if (has_addr) {
         if (*has_addr || !nmtst_get_rand_one_case_in(one_case_in_num))
@@ -570,9 +570,9 @@ _test_l3_ipv4ll_maybe_add_addr_4(const TestL3IPv4LLData *tdata,
 }
 
 static void
-_test_l3_ipv4ll_signal_notify(NML3Cfg *                   l3cfg,
+_test_l3_ipv4ll_signal_notify(NML3Cfg                    *l3cfg,
                               const NML3ConfigNotifyData *notify_data,
-                              TestL3IPv4LLData *          tdata)
+                              TestL3IPv4LLData           *tdata)
 {
     char sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
 
@@ -653,17 +653,17 @@ test_l3_ipv4ll(gconstpointer test_data)
 {
     const int                                      TEST_IDX     = GPOINTER_TO_INT(test_data);
     nm_auto(_test_fixture_1_teardown) TestFixture1 test_fixture = {};
-    const TestFixture1 *                           f;
-    gs_unref_object NML3Cfg *l3cfg0      = NULL;
-    TestL3IPv4LLData         tdata_stack = {
-        .f = NULL,
+    const TestFixture1                            *f;
+    gs_unref_object NML3Cfg                       *l3cfg0      = NULL;
+    TestL3IPv4LLData                               tdata_stack = {
+                                      .f = NULL,
     };
-    TestL3IPv4LLData *const tdata                 = &tdata_stack;
-    NMTstpAcdDefender *     acd_defender_1        = NULL;
-    NMTstpAcdDefender *     acd_defender_2        = NULL;
-    nm_auto_unref_l3ipv4ll NML3IPv4LL *  l3ipv4ll = NULL;
-    gint64                               start_time_msec;
-    gint64                               total_poll_time_msec;
+    TestL3IPv4LLData *const                                      tdata          = &tdata_stack;
+    NMTstpAcdDefender                                           *acd_defender_1 = NULL;
+    NMTstpAcdDefender                                           *acd_defender_2 = NULL;
+    nm_auto_unref_l3ipv4ll NML3IPv4LL                           *l3ipv4ll       = NULL;
+    gint64                                                       start_time_msec;
+    gint64                                                       total_poll_time_msec;
     nm_auto_remove_l3ipv4ll_registration NML3IPv4LLRegistration *l3ipv4ll_reg = NULL;
     char sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
 
@@ -805,12 +805,12 @@ test_l3_ipv4ll(gconstpointer test_data)
 
 typedef struct {
     const TestFixture1 *f;
-    NML3Cfg *           l3cfg0;
-    NML3IPv6LL *        l3ipv6ll;
+    NML3Cfg            *l3cfg0;
+    NML3IPv6LL         *l3ipv6ll;
     int                 step;
     int                 ipv6ll_callback_step;
     bool                steps_done : 1;
-    const NMPObject *   lladdr0;
+    const NMPObject    *lladdr0;
 } TestL3IPv6LLData;
 
 static const NMPlatformIP6Address *
@@ -818,7 +818,7 @@ _test_l3_ipv6ll_find_lladdr(TestL3IPv6LLData *tdata, int ifindex)
 {
     const NMPlatformIP6Address *found = NULL;
     NMDedupMultiIter            iter;
-    const NMPObject *           obj;
+    const NMPObject            *obj;
     NMPLookup                   lookup;
 
     g_assert(tdata);
@@ -880,21 +880,21 @@ _test_l3_ipv6ll_find_inet6(TestL3IPv6LLData *tdata, const struct in6_addr *addr)
 }
 
 static void
-_test_l3_ipv6ll_signal_notify(NML3Cfg *                   l3cfg,
+_test_l3_ipv6ll_signal_notify(NML3Cfg                    *l3cfg,
                               const NML3ConfigNotifyData *notify_data,
-                              TestL3IPv6LLData *          tdata)
+                              TestL3IPv6LLData           *tdata)
 {
     g_assert_cmpint(tdata->step, >=, 1);
     g_assert_cmpint(tdata->step, <=, 2);
 }
 
 static void
-_test_l3_ipv6ll_callback_changed(NML3IPv6LL *           ipv6ll,
+_test_l3_ipv6ll_callback_changed(NML3IPv6LL            *ipv6ll,
                                  NML3IPv6LLState        state,
                                  const struct in6_addr *lladdr,
                                  gpointer               user_data)
 {
-    TestL3IPv6LLData *          tdata = user_data;
+    TestL3IPv6LLData           *tdata = user_data;
     int                         step  = tdata->ipv6ll_callback_step++;
     const NMPlatformIP6Address *a1;
 
@@ -950,10 +950,10 @@ test_l3_ipv6ll(gconstpointer test_data)
     NMTST_UTILS_HOST_ID_CONTEXT("l3-ipv6ll");
     const int                                      TEST_IDX     = GPOINTER_TO_INT(test_data);
     nm_auto(_test_fixture_1_teardown) TestFixture1 test_fixture = {};
-    gs_unref_object NML3Cfg *l3cfg0                             = NULL;
-    TestL3IPv6LLData         tdata_stack                        = {
-        .step       = 0,
-        .steps_done = FALSE,
+    gs_unref_object NML3Cfg                       *l3cfg0       = NULL;
+    TestL3IPv6LLData                               tdata_stack  = {
+                                       .step       = 0,
+                                       .steps_done = FALSE,
     };
     TestL3IPv6LLData *const tdata = &tdata_stack;
     char                    sbuf1[sizeof(_nm_utils_to_string_buffer)];

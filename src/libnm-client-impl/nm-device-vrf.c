@@ -115,7 +115,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_vrf = NML_DBUS_META_IFACE_
 static void
 nm_device_vrf_class_init(NMDeviceVrfClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
     NMDeviceClass *device_class    = NM_DEVICE_CLASS(klass);
 

@@ -22,33 +22,33 @@ typedef enum {
 } ParseContextState;
 
 typedef struct {
-    char *                           mccmnc;
+    char                            *mccmnc;
     NMServiceProvidersGsmApnCallback callback;
     gpointer                         user_data;
-    GCancellable *                   cancellable;
-    GMarkupParseContext *            ctx;
+    GCancellable                    *cancellable;
+    GMarkupParseContext             *ctx;
     char                             buffer[4096];
 
-    char *            text_buffer;
+    char             *text_buffer;
     ParseContextState state;
 
     gboolean mccmnc_matched;
     gboolean found_internet_apn;
-    char *   apn;
-    char *   username;
-    char *   password;
-    char *   gateway;
-    char *   auth_method;
-    GSList * dns;
+    char    *apn;
+    char    *username;
+    char    *password;
+    char    *gateway;
+    char    *auth_method;
+    GSList  *dns;
 } ParseContext;
 
 /*****************************************************************************/
 
 static void
 parser_toplevel_start(ParseContext *parse_context,
-                      const char *  name,
-                      const char ** attribute_names,
-                      const char ** attribute_values)
+                      const char   *name,
+                      const char  **attribute_names,
+                      const char  **attribute_values)
 {
     int i;
 
@@ -72,9 +72,9 @@ parser_toplevel_start(ParseContext *parse_context,
 
 static void
 parser_country_start(ParseContext *parse_context,
-                     const char *  name,
-                     const char ** attribute_names,
-                     const char ** attribute_values)
+                     const char   *name,
+                     const char  **attribute_names,
+                     const char  **attribute_values)
 {
     if (strcmp(name, "provider") == 0)
         parse_context->state = PARSER_PROVIDER;
@@ -82,9 +82,9 @@ parser_country_start(ParseContext *parse_context,
 
 static void
 parser_provider_start(ParseContext *parse_context,
-                      const char *  name,
-                      const char ** attribute_names,
-                      const char ** attribute_values)
+                      const char   *name,
+                      const char  **attribute_names,
+                      const char  **attribute_values)
 {
     parse_context->mccmnc_matched = FALSE;
     if (strcmp(name, "gsm") == 0)
@@ -95,9 +95,9 @@ parser_provider_start(ParseContext *parse_context,
 
 static void
 parser_gsm_start(ParseContext *parse_context,
-                 const char *  name,
-                 const char ** attribute_names,
-                 const char ** attribute_values)
+                 const char   *name,
+                 const char  **attribute_names,
+                 const char  **attribute_values)
 {
     int i;
 
@@ -140,9 +140,9 @@ parser_gsm_start(ParseContext *parse_context,
 
 static void
 parser_gsm_apn_start(ParseContext *parse_context,
-                     const char *  name,
-                     const char ** attribute_names,
-                     const char ** attribute_values)
+                     const char   *name,
+                     const char  **attribute_names,
+                     const char  **attribute_values)
 {
     int i;
 
@@ -167,11 +167,11 @@ parser_gsm_apn_start(ParseContext *parse_context,
 
 static void
 parser_start_element(GMarkupParseContext *context,
-                     const char *         element_name,
-                     const char **        attribute_names,
-                     const char **        attribute_values,
+                     const char          *element_name,
+                     const char         **attribute_names,
+                     const char         **attribute_values,
                      gpointer             user_data,
-                     GError **            error)
+                     GError             **error)
 {
     ParseContext *parse_context = user_data;
 
@@ -265,9 +265,9 @@ parser_cdma_end(ParseContext *parse_context, const char *name)
 
 static void
 parser_end_element(GMarkupParseContext *context,
-                   const char *         element_name,
+                   const char          *element_name,
                    gpointer             user_data,
-                   GError **            error)
+                   GError             **error)
 {
     ParseContext *parse_context = user_data;
 
@@ -298,10 +298,10 @@ parser_end_element(GMarkupParseContext *context,
 
 static void
 parser_text(GMarkupParseContext *context,
-            const char *         text,
+            const char          *text,
             gsize                text_len,
             gpointer             user_data,
-            GError **            error)
+            GError             **error)
 {
     ParseContext *parse_context = user_data;
 
@@ -360,7 +360,7 @@ stream_read_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
     GInputStream *stream        = G_INPUT_STREAM(source_object);
     ParseContext *parse_context = user_data;
     gssize        len;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     len = g_input_stream_read_finish(stream, res, &error);
     if (len == -1) {
@@ -411,9 +411,9 @@ read_next_chunk(GInputStream *stream, ParseContext *parse_context)
 static void
 file_read_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    GFile *           file          = G_FILE(source_object);
-    ParseContext *    parse_context = user_data;
-    GFileInputStream *stream;
+    GFile                *file          = G_FILE(source_object);
+    ParseContext         *parse_context = user_data;
+    GFileInputStream     *stream;
     gs_free_error GError *error = NULL;
 
     stream = g_file_read_finish(file, res, &error);
@@ -431,13 +431,13 @@ file_read_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 /*****************************************************************************/
 
 void
-nm_service_providers_find_gsm_apn(const char *                     service_providers,
-                                  const char *                     mccmnc,
-                                  GCancellable *                   cancellable,
+nm_service_providers_find_gsm_apn(const char                      *service_providers,
+                                  const char                      *mccmnc,
+                                  GCancellable                    *cancellable,
                                   NMServiceProvidersGsmApnCallback callback,
                                   gpointer                         user_data)
 {
-    GFile *       file;
+    GFile        *file;
     ParseContext *parse_context;
 
     parse_context              = g_slice_new0(ParseContext);

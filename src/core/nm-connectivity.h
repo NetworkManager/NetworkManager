@@ -56,16 +56,16 @@ guint nm_connectivity_get_interval(NMConnectivity *self);
 
 typedef struct _NMConnectivityCheckHandle NMConnectivityCheckHandle;
 
-typedef void (*NMConnectivityCheckCallback)(NMConnectivity *           self,
+typedef void (*NMConnectivityCheckCallback)(NMConnectivity            *self,
                                             NMConnectivityCheckHandle *handle,
                                             NMConnectivityState        state,
                                             gpointer                   user_data);
 
-NMConnectivityCheckHandle *nm_connectivity_check_start(NMConnectivity *            self,
+NMConnectivityCheckHandle *nm_connectivity_check_start(NMConnectivity             *self,
                                                        int                         family,
-                                                       NMPlatform *                platform,
+                                                       NMPlatform                 *platform,
                                                        int                         ifindex,
-                                                       const char *                iface,
+                                                       const char                 *iface,
                                                        NMConnectivityCheckCallback callback,
                                                        gpointer                    user_data);
 

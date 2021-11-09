@@ -19,26 +19,26 @@ void nm_checkpoint_manager_free(NMCheckpointManager *self);
 NMCheckpoint *
 nm_checkpoint_manager_lookup_by_path(NMCheckpointManager *self, const char *path, GError **error);
 
-NMCheckpoint *nm_checkpoint_manager_create(NMCheckpointManager *   self,
-                                           const char *const *     device_names,
+NMCheckpoint *nm_checkpoint_manager_create(NMCheckpointManager    *self,
+                                           const char *const      *device_names,
                                            guint32                 rollback_timeout,
                                            NMCheckpointCreateFlags flags,
-                                           GError **               error);
+                                           GError                **error);
 
 void nm_checkpoint_manager_destroy_all(NMCheckpointManager *self);
 
 gboolean nm_checkpoint_manager_destroy(NMCheckpointManager *self, const char *path, GError **error);
 gboolean nm_checkpoint_manager_rollback(NMCheckpointManager *self,
-                                        const char *         path,
-                                        GVariant **          results,
-                                        GError **            error);
+                                        const char          *path,
+                                        GVariant           **results,
+                                        GError             **error);
 
 gboolean nm_checkpoint_manager_adjust_rollback_timeout(NMCheckpointManager *self,
-                                                       const char *         path,
+                                                       const char          *path,
                                                        guint32              add_timeout,
-                                                       GError **            error);
+                                                       GError             **error);
 
 const char **nm_checkpoint_manager_get_checkpoint_paths(NMCheckpointManager *self,
-                                                        guint *              out_length);
+                                                        guint               *out_length);
 
 #endif /* __NM_CHECKPOINT_MANAGER_H__ */

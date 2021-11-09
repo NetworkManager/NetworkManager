@@ -39,15 +39,15 @@ GType nmt_connect_connection_list_get_type(void);
 NmtNewtWidget *nmt_connect_connection_list_new(void);
 
 gboolean nmt_connect_connection_list_get_connection(NmtConnectConnectionList *list,
-                                                    const char *              identifier,
-                                                    NMConnection **           connection,
-                                                    NMDevice **               device,
-                                                    NMObject **               specific_object,
-                                                    NMActiveConnection **     active);
+                                                    const char               *identifier,
+                                                    NMConnection            **connection,
+                                                    NMDevice                **device,
+                                                    NMObject                **specific_object,
+                                                    NMActiveConnection      **active);
 gboolean nmt_connect_connection_list_get_selection(NmtConnectConnectionList *list,
-                                                   NMConnection **           connection,
-                                                   NMDevice **               device,
-                                                   NMObject **               specific_object,
-                                                   NMActiveConnection **     active);
+                                                   NMConnection            **connection,
+                                                   NMDevice                **device,
+                                                   NMObject                **specific_object,
+                                                   NMActiveConnection      **active);
 
 #endif /* NMT_CONNECT_CONNECTION_LIST_H */

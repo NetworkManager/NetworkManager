@@ -257,7 +257,7 @@ nm_ppdirect_equal(gconstpointer a, gconstpointer b)
 guint
 nm_g_bytes_hash(gconstpointer p)
 {
-    GBytes *      ptr = (GBytes *) p;
+    GBytes       *ptr = (GBytes *) p;
     gconstpointer arr;
     gsize         len;
 

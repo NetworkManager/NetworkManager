@@ -105,10 +105,10 @@ nm_device_vlan_get_vlan_id(NMDeviceVlan *device)
 static gboolean
 connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
-    NMSettingVlan * s_vlan;
+    NMSettingVlan  *s_vlan;
     NMSettingWired *s_wired;
-    const char *    setting_hwaddr;
-    const char *    hw_address;
+    const char     *setting_hwaddr;
+    const char     *hw_address;
 
     if (!NM_DEVICE_CLASS(nm_device_vlan_parent_class)
              ->connection_compatible(device, connection, error))
@@ -205,7 +205,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_vlan = NML_DBUS_META_IFACE
 static void
 nm_device_vlan_class_init(NMDeviceVlanClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
     NMDeviceClass *device_class    = NM_DEVICE_CLASS(klass);
 

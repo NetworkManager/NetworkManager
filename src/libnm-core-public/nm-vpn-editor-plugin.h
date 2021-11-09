@@ -103,9 +103,9 @@ typedef struct {
     NMConnection *(*import_from_file)(NMVpnEditorPlugin *plugin, const char *path, GError **error);
 
     gboolean (*export_to_file)(NMVpnEditorPlugin *plugin,
-                               const char *       path,
-                               NMConnection *     connection,
-                               GError **          error);
+                               const char        *path,
+                               NMConnection      *connection,
+                               GError           **error);
 
     char *(*get_suggested_filename)(NMVpnEditorPlugin *plugin, NMConnection *connection);
 
@@ -117,8 +117,8 @@ typedef struct {
 GType nm_vpn_editor_plugin_get_type(void);
 
 NMVpnEditor *nm_vpn_editor_plugin_get_editor(NMVpnEditorPlugin *plugin,
-                                             NMConnection *     connection,
-                                             GError **          error);
+                                             NMConnection      *connection,
+                                             GError           **error);
 
 NMVpnEditorPluginCapability nm_vpn_editor_plugin_get_capabilities(NMVpnEditorPlugin *plugin);
 
@@ -126,22 +126,22 @@ NM_AVAILABLE_IN_1_4
 gsize
 nm_vpn_editor_plugin_get_vt(NMVpnEditorPlugin *plugin, NMVpnEditorPluginVT *vt, gsize vt_size);
 
-NMConnection *
-         nm_vpn_editor_plugin_import(NMVpnEditorPlugin *plugin, const char *path, GError **error);
+NMConnection          *
+nm_vpn_editor_plugin_import(NMVpnEditorPlugin *plugin, const char *path, GError **error);
 gboolean nm_vpn_editor_plugin_export(NMVpnEditorPlugin *plugin,
-                                     const char *       path,
-                                     NMConnection *     connection,
-                                     GError **          error);
-char *   nm_vpn_editor_plugin_get_suggested_filename(NMVpnEditorPlugin *plugin,
-                                                     NMConnection *     connection);
+                                     const char        *path,
+                                     NMConnection      *connection,
+                                     GError           **error);
+char    *nm_vpn_editor_plugin_get_suggested_filename(NMVpnEditorPlugin *plugin,
+                                                     NMConnection      *connection);
 
 NM_AVAILABLE_IN_1_2
-NMVpnEditorPlugin *nm_vpn_editor_plugin_load_from_file(const char *              plugin_name,
-                                                       const char *              check_service,
+NMVpnEditorPlugin *nm_vpn_editor_plugin_load_from_file(const char               *plugin_name,
+                                                       const char               *check_service,
                                                        int                       check_owner,
                                                        NMUtilsCheckFilePredicate check_file,
                                                        gpointer                  user_data,
-                                                       GError **                 error);
+                                                       GError                  **error);
 
 NM_AVAILABLE_IN_1_4
 NMVpnEditorPlugin *

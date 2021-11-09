@@ -14,9 +14,9 @@
 
 gboolean
 nm_dnsmasq_utils_get_range(const NMPlatformIP4Address *addr,
-                           char *                      out_first,
-                           char *                      out_last,
-                           char **                     out_error_desc)
+                           char                       *out_first,
+                           char                       *out_last,
+                           char                      **out_error_desc)
 {
     guint32       host   = addr->address;
     guint8        prefix = addr->plen;

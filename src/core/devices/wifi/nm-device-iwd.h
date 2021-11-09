@@ -40,8 +40,8 @@ gboolean nm_device_iwd_agent_query(NMDeviceIwd *device, GDBusMethodInvocation *i
 
 const CList *_nm_device_iwd_get_aps(NMDeviceIwd *self);
 
-void _nm_device_iwd_request_scan(NMDeviceIwd *          self,
-                                 GVariant *             options,
+void _nm_device_iwd_request_scan(NMDeviceIwd           *self,
+                                 GVariant              *options,
                                  GDBusMethodInvocation *invocation);
 
 void nm_device_iwd_network_add_remove(NMDeviceIwd *device, GDBusProxy *network, bool add);

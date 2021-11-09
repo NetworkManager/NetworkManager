@@ -30,13 +30,13 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDeviceModem,
                              PROP_APN, );
 
 typedef struct {
-    NMModem *                 modem;
+    NMModem                  *modem;
     NMDeviceModemCapabilities caps;
     NMDeviceModemCapabilities current_caps;
     NMUtilsIPv6IfaceId        iid;
-    char *                    device_id;
-    char *                    operator_code;
-    char *                    apn;
+    char                     *device_id;
+    char                     *operator_code;
+    char                     *apn;
     bool                      rf_enabled : 1;
     NMDeviceStageState        stage1_state : 3;
     NMDeviceStageState        stage2_state : 3;
@@ -61,7 +61,7 @@ G_DEFINE_TYPE(NMDeviceModem, nm_device_modem, NM_TYPE_DEVICE)
 static void
 ppp_failed(NMModem *modem, guint i_reason, gpointer user_data)
 {
-    NMDevice *          device = NM_DEVICE(user_data);
+    NMDevice           *device = NM_DEVICE(user_data);
     NMDeviceStateReason reason = i_reason;
 
     nm_device_state_changed(device, NM_DEVICE_STATE_FAILED, reason);
@@ -70,9 +70,9 @@ ppp_failed(NMModem *modem, guint i_reason, gpointer user_data)
 static void
 modem_prepare_result(NMModem *modem, gboolean success, guint i_reason, gpointer user_data)
 {
-    NMDeviceModem *       self   = NM_DEVICE_MODEM(user_data);
+    NMDeviceModem        *self   = NM_DEVICE_MODEM(user_data);
     NMDeviceModemPrivate *priv   = NM_DEVICE_MODEM_GET_PRIVATE(self);
-    NMDevice *            device = NM_DEVICE(self);
+    NMDevice             *device = NM_DEVICE(self);
     NMDeviceStateReason   reason = i_reason;
 
     if (nm_device_get_state(device) != NM_DEVICE_STATE_PREPARE
@@ -141,7 +141,7 @@ modem_auth_requested(NMModem *modem, gpointer user_data)
 static void
 modem_auth_result(NMModem *modem, GError *error, gpointer user_data)
 {
-    NMDevice *            device = NM_DEVICE(user_data);
+    NMDevice             *device = NM_DEVICE(user_data);
     NMDeviceModemPrivate *priv   = NM_DEVICE_MODEM_GET_PRIVATE(device);
 
     g_return_if_fail(nm_device_get_state(device) == NM_DEVICE_STATE_NEED_AUTH);
@@ -156,19 +156,19 @@ modem_auth_result(NMModem *modem, GError *error, gpointer user_data)
 }
 
 static void
-modem_new_config(NMModem *                 modem,
+modem_new_config(NMModem                  *modem,
                  int                       addr_family,
-                 const NML3ConfigData *    l3cd,
+                 const NML3ConfigData     *l3cd,
                  gboolean                  do_auto,
                  const NMUtilsIPv6IfaceId *iid,
                  int                       failure_reason_i,
-                 GError *                  error,
+                 GError                   *error,
                  gpointer                  user_data)
 {
     const int             IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMDeviceModem *       self    = NM_DEVICE_MODEM(user_data);
+    NMDeviceModem        *self    = NM_DEVICE_MODEM(user_data);
     NMDeviceModemPrivate *priv    = NM_DEVICE_MODEM_GET_PRIVATE(self);
-    NMDevice *            device  = NM_DEVICE(self);
+    NMDevice             *device  = NM_DEVICE(self);
 
     g_return_if_fail(nm_device_devip_get_state(device, addr_family) == NM_DEVICE_IP_STATE_PENDING);
 
@@ -194,8 +194,8 @@ modem_new_config(NMModem *                 modem,
 static void
 ip_ifindex_changed_cb(NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-    NMDevice *            device = NM_DEVICE(user_data);
-    NMDeviceModem *       self   = NM_DEVICE_MODEM(device);
+    NMDevice             *device = NM_DEVICE(user_data);
+    NMDeviceModem        *self   = NM_DEVICE_MODEM(device);
     NMDeviceModemPrivate *priv   = NM_DEVICE_MODEM_GET_PRIVATE(self);
 
     if (!nm_device_is_activating(device))
@@ -223,9 +223,9 @@ ip_ifindex_changed_cb(NMModem *modem, GParamSpec *pspec, gpointer user_data)
 static void
 operator_code_changed_cb(NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-    NMDeviceModem *       self          = NM_DEVICE_MODEM(user_data);
+    NMDeviceModem        *self          = NM_DEVICE_MODEM(user_data);
     NMDeviceModemPrivate *priv          = NM_DEVICE_MODEM_GET_PRIVATE(self);
-    const char *          operator_code = nm_modem_get_operator_code(modem);
+    const char           *operator_code = nm_modem_get_operator_code(modem);
 
     if (g_strcmp0(priv->operator_code, operator_code) != 0) {
         g_free(priv->operator_code);
@@ -237,9 +237,9 @@ operator_code_changed_cb(NMModem *modem, GParamSpec *pspec, gpointer user_data)
 static void
 apn_changed_cb(NMModem *modem, GParamSpec *pspec, gpointer user_data)
 {
-    NMDeviceModem *       self = NM_DEVICE_MODEM(user_data);
+    NMDeviceModem        *self = NM_DEVICE_MODEM(user_data);
     NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(self);
-    const char *          apn  = nm_modem_get_apn(modem);
+    const char           *apn  = nm_modem_get_apn(modem);
 
     if (g_strcmp0(priv->apn, apn) != 0) {
         g_free(priv->apn);
@@ -259,7 +259,7 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
 {
     NMModemState          new_state = new_state_i;
     NMModemState          old_state = old_state_i;
-    NMDevice *            device    = NM_DEVICE(user_data);
+    NMDevice             *device    = NM_DEVICE(user_data);
     NMDeviceModemPrivate *priv      = NM_DEVICE_MODEM_GET_PRIVATE(device);
     NMDeviceState         dev_state = nm_device_get_state(device);
 
@@ -331,12 +331,12 @@ owns_iface(NMDevice *device, const char *iface)
 /*****************************************************************************/
 
 static void
-device_state_changed(NMDevice *          device,
+device_state_changed(NMDevice           *device,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state,
                      NMDeviceStateReason reason)
 {
-    NMDeviceModem *       self = NM_DEVICE_MODEM(device);
+    NMDeviceModem        *self = NM_DEVICE_MODEM(device);
     NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(self);
 
     g_return_if_fail(priv->modem);
@@ -398,13 +398,13 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
 }
 
 static gboolean
-check_connection_available(NMDevice *                     device,
-                           NMConnection *                 connection,
+check_connection_available(NMDevice                      *device,
+                           NMConnection                  *connection,
                            NMDeviceCheckConAvailableFlags flags,
-                           const char *                   specific_object,
-                           GError **                      error)
+                           const char                    *specific_object,
+                           GError                       **error)
 {
-    NMDeviceModem *       self = NM_DEVICE_MODEM(device);
+    NMDeviceModem        *self = NM_DEVICE_MODEM(device);
     NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(self);
     NMModemState          state;
 
@@ -443,11 +443,11 @@ check_connection_available(NMDevice *                     device,
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
     NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(device);
 
@@ -473,7 +473,7 @@ deactivate(NMDevice *device)
 static void
 modem_deactivate_async_cb(NMModem *modem, GError *error, gpointer user_data)
 {
-    gs_unref_object NMDevice * self = NULL;
+    gs_unref_object NMDevice  *self = NULL;
     NMDeviceDeactivateCallback callback;
     gpointer                   callback_user_data;
 
@@ -482,8 +482,8 @@ modem_deactivate_async_cb(NMModem *modem, GError *error, gpointer user_data)
 }
 
 static void
-deactivate_async(NMDevice *                 self,
-                 GCancellable *             cancellable,
+deactivate_async(NMDevice                  *self,
+                 GCancellable              *cancellable,
                  NMDeviceDeactivateCallback callback,
                  gpointer                   user_data)
 {
@@ -503,7 +503,7 @@ static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
     NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(device);
-    NMActRequest *        req;
+    NMActRequest         *req;
 
     req = nm_device_get_act_request(device);
     g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
@@ -552,7 +552,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
 static gboolean
 get_ip_iface_identifier(NMDevice *device, NMUtilsIPv6IfaceId *out_iid)
 {
-    NMDeviceModem *       self = NM_DEVICE_MODEM(device);
+    NMDeviceModem        *self = NM_DEVICE_MODEM(device);
     NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(self);
 
     g_return_val_if_fail(priv->modem, FALSE);
@@ -579,7 +579,7 @@ get_enabled(NMDevice *device)
 static void
 set_enabled(NMDevice *device, gboolean enabled)
 {
-    NMDeviceModem *       self = NM_DEVICE_MODEM(device);
+    NMDeviceModem        *self = NM_DEVICE_MODEM(device);
     NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(self);
 
     /* Called only by the Manager in response to rfkill switch changes or
@@ -600,7 +600,7 @@ set_enabled(NMDevice *device, gboolean enabled)
 static gboolean
 is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 {
-    NMDeviceModem *       self = NM_DEVICE_MODEM(device);
+    NMDeviceModem        *self = NM_DEVICE_MODEM(device);
     NMDeviceModemPrivate *priv = NM_DEVICE_MODEM_GET_PRIVATE(self);
     NMModemState          modem_state;
 
@@ -806,9 +806,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_modem = {
 static void
 nm_device_modem_class_init(NMDeviceModemClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->dispose      = dispose;
     object_class->get_property = get_property;

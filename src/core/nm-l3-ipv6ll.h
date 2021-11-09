@@ -30,7 +30,7 @@ typedef enum _nm_packed {
 
 const char *nm_l3_ipv6ll_state_to_string(NML3IPv6LLState state);
 
-typedef void (*NML3IPv6LLNotifyFcn)(NML3IPv6LL *           ipv6ll,
+typedef void (*NML3IPv6LLNotifyFcn)(NML3IPv6LL            *ipv6ll,
                                     NML3IPv6LLState        state,
                                     const struct in6_addr *lladdr,
                                     gpointer               user_data);
@@ -42,22 +42,22 @@ NM_IS_L3_IPV6LL(const NML3IPv6LL *self)
     return !!self;
 }
 
-NML3IPv6LL *_nm_l3_ipv6ll_new(NML3Cfg *                 l3cfg,
+NML3IPv6LL *_nm_l3_ipv6ll_new(NML3Cfg                  *l3cfg,
                               gboolean                  assume,
                               NMUtilsStableType         stable_type,
-                              const char *              ifname,
-                              const char *              network_id,
+                              const char               *ifname,
+                              const char               *network_id,
                               const NMUtilsIPv6IfaceId *token_iid,
                               guint32                   route_table,
                               NML3IPv6LLNotifyFcn       notify_fcn,
                               gpointer                  user_data);
 
 static inline NML3IPv6LL *
-nm_l3_ipv6ll_new_stable_privacy(NML3Cfg *           l3cfg,
+nm_l3_ipv6ll_new_stable_privacy(NML3Cfg            *l3cfg,
                                 gboolean            assume,
                                 NMUtilsStableType   stable_type,
-                                const char *        ifname,
-                                const char *        network_id,
+                                const char         *ifname,
+                                const char         *network_id,
                                 guint32             route_table,
                                 NML3IPv6LLNotifyFcn notify_fcn,
                                 gpointer            user_data)
@@ -75,7 +75,7 @@ nm_l3_ipv6ll_new_stable_privacy(NML3Cfg *           l3cfg,
 }
 
 static inline NML3IPv6LL *
-nm_l3_ipv6ll_new_token(NML3Cfg *                 l3cfg,
+nm_l3_ipv6ll_new_token(NML3Cfg                  *l3cfg,
                        gboolean                  assume,
                        const NMUtilsIPv6IfaceId *token_iid,
                        guint32                   route_table,

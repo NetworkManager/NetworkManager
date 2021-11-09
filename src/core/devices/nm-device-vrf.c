@@ -44,7 +44,7 @@ static void
 do_update_properties(NMDeviceVrf *self, const NMPlatformLnkVrf *props)
 {
     NMDeviceVrfPrivate *priv   = NM_DEVICE_VRF_GET_PRIVATE(self);
-    GObject *           object = G_OBJECT(self);
+    GObject            *object = G_OBJECT(self);
     NMPlatformLnkVrf    props_null;
 
     if (!props) {
@@ -72,7 +72,7 @@ do_update_properties(NMDeviceVrf *self, const NMPlatformLnkVrf *props)
 static void
 update_properties(NMDevice *device)
 {
-    NMDeviceVrf *           self = NM_DEVICE_VRF(device);
+    NMDeviceVrf            *self = NM_DEVICE_VRF(device);
     const NMPlatformLnkVrf *props;
 
     props = nm_platform_link_get_lnk_vrf(nm_device_get_platform(device),
@@ -110,15 +110,15 @@ unrealize_notify(NMDevice *device)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
-    const char *     iface = nm_device_get_iface(device);
+    const char      *iface = nm_device_get_iface(device);
     NMPlatformLnkVrf props = {};
-    NMSettingVrf *   s_vrf;
+    NMSettingVrf    *s_vrf;
     int              r;
 
     s_vrf = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VRF);
@@ -145,7 +145,7 @@ static gboolean
 check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
     NMDeviceVrfPrivate *priv = NM_DEVICE_VRF_GET_PRIVATE(device);
-    NMSettingVrf *      s_vrf;
+    NMSettingVrf       *s_vrf;
 
     if (!NM_DEVICE_CLASS(nm_device_vrf_parent_class)
              ->check_connection_compatible(device, connection, error))
@@ -166,11 +166,11 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
     NMSettingVrf *s_vrf;
 
@@ -200,7 +200,7 @@ static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
     NMDeviceVrfPrivate *priv  = NM_DEVICE_VRF_GET_PRIVATE(device);
-    NMSettingVrf *      s_vrf = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VRF);
+    NMSettingVrf       *s_vrf = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VRF);
 
     if (priv->props.table != nm_setting_vrf_get_table(s_vrf))
         g_object_set(G_OBJECT(s_vrf), NM_SETTING_VRF_TABLE, priv->props.table, NULL);
@@ -211,7 +211,7 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
 {
     NMDeviceVrf *self        = NM_DEVICE_VRF(device);
     gboolean     success     = TRUE;
-    const char * slave_iface = nm_device_get_ip_iface(slave);
+    const char  *slave_iface = nm_device_get_ip_iface(slave);
 
     nm_device_master_check_slave_physical_port(device, slave, LOGD_DEVICE);
 
@@ -303,9 +303,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_vrf = {
 static void
 nm_device_vrf_class_init(NMDeviceVrfClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;
 
@@ -344,11 +344,11 @@ nm_device_vrf_class_init(NMDeviceVrfClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VRF_DEVICE_FACTORY, NMVrfDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     return g_object_new(NM_TYPE_DEVICE_VRF,
                         NM_DEVICE_IFACE,

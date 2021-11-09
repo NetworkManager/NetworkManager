@@ -44,9 +44,9 @@
 
 static const NMCryptoCipherInfo cipher_infos[] = {
 #define _CI(_cipher, _name, _digest_len, _real_iv_len) \
-    [(_cipher) -1] = {.cipher = _cipher,               \
-                      .name   = ""_name                \
-                              "",                      \
+    [(_cipher) -1] = {.cipher      = _cipher,          \
+                      .name        = ""_name           \
+                                     "",               \
                       .digest_len  = _digest_len,      \
                       .real_iv_len = _real_iv_len}
     _CI(NM_CRYPTO_CIPHER_DES_EDE3_CBC, "DES-EDE3-CBC", 24, 8),
@@ -166,26 +166,26 @@ _extract_line(const guint8 **p, const guint8 *p_end)
 }
 
 static gboolean
-parse_old_openssl_key_file(const guint8 *      data,
+parse_old_openssl_key_file(const guint8       *data,
                            gsize               data_len,
-                           NMSecretPtr *       out_parsed,
-                           NMCryptoKeyType *   out_key_type,
+                           NMSecretPtr        *out_parsed,
+                           NMCryptoKeyType    *out_key_type,
                            NMCryptoCipherType *out_cipher,
-                           char **             out_iv,
-                           GError **           error)
+                           char              **out_iv,
+                           GError            **error)
 {
     gsize                                start = 0, end = 0;
-    nm_auto_free_secret char *           str = NULL;
-    char *                               str_p;
+    nm_auto_free_secret char            *str = NULL;
+    char                                *str_p;
     gsize                                str_len;
     int                                  enc_tags = 0;
     NMCryptoKeyType                      key_type;
     nm_auto_clear_secret_ptr NMSecretPtr parsed = {0};
-    nm_auto_free_secret char *           iv     = NULL;
+    nm_auto_free_secret char            *iv     = NULL;
     NMCryptoCipherType                   cipher = NM_CRYPTO_CIPHER_UNKNOWN;
-    const char *                         start_tag;
-    const char *                         end_tag;
-    const guint8 *                       data_start, *data_end;
+    const char                          *start_tag;
+    const char                          *end_tag;
+    const guint8                        *data_start, *data_end;
 
     nm_assert(!out_parsed || (out_parsed->len == 0 && !out_parsed->bin));
     nm_assert(!out_iv || !*out_iv);
@@ -229,7 +229,7 @@ parse_old_openssl_key_file(const guint8 *      data,
 
     while (data_start < data_end) {
         nm_auto_free_secret char *line = NULL;
-        char *                    p;
+        char                     *p;
 
         line = _extract_line(&data_start, data_end);
         if (!line)
@@ -257,7 +257,7 @@ parse_old_openssl_key_file(const guint8 *      data,
             }
         } else if (!strncmp(p, DEK_INFO_TAG, strlen(DEK_INFO_TAG))) {
             const NMCryptoCipherInfo *cipher_info;
-            char *                    comma;
+            char                     *comma;
             gsize                     p_len;
 
             if (enc_tags++ != 1 || str_p != str) {
@@ -335,12 +335,12 @@ parse_old_openssl_key_file(const guint8 *      data,
 static gboolean
 parse_pkcs8_key_file(const guint8 *data,
                      gsize         data_len,
-                     NMSecretPtr * parsed,
-                     gboolean *    out_encrypted,
-                     GError **     error)
+                     NMSecretPtr  *parsed,
+                     gboolean     *out_encrypted,
+                     GError      **error)
 {
     gsize                     start = 0, end = 0;
-    const char *              start_tag = NULL, *end_tag = NULL;
+    const char               *start_tag = NULL, *end_tag = NULL;
     gboolean                  encrypted  = FALSE;
     nm_auto_free_secret char *der_base64 = NULL;
 
@@ -396,8 +396,8 @@ parse_pkcs8_key_file(const guint8 *data,
 static gboolean
 parse_tpm2_wrapped_key_file(const guint8 *data,
                             gsize         data_len,
-                            gboolean *    out_encrypted,
-                            GError **     error)
+                            gboolean     *out_encrypted,
+                            GError      **error)
 {
     gsize       start = 0, end = 0;
     const char *start_tag = NULL, *end_tag = NULL;
@@ -467,7 +467,7 @@ nm_crypto_read_file(const char *filename, GError **error)
 static guint8 *
 _nmtst_convert_iv(const char *src, gsize *out_len, GError **error)
 {
-    gsize   i, num;
+    gsize           i, num;
     gs_free guint8 *c = NULL;
     int             c0, c1;
 
@@ -508,13 +508,13 @@ _nmtst_convert_iv(const char *src, gsize *out_len, GError **error)
 
 guint8 *
 nmtst_crypto_make_des_aes_key(NMCryptoCipherType cipher,
-                              const guint8 *     salt,
+                              const guint8      *salt,
                               gsize              salt_len,
-                              const char *       password,
-                              gsize *            out_len,
-                              GError **          error)
+                              const char        *password,
+                              gsize             *out_len,
+                              GError           **error)
 {
-    guint8 *                  key;
+    guint8                   *key;
     const NMCryptoCipherInfo *cipher_info;
 
     g_return_val_if_fail(salt != NULL, NULL);
@@ -546,12 +546,12 @@ nmtst_crypto_make_des_aes_key(NMCryptoCipherType cipher,
 
 static gboolean
 _nmtst_decrypt_key(NMCryptoCipherType cipher,
-                   const guint8 *     data,
+                   const guint8      *data,
                    gsize              data_len,
-                   const char *       iv,
-                   const char *       password,
-                   NMSecretPtr *      parsed,
-                   GError **          error)
+                   const char        *iv,
+                   const char        *password,
+                   NMSecretPtr       *parsed,
+                   GError           **error)
 {
     nm_auto_clear_secret_ptr NMSecretPtr bin_iv = {0};
     nm_auto_clear_secret_ptr NMSecretPtr key    = {0};
@@ -599,15 +599,15 @@ _nmtst_decrypt_key(NMCryptoCipherType cipher,
 }
 
 GBytes *
-nmtst_crypto_decrypt_openssl_private_key_data(const guint8 *   data,
+nmtst_crypto_decrypt_openssl_private_key_data(const guint8    *data,
                                               gsize            data_len,
-                                              const char *     password,
+                                              const char      *password,
                                               NMCryptoKeyType *out_key_type,
-                                              GError **        error)
+                                              GError         **error)
 {
     NMCryptoKeyType                      key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
     nm_auto_clear_secret_ptr NMSecretPtr parsed   = {0};
-    nm_auto_free_secret char *           iv       = NULL;
+    nm_auto_free_secret char            *iv       = NULL;
     NMCryptoCipherType                   cipher   = NM_CRYPTO_CIPHER_UNKNOWN;
 
     g_return_val_if_fail(data != NULL, NULL);
@@ -651,10 +651,10 @@ nmtst_crypto_decrypt_openssl_private_key_data(const guint8 *   data,
 }
 
 GBytes *
-nmtst_crypto_decrypt_openssl_private_key(const char *     file,
-                                         const char *     password,
+nmtst_crypto_decrypt_openssl_private_key(const char      *file,
+                                         const char      *password,
                                          NMCryptoKeyType *out_key_type,
-                                         GError **        error)
+                                         GError         **error)
 {
     nm_auto_clear_secret_ptr NMSecretPtr contents = {0};
 
@@ -674,8 +674,8 @@ nmtst_crypto_decrypt_openssl_private_key(const char *     file,
 static gboolean
 extract_pem_cert_data(const guint8 *contents,
                       gsize         contents_len,
-                      NMSecretPtr * out_cert,
-                      GError **     error)
+                      NMSecretPtr  *out_cert,
+                      GError      **error)
 {
     gsize                     start      = 0;
     gsize                     end        = 0;
@@ -722,10 +722,10 @@ extract_pem_cert_data(const guint8 *contents,
 }
 
 gboolean
-nm_crypto_load_and_verify_certificate(const char *        file,
+nm_crypto_load_and_verify_certificate(const char         *file,
                                       NMCryptoFileFormat *out_file_format,
-                                      GBytes **           out_certificate,
-                                      GError **           error)
+                                      GBytes            **out_certificate,
+                                      GError            **error)
 {
     nm_auto_clear_secret_ptr NMSecretPtr contents = {0};
 
@@ -786,7 +786,7 @@ out:
 gboolean
 nm_crypto_is_pkcs12_data(const guint8 *data, gsize data_len, GError **error)
 {
-    GError * local = NULL;
+    GError  *local = NULL;
     gboolean success;
 
     if (!data_len) {
@@ -838,9 +838,9 @@ nm_crypto_is_pkcs12_file(const char *file, GError **error)
 NMCryptoFileFormat
 nm_crypto_verify_private_key_data(const guint8 *data,
                                   gsize         data_len,
-                                  const char *  password,
-                                  gboolean *    out_is_encrypted,
-                                  GError **     error)
+                                  const char   *password,
+                                  gboolean     *out_is_encrypted,
+                                  GError      **error)
 {
     NMCryptoFileFormat format       = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
     gboolean           is_encrypted = FALSE;
@@ -894,8 +894,8 @@ nm_crypto_verify_private_key_data(const guint8 *data,
 NMCryptoFileFormat
 nm_crypto_verify_private_key(const char *filename,
                              const char *password,
-                             gboolean *  out_is_encrypted,
-                             GError **   error)
+                             gboolean   *out_is_encrypted,
+                             GError    **error)
 {
     nm_auto_clear_secret_ptr NMSecretPtr contents = {0};
 
@@ -939,21 +939,21 @@ nm_crypto_randomize(void *buffer, gsize buffer_len, GError **error)
 GBytes *
 nmtst_crypto_rsa_key_encrypt(const guint8 *data,
                              gsize         len,
-                             const char *  in_password,
-                             char **       out_password,
-                             GError **     error)
+                             const char   *in_password,
+                             char        **out_password,
+                             GError      **error)
 {
     guint8                               salt[8];
-    nm_auto_clear_secret_ptr NMSecretPtr key  = {0};
-    nm_auto_clear_secret_ptr NMSecretPtr enc  = {0};
-    gs_unref_ptrarray GPtrArray *pem          = NULL;
-    nm_auto_free_secret char *   tmp_password = NULL;
-    nm_auto_free_secret char *   enc_base64   = NULL;
-    gsize                        enc_base64_len;
-    const char *                 p;
-    gsize                        ret_len, ret_idx;
-    guint                        i;
-    NMSecretBuf *                ret;
+    nm_auto_clear_secret_ptr NMSecretPtr key          = {0};
+    nm_auto_clear_secret_ptr NMSecretPtr enc          = {0};
+    gs_unref_ptrarray GPtrArray         *pem          = NULL;
+    nm_auto_free_secret char            *tmp_password = NULL;
+    nm_auto_free_secret char            *enc_base64   = NULL;
+    gsize                                enc_base64_len;
+    const char                          *p;
+    gsize                                ret_len, ret_idx;
+    guint                                i;
+    NMSecretBuf                         *ret;
 
     g_return_val_if_fail(data, NULL);
     g_return_val_if_fail(len > 0, NULL);

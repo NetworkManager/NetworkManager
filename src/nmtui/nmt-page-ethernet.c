@@ -34,13 +34,13 @@ nmt_page_ethernet_init(NmtPageEthernet *ethernet)
 static void
 nmt_page_ethernet_constructed(GObject *object)
 {
-    NmtPageEthernet * ethernet = NMT_PAGE_ETHERNET(object);
-    NmtDeviceEntry *  deventry;
+    NmtPageEthernet  *ethernet = NMT_PAGE_ETHERNET(object);
+    NmtDeviceEntry   *deventry;
     NmtEditorSection *section;
-    NmtEditorGrid *   grid;
-    NMSettingWired *  s_wired;
-    NmtNewtWidget *   widget;
-    NMConnection *    conn;
+    NmtEditorGrid    *grid;
+    NMSettingWired   *s_wired;
+    NmtNewtWidget    *widget;
+    NMConnection     *conn;
 
     conn    = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(ethernet));
     s_wired = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_WIRED);

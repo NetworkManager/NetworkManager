@@ -307,7 +307,7 @@ update_active_internal(NmtNewtListbox *listbox, int new_active)
 static void
 selection_changed_callback(newtComponent co, void *user_data)
 {
-    NmtNewtListbox *       listbox = user_data;
+    NmtNewtListbox        *listbox = user_data;
     NmtNewtListboxPrivate *priv    = NMT_NEWT_LISTBOX_GET_PRIVATE(listbox);
     int                    new_active;
 
@@ -369,12 +369,12 @@ nmt_newt_listbox_activated(NmtNewtWidget *widget)
 }
 
 static void
-nmt_newt_listbox_set_property(GObject *     object,
+nmt_newt_listbox_set_property(GObject      *object,
                               guint         prop_id,
                               const GValue *value,
-                              GParamSpec *  pspec)
+                              GParamSpec   *pspec)
 {
-    NmtNewtListbox *       listbox = NMT_NEWT_LISTBOX(object);
+    NmtNewtListbox        *listbox = NMT_NEWT_LISTBOX(object);
     NmtNewtListboxPrivate *priv    = NMT_NEWT_LISTBOX_GET_PRIVATE(object);
 
     switch (prop_id) {
@@ -430,8 +430,8 @@ nmt_newt_listbox_get_property(GObject *object, guint prop_id, GValue *value, GPa
 static void
 nmt_newt_listbox_class_init(NmtNewtListboxClass *listbox_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(listbox_class);
-    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(listbox_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(listbox_class);
+    NmtNewtWidgetClass    *widget_class    = NMT_NEWT_WIDGET_CLASS(listbox_class);
     NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS(listbox_class);
 
     g_type_class_add_private(listbox_class, sizeof(NmtNewtListboxPrivate));

@@ -115,7 +115,7 @@ static gboolean
 _share_iptables_call_v(const char *const *argv)
 {
     gs_free_error GError *error    = NULL;
-    gs_free char *        argv_str = NULL;
+    gs_free char         *argv_str = NULL;
     int                   status;
 
     nm_log_dbg(LOGD_SHARING, "iptables: %s", (argv_str = g_strjoinv(" ", (char **) argv)));
@@ -356,11 +356,11 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
 /*****************************************************************************/
 
 typedef struct {
-    GTask *       task;
-    GSubprocess * subprocess;
-    GSource *     timeout_source;
+    GTask        *task;
+    GSubprocess  *subprocess;
+    GSource      *timeout_source;
     GCancellable *intern_cancellable;
-    char *        identifier;
+    char         *identifier;
     gulong        cancellable_id;
 } FwNftCallData;
 
@@ -386,8 +386,8 @@ _fw_nft_call_data_free(FwNftCallData *call_data, GError *error_take)
 static void
 _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    FwNftCallData *call_data          = user_data;
-    gs_free_error GError *error       = NULL;
+    FwNftCallData         *call_data  = user_data;
+    gs_free_error GError  *error      = NULL;
     gs_unref_bytes GBytes *stdout_buf = NULL;
     gs_unref_bytes GBytes *stderr_buf = NULL;
 
@@ -487,14 +487,14 @@ _fw_nft_call_timeout_cb(gpointer user_data)
 }
 
 static void
-_fw_nft_call(GBytes *            stdin_buf,
-             GCancellable *      cancellable,
+_fw_nft_call(GBytes             *stdin_buf,
+             GCancellable       *cancellable,
              GAsyncReadyCallback callback,
              gpointer            callback_user_data)
 {
     gs_unref_object GSubprocessLauncher *subprocess_launcher = NULL;
-    gs_free_error GError *error                              = NULL;
-    FwNftCallData *       call_data;
+    gs_free_error GError                *error               = NULL;
+    FwNftCallData                       *call_data;
 
     call_data  = g_slice_new(FwNftCallData);
     *call_data = (FwNftCallData){
@@ -566,7 +566,7 @@ _fw_nft_call_finish(GAsyncResult *result, GError **error)
 
 typedef struct {
     GMainLoop *loop;
-    GError **  error;
+    GError   **error;
     gboolean   success;
 } FwNftCallSyncData;
 
@@ -586,8 +586,8 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
         nm_g_main_context_push_thread_default(g_main_context_new());
     nm_auto_unref_gmainloop GMainLoop *main_loop = g_main_loop_new(main_context, FALSE);
     FwNftCallSyncData                  data      = (FwNftCallSyncData){
-        .loop  = main_loop,
-        .error = error,
+                              .loop  = main_loop,
+                              .error = error,
     };
 
     _fw_nft_call(stdin_buf, NULL, _fw_nft_call_sync_done, &data);
@@ -601,11 +601,11 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
 static void
 _fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
-    nm_auto_str_buf NMStrBuf strbuf   = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
-    gs_unref_bytes GBytes *stdin_buf  = NULL;
-    gs_free char *         table_name = NULL;
-    gs_free char *         ss1        = NULL;
-    char                   str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
+    nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    gs_unref_bytes GBytes   *stdin_buf  = NULL;
+    gs_free char            *table_name = NULL;
+    gs_free char            *ss1        = NULL;
+    char                     str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
 
     table_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
 
@@ -687,7 +687,7 @@ _fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
 /*****************************************************************************/
 
 struct _NMFirewallConfig {
-    char *    ip_iface;
+    char     *ip_iface;
     in_addr_t addr;
     guint8    plen;
 };

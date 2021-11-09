@@ -46,8 +46,8 @@ typedef struct {
 
 typedef struct {
     CList                 request_queue_lst;
-    const char *          operation;
-    GVariant *            argument;
+    const char           *operation;
+    GVariant             *argument;
     NMDnsSystemdResolved *self;
     int                   ifindex;
 } RequestItem;
@@ -55,8 +55,8 @@ typedef struct {
 struct _NMDnsSystemdResolvedResolveHandle {
     CList                 handle_lst;
     NMDnsSystemdResolved *self;
-    GSource *             timeout_source;
-    GCancellable *        handle_cancellable;
+    GSource              *timeout_source;
+    GCancellable         *handle_cancellable;
     gpointer              callback_user_data;
     guint                 timeout_msec;
     bool                  is_failing_on_idle;
@@ -75,11 +75,11 @@ struct _NMDnsSystemdResolvedResolveHandle {
 
 typedef struct {
     GDBusConnection *dbus_connection;
-    GHashTable *     dirty_interfaces;
-    GCancellable *   cancellable;
-    GSource *        try_start_timeout_source;
+    GHashTable      *dirty_interfaces;
+    GCancellable    *cancellable;
+    GSource         *try_start_timeout_source;
     CList            request_queue_lst_head;
-    char *           dbus_owner;
+    char            *dbus_owner;
     CList            handle_lst_head;
     guint            name_owner_changed_id;
     bool             send_updates_warn_ratelimited : 1;
@@ -156,12 +156,12 @@ _request_item_free(RequestItem *request_item)
 
 static void
 _request_item_append(NMDnsSystemdResolved *self,
-                     const char *          operation,
+                     const char           *operation,
                      int                   ifindex,
-                     GVariant *            argument)
+                     GVariant             *argument)
 {
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
-    RequestItem *                request_item;
+    RequestItem                 *request_item;
 
     request_item  = g_slice_new(RequestItem);
     *request_item = (RequestItem){
@@ -185,11 +185,11 @@ _interface_config_free(InterfaceConfig *config)
 static void
 call_done(GObject *source, GAsyncResult *r, gpointer user_data)
 {
-    gs_unref_variant GVariant *v       = NULL;
-    gs_free_error GError *       error = NULL;
-    NMDnsSystemdResolved *       self;
+    gs_unref_variant GVariant   *v     = NULL;
+    gs_free_error GError        *error = NULL;
+    NMDnsSystemdResolved        *self;
     NMDnsSystemdResolvedPrivate *priv;
-    RequestItem *                request_item;
+    RequestItem                 *request_item;
     NMLogLevel                   log_level;
 
     v = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), r, &error);
@@ -243,15 +243,15 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
 
 static gboolean
 update_add_ip_config(NMDnsSystemdResolved *self,
-                     GVariantBuilder *     dns,
-                     GVariantBuilder *     domains,
-                     NMDnsConfigIPData *   ip_data)
+                     GVariantBuilder      *dns,
+                     GVariantBuilder      *domains,
+                     NMDnsConfigIPData    *ip_data)
 {
     gsize         addr_size;
     guint         n;
     guint         i;
     gboolean      is_routing;
-    const char *  domain;
+    const char   *domain;
     gboolean      has_config = FALSE;
     gconstpointer nameservers;
 
@@ -293,7 +293,7 @@ static void
 free_pending_updates(NMDnsSystemdResolved *self)
 {
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
-    RequestItem *                request_item;
+    RequestItem                 *request_item;
 
     while ((request_item =
                 c_list_first_entry(&priv->request_queue_lst_head, RequestItem, request_queue_lst)))
@@ -305,11 +305,11 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
 {
     GVariantBuilder               dns;
     GVariantBuilder               domains;
-    NMCListElem *                 elem;
+    NMCListElem                  *elem;
     NMSettingConnectionMdns       mdns         = NM_SETTING_CONNECTION_MDNS_DEFAULT;
     NMSettingConnectionLlmnr      llmnr        = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
     NMSettingConnectionDnsOverTls dns_over_tls = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
-    const char *                  mdns_arg = NULL, *llmnr_arg = NULL, *dns_over_tls_arg = NULL;
+    const char                   *mdns_arg = NULL, *llmnr_arg = NULL, *dns_over_tls_arg = NULL;
     gboolean                      has_config        = FALSE;
     gboolean                      has_default_route = FALSE;
 
@@ -416,8 +416,8 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
 static gboolean
 _ensure_resolved_running_timeout(gpointer user_data)
 {
-    NMDnsSystemdResolved *             self = user_data;
-    NMDnsSystemdResolvedPrivate *      priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMDnsSystemdResolved              *self = user_data;
+    NMDnsSystemdResolvedPrivate       *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     NMDnsSystemdResolvedResolveHandle *handle;
 
     nm_clear_g_source_inst(&priv->try_start_timeout_source);
@@ -478,8 +478,8 @@ ensure_resolved_running(NMDnsSystemdResolved *self)
 static void
 send_updates(NMDnsSystemdResolved *self)
 {
-    NMDnsSystemdResolvedPrivate *      priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
-    RequestItem *                      request_item;
+    NMDnsSystemdResolvedPrivate       *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    RequestItem                       *request_item;
     NMDnsSystemdResolvedResolveHandle *handle;
 
     if (!priv->send_updates_waiting) {
@@ -548,22 +548,22 @@ start_resolve:
 }
 
 static gboolean
-update(NMDnsPlugin *            plugin,
+update(NMDnsPlugin             *plugin,
        const NMGlobalDnsConfig *global_config,
-       const CList *            ip_data_lst_head,
-       const char *             hostname,
-       GError **                error)
+       const CList             *ip_data_lst_head,
+       const char              *hostname,
+       GError                 **error)
 {
-    NMDnsSystemdResolved *       self         = NM_DNS_SYSTEMD_RESOLVED(plugin);
-    NMDnsSystemdResolvedPrivate *priv         = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
-    gs_unref_hashtable GHashTable *interfaces = NULL;
-    gs_free gpointer * interfaces_keys        = NULL;
-    guint              interfaces_len;
-    int                ifindex;
-    gpointer           pointer;
-    NMDnsConfigIPData *ip_data;
-    GHashTableIter     iter;
-    guint              i;
+    NMDnsSystemdResolved          *self            = NM_DNS_SYSTEMD_RESOLVED(plugin);
+    NMDnsSystemdResolvedPrivate   *priv            = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    gs_unref_hashtable GHashTable *interfaces      = NULL;
+    gs_free gpointer              *interfaces_keys = NULL;
+    guint                          interfaces_len;
+    int                            ifindex;
+    gpointer                       pointer;
+    NMDnsConfigIPData             *ip_data;
+    GHashTableIter                 iter;
+    guint                          i;
 
     interfaces =
         g_hash_table_new_full(nm_direct_hash, NULL, NULL, (GDestroyNotify) _interface_config_free);
@@ -653,16 +653,16 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
 
 static void
 name_owner_changed_cb(GDBusConnection *connection,
-                      const char *     sender_name,
-                      const char *     object_path,
-                      const char *     interface_name,
-                      const char *     signal_name,
-                      GVariant *       parameters,
+                      const char      *sender_name,
+                      const char      *object_path,
+                      const char      *interface_name,
+                      const char      *signal_name,
+                      GVariant        *parameters,
                       gpointer         user_data)
 {
-    NMDnsSystemdResolved *       self = user_data;
+    NMDnsSystemdResolved        *self = user_data;
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
-    const char *                 new_owner;
+    const char                  *new_owner;
 
     if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sss)")))
         return;
@@ -683,7 +683,7 @@ name_owner_changed_cb(GDBusConnection *connection,
 static void
 get_name_owner_cb(const char *name_owner, GError *error, gpointer user_data)
 {
-    NMDnsSystemdResolved *       self;
+    NMDnsSystemdResolved        *self;
     NMDnsSystemdResolvedPrivate *priv;
 
     if (!name_owner && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -717,13 +717,13 @@ nm_dns_systemd_resolved_is_running(NMDnsSystemdResolved *self)
 /*****************************************************************************/
 
 static void
-_resolve_complete(NMDnsSystemdResolvedResolveHandle *      handle,
+_resolve_complete(NMDnsSystemdResolvedResolveHandle       *handle,
                   const NMDnsSystemdResolvedAddressResult *names,
                   guint                                    names_len,
                   guint64                                  flags,
-                  GError *                                 error)
+                  GError                                  *error)
 {
-    NMDnsSystemdResolved *       self;
+    NMDnsSystemdResolved        *self;
     NMDnsSystemdResolvedPrivate *priv;
 
     g_return_if_fail(handle && NM_IS_DNS_SYSTEMD_RESOLVED(handle->self));
@@ -759,16 +759,16 @@ _resolve_complete_error(NMDnsSystemdResolvedResolveHandle *handle, GError *error
 static void
 _resolve_handle_call_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    gs_unref_variant GVariant *v             = NULL;
-    gs_free_error GError *             error = NULL;
+    gs_unref_variant GVariant         *v     = NULL;
+    gs_free_error GError              *error = NULL;
     NMDnsSystemdResolvedResolveHandle *handle;
-    NMDnsSystemdResolved *             self;
-    GVariantIter *                     v_names_iter;
+    NMDnsSystemdResolved              *self;
+    GVariantIter                      *v_names_iter;
     guint64                            v_flags;
     int                                v_ifindex;
-    char *                             v_name;
-    gs_unref_array GArray *v_names = NULL;
-    gs_free char *         ss      = NULL;
+    char                              *v_name;
+    gs_unref_array GArray             *v_names = NULL;
+    gs_free char                      *ss      = NULL;
 
     v = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -823,7 +823,7 @@ static gboolean
 _resolve_failing_on_idle(gpointer user_data)
 {
     NMDnsSystemdResolvedResolveHandle *handle = user_data;
-    gs_free_error GError *error               = NULL;
+    gs_free_error GError              *error  = NULL;
 
     nm_utils_error_set_literal(&error,
                                NM_UTILS_ERROR_NOT_READY,
@@ -836,7 +836,7 @@ static gboolean
 _resolve_handle_timeout(gpointer user_data)
 {
     NMDnsSystemdResolvedResolveHandle *handle = user_data;
-    gs_free_error GError *error               = NULL;
+    gs_free_error GError              *error  = NULL;
 
     nm_utils_error_set_literal(&error, NM_UTILS_ERROR_UNKNOWN, "timeout for request");
     _resolve_complete_error(handle, error);
@@ -900,16 +900,16 @@ _resolve_start(NMDnsSystemdResolved *self, NMDnsSystemdResolvedResolveHandle *ha
 }
 
 NMDnsSystemdResolvedResolveHandle *
-nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved *                     self,
+nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved                      *self,
                                         int                                        ifindex,
                                         int                                        addr_family,
-                                        const NMIPAddr *                           addr,
+                                        const NMIPAddr                            *addr,
                                         guint64                                    flags,
                                         guint                                      timeout_msec,
                                         NMDnsSystemdResolvedResolveAddressCallback callback,
                                         gpointer                                   user_data)
 {
-    NMDnsSystemdResolvedPrivate *      priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMDnsSystemdResolvedPrivate       *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     NMDnsSystemdResolvedResolveHandle *handle;
     char                               addr_str[NM_UTILS_INET_ADDRSTRLEN];
 
@@ -998,8 +998,8 @@ nm_dns_systemd_resolved_new(void)
 static void
 dispose(GObject *object)
 {
-    NMDnsSystemdResolved *             self = NM_DNS_SYSTEMD_RESOLVED(object);
-    NMDnsSystemdResolvedPrivate *      priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMDnsSystemdResolved              *self = NM_DNS_SYSTEMD_RESOLVED(object);
+    NMDnsSystemdResolvedPrivate       *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     NMDnsSystemdResolvedResolveHandle *handle;
 
     while ((handle = c_list_first_entry(&priv->handle_lst_head,
@@ -1031,7 +1031,7 @@ static void
 nm_dns_systemd_resolved_class_init(NMDnsSystemdResolvedClass *dns_class)
 {
     NMDnsPluginClass *plugin_class = NM_DNS_PLUGIN_CLASS(dns_class);
-    GObjectClass *    object_class = G_OBJECT_CLASS(dns_class);
+    GObjectClass     *object_class = G_OBJECT_CLASS(dns_class);
 
     object_class->dispose = dispose;
 

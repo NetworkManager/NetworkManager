@@ -32,7 +32,7 @@ struct nl_msg {
     struct sockaddr_nl nm_src;
     struct sockaddr_nl nm_dst;
     struct ucred       nm_creds;
-    struct nlmsghdr *  nm_nlh;
+    struct nlmsghdr   *nm_nlh;
     size_t             nm_size;
     bool               nm_creds_has : 1;
 };
@@ -245,7 +245,7 @@ nlmsg_hdr(struct nl_msg *n)
 void *
 nlmsg_reserve(struct nl_msg *n, size_t len, int pad)
 {
-    char * buf       = (char *) n->nm_nlh;
+    char  *buf       = (char *) n->nm_nlh;
     size_t nlmsg_len = n->nm_nlh->nlmsg_len;
     size_t tlen;
 
@@ -386,9 +386,9 @@ nlmsg_append(struct nl_msg *n, const void *data, size_t len, int pad)
 /*****************************************************************************/
 
 int
-nlmsg_parse(struct nlmsghdr *        nlh,
+nlmsg_parse(struct nlmsghdr         *nlh,
             int                      hdrlen,
-            struct nlattr *          tb[],
+            struct nlattr           *tb[],
             int                      maxtype,
             const struct nla_policy *policy)
 {
@@ -639,9 +639,9 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
 }
 
 int
-nla_parse(struct nlattr *          tb[],
+nla_parse(struct nlattr           *tb[],
           int                      maxtype,
-          struct nlattr *          head,
+          struct nlattr           *head,
           int                      len,
           const struct nla_policy *policy)
 {
@@ -718,7 +718,7 @@ genlmsg_put(struct nl_msg *msg,
             uint8_t        cmd,
             uint8_t        version)
 {
-    struct nlmsghdr * nlh;
+    struct nlmsghdr  *nlh;
     struct genlmsghdr hdr = {
         .cmd     = cmd,
         .version = version,
@@ -794,9 +794,9 @@ genlmsg_valid_hdr(struct nlmsghdr *nlh, int hdrlen)
 }
 
 int
-genlmsg_parse(struct nlmsghdr *        nlh,
+genlmsg_parse(struct nlmsghdr         *nlh,
               int                      hdrlen,
-              struct nlattr *          tb[],
+              struct nlattr           *tb[],
               int                      maxtype,
               const struct nla_policy *policy)
 {
@@ -825,9 +825,9 @@ _genl_parse_getfamily(struct nl_msg *msg, void *arg)
         [CTRL_ATTR_OPS]          = {.type = NLA_NESTED},
         [CTRL_ATTR_MCAST_GROUPS] = {.type = NLA_NESTED},
     };
-    struct nlattr *  tb[G_N_ELEMENTS(ctrl_policy)];
+    struct nlattr   *tb[G_N_ELEMENTS(ctrl_policy)];
     struct nlmsghdr *nlh           = nlmsg_hdr(msg);
-    gint32 *         response_data = arg;
+    gint32          *response_data = arg;
 
     if (genlmsg_parse_arr(nlh, 0, tb, ctrl_policy) < 0)
         return NL_SKIP;
@@ -845,8 +845,8 @@ genl_ctrl_resolve(struct nl_sock *sk, const char *name)
     int                          nmerr;
     gint32                       response_data = -1;
     const struct nl_cb           cb            = {
-        .valid_cb  = _genl_parse_getfamily,
-        .valid_arg = &response_data,
+                             .valid_cb  = _genl_parse_getfamily,
+                             .valid_arg = &response_data,
     };
 
     msg = nlmsg_alloc();
@@ -1170,7 +1170,7 @@ nl_recvmsgs(struct nl_sock *sk, const struct nl_cb *cb)
 {
     int                    n, nmerr = 0, multipart = 0, interrupted = 0, nrecv = 0;
     gs_free unsigned char *buf = NULL;
-    struct nlmsghdr *      hdr;
+    struct nlmsghdr       *hdr;
     struct sockaddr_nl     nla = {0};
     struct ucred           creds;
     gboolean               creds_has;
@@ -1327,12 +1327,12 @@ int
 nl_send_iovec(struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, unsigned iovlen)
 {
     struct sockaddr_nl *dst;
-    struct ucred *      creds;
+    struct ucred       *creds;
     struct msghdr       hdr = {
-        .msg_name    = (void *) &sk->s_peer,
-        .msg_namelen = sizeof(struct sockaddr_nl),
-        .msg_iov     = iov,
-        .msg_iovlen  = iovlen,
+              .msg_name    = (void *) &sk->s_peer,
+              .msg_namelen = sizeof(struct sockaddr_nl),
+              .msg_iov     = iov,
+              .msg_iovlen  = iovlen,
     };
     char buf[CMSG_SPACE(sizeof(struct ucred))];
 
@@ -1402,11 +1402,11 @@ nl_send_auto(struct nl_sock *sk, struct nl_msg *msg)
 }
 
 int
-nl_recv(struct nl_sock *    sk,
+nl_recv(struct nl_sock     *sk,
         struct sockaddr_nl *nla,
-        unsigned char **    buf,
-        struct ucred *      out_creds,
-        gboolean *          out_creds_has)
+        unsigned char     **buf,
+        struct ucred       *out_creds,
+        gboolean           *out_creds_has)
 {
     /* We really expect msg_contol_buf to be large enough and MSG_CTRUNC not
      * happening. We nm_assert() against that. However, in release builds

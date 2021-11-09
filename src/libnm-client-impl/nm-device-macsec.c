@@ -29,7 +29,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT,
 
 typedef struct {
     NMLDBusPropertyO parent;
-    char *           validation;
+    char            *validation;
     guint64          sci;
     guint64          cipher_suite;
     guint32          window;
@@ -428,7 +428,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_macsec = NML_DBUS_META_IFA
 static void
 nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
 
     object_class->get_property = get_property;

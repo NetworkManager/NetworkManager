@@ -9,19 +9,19 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
 
-char *nm_dhcp_dhclient_create_config(const char *        interface,
+char *nm_dhcp_dhclient_create_config(const char         *interface,
                                      int                 addr_family,
-                                     GBytes *            client_id,
-                                     const char *        anycast_addr,
-                                     const char *        hostname,
+                                     GBytes             *client_id,
+                                     const char         *anycast_addr,
+                                     const char         *hostname,
                                      guint32             timeout,
                                      gboolean            use_fqdn,
                                      NMDhcpHostnameFlags hostname_flags,
-                                     const char *        mud_url,
-                                     const char *const * reject_servers,
-                                     const char *        orig_path,
-                                     const char *        orig_contents,
-                                     GBytes **           out_new_client_id);
+                                     const char         *mud_url,
+                                     const char *const  *reject_servers,
+                                     const char         *orig_path,
+                                     const char         *orig_contents,
+                                     GBytes            **out_new_client_id);
 
 char *nm_dhcp_dhclient_escape_duid(GBytes *duid);
 

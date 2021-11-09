@@ -87,7 +87,7 @@ nmt_newt_stack_get_components(NmtNewtWidget *widget)
 static void
 nmt_newt_stack_size_request(NmtNewtWidget *widget, int *width, int *height)
 {
-    NmtNewtStack *       stack = NMT_NEWT_STACK(widget);
+    NmtNewtStack        *stack = NMT_NEWT_STACK(widget);
     NmtNewtStackPrivate *priv  = NMT_NEWT_STACK_GET_PRIVATE(stack);
     int                  i, child_width, child_height;
 
@@ -142,7 +142,7 @@ nmt_newt_stack_add(NmtNewtStack *stack, const char *id, NmtNewtWidget *widget)
 static void
 nmt_newt_stack_remove(NmtNewtContainer *container, NmtNewtWidget *widget)
 {
-    NmtNewtStack *       stack = NMT_NEWT_STACK(container);
+    NmtNewtStack        *stack = NMT_NEWT_STACK(container);
     NmtNewtStackPrivate *priv  = NMT_NEWT_STACK_GET_PRIVATE(stack);
     int                  i;
 
@@ -293,8 +293,8 @@ nmt_newt_stack_get_property(GObject *object, guint prop_id, GValue *value, GPara
 static void
 nmt_newt_stack_class_init(NmtNewtStackClass *stack_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(stack_class);
-    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(stack_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(stack_class);
+    NmtNewtWidgetClass    *widget_class    = NMT_NEWT_WIDGET_CLASS(stack_class);
     NmtNewtContainerClass *container_class = NMT_NEWT_CONTAINER_CLASS(stack_class);
 
     g_type_class_add_private(stack_class, sizeof(NmtNewtStackPrivate));

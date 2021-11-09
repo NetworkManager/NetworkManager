@@ -100,36 +100,36 @@ typedef void (*_NMModemDisconnectCallback)(NMModem *modem, GError *error, gpoint
 typedef struct {
     GObjectClass parent;
 
-    void (*get_capabilities)(NMModem *                  self,
+    void (*get_capabilities)(NMModem                   *self,
                              NMDeviceModemCapabilities *modem_caps,
                              NMDeviceModemCapabilities *current_caps);
 
-    gboolean (*get_user_pass)(NMModem *     modem,
+    gboolean (*get_user_pass)(NMModem      *modem,
                               NMConnection *connection,
-                              const char ** user,
-                              const char ** pass);
+                              const char  **user,
+                              const char  **pass);
 
-    gboolean (*check_connection_compatible_with_modem)(NMModem *     modem,
+    gboolean (*check_connection_compatible_with_modem)(NMModem      *modem,
                                                        NMConnection *connection,
-                                                       GError **     error);
+                                                       GError      **error);
 
-    gboolean (*complete_connection)(NMModem *            modem,
-                                    const char *         iface,
-                                    NMConnection *       connection,
+    gboolean (*complete_connection)(NMModem             *modem,
+                                    const char          *iface,
+                                    NMConnection        *connection,
                                     NMConnection *const *existing_connections,
-                                    GError **            error);
+                                    GError             **error);
 
-    NMActStageReturn (*modem_act_stage1_prepare)(NMModem *            modem,
-                                                 NMConnection *       connection,
+    NMActStageReturn (*modem_act_stage1_prepare)(NMModem             *modem,
+                                                 NMConnection        *connection,
                                                  NMDeviceStateReason *out_failure_reason);
 
     void (*stage3_ip_config_start)(NMModem *self, int addr_family, NMModemIPMethod method);
 
     void (*set_mm_enabled)(NMModem *self, gboolean enabled);
 
-    void (*disconnect)(NMModem *                  self,
+    void (*disconnect)(NMModem                   *self,
                        gboolean                   warn,
-                       GCancellable *             cancellable,
+                       GCancellable              *cancellable,
                        _NMModemDisconnectCallback callback,
                        gpointer                   user_data);
 
@@ -155,40 +155,40 @@ const char *nm_modem_get_sim_operator_id(NMModem *modem);
 const char *nm_modem_get_operator_code(NMModem *modem);
 const char *nm_modem_get_apn(NMModem *modem);
 
-gboolean nm_modem_set_data_port(NMModem *       self,
-                                NMPlatform *    platform,
-                                const char *    data_port,
+gboolean nm_modem_set_data_port(NMModem        *self,
+                                NMPlatform     *platform,
+                                const char     *data_port,
                                 NMModemIPMethod ip4_method,
                                 NMModemIPMethod ip6_method,
                                 guint           timeout,
-                                GError **       error);
+                                GError        **error);
 
 gboolean nm_modem_owns_port(NMModem *modem, const char *iface);
 
-void nm_modem_get_capabilities(NMModem *                  self,
+void nm_modem_get_capabilities(NMModem                   *self,
                                NMDeviceModemCapabilities *modem_caps,
                                NMDeviceModemCapabilities *current_caps);
 
 gboolean
 nm_modem_check_connection_compatible(NMModem *self, NMConnection *connection, GError **error);
 
-gboolean nm_modem_complete_connection(NMModem *            self,
-                                      const char *         iface,
-                                      NMConnection *       connection,
+gboolean nm_modem_complete_connection(NMModem             *self,
+                                      const char          *iface,
+                                      NMConnection        *connection,
                                       NMConnection *const *existing_connections,
-                                      GError **            error);
+                                      GError             **error);
 
-NMActStageReturn nm_modem_act_stage1_prepare(NMModem *            modem,
-                                             NMActRequest *       req,
+NMActStageReturn nm_modem_act_stage1_prepare(NMModem             *modem,
+                                             NMActRequest        *req,
                                              NMDeviceStateReason *out_failure_reason);
 
-NMActStageReturn nm_modem_act_stage2_config(NMModem *            self,
-                                            NMDevice *           device,
+NMActStageReturn nm_modem_act_stage2_config(NMModem             *self,
+                                            NMDevice            *device,
                                             NMDeviceStateReason *out_failure_reason);
 
 gboolean nm_modem_stage3_ip_config_start(NMModem *self, int addr_family, NMDevice *device);
 
-void nm_modem_get_secrets(NMModem *   modem,
+void nm_modem_get_secrets(NMModem    *modem,
                           const char *setting_name,
                           gboolean    request_new,
                           const char *hint);
@@ -197,9 +197,9 @@ void nm_modem_deactivate(NMModem *modem, NMDevice *device);
 
 typedef void (*NMModemDeactivateCallback)(NMModem *self, GError *error, gpointer user_data);
 
-void nm_modem_deactivate_async(NMModem *                 self,
-                               NMDevice *                device,
-                               GCancellable *            cancellable,
+void nm_modem_deactivate_async(NMModem                  *self,
+                               NMDevice                 *device,
+                               GCancellable             *cancellable,
                                NMModemDeactivateCallback callback,
                                gpointer                  user_data);
 
@@ -211,7 +211,7 @@ void nm_modem_set_mm_enabled(NMModem *self, gboolean enabled);
 NMModemState nm_modem_get_state(NMModem *self);
 void         nm_modem_set_state(NMModem *self, NMModemState new_state, const char *reason);
 void         nm_modem_set_prev_state(NMModem *self, const char *reason);
-const char * nm_modem_state_to_string(NMModemState state);
+const char  *nm_modem_state_to_string(NMModemState state);
 
 NMModemIPType nm_modem_get_supported_ip_types(NMModem *self);
 
@@ -228,22 +228,22 @@ GArray *nm_modem_get_connection_ip_type(NMModem *self, NMConnection *connection,
 
 /* For subclasses */
 
-void nm_modem_emit_signal_new_config(NMModem *                 self,
+void nm_modem_emit_signal_new_config(NMModem                  *self,
                                      int                       addr_family,
-                                     const NML3ConfigData *    l3cd,
+                                     const NML3ConfigData     *l3cd,
                                      gboolean                  do_slaac,
                                      const NMUtilsIPv6IfaceId *iid,
                                      NMDeviceStateReason       failure_reason,
-                                     GError *                  error);
-void nm_modem_emit_signal_new_config_success(NMModem *                 self,
+                                     GError                   *error);
+void nm_modem_emit_signal_new_config_success(NMModem                  *self,
                                              int                       addr_family,
-                                             const NML3ConfigData *    l3cd,
+                                             const NML3ConfigData     *l3cd,
                                              gboolean                  do_auto,
                                              const NMUtilsIPv6IfaceId *iid);
-void nm_modem_emit_signal_new_config_failure(NMModem *           self,
+void nm_modem_emit_signal_new_config_failure(NMModem            *self,
                                              int                 addr_family,
                                              NMDeviceStateReason failure_reason,
-                                             GError *            error);
+                                             GError             *error);
 
 const char *nm_modem_ip_type_to_string(NMModemIPType ip_type);
 

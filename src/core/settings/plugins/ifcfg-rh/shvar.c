@@ -62,7 +62,7 @@ struct _shvarLine {
 typedef struct _shvarLine shvarLine;
 
 struct _shvarFile {
-    char *      fileName;
+    char       *fileName;
     CList       lst_head;
     GHashTable *lst_idx;
     int         fd;
@@ -151,8 +151,8 @@ static char *
 _escape_ansic(const char *source)
 {
     const char *p;
-    char *      dest;
-    char *      q;
+    char       *dest;
+    char       *q;
     gsize       n_alloc;
 
     nm_assert(source);
@@ -705,7 +705,7 @@ out_error:
 shvarFile *
 svFile_new(const char *name, int fd, const char *content)
 {
-    shvarFile * s;
+    shvarFile  *s;
     const char *p;
     const char *q;
 
@@ -820,9 +820,9 @@ line_new_parse(const char *value, gsize len)
 static shvarLine *
 line_new_build(const char *key, const char *value)
 {
-    char *     value_escaped = NULL;
+    char      *value_escaped = NULL;
     shvarLine *line;
-    char *     new_key;
+    char      *new_key;
 
     value = svEscape(value, &value_escaped);
 
@@ -841,7 +841,7 @@ line_new_build(const char *key, const char *value)
 static gboolean
 line_set(shvarLine *line, const char *value)
 {
-    char *   value_escaped = NULL;
+    char    *value_escaped = NULL;
     gboolean changed       = FALSE;
 
     ASSERT_shvarLine(line);
@@ -926,11 +926,11 @@ do_link:
 static shvarFile *
 svOpenFileInternal(const char *name, gboolean create, GError **error)
 {
-    gboolean      closefd       = FALSE;
-    int           errsv         = 0;
-    gs_free char *content       = NULL;
-    gs_free_error GError *local = NULL;
-    nm_auto_close int     fd    = -1;
+    gboolean              closefd = FALSE;
+    int                   errsv   = 0;
+    gs_free char         *content = NULL;
+    gs_free_error GError *local   = NULL;
+    nm_auto_close int     fd      = -1;
 
     if (create)
         fd = open(name, O_RDWR | O_CLOEXEC); /* NOT O_CREAT */
@@ -1063,8 +1063,8 @@ svNumberedParseKey(const char *key)
 GHashTable *
 svGetKeys(shvarFile *s, SvKeyType match_key_type)
 {
-    GHashTable *     keys = NULL;
-    CList *          current;
+    GHashTable      *keys = NULL;
+    CList           *current;
     const shvarLine *line;
 
     nm_assert(s);
@@ -1137,7 +1137,7 @@ static const char *
 _svGetValue(shvarFile *s, const char *key, char **to_free)
 {
     const shvarLine *line;
-    const char *     v;
+    const char      *v;
 
     nm_assert(s);
     nm_assert(_shell_is_name(key, -1));
@@ -1209,7 +1209,7 @@ svGetValueStr(shvarFile *s, const char *key, char **to_free)
 char *
 svGetValue_cp(shvarFile *s, const char *key)
 {
-    char *      to_free;
+    char       *to_free;
     const char *value;
 
     g_return_val_if_fail(s, NULL);
@@ -1233,7 +1233,7 @@ svGetValue_cp(shvarFile *s, const char *key)
 char *
 svGetValueStr_cp(shvarFile *s, const char *key)
 {
-    char *      to_free;
+    char       *to_free;
     const char *value;
 
     g_return_val_if_fail(s, NULL);
@@ -1260,7 +1260,7 @@ int
 svGetValueBoolean(shvarFile *s, const char *key, int fallback)
 {
     gs_free char *to_free = NULL;
-    const char *  value;
+    const char   *value;
 
     value = _svGetValue(s, key, &to_free);
     return svParseBoolean(value, fallback);
@@ -1293,7 +1293,7 @@ svGetValueTernary(shvarFile *s, const char *key)
 gint64
 svGetValueInt64(shvarFile *s, const char *key, guint base, gint64 min, gint64 max, gint64 fallback)
 {
-    char *      to_free;
+    char       *to_free;
     const char *value;
     gint64      result;
     int         errsv;
@@ -1320,7 +1320,7 @@ gboolean
 svGetValueEnum(shvarFile *s, const char *key, GType gtype, int *out_value, GError **error)
 {
     gs_free char *to_free = NULL;
-    const char *  svalue;
+    const char   *svalue;
     gs_free char *err_token = NULL;
     int           value;
 
@@ -1618,7 +1618,7 @@ svWarnInvalid(shvarFile *s, const char *file_type, NMLogDomain log_domain)
 gboolean
 svWriteFile(shvarFile *s, int mode, GError **error)
 {
-    FILE * f;
+    FILE  *f;
     int    tmpfd;
     CList *current;
     int    errsv;
@@ -1672,8 +1672,8 @@ svWriteFile(shvarFile *s, int mode, GError **error)
         fseek(f, 0, SEEK_SET);
         c_list_for_each (current, &s->lst_head) {
             const shvarLine *line = c_list_entry(current, shvarLine, lst);
-            const char *     str;
-            char *           s_tmp;
+            const char      *str;
+            char            *s_tmp;
             gboolean         valid_value;
 
             ASSERT_shvarLine(line);

@@ -427,7 +427,7 @@ wext_qual_to_percent(const struct iw_quality *qual, const struct iw_quality *max
 static int
 wifi_wext_get_qual(NMWifiUtils *data)
 {
-    NMWifiUtilsWext *    wext = (NMWifiUtilsWext *) data;
+    NMWifiUtilsWext     *wext = (NMWifiUtilsWext *) data;
     struct iwreq         wrq;
     struct iw_statistics stats;
     char                 ifname[IFNAMSIZ];
@@ -455,8 +455,8 @@ wifi_wext_get_qual(NMWifiUtils *data)
 static gboolean
 wifi_wext_get_station(NMWifiUtils *data,
                       NMEtherAddr *out_bssid,
-                      int *        out_quality,
-                      guint32 *    out_rate)
+                      int         *out_quality,
+                      guint32     *out_rate)
 {
     NMEtherAddr local_addr;
 
@@ -588,9 +588,9 @@ wext_can_scan_ifname(NMWifiUtilsWext *wext, const char *ifname)
 
 static gboolean
 wext_get_range_ifname(NMWifiUtilsWext *wext,
-                      const char *     ifname,
+                      const char      *ifname,
                       struct iw_range *range,
-                      guint32 *        response_len)
+                      guint32         *response_len)
 {
     int          i       = 26;
     gboolean     success = FALSE;
@@ -698,7 +698,7 @@ nm_wifi_utils_wext_init(NMWifiUtilsWext *self)
 static void
 nm_wifi_utils_wext_class_init(NMWifiUtilsWextClass *klass)
 {
-    GObjectClass *    object_class     = G_OBJECT_CLASS(klass);
+    GObjectClass     *object_class     = G_OBJECT_CLASS(klass);
     NMWifiUtilsClass *wifi_utils_class = NM_WIFI_UTILS_CLASS(klass);
 
     object_class->dispose = dispose;
@@ -717,7 +717,7 @@ nm_wifi_utils_wext_class_init(NMWifiUtilsWextClass *klass)
 NMWifiUtils *
 nm_wifi_utils_wext_new(int ifindex, gboolean check_scan)
 {
-    NMWifiUtilsWext *               wext;
+    NMWifiUtilsWext                *wext;
     struct iw_range                 range;
     guint32                         response_len = 0;
     struct iw_range_with_scan_capa *scan_capa_range;

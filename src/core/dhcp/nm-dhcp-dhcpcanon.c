@@ -34,10 +34,10 @@ static GType nm_dhcp_dhcpcanon_get_type(void);
 /*****************************************************************************/
 
 typedef struct {
-    char *          conf_file;
-    const char *    def_leasefile;
-    char *          lease_file;
-    char *          pid_file;
+    char           *conf_file;
+    const char     *def_leasefile;
+    char           *lease_file;
+    char           *pid_file;
     NMDhcpListener *dhcp_listener;
 } NMDhcpDhcpcanonPrivate;
 
@@ -65,25 +65,25 @@ nm_dhcp_dhcpcanon_get_path(void)
 
 static gboolean
 dhcpcanon_start(NMDhcpClient *client,
-                const char *  mode_opt,
-                GBytes *      duid,
+                const char   *mode_opt,
+                GBytes       *duid,
                 gboolean      release,
-                pid_t *       out_pid,
+                pid_t        *out_pid,
                 guint         needed_prefixes,
-                GError **     error)
+                GError      **error)
 {
-    NMDhcpDhcpcanon *       self      = NM_DHCP_DHCPCANON(client);
-    NMDhcpDhcpcanonPrivate *priv      = NM_DHCP_DHCPCANON_GET_PRIVATE(self);
+    NMDhcpDhcpcanon             *self = NM_DHCP_DHCPCANON(client);
+    NMDhcpDhcpcanonPrivate      *priv = NM_DHCP_DHCPCANON_GET_PRIVATE(self);
     gs_unref_ptrarray GPtrArray *argv = NULL;
     pid_t                        pid;
-    gs_free_error GError *local = NULL;
-    const char *          iface;
-    const char *          system_bus_address;
-    const char *          dhcpcanon_path;
-    gs_free char *        binary_name            = NULL;
-    gs_free char *        pid_file               = NULL;
-    gs_free char *        system_bus_address_env = NULL;
-    int                   addr_family;
+    gs_free_error GError        *local = NULL;
+    const char                  *iface;
+    const char                  *system_bus_address;
+    const char                  *dhcpcanon_path;
+    gs_free char                *binary_name            = NULL;
+    gs_free char                *pid_file               = NULL;
+    gs_free char                *system_bus_address_env = NULL;
+    int                          addr_family;
 
     g_return_val_if_fail(!priv->pid_file, FALSE);
 
@@ -168,7 +168,7 @@ ip4_start(NMDhcpClient *client, GError **error)
 static void
 stop(NMDhcpClient *client, gboolean release)
 {
-    NMDhcpDhcpcanon *       self = NM_DHCP_DHCPCANON(client);
+    NMDhcpDhcpcanon        *self = NM_DHCP_DHCPCANON(client);
     NMDhcpDhcpcanonPrivate *priv = NM_DHCP_DHCPCANON_GET_PRIVATE(self);
     int                     errsv;
 
@@ -222,7 +222,7 @@ static void
 nm_dhcp_dhcpcanon_class_init(NMDhcpDhcpcanonClass *dhcpcanon_class)
 {
     NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS(dhcpcanon_class);
-    GObjectClass *     object_class = G_OBJECT_CLASS(dhcpcanon_class);
+    GObjectClass      *object_class = G_OBJECT_CLASS(dhcpcanon_class);
 
     object_class->dispose = dispose;
 

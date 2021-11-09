@@ -21,14 +21,14 @@
 #define CREATE_IFACE_TRY_COUNT_MAX 7u
 
 struct _NMSupplMgrCreateIfaceHandle {
-    NMSupplicantManager *                self;
+    NMSupplicantManager                 *self;
     CList                                create_iface_lst;
-    GCancellable *                       cancellable;
+    GCancellable                        *cancellable;
     NMSupplicantManagerCreateInterfaceCb callback;
     gpointer                             callback_user_data;
-    NMShutdownWaitObjHandle *            shutdown_handle;
-    NMRefString *                        name_owner;
-    GError *                             fail_on_idle_error;
+    NMShutdownWaitObjHandle             *shutdown_handle;
+    NMRefString                         *name_owner;
+    GError                              *fail_on_idle_error;
     NMSupplicantDriver                   driver;
     int                                  ifindex;
     guint                                fail_on_idle_id;
@@ -98,19 +98,19 @@ NM_CACHED_QUARK_FCN("nm-supplicant-error-quark", nm_supplicant_error_quark);
 /*****************************************************************************/
 
 static void     _create_iface_proceed_all(NMSupplicantManager *self, GError *error);
-static void     _supp_iface_add(NMSupplicantManager *  self,
-                                NMRefString *          iface_path,
+static void     _supp_iface_add(NMSupplicantManager   *self,
+                                NMRefString           *iface_path,
                                 NMSupplicantInterface *supp_iface);
-static void     _supp_iface_remove_one(NMSupplicantManager *  self,
+static void     _supp_iface_remove_one(NMSupplicantManager   *self,
                                        NMSupplicantInterface *supp_iface,
                                        gboolean               force_remove_from_supplicant,
-                                       const char *           reason);
-static void     _create_iface_dbus_call_get_interface(NMSupplicantManager *        self,
+                                       const char            *reason);
+static void     _create_iface_dbus_call_get_interface(NMSupplicantManager         *self,
                                                       NMSupplMgrCreateIfaceHandle *handle,
-                                                      const char *                 ifname);
-static void     _create_iface_dbus_call_create_interface(NMSupplicantManager *        self,
+                                                      const char                  *ifname);
+static void     _create_iface_dbus_call_create_interface(NMSupplicantManager         *self,
                                                          NMSupplMgrCreateIfaceHandle *handle,
-                                                         const char *                 ifname);
+                                                         const char                  *ifname);
 static gboolean _create_iface_fail_on_idle_cb(gpointer user_data);
 
 static gboolean _available_reset_cb(gpointer user_data);
@@ -172,8 +172,8 @@ _caps_set(NMSupplicantManagerPrivate *priv, NMSupplCapType type, NMTernary value
 
 static void
 _dbus_call_remove_interface(GDBusConnection *dbus_connection,
-                            const char *     name_owner,
-                            const char *     iface_path)
+                            const char      *name_owner,
+                            const char      *iface_path)
 {
     nm_assert(G_IS_DBUS_CONNECTION(dbus_connection));
     nm_assert(name_owner);
@@ -195,8 +195,8 @@ _dbus_call_remove_interface(GDBusConnection *dbus_connection,
 
 void
 _nm_supplicant_manager_dbus_call_remove_interface(NMSupplicantManager *self,
-                                                  const char *         name_owner,
-                                                  const char *         iface_path)
+                                                  const char          *name_owner,
+                                                  const char          *iface_path)
 {
     _dbus_call_remove_interface(NM_SUPPLICANT_MANAGER_GET_PRIVATE(self)->dbus_connection,
                                 name_owner,
@@ -208,8 +208,8 @@ _nm_supplicant_manager_dbus_call_remove_interface(NMSupplicantManager *self,
 static void
 on_supplicant_wfd_ies_set(GObject *source_object, GAsyncResult *result, gpointer user_data)
 {
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), result, &error);
     if (!res)
@@ -265,10 +265,10 @@ nm_supplicant_manager_set_wfd_ies(NMSupplicantManager *self, GBytes *wfd_ies)
 static gboolean
 _poke_name_owner_timeout_cb(gpointer user_data)
 {
-    NMSupplicantManager *       self        = user_data;
-    NMSupplicantManagerPrivate *priv        = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
-    gs_free_error GError *error             = NULL;
-    gboolean              available_changed = FALSE;
+    NMSupplicantManager        *self              = user_data;
+    NMSupplicantManagerPrivate *priv              = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
+    gs_free_error GError       *error             = NULL;
+    gboolean                    available_changed = FALSE;
 
     nm_assert(!priv->name_owner);
 
@@ -307,8 +307,8 @@ _poke_name_owner_timeout_cb(gpointer user_data)
 static void
 _poke_name_owner_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -347,8 +347,8 @@ _poke_name_owner(NMSupplicantManager *self)
 
 static void
 _create_iface_complete(NMSupplMgrCreateIfaceHandle *handle,
-                       NMSupplicantInterface *      supp_iface,
-                       GError *                     error)
+                       NMSupplicantInterface       *supp_iface,
+                       GError                      *error)
 {
     nm_assert(!supp_iface || NM_IS_SUPPLICANT_INTERFACE(supp_iface));
     nm_assert((!!supp_iface) != (!!error));
@@ -385,13 +385,13 @@ _create_iface_complete(NMSupplMgrCreateIfaceHandle *handle,
 }
 
 static void
-_create_iface_add(NMSupplicantManager *        self,
+_create_iface_add(NMSupplicantManager         *self,
                   NMSupplMgrCreateIfaceHandle *handle,
-                  const char *                 iface_path_str,
+                  const char                  *iface_path_str,
                   gboolean                     created_by_us)
 {
-    NMSupplicantManagerPrivate *priv                  = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
-    nm_auto_ref_string NMRefString *iface_path        = NULL;
+    NMSupplicantManagerPrivate            *priv       = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
+    nm_auto_ref_string NMRefString        *iface_path = NULL;
     gs_unref_object NMSupplicantInterface *supp_iface = NULL;
 
     iface_path = nm_ref_string_new(iface_path_str);
@@ -425,13 +425,13 @@ _create_iface_add(NMSupplicantManager *        self,
 static void
 _create_iface_dbus_call_get_interface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    GDBusConnection *            dbus_connection = G_DBUS_CONNECTION(source);
+    GDBusConnection             *dbus_connection = G_DBUS_CONNECTION(source);
     NMSupplMgrCreateIfaceHandle *handle;
-    NMSupplicantManager *        self;
-    NMSupplicantManagerPrivate * priv;
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
-    const char *          iface_path_str;
+    NMSupplicantManager         *self;
+    NMSupplicantManagerPrivate  *priv;
+    gs_unref_variant GVariant   *res   = NULL;
+    gs_free_error GError        *error = NULL;
+    const char                  *iface_path_str;
 
     res = g_dbus_connection_call_finish(dbus_connection, result, &error);
 
@@ -478,18 +478,18 @@ _create_iface_dbus_call_get_interface_cb(GObject *source, GAsyncResult *result, 
 }
 
 static void
-_create_iface_dbus_call_create_interface_cb(GObject *     source,
+_create_iface_dbus_call_create_interface_cb(GObject      *source,
                                             GAsyncResult *result,
                                             gpointer      user_data)
 {
-    GDBusConnection *            dbus_connection = G_DBUS_CONNECTION(source);
+    GDBusConnection             *dbus_connection = G_DBUS_CONNECTION(source);
     NMSupplMgrCreateIfaceHandle *handle          = user_data;
-    NMSupplicantManager *        self;
-    NMSupplicantManagerPrivate * priv;
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
-    const char *          iface_path_str;
-    char                  ifname[NMP_IFNAMSIZ];
+    NMSupplicantManager         *self;
+    NMSupplicantManagerPrivate  *priv;
+    gs_unref_variant GVariant   *res   = NULL;
+    gs_free_error GError        *error = NULL;
+    const char                  *iface_path_str;
+    char                         ifname[NMP_IFNAMSIZ];
 
     res = g_dbus_connection_call_finish(dbus_connection, result, &error);
 
@@ -553,9 +553,9 @@ _create_iface_dbus_call_create_interface_cb(GObject *     source,
 }
 
 static void
-_create_iface_dbus_call_get_interface(NMSupplicantManager *        self,
+_create_iface_dbus_call_get_interface(NMSupplicantManager         *self,
                                       NMSupplMgrCreateIfaceHandle *handle,
-                                      const char *                 ifname)
+                                      const char                  *ifname)
 {
     NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
 
@@ -577,9 +577,9 @@ _create_iface_dbus_call_get_interface(NMSupplicantManager *        self,
 }
 
 static void
-_create_iface_dbus_call_create_interface(NMSupplicantManager *        self,
+_create_iface_dbus_call_create_interface(NMSupplicantManager         *self,
                                          NMSupplMgrCreateIfaceHandle *handle,
-                                         const char *                 ifname)
+                                         const char                  *ifname)
 {
     NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
     GVariantBuilder             builder;
@@ -676,13 +676,13 @@ _create_iface_fail_on_idle_cb(gpointer user_data)
 }
 
 NMSupplMgrCreateIfaceHandle *
-nm_supplicant_manager_create_interface(NMSupplicantManager *                self,
+nm_supplicant_manager_create_interface(NMSupplicantManager                 *self,
                                        int                                  ifindex,
                                        NMSupplicantDriver                   driver,
                                        NMSupplicantManagerCreateInterfaceCb callback,
                                        gpointer                             user_data)
 {
-    NMSupplicantManagerPrivate * priv;
+    NMSupplicantManagerPrivate  *priv;
     NMSupplMgrCreateIfaceHandle *handle;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_MANAGER(self), NULL);
@@ -751,7 +751,7 @@ nm_supplicant_manager_create_interface(NMSupplicantManager *                self
 static void
 _create_iface_proceed_all(NMSupplicantManager *self, GError *error)
 {
-    NMSupplicantManagerPrivate * priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
+    NMSupplicantManagerPrivate  *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
     NMSupplMgrCreateIfaceHandle *handle;
 
     nm_assert(error || priv->name_owner);
@@ -810,8 +810,8 @@ nm_supplicant_manager_create_interface_cancel(NMSupplMgrCreateIfaceHandle *handl
 NMSupplicantInterface *
 nm_supplicant_manager_create_interface_from_path(NMSupplicantManager *self, const char *object_path)
 {
-    NMSupplicantManagerPrivate *priv;
-    NMSupplicantInterface *     supp_iface;
+    NMSupplicantManagerPrivate     *priv;
+    NMSupplicantInterface          *supp_iface;
     nm_auto_ref_string NMRefString *iface_path = NULL;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_MANAGER(self), NULL);
@@ -837,17 +837,17 @@ nm_supplicant_manager_create_interface_from_path(NMSupplicantManager *self, cons
 
 static void
 _dbus_interface_removed_cb(GDBusConnection *connection,
-                           const char *     sender_name,
-                           const char *     object_path,
-                           const char *     signal_interface_name,
-                           const char *     signal_name,
-                           GVariant *       parameters,
+                           const char      *sender_name,
+                           const char      *object_path,
+                           const char      *signal_interface_name,
+                           const char      *signal_name,
+                           GVariant        *parameters,
                            gpointer         user_data)
 {
-    NMSupplicantManager *       self = user_data;
-    NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
-    NMSupplicantInterface *     supp_iface;
-    const char *                iface_path_str;
+    NMSupplicantManager            *self = user_data;
+    NMSupplicantManagerPrivate     *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
+    NMSupplicantInterface          *supp_iface;
+    const char                     *iface_path_str;
     nm_auto_ref_string NMRefString *iface_path = NULL;
 
     nm_assert(nm_streq(sender_name, priv->name_owner->str));
@@ -871,7 +871,7 @@ _dbus_interface_removed_cb(GDBusConnection *connection,
 static void
 _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
 {
-    NMSupplicantManager *       self;
+    NMSupplicantManager        *self;
     NMSupplicantManagerPrivate *priv;
 
     if (nm_utils_error_is_cancelled(error))
@@ -905,15 +905,15 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
 
     if (res) {
         nm_auto_free_variant_iter GVariantIter *res_iter = NULL;
-        const char *                            res_key;
-        GVariant *                              res_val;
+        const char                             *res_key;
+        GVariant                               *res_val;
 
         g_variant_get(res, "(a{sv})", &res_iter);
         while (g_variant_iter_loop(res_iter, "{&sv}", &res_key, &res_val)) {
             if (nm_streq(res_key, "Capabilities")) {
                 if (g_variant_is_of_type(res_val, G_VARIANT_TYPE_STRING_ARRAY)) {
                     gs_free const char **array = NULL;
-                    const char **        a;
+                    const char         **a;
 
                     array = g_variant_get_strv(res_val, NULL);
                     _caps_set(priv, NM_SUPPL_CAP_TYPE_AP, NM_TERNARY_FALSE);
@@ -962,7 +962,7 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
             if (nm_streq(res_key, "EapMethods")) {
                 if (g_variant_is_of_type(res_val, G_VARIANT_TYPE_STRING_ARRAY)) {
                     gs_free const char **array = NULL;
-                    const char **        a;
+                    const char         **a;
 
                     array = g_variant_get_strv(res_val, NULL);
                     if (array) {
@@ -1013,7 +1013,7 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
 /*****************************************************************************/
 
 void
-_nm_supplicant_manager_unregister_interface(NMSupplicantManager *  self,
+_nm_supplicant_manager_unregister_interface(NMSupplicantManager   *self,
                                             NMSupplicantInterface *supp_iface)
 {
     NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
@@ -1029,8 +1029,8 @@ _nm_supplicant_manager_unregister_interface(NMSupplicantManager *  self,
 }
 
 static void
-_supp_iface_add(NMSupplicantManager *  self,
-                NMRefString *          iface_path,
+_supp_iface_add(NMSupplicantManager   *self,
+                NMRefString           *iface_path,
                 NMSupplicantInterface *supp_iface)
 {
     NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
@@ -1041,10 +1041,10 @@ _supp_iface_add(NMSupplicantManager *  self,
 }
 
 static void
-_supp_iface_remove_one(NMSupplicantManager *  self,
+_supp_iface_remove_one(NMSupplicantManager   *self,
                        NMSupplicantInterface *supp_iface,
                        gboolean               force_remove_from_supplicant,
-                       const char *           reason)
+                       const char            *reason)
 {
 #if NM_MORE_ASSERTS
     _nm_unused gs_unref_object NMSupplicantInterface *supp_iface_keep_alive =
@@ -1064,10 +1064,10 @@ _supp_iface_remove_one(NMSupplicantManager *  self,
 static void
 _supp_iface_remove_all(NMSupplicantManager *self,
                        gboolean             force_remove_from_supplicant,
-                       const char *         reason)
+                       const char          *reason)
 {
     NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
-    NMSupplicantInterface *     supp_iface;
+    NMSupplicantInterface      *supp_iface;
 
     while ((supp_iface = c_list_first_entry(&priv->supp_lst_head, NMSupplicantInterface, supp_lst)))
         _supp_iface_remove_one(self, supp_iface, force_remove_from_supplicant, reason);
@@ -1078,7 +1078,7 @@ _supp_iface_remove_all(NMSupplicantManager *self,
 static gboolean
 _available_reset_cb(gpointer user_data)
 {
-    NMSupplicantManager *       self = user_data;
+    NMSupplicantManager        *self = user_data;
     NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
 
     priv->available_reset_id = 0;
@@ -1209,16 +1209,16 @@ name_owner_changed(NMSupplicantManager *self, const char *name_owner, gboolean f
 
 static void
 name_owner_changed_cb(GDBusConnection *connection,
-                      const char *     sender_name,
-                      const char *     object_path,
-                      const char *     interface_name,
-                      const char *     signal_name,
-                      GVariant *       parameters,
+                      const char      *sender_name,
+                      const char      *object_path,
+                      const char      *interface_name,
+                      const char      *signal_name,
+                      GVariant        *parameters,
                       gpointer         user_data)
 {
     gs_unref_object NMSupplicantManager *self = g_object_ref(user_data);
-    NMSupplicantManagerPrivate *         priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
-    const char *                         name_owner;
+    NMSupplicantManagerPrivate          *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
+    const char                          *name_owner;
 
     if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sss)")))
         return;
@@ -1244,7 +1244,7 @@ name_owner_changed_cb(GDBusConnection *connection,
 static void
 get_name_owner_cb(const char *name_owner, GError *error, gpointer user_data)
 {
-    NMSupplicantManager *       self = user_data;
+    NMSupplicantManager        *self = user_data;
     NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
 
     if (!name_owner && nm_utils_error_is_cancelled(error))
@@ -1297,7 +1297,7 @@ nm_supplicant_manager_init(NMSupplicantManager *self)
 static void
 dispose(GObject *object)
 {
-    NMSupplicantManager *       self = (NMSupplicantManager *) object;
+    NMSupplicantManager        *self = (NMSupplicantManager *) object;
     NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
 
     _supp_iface_remove_all(self, TRUE, "NMSupplicantManager is disposing");

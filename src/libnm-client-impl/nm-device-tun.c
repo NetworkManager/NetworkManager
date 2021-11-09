@@ -24,7 +24,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_MODE,
                                   PROP_MULTI_QUEUE, );
 
 typedef struct {
-    char * mode;
+    char  *mode;
     gint64 owner;
     gint64 group;
     bool   no_pi;
@@ -191,7 +191,7 @@ connection_compatible(NMDevice *device, NMConnection *connection, GError **error
 {
     NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE(device);
     NMSettingTunMode    mode;
-    NMSettingTun *      s_tun;
+    NMSettingTun       *s_tun;
 
     if (!NM_DEVICE_CLASS(nm_device_tun_parent_class)
              ->connection_compatible(device, connection, error))
@@ -294,7 +294,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_tun = NML_DBUS_META_IFACE_
 static void
 nm_device_tun_class_init(NMDeviceTunClass *gre_class)
 {
-    GObjectClass * object_class = G_OBJECT_CLASS(gre_class);
+    GObjectClass  *object_class = G_OBJECT_CLASS(gre_class);
     NMDeviceClass *device_class = NM_DEVICE_CLASS(gre_class);
 
     object_class->get_property = get_property;

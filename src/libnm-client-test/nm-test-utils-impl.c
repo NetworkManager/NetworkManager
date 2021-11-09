@@ -42,7 +42,7 @@ name_exists(GDBusConnection *c, const char *name)
 }
 
 typedef struct {
-    GMainLoop *      mainloop;
+    GMainLoop       *mainloop;
     GDBusConnection *bus;
     int              exit_code;
     bool             exited : 1;
@@ -92,8 +92,8 @@ NMTstcServiceInfo *
 nmtstc_service_init(void)
 {
     NMTstcServiceInfo *info;
-    const char *       args[] = {TEST_NM_PYTHON, NMTSTC_NM_SERVICE, NULL};
-    GError *           error  = NULL;
+    const char        *args[] = {TEST_NM_PYTHON, NMTSTC_NM_SERVICE, NULL};
+    GError            *error  = NULL;
 
     info = g_malloc0(sizeof(*info));
 
@@ -120,10 +120,10 @@ nmtstc_service_init(void)
     {
         nm_auto_unref_gsource GSource *timeout_source = NULL;
         nm_auto_unref_gsource GSource *child_source   = NULL;
-        GMainContext *                 context        = g_main_context_new();
+        GMainContext                  *context        = g_main_context_new();
         ServiceInitWaitData            data           = {
-            .bus      = info->bus,
-            .mainloop = g_main_loop_new(context, FALSE),
+                                 .bus      = info->bus,
+                                 .mainloop = g_main_loop_new(context, FALSE),
         };
         gboolean had_timeout;
 
@@ -226,10 +226,10 @@ again_wait:
 }
 
 typedef struct {
-    GMainLoop * loop;
+    GMainLoop  *loop;
     const char *ifname;
     const char *path;
-    NMDevice *  device;
+    NMDevice   *device;
 } AddDeviceInfo;
 
 static void
@@ -249,11 +249,11 @@ device_added_cb(NMClient *client, NMDevice *device, gpointer user_data)
 }
 
 static GVariant *
-call_add_wired_device(GDBusProxy * proxy,
-                      const char * ifname,
-                      const char * hwaddr,
+call_add_wired_device(GDBusProxy  *proxy,
+                      const char  *ifname,
+                      const char  *hwaddr,
                       const char **subchannels,
-                      GError **    error)
+                      GError     **error)
 {
     const char *empty[] = {NULL};
 
@@ -285,16 +285,16 @@ call_add_device(GDBusProxy *proxy, const char *method, const char *ifname, GErro
 
 static NMDevice *
 add_device_common(NMTstcServiceInfo *sinfo,
-                  NMClient *         client,
-                  const char *       method,
-                  const char *       ifname,
-                  const char *       hwaddr,
-                  const char **      subchannels)
+                  NMClient          *client,
+                  const char        *method,
+                  const char        *ifname,
+                  const char        *hwaddr,
+                  const char       **subchannels)
 {
-    nm_auto_unref_gmainloop GMainLoop *loop = NULL;
-    gs_unref_variant GVariant *ret          = NULL;
-    gs_free_error GError *error             = NULL;
-    AddDeviceInfo         info;
+    nm_auto_unref_gmainloop GMainLoop *loop  = NULL;
+    gs_unref_variant GVariant         *ret   = NULL;
+    gs_free_error GError              *error = NULL;
+    AddDeviceInfo                      info;
 
     g_assert(sinfo);
     g_assert(NM_IS_CLIENT(client));
@@ -334,28 +334,28 @@ add_device_common(NMTstcServiceInfo *sinfo,
 
 NMDevice *
 nmtstc_service_add_device(NMTstcServiceInfo *sinfo,
-                          NMClient *         client,
-                          const char *       method,
-                          const char *       ifname)
+                          NMClient          *client,
+                          const char        *method,
+                          const char        *ifname)
 {
     return add_device_common(sinfo, client, method, ifname, NULL, NULL);
 }
 
 NMDevice *
 nmtstc_service_add_wired_device(NMTstcServiceInfo *sinfo,
-                                NMClient *         client,
-                                const char *       ifname,
-                                const char *       hwaddr,
-                                const char **      subchannels)
+                                NMClient          *client,
+                                const char        *ifname,
+                                const char        *hwaddr,
+                                const char       **subchannels)
 {
     return add_device_common(sinfo, client, "AddWiredDevice", ifname, hwaddr, subchannels);
 }
 
 void
 nmtstc_service_add_connection(NMTstcServiceInfo *sinfo,
-                              NMConnection *     connection,
+                              NMConnection      *connection,
                               gboolean           verify_connection,
-                              char **            out_path)
+                              char             **out_path)
 {
     nmtstc_service_add_connection_variant(
         sinfo,
@@ -366,12 +366,12 @@ nmtstc_service_add_connection(NMTstcServiceInfo *sinfo,
 
 void
 nmtstc_service_add_connection_variant(NMTstcServiceInfo *sinfo,
-                                      GVariant *         connection,
+                                      GVariant          *connection,
                                       gboolean           verify_connection,
-                                      char **            out_path)
+                                      char             **out_path)
 {
     GVariant *result;
-    GError *  error = NULL;
+    GError   *error = NULL;
 
     g_assert(sinfo);
     g_assert(G_IS_DBUS_PROXY(sinfo->proxy));
@@ -393,8 +393,8 @@ nmtstc_service_add_connection_variant(NMTstcServiceInfo *sinfo,
 
 void
 nmtstc_service_update_connection(NMTstcServiceInfo *sinfo,
-                                 const char *       path,
-                                 NMConnection *     connection,
+                                 const char        *path,
+                                 NMConnection      *connection,
                                  gboolean           verify_connection)
 {
     if (!path)
@@ -410,12 +410,12 @@ nmtstc_service_update_connection(NMTstcServiceInfo *sinfo,
 
 void
 nmtstc_service_update_connection_variant(NMTstcServiceInfo *sinfo,
-                                         const char *       path,
-                                         GVariant *         connection,
+                                         const char        *path,
+                                         GVariant          *connection,
                                          gboolean           verify_connection)
 {
     GVariant *result;
-    GError *  error = NULL;
+    GError   *error = NULL;
 
     g_assert(sinfo);
     g_assert(G_IS_DBUS_PROXY(sinfo->proxy));
@@ -439,14 +439,14 @@ nmtstc_service_update_connection_variant(NMTstcServiceInfo *sinfo,
 typedef struct {
     GType      gtype;
     GMainLoop *loop;
-    GObject *  obj;
+    GObject   *obj;
     bool       call_nm_client_new_async : 1;
 } NMTstcObjNewData;
 
 static void
 _context_object_new_do_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMTstcObjNewData *d         = user_data;
+    NMTstcObjNewData     *d     = user_data;
     gs_free_error GError *error = NULL;
 
     g_assert(!d->obj);
@@ -472,7 +472,7 @@ _context_object_new_do(GType       gtype,
                        va_list     var_args)
 {
     gs_free_error GError *error = NULL;
-    GObject *             obj;
+    GObject              *obj;
 
     /* Create a GObject instance synchronously, and arbitrarily use either
      * the sync or async constructor.
@@ -508,8 +508,8 @@ _context_object_new_do(GType       gtype,
     } else {
         nm_auto_unref_gmainloop GMainLoop *loop = NULL;
         NMTstcObjNewData                   d    = {
-            .gtype = gtype,
-            .loop  = NULL,
+                                 .gtype = gtype,
+                                 .loop  = NULL,
         };
         gs_unref_object GObject *obj2 = NULL;
 
@@ -545,8 +545,8 @@ typedef struct {
     GType       gtype;
     const char *first_property_name;
     va_list     var_args;
-    GMainLoop * loop;
-    GObject *   obj;
+    GMainLoop  *loop;
+    GObject    *obj;
     bool        sync;
 } NewSyncInsideDispatchedData;
 
@@ -570,13 +570,13 @@ _context_object_new_inside_loop(GType       gtype,
                                 const char *first_property_name,
                                 va_list     var_args)
 {
-    GMainContext *          context         = g_main_context_get_thread_default();
-    nm_auto_unref_gmainloop GMainLoop *loop = g_main_loop_new(context, FALSE);
-    NewSyncInsideDispatchedData        d    = {
-        .gtype               = gtype,
-        .first_property_name = first_property_name,
-        .sync                = sync,
-        .loop                = loop,
+    GMainContext                      *context = g_main_context_get_thread_default();
+    nm_auto_unref_gmainloop GMainLoop *loop    = g_main_loop_new(context, FALSE);
+    NewSyncInsideDispatchedData        d       = {
+                     .gtype               = gtype,
+                     .first_property_name = first_property_name,
+                     .sync                = sync,
+                     .loop                = loop,
     };
     nm_auto_destroy_and_unref_gsource GSource *source = NULL;
 

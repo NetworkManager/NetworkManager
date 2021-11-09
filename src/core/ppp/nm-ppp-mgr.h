@@ -58,7 +58,7 @@ typedef struct {
 } NMPppMgrStatsData;
 
 typedef struct {
-    const NML3ConfigData *    l3cd;
+    const NML3ConfigData     *l3cd;
     const NMUtilsIPv6IfaceId *ipv6_iid;
     NMOptionBool              ip_enabled;
     bool                      ip_received;
@@ -92,19 +92,19 @@ typedef struct {
     };
 } NMPppMgrCallbackData;
 
-typedef void (*NMPppMgrCallback)(NMPppMgr *                  self,
+typedef void (*NMPppMgrCallback)(NMPppMgr                   *self,
                                  const NMPppMgrCallbackData *callback_data,
                                  gpointer                    user_data);
 
 typedef struct {
-    NMNetns *   netns;
+    NMNetns    *netns;
     const char *parent_iface;
 
     NMPppMgrCallback callback;
     gpointer         user_data;
 
     NMActRequest *act_req;
-    const char *  ppp_username;
+    const char   *ppp_username;
     guint32       timeout_secs;
     guint         baud_override;
 } NMPppMgrConfig;
@@ -123,7 +123,7 @@ NMPppMgr *nm_ppp_mgr_start(const NMPppMgrConfig *config, GError **error);
 
 NMPppMgrState            nm_ppp_mgr_get_state(const NMPppMgr *self);
 int                      nm_ppp_mgr_get_ifindex(const NMPppMgr *self);
-const NMPppMgrIPData *   nm_ppp_mgr_get_ip_data(const NMPppMgr *self, int addr_family);
+const NMPppMgrIPData    *nm_ppp_mgr_get_ip_data(const NMPppMgr *self, int addr_family);
 const NMPppMgrStatsData *nm_ppp_mgr_get_stats(const NMPppMgr *self);
 
 void nm_ppp_mgr_destroy(NMPppMgr *self);

@@ -43,7 +43,7 @@ typedef struct {
 
     struct {
         GDBusConnection *connection;
-        GCancellable *   cancellable;
+        GCancellable    *cancellable;
         gulong           signal_id;
         guint            regist_id;
     } dbus;
@@ -99,9 +99,9 @@ nm_assert_self(NMSIfcfgRHPlugin *self, gboolean unhandled_specs_consistent)
 
 #if NM_MORE_ASSERTS > 5
     {
-        NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
-        NMSIfcfgRHStorage *      storage;
-        gsize                    n_uuid;
+        NMSIfcfgRHPluginPrivate       *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
+        NMSIfcfgRHStorage             *storage;
+        gsize                          n_uuid;
         gs_unref_hashtable GHashTable *h_unmanaged    = NULL;
         gs_unref_hashtable GHashTable *h_unrecognized = NULL;
 
@@ -177,11 +177,11 @@ nm_assert_self(NMSIfcfgRHPlugin *self, gboolean unhandled_specs_consistent)
 static NMSIfcfgRHStorage *
 _load_file(NMSIfcfgRHPlugin *self, const char *filename, GError **error)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_free_error GError *load_error         = NULL;
-    gs_free char *        unhandled_spec     = NULL;
-    gboolean              load_error_ignore;
-    struct stat           st;
+    gs_unref_object NMConnection *connection     = NULL;
+    gs_free_error GError         *load_error     = NULL;
+    gs_free char                 *unhandled_spec = NULL;
+    gboolean                      load_error_ignore;
+    struct stat                   st;
 
     if (stat(filename, &st) != 0) {
         int errsv = errno;
@@ -240,9 +240,9 @@ static void
 _load_dir(NMSIfcfgRHPlugin *self, NMSettUtilStorages *storages)
 {
     gs_unref_hashtable GHashTable *dupl_filenames = NULL;
-    gs_free_error GError *local                   = NULL;
-    const char *          f_filename;
-    GDir *                dir;
+    gs_free_error GError          *local          = NULL;
+    const char                    *f_filename;
+    GDir                          *dir;
 
     dir = g_dir_open(IFCFG_DIR, 0, &local);
     if (!dir) {
@@ -253,9 +253,9 @@ _load_dir(NMSIfcfgRHPlugin *self, NMSettUtilStorages *storages)
     dupl_filenames = g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, g_free);
 
     while ((f_filename = g_dir_read_name(dir))) {
-        gs_free char *     full_path = NULL;
+        gs_free char      *full_path = NULL;
         NMSIfcfgRHStorage *storage;
-        char *             full_filename;
+        char              *full_filename;
 
         full_path     = g_build_filename(IFCFG_DIR, f_filename, NULL);
         full_filename = utils_detect_ifcfg_path(full_path, TRUE);
@@ -275,21 +275,21 @@ _load_dir(NMSIfcfgRHPlugin *self, NMSettUtilStorages *storages)
 }
 
 static void
-_storages_consolidate(NMSIfcfgRHPlugin *                     self,
-                      NMSettUtilStorages *                   storages_new,
+_storages_consolidate(NMSIfcfgRHPlugin                      *self,
+                      NMSettUtilStorages                    *storages_new,
                       gboolean                               replace_all,
-                      GHashTable *                           storages_replaced,
+                      GHashTable                            *storages_replaced,
                       NMSettingsPluginConnectionLoadCallback callback,
                       gpointer                               user_data)
 {
-    NMSIfcfgRHPluginPrivate *priv                  = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
-    CList                    lst_conn_info_deleted = C_LIST_INIT(lst_conn_info_deleted);
-    gs_unref_ptrarray GPtrArray *storages_modified = NULL;
+    NMSIfcfgRHPluginPrivate     *priv                  = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
+    CList                        lst_conn_info_deleted = C_LIST_INIT(lst_conn_info_deleted);
+    gs_unref_ptrarray GPtrArray *storages_modified     = NULL;
     CList                        storages_deleted;
-    NMSIfcfgRHStorage *          storage_safe;
-    NMSIfcfgRHStorage *          storage_new;
-    NMSIfcfgRHStorage *          storage_old;
-    NMSIfcfgRHStorage *          storage;
+    NMSIfcfgRHStorage           *storage_safe;
+    NMSIfcfgRHStorage           *storage_new;
+    NMSIfcfgRHStorage           *storage_old;
+    NMSIfcfgRHStorage           *storage;
     guint                        i;
 
     /* when we reload all files, we must signal add/update/modify of profiles one-by-one.
@@ -402,20 +402,20 @@ _storages_consolidate(NMSIfcfgRHPlugin *                     self,
 /*****************************************************************************/
 
 static void
-load_connections(NMSettingsPlugin *                     plugin,
-                 NMSettingsPluginConnectionLoadEntry *  entries,
+load_connections(NMSettingsPlugin                      *plugin,
+                 NMSettingsPluginConnectionLoadEntry   *entries,
                  gsize                                  n_entries,
                  NMSettingsPluginConnectionLoadCallback callback,
                  gpointer                               user_data)
 {
-    NMSIfcfgRHPlugin *       self = NMS_IFCFG_RH_PLUGIN(plugin);
+    NMSIfcfgRHPlugin        *self = NMS_IFCFG_RH_PLUGIN(plugin);
     NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
     nm_auto_clear_sett_util_storages NMSettUtilStorages storages_new =
         NM_SETT_UTIL_STORAGES_INIT(storages_new, nms_ifcfg_rh_storage_destroy);
     gs_unref_hashtable GHashTable *dupl_filenames    = NULL;
     gs_unref_hashtable GHashTable *storages_replaced = NULL;
     gs_unref_hashtable GHashTable *loaded_uuids      = NULL;
-    const char *                   loaded_uuid;
+    const char                    *loaded_uuid;
     GHashTableIter                 h_iter;
     gsize                          i;
 
@@ -430,12 +430,12 @@ load_connections(NMSettingsPlugin *                     plugin,
 
     for (i = 0; i < n_entries; i++) {
         NMSettingsPluginConnectionLoadEntry *const entry = &entries[i];
-        gs_free_error GError *               local       = NULL;
-        const char *                         full_filename;
-        const char *                         uuid;
-        gs_free char *                       full_filename_keep = NULL;
-        NMSettingsPluginConnectionLoadEntry *dupl_content_entry;
-        gs_unref_object NMSIfcfgRHStorage *storage = NULL;
+        gs_free_error GError                      *local = NULL;
+        const char                                *full_filename;
+        const char                                *uuid;
+        gs_free char                              *full_filename_keep = NULL;
+        NMSettingsPluginConnectionLoadEntry       *dupl_content_entry;
+        gs_unref_object NMSIfcfgRHStorage         *storage = NULL;
 
         if (entry->handled)
             continue;
@@ -499,7 +499,7 @@ load_connections(NMSettingsPlugin *                     plugin,
     /* now we visit all UUIDs that are about to change... */
     g_hash_table_iter_init(&h_iter, loaded_uuids);
     while (g_hash_table_iter_next(&h_iter, (gpointer *) &loaded_uuid, NULL)) {
-        NMSIfcfgRHStorage *          storage;
+        NMSIfcfgRHStorage           *storage;
         NMSettUtilStorageByUuidHead *sbuh;
 
         sbuh = nm_sett_util_storages_lookup_by_uuid(&priv->storages, loaded_uuid);
@@ -509,9 +509,9 @@ load_connections(NMSettingsPlugin *                     plugin,
         c_list_for_each_entry (storage,
                                &sbuh->_storage_by_uuid_lst_head,
                                parent._storage_by_uuid_lst) {
-            const char *    full_filename = nms_ifcfg_rh_storage_get_filename(storage);
+            const char *full_filename = nms_ifcfg_rh_storage_get_filename(storage);
             gs_unref_object NMSIfcfgRHStorage *storage_new = NULL;
-            gs_free_error GError *local                    = NULL;
+            gs_free_error GError              *local       = NULL;
 
             if (g_hash_table_contains(dupl_filenames, full_filename)) {
                 /* already re-loaded. */
@@ -544,11 +544,11 @@ load_connections(NMSettingsPlugin *                     plugin,
 }
 
 static void
-reload_connections(NMSettingsPlugin *                     plugin,
+reload_connections(NMSettingsPlugin                      *plugin,
                    NMSettingsPluginConnectionLoadCallback callback,
                    gpointer                               user_data)
 {
-    NMSIfcfgRHPlugin *                                  self = NMS_IFCFG_RH_PLUGIN(plugin);
+    NMSIfcfgRHPlugin                                   *self = NMS_IFCFG_RH_PLUGIN(plugin);
     nm_auto_clear_sett_util_storages NMSettUtilStorages storages_new =
         NM_SETT_UTIL_STORAGES_INIT(storages_new, nms_ifcfg_rh_storage_destroy);
 
@@ -581,20 +581,20 @@ load_connections_done(NMSettingsPlugin *plugin)
 /*****************************************************************************/
 
 static gboolean
-add_connection(NMSettingsPlugin *  plugin,
-               NMConnection *      connection,
+add_connection(NMSettingsPlugin   *plugin,
+               NMConnection       *connection,
                NMSettingsStorage **out_storage,
-               NMConnection **     out_connection,
-               GError **           error)
+               NMConnection      **out_connection,
+               GError            **error)
 {
-    NMSIfcfgRHPlugin *       self               = NMS_IFCFG_RH_PLUGIN(plugin);
-    NMSIfcfgRHPluginPrivate *priv               = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
-    gs_unref_object NMSIfcfgRHStorage *storage  = NULL;
-    gs_unref_object NMConnection *reread        = NULL;
-    gs_free char *                full_filename = NULL;
-    GError *                      local         = NULL;
-    gboolean                      reread_same;
-    struct timespec               mtime;
+    NMSIfcfgRHPlugin                  *self          = NMS_IFCFG_RH_PLUGIN(plugin);
+    NMSIfcfgRHPluginPrivate           *priv          = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
+    gs_unref_object NMSIfcfgRHStorage *storage       = NULL;
+    gs_unref_object NMConnection      *reread        = NULL;
+    gs_free char                      *full_filename = NULL;
+    GError                            *local         = NULL;
+    gboolean                           reread_same;
+    struct timespec                    mtime;
 
     nm_assert_self(self, TRUE);
     nm_assert(NM_IS_CONNECTION(connection));
@@ -646,19 +646,19 @@ add_connection(NMSettingsPlugin *  plugin,
 }
 
 static gboolean
-update_connection(NMSettingsPlugin *  plugin,
-                  NMSettingsStorage * storage_x,
-                  NMConnection *      connection,
+update_connection(NMSettingsPlugin   *plugin,
+                  NMSettingsStorage  *storage_x,
+                  NMConnection       *connection,
                   NMSettingsStorage **out_storage,
-                  NMConnection **     out_connection,
-                  GError **           error)
+                  NMConnection      **out_connection,
+                  GError            **error)
 {
-    NMSIfcfgRHPlugin *       self    = NMS_IFCFG_RH_PLUGIN(plugin);
-    NMSIfcfgRHPluginPrivate *priv    = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
-    NMSIfcfgRHStorage *      storage = NMS_IFCFG_RH_STORAGE(storage_x);
-    const char *             full_filename;
-    const char *             uuid;
-    GError *                 local       = NULL;
+    NMSIfcfgRHPlugin             *self    = NMS_IFCFG_RH_PLUGIN(plugin);
+    NMSIfcfgRHPluginPrivate      *priv    = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
+    NMSIfcfgRHStorage            *storage = NMS_IFCFG_RH_STORAGE(storage_x);
+    const char                   *full_filename;
+    const char                   *uuid;
+    GError                       *local  = NULL;
     gs_unref_object NMConnection *reread = NULL;
     gboolean                      reread_same;
     struct timespec               mtime;
@@ -718,11 +718,11 @@ update_connection(NMSettingsPlugin *  plugin,
 static gboolean
 delete_connection(NMSettingsPlugin *plugin, NMSettingsStorage *storage_x, GError **error)
 {
-    NMSIfcfgRHPlugin *       self    = NMS_IFCFG_RH_PLUGIN(plugin);
+    NMSIfcfgRHPlugin        *self    = NMS_IFCFG_RH_PLUGIN(plugin);
     NMSIfcfgRHPluginPrivate *priv    = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
-    NMSIfcfgRHStorage *      storage = NMS_IFCFG_RH_STORAGE(storage_x);
-    const char *             operation_message;
-    const char *             full_filename;
+    NMSIfcfgRHStorage       *storage = NMS_IFCFG_RH_STORAGE(storage_x);
+    const char              *operation_message;
+    const char              *full_filename;
 
     nm_assert_self(self, TRUE);
     nm_assert(!error || !*error);
@@ -736,9 +736,9 @@ delete_connection(NMSettingsPlugin *plugin, NMSettingsStorage *storage_x, GError
     nm_assert(storage == nm_sett_util_storages_lookup_by_filename(&priv->storages, full_filename));
 
     {
-        gs_free char *    keyfile     = utils_get_keys_path(full_filename);
-        gs_free char *    routefile   = utils_get_route_path(full_filename);
-        gs_free char *    route6file  = utils_get_route6_path(full_filename);
+        gs_free char     *keyfile     = utils_get_keys_path(full_filename);
+        gs_free char     *routefile   = utils_get_route_path(full_filename);
+        gs_free char     *route6file  = utils_get_route6_path(full_filename);
         const char *const files[]     = {full_filename, keyfile, routefile, route6file};
         gboolean          any_deleted = FALSE;
         gboolean          any_failure = FALSE;
@@ -784,10 +784,10 @@ delete_connection(NMSettingsPlugin *plugin, NMSettingsStorage *storage_x, GError
 static void
 _unhandled_specs_reset(NMSIfcfgRHPlugin *self)
 {
-    NMSIfcfgRHPluginPrivate *priv                     = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
+    NMSIfcfgRHPluginPrivate       *priv               = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
     gs_unref_hashtable GHashTable *unmanaged_specs    = NULL;
     gs_unref_hashtable GHashTable *unrecognized_specs = NULL;
-    NMSIfcfgRHStorage *            storage;
+    NMSIfcfgRHStorage             *storage;
 
     unmanaged_specs    = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, NULL);
     unrecognized_specs = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, NULL);
@@ -820,7 +820,7 @@ _unhandled_specs_merge_storages(NMSIfcfgRHPlugin *self, NMSettUtilStorages *stor
     NMSIfcfgRHPluginPrivate *priv                 = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
     gboolean                 unmanaged_changed    = FALSE;
     gboolean                 unrecognized_changed = FALSE;
-    NMSIfcfgRHStorage *      storage;
+    NMSIfcfgRHStorage       *storage;
 
     c_list_for_each_entry (storage, &storages->_storage_lst_head, parent._storage_lst) {
         if (storage->unmanaged_spec
@@ -845,7 +845,7 @@ static GSList *
 _unhandled_specs_from_hashtable(GHashTable *hash)
 {
     gs_free const char **keys = NULL;
-    GSList *             list = NULL;
+    GSList              *list = NULL;
     guint                i, l;
 
     keys = nm_strdict_get_keys(hash, TRUE, &l);
@@ -873,15 +873,15 @@ get_unrecognized_specs(NMSettingsPlugin *plugin)
 /*****************************************************************************/
 
 static void
-impl_ifcfgrh_get_ifcfg_details(NMSIfcfgRHPlugin *     self,
+impl_ifcfgrh_get_ifcfg_details(NMSIfcfgRHPlugin      *self,
                                GDBusMethodInvocation *context,
-                               const char *           in_ifcfg)
+                               const char            *in_ifcfg)
 {
     NMSIfcfgRHPluginPrivate *priv       = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
-    gs_free char *           ifcfg_path = NULL;
-    NMSIfcfgRHStorage *      storage;
-    const char *             uuid;
-    const char *             path;
+    gs_free char            *ifcfg_path = NULL;
+    NMSIfcfgRHStorage       *storage;
+    const char              *uuid;
+    const char              *path;
 
     if (in_ifcfg[0] != '/') {
         g_dbus_method_invocation_return_error(context,
@@ -964,7 +964,7 @@ _dbus_clear(NMSIfcfgRHPlugin *self)
 static void
 _dbus_connection_closed(GDBusConnection *connection,
                         gboolean         remote_peer_vanished,
-                        GError *         error,
+                        GError          *error,
                         gpointer         user_data)
 {
     _LOGW("dbus: %s bus closed", IFCFGRH1_BUS_NAME);
@@ -974,12 +974,12 @@ _dbus_connection_closed(GDBusConnection *connection,
 }
 
 static void
-_method_call(GDBusConnection *      connection,
-             const char *           sender,
-             const char *           object_path,
-             const char *           interface_name,
-             const char *           method_name,
-             GVariant *             parameters,
+_method_call(GDBusConnection       *connection,
+             const char            *sender,
+             const char            *object_path,
+             const char            *interface_name,
+             const char            *method_name,
+             GVariant              *parameters,
              GDBusMethodInvocation *invocation,
              gpointer               user_data)
 {
@@ -1014,11 +1014,11 @@ static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO
 static void
 _dbus_request_name_done(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    GDBusConnection *        connection = G_DBUS_CONNECTION(source_object);
-    NMSIfcfgRHPlugin *       self;
-    NMSIfcfgRHPluginPrivate *priv;
-    gs_free_error GError *error    = NULL;
-    gs_unref_variant GVariant *ret = NULL;
+    GDBusConnection           *connection = G_DBUS_CONNECTION(source_object);
+    NMSIfcfgRHPlugin          *self;
+    NMSIfcfgRHPluginPrivate   *priv;
+    gs_free_error GError      *error = NULL;
+    gs_unref_variant GVariant *ret   = NULL;
     guint32                    result;
 
     ret = g_dbus_connection_call_finish(connection, res, &error);
@@ -1072,10 +1072,10 @@ _dbus_request_name_done(GObject *source_object, GAsyncResult *res, gpointer user
 static void
 _dbus_create_done(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMSIfcfgRHPlugin *       self;
+    NMSIfcfgRHPlugin        *self;
     NMSIfcfgRHPluginPrivate *priv;
-    gs_free_error GError *error = NULL;
-    GDBusConnection *     connection;
+    gs_free_error GError    *error = NULL;
+    GDBusConnection         *connection;
 
     connection = g_dbus_connection_new_for_address_finish(res, &error);
     if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -1117,8 +1117,8 @@ static void
 _dbus_setup(NMSIfcfgRHPlugin *self)
 {
     NMSIfcfgRHPluginPrivate *priv    = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
-    gs_free char *           address = NULL;
-    gs_free_error GError *error      = NULL;
+    gs_free char            *address = NULL;
+    gs_free_error GError    *error   = NULL;
 
     _dbus_clear(self);
 
@@ -1147,11 +1147,11 @@ _dbus_setup(NMSIfcfgRHPlugin *self)
 }
 
 static void
-config_changed_cb(NMConfig *          config,
-                  NMConfigData *      config_data,
+config_changed_cb(NMConfig           *config,
+                  NMConfigData       *config_data,
                   NMConfigChangeFlags changes,
-                  NMConfigData *      old_data,
-                  NMSIfcfgRHPlugin *  self)
+                  NMConfigData       *old_data,
+                  NMSIfcfgRHPlugin   *self)
 {
     NMSIfcfgRHPluginPrivate *priv;
 
@@ -1188,7 +1188,7 @@ nms_ifcfg_rh_plugin_init(NMSIfcfgRHPlugin *self)
 static void
 constructed(GObject *object)
 {
-    NMSIfcfgRHPlugin *       self = NMS_IFCFG_RH_PLUGIN(object);
+    NMSIfcfgRHPlugin        *self = NMS_IFCFG_RH_PLUGIN(object);
     NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
 
     G_OBJECT_CLASS(nms_ifcfg_rh_plugin_parent_class)->constructed(object);
@@ -1204,7 +1204,7 @@ constructed(GObject *object)
 static void
 dispose(GObject *object)
 {
-    NMSIfcfgRHPlugin *       self = NMS_IFCFG_RH_PLUGIN(object);
+    NMSIfcfgRHPlugin        *self = NMS_IFCFG_RH_PLUGIN(object);
     NMSIfcfgRHPluginPrivate *priv = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
 
     if (priv->config)
@@ -1227,7 +1227,7 @@ dispose(GObject *object)
 static void
 nms_ifcfg_rh_plugin_class_init(NMSIfcfgRHPluginClass *klass)
 {
-    GObjectClass *         object_class = G_OBJECT_CLASS(klass);
+    GObjectClass          *object_class = G_OBJECT_CLASS(klass);
     NMSettingsPluginClass *plugin_class = NM_SETTINGS_PLUGIN_CLASS(klass);
 
     object_class->constructed = constructed;
@@ -1247,7 +1247,7 @@ nms_ifcfg_rh_plugin_class_init(NMSIfcfgRHPluginClass *klass)
 /*****************************************************************************/
 
 G_MODULE_EXPORT NMSettingsPlugin *
-                nm_settings_plugin_factory(void)
+nm_settings_plugin_factory(void)
 {
     return g_object_new(NMS_TYPE_IFCFG_RH_PLUGIN, NULL);
 }

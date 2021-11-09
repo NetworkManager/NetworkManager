@@ -80,7 +80,7 @@ _bad_random_init_seed(BadRandSeed *seed)
 {
     const guint8 *p_at_random;
     int           seed_idx;
-    GRand *       rand;
+    GRand        *rand;
 
     /* g_rand_new() reads /dev/urandom, but we already noticed that
      * /dev/urandom fails to give us good randomness (which is why
@@ -148,7 +148,7 @@ _bad_random_bytes(guint8 *buf, gsize n)
 
     {
         static BadRandState gl_state;
-        static GRand *      gl_rand;
+        static GRand       *gl_rand;
         static GMutex       gl_mutex;
         NM_G_MUTEX_LOCKED(&gl_mutex);
 
@@ -224,7 +224,7 @@ nm_utils_random_bytes(void *p, size_t n)
     int      fd;
     int      r;
     gboolean has_high_quality = TRUE;
-    guint8 * buf              = p;
+    guint8  *buf              = p;
 
     g_return_val_if_fail(p, FALSE);
     g_return_val_if_fail(n > 0, FALSE);

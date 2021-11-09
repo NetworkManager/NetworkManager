@@ -59,9 +59,9 @@ static guint signals[LAST_SIGNAL] = {0};
 struct _NMPolkitListener {
     GObject          parent;
     GDBusConnection *dbus_connection;
-    char *           name_owner;
-    GCancellable *   cancellable;
-    GMainContext *   main_context;
+    char            *name_owner;
+    GCancellable    *cancellable;
+    GMainContext    *main_context;
     CList            request_lst_head;
     guint            pk_auth_agent_reg_id;
     guint            name_owner_changed_id;
@@ -79,14 +79,14 @@ G_DEFINE_TYPE(NMPolkitListener, nm_polkit_listener, G_TYPE_OBJECT);
 typedef struct {
     CList request_lst;
 
-    NMPolkitListener *     listener;
-    GSource *              child_stdout_watch_source;
-    GSource *              child_stdin_watch_source;
+    NMPolkitListener      *listener;
+    GSource               *child_stdout_watch_source;
+    GSource               *child_stdin_watch_source;
     GDBusMethodInvocation *dbus_invocation;
-    char *                 action_id;
-    char *                 message;
-    char *                 username;
-    char *                 cookie;
+    char                  *action_id;
+    char                  *message;
+    char                  *username;
+    char                  *cookie;
     NMStrBuf               in_buffer;
     NMStrBuf               out_buffer;
     gsize                  out_buffer_offset;
@@ -163,11 +163,11 @@ static char *
 choose_identity(GVariant *identities)
 {
     GVariantIter  identity_iter;
-    GVariant *    details_tmp;
-    const char *  kind;
+    GVariant     *details_tmp;
+    const char   *kind;
     gs_free char *username_first = NULL;
     gs_free char *username_root  = NULL;
-    const char *  user;
+    const char   *user;
 
     /* Choose identity. First try current user, then root, and else
      * take the first one we find. */
@@ -221,10 +221,10 @@ choose_identity(GVariant *identities)
 static void
 agent_register_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMPolkitListener *listener        = NM_POLKIT_LISTENER(user_data);
-    GDBusConnection * dbus_connection = G_DBUS_CONNECTION(source_object);
-    gs_free_error GError *error       = NULL;
-    gs_unref_variant GVariant *ret    = NULL;
+    NMPolkitListener          *listener        = NM_POLKIT_LISTENER(user_data);
+    GDBusConnection           *dbus_connection = G_DBUS_CONNECTION(source_object);
+    gs_free_error GError      *error           = NULL;
+    gs_unref_variant GVariant *ret             = NULL;
 
     ret = g_dbus_connection_call_finish(dbus_connection, res, &error);
 
@@ -242,9 +242,9 @@ agent_register_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 static void
 agent_register(NMPolkitListener *self, const char *session_id)
 {
-    const char *    locale                         = NULL;
+    const char                    *locale          = NULL;
     gs_unref_object NMAuthSubject *subject         = NULL;
-    GVariant *                     subject_variant = NULL;
+    GVariant                      *subject_variant = NULL;
 
     locale = g_getenv("LANG");
     if (locale == NULL) {
@@ -277,7 +277,7 @@ static void
 agent_unregister(NMPolkitListener *self)
 {
     gs_unref_object NMAuthSubject *subject         = NULL;
-    GVariant *                     subject_variant = NULL;
+    GVariant                      *subject_variant = NULL;
 
     subject         = nm_auth_subject_new_unix_process_self();
     subject_variant = nm_auth_subject_unix_to_polkit_gvariant(subject);
@@ -299,14 +299,14 @@ agent_unregister(NMPolkitListener *self)
 static void
 retrieve_session_id_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMPolkitListener *        listener = NM_POLKIT_LISTENER(user_data);
-    char *                    session_id;
-    guint32                   session_uid;
-    nm_auto_free_variant_iter GVariantIter *iter = NULL;
-    gs_unref_variant GVariant *ret               = NULL;
-    gs_free_error GError *error                  = NULL;
-    gs_free char *        err_str                = NULL;
-    uid_t                 uid                    = getuid();
+    NMPolkitListener                       *listener = NM_POLKIT_LISTENER(user_data);
+    char                                   *session_id;
+    guint32                                 session_uid;
+    nm_auto_free_variant_iter GVariantIter *iter    = NULL;
+    gs_unref_variant GVariant              *ret     = NULL;
+    gs_free_error GError                   *error   = NULL;
+    gs_free char                           *err_str = NULL;
+    uid_t                                   uid     = getuid();
 
     ret = g_dbus_connection_call_finish(listener->dbus_connection, res, &error);
 
@@ -437,7 +437,7 @@ io_watch_have_data(int fd, GIOCondition condition, gpointer user_data)
     }
 
     while (TRUE) {
-        char *      line_terminator;
+        char       *line_terminator;
         const char *line;
 
         line            = nm_str_buf_get_str(&request->in_buffer);
@@ -568,12 +568,12 @@ get_request(NMPolkitListener *listener, const char *cookie)
 }
 
 static AuthRequest *
-create_request(NMPolkitListener *     listener,
+create_request(NMPolkitListener      *listener,
                GDBusMethodInvocation *invocation,
-               const char *           action_id,
-               const char *           message,
-               char *                 username_take,
-               const char *           cookie)
+               const char            *action_id,
+               const char            *message,
+               char                  *username_take,
+               const char            *cookie)
 {
     AuthRequest *request;
 
@@ -596,20 +596,20 @@ create_request(NMPolkitListener *     listener,
 }
 
 static void
-dbus_method_call_cb(GDBusConnection *      connection,
-                    const char *           sender,
-                    const char *           object_path,
-                    const char *           interface_name,
-                    const char *           method_name,
-                    GVariant *             parameters,
+dbus_method_call_cb(GDBusConnection       *connection,
+                    const char            *sender,
+                    const char            *object_path,
+                    const char            *interface_name,
+                    const char            *method_name,
+                    GVariant              *parameters,
                     GDBusMethodInvocation *invocation,
                     gpointer               user_data)
 {
-    NMPolkitListener *listener = NM_POLKIT_LISTENER(user_data);
-    const char *      action_id;
-    const char *      message;
-    const char *      cookie;
-    AuthRequest *     request;
+    NMPolkitListener          *listener = NM_POLKIT_LISTENER(user_data);
+    const char                *action_id;
+    const char                *message;
+    const char                *cookie;
+    AuthRequest               *request;
     gs_unref_variant GVariant *identities_gvariant = NULL;
 
     if (nm_streq(method_name, "BeginAuthentication")) {
@@ -724,15 +724,15 @@ name_owner_changed(NMPolkitListener *self, const char *name_owner)
 
 static void
 name_owner_changed_cb(GDBusConnection *connection,
-                      const char *     sender_name,
-                      const char *     object_path,
-                      const char *     interface_name,
-                      const char *     signal_name,
-                      GVariant *       parameters,
+                      const char      *sender_name,
+                      const char      *object_path,
+                      const char      *interface_name,
+                      const char      *signal_name,
+                      GVariant        *parameters,
                       gpointer         user_data)
 {
     NMPolkitListener *self = user_data;
-    const char *      new_owner;
+    const char       *new_owner;
 
     if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sss)"))) {
         return;
@@ -829,7 +829,7 @@ static void
 dispose(GObject *object)
 {
     NMPolkitListener *self = NM_POLKIT_LISTENER(object);
-    AuthRequest *     request;
+    AuthRequest      *request;
 
     nm_clear_g_cancellable(&self->cancellable);
 

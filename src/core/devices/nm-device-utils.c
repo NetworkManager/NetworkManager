@@ -165,7 +165,7 @@ typedef struct {
     int                                addr_family;
     NMIPAddr                           address;
     gulong                             cancellable_id;
-    GTask *                            task;
+    GTask                             *task;
     NMDnsSystemdResolvedResolveHandle *resolved_handle;
 } ResolveAddrInfo;
 
@@ -218,9 +218,9 @@ resolve_addr_complete(ResolveAddrInfo *info, char *hostname_take, GError *error_
 static void
 resolve_addr_helper_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    ResolveAddrInfo *info        = user_data;
+    ResolveAddrInfo      *info   = user_data;
     gs_free_error GError *error  = NULL;
-    gs_free char *        output = NULL;
+    gs_free char         *output = NULL;
 
     output = nm_utils_spawn_helper_finish(result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -245,12 +245,12 @@ resolve_addr_spawn_helper(ResolveAddrInfo *info)
 }
 
 static void
-resolve_addr_resolved_cb(NMDnsSystemdResolved *                   resolved,
-                         NMDnsSystemdResolvedResolveHandle *      handle,
+resolve_addr_resolved_cb(NMDnsSystemdResolved                    *resolved,
+                         NMDnsSystemdResolvedResolveHandle       *handle,
                          const NMDnsSystemdResolvedAddressResult *names,
                          guint                                    names_len,
                          guint64                                  flags,
-                         GError *                                 error,
+                         GError                                  *error,
                          gpointer                                 user_data)
 {
     ResolveAddrInfo *info = user_data;
@@ -300,7 +300,7 @@ static void
 resolve_addr_cancelled(GObject *object, gpointer user_data)
 {
     ResolveAddrInfo *info  = user_data;
-    GError *         error = NULL;
+    GError          *error = NULL;
 
     nm_clear_g_signal_handler(g_task_get_cancellable(info->task), &info->cancellable_id);
     nm_clear_pointer(&info->resolved_handle, nm_dns_systemd_resolved_resolve_cancel);
@@ -311,11 +311,11 @@ resolve_addr_cancelled(GObject *object, gpointer user_data)
 void
 nm_device_resolve_address(int                 addr_family,
                           gconstpointer       address,
-                          GCancellable *      cancellable,
+                          GCancellable       *cancellable,
                           GAsyncReadyCallback callback,
                           gpointer            cb_data)
 {
-    ResolveAddrInfo *     info;
+    ResolveAddrInfo      *info;
     NMDnsSystemdResolved *resolved;
 
     info  = g_new(ResolveAddrInfo, 1);

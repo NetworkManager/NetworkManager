@@ -62,12 +62,12 @@ nm_setting_ovs_interface_get_interface_type(NMSettingOvsInterface *self)
 
 int
 _nm_setting_ovs_interface_verify_interface_type(NMSettingOvsInterface *self,
-                                                const char *           type,
-                                                NMConnection *         connection,
+                                                const char            *type,
+                                                NMConnection          *connection,
                                                 gboolean               normalize,
-                                                gboolean *             out_modified,
-                                                const char **          out_normalized_type,
-                                                GError **              error)
+                                                gboolean              *out_modified,
+                                                const char           **out_normalized_type,
+                                                GError               **error)
 {
     const char *type_from_setting = NULL;
     const char *type_setting      = NULL;
@@ -276,7 +276,7 @@ static int
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingOvsInterface *self  = NM_SETTING_OVS_INTERFACE(setting);
-    NMSettingConnection *  s_con = NULL;
+    NMSettingConnection   *s_con = NULL;
 
     if (connection) {
         const char *slave_type;
@@ -398,7 +398,7 @@ finalize(GObject *object)
 static void
 nm_setting_ovs_interface_class_init(NMSettingOvsInterfaceClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
 
     object_class->get_property = get_property;

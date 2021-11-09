@@ -133,10 +133,10 @@ drop_inhibitor(NMSleepMonitor *self, gboolean force)
 static void
 inhibit_done(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    GDBusProxy *    proxy                = G_DBUS_PROXY(source);
-    NMSleepMonitor *self                 = user_data;
-    gs_free_error GError *error          = NULL;
-    gs_unref_variant GVariant *res       = NULL;
+    GDBusProxy                  *proxy   = G_DBUS_PROXY(source);
+    NMSleepMonitor              *self    = user_data;
+    gs_free_error GError        *error   = NULL;
+    gs_unref_variant GVariant   *res     = NULL;
     gs_unref_object GUnixFDList *fd_list = NULL;
 
     res = g_dbus_proxy_call_with_unix_fd_list_finish(proxy, &fd_list, result, &error);
@@ -193,9 +193,9 @@ prepare_for_sleep_cb(GDBusProxy *proxy, gboolean is_about_to_suspend, gpointer d
 static void
 name_owner_cb(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-    GDBusProxy *    proxy = G_DBUS_PROXY(object);
+    GDBusProxy     *proxy = G_DBUS_PROXY(object);
     NMSleepMonitor *self  = NM_SLEEP_MONITOR(user_data);
-    char *          owner;
+    char           *owner;
 
     g_assert(proxy == self->proxy);
 
@@ -280,7 +280,7 @@ nm_sleep_monitor_inhibit_release(NMSleepMonitor *self, NMSleepMonitorInhibitorHa
 static void
 on_proxy_acquired(GObject *object, GAsyncResult *res, NMSleepMonitor *self)
 {
-    GError *    error = NULL;
+    GError     *error = NULL;
     GDBusProxy *proxy;
 
     proxy = g_dbus_proxy_new_for_bus_finish(res, &error);

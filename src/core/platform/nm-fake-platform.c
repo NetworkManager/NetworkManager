@@ -23,13 +23,13 @@
 
 typedef struct {
     const NMPObject *obj;
-    char *           udi;
+    char            *udi;
     struct in6_addr  ip6_lladdr;
 } NMFakePlatformLink;
 
 typedef struct {
     GHashTable *options;
-    GArray *    links;
+    GArray     *links;
 } NMFakePlatformPrivate;
 
 struct _NMFakePlatform {
@@ -60,7 +60,7 @@ G_DEFINE_TYPE(NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
                                                                                               \
         if (nm_logging_enabled(__level, __domain)) {                                          \
             char              __prefix[32];                                                   \
-            const char *      __p_prefix = _NMLOG_PREFIX_NAME;                                \
+            const char       *__p_prefix = _NMLOG_PREFIX_NAME;                                \
             NMPlatform *const __self     = (self);                                            \
                                                                                               \
             if (__self && nm_platform_get_log_with_ptr(self)) {                               \
@@ -80,12 +80,12 @@ G_DEFINE_TYPE(NMFakePlatform, nm_fake_platform, NM_TYPE_PLATFORM)
 
 /*****************************************************************************/
 
-static void link_changed(NMPlatform *        platform,
+static void link_changed(NMPlatform         *platform,
                          NMFakePlatformLink *device,
                          NMPCacheOpsType     cache_op,
-                         const NMPObject *   obj_old);
+                         const NMPObject    *obj_old);
 
-static gboolean ipx_address_delete(NMPlatform *  platform,
+static gboolean ipx_address_delete(NMPlatform   *platform,
                                    int           addr_family,
                                    int           ifindex,
                                    gconstpointer addr,
@@ -95,7 +95,7 @@ static gboolean ipx_address_delete(NMPlatform *  platform,
 static gboolean
 ipx_route_delete(NMPlatform *platform, int addr_family, int ifindex, const NMPObject *obj);
 
-static gboolean ip6_address_add(NMPlatform *    platform,
+static gboolean ip6_address_add(NMPlatform     *platform,
                                 int             ifindex,
                                 struct in6_addr addr,
                                 guint8          plen,
@@ -143,7 +143,7 @@ static char *
 sysctl_get(NMPlatform *platform, const char *pathid, int dirfd, const char *path)
 {
     NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
-    const char *           v;
+    const char            *v;
 
     ASSERT_SYSCTL_ARGS(pathid, dirfd, path);
 
@@ -160,7 +160,7 @@ static NMFakePlatformLink *
 link_get(NMPlatform *platform, int ifindex)
 {
     NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
-    NMFakePlatformLink *   device;
+    NMFakePlatformLink    *device;
     int                    idx;
 
     if (ifindex <= 0)
@@ -226,11 +226,11 @@ link_add_pre(NMPlatform *platform,
              guint32     mtu)
 {
     NMFakePlatformPrivate *priv = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
-    NMFakePlatformLink *   device;
+    NMFakePlatformLink    *device;
     int                    ifindex;
-    NMPObject *            o;
-    NMPlatformLink *       link;
-    gs_free char *         ip6_lladdr = NULL;
+    NMPObject             *o;
+    NMPlatformLink        *link;
+    gs_free char          *ip6_lladdr = NULL;
 
     g_assert(!name || strlen(name) < IFNAMSIZ);
 
@@ -278,27 +278,27 @@ link_add_pre(NMPlatform *platform,
 }
 
 static int
-link_add(NMPlatform *           platform,
+link_add(NMPlatform            *platform,
          NMLinkType             type,
-         const char *           name,
+         const char            *name,
          int                    parent,
-         const void *           address,
+         const void            *address,
          size_t                 address_len,
          guint32                mtu,
          gconstpointer          extra_data,
          const NMPlatformLink **out_link)
 {
-    NMFakePlatformLink * device;
-    NMFakePlatformLink * device_veth             = NULL;
+    NMFakePlatformLink             *device;
+    NMFakePlatformLink             *device_veth  = NULL;
     nm_auto_nmpobj const NMPObject *obj_old      = NULL;
     nm_auto_nmpobj const NMPObject *obj_new      = NULL;
     nm_auto_nmpobj const NMPObject *obj_old_veth = NULL;
     nm_auto_nmpobj const NMPObject *obj_new_veth = NULL;
     NMPCacheOpsType                 cache_op;
     NMPCacheOpsType                 cache_op_veth = NMP_CACHE_OPS_UNCHANGED;
-    const char *                    veth_peer     = NULL;
-    NMPObject *                     dev_obj;
-    NMPObject *                     dev_lnk = NULL;
+    const char                     *veth_peer     = NULL;
+    NMPObject                      *dev_obj;
+    NMPObject                      *dev_lnk = NULL;
 
     device = link_add_pre(platform, name, type, address, address_len, mtu);
 
@@ -389,13 +389,13 @@ static NMFakePlatformLink *
 link_add_one(NMPlatform *platform,
              const char *name,
              NMLinkType  link_type,
-             void (*prepare_fcn)(NMPlatform *        platform,
+             void (*prepare_fcn)(NMPlatform         *platform,
                                  NMFakePlatformLink *device,
                                  gconstpointer       user_data),
              gconstpointer          user_data,
              const NMPlatformLink **out_link)
 {
-    NMFakePlatformLink * device;
+    NMFakePlatformLink             *device;
     nm_auto_nmpobj const NMPObject *obj_old = NULL;
     nm_auto_nmpobj const NMPObject *obj_new = NULL;
     NMPCacheOpsType                 cache_op;
@@ -431,7 +431,7 @@ link_add_one(NMPlatform *platform,
 static gboolean
 link_delete(NMPlatform *platform, int ifindex)
 {
-    NMFakePlatformLink * device              = link_get(platform, ifindex);
+    NMFakePlatformLink             *device   = link_get(platform, ifindex);
     nm_auto_nmpobj const NMPObject *obj_old  = NULL;
     nm_auto_nmpobj const NMPObject *obj_old2 = NULL;
     NMPCacheOpsType                 cache_op;
@@ -459,10 +459,10 @@ link_delete(NMPlatform *platform, int ifindex)
 static void
 link_set_obj(NMPlatform *platform, NMFakePlatformLink *device, NMPObject *obj_tmp)
 {
-    nm_auto_nmpobj const NMPObject *obj_new = NULL;
-    nm_auto_nmpobj const NMPObject *obj_old = NULL;
-    nm_auto_nmpobj NMPObject *obj_tmp_tmp   = NULL;
-    NMPCacheOpsType           cache_op;
+    nm_auto_nmpobj const NMPObject *obj_new     = NULL;
+    nm_auto_nmpobj const NMPObject *obj_old     = NULL;
+    nm_auto_nmpobj NMPObject       *obj_tmp_tmp = NULL;
+    NMPCacheOpsType                 cache_op;
 
     g_assert(device);
     g_assert(NMP_OBJECT_GET_TYPE(device->obj) == NMP_OBJECT_TYPE_LINK);
@@ -519,10 +519,10 @@ link_change_flags(NMPlatform *platform, int ifindex, unsigned flags_mask, unsign
 }
 
 static void
-link_changed(NMPlatform *        platform,
+link_changed(NMPlatform         *platform,
              NMFakePlatformLink *device,
              NMPCacheOpsType     cache_op,
-             const NMPObject *   obj_old)
+             const NMPObject    *obj_old)
 {
     g_assert(device->obj);
 
@@ -558,7 +558,7 @@ link_changed(NMPlatform *        platform,
 static int
 link_set_address(NMPlatform *platform, int ifindex, gconstpointer addr, size_t len)
 {
-    NMFakePlatformLink *device        = link_get(platform, ifindex);
+    NMFakePlatformLink       *device  = link_get(platform, ifindex);
     nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
     if (len == 0 || len > _NM_UTILS_HWADDR_LEN_MAX || !addr)
@@ -579,7 +579,7 @@ link_set_address(NMPlatform *platform, int ifindex, gconstpointer addr, size_t l
 static int
 link_set_mtu(NMPlatform *platform, int ifindex, guint32 mtu)
 {
-    NMFakePlatformLink *device        = link_get(platform, ifindex);
+    NMFakePlatformLink       *device  = link_get(platform, ifindex);
     nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
     if (!device) {
@@ -596,9 +596,9 @@ link_set_mtu(NMPlatform *platform, int ifindex, guint32 mtu)
 static gboolean
 link_get_driver_info(NMPlatform *platform,
                      int         ifindex,
-                     char **     out_driver_name,
-                     char **     out_driver_version,
-                     char **     out_fw_version)
+                     char      **out_driver_name,
+                     char      **out_driver_version,
+                     char      **out_fw_version)
 {
     if (out_driver_name)
         *out_driver_name = NULL;
@@ -683,8 +683,8 @@ link_enslave(NMPlatform *platform, int master, int slave)
 static gboolean
 link_release(NMPlatform *platform, int master_idx, int slave_idx)
 {
-    NMFakePlatformLink *master        = link_get(platform, master_idx);
-    NMFakePlatformLink *slave         = link_get(platform, slave_idx);
+    NMFakePlatformLink       *master  = link_get(platform, master_idx);
+    NMFakePlatformLink       *slave   = link_get(platform, slave_idx);
     nm_auto_nmpobj NMPObject *obj_tmp = NULL;
 
     g_return_val_if_fail(master, FALSE);
@@ -700,7 +700,7 @@ link_release(NMPlatform *platform, int master_idx, int slave_idx)
 }
 
 static gboolean
-link_vlan_change(NMPlatform *            platform,
+link_vlan_change(NMPlatform             *platform,
                  int                     ifindex,
                  _NMVlanFlags            flags_mask,
                  _NMVlanFlags            flags_set,
@@ -723,8 +723,8 @@ static void
 _infiniband_add_prepare(NMPlatform *platform, NMFakePlatformLink *device, gconstpointer user_data)
 {
     const struct infiniband_add_data *d = user_data;
-    NMPObject *                       obj_tmp;
-    NMPObject *                       lnk;
+    NMPObject                        *obj_tmp;
+    NMPObject                        *lnk;
 
     obj_tmp = (NMPObject *) device->obj;
 
@@ -737,12 +737,12 @@ _infiniband_add_prepare(NMPlatform *platform, NMFakePlatformLink *device, gconst
 }
 
 static gboolean
-infiniband_partition_add(NMPlatform *           platform,
+infiniband_partition_add(NMPlatform            *platform,
                          int                    parent,
                          int                    p_key,
                          const NMPlatformLink **out_link)
 {
-    NMFakePlatformLink *             parent_device;
+    NMFakePlatformLink              *parent_device;
     char                             name[IFNAMSIZ];
     const struct infiniband_add_data d = {
         .parent = parent,
@@ -762,7 +762,7 @@ static gboolean
 infiniband_partition_delete(NMPlatform *platform, int parent, int p_key)
 {
     NMFakePlatformLink *parent_device;
-    gs_free char *      name = NULL;
+    gs_free char       *name = NULL;
 
     parent_device = link_get(platform, parent);
     g_return_val_if_fail(parent_device != NULL, FALSE);
@@ -859,11 +859,11 @@ mesh_set_ssid(NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 static gboolean
 ipx_address_add(NMPlatform *platform, int addr_family, const NMPlatformObject *address)
 {
-    nm_auto_nmpobj NMPObject *obj = NULL;
-    NMPCacheOpsType           cache_op;
+    nm_auto_nmpobj NMPObject       *obj = NULL;
+    NMPCacheOpsType                 cache_op;
     nm_auto_nmpobj const NMPObject *obj_old = NULL;
     nm_auto_nmpobj const NMPObject *obj_new = NULL;
-    NMPCache *                      cache   = nm_platform_get_cache(platform);
+    NMPCache                       *cache   = nm_platform_get_cache(platform);
 
     g_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
 
@@ -910,7 +910,7 @@ ip4_address_add(NMPlatform *platform,
 }
 
 static gboolean
-ip6_address_add(NMPlatform *    platform,
+ip6_address_add(NMPlatform     *platform,
                 int             ifindex,
                 struct in6_addr addr,
                 guint8          plen,
@@ -938,7 +938,7 @@ ip6_address_add(NMPlatform *    platform,
 }
 
 static gboolean
-ipx_address_delete(NMPlatform *  platform,
+ipx_address_delete(NMPlatform   *platform,
                    int           addr_family,
                    int           ifindex,
                    gconstpointer addr,
@@ -1085,23 +1085,23 @@ object_delete(NMPlatform *platform, const NMPObject *obj)
 }
 
 static int
-ip_route_add(NMPlatform *             platform,
+ip_route_add(NMPlatform              *platform,
              NMPNlmFlags              flags,
              int                      addr_family,
              const NMPlatformIPRoute *route)
 {
-    NMDedupMultiIter iter;
-    nm_auto_nmpobj NMPObject *obj = NULL;
-    NMPCacheOpsType           cache_op;
-    const NMPObject *         o                 = NULL;
+    NMDedupMultiIter                iter;
+    nm_auto_nmpobj NMPObject       *obj = NULL;
+    NMPCacheOpsType                 cache_op;
+    const NMPObject                *o           = NULL;
     nm_auto_nmpobj const NMPObject *obj_old     = NULL;
     nm_auto_nmpobj const NMPObject *obj_new     = NULL;
     nm_auto_nmpobj const NMPObject *obj_replace = NULL;
-    NMPCache *                      cache       = nm_platform_get_cache(platform);
+    NMPCache                       *cache       = nm_platform_get_cache(platform);
     gboolean                        has_gateway = FALSE;
-    NMPlatformIPRoute *             r           = NULL;
-    NMPlatformIP4Route *            r4          = NULL;
-    NMPlatformIP6Route *            r6          = NULL;
+    NMPlatformIPRoute              *r           = NULL;
+    NMPlatformIP4Route             *r4          = NULL;
+    NMPlatformIP6Route             *r6          = NULL;
     gboolean                        has_same_weak_id;
     gboolean                        only_dirty;
     guint16                         nlmsgflags;
@@ -1296,8 +1296,8 @@ finalize(GObject *object)
 static void
 nm_fake_platform_class_init(NMFakePlatformClass *klass)
 {
-    GObjectClass *              object_class   = G_OBJECT_CLASS(klass);
-    NMPlatformClass *           platform_class = NM_PLATFORM_CLASS(klass);
+    GObjectClass               *object_class   = G_OBJECT_CLASS(klass);
+    NMPlatformClass            *platform_class = NM_PLATFORM_CLASS(klass);
     NMPlatformKernelSupportType kernel_support;
 
     for (kernel_support = 0; kernel_support < _NM_PLATFORM_KERNEL_SUPPORT_NUM; kernel_support++)

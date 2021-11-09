@@ -85,7 +85,7 @@ typedef struct _NmcMetaGenericInfo NmcMetaGenericInfo;
 struct _NmcOutputField {
     const NMMetaAbstractInfo *info;
     int                       width; /* Width in screen columns */
-    void *      value; /* Value of current field - char* or char** (NULL-terminated array) */
+    void       *value; /* Value of current field - char* or char** (NULL-terminated array) */
     gboolean    value_is_array; /* Whether value is char** instead of char* */
     gboolean    free_value;     /* Whether to free the value */
     NmcOfFlags  flags;          /* Flags - whether and how to print values/field names/headers */
@@ -118,14 +118,14 @@ typedef struct _NmCli {
     NMClient *client; /* Pointer to NMClient of libnm */
 
     NMCResultCode return_value; /* Return code of nmcli */
-    GString *     return_text;  /* Reason text */
+    GString      *return_text;  /* Reason text */
 
     NmcPagerData pager_data;
 
     int timeout; /* Operation timeout */
 
-    NMSecretAgentSimple *     secret_agent; /* Secret agent */
-    GHashTable *              pwds_hash;    /* Hash table with passwords in passwd-file */
+    NMSecretAgentSimple      *secret_agent; /* Secret agent */
+    GHashTable               *pwds_hash;    /* Hash table with passwords in passwd-file */
     struct _NMPolkitListener *pk_listener;  /* polkit agent listener */
 
     int      should_wait;    /* Semaphore indicating whether nmcli should not end or not yet */
@@ -135,7 +135,7 @@ typedef struct _NmCli {
         const NmcConfig nmc_config;
         NmcConfig       nmc_config_mutable;
     };
-    char *   required_fields;    /* Required fields in output: '--fields' option */
+    char    *required_fields;    /* Required fields in output: '--fields' option */
     gboolean ask;                /* Ask for missing parameters: option '--ask' */
     gboolean complete;           /* Autocomplete the command line */
     gboolean editor_status_line; /* Whether to display status line in connection editor */
@@ -163,9 +163,9 @@ void nm_cli_spawn_pager(const NmcConfig *nmc_config, NmcPagerData *pager_data);
 void nmc_empty_output_fields(NmcOutputData *output_data);
 
 #define NMC_OUTPUT_DATA_DEFINE_SCOPED(out)                               \
-    gs_unref_array GArray *                        out##_indices = NULL; \
+    gs_unref_array GArray                         *out##_indices = NULL; \
     nm_auto(nmc_empty_output_fields) NmcOutputData out           = {     \
-        .output_data = g_ptr_array_new_full(20, g_free),       \
+                  .output_data = g_ptr_array_new_full(20, g_free),       \
     }
 
 /*****************************************************************************/

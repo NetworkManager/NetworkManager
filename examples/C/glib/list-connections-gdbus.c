@@ -21,9 +21,9 @@ static void
 list_connections(GDBusProxy *proxy)
 {
     int       i;
-    GError *  error = NULL;
+    GError   *error = NULL;
     GVariant *ret;
-    char **   paths;
+    char    **paths;
 
     /* Call ListConnections D-Bus method */
     ret = g_dbus_proxy_call_sync(proxy,

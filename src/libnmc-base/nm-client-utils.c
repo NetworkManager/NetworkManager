@@ -55,14 +55,14 @@ nmc_objects_sort_by_path(const NMObject *const *objs, gssize len)
  * If required, the resulting number is checked to be in the <min,max> range.
  */
 static gboolean
-nmc_string_to_uint_base(const char *       str,
+nmc_string_to_uint_base(const char        *str,
                         int                base,
                         gboolean           range_check,
                         unsigned long int  min,
                         unsigned long int  max,
                         unsigned long int *value)
 {
-    char *            end;
+    char             *end;
     unsigned long int tmp;
 
     if (!str || !str[0])
@@ -79,7 +79,7 @@ nmc_string_to_uint_base(const char *       str,
 }
 
 gboolean
-nmc_string_to_uint(const char *       str,
+nmc_string_to_uint(const char        *str,
                    gboolean           range_check,
                    unsigned long int  min,
                    unsigned long int  max,
@@ -130,10 +130,10 @@ nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
 }
 
 gboolean
-nmc_string_to_ternary_full(const char *            str,
+nmc_string_to_ternary_full(const char             *str,
                            NMCStringToTernaryFlags flags,
-                           NMTernary *             val,
-                           GError **               error)
+                           NMTernary              *val,
+                           GError                **error)
 {
     gs_free char *str_to_free = NULL;
     int           i;
@@ -194,7 +194,7 @@ _nmc_string_is_valid(const char *input, const char *const *allowed, GError **err
 {
     const char *const *p;
     size_t             input_ln, p_len;
-    const char *       partial_match = NULL;
+    const char        *partial_match = NULL;
     gboolean           ambiguous     = FALSE;
 
     g_return_val_if_fail(!error || !*error, NULL);
@@ -324,7 +324,7 @@ nmc_device_state_to_string_with_external(NMDevice *device)
 {
     NMActiveConnection *ac;
     NMDeviceState       state;
-    const char *        s;
+    const char         *s;
 
     state = nm_device_get_state(device);
 
@@ -501,8 +501,8 @@ NM_UTILS_LOOKUP_STR_DEFINE(
 
 NMActiveConnectionState
 nmc_activation_get_effective_state(NMActiveConnection *active,
-                                   NMDevice *          device,
-                                   const char **       reason)
+                                   NMDevice           *device,
+                                   const char        **reason)
 {
     NMActiveConnectionState       ac_state;
     NMActiveConnectionStateReason ac_reason;
@@ -569,7 +569,7 @@ can_show_utf8(void)
 {
     static gboolean can_show_utf8_set = FALSE;
     static gboolean can_show_utf8     = TRUE;
-    char *          locale_str;
+    char           *locale_str;
 
     if (G_LIKELY(can_show_utf8_set))
         return can_show_utf8;
@@ -763,12 +763,12 @@ nmc_utils_read_passwd_file(const char *passwd_file, gssize *out_error_line, GErr
 }
 
 GHashTable *
-nmc_utils_parse_passwd_file(char *   contents /* will be modified */,
-                            gssize * out_error_line,
+nmc_utils_parse_passwd_file(char    *contents /* will be modified */,
+                            gssize  *out_error_line,
                             GError **error)
 {
     gs_unref_hashtable GHashTable *pwds_hash = NULL;
-    const char *                   contents_str;
+    const char                    *contents_str;
     gsize                          contents_line;
 
     pwds_hash =
@@ -781,11 +781,11 @@ nmc_utils_parse_passwd_file(char *   contents /* will be modified */,
     while (contents_str[0]) {
         nm_auto_free_secret char *l_hash_key = NULL;
         nm_auto_free_secret char *l_hash_val = NULL;
-        const char *              l_content_line;
-        const char *              l_setting;
-        const char *              l_prop;
-        const char *              l_val;
-        const char *              s;
+        const char               *l_content_line;
+        const char               *l_setting;
+        const char               *l_prop;
+        const char               *l_val;
+        const char               *s;
         gsize                     l_hash_val_len;
 
         /* consume first line. As line delimiters we accept "\r\n", "\n", and "\r". */

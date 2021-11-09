@@ -25,7 +25,7 @@
 /*****************************************************************************/
 
 typedef struct {
-    NMConnection *     connection;
+    NMConnection      *connection;
     NMSettingsStorage *storage;
 } StorageData;
 
@@ -107,17 +107,17 @@ initialize(NMSIfupdownPlugin *self)
 }
 
 static void
-reload_connections(NMSettingsPlugin *                     plugin,
+reload_connections(NMSettingsPlugin                      *plugin,
                    NMSettingsPluginConnectionLoadCallback callback,
                    gpointer                               user_data)
 {
-    NMSIfupdownPlugin *       self                = NMS_IFUPDOWN_PLUGIN(plugin);
-    NMSIfupdownPluginPrivate *priv                = NMS_IFUPDOWN_PLUGIN_GET_PRIVATE(self);
+    NMSIfupdownPlugin             *self           = NMS_IFUPDOWN_PLUGIN(plugin);
+    NMSIfupdownPluginPrivate      *priv           = NMS_IFUPDOWN_PLUGIN_GET_PRIVATE(self);
     gs_unref_hashtable GHashTable *eni_ifaces_old = NULL;
     GHashTableIter                 iter;
-    StorageData *                  sd;
-    StorageData *                  sd2;
-    const char *                   block_name;
+    StorageData                   *sd;
+    StorageData                   *sd2;
+    const char                    *block_name;
 
     if (!priv->initialized)
         initialize(self);
@@ -186,7 +186,7 @@ static GSList *
 _unmanaged_specs(GHashTable *eni_ifaces)
 {
     gs_free const char **keys  = NULL;
-    GSList *             specs = NULL;
+    GSList              *specs = NULL;
     guint                i, len;
 
     keys = nm_strdict_get_keys(eni_ifaces, TRUE, &len);
@@ -201,7 +201,7 @@ _unmanaged_specs(GHashTable *eni_ifaces)
 static GSList *
 get_unmanaged_specs(NMSettingsPlugin *plugin)
 {
-    NMSIfupdownPlugin *       self = NMS_IFUPDOWN_PLUGIN(plugin);
+    NMSIfupdownPlugin        *self = NMS_IFUPDOWN_PLUGIN(plugin);
     NMSIfupdownPluginPrivate *priv = NMS_IFUPDOWN_PLUGIN_GET_PRIVATE(self);
 
     if (G_UNLIKELY(!priv->initialized))
@@ -222,9 +222,9 @@ load_eni_ifaces(NMSIfupdownPlugin *self)
 {
     gs_unref_hashtable GHashTable *eni_ifaces  = NULL;
     gs_unref_hashtable GHashTable *auto_ifaces = NULL;
-    nm_auto_ifparser if_parser *parser         = NULL;
-    if_block *                  block;
-    StorageData *               sd;
+    nm_auto_ifparser if_parser    *parser      = NULL;
+    if_block                      *block;
+    StorageData                   *sd;
 
     eni_ifaces = g_hash_table_new_full(nm_str_hash,
                                        g_str_equal,
@@ -246,11 +246,11 @@ load_eni_ifaces(NMSIfupdownPlugin *self)
             continue;
 
         if (nm_streq(block->type, "iface")) {
-            gs_free_error GError *local                = NULL;
-            gs_unref_object NMConnection *connection   = NULL;
-            gs_unref_object NMSettingsStorage *storage = NULL;
-            const char *                       uuid    = NULL;
-            StorageData *                      sd_repl;
+            gs_free_error GError              *local      = NULL;
+            gs_unref_object NMConnection      *connection = NULL;
+            gs_unref_object NMSettingsStorage *storage    = NULL;
+            const char                        *uuid       = NULL;
+            StorageData                       *sd_repl;
 
             /* Bridge configuration */
             if (g_str_has_prefix(block->name, "br")) {
@@ -369,7 +369,7 @@ nms_ifupdown_plugin_init(NMSIfupdownPlugin *self)
 static void
 dispose(GObject *object)
 {
-    NMSIfupdownPlugin *       plugin = NMS_IFUPDOWN_PLUGIN(object);
+    NMSIfupdownPlugin        *plugin = NMS_IFUPDOWN_PLUGIN(object);
     NMSIfupdownPluginPrivate *priv   = NMS_IFUPDOWN_PLUGIN_GET_PRIVATE(plugin);
 
     nm_clear_pointer(&priv->eni_ifaces, g_hash_table_destroy);
@@ -380,7 +380,7 @@ dispose(GObject *object)
 static void
 nms_ifupdown_plugin_class_init(NMSIfupdownPluginClass *klass)
 {
-    GObjectClass *         object_class = G_OBJECT_CLASS(klass);
+    GObjectClass          *object_class = G_OBJECT_CLASS(klass);
     NMSettingsPluginClass *plugin_class = NM_SETTINGS_PLUGIN_CLASS(klass);
 
     object_class->dispose = dispose;
@@ -393,7 +393,7 @@ nms_ifupdown_plugin_class_init(NMSIfupdownPluginClass *klass)
 /*****************************************************************************/
 
 G_MODULE_EXPORT NMSettingsPlugin *
-                nm_settings_plugin_factory(void)
+nm_settings_plugin_factory(void)
 {
     return g_object_new(NMS_TYPE_IFUPDOWN_PLUGIN, NULL);
 }

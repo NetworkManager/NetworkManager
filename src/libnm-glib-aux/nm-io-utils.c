@@ -20,9 +20,9 @@
 
 /*****************************************************************************/
 
-_nm_printf(4, 5) static int _get_contents_error(GError **   error,
+_nm_printf(4, 5) static int _get_contents_error(GError    **error,
                                                 int         errsv,
-                                                int *       out_errsv,
+                                                int        *out_errsv,
                                                 const char *format,
                                                 ...)
 {
@@ -94,14 +94,14 @@ nm_utils_fd_get_contents(int                         fd,
                          gboolean                    close_fd,
                          gsize                       max_length,
                          NMUtilsFileGetContentsFlags flags,
-                         char **                     contents,
-                         gsize *                     length,
-                         int *                       out_errsv,
-                         GError **                   error)
+                         char                      **contents,
+                         gsize                      *length,
+                         int                        *out_errsv,
+                         GError                    **error)
 {
     nm_auto_close int fd_keeper = close_fd ? fd : -1;
     struct stat       stat_buf;
-    gs_free char *    str          = NULL;
+    gs_free char     *str          = NULL;
     const bool        do_bzero_mem = NM_FLAGS_HAS(flags, NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET);
     int               errsv;
 
@@ -288,13 +288,13 @@ nm_utils_fd_get_contents(int                         fd,
  */
 gboolean
 nm_utils_file_get_contents(int                         dirfd,
-                           const char *                filename,
+                           const char                 *filename,
                            gsize                       max_length,
                            NMUtilsFileGetContentsFlags flags,
-                           char **                     contents,
-                           gsize *                     length,
-                           int *                       out_errsv,
-                           GError **                   error)
+                           char                      **contents,
+                           gsize                      *length,
+                           int                        *out_errsv,
+                           GError                    **error)
 {
     int fd;
 
@@ -338,13 +338,13 @@ nm_utils_file_get_contents(int                         dirfd,
  * and last modification times.
  */
 gboolean
-nm_utils_file_set_contents(const char *           filename,
-                           const char *           contents,
+nm_utils_file_set_contents(const char            *filename,
+                           const char            *contents,
                            gssize                 length,
                            mode_t                 mode,
                            const struct timespec *times,
-                           int *                  out_errsv,
-                           GError **              error)
+                           int                   *out_errsv,
+                           GError               **error)
 {
     gs_free char *tmp_name = NULL;
     struct stat   statbuf;
@@ -498,7 +498,7 @@ nm_utils_fd_read(int fd, NMStrBuf *out_string)
 
 typedef struct {
     GSubprocess *subprocess;
-    GSource *    timeout_source;
+    GSource     *timeout_source;
 } SubprocessTerminateData;
 
 static void
@@ -527,7 +527,7 @@ void
 nm_g_subprocess_terminate_in_background(GSubprocess *subprocess, int timeout_msec_before_kill)
 {
     SubprocessTerminateData *term_data;
-    GMainContext *           main_context;
+    GMainContext            *main_context;
 
     nm_assert(timeout_msec_before_kill > 0);
 
@@ -573,9 +573,9 @@ char **
 nm_utils_find_mkstemp_files(const char *dirname, const char *filename)
 {
     static const char letters[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    DIR *             dir;
-    struct dirent *   entry;
-    GPtrArray *       arr = NULL;
+    DIR              *dir;
+    struct dirent    *entry;
+    GPtrArray        *arr = NULL;
     gsize             l;
 
     /* We write files with g_file_set_contents() and nm_utils_file_set_contents().
@@ -685,12 +685,12 @@ nm_sd_notify(const char *state)
     struct sockaddr_un sockaddr;
     struct iovec       iovec;
     struct msghdr      msghdr = {
-        .msg_iov    = &iovec,
-        .msg_iovlen = 1,
-        .msg_name   = &sockaddr,
+             .msg_iov    = &iovec,
+             .msg_iovlen = 1,
+             .msg_name   = &sockaddr,
     };
     nm_auto_close int fd = -1;
-    const char *      e;
+    const char       *e;
     int               r;
 
     if (!state)

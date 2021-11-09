@@ -18,7 +18,7 @@ typedef struct _NMPPPManager NMPPPManager;
 
 typedef struct _NMPPPManagerStopHandle NMPPPManagerStopHandle;
 
-typedef void (*NMPPPManagerStopCallback)(NMPPPManager *          manager,
+typedef void (*NMPPPManagerStopCallback)(NMPPPManager           *manager,
                                          NMPPPManagerStopHandle *handle,
                                          gboolean                was_cancelled,
                                          gpointer                user_data);

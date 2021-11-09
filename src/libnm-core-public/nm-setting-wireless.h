@@ -148,7 +148,7 @@ GType nm_setting_wireless_get_type(void);
 
 NMSetting *nm_setting_wireless_new(void);
 
-GBytes *    nm_setting_wireless_get_ssid(NMSettingWireless *setting);
+GBytes     *nm_setting_wireless_get_ssid(NMSettingWireless *setting);
 const char *nm_setting_wireless_get_mode(NMSettingWireless *setting);
 const char *nm_setting_wireless_get_band(NMSettingWireless *setting);
 guint32     nm_setting_wireless_get_channel(NMSettingWireless *setting);
@@ -167,7 +167,7 @@ const char *nm_setting_wireless_get_mac_blacklist_item(NMSettingWireless *settin
 gboolean    nm_setting_wireless_add_mac_blacklist_item(NMSettingWireless *setting, const char *mac);
 void        nm_setting_wireless_remove_mac_blacklist_item(NMSettingWireless *setting, guint32 idx);
 gboolean    nm_setting_wireless_remove_mac_blacklist_item_by_value(NMSettingWireless *setting,
-                                                                   const char *       mac);
+                                                                   const char        *mac);
 void        nm_setting_wireless_clear_mac_blacklist_items(NMSettingWireless *setting);
 
 guint32  nm_setting_wireless_get_mtu(NMSettingWireless *setting);
@@ -184,7 +184,7 @@ gboolean nm_setting_wireless_add_seen_bssid(NMSettingWireless *setting, const ch
 guint32     nm_setting_wireless_get_num_seen_bssids(NMSettingWireless *setting);
 const char *nm_setting_wireless_get_seen_bssid(NMSettingWireless *setting, guint32 i);
 
-gboolean nm_setting_wireless_ap_security_compatible(NMSettingWireless *        s_wireless,
+gboolean nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless,
                                                     NMSettingWirelessSecurity *s_wireless_sec,
                                                     NM80211ApFlags             ap_flags,
                                                     NM80211ApSecurityFlags     ap_wpa,

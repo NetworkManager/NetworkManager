@@ -18,8 +18,8 @@
 
 static void
 on_name_appeared(GDBusConnection *connection,
-                 const char *     name,
-                 const char *     name_owner,
+                 const char      *name,
+                 const char      *name_owner,
                  gpointer         user_data)
 {
     g_print("Name '%s' on the system bus is owned by %s => NM is running\n", name, name_owner);
@@ -35,7 +35,7 @@ int
 main(int argc, char *argv[])
 {
     guint                watcher_id;
-    GMainLoop *          loop;
+    GMainLoop           *loop;
     GBusNameWatcherFlags flags;
 
     g_print("Monitor 'org.freedesktop.NetworkManager' D-Bus name\n");

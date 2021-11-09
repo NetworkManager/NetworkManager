@@ -10,9 +10,9 @@
 #include <libudev.h>
 
 struct _NMPUdevClient {
-    char **              subsystems;
-    GSource *            watch_source;
-    struct udev *        udev;
+    char               **subsystems;
+    GSource             *watch_source;
+    struct udev         *udev;
     struct udev_monitor *monitor;
     NMUdevClientEvent    event_handler;
     gpointer             event_user_data;
@@ -36,8 +36,8 @@ const char *
 nm_udev_utils_property_decode(const char *uproperty, char **to_free)
 {
     const char *p;
-    char *      unescaped = NULL;
-    char *      n         = NULL;
+    char       *unescaped = NULL;
+    char       *n         = NULL;
 
     if (!uproperty) {
         *to_free = NULL;
@@ -87,10 +87,10 @@ nm_udev_utils_property_decode_cp(const char *uproperty)
 /*****************************************************************************/
 
 static void
-_subsystem_split(const char * subsystem_full,
+_subsystem_split(const char  *subsystem_full,
                  const char **out_subsystem,
                  const char **out_devtype,
-                 char **      to_free)
+                 char       **to_free)
 {
     char *tmp, *s;
 
@@ -124,8 +124,8 @@ nm_udev_utils_enumerate(struct udev *uclient, const char *const *subsystems)
 
     if (subsystems) {
         for (n = 0; subsystems[n]; n++) {
-            const char *  subsystem;
-            const char *  devtype;
+            const char   *subsystem;
+            const char   *devtype;
             gs_free char *to_free = NULL;
 
             _subsystem_split(subsystems[n], &subsystem, &devtype, &to_free);
@@ -161,7 +161,7 @@ nm_udev_client_enumerate_new(NMUdevClient *self)
 static gboolean
 monitor_event(int fd, GIOCondition condition, gpointer user_data)
 {
-    NMUdevClient *      self = user_data;
+    NMUdevClient       *self = user_data;
     struct udev_device *udevice;
 
     if (!self->monitor)
@@ -217,8 +217,8 @@ nm_udev_client_new(const char *const *subsystems,
             /* install subsystem filters to only wake up for certain events */
             for (n = 0; self->subsystems[n]; n++) {
                 gs_free char *to_free = NULL;
-                const char *  subsystem;
-                const char *  devtype;
+                const char   *subsystem;
+                const char   *devtype;
 
                 _subsystem_split(self->subsystems[n], &subsystem, &devtype, &to_free);
                 udev_monitor_filter_add_match_subsystem_devtype(self->monitor, subsystem, devtype);

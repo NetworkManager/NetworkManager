@@ -139,7 +139,7 @@ NMConnection *
 nm_simple_connection_new_clone(NMConnection *connection)
 {
     NMConnection *clone;
-    const char *  path;
+    const char   *path;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
 

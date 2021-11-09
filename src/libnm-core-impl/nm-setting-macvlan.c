@@ -28,7 +28,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT, PROP_MODE, PROP_PROMISCUOUS, PROP_TAP, );
 
 typedef struct {
-    char *               parent;
+    char                *parent;
     NMSettingMacvlanMode mode;
     bool                 promiscuous;
     bool                 tap;
@@ -123,7 +123,7 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingMacvlanPrivate *priv = NM_SETTING_MACVLAN_GET_PRIVATE(setting);
-    NMSettingWired *         s_wired;
+    NMSettingWired          *s_wired;
 
     if (connection)
         s_wired = nm_connection_get_setting_wired(connection);
@@ -182,7 +182,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingMacvlan *       setting = NM_SETTING_MACVLAN(object);
+    NMSettingMacvlan        *setting = NM_SETTING_MACVLAN(object);
     NMSettingMacvlanPrivate *priv    = NM_SETTING_MACVLAN_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -207,7 +207,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingMacvlan *       setting = NM_SETTING_MACVLAN(object);
+    NMSettingMacvlan        *setting = NM_SETTING_MACVLAN(object);
     NMSettingMacvlanPrivate *priv    = NM_SETTING_MACVLAN_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -254,7 +254,7 @@ nm_setting_macvlan_new(void)
 static void
 finalize(GObject *object)
 {
-    NMSettingMacvlan *       setting = NM_SETTING_MACVLAN(object);
+    NMSettingMacvlan        *setting = NM_SETTING_MACVLAN(object);
     NMSettingMacvlanPrivate *priv    = NM_SETTING_MACVLAN_GET_PRIVATE(setting);
 
     g_free(priv->parent);
@@ -265,9 +265,9 @@ finalize(GObject *object)
 static void
 nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingMacvlanPrivate));
 

@@ -30,14 +30,14 @@ test_obj_base(void)
         GTypeClass k;
         NMPClass   c;
     } l                        = {};
-    static const GObject *   g = &x.g;
+    static const GObject    *g = &x.g;
     static const GTypeClass *k = &l.k;
-    static const NMPObject * o = &x.k;
-    static const NMPClass *  c = &l.c;
+    static const NMPObject  *o = &x.k;
+    static const NMPClass   *c = &l.c;
 
-    NMObjBaseInst * obj;
+    NMObjBaseInst                *obj;
     gs_unref_object GCancellable *obj_cancellable = g_cancellable_new();
-    nm_auto_nmpobj NMPObject *obj_link            = nmp_object_new_link(10);
+    nm_auto_nmpobj NMPObject     *obj_link        = nmp_object_new_link(10);
 
     g_assert(&g->g_type_instance == (void *) &o->_class);
     g_assert(&g->g_type_instance.g_class == (void *) &o->_class);
@@ -88,9 +88,9 @@ _nmp_object_equal(const NMPObject *a, const NMPObject *b)
 /*****************************************************************************/
 
 static void
-_assert_cache_multi_lookup_contains(const NMPCache *             cache,
+_assert_cache_multi_lookup_contains(const NMPCache              *cache,
                                     const NMDedupMultiHeadEntry *head_entry,
-                                    const NMPObject *            obj,
+                                    const NMPObject             *obj,
                                     gboolean                     visible_only,
                                     gboolean                     contains)
 {
@@ -126,7 +126,7 @@ _assert_cache_multi_lookup_contains(const NMPCache *             cache,
 }
 
 static void
-_assert_cache_multi_lookup_contains_link(const NMPCache * cache,
+_assert_cache_multi_lookup_contains_link(const NMPCache  *cache,
                                          gboolean         visible_only,
                                          const NMPObject *obj,
                                          gboolean         contains)
@@ -144,7 +144,7 @@ _assert_cache_multi_lookup_contains_link(const NMPCache * cache,
 /*****************************************************************************/
 
 static void
-ops_post_check(NMPCache *       cache,
+ops_post_check(NMPCache        *cache,
                NMPCacheOpsType  ops_type,
                const NMPObject *obj_old,
                const NMPObject *obj_new,
@@ -199,16 +199,16 @@ ops_post_check(NMPCache *       cache,
 }
 
 static void
-_nmp_cache_update_netlink(NMPCache *        cache,
-                          NMPObject *       obj,
+_nmp_cache_update_netlink(NMPCache         *cache,
+                          NMPObject        *obj,
                           const NMPObject **out_obj_old,
                           const NMPObject **out_obj_new,
                           NMPCacheOpsType   expected_ops_type)
 {
-    NMPCacheOpsType  ops_type;
-    const NMPObject *obj_prev;
-    const NMPObject *obj_old;
-    const NMPObject *obj_new;
+    NMPCacheOpsType           ops_type;
+    const NMPObject          *obj_prev;
+    const NMPObject          *obj_old;
+    const NMPObject          *obj_new;
     nm_auto_nmpobj NMPObject *obj_new_expected = NULL;
 
     g_assert(cache);
@@ -253,13 +253,13 @@ static const NMPlatformLink pl_link_3 = {
 static void
 test_cache_link(void)
 {
-    NMPCache *                      cache;
-    NMPObject *                     objm1;
-    const NMPObject *               obj_old, *obj_new;
-    NMPObject                       objs1;
-    struct udev_device *            udev_device_2 = g_list_nth_data(global.udev_devices, 0);
-    struct udev_device *            udev_device_3 = g_list_nth_data(global.udev_devices, 0);
-    NMPCacheOpsType                 ops_type;
+    NMPCache           *cache;
+    NMPObject          *objm1;
+    const NMPObject    *obj_old, *obj_new;
+    NMPObject           objs1;
+    struct udev_device *udev_device_2 = g_list_nth_data(global.udev_devices, 0);
+    struct udev_device *udev_device_3 = g_list_nth_data(global.udev_devices, 0);
+    NMPCacheOpsType     ops_type;
     nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = NULL;
     gboolean                                           use_udev  = nmtst_get_rand_uint32() % 2;
 
@@ -512,11 +512,11 @@ static const NMPlatformQdisc pl_qdisc_2 = {
 static void
 test_cache_qdisc(void)
 {
-    NMPCache *                      cache;
+    NMPCache                                          *cache;
     nm_auto_unref_dedup_multi_index NMDedupMultiIndex *multi_idx = NULL;
     NMPLookup                                          lookup;
-    const NMDedupMultiHeadEntry *                      head_entry;
-    nm_auto_nmpobj NMPObject *obj1a =
+    const NMDedupMultiHeadEntry                       *head_entry;
+    nm_auto_nmpobj NMPObject                          *obj1a =
         nmp_object_new(NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_1a);
     nm_auto_nmpobj NMPObject *obj1b =
         nmp_object_new(NMP_OBJECT_TYPE_QDISC, (NMPlatformObject *) &pl_qdisc_1b);
@@ -571,7 +571,7 @@ main(int argc, char **argv)
 
     udev_client = nm_udev_client_new(NM_MAKE_STRV("net"), NULL, NULL);
     {
-        struct udev_enumerate * enumerator;
+        struct udev_enumerate  *enumerator;
         struct udev_list_entry *devices, *l;
 
         enumerator = nm_udev_client_enumerate_new(udev_client);

@@ -271,19 +271,19 @@ void
 nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3ConfigData *l3cd);
 
 gboolean nm_dhcp_client_handle_event(gpointer      unused,
-                                     const char *  iface,
+                                     const char   *iface,
                                      int           pid,
-                                     GVariant *    options,
-                                     const char *  reason,
+                                     GVariant     *options,
+                                     const char   *reason,
                                      NMDhcpClient *self);
 
-void nm_dhcp_client_emit_ipv6_prefix_delegated(NMDhcpClient *              self,
+void nm_dhcp_client_emit_ipv6_prefix_delegated(NMDhcpClient               *self,
                                                const NMPlatformIP6Address *prefix);
 
 gboolean nm_dhcp_client_server_id_is_rejected(NMDhcpClient *self, gconstpointer addr);
 
 int                nm_dhcp_client_get_addr_family(NMDhcpClient *self);
-const char *       nm_dhcp_client_get_iface(NMDhcpClient *self);
+const char        *nm_dhcp_client_get_iface(NMDhcpClient *self);
 NMDedupMultiIndex *nm_dhcp_client_get_multi_idx(NMDhcpClient *self);
 int                nm_dhcp_client_get_ifindex(NMDhcpClient *self);
 

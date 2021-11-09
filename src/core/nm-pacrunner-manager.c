@@ -29,14 +29,14 @@ struct _NMPacrunnerConfId {
 
     GVariant *parameters;
 
-    char *  path;
+    char   *path;
     guint64 log_id;
     guint   refcount;
 };
 
 typedef struct {
     GDBusConnection *dbus_connection;
-    GCancellable *   cancellable;
+    GCancellable    *cancellable;
     CList            conf_id_lst_head;
     guint64          log_id_counter;
     guint            name_owner_changed_id;
@@ -85,8 +85,8 @@ NM_DEFINE_SINGLETON_GETTER(NMPacrunnerManager, nm_pacrunner_manager_get, NM_TYPE
 /*****************************************************************************/
 
 static void _call_destroy_proxy_configuration(NMPacrunnerManager *self,
-                                              NMPacrunnerConfId * conf_id,
-                                              const char *        path,
+                                              NMPacrunnerConfId  *conf_id,
+                                              const char         *path,
                                               gboolean            verbose_log);
 
 /*****************************************************************************/
@@ -126,13 +126,13 @@ static void
 get_ip_domains(GPtrArray *domains, const NML3ConfigData *l3cd, int addr_family)
 {
     NMDedupMultiIter           ipconf_iter;
-    char *                     cidr;
+    char                      *cidr;
     guint                      num;
     guint                      i;
     char                       sbuf[NM_UTILS_INET_ADDRSTRLEN];
     const NMPlatformIPAddress *address;
-    const NMPlatformIPRoute *  route;
-    const char *const *        strv;
+    const NMPlatformIPRoute   *route;
+    const char *const         *strv;
 
     strv = nm_l3_config_data_get_searches(l3cd, addr_family, &num);
     for (i = 0; i < num; i++)
@@ -164,7 +164,7 @@ _make_request_create_proxy_configuration(const char *iface, const NML3ConfigData
 {
     GVariantBuilder     builder;
     NMProxyConfigMethod method;
-    const char *        s;
+    const char         *s;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 
@@ -224,8 +224,8 @@ static void
 _call_destroy_proxy_configuration_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 {
     nm_auto_unref_conf_id NMPacrunnerConfId *conf_id = user_data;
-    gs_free_error GError *error                      = NULL;
-    gs_unref_variant GVariant *ret                   = NULL;
+    gs_free_error GError                    *error   = NULL;
+    gs_unref_variant GVariant               *ret     = NULL;
 
     ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), res, &error);
     if (!ret) {
@@ -242,10 +242,10 @@ static void
 _call_create_proxy_configuration_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 {
     nm_auto_unref_conf_id NMPacrunnerConfId *conf_id = user_data;
-    NMPacrunnerManager *                     self    = NM_PACRUNNER_MANAGER(conf_id->self);
-    gs_free_error GError *error                      = NULL;
-    gs_unref_variant GVariant *variant               = NULL;
-    const char *               path                  = NULL;
+    NMPacrunnerManager                      *self    = NM_PACRUNNER_MANAGER(conf_id->self);
+    gs_free_error GError                    *error   = NULL;
+    gs_unref_variant GVariant               *variant = NULL;
+    const char                              *path    = NULL;
 
     nm_assert(!conf_id->path);
 
@@ -274,8 +274,8 @@ _call_create_proxy_configuration_cb(GObject *source, GAsyncResult *res, gpointer
 
 static void
 _call_destroy_proxy_configuration(NMPacrunnerManager *self,
-                                  NMPacrunnerConfId * conf_id,
-                                  const char *        path,
+                                  NMPacrunnerConfId  *conf_id,
+                                  const char         *path,
                                   gboolean            verbose_log)
 {
     NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE(self);
@@ -299,7 +299,7 @@ _call_destroy_proxy_configuration(NMPacrunnerManager *self,
 
 static void
 _call_create_proxy_configuration(NMPacrunnerManager *self,
-                                 NMPacrunnerConfId * conf_id,
+                                 NMPacrunnerConfId  *conf_id,
                                  gboolean            verbose_log)
 {
     NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE(self);
@@ -357,8 +357,8 @@ NMPacrunnerConfId *
 nm_pacrunner_manager_add(NMPacrunnerManager *self, const char *iface, const NML3ConfigData *l3cd)
 {
     NMPacrunnerManagerPrivate *priv;
-    NMPacrunnerConfId *        conf_id;
-    gs_free char *             log_msg = NULL;
+    NMPacrunnerConfId         *conf_id;
+    gs_free char              *log_msg = NULL;
 
     g_return_val_if_fail(NM_IS_PACRUNNER_MANAGER(self), NULL);
 
@@ -398,8 +398,8 @@ void
 nm_pacrunner_manager_remove(NMPacrunnerConfId *conf_id)
 {
     _nm_unused nm_auto_unref_conf_id NMPacrunnerConfId *conf_id_free = conf_id;
-    NMPacrunnerManager *                                self;
-    NMPacrunnerManagerPrivate *                         priv;
+    NMPacrunnerManager                                 *self;
+    NMPacrunnerManagerPrivate                          *priv;
 
     g_return_if_fail(conf_id);
 
@@ -451,7 +451,7 @@ static void
 name_owner_changed(NMPacrunnerManager *self, const char *name_owner)
 {
     NMPacrunnerManagerPrivate *priv = NM_PACRUNNER_MANAGER_GET_PRIVATE(self);
-    NMPacrunnerConfId *        conf_id;
+    NMPacrunnerConfId         *conf_id;
     gboolean                   has_name_owner;
 
     has_name_owner = (name_owner && name_owner[0]);
@@ -487,11 +487,11 @@ name_owner_changed(NMPacrunnerManager *self, const char *name_owner)
 
 static void
 name_owner_changed_cb(GDBusConnection *connection,
-                      const char *     sender_name,
-                      const char *     object_path,
-                      const char *     interface_name,
-                      const char *     signal_name,
-                      GVariant *       parameters,
+                      const char      *sender_name,
+                      const char      *object_path,
+                      const char      *interface_name,
+                      const char      *signal_name,
+                      GVariant        *parameters,
                       gpointer         user_data)
 {
     const char *new_owner;

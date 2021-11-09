@@ -38,7 +38,7 @@
 #define _NM_BT_CAPABILITY_SUPPORTED (NM_BT_CAPABILITY_NAP | _NM_BT_CAPABILITY_SUPPORTED_DUN)
 
 typedef struct {
-    const char *            bdaddr;
+    const char             *bdaddr;
     CList                   lst_head;
     NMBluetoothCapabilities bt_type : 8;
     char                    bdaddr_data[];
@@ -46,24 +46,24 @@ typedef struct {
 
 typedef struct {
     NMSettingsConnection *sett_conn;
-    ConnDataHead *        cdata_hd;
+    ConnDataHead         *cdata_hd;
     CList                 lst;
 } ConnDataElem;
 
 typedef struct {
-    GCancellable *             ext_cancellable;
-    GCancellable *             int_cancellable;
+    GCancellable              *ext_cancellable;
+    GCancellable              *int_cancellable;
     NMBtVTableRegisterCallback callback;
     gpointer                   callback_user_data;
     gulong                     ext_cancelled_id;
 } NetworkServerRegisterReqData;
 
 typedef struct {
-    GCancellable *          ext_cancellable;
-    GCancellable *          int_cancellable;
+    GCancellable           *ext_cancellable;
+    GCancellable           *int_cancellable;
     NMBluezManagerConnectCb callback;
     gpointer                callback_user_data;
-    char *                  device_name;
+    char                   *device_name;
     gulong                  ext_cancelled_id;
     guint                   timeout_id;
     guint                   timeout_wait_connect_id;
@@ -97,16 +97,16 @@ typedef struct {
 
     struct {
         CList                         lst;
-        char *                        adapter_address;
-        NMDevice *                    device_br;
+        char                         *adapter_address;
+        NMDevice                     *device_br;
         NetworkServerRegisterReqData *r_req_data;
     } x_network_server;
 
     struct {
         NMSettingsConnection *panu_connection;
-        NMDeviceBt *          device_bt;
+        NMDeviceBt           *device_bt;
         DeviceConnectReqData *c_req_data;
-        NMBluez5DunContext *  connect_dun_context;
+        NMBluez5DunContext   *connect_dun_context;
         gulong                device_bt_signal_id;
     } x_device;
 
@@ -142,7 +142,7 @@ typedef struct {
 } BzDBusObj;
 
 typedef struct {
-    NMManager * manager;
+    NMManager  *manager;
     NMSettings *settings;
 
     GDBusConnection *dbus_connection;
@@ -194,7 +194,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES(NM_DEVICE_FACTORY_DECLARE_LINK_TYPES(
     NM_LINK_TYPE_BNEP) NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(NM_SETTING_BLUETOOTH_SETTING_NAME))
 
 G_MODULE_EXPORT NMDeviceFactory *
-                nm_device_factory_create(GError **error)
+nm_device_factory_create(GError **error)
 {
     return g_object_new(NM_TYPE_BLUEZ_MANAGER, NULL);
 }
@@ -214,8 +214,8 @@ convert_uuids_to_capabilities(const char *const *strv)
     if (strv) {
         for (; strv[0]; strv++) {
             gs_free char *s_part1 = NULL;
-            const char *  str     = strv[0];
-            const char *  s;
+            const char   *str     = strv[0];
+            const char   *s;
 
             s = strchr(str, '-');
             if (!s)
@@ -245,8 +245,8 @@ static void     _connect_disconnect(NMBluezManager *self, BzDBusObj *bzobj, cons
 static gboolean _bzobjs_network_server_is_usable(const BzDBusObj *bzobj, gboolean require_powered);
 static gboolean _bzobjs_is_dead(const BzDBusObj *bzobj);
 static gboolean _bzobjs_device_is_usable(const BzDBusObj *bzobj,
-                                         BzDBusObj **     out_adapter_bzobj,
-                                         gboolean *       out_create_panu_connection);
+                                         BzDBusObj      **out_adapter_bzobj,
+                                         gboolean        *out_create_panu_connection);
 static gboolean _bzobjs_adapter_is_usable_for_device(const BzDBusObj *bzobj);
 static ConnDataHead *
 _conn_track_find_head(NMBluezManager *self, NMBluetoothCapabilities bt_type, const char *bdaddr);
@@ -293,9 +293,9 @@ _network_server_register_req_data_complete(NetworkServerRegisterReqData *r_req_d
 
 static void
 _device_connect_req_data_complete(DeviceConnectReqData *c_req_data,
-                                  NMBluezManager *      self,
-                                  const char *          device_name,
-                                  GError *              error)
+                                  NMBluezManager       *self,
+                                  const char           *device_name,
+                                  GError               *error)
 {
     nm_assert((!!device_name) != (!!error));
 
@@ -371,7 +371,7 @@ _bz_dbus_obj_free(BzDBusObj *bzobj)
 static const char *
 _bzobj_to_string(const BzDBusObj *bzobj, char *buf, gsize len)
 {
-    char *      buf0   = buf;
+    char       *buf0   = buf;
     const char *prefix = "";
     gboolean    device_is_usable;
     gboolean    create_panu_connection = FALSE;
@@ -591,7 +591,7 @@ static BzDBusObj *
 _bzobjs_add(NMBluezManager *self, const char *object_path)
 {
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
-    BzDBusObj *            bzobj;
+    BzDBusObj             *bzobj;
 
     bzobj = _bz_dbus_obj_new(self, object_path);
     if (!g_hash_table_add(priv->bzobjs, bzobj))
@@ -642,14 +642,14 @@ _bzobjs_adapter_is_usable_for_device(const BzDBusObj *bzobj)
 
 static gboolean
 _bzobjs_device_is_usable(const BzDBusObj *bzobj,
-                         BzDBusObj **     out_adapter_bzobj,
-                         gboolean *       out_create_panu_connection)
+                         BzDBusObj      **out_adapter_bzobj,
+                         gboolean        *out_create_panu_connection)
 {
-    NMBluezManager *       self;
+    NMBluezManager        *self;
     NMBluezManagerPrivate *priv;
     gboolean               usable_dun = FALSE;
     gboolean               usable_nap = FALSE;
-    BzDBusObj *            bzobj_adapter;
+    BzDBusObj             *bzobj_adapter;
     gboolean               create_panu_connection = FALSE;
 
     if (!bzobj->d_has_device_iface
@@ -805,14 +805,14 @@ _conn_track_find_elem(NMBluezManager *self, NMSettingsConnection *sett_conn)
 }
 
 static gboolean
-_conn_track_is_relevant_connection(NMConnection *           connection,
+_conn_track_is_relevant_connection(NMConnection            *connection,
                                    NMBluetoothCapabilities *out_bt_type,
-                                   const char **            out_bdaddr)
+                                   const char             **out_bdaddr)
 {
-    NMSettingBluetooth *    s_bt;
+    NMSettingBluetooth     *s_bt;
     NMBluetoothCapabilities bt_type;
-    const char *            bdaddr;
-    const char *            b_type;
+    const char             *bdaddr;
+    const char             *b_type;
 
     s_bt = nm_connection_get_setting_bluetooth(connection);
     if (!s_bt)
@@ -840,9 +840,9 @@ _conn_track_is_relevant_connection(NMConnection *           connection,
 }
 
 static gboolean
-_conn_track_is_relevant_sett_conn(NMSettingsConnection *   sett_conn,
+_conn_track_is_relevant_sett_conn(NMSettingsConnection    *sett_conn,
                                   NMBluetoothCapabilities *out_bt_type,
-                                  const char **            out_bdaddr)
+                                  const char             **out_bdaddr)
 {
     NMConnection *connection;
 
@@ -854,25 +854,25 @@ _conn_track_is_relevant_sett_conn(NMSettingsConnection *   sett_conn,
 }
 
 static gboolean
-_conn_track_is_relevant_for_sett_conn(NMSettingsConnection *  sett_conn,
+_conn_track_is_relevant_for_sett_conn(NMSettingsConnection   *sett_conn,
                                       NMBluetoothCapabilities bt_type,
-                                      const char *            bdaddr)
+                                      const char             *bdaddr)
 {
     NMBluetoothCapabilities x_bt_type;
-    const char *            x_bdaddr;
+    const char             *x_bdaddr;
 
     return bdaddr && _conn_track_is_relevant_sett_conn(sett_conn, &x_bt_type, &x_bdaddr)
            && x_bt_type == bt_type && nm_streq(x_bdaddr, bdaddr);
 }
 
 static void
-_conn_track_schedule_notify(NMBluezManager *        self,
+_conn_track_schedule_notify(NMBluezManager         *self,
                             NMBluetoothCapabilities bt_type,
-                            const char *            bdaddr)
+                            const char             *bdaddr)
 {
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
     GHashTableIter         iter;
-    BzDBusObj *            bzobj;
+    BzDBusObj             *bzobj;
 
     g_hash_table_iter_init(&iter, priv->bzobjs);
     while (g_hash_table_iter_next(&iter, (gpointer *) &bzobj, NULL)) {
@@ -885,19 +885,19 @@ _conn_track_schedule_notify(NMBluezManager *        self,
 }
 
 static void
-_conn_track_update(NMBluezManager *      self,
+_conn_track_update(NMBluezManager       *self,
                    NMSettingsConnection *sett_conn,
                    gboolean              track,
-                   gboolean *            out_changed,
-                   gboolean *            out_changed_usable,
-                   ConnDataElem **       out_conn_data_elem)
+                   gboolean             *out_changed,
+                   gboolean             *out_changed_usable,
+                   ConnDataElem        **out_conn_data_elem)
 {
-    NMBluezManagerPrivate * priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
-    ConnDataHead *          cdata_hd;
-    ConnDataElem *          cdata_el;
-    ConnDataElem *          cdata_el_remove = NULL;
+    NMBluezManagerPrivate  *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
+    ConnDataHead           *cdata_hd;
+    ConnDataElem           *cdata_el;
+    ConnDataElem           *cdata_el_remove = NULL;
     NMBluetoothCapabilities bt_type;
-    const char *            bdaddr;
+    const char             *bdaddr;
     gboolean                changed        = FALSE;
     gboolean                changed_usable = FALSE;
     char                    sbuf_cap[100];
@@ -946,7 +946,7 @@ _conn_track_update(NMBluezManager *      self,
 out_remove:
     if (cdata_el_remove) {
         GHashTableIter iter;
-        BzDBusObj *    bzobj;
+        BzDBusObj     *bzobj;
 
         _LOGT("connection: untrack for %s, %s: %s (%s)",
               nm_bluetooth_capability_to_string(cdata_el_remove->cdata_hd->bt_type,
@@ -989,10 +989,10 @@ cp_connection_added(NMSettings *settings, NMSettingsConnection *sett_conn, NMBlu
 }
 
 static void
-cp_connection_updated(NMSettings *          settings,
+cp_connection_updated(NMSettings           *settings,
                       NMSettingsConnection *sett_conn,
                       guint                 update_reason_u,
-                      NMBluezManager *      self)
+                      NMBluezManager       *self)
 {
     _conn_track_update(self, sett_conn, TRUE, NULL, NULL, NULL);
 }
@@ -1032,8 +1032,8 @@ _network_server_find_has_device(NMBluezManagerPrivate *priv, NMDevice *device)
 
 static BzDBusObj *
 _network_server_find_available(NMBluezManagerPrivate *priv,
-                               const char *           addr,
-                               NMDevice *             device_accept_busy)
+                               const char            *addr,
+                               NMDevice              *device_accept_busy)
 {
     BzDBusObj *bzobj;
 
@@ -1052,10 +1052,10 @@ _network_server_find_available(NMBluezManagerPrivate *priv,
 
 static gboolean
 _network_server_vt_is_available(const NMBtVTableNetworkServer *vtable,
-                                const char *                   addr,
-                                NMDevice *                     device_accept_busy)
+                                const char                    *addr,
+                                NMDevice                      *device_accept_busy)
 {
-    NMBluezManager *       self = _network_server_get_bluez_manager(vtable);
+    NMBluezManager        *self = _network_server_get_bluez_manager(vtable);
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
 
     return !!_network_server_find_available(priv, addr, device_accept_busy);
@@ -1064,9 +1064,9 @@ _network_server_vt_is_available(const NMBtVTableNetworkServer *vtable,
 static void
 _network_server_register_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    gs_unref_variant GVariant *ret = NULL;
-    gs_free_error GError *error    = NULL;
-    BzDBusObj *           bzobj;
+    gs_unref_variant GVariant *ret   = NULL;
+    gs_free_error GError      *error = NULL;
+    BzDBusObj                 *bzobj;
 
     ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res, &error);
     if (!ret && nm_utils_error_is_cancelled(error))
@@ -1092,18 +1092,18 @@ _network_server_register_cancelled_cb(GCancellable *cancellable, BzDBusObj *bzob
 
 static gboolean
 _network_server_vt_register_bridge(const NMBtVTableNetworkServer *vtable,
-                                   const char *                   addr,
-                                   NMDevice *                     device,
-                                   GCancellable *                 cancellable,
+                                   const char                    *addr,
+                                   NMDevice                      *device,
+                                   GCancellable                  *cancellable,
                                    NMBtVTableRegisterCallback     callback,
                                    gpointer                       callback_user_data,
-                                   GError **                      error)
+                                   GError                       **error)
 {
-    NMBluezManager *              self = _network_server_get_bluez_manager(vtable);
-    NMBluezManagerPrivate *       priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
+    NMBluezManager               *self = _network_server_get_bluez_manager(vtable);
+    NMBluezManagerPrivate        *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
     NetworkServerRegisterReqData *r_req_data;
-    BzDBusObj *                   bzobj;
-    const char *                  ifname;
+    BzDBusObj                    *bzobj;
+    const char                   *ifname;
 
     g_return_val_if_fail(NM_IS_DEVICE(device), FALSE);
     g_return_val_if_fail(G_IS_CANCELLABLE(cancellable), FALSE);
@@ -1174,8 +1174,8 @@ _network_server_vt_register_bridge(const NMBtVTableNetworkServer *vtable,
 static void
 _network_server_unregister_bridge_complete_on_idle_cb(gpointer user_data, GCancellable *cancellable)
 {
-    gs_free_error GError *        error  = NULL;
-    gs_free char *                reason = NULL;
+    gs_free_error GError         *error  = NULL;
+    gs_free char                 *reason = NULL;
     NetworkServerRegisterReqData *r_req_data;
 
     nm_utils_user_data_unpack(user_data, &r_req_data, &reason);
@@ -1190,9 +1190,9 @@ _network_server_unregister_bridge_complete_on_idle_cb(gpointer user_data, GCance
 static void
 _network_server_unregister_bridge(NMBluezManager *self, BzDBusObj *bzobj, const char *reason)
 {
-    NMBluezManagerPrivate *    priv             = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
+    NMBluezManagerPrivate               *priv   = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
     _nm_unused gs_unref_object NMDevice *device = NULL;
-    NetworkServerRegisterReqData *       r_req_data;
+    NetworkServerRegisterReqData        *r_req_data;
 
     nm_assert(NM_IS_DEVICE(bzobj->x_network_server.device_br));
 
@@ -1242,9 +1242,9 @@ _network_server_unregister_bridge(NMBluezManager *self, BzDBusObj *bzobj, const 
 static gboolean
 _network_server_vt_unregister_bridge(const NMBtVTableNetworkServer *vtable, NMDevice *device)
 {
-    NMBluezManager *       self = _network_server_get_bluez_manager(vtable);
+    NMBluezManager        *self = _network_server_get_bluez_manager(vtable);
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
-    BzDBusObj *            bzobj;
+    BzDBusObj             *bzobj;
 
     g_return_val_if_fail(NM_IS_DEVICE(device), FALSE);
 
@@ -1258,7 +1258,7 @@ _network_server_vt_unregister_bridge(const NMBtVTableNetworkServer *vtable, NMDe
 static void
 _network_server_process_change(BzDBusObj *bzobj, gboolean *out_emit_device_availability_changed)
 {
-    NMBluezManager *       self = bzobj->self;
+    NMBluezManager        *self = bzobj->self;
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
     gboolean               network_server_is_usable;
     gboolean               emit_device_availability_changed = FALSE;
@@ -1303,13 +1303,13 @@ _network_server_process_change(BzDBusObj *bzobj, gboolean *out_emit_device_avail
 static void
 _conn_create_panu_connection(NMBluezManager *self, BzDBusObj *bzobj)
 {
-    NMBluezManagerPrivate *priv              = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
+    NMBluezManagerPrivate        *priv       = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingsConnection *        added;
-    NMSetting *                   setting;
-    gs_free char *                id = NULL;
+    NMSettingsConnection         *added;
+    NMSetting                    *setting;
+    gs_free char                 *id = NULL;
     char                          uuid[37];
-    gs_free_error GError *error = NULL;
+    gs_free_error GError         *error = NULL;
 
     nm_uuid_generate_random_str_arr(uuid);
     id = g_strdup_printf(_("%s Network"), bzobj->d_device.name);
@@ -1398,7 +1398,7 @@ _device_state_changed_cb(NMDevice *device,
 static void
 _device_process_change(BzDBusObj *bzobj)
 {
-    NMBluezManager *self                       = bzobj->self;
+    NMBluezManager             *self           = bzobj->self;
     gs_unref_object NMDeviceBt *device_added   = NULL;
     gs_unref_object NMDeviceBt *device_deleted = NULL;
     gboolean                    device_is_usable;
@@ -1513,7 +1513,7 @@ static void
 _process_change_idle_all(NMBluezManager *self, gboolean *out_emit_device_availability_changed)
 {
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
-    BzDBusObj *            bzobj;
+    BzDBusObj             *bzobj;
 
     while (
         (bzobj =
@@ -1537,7 +1537,7 @@ _process_change_idle_all(NMBluezManager *self, gboolean *out_emit_device_availab
 static gboolean
 _process_change_idle_cb(gpointer user_data)
 {
-    NMBluezManager *       self                             = user_data;
+    NMBluezManager        *self                             = user_data;
     NMBluezManagerPrivate *priv                             = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
     gboolean               emit_device_availability_changed = FALSE;
 
@@ -1622,7 +1622,7 @@ _dbus_process_changes(NMBluezManager *self, BzDBusObj *bzobj, const char *log_re
 
     if (recheck_devices_for_adapter) {
         GHashTableIter iter;
-        BzDBusObj *    bzobj2;
+        BzDBusObj     *bzobj2;
 
         /* we got a change to the availability of an adapter. We might need to recheck
          * all devices that use this adapter... */
@@ -1651,17 +1651,17 @@ _dbus_process_changes(NMBluezManager *self, BzDBusObj *bzobj, const char *log_re
                  NM_BLUEZ5_NETWORK_SERVER_INTERFACE)
 
 static gboolean
-_dbus_handle_properties_changed(NMBluezManager *   self,
-                                const char *       object_path,
-                                const char *       interface_name,
-                                GVariant *         changed_properties,
+_dbus_handle_properties_changed(NMBluezManager    *self,
+                                const char        *object_path,
+                                const char        *interface_name,
+                                GVariant          *changed_properties,
                                 const char *const *invalidated_properties,
-                                BzDBusObj **       inout_bzobj)
+                                BzDBusObj        **inout_bzobj)
 {
-    BzDBusObj *  bzobj   = NULL;
+    BzDBusObj   *bzobj   = NULL;
     gboolean     changed = FALSE;
-    const char * property_name;
-    GVariant *   property_value;
+    const char  *property_name;
+    GVariant    *property_value;
     GVariantIter iter_prop;
     gsize        i;
 
@@ -1933,14 +1933,14 @@ _dbus_handle_properties_changed(NMBluezManager *   self,
 
 static void
 _dbus_handle_interface_added(NMBluezManager *self,
-                             const char *    object_path,
-                             GVariant *      ifaces,
+                             const char     *object_path,
+                             GVariant       *ifaces,
                              gboolean        initial_get_managed_objects)
 {
-    BzDBusObj *  bzobj   = NULL;
+    BzDBusObj   *bzobj   = NULL;
     gboolean     changed = FALSE;
-    const char * interface_name;
-    GVariant *   changed_properties;
+    const char  *interface_name;
+    GVariant    *changed_properties;
     GVariantIter iter_ifaces;
 
     nm_assert(g_variant_is_of_type(ifaces, G_VARIANT_TYPE("a{sa{sv}}")));
@@ -1966,9 +1966,9 @@ _dbus_handle_interface_added(NMBluezManager *self,
 }
 
 static gboolean
-_dbus_handle_interface_removed(NMBluezManager *   self,
-                               const char *       object_path,
-                               BzDBusObj **       inout_bzobj,
+_dbus_handle_interface_removed(NMBluezManager    *self,
+                               const char        *object_path,
+                               BzDBusObj        **inout_bzobj,
                                const char *const *removed_interfaces)
 {
     gboolean   changed = FALSE;
@@ -2056,16 +2056,16 @@ _dbus_handle_interface_removed(NMBluezManager *   self,
 
 static void
 _dbus_managed_objects_changed_cb(GDBusConnection *connection,
-                                 const char *     sender_name,
-                                 const char *     arg_object_path,
-                                 const char *     interface_name,
-                                 const char *     signal_name,
-                                 GVariant *       parameters,
+                                 const char      *sender_name,
+                                 const char      *arg_object_path,
+                                 const char      *interface_name,
+                                 const char      *signal_name,
+                                 GVariant        *parameters,
                                  gpointer         user_data)
 {
-    NMBluezManager *       self  = user_data;
+    NMBluezManager        *self  = user_data;
     NMBluezManagerPrivate *priv  = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
-    BzDBusObj *            bzobj = NULL;
+    BzDBusObj             *bzobj = NULL;
     gboolean               changed;
 
     nm_assert(nm_streq0(interface_name, DBUS_INTERFACE_OBJECT_MANAGER));
@@ -2077,7 +2077,7 @@ _dbus_managed_objects_changed_cb(GDBusConnection *connection,
 
     if (nm_streq(signal_name, "InterfacesAdded")) {
         gs_unref_variant GVariant *interfaces_and_properties = NULL;
-        const char *               object_path;
+        const char                *object_path;
 
         if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(oa{sa{sv}})")))
             return;
@@ -2090,7 +2090,7 @@ _dbus_managed_objects_changed_cb(GDBusConnection *connection,
 
     if (nm_streq(signal_name, "InterfacesRemoved")) {
         gs_free const char **interfaces = NULL;
-        const char *         object_path;
+        const char          *object_path;
 
         if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(oas)")))
             return;
@@ -2106,19 +2106,19 @@ _dbus_managed_objects_changed_cb(GDBusConnection *connection,
 
 static void
 _dbus_properties_changed_cb(GDBusConnection *connection,
-                            const char *     sender_name,
-                            const char *     object_path,
-                            const char *     signal_interface_name,
-                            const char *     signal_name,
-                            GVariant *       parameters,
+                            const char      *sender_name,
+                            const char      *object_path,
+                            const char      *signal_interface_name,
+                            const char      *signal_name,
+                            GVariant        *parameters,
                             gpointer         user_data)
 {
-    NMBluezManager *       self = user_data;
-    NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
-    const char *           interface_name;
+    NMBluezManager            *self = user_data;
+    NMBluezManagerPrivate     *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
+    const char                *interface_name;
     gs_unref_variant GVariant *changed_properties     = NULL;
-    gs_free const char **      invalidated_properties = NULL;
-    BzDBusObj *                bzobj                  = NULL;
+    gs_free const char       **invalidated_properties = NULL;
+    BzDBusObj                 *bzobj                  = NULL;
 
     if (priv->get_managed_objects_cancellable) {
         /* we still wait for the initial GetManagedObjects(). Ignore the event. */
@@ -2146,11 +2146,11 @@ _dbus_properties_changed_cb(GDBusConnection *connection,
 static void
 _dbus_get_managed_objects_cb(GVariant *result, GError *error, gpointer user_data)
 {
-    NMBluezManager *       self;
+    NMBluezManager        *self;
     NMBluezManagerPrivate *priv;
     GVariantIter           iter;
-    const char *           object_path;
-    GVariant *             ifaces;
+    const char            *object_path;
+    GVariant              *ifaces;
 
     if (!result && nm_utils_error_is_cancelled(error))
         return;
@@ -2184,7 +2184,7 @@ _cleanup_for_name_owner(NMBluezManager *self)
     NMBluezManagerPrivate *priv                             = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
     gboolean               emit_device_availability_changed = FALSE;
     GHashTableIter         iter;
-    BzDBusObj *            bzobj;
+    BzDBusObj             *bzobj;
     gboolean               first = TRUE;
 
     nm_clear_g_cancellable(&priv->get_managed_objects_cancellable);
@@ -2217,7 +2217,7 @@ static void
 name_owner_changed(NMBluezManager *self, const char *owner)
 {
     _nm_unused gs_unref_object NMBluezManager *self_keep_alive = g_object_ref(self);
-    NMBluezManagerPrivate *                    priv            = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
+    NMBluezManagerPrivate                     *priv            = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
 
     owner = nm_str_not_empty(owner);
 
@@ -2270,15 +2270,15 @@ name_owner_changed(NMBluezManager *self, const char *owner)
 
 static void
 name_owner_changed_cb(GDBusConnection *connection,
-                      const char *     sender_name,
-                      const char *     object_path,
-                      const char *     interface_name,
-                      const char *     signal_name,
-                      GVariant *       parameters,
+                      const char      *sender_name,
+                      const char      *object_path,
+                      const char      *interface_name,
+                      const char      *signal_name,
+                      GVariant        *parameters,
                       gpointer         user_data)
 {
     NMBluezManager *self = user_data;
-    const char *    new_owner;
+    const char     *new_owner;
 
     if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sss)")))
         return;
@@ -2321,8 +2321,8 @@ _cleanup_all(NMBluezManager *self)
 static void
 start(NMDeviceFactory *factory)
 {
-    NMBluezManager *             self;
-    NMBluezManagerPrivate *      priv;
+    NMBluezManager              *self;
+    NMBluezManagerPrivate       *priv;
     NMSettingsConnection *const *sett_conns;
     guint                        n_sett_conns;
     guint                        i;
@@ -2378,12 +2378,12 @@ start(NMDeviceFactory *factory)
 /*****************************************************************************/
 
 static void
-_connect_returned(NMBluezManager *        self,
-                  BzDBusObj *             bzobj,
+_connect_returned(NMBluezManager         *self,
+                  BzDBusObj              *bzobj,
                   NMBluetoothCapabilities bt_type,
-                  const char *            device_name,
-                  NMBluez5DunContext *    dun_context,
-                  GError *                error)
+                  const char             *device_name,
+                  NMBluez5DunContext     *dun_context,
+                  GError                 *error)
 {
     char sbuf_cap[100];
 
@@ -2449,8 +2449,8 @@ _connect_dun_notify_tty_hangup_cb(NMBluez5DunContext *context, gpointer user_dat
 
 static void
 _connect_dun_step2_cb(NMBluez5DunContext *context,
-                      const char *        rfcomm_dev,
-                      GError *            error,
+                      const char         *rfcomm_dev,
+                      GError             *error,
                       gpointer            user_data)
 {
     BzDBusObj *bzobj;
@@ -2491,10 +2491,10 @@ _connect_dun_step2_cb(NMBluez5DunContext *context,
 static void
 _connect_dun_step1_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    gs_unref_variant GVariant *ret = NULL;
-    gs_free_error GError *error    = NULL;
-    BzDBusObj *           bzobj_adapter;
-    BzDBusObj *           bzobj;
+    gs_unref_variant GVariant *ret   = NULL;
+    gs_free_error GError      *error = NULL;
+    BzDBusObj                 *bzobj_adapter;
+    BzDBusObj                 *bzobj;
 
     ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res, &error);
 
@@ -2537,9 +2537,9 @@ static void
 _connect_nap_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
     gs_unref_variant GVariant *ret                = NULL;
-    const char *               network_iface_name = NULL;
-    gs_free_error GError *error                   = NULL;
-    BzDBusObj *           bzobj;
+    const char                *network_iface_name = NULL;
+    gs_free_error GError      *error              = NULL;
+    BzDBusObj                 *bzobj;
 
     ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res, &error);
 
@@ -2584,7 +2584,7 @@ static void
 _connect_disconnect(NMBluezManager *self, BzDBusObj *bzobj, const char *reason)
 {
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
-    DeviceConnectReqData * c_req_data;
+    DeviceConnectReqData  *c_req_data;
     char                   sbuf_cap[100];
     gboolean               bt_type;
 
@@ -2655,19 +2655,19 @@ _connect_disconnect(NMBluezManager *self, BzDBusObj *bzobj, const char *reason)
 }
 
 gboolean
-nm_bluez_manager_connect(NMBluezManager *        self,
-                         const char *            object_path,
+nm_bluez_manager_connect(NMBluezManager         *self,
+                         const char             *object_path,
                          NMBluetoothCapabilities connection_bt_type,
                          int                     timeout_msec,
-                         GCancellable *          cancellable,
+                         GCancellable           *cancellable,
                          NMBluezManagerConnectCb callback,
                          gpointer                callback_user_data,
-                         GError **               error)
+                         GError                **error)
 {
     gs_unref_object GCancellable *int_cancellable = NULL;
-    DeviceConnectReqData *        c_req_data;
-    NMBluezManagerPrivate *       priv;
-    BzDBusObj *                   bzobj;
+    DeviceConnectReqData         *c_req_data;
+    NMBluezManagerPrivate        *priv;
+    BzDBusObj                    *bzobj;
     char                          sbuf_cap[100];
 
     g_return_val_if_fail(NM_IS_BLUEZ_MANAGER(self), FALSE);
@@ -2781,11 +2781,11 @@ nm_bluez_manager_disconnect(NMBluezManager *self, const char *object_path)
 /*****************************************************************************/
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     *out_ignore = TRUE;
     g_return_val_if_fail(plink->type == NM_LINK_TYPE_BNEP, NULL);
@@ -2845,7 +2845,7 @@ nm_bluez_manager_init(NMBluezManager *self)
 static void
 dispose(GObject *object)
 {
-    NMBluezManager *       self = NM_BLUEZ_MANAGER(object);
+    NMBluezManager        *self = NM_BLUEZ_MANAGER(object);
     NMBluezManagerPrivate *priv = NM_BLUEZ_MANAGER_GET_PRIVATE(self);
 
     /* FIXME(shutdown): we need a nm_device_factory_stop() hook to first unregister all
@@ -2876,7 +2876,7 @@ dispose(GObject *object)
 static void
 nm_bluez_manager_class_init(NMBluezManagerClass *klass)
 {
-    GObjectClass *        object_class  = G_OBJECT_CLASS(klass);
+    GObjectClass         *object_class  = G_OBJECT_CLASS(klass);
     NMDeviceFactoryClass *factory_class = NM_DEVICE_FACTORY_CLASS(klass);
 
     object_class->dispose = dispose;

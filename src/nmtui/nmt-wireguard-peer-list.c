@@ -24,9 +24,9 @@ G_DEFINE_TYPE(NmtWireguardPeerList, nmt_wireguard_peer_list, NMT_TYPE_NEWT_GRID)
 
 typedef struct {
     NMSettingWireGuard *setting;
-    GSList *            peers;
+    GSList             *peers;
 
-    NmtNewtListbox *  listbox;
+    NmtNewtListbox   *listbox;
     NmtNewtButtonBox *buttons;
 
     NmtNewtWidget *add;
@@ -98,8 +98,8 @@ static void
 nmt_wireguard_peer_list_init(NmtWireguardPeerList *list)
 {
     NmtWireguardPeerListPrivate *priv = NMT_WIREGUARD_PEER_LIST_GET_PRIVATE(list);
-    NmtNewtWidget *              listbox, *buttons;
-    NmtNewtGrid *                grid = NMT_NEWT_GRID(list);
+    NmtNewtWidget               *listbox, *buttons;
+    NmtNewtGrid                 *grid = NMT_NEWT_GRID(list);
 
     listbox       = g_object_new(NMT_TYPE_NEWT_LISTBOX,
                            "flags",
@@ -166,8 +166,8 @@ static void
 nmt_wireguard_peer_list_add_peer(NmtWireguardPeerList *list)
 {
     NmtWireguardPeerListPrivate *priv = NMT_WIREGUARD_PEER_LIST_GET_PRIVATE(list);
-    NMWireGuardPeer *            peer = nm_wireguard_peer_new();
-    NmtNewtForm *                editor;
+    NMWireGuardPeer             *peer = nm_wireguard_peer_new();
+    NmtNewtForm                 *editor;
 
     editor = nmt_wireguard_peer_editor_new(priv->setting, peer);
 
@@ -183,8 +183,8 @@ static void
 nmt_wireguard_peer_list_edit_peer(NmtWireguardPeerList *list)
 {
     NmtWireguardPeerListPrivate *priv = NMT_WIREGUARD_PEER_LIST_GET_PRIVATE(list);
-    NMWireGuardPeer *            orig_peer, *edit_peer;
-    NmtNewtForm *                editor;
+    NMWireGuardPeer             *orig_peer, *edit_peer;
+    NmtNewtForm                 *editor;
     int                          selected_row;
 
     selected_row = nmt_newt_listbox_get_active(priv->listbox);
@@ -216,10 +216,10 @@ nmt_wireguard_peer_list_remove_peer(NmtWireguardPeerList *list)
 }
 
 static void
-nmt_wireguard_peer_list_set_property(GObject *     object,
+nmt_wireguard_peer_list_set_property(GObject      *object,
                                      guint         prop_id,
                                      const GValue *value,
-                                     GParamSpec *  pspec)
+                                     GParamSpec   *pspec)
 {
     NmtWireguardPeerListPrivate *priv = NMT_WIREGUARD_PEER_LIST_GET_PRIVATE(object);
 
@@ -237,14 +237,14 @@ nmt_wireguard_peer_list_set_property(GObject *     object,
 }
 
 static void
-nmt_wireguard_peer_list_get_property(GObject *   object,
+nmt_wireguard_peer_list_get_property(GObject    *object,
                                      guint       prop_id,
-                                     GValue *    value,
+                                     GValue     *value,
                                      GParamSpec *pspec)
 {
     NmtWireguardPeerListPrivate *priv = NMT_WIREGUARD_PEER_LIST_GET_PRIVATE(object);
-    GPtrArray *                  peers;
-    GSList *                     iter;
+    GPtrArray                   *peers;
+    GSList                      *iter;
 
     switch (prop_id) {
     case PROP_SETTING:
@@ -269,10 +269,10 @@ static void
 nmt_wireguard_peer_list_rebuild(NmtWireguardPeerList *list)
 {
     NmtWireguardPeerListPrivate *priv = NMT_WIREGUARD_PEER_LIST_GET_PRIVATE(list);
-    GSList *                     iter;
-    NMWireGuardPeer *            peer, *selected_peer;
+    GSList                      *iter;
+    NMWireGuardPeer             *peer, *selected_peer;
     int                          i, row, selected_row, num;
-    NMSettingWireGuard *         setting = priv->setting;
+    NMSettingWireGuard          *setting = priv->setting;
 
     selected_row  = nmt_newt_listbox_get_active(priv->listbox);
     selected_peer = nmt_newt_listbox_get_active_key(priv->listbox);

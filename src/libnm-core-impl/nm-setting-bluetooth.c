@@ -100,7 +100,7 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingBluetoothPrivate *priv = NM_SETTING_BLUETOOTH_GET_PRIVATE(setting);
-    const char *               type;
+    const char                *type;
     gboolean                   missing_nap_bridge = FALSE;
 
     if (priv->bdaddr && !nm_utils_hwaddr_valid(priv->bdaddr, ETH_ALEN)) {
@@ -250,9 +250,9 @@ nm_setting_bluetooth_new(void)
 static void
 nm_setting_bluetooth_class_init(NMSettingBluetoothClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingBluetoothPrivate));
 
