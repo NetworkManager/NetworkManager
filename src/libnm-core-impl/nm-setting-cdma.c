@@ -29,7 +29,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_NUMBER,
                                   PROP_MTU, );
 
 typedef struct {
-    char *               number; /* For dialing, duh */
+    char *               number;
     char *               username;
     char *               password;
     guint32              mtu;
@@ -136,23 +136,23 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE(setting);
 
-    if (!priv->number) {
-        g_set_error_literal(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                            _("property is missing"));
-        g_prefix_error(error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_NUMBER);
-        return FALSE;
-    } else if (!strlen(priv->number)) {
-        g_set_error_literal(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("property is empty"));
+    if (nm_str_is_empty(priv->number)) {
+        if (!priv->number) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                                _("property is missing"));
+        } else {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("property is empty"));
+        }
         g_prefix_error(error, "%s.%s: ", NM_SETTING_CDMA_SETTING_NAME, NM_SETTING_CDMA_NUMBER);
         return FALSE;
     }
 
-    if (priv->username && !strlen(priv->username)) {
+    if (priv->username && nm_str_is_empty(priv->username)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -179,7 +179,7 @@ need_secrets(NMSetting *setting)
     NMSettingCdmaPrivate *priv    = NM_SETTING_CDMA_GET_PRIVATE(setting);
     GPtrArray *           secrets = NULL;
 
-    if (priv->password && *priv->password)
+    if (!nm_str_is_empty(priv->password))
         return NULL;
 
     if (priv->username) {
@@ -190,65 +190,6 @@ need_secrets(NMSetting *setting)
     }
 
     return secrets;
-}
-
-/*****************************************************************************/
-
-static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingCdma *setting = NM_SETTING_CDMA(object);
-
-    switch (prop_id) {
-    case PROP_NUMBER:
-        g_value_set_string(value, nm_setting_cdma_get_number(setting));
-        break;
-    case PROP_USERNAME:
-        g_value_set_string(value, nm_setting_cdma_get_username(setting));
-        break;
-    case PROP_PASSWORD:
-        g_value_set_string(value, nm_setting_cdma_get_password(setting));
-        break;
-    case PROP_PASSWORD_FLAGS:
-        g_value_set_flags(value, nm_setting_cdma_get_password_flags(setting));
-        break;
-    case PROP_MTU:
-        g_value_set_uint(value, nm_setting_cdma_get_mtu(setting));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE(object);
-
-    switch (prop_id) {
-    case PROP_NUMBER:
-        g_free(priv->number);
-        priv->number = g_value_dup_string(value);
-        break;
-    case PROP_USERNAME:
-        g_free(priv->username);
-        priv->username = g_value_dup_string(value);
-        break;
-    case PROP_PASSWORD:
-        g_free(priv->password);
-        priv->password = g_value_dup_string(value);
-        break;
-    case PROP_PASSWORD_FLAGS:
-        priv->password_flags = g_value_get_flags(value);
-        break;
-    case PROP_MTU:
-        priv->mtu = g_value_get_uint(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
 }
 
 /*****************************************************************************/
@@ -271,28 +212,16 @@ nm_setting_cdma_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE(object);
-
-    g_free(priv->number);
-    g_free(priv->username);
-    g_free(priv->password);
-
-    G_OBJECT_CLASS(nm_setting_cdma_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray *        properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingCdmaPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify         = verify;
     setting_class->verify_secrets = verify_secrets;
@@ -305,11 +234,13 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
      * broadband network, if any.  If not specified, the default number (#777)
      * is used when required.
      **/
-    obj_properties[PROP_NUMBER] = g_param_spec_string(NM_SETTING_CDMA_NUMBER,
-                                                      "",
-                                                      "",
-                                                      NULL,
-                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CDMA_NUMBER,
+                                              PROP_NUMBER,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingCdmaPrivate,
+                                              number);
 
     /**
      * NMSettingCdma:username:
@@ -318,11 +249,13 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
      * providers do not require a username, or accept any username.  But if a
      * username is required, it is specified here.
      **/
-    obj_properties[PROP_USERNAME] = g_param_spec_string(NM_SETTING_CDMA_USERNAME,
-                                                        "",
-                                                        "",
-                                                        NULL,
-                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CDMA_USERNAME,
+                                              PROP_USERNAME,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingCdmaPrivate,
+                                              username);
 
     /**
      * NMSettingCdma:password:
@@ -331,25 +264,25 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
      * providers do not require a password, or accept any password.  But if a
      * password is required, it is specified here.
      **/
-    obj_properties[PROP_PASSWORD] =
-        g_param_spec_string(NM_SETTING_CDMA_PASSWORD,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CDMA_PASSWORD,
+                                              PROP_PASSWORD,
+                                              NM_SETTING_PARAM_SECRET,
+                                              NMSettingCdmaPrivate,
+                                              password);
 
     /**
      * NMSettingCdma:password-flags:
      *
      * Flags indicating how to handle the #NMSettingCdma:password property.
      **/
-    obj_properties[PROP_PASSWORD_FLAGS] =
-        g_param_spec_flags(NM_SETTING_CDMA_PASSWORD_FLAGS,
-                           "",
-                           "",
-                           NM_TYPE_SETTING_SECRET_FLAGS,
-                           NM_SETTING_SECRET_FLAG_NONE,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_secret_flags(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_CDMA_PASSWORD_FLAGS,
+                                                    PROP_PASSWORD_FLAGS,
+                                                    NMSettingCdmaPrivate,
+                                                    password_flags);
 
     /**
      * NMSettingCdma:mtu:
@@ -359,16 +292,22 @@ nm_setting_cdma_class_init(NMSettingCdmaClass *klass)
      *
      * Since: 1.8
      **/
-    obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_CDMA_MTU,
-                                                 "",
-                                                 "",
-                                                 0,
-                                                 G_MAXUINT32,
-                                                 0,
-                                                 G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE
-                                                     | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CDMA_MTU,
+                                              PROP_MTU,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingCdmaPrivate,
+                                              mtu);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_CDMA, NULL, NULL, 0);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_CDMA,
+                             NULL,
+                             properties_override,
+                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
 }

@@ -371,6 +371,7 @@ nm_value_type_to_json(NMValueType value_type, GString *gstr, gconstpointer p_fie
         nm_json_gstr_append_int64(gstr, *((const gint32 *) p_field));
         return;
     case NM_VALUE_TYPE_INT:
+    case NM_VALUE_TYPE_ENUM:
         nm_json_gstr_append_int64(gstr, *((const int *) p_field));
         return;
     case NM_VALUE_TYPE_INT64:
@@ -380,6 +381,7 @@ nm_value_type_to_json(NMValueType value_type, GString *gstr, gconstpointer p_fie
         nm_json_gstr_append_uint64(gstr, *((const guint32 *) p_field));
         return;
     case NM_VALUE_TYPE_UINT:
+    case NM_VALUE_TYPE_FLAGS:
         nm_json_gstr_append_uint64(gstr, *((const guint *) p_field));
         return;
     case NM_VALUE_TYPE_UINT64:
@@ -388,6 +390,7 @@ nm_value_type_to_json(NMValueType value_type, GString *gstr, gconstpointer p_fie
     case NM_VALUE_TYPE_STRING:
         nm_json_gstr_append_string(gstr, *((const char *const *) p_field));
         return;
+    case NM_VALUE_TYPE_BYTES:
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
@@ -407,12 +410,14 @@ nm_value_type_from_json(const NMJsonVt * vt,
     case NM_VALUE_TYPE_INT32:
         return (nm_jansson_json_as_int32(vt, elem, out_val) > 0);
     case NM_VALUE_TYPE_INT:
+    case NM_VALUE_TYPE_ENUM:
         return (nm_jansson_json_as_int(vt, elem, out_val) > 0);
     case NM_VALUE_TYPE_INT64:
         return (nm_jansson_json_as_int64(vt, elem, out_val) > 0);
     case NM_VALUE_TYPE_UINT32:
         return (nm_jansson_json_as_uint32(vt, elem, out_val) > 0);
     case NM_VALUE_TYPE_UINT:
+    case NM_VALUE_TYPE_FLAGS:
         return (nm_jansson_json_as_uint(vt, elem, out_val) > 0);
     case NM_VALUE_TYPE_UINT64:
         return (nm_jansson_json_as_uint64(vt, elem, out_val) > 0);
@@ -422,6 +427,7 @@ nm_value_type_from_json(const NMJsonVt * vt,
     case NM_VALUE_TYPE_STRING:
         return (nm_jansson_json_as_string(vt, elem, out_val) > 0);
 
+    case NM_VALUE_TYPE_BYTES:
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;

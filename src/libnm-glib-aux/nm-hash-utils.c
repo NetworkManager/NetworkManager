@@ -255,7 +255,7 @@ nm_ppdirect_equal(gconstpointer a, gconstpointer b)
 /*****************************************************************************/
 
 guint
-nm_gbytes_hash(gconstpointer p)
+nm_g_bytes_hash(gconstpointer p)
 {
     GBytes *      ptr = (GBytes *) p;
     gconstpointer arr;
@@ -266,7 +266,7 @@ nm_gbytes_hash(gconstpointer p)
 }
 
 guint
-nm_pgbytes_hash(gconstpointer p)
+nm_pg_bytes_hash(gconstpointer p)
 {
     GBytes *const *ptr = p;
     gconstpointer  arr;
@@ -277,7 +277,7 @@ nm_pgbytes_hash(gconstpointer p)
 }
 
 gboolean
-nm_pgbytes_equal(gconstpointer a, gconstpointer b)
+nm_pg_bytes_equal(gconstpointer a, gconstpointer b)
 {
     GBytes *const *ptr_a = a;
     GBytes *const *ptr_b = b;

@@ -34,8 +34,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingBridgePort,
 
 typedef struct {
     GPtrArray *vlans;
-    guint16    priority;
-    guint16    path_cost;
+    guint32    priority;
+    guint32    path_cost;
     bool       hairpin_mode;
 } NMSettingBridgePortPrivate;
 
@@ -385,15 +385,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE(object);
 
     switch (prop_id) {
-    case PROP_PRIORITY:
-        g_value_set_uint(value, priv->priority);
-        break;
-    case PROP_PATH_COST:
-        g_value_set_uint(value, priv->path_cost);
-        break;
-    case PROP_HAIRPIN_MODE:
-        g_value_set_boolean(value, priv->hairpin_mode);
-        break;
     case PROP_VLANS:
         g_value_take_boxed(value,
                            _nm_utils_copy_array(priv->vlans,
@@ -401,7 +392,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                                                 (GDestroyNotify) nm_bridge_vlan_unref));
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -412,15 +403,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE(object);
 
     switch (prop_id) {
-    case PROP_PRIORITY:
-        priv->priority = g_value_get_uint(value);
-        break;
-    case PROP_PATH_COST:
-        priv->path_cost = g_value_get_uint(value);
-        break;
-    case PROP_HAIRPIN_MODE:
-        priv->hairpin_mode = g_value_get_boolean(value);
-        break;
     case PROP_VLANS:
         g_ptr_array_unref(priv->vlans);
         priv->vlans = _nm_utils_copy_array(g_value_get_boxed(value),
@@ -428,7 +410,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                            (GDestroyNotify) nm_bridge_vlan_unref);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -441,9 +423,6 @@ nm_setting_bridge_port_init(NMSettingBridgePort *setting)
     NMSettingBridgePortPrivate *priv = NM_SETTING_BRIDGE_PORT_GET_PRIVATE(setting);
 
     priv->vlans = g_ptr_array_new_with_free_func((GDestroyNotify) nm_bridge_vlan_unref);
-
-    priv->priority  = NM_BRIDGE_PORT_PRIORITY_DEF;
-    priv->path_cost = NM_BRIDGE_PORT_PATH_COST_DEF;
 }
 
 /**
@@ -478,9 +457,9 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingBridgePortPrivate));
 
-    object_class->finalize     = finalize;
     object_class->get_property = get_property;
     object_class->set_property = set_property;
+    object_class->finalize     = finalize;
 
     setting_class->verify = verify;
 
@@ -497,14 +476,16 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
      * description: STP priority.
      * ---end---
      */
-    obj_properties[PROP_PRIORITY] =
-        g_param_spec_uint(NM_SETTING_BRIDGE_PORT_PRIORITY,
-                          "",
-                          "",
-                          NM_BRIDGE_PORT_PRIORITY_MIN,
-                          NM_BRIDGE_PORT_PRIORITY_MAX,
-                          NM_BRIDGE_PORT_PRIORITY_DEF,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_BRIDGE_PORT_PRIORITY,
+                                              PROP_PRIORITY,
+                                              NM_BRIDGE_PORT_PRIORITY_MIN,
+                                              NM_BRIDGE_PORT_PRIORITY_MAX,
+                                              NM_BRIDGE_PORT_PRIORITY_DEF,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingBridgePortPrivate,
+                                              priority);
 
     /**
      * NMSettingBridgePort:path-cost:
@@ -520,13 +501,16 @@ nm_setting_bridge_port_class_init(NMSettingBridgePortClass *klass)
      * description: STP cost.
      * ---end---
      */
-    obj_properties[PROP_PATH_COST] = g_param_spec_uint(NM_SETTING_BRIDGE_PORT_PATH_COST,
-                                                       "",
-                                                       "",
-                                                       NM_BRIDGE_PORT_PATH_COST_MIN,
-                                                       NM_BRIDGE_PORT_PATH_COST_MAX,
-                                                       NM_BRIDGE_PORT_PATH_COST_DEF,
-                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_BRIDGE_PORT_PATH_COST,
+                                              PROP_PATH_COST,
+                                              NM_BRIDGE_PORT_PATH_COST_MIN,
+                                              NM_BRIDGE_PORT_PATH_COST_MAX,
+                                              NM_BRIDGE_PORT_PATH_COST_DEF,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingBridgePortPrivate,
+                                              path_cost);
 
     /**
      * NMSettingBridgePort:hairpin-mode:

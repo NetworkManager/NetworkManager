@@ -3030,6 +3030,7 @@ make_dcb_setting(shvarFile *ifcfg, NMSetting **out_setting, GError **error)
     gs_unref_object NMSettingDcb *s_dcb = NULL;
     gboolean                      dcb_on;
     NMSettingDcbFlags             flags = NM_SETTING_DCB_FLAG_NONE;
+    gs_free char *                val   = NULL;
 
     g_return_val_if_fail(out_setting, FALSE);
     *out_setting = NULL;
@@ -3049,21 +3050,18 @@ make_dcb_setting(shvarFile *ifcfg, NMSetting **out_setting, GError **error)
                       error)) {
         return FALSE;
     }
-    if (nm_setting_dcb_get_app_fcoe_flags(s_dcb) & NM_SETTING_DCB_FLAG_ENABLE) {
-        gs_free char *val = NULL;
 
-        val = svGetValueStr_cp(ifcfg, KEY_DCB_APP_FCOE_MODE);
-        if (val) {
-            if (NM_IN_STRSET(val, NM_SETTING_DCB_FCOE_MODE_FABRIC, NM_SETTING_DCB_FCOE_MODE_VN2VN))
-                g_object_set(G_OBJECT(s_dcb), NM_SETTING_DCB_APP_FCOE_MODE, val, NULL);
-            else {
-                PARSE_WARNING("invalid FCoE mode '%s'", val);
-                g_set_error_literal(error,
-                                    NM_SETTINGS_ERROR,
-                                    NM_SETTINGS_ERROR_INVALID_CONNECTION,
-                                    "invalid FCoE mode");
-                return FALSE;
-            }
+    val = svGetValueStr_cp(ifcfg, KEY_DCB_APP_FCOE_MODE);
+    if (val) {
+        if (NM_IN_STRSET(val, NM_SETTING_DCB_FCOE_MODE_FABRIC, NM_SETTING_DCB_FCOE_MODE_VN2VN))
+            g_object_set(G_OBJECT(s_dcb), NM_SETTING_DCB_APP_FCOE_MODE, val, NULL);
+        else {
+            PARSE_WARNING("invalid FCoE mode '%s'", val);
+            g_set_error_literal(error,
+                                NM_SETTINGS_ERROR,
+                                NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                                "invalid FCoE mode");
+            return FALSE;
         }
     }
 

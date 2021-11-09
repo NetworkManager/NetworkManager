@@ -71,32 +71,32 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_MUD_URL, );
 
 typedef struct {
-    GArray *                             permissions;
-    GArray *                             secondaries;
-    char *                               id;
-    char *                               uuid;
-    char *                               stable_id;
-    char *                               interface_name;
-    char *                               type;
-    char *                               master;
-    char *                               slave_type;
-    char *                               zone;
-    char *                               mud_url;
-    guint64                              timestamp;
-    gint32                               autoconnect_priority;
-    gint32                               autoconnect_retries;
-    gint32                               multi_connect;
-    gint32                               auth_retries;
-    gint32                               mdns;
-    gint32                               llmnr;
-    gint32                               dns_over_tls;
-    gint32                               wait_device_timeout;
-    gint32                               lldp;
-    guint32                              gateway_ping_timeout;
-    NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
-    NMMetered                            metered;
-    bool                                 autoconnect;
-    bool                                 read_only;
+    GArray *permissions;
+    GArray *secondaries;
+    char *  id;
+    char *  uuid;
+    char *  stable_id;
+    char *  interface_name;
+    char *  type;
+    char *  master;
+    char *  slave_type;
+    char *  zone;
+    char *  mud_url;
+    guint64 timestamp;
+    int     autoconnect_slaves;
+    int     metered;
+    gint32  autoconnect_priority;
+    gint32  autoconnect_retries;
+    gint32  multi_connect;
+    gint32  auth_retries;
+    gint32  mdns;
+    gint32  llmnr;
+    gint32  dns_over_tls;
+    gint32  wait_device_timeout;
+    gint32  lldp;
+    guint32 gateway_ping_timeout;
+    bool    autoconnect;
+    bool    read_only;
 } NMSettingConnectionPrivate;
 
 /**
@@ -1293,8 +1293,7 @@ after_interface_name:
         return FALSE;
     }
 
-    if (priv->metered != NM_METERED_UNKNOWN && priv->metered != NM_METERED_YES
-        && priv->metered != NM_METERED_NO) {
+    if (!NM_IN_SET(priv->metered, NM_METERED_UNKNOWN, NM_METERED_NO, NM_METERED_YES)) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1620,21 +1619,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingConnectionPrivate *priv    = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
 
     switch (prop_id) {
-    case PROP_ID:
-        g_value_set_string(value, nm_setting_connection_get_id(setting));
-        break;
-    case PROP_UUID:
-        g_value_set_string(value, nm_setting_connection_get_uuid(setting));
-        break;
-    case PROP_STABLE_ID:
-        g_value_set_string(value, nm_setting_connection_get_stable_id(setting));
-        break;
-    case PROP_INTERFACE_NAME:
-        g_value_set_string(value, nm_setting_connection_get_interface_name(setting));
-        break;
-    case PROP_TYPE:
-        g_value_set_string(value, nm_setting_connection_get_connection_type(setting));
-        break;
     case PROP_PERMISSIONS:
     {
         char **strv;
@@ -1650,68 +1634,14 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_take_boxed(value, strv);
         break;
     }
-    case PROP_AUTOCONNECT:
-        g_value_set_boolean(value, nm_setting_connection_get_autoconnect(setting));
-        break;
-    case PROP_AUTOCONNECT_PRIORITY:
-        g_value_set_int(value, nm_setting_connection_get_autoconnect_priority(setting));
-        break;
-    case PROP_AUTOCONNECT_RETRIES:
-        g_value_set_int(value, nm_setting_connection_get_autoconnect_retries(setting));
-        break;
-    case PROP_MULTI_CONNECT:
-        g_value_set_int(value, priv->multi_connect);
-        break;
     case PROP_TIMESTAMP:
         g_value_set_uint64(value, nm_setting_connection_get_timestamp(setting));
-        break;
-    case PROP_READ_ONLY:
-        g_value_set_boolean(value, nm_setting_connection_get_read_only(setting));
-        break;
-    case PROP_ZONE:
-        g_value_set_string(value, nm_setting_connection_get_zone(setting));
-        break;
-    case PROP_MASTER:
-        g_value_set_string(value, nm_setting_connection_get_master(setting));
-        break;
-    case PROP_SLAVE_TYPE:
-        g_value_set_string(value, nm_setting_connection_get_slave_type(setting));
-        break;
-    case PROP_AUTOCONNECT_SLAVES:
-        g_value_set_enum(value, nm_setting_connection_get_autoconnect_slaves(setting));
         break;
     case PROP_SECONDARIES:
         g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(priv->secondaries, NULL));
         break;
-    case PROP_GATEWAY_PING_TIMEOUT:
-        g_value_set_uint(value, priv->gateway_ping_timeout);
-        break;
-    case PROP_METERED:
-        g_value_set_enum(value, priv->metered);
-        break;
-    case PROP_LLDP:
-        g_value_set_int(value, priv->lldp);
-        break;
-    case PROP_AUTH_RETRIES:
-        g_value_set_int(value, priv->auth_retries);
-        break;
-    case PROP_MDNS:
-        g_value_set_int(value, priv->mdns);
-        break;
-    case PROP_LLMNR:
-        g_value_set_int(value, priv->llmnr);
-        break;
-    case PROP_DNS_OVER_TLS:
-        g_value_set_int(value, priv->dns_over_tls);
-        break;
-    case PROP_WAIT_DEVICE_TIMEOUT:
-        g_value_set_int(value, priv->wait_device_timeout);
-        break;
-    case PROP_MUD_URL:
-        g_value_set_string(value, priv->mud_url);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1722,26 +1652,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(object);
 
     switch (prop_id) {
-    case PROP_ID:
-        g_free(priv->id);
-        priv->id = g_value_dup_string(value);
-        break;
-    case PROP_UUID:
-        g_free(priv->uuid);
-        priv->uuid = g_value_dup_string(value);
-        break;
-    case PROP_STABLE_ID:
-        g_free(priv->stable_id);
-        priv->stable_id = g_value_dup_string(value);
-        break;
-    case PROP_INTERFACE_NAME:
-        g_free(priv->interface_name);
-        priv->interface_name = g_value_dup_string(value);
-        break;
-    case PROP_TYPE:
-        g_free(priv->type);
-        priv->type = g_value_dup_string(value);
-        break;
     case PROP_PERMISSIONS:
     {
         const char *const *strv;
@@ -1762,72 +1672,14 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         }
         break;
     }
-    case PROP_AUTOCONNECT:
-        priv->autoconnect = g_value_get_boolean(value);
-        break;
-    case PROP_AUTOCONNECT_PRIORITY:
-        priv->autoconnect_priority = g_value_get_int(value);
-        break;
-    case PROP_AUTOCONNECT_RETRIES:
-        priv->autoconnect_retries = g_value_get_int(value);
-        break;
-    case PROP_MULTI_CONNECT:
-        priv->multi_connect = g_value_get_int(value);
-        break;
     case PROP_TIMESTAMP:
         priv->timestamp = g_value_get_uint64(value);
-        break;
-    case PROP_READ_ONLY:
-        priv->read_only = g_value_get_boolean(value);
-        break;
-    case PROP_ZONE:
-        g_free(priv->zone);
-        priv->zone = g_value_dup_string(value);
-        break;
-    case PROP_MASTER:
-        g_free(priv->master);
-        priv->master = g_value_dup_string(value);
-        break;
-    case PROP_SLAVE_TYPE:
-        g_free(priv->slave_type);
-        priv->slave_type = g_value_dup_string(value);
-        break;
-    case PROP_AUTOCONNECT_SLAVES:
-        priv->autoconnect_slaves = g_value_get_enum(value);
         break;
     case PROP_SECONDARIES:
         nm_strvarray_set_strv(&priv->secondaries, g_value_get_boxed(value));
         break;
-    case PROP_GATEWAY_PING_TIMEOUT:
-        priv->gateway_ping_timeout = g_value_get_uint(value);
-        break;
-    case PROP_METERED:
-        priv->metered = g_value_get_enum(value);
-        break;
-    case PROP_LLDP:
-        priv->lldp = g_value_get_int(value);
-        break;
-    case PROP_AUTH_RETRIES:
-        priv->auth_retries = g_value_get_int(value);
-        break;
-    case PROP_MDNS:
-        priv->mdns = g_value_get_int(value);
-        break;
-    case PROP_LLMNR:
-        priv->llmnr = g_value_get_int(value);
-        break;
-    case PROP_DNS_OVER_TLS:
-        priv->dns_over_tls = g_value_get_int(value);
-        break;
-    case PROP_WAIT_DEVICE_TIMEOUT:
-        priv->wait_device_timeout = g_value_get_int(value);
-        break;
-    case PROP_MUD_URL:
-        g_free(priv->mud_url);
-        priv->mud_url = g_value_dup_string(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1836,11 +1688,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_connection_init(NMSettingConnection *setting)
-{
-    NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
-
-    priv->autoconnect_slaves = NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT;
-}
+{}
 
 /**
  * nm_setting_connection_new:
@@ -1860,15 +1708,6 @@ finalize(GObject *object)
 {
     NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(object);
 
-    g_free(priv->id);
-    g_free(priv->uuid);
-    g_free(priv->stable_id);
-    g_free(priv->interface_name);
-    g_free(priv->type);
-    g_free(priv->zone);
-    g_free(priv->master);
-    g_free(priv->slave_type);
-    g_free(priv->mud_url);
     nm_clear_pointer(&priv->permissions, g_array_unref);
     nm_clear_pointer(&priv->secondaries, g_array_unref);
 
@@ -2366,13 +2205,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   when this connection is activated.
      * ---end---
      */
-    obj_properties[PROP_AUTOCONNECT_SLAVES] = g_param_spec_enum(
-        NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
-        "",
-        "",
-        NM_TYPE_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
-        NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+                                            PROP_AUTOCONNECT_SLAVES,
+                                            NM_TYPE_SETTING_CONNECTION_AUTOCONNECT_SLAVES,
+                                            NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT,
+                                            NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NMSettingConnectionPrivate,
+                                            autoconnect_slaves);
 
     /**
      * NMSettingConnection:secondaries:
@@ -2439,13 +2280,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: CONNECTION_METERED=yes
      * ---end---
      */
-    obj_properties[PROP_METERED] = g_param_spec_enum(
-        NM_SETTING_CONNECTION_METERED,
-        "",
-        "",
-        NM_TYPE_METERED,
-        NM_METERED_UNKNOWN,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_enum(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_CONNECTION_METERED,
+                                            PROP_METERED,
+                                            NM_TYPE_METERED,
+                                            NM_METERED_UNKNOWN,
+                                            NM_SETTING_PARAM_REAPPLY_IMMEDIATELY,
+                                            NMSettingConnectionPrivate,
+                                            metered);
 
     /**
      * NMSettingConnection:lldp:

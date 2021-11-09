@@ -29,10 +29,10 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_METHOD, PROP_BROWSER_ONLY, PROP_PAC_URL, PROP_PAC_SCRIPT, );
 
 typedef struct {
-    char *pac_url;
-    char *pac_script;
-    int   method;
-    bool  browser_only;
+    char * pac_url;
+    char * pac_script;
+    gint32 method;
+    bool   browser_only;
 } NMSettingProxyPrivate;
 
 /**
@@ -208,62 +208,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingProxy *setting = NM_SETTING_PROXY(object);
-
-    switch (prop_id) {
-    case PROP_METHOD:
-        g_value_set_int(value, nm_setting_proxy_get_method(setting));
-        break;
-    case PROP_BROWSER_ONLY:
-        g_value_set_boolean(value, nm_setting_proxy_get_browser_only(setting));
-        break;
-    case PROP_PAC_URL:
-        g_value_set_string(value, nm_setting_proxy_get_pac_url(setting));
-        break;
-    case PROP_PAC_SCRIPT:
-        g_value_set_string(value, nm_setting_proxy_get_pac_script(setting));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingProxyPrivate *priv = NM_SETTING_PROXY_GET_PRIVATE(object);
-
-    switch (prop_id) {
-    case PROP_METHOD:
-        priv->method = g_value_get_int(value);
-        break;
-    case PROP_BROWSER_ONLY:
-        priv->browser_only = g_value_get_boolean(value);
-        break;
-    case PROP_PAC_URL:
-        g_free(priv->pac_url);
-        priv->pac_url = g_value_dup_string(value);
-        break;
-    case PROP_PAC_SCRIPT:
-        g_free(priv->pac_script);
-        priv->pac_script = g_value_dup_string(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_proxy_init(NMSettingProxy *self)
-{
-    nm_assert(NM_SETTING_PROXY_GET_PRIVATE(self)->method == NM_SETTING_PROXY_METHOD_NONE);
-}
+{}
 
 /**
  * nm_setting_proxy_new:
@@ -281,18 +227,6 @@ nm_setting_proxy_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingProxy *       self = NM_SETTING_PROXY(object);
-    NMSettingProxyPrivate *priv = NM_SETTING_PROXY_GET_PRIVATE(self);
-
-    g_free(priv->pac_url);
-    g_free(priv->pac_script);
-
-    G_OBJECT_CLASS(nm_setting_proxy_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_proxy_class_init(NMSettingProxyClass *klass)
 {
     GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
@@ -301,9 +235,8 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingProxyPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
@@ -323,13 +256,16 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
      * values: none, auto
      * ---end---
      */
-    obj_properties[PROP_METHOD] = g_param_spec_int(NM_SETTING_PROXY_METHOD,
-                                                   "",
-                                                   "",
-                                                   G_MININT32,
-                                                   G_MAXINT32,
-                                                   NM_SETTING_PROXY_METHOD_NONE,
-                                                   G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_PROXY_METHOD,
+                                             PROP_METHOD,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_SETTING_PROXY_METHOD_NONE,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingProxyPrivate,
+                                             method);
 
     /**
      * NMSettingProxy:browser-only:
@@ -368,11 +304,13 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
      * example: PAC_URL=http://wpad.mycompany.com/wpad.dat
      * ---end---
      */
-    obj_properties[PROP_PAC_URL] = g_param_spec_string(NM_SETTING_PROXY_PAC_URL,
-                                                       "",
-                                                       "",
-                                                       NULL,
-                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_PROXY_PAC_URL,
+                                              PROP_PAC_URL,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingProxyPrivate,
+                                              pac_url);
 
     /**
      * NMSettingProxy:pac-script:
@@ -388,12 +326,13 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
      * example: PAC_SCRIPT=/home/joe/proxy.pac
      * ---end---
      */
-    obj_properties[PROP_PAC_SCRIPT] =
-        g_param_spec_string(NM_SETTING_PROXY_PAC_SCRIPT,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_PROXY_PAC_SCRIPT,
+                                              PROP_PAC_SCRIPT,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingProxyPrivate,
+                                              pac_script);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

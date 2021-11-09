@@ -1445,7 +1445,7 @@ do_test_ssids_options_to_ptrarray(const char *const *ssids)
         const char *ssid  = ssids[i];
         GBytes *    bytes = ssids_arr->pdata[i];
 
-        g_assert(nm_utils_gbytes_equal_mem(bytes, ssid, strlen(ssid)));
+        g_assert(nm_g_bytes_equal_mem(bytes, ssid, strlen(ssid)));
     }
 }
 

@@ -2031,8 +2031,7 @@ write_dcb_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
                   "APP_FCOE",
                   nm_setting_dcb_get_app_fcoe_flags(s_dcb),
                   nm_setting_dcb_get_app_fcoe_priority(s_dcb));
-    if (nm_setting_dcb_get_app_fcoe_flags(s_dcb) & NM_SETTING_DCB_FLAG_ENABLE)
-        svSetValueStr(ifcfg, KEY_DCB_APP_FCOE_MODE, nm_setting_dcb_get_app_fcoe_mode(s_dcb));
+    svSetValueStr(ifcfg, KEY_DCB_APP_FCOE_MODE, nm_setting_dcb_get_app_fcoe_mode(s_dcb));
 
     write_dcb_app(ifcfg,
                   "APP_ISCSI",

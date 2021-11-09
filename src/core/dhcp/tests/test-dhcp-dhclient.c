@@ -830,7 +830,7 @@ test_one_duid(const char *escaped, const guint8 *unescaped, guint len)
 
     t1 = nm_dhcp_dhclient_unescape_duid(escaped);
     g_assert(t1);
-    g_assert(nm_utils_gbytes_equal_mem(t1, unescaped, len));
+    g_assert(nm_g_bytes_equal_mem(t1, unescaped, len));
 
     t2 = g_bytes_new(unescaped, len);
     w  = nm_dhcp_dhclient_escape_duid(t2);
@@ -879,7 +879,7 @@ test_read_duid_from_leasefile(void)
     duid = nm_dhcp_dhclient_read_duid(TEST_DIR "/test-dhclient-duid.leases", &error);
     nmtst_assert_success(duid, error);
 
-    g_assert(nm_utils_gbytes_equal_mem(duid, expected, G_N_ELEMENTS(expected)));
+    g_assert(nm_g_bytes_equal_mem(duid, expected, G_N_ELEMENTS(expected)));
 }
 
 static void

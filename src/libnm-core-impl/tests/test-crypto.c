@@ -135,7 +135,7 @@ test_load_private_key(const char *path,
         /* Compare the crypto decrypted key against a known-good decryption */
         if (!g_file_get_contents(decrypted_path, &contents, &length, NULL))
             g_assert_not_reached();
-        g_assert(nm_utils_gbytes_equal_mem(array, contents, length));
+        g_assert(nm_g_bytes_equal_mem(array, contents, length));
     }
 }
 

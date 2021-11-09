@@ -1156,9 +1156,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingWirelessPrivate *priv    = NM_SETTING_WIRELESS_GET_PRIVATE(object);
 
     switch (prop_id) {
-    case PROP_SSID:
-        g_value_set_boxed(value, nm_setting_wireless_get_ssid(setting));
-        break;
     case PROP_MODE:
         g_value_set_string(value, nm_setting_wireless_get_mode(setting));
         break;
@@ -1168,17 +1165,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_CHANNEL:
         g_value_set_uint(value, nm_setting_wireless_get_channel(setting));
         break;
-    case PROP_BSSID:
-        g_value_set_string(value, nm_setting_wireless_get_bssid(setting));
-        break;
     case PROP_RATE:
         g_value_set_uint(value, nm_setting_wireless_get_rate(setting));
         break;
     case PROP_TX_POWER:
         g_value_set_uint(value, nm_setting_wireless_get_tx_power(setting));
-        break;
-    case PROP_MAC_ADDRESS:
-        g_value_set_string(value, nm_setting_wireless_get_mac_address(setting));
         break;
     case PROP_CLONED_MAC_ADDRESS:
         g_value_set_string(value, nm_setting_wireless_get_cloned_mac_address(setting));
@@ -1199,9 +1190,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                 ? nm_strv_dup((char **) priv->seen_bssids->pdata, priv->seen_bssids->len, TRUE)
                 : NULL);
         break;
-    case PROP_HIDDEN:
-        g_value_set_boolean(value, nm_setting_wireless_get_hidden(setting));
-        break;
     case PROP_POWERSAVE:
         g_value_set_uint(value, nm_setting_wireless_get_powersave(setting));
         break;
@@ -1215,7 +1203,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_enum(value, priv->ap_isolation);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1229,11 +1217,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     gboolean                  bool_val;
 
     switch (prop_id) {
-    case PROP_SSID:
-        if (priv->ssid)
-            g_bytes_unref(priv->ssid);
-        priv->ssid = g_value_dup_boxed(value);
-        break;
     case PROP_MODE:
         g_free(priv->mode);
         priv->mode = g_value_dup_string(value);
@@ -1245,20 +1228,11 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_CHANNEL:
         priv->channel = g_value_get_uint(value);
         break;
-    case PROP_BSSID:
-        g_free(priv->bssid);
-        priv->bssid = _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
-        break;
     case PROP_RATE:
         priv->rate = g_value_get_uint(value);
         break;
     case PROP_TX_POWER:
         priv->tx_power = g_value_get_uint(value);
-        break;
-    case PROP_MAC_ADDRESS:
-        g_free(priv->device_mac_address);
-        priv->device_mac_address =
-            _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
         break;
     case PROP_CLONED_MAC_ADDRESS:
         bool_val = !!priv->cloned_mac_address;
@@ -1311,9 +1285,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         }
         break;
     }
-    case PROP_HIDDEN:
-        priv->hidden = g_value_get_boolean(value);
-        break;
     case PROP_POWERSAVE:
         priv->powersave = g_value_get_uint(value);
         break;
@@ -1327,7 +1298,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         priv->ap_isolation = g_value_get_enum(value);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1368,10 +1339,6 @@ finalize(GObject *object)
     g_free(priv->mode);
     g_free(priv->band);
 
-    if (priv->ssid)
-        g_bytes_unref(priv->ssid);
-    g_free(priv->bssid);
-    g_free(priv->device_mac_address);
     g_free(priv->cloned_mac_address);
     g_free(priv->generate_mac_address_mask);
     g_array_unref(priv->mac_address_blacklist);
@@ -1413,11 +1380,13 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * example: ESSID="Quick Net"
      * ---end---
      */
-    obj_properties[PROP_SSID] = g_param_spec_boxed(NM_SETTING_WIRELESS_SSID,
-                                                   "",
-                                                   "",
-                                                   G_TYPE_BYTES,
-                                                   G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_bytes(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_WIRELESS_SSID,
+                                             PROP_SSID,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingWirelessPrivate,
+                                             ssid);
 
     /**
      * NMSettingWireless:mode:

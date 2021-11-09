@@ -109,8 +109,7 @@ nm_setting_vrf_class_init(NMSettingVrfClass *klass)
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
-    setting_class->verify          = verify;
-    setting_class->finalize_direct = TRUE;
+    setting_class->verify = verify;
 
     /**
      * NMSettingVrf:table:

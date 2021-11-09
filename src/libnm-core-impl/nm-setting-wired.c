@@ -1230,21 +1230,13 @@ finalize(GObject *object)
 {
     NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE(object);
 
-    g_free(priv->port);
-    g_free(priv->duplex);
-    g_free(priv->s390_nettype);
-
     _s390_options_clear(priv);
 
-    g_free(priv->device_mac_address);
     g_free(priv->cloned_mac_address);
-    g_free(priv->generate_mac_address_mask);
     g_array_unref(priv->mac_address_blacklist);
 
     if (priv->s390_subchannels)
         g_strfreev(priv->s390_subchannels);
-
-    g_free(priv->wol_password);
 
     G_OBJECT_CLASS(nm_setting_wired_parent_class)->finalize(object);
 }

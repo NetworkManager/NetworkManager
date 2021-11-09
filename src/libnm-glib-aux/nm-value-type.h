@@ -16,7 +16,18 @@ typedef enum _nm_packed {
     NM_VALUE_TYPE_UINT32 = 6,
     NM_VALUE_TYPE_UINT   = 7,
     NM_VALUE_TYPE_UINT64 = 8,
-    NM_VALUE_TYPE_STRING = 9,
+
+    /* Flags are for G_TYPE_FLAGS. That is, internally they are tracked
+     * as a guint, they have a g_param_spec_flags() property and they are
+     * serialized on D-Bus as "u". */
+    NM_VALUE_TYPE_FLAGS = 9,
+
+    /* G_TYPE_ENUM */
+    NM_VALUE_TYPE_ENUM = 10,
+
+    NM_VALUE_TYPE_STRING = 11,
+
+    NM_VALUE_TYPE_BYTES = 12,
 } NMValueType;
 
 /*****************************************************************************/
@@ -83,6 +94,7 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
         NM_CMP_DIRECT(*((const gint32 *) p_a), *((const gint32 *) p_b));
         return 0;
     case NM_VALUE_TYPE_INT:
+    case NM_VALUE_TYPE_ENUM:
         NM_CMP_DIRECT(*((const int *) p_a), *((const int *) p_b));
         return 0;
     case NM_VALUE_TYPE_INT64:
@@ -92,6 +104,7 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
         NM_CMP_DIRECT(*((const guint32 *) p_a), *((const guint32 *) p_b));
         return 0;
     case NM_VALUE_TYPE_UINT:
+    case NM_VALUE_TYPE_FLAGS:
         NM_CMP_DIRECT(*((const guint *) p_a), *((const guint *) p_b));
         return 0;
     case NM_VALUE_TYPE_UINT64:
@@ -99,6 +112,8 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
         return 0;
     case NM_VALUE_TYPE_STRING:
         return nm_strcmp0(*((const char *const *) p_a), *((const char *const *) p_b));
+    case NM_VALUE_TYPE_BYTES:
+        return nm_g_bytes_equal0(*((const GBytes *const *) p_a), *((const GBytes *const *) p_b));
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
@@ -124,6 +139,7 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
         (*((gint32 *) dst) = *((const gint32 *) src));
         return;
     case NM_VALUE_TYPE_INT:
+    case NM_VALUE_TYPE_ENUM:
         (*((int *) dst) = *((const int *) src));
         return;
     case NM_VALUE_TYPE_INT64:
@@ -133,6 +149,7 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
         (*((guint32 *) dst) = *((const guint32 *) src));
         return;
     case NM_VALUE_TYPE_UINT:
+    case NM_VALUE_TYPE_FLAGS:
         (*((guint *) dst) = *((const guint *) src));
         return;
     case NM_VALUE_TYPE_UINT64:
@@ -141,8 +158,17 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
     case NM_VALUE_TYPE_STRING:
         /* self assignment safe! */
         if (*((char **) dst) != *((const char *const *) src)) {
-            g_free(*((char **) dst));
+            _nm_unused char *old = *((char **) dst);
+
             *((char **) dst) = g_strdup(*((const char *const *) src));
+        }
+        return;
+    case NM_VALUE_TYPE_BYTES:
+        /* self assignment safe! */
+        if (*((GBytes **) dst) != *((const GBytes *const *) src)) {
+            _nm_unused gs_unref_bytes GBytes *old = *((GBytes **) dst);
+
+            *((GBytes **) dst) = g_bytes_ref(*((GBytes *const *) src));
         }
         return;
     case NM_VALUE_TYPE_NONE:
@@ -176,7 +202,8 @@ nm_value_type_get_from_variant(NMValueType value_type,
         return;
     case NM_VALUE_TYPE_STRING:
         if (clone) {
-            g_free(*((char **) dst));
+            _nm_unused gs_free char *old = *((char **) dst);
+
             *((char **) dst) = g_variant_dup_string(variant, NULL);
         } else {
             /* we don't clone the string, nor free the previous value. */
@@ -184,10 +211,13 @@ nm_value_type_get_from_variant(NMValueType value_type,
         }
         return;
 
+    case NM_VALUE_TYPE_BYTES:
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
-        /* "int" and "uint" also does not have a defined variant type, because it's not
-         * clear how many bits we would need. */
+    case NM_VALUE_TYPE_ENUM:
+    case NM_VALUE_TYPE_FLAGS:
+        /* These types don't have a defined variant type, because it's not
+         * clear how many bits we would need or how to handle the type. */
 
         /* fall-through */
     case NM_VALUE_TYPE_NONE:
@@ -200,7 +230,8 @@ nm_value_type_get_from_variant(NMValueType value_type,
 static inline GVariant *
 nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
 {
-    const char *v_string;
+    const char *  v_string;
+    const GBytes *v_bytes;
 
     switch (value_type) {
     case NM_VALUE_TYPE_BOOL:
@@ -216,11 +247,16 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
     case NM_VALUE_TYPE_STRING:
         v_string = *((const char *const *) src);
         return v_string ? g_variant_new_string(v_string) : NULL;
+    case NM_VALUE_TYPE_BYTES:
+        v_bytes = *((const GBytes *const *) src);
+        return v_bytes ? nm_g_bytes_to_variant_ay(v_bytes) : NULL;
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
-        /* "int" and "uint" also does not have a defined variant type, because it's not
-         * clear how many bits we would need. */
+    case NM_VALUE_TYPE_ENUM:
+    case NM_VALUE_TYPE_FLAGS:
+        /* These types don't have a defined variant type, because it's not
+         * clear how many bits we would need or how to handle the type. */
 
         /* fall-through */
     case NM_VALUE_TYPE_NONE:
@@ -247,11 +283,15 @@ nm_value_type_get_variant_type(NMValueType value_type)
         return G_VARIANT_TYPE_UINT64;
     case NM_VALUE_TYPE_STRING:
         return G_VARIANT_TYPE_STRING;
+    case NM_VALUE_TYPE_BYTES:
+        return G_VARIANT_TYPE_BYTESTRING;
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
-        /* "int" and "uint" also does not have a defined variant type, because it's not
-         * clear how many bits we would need. */
+    case NM_VALUE_TYPE_ENUM:
+    case NM_VALUE_TYPE_FLAGS:
+        /* These types don't have a defined variant type, because it's not
+         * clear how many bits we would need or how to handle the type. */
 
         /* fall-through */
     case NM_VALUE_TYPE_NONE:

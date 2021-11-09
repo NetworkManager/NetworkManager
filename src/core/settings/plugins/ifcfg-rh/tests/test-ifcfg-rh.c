@@ -3085,7 +3085,7 @@ test_read_wifi_wpa_psk_hex(void)
 
     ssid = nm_setting_wireless_get_ssid(s_wifi);
     g_assert(ssid);
-    g_assert(nm_utils_gbytes_equal_mem(ssid, expected_ssid, strlen(expected_ssid)));
+    g_assert(nm_g_bytes_equal_mem(ssid, expected_ssid, strlen(expected_ssid)));
 
     s_wsec = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
     g_assert_cmpstr(nm_setting_wireless_security_get_key_mgmt(s_wsec), ==, "wpa-psk");

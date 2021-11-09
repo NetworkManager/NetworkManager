@@ -477,7 +477,7 @@ truncate:
 /*****************************************************************************/
 
 GBytes *
-nm_gbytes_get_empty(void)
+nm_g_bytes_get_empty(void)
 {
     static GBytes *bytes = NULL;
     GBytes *       b;
@@ -509,8 +509,18 @@ nm_g_bytes_new_from_str(const char *str)
     return g_bytes_new_take(nm_memdup(str, l + 1u), l);
 }
 
+GBytes *
+nm_g_bytes_new_from_variant_ay(GVariant *var)
+{
+    if (!var)
+        return NULL;
+    if (!g_variant_is_of_type(var, G_VARIANT_TYPE_BYTESTRING))
+        g_return_val_if_reached(NULL);
+    return g_variant_get_data_as_bytes(var);
+}
+
 /**
- * nm_utils_gbytes_equal_mem:
+ * nm_g_bytes_equal_mem:
  * @bytes: (allow-none): a #GBytes array to compare. Note that
  *   %NULL is treated like an #GBytes array of length zero.
  * @mem_data: the data pointer with @mem_len bytes
@@ -520,7 +530,7 @@ nm_g_bytes_new_from_str(const char *str)
  *   special case, a %NULL @bytes is treated like an empty array.
  */
 gboolean
-nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len)
+nm_g_bytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len)
 {
     gconstpointer p;
     gsize         l;
@@ -538,7 +548,7 @@ nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len)
 }
 
 GVariant *
-nm_utils_gbytes_to_variant_ay(GBytes *bytes)
+nm_g_bytes_to_variant_ay(const GBytes *bytes)
 {
     const guint8 *p = NULL;
     gsize         l = 0;
@@ -546,7 +556,7 @@ nm_utils_gbytes_to_variant_ay(GBytes *bytes)
     if (!bytes) {
         /* for convenience, accept NULL to return an empty variant */
     } else
-        p = g_bytes_get_data(bytes, &l);
+        p = g_bytes_get_data((GBytes *) bytes, &l);
 
     return nm_g_variant_new_ay(p, l);
 }
@@ -670,6 +680,27 @@ GVariant *
 nm_g_variant_singleton_ao(void)
 {
     return _variant_singleton_get_array("o");
+}
+
+GVariant *
+nm_g_variant_maybe_singleton_i(gint32 value)
+{
+    /* Warning: this function always returns a non-floating reference
+     * that must be consumed (and later unrefed) by the caller.
+     *
+     * The instance is either a singleton instance or a newly created
+     * instance.
+     *
+     * The idea of this is that common values (zero) can use the immutable
+     * singleton/flyweight instance and avoid allocating a new instance in
+     * the (presumable) common case.
+     */
+    switch (value) {
+    case 0:
+        return g_variant_ref(nm_g_variant_singleton_i_0());
+    default:
+        return g_variant_take_ref(g_variant_new_int32(value));
+    }
 }
 
 /*****************************************************************************/

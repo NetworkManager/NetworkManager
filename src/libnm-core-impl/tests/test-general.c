@@ -7119,7 +7119,7 @@ test_hexstr2bin(void)
             g_assert(b);
         else
             g_assert(!b);
-        g_assert(nm_utils_gbytes_equal_mem(b, items[i].expected, items[i].expected_len));
+        g_assert(nm_g_bytes_equal_mem(b, items[i].expected, items[i].expected_len));
     }
 }
 

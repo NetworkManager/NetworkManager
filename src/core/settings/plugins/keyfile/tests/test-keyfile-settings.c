@@ -992,7 +992,7 @@ test_read_intlike_ssid(void)
 
     ssid = nm_setting_wireless_get_ssid(s_wifi);
     g_assert(ssid);
-    g_assert(nm_utils_gbytes_equal_mem(ssid, expected_ssid, strlen(expected_ssid)));
+    g_assert(nm_g_bytes_equal_mem(ssid, expected_ssid, strlen(expected_ssid)));
 }
 
 static void
@@ -1010,7 +1010,7 @@ test_read_intlike_ssid_2(void)
 
     ssid = nm_setting_wireless_get_ssid(s_wifi);
     g_assert(ssid);
-    g_assert(nm_utils_gbytes_equal_mem(ssid, expected_ssid, strlen(expected_ssid)));
+    g_assert(nm_g_bytes_equal_mem(ssid, expected_ssid, strlen(expected_ssid)));
 }
 
 static void
@@ -1774,7 +1774,7 @@ test_write_wired_8021x_tls_connection_blob(void)
 
     password_raw = nm_setting_802_1x_get_password_raw(s_8021x);
     g_assert(password_raw);
-    g_assert(nm_utils_gbytes_equal_mem(password_raw, PASSWORD_RAW, NM_STRLEN(PASSWORD_RAW)));
+    g_assert(nm_g_bytes_equal_mem(password_raw, PASSWORD_RAW, NM_STRLEN(PASSWORD_RAW)));
 
     unlink(testfile);
 
@@ -2160,7 +2160,7 @@ test_read_new_wireless_group_names(void)
 
     ssid = nm_setting_wireless_get_ssid(s_wifi);
     g_assert(ssid);
-    g_assert(nm_utils_gbytes_equal_mem(ssid, expected_ssid, strlen(expected_ssid)));
+    g_assert(nm_g_bytes_equal_mem(ssid, expected_ssid, strlen(expected_ssid)));
 
     g_assert_cmpstr(nm_setting_wireless_get_mode(s_wifi), ==, NM_SETTING_WIRELESS_MODE_INFRA);
 
