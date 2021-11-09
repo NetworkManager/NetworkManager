@@ -427,11 +427,14 @@ nm_wifi_p2p_peer_update_from_iwd_object(NMWifiP2PPeer *peer, GDBusObject *obj)
     gboolean                        changed    = FALSE;
     nm_auto_ref_string NMRefString *peer_path  = NULL;
     gs_unref_object GDBusProxy     *peer_proxy = NULL;
+    gs_unref_object GDBusProxy     *wfd_proxy  = NULL;
     GVariant                       *value;
+    gs_unref_bytes GBytes          *wfd_ies = NULL;
 
     g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(peer), FALSE);
 
     peer_proxy = G_DBUS_PROXY(g_dbus_object_get_interface(obj, NM_IWD_P2P_PEER_INTERFACE));
+    wfd_proxy  = G_DBUS_PROXY(g_dbus_object_get_interface(obj, NM_IWD_P2P_WFD_INTERFACE));
     g_return_val_if_fail(peer_proxy, FALSE);
 
     peer_path = nm_ref_string_new(g_dbus_object_get_object_path(obj));
@@ -456,6 +459,45 @@ nm_wifi_p2p_peer_update_from_iwd_object(NMWifiP2PPeer *peer, GDBusObject *obj)
     if (value && g_variant_is_of_type(value, G_VARIANT_TYPE_STRING))
         changed |= nm_wifi_p2p_peer_set_address(peer, g_variant_get_string(value, NULL));
     nm_g_variant_unref(value);
+
+    if (wfd_proxy) {
+        NMIwdWfdInfo wfd = {};
+
+        value      = g_dbus_proxy_get_cached_property(wfd_proxy, "Source");
+        wfd.source = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                     && g_variant_get_boolean(value);
+        nm_g_variant_unref(value);
+
+        value    = g_dbus_proxy_get_cached_property(wfd_proxy, "Sink");
+        wfd.sink = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                   && g_variant_get_boolean(value);
+        nm_g_variant_unref(value);
+
+        value    = g_dbus_proxy_get_cached_property(wfd_proxy, "Port");
+        wfd.port = (value && g_variant_is_of_type(value, G_VARIANT_TYPE_UINT16))
+                       ? g_variant_get_uint16(value)
+                       : 0;
+        nm_g_variant_unref(value);
+
+        value         = g_dbus_proxy_get_cached_property(wfd_proxy, "HasAudio");
+        wfd.has_audio = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                        && g_variant_get_boolean(value);
+        nm_g_variant_unref(value);
+
+        value        = g_dbus_proxy_get_cached_property(wfd_proxy, "HasUIBC");
+        wfd.has_uibc = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                       && g_variant_get_boolean(value);
+        nm_g_variant_unref(value);
+
+        value      = g_dbus_proxy_get_cached_property(wfd_proxy, "HasContentProtection");
+        wfd.has_cp = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                     && g_variant_get_boolean(value);
+        nm_g_variant_unref(value);
+
+        wfd_ies = nm_wifi_utils_build_wfd_ies(&wfd);
+    }
+
+    changed |= nm_wifi_p2p_peer_set_wfd_ies(peer, wfd_ies);
 
     g_object_thaw_notify(G_OBJECT(peer));
 
