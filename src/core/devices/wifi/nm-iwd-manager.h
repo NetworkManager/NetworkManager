@@ -25,6 +25,7 @@
 #define NM_IWD_AP_INTERFACE            "net.connman.iwd.AccessPoint"
 #define NM_IWD_ADHOC_INTERFACE         "net.connman.iwd.AdHoc"
 #define NM_IWD_STATION_INTERFACE       "net.connman.iwd.Station"
+#define NM_IWD_P2P_PEER_INTERFACE      "net.connman.iwd.p2p.Peer"
 
 #define NM_TYPE_IWD_MANAGER (nm_iwd_manager_get_type())
 #define NM_IWD_MANAGER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_IWD_MANAGER, NMIwdManager))
