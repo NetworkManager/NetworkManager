@@ -101,14 +101,16 @@ nm_wifi_p2p_peers_get_paths(const CList *peers_lst_head)
 }
 
 NMWifiP2PPeer *
-nm_wifi_p2p_peers_find_first_compatible(const CList *peers_lst_head, NMConnection *connection)
+nm_wifi_p2p_peers_find_first_compatible(const CList  *peers_lst_head,
+                                        NMConnection *connection,
+                                        gboolean      check_wfd)
 {
     NMWifiP2PPeer *peer;
 
     g_return_val_if_fail(connection, NULL);
 
     c_list_for_each_entry (peer, peers_lst_head, peers_lst) {
-        if (nm_wifi_p2p_peer_check_compatible(peer, connection))
+        if (nm_wifi_p2p_peer_check_compatible(peer, connection, check_wfd))
             return peer;
     }
     return NULL;
@@ -543,7 +545,7 @@ nm_wifi_p2p_peer_to_string(const NMWifiP2PPeer *self, char *str_buf, gsize buf_l
 }
 
 gboolean
-nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection)
+nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection, gboolean check_wfd)
 {
     NMWifiP2PPeerPrivate *priv;
     NMSettingWifiP2P     *s_wifi_p2p;
@@ -561,6 +563,10 @@ nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection)
 
     hwaddr = nm_setting_wifi_p2p_get_peer(s_wifi_p2p);
     if (hwaddr && (!priv->address || !nm_utils_hwaddr_matches(hwaddr, -1, priv->address, -1)))
+        return FALSE;
+
+    if (check_wfd && nm_setting_wifi_p2p_get_wfd_ies(s_wifi_p2p)
+        && !nm_wifi_p2p_peer_get_wfd_ies(self))
         return FALSE;
 
     return TRUE;
