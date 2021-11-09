@@ -194,14 +194,14 @@ check_connection_available(NMDevice *                     device,
             return FALSE;
         }
 
-        if (!nm_wifi_p2p_peer_check_compatible(peer, connection)) {
+        if (!nm_wifi_p2p_peer_check_compatible(peer, connection, FALSE)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                        "Requested P2P peer is not compatible with profile");
             return FALSE;
         }
     } else {
-        peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection);
+        peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, FALSE);
         if (!peer) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
@@ -599,7 +599,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         priv->wfd_registered = TRUE;
     }
 
-    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection);
+    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, TRUE);
     if (!peer) {
         iwd_request_discovery(self, 10);
         return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -677,7 +677,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         NM_IS_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P)));
 
     /* The prepare stage ensures that the peer has been found */
-    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection);
+    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, TRUE);
     if (!peer) {
         cleanup_connect_attempt(self);
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_PEER_NOT_FOUND);
@@ -745,7 +745,7 @@ act_check_new_peer_compatible(NMDeviceIwdP2P *self, NMWifiP2PPeer *peer)
     connection = nm_device_get_applied_connection(device);
     nm_assert(NM_IS_CONNECTION(connection));
 
-    if (nm_wifi_p2p_peer_check_compatible(peer, connection)) {
+    if (nm_wifi_p2p_peer_check_compatible(peer, connection, TRUE)) {
         /* A peer for the connection was found, cancel the timeout and go to configure state. */
         iwd_release_discovery(self);
         nm_device_activate_schedule_stage2_device_config(device, FALSE);

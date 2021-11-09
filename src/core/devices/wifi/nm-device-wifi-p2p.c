@@ -168,7 +168,7 @@ check_connection_peer_joined(NMDeviceWifiP2P *device)
         return FALSE;
 
     /* NOTE: We currently only support connections to a specific peer */
-    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, conn);
+    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, conn, FALSE);
     if (!peer)
         return FALSE;
 
@@ -369,7 +369,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         NM_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P));
     g_return_val_if_fail(s_wifi_p2p, NM_ACT_STAGE_RETURN_FAILURE);
 
-    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection);
+    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, FALSE);
     if (!peer) {
         /* Set up a timeout on the find attempt and run a find for the same period of time */
         if (priv->find_peer_timeout_id == 0) {
@@ -436,7 +436,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         NM_IS_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P)));
 
     /* The prepare stage ensures that the peer has been found */
-    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection);
+    peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, FALSE);
     if (!peer) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_PEER_NOT_FOUND);
         return NM_ACT_STAGE_RETURN_FAILURE;
@@ -521,7 +521,8 @@ peer_add_remove(NMDeviceWifiP2P *self,
             connection = nm_device_get_applied_connection(device);
             nm_assert(NM_IS_CONNECTION(connection));
 
-            peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection);
+            peer =
+                nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection, FALSE);
             if (peer) {
                 /* A peer for the connection was found, cancel the timeout and go to configure state. */
                 nm_clear_g_source(&priv->find_peer_timeout_id);
