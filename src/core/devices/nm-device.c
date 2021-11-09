@@ -3074,6 +3074,12 @@ _dev_ip_state_check(NMDevice *self, int addr_family)
         return;
     }
 
+    if (priv->ipdhcp_data_x[IS_IPv4].state == NM_DEVICE_IP_STATE_READY) {
+        ip_state = NM_DEVICE_IP_STATE_READY;
+        _LOGW(LOGD_DEVICE, "WE ARE HERE, IP_STATE_READY from DHCP!");
+        goto got_ip_state;
+    }
+
     if (priv->ip_data_x[IS_IPv4].state == NM_DEVICE_IP_STATE_NONE) {
         ip_state = NM_DEVICE_IP_STATE_NONE;
         goto got_ip_state;
