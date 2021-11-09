@@ -18,6 +18,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-utils.h"
 #include "nm-wifi-utils.h"
+#include "nm-iwd-manager.h"
 #include "libnm-platform/nm-platform.h"
 #include "supplicant/nm-supplicant-types.h"
 
@@ -419,6 +420,48 @@ nm_wifi_p2p_peer_update_from_properties(NMWifiP2PPeer *peer, const NMSupplicantP
     return changed;
 }
 
+gboolean
+nm_wifi_p2p_peer_update_from_iwd_object(NMWifiP2PPeer *peer, GDBusObject *obj)
+{
+    NMWifiP2PPeerPrivate *priv;
+    gboolean              changed             = FALSE;
+    nm_auto_ref_string NMRefString *peer_path = NULL;
+    gs_unref_object GDBusProxy *peer_proxy    = NULL;
+    GVariant *                  value;
+
+    g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(peer), FALSE);
+
+    peer_proxy = G_DBUS_PROXY(g_dbus_object_get_interface(obj, NM_IWD_P2P_PEER_INTERFACE));
+    g_return_val_if_fail(peer_proxy, FALSE);
+
+    peer_path = nm_ref_string_new(g_dbus_object_get_object_path(obj));
+    priv      = NM_WIFI_P2P_PEER_GET_PRIVATE(peer);
+    nm_assert(!priv->supplicant_path || priv->supplicant_path == peer_path);
+
+    g_object_freeze_notify(G_OBJECT(peer));
+
+    if (!priv->supplicant_path) {
+        priv->supplicant_path = g_steal_pointer(&peer_path);
+        changed               = TRUE;
+    }
+
+    value = g_dbus_proxy_get_cached_property(peer_proxy, "Name");
+    if (value && g_variant_is_of_type(value, G_VARIANT_TYPE_STRING))
+        changed |= nm_wifi_p2p_peer_set_name(peer, g_variant_get_string(value, NULL));
+    else
+        changed |= nm_wifi_p2p_peer_set_name(peer, "");
+    g_variant_unref(value);
+
+    value = g_dbus_proxy_get_cached_property(peer_proxy, "Address");
+    if (value && g_variant_is_of_type(value, G_VARIANT_TYPE_STRING))
+        changed |= nm_wifi_p2p_peer_set_address(peer, g_variant_get_string(value, NULL));
+    g_variant_unref(value);
+
+    g_object_thaw_notify(G_OBJECT(peer));
+
+    return changed;
+}
+
 const char *
 nm_wifi_p2p_peer_to_string(const NMWifiP2PPeer *self, char *str_buf, gsize buf_len, gint32 now_s)
 {
@@ -556,6 +599,17 @@ nm_wifi_p2p_peer_new_from_properties(const NMSupplicantPeerInfo *peer_info)
 
     peer = g_object_new(NM_TYPE_WIFI_P2P_PEER, NULL);
     nm_wifi_p2p_peer_update_from_properties(peer, peer_info);
+    return peer;
+}
+
+NMWifiP2PPeer *
+nm_wifi_p2p_peer_new_from_iwd_object(GDBusObject *obj)
+{
+    NMWifiP2PPeer *peer;
+
+    /* TODO: Set the flags here */
+    peer = g_object_new(NM_TYPE_WIFI_P2P_PEER, NULL);
+    nm_wifi_p2p_peer_update_from_iwd_object(peer, obj);
     return peer;
 }
 
