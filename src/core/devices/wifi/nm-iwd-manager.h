@@ -59,4 +59,8 @@ nm_iwd_manager_get_dbus_interface(NMIwdManager *self, const char *path, const ch
 
 gboolean nm_iwd_manager_get_netconfig_enabled(NMIwdManager *self);
 
+gboolean nm_iwd_manager_check_wfd_info_compatible(NMIwdManager *self, const NMIwdWfdInfo *wfd_info);
+gboolean nm_iwd_manager_register_wfd(NMIwdManager *self, const NMIwdWfdInfo *wfd_info);
+void     nm_iwd_manager_unregister_wfd(NMIwdManager *self);
+
 #endif /* __NETWORKMANAGER_IWD_MANAGER_H__ */
