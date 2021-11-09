@@ -40,6 +40,7 @@ typedef struct {
     GCancellable *connect_cancellable;
 
     bool enabled : 1;
+    bool wfd_registered : 1;
 } NMDeviceIwdP2PPrivate;
 
 struct _NMDeviceIwdP2P {
@@ -164,6 +165,70 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
                                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                    "P2P implies 'auto' IPv4 config method");
         return FALSE;
+    }
+
+    return TRUE;
+}
+
+static gboolean
+check_connection_available(NMDevice *                     device,
+                           NMConnection *                 connection,
+                           NMDeviceCheckConAvailableFlags flags,
+                           const char *                   specific_object,
+                           GError **                      error)
+{
+    NMDeviceIwdP2P *       self = NM_DEVICE_IWD_P2P(device);
+    NMDeviceIwdP2PPrivate *priv = NM_DEVICE_IWD_P2P_GET_PRIVATE(self);
+    NMSettingWifiP2P *     s_wifi_p2p;
+    GBytes *               wfd_ies;
+    NMWifiP2PPeer *        peer;
+
+    if (specific_object) {
+        peer = nm_wifi_p2p_peer_lookup_for_device(NM_DEVICE(self), specific_object);
+        if (!peer) {
+            g_set_error(error,
+                        NM_UTILS_ERROR,
+                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                        "The P2P peer %s is unknown",
+                        specific_object);
+            return FALSE;
+        }
+
+        if (!nm_wifi_p2p_peer_check_compatible(peer, connection)) {
+            nm_utils_error_set_literal(error,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       "Requested P2P peer is not compatible with profile");
+            return FALSE;
+        }
+    } else {
+        peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection);
+        if (!peer) {
+            nm_utils_error_set_literal(error,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       "No compatible P2P peer found");
+            return FALSE;
+        }
+    }
+
+    s_wifi_p2p =
+        NM_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P));
+    wfd_ies = nm_setting_wifi_p2p_get_wfd_ies(s_wifi_p2p);
+    if (wfd_ies) {
+        NMIwdWfdInfo wfd_info = {};
+
+        if (!nm_wifi_utils_parse_wfd_ies(wfd_ies, &wfd_info)) {
+            nm_utils_error_set_literal(error,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
+                                       "Can't parse connection WFD IEs");
+            return FALSE;
+        }
+
+        if (!nm_iwd_manager_check_wfd_info_compatible(nm_iwd_manager_get(), &wfd_info)) {
+            nm_utils_error_set_literal(error,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       "An incompatible WFD connection is active");
+            return FALSE;
+        }
     }
 
     return TRUE;
@@ -433,6 +498,11 @@ cleanup_connect_attempt(NMDeviceIwdP2P *self)
     if (priv->find_peer_timeout_source)
         iwd_release_discovery(self);
 
+    if (priv->wfd_registered) {
+        nm_iwd_manager_unregister_wfd(nm_iwd_manager_get());
+        priv->wfd_registered = FALSE;
+    }
+
     if (!priv->dbus_peer_proxy)
         return;
 
@@ -477,6 +547,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMConnection *         connection;
     NMSettingWifiP2P *     s_wifi_p2p;
     NMWifiP2PPeer *        peer;
+    GBytes *               wfd_ies;
 
     if (!priv->enabled) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
@@ -489,6 +560,44 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     s_wifi_p2p =
         NM_SETTING_WIFI_P2P(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P));
     g_return_val_if_fail(s_wifi_p2p, NM_ACT_STAGE_RETURN_FAILURE);
+
+    /* Set the WFD IEs before connecting and before peer discovery if that is needed,
+     * usually the WFD IEs need to actually be sent in the Probe frames before we can
+     * receive the peers' WFD IEs and decide whether the peer is compatible with the
+     * requested WFD parameters.  In the current setup we only get the WFD IEs from
+     * the connection settings so during a normal find the client will not be getting
+     * any WFD information about the peers and has to decide to connect based on the
+     * name and device type (category + subcategory) -- assuming that the peers even
+     * bother to reply to probes without WFD IEs.  We'll then need to redo the find
+     * here in PREPARE because IWD wants to see that the parameters in the peer's
+     * WFD IEs match those in our WFD IEs.  The normal use case for IWD is that the
+     * WFD client registers its WFD parameters as soon as it starts and they remain
+     * registered during the find and then during the connect.  */
+    wfd_ies = nm_setting_wifi_p2p_get_wfd_ies(s_wifi_p2p);
+    if (wfd_ies) {
+        NMIwdWfdInfo wfd_info = {};
+
+        if (!nm_wifi_utils_parse_wfd_ies(wfd_ies, &wfd_info)) {
+            _LOGE(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi-p2p) Can't parse connection WFD IEs");
+            NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+            return NM_ACT_STAGE_RETURN_FAILURE;
+        }
+
+        if (!nm_iwd_manager_check_wfd_info_compatible(nm_iwd_manager_get(), &wfd_info)) {
+            _LOGE(LOGD_DEVICE | LOGD_WIFI,
+                  "Activation: (wifi-p2p) An incompatible WFD connection is active");
+            NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+            return NM_ACT_STAGE_RETURN_FAILURE;
+        }
+
+        if (!nm_iwd_manager_register_wfd(nm_iwd_manager_get(), &wfd_info)) {
+            _LOGE(LOGD_DEVICE | LOGD_WIFI, "Activation: (wifi-p2p) Can't register WFD service");
+            NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+            return NM_ACT_STAGE_RETURN_FAILURE;
+        }
+
+        priv->wfd_registered = TRUE;
+    }
 
     peer = nm_wifi_p2p_peers_find_first_compatible(&priv->peers_lst_head, connection);
     if (!peer) {
@@ -1130,9 +1239,9 @@ nm_device_iwd_p2p_class_init(NMDeviceIwdP2PClass *klass)
     device_class->link_types           = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_WIFI_P2P);
     device_class->get_type_description = get_type_description;
 
-    /* Do we need compatibility checking or is the default good enough? */
     device_class->is_available                = is_available;
     device_class->check_connection_compatible = check_connection_compatible;
+    device_class->check_connection_available  = check_connection_available;
     device_class->complete_connection         = complete_connection;
     device_class->get_enabled                 = get_enabled;
     device_class->set_enabled                 = set_enabled;
