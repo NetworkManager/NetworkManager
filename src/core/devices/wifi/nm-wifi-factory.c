@@ -76,6 +76,7 @@ create_device(NMDeviceFactory      *factory,
 {
     gs_free char *backend_free = NULL;
     const char   *backend;
+    _NM80211Mode  mode;
 
     g_return_val_if_fail(iface != NULL, NULL);
     g_return_val_if_fail(plink != NULL, NULL);
@@ -84,6 +85,20 @@ create_device(NMDeviceFactory      *factory,
 
     if (plink->type != NM_LINK_TYPE_WIFI)
         return nm_device_olpc_mesh_new(iface);
+
+    /* Ignore monitor-mode and other unhandled interface types.
+     * FIXME: keep TYPE_MONITOR devices in UNAVAILABLE state and manage
+     * them if/when they change to a handled type.
+     */
+    mode = nm_platform_wifi_get_mode(NM_PLATFORM_GET, plink->ifindex);
+    if (!NM_IN_SET(mode,
+                   _NM_802_11_MODE_INFRA,
+                   _NM_802_11_MODE_ADHOC,
+                   _NM_802_11_MODE_AP,
+                   _NM_802_11_MODE_MESH)) {
+        *out_ignore = TRUE;
+        return NULL;
+    }
 
     backend = nm_config_data_get_device_config_by_pllink(NM_CONFIG_GET_DATA,
                                                          NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_BACKEND,
@@ -103,23 +118,12 @@ create_device(NMDeviceFactory      *factory,
     if (!g_ascii_strcasecmp(backend, "wpa_supplicant")) {
         NMDevice                 *device;
         _NMDeviceWifiCapabilities capabilities;
-        _NM80211Mode              mode;
 
         if (!nm_platform_wifi_get_capabilities(NM_PLATFORM_GET, plink->ifindex, &capabilities)) {
             nm_log_warn(LOGD_PLATFORM | LOGD_WIFI,
                         "(%s) failed to initialize Wi-Fi driver for ifindex %d",
                         iface,
                         plink->ifindex);
-            return NULL;
-        }
-
-        /* Ignore monitor-mode and other unhandled interface types.
-         * FIXME: keep TYPE_MONITOR devices in UNAVAILABLE state and manage
-         * them if/when they change to a handled type.
-         */
-        mode = nm_platform_wifi_get_mode(NM_PLATFORM_GET, plink->ifindex);
-        if (mode == _NM_802_11_MODE_UNKNOWN) {
-            *out_ignore = TRUE;
             return NULL;
         }
 
