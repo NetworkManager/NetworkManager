@@ -2636,6 +2636,7 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
     nm_l3_config_data_set_mdns(l3cd, _prop_get_connection_mdns(self));
     nm_l3_config_data_set_llmnr(l3cd, _prop_get_connection_llmnr(self));
     nm_l3_config_data_set_dns_over_tls(l3cd, _prop_get_connection_dns_over_tls(self));
+    nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self));
     return l3cd;
 }
 
