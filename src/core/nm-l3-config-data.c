@@ -2385,7 +2385,8 @@ nm_l3_config_data_add_dependent_onlink_routes(NML3ConfigData *self, int addr_fam
         if (nm_ip_addr_is_null(addr_family, p_gateway))
             continue;
 
-        if (_data_get_direct_route_for_host(
+        if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route_src)
+            || _data_get_direct_route_for_host(
                 self,
                 addr_family,
                 p_gateway,
