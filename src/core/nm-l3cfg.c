@@ -3404,7 +3404,8 @@ _l3_hook_add_obj_cb(const NML3ConfigData *     l3cd,
 
         if (!NM_IN_SET(acd_data->info.state,
                        NM_L3_ACD_ADDR_STATE_READY,
-                       NM_L3_ACD_ADDR_STATE_DEFENDING)) {
+                       NM_L3_ACD_ADDR_STATE_DEFENDING,
+                       NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED)) {
             acd_bad = TRUE;
             goto out_ip4_address;
         }
