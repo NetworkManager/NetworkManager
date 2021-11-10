@@ -2723,10 +2723,10 @@ handle_probing_done:
         goto handle_start_defending;
     case NM_L3_ACD_ADDR_STATE_READY:
     case NM_L3_ACD_ADDR_STATE_DEFENDING:
+    case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
         goto handle_start_defending;
     case NM_L3_ACD_ADDR_STATE_CONFLICT:
         return;
-    case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
         nm_assert_not_reached();
         return;
     }
