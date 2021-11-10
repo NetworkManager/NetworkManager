@@ -4310,6 +4310,20 @@ nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle)
     nm_g_slice_free(handle);
 }
 
+void
+nm_l3cfg_commit_type_reset_update(NML3Cfg *self)
+{
+    NML3CfgCommitTypeHandle *h;
+
+    c_list_for_each_entry (h, &self->priv.p->commit_type_lst_head, commit_type_lst) {
+        if (h->commit_type >= NM_L3_CFG_COMMIT_TYPE_UPDATE) {
+            return;
+        }
+    }
+
+    self->priv.p->commit_type_update_sticky = FALSE;
+}
+
 /*****************************************************************************/
 
 const NML3ConfigData *
