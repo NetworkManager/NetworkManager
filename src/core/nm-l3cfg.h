@@ -53,11 +53,15 @@ typedef enum _nm_packed {
  *   "don't change" behavior. At least once. If the address/route
  *   is still not (no longer) configured on the subsequent
  *   commit, it's not getting added again.
+ * @NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE: if set, objects in the
+ *   NML3ConfigData are committed to platform even if they were
+ *   removed externally.
  */
 typedef enum _nm_packed {
     NM_L3CFG_CONFIG_FLAGS_NONE               = 0,
     NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD       = (1LL << 0),
     NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE = (1LL << 1),
+    NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE         = (1LL << 2),
 } NML3CfgConfigFlags;
 
 typedef enum _nm_packed {

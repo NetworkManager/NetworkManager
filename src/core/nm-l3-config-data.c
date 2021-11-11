@@ -2906,6 +2906,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
             NML3ConfigMergeHookResult  hook_result = {
                 .ip4acd_not_ready   = NM_OPTION_BOOL_DEFAULT,
                 .assume_config_once = NM_OPTION_BOOL_DEFAULT,
+                .force_commit       = NM_OPTION_BOOL_DEFAULT,
             };
 
 #define _ensure_a()                                       \
@@ -2944,6 +2945,12 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                 a.ax.a_assume_config_once = (!!hook_result.assume_config_once);
             }
 
+            if (hook_result.force_commit != NM_OPTION_BOOL_DEFAULT
+                && (!!hook_result.force_commit) != a_src->a_force_commit) {
+                _ensure_a();
+                a.ax.a_force_commit = (!!hook_result.force_commit);
+            }
+
             nm_l3_config_data_add_address_full(self,
                                                addr_family,
                                                a_src == &a.ax ? NULL : obj,
@@ -2964,6 +2971,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                 NML3ConfigMergeHookResult hook_result = {
                     .ip4acd_not_ready   = NM_OPTION_BOOL_DEFAULT,
                     .assume_config_once = NM_OPTION_BOOL_DEFAULT,
+                    .force_commit       = NM_OPTION_BOOL_DEFAULT,
                 };
 
 #define _ensure_r()                                     \
@@ -2993,6 +3001,12 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                     && (!!hook_result.assume_config_once) != r_src->r_assume_config_once) {
                     _ensure_r();
                     r.rx.r_assume_config_once = (!!hook_result.assume_config_once);
+                }
+
+                if (hook_result.force_commit != NM_OPTION_BOOL_DEFAULT
+                    && (!!hook_result.force_commit) != r_src->r_force_commit) {
+                    _ensure_r();
+                    r.rx.r_force_commit = (!!hook_result.force_commit);
                 }
 
                 if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)) {
