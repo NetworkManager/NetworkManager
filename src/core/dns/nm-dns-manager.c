@@ -35,6 +35,7 @@
 #include "nm-dns-plugin.h"
 #include "nm-dns-systemd-resolved.h"
 #include "nm-dns-unbound.h"
+#include "nm-ip-config.h"
 #include "nm-l3-config-data.h"
 #include "nm-manager.h"
 #include "nm-utils.h"
@@ -98,6 +99,9 @@ typedef struct {
 
     char *hostname;
     guint updates_queue;
+
+    guint8 hash[HASH_LEN];      /* SHA1 hash of current DNS config */
+    guint8 prev_hash[HASH_LEN]; /* Hash when begin_updates() was called */
 
     NMDnsManagerResolvConfManager rc_manager;
     char *                        mode;
@@ -1097,6 +1101,30 @@ update_resolv_conf(NMDnsManager *                self,
     return write_file_result;
 }
 
+static void
+compute_hash(NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[static HASH_LEN])
+{
+    nm_auto_free_checksum GChecksum *sum = NULL;
+    NMDnsConfigIPData *              ip_data;
+
+    sum = g_checksum_new(G_CHECKSUM_SHA1);
+    nm_assert(HASH_LEN == g_checksum_type_get_length(G_CHECKSUM_SHA1));
+
+    if (global)
+        nm_global_dns_config_update_checksum(global, sum);
+    else {
+        const CList *head;
+
+        /* FIXME(ip-config-checksum): this relies on the fact that an IP
+         * configuration without DNS parameters gives a zero checksum. */
+        head = _mgr_get_ip_data_lst_head(self);
+        c_list_for_each_entry (ip_data, head, ip_data_lst)
+            nm_ip_config_dns_hash(ip_data->l3cd, sum, ip_data->addr_family);
+    }
+
+    nm_utils_checksum_get_digest_len(sum, buffer, HASH_LEN);
+}
+
 static gboolean
 merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 {
@@ -1649,6 +1677,9 @@ update_dns(NMDnsManager *self, gboolean no_caching, gboolean force_emit, GError 
     data          = nm_config_get_data(priv->config);
     global_config = nm_config_data_get_global_dns_config(data);
 
+    /* Update hash with config we're applying */
+    compute_hash(self, global_config, priv->hash);
+
     _collect_resolv_conf_data(self,
                               global_config,
                               &searches,
@@ -2006,6 +2037,10 @@ nm_dns_manager_begin_updates(NMDnsManager *self, const char *func)
 
     priv = NM_DNS_MANAGER_GET_PRIVATE(self);
 
+    /* Save current hash when starting a new batch */
+    if (priv->updates_queue == 0)
+        memcpy(priv->prev_hash, priv->hash, sizeof(priv->hash));
+
     priv->updates_queue++;
 
     _LOGD("(%s): queueing DNS updates (%d)", func, priv->updates_queue);
@@ -2016,12 +2051,15 @@ nm_dns_manager_end_updates(NMDnsManager *self, const char *func)
 {
     NMDnsManagerPrivate *priv;
     gs_free_error GError *error = NULL;
+    guint8 new[HASH_LEN];
 
     g_return_if_fail(self != NULL);
 
     priv = NM_DNS_MANAGER_GET_PRIVATE(self);
     g_return_if_fail(priv->updates_queue > 0);
 
+    compute_hash(self, nm_config_data_get_global_dns_config(nm_config_get_data(priv->config)), new);
+    priv->config_changed = (memcmp(new, priv->prev_hash, sizeof(new)) != 0) ? TRUE : FALSE;
     _LOGD("(%s): DNS configuration %s", func, priv->config_changed ? "changed" : "did not change");
 
     priv->updates_queue--;
@@ -2574,6 +2612,7 @@ nm_dns_manager_init(NMDnsManager *self)
                                                (GDestroyNotify) _dns_config_data_free,
                                                NULL);
 
+    compute_hash(self, NULL, NM_DNS_MANAGER_GET_PRIVATE(self)->hash);
     g_signal_connect(G_OBJECT(priv->config),
                      NM_CONFIG_SIGNAL_CONFIG_CHANGED,
                      G_CALLBACK(config_changed_cb),
