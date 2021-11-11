@@ -3572,7 +3572,9 @@ after_merge_flags:
 }
 
 static gboolean
-_dev_l3_register_l3cds_add_config(NMDevice *self, L3ConfigDataType l3cd_type)
+_dev_l3_register_l3cds_add_config(NMDevice *         self,
+                                  L3ConfigDataType   l3cd_type,
+                                  NML3CfgConfigFlags flags)
 {
     NMDevicePrivate *    priv = NM_DEVICE_GET_PRIVATE(self);
     NML3ConfigMergeFlags merge_flags;
@@ -3595,15 +3597,16 @@ _dev_l3_register_l3cds_add_config(NMDevice *self, L3ConfigDataType l3cd_type)
                                _prop_get_ipvx_dns_priority(self, AF_INET6),
                                acd_defend_type,
                                acd_timeout_msec,
-                               NM_L3CFG_CONFIG_FLAGS_NONE,
+                               flags,
                                merge_flags);
 }
 
 static gboolean
-_dev_l3_register_l3cds_set_one(NMDevice *            self,
-                               L3ConfigDataType      l3cd_type,
-                               const NML3ConfigData *l3cd,
-                               NMTernary             commit_sync)
+_dev_l3_register_l3cds_set_one_full(NMDevice *            self,
+                                    L3ConfigDataType      l3cd_type,
+                                    const NML3ConfigData *l3cd,
+                                    NML3CfgConfigFlags    flags,
+                                    NMTernary             commit_sync)
 {
     NMDevicePrivate *        priv                     = NM_DEVICE_GET_PRIVATE(self);
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_old = NULL;
@@ -3626,7 +3629,7 @@ _dev_l3_register_l3cds_set_one(NMDevice *            self,
 
     if (priv->l3cfg) {
         if (priv->l3cds[l3cd_type].d) {
-            if (_dev_l3_register_l3cds_add_config(self, l3cd_type))
+            if (_dev_l3_register_l3cds_add_config(self, l3cd_type, flags))
                 changed = TRUE;
         }
 
@@ -3642,6 +3645,19 @@ _dev_l3_register_l3cds_set_one(NMDevice *            self,
         _dev_l3_cfg_commit(self, !!commit_sync);
 
     return changed;
+}
+
+static gboolean
+_dev_l3_register_l3cds_set_one(NMDevice *            self,
+                               L3ConfigDataType      l3cd_type,
+                               const NML3ConfigData *l3cd,
+                               NMTernary             commit_sync)
+{
+    return _dev_l3_register_l3cds_set_one_full(self,
+                                               l3cd_type,
+                                               l3cd,
+                                               NM_L3CFG_CONFIG_FLAGS_NONE,
+                                               commit_sync);
 }
 
 static void
@@ -3696,7 +3712,7 @@ _dev_l3_register_l3cds(NMDevice *self,
         }
         if (is_external)
             continue;
-        if (_dev_l3_register_l3cds_add_config(self, i))
+        if (_dev_l3_register_l3cds_add_config(self, i, NM_L3CFG_CONFIG_FLAGS_NONE))
             changed = TRUE;
     }
 
@@ -9870,7 +9886,11 @@ _dev_ipdhcpx_handle_accept(NMDevice *self, int addr_family, const NML3ConfigData
     nm_assert(NM_IS_L3_CONFIG_DATA(l3cd));
 
     nm_dhcp_config_set_lease(priv->ipdhcp_data_x[IS_IPv4].config, l3cd);
-    _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4), l3cd, TRUE);
+    _dev_l3_register_l3cds_set_one_full(self,
+                                        L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
+                                        l3cd,
+                                        NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
+                                        TRUE);
 
     /* FIXME(l3cfg:dhcp): accept also should be handled by NMDhcpClient transparently.
      * NMDhcpClient should do ACD (if enabled), and only after that passes, it exposes
@@ -11074,7 +11094,11 @@ _dev_ipac6_ndisc_config_changed(NMNDisc *             ndisc,
 
     _dev_ipac6_grace_period_start(self, 0, TRUE);
 
-    _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_AC_6, l3cd, FALSE);
+    _dev_l3_register_l3cds_set_one_full(self,
+                                        L3_CONFIG_DATA_TYPE_AC_6,
+                                        l3cd,
+                                        NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
+                                        FALSE);
 
     nm_clear_l3cd(&priv->ipac6_data.l3cd);
 

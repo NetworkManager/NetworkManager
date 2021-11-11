@@ -320,10 +320,12 @@ typedef enum {
                                                                                              \
     bool use_ip4_broadcast_address : 1;                                                      \
                                                                                              \
-    /* Whether the address is should be configured once during assume. This is a meta flag
-     * that is not honored by NMPlatform (netlink code). Instead, it can be used by the upper
-     * layers which use NMPlatformIPAddress to track addresses that should be configured. */   \
+    /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
+     * used by the upper layers which use NMPlatformIPRoute to track addresses that
+     * should be configured. */             \
+    /* Whether the address is should be configured once during assume. */                    \
     bool a_assume_config_once : 1;                                                           \
+    bool a_force_commit : 1;                                                                 \
                                                                                              \
     guint8 plen;                                                                             \
     ;
@@ -467,10 +469,13 @@ typedef union {
      * the "table_coerced" field is ignored (unlike for the metric). */            \
     bool table_any : 1;                                                                   \
                                                                                           \
-    /* Whether the route is should be configured once during assume. This is a meta flag
-     * that is not honored by NMPlatform (netlink code). Instead, it can be used by the upper
-     * layers which use NMPlatformIPRoute to track routes that should be configured. */  \
+    /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
+     * used by the upper layers which use NMPlatformIPRoute to track routes that
+     * should be configured. */          \
+    /* Whether the route is should be configured once during assume. */                   \
     bool r_assume_config_once : 1;                                                        \
+    /* Whether the route should be committed even if it was removed externally. */        \
+    bool r_force_commit : 1;                                                              \
                                                                                           \
     /* rtnh_flags
      *
