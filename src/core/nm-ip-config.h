@@ -51,6 +51,8 @@ NMIPConfig *nm_ip_config_new(int addr_family, NML3Cfg *l3cfg);
 
 void nm_ip_config_take_and_unexport_on_idle(NMIPConfig *self_take);
 
+void nm_ip_config_dns_hash(const NML3ConfigData *l3cd, GChecksum *sum, int addr_family);
+
 /*****************************************************************************/
 
 static inline NML3Cfg *

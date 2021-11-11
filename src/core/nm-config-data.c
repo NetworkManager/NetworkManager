@@ -982,6 +982,61 @@ nm_global_dns_config_cmp(const NMGlobalDnsConfig *a,
     return 0;
 }
 
+void
+nm_global_dns_config_update_checksum(const NMGlobalDnsConfig *dns_config, GChecksum *sum)
+{
+    NMGlobalDnsDomain *domain;
+    guint              i, j;
+    guint8             v8;
+
+    g_return_if_fail(dns_config);
+    g_return_if_fail(sum);
+
+    v8 = NM_HASH_COMBINE_BOOLS(guint8,
+                               !dns_config->searches,
+                               !dns_config->options,
+                               !dns_config->domain_list);
+    g_checksum_update(sum, (guchar *) &v8, 1);
+
+    if (dns_config->searches) {
+        for (i = 0; dns_config->searches[i]; i++)
+            g_checksum_update(sum,
+                              (guchar *) dns_config->searches[i],
+                              strlen(dns_config->searches[i]) + 1);
+    }
+    if (dns_config->options) {
+        for (i = 0; dns_config->options[i]; i++)
+            g_checksum_update(sum,
+                              (guchar *) dns_config->options[i],
+                              strlen(dns_config->options[i]) + 1);
+    }
+
+    if (dns_config->domain_list) {
+        for (i = 0; dns_config->domain_list[i]; i++) {
+            domain = g_hash_table_lookup(dns_config->domains, dns_config->domain_list[i]);
+            nm_assert(domain);
+
+            v8 = NM_HASH_COMBINE_BOOLS(guint8, !domain->servers, !domain->options);
+            g_checksum_update(sum, (guchar *) &v8, 1);
+
+            g_checksum_update(sum, (guchar *) domain->name, strlen(domain->name) + 1);
+
+            if (domain->servers) {
+                for (j = 0; domain->servers[j]; j++)
+                    g_checksum_update(sum,
+                                      (guchar *) domain->servers[j],
+                                      strlen(domain->servers[j]) + 1);
+            }
+            if (domain->options) {
+                for (j = 0; domain->options[j]; j++)
+                    g_checksum_update(sum,
+                                      (guchar *) domain->options[j],
+                                      strlen(domain->options[j]) + 1);
+            }
+        }
+    }
+}
+
 static void
 global_dns_domain_free(NMGlobalDnsDomain *domain)
 {
