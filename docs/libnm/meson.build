@@ -62,5 +62,5 @@ gnome.gtkdoc(
   gobject_typesfile: libnm_name + '.types',
   html_assets: 'libnm.png',
   content_files: version_xml,
-  install: true,
+  install: not libnm_only,
 )

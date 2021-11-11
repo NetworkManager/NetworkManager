@@ -213,7 +213,7 @@ executable(
   ],
   link_args: ldflags_linker_script_binary,
   link_depends: linker_script_binary,
-  install: true,
+  install: not libnm_only,
   install_dir: nm_libexecdir,
 )
 
@@ -349,7 +349,7 @@ NetworkManager = executable(
     '-Wl,--version-script,@0@'.format(ver_script.full_path()),
   ],
   link_depends: ver_script,
-  install: true,
+  install: not libnm_only,
   install_dir: nm_sbindir,
 )
 

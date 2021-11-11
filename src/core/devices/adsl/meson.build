@@ -9,7 +9,7 @@ libnm_device_plugin_adsl = shared_module(
   dependencies: core_plugin_dep,
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,
-  install: true,
+  install: not libnm_only,
   install_dir: nm_plugindir,
 )
 
