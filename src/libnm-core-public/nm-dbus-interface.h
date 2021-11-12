@@ -317,6 +317,7 @@ typedef enum { /*< flags >*/
  * @NM_802_11_AP_FLAGS_WPS: access point supports some WPS method
  * @NM_802_11_AP_FLAGS_WPS_PBC: access point supports push-button WPS
  * @NM_802_11_AP_FLAGS_WPS_PIN: access point supports PIN-based WPS
+ * @NM_802_11_AP_FLAGS_HE: access point support high efficiency (new feature in 802.11ax)
  *
  * 802.11 access point flags.
  **/
@@ -326,6 +327,7 @@ typedef enum { /*< underscore_name=nm_802_11_ap_flags, flags >*/
                NM_802_11_AP_FLAGS_WPS     = 0x00000002,
                NM_802_11_AP_FLAGS_WPS_PBC = 0x00000004,
                NM_802_11_AP_FLAGS_WPS_PIN = 0x00000008,
+               NM_802_11_AP_FLAGS_HE      = 0x00000010,
 } NM80211ApFlags;
 
 /**
