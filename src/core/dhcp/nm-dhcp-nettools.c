@@ -1208,8 +1208,6 @@ ip4_start(NMDhcpClient *client, GError **error)
     }
 
     _LOGT("dhcp-client4: start " NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(priv->client));
-
-    nm_dhcp_client_start_timeout(client);
     return TRUE;
 }
 
