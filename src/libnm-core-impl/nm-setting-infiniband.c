@@ -379,7 +379,6 @@ finalize(GObject *object)
     NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE(object);
 
     g_free(priv->transport_mode);
-    g_free(priv->mac_address);
     g_free(priv->parent);
     g_free(priv->virtual_iface_name);
 

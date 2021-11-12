@@ -430,7 +430,7 @@
         <property name="app-fcoe-priority"
                   description="The highest User Priority (0 - 7) which FCoE frames should use, or -1 for default priority.  Only used when the &quot;app-fcoe-flags&quot; property includes the NM_SETTING_DCB_FLAG_ENABLE (0x1) flag." />
         <property name="app-fcoe-mode"
-                  description="The FCoE controller mode; either &quot;fabric&quot; (default) or &quot;vn2vn&quot;." />
+                  description="The FCoE controller mode; either &quot;fabric&quot; or &quot;vn2vn&quot;. Since 1.34, NULL is the default and means &quot;fabric&quot;. Before 1.34, NULL was rejected as invalid and the default was &quot;fabric&quot;." />
         <property name="app-iscsi-flags"
                   description="Specifies the NMSettingDcbFlags for the DCB iSCSI application.  Flags may be any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)." />
         <property name="app-iscsi-priority"

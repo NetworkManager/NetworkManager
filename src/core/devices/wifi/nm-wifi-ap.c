@@ -669,7 +669,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_uint(value, priv->rsn_flags);
         break;
     case PROP_SSID:
-        g_value_take_variant(value, nm_utils_gbytes_to_variant_ay(priv->ssid));
+        g_value_take_variant(value, nm_g_bytes_to_variant_ay(priv->ssid));
         break;
     case PROP_FREQUENCY:
         g_value_set_uint(value, priv->freq);

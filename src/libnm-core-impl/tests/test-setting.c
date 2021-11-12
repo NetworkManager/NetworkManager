@@ -4490,6 +4490,58 @@ test_setting_metadata(void)
                 g_assert_cmpint(pspec->maximum, <=, (guint64) G_MAXUINT32);
 
                 can_set_including_default = TRUE;
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_UINT64) {
+                const GParamSpecUInt64 *pspec;
+
+                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_uint64);
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "t"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_UINT64);
+
+                pspec = NM_G_PARAM_SPEC_CAST_UINT64(sip->param_spec);
+                g_assert_cmpuint(pspec->minimum, <=, pspec->maximum);
+                g_assert_cmpuint(pspec->default_value, >=, pspec->minimum);
+                g_assert_cmpuint(pspec->default_value, <=, pspec->maximum);
+
+                g_assert_cmpuint(pspec->maximum, <=, G_MAXUINT64);
+
+                can_set_including_default = TRUE;
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_ENUM) {
+                const GParamSpecEnum *pspec;
+
+                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_enum);
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "i"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(g_type_is_a(sip->param_spec->value_type, G_TYPE_ENUM));
+                g_assert(sip->param_spec->value_type != G_TYPE_ENUM);
+
+                pspec = NM_G_PARAM_SPEC_CAST_ENUM(sip->param_spec);
+                g_assert(G_TYPE_FROM_CLASS(pspec->enum_class) == sip->param_spec->value_type);
+                g_assert(g_enum_get_value(pspec->enum_class, pspec->default_value));
+
+                can_set_including_default = TRUE;
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_FLAGS) {
+                const GParamSpecFlags *pspec;
+
+                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_flags);
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "u"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(g_type_is_a(sip->param_spec->value_type, G_TYPE_FLAGS));
+                g_assert(sip->param_spec->value_type != G_TYPE_FLAGS);
+
+                pspec = NM_G_PARAM_SPEC_CAST_FLAGS(sip->param_spec);
+                g_assert_cmpint(pspec->flags_class->mask, !=, 0);
+                g_assert_cmpint(pspec->default_value,
+                                ==,
+                                pspec->flags_class->mask & pspec->default_value);
+
+                can_set_including_default = TRUE;
             } else if (sip->property_type->direct_type == NM_VALUE_TYPE_STRING) {
                 if (sip->property_type == &nm_sett_info_propert_type_direct_mac_address) {
                     g_assert(g_variant_type_equal(sip->property_type->dbus_type, "ay"));
@@ -4506,6 +4558,12 @@ test_setting_metadata(void)
                 }
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_STRING);
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_BYTES) {
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "ay"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_BYTES);
             } else
                 g_assert_not_reached();
 
@@ -4531,9 +4589,6 @@ test_setting_metadata(void)
             } else if (sip->property_type->to_dbus_fcn == _nm_setting_property_to_dbus_fcn_gprop) {
                 g_assert(sip->param_spec);
                 switch (sip->property_type->typdata_to_dbus.gprop_type) {
-                case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_BYTES:
-                    g_assert(sip->param_spec->value_type == G_TYPE_BYTES);
-                    goto check_done;
                 case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM:
                     g_assert(g_type_is_a(sip->param_spec->value_type, G_TYPE_ENUM));
                     goto check_done;
@@ -4647,24 +4702,17 @@ check_done:;
                 g_object_get_property(G_OBJECT(setting), sip->name, &val);
 
                 if (sip->param_spec->value_type == G_TYPE_STRING) {
-                    const char *default_value;
-
-                    default_value = ((const GParamSpecString *) sip->param_spec)->default_value;
-                    if (default_value) {
-                        /* having a string property with a default != NULL is really ugly. They
-                         * should be best avoided... */
-                        if (meta_type == NM_META_SETTING_TYPE_DCB
-                            && nm_streq(sip->name, NM_SETTING_DCB_APP_FCOE_MODE)) {
-                            /* Whitelist the properties that have a non-NULL default value. */
-                            g_assert_cmpstr(default_value, ==, NM_SETTING_DCB_FCOE_MODE_FABRIC);
-                        } else
-                            g_assert_not_reached();
-                    }
+                    /* String properties should all have a default value of NULL. Otherwise,
+                     * it's ugly. */
+                    g_assert_cmpstr(((const GParamSpecString *) sip->param_spec)->default_value,
+                                    ==,
+                                    NULL);
+                    g_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(sip->param_spec));
 
                     if (nm_streq(sip->name, NM_SETTING_NAME))
                         g_assert_cmpstr(g_value_get_string(&val), ==, msi->setting_name);
                     else
-                        g_assert_cmpstr(g_value_get_string(&val), ==, default_value);
+                        g_assert_cmpstr(g_value_get_string(&val), ==, NULL);
                 }
 
                 if (NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS))

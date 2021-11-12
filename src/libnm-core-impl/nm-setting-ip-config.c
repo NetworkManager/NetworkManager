@@ -6082,11 +6082,6 @@ finalize(GObject *object)
     NMSettingIPConfig *       self = NM_SETTING_IP_CONFIG(object);
     NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(self);
 
-    g_free(priv->method);
-    g_free(priv->gateway);
-    g_free(priv->dhcp_hostname);
-    g_free(priv->dhcp_iaid);
-
     g_ptr_array_unref(priv->dns);
     g_ptr_array_unref(priv->dns_search);
     if (priv->dns_options)

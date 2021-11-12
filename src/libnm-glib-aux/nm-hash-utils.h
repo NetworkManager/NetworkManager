@@ -267,11 +267,11 @@ gboolean nm_ppdirect_equal(gconstpointer a, gconstpointer b);
 
 /*****************************************************************************/
 
-guint nm_gbytes_hash(gconstpointer p);
-#define nm_gbytes_equal g_bytes_equal
+guint nm_g_bytes_hash(gconstpointer p);
+#define nm_g_bytes_equal g_bytes_equal
 
-guint    nm_pgbytes_hash(gconstpointer p);
-gboolean nm_pgbytes_equal(gconstpointer a, gconstpointer b);
+guint    nm_pg_bytes_hash(gconstpointer p);
+gboolean nm_pg_bytes_equal(gconstpointer a, gconstpointer b);
 
 /*****************************************************************************/
 

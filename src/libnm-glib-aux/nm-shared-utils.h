@@ -599,19 +599,20 @@ nm_utils_is_separator(const char c)
 
 /*****************************************************************************/
 
-GBytes *nm_gbytes_get_empty(void);
+GBytes *nm_g_bytes_get_empty(void);
 
 GBytes *nm_g_bytes_new_from_str(const char *str);
+GBytes *nm_g_bytes_new_from_variant_ay(GVariant *var);
 
 static inline gboolean
-nm_gbytes_equal0(GBytes *a, GBytes *b)
+nm_g_bytes_equal0(const GBytes *a, const GBytes *b)
 {
     return a == b || (a && b && g_bytes_equal(a, b));
 }
 
-gboolean nm_utils_gbytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len);
+gboolean nm_g_bytes_equal_mem(GBytes *bytes, gconstpointer mem_data, gsize mem_len);
 
-GVariant *nm_utils_gbytes_to_variant_ay(GBytes *bytes);
+GVariant *nm_g_bytes_to_variant_ay(const GBytes *bytes);
 
 GHashTable *nm_strdict_clone(GHashTable *src);
 
@@ -1449,6 +1450,14 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
         ((const _c_type *) _param_spec);                                     \
     })
 
+#define _NM_G_PARAM_SPEC_CAST_IS_A(param_spec, _value_type, _c_type)                  \
+    ({                                                                                \
+        const GParamSpec *const _param_spec = (param_spec);                           \
+                                                                                      \
+        nm_assert(!_param_spec || g_type_is_a(_param_spec->value_type, _value_type)); \
+        ((const _c_type *) _param_spec);                                              \
+    })
+
 #define NM_G_PARAM_SPEC_CAST_BOOLEAN(param_spec) \
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_BOOLEAN, GParamSpecBoolean)
 #define NM_G_PARAM_SPEC_CAST_INT(param_spec) \
@@ -1457,6 +1466,10 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_UINT, GParamSpecUInt)
 #define NM_G_PARAM_SPEC_CAST_UINT64(param_spec) \
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_UINT64, GParamSpecUInt64)
+#define NM_G_PARAM_SPEC_CAST_ENUM(param_spec) \
+    _NM_G_PARAM_SPEC_CAST_IS_A(param_spec, G_TYPE_ENUM, GParamSpecEnum)
+#define NM_G_PARAM_SPEC_CAST_FLAGS(param_spec) \
+    _NM_G_PARAM_SPEC_CAST_IS_A(param_spec, G_TYPE_FLAGS, GParamSpecFlags)
 #define NM_G_PARAM_SPEC_CAST_STRING(param_spec) \
     _NM_G_PARAM_SPEC_CAST(param_spec, G_TYPE_STRING, GParamSpecString)
 
@@ -1468,6 +1481,10 @@ GParamSpec *nm_g_object_class_find_property_from_gtype(GType gtype, const char *
     (NM_G_PARAM_SPEC_CAST_UINT(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 #define NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(param_spec) \
     (NM_G_PARAM_SPEC_CAST_UINT64(NM_ENSURE_NOT_NULL(param_spec))->default_value)
+#define NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(param_spec) \
+    (NM_G_PARAM_SPEC_CAST_ENUM(NM_ENSURE_NOT_NULL(param_spec))->default_value)
+#define NM_G_PARAM_SPEC_GET_DEFAULT_FLAGS(param_spec) \
+    (NM_G_PARAM_SPEC_CAST_FLAGS(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 #define NM_G_PARAM_SPEC_GET_DEFAULT_STRING(param_spec) \
     (NM_G_PARAM_SPEC_CAST_STRING(NM_ENSURE_NOT_NULL(param_spec))->default_value)
 
@@ -1540,6 +1557,8 @@ GVariant *nm_g_variant_singleton_aLsvI(void);
 GVariant *nm_g_variant_singleton_aLsaLsvII(void);
 GVariant *nm_g_variant_singleton_aaLsvI(void);
 GVariant *nm_g_variant_singleton_ao(void);
+
+GVariant *nm_g_variant_maybe_singleton_i(gint32 v);
 
 static inline void
 nm_g_variant_unref_floating(GVariant *var)
@@ -2977,7 +2996,7 @@ nm_strdup_reset_take(char **dst, char *src)
     char *old;
 
     nm_assert(dst);
-    nm_assert(src != *dst);
+    nm_assert(!src || src != *dst);
 
     if (nm_streq0(*dst, src)) {
         if (src)

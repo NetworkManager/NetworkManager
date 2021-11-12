@@ -208,7 +208,6 @@ finalize(GObject *object)
     NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE(object);
 
     g_free(priv->network_name);
-    g_free(priv->mac_address);
 
     G_OBJECT_CLASS(nm_setting_wimax_parent_class)->finalize(object);
 }

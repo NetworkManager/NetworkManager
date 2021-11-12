@@ -30,9 +30,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_BAUD,
 
 typedef struct {
     guint64 send_delay;
-    guint   baud;
-    guint   bits;
-    guint   stopbits;
+    guint32 baud;
+    guint32 bits;
+    guint32 stopbits;
     char    parity;
 } NMSettingSerialPrivate;
 
@@ -129,6 +129,8 @@ nm_setting_serial_get_send_delay(NMSettingSerial *setting)
     return NM_SETTING_SERIAL_GET_PRIVATE(setting)->send_delay;
 }
 
+/*****************************************************************************/
+
 static GVariant *
 parity_to_dbus_fcn(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
@@ -170,23 +172,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingSerial *setting = NM_SETTING_SERIAL(object);
 
     switch (prop_id) {
-    case PROP_BAUD:
-        g_value_set_uint(value, nm_setting_serial_get_baud(setting));
-        break;
-    case PROP_BITS:
-        g_value_set_uint(value, nm_setting_serial_get_bits(setting));
-        break;
     case PROP_PARITY:
         g_value_set_enum(value, nm_setting_serial_get_parity(setting));
         break;
-    case PROP_STOPBITS:
-        g_value_set_uint(value, nm_setting_serial_get_stopbits(setting));
-        break;
-    case PROP_SEND_DELAY:
-        g_value_set_uint64(value, nm_setting_serial_get_send_delay(setting));
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -197,23 +187,11 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMSettingSerialPrivate *priv = NM_SETTING_SERIAL_GET_PRIVATE(object);
 
     switch (prop_id) {
-    case PROP_BAUD:
-        priv->baud = g_value_get_uint(value);
-        break;
-    case PROP_BITS:
-        priv->bits = g_value_get_uint(value);
-        break;
     case PROP_PARITY:
         priv->parity = g_value_get_enum(value);
         break;
-    case PROP_STOPBITS:
-        priv->stopbits = g_value_get_uint(value);
-        break;
-    case PROP_SEND_DELAY:
-        priv->send_delay = g_value_get_uint64(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -226,9 +204,6 @@ nm_setting_serial_init(NMSettingSerial *self)
     NMSettingSerialPrivate *priv = NM_SETTING_SERIAL_GET_PRIVATE(self);
 
     nm_assert(priv->parity == NM_SETTING_SERIAL_PARITY_NONE);
-    priv->stopbits = 1;
-    priv->baud     = 57600;
-    priv->bits     = 8;
 }
 
 /**
@@ -263,26 +238,32 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
      * value usually has no effect for mobile broadband modems as they generally
      * ignore speed settings and use the highest available speed.
      **/
-    obj_properties[PROP_BAUD] = g_param_spec_uint(NM_SETTING_SERIAL_BAUD,
-                                                  "",
-                                                  "",
-                                                  0,
-                                                  G_MAXUINT,
-                                                  57600,
-                                                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_SERIAL_BAUD,
+                                              PROP_BAUD,
+                                              0,
+                                              G_MAXUINT32,
+                                              57600,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingSerialPrivate,
+                                              baud);
 
     /**
      * NMSettingSerial:bits:
      *
      * Byte-width of the serial communication. The 8 in "8n1" for example.
      **/
-    obj_properties[PROP_BITS] = g_param_spec_uint(NM_SETTING_SERIAL_BITS,
-                                                  "",
-                                                  "",
-                                                  5,
-                                                  8,
-                                                  8,
-                                                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_SERIAL_BITS,
+                                              PROP_BITS,
+                                              5,
+                                              8,
+                                              8,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingSerialPrivate,
+                                              bits);
 
     /**
      * NMSettingSerial:parity:
@@ -326,27 +307,32 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
      * Number of stop bits for communication on the serial port.  Either 1 or 2.
      * The 1 in "8n1" for example.
      **/
-    obj_properties[PROP_STOPBITS] = g_param_spec_uint(NM_SETTING_SERIAL_STOPBITS,
-                                                      "",
-                                                      "",
-                                                      1,
-                                                      2,
-                                                      1,
-                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_SERIAL_STOPBITS,
+                                              PROP_STOPBITS,
+                                              1,
+                                              2,
+                                              1,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingSerialPrivate,
+                                              stopbits);
 
     /**
      * NMSettingSerial:send-delay:
      *
      * Time to delay between each byte sent to the modem, in microseconds.
      **/
-    obj_properties[PROP_SEND_DELAY] =
-        g_param_spec_uint64(NM_SETTING_SERIAL_SEND_DELAY,
-                            "",
-                            "",
-                            0,
-                            G_MAXUINT64,
-                            0,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint64(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_SERIAL_SEND_DELAY,
+                                              PROP_SEND_DELAY,
+                                              0,
+                                              G_MAXUINT64,
+                                              0,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingSerialPrivate,
+                                              send_delay);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

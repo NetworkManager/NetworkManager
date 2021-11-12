@@ -134,8 +134,7 @@ nm_setting_bond_port_class_init(NMSettingBondPortClass *klass)
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
-    setting_class->verify          = verify;
-    setting_class->finalize_direct = TRUE;
+    setting_class->verify = verify;
 
     /**
      * NMSettingBondPort:queue-id:
