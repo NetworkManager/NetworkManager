@@ -238,6 +238,25 @@ nm_dhcp_client_get_config(NMDhcpClient *self)
     return &priv->config;
 }
 
+static void
+schedule_no_lease_timeout(NMDhcpClient *self)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    if (priv->no_lease_timeout_source)
+        return;
+
+    if (priv->config.timeout == NM_DHCP_TIMEOUT_INFINITY) {
+        _LOGI("activation: beginning transaction (no timeout)");
+        priv->no_lease_timeout_source = g_source_ref(nm_g_source_sentinel_get(0));
+    } else {
+        _LOGI("activation: beginning transaction (timeout in %u seconds)",
+              (guint) priv->config.timeout);
+        priv->no_lease_timeout_source =
+            nm_g_timeout_add_seconds_source(priv->config.timeout, _no_lease_timeout, self);
+    }
+}
+
 void
 nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3ConfigData *l3cd)
 {
@@ -271,19 +290,11 @@ nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3Co
     if (priv->l3cd == l3cd)
         return;
 
-    if (l3cd)
+    if (l3cd) {
         nm_clear_g_source_inst(&priv->no_lease_timeout_source);
-    else {
-        /* FIXME(l3cfg:dhcp): we also need to start no_lease_timeout initially, if the
-         * instance starts without a previous_lease. */
-        if (!priv->no_lease_timeout_source && priv->l3cd) {
-            if (priv->config.timeout == NM_DHCP_TIMEOUT_INFINITY)
-                priv->no_lease_timeout_source = g_source_ref(nm_g_source_sentinel_get(0));
-            else {
-                priv->no_lease_timeout_source =
-                    nm_g_timeout_add_seconds_source(priv->config.timeout, _no_lease_timeout, self);
-            }
-        }
+    } else {
+        if (priv->l3cd)
+            schedule_no_lease_timeout(self);
     }
 
     /* FIXME(l3cfg:dhcp): the API of NMDhcpClient is changing to expose a simpler API.
@@ -444,11 +455,7 @@ nm_dhcp_client_start_ip4(NMDhcpClient *self, GError **error)
     g_return_val_if_fail(priv->config.addr_family == AF_INET, FALSE);
     g_return_val_if_fail(priv->config.uuid, FALSE);
 
-    if (priv->config.timeout == NM_DHCP_TIMEOUT_INFINITY)
-        _LOGI("activation: beginning transaction (no timeout)");
-    else
-        _LOGI("activation: beginning transaction (timeout in %u seconds)",
-              (guint) priv->config.timeout);
+    schedule_no_lease_timeout(self);
 
     return NM_DHCP_CLIENT_GET_CLASS(self)->ip4_start(self, error);
 }
@@ -568,6 +575,8 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
             g_signal_handlers_disconnect_by_func(l3cfg, l3_cfg_notify_cb, self);
             nm_clear_g_source_inst(&priv->ipv6_lladdr_timeout_source);
 
+            schedule_no_lease_timeout(self);
+
             if (!NM_DHCP_CLIENT_GET_CLASS(self)->ip6_start(self, &addr->address, &error)) {
                 _emit_notify(self,
                              &((NMDhcpClientNotifyData){
@@ -616,6 +625,8 @@ nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error)
             nm_g_timeout_add_seconds_source(10, ipv6_lladdr_timeout, self);
         return TRUE;
     }
+
+    schedule_no_lease_timeout(self);
 
     return NM_DHCP_CLIENT_GET_CLASS(self)->ip6_start(self, &addr->address, error);
 }
