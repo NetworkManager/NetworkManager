@@ -752,7 +752,6 @@ ip4_start(NMDhcpClient *client, GError **error)
         return FALSE;
     }
 
-    nm_dhcp_client_start_timeout(client);
     return TRUE;
 }
 
@@ -1049,7 +1048,6 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
         return FALSE;
     }
 
-    nm_dhcp_client_start_timeout(client);
     return TRUE;
 }
 
