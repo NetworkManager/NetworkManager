@@ -197,7 +197,9 @@ Source6: 70-nm-connectivity.conf
 #Patch1: 0001-some.patch
 
 Requires(post): systemd
+%if 0%{?fedora} || 0%{?rhel} > 7
 Requires(post): systemd-udev
+%endif
 Requires(post): /usr/sbin/update-alternatives
 Requires(preun): systemd
 Requires(preun): /usr/sbin/update-alternatives
