@@ -3,6 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 vpnservicedir=@nmlibdir@/VPN
+plugindir=@libdir@/NetworkManager
+configdir=@sysconfdir@/NetworkManager
 
 Name: libnm
 Description: Convenience library for clients of NetworkManager
