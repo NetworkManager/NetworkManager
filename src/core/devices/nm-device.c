@@ -3479,7 +3479,8 @@ _dev_l3_get_config_settings(NMDevice             *self,
                             L3ConfigDataType      type,
                             NML3ConfigMergeFlags *out_merge_flags,
                             NML3AcdDefendType    *out_acd_defend_type,
-                            guint32              *out_acd_timeout_msec)
+                            guint32              *out_acd_timeout_msec,
+                            gboolean             *out_acd_do_announce)
 {
     NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
     NML3ConfigMergeFlags flags;
@@ -3601,6 +3602,30 @@ after_acd_defend_type:
     *out_merge_flags = nm_assert_unreachable_val(NM_L3_CONFIG_MERGE_FLAGS_NONE);
 
 after_merge_flags:
+    switch (type) {
+    case L3_CONFIG_DATA_TYPE_DHCP_4:
+    case L3_CONFIG_DATA_TYPE_AC_6:
+    case L3_CONFIG_DATA_TYPE_DHCP_6:
+        *out_acd_do_announce = FALSE;
+        goto after_do_announce;
+    case L3_CONFIG_DATA_TYPE_DEVIP_UNSPEC:
+    case L3_CONFIG_DATA_TYPE_MANUALIP:
+    case L3_CONFIG_DATA_TYPE_LL_4:
+    case L3_CONFIG_DATA_TYPE_LL_6:
+    case L3_CONFIG_DATA_TYPE_PD_6:
+    case L3_CONFIG_DATA_TYPE_SHARED_4:
+    case L3_CONFIG_DATA_TYPE_DEVIP_4:
+    case L3_CONFIG_DATA_TYPE_DEVIP_6:
+        *out_acd_do_announce = TRUE;
+        goto after_do_announce;
+    case _L3_CONFIG_DATA_TYPE_NUM:
+    case _L3_CONFIG_DATA_TYPE_NONE:
+    case _L3_CONFIG_DATA_TYPE_ACD_ONLY:
+        break;
+    }
+    *out_acd_do_announce = nm_assert_unreachable_val(FALSE);
+
+after_do_announce:
     return;
 }
 
@@ -3613,8 +3638,15 @@ _dev_l3_register_l3cds_add_config(NMDevice          *self,
     NML3ConfigMergeFlags merge_flags;
     NML3AcdDefendType    acd_defend_type;
     guint32              acd_timeout_msec;
+    gboolean             acd_do_announce;
 
-    _dev_l3_get_config_settings(self, l3cd_type, &merge_flags, &acd_defend_type, &acd_timeout_msec);
+    _dev_l3_get_config_settings(self,
+                                l3cd_type,
+                                &merge_flags,
+                                &acd_defend_type,
+                                &acd_timeout_msec,
+                                &acd_do_announce);
+
     return nm_l3cfg_add_config(priv->l3cfg,
                                _dev_l3_config_data_tag_get(priv, l3cd_type),
                                FALSE,
@@ -3630,6 +3662,7 @@ _dev_l3_register_l3cds_add_config(NMDevice          *self,
                                _prop_get_ipvx_dns_priority(self, AF_INET6),
                                acd_defend_type,
                                acd_timeout_msec,
+                               acd_do_announce,
                                flags,
                                merge_flags);
 }
