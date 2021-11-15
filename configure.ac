@@ -1341,7 +1341,6 @@ docs/api/Makefile
 docs/api/version.xml
 docs/libnm/Makefile
 docs/libnm/version.xml
-NetworkManager.pc
 src/libnm-client-impl/libnm.pc
 src/libnm-core-public/nm-version-macros.h
 ])

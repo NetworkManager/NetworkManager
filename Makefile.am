@@ -5619,7 +5619,6 @@ EXTRA_DIST += \
 	COPYING.LGPL \
 	COPYING.GFDL \
 	\
-	NetworkManager.pc.in \
 	intltool-extract.in \
 	intltool-merge.in \
 	intltool-update.in \
