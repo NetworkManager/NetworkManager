@@ -564,9 +564,6 @@ typedef struct _NMDevicePrivate {
 
     bool up : 1; /* IFF_UP */
 
-    bool default_route_metric_penalty_ip4_has : 1;
-    bool default_route_metric_penalty_ip6_has : 1;
-
     bool v4_route_table_initialized : 1;
     bool v6_route_table_initialized : 1;
 
@@ -4811,31 +4808,16 @@ nm_device_get_route_metric_default(NMDeviceType device_type)
     return 11000;
 }
 
-/* FIXME(l3cfg): we currently never call this function. We need to react
- * to changes and re-commit the IP configuration with updated penalty. */
-_nm_unused static gboolean
-_dev_default_route_metric_penalty_detect(NMDevice *self, int addr_family)
+static guint32
+_dev_default_route_metric_penalty_get(NMDevice *self, int addr_family)
 {
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     const int        IS_IPv4 = NM_IS_IPv4(addr_family);
 
-    /* currently we don't differentiate between IPv4 and IPv6 when detecting
-     * connectivity. */
     if (priv->concheck_x[IS_IPv4].state != NM_CONNECTIVITY_FULL
         && nm_connectivity_check_enabled(concheck_get_mgr(self)))
-        return TRUE;
-
-    return FALSE;
-}
-
-static guint32
-_dev_default_route_metric_penalty_get(NMDevice *self, int addr_family)
-{
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-
-    if (NM_IS_IPv4(addr_family) ? priv->default_route_metric_penalty_ip4_has
-                                : priv->default_route_metric_penalty_ip6_has)
         return 20000;
+
     return 0;
 }
 
@@ -14943,9 +14925,6 @@ _cleanup_generic_post(NMDevice *self, CleanupType cleanup_type)
 
     priv->v4_route_table_all_sync_before = FALSE;
     priv->v6_route_table_all_sync_before = FALSE;
-
-    priv->default_route_metric_penalty_ip4_has = FALSE;
-    priv->default_route_metric_penalty_ip6_has = FALSE;
 
     priv->mtu_force_set_done = FALSE;
 
