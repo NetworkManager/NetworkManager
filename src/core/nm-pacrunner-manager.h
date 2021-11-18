@@ -26,11 +26,8 @@ GType nm_pacrunner_manager_get_type(void);
 
 NMPacrunnerManager *nm_pacrunner_manager_get(void);
 
-NMPacrunnerConfId *nm_pacrunner_manager_add(NMPacrunnerManager *self,
-                                            NMProxyConfig *     proxy_config,
-                                            const char *        iface,
-                                            NMIP4Config *       ip4_config,
-                                            NMIP6Config *       ip6_config);
+NMPacrunnerConfId *
+nm_pacrunner_manager_add(NMPacrunnerManager *self, const char *iface, const NML3ConfigData *l3cd);
 
 void nm_pacrunner_manager_remove(NMPacrunnerConfId *conf_id);
 

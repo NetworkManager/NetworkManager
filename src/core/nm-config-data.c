@@ -929,6 +929,59 @@ nm_global_dns_config_is_empty(const NMGlobalDnsConfig *dns_config)
     return !dns_config->searches && !dns_config->options && !dns_config->domain_list;
 }
 
+int
+nm_global_dns_config_cmp(const NMGlobalDnsConfig *a,
+                         const NMGlobalDnsConfig *b,
+                         gboolean                 check_internal)
+{
+    guint i;
+
+    NM_CMP_SELF(a, b);
+
+    NM_CMP_RETURN(
+        nm_strv_cmp_n(a->searches ?: NM_STRV_EMPTY(), -1, b->searches ?: NM_STRV_EMPTY(), -1));
+
+    NM_CMP_RETURN(
+        nm_strv_cmp_n(a->options ?: NM_STRV_EMPTY(), -1, b->options ?: NM_STRV_EMPTY(), -1));
+
+    NM_CMP_RETURN(nm_strv_cmp_n(a->domain_list ?: NM_STRV_EMPTY_CC(),
+                                -1,
+                                b->domain_list ?: NM_STRV_EMPTY_CC(),
+                                -1));
+
+    if (a->domain_list) {
+        for (i = 0; a->domain_list[i]; i++) {
+            const NMGlobalDnsDomain *domain_a;
+            const NMGlobalDnsDomain *domain_b;
+
+            nm_assert(nm_streq(a->domain_list[i], b->domain_list[i]));
+
+            domain_a = g_hash_table_lookup(a->domains, a->domain_list[i]);
+            nm_assert(domain_a);
+
+            domain_b = g_hash_table_lookup(b->domains, b->domain_list[i]);
+            nm_assert(domain_b);
+
+            NM_CMP_FIELD_STR0(domain_a, domain_b, name);
+
+            NM_CMP_RETURN(nm_strv_cmp_n(domain_a->servers ?: NM_STRV_EMPTY(),
+                                        -1,
+                                        domain_b->servers ?: NM_STRV_EMPTY(),
+                                        -1));
+
+            NM_CMP_RETURN(nm_strv_cmp_n(domain_a->options ?: NM_STRV_EMPTY(),
+                                        -1,
+                                        domain_b->options ?: NM_STRV_EMPTY(),
+                                        -1));
+        }
+    }
+
+    if (check_internal)
+        NM_CMP_FIELD(a, b, internal);
+
+    return 0;
+}
+
 void
 nm_global_dns_config_update_checksum(const NMGlobalDnsConfig *dns_config, GChecksum *sum)
 {

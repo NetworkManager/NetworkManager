@@ -4520,12 +4520,6 @@ nm_platform_ip_route_sync(NMPlatform *self,
 
             conf_o = routes->pdata[i];
 
-            if (NMP_OBJECT_CAST_IP_ROUTE(conf_o)->is_external) {
-                /* This route is added externally. We don't have our own agenda to
-                 * add it, so skip. */
-                continue;
-            }
-
             /* User space cannot add IPv6 routes with metric 0. However, kernel can, and we might track such
              * routes in @route as they are present external. As we already skipped external routes above,
              * we don't expect a user's choice to add such a route (it won't work anyway). */
@@ -4721,24 +4715,6 @@ sync_route_add:
     }
 
     if (routes_prune) {
-        if (routes) {
-            for (i = 0; i < routes->len; i++) {
-                conf_o = routes->pdata[i];
-
-                if (NMP_OBJECT_CAST_IP_ROUTE(conf_o)->is_external) {
-                    /* this is only to catch the case where an external route is
-                     * both in @routes and @routes_prune list. In that case,
-                     * @routes should win and we should not remove the address. */
-                    if (!routes_idx) {
-                        routes_idx = g_hash_table_new((GHashFunc) nmp_object_id_hash,
-                                                      (GEqualFunc) nmp_object_id_equal);
-                    }
-                    g_hash_table_add(routes_idx, (gpointer) conf_o);
-                    continue;
-                }
-            }
-        }
-
         for (i = 0; i < routes_prune->len; i++) {
             const NMPObject *prune_o;
 
@@ -6273,9 +6249,9 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         "%s" /* flags */
         "%s" /* label */
         " src %s"
-        "%s" /* external */
         "%s" /* a_acd_not_ready */
         "%s" /* a_assume_config_once */
+        "%s" /* a_force_commit */
         "",
         s_address,
         address->plen,
@@ -6293,9 +6269,9 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         _to_string_ifa_flags(address->n_ifa_flags, s_flags, sizeof(s_flags)),
         str_label,
         nmp_utils_ip_config_source_to_string(address->addr_source, s_source, sizeof(s_source)),
-        address->external ? " ext" : "",
         address->a_acd_not_ready ? " ip4acd-not-ready" : "",
-        address->a_assume_config_once ? " assume-config-once" : "");
+        address->a_assume_config_once ? " assume-config-once" : "",
+        address->a_force_commit ? " force-commit" : "");
     g_free(str_peer);
     return buf;
 }
@@ -6415,8 +6391,8 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
         buf,
         len,
         "%s/%d lft %s pref %s%s%s%s%s src %s"
-        "%s" /* external */
         "%s" /* a_assume_config_once */
+        "%s" /* a_force_commit */
         "",
         s_address,
         address->plen,
@@ -6427,8 +6403,8 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
         str_dev,
         _to_string_ifa_flags(address->n_ifa_flags, s_flags, sizeof(s_flags)),
         nmp_utils_ip_config_source_to_string(address->addr_source, s_source, sizeof(s_source)),
-        address->external ? " external" : "",
-        address->a_assume_config_once ? " assume-config-once" : "");
+        address->a_assume_config_once ? " assume-config-once" : "",
+        address->a_force_commit ? " force-commit" : "");
     g_free(str_peer);
     return buf;
 }
@@ -6519,8 +6495,8 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         "%s"                                   /* initcwnd */
         "%s"                                   /* initrwnd */
         "%s"                                   /* mtu */
-        "%s"                                   /* is_external */
         "%s"                                   /* r_assume_config_once */
+        "%s"                                   /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -6577,8 +6553,8 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
                                                        route->lock_mtu ? "lock " : "",
                                                        route->mtu)
                                       : "",
-        route->is_external ? " is-external" : "",
-        route->r_assume_config_once ? " assume-config-once" : "");
+        route->r_assume_config_once ? " assume-config-once" : "",
+        route->r_force_commit ? " force-commit" : "");
     return buf;
 }
 
@@ -6648,8 +6624,8 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         "%s"                                   /* initrwnd */
         "%s"                                   /* mtu */
         "%s"                                   /* pref */
-        "%s"                                   /* is_external */
         "%s"                                   /* r_assume_config_once */
+        "%s"                                   /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -6710,8 +6686,8 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
             " pref %s",
             nm_icmpv6_router_pref_to_string(route->rt_pref, str_pref2, sizeof(str_pref2)))
                        : "",
-        route->is_external ? " is-external" : "",
-        route->r_assume_config_once ? " assume-config-once" : "");
+        route->r_assume_config_once ? " assume-config-once" : "",
+        route->r_force_commit ? " force-commit" : "");
 
     return buf;
 }
@@ -7845,10 +7821,10 @@ nm_platform_ip4_address_hash_update(const NMPlatformIP4Address *obj, NMHashState
                         obj->address,
                         obj->peer_address,
                         NM_HASH_COMBINE_BOOLS(guint8,
-                                              obj->external,
                                               obj->use_ip4_broadcast_address,
                                               obj->a_acd_not_ready,
-                                              obj->a_assume_config_once));
+                                              obj->a_assume_config_once,
+                                              obj->a_force_commit));
     nm_hash_update_strarr(h, obj->label);
 }
 
@@ -7869,26 +7845,27 @@ nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a, const NMPlatformIP4Ad
     NM_CMP_FIELD(a, b, preferred);
     NM_CMP_FIELD(a, b, n_ifa_flags);
     NM_CMP_FIELD_STR(a, b, label);
-    NM_CMP_FIELD_UNSAFE(a, b, external);
     NM_CMP_FIELD_UNSAFE(a, b, a_acd_not_ready);
     NM_CMP_FIELD_UNSAFE(a, b, a_assume_config_once);
+    NM_CMP_FIELD_UNSAFE(a, b, a_force_commit);
     return 0;
 }
 
 void
 nm_platform_ip6_address_hash_update(const NMPlatformIP6Address *obj, NMHashState *h)
 {
-    nm_hash_update_vals(h,
-                        obj->ifindex,
-                        obj->addr_source,
-                        obj->timestamp,
-                        obj->lifetime,
-                        obj->preferred,
-                        obj->n_ifa_flags,
-                        obj->plen,
-                        obj->address,
-                        obj->peer_address,
-                        NM_HASH_COMBINE_BOOLS(guint8, obj->external, obj->a_assume_config_once));
+    nm_hash_update_vals(
+        h,
+        obj->ifindex,
+        obj->addr_source,
+        obj->timestamp,
+        obj->lifetime,
+        obj->preferred,
+        obj->n_ifa_flags,
+        obj->plen,
+        obj->address,
+        obj->peer_address,
+        NM_HASH_COMBINE_BOOLS(guint8, obj->a_assume_config_once, obj->a_force_commit));
 }
 
 int
@@ -7908,8 +7885,8 @@ nm_platform_ip6_address_cmp(const NMPlatformIP6Address *a, const NMPlatformIP6Ad
     NM_CMP_FIELD(a, b, lifetime);
     NM_CMP_FIELD(a, b, preferred);
     NM_CMP_FIELD(a, b, n_ifa_flags);
-    NM_CMP_FIELD_UNSAFE(a, b, external);
     NM_CMP_FIELD_UNSAFE(a, b, a_assume_config_once);
+    NM_CMP_FIELD_UNSAFE(a, b, a_force_commit);
     return 0;
 }
 
@@ -8018,8 +7995,8 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
-                                                  obj->is_external,
-                                                  obj->r_assume_config_once));
+                                                  obj->r_assume_config_once,
+                                                  obj->r_force_commit));
         break;
     }
 }
@@ -8110,8 +8087,8 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         NM_CMP_FIELD(a, b, initrwnd);
         NM_CMP_FIELD(a, b, mtu);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL) {
-            NM_CMP_FIELD_UNSAFE(a, b, is_external);
             NM_CMP_FIELD_UNSAFE(a, b, r_assume_config_once);
+            NM_CMP_FIELD_UNSAFE(a, b, r_force_commit);
         }
         break;
     }
@@ -8205,8 +8182,8 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
-                                                  obj->is_external,
-                                                  obj->r_assume_config_once),
+                                                  obj->r_assume_config_once,
+                                                  obj->r_force_commit),
                             obj->window,
                             obj->cwnd,
                             obj->initcwnd,
@@ -8290,8 +8267,8 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
         else
             NM_CMP_FIELD(a, b, rt_pref);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL) {
-            NM_CMP_FIELD_UNSAFE(a, b, is_external);
             NM_CMP_FIELD_UNSAFE(a, b, r_assume_config_once);
+            NM_CMP_FIELD_UNSAFE(a, b, r_force_commit);
         }
         break;
     }

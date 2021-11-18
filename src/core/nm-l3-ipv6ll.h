@@ -48,6 +48,7 @@ NML3IPv6LL *_nm_l3_ipv6ll_new(NML3Cfg *                 l3cfg,
                               const char *              ifname,
                               const char *              network_id,
                               const NMUtilsIPv6IfaceId *token_iid,
+                              guint32                   route_table,
                               NML3IPv6LLNotifyFcn       notify_fcn,
                               gpointer                  user_data);
 
@@ -57,6 +58,7 @@ nm_l3_ipv6ll_new_stable_privacy(NML3Cfg *           l3cfg,
                                 NMUtilsStableType   stable_type,
                                 const char *        ifname,
                                 const char *        network_id,
+                                guint32             route_table,
                                 NML3IPv6LLNotifyFcn notify_fcn,
                                 gpointer            user_data)
 {
@@ -67,6 +69,7 @@ nm_l3_ipv6ll_new_stable_privacy(NML3Cfg *           l3cfg,
                              ifname,
                              network_id,
                              NULL,
+                             route_table,
                              notify_fcn,
                              user_data);
 }
@@ -75,6 +78,7 @@ static inline NML3IPv6LL *
 nm_l3_ipv6ll_new_token(NML3Cfg *                 l3cfg,
                        gboolean                  assume,
                        const NMUtilsIPv6IfaceId *token_iid,
+                       guint32                   route_table,
                        NML3IPv6LLNotifyFcn       notify_fcn,
                        gpointer                  user_data)
 {
@@ -84,6 +88,7 @@ nm_l3_ipv6ll_new_token(NML3Cfg *                 l3cfg,
                              NULL,
                              NULL,
                              token_iid,
+                             route_table,
                              notify_fcn,
                              user_data);
 }

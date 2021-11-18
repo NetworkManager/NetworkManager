@@ -15,6 +15,7 @@
 #include "nm-netns.h"
 #include "n-acd/src/n-acd.h"
 #include "nm-l3-ipv4ll.h"
+#include "nm-ip-config.h"
 
 /*****************************************************************************/
 
@@ -203,6 +204,7 @@ typedef struct {
     guint32           acd_timeout_msec_confdata;
     NML3AcdDefendType acd_defend_type_confdata : 3;
     bool              dirty_confdata : 1;
+    gboolean          force_commit_once : 1;
 } L3ConfigData;
 
 /*****************************************************************************/
@@ -245,6 +247,14 @@ typedef struct _NML3CfgPrivate {
 
     GSource *nacd_event_down_source;
     gint64   nacd_event_down_ratelimited_until_msec;
+
+    union {
+        struct {
+            NMIPConfig *ipconfig_6;
+            NMIPConfig *ipconfig_4;
+        };
+        NMIPConfig *ipconfig_x[2];
+    };
 
     /* This is for rate-limiting the creation of nacd instance. */
     GSource *nacd_instance_ensure_retry;
@@ -399,6 +409,73 @@ static NM_UTILS_LOOKUP_DEFINE(_l3_acd_addr_state_to_string,
                               NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED,
                                                    "external-removed"),
                               NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_USED, "used"), );
+
+/*****************************************************************************/
+
+NMIPConfig *
+nm_l3cfg_ipconfig_get(NML3Cfg *self, int addr_family)
+{
+    g_return_val_if_fail(NM_IS_L3CFG(self), NULL);
+    nm_assert_addr_family(addr_family);
+
+    return self->priv.p->ipconfig_x[NM_IS_IPv4(addr_family)];
+}
+
+static void
+_ipconfig_toggle_notify(gpointer data, GObject *object, gboolean is_last_ref)
+{
+    NML3Cfg *   self     = NM_L3CFG(data);
+    NMIPConfig *ipconfig = NM_IP_CONFIG(object);
+
+    if (!is_last_ref) {
+        /* This happens while we take another ref below. Ignore the signal. */
+        nm_assert(!NM_IN_SET(ipconfig, self->priv.p->ipconfig_4, self->priv.p->ipconfig_6));
+        return;
+    }
+
+    if (ipconfig == self->priv.p->ipconfig_4)
+        self->priv.p->ipconfig_4 = NULL;
+    else {
+        nm_assert(ipconfig == self->priv.p->ipconfig_6);
+        self->priv.p->ipconfig_6 = NULL;
+    }
+
+    /* We take a second reference to keep the instance alive, while also removing the
+     * toggle ref. This will notify the function again, but we will ignore that. */
+    g_object_ref(ipconfig);
+
+    g_object_remove_toggle_ref(G_OBJECT(ipconfig), _ipconfig_toggle_notify, self);
+
+    /* pass on the reference, and unexport on idle. */
+    nm_ip_config_take_and_unexport_on_idle(g_steal_pointer(&ipconfig));
+}
+
+NMIPConfig *
+nm_l3cfg_ipconfig_acquire(NML3Cfg *self, int addr_family)
+{
+    NMIPConfig *ipconfig;
+
+    g_return_val_if_fail(NM_IS_L3CFG(self), NULL);
+    nm_assert_addr_family(addr_family);
+
+    ipconfig = self->priv.p->ipconfig_x[NM_IS_IPv4(addr_family)];
+
+    if (ipconfig)
+        return g_object_ref(ipconfig);
+
+    ipconfig = nm_ip_config_new(addr_family, self);
+
+    self->priv.p->ipconfig_x[NM_IS_IPv4(addr_family)] = ipconfig;
+
+    /* The ipconfig keeps self alive. We use a toggle reference
+     * to avoid a cycle. But we anyway wouldn't want a strong reference,
+     * because the user releases the instance by unrefing it, and we
+     * notice that via the weak reference. */
+    g_object_add_toggle_ref(G_OBJECT(ipconfig), _ipconfig_toggle_notify, self);
+
+    /* We keep the toggle reference, and return the other reference to the caller. */
+    return g_steal_pointer(&ipconfig);
+}
 
 /*****************************************************************************/
 
@@ -938,9 +1015,11 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
     const ObjStatesSyncFilterData *sync_filter_data = user_data;
     NMPObjectType                  obj_type;
     ObjStateData *                 obj_state;
+    NML3Cfg *                      self;
 
     nm_assert(sync_filter_data);
     nm_assert(NM_IS_L3CFG(sync_filter_data->self));
+    self = sync_filter_data->self;
 
     obj_type = NMP_OBJECT_GET_TYPE(obj);
 
@@ -955,15 +1034,12 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
     nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
 
     if (!obj_state->os_nm_configured) {
-        NML3Cfg *self;
-
         if (sync_filter_data->commit_type == NM_L3_CFG_COMMIT_TYPE_ASSUME
             && !_obj_state_data_get_assume_config_once(obj_state))
             return FALSE;
 
         obj_state->os_nm_configured = TRUE;
 
-        self = sync_filter_data->self;
         _LOGD("obj-state: configure-first-time: %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
         return TRUE;
@@ -975,7 +1051,8 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
         return TRUE;
     }
 
-    if (!obj_state->os_plobj && sync_filter_data->commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY)
+    if (!obj_state->os_plobj && sync_filter_data->commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
+        && !nmp_object_get_force_commit(obj))
         return FALSE;
 
     return TRUE;
@@ -1494,6 +1571,7 @@ _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_d
     }
     nm_clear_g_source_inst(&self->priv.p->nacd_source);
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
+    nm_clear_g_source_inst(&self->priv.p->nacd_event_down_source);
 
     if (c_list_is_empty(&self->priv.p->acd_lst_head))
         start_timer = NM_TERNARY_DEFAULT;
@@ -2646,10 +2724,10 @@ handle_probing_done:
         goto handle_start_defending;
     case NM_L3_ACD_ADDR_STATE_READY:
     case NM_L3_ACD_ADDR_STATE_DEFENDING:
+    case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
         goto handle_start_defending;
     case NM_L3_ACD_ADDR_STATE_CONFLICT:
         return;
-    case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
         nm_assert_not_reached();
         return;
     }
@@ -3123,7 +3201,8 @@ nm_l3cfg_add_config(NML3Cfg *             self,
             .acd_timeout_msec_confdata = acd_timeout_msec,
             .priority_confdata         = priority,
             .pseudo_timestamp_confdata = ++self->priv.p->pseudo_timestamp_counter,
-            .dirty_confdata            = FALSE,
+            .force_commit_once = NM_FLAGS_HAS(config_flags, NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE),
+            .dirty_confdata    = FALSE,
         };
         changed = TRUE;
     } else {
@@ -3268,6 +3347,7 @@ typedef struct {
     gconstpointer tag;
     bool          assume_config_once;
     bool          to_commit;
+    bool          force_commit_once;
 } L3ConfigMergeHookAddObjData;
 
 static gboolean
@@ -3286,8 +3366,10 @@ _l3_hook_add_obj_cb(const NML3ConfigData *     l3cd,
     nm_assert(hook_result);
     nm_assert(hook_result->ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
     nm_assert(hook_result->assume_config_once == NM_OPTION_BOOL_DEFAULT);
+    nm_assert(hook_result->force_commit == NM_OPTION_BOOL_DEFAULT);
 
     hook_result->assume_config_once = hook_data->assume_config_once;
+    hook_result->force_commit       = hook_data->force_commit_once;
 
     switch (NMP_OBJECT_GET_TYPE(obj)) {
     case NMP_OBJECT_TYPE_IP4_ADDRESS:
@@ -3327,7 +3409,8 @@ _l3_hook_add_obj_cb(const NML3ConfigData *     l3cd,
 
         if (!NM_IN_SET(acd_data->info.state,
                        NM_L3_ACD_ADDR_STATE_READY,
-                       NM_L3_ACD_ADDR_STATE_DEFENDING)) {
+                       NM_L3_ACD_ADDR_STATE_DEFENDING,
+                       NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED)) {
             acd_bad = TRUE;
             goto out_ip4_address;
         }
@@ -3423,6 +3506,7 @@ _l3cfg_update_combined_config(NML3Cfg *              self,
             hook_data.tag = l3cd_data->tag_confdata;
             hook_data.assume_config_once =
                 NM_FLAGS_HAS(l3cd_data->config_flags, NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE);
+            hook_data.force_commit_once = l3cd_data->force_commit_once;
 
             nm_l3_config_data_merge(l3cd,
                                     l3cd_data->l3cd,
@@ -3861,6 +3945,68 @@ set:
                                    ip6_privacy_to_str(ip6_privacy));
 }
 
+static void
+_l3_commit_ip6_token(NML3Cfg *self, NML3CfgCommitType commit_type)
+{
+    NMUtilsIPv6IfaceId    token;
+    const NMPlatformLink *pllink;
+    int                   val;
+
+    if (commit_type < NM_L3_CFG_COMMIT_TYPE_UPDATE || !self->priv.p->combined_l3cd_commited)
+        token.id = 0;
+    else
+        token = nm_l3_config_data_get_ip6_token(self->priv.p->combined_l3cd_commited);
+
+    pllink = nm_l3cfg_get_pllink(self, TRUE);
+    if (!pllink || pllink->inet6_token.id == token.id)
+        return;
+
+    if (_LOGT_ENABLED()) {
+        struct in6_addr addr     = {};
+        struct in6_addr addr_old = {};
+        char            addr_str[INET6_ADDRSTRLEN];
+        char            addr_str_old[INET6_ADDRSTRLEN];
+
+        nm_utils_ipv6_addr_set_interface_identifier(&addr, &token);
+        nm_utils_ipv6_addr_set_interface_identifier(&addr_old, &pllink->inet6_token);
+
+        _LOGT("commit-ip6-token: set value %s (was %s)",
+              inet_ntop(AF_INET6, &addr, addr_str, INET6_ADDRSTRLEN),
+              inet_ntop(AF_INET6, &addr_old, addr_str_old, INET6_ADDRSTRLEN));
+    }
+
+    /* The kernel allows setting a token only when 'accept_ra'
+     * is 1: temporarily flip it if necessary; unfortunately
+     * this will also generate an additional Router Solicitation
+     * from kernel. */
+    val = nm_platform_sysctl_ip_conf_get_int_checked(self->priv.platform,
+                                                     AF_INET6,
+                                                     pllink->name,
+                                                     "accept_ra",
+                                                     10,
+                                                     G_MININT32,
+                                                     G_MAXINT32,
+                                                     1);
+
+    if (val != 1) {
+        nm_platform_sysctl_ip_conf_set(self->priv.platform,
+                                       AF_INET6,
+                                       pllink->name,
+                                       "accept_ra",
+                                       "1");
+    }
+
+    nm_platform_link_set_ipv6_token(self->priv.platform, self->priv.ifindex, &token);
+
+    if (val != 1) {
+        nm_platform_sysctl_ip_conf_set_int64(self->priv.platform,
+                                             AF_INET6,
+                                             pllink->name,
+                                             "accept_ra",
+                                             val);
+    }
+}
+
 static gboolean
 _l3_commit_one(NML3Cfg *             self,
                int                   addr_family,
@@ -3918,10 +4064,11 @@ _l3_commit_one(NML3Cfg *             self,
     if (!IS_IPv4) {
         _l3_commit_ip6_privacy(self, commit_type);
         _l3_commit_ndisc_params(self, commit_type);
+        _l3_commit_ip6_token(self, commit_type);
     }
 
     if (route_table_sync == NM_IP_ROUTE_TABLE_SYNC_MODE_NONE)
-        route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_ALL;
+        route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN;
 
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY) {
         addresses_prune = nm_platform_ip_address_get_prune_list(self->priv.platform,
@@ -3975,6 +4122,7 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     gboolean                                 is_sticky_update      = FALSE;
     char                                     sbuf_ct[30];
     gboolean                                 changed_combined_l3cd;
+    guint                                    i;
 
     g_return_if_fail(NM_IS_L3CFG(self));
     nm_assert(NM_IN_SET(commit_type,
@@ -4037,6 +4185,15 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     _l3_commit_one(self, AF_INET6, commit_type, changed_combined_l3cd, l3cd_old);
 
     _l3_acd_data_process_changes(self);
+
+    if (self->priv.p->l3_config_datas) {
+        for (i = 0; i < self->priv.p->l3_config_datas->len; i++) {
+            L3ConfigData *l3_config_data = _l3_config_datas_at(self->priv.p->l3_config_datas, i);
+
+            if (l3_config_data->force_commit_once)
+                l3_config_data->force_commit_once = FALSE;
+        }
+    }
 
     nm_assert(self->priv.p->commit_reentrant_count == 1);
     self->priv.p->commit_reentrant_count--;
@@ -4168,6 +4325,20 @@ nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle)
     if (c_list_is_empty(&self->priv.p->commit_type_lst_head))
         g_object_unref(self);
     nm_g_slice_free(handle);
+}
+
+void
+nm_l3cfg_commit_type_reset_update(NML3Cfg *self)
+{
+    NML3CfgCommitTypeHandle *h;
+
+    c_list_for_each_entry (h, &self->priv.p->commit_type_lst_head, commit_type_lst) {
+        if (h->commit_type >= NM_L3_CFG_COMMIT_TYPE_UPDATE) {
+            return;
+        }
+    }
+
+    self->priv.p->commit_type_update_sticky = FALSE;
 }
 
 /*****************************************************************************/
@@ -4376,6 +4547,9 @@ finalize(GObject *object)
 {
     NML3Cfg *self = NM_L3CFG(object);
 
+    nm_assert(!self->priv.p->ipconfig_4);
+    nm_assert(!self->priv.p->ipconfig_6);
+
     nm_assert(!self->priv.p->l3_config_datas);
     nm_assert(!self->priv.p->ipv4ll);
 
@@ -4393,6 +4567,7 @@ finalize(GObject *object)
     nm_clear_pointer(&self->priv.p->nacd, n_acd_unref);
     nm_clear_g_source_inst(&self->priv.p->nacd_source);
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
+    nm_clear_g_source_inst(&self->priv.p->nacd_event_down_source);
 
     nm_clear_g_source_inst(&self->priv.p->obj_state_temporary_not_available_timeout_source);
 

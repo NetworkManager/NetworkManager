@@ -318,16 +318,14 @@ typedef enum {
      * IFA_FLAGS attribute. */         \
     guint32 n_ifa_flags;                                                                     \
                                                                                              \
-    /* FIXME(l3cfg): the external marker won't be necessary anymore, because we only
-     * merge addresses we care about, and ignore (don't remove) external addresses. */         \
-    bool external : 1;                                                                       \
-                                                                                             \
     bool use_ip4_broadcast_address : 1;                                                      \
                                                                                              \
-    /* Whether the address is should be configured once during assume. This is a meta flag
-     * that is not honored by NMPlatform (netlink code). Instead, it can be used by the upper
-     * layers which use NMPlatformIPAddress to track addresses that should be configured. */   \
+    /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
+     * used by the upper layers which use NMPlatformIPRoute to track addresses that
+     * should be configured. */             \
+    /* Whether the address is should be configured once during assume. */                    \
     bool a_assume_config_once : 1;                                                           \
+    bool a_force_commit : 1;                                                                 \
                                                                                              \
     guint8 plen;                                                                             \
     ;
@@ -471,18 +469,13 @@ typedef union {
      * the "table_coerced" field is ignored (unlike for the metric). */            \
     bool table_any : 1;                                                                   \
                                                                                           \
-    /* This route is tracked as external route, that is not a route that NetworkManager
-     * actively wants to add, but a route that was added externally. In some cases, such
-     * a route should be ignored.
-     *
-     * Note that unlike most other fields here, this flag only exists inside NetworkManager
-     * and is not reflected on netlink. */   \
-    bool is_external : 1;                                                                 \
-                                                                                          \
-    /* Whether the route is should be configured once during assume. This is a meta flag
-     * that is not honored by NMPlatform (netlink code). Instead, it can be used by the upper
-     * layers which use NMPlatformIPRoute to track routes that should be configured. */  \
+    /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
+     * used by the upper layers which use NMPlatformIPRoute to track routes that
+     * should be configured. */          \
+    /* Whether the route is should be configured once during assume. */                   \
     bool r_assume_config_once : 1;                                                        \
+    /* Whether the route should be committed even if it was removed externally. */        \
+    bool r_force_commit : 1;                                                              \
                                                                                           \
     /* rtnh_flags
      *
@@ -2188,7 +2181,9 @@ static inline gconstpointer
 nm_platform_ip_route_get_gateway(int addr_family, const NMPlatformIPRoute *route)
 {
     nm_assert_addr_family(addr_family);
-    nm_assert(route);
+
+    if (!route)
+        return NULL;
 
     if (NM_IS_IPv4(addr_family))
         return &((NMPlatformIP4Route *) route)->gateway;

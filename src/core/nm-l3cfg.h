@@ -53,11 +53,15 @@ typedef enum _nm_packed {
  *   "don't change" behavior. At least once. If the address/route
  *   is still not (no longer) configured on the subsequent
  *   commit, it's not getting added again.
+ * @NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE: if set, objects in the
+ *   NML3ConfigData are committed to platform even if they were
+ *   removed externally.
  */
 typedef enum _nm_packed {
     NM_L3CFG_CONFIG_FLAGS_NONE               = 0,
     NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD       = (1LL << 0),
     NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE = (1LL << 1),
+    NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE         = (1LL << 2),
 } NML3CfgConfigFlags;
 
 typedef enum _nm_packed {
@@ -426,6 +430,8 @@ nm_l3cfg_commit_type_clear(NML3Cfg *self, NML3CfgCommitTypeHandle **handle)
     return TRUE;
 }
 
+void nm_l3cfg_commit_type_reset_update(NML3Cfg *self);
+
 /*****************************************************************************/
 
 const NML3ConfigData *nm_l3cfg_get_combined_l3cd(NML3Cfg *self, gboolean get_commited);
@@ -444,6 +450,12 @@ struct _NML3IPv4LL *nm_l3cfg_get_ipv4ll(NML3Cfg *self);
 struct _NML3IPv4LL *nm_l3cfg_access_ipv4ll(NML3Cfg *self);
 
 void _nm_l3cfg_unregister_ipv4ll(NML3Cfg *self);
+
+/*****************************************************************************/
+
+struct _NMIPConfig;
+struct _NMIPConfig *nm_l3cfg_ipconfig_get(NML3Cfg *self, int addr_family);
+struct _NMIPConfig *nm_l3cfg_ipconfig_acquire(NML3Cfg *self, int addr_family);
 
 /*****************************************************************************/
 

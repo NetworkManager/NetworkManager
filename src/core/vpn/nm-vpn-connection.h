@@ -54,16 +54,13 @@ void     nm_vpn_connection_disconnect(NMVpnConnection *             self,
                                       NMActiveConnectionStateReason reason,
                                       gboolean                      quitting);
 
-NMProxyConfig *nm_vpn_connection_get_proxy_config(NMVpnConnection *self);
+const NML3ConfigData *nm_vpn_connection_get_l3cd(NMVpnConnection *self);
 
-NMIP4Config *    nm_vpn_connection_get_ip4_config(NMVpnConnection *self);
-NMIP6Config *    nm_vpn_connection_get_ip6_config(NMVpnConnection *self);
 const char *     nm_vpn_connection_get_ip_iface(NMVpnConnection *self, gboolean fallback_device);
 int              nm_vpn_connection_get_ip_ifindex(NMVpnConnection *self, gboolean fallback_device);
 guint32          nm_vpn_connection_get_ip4_internal_gateway(NMVpnConnection *self);
 struct in6_addr *nm_vpn_connection_get_ip6_internal_gateway(NMVpnConnection *self);
 
-guint32 nm_vpn_connection_get_ip4_route_metric(NMVpnConnection *self);
-guint32 nm_vpn_connection_get_ip6_route_metric(NMVpnConnection *self);
+guint32 nm_vpn_connection_get_ip_route_metric(NMVpnConnection *self, int addr_family);
 
 #endif /* __NM_VPN_CONNECTION_H__ */

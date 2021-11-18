@@ -9,13 +9,14 @@
 
 #include <netinet/in.h>
 
-#include "nm-setting-connection.h"
-#include "nm-dbus-object.h"
-#include "nm-dbus-interface.h"
-#include "nm-connection.h"
-#include "nm-rfkill-manager.h"
 #include "NetworkManagerUtils.h"
+#include "nm-connection.h"
+#include "nm-dbus-interface.h"
+#include "nm-dbus-object.h"
 #include "nm-device-utils.h"
+#include "nm-l3cfg.h"
+#include "nm-rfkill-manager.h"
+#include "nm-setting-connection.h"
 
 /* Properties */
 #define NM_DEVICE_UDI                   "udi"
@@ -70,17 +71,17 @@
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
 
 /* Internal signals */
-#define NM_DEVICE_DNS_LOOKUP_DONE       "dns-lookup-done"
-#define NM_DEVICE_IP4_CONFIG_CHANGED    "ip4-config-changed"
-#define NM_DEVICE_IP6_CONFIG_CHANGED    "ip6-config-changed"
-#define NM_DEVICE_IP6_PREFIX_DELEGATED  "ip6-prefix-delegated"
-#define NM_DEVICE_IP6_SUBNET_NEEDED     "ip6-subnet-needed"
-#define NM_DEVICE_REMOVED               "removed"
-#define NM_DEVICE_RECHECK_AUTO_ACTIVATE "recheck-auto-activate"
-#define NM_DEVICE_RECHECK_ASSUME        "recheck-assume"
-#define NM_DEVICE_STATE_CHANGED         "state-changed"
-#define NM_DEVICE_LINK_INITIALIZED      "link-initialized"
-#define NM_DEVICE_AUTOCONNECT_ALLOWED   "autoconnect-allowed"
+#define NM_DEVICE_DNS_LOOKUP_DONE          "dns-lookup-done"
+#define NM_DEVICE_L3CD_CHANGED             "l3cd-changed"
+#define NM_DEVICE_IP6_PREFIX_DELEGATED     "ip6-prefix-delegated"
+#define NM_DEVICE_IP6_SUBNET_NEEDED        "ip6-subnet-needed"
+#define NM_DEVICE_REMOVED                  "removed"
+#define NM_DEVICE_RECHECK_AUTO_ACTIVATE    "recheck-auto-activate"
+#define NM_DEVICE_RECHECK_ASSUME           "recheck-assume"
+#define NM_DEVICE_STATE_CHANGED            "state-changed"
+#define NM_DEVICE_LINK_INITIALIZED         "link-initialized"
+#define NM_DEVICE_AUTOCONNECT_ALLOWED      "autoconnect-allowed"
+#define NM_DEVICE_PLATFORM_ADDRESS_CHANGED "platform-address-changed"
 
 #define NM_DEVICE_STATISTICS_REFRESH_RATE_MS "refresh-rate-ms"
 #define NM_DEVICE_STATISTICS_TX_BYTES        "tx-bytes"
@@ -344,15 +345,10 @@ typedef struct _NMDeviceClass {
 
     NMActStageReturn (*act_stage1_prepare)(NMDevice *self, NMDeviceStateReason *out_failure_reason);
     NMActStageReturn (*act_stage2_config)(NMDevice *self, NMDeviceStateReason *out_failure_reason);
-    NMActStageReturn (*act_stage3_ip_config_start)(NMDevice *           self,
-                                                   int                  addr_family,
-                                                   gpointer *           out_config,
-                                                   NMDeviceStateReason *out_failure_reason);
-    NMActStageReturn (*act_stage4_ip_config_timeout)(NMDevice *           self,
-                                                     int                  addr_family,
-                                                     NMDeviceStateReason *out_failure_reason);
+    void (*act_stage3_ip_config)(NMDevice *self, int addr_family);
+    gboolean (*ready_for_ip_config)(NMDevice *self);
 
-    void (*ip4_config_pre_commit)(NMDevice *self, NMIP4Config *config);
+    const char *(*get_ip_method_auto)(NMDevice *self, int addr_family);
 
     /* Async deactivating (in the DEACTIVATING phase) */
     void (*deactivate_async)(NMDevice *                 self,
@@ -460,16 +456,13 @@ const char *nm_device_get_permanent_hw_address_full(NMDevice *self,
                                                     gboolean *out_is_fake);
 const char *nm_device_get_initial_hw_address(NMDevice *dev);
 
-NMProxyConfig *nm_device_get_proxy_config(NMDevice *dev);
-
 NMDhcpConfig *nm_device_get_dhcp_config(NMDevice *dev, int addr_family);
-NMIP4Config * nm_device_get_ip4_config(NMDevice *dev);
-void          nm_device_replace_vpn4_config(NMDevice *dev, NMIP4Config *old, NMIP4Config *config);
 
-NMIP6Config *nm_device_get_ip6_config(NMDevice *dev);
-void         nm_device_replace_vpn6_config(NMDevice *dev, NMIP6Config *old, NMIP6Config *config);
+NML3Cfg *nm_device_get_l3cfg(NMDevice *self);
 
-void nm_device_capture_initial_config(NMDevice *dev);
+const NML3ConfigData *nm_device_get_l3cd(NMDevice *self, gboolean get_commited);
+
+void nm_device_l3cfg_commit(NMDevice *self, NML3CfgCommitType commit_type, gboolean commit_sync);
 
 int       nm_device_parent_get_ifindex(NMDevice *dev);
 NMDevice *nm_device_parent_get_device(NMDevice *dev);
@@ -547,7 +540,7 @@ RfKillType nm_device_get_rfkill_type(NMDevice *device);
 
 /* IPv6 prefix delegation */
 
-void nm_device_request_ip6_prefixes(NMDevice *self, int needed_prefixes);
+void nm_device_request_ip6_prefixes(NMDevice *self, guint needed_prefixes);
 
 gboolean nm_device_needs_ip6_subnet(NMDevice *self);
 
@@ -754,17 +747,11 @@ NMConnection *nm_device_new_default_connection(NMDevice *self);
 
 const NMPObject *nm_device_get_best_default_route(NMDevice *self, int addr_family);
 
-void nm_device_spawn_iface_helper(NMDevice *self);
-
 gboolean nm_device_reapply(NMDevice *self, NMConnection *connection, GError **error);
 void     nm_device_reapply_settings_immediately(NMDevice *self);
 
 void nm_device_update_firewall_zone(NMDevice *self);
 void nm_device_update_metered(NMDevice *self);
-void nm_device_reactivate_ip_config(NMDevice *         device,
-                                    int                addr_family,
-                                    NMSettingIPConfig *s_ip_old,
-                                    NMSettingIPConfig *s_ip_new);
 
 gboolean nm_device_update_hw_address(NMDevice *self);
 void     nm_device_update_initial_hw_address(NMDevice *self);

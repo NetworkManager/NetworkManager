@@ -54,8 +54,6 @@ libNetworkManagerBase = static_library(
     'nm-l3-ipv6ll.c',
     'nm-l3cfg.c',
     'nm-ip-config.c',
-    'nm-ip4-config.c',
-    'nm-ip6-config.c',
   ),
   dependencies: [
     core_default_dep,
@@ -93,7 +91,6 @@ endif
 libNetworkManager = static_library(
   'NetworkManager',
   sources: files(
-    'devices/nm-acd-manager.c',
     'devices/nm-device-6lowpan.c',
     'devices/nm-device-bond.c',
     'devices/nm-device-bridge.c',
@@ -130,9 +127,10 @@ libNetworkManager = static_library(
     'dnsmasq/nm-dnsmasq-manager.c',
     'dnsmasq/nm-dnsmasq-utils.c',
     'ppp/nm-ppp-manager-call.c',
-    'settings/plugins/keyfile/nms-keyfile-storage.c',
+    'ppp/nm-ppp-mgr.c',
     'settings/plugins/keyfile/nms-keyfile-plugin.c',
     'settings/plugins/keyfile/nms-keyfile-reader.c',
+    'settings/plugins/keyfile/nms-keyfile-storage.c',
     'settings/plugins/keyfile/nms-keyfile-utils.c',
     'settings/plugins/keyfile/nms-keyfile-writer.c',
     'settings/nm-agent-manager.c',
@@ -169,7 +167,6 @@ libNetworkManager = static_library(
     'nm-manager.c',
     'nm-pacrunner-manager.c',
     'nm-policy.c',
-    'nm-proxy-config.c',
     'nm-rfkill-manager.c',
     'nm-session-monitor.c',
     'nm-sleep-monitor.c',
@@ -181,40 +178,6 @@ libNetworkManager = static_library(
     libnm_systemd_core,
     libnm_systemd_shared,
   ],
-)
-
-executable(
-  'nm-iface-helper',
-  'nm-iface-helper.c',
-  dependencies: [
-    core_default_dep,
-    glib_dep,
-    libudev_dep,
-    libndp_dep,
-    dl_dep,
-  ],
-  link_with: [
-    libNetworkManagerBase,
-    libnm_core_aux_intern,
-    libnm_core_impl,
-    libnm_crypto,
-    libnm_systemd_core,
-    libnm_platform,
-    libnm_systemd_shared,
-    libnm_base,
-    libnm_udev_aux,
-    libnm_log_core,
-    libnm_glib_aux,
-    libnm_std_aux,
-    libn_acd,
-    libn_dhcp4,
-    libc_rbtree,
-    libc_siphash,
-  ],
-  link_args: ldflags_linker_script_binary,
-  link_depends: linker_script_binary,
-  install: true,
-  install_dir: nm_libexecdir,
 )
 
 if enable_tests

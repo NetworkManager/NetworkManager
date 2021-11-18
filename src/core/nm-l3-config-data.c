@@ -117,8 +117,10 @@ struct _NML3ConfigData {
         NMIPRouteTableSyncMode route_table_sync_x[2];
     };
 
-    NMSettingConnectionMdns  mdns;
-    NMSettingConnectionLlmnr llmnr;
+    NMSettingConnectionMdns       mdns;
+    NMSettingConnectionLlmnr      llmnr;
+    NMSettingConnectionDnsOverTls dns_over_tls;
+    NMUtilsIPv6IfaceId            ip6_token;
 
     NML3ConfigDatFlags flags;
 
@@ -570,6 +572,21 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                                            NULL)));
     }
 
+    if (self->dns_over_tls != NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT) {
+        gs_free char *s = NULL;
+
+        _L("dns-over-tls: %s",
+           (s = _nm_utils_enum_to_str_full(nm_setting_connection_dns_over_tls_get_type(),
+                                           self->dns_over_tls,
+                                           " ",
+                                           NULL)));
+    }
+
+    if (self->ip6_token.id != 0) {
+        _L("ipv6-token: %s",
+           nm_utils_inet6_interface_identifier_to_token(&self->ip6_token, sbuf_addr));
+    }
+
     if (self->metered != NM_TERNARY_DEFAULT)
         _L("metered: %s", self->metered ? "yes" : "no");
 
@@ -666,6 +683,7 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
         .multi_idx                     = nm_dedup_multi_index_ref(multi_idx),
         .mdns                          = NM_SETTING_CONNECTION_MDNS_DEFAULT,
         .llmnr                         = NM_SETTING_CONNECTION_LLMNR_DEFAULT,
+        .dns_over_tls                  = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT,
         .flags                         = NM_L3_CONFIG_DAT_FLAGS_NONE,
         .metered                       = NM_TERNARY_DEFAULT,
         .proxy_browser_only            = NM_TERNARY_DEFAULT,
@@ -1679,6 +1697,26 @@ nm_l3_config_data_set_llmnr(NML3ConfigData *self, NMSettingConnectionLlmnr llmnr
     return TRUE;
 }
 
+NMSettingConnectionDnsOverTls
+nm_l3_config_data_get_dns_over_tls(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->dns_over_tls;
+}
+
+gboolean
+nm_l3_config_data_set_dns_over_tls(NML3ConfigData *self, NMSettingConnectionDnsOverTls dns_over_tls)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    if (self->dns_over_tls == dns_over_tls)
+        return FALSE;
+
+    self->dns_over_tls = dns_over_tls;
+    return TRUE;
+}
+
 NMIPRouteTableSyncMode
 nm_l3_config_data_get_route_table_sync(const NML3ConfigData *self, int addr_family)
 {
@@ -1814,6 +1852,26 @@ nm_l3_config_data_set_ip6_privacy(NML3ConfigData *self, NMSettingIP6ConfigPrivac
         return FALSE;
     self->ip6_privacy = ip6_privacy;
     nm_assert(self->ip6_privacy == ip6_privacy);
+    return TRUE;
+}
+
+NMUtilsIPv6IfaceId
+nm_l3_config_data_get_ip6_token(const NML3ConfigData *self)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, TRUE));
+
+    return self->ip6_token;
+}
+
+gboolean
+nm_l3_config_data_set_ip6_token(NML3ConfigData *self, NMUtilsIPv6IfaceId ipv6_token)
+{
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+
+    if (self->ip6_token.id == ipv6_token.id)
+        return FALSE;
+
+    self->ip6_token.id = ipv6_token.id;
     return TRUE;
 }
 
@@ -2125,6 +2183,8 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
     NM_CMP_DIRECT_REF_STRING(a->nis_domain, b->nis_domain);
     NM_CMP_DIRECT(a->mdns, b->mdns);
     NM_CMP_DIRECT(a->llmnr, b->llmnr);
+    NM_CMP_DIRECT(a->dns_over_tls, b->dns_over_tls);
+    NM_CMP_DIRECT(a->ip6_token.id, b->ip6_token.id);
     NM_CMP_DIRECT(a->mtu, b->mtu);
     NM_CMP_DIRECT(a->ip6_mtu, b->ip6_mtu);
     NM_CMP_DIRECT_UNSAFE(a->metered, b->metered);
@@ -2325,7 +2385,8 @@ nm_l3_config_data_add_dependent_onlink_routes(NML3ConfigData *self, int addr_fam
         if (nm_ip_addr_is_null(addr_family, p_gateway))
             continue;
 
-        if (_data_get_direct_route_for_host(
+        if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT(route_src)
+            || _data_get_direct_route_for_host(
                 self,
                 addr_family,
                 p_gateway,
@@ -2456,6 +2517,7 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData *      self,
                     .network       = *a6,
                     .plen          = plen,
                 };
+
                 nm_platform_ip_route_normalize(addr_family, &rx.rx);
                 nm_l3_config_data_add_route(self, addr_family, NULL, &rx.rx);
             }
@@ -2844,6 +2906,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
             NML3ConfigMergeHookResult  hook_result = {
                 .ip4acd_not_ready   = NM_OPTION_BOOL_DEFAULT,
                 .assume_config_once = NM_OPTION_BOOL_DEFAULT,
+                .force_commit       = NM_OPTION_BOOL_DEFAULT,
             };
 
 #define _ensure_a()                                       \
@@ -2882,6 +2945,12 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                 a.ax.a_assume_config_once = (!!hook_result.assume_config_once);
             }
 
+            if (hook_result.force_commit != NM_OPTION_BOOL_DEFAULT
+                && (!!hook_result.force_commit) != a_src->a_force_commit) {
+                _ensure_a();
+                a.ax.a_force_commit = (!!hook_result.force_commit);
+            }
+
             nm_l3_config_data_add_address_full(self,
                                                addr_family,
                                                a_src == &a.ax ? NULL : obj,
@@ -2902,6 +2971,7 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                 NML3ConfigMergeHookResult hook_result = {
                     .ip4acd_not_ready   = NM_OPTION_BOOL_DEFAULT,
                     .assume_config_once = NM_OPTION_BOOL_DEFAULT,
+                    .force_commit       = NM_OPTION_BOOL_DEFAULT,
                 };
 
 #define _ensure_r()                                     \
@@ -2931,6 +3001,12 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
                     && (!!hook_result.assume_config_once) != r_src->r_assume_config_once) {
                     _ensure_r();
                     r.rx.r_assume_config_once = (!!hook_result.assume_config_once);
+                }
+
+                if (hook_result.force_commit != NM_OPTION_BOOL_DEFAULT
+                    && (!!hook_result.force_commit) != r_src->r_force_commit) {
+                    _ensure_r();
+                    r.rx.r_force_commit = (!!hook_result.force_commit);
                 }
 
                 if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)) {
@@ -3018,6 +3094,12 @@ nm_l3_config_data_merge(NML3ConfigData *      self,
 
     if (self->llmnr == NM_SETTING_CONNECTION_LLMNR_DEFAULT)
         self->llmnr = src->llmnr;
+
+    if (self->dns_over_tls == NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT)
+        self->dns_over_tls = src->dns_over_tls;
+
+    if (self->ip6_token.id == 0)
+        self->ip6_token.id = src->ip6_token.id;
 
     self->metered = NM_MAX((NMTernary) self->metered, (NMTernary) src->metered);
 
