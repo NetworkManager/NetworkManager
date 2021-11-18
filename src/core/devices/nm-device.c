@@ -12001,8 +12001,7 @@ _dev_ipshared4_start(NMDevice *self)
     NMPlatformIP4Address                     ip4_addr;
     NMDevicePrivate *                        priv = NM_DEVICE_GET_PRIVATE(self);
     const char *                             ip_iface;
-    gs_free_error GError *error = NULL;
-    NMConnection *        applied;
+    NMConnection *                           applied;
 
     if (priv->ipshared_data_4.state != NM_DEVICE_IP_STATE_NONE)
         return;
