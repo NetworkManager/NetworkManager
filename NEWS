@@ -16,10 +16,6 @@ NetworkManager-1.34
 Overview of changes since NetworkManager-1.32
 =============================================
 
-This is a release candidate. The API is subject to change
-and not guaranteed to be compatible with the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
-
 * initrd: wait for both IPv4 and IPv6 with "ip=dhcp,dhcp6".
 * core: better handle sd-resolved errors when resolving hostnames.
 * nmcli: fix import WireGuard profile with DNS domain and address
