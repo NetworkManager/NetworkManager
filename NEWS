@@ -10,6 +10,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * rework IP configuration code to make it more independent from
   NMDevice.
+* Drop "configure-and-quit" mode and nm-iface-helper.
 
 =============================================
 NetworkManager-1.34
