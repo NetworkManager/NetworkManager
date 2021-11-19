@@ -33,10 +33,7 @@ NotifyAccess=main
 # or set to 2147483647 for infinity.
 #Environment=NM_SUDO_IDLE_TIMEOUT_MSEC=10000
 
-[Install]
-Alias=dbus-org.freedesktop.nm.sudo.service
 
-[Service]
 # Restrict:
 AmbientCapabilities=
 CapabilityBoundingSet=
@@ -72,3 +69,7 @@ CapabilityBoundingSet=CAP_DAC_OVERRIDE
 PrivateUsers=no
 RestrictAddressFamilies=AF_UNIX
 SystemCallFilter=@resources
+
+
+[Install]
+Alias=dbus-org.freedesktop.nm.sudo.service
