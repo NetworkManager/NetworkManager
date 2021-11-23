@@ -3409,6 +3409,11 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
     if (!NM_IN_SET(rtm->rtm_type, RTN_UNICAST, RTN_LOCAL))
         return NULL;
 
+    /* A BPF filter on the netlink socket already enforces this, but
+     * check it also here in case the filter couldn't be installed. */
+    if (rtm->rtm_protocol > RTPROT_STATIC && !NM_IN_SET(rtm->rtm_protocol, RTPROT_DHCP, RTPROT_RA))
+        return NULL;
+
     if (nlmsg_parse_arr(nlh, sizeof(struct rtmsg), tb, policy) < 0)
         return NULL;
 
@@ -9536,6 +9541,10 @@ constructed(GObject *_object)
         nle = nl_socket_add_memberships(priv->nlh, RTNLGRP_TC, 0);
         nm_assert(!nle);
     }
+
+    nle = nl_socket_set_rtprot_filter(priv->nlh);
+    if (nle)
+        _LOGW("error adding routing protocol filter: %s (%d)", nm_strerror(nle), -nle);
 
     fd = nl_socket_get_fd(priv->nlh);
 
