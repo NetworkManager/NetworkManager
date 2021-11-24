@@ -409,21 +409,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
                 .compare_fcn       = _nm_setting_property_compare_fcn_default,
                 .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
                 .from_dbus_is_full = TRUE);
-        else if (g_type_is_a(vtype, G_TYPE_ENUM)) {
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_INT32,
-                .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM,
-                .compare_fcn                = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn              = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full          = TRUE);
-        } else if (g_type_is_a(vtype, G_TYPE_FLAGS)) {
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_UINT32,
-                .typdata_to_dbus.gprop_type = NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS,
-                .compare_fcn                = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn              = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full          = TRUE);
-        } else
+        else
             nm_assert_not_reached();
 
 has_property_type:
@@ -1209,10 +1195,6 @@ _nm_setting_property_to_dbus_fcn_gprop(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_n
     switch (property_info->property_type->typdata_to_dbus.gprop_type) {
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_DEFAULT:
         return g_dbus_gvalue_to_gvariant(&prop_value, property_info->property_type->dbus_type);
-    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_ENUM:
-        return nm_g_variant_maybe_singleton_i(g_value_get_enum(&prop_value));
-    case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_FLAGS:
-        return g_variant_new_uint32(g_value_get_flags(&prop_value));
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_GARRAY_UINT:
         G_STATIC_ASSERT_EXPR(sizeof(guint) == sizeof(guint32));
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_ARRAY));

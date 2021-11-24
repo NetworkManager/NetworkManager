@@ -62,8 +62,8 @@ typedef struct {
     char                   *generate_mac_address_mask;
     char                   *s390_nettype;
     char                   *wol_password;
+    int                     accept_all_mac_addresses;
     NMSettingWiredWakeOnLan wol;
-    NMTernary               accept_all_mac_addresses;
     guint32                 speed;
     guint32                 mtu;
     bool                    auto_negotiate;
@@ -1050,11 +1050,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_WAKE_ON_LAN_PASSWORD:
         g_value_set_string(value, priv->wol_password);
         break;
-    case PROP_ACCEPT_ALL_MAC_ADDRESSES:
-        g_value_set_enum(value, priv->accept_all_mac_addresses);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1188,11 +1185,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_free(priv->wol_password);
         priv->wol_password = g_value_dup_string(value);
         break;
-    case PROP_ACCEPT_ALL_MAC_ADDRESSES:
-        priv->accept_all_mac_addresses = g_value_get_enum(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1208,8 +1202,7 @@ nm_setting_wired_init(NMSettingWired *setting)
     priv->mac_address_blacklist = g_array_new(TRUE, FALSE, sizeof(char *));
     g_array_set_clear_func(priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
 
-    priv->wol                      = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
-    priv->accept_all_mac_addresses = NM_TERNARY_DEFAULT;
+    priv->wol = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
 }
 
 /**
@@ -1724,13 +1717,13 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * description: Enforce the interface to accept all the packets.
      * ---end---
      */
-    obj_properties[PROP_ACCEPT_ALL_MAC_ADDRESSES] =
-        g_param_spec_enum(NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
-                          "",
-                          "",
-                          NM_TYPE_TERNARY,
-                          NM_TERNARY_DEFAULT,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
+                                                    PROP_ACCEPT_ALL_MAC_ADDRESSES,
+                                                    NM_SETTING_PARAM_NONE,
+                                                    NMSettingWiredPrivate,
+                                                    accept_all_mac_addresses);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

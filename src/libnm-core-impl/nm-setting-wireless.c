@@ -55,8 +55,8 @@ typedef struct {
     char                     *device_mac_address;
     char                     *cloned_mac_address;
     char                     *generate_mac_address_mask;
+    int                       ap_isolation;
     NMSettingMacRandomization mac_address_randomization;
-    NMTernary                 ap_isolation;
     guint32                   channel;
     guint32                   rate;
     guint32                   tx_power;
@@ -1199,9 +1199,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_WAKE_ON_WLAN:
         g_value_set_uint(value, nm_setting_wireless_get_wake_on_wlan(setting));
         break;
-    case PROP_AP_ISOLATION:
-        g_value_set_enum(value, priv->ap_isolation);
-        break;
     default:
         _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
@@ -1294,9 +1291,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_WAKE_ON_WLAN:
         priv->wowl = g_value_get_uint(value);
         break;
-    case PROP_AP_ISOLATION:
-        priv->ap_isolation = g_value_get_enum(value);
-        break;
     default:
         _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
@@ -1314,8 +1308,7 @@ nm_setting_wireless_init(NMSettingWireless *setting)
     priv->mac_address_blacklist = g_array_new(TRUE, FALSE, sizeof(char *));
     g_array_set_clear_func(priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
 
-    priv->wowl         = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
-    priv->ap_isolation = NM_TERNARY_DEFAULT;
+    priv->wowl = NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT;
 }
 
 /**
@@ -1924,13 +1917,13 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * description: Whether AP isolation is enabled
      * ---end---
      */
-    obj_properties[PROP_AP_ISOLATION] = g_param_spec_enum(
-        NM_SETTING_WIRELESS_AP_ISOLATION,
-        "",
-        "",
-        NM_TYPE_TERNARY,
-        NM_TERNARY_DEFAULT,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIRELESS_AP_ISOLATION,
+                                                    PROP_AP_ISOLATION,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE,
+                                                    NMSettingWirelessPrivate,
+                                                    ap_isolation);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
