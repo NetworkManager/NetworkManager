@@ -42,8 +42,8 @@ typedef struct {
     char                     *mka_cak;
     char                     *mka_ckn;
     int                       port;
+    guint                     mka_cak_flags;
     NMSettingMacsecMode       mode;
-    NMSettingSecretFlags      mka_cak_flags;
     NMSettingMacsecValidation validation;
     bool                      encrypt;
     bool                      send_sci;
@@ -420,9 +420,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_MKA_CAK:
         g_value_set_string(value, priv->mka_cak);
         break;
-    case PROP_MKA_CAK_FLAGS:
-        g_value_set_flags(value, priv->mka_cak_flags);
-        break;
     case PROP_MKA_CKN:
         g_value_set_string(value, priv->mka_ckn);
         break;
@@ -436,7 +433,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_boolean(value, priv->send_sci);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -462,9 +459,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         nm_free_secret(priv->mka_cak);
         priv->mka_cak = g_value_dup_string(value);
         break;
-    case PROP_MKA_CAK_FLAGS:
-        priv->mka_cak_flags = g_value_get_flags(value);
-        break;
     case PROP_MKA_CKN:
         g_free(priv->mka_ckn);
         priv->mka_ckn = g_value_dup_string(value);
@@ -479,7 +473,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         priv->send_sci = g_value_get_boolean(value);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -613,13 +607,12 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_MKA_CAK_FLAGS] =
-        g_param_spec_flags(NM_SETTING_MACSEC_MKA_CAK_FLAGS,
-                           "",
-                           "",
-                           NM_TYPE_SETTING_SECRET_FLAGS,
-                           NM_SETTING_SECRET_FLAG_NONE,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_secret_flags(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_MACSEC_MKA_CAK_FLAGS,
+                                                    PROP_MKA_CAK_FLAGS,
+                                                    NMSettingMacsecPrivate,
+                                                    mka_cak_flags);
 
     /**
      * NMSettingMacsec:mka-ckn:

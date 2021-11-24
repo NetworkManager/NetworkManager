@@ -893,17 +893,17 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_FWMARK,
                                   PROP_PRIVATE_KEY_FLAGS, );
 
 typedef struct {
-    char                *private_key;
-    GPtrArray           *peers_arr;
-    GHashTable          *peers_hash;
-    NMSettingSecretFlags private_key_flags;
-    NMTernary            ip4_auto_default_route;
-    NMTernary            ip6_auto_default_route;
-    guint32              fwmark;
-    guint32              mtu;
-    guint16              listen_port;
-    bool                 peer_routes;
-    bool                 private_key_valid : 1;
+    char       *private_key;
+    GPtrArray  *peers_arr;
+    GHashTable *peers_hash;
+    guint       private_key_flags;
+    int         ip4_auto_default_route;
+    int         ip6_auto_default_route;
+    guint32     fwmark;
+    guint32     mtu;
+    guint16     listen_port;
+    bool        peer_routes;
+    bool        private_key_valid : 1;
 } NMSettingWireGuardPrivate;
 
 /**
@@ -2268,12 +2268,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_FWMARK:
         g_value_set_uint(value, priv->fwmark);
         break;
-    case PROP_IP4_AUTO_DEFAULT_ROUTE:
-        g_value_set_enum(value, priv->ip4_auto_default_route);
-        break;
-    case PROP_IP6_AUTO_DEFAULT_ROUTE:
-        g_value_set_enum(value, priv->ip6_auto_default_route);
-        break;
     case PROP_LISTEN_PORT:
         g_value_set_uint(value, priv->listen_port);
         break;
@@ -2286,11 +2280,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_PRIVATE_KEY:
         g_value_set_string(value, priv->private_key);
         break;
-    case PROP_PRIVATE_KEY_FLAGS:
-        g_value_set_flags(value, priv->private_key_flags);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -2304,12 +2295,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     switch (prop_id) {
     case PROP_FWMARK:
         priv->fwmark = g_value_get_uint(value);
-        break;
-    case PROP_IP4_AUTO_DEFAULT_ROUTE:
-        priv->ip4_auto_default_route = g_value_get_enum(value);
-        break;
-    case PROP_IP6_AUTO_DEFAULT_ROUTE:
-        priv->ip6_auto_default_route = g_value_get_enum(value);
         break;
     case PROP_LISTEN_PORT:
         priv->listen_port = g_value_get_uint(value);
@@ -2334,11 +2319,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             }
         }
         break;
-    case PROP_PRIVATE_KEY_FLAGS:
-        priv->private_key_flags = g_value_get_flags(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -2350,10 +2332,8 @@ nm_setting_wireguard_init(NMSettingWireGuard *setting)
 {
     NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
 
-    priv->peers_arr              = g_ptr_array_new();
-    priv->peers_hash             = g_hash_table_new(nm_pstr_hash, nm_pstr_equal);
-    priv->ip4_auto_default_route = NM_TERNARY_DEFAULT;
-    priv->ip6_auto_default_route = NM_TERNARY_DEFAULT;
+    priv->peers_arr  = g_ptr_array_new();
+    priv->peers_hash = g_hash_table_new(nm_pstr_hash, nm_pstr_equal);
 }
 
 /**
@@ -2430,13 +2410,12 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_PRIVATE_KEY_FLAGS] =
-        g_param_spec_flags(NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
-                           "",
-                           "",
-                           NM_TYPE_SETTING_SECRET_FLAGS,
-                           NM_SETTING_SECRET_FLAG_NONE,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_secret_flags(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
+                                                    PROP_PRIVATE_KEY_FLAGS,
+                                                    NMSettingWireGuardPrivate,
+                                                    private_key_flags);
 
     /**
      * NMSettingWireGuard:fwmark:
@@ -2542,13 +2521,13 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.20
      **/
-    obj_properties[PROP_IP4_AUTO_DEFAULT_ROUTE] = g_param_spec_enum(
-        NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
-        "",
-        "",
-        NM_TYPE_TERNARY,
-        NM_TERNARY_DEFAULT,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
+                                                    PROP_IP4_AUTO_DEFAULT_ROUTE,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE,
+                                                    NMSettingWireGuardPrivate,
+                                                    ip4_auto_default_route);
 
     /**
      * NMSettingWireGuard:ip6-auto-default-route:
@@ -2557,13 +2536,13 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.20
      **/
-    obj_properties[PROP_IP6_AUTO_DEFAULT_ROUTE] = g_param_spec_enum(
-        NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
-        "",
-        "",
-        NM_TYPE_TERNARY,
-        NM_TERNARY_DEFAULT,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
+                                                    PROP_IP6_AUTO_DEFAULT_ROUTE,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE,
+                                                    NMSettingWireGuardPrivate,
+                                                    ip6_auto_default_route);
 
     /* ---dbus---
      * property: peers

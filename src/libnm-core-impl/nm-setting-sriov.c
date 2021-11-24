@@ -31,7 +31,7 @@ struct _NMSettingSriov {
     NMSetting  parent;
     GPtrArray *vfs;
     guint      total_vfs;
-    NMTernary  autoprobe_drivers;
+    int        autoprobe_drivers;
 };
 
 struct _NMSettingSriovClass {
@@ -1147,11 +1147,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                                                 (NMUtilsCopyFunc) nm_sriov_vf_dup,
                                                 (GDestroyNotify) nm_sriov_vf_unref));
         break;
-    case PROP_AUTOPROBE_DRIVERS:
-        g_value_set_enum(value, self->autoprobe_drivers);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1171,11 +1168,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                          (NMUtilsCopyFunc) nm_sriov_vf_dup,
                                          (GDestroyNotify) nm_sriov_vf_unref);
         break;
-    case PROP_AUTOPROBE_DRIVERS:
-        self->autoprobe_drivers = g_value_get_enum(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1186,8 +1180,6 @@ static void
 nm_setting_sriov_init(NMSettingSriov *setting)
 {
     setting->vfs = g_ptr_array_new_with_free_func((GDestroyNotify) nm_sriov_vf_unref);
-
-    setting->autoprobe_drivers = NM_TERNARY_DEFAULT;
 }
 
 /**
@@ -1335,13 +1327,13 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
      * example: SRIOV_AUTOPROBE_DRIVERS=0,1
      * ---end---
      */
-    obj_properties[PROP_AUTOPROBE_DRIVERS] = g_param_spec_enum(
-        NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
-        "",
-        "",
-        NM_TYPE_TERNARY,
-        NM_TERNARY_DEFAULT,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
+                                                    PROP_AUTOPROBE_DRIVERS,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE,
+                                                    NMSettingSriov,
+                                                    autoprobe_drivers);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
