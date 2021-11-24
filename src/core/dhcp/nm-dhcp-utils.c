@@ -1010,7 +1010,11 @@ nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *ou
      * - option 28, https://tools.ietf.org/html/rfc2132#section-5.3
      */
 
-    if (n_data != 4)
+    /* Some DHCP servers send duplicate options, and we concatenate them
+     * according to RFC 3396 section 7. Therefore, it's possible that a
+     * option carrying a IPv4 address has a length > 4.
+     */
+    if (n_data < 4)
         return FALSE;
 
     *out_val = unaligned_read_ne32(data);
