@@ -8005,8 +8005,9 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                         if (!nmc_setting_set_property(nmc->client,
                                                       ss,
                                                       prop_name,
-                                                      NM_META_ACCESSOR_MODIFIER_SET,
-                                                      NULL,
+                                                      cmd_arg_v ? NM_META_ACCESSOR_MODIFIER_DEL
+                                                                : NM_META_ACCESSOR_MODIFIER_SET,
+                                                      cmd_arg_v ? cmd_arg_v : NULL,
                                                       &tmp_err)) {
                             g_print(_("Error: failed to remove value of '%s': %s\n"),
                                     prop_name,
