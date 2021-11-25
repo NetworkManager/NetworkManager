@@ -17,6 +17,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
+#include "core/main-utils.h"
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-glib-aux/nm-io-utils.h"
@@ -464,9 +465,9 @@ check_permissions(struct stat *s, const char **out_error_msg)
     g_return_val_if_fail(out_error_msg != NULL, FALSE);
     g_return_val_if_fail(*out_error_msg == NULL, FALSE);
 
-    /* Only accept files owned by root */
-    if (s->st_uid != 0) {
-        *out_error_msg = "not owned by root.";
+    /* Only accept files owned by user running nm-dispatcher */
+    if (s->st_uid != nm_main_utils_get_nm_uid()) {
+        *out_error_msg = "not owned by user running nm-dispatcher.";
         return FALSE;
     }
 
