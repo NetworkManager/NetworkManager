@@ -13,6 +13,7 @@
 
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <gmodule.h>
 #include <pwd.h>
 
@@ -66,6 +67,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-dispatcher.h"
 #include "nm-hostname-manager.h"
+#include "src/core/main-utils.h"
 
 /*****************************************************************************/
 
@@ -3291,8 +3293,11 @@ add_plugin_load_file(NMSettings *self, const char *pname, GError **error)
         _LOGW("could not load plugin '%s' from file '%s': not a file", pname, path);
         return TRUE;
     }
-    if (st.st_uid != 0) {
-        _LOGW("could not load plugin '%s' from file '%s': file must be owned by root", pname, path);
+    if (st.st_uid != nm_main_utils_get_nm_uid()) {
+        _LOGW("could not load plugin '%s' from file '%s': file must be owned by user %d",
+              pname,
+              path,
+              nm_main_utils_get_nm_uid());
         return TRUE;
     }
     if (st.st_mode & (S_IWGRP | S_IWOTH | S_ISUID)) {
