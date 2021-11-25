@@ -6726,6 +6726,7 @@ typedef enum {
     NMC_EDITOR_MAIN_CMD_HELP,
     NMC_EDITOR_MAIN_CMD_NMCLI,
     NMC_EDITOR_MAIN_CMD_QUIT,
+    NMC_EDITOR_MAIN_CMD_ADD,
 } NmcEditorMainCmd;
 
 static void
@@ -6776,6 +6777,8 @@ parse_editor_main_cmd(const char *cmd, char **cmd_arg)
         editor_cmd = NMC_EDITOR_MAIN_CMD_REMOVE;
     else if (matches(cmd_arg0, "set"))
         editor_cmd = NMC_EDITOR_MAIN_CMD_SET;
+    else if (matches(cmd_arg0, "add"))
+        editor_cmd = NMC_EDITOR_MAIN_CMD_ADD;
     else if (matches(cmd_arg0, "describe"))
         editor_cmd = NMC_EDITOR_MAIN_CMD_DESCRIBE;
     else if (matches(cmd_arg0, "print"))
@@ -6856,6 +6859,11 @@ editor_main_help(const char *command)
             g_print(_("set [<setting>.<prop> <value>]  :: set property value\n\n"
                       "This command sets property value.\n\n"
                       "Example: nmcli> set con.id My connection\n"));
+            break;
+        case NMC_EDITOR_MAIN_CMD_ADD:
+            g_print(_("add [<setting>.<prop> <value>]  :: add property value\n\n"
+                      "This command appends property value.\n\n"
+                      "Example: nmcli> add ipv4.addresses 192.168.1.1/24\n"));
             break;
         case NMC_EDITOR_MAIN_CMD_DESCRIBE:
             g_print(_("describe [<setting>.<prop>]  :: describe property\n\n"
@@ -7727,6 +7735,7 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
 
         split_editor_main_cmd_args(cmd_arg, &cmd_arg_s, &cmd_arg_p, &cmd_arg_v);
         switch (cmd) {
+        case NMC_EDITOR_MAIN_CMD_ADD:
         case NMC_EDITOR_MAIN_CMD_SET:
             /* Set property value */
             if (!cmd_arg) {
