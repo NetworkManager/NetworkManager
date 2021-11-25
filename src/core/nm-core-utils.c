@@ -37,6 +37,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
+#include "src/core/main-utils.h"
 
 #ifdef __NM_SD_UTILS_H__
 #error \
@@ -4229,11 +4230,11 @@ nm_utils_validate_plugin(const char *path, struct stat *st, GError **error)
         return FALSE;
     }
 
-    if (st->st_uid != 0) {
+    if (st->st_uid != nm_main_utils_get_nm_uid()) {
         g_set_error_literal(error,
                             NM_UTILS_ERROR,
                             NM_UTILS_ERROR_UNKNOWN,
-                            "file has invalid owner (should be root)");
+                            "file has invalid owner (should match uid of daemon)");
         return FALSE;
     }
 

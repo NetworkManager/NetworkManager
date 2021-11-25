@@ -7,6 +7,8 @@
 
 #include "nm-auth-utils.h"
 
+#include <sys/types.h>
+
 #include "libnm-glib-aux/nm-c-list.h"
 #include "nm-setting-connection.h"
 #include "libnm-core-aux-intern/nm-auth-subject.h"
@@ -14,6 +16,7 @@
 #include "nm-session-monitor.h"
 #include "nm-dbus-manager.h"
 #include "nm-core-utils.h"
+#include "src/core/main-utils.h"
 
 /*****************************************************************************/
 
@@ -617,8 +620,8 @@ nm_auth_is_subject_in_acl(NMConnection *connection, NMAuthSubject *subject, char
 
     uid = nm_auth_subject_get_unix_process_uid(subject);
 
-    /* Root gets a free pass */
-    if (0 == uid)
+    /* Root, and user of running daemon, get a free pass */
+    if (0 == uid || nm_main_utils_get_nm_uid() == uid)
         return TRUE;
 
     user = nm_utils_uid_to_name(uid);
