@@ -7,12 +7,15 @@
 
 #include "nm-auth-manager.h"
 
+#include <sys/types.h>
+
 #include "c-list/src/c-list.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-errors.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-manager.h"
 #include "NetworkManagerUtils.h"
+#include "src/core/main-utils.h"
 
 #define POLKIT_SERVICE     "org.freedesktop.PolicyKit1"
 #define POLKIT_OBJECT_PATH "/org/freedesktop/PolicyKit1/Authority"
@@ -342,11 +345,12 @@ nm_auth_manager_check_authorization(NMAuthManager *                         self
                action_id,
                nm_auth_subject_to_string(subject, subject_buf, sizeof(subject_buf)));
         call_id->idle_id = g_idle_add(_call_on_idle, call_id);
-    } else if (nm_auth_subject_get_unix_process_uid(subject) == 0) {
+    } else if (nm_auth_subject_get_unix_process_uid(subject) == nm_main_utils_get_nm_uid()) {
         _LOG2T(call_id,
-               "CheckAuthorization(%s), subject=%s (succeeding for root)",
+               "CheckAuthorization(%s), subject=%s (succeeding for %d)",
                action_id,
-               nm_auth_subject_to_string(subject, subject_buf, sizeof(subject_buf)));
+               nm_auth_subject_to_string(subject, subject_buf, sizeof(subject_buf)),
+               nm_main_utils_get_nm_uid());
         call_id->idle_id = g_idle_add(_call_on_idle, call_id);
     } else if (priv->auth_polkit_mode != NM_AUTH_POLKIT_MODE_USE_POLKIT) {
         _LOG2T(call_id,
