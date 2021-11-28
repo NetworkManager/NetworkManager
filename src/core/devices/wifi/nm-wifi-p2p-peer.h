@@ -45,11 +45,15 @@ struct _NMSupplicantPeerInfo;
 GType nm_wifi_p2p_peer_get_type(void);
 
 NMWifiP2PPeer *nm_wifi_p2p_peer_new_from_properties(const struct _NMSupplicantPeerInfo *peer_info);
+NMWifiP2PPeer *nm_wifi_p2p_peer_new_from_iwd_object(GDBusObject *obj);
 
 gboolean nm_wifi_p2p_peer_update_from_properties(NMWifiP2PPeer *                     peer,
                                                  const struct _NMSupplicantPeerInfo *peer_info);
+gboolean nm_wifi_p2p_peer_update_from_iwd_object(NMWifiP2PPeer *peer, GDBusObject *obj);
 
-gboolean nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection);
+gboolean nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self,
+                                           NMConnection * connection,
+                                           gboolean       check_wfd);
 
 const char *nm_wifi_p2p_peer_get_supplicant_path(NMWifiP2PPeer *peer);
 
@@ -81,7 +85,8 @@ nm_wifi_p2p_peer_to_string(const NMWifiP2PPeer *self, char *str_buf, gsize buf_l
 const char **nm_wifi_p2p_peers_get_paths(const CList *peers_lst_head);
 
 NMWifiP2PPeer *nm_wifi_p2p_peers_find_first_compatible(const CList * peers_lst_head,
-                                                       NMConnection *connection);
+                                                       NMConnection *connection,
+                                                       gboolean      check_wfd);
 
 NMWifiP2PPeer *nm_wifi_p2p_peers_find_by_supplicant_path(const CList *peers_lst_head,
                                                          const char * path);

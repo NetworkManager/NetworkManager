@@ -15,6 +15,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-manager.h"
 #include "nm-device-iwd.h"
+#include "nm-device-iwd-p2p.h"
 #include "nm-wifi-utils.h"
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-random-utils.h"
@@ -24,6 +25,14 @@
 #include "nm-config.h"
 
 /*****************************************************************************/
+
+enum {
+    P2P_DEVICE_ADDED,
+
+    LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL];
 
 typedef struct {
     const char *         name;
@@ -49,6 +58,10 @@ typedef struct {
     NMDeviceIwd *       last_agent_call_device;
     char *              last_state_dir;
     char *              warned_state_dir;
+    bool                netconfig_enabled;
+    GHashTable *        p2p_devices;
+    NMIwdWfdInfo        wfd_info;
+    guint               wfd_use_count;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -417,6 +430,66 @@ set_device_dbus_object(NMIwdManager *self, GDBusProxy *proxy, GDBusObject *objec
     }
 
     nm_device_iwd_set_dbus_object(NM_DEVICE_IWD(device), object);
+}
+
+static void
+add_p2p_device(NMIwdManager *self, GDBusProxy *proxy, GDBusObject *object)
+{
+    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    const char *         path = g_dbus_object_get_object_path(object);
+    NMDeviceIwdP2P *     p2p;
+    gs_unref_object GDBusInterface *wiphy = NULL;
+    const char *                    phy_name;
+
+    if (g_hash_table_contains(priv->p2p_devices, path))
+        return;
+
+    wiphy = g_dbus_object_get_interface(object, NM_IWD_WIPHY_INTERFACE);
+    if (!wiphy)
+        return;
+
+    phy_name = get_property_string_or_null(G_DBUS_PROXY(wiphy), "Name");
+    if (!phy_name) {
+        _LOGE("Name not cached for phy at %s", path);
+        return;
+    }
+
+    p2p = nm_device_iwd_p2p_new(object);
+    if (!p2p) {
+        _LOGE("Can't create NMDeviceIwdP2P for phy at %s", path);
+        return;
+    }
+
+    g_hash_table_insert(priv->p2p_devices, g_strdup(path), g_object_ref_sink(p2p));
+    g_signal_emit(self, signals[P2P_DEVICE_ADDED], 0, p2p, phy_name);
+
+    /* There should be no peer objects before the device object appeared so don't
+     * try to look for them and notify the new device.  */
+}
+
+static void
+remove_p2p_device(NMIwdManager *self, GDBusProxy *proxy, GDBusObject *object)
+{
+    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    const char *         path = g_dbus_object_get_object_path(object);
+    NMDeviceIwdP2P *     p2p  = g_hash_table_lookup(priv->p2p_devices, path);
+
+    if (!p2p)
+        return;
+
+    g_hash_table_remove(priv->p2p_devices, path);
+}
+
+static NMDeviceIwdP2P *
+get_p2p_device_from_peer(NMIwdManager *self, GDBusProxy *proxy)
+{
+    NMIwdManagerPrivate *priv        = NM_IWD_MANAGER_GET_PRIVATE(self);
+    const char *         device_path = get_property_string_or_null(proxy, "Device");
+
+    if (!device_path)
+        return NULL;
+
+    return g_hash_table_lookup(priv->p2p_devices, device_path);
 }
 
 static void
@@ -998,6 +1071,22 @@ interface_added(GDBusObjectManager *object_manager,
 
         return;
     }
+
+    if (nm_streq(iface_name, NM_IWD_P2P_INTERFACE)) {
+        add_p2p_device(self, proxy, object);
+        return;
+    }
+
+    if (nm_streq(iface_name, NM_IWD_P2P_PEER_INTERFACE)) {
+        NMDeviceIwdP2P *p2p = get_p2p_device_from_peer(self, proxy);
+
+        /* This is more conveniently done with a direct call than a signal because
+         * this way we only notify the interested NMDeviceIwdP2P.  */
+        if (p2p)
+            nm_device_iwd_p2p_peer_add_remove(p2p, object, TRUE);
+
+        return;
+    }
 }
 
 static void
@@ -1048,6 +1137,20 @@ interface_removed(GDBusObjectManager *object_manager,
 
         if (device)
             nm_device_iwd_network_add_remove(device, proxy, FALSE);
+
+        return;
+    }
+
+    if (nm_streq(iface_name, NM_IWD_P2P_INTERFACE)) {
+        remove_p2p_device(self, proxy, object);
+        return;
+    }
+
+    if (nm_streq(iface_name, NM_IWD_P2P_PEER_INTERFACE)) {
+        NMDeviceIwdP2P *p2p = get_p2p_device_from_peer(self, proxy);
+
+        if (p2p)
+            nm_device_iwd_p2p_peer_add_remove(p2p, object, FALSE);
 
         return;
     }
@@ -1469,6 +1572,15 @@ get_daemon_info_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
             nm_clear_g_free(&priv->last_state_dir);
             priv->last_state_dir = g_variant_dup_string(value, NULL);
+        } else if (nm_streq(key, "NetworkConfigurationEnabled")) {
+            if (!g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)) {
+                _LOGE("Daemon.GetInfo property %s is typed '%s' instead of 'b'",
+                      key,
+                      g_variant_get_type_string(value));
+                goto next;
+            }
+
+            priv->netconfig_enabled = g_variant_get_boolean(value);
         }
 
 next:
@@ -1542,6 +1654,8 @@ got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
 
         if (priv->agent_id)
             register_agent(self);
+
+        priv->netconfig_enabled = false; /* Assume false until GetInfo() results come in */
 
         daemon = g_dbus_object_manager_get_interface(object_manager,
                                                      "/net/connman/iwd", /* IWD 1.15+ */
@@ -1639,6 +1753,121 @@ nm_iwd_manager_get_dbus_interface(NMIwdManager *self, const char *path, const ch
     return interface ? G_DBUS_PROXY(interface) : NULL;
 }
 
+gboolean
+nm_iwd_manager_get_netconfig_enabled(NMIwdManager *self)
+{
+    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+
+    return priv->netconfig_enabled;
+}
+
+/* IWD's net.connman.iwd.p2p.ServiceManager.RegisterDisplayService() is global so
+ * two local Wi-Fi P2P devices can't be connected to (or even scanning for) WFD
+ * peers using different WFD IE contents, e.g. one as a sink and one as a source.
+ * If one device is connected to a peer without a WFD service, another can try
+ * to establish a WFD connection to a peer since this won't disturb the first
+ * connection.  Similarly if one device is connected to a peer with WFD, another
+ * can make a connection to a non-WFD peer (if that exists...) because a non-WFD
+ * peer will simply ignore the WFD IEs, but it cannot connect to or search for a
+ * peer that's WFD capable without passing our own WFD IEs, i.e. if the new
+ * NMSettingsConnection has no WFD IEs and we're already in a WFD connection on
+ * another device, we can't activate that new connection.  We expose methods
+ * for the NMDeviceIwdP2P's to register/unregister the service and one to check
+ * if there's already an incompatible connection active.
+ */
+gboolean
+nm_iwd_manager_check_wfd_info_compatible(NMIwdManager *self, const NMIwdWfdInfo *wfd_info)
+{
+    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+
+    if (priv->wfd_use_count == 0)
+        return TRUE;
+
+    return nm_wifi_utils_wfd_info_eq(&priv->wfd_info, wfd_info);
+}
+
+gboolean
+nm_iwd_manager_register_wfd(NMIwdManager *self, const NMIwdWfdInfo *wfd_info)
+{
+    NMIwdManagerPrivate *priv                       = NM_IWD_MANAGER_GET_PRIVATE(self);
+    gs_unref_object GDBusInterface *service_manager = NULL;
+    GVariantBuilder                 builder;
+
+    nm_assert(nm_iwd_manager_check_wfd_info_compatible(self, wfd_info));
+
+    if (!priv->object_manager)
+        return FALSE;
+
+    service_manager = g_dbus_object_manager_get_interface(priv->object_manager,
+                                                          "/net/connman/iwd",
+                                                          NM_IWD_P2P_SERVICE_MANAGER_INTERFACE);
+    if (!service_manager) {
+        _LOGE("IWD P2P service manager not found");
+        return FALSE;
+    }
+
+    g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
+    g_variant_builder_add(&builder, "{sv}", "Source", g_variant_new_boolean(wfd_info->source));
+    g_variant_builder_add(&builder, "{sv}", "Sink", g_variant_new_boolean(wfd_info->sink));
+
+    if (wfd_info->source)
+        g_variant_builder_add(&builder, "{sv}", "Port", g_variant_new_uint16(wfd_info->port));
+
+    if (wfd_info->sink && wfd_info->has_audio)
+        g_variant_builder_add(&builder, "{sv}", "HasAudio", g_variant_new_boolean(TRUE));
+
+    if (wfd_info->has_uibc)
+        g_variant_builder_add(&builder, "{sv}", "HasUIBC", g_variant_new_boolean(TRUE));
+
+    if (wfd_info->has_cp)
+        g_variant_builder_add(&builder,
+                              "{sv}",
+                              "HasContentProtection",
+                              g_variant_new_boolean(TRUE));
+
+    g_dbus_proxy_call(G_DBUS_PROXY(service_manager),
+                      "RegisterDisplayService",
+                      g_variant_new("(a{sv})", &builder),
+                      G_DBUS_CALL_FLAGS_NONE,
+                      -1,
+                      NULL,
+                      NULL,
+                      NULL);
+
+    memcpy(&priv->wfd_info, wfd_info, sizeof(priv->wfd_info));
+    priv->wfd_use_count++;
+    return TRUE;
+}
+
+void
+nm_iwd_manager_unregister_wfd(NMIwdManager *self)
+{
+    NMIwdManagerPrivate *priv                       = NM_IWD_MANAGER_GET_PRIVATE(self);
+    gs_unref_object GDBusInterface *service_manager = NULL;
+
+    nm_assert(priv->wfd_use_count > 0);
+
+    priv->wfd_use_count--;
+
+    if (!priv->object_manager)
+        return;
+
+    service_manager = g_dbus_object_manager_get_interface(priv->object_manager,
+                                                          "/net/connman/iwd",
+                                                          NM_IWD_P2P_SERVICE_MANAGER_INTERFACE);
+    if (!service_manager)
+        return;
+
+    g_dbus_proxy_call(G_DBUS_PROXY(service_manager),
+                      "UnregisterDisplayService",
+                      g_variant_new("()"),
+                      G_DBUS_CALL_FLAGS_NONE,
+                      -1,
+                      NULL,
+                      NULL,
+                      NULL);
+}
+
 /*****************************************************************************/
 
 NM_DEFINE_SINGLETON_GETTER(NMIwdManager, nm_iwd_manager_get, NM_TYPE_IWD_MANAGER);
@@ -1685,6 +1914,8 @@ nm_iwd_manager_init(NMIwdManager *self)
                                                  g_free,
                                                  (GDestroyNotify) known_network_data_free);
 
+    priv->p2p_devices = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_object_unref);
+
     prepare_object_manager(self);
 }
 
@@ -1718,6 +1949,8 @@ dispose(GObject *object)
     nm_clear_g_free(&priv->last_state_dir);
     nm_clear_g_free(&priv->warned_state_dir);
 
+    g_hash_table_unref(nm_steal_pointer(&priv->p2p_devices));
+
     G_OBJECT_CLASS(nm_iwd_manager_parent_class)->dispose(object);
 }
 
@@ -1727,4 +1960,16 @@ nm_iwd_manager_class_init(NMIwdManagerClass *klass)
     GObjectClass *object_class = G_OBJECT_CLASS(klass);
 
     object_class->dispose = dispose;
+
+    signals[P2P_DEVICE_ADDED] = g_signal_new(NM_IWD_MANAGER_P2P_DEVICE_ADDED,
+                                             G_OBJECT_CLASS_TYPE(object_class),
+                                             G_SIGNAL_RUN_LAST,
+                                             0,
+                                             NULL,
+                                             NULL,
+                                             NULL,
+                                             G_TYPE_NONE,
+                                             2,
+                                             NM_TYPE_DEVICE,
+                                             G_TYPE_STRING);
 }

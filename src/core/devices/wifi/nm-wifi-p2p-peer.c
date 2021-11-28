@@ -18,6 +18,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-utils.h"
 #include "nm-wifi-utils.h"
+#include "nm-iwd-manager.h"
 #include "libnm-platform/nm-platform.h"
 #include "supplicant/nm-supplicant-types.h"
 
@@ -100,14 +101,16 @@ nm_wifi_p2p_peers_get_paths(const CList *peers_lst_head)
 }
 
 NMWifiP2PPeer *
-nm_wifi_p2p_peers_find_first_compatible(const CList *peers_lst_head, NMConnection *connection)
+nm_wifi_p2p_peers_find_first_compatible(const CList * peers_lst_head,
+                                        NMConnection *connection,
+                                        gboolean      check_wfd)
 {
     NMWifiP2PPeer *peer;
 
     g_return_val_if_fail(connection, NULL);
 
     c_list_for_each_entry (peer, peers_lst_head, peers_lst) {
-        if (nm_wifi_p2p_peer_check_compatible(peer, connection))
+        if (nm_wifi_p2p_peer_check_compatible(peer, connection, check_wfd))
             return peer;
     }
     return NULL;
@@ -419,6 +422,90 @@ nm_wifi_p2p_peer_update_from_properties(NMWifiP2PPeer *peer, const NMSupplicantP
     return changed;
 }
 
+gboolean
+nm_wifi_p2p_peer_update_from_iwd_object(NMWifiP2PPeer *peer, GDBusObject *obj)
+{
+    NMWifiP2PPeerPrivate *priv;
+    gboolean              changed             = FALSE;
+    nm_auto_ref_string NMRefString *peer_path = NULL;
+    gs_unref_object GDBusProxy *peer_proxy    = NULL;
+    gs_unref_object GDBusProxy *wfd_proxy     = NULL;
+    GVariant *                  value;
+    gs_unref_bytes GBytes *wfd_ies = NULL;
+
+    g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(peer), FALSE);
+
+    peer_proxy = G_DBUS_PROXY(g_dbus_object_get_interface(obj, NM_IWD_P2P_PEER_INTERFACE));
+    wfd_proxy  = G_DBUS_PROXY(g_dbus_object_get_interface(obj, NM_IWD_P2P_WFD_INTERFACE));
+    g_return_val_if_fail(peer_proxy, FALSE);
+
+    peer_path = nm_ref_string_new(g_dbus_object_get_object_path(obj));
+    priv      = NM_WIFI_P2P_PEER_GET_PRIVATE(peer);
+    nm_assert(!priv->supplicant_path || priv->supplicant_path == peer_path);
+
+    g_object_freeze_notify(G_OBJECT(peer));
+
+    if (!priv->supplicant_path) {
+        priv->supplicant_path = g_steal_pointer(&peer_path);
+        changed               = TRUE;
+    }
+
+    value = g_dbus_proxy_get_cached_property(peer_proxy, "Name");
+    if (value && g_variant_is_of_type(value, G_VARIANT_TYPE_STRING))
+        changed |= nm_wifi_p2p_peer_set_name(peer, g_variant_get_string(value, NULL));
+    else
+        changed |= nm_wifi_p2p_peer_set_name(peer, "");
+    g_variant_unref(value);
+
+    value = g_dbus_proxy_get_cached_property(peer_proxy, "Address");
+    if (value && g_variant_is_of_type(value, G_VARIANT_TYPE_STRING))
+        changed |= nm_wifi_p2p_peer_set_address(peer, g_variant_get_string(value, NULL));
+    g_variant_unref(value);
+
+    if (wfd_proxy) {
+        NMIwdWfdInfo wfd = {};
+
+        value      = g_dbus_proxy_get_cached_property(wfd_proxy, "Source");
+        wfd.source = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                     && g_variant_get_boolean(value);
+        g_variant_unref(value);
+
+        value    = g_dbus_proxy_get_cached_property(wfd_proxy, "Sink");
+        wfd.sink = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                   && g_variant_get_boolean(value);
+        g_variant_unref(value);
+
+        value    = g_dbus_proxy_get_cached_property(wfd_proxy, "Port");
+        wfd.port = (value && g_variant_is_of_type(value, G_VARIANT_TYPE_UINT16))
+                       ? g_variant_get_uint16(value)
+                       : 0;
+        g_variant_unref(value);
+
+        value         = g_dbus_proxy_get_cached_property(wfd_proxy, "HasAudio");
+        wfd.has_audio = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                        && g_variant_get_boolean(value);
+        g_variant_unref(value);
+
+        value        = g_dbus_proxy_get_cached_property(wfd_proxy, "HasUIBC");
+        wfd.has_uibc = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                       && g_variant_get_boolean(value);
+        g_variant_unref(value);
+
+        value      = g_dbus_proxy_get_cached_property(wfd_proxy, "HasContentProtection");
+        wfd.has_cp = value && g_variant_is_of_type(value, G_VARIANT_TYPE_BOOLEAN)
+                     && g_variant_get_boolean(value);
+        g_variant_unref(value);
+
+        wfd_ies = nm_wifi_utils_build_wfd_ies(&wfd);
+    }
+
+    changed |= nm_wifi_p2p_peer_set_wfd_ies(peer, wfd_ies);
+
+    g_object_thaw_notify(G_OBJECT(peer));
+
+    return changed;
+}
+
 const char *
 nm_wifi_p2p_peer_to_string(const NMWifiP2PPeer *self, char *str_buf, gsize buf_len, gint32 now_s)
 {
@@ -458,7 +545,7 @@ nm_wifi_p2p_peer_to_string(const NMWifiP2PPeer *self, char *str_buf, gsize buf_l
 }
 
 gboolean
-nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection)
+nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection, gboolean check_wfd)
 {
     NMWifiP2PPeerPrivate *priv;
     NMSettingWifiP2P *    s_wifi_p2p;
@@ -476,6 +563,10 @@ nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection)
 
     hwaddr = nm_setting_wifi_p2p_get_peer(s_wifi_p2p);
     if (hwaddr && (!priv->address || !nm_utils_hwaddr_matches(hwaddr, -1, priv->address, -1)))
+        return FALSE;
+
+    if (check_wfd && nm_setting_wifi_p2p_get_wfd_ies(s_wifi_p2p)
+        && !nm_wifi_p2p_peer_get_wfd_ies(self))
         return FALSE;
 
     return TRUE;
@@ -556,6 +647,17 @@ nm_wifi_p2p_peer_new_from_properties(const NMSupplicantPeerInfo *peer_info)
 
     peer = g_object_new(NM_TYPE_WIFI_P2P_PEER, NULL);
     nm_wifi_p2p_peer_update_from_properties(peer, peer_info);
+    return peer;
+}
+
+NMWifiP2PPeer *
+nm_wifi_p2p_peer_new_from_iwd_object(GDBusObject *obj)
+{
+    NMWifiP2PPeer *peer;
+
+    /* TODO: Set the flags here */
+    peer = g_object_new(NM_TYPE_WIFI_P2P_PEER, NULL);
+    nm_wifi_p2p_peer_update_from_iwd_object(peer, obj);
     return peer;
 }
 

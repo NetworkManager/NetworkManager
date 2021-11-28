@@ -14,6 +14,8 @@
 #include "nm-device-wifi-p2p.h"
 #include "nm-device-olpc-mesh.h"
 #include "nm-device-iwd.h"
+#include "nm-device-iwd-p2p.h"
+#include "nm-iwd-manager.h"
 #include "settings/nm-settings-connection.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-config.h"
@@ -67,6 +69,17 @@ p2p_device_created(NMDeviceWifi *device, NMDeviceWifiP2P *p2p_device, NMDeviceFa
     g_signal_emit_by_name(self, NM_DEVICE_FACTORY_DEVICE_ADDED, p2p_device);
 }
 
+static void
+iwd_p2p_device_added(NMIwdManager *   iwd,
+                     NMDeviceIwdP2P * p2p_device,
+                     const char *     phy_name,
+                     NMDeviceFactory *self)
+{
+    nm_log_info(LOGD_PLATFORM | LOGD_WIFI, "Wi-Fi P2P device added on %s", phy_name);
+
+    g_signal_emit_by_name(self, NM_DEVICE_FACTORY_DEVICE_ADDED, p2p_device);
+}
+
 static NMDevice *
 create_device(NMDeviceFactory *     factory,
               const char *          iface,
@@ -76,6 +89,7 @@ create_device(NMDeviceFactory *     factory,
 {
     gs_free char *backend_free = NULL;
     const char *  backend;
+    _NM80211Mode  mode;
 
     g_return_val_if_fail(iface != NULL, NULL);
     g_return_val_if_fail(plink != NULL, NULL);
@@ -84,6 +98,20 @@ create_device(NMDeviceFactory *     factory,
 
     if (plink->type != NM_LINK_TYPE_WIFI)
         return nm_device_olpc_mesh_new(iface);
+
+    /* Ignore monitor-mode and other unhandled interface types.
+     * FIXME: keep TYPE_MONITOR devices in UNAVAILABLE state and manage
+     * them if/when they change to a handled type.
+     */
+    mode = nm_platform_wifi_get_mode(NM_PLATFORM_GET, plink->ifindex);
+    if (!NM_IN_SET(mode,
+                   _NM_802_11_MODE_INFRA,
+                   _NM_802_11_MODE_ADHOC,
+                   _NM_802_11_MODE_AP,
+                   _NM_802_11_MODE_MESH)) {
+        *out_ignore = TRUE;
+        return NULL;
+    }
 
     backend = nm_config_data_get_device_config_by_pllink(NM_CONFIG_GET_DATA,
                                                          NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_BACKEND,
@@ -100,23 +128,12 @@ create_device(NMDeviceFactory *     factory,
     if (!backend || !g_ascii_strcasecmp(backend, "wpa_supplicant")) {
         NMDevice *                device;
         _NMDeviceWifiCapabilities capabilities;
-        _NM80211Mode              mode;
 
         if (!nm_platform_wifi_get_capabilities(NM_PLATFORM_GET, plink->ifindex, &capabilities)) {
             nm_log_warn(LOGD_PLATFORM | LOGD_WIFI,
                         "(%s) failed to initialize Wi-Fi driver for ifindex %d",
                         iface,
                         plink->ifindex);
-            return NULL;
-        }
-
-        /* Ignore monitor-mode and other unhandled interface types.
-         * FIXME: keep TYPE_MONITOR devices in UNAVAILABLE state and manage
-         * them if/when they change to a handled type.
-         */
-        mode = nm_platform_wifi_get_mode(NM_PLATFORM_GET, plink->ifindex);
-        if (mode == _NM_802_11_MODE_UNKNOWN) {
-            *out_ignore = TRUE;
             return NULL;
         }
 
@@ -131,8 +148,23 @@ create_device(NMDeviceFactory *     factory,
         return device;
     }
 #if WITH_IWD
-    else if (!g_ascii_strcasecmp(backend, "iwd"))
+    else if (!g_ascii_strcasecmp(backend, "iwd")) {
+        NMIwdManager *iwd = nm_iwd_manager_get();
+
+        if (!g_signal_handler_find(iwd,
+                                   G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA,
+                                   0,
+                                   0,
+                                   NULL,
+                                   G_CALLBACK(iwd_p2p_device_added),
+                                   factory))
+            g_signal_connect(iwd,
+                             NM_IWD_MANAGER_P2P_DEVICE_ADDED,
+                             G_CALLBACK(iwd_p2p_device_added),
+                             factory);
+
         return nm_device_iwd_new(iface);
+    }
 #endif
 
     nm_log_warn(LOGD_PLATFORM | LOGD_WIFI,
