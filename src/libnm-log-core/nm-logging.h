@@ -16,6 +16,7 @@
 #define NM_LOG_CONFIG_BACKEND_DEBUG   "debug"
 #define NM_LOG_CONFIG_BACKEND_SYSLOG  "syslog"
 #define NM_LOG_CONFIG_BACKEND_JOURNAL "journal"
+#define NM_LOG_CONFIG_BACKEND_NONE    "none"
 
 #define nm_log_err(domain, ...)   nm_log(LOGL_ERR, (domain), NULL, NULL, __VA_ARGS__)
 #define nm_log_warn(domain, ...)  nm_log(LOGL_WARN, (domain), NULL, NULL, __VA_ARGS__)
