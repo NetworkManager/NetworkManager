@@ -36,7 +36,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMAccessPoint,
 
 typedef struct {
     GBytes *ssid;
-    char *  bssid;
+    char   *bssid;
     guint32 flags;
     guint32 wpa_flags;
     guint32 rsn_flags;
@@ -251,16 +251,16 @@ NM_BACKPORT_SYMBOL(libnm_1_0_6, int, nm_access_point_get_last_seen, (NMAccessPoi
 gboolean
 nm_access_point_connection_valid(NMAccessPoint *ap, NMConnection *connection)
 {
-    NMSettingConnection *      s_con;
-    NMSettingWireless *        s_wifi;
+    NMSettingConnection       *s_con;
+    NMSettingWireless         *s_wifi;
     NMSettingWirelessSecurity *s_wsec;
-    const char *               ctype, *ap_bssid;
-    GBytes *                   setting_ssid;
-    GBytes *                   ap_ssid;
-    const char *               setting_bssid;
-    const char *               setting_mode;
+    const char                *ctype, *ap_bssid;
+    GBytes                    *setting_ssid;
+    GBytes                    *ap_ssid;
+    const char                *setting_bssid;
+    const char                *setting_mode;
     NM80211Mode                ap_mode;
-    const char *               setting_band;
+    const char                *setting_band;
     guint32                    ap_freq, setting_chan, ap_chan;
 
     g_return_val_if_fail(NM_IS_ACCESS_POINT(ap), FALSE);
@@ -395,13 +395,13 @@ nm_access_point_filter_connections(NMAccessPoint *ap, const GPtrArray *connectio
 /*****************************************************************************/
 
 static NMLDBusNotifyUpdatePropFlags
-_notify_update_prop_hw_address(NMClient *              client,
-                               NMLDBusObject *         dbobj,
+_notify_update_prop_hw_address(NMClient               *client,
+                               NMLDBusObject          *dbobj,
                                const NMLDBusMetaIface *meta_iface,
                                guint                   dbus_property_idx,
-                               GVariant *              value)
+                               GVariant               *value)
 {
-    NMAccessPoint *       self = NM_ACCESS_POINT(dbobj->nmobj);
+    NMAccessPoint        *self = NM_ACCESS_POINT(dbobj->nmobj);
     NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE(self);
 
     g_free(priv->bssid);

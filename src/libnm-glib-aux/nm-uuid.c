@@ -45,7 +45,7 @@ gboolean
 nm_uuid_parse_full(const char *str, NMUuid *out_uuid, gboolean *out_is_normalized)
 {
     NMUuid   uuid;
-    guint8 * p;
+    guint8  *p;
     int      i;
     gboolean is_normalized = TRUE;
 
@@ -194,8 +194,8 @@ nm_uuid_is_valid_nmlegacy(const char *str)
 
 gboolean
 nm_uuid_is_valid_nm(const char *str,
-                    gboolean *  out_normalized,
-                    char *      out_normalized_str /* [static 37] */)
+                    gboolean   *out_normalized,
+                    char       *out_normalized_str /* [static 37] */)
 {
     NMUuid   uuid;
     gboolean is_normalized;
@@ -310,8 +310,8 @@ nm_uuid_generate_random_str(char buf[static 37])
  * Returns: the input @uuid. This function cannot fail.
  **/
 NMUuid *
-nm_uuid_generate_from_string(NMUuid *      uuid,
-                             const char *  s,
+nm_uuid_generate_from_string(NMUuid       *uuid,
+                             const char   *s,
                              gssize        slen,
                              NMUuidType    uuid_type,
                              const NMUuid *type_args)
@@ -382,7 +382,7 @@ nm_uuid_generate_from_string(NMUuid *      uuid,
  * object's #NMSettingConnection:id: property
  **/
 char *
-nm_uuid_generate_from_string_str(const char *  s,
+nm_uuid_generate_from_string_str(const char   *s,
                                  gssize        slen,
                                  NMUuidType    uuid_type,
                                  const NMUuid *type_args)
@@ -415,7 +415,7 @@ nm_uuid_generate_from_strings(const char *string1, ...)
     {
         nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
         va_list                  args;
-        const char *             s;
+        const char              *s;
 
         nm_str_buf_append_len(&str, string1, strlen(string1) + 1u);
 

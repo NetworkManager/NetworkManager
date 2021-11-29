@@ -75,7 +75,7 @@ typedef enum _nm_packed {
 } NML3AcdAddrState;
 
 typedef struct {
-    const NMPObject *     obj;
+    const NMPObject      *obj;
     const NML3ConfigData *l3cd;
     gconstpointer         tag;
 
@@ -92,15 +92,15 @@ typedef struct {
     in_addr_t                   addr;
     guint                       n_track_infos;
     NML3AcdAddrState            state;
-    NML3Cfg *                   l3cfg;
+    NML3Cfg                    *l3cfg;
     const NML3AcdAddrTrackInfo *track_infos;
 } NML3AcdAddrInfo;
 
 static inline const NML3AcdAddrTrackInfo *
 nm_l3_acd_addr_info_find_track_info(const NML3AcdAddrInfo *addr_info,
                                     gconstpointer          tag,
-                                    const NML3ConfigData * l3cd,
-                                    const NMPObject *      obj)
+                                    const NML3ConfigData  *l3cd,
+                                    const NMPObject       *obj)
 {
     guint                       i;
     const NML3AcdAddrTrackInfo *ti;
@@ -179,7 +179,7 @@ typedef struct {
         } acd_event;
 
         struct {
-            const NMPObject *          obj;
+            const NMPObject           *obj;
             NMPlatformSignalChangeType change_type;
         } platform_change;
 
@@ -199,10 +199,10 @@ struct _NML3Cfg {
     GObject parent;
     struct {
         struct _NML3CfgPrivate *p;
-        NMNetns *               netns;
-        NMPlatform *            platform;
-        const NMPObject *       plobj;
-        const NMPObject *       plobj_next;
+        NMNetns                *netns;
+        NMPlatform             *platform;
+        const NMPObject        *plobj;
+        const NMPObject        *plobj_next;
         int                     ifindex;
     } priv;
 };
@@ -219,9 +219,9 @@ gboolean nm_l3cfg_is_ready(NML3Cfg *self);
 
 void _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags);
 
-void _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
+void _nm_l3cfg_notify_platform_change(NML3Cfg                   *self,
                                       NMPlatformSignalChangeType change_type,
-                                      const NMPObject *          obj);
+                                      const NMPObject           *obj);
 
 /*****************************************************************************/
 
@@ -305,7 +305,7 @@ void _nm_l3cfg_emit_signal_notify(NML3Cfg *self, const NML3ConfigNotifyData *not
 
 void nm_l3cfg_mark_config_dirty(NML3Cfg *self, gconstpointer tag, gboolean dirty);
 
-gboolean nm_l3cfg_add_config(NML3Cfg *             self,
+gboolean nm_l3cfg_add_config(NML3Cfg              *self,
                              gconstpointer         tag,
                              gboolean              replace_same_tag,
                              const NML3ConfigData *l3cd,
@@ -401,11 +401,11 @@ typedef enum {
     NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY = (1ull << 1),
 } NML3CfgCheckReadyFlags;
 
-gboolean nm_l3cfg_check_ready(NML3Cfg *              self,
-                              const NML3ConfigData * l3cd,
+gboolean nm_l3cfg_check_ready(NML3Cfg               *self,
+                              const NML3ConfigData  *l3cd,
                               int                    addr_family,
                               NML3CfgCheckReadyFlags flags,
-                              gboolean *             acd_used);
+                              gboolean              *acd_used);
 
 /*****************************************************************************/
 
@@ -413,10 +413,10 @@ NML3CfgCommitType nm_l3cfg_commit_type_get(NML3Cfg *self);
 
 typedef struct _NML3CfgCommitTypeHandle NML3CfgCommitTypeHandle;
 
-NML3CfgCommitTypeHandle *nm_l3cfg_commit_type_register(NML3Cfg *                self,
+NML3CfgCommitTypeHandle *nm_l3cfg_commit_type_register(NML3Cfg                 *self,
                                                        NML3CfgCommitType        commit_type,
                                                        NML3CfgCommitTypeHandle *existing_handle,
-                                                       const char *             source);
+                                                       const char              *source);
 
 void nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle);
 

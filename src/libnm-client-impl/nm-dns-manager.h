@@ -12,7 +12,7 @@
 
 #include "nm-client.h"
 
-NMDnsEntry *nm_dns_entry_new(const char *       interface,
+NMDnsEntry *nm_dns_entry_new(const char        *interface,
                              const char *const *nameservers,
                              const char *const *domains,
                              int                priority,

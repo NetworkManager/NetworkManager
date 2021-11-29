@@ -35,7 +35,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PEER, PROP_WPS_METHOD, PROP_WFD_IES, );
 
 typedef struct {
-    char *  peer;
+    char   *peer;
     GBytes *wfd_ies;
     guint32 wps_method;
 } NMSettingWifiP2PPrivate;
@@ -170,9 +170,9 @@ nm_setting_wifi_p2p_new(void)
 static void
 nm_setting_wifi_p2p_class_init(NMSettingWifiP2PClass *setting_wifi_p2p_class)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(setting_wifi_p2p_class);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(setting_wifi_p2p_class);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(setting_wifi_p2p_class);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;

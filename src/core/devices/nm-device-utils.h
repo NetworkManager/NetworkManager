@@ -86,7 +86,7 @@ const char *nm_device_ip_state_to_string(NMDeviceIPState ip_state);
 
 void nm_device_resolve_address(int                 addr_family,
                                gconstpointer       address,
-                               GCancellable *      cancellable,
+                               GCancellable       *cancellable,
                                GAsyncReadyCallback callback,
                                gpointer            cb_data);
 

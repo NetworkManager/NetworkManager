@@ -25,10 +25,10 @@ struct newtComponent_0_52_15_struct_hack {
     struct componentOps *ops;
 
     newtCallback callback;
-    void *       callbackData;
+    void        *callbackData;
 
     newtCallback destroyCallback;
-    void *       destroyCallbackData;
+    void        *destroyCallbackData;
 
     void *data;
 };
@@ -57,7 +57,7 @@ newtComponentGetPosition(newtComponent component, int *left, int *top)
 #ifndef HAVE_NEWTENTRYGETCURSORPOSITION
 struct newtEntry_0_52_15_struct_hack {
     int          flags;
-    char *       buf;
+    char        *buf;
     const char **resultPtr;
     int          bufAlloced;
     int          bufUsed;
@@ -69,7 +69,7 @@ int
 newtEntryGetCursorPosition(newtComponent component)
 {
     struct newtComponent_0_52_15_struct_hack *co_hack    = (void *) component;
-    struct newtEntry_0_52_15_struct_hack *    entry_hack = co_hack->data;
+    struct newtEntry_0_52_15_struct_hack     *entry_hack = co_hack->data;
 
     return entry_hack->cursorPosition;
 }
@@ -78,7 +78,7 @@ void
 newtEntrySetCursorPosition(newtComponent component, int position)
 {
     struct newtComponent_0_52_15_struct_hack *co_hack    = (void *) component;
-    struct newtEntry_0_52_15_struct_hack *    entry_hack = co_hack->data;
+    struct newtEntry_0_52_15_struct_hack     *entry_hack = co_hack->data;
 
     entry_hack->cursorPosition = position;
 }

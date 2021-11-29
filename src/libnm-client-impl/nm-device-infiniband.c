@@ -77,7 +77,7 @@ static gboolean
 connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
     NMSettingInfiniband *s_infiniband;
-    const char *         hwaddr, *setting_hwaddr;
+    const char          *hwaddr, *setting_hwaddr;
 
     if (!NM_DEVICE_CLASS(nm_device_infiniband_parent_class)
              ->connection_compatible(device, connection, error))
@@ -156,7 +156,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_infiniband = NML_DBUS_META
 static void
 nm_device_infiniband_class_init(NMDeviceInfinibandClass *ib_class)
 {
-    GObjectClass * object_class = G_OBJECT_CLASS(ib_class);
+    GObjectClass  *object_class = G_OBJECT_CLASS(ib_class);
     NMDeviceClass *device_class = NM_DEVICE_CLASS(ib_class);
 
     object_class->get_property = get_property;

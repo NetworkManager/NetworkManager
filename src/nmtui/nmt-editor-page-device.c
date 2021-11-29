@@ -60,10 +60,10 @@ nmt_editor_page_device_get_device_entry(NmtEditorPageDevice *page)
 }
 
 static void
-nmt_editor_page_device_set_property(GObject *     object,
+nmt_editor_page_device_set_property(GObject      *object,
                                     guint         prop_id,
                                     const GValue *value,
-                                    GParamSpec *  pspec)
+                                    GParamSpec   *pspec)
 {
     NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE(object);
 
@@ -78,9 +78,9 @@ nmt_editor_page_device_set_property(GObject *     object,
 }
 
 static void
-nmt_editor_page_device_get_property(GObject *   object,
+nmt_editor_page_device_get_property(GObject    *object,
                                     guint       prop_id,
-                                    GValue *    value,
+                                    GValue     *value,
                                     GParamSpec *pspec)
 {
     NmtEditorPageDevicePrivate *priv = NMT_EDITOR_PAGE_DEVICE_GET_PRIVATE(object);

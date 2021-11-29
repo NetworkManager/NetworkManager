@@ -13,7 +13,7 @@
 static void
 test_jansson(void)
 {
-    const NMJsonVt *    vt;
+    const NMJsonVt                *vt;
     nm_auto_decref_json nm_json_t *js1 = NULL;
     nm_auto_decref_json nm_json_t *js2 = NULL;
 

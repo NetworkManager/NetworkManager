@@ -51,8 +51,8 @@ guint32 nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs);
  */
 gboolean nm_wifi_utils_get_station(NMWifiUtils *data,
                                    NMEtherAddr *out_bssid,
-                                   int *        out_quality,
-                                   guint32 *    out_rate);
+                                   int         *out_quality,
+                                   guint32     *out_rate);
 
 /* Tells the driver DHCP or SLAAC is running */
 gboolean nm_wifi_utils_indicate_addressing_running(NMWifiUtils *data, gboolean running);

@@ -46,10 +46,10 @@ G_DEFINE_BOXED_TYPE(NMWireGuardPeer,
  * Since: 1.16
  */
 struct _NMWireGuardPeer {
-    NMSockAddrEndpoint * endpoint;
-    char *               public_key;
-    char *               preshared_key;
-    GPtrArray *          allowed_ips;
+    NMSockAddrEndpoint  *endpoint;
+    char                *public_key;
+    char                *preshared_key;
+    GPtrArray           *allowed_ips;
     guint                refcount;
     NMSettingSecretFlags preshared_key_flags;
     guint16              persistent_keepalive;
@@ -278,10 +278,10 @@ nm_wireguard_peer_get_public_key(const NMWireGuardPeer *self)
  */
 gboolean
 nm_wireguard_peer_set_public_key(NMWireGuardPeer *self,
-                                 const char *     public_key,
+                                 const char      *public_key,
                                  gboolean         accept_invalid)
 {
-    char *   public_key_normalized = NULL;
+    char    *public_key_normalized = NULL;
     gboolean is_valid;
 
     g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE), FALSE);
@@ -365,10 +365,10 @@ nm_wireguard_peer_get_preshared_key(const NMWireGuardPeer *self)
  */
 gboolean
 nm_wireguard_peer_set_preshared_key(NMWireGuardPeer *self,
-                                    const char *     preshared_key,
+                                    const char      *preshared_key,
                                     gboolean         accept_invalid)
 {
-    char *   preshared_key_normalized = NULL;
+    char    *preshared_key_normalized = NULL;
     gboolean is_valid;
 
     g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE), FALSE);
@@ -418,7 +418,7 @@ nm_wireguard_peer_get_preshared_key_flags(const NMWireGuardPeer *self)
  * Since: 1.16
  */
 void
-nm_wireguard_peer_set_preshared_key_flags(NMWireGuardPeer *    self,
+nm_wireguard_peer_set_preshared_key_flags(NMWireGuardPeer     *self,
                                           NMSettingSecretFlags preshared_key_flags)
 {
     g_return_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE));
@@ -620,7 +620,7 @@ _peer_append_allowed_ip(NMWireGuardPeer *self, const char *allowed_ip, gboolean 
     int      addr_family;
     int      prefix;
     NMIPAddr addrbin;
-    char *   str;
+    char    *str;
     gboolean is_valid = TRUE;
 
     nm_assert(NM_IS_WIREGUARD_PEER(self, FALSE));
@@ -677,7 +677,7 @@ _peer_append_allowed_ip(NMWireGuardPeer *self, const char *allowed_ip, gboolean 
  */
 gboolean
 nm_wireguard_peer_append_allowed_ip(NMWireGuardPeer *self,
-                                    const char *     allowed_ip,
+                                    const char      *allowed_ip,
                                     gboolean         accept_invalid)
 {
     g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, FALSE), FALSE);
@@ -733,7 +733,7 @@ gboolean
 nm_wireguard_peer_is_valid(const NMWireGuardPeer *self,
                            gboolean               check_non_secrets,
                            gboolean               check_secrets,
-                           GError **              error)
+                           GError               **error)
 {
     guint i;
 
@@ -876,7 +876,7 @@ nm_wireguard_peer_cmp(const NMWireGuardPeer *a,
 /*****************************************************************************/
 
 typedef struct {
-    const char *     public_key;
+    const char      *public_key;
     NMWireGuardPeer *peer;
     guint            idx;
 } PeerData;
@@ -893,9 +893,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_FWMARK,
                                   PROP_PRIVATE_KEY_FLAGS, );
 
 typedef struct {
-    char *               private_key;
-    GPtrArray *          peers_arr;
-    GHashTable *         peers_hash;
+    char                *private_key;
+    GPtrArray           *peers_arr;
+    GHashTable          *peers_hash;
     NMSettingSecretFlags private_key_flags;
     NMTernary            ip4_auto_default_route;
     NMTernary            ip6_auto_default_route;
@@ -941,7 +941,7 @@ G_DEFINE_TYPE(NMSettingWireGuard, nm_setting_wireguard, NM_TYPE_SETTING)
 #define peers_psk_get_secret_parse_a(secret_public_key, public_key_free)                           \
     ({                                                                                             \
         const char *_secret_public_key = (secret_public_key);                                      \
-        char **     _public_key_free   = (public_key_free);                                        \
+        char      **_public_key_free   = (public_key_free);                                        \
         const char *_public_key        = NULL;                                                     \
                                                                                                    \
         nm_assert(_public_key_free && !*_public_key_free);                                         \
@@ -1132,11 +1132,11 @@ _peers_get(NMSettingWireGuardPrivate *priv, guint idx)
 
 static PeerData *
 _peers_get_by_public_key(NMSettingWireGuardPrivate *priv,
-                         const char *               public_key,
+                         const char                *public_key,
                          gboolean                   try_with_normalized_key)
 {
     gs_free char *public_key_normalized = NULL;
-    PeerData *    pd;
+    PeerData     *pd;
 
 again:
     nm_assert(priv);
@@ -1233,11 +1233,11 @@ nm_setting_wireguard_get_peer(NMSettingWireGuard *self, guint idx)
  */
 NMWireGuardPeer *
 nm_setting_wireguard_get_peer_by_public_key(NMSettingWireGuard *self,
-                                            const char *        public_key,
-                                            guint *             out_idx)
+                                            const char         *public_key,
+                                            guint              *out_idx)
 {
     NMSettingWireGuardPrivate *priv;
-    PeerData *                 pd;
+    PeerData                  *pd;
 
     g_return_val_if_fail(NM_IS_SETTING_WIREGUARD(self), NULL);
     g_return_val_if_fail(public_key, NULL);
@@ -1255,12 +1255,12 @@ nm_setting_wireguard_get_peer_by_public_key(NMSettingWireGuard *self,
 
 static gboolean
 _peers_set(NMSettingWireGuardPrivate *priv,
-           NMWireGuardPeer *          peer,
+           NMWireGuardPeer           *peer,
            guint                      idx,
            gboolean                   check_same_key)
 {
-    PeerData *  pd_same_key = NULL;
-    PeerData *  pd_idx      = NULL;
+    PeerData   *pd_same_key = NULL;
+    PeerData   *pd_idx      = NULL;
     const char *public_key;
 
     nm_assert(idx <= priv->peers_arr->len);
@@ -1462,7 +1462,7 @@ nm_setting_wireguard_clear_peers(NMSettingWireGuard *self)
 static GVariant *
 _peers_dbus_only_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
-    NMSettingWireGuard *       self = NM_SETTING_WIREGUARD(setting);
+    NMSettingWireGuard        *self = NM_SETTING_WIREGUARD(setting);
     NMSettingWireGuardPrivate *priv;
     gboolean                   any_peers = FALSE;
     GVariantBuilder            peers_builder;
@@ -1518,7 +1518,7 @@ _peers_dbus_only_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 
         if (_nm_connection_serialize_non_secret(flags) && peer->allowed_ips
             && peer->allowed_ips->len > 0) {
-            const char *const *  strv       = (const char *const *) peer->allowed_ips->pdata;
+            const char *const   *strv       = (const char *const *) peer->allowed_ips->pdata;
             gs_free const char **strv_fixed = NULL;
 
             for (i = 0; i < peer->allowed_ips->len; i++) {
@@ -1561,7 +1561,7 @@ static gboolean
 _peers_dbus_only_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GVariantIter iter_peers;
-    GVariant *   peer_var;
+    GVariant    *peer_var;
     guint        i_peer;
     gboolean     success       = FALSE;
     gboolean     peers_changed = FALSE;
@@ -1574,9 +1574,9 @@ _peers_dbus_only_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     while (g_variant_iter_next(&iter_peers, "@a{sv}", &peer_var)) {
         _nm_unused gs_unref_variant GVariant *peer_var_unref = peer_var;
         nm_auto_unref_wgpeer NMWireGuardPeer *peer           = NULL;
-        const char *                          cstr;
+        const char                           *cstr;
         guint32                               u32;
-        GVariant *                            var;
+        GVariant                             *var;
 
         i_peer++;
 
@@ -1633,7 +1633,7 @@ _peers_dbus_only_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
         if (g_variant_lookup(peer_var, NM_WIREGUARD_PEER_ATTR_ALLOWED_IPS, "@as", &var)) {
             _nm_unused gs_unref_variant GVariant *var_free    = var;
-            gs_free const char **                 allowed_ips = NULL;
+            gs_free const char                  **allowed_ips = NULL;
             gsize                                 i, l;
 
             allowed_ips = g_variant_get_strv(var, &l);
@@ -1688,7 +1688,7 @@ out:
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingWireGuard *       s_wg = NM_SETTING_WIREGUARD(setting);
+    NMSettingWireGuard        *s_wg = NM_SETTING_WIREGUARD(setting);
     NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
     guint                      i;
 
@@ -1718,7 +1718,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     if (connection) {
         NMSettingIPConfig *s_ip4;
         NMSettingIPConfig *s_ip6;
-        const char *       method;
+        const char        *method;
 
         /* WireGuard is Layer 3 only. For the moment, we only support a restricted set of
          * IP methods. We may relax that later, once we fix the implementations so they
@@ -1803,7 +1803,7 @@ static GPtrArray *
 need_secrets(NMSetting *setting)
 {
     NMSettingWireGuardPrivate *priv    = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
-    GPtrArray *                secrets = NULL;
+    GPtrArray                 *secrets = NULL;
     guint                      i;
 
     if (!priv->private_key || !priv->private_key_valid) {
@@ -1832,9 +1832,9 @@ need_secrets(NMSetting *setting)
 }
 
 static gboolean
-clear_secrets(const NMSettInfoSetting *        sett_info,
-              const NMSettInfoProperty *       property_info,
-              NMSetting *                      setting,
+clear_secrets(const NMSettInfoSetting         *sett_info,
+              const NMSettInfoProperty        *property_info,
+              NMSetting                       *setting,
               NMSettingClearSecretsWithFlagsFn func,
               gpointer                         user_data)
 {
@@ -1852,7 +1852,7 @@ clear_secrets(const NMSettInfoSetting *        sett_info,
 
             if (func) {
                 gs_free char *name_free = NULL;
-                const char *  name;
+                const char   *name;
 
                 if (j++ < 5) {
                     /* we use alloca() inside a loop here, but it is guarded to happen at most
@@ -1891,12 +1891,12 @@ clear_secrets(const NMSettInfoSetting *        sett_info,
 static int
 update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError **error)
 {
-    NMSettingWireGuard *       self = NM_SETTING_WIREGUARD(setting);
+    NMSettingWireGuard        *self = NM_SETTING_WIREGUARD(setting);
     NMSettingWireGuardPrivate *priv;
     gboolean                   has_changes = FALSE;
     gboolean                   has_error   = FALSE;
     GVariantIter               iter_peers;
-    GVariant *                 peer_var;
+    GVariant                  *peer_var;
     guint                      i_peer;
 
     if (!nm_streq(key, NM_SETTING_WIREGUARD_PEERS)) {
@@ -1924,8 +1924,8 @@ update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError *
     while (g_variant_iter_next(&iter_peers, "@a{sv}", &peer_var)) {
         _nm_unused gs_unref_variant GVariant *peer_var_unref = peer_var;
         nm_auto_unref_wgpeer NMWireGuardPeer *peer           = NULL;
-        PeerData *                            pd;
-        const char *                          cstr;
+        PeerData                             *pd;
+        const char                           *cstr;
 
         i_peer++;
 
@@ -2041,14 +2041,14 @@ duplicate_copy_properties(const NMSettInfoSetting *sett_info, NMSetting *src, NM
 
 static void
 enumerate_values(const NMSettInfoProperty *property_info,
-                 NMSetting *               setting,
+                 NMSetting                *setting,
                  NMSettingValueIterFn      func,
                  gpointer                  user_data)
 {
     if (nm_streq(property_info->name, NM_SETTING_WIREGUARD_PEERS)) {
-        NMSettingWireGuardPrivate * priv  = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+        NMSettingWireGuardPrivate  *priv  = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
         nm_auto_unset_gvalue GValue value = G_VALUE_INIT;
-        GPtrArray *                 ptr   = NULL;
+        GPtrArray                  *ptr   = NULL;
         guint                       i;
 
         if (priv->peers_arr && priv->peers_arr->len > 0) {
@@ -2115,16 +2115,16 @@ out_done:
 }
 
 static gboolean
-get_secret_flags(NMSetting *           setting,
-                 const char *          secret_name,
+get_secret_flags(NMSetting            *setting,
+                 const char           *secret_name,
                  NMSettingSecretFlags *out_flags,
-                 GError **             error)
+                 GError              **error)
 {
     if (NM_STR_HAS_PREFIX(secret_name, NM_SETTING_WIREGUARD_PEERS ".")) {
         NMSettingWireGuardPrivate *priv            = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
-        gs_free char *             public_key_free = NULL;
-        const char *               public_key;
-        PeerData *                 pd;
+        gs_free char              *public_key_free = NULL;
+        const char                *public_key;
+        PeerData                  *pd;
 
         public_key = peers_psk_get_secret_parse_a(secret_name, &public_key_free);
         if (public_key && (pd = _peers_get_by_public_key(priv, public_key, FALSE))) {
@@ -2138,17 +2138,17 @@ get_secret_flags(NMSetting *           setting,
 }
 
 static gboolean
-set_secret_flags(NMSetting *          setting,
-                 const char *         secret_name,
+set_secret_flags(NMSetting           *setting,
+                 const char          *secret_name,
                  NMSettingSecretFlags flags,
-                 GError **            error)
+                 GError             **error)
 {
     if (NM_STR_HAS_PREFIX(secret_name, NM_SETTING_WIREGUARD_PEERS ".")) {
-        NMSettingWireGuard *       self            = NM_SETTING_WIREGUARD(setting);
+        NMSettingWireGuard        *self            = NM_SETTING_WIREGUARD(setting);
         NMSettingWireGuardPrivate *priv            = NM_SETTING_WIREGUARD_GET_PRIVATE(self);
-        gs_free char *             public_key_free = NULL;
-        const char *               public_key;
-        PeerData *                 pd;
+        gs_free char              *public_key_free = NULL;
+        const char                *public_key;
+        PeerData                  *pd;
 
         public_key = peers_psk_get_secret_parse_a(secret_name, &public_key_free);
         if (public_key && (pd = _peers_get_by_public_key(priv, public_key, FALSE))) {
@@ -2170,20 +2170,20 @@ set_secret_flags(NMSetting *          setting,
 }
 
 static void
-for_each_secret(NMSetting *                    setting,
-                const char *                   data_key,
-                GVariant *                     data_val,
+for_each_secret(NMSetting                     *setting,
+                const char                    *data_key,
+                GVariant                      *data_val,
                 gboolean                       remove_non_secrets,
                 _NMConnectionForEachSecretFunc callback,
                 gpointer                       callback_data,
-                GVariantBuilder *              setting_builder)
+                GVariantBuilder               *setting_builder)
 {
-    NMSettingWireGuard *       s_wg;
+    NMSettingWireGuard        *s_wg;
     NMSettingWireGuardPrivate *priv;
     GVariantBuilder            peers_builder;
-    GVariantIter *             peer_iter;
+    GVariantIter              *peer_iter;
     GVariantIter               data_iter;
-    const char *               key;
+    const char                *key;
 
     if (!nm_streq(data_key, NM_SETTING_WIREGUARD_PEERS)) {
         NM_SETTING_CLASS(nm_setting_wireguard_parent_class)
@@ -2210,11 +2210,11 @@ for_each_secret(NMSetting *                    setting,
     g_variant_iter_init(&data_iter, data_val);
     while (g_variant_iter_next(&data_iter, "a{sv}", &peer_iter)) {
         _nm_unused nm_auto_free_variant_iter GVariantIter *peer_iter_free = peer_iter;
-        gs_unref_variant GVariant *preshared_key                          = NULL;
-        PeerData *                 pd                                     = NULL;
-        NMSettingSecretFlags       secret_flags;
-        GVariant *                 val;
-        GVariantBuilder            peer_builder;
+        gs_unref_variant GVariant                         *preshared_key  = NULL;
+        PeerData                                          *pd             = NULL;
+        NMSettingSecretFlags                               secret_flags;
+        GVariant                                          *val;
+        GVariantBuilder                                    peer_builder;
 
         g_variant_builder_init(&peer_builder, G_VARIANT_TYPE("a{sv}"));
 
@@ -2261,7 +2261,7 @@ for_each_secret(NMSetting *                    setting,
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingWireGuard *       setting = NM_SETTING_WIREGUARD(object);
+    NMSettingWireGuard        *setting = NM_SETTING_WIREGUARD(object);
     NMSettingWireGuardPrivate *priv    = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -2299,7 +2299,7 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(object);
-    const char *               str;
+    const char                *str;
 
     switch (prop_id) {
     case PROP_FWMARK:
@@ -2388,9 +2388,9 @@ finalize(GObject *object)
 static void
 nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;

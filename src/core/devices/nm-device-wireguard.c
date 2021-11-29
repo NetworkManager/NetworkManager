@@ -179,9 +179,9 @@ static NM_UTILS_LOOKUP_STR_DEFINE(_link_config_mode_to_string,
 
 static void
 _auto_default_route_get_enabled(NMSettingWireGuard *s_wg,
-                                NMConnection *      connection,
-                                gboolean *          out_enabled_v4,
-                                gboolean *          out_enabled_v6)
+                                NMConnection       *connection,
+                                gboolean           *out_enabled_v4,
+                                gboolean           *out_enabled_v6)
 {
     NMTernary enabled_v4;
     NMTernary enabled_v6;
@@ -327,7 +327,7 @@ static void
 _auto_default_route_init(NMDeviceWireGuard *self)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-    NMConnection *            connection;
+    NMConnection             *connection;
     gboolean                  enabled_v4 = FALSE;
     gboolean                  enabled_v6 = FALSE;
     gboolean                  refreshing_only;
@@ -380,12 +380,12 @@ _auto_default_route_init(NMDeviceWireGuard *self)
 static GPtrArray *
 get_extra_rules(NMDevice *device)
 {
-    NMDeviceWireGuard *       self           = NM_DEVICE_WIREGUARD(device);
-    NMDeviceWireGuardPrivate *priv           = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+    NMDeviceWireGuard           *self        = NM_DEVICE_WIREGUARD(device);
+    NMDeviceWireGuardPrivate    *priv        = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
     gs_unref_ptrarray GPtrArray *extra_rules = NULL;
     guint32                      priority    = 0;
     int                          is_ipv4;
-    NMConnection *               connection;
+    NMConnection                *connection;
 
     _auto_default_route_init(self);
 
@@ -457,7 +457,7 @@ get_extra_rules(NMDevice *device)
 static guint32
 coerce_route_table(NMDevice *device, int addr_family, guint32 route_table, gboolean is_user_config)
 {
-    NMDeviceWireGuard *       self = NM_DEVICE_WIREGUARD(device);
+    NMDeviceWireGuard        *self = NM_DEVICE_WIREGUARD(device);
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
     gboolean                  auto_default_route_enabled;
 
@@ -581,7 +581,7 @@ static PeerData *
 _peers_add(NMDeviceWireGuard *self, NMWireGuardPeer *peer)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-    PeerData *                peer_data;
+    PeerData                 *peer_data;
 
     nm_assert(peer);
     nm_assert(nm_wireguard_peer_is_sealed(peer));
@@ -606,9 +606,9 @@ _peers_add(NMDeviceWireGuard *self, NMWireGuardPeer *peer)
 static gboolean
 _peers_resolve_retry_timeout(gpointer user_data)
 {
-    NMDeviceWireGuard *       self = user_data;
+    NMDeviceWireGuard        *self = user_data;
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-    PeerData *                peer_data;
+    PeerData                 *peer_data;
     gint64                    now;
     gint64                    next;
 
@@ -684,7 +684,7 @@ _peers_resolve_retry_reschedule(NMDeviceWireGuard *self, gint64 new_next_try_at_
 
 static void
 _peers_resolve_retry_reschedule_for_peer(NMDeviceWireGuard *self,
-                                         PeerData *         peer_data,
+                                         PeerData          *peer_data,
                                          gint64             retry_in_msec)
 {
     nm_assert(retry_in_msec >= 0);
@@ -726,16 +726,16 @@ _peers_retry_in_msec(PeerData *peer_data, gboolean after_failure)
 static void
 _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMDeviceWireGuard *       self;
+    NMDeviceWireGuard        *self;
     NMDeviceWireGuardPrivate *priv;
-    PeerData *                peer_data;
-    gs_free_error GError *resolv_error = NULL;
-    GList *               list;
-    gboolean              changed;
-    NMSockAddrUnion       sockaddr;
-    gint64                retry_in_msec;
-    char                  s_sockaddr[100];
-    char                  s_retry[100];
+    PeerData                 *peer_data;
+    gs_free_error GError     *resolv_error = NULL;
+    GList                    *list;
+    gboolean                  changed;
+    NMSockAddrUnion           sockaddr;
+    gint64                    retry_in_msec;
+    char                      s_sockaddr[100];
+    char                      s_retry[100];
 
     list = g_resolver_lookup_by_name_finish(G_RESOLVER(source_object), res, &resolv_error);
 
@@ -783,7 +783,7 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
         GList *iter;
 
         for (iter = list; iter; iter = iter->next) {
-            GInetAddress *   a = iter->data;
+            GInetAddress    *a = iter->data;
             NMSockAddrUnion  sockaddr_tmp;
             NMSockAddrUnion *s;
 
@@ -875,9 +875,9 @@ _peers_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 static void
 _peers_resolve_start(NMDeviceWireGuard *self, PeerData *peer_data)
 {
-    NMDeviceWireGuardPrivate *priv      = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+    NMDeviceWireGuardPrivate  *priv     = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
     gs_unref_object GResolver *resolver = NULL;
-    const char *               host;
+    const char                *host;
 
     resolver = g_resolver_get_default();
 
@@ -914,7 +914,7 @@ static void
 _peers_resolve_reresolve_all(NMDeviceWireGuard *self)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-    PeerData *                peer_data;
+    PeerData                 *peer_data;
 
     c_list_for_each_entry (peer_data, &priv->lst_peers_head, lst_peers) {
         if (peer_data->ep_resolv.cancellable) {
@@ -932,13 +932,13 @@ _peers_resolve_reresolve_all(NMDeviceWireGuard *self)
 
 static gboolean
 _peers_update(NMDeviceWireGuard *self,
-              PeerData *         peer_data,
-              NMWireGuardPeer *  peer,
+              PeerData          *peer_data,
+              NMWireGuardPeer   *peer,
               gboolean           force_update)
 {
     nm_auto_unref_wgpeer NMWireGuardPeer *old_peer = NULL;
-    NMSockAddrEndpoint *                  old_endpoint;
-    NMSockAddrEndpoint *                  endpoint;
+    NMSockAddrEndpoint                   *old_endpoint;
+    NMSockAddrEndpoint                   *endpoint;
     gboolean                              endpoint_changed = FALSE;
     gboolean                              changed;
     NMSockAddrUnion                       sockaddr;
@@ -1019,7 +1019,7 @@ static void
 _peers_remove_all(NMDeviceWireGuard *self)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-    PeerData *                peer_data;
+    PeerData                 *peer_data;
 
     while ((peer_data = c_list_first_entry(&priv->lst_peers_head, PeerData, lst_peers)))
         _peers_remove(self, peer_data);
@@ -1029,8 +1029,8 @@ static void
 _peers_update_all(NMDeviceWireGuard *self, NMSettingWireGuard *s_wg, gboolean *out_peers_removed)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-    PeerData *                peer_data_safe;
-    PeerData *                peer_data;
+    PeerData                 *peer_data_safe;
+    PeerData                 *peer_data;
     guint                     i, n;
     gboolean                  peers_removed = FALSE;
 
@@ -1062,22 +1062,22 @@ _peers_update_all(NMDeviceWireGuard *self, NMSettingWireGuard *s_wg, gboolean *o
 }
 
 static void
-_peers_get_platform_list(NMDeviceWireGuardPrivate *           priv,
+_peers_get_platform_list(NMDeviceWireGuardPrivate            *priv,
                          LinkConfigMode                       config_mode,
-                         NMPWireGuardPeer **                  out_peers,
+                         NMPWireGuardPeer                   **out_peers,
                          NMPlatformWireGuardChangePeerFlags **out_peer_flags,
-                         guint *                              out_len,
-                         GArray **                            out_allowed_ips_data)
+                         guint                               *out_len,
+                         GArray                             **out_allowed_ips_data)
 {
-    gs_free NMPWireGuardPeer *plpeers                        = NULL;
+    gs_free NMPWireGuardPeer                   *plpeers      = NULL;
     gs_free NMPlatformWireGuardChangePeerFlags *plpeer_flags = NULL;
-    gs_unref_array GArray *allowed_ips                       = NULL;
-    PeerData *             peer_data;
-    guint                  i_good;
-    guint                  n_aip;
-    guint                  i_aip;
-    guint                  len;
-    guint                  i;
+    gs_unref_array GArray                      *allowed_ips  = NULL;
+    PeerData                                   *peer_data;
+    guint                                       i_good;
+    guint                                       n_aip;
+    guint                                       i_aip;
+    guint                                       len;
+    guint                                       i;
 
     nm_assert(out_peers && !*out_peers);
     nm_assert(out_peer_flags && !*out_peer_flags);
@@ -1097,7 +1097,7 @@ _peers_get_platform_list(NMDeviceWireGuardPrivate *           priv,
     i_good = 0;
     c_list_for_each_entry (peer_data, &priv->lst_peers_head, lst_peers) {
         NMPlatformWireGuardChangePeerFlags *plf = &plpeer_flags[i_good];
-        NMPWireGuardPeer *                  plp = &plpeers[i_good];
+        NMPWireGuardPeer                   *plp = &plpeers[i_good];
         NMSettingSecretFlags                psk_secret_flags;
 
         if (!nm_utils_base64secret_decode(nm_wireguard_peer_get_public_key(peer_data->peer),
@@ -1212,9 +1212,9 @@ skip:
 static void
 update_properties(NMDevice *device)
 {
-    NMDeviceWireGuard *           self;
-    NMDeviceWireGuardPrivate *    priv;
-    const NMPlatformLink *        plink;
+    NMDeviceWireGuard            *self;
+    NMDeviceWireGuardPrivate     *priv;
+    const NMPlatformLink         *plink;
     const NMPlatformLnkWireGuard *props = NULL;
     int                           ifindex;
 
@@ -1274,11 +1274,11 @@ get_generic_capabilities(NMDevice *dev)
 /*****************************************************************************/
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
     const char *iface = nm_device_get_iface(device);
     int         r;
@@ -1313,14 +1313,14 @@ _secrets_cancel(NMDeviceWireGuard *self)
 }
 
 static void
-_secrets_cb(NMActRequest *                req,
+_secrets_cb(NMActRequest                 *req,
             NMActRequestGetSecretsCallId *call_id,
-            NMSettingsConnection *        connection,
-            GError *                      error,
+            NMSettingsConnection         *connection,
+            GError                       *error,
             gpointer                      user_data)
 {
-    NMDeviceWireGuard *       self   = NM_DEVICE_WIREGUARD(user_data);
-    NMDevice *                device = NM_DEVICE(self);
+    NMDeviceWireGuard        *self   = NM_DEVICE_WIREGUARD(user_data);
+    NMDevice                 *device = NM_DEVICE(self);
     NMDeviceWireGuardPrivate *priv;
 
     g_return_if_fail(NM_IS_DEVICE_WIREGUARD(self));
@@ -1349,13 +1349,13 @@ _secrets_cb(NMActRequest *                req,
 }
 
 static void
-_secrets_get_secrets(NMDeviceWireGuard *          self,
-                     const char *                 setting_name,
+_secrets_get_secrets(NMDeviceWireGuard           *self,
+                     const char                  *setting_name,
                      NMSecretAgentGetSecretsFlags flags,
-                     const char *const *          hints)
+                     const char *const           *hints)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-    NMActRequest *            req;
+    NMActRequest             *req;
 
     _secrets_cancel(self);
 
@@ -1370,8 +1370,8 @@ _secrets_get_secrets(NMDeviceWireGuard *          self,
 static NMActStageReturn
 _secrets_handle_auth_or_fail(NMDeviceWireGuard *self, NMActRequest *req, gboolean new_secrets)
 {
-    NMConnection *    applied_connection;
-    const char *      setting_name;
+    NMConnection                *applied_connection;
+    const char                  *setting_name;
     gs_unref_ptrarray GPtrArray *hints = NULL;
 
     if (!nm_device_auth_retries_try_next(NM_DEVICE(self)))
@@ -1416,22 +1416,22 @@ _dns_config_changed(NMDnsManager *dns_manager, NMDeviceWireGuard *self)
 /*****************************************************************************/
 
 static NMActStageReturn
-link_config(NMDeviceWireGuard *  self,
-            const char *         reason,
+link_config(NMDeviceWireGuard   *self,
+            const char          *reason,
             LinkConfigMode       config_mode,
             NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceWireGuardPrivate *           priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
-    nm_auto_bzero_secret_ptr NMSecretPtr wg_lnk_clear_private_key = NM_SECRET_PTR_INIT();
-    NMSettingWireGuard *                 s_wg;
-    NMConnection *                       connection;
-    NMActStageReturn                     ret;
-    gs_unref_array GArray *allowed_ips_data = NULL;
-    NMPlatformLnkWireGuard wg_lnk;
-    gs_free NMPWireGuardPeer *plpeers                        = NULL;
+    NMDeviceWireGuardPrivate                   *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+    nm_auto_bzero_secret_ptr NMSecretPtr        wg_lnk_clear_private_key = NM_SECRET_PTR_INIT();
+    NMSettingWireGuard                         *s_wg;
+    NMConnection                               *connection;
+    NMActStageReturn                            ret;
+    gs_unref_array GArray                      *allowed_ips_data = NULL;
+    NMPlatformLnkWireGuard                      wg_lnk;
+    gs_free NMPWireGuardPeer                   *plpeers      = NULL;
     gs_free NMPlatformWireGuardChangePeerFlags *plpeer_flags = NULL;
     guint                                       plpeers_len  = 0;
-    const char *                                setting_name;
+    const char                                 *setting_name;
     gboolean                                    peers_removed;
     NMPlatformWireGuardChangeFlags              wg_change_flags;
     int                                         ifindex;
@@ -1584,7 +1584,7 @@ link_config_delayed_resolver_cb(gpointer user_data)
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceWireGuard *       self = NM_DEVICE_WIREGUARD(device);
+    NMDeviceWireGuard        *self = NM_DEVICE_WIREGUARD(device);
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
     NMDeviceSysIfaceState     sys_iface_state;
     NMDeviceStateReason       failure_reason;
@@ -1629,10 +1629,10 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static const NML3ConfigData *
 _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
 {
-    NMDeviceWireGuardPrivate *priv               = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
+    NMDeviceWireGuardPrivate               *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    NMConnection *                          connection;
-    NMSettingWireGuard *                    s_wg;
+    NMConnection                           *connection;
+    NMSettingWireGuard                     *s_wg;
     guint                                   n_peers;
     guint                                   i;
     int                                     ip_ifindex;
@@ -1694,7 +1694,7 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
         for (j = 0; j < n_aips; j++) {
             NMPlatformIPXRoute rt;
             NMIPAddr           addrbin;
-            const char *       aip;
+            const char        *aip;
             gboolean           valid;
             int                prefix;
             guint32            rtable_coerced;
@@ -1815,7 +1815,7 @@ _device_cleanup(NMDeviceWireGuard *self)
 }
 
 static void
-device_state_changed(NMDevice *          device,
+device_state_changed(NMDevice           *device,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state,
                      NMDeviceStateReason reason)
@@ -1829,12 +1829,12 @@ device_state_changed(NMDevice *          device,
 /*****************************************************************************/
 
 static gboolean
-can_reapply_change(NMDevice *  device,
+can_reapply_change(NMDevice   *device,
                    const char *setting_name,
-                   NMSetting * s_old,
-                   NMSetting * s_new,
+                   NMSetting  *s_old,
+                   NMSetting  *s_new,
                    GHashTable *diffs,
-                   GError **   error)
+                   GError    **error)
 {
     if (nm_streq(setting_name, NM_SETTING_WIREGUARD_SETTING_NAME)) {
         /* Most, but not all WireGuard settings can be reapplied. Whitelist.
@@ -1860,7 +1860,7 @@ can_reapply_change(NMDevice *  device,
 static void
 reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_new)
 {
-    NMDeviceWireGuard *       self  = NM_DEVICE_WIREGUARD(device);
+    NMDeviceWireGuard        *self  = NM_DEVICE_WIREGUARD(device);
     NMDeviceWireGuardPrivate *priv  = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
     NMDeviceState             state = nm_device_get_state(device);
 
@@ -1890,7 +1890,7 @@ update_connection(NMDevice *device, NMConnection *connection)
 {
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(device);
     NMSettingWireGuard *s_wg = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_WIREGUARD);
-    const NMPObject *   obj_wg;
+    const NMPObject    *obj_wg;
     const NMPObjectLnkWireGuard *olnk_wg;
     guint                        i;
 
@@ -1911,7 +1911,7 @@ update_connection(NMDevice *device, NMConnection *connection)
 
     for (i = 0; i < olnk_wg->peers_len; i++) {
         nm_auto_unref_wgpeer NMWireGuardPeer *peer  = NULL;
-        const NMPWireGuardPeer *              ppeer = &olnk_wg->peers[i];
+        const NMPWireGuardPeer               *ppeer = &olnk_wg->peers[i];
 
         peer = nm_wireguard_peer_new();
 
@@ -1926,7 +1926,7 @@ update_connection(NMDevice *device, NMConnection *connection)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMDeviceWireGuard *       self = NM_DEVICE_WIREGUARD(object);
+    NMDeviceWireGuard        *self = NM_DEVICE_WIREGUARD(object);
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -1971,7 +1971,7 @@ dispose(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMDeviceWireGuard *       self = NM_DEVICE_WIREGUARD(object);
+    NMDeviceWireGuard        *self = NM_DEVICE_WIREGUARD(object);
     NMDeviceWireGuardPrivate *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
 
     nm_explicit_bzero(priv->lnk_curr.private_key, sizeof(priv->lnk_curr.private_key));
@@ -2004,9 +2004,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_wireguard = {
 static void
 nm_device_wireguard_class_init(NMDeviceWireGuardClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;
     object_class->dispose      = dispose;
@@ -2066,11 +2066,11 @@ nm_device_wireguard_class_init(NMDeviceWireGuardClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIREGUARD_DEVICE_FACTORY, NMWireGuardDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     return g_object_new(NM_TYPE_DEVICE_WIREGUARD,
                         NM_DEVICE_IFACE,

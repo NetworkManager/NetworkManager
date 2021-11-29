@@ -33,10 +33,10 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingMatch,
  */
 struct _NMSettingMatch {
     NMSetting parent;
-    GArray *  interface_name;
-    GArray *  kernel_command_line;
-    GArray *  driver;
-    GArray *  path;
+    GArray   *interface_name;
+    GArray   *kernel_command_line;
+    GArray   *driver;
+    GArray   *path;
 };
 
 struct _NMSettingMatchClass {
@@ -278,7 +278,7 @@ nm_setting_match_remove_kernel_command_line(NMSettingMatch *setting, guint idx)
  **/
 gboolean
 nm_setting_match_remove_kernel_command_line_by_value(NMSettingMatch *setting,
-                                                     const char *    kernel_command_line)
+                                                     const char     *kernel_command_line)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
     g_return_val_if_fail(kernel_command_line, FALSE);
@@ -781,7 +781,7 @@ finalize(GObject *object)
 static void
 nm_setting_match_class_init(NMSettingMatchClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
 
     object_class->get_property = get_property;

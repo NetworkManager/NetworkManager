@@ -126,8 +126,8 @@ typedef struct {
 } DeleteOnDeactivateData;
 
 typedef struct {
-    NMDevice *              device;
-    GCancellable *          cancellable;
+    NMDevice               *device;
+    GCancellable           *cancellable;
     NMPlatformAsyncCallback callback;
     gpointer                callback_data;
     guint                   num_vfs;
@@ -223,8 +223,8 @@ typedef struct {
 } IPStateData;
 
 typedef struct {
-    NMDhcpClient *  client;
-    NMDhcpConfig *  config;
+    NMDhcpClient   *client;
+    NMDhcpConfig   *config;
     gulong          notify_sigid;
     NMDeviceIPState state;
     union {
@@ -246,11 +246,11 @@ typedef struct {
     NMDeviceIPState state;
     union {
         struct {
-            NMDnsMasqManager *     dnsmasq_manager;
+            NMDnsMasqManager      *dnsmasq_manager;
             NMNetnsSharedIPHandle *shared_ip_handle;
-            NMFirewallConfig *     firewall_config;
+            NMFirewallConfig      *firewall_config;
             gulong                 dnsmasq_state_id;
-            const NML3ConfigData * l3cd;
+            const NML3ConfigData  *l3cd;
         } v4;
         struct {
         } v6;
@@ -261,13 +261,13 @@ typedef struct {
     NMDeviceIPState state;
     union {
         struct {
-            NML3IPv4LL *            ipv4ll;
+            NML3IPv4LL             *ipv4ll;
             NML3IPv4LLRegistration *ipv4ll_registation;
-            GSource *               timeout_source;
+            GSource                *timeout_source;
         } v4;
         struct {
-            NML3IPv6LL *    ipv6ll;
-            GSource *       retry_source;
+            NML3IPv6LL     *ipv6ll;
+            GSource        *retry_source;
             NML3IPv6LLState llstate;
             struct in6_addr lladdr;
         } v6;
@@ -276,10 +276,10 @@ typedef struct {
 
 struct _NMDeviceConnectivityHandle {
     CList                        concheck_lst;
-    NMDevice *                   self;
+    NMDevice                    *self;
     NMDeviceConnectivityCallback callback;
     gpointer                     user_data;
-    NMConnectivityCheckHandle *  c_handle;
+    NMConnectivityCheckHandle   *c_handle;
     guint64                      seq;
     bool                         is_periodic : 1;
     bool                         is_periodic_bump : 1;
@@ -292,8 +292,8 @@ typedef struct {
     NMEthtoolFeatureStates *features;
     NMOptionBool            requested[_NM_ETHTOOL_ID_FEATURE_NUM];
     NMEthtoolCoalesceState *coalesce;
-    NMEthtoolRingState *    ring;
-    NMEthtoolPauseState *   pause;
+    NMEthtoolRingState     *ring;
+    NMEthtoolPauseState    *pause;
 } EthtoolState;
 
 typedef enum {
@@ -306,8 +306,8 @@ typedef struct {
     ResolverState state;
     GInetAddress *address;
     GCancellable *cancellable;
-    char *        hostname;
-    NMDevice *    device;
+    char         *hostname;
+    NMDevice     *device;
     guint         timeout_id; /* Used when waiting for the address */
     int           addr_family;
 } HostnameResolver;
@@ -406,16 +406,16 @@ typedef struct _NMDevicePrivate {
 
     union {
         const char *const iface;
-        char *            iface_;
+        char             *iface_;
     };
     union {
         const char *const ip_iface;
-        char *            ip_iface_;
+        char             *ip_iface_;
     };
 
     union {
         NML3Cfg *const l3cfg;
-        NML3Cfg *      l3cfg_;
+        NML3Cfg       *l3cfg_;
     };
 
     union {
@@ -464,12 +464,12 @@ typedef struct _NMDevicePrivate {
     bool real : 1;
 
     NMDeviceType         type;
-    char *               type_desc;
+    char                *type_desc;
     NMLinkType           link_type;
     NMDeviceCapabilities capabilities;
-    char *               driver;
-    char *               driver_version;
-    char *               firmware_version;
+    char                *driver;
+    char                *driver_version;
+    char                *firmware_version;
     RfKillType           rfkill_type;
     bool                 firmware_missing : 1;
     bool                 nm_plugin_missing : 1;
@@ -488,10 +488,10 @@ typedef struct _NMDevicePrivate {
     guint64 udi_id;
 
     GHashTable *available_connections;
-    char *      hw_addr;
-    char *      hw_addr_perm;
-    char *      hw_addr_initial;
-    char *      physical_port_id;
+    char       *hw_addr;
+    char       *hw_addr_perm;
+    char       *hw_addr_initial;
+    char       *physical_port_id;
     guint       dev_id;
 
     NMUnmanagedFlags unmanaged_mask;
@@ -501,11 +501,11 @@ typedef struct _NMDevicePrivate {
 
     GCancellable *deactivating_cancellable;
 
-    NMActRequest *     queued_act_request;
+    NMActRequest      *queued_act_request;
     bool               queued_act_request_is_waiting_for_carrier : 1;
     NMDBusTrackObjPath act_request;
 
-    GSource *            activation_idle_source;
+    GSource             *activation_idle_source;
     ActivationHandleFunc activation_func;
 
     guint recheck_assume_id;
@@ -624,8 +624,8 @@ typedef struct _NMDevicePrivate {
     };
 
     struct {
-        NMNDisc *             ndisc;
-        GSource *             ndisc_grace_source;
+        NMNDisc              *ndisc;
+        GSource              *ndisc_grace_source;
         gulong                ndisc_changed_id;
         gulong                ndisc_timeout_id;
         NMDeviceIPState       state;
@@ -671,14 +671,14 @@ typedef struct _NMDevicePrivate {
         guint       timeout;
         guint       watch;
         GPid        pid;
-        char *      binary;
-        char *      address;
+        char       *binary;
+        char       *address;
         guint       deadline;
     } gw_ping;
 
     /* Firewall */
     FirewallState             fw_state : 4;
-    NMFirewalldManager *      fw_mgr;
+    NMFirewalldManager       *fw_mgr;
     NMFirewalldManagerCallId *fw_call;
 
     GHashTable *ip6_saved_properties;
@@ -696,7 +696,7 @@ typedef struct _NMDevicePrivate {
     NMMetered metered;
 
     NMSettings *settings;
-    NMManager * manager;
+    NMManager  *manager;
 
     NMNetns *netns;
 
@@ -776,10 +776,10 @@ static guint32 _prop_get_ipv4_dad_timeout(NMDevice *self);
 static void   _carrier_wait_check_queued_act_request(NMDevice *self);
 static gint64 _get_carrier_wait_ms(NMDevice *self);
 
-static GBytes *_prop_get_ipv6_dhcp_duid(NMDevice *    self,
+static GBytes *_prop_get_ipv6_dhcp_duid(NMDevice     *self,
                                         NMConnection *connection,
-                                        GBytes *      hwaddr,
-                                        gboolean *    out_enforce);
+                                        GBytes       *hwaddr,
+                                        gboolean     *out_enforce);
 
 static const char *_activation_func_to_string(ActivationHandleFunc func);
 
@@ -788,10 +788,10 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
 static void queued_state_clear(NMDevice *device);
 static void ip_check_ping_watch_cb(GPid pid, int status, gpointer user_data);
 static void nm_device_start_ip_check(NMDevice *self);
-static void realize_start_setup(NMDevice *            self,
+static void realize_start_setup(NMDevice             *self,
                                 const NMPlatformLink *plink,
                                 gboolean              assume_state_guess_assume,
-                                const char *          assume_state_connection_uuid,
+                                const char           *assume_state_connection_uuid,
                                 gboolean              set_nm_owned,
                                 NMUnmanFlagOp         unmanaged_user_explicit,
                                 gboolean              force_platform_init);
@@ -833,7 +833,7 @@ static void _dev_ipshared6_start(NMDevice *self);
 static void
 _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gboolean from_reapply);
 
-static void concheck_update_state(NMDevice *          self,
+static void concheck_update_state(NMDevice           *self,
                                   int                 addr_family,
                                   NMConnectivityState state,
                                   gboolean            is_periodic);
@@ -949,8 +949,8 @@ _ip6_privacy_clamp(NMSettingIP6ConfigPrivacy use_tempaddr)
 /*****************************************************************************/
 
 static const char *
-_prop_get_connection_stable_id(NMDevice *         self,
-                               NMConnection *     connection,
+_prop_get_connection_stable_id(NMDevice          *self,
+                               NMConnection      *connection,
                                NMUtilsStableType *out_stable_type)
 {
     NMDevicePrivate *priv;
@@ -969,13 +969,13 @@ _prop_get_connection_stable_id(NMDevice *         self,
      * Especially with ${RANDOM} stable-id we want to generate *one* configuration
      * for each activation. */
     if (G_UNLIKELY(!priv->current_stable_id)) {
-        gs_free char *       generated = NULL;
+        gs_free char        *generated = NULL;
         NMUtilsStableType    stable_type;
         NMSettingConnection *s_con;
         gboolean             hwaddr_is_fake;
-        const char *         hwaddr;
-        const char *         stable_id;
-        const char *         uuid;
+        const char          *hwaddr;
+        const char          *stable_id;
+        const char          *uuid;
 
         s_con = nm_connection_get_setting_connection(connection);
 
@@ -1037,18 +1037,18 @@ _prop_get_connection_stable_id(NMDevice *         self,
 }
 
 static GBytes *
-_prop_get_ipv6_dhcp_duid(NMDevice *    self,
+_prop_get_ipv6_dhcp_duid(NMDevice     *self,
                          NMConnection *connection,
-                         GBytes *      hwaddr,
-                         gboolean *    out_enforce)
+                         GBytes       *hwaddr,
+                         gboolean     *out_enforce)
 {
     NMSettingIPConfig *s_ip6;
-    const char *       duid;
-    const char *       duid_error;
-    GBytes *           duid_out;
+    const char        *duid;
+    const char        *duid_error;
+    GBytes            *duid_out;
     gboolean           duid_enforce = TRUE;
-    gs_free char *     logstr1      = NULL;
-    const guint8 *     hwaddr_bin;
+    gs_free char      *logstr1      = NULL;
+    const guint8      *hwaddr_bin;
     gsize              hwaddr_len;
     int                arp_type;
 
@@ -1109,12 +1109,12 @@ _prop_get_ipv6_dhcp_duid(NMDevice *    self,
          *
          * Implementations that are added later, should use a distinct salt instead,
          * like "stable-ll"/"stable-llt" with ARPHRD_INFINIBAND below. */
-        const guint32         DEFAULT_SALT   = 670531087u;
-        nm_auto_free_checksum GChecksum *sum = NULL;
+        const guint32                    DEFAULT_SALT = 670531087u;
+        nm_auto_free_checksum GChecksum *sum          = NULL;
         NMUtilsStableType                stable_type;
-        const char *                     stable_id = NULL;
+        const char                      *stable_id = NULL;
         guint32                          salted_header;
-        const guint8 *                   host_id;
+        const guint8                    *host_id;
         gsize                            host_id_len;
         union {
             guint8 sha256[NM_UTILS_CHECKSUM_LENGTH_SHA256];
@@ -1287,7 +1287,7 @@ _prop_get_ipv6_ra_timeout(NMDevice *self)
 static NMSettingConnectionMdns
 _prop_get_connection_mdns(NMDevice *self)
 {
-    NMConnection *          connection;
+    NMConnection           *connection;
     NMSettingConnectionMdns mdns = NM_SETTING_CONNECTION_MDNS_DEFAULT;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_MDNS_DEFAULT);
@@ -1309,7 +1309,7 @@ _prop_get_connection_mdns(NMDevice *self)
 static NMSettingConnectionLlmnr
 _prop_get_connection_llmnr(NMDevice *self)
 {
-    NMConnection *           connection;
+    NMConnection            *connection;
     NMSettingConnectionLlmnr llmnr = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_LLMNR_DEFAULT);
@@ -1331,7 +1331,7 @@ _prop_get_connection_llmnr(NMDevice *self)
 static NMSettingConnectionDnsOverTls
 _prop_get_connection_dns_over_tls(NMDevice *self)
 {
-    NMConnection *                connection;
+    NMConnection                 *connection;
     NMSettingConnectionDnsOverTls dns_over_tls = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
@@ -1354,14 +1354,14 @@ _prop_get_connection_dns_over_tls(NMDevice *self)
 static guint32
 _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
 {
-    NMDevicePrivate *    priv = NM_DEVICE_GET_PRIVATE(self);
-    NMDeviceClass *      klass;
-    NMConnection *       connection;
-    NMSettingIPConfig *  s_ip;
+    NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDeviceClass       *klass;
+    NMConnection        *connection;
+    NMSettingIPConfig   *s_ip;
     guint32              route_table    = 0;
     gboolean             is_user_config = TRUE;
     NMSettingConnection *s_con;
-    NMSettingVrf *       s_vrf;
+    NMSettingVrf        *s_vrf;
 
     nm_assert_addr_family(addr_family);
 
@@ -1441,8 +1441,8 @@ _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
 static gboolean
 _prop_get_connection_lldp(NMDevice *self)
 {
-    NMConnection *          connection;
-    NMSettingConnection *   s_con;
+    NMConnection           *connection;
+    NMSettingConnection    *s_con;
     NMSettingConnectionLldp lldp = NM_SETTING_CONNECTION_LLDP_DEFAULT;
 
     connection = nm_device_get_applied_connection(self);
@@ -1468,7 +1468,7 @@ _prop_get_connection_lldp(NMDevice *self)
 static guint32
 _prop_get_ipv4_dad_timeout(NMDevice *self)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     NMSettingIPConfig *s_ip4   = NULL;
     int                timeout = -1;
 
@@ -1495,7 +1495,7 @@ static guint32
 _prop_get_ipvx_dhcp_timeout(NMDevice *self, int addr_family)
 {
     NMDeviceClass *klass;
-    NMConnection * connection;
+    NMConnection  *connection;
     guint32        timeout;
     int            timeout_i;
 
@@ -1542,7 +1542,7 @@ out:
 static guint32
 _prop_get_ipvx_dns_priority(NMDevice *self, int addr_family)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     NMSettingIPConfig *s_ip;
     int                prio = 0;
 
@@ -1573,7 +1573,7 @@ _prop_get_ipvx_dns_priority(NMDevice *self, int addr_family)
 static guint32
 _prop_get_ipvx_required_timeout(NMDevice *self, int addr_family)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     NMSettingIPConfig *s_ip;
     int                timeout;
 
@@ -1607,7 +1607,7 @@ _prop_get_ipvx_required_timeout(NMDevice *self, int addr_family)
 static gboolean
 _prop_get_ipvx_may_fail(NMDevice *self, int addr_family)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     NMSettingIPConfig *s_ip = NULL;
 
     connection = nm_device_get_applied_connection(self);
@@ -1636,18 +1636,18 @@ _prop_get_ipvx_may_fail_cached(NMDevice *self, int addr_family, NMTernary *cache
  * Returns: a IAID value for this device and the given connection.
  */
 static guint32
-_prop_get_ipvx_dhcp_iaid(NMDevice *    self,
+_prop_get_ipvx_dhcp_iaid(NMDevice     *self,
                          int           addr_family,
                          NMConnection *connection,
                          gboolean      log_silent,
-                         gboolean *    out_is_explicit)
+                         gboolean     *out_is_explicit)
 {
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
     NMSettingIPConfig *s_ip;
-    const char *       iaid_str;
+    const char        *iaid_str;
     guint32            iaid;
-    const char *       iface;
-    const char *       fail_reason;
+    const char        *iface;
+    const char        *fail_reason;
     gboolean           is_explicit = TRUE;
 
     s_ip     = nm_connection_get_setting_ip_config(connection, addr_family);
@@ -1711,9 +1711,9 @@ _prop_get_ipvx_dhcp_iaid(NMDevice *    self,
         nm_auto_free_checksum GChecksum *sum = NULL;
         guint8                           digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
         NMUtilsStableType                stable_type;
-        const char *                     stable_id;
+        const char                      *stable_id;
         guint32                          salted_header;
-        const guint8 *                   host_id;
+        const guint8                    *host_id;
         gsize                            host_id_len;
 
         stable_id     = _prop_get_connection_stable_id(self, connection, &stable_type);
@@ -1766,9 +1766,9 @@ out_good:
 static NMDhcpHostnameFlags
 _prop_get_ipvx_dhcp_hostname_flags(NMDevice *self, int addr_family)
 {
-    NMConnection *      connection;
-    NMSettingIPConfig * s_ip;
-    NMDhcpHostnameFlags flags;
+    NMConnection         *connection;
+    NMSettingIPConfig    *s_ip;
+    NMDhcpHostnameFlags   flags;
     gs_free_error GError *error = NULL;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_DHCP_HOSTNAME_FLAG_NONE);
@@ -1843,15 +1843,15 @@ static GBytes *
 _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *hwaddr)
 {
     NMSettingIPConfig *s_ip4;
-    const char *       client_id;
-    guint8 *           client_id_buf;
-    const char *       fail_reason;
+    const char        *client_id;
+    guint8            *client_id_buf;
+    const char        *fail_reason;
     guint8             hwaddr_bin_buf[_NM_UTILS_HWADDR_LEN_MAX];
-    const guint8 *     hwaddr_bin;
+    const guint8      *hwaddr_bin;
     int                arp_type;
     gsize              hwaddr_len;
-    GBytes *           result;
-    gs_free char *     logstr1 = NULL;
+    GBytes            *result;
+    gs_free char      *logstr1 = NULL;
 
     s_ip4     = nm_connection_get_setting_ip4_config(connection);
     client_id = nm_setting_ip4_config_get_dhcp_client_id(NM_SETTING_IP4_CONFIG(s_ip4));
@@ -1922,7 +1922,7 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
         gs_unref_bytes GBytes *duid = NULL;
         gboolean               iaid_is_explicit;
         guint32                iaid;
-        const guint8 *         duid_arr;
+        const guint8          *duid_arr;
         gsize                  duid_len;
 
         iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET, connection, FALSE, &iaid_is_explicit);
@@ -1947,9 +1947,9 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
         nm_auto_free_checksum GChecksum *sum = NULL;
         guint8                           digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
         NMUtilsStableType                stable_type;
-        const char *                     stable_id;
+        const char                      *stable_id;
         guint32                          salted_header;
-        const guint8 *                   host_id;
+        const guint8                    *host_id;
         gsize                            host_id_len;
 
         stable_id     = _prop_get_connection_stable_id(self, connection, &stable_type);
@@ -1995,9 +1995,9 @@ static GBytes *
 _prop_get_ipv4_dhcp_vendor_class_identifier(NMDevice *self, NMSettingIP4Config *s_ip4)
 {
     gs_free char *to_free = NULL;
-    const char *  conn_prop;
-    GBytes *      bytes = NULL;
-    const char *  bin;
+    const char   *conn_prop;
+    GBytes       *bytes = NULL;
+    const char   *bin;
     gsize         len;
 
     conn_prop = nm_setting_ip4_config_get_dhcp_vendor_class_identifier(s_ip4);
@@ -2031,7 +2031,7 @@ static NMSettingIP6ConfigPrivacy
 _prop_get_ipv6_ip6_privacy(NMDevice *self)
 {
     NMSettingIP6ConfigPrivacy ip6_privacy;
-    NMConnection *            connection;
+    NMConnection             *connection;
 
     g_return_val_if_fail(self, NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
@@ -2078,7 +2078,7 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
 static const char *
 _prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolean is_wifi)
 {
-    NMSetting * setting;
+    NMSetting  *setting;
     const char *addr = NULL;
 
     setting = nm_connection_get_setting(connection,
@@ -2124,7 +2124,7 @@ _prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolea
 static const char *
 _prop_get_x_generate_mac_address_mask(NMDevice *self, NMConnection *connection, gboolean is_wifi)
 {
-    NMSetting * setting;
+    NMSetting  *setting;
     const char *value;
 
     setting = nm_connection_get_setting(connection,
@@ -2165,9 +2165,9 @@ _ethtool_features_reset(NMDevice *self, NMPlatform *platform, EthtoolState *etht
 }
 
 static void
-_ethtool_features_set(NMDevice *        self,
-                      NMPlatform *      platform,
-                      EthtoolState *    ethtool_state,
+_ethtool_features_set(NMDevice         *self,
+                      NMPlatform       *platform,
+                      EthtoolState     *ethtool_state,
                       NMSettingEthtool *s_ethtool)
 {
     gs_free NMEthtoolFeatureStates *features = NULL;
@@ -2216,18 +2216,18 @@ _ethtool_coalesce_reset(NMDevice *self, NMPlatform *platform, EthtoolState *etht
 }
 
 static void
-_ethtool_coalesce_set(NMDevice *        self,
-                      NMPlatform *      platform,
-                      EthtoolState *    ethtool_state,
+_ethtool_coalesce_set(NMDevice         *self,
+                      NMPlatform       *platform,
+                      EthtoolState     *ethtool_state,
                       NMSettingEthtool *s_ethtool)
 {
     NMEthtoolCoalesceState coalesce_old;
     NMEthtoolCoalesceState coalesce_new;
     gboolean               has_old = FALSE;
-    GHashTable *           hash;
+    GHashTable            *hash;
     GHashTableIter         iter;
-    const char *           name;
-    GVariant *             variant;
+    const char            *name;
+    GVariant              *variant;
 
     nm_assert(NM_IS_DEVICE(self));
     nm_assert(NM_IS_PLATFORM(platform));
@@ -2294,17 +2294,17 @@ _ethtool_ring_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool_
 }
 
 static void
-_ethtool_ring_set(NMDevice *        self,
-                  NMPlatform *      platform,
-                  EthtoolState *    ethtool_state,
+_ethtool_ring_set(NMDevice         *self,
+                  NMPlatform       *platform,
+                  EthtoolState     *ethtool_state,
                   NMSettingEthtool *s_ethtool)
 {
     NMEthtoolRingState ring_old;
     NMEthtoolRingState ring_new;
-    GHashTable *       hash;
+    GHashTable        *hash;
     GHashTableIter     iter;
-    const char *       name;
-    GVariant *         variant;
+    const char        *name;
+    GVariant          *variant;
     gboolean           has_old = FALSE;
 
     nm_assert(NM_IS_DEVICE(self));
@@ -2390,17 +2390,17 @@ _ethtool_pause_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool
 }
 
 static void
-_ethtool_pause_set(NMDevice *        self,
-                   NMPlatform *      platform,
-                   EthtoolState *    ethtool_state,
+_ethtool_pause_set(NMDevice         *self,
+                   NMPlatform       *platform,
+                   EthtoolState     *ethtool_state,
                    NMSettingEthtool *s_ethtool)
 {
     NMEthtoolPauseState pause_old;
     NMEthtoolPauseState pause_new;
-    GHashTable *        hash;
+    GHashTable         *hash;
     GHashTableIter      iter;
-    const char *        name;
-    GVariant *          variant;
+    const char         *name;
+    GVariant           *variant;
     gboolean            has_old       = FALSE;
     NMTernary           pause_autoneg = NM_TERNARY_DEFAULT;
     NMTernary           pause_rx      = NM_TERNARY_DEFAULT;
@@ -2480,8 +2480,8 @@ _ethtool_pause_set(NMDevice *        self,
 static void
 _ethtool_state_reset(NMDevice *self)
 {
-    NMPlatform *     platform           = nm_device_get_platform(self);
-    NMDevicePrivate *priv               = NM_DEVICE_GET_PRIVATE(self);
+    NMPlatform           *platform      = nm_device_get_platform(self);
+    NMDevicePrivate      *priv          = NM_DEVICE_GET_PRIVATE(self);
     gs_free EthtoolState *ethtool_state = g_steal_pointer(&priv->ethtool_state);
 
     if (!ethtool_state)
@@ -2500,12 +2500,12 @@ _ethtool_state_reset(NMDevice *self)
 static void
 _ethtool_state_set(NMDevice *self)
 {
-    int               ifindex;
-    NMPlatform *      platform;
-    NMConnection *    connection;
-    NMSettingEthtool *s_ethtool;
+    int                   ifindex;
+    NMPlatform           *platform;
+    NMConnection         *connection;
+    NMSettingEthtool     *s_ethtool;
     gs_free EthtoolState *ethtool_state = NULL;
-    NMDevicePrivate *     priv          = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate      *priv          = NM_DEVICE_GET_PRIVATE(self);
 
     ifindex = nm_device_get_ip_ifindex(self);
     if (ifindex <= 0)
@@ -2692,7 +2692,7 @@ nm_device_sys_iface_state_set(NMDevice *self, NMDeviceSysIfaceState sys_iface_st
 }
 
 static void
-_active_connection_set_state_flags_full(NMDevice *             self,
+_active_connection_set_state_flags_full(NMDevice              *self,
                                         NMActivationStateFlags flags,
                                         NMActivationStateFlags mask)
 {
@@ -2712,12 +2712,12 @@ _active_connection_set_state_flags(NMDevice *self, NMActivationStateFlags flags)
 /*****************************************************************************/
 
 static gboolean
-set_interface_flags_full(NMDevice *             self,
+set_interface_flags_full(NMDevice              *self,
                          NMDeviceInterfaceFlags mask,
                          NMDeviceInterfaceFlags interface_flags,
                          gboolean               notify)
 {
-    NMDevicePrivate *      priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate       *priv = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceInterfaceFlags f;
 
     nm_assert(!!mask);
@@ -2736,7 +2736,7 @@ set_interface_flags_full(NMDevice *             self,
 }
 
 static gboolean
-set_interface_flags(NMDevice *             self,
+set_interface_flags(NMDevice              *self,
                     NMDeviceInterfaceFlags interface_flags,
                     gboolean               set,
                     gboolean               notify)
@@ -2748,8 +2748,8 @@ set_interface_flags(NMDevice *             self,
 }
 
 void
-nm_device_assume_state_get(NMDevice *   self,
-                           gboolean *   out_assume_state_guess_assume,
+nm_device_assume_state_get(NMDevice    *self,
+                           gboolean    *out_assume_state_guess_assume,
                            const char **out_assume_state_connection_uuid)
 {
     NMDevicePrivate *priv;
@@ -2762,7 +2762,7 @@ nm_device_assume_state_get(NMDevice *   self,
 }
 
 static void
-_assume_state_set(NMDevice *  self,
+_assume_state_set(NMDevice   *self,
                   gboolean    assume_state_guess_assume,
                   const char *assume_state_connection_uuid)
 {
@@ -2811,7 +2811,7 @@ nm_device_sysctl_ip_conf_get(NMDevice *self, int addr_family, const char *proper
 }
 
 static gint64
-nm_device_sysctl_ip_conf_get_int_checked(NMDevice *  self,
+nm_device_sysctl_ip_conf_get_int_checked(NMDevice   *self,
                                          int         addr_family,
                                          const char *property,
                                          guint       base,
@@ -2839,14 +2839,14 @@ nm_device_sysctl_ip_conf_get_int_checked(NMDevice *  self,
 }
 
 gboolean
-nm_device_sysctl_ip_conf_set(NMDevice *  self,
+nm_device_sysctl_ip_conf_set(NMDevice   *self,
                              int         addr_family,
                              const char *property,
                              const char *value)
 {
-    NMPlatform *  platform      = nm_device_get_platform(self);
+    NMPlatform   *platform      = nm_device_get_platform(self);
     gs_free char *value_to_free = NULL;
-    const char *  ifname;
+    const char   *ifname;
 
     nm_assert_addr_family(addr_family);
 
@@ -2955,10 +2955,10 @@ _dev_ip_state_req_timeout_schedule(NMDevice *self, int addr_family)
 }
 
 static gboolean
-_dev_ip_state_set_state(NMDevice *      self,
+_dev_ip_state_set_state(NMDevice       *self,
                         int             addr_family,
                         NMDeviceIPState ip_state,
-                        const char *    reason)
+                        const char     *reason)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     int              IS_IPv4;
@@ -2991,9 +2991,9 @@ _dev_ip_state_set_state(NMDevice *      self,
 
 static void
 _device_ip_state_accumulate(NMDeviceIPState state,
-                            gboolean *      out_is_started,
-                            gboolean *      out_is_pending,
-                            gboolean *      out_is_failed)
+                            gboolean       *out_is_started,
+                            gboolean       *out_is_pending,
+                            gboolean       *out_is_failed)
 {
     switch (state) {
     case NM_DEVICE_IP_STATE_NONE:
@@ -3167,7 +3167,7 @@ got_ip_state:
 #define _state_str_a(state, name)                                       \
     ({                                                                  \
         const NMDeviceIPState _state = (state);                         \
-        char *                _s     = "";                              \
+        char                 *_s     = "";                              \
                                                                         \
         if (_state != NM_DEVICE_IP_STATE_NONE) {                        \
             _s = nm_sprintf_bufa(NM_STRLEN(name) + 11,                  \
@@ -3411,7 +3411,7 @@ _dev_l3_config_data_tag_to_type(NMDevice *self, gconstpointer tag)
 }
 
 static L3ConfigDataType
-_dev_l3_config_data_acd_addr_info_to_type(NMDevice *             self,
+_dev_l3_config_data_acd_addr_info_to_type(NMDevice              *self,
                                           const NML3AcdAddrInfo *addr_info,
                                           guint                  i_track_infos)
 {
@@ -3424,7 +3424,7 @@ _dev_l3_config_data_acd_addr_info_to_type(NMDevice *             self,
 
 // FIXME(l3cfg): unused function??
 _nm_unused static const NML3AcdAddrTrackInfo *
-_dev_l3_config_data_acd_addr_info_has_by_type(NMDevice *             self,
+_dev_l3_config_data_acd_addr_info_has_by_type(NMDevice              *self,
                                               const NML3AcdAddrInfo *addr_info,
                                               L3ConfigDataType       l3cd_type)
 {
@@ -3442,16 +3442,16 @@ _dev_l3_config_data_acd_addr_info_has_by_type(NMDevice *             self,
 }
 
 static void
-_dev_l3_get_config_settings(NMDevice *            self,
+_dev_l3_get_config_settings(NMDevice             *self,
                             L3ConfigDataType      type,
                             NML3ConfigMergeFlags *out_merge_flags,
-                            NML3AcdDefendType *   out_acd_defend_type,
-                            guint32 *             out_acd_timeout_msec)
+                            NML3AcdDefendType    *out_acd_defend_type,
+                            guint32              *out_acd_timeout_msec)
 {
-    NMDevicePrivate *    priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
     NML3ConfigMergeFlags flags;
-    NMConnection *       connection;
-    NMSettingIPConfig *  s_ip;
+    NMConnection        *connection;
+    NMSettingIPConfig   *s_ip;
 
     nm_assert(_NM_INT_NOT_NEGATIVE(type) && type < _L3_CONFIG_DATA_TYPE_NUM);
 
@@ -3572,11 +3572,11 @@ after_merge_flags:
 }
 
 static gboolean
-_dev_l3_register_l3cds_add_config(NMDevice *         self,
+_dev_l3_register_l3cds_add_config(NMDevice          *self,
                                   L3ConfigDataType   l3cd_type,
                                   NML3CfgConfigFlags flags)
 {
-    NMDevicePrivate *    priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
     NML3ConfigMergeFlags merge_flags;
     NML3AcdDefendType    acd_defend_type;
     guint32              acd_timeout_msec;
@@ -3602,13 +3602,13 @@ _dev_l3_register_l3cds_add_config(NMDevice *         self,
 }
 
 static gboolean
-_dev_l3_register_l3cds_set_one_full(NMDevice *            self,
+_dev_l3_register_l3cds_set_one_full(NMDevice             *self,
                                     L3ConfigDataType      l3cd_type,
                                     const NML3ConfigData *l3cd,
                                     NML3CfgConfigFlags    flags,
                                     NMTernary             commit_sync)
 {
-    NMDevicePrivate *        priv                     = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate                         *priv     = NM_DEVICE_GET_PRIVATE(self);
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_old = NULL;
     gboolean                                 changed  = FALSE;
 
@@ -3648,7 +3648,7 @@ _dev_l3_register_l3cds_set_one_full(NMDevice *            self,
 }
 
 static gboolean
-_dev_l3_register_l3cds_set_one(NMDevice *            self,
+_dev_l3_register_l3cds_set_one(NMDevice             *self,
                                L3ConfigDataType      l3cd_type,
                                const NML3ConfigData *l3cd,
                                NMTernary             commit_sync)
@@ -3685,7 +3685,7 @@ _dev_l3_update_l3cds_ifindex(NMDevice *self)
 
 static gboolean
 _dev_l3_register_l3cds(NMDevice *self,
-                       NML3Cfg * l3cfg,
+                       NML3Cfg  *l3cfg,
                        gboolean  do_add /* else remove */,
                        NMTernary do_commit)
 {
@@ -3758,14 +3758,14 @@ _dev_l3_cfg_commit(NMDevice *self, gboolean commit_sync)
 static void
 update_external_connection(NMDevice *self)
 {
-    NMDevicePrivate *     priv = NM_DEVICE_GET_PRIVATE(self);
-    NMSettingsConnection *settings_connection;
+    NMDevicePrivate              *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMSettingsConnection         *settings_connection;
     gs_unref_object NMConnection *connection_new = NULL;
-    NMConnection *                connection_old;
-    gs_unref_object NMSetting *s_ip4_new = NULL;
-    gs_unref_object NMSetting *s_ip6_new = NULL;
-    NMSetting *                s_ip4_old;
-    NMSetting *                s_ip6_old;
+    NMConnection                 *connection_old;
+    gs_unref_object NMSetting    *s_ip4_new = NULL;
+    gs_unref_object NMSetting    *s_ip6_new = NULL;
+    NMSetting                    *s_ip4_old;
+    NMSetting                    *s_ip6_old;
 
     /* Update external connections with configuration from platform */
 
@@ -3916,7 +3916,7 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
 static void
 _dev_l3_cfg_commit_type_reset(NMDevice *self)
 {
-    NMDevicePrivate * priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate  *priv = NM_DEVICE_GET_PRIVATE(self);
     NML3CfgCommitType commit_type;
 
     if (!priv->l3cfg)
@@ -3965,12 +3965,12 @@ nm_device_get_iface(NMDevice *self)
 static gboolean
 _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
 {
-    NMDevicePrivate *priv                          = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate         *priv                  = NM_DEVICE_GET_PRIVATE(self);
     gs_unref_object NML3Cfg *l3cfg_old             = NULL;
     NML3CfgCommitTypeHandle *l3cfg_commit_type_old = NULL;
     gboolean                 l3_changed;
     int                      ip_ifindex_new;
-    int *                    p_ifindex;
+    int                     *p_ifindex;
     gboolean                 l3cfg_was_reset = FALSE;
 
     if (ifindex < 0) {
@@ -4101,9 +4101,9 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
 gboolean
 nm_device_take_over_link(NMDevice *self, int ifindex, char **old_name, GError **error)
 {
-    NMDevicePrivate *     priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate      *priv = NM_DEVICE_GET_PRIVATE(self);
     const NMPlatformLink *plink;
-    NMPlatform *          platform;
+    NMPlatform           *platform;
 
     nm_assert(ifindex > 0);
     NM_SET_OUT(old_name, NULL);
@@ -4228,7 +4228,7 @@ static void
 _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMPlatform *     platform;
+    NMPlatform      *platform;
     gboolean         eq_name;
 
     /* normalize arguments */
@@ -4352,10 +4352,10 @@ parent_changed_notify(NMDevice *self,
 static gboolean
 _parent_set_ifindex(NMDevice *self, int parent_ifindex, gboolean force_check)
 {
-    NMDevicePrivate *priv;
-    NMDevice *       parent_device;
-    gboolean         changed = FALSE;
-    int              old_ifindex;
+    NMDevicePrivate          *priv;
+    NMDevice                 *parent_device;
+    gboolean                  changed = FALSE;
+    int                       old_ifindex;
     gs_unref_object NMDevice *old_device = NULL;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
@@ -4446,7 +4446,7 @@ const char *
 nm_device_parent_find_for_connection(NMDevice *self, const char *current_setting_parent)
 {
     const char *new_parent;
-    NMDevice *  parent_device;
+    NMDevice   *parent_device;
 
     parent_device = nm_device_parent_get_device(self);
     if (!parent_device)
@@ -4583,10 +4583,10 @@ _stats_set_refresh_rate(NMDevice *self, guint refresh_rate_ms)
 static gboolean
 get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 {
-    NMDevicePrivate *     priv     = NM_DEVICE_GET_PRIVATE(self);
-    NMPlatform *          platform = nm_device_get_platform(self);
+    NMDevicePrivate      *priv     = NM_DEVICE_GET_PRIVATE(self);
+    NMPlatform           *platform = nm_device_get_platform(self);
     const NMPlatformLink *pllink;
-    const guint8 *        hwaddr;
+    const guint8         *hwaddr;
     guint8                pseudo_hwaddr[ETH_ALEN];
     gsize                 hwaddr_len;
     int                   ifindex;
@@ -4659,13 +4659,13 @@ get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
  * Returns: #TRUE if the @iid could be set
  */
 static gboolean
-nm_device_get_ip_iface_identifier(NMDevice *          self,
+nm_device_get_ip_iface_identifier(NMDevice           *self,
                                   NMUtilsIPv6IfaceId *iid,
                                   gboolean            ignore_token,
-                                  gboolean *          out_is_token)
+                                  gboolean           *out_is_token)
 {
     NMSettingIP6Config *s_ip6;
-    const char *        token = NULL;
+    const char         *token = NULL;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
@@ -4842,8 +4842,8 @@ nm_device_get_route_metric(NMDevice *self, int addr_family)
 {
     gint64             route_metric;
     NMSettingIPConfig *s_ip;
-    NMConnection *     connection;
-    const char *       property;
+    NMConnection      *connection;
+    const char        *property;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), G_MAXUINT32);
     g_return_val_if_fail(NM_IN_SET(addr_family, AF_INET, AF_INET6), G_MAXUINT32);
@@ -5061,7 +5061,7 @@ NMConnection *
 nm_device_get_settings_connection_get_connection(NMDevice *self)
 {
     NMSettingsConnection *sett_con;
-    NMDevicePrivate *     priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate      *priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (!priv->act_request.obj)
         return NULL;
@@ -5134,7 +5134,7 @@ typedef enum {
     CONCHECK_SCHEDULE_RETURNED_MAX,
 } ConcheckScheduleMode;
 
-static NMDeviceConnectivityHandle *concheck_start(NMDevice *                   self,
+static NMDeviceConnectivityHandle *concheck_start(NMDevice                    *self,
                                                   int                          addr_family,
                                                   NMDeviceConnectivityCallback callback,
                                                   gpointer                     user_data,
@@ -5440,7 +5440,7 @@ nm_device_check_connectivity_update_interval(NMDevice *self)
 }
 
 static void
-concheck_update_state(NMDevice *          self,
+concheck_update_state(NMDevice           *self,
                       int                 addr_family,
                       NMConnectivityState state,
                       gboolean            allow_periodic_bump)
@@ -5519,8 +5519,8 @@ static const char *
 nm_device_get_effective_ip_config_method(NMDevice *self, int addr_family)
 {
     NMDeviceClass *klass;
-    NMConnection * connection = nm_device_get_applied_connection(self);
-    const char *   method;
+    NMConnection  *connection = nm_device_get_applied_connection(self);
+    const char    *method;
     const int      IS_IPv4 = NM_IS_IPv4(addr_family);
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), "" /* bogus */);
@@ -5567,16 +5567,16 @@ concheck_handle_complete(NMDeviceConnectivityHandle *handle, GError *error)
 }
 
 static void
-concheck_cb(NMConnectivity *           connectivity,
+concheck_cb(NMConnectivity            *connectivity,
             NMConnectivityCheckHandle *c_handle,
             NMConnectivityState        state,
             gpointer                   user_data)
 {
     _nm_unused gs_unref_object NMDevice *self_keep_alive = NULL;
-    NMDevice *                           self;
-    NMDevicePrivate *                    priv;
-    NMDeviceConnectivityHandle *         handle;
-    NMDeviceConnectivityHandle *         other_handle;
+    NMDevice                            *self;
+    NMDevicePrivate                     *priv;
+    NMDeviceConnectivityHandle          *handle;
+    NMDeviceConnectivityHandle          *other_handle;
     gboolean                             handle_is_alive;
     gboolean                             allow_periodic_bump;
     gboolean                             any_periodic_before;
@@ -5700,16 +5700,16 @@ check_handles:
 }
 
 static NMDeviceConnectivityHandle *
-concheck_start(NMDevice *                   self,
+concheck_start(NMDevice                    *self,
                int                          addr_family,
                NMDeviceConnectivityCallback callback,
                gpointer                     user_data,
                gboolean                     is_periodic)
 {
     static guint64              seq_counter = 0;
-    NMDevicePrivate *           priv;
+    NMDevicePrivate            *priv;
     NMDeviceConnectivityHandle *handle;
-    const char *                ifname;
+    const char                 *ifname;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NULL);
 
@@ -5765,7 +5765,7 @@ concheck_start(NMDevice *                   self,
 }
 
 NMDeviceConnectivityHandle *
-nm_device_check_connectivity(NMDevice *                   self,
+nm_device_check_connectivity(NMDevice                    *self,
                              int                          addr_family,
                              NMDeviceConnectivityCallback callback,
                              gpointer                     user_data)
@@ -5821,8 +5821,8 @@ static SlaveInfo *
 find_slave_info(NMDevice *self, NMDevice *slave)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    CList *          iter;
-    SlaveInfo *      info;
+    CList           *iter;
+    SlaveInfo       *info;
 
     c_list_for_each (iter, &priv->slaves) {
         info = c_list_entry(iter, SlaveInfo, lst_slave);
@@ -5906,15 +5906,15 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
  * updates the state of @self and @slave to reflect its release.
  */
 static void
-nm_device_master_release_one_slave(NMDevice *          self,
-                                   NMDevice *          slave,
+nm_device_master_release_one_slave(NMDevice           *self,
+                                   NMDevice           *slave,
                                    gboolean            configure,
                                    gboolean            force,
                                    NMDeviceStateReason reason)
 {
-    NMDevicePrivate *priv;
-    NMDevicePrivate *slave_priv;
-    SlaveInfo *      info;
+    NMDevicePrivate          *priv;
+    NMDevicePrivate          *slave_priv;
+    SlaveInfo                *info;
     gs_unref_object NMDevice *self_free = NULL;
 
     g_return_if_fail(NM_DEVICE(self));
@@ -6137,7 +6137,7 @@ carrier_changed(NMDevice *self, gboolean carrier)
 static gboolean
 carrier_disconnected_action_cb(gpointer user_data)
 {
-    NMDevice *       self = NM_DEVICE(user_data);
+    NMDevice        *self = NM_DEVICE(user_data);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     _LOGD(LOGD_DEVICE,
@@ -6239,10 +6239,10 @@ nm_device_set_carrier_from_platform(NMDevice *self)
 static void
 device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
 {
-    NMDevicePrivate *    priv = NM_DEVICE_GET_PRIVATE(self);
-    NMDevice *           master;
+    NMDevicePrivate                *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevice                       *master;
     nm_auto_nmpobj const NMPObject *plink_master_keep_alive = NULL;
-    const NMPlatformLink *          plink_master;
+    const NMPlatformLink           *plink_master;
 
     g_return_if_fail(plink);
 
@@ -6322,7 +6322,7 @@ device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice
 static void
 device_update_interface_flags(NMDevice *self, const NMPlatformLink *plink)
 {
-    NMDevicePrivate *      priv  = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate       *priv  = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceInterfaceFlags flags = NM_DEVICE_INTERFACE_FLAG_NONE;
 
     if (plink && NM_FLAGS_HAS(plink->n_ifi_flags, IFF_UP))
@@ -6352,13 +6352,13 @@ device_update_interface_flags(NMDevice *self, const NMPlatformLink *plink)
 static gboolean
 device_link_changed(gpointer user_data)
 {
-    NMDevice *           self                         = user_data;
-    NMDeviceClass *      klass                        = NM_DEVICE_GET_CLASS(self);
-    NMDevicePrivate *    priv                         = NM_DEVICE_GET_PRIVATE(self);
-    gboolean             ip_ifname_changed            = FALSE;
+    NMDevice                       *self              = user_data;
+    NMDeviceClass                  *klass             = NM_DEVICE_GET_CLASS(self);
+    NMDevicePrivate                *priv              = NM_DEVICE_GET_PRIVATE(self);
+    gboolean                        ip_ifname_changed = FALSE;
     nm_auto_nmpobj const NMPObject *pllink_keep_alive = NULL;
-    const NMPlatformLink *          pllink;
-    const char *                    str;
+    const NMPlatformLink           *pllink;
+    const char                     *str;
     int                             ifindex;
     gboolean                        was_up;
     gboolean                        update_unmanaged_specs = FALSE;
@@ -6524,10 +6524,10 @@ device_link_changed(gpointer user_data)
 static gboolean
 device_ip_link_changed(gpointer user_data)
 {
-    NMDevice *            self = user_data;
-    NMDevicePrivate *     priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevice             *self = user_data;
+    NMDevicePrivate      *priv = NM_DEVICE_GET_PRIVATE(self);
     const NMPlatformLink *pllink;
-    const char *          ip_iface;
+    const char           *ip_iface;
 
     priv->device_ip_link_changed_id = 0;
 
@@ -6568,15 +6568,15 @@ device_ip_link_changed(gpointer user_data)
 }
 
 static void
-link_changed_cb(NMPlatform *    platform,
+link_changed_cb(NMPlatform     *platform,
                 int             obj_type_i,
                 int             ifindex,
                 NMPlatformLink *info,
                 int             change_type_i,
-                NMDevice *      self)
+                NMDevice       *self)
 {
     const NMPlatformSignalChangeType change_type = change_type_i;
-    NMDevicePrivate *                priv;
+    NMDevicePrivate                 *priv;
 
     if (change_type != NM_PLATFORM_SIGNAL_CHANGED)
         return;
@@ -6675,14 +6675,14 @@ link_type_compatible(NMDevice *self, NMLinkType link_type, gboolean *out_compati
  * Returns: %TRUE on success, %FALSE on error
  */
 gboolean
-nm_device_realize_start(NMDevice *            self,
+nm_device_realize_start(NMDevice             *self,
                         const NMPlatformLink *plink,
                         gboolean              assume_state_guess_assume,
-                        const char *          assume_state_connection_uuid,
+                        const char           *assume_state_connection_uuid,
                         gboolean              set_nm_owned,
                         NMUnmanFlagOp         unmanaged_user_explicit,
-                        gboolean *            out_compatible,
-                        GError **             error)
+                        gboolean             *out_compatible,
+                        GError              **error)
 {
     nm_auto_nmpobj const NMPObject *plink_keep_alive = NULL;
 
@@ -6729,14 +6729,14 @@ nm_device_realize_start(NMDevice *            self,
  * Returns: %TRUE on success, %FALSE on error
  */
 gboolean
-nm_device_create_and_realize(NMDevice *    self,
+nm_device_create_and_realize(NMDevice     *self,
                              NMConnection *connection,
-                             NMDevice *    parent,
-                             GError **     error)
+                             NMDevice     *parent,
+                             GError      **error)
 {
     nm_auto_nmpobj const NMPObject *plink_keep_alive = NULL;
-    NMDevicePrivate *               priv             = NM_DEVICE_GET_PRIVATE(self);
-    const NMPlatformLink *          plink;
+    NMDevicePrivate                *priv             = NM_DEVICE_GET_PRIVATE(self);
+    const NMPlatformLink           *plink;
     gboolean                        nm_owned;
 
     /* Must be set before device is realized */
@@ -6784,7 +6784,7 @@ void
 nm_device_update_from_platform_link(NMDevice *self, const NMPlatformLink *plink)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    const char *     str;
+    const char      *str;
     gboolean         ifindex_changed;
     guint32          mtu;
 
@@ -6861,9 +6861,9 @@ sriov_op_start(NMDevice *self, SriovOp *op)
 static void
 sriov_op_cb(GError *error, gpointer user_data)
 {
-    SriovOp *       op             = user_data;
+    SriovOp                  *op   = user_data;
     gs_unref_object NMDevice *self = op->device;
-    NMDevicePrivate *         priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate          *priv = NM_DEVICE_GET_PRIVATE(self);
 
     nm_assert(op == priv->sriov.pending);
 
@@ -6913,7 +6913,7 @@ sriov_op_queue_op(NMDevice *self, SriovOp *op)
 }
 
 static void
-sriov_op_queue(NMDevice *              self,
+sriov_op_queue(NMDevice               *self,
                guint                   num_vfs,
                NMOptionBool            autoprobe,
                NMPlatformAsyncCallback callback,
@@ -6972,11 +6972,11 @@ device_init_static_sriov_num_vfs(NMDevice *self)
 }
 
 static void
-config_changed(NMConfig *          config,
-               NMConfigData *      config_data,
+config_changed(NMConfig           *config,
+               NMConfigData       *config_data,
                NMConfigChangeFlags changes,
-               NMConfigData *      old_data,
-               NMDevice *          self)
+               NMConfigData       *old_data,
+               NMDevice           *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
@@ -7015,19 +7015,19 @@ realize_start_notify(NMDevice *self, const NMPlatformLink *pllink)
  * stuff).
  */
 static void
-realize_start_setup(NMDevice *            self,
+realize_start_setup(NMDevice             *self,
                     const NMPlatformLink *plink,
                     gboolean              assume_state_guess_assume,
-                    const char *          assume_state_connection_uuid,
+                    const char           *assume_state_connection_uuid,
                     gboolean              set_nm_owned,
                     NMUnmanFlagOp         unmanaged_user_explicit,
                     gboolean              force_platform_init)
 {
-    NMDevicePrivate *    priv;
-    NMDeviceClass *      klass;
-    NMPlatform *         platform;
+    NMDevicePrivate     *priv;
+    NMDeviceClass       *klass;
+    NMPlatform          *platform;
     NMDeviceCapabilities capabilities = 0;
-    NMConfig *           config;
+    NMConfig            *config;
     guint                refresh_rate_ms;
     gboolean             unmanaged;
 
@@ -7206,7 +7206,7 @@ unrealize_notify(NMDevice *self)
 static gboolean
 available_connections_check_delete_unrealized_on_idle(gpointer user_data)
 {
-    NMDevice *       self = user_data;
+    NMDevice        *self = user_data;
     NMDevicePrivate *priv;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), G_SOURCE_REMOVE);
@@ -7405,7 +7405,7 @@ NMConnection *
 nm_device_new_default_connection(NMDevice *self)
 {
     NMConnection *connection;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     if (!NM_DEVICE_GET_CLASS(self)->new_default_connection)
         return NULL;
@@ -7424,11 +7424,11 @@ nm_device_new_default_connection(NMDevice *self)
 }
 
 static void
-slave_state_changed(NMDevice *          slave,
+slave_state_changed(NMDevice           *slave,
                     NMDeviceState       slave_new_state,
                     NMDeviceState       slave_old_state,
                     NMDeviceStateReason reason,
-                    NMDevice *          self)
+                    NMDevice           *self)
 {
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     gboolean         release = FALSE;
@@ -7485,7 +7485,7 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
 {
     NMDevicePrivate *priv;
     NMDevicePrivate *slave_priv;
-    SlaveInfo *      info;
+    SlaveInfo       *info;
     gboolean         changed = FALSE;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
@@ -7555,9 +7555,9 @@ void
 nm_device_master_check_slave_physical_port(NMDevice *self, NMDevice *slave, NMLogDomain log_domain)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    const char *     slave_physical_port_id, *existing_physical_port_id;
-    SlaveInfo *      info;
-    CList *          iter;
+    const char      *slave_physical_port_id, *existing_physical_port_id;
+    SlaveInfo       *info;
+    CList           *iter;
 
     slave_physical_port_id = nm_device_get_physical_port_id(slave);
     if (!slave_physical_port_id)
@@ -7588,9 +7588,9 @@ nm_device_master_check_slave_physical_port(NMDevice *self, NMDevice *slave, NMLo
 void
 nm_device_master_release_slaves(NMDevice *self)
 {
-    NMDevicePrivate *   priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceStateReason reason;
-    CList *             iter, *safe;
+    CList              *iter, *safe;
 
     /* Don't release the slaves if this connection doesn't belong to NM. */
     if (nm_device_sys_iface_state_is_external(self))
@@ -7656,7 +7656,7 @@ static void
 nm_device_slave_notify_enslave(NMDevice *self, gboolean success)
 {
     NMDevicePrivate *priv       = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *   connection = nm_device_get_applied_connection(self);
+    NMConnection    *connection = nm_device_get_applied_connection(self);
     gboolean         activating = (priv->state == NM_DEVICE_STATE_IP_CONFIG);
 
     g_return_if_fail(priv->master);
@@ -7707,8 +7707,8 @@ static void
 nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
 {
     NMDevicePrivate *priv       = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *   connection = nm_device_get_applied_connection(self);
-    const char *     master_status;
+    NMConnection    *connection = nm_device_get_applied_connection(self);
+    const char      *master_status;
 
     g_return_if_fail(priv->master);
 
@@ -7882,7 +7882,7 @@ nm_device_autoconnect_blocked_get(NMDevice *self, NMDeviceAutoconnectBlockedFlag
 }
 
 void
-nm_device_autoconnect_blocked_set_full(NMDevice *                      self,
+nm_device_autoconnect_blocked_set_full(NMDevice                       *self,
                                        NMDeviceAutoconnectBlockedFlags mask,
                                        NMDeviceAutoconnectBlockedFlags value)
 {
@@ -7917,8 +7917,8 @@ nm_device_autoconnect_blocked_set_full(NMDevice *                      self,
 
 static gboolean
 autoconnect_allowed_accumulator(GSignalInvocationHint *ihint,
-                                GValue *               return_accu,
-                                const GValue *         handler_return,
+                                GValue                *return_accu,
+                                const GValue          *handler_return,
                                 gpointer               data)
 {
     if (!g_value_get_boolean(handler_return))
@@ -7938,7 +7938,7 @@ gboolean
 nm_device_autoconnect_allowed(NMDevice *self)
 {
     NMDevicePrivate *priv     = NM_DEVICE_GET_PRIVATE(self);
-    NMDeviceClass *  klass    = NM_DEVICE_GET_CLASS(self);
+    NMDeviceClass   *klass    = NM_DEVICE_GET_CLASS(self);
     GValue           instance = G_VALUE_INIT;
     GValue           retval   = G_VALUE_INIT;
 
@@ -8039,9 +8039,9 @@ nm_device_can_auto_connect(NMDevice *self, NMSettingsConnection *sett_conn, char
 static gboolean
 device_has_config(NMDevice *self)
 {
-    NMDevicePrivate *            priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate             *priv = NM_DEVICE_GET_PRIVATE(self);
     const NMDedupMultiHeadEntry *head_entry;
-    const NMPlatformLink *       pllink;
+    const NMPlatformLink        *pllink;
     NMPLookup                    lookup;
 
     pllink = nm_l3cfg_get_pllink(priv->l3cfg, TRUE);
@@ -8087,10 +8087,10 @@ device_has_config(NMDevice *self)
  * %FALSE on failure.
  */
 gboolean
-nm_device_master_update_slave_connection(NMDevice *    self,
-                                         NMDevice *    slave,
+nm_device_master_update_slave_connection(NMDevice     *self,
+                                         NMDevice     *slave,
                                          NMConnection *connection,
-                                         GError **     error)
+                                         GError      **error)
 {
     NMDeviceClass *klass;
     gboolean       success;
@@ -8156,19 +8156,19 @@ NMConnection *
 nm_device_generate_connection(NMDevice *self,
                               NMDevice *master,
                               gboolean *out_maybe_later,
-                              GError ** error)
+                              GError  **error)
 {
-    NMDeviceClass *  klass                   = NM_DEVICE_GET_CLASS(self);
-    NMDevicePrivate *priv                    = NM_DEVICE_GET_PRIVATE(self);
-    const char *     ifname                  = nm_device_get_iface(self);
+    NMDeviceClass                *klass      = NM_DEVICE_GET_CLASS(self);
+    NMDevicePrivate              *priv       = NM_DEVICE_GET_PRIVATE(self);
+    const char                   *ifname     = nm_device_get_iface(self);
     gs_unref_object NMConnection *connection = NULL;
-    NMSetting *                   s_con;
-    NMSetting *                   s_ip4;
-    NMSetting *                   s_ip6;
+    NMSetting                    *s_con;
+    NMSetting                    *s_ip4;
+    NMSetting                    *s_ip6;
     char                          uuid[37];
-    const char *                  ip4_method, *ip6_method;
-    GError *                      local = NULL;
-    const NMPlatformLink *        pllink;
+    const char                   *ip4_method, *ip6_method;
+    GError                       *local = NULL;
+    const NMPlatformLink         *pllink;
 
     NM_SET_OUT(out_maybe_later, FALSE);
 
@@ -8318,11 +8318,11 @@ nm_device_generate_connection(NMDevice *self,
  * Returns: success or failure.
  */
 gboolean
-nm_device_complete_connection(NMDevice *           self,
-                              NMConnection *       connection,
-                              const char *         specific_object,
+nm_device_complete_connection(NMDevice            *self,
+                              NMConnection        *connection,
+                              const char          *specific_object,
                               NMConnection *const *existing_connections,
-                              GError **            error)
+                              GError             **error)
 {
     NMDeviceClass *klass;
 
@@ -8380,14 +8380,14 @@ nm_device_match_parent(NMDevice *self, const char *parent)
 }
 
 gboolean
-nm_device_match_parent_hwaddr(NMDevice *    device,
+nm_device_match_parent_hwaddr(NMDevice     *device,
                               NMConnection *connection,
                               gboolean      fail_if_no_hwaddr)
 {
     NMSettingWired *s_wired;
-    NMDevice *      parent_device;
-    const char *    setting_mac;
-    const char *    parent_mac;
+    NMDevice       *parent_device;
+    const char     *setting_mac;
+    const char     *parent_mac;
 
     s_wired = nm_connection_get_setting_wired(connection);
     if (!s_wired)
@@ -8408,13 +8408,13 @@ nm_device_match_parent_hwaddr(NMDevice *    device,
 static gboolean
 check_connection_compatible(NMDevice *self, NMConnection *connection, GError **error)
 {
-    NMDevicePrivate *priv            = NM_DEVICE_GET_PRIVATE(self);
-    const char *     device_iface    = nm_device_get_iface(self);
-    gs_free_error GError *local      = NULL;
-    gs_free char *        conn_iface = NULL;
-    NMDeviceClass *       klass;
-    NMSettingMatch *      s_match;
-    const GSList *        specs;
+    NMDevicePrivate      *priv         = NM_DEVICE_GET_PRIVATE(self);
+    const char           *device_iface = nm_device_get_iface(self);
+    gs_free_error GError *local        = NULL;
+    gs_free char         *conn_iface   = NULL;
+    NMDeviceClass        *klass;
+    NMSettingMatch       *s_match;
+    const GSList         *specs;
     gboolean              has_match = FALSE;
 
     klass = NM_DEVICE_GET_CLASS(self);
@@ -8537,7 +8537,7 @@ gboolean
 nm_device_check_slave_connection_compatible(NMDevice *self, NMConnection *slave)
 {
     NMSettingConnection *s_con;
-    const char *         connection_type, *slave_type;
+    const char          *connection_type, *slave_type;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
     g_return_val_if_fail(NM_IS_CONNECTION(slave), FALSE);
@@ -8615,7 +8615,7 @@ nm_device_unmanage_on_quit(NMDevice *self)
 static gboolean
 nm_device_emit_recheck_assume(gpointer user_data)
 {
-    NMDevice *       self = user_data;
+    NMDevice        *self = user_data;
     NMDevicePrivate *priv;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), G_SOURCE_REMOVE);
@@ -8641,7 +8641,7 @@ nm_device_queue_recheck_assume(NMDevice *self)
 static gboolean
 recheck_available(gpointer user_data)
 {
-    NMDevice *       self = NM_DEVICE(user_data);
+    NMDevice        *self = NM_DEVICE(user_data);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     gboolean         now_available;
     NMDeviceState    state     = nm_device_get_state(self);
@@ -8679,7 +8679,7 @@ recheck_available(gpointer user_data)
 }
 
 void
-nm_device_queue_recheck_available(NMDevice *          self,
+nm_device_queue_recheck_available(NMDevice           *self,
                                   NMDeviceStateReason available_reason,
                                   NMDeviceStateReason unavailable_reason)
 {
@@ -8702,12 +8702,12 @@ nm_device_emit_recheck_auto_activate(NMDevice *self)
 }
 
 void
-nm_device_auth_request(NMDevice *                     self,
-                       GDBusMethodInvocation *        context,
-                       NMConnection *                 connection,
-                       const char *                   permission,
+nm_device_auth_request(NMDevice                      *self,
+                       GDBusMethodInvocation         *context,
+                       NMConnection                  *connection,
+                       const char                    *permission,
                        gboolean                       allow_interaction,
-                       GCancellable *                 cancellable,
+                       GCancellable                  *cancellable,
                        NMManagerDeviceAuthRequestFunc callback,
                        gpointer                       user_data)
 {
@@ -8740,8 +8740,8 @@ activation_source_clear(NMDevice *self)
 static gboolean
 activation_source_handle_cb(gpointer user_data)
 {
-    NMDevice *           self = user_data;
-    NMDevicePrivate *    priv;
+    NMDevice            *self = user_data;
+    NMDevicePrivate     *priv;
     ActivationHandleFunc activation_func;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), G_SOURCE_REMOVE);
@@ -8836,9 +8836,9 @@ activation_source_invoke_or_schedule(NMDevice *self, ActivationHandleFunc func, 
 static void
 master_ready(NMDevice *self, NMActiveConnection *active)
 {
-    NMDevicePrivate *   priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(self);
     NMActiveConnection *master_connection;
-    NMDevice *          master;
+    NMDevice           *master;
 
     /* Notify a master device that it has a new slave */
     nm_assert(nm_active_connection_get_master_ready(active));
@@ -8876,10 +8876,10 @@ master_ready_cb(NMActiveConnection *active, GParamSpec *pspec, NMDevice *self)
 static NMPlatformVF *
 sriov_vf_config_to_platform(NMDevice *self, NMSriovVF *vf, GError **error)
 {
-    NMDevicePrivate *priv         = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate      *priv    = NM_DEVICE_GET_PRIVATE(self);
     gs_free NMPlatformVF *plat_vf = NULL;
-    const guint *         vlan_ids;
-    GVariant *            variant;
+    const guint          *vlan_ids;
+    GVariant             *variant;
     guint                 i, num_vlans;
     gsize                 length;
 
@@ -8950,8 +8950,8 @@ sriov_vf_config_to_platform(NMDevice *self, NMSriovVF *vf, GError **error)
 static void
 sriov_params_cb(GError *error, gpointer user_data)
 {
-    NMDevice *       self;
-    NMDevicePrivate *priv;
+    NMDevice                    *self;
+    NMDevicePrivate             *priv;
     nm_auto_freev NMPlatformVF **plat_vfs = NULL;
 
     nm_utils_user_data_unpack(user_data, &self, &plat_vfs);
@@ -8993,11 +8993,11 @@ sriov_params_cb(GError *error, gpointer user_data)
 static void
 activate_stage1_device_prepare(NMDevice *self)
 {
-    NMDevicePrivate *   priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(self);
     NMActStageReturn    ret  = NM_ACT_STAGE_RETURN_SUCCESS;
     NMActiveConnection *active;
     NMActiveConnection *master;
-    NMDeviceClass *     klass;
+    NMDeviceClass      *klass;
 
     nm_assert((priv->ip_data_4.state == NM_DEVICE_IP_STATE_NONE)
               == (priv->ip_data_6.state == NM_DEVICE_IP_STATE_NONE));
@@ -9026,11 +9026,11 @@ activate_stage1_device_prepare(NMDevice *self)
         else if (priv->ifindex > 0 && nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)
                  && (s_sriov = nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))) {
             nm_auto_freev NMPlatformVF **plat_vfs = NULL;
-            gs_free_error GError *error           = NULL;
-            NMSriovVF *           vf;
-            NMTernary             autoprobe;
-            guint                 num;
-            guint                 i;
+            gs_free_error GError        *error    = NULL;
+            NMSriovVF                   *vf;
+            NMTernary                    autoprobe;
+            guint                        num;
+            guint                        i;
 
             autoprobe = nm_setting_sriov_get_autoprobe_drivers(s_sriov);
             if (autoprobe == NM_TERNARY_DEFAULT) {
@@ -9227,7 +9227,7 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
 {
     NMDevicePrivate *priv               = NM_DEVICE_GET_PRIVATE(self);
     NMPRulesManager *rules_manager      = nm_netns_get_rules_manager(nm_device_get_netns(self));
-    NMDeviceClass *  klass              = NM_DEVICE_GET_CLASS(self);
+    NMDeviceClass   *klass              = NM_DEVICE_GET_CLASS(self);
     gboolean         untrack_only_dirty = FALSE;
     gboolean         keep_deleted_rules;
     gpointer         user_tag_1;
@@ -9238,7 +9238,7 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
     user_tag_2 = &priv->v6_route_table;
 
     if (set_mode == NM_TERNARY_TRUE) {
-        NMConnection *     applied_connection;
+        NMConnection      *applied_connection;
         NMSettingIPConfig *s_ip;
         guint              i, num;
         int                is_ipv4;
@@ -9260,7 +9260,7 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
             num = nm_setting_ip_config_get_num_routing_rules(s_ip);
             for (i = 0; i < num; i++) {
                 NMPlatformRoutingRule plrule;
-                NMIPRoutingRule *     rule;
+                NMIPRoutingRule      *rule;
 
                 rule = nm_setting_ip_config_get_routing_rule(s_ip, i);
                 nm_ip_routing_rule_to_platform(rule, &plrule);
@@ -9321,8 +9321,8 @@ tc_commit(NMDevice *self)
 {
     gs_unref_ptrarray GPtrArray *qdiscs   = NULL;
     gs_unref_ptrarray GPtrArray *tfilters = NULL;
-    NMSettingTCConfig *          s_tc;
-    NMPlatform *                 platform;
+    NMSettingTCConfig           *s_tc;
+    NMPlatform                  *platform;
     int                          ip_ifindex;
 
     s_tc = nm_device_get_applied_setting(self, NM_TYPE_SETTING_TC_CONFIG);
@@ -9354,11 +9354,11 @@ static void
 activate_stage2_device_config(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMDeviceClass *  klass;
+    NMDeviceClass   *klass;
     NMActStageReturn ret;
-    NMSettingWired * s_wired;
+    NMSettingWired  *s_wired;
     gboolean         no_firmware = FALSE;
-    CList *          iter;
+    CList           *iter;
     NMTernary        accept_all_mac_addresses;
 
     nm_device_state_changed(self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
@@ -9406,7 +9406,7 @@ activate_stage2_device_config(NMDevice *self)
 
     /* If we have slaves that aren't yet enslaved, do that now */
     c_list_for_each (iter, &priv->slaves) {
-        SlaveInfo *   info        = c_list_entry(iter, SlaveInfo, lst_slave);
+        SlaveInfo    *info        = c_list_entry(iter, SlaveInfo, lst_slave);
         NMDeviceState slave_state = nm_device_get_state(info->slave);
 
         if (slave_state == NM_DEVICE_STATE_IP_CONFIG)
@@ -9500,7 +9500,7 @@ _dev_ipllx_cleanup(NMDevice *self, int addr_family)
 static void
 _dev_ipll4_notify_event(NMDevice *self)
 {
-    NMDevicePrivate *     priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate      *priv = NM_DEVICE_GET_PRIVATE(self);
     NML3IPv4LLState       ipv4ll_state;
     const NML3ConfigData *l3cd;
     NMDeviceIPState       state;
@@ -9613,14 +9613,14 @@ nm_device_devip_get_state(NMDevice *self, int addr_family)
 }
 
 void
-nm_device_devip_set_state_full(NMDevice *            self,
+nm_device_devip_set_state_full(NMDevice             *self,
                                int                   addr_family,
                                NMDeviceIPState       ip_state,
                                const NML3ConfigData *l3cd,
                                NMDeviceStateReason   failed_reason)
 {
     NMDevicePrivate *priv;
-    IPDevStateData * p;
+    IPDevStateData  *p;
 
     g_return_if_fail(NM_IS_DEVICE(self));
 
@@ -9716,8 +9716,8 @@ _dev_ipmanual_carrier_timeout(NMDevice *self)
 static void
 _dev_ipmanual_check_ready(NMDevice *self)
 {
-    NMDevicePrivate *      priv = NM_DEVICE_GET_PRIVATE(self);
-    const NMPlatformLink * plink;
+    NMDevicePrivate       *priv = NM_DEVICE_GET_PRIVATE(self);
+    const NMPlatformLink  *plink;
     gboolean               has_carrier;
     NML3CfgCheckReadyFlags flags;
     gboolean               ready;
@@ -9778,7 +9778,7 @@ _dev_ipmanual_check_ready(NMDevice *self)
 static void
 _dev_ipmanual_start(NMDevice *self)
 {
-    NMDevicePrivate *        priv                 = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate                         *priv = NM_DEVICE_GET_PRIVATE(self);
     nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
 
     if (priv->ipmanual_data.state_4 != NM_DEVICE_IP_STATE_NONE
@@ -9879,9 +9879,9 @@ _dev_ipdhcpx_handle_fail(NMDevice *self, int addr_family, const char *reason)
 static void
 _dev_ipdhcpx_handle_accept(NMDevice *self, int addr_family, const NML3ConfigData *l3cd)
 {
-    NMDevicePrivate *priv       = NM_DEVICE_GET_PRIVATE(self);
-    const int        IS_IPv4    = NM_IS_IPv4(addr_family);
-    gs_free_error GError *error = NULL;
+    NMDevicePrivate      *priv    = NM_DEVICE_GET_PRIVATE(self);
+    const int             IS_IPv4 = NM_IS_IPv4(addr_family);
+    gs_free_error GError *error   = NULL;
 
     nm_assert(NM_IS_L3_CONFIG_DATA(l3cd));
 
@@ -9989,21 +9989,21 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
 static void
 _dev_ipdhcpx_start(NMDevice *self, int addr_family)
 {
-    const int             IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMDevicePrivate *     priv    = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *        connection;
-    NMSettingConnection * s_con;
-    NMSettingIPConfig *   s_ip;
-    const NML3ConfigData *previous_lease;
+    const int              IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMDevicePrivate       *priv    = NM_DEVICE_GET_PRIVATE(self);
+    NMConnection          *connection;
+    NMSettingConnection   *s_con;
+    NMSettingIPConfig     *s_ip;
+    const NML3ConfigData  *previous_lease;
     gs_unref_bytes GBytes *hwaddr       = NULL;
     gboolean               enforce_duid = FALSE;
-    gs_free_error GError *error         = NULL;
-    const NMPlatformLink *pllink;
-    guint                 no_lease_timeout_sec;
-    int                   ifindex;
-    const char *          str;
-    gboolean              request_broadcast;
-    const char *          fail_reason;
+    gs_free_error GError  *error        = NULL;
+    const NMPlatformLink  *pllink;
+    guint                  no_lease_timeout_sec;
+    int                    ifindex;
+    const char            *str;
+    gboolean               request_broadcast;
+    const char            *fail_reason;
 
     if (priv->ipdhcp_data_x[IS_IPv4].state == NM_DEVICE_IP_STATE_NONE)
         _dev_ipdhcpx_set_state(self, addr_family, NM_DEVICE_IP_STATE_PENDING);
@@ -10076,12 +10076,12 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
     no_lease_timeout_sec = _prop_get_ipvx_dhcp_timeout(self, addr_family);
 
     if (IS_IPv4) {
-        NMDhcpClientConfig config;
+        NMDhcpClientConfig     config;
         gs_unref_bytes GBytes *bcast_hwaddr            = NULL;
         gs_unref_bytes GBytes *client_id               = NULL;
         gs_unref_bytes GBytes *vendor_class_identifier = NULL;
-        const char *const *    reject_servers;
-        const char *           hostname;
+        const char *const     *reject_servers;
+        const char            *hostname;
         gboolean               hostname_is_fqdn;
 
         client_id = _prop_get_ipv4_dhcp_client_id(self, connection, hwaddr);
@@ -10271,7 +10271,7 @@ nm_device_request_ip6_prefixes(NMDevice *self, guint needed_prefixes)
 static gboolean
 connection_ip_method_requires_carrier(NMConnection *connection,
                                       int           addr_family,
-                                      gboolean *    out_ip_enabled)
+                                      gboolean     *out_ip_enabled)
 {
     const char *method;
 
@@ -10298,7 +10298,7 @@ connection_ip_method_requires_carrier(NMConnection *connection,
 static gboolean
 connection_requires_carrier(NMConnection *connection)
 {
-    NMSettingIPConfig *  s_ip4, *s_ip6;
+    NMSettingIPConfig   *s_ip4, *s_ip6;
     NMSettingConnection *s_con;
     gboolean             ip4_carrier_wanted, ip6_carrier_wanted;
     gboolean             ip4_used = FALSE, ip6_used = FALSE;
@@ -10345,8 +10345,8 @@ static gboolean
 have_any_ready_slaves(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    SlaveInfo *      info;
-    CList *          iter;
+    SlaveInfo       *info;
+    CList           *iter;
 
     /* Any enslaved slave is "ready" in the generic case as it's
      * at least >= NM_DEVCIE_STATE_IP_CONFIG and has had Layer 2
@@ -10403,10 +10403,10 @@ nm_device_use_ip6_subnet(NMDevice *self, const NMPlatformIP6Address *subnet)
 void
 nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device)
 {
-    NMDevicePrivate *       priv = NM_DEVICE_GET_PRIVATE(self);
-    NMDevicePrivate *       priv_src;
+    NMDevicePrivate                        *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate                        *priv_src;
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd     = NULL;
-    const NML3ConfigData *                  l3cd_src = NULL;
+    const NML3ConfigData                   *l3cd_src = NULL;
 
     /* FIXME(l3cfg): this entire code an approach seems flawed. It's flawed, because the
      *   very next RA will reset the changes. */
@@ -10423,7 +10423,7 @@ nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device)
         l3cd_src = priv_src->l3cds[L3_CONFIG_DATA_TYPE_AC_6].d;
     }
     if (l3cd_src) {
-        const char *const *           strvarr;
+        const char *const            *strvarr;
         const struct in6_addr *const *addrs;
         guint                         n;
         guint                         i;
@@ -10447,7 +10447,7 @@ nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device)
 static gboolean
 _dev_ipll6_state_retry_cb(gpointer user_data)
 {
-    NMDevice *       self = user_data;
+    NMDevice        *self = user_data;
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     nm_clear_g_source_inst(&priv->ipll_data_6.v6.retry_source);
@@ -10544,7 +10544,7 @@ _dev_ipll6_set_llstate(NMDevice *self, NML3IPv6LLState llstate, const struct in6
 }
 
 static void
-_dev_ipll6_state_change_cb(NML3IPv6LL *           ipv6ll,
+_dev_ipll6_state_change_cb(NML3IPv6LL            *ipv6ll,
                            NML3IPv6LLState        llstate,
                            const struct in6_addr *lladdr,
                            gpointer               user_data)
@@ -10555,11 +10555,11 @@ _dev_ipll6_state_change_cb(NML3IPv6LL *           ipv6ll,
 static void
 _dev_ipll6_start(NMDevice *self)
 {
-    NMDevicePrivate *      priv = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *         connection;
-    NMSettingIP6Config *   s_ip6 = NULL;
+    NMDevicePrivate       *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMConnection          *connection;
+    NMSettingIP6Config    *s_ip6 = NULL;
     gboolean               assume;
-    const char *           ifname;
+    const char            *ifname;
     NML3IPv6LLState        llstate;
     const struct in6_addr *lladdr;
 
@@ -10587,7 +10587,7 @@ _dev_ipll6_start(NMDevice *self)
         && nm_setting_ip6_config_get_addr_gen_mode(s_ip6)
                == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
         NMUtilsStableType stable_type;
-        const char *      stable_id;
+        const char       *stable_id;
 
         stable_id = _prop_get_connection_stable_id(self, connection, &stable_type);
         priv->ipll_data_6.v6.ipv6ll =
@@ -10627,7 +10627,7 @@ out_fail:
 /*****************************************************************************/
 
 gint64
-nm_device_get_configured_mtu_from_connection_default(NMDevice *  self,
+nm_device_get_configured_mtu_from_connection_default(NMDevice   *self,
                                                      const char *property_name,
                                                      guint32     max_mtu)
 {
@@ -10640,13 +10640,13 @@ nm_device_get_configured_mtu_from_connection_default(NMDevice *  self,
 }
 
 guint32
-nm_device_get_configured_mtu_from_connection(NMDevice *         self,
+nm_device_get_configured_mtu_from_connection(NMDevice          *self,
                                              GType              setting_type,
                                              NMDeviceMtuSource *out_source)
 {
-    const char *  global_property_name;
+    const char   *global_property_name;
     NMConnection *connection;
-    NMSetting *   setting;
+    NMSetting    *setting;
     gint64        mtu_default;
     guint32       mtu     = 0;
     guint32       max_mtu = G_MAXUINT32;
@@ -10701,17 +10701,17 @@ nm_device_get_configured_mtu_from_connection(NMDevice *         self,
 }
 
 guint32
-nm_device_get_configured_mtu_for_wired(NMDevice *         self,
+nm_device_get_configured_mtu_for_wired(NMDevice          *self,
                                        NMDeviceMtuSource *out_source,
-                                       gboolean *         out_force)
+                                       gboolean          *out_force)
 {
     return nm_device_get_configured_mtu_from_connection(self, NM_TYPE_SETTING_WIRED, out_source);
 }
 
 guint32
-nm_device_get_configured_mtu_wired_parent(NMDevice *         self,
+nm_device_get_configured_mtu_wired_parent(NMDevice          *self,
                                           NMDeviceMtuSource *out_source,
-                                          gboolean *         out_force)
+                                          gboolean          *out_force)
 {
     guint32 mtu        = 0;
     guint32 parent_mtu = 0;
@@ -10786,7 +10786,7 @@ set_platform_mtu(NMDevice *self, guint32 mtu)
 static void
 _commit_mtu(NMDevice *self)
 {
-    NMDevicePrivate *     priv   = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate      *priv   = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceMtuSource     source = NM_DEVICE_MTU_SOURCE_NONE;
     const NML3ConfigData *l3cd;
     guint32               ip6_mtu_orig;
@@ -11051,7 +11051,7 @@ nm_device_commit_mtu(NMDevice *self)
 static void
 _dev_ipac6_ndisc_set_router_config(NMDevice *self)
 {
-    NMDevicePrivate *     priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate      *priv = NM_DEVICE_GET_PRIVATE(self);
     const NML3ConfigData *l3cd;
 
     if (!priv->ipac6_data.ndisc)
@@ -11081,11 +11081,11 @@ _dev_ipac6_set_state(NMDevice *self, NMDeviceIPState state)
 }
 
 static void
-_dev_ipac6_ndisc_config_changed(NMNDisc *             ndisc,
-                                const NMNDiscData *   rdata,
+_dev_ipac6_ndisc_config_changed(NMNDisc              *ndisc,
+                                const NMNDiscData    *rdata,
                                 guint                 changed_i,
                                 const NML3ConfigData *l3cd,
-                                NMDevice *            self)
+                                NMDevice             *self)
 {
     NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
     gboolean         ready = TRUE;
@@ -11204,12 +11204,12 @@ _dev_ipac6_grace_period_start(NMDevice *self, guint32 timeout_sec, gboolean forc
 static void
 _dev_ipac6_start(NMDevice *self)
 {
-    NMDevicePrivate *   priv = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *      connection;
+    NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMConnection       *connection;
     NMSettingIP6Config *s_ip = NULL;
     NMNDiscNodeType     node_type;
     NMUtilsStableType   stable_type;
-    const char *        stable_id;
+    const char         *stable_id;
     int                 max_addresses;
     int                 router_solicitations;
     int                 router_solicitation_interval;
@@ -11372,9 +11372,9 @@ _dev_sysctl_save_ip6_properties(NMDevice *self)
         "use_tempaddr",
     };
     NMDevicePrivate *priv     = NM_DEVICE_GET_PRIVATE(self);
-    NMPlatform *     platform = nm_device_get_platform(self);
-    const char *     ifname;
-    char *           value;
+    NMPlatform      *platform = nm_device_get_platform(self);
+    const char      *ifname;
+    char            *value;
     int              i;
 
     g_hash_table_remove_all(priv->ip6_saved_properties);
@@ -11426,7 +11426,7 @@ _dev_sysctl_set_disable_ipv6(NMDevice *self, gboolean do_disable)
 static void
 _dev_addrgenmode6_set(NMDevice *self, guint8 addr_gen_mode)
 {
-    NMDevicePrivate *     priv    = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate      *priv    = NM_DEVICE_GET_PRIVATE(self);
     int                   ifindex = nm_device_get_ip_ifindex(self);
     const NMPlatformLink *plink;
     int                   r;
@@ -11516,8 +11516,8 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
 {
     const int        IS_IPv4 = NM_IS_IPv4(addr_family);
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
-    NMDeviceClass *  klass   = NM_DEVICE_GET_CLASS(self);
-    NMConnection *   connection;
+    NMDeviceClass   *klass   = NM_DEVICE_GET_CLASS(self);
+    NMConnection    *connection;
     int              ip_ifindex;
 
     if (nm_device_sys_iface_state_is_external(self))
@@ -11638,12 +11638,12 @@ out:
 }
 
 static void
-fw_change_zone_cb(NMFirewalldManager *      firewalld_manager,
+fw_change_zone_cb(NMFirewalldManager       *firewalld_manager,
                   NMFirewalldManagerCallId *call_id,
-                  GError *                  error,
+                  GError                   *error,
                   gpointer                  user_data)
 {
-    NMDevice *       self = user_data;
+    NMDevice        *self = user_data;
     NMDevicePrivate *priv;
 
     g_return_if_fail(NM_IS_DEVICE(self));
@@ -11679,10 +11679,10 @@ fw_change_zone_cb(NMFirewalldManager *      firewalld_manager,
 static void
 fw_change_zone(NMDevice *self)
 {
-    NMDevicePrivate *    priv = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *       applied_connection;
+    NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMConnection        *applied_connection;
     NMSettingConnection *s_con;
-    const char *         zone;
+    const char          *zone;
 
     nm_assert(priv->fw_state >= FIREWALL_STATE_INITIALIZED);
 
@@ -11722,10 +11722,10 @@ static void
 activate_stage3_ip_config(NMDevice *self)
 {
     NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
-    NMDeviceClass *  klass = NM_DEVICE_GET_CLASS(self);
+    NMDeviceClass   *klass = NM_DEVICE_GET_CLASS(self);
     int              ifindex;
-    const char *     ipv4_method;
-    const char *     ipv6_method;
+    const char      *ipv4_method;
+    const char      *ipv6_method;
 
     /* stage3 is different from stage1+2.
      *
@@ -11899,11 +11899,11 @@ _dev_ipsharedx_cleanup(NMDevice *self, int addr_family)
 static const NML3ConfigData *
 _dev_ipshared4_new_l3cd(NMDevice *self, NMConnection *connection, NMPlatformIP4Address *out_addr4)
 {
-    NMDevicePrivate *       priv                 = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate                        *priv = NM_DEVICE_GET_PRIVATE(self);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    NMSettingIPConfig *                     s_ip4;
+    NMSettingIPConfig                      *s_ip4;
     NMPlatformIP4Address                    address = {
-        .addr_source = NM_IP_CONFIG_SOURCE_SHARED,
+                           .addr_source = NM_IP_CONFIG_SOURCE_SHARED,
     };
 
     g_return_val_if_fail(self, NULL);
@@ -11999,9 +11999,9 @@ _dev_ipshared4_start(NMDevice *self)
 {
     nm_auto_unref_l3cd const NML3ConfigData *l3cd = NULL;
     NMPlatformIP4Address                     ip4_addr;
-    NMDevicePrivate *                        priv = NM_DEVICE_GET_PRIVATE(self);
-    const char *                             ip_iface;
-    NMConnection *                           applied;
+    NMDevicePrivate                         *priv = NM_DEVICE_GET_PRIVATE(self);
+    const char                              *ip_iface;
+    NMConnection                            *applied;
 
     if (priv->ipshared_data_4.state != NM_DEVICE_IP_STATE_NONE)
         return;
@@ -12044,12 +12044,12 @@ out_fail:
 static void
 _dev_ipshared4_spawn_dnsmasq(NMDevice *self)
 {
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    const char *     ip_iface;
+    NMDevicePrivate      *priv = NM_DEVICE_GET_PRIVATE(self);
+    const char           *ip_iface;
     gs_free_error GError *error = NULL;
-    NMSettingConnection * s_con;
+    NMSettingConnection  *s_con;
     gboolean              announce_android_metered;
-    NMConnection *        applied;
+    NMConnection         *applied;
 
     nm_assert(priv->ipshared_data_4.v4.firewall_config);
     nm_assert(priv->ipshared_data_4.v4.dnsmasq_state_id == 0);
@@ -12187,10 +12187,10 @@ nm_device_is_nm_owned(NMDevice *self)
 static gboolean
 delete_on_deactivate_link_delete(gpointer user_data)
 {
-    DeleteOnDeactivateData *data        = user_data;
-    nm_auto_unref_object NMDevice *self = data->device;
-    NMDevicePrivate *              priv = NM_DEVICE_GET_PRIVATE(self);
-    gs_free_error GError *error         = NULL;
+    DeleteOnDeactivateData        *data  = user_data;
+    nm_auto_unref_object NMDevice *self  = data->device;
+    NMDevicePrivate               *priv  = NM_DEVICE_GET_PRIVATE(self);
+    gs_free_error GError          *error = NULL;
 
     _LOGD(LOGD_DEVICE,
           "delete_on_deactivate: cleanup and delete virtual link (id=%u)",
@@ -12229,7 +12229,7 @@ delete_on_deactivate_unschedule(NMDevice *self)
 static void
 delete_on_deactivate_check_and_schedule(NMDevice *self)
 {
-    NMDevicePrivate *       priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate        *priv = NM_DEVICE_GET_PRIVATE(self);
     DeleteOnDeactivateData *data;
 
     if (!priv->nm_owned)
@@ -12278,9 +12278,9 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
 }
 
 gboolean
-_nm_device_hash_check_invalid_keys(GHashTable *       hash,
-                                   const char *       setting_name,
-                                   GError **          error,
+_nm_device_hash_check_invalid_keys(GHashTable        *hash,
+                                   const char        *setting_name,
+                                   GError           **error,
                                    const char *const *whitelist)
 {
     guint found_whitelisted_keys = 0;
@@ -12315,8 +12315,8 @@ _nm_device_hash_check_invalid_keys(GHashTable *       hash,
 
     if (error) {
         GHashTableIter iter;
-        const char *   k                 = NULL;
-        const char *   first_invalid_key = NULL;
+        const char    *k                 = NULL;
+        const char    *first_invalid_key = NULL;
 
         g_hash_table_iter_init(&iter, hash);
         while (g_hash_table_iter_next(&iter, (gpointer *) &k, NULL)) {
@@ -12369,12 +12369,12 @@ reactivate_proxy_config(NMDevice *self)
 /*****************************************************************************/
 
 static gboolean
-can_reapply_change(NMDevice *  self,
+can_reapply_change(NMDevice   *self,
                    const char *setting_name,
-                   NMSetting * s_old,
-                   NMSetting * s_new,
+                   NMSetting  *s_old,
+                   NMSetting  *s_new,
                    GHashTable *diffs,
-                   GError **   error)
+                   GError    **error)
 {
     if (nm_streq(setting_name, NM_SETTING_CONNECTION_SETTING_NAME)) {
         /* Whitelist allowed properties from "connection" setting which are
@@ -12452,19 +12452,19 @@ reapply_connection(NMDevice *self, NMConnection *con_old, NMConnection *con_new)
  * Return: %FALSE if the new configuration can not be reapplied.
  */
 static gboolean
-check_and_reapply_connection(NMDevice *    self,
+check_and_reapply_connection(NMDevice     *self,
                              NMConnection *connection,
                              guint64       version_id,
-                             char **       audit_args,
-                             GError **     error)
+                             char        **audit_args,
+                             GError      **error)
 {
-    NMDeviceClass *  klass                      = NM_DEVICE_GET_CLASS(self);
-    NMDevicePrivate *priv                       = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *   applied                    = nm_device_get_applied_connection(self);
-    gs_unref_object NMConnection *applied_clone = NULL;
-    gs_unref_hashtable GHashTable *diffs        = NULL;
-    NMConnection *                 con_old;
-    NMConnection *                 con_new;
+    NMDeviceClass                 *klass         = NM_DEVICE_GET_CLASS(self);
+    NMDevicePrivate               *priv          = NM_DEVICE_GET_PRIVATE(self);
+    NMConnection                  *applied       = nm_device_get_applied_connection(self);
+    gs_unref_object NMConnection  *applied_clone = NULL;
+    gs_unref_hashtable GHashTable *diffs         = NULL;
+    NMConnection                  *con_old;
+    NMConnection                  *con_new;
     GHashTableIter                 iter;
 
     if (priv->state < NM_DEVICE_STATE_PREPARE || priv->state > NM_DEVICE_STATE_ACTIVATED) {
@@ -12492,7 +12492,7 @@ check_and_reapply_connection(NMDevice *    self,
      * check for unsupported changes and reject to reapply
      *************************************************************************/
     if (diffs) {
-        char *      setting_name;
+        char       *setting_name;
         GHashTable *setting_diff;
 
         g_hash_table_iter_init(&iter, diffs);
@@ -12535,7 +12535,7 @@ check_and_reapply_connection(NMDevice *    self,
           diffs ? "" : " (unmodified)");
 
     if (diffs) {
-        NMConnection *  connection_clean                    = connection;
+        NMConnection                 *connection_clean      = connection;
         gs_unref_object NMConnection *connection_clean_free = NULL;
 
         {
@@ -12639,17 +12639,17 @@ typedef struct {
 } ReapplyData;
 
 static void
-reapply_cb(NMDevice *             self,
+reapply_cb(NMDevice              *self,
            GDBusMethodInvocation *context,
-           NMAuthSubject *        subject,
-           GError *               error,
+           NMAuthSubject         *subject,
+           GError                *error,
            gpointer               user_data)
 {
-    ReapplyData *   reapply_data             = user_data;
-    guint64         version_id               = 0;
-    gs_unref_object NMConnection *connection = NULL;
-    GError *                      local      = NULL;
-    gs_free char *                audit_args = NULL;
+    ReapplyData                  *reapply_data = user_data;
+    guint64                       version_id   = 0;
+    gs_unref_object NMConnection *connection   = NULL;
+    GError                       *local        = NULL;
+    gs_free char                 *audit_args   = NULL;
 
     if (reapply_data) {
         connection = reapply_data->connection;
@@ -12692,20 +12692,20 @@ reapply_cb(NMDevice *             self,
 }
 
 static void
-impl_device_reapply(NMDBusObject *                     obj,
+impl_device_reapply(NMDBusObject                      *obj,
                     const NMDBusInterfaceInfoExtended *interface_info,
-                    const NMDBusMethodInfoExtended *   method_info,
-                    GDBusConnection *                  dbus_connection,
-                    const char *                       sender,
-                    GDBusMethodInvocation *            invocation,
-                    GVariant *                         parameters)
+                    const NMDBusMethodInfoExtended    *method_info,
+                    GDBusConnection                   *dbus_connection,
+                    const char                        *sender,
+                    GDBusMethodInvocation             *invocation,
+                    GVariant                          *parameters)
 {
-    NMDevice *            self = NM_DEVICE(obj);
-    NMDevicePrivate *     priv = NM_DEVICE_GET_PRIVATE(self);
-    NMSettingsConnection *settings_connection;
-    NMConnection *        connection = NULL;
-    GError *              error      = NULL;
-    ReapplyData *         reapply_data;
+    NMDevice                  *self = NM_DEVICE(obj);
+    NMDevicePrivate           *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMSettingsConnection      *settings_connection;
+    NMConnection              *connection = NULL;
+    GError                    *error      = NULL;
+    ReapplyData               *reapply_data;
     gs_unref_variant GVariant *settings = NULL;
     guint64                    version_id;
     guint32                    flags;
@@ -12783,20 +12783,20 @@ impl_device_reapply(NMDBusObject *                     obj,
 /*****************************************************************************/
 
 static void
-impl_device_get_applied_connection(NMDBusObject *                     obj,
+impl_device_get_applied_connection(NMDBusObject                      *obj,
                                    const NMDBusInterfaceInfoExtended *interface_info,
-                                   const NMDBusMethodInfoExtended *   method_info,
-                                   GDBusConnection *                  connection,
-                                   const char *                       sender,
-                                   GDBusMethodInvocation *            invocation,
-                                   GVariant *                         parameters)
+                                   const NMDBusMethodInfoExtended    *method_info,
+                                   GDBusConnection                   *connection,
+                                   const char                        *sender,
+                                   GDBusMethodInvocation             *invocation,
+                                   GVariant                          *parameters)
 {
-    NMDevice *       self       = NM_DEVICE(obj);
-    NMDevicePrivate *priv       = NM_DEVICE_GET_PRIVATE(self);
+    NMDevice             *self  = NM_DEVICE(obj);
+    NMDevicePrivate      *priv  = NM_DEVICE_GET_PRIVATE(self);
     gs_free_error GError *error = NULL;
-    NMConnection *        applied_connection;
+    NMConnection         *applied_connection;
     guint32               flags;
-    GVariant *            var_settings;
+    GVariant             *var_settings;
 
     g_variant_get(parameters, "(u)", &flags);
 
@@ -12844,14 +12844,14 @@ impl_device_get_applied_connection(NMDBusObject *                     obj,
 /*****************************************************************************/
 
 static void
-disconnect_cb(NMDevice *             self,
+disconnect_cb(NMDevice              *self,
               GDBusMethodInvocation *context,
-              NMAuthSubject *        subject,
-              GError *               error,
+              NMAuthSubject         *subject,
+              GError                *error,
               gpointer               user_data)
 {
     NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
-    GError *         local = NULL;
+    GError          *local = NULL;
 
     if (error) {
         g_dbus_method_invocation_return_gerror(context, error);
@@ -12899,17 +12899,17 @@ _clear_queued_act_request(NMDevicePrivate *priv, NMActiveConnectionStateReason a
 }
 
 static void
-impl_device_disconnect(NMDBusObject *                     obj,
+impl_device_disconnect(NMDBusObject                      *obj,
                        const NMDBusInterfaceInfoExtended *interface_info,
-                       const NMDBusMethodInfoExtended *   method_info,
-                       GDBusConnection *                  dbus_connection,
-                       const char *                       sender,
-                       GDBusMethodInvocation *            invocation,
-                       GVariant *                         parameters)
+                       const NMDBusMethodInfoExtended    *method_info,
+                       GDBusConnection                   *dbus_connection,
+                       const char                        *sender,
+                       GDBusMethodInvocation             *invocation,
+                       GVariant                          *parameters)
 {
-    NMDevice *       self = NM_DEVICE(obj);
+    NMDevice        *self = NM_DEVICE(obj);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *   connection;
+    NMConnection    *connection;
 
     if (!priv->act_request.obj) {
         g_dbus_method_invocation_return_error_literal(invocation,
@@ -12933,10 +12933,10 @@ impl_device_disconnect(NMDBusObject *                     obj,
 }
 
 static void
-delete_cb(NMDevice *             self,
+delete_cb(NMDevice              *self,
           GDBusMethodInvocation *context,
-          NMAuthSubject *        subject,
-          GError *               error,
+          NMAuthSubject         *subject,
+          GError                *error,
           gpointer               user_data)
 {
     GError *local = NULL;
@@ -12961,13 +12961,13 @@ delete_cb(NMDevice *             self,
 }
 
 static void
-impl_device_delete(NMDBusObject *                     obj,
+impl_device_delete(NMDBusObject                      *obj,
                    const NMDBusInterfaceInfoExtended *interface_info,
-                   const NMDBusMethodInfoExtended *   method_info,
-                   GDBusConnection *                  connection,
-                   const char *                       sender,
-                   GDBusMethodInvocation *            invocation,
-                   GVariant *                         parameters)
+                   const NMDBusMethodInfoExtended    *method_info,
+                   GDBusConnection                   *connection,
+                   const char                        *sender,
+                   GDBusMethodInvocation             *invocation,
+                   GVariant                          *parameters)
 {
     NMDevice *self = NM_DEVICE(obj);
 
@@ -13058,7 +13058,7 @@ static gboolean
 _carrier_wait_check_act_request_must_queue(NMDevice *self, NMActRequest *req)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *   connection;
+    NMConnection    *connection;
 
     /* If we have carrier or if we are not waiting for it, the activation
      * request is not blocked waiting for carrier. */
@@ -13107,11 +13107,11 @@ _carrier_wait_check_act_request_must_queue(NMDevice *self, NMActRequest *req)
 }
 
 void
-nm_device_disconnect_active_connection(NMActiveConnection *          active,
+nm_device_disconnect_active_connection(NMActiveConnection           *active,
                                        NMDeviceStateReason           device_reason,
                                        NMActiveConnectionStateReason active_reason)
 {
-    NMDevice *       self;
+    NMDevice        *self;
     NMDevicePrivate *priv;
 
     g_return_if_fail(NM_IS_ACTIVE_CONNECTION(active));
@@ -13275,7 +13275,7 @@ _dispatcher_cleanup(NMDevice *self)
 static void
 _dispatcher_complete_proceed_state(NMDispatcherCallId *call_id, gpointer user_data)
 {
-    NMDevice *       self = NM_DEVICE(user_data);
+    NMDevice        *self = NM_DEVICE(user_data);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     g_return_if_fail(call_id == priv->dispatcher.call_id);
@@ -13335,10 +13335,10 @@ ip_check_gw_ping_cleanup(NMDevice *self)
 static gboolean
 spawn_ping(NMDevice *self)
 {
-    NMDevicePrivate *priv        = NM_DEVICE_GET_PRIVATE(self);
-    gs_free char *   str_timeout = NULL;
-    gs_free char *   tmp_str     = NULL;
-    const char *     args[]      = {priv->gw_ping.binary,
+    NMDevicePrivate      *priv        = NM_DEVICE_GET_PRIVATE(self);
+    gs_free char         *str_timeout = NULL;
+    gs_free char         *tmp_str     = NULL;
+    const char           *args[]      = {priv->gw_ping.binary,
                           "-I",
                           nm_device_get_ip_iface(self),
                           "-c",
@@ -13347,7 +13347,7 @@ spawn_ping(NMDevice *self)
                           NULL,
                           priv->gw_ping.address,
                           NULL};
-    gs_free_error GError *error  = NULL;
+    gs_free_error GError *error       = NULL;
     gboolean              ret;
 
     args[6] = str_timeout = g_strdup_printf("%u", priv->gw_ping.deadline);
@@ -13376,7 +13376,7 @@ spawn_ping(NMDevice *self)
 static gboolean
 respawn_ping_cb(gpointer user_data)
 {
-    NMDevice *       self = NM_DEVICE(user_data);
+    NMDevice        *self = NM_DEVICE(user_data);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     priv->gw_ping.watch = 0;
@@ -13394,7 +13394,7 @@ respawn_ping_cb(gpointer user_data)
 static void
 ip_check_ping_watch_cb(GPid pid, int status, gpointer user_data)
 {
-    NMDevice *       self       = NM_DEVICE(user_data);
+    NMDevice        *self       = NM_DEVICE(user_data);
     NMDevicePrivate *priv       = NM_DEVICE_GET_PRIVATE(self);
     NMLogDomain      log_domain = priv->gw_ping.log_domain;
     gboolean         success    = FALSE;
@@ -13428,7 +13428,7 @@ ip_check_ping_watch_cb(GPid pid, int status, gpointer user_data)
 static gboolean
 ip_check_ping_timeout_cb(gpointer user_data)
 {
-    NMDevice *       self = NM_DEVICE(user_data);
+    NMDevice        *self = NM_DEVICE(user_data);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     priv->gw_ping.timeout = 0;
@@ -13441,7 +13441,7 @@ ip_check_ping_timeout_cb(gpointer user_data)
 }
 
 static gboolean
-start_ping(NMDevice *  self,
+start_ping(NMDevice   *self,
            NMLogDomain log_domain,
            const char *binary,
            const char *address,
@@ -13470,11 +13470,11 @@ start_ping(NMDevice *  self,
 static void
 nm_device_start_ip_check(NMDevice *self)
 {
-    NMDevicePrivate *    priv = NM_DEVICE_GET_PRIVATE(self);
-    NMConnection *       connection;
+    NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMConnection        *connection;
     NMSettingConnection *s_con;
     guint                timeout     = 0;
-    const char *         ping_binary = NULL;
+    const char          *ping_binary = NULL;
     char                 buf[NM_UTILS_INET_ADDRSTRLEN];
     NMLogDomain          log_domain = LOGD_IP4;
 
@@ -13497,7 +13497,7 @@ nm_device_start_ip_check(NMDevice *self)
 
     buf[0] = '\0';
     if (timeout) {
-        const NMPObject *     gw;
+        const NMPObject      *gw;
         const NML3ConfigData *l3cd;
 
         l3cd = priv->l3cfg ? nm_l3cfg_get_combined_l3cd(priv->l3cfg, TRUE) : NULL;
@@ -13533,7 +13533,7 @@ nm_device_start_ip_check(NMDevice *self)
 static gboolean
 carrier_wait_timeout(gpointer user_data)
 {
-    NMDevice *       self = NM_DEVICE(user_data);
+    NMDevice        *self = NM_DEVICE(user_data);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     priv->carrier_wait_id = 0;
@@ -13570,7 +13570,7 @@ _get_carrier_wait_ms(NMDevice *self)
 gboolean
 nm_device_bring_up(NMDevice *self, gboolean block, gboolean *no_firmware)
 {
-    NMDevicePrivate *    priv         = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate     *priv         = NM_DEVICE_GET_PRIVATE(self);
     gboolean             device_is_up = FALSE;
     NMDeviceCapabilities capabilities;
     int                  ifindex;
@@ -13927,7 +13927,7 @@ nm_device_get_unmanaged_flags(NMDevice *self, NMUnmanagedFlags flag)
  * Set the unmanaged flags of the device.
  **/
 static void
-_set_unmanaged_flags(NMDevice *          self,
+_set_unmanaged_flags(NMDevice           *self,
                      NMUnmanagedFlags    flags,
                      NMUnmanFlagOp       set_op,
                      gboolean            allow_state_transition,
@@ -13938,7 +13938,7 @@ _set_unmanaged_flags(NMDevice *          self,
     gboolean         was_managed, transition_state;
     NMUnmanagedFlags old_flags, old_mask;
     NMDeviceState    new_state;
-    const char *     operation = NULL;
+    const char      *operation = NULL;
     char             str1[512];
     char             str2[512];
     gboolean         do_notify_has_pending_actions = FALSE;
@@ -14064,7 +14064,7 @@ nm_device_set_unmanaged_flags(NMDevice *self, NMUnmanagedFlags flags, NMUnmanFla
  * Set the unmanaged flags of the device and possibly trigger a state change.
  **/
 void
-nm_device_set_unmanaged_by_flags(NMDevice *          self,
+nm_device_set_unmanaged_by_flags(NMDevice           *self,
                                  NMUnmanagedFlags    flags,
                                  NMUnmanFlagOp       set_op,
                                  NMDeviceStateReason reason)
@@ -14073,7 +14073,7 @@ nm_device_set_unmanaged_by_flags(NMDevice *          self,
 }
 
 void
-nm_device_set_unmanaged_by_flags_queue(NMDevice *          self,
+nm_device_set_unmanaged_by_flags_queue(NMDevice           *self,
                                        NMUnmanagedFlags    flags,
                                        NMUnmanFlagOp       set_op,
                                        NMDeviceStateReason reason)
@@ -14212,12 +14212,12 @@ nm_device_set_unmanaged_by_quitting(NMDevice *self)
 void
 nm_device_reapply_settings_immediately(NMDevice *self)
 {
-    NMConnection *        applied_connection;
+    NMConnection         *applied_connection;
     NMSettingsConnection *settings_connection;
     NMDeviceState         state;
-    NMSettingConnection * s_con_settings;
-    NMSettingConnection * s_con_applied;
-    const char *          zone;
+    NMSettingConnection  *s_con_settings;
+    NMSettingConnection  *s_con_applied;
+    const char           *zone;
     NMMetered             metered;
     guint64               version_id;
 
@@ -14287,10 +14287,10 @@ void
 nm_device_update_metered(NMDevice *self)
 {
 #define NM_METERED_INVALID ((NMMetered) -1)
-    NMDevicePrivate *    priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
     NMSettingConnection *setting;
     NMMetered            conn_value, value = NM_METERED_INVALID;
-    NMConnection *       connection = NULL;
+    NMConnection        *connection = NULL;
     NMDeviceState        state;
 
     g_return_if_fail(NM_IS_DEVICE(self));
@@ -14369,14 +14369,14 @@ _device_check_dev_available_flags_from_con(NMDeviceCheckConAvailableFlags con_fl
 }
 
 static gboolean
-_nm_device_check_connection_available(NMDevice *                     self,
-                                      NMConnection *                 connection,
+_nm_device_check_connection_available(NMDevice                      *self,
+                                      NMConnection                  *connection,
                                       NMDeviceCheckConAvailableFlags flags,
-                                      const char *                   specific_object,
-                                      GError **                      error)
+                                      const char                    *specific_object,
+                                      GError                       **error)
 {
     NMDeviceState state;
-    GError *      local = NULL;
+    GError       *local = NULL;
 
     /* an unrealized software device is always available, hardware devices never. */
     if (!nm_device_is_real(self)) {
@@ -14480,11 +14480,11 @@ _nm_device_check_connection_available(NMDevice *                     self,
  * Returns: %TRUE if @connection can be activated on @self
  */
 gboolean
-nm_device_check_connection_available(NMDevice *                     self,
-                                     NMConnection *                 connection,
+nm_device_check_connection_available(NMDevice                      *self,
+                                     NMConnection                  *connection,
                                      NMDeviceCheckConAvailableFlags flags,
-                                     const char *                   specific_object,
-                                     GError **                      error)
+                                     const char                    *specific_object,
+                                     GError                       **error)
 {
     gboolean available;
 
@@ -14538,11 +14538,11 @@ available_connections_del(NMDevice *self, NMSettingsConnection *sett_conn)
 }
 
 static gboolean
-check_connection_available(NMDevice *                     self,
-                           NMConnection *                 connection,
+check_connection_available(NMDevice                      *self,
+                           NMConnection                  *connection,
                            NMDeviceCheckConAvailableFlags flags,
-                           const char *                   specific_object,
-                           GError **                      error)
+                           const char                    *specific_object,
+                           GError                       **error)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
@@ -14585,12 +14585,12 @@ check_connection_available(NMDevice *                     self,
 void
 nm_device_recheck_available_connections(NMDevice *self)
 {
-    NMDevicePrivate *            priv;
-    NMSettingsConnection *const *connections;
-    gboolean                     changed = FALSE;
-    GHashTableIter               h_iter;
-    NMSettingsConnection *       sett_conn;
-    guint                        i;
+    NMDevicePrivate               *priv;
+    NMSettingsConnection *const   *connections;
+    gboolean                       changed = FALSE;
+    GHashTableIter                 h_iter;
+    NMSettingsConnection          *sett_conn;
+    guint                          i;
     gs_unref_hashtable GHashTable *prune_list = NULL;
 
     g_return_if_fail(NM_IS_DEVICE(self));
@@ -14647,7 +14647,7 @@ nm_device_recheck_available_connections(NMDevice *self)
 NMSettingsConnection *
 nm_device_get_best_connection(NMDevice *self, const char *specific_object, GError **error)
 {
-    NMDevicePrivate *     priv      = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate      *priv      = NM_DEVICE_GET_PRIVATE(self);
     NMSettingsConnection *sett_conn = NULL;
     NMSettingsConnection *candidate;
     guint64               best_timestamp = 0;
@@ -14717,7 +14717,7 @@ cp_connection_added(NMSettings *settings, NMSettingsConnection *sett_conn, gpoin
 }
 
 static void
-cp_connection_updated(NMSettings *          settings,
+cp_connection_updated(NMSettings           *settings,
                       NMSettingsConnection *sett_conn,
                       guint                 update_reason_u,
                       gpointer              user_data)
@@ -15149,7 +15149,7 @@ deactivate_ready(NMDevice *self, NMDeviceStateReason reason)
 static void
 sriov_reset_on_deactivate_cb(GError *error, gpointer user_data)
 {
-    NMDevice *       self;
+    NMDevice        *self;
     NMDevicePrivate *priv;
     gpointer         reason;
 
@@ -15167,7 +15167,7 @@ sriov_reset_on_deactivate_cb(GError *error, gpointer user_data)
 static void
 sriov_reset_on_failure_cb(GError *error, gpointer user_data)
 {
-    NMDevice *       self = user_data;
+    NMDevice        *self = user_data;
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     nm_assert(priv->sriov_reset_pending > 0);
@@ -15184,7 +15184,7 @@ sriov_reset_on_failure_cb(GError *error, gpointer user_data)
 static void
 deactivate_async_ready(NMDevice *self, GError *error, gpointer user_data)
 {
-    NMDevicePrivate *   priv   = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate    *priv   = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceStateReason reason = GPOINTER_TO_UINT(user_data);
 
     if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
@@ -15205,8 +15205,8 @@ deactivate_async_ready(NMDevice *self, GError *error, gpointer user_data)
 static void
 deactivate_dispatcher_complete(NMDispatcherCallId *call_id, gpointer user_data)
 {
-    NMDevice *          self = NM_DEVICE(user_data);
-    NMDevicePrivate *   priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevice           *self = NM_DEVICE(user_data);
+    NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceStateReason reason;
 
     g_return_if_fail(call_id == priv->dispatcher.call_id);
@@ -15260,11 +15260,11 @@ static void
 _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason, gboolean quitting)
 {
     gs_unref_object NMActRequest *req = NULL;
-    NMDevicePrivate *             priv;
+    NMDevicePrivate              *priv;
     NMDeviceState                 old_state;
     gboolean                      no_firmware = FALSE;
-    NMSettingsConnection *        sett_conn;
-    NMSettingSriov *              s_sriov;
+    NMSettingsConnection         *sett_conn;
+    NMSettingSriov               *s_sriov;
     gboolean                      concheck_now;
 
     g_return_if_fail(NM_IS_DEVICE(self));
@@ -15626,8 +15626,8 @@ nm_device_state_changed(NMDevice *self, NMDeviceState state, NMDeviceStateReason
 static gboolean
 queued_state_set(gpointer user_data)
 {
-    NMDevice *          self = NM_DEVICE(user_data);
-    NMDevicePrivate *   priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevice           *self = NM_DEVICE(user_data);
+    NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceState       new_state;
     NMDeviceStateReason new_reason;
 
@@ -15762,7 +15762,7 @@ gboolean
 nm_device_update_hw_address(NMDevice *self)
 {
     NMDevicePrivate *priv;
-    const guint8 *   hwaddr;
+    const guint8    *hwaddr;
     gsize            hwaddrlen = 0;
 
     priv = NM_DEVICE_GET_PRIVATE(self);
@@ -15837,11 +15837,11 @@ nm_device_update_initial_hw_address(NMDevice *self)
 void
 nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze)
 {
-    NMDevicePrivate *              priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate               *priv = NM_DEVICE_GET_PRIVATE(self);
     guint8                         buf[_NM_UTILS_HWADDR_LEN_MAX];
     gboolean                       success_read;
     int                            ifindex;
-    const NMPlatformLink *         pllink;
+    const NMPlatformLink          *pllink;
     const NMConfigDeviceStateData *dev_state;
     NMPLinkAddress                 cached_hw_addr_perm;
 
@@ -15950,7 +15950,7 @@ _hw_addr_matches(NMDevice *self, const guint8 *addr, gsize addr_len)
 }
 
 static gboolean
-_hw_addr_set(NMDevice *        self,
+_hw_addr_set(NMDevice         *self,
              const char *const addr,
              const char *const operation,
              const char *const detail)
@@ -16153,20 +16153,20 @@ nm_device_hw_addr_set(NMDevice *self, const char *addr, const char *detail, gboo
  * %TRUE otherwise
  */
 static gboolean
-_hw_addr_get_cloned(NMDevice *    self,
+_hw_addr_get_cloned(NMDevice     *self,
                     NMConnection *connection,
                     gboolean      is_wifi,
-                    gboolean *    preserve,
-                    char **       hwaddr,
-                    HwAddrType *  hwaddr_type,
-                    const char ** hwaddr_detail,
-                    GError **     error)
+                    gboolean     *preserve,
+                    char        **hwaddr,
+                    HwAddrType   *hwaddr_type,
+                    const char  **hwaddr_detail,
+                    GError      **error)
 {
     NMDevicePrivate *priv;
-    gs_free char *   hw_addr_generated = NULL;
-    const char *     addr;
-    const char *     addr_setting;
-    char *           addr_out;
+    gs_free char    *hw_addr_generated = NULL;
+    const char      *addr;
+    const char      *addr_setting;
+    char            *addr_out;
     HwAddrType       type_out;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
@@ -16234,7 +16234,7 @@ _hw_addr_get_cloned(NMDevice *    self,
         type_out = HW_ADDR_TYPE_GENERATED;
     } else if (NM_IN_STRSET(addr, NM_CLONED_MAC_STABLE)) {
         NMUtilsStableType stable_type;
-        const char *      stable_id;
+        const char       *stable_id;
 
         if (priv->hw_addr_type == HW_ADDR_TYPE_GENERATED) {
             /* hm, we already use a generate MAC address. Most certainly, that is from the same
@@ -16283,12 +16283,12 @@ out_no_action:
 }
 
 gboolean
-nm_device_hw_addr_get_cloned(NMDevice *    self,
+nm_device_hw_addr_get_cloned(NMDevice     *self,
                              NMConnection *connection,
                              gboolean      is_wifi,
-                             char **       hwaddr,
-                             gboolean *    preserve,
-                             GError **     error)
+                             char        **hwaddr,
+                             gboolean     *preserve,
+                             GError      **error)
 {
     if (!_hw_addr_get_cloned(self, connection, is_wifi, preserve, hwaddr, NULL, NULL, error))
         return FALSE;
@@ -16299,12 +16299,12 @@ nm_device_hw_addr_get_cloned(NMDevice *    self,
 gboolean
 nm_device_hw_addr_set_cloned(NMDevice *self, NMConnection *connection, gboolean is_wifi)
 {
-    NMDevicePrivate *priv;
-    gboolean         preserve   = FALSE;
-    gs_free char *   hwaddr     = NULL;
-    const char *     detail     = NULL;
-    HwAddrType       type       = HW_ADDR_TYPE_UNSET;
-    gs_free_error GError *error = NULL;
+    NMDevicePrivate      *priv;
+    gboolean              preserve = FALSE;
+    gs_free char         *hwaddr   = NULL;
+    const char           *detail   = NULL;
+    HwAddrType            type     = HW_ADDR_TYPE_UNSET;
+    gs_free_error GError *error    = NULL;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
     priv = NM_DEVICE_GET_PRIVATE(self);
@@ -16336,7 +16336,7 @@ gboolean
 nm_device_hw_addr_reset(NMDevice *self, const char *detail)
 {
     NMDevicePrivate *priv;
-    const char *     addr;
+    const char      *addr;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
@@ -16425,9 +16425,9 @@ nm_device_spec_match_list(NMDevice *self, const GSList *specs)
 int
 nm_device_spec_match_list_full(NMDevice *self, const GSList *specs, int no_match_value)
 {
-    NMDeviceClass *      klass;
+    NMDeviceClass       *klass;
     NMMatchSpecMatchType m;
-    const char *         hw_address = NULL;
+    const char          *hw_address = NULL;
     gboolean             is_fake;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
@@ -16462,7 +16462,7 @@ nm_device_spec_match_list_full(NMDevice *self, const GSList *specs, int no_match
 guint
 nm_device_get_supplicant_timeout(NMDevice *self)
 {
-    NMConnection *  connection;
+    NMConnection   *connection;
     NMSetting8021x *s_8021x;
     int             timeout;
 #define SUPPLICANT_DEFAULT_TIMEOUT 25
@@ -16491,7 +16491,7 @@ nm_device_get_supplicant_timeout(NMDevice *self)
 gboolean
 nm_device_auth_retries_try_next(NMDevice *self)
 {
-    NMDevicePrivate *    priv;
+    NMDevicePrivate     *priv;
     NMSettingConnection *s_con;
     int                  auth_retries;
 
@@ -16540,11 +16540,11 @@ nm_device_auth_retries_try_next(NMDevice *self)
 static void
 hostname_dns_lookup_callback(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    HostnameResolver *resolver;
-    NMDevice *        self;
-    gs_free char *    addr_str  = NULL;
-    gs_free char *    output    = NULL;
-    gs_free_error GError *error = NULL;
+    HostnameResolver     *resolver;
+    NMDevice             *self;
+    gs_free char         *addr_str = NULL;
+    gs_free char         *output   = NULL;
+    gs_free_error GError *error    = NULL;
 
     output = nm_device_resolve_address_finish(result, &error);
     if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -16583,7 +16583,7 @@ static gboolean
 hostname_dns_address_timeout(gpointer user_data)
 {
     HostnameResolver *resolver = user_data;
-    NMDevice *        self     = resolver->device;
+    NMDevice         *self     = resolver->device;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), G_SOURCE_REMOVE);
 
@@ -16634,9 +16634,9 @@ get_address_for_hostname_dns_lookup(NMDevice *self, int addr_family)
     const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
     NMPLookup                    lookup;
     const NMDedupMultiHeadEntry *head_entry;
-    const NMDedupMultiEntry *    iter;
-    const guint8 *               addr6_ll    = NULL;
-    const guint8 *               addr6_nonll = NULL;
+    const NMDedupMultiEntry     *iter;
+    const guint8                *addr6_ll    = NULL;
+    const guint8                *addr6_nonll = NULL;
     int                          ifindex;
 
     ifindex = nm_device_get_ip_ifindex(self);
@@ -16686,12 +16686,12 @@ get_address_for_hostname_dns_lookup(NMDevice *self, int addr_family)
 const char *
 nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean *out_wait)
 {
-    const int         IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMDevicePrivate * priv;
-    HostnameResolver *resolver;
-    const char *      method;
-    gboolean          address_changed         = FALSE;
-    gs_unref_object GInetAddress *new_address = NULL;
+    const int                     IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMDevicePrivate              *priv;
+    HostnameResolver             *resolver;
+    const char                   *method;
+    gboolean                      address_changed = FALSE;
+    gs_unref_object GInetAddress *new_address     = NULL;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), NULL);
     priv = NM_DEVICE_GET_PRIVATE(self);
@@ -16813,7 +16813,7 @@ static GVariant *
 _device_get_ports_variant(NMDevice *device)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(device);
-    SlaveInfo *      info;
+    SlaveInfo       *info;
     GVariantBuilder  builder;
     gboolean         any = FALSE;
 
@@ -16845,7 +16845,7 @@ _device_get_ports_variant(NMDevice *device)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMDevice *       self = NM_DEVICE(object);
+    NMDevice        *self = NM_DEVICE(object);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -17025,7 +17025,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMDevice *       self = (NMDevice *) object;
+    NMDevice        *self = (NMDevice *) object;
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -17155,10 +17155,10 @@ nm_device_init(NMDevice *self)
 static GObject *
 constructor(GType type, guint n_construct_params, GObjectConstructParam *construct_params)
 {
-    GObject *             object;
-    GObjectClass *        klass;
-    NMDevice *            self;
-    NMDevicePrivate *     priv;
+    GObject              *object;
+    GObjectClass         *klass;
+    NMDevice             *self;
+    NMDevicePrivate      *priv;
     const NMPlatformLink *pllink;
 
     klass  = G_OBJECT_CLASS(nm_device_parent_class);
@@ -17198,9 +17198,9 @@ constructor(GType type, guint n_construct_params, GObjectConstructParam *constru
 static void
 constructed(GObject *object)
 {
-    NMDevice *       self = NM_DEVICE(object);
+    NMDevice        *self = NM_DEVICE(object);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    NMPlatform *     platform;
+    NMPlatform      *platform;
 
     if (NM_DEVICE_GET_CLASS(self)->get_generic_capabilities)
         priv->capabilities |= NM_DEVICE_GET_CLASS(self)->get_generic_capabilities(self);
@@ -17232,11 +17232,11 @@ constructed(GObject *object)
 static void
 dispose(GObject *object)
 {
-    NMDevice *                  self = NM_DEVICE(object);
-    NMDevicePrivate *           priv = NM_DEVICE_GET_PRIVATE(self);
-    NMPlatform *                platform;
+    NMDevice                   *self = NM_DEVICE(object);
+    NMDevicePrivate            *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMPlatform                 *platform;
     NMDeviceConnectivityHandle *con_handle;
-    gs_free_error GError *cancelled_error = NULL;
+    gs_free_error GError       *cancelled_error = NULL;
 
     _LOGD(LOGD_DEVICE, "disposing");
 
@@ -17335,7 +17335,7 @@ dispose(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMDevice *       self = NM_DEVICE(object);
+    NMDevice        *self = NM_DEVICE(object);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     _LOGD(LOGD_DEVICE, "finalize(): %s", G_OBJECT_TYPE_NAME(self));
@@ -17506,7 +17506,7 @@ static const NMDBusInterfaceInfoExtended interface_info_device_statistics = {
 static void
 nm_device_class_init(NMDeviceClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
 
     g_type_class_add_private(object_class, sizeof(NMDevicePrivate));

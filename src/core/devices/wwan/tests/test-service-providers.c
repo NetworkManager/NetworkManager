@@ -10,13 +10,13 @@
 #include "nm-test-utils-core.h"
 
 static void
-test_positive_cb(const char *  apn,
-                 const char *  username,
-                 const char *  password,
-                 const char *  gateway,
-                 const char *  auth_method,
+test_positive_cb(const char   *apn,
+                 const char   *username,
+                 const char   *password,
+                 const char   *gateway,
+                 const char   *auth_method,
                  const GSList *dns,
-                 GError *      error,
+                 GError       *error,
                  gpointer      user_data)
 {
     GMainLoop *loop = user_data;
@@ -55,13 +55,13 @@ test_positive(void)
 /*****************************************************************************/
 
 static void
-test_negative_cb(const char *  apn,
-                 const char *  username,
-                 const char *  password,
-                 const char *  gateway,
-                 const char *  auth_method,
+test_negative_cb(const char   *apn,
+                 const char   *username,
+                 const char   *password,
+                 const char   *gateway,
+                 const char   *auth_method,
                  const GSList *dns,
-                 GError *      error,
+                 GError       *error,
                  gpointer      user_data)
 {
     GMainLoop *loop = user_data;
@@ -88,13 +88,13 @@ test_negative(void)
 /*****************************************************************************/
 
 static void
-test_nonexistent_cb(const char *  apn,
-                    const char *  username,
-                    const char *  password,
-                    const char *  gateway,
-                    const char *  auth_method,
+test_nonexistent_cb(const char   *apn,
+                    const char   *username,
+                    const char   *password,
+                    const char   *gateway,
+                    const char   *auth_method,
                     const GSList *dns,
-                    GError *      error,
+                    GError       *error,
                     gpointer      user_data)
 {
     GMainLoop *loop = user_data;

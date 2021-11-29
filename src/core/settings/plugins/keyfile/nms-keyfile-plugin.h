@@ -30,38 +30,38 @@ GType nms_keyfile_plugin_get_type(void);
 
 NMSKeyfilePlugin *nms_keyfile_plugin_new(void);
 
-gboolean nms_keyfile_plugin_add_connection(NMSKeyfilePlugin *  self,
-                                           NMConnection *      connection,
+gboolean nms_keyfile_plugin_add_connection(NMSKeyfilePlugin   *self,
+                                           NMConnection       *connection,
                                            gboolean            in_memory,
                                            gboolean            is_nm_generated,
                                            gboolean            is_volatile,
                                            gboolean            is_external,
-                                           const char *        shadowed_storage,
+                                           const char         *shadowed_storage,
                                            gboolean            shadowed_owned,
                                            NMSettingsStorage **out_storage,
-                                           NMConnection **     out_connection,
-                                           GError **           error);
+                                           NMConnection      **out_connection,
+                                           GError            **error);
 
-gboolean nms_keyfile_plugin_update_connection(NMSKeyfilePlugin *  self,
-                                              NMSettingsStorage * storage,
-                                              NMConnection *      connection,
+gboolean nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
+                                              NMSettingsStorage  *storage,
+                                              NMConnection       *connection,
                                               gboolean            is_nm_generated,
                                               gboolean            is_volatile,
                                               gboolean            is_external,
-                                              const char *        shadowed_storage,
+                                              const char         *shadowed_storage,
                                               gboolean            shadowed_owned,
                                               gboolean            force_rename,
                                               NMSettingsStorage **out_storage,
-                                              NMConnection **     out_connection,
-                                              GError **           error);
+                                              NMConnection      **out_connection,
+                                              GError            **error);
 
-gboolean nms_keyfile_plugin_set_nmmeta_tombstone(NMSKeyfilePlugin *  self,
+gboolean nms_keyfile_plugin_set_nmmeta_tombstone(NMSKeyfilePlugin   *self,
                                                  gboolean            simulate,
-                                                 const char *        uuid,
+                                                 const char         *uuid,
                                                  gboolean            in_memory,
                                                  gboolean            set,
-                                                 const char *        shadowed_storage,
+                                                 const char         *shadowed_storage,
                                                  NMSettingsStorage **out_storage,
-                                                 gboolean *          out_hard_failure);
+                                                 gboolean           *out_hard_failure);
 
 #endif /* __NMS_KEYFILE_PLUGIN_H__ */

@@ -58,7 +58,7 @@ _ifupdownplugin_guess_connection_type(if_block *block)
 }
 
 struct _Mapping {
-    const char *   domain;
+    const char    *domain;
     const gpointer target;
 };
 
@@ -78,8 +78,8 @@ map_by_mapping(struct _Mapping *mapping, const char *key)
 static void
 update_wireless_setting_from_if_block(NMConnection *connection, if_block *block)
 {
-    if_data *       curr;
-    const char *    value     = ifparser_getkey(block, "inet");
+    if_data        *curr;
+    const char     *value     = ifparser_getkey(block, "inet");
     struct _Mapping mapping[] = {{"ssid", "ssid"},
                                  {"essid", "ssid"},
                                  {"mode", "mode"},
@@ -210,7 +210,7 @@ static gpointer
 string_to_glist_of_strings(const char *data)
 {
     GSList *ret    = NULL;
-    char *  string = (char *) data;
+    char   *string = (char *) data;
     while (string) {
         char *next = NULL;
         if ((next = strchr(string, ' ')) || (next = strchr(string, '\t'))
@@ -237,8 +237,8 @@ slist_free_all(gpointer slist)
 static void
 update_wireless_security_setting_from_if_block(NMConnection *connection, if_block *block)
 {
-    if_data *       curr;
-    const char *    value     = ifparser_getkey(block, "inet");
+    if_data        *curr;
+    const char     *value     = ifparser_getkey(block, "inet");
     struct _Mapping mapping[] = {{"psk", "psk"},
                                  {"identity", "leap-username"},
                                  {"password", "leap-password"},
@@ -283,7 +283,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection, if_bloc
                                            {NULL, NULL}};
 
     NMSettingWirelessSecurity *wireless_security_setting;
-    NMSettingWireless *        s_wireless;
+    NMSettingWireless         *s_wireless;
     gboolean                   security = FALSE;
 
     if (nm_streq0(value, "ppp"))
@@ -297,10 +297,10 @@ update_wireless_security_setting_from_if_block(NMConnection *connection, if_bloc
 
     c_list_for_each_entry (curr, &block->data_lst_head, data_lst) {
         if (NM_STR_HAS_PREFIX_WITH_MORE(curr->key, "wireless-")) {
-            const char *          key                  = curr->key + NM_STRLEN("wireless-");
-            char *                property_value       = NULL;
+            const char           *key                  = curr->key + NM_STRLEN("wireless-");
+            char                 *property_value       = NULL;
             gpointer              typed_property_value = NULL;
-            const char *          newkey               = map_by_mapping(mapping, key);
+            const char           *newkey               = map_by_mapping(mapping, key);
             IfupdownStrDupeFunc   dupe_func            = map_by_mapping(dupe_mapping, key);
             IfupdownStrToTypeFunc type_map_func        = map_by_mapping(type_mapping, key);
             GFreeFunc             free_func            = map_by_mapping(free_type_mapping, key);
@@ -329,10 +329,10 @@ wireless_next:
                 (*free_func)(typed_property_value);
 
         } else if (NM_STR_HAS_PREFIX_WITH_MORE(curr->key, "wpa-")) {
-            const char *          key                  = curr->key + NM_STRLEN("wpa-");
-            char *                property_value       = NULL;
+            const char           *key                  = curr->key + NM_STRLEN("wpa-");
+            char                 *property_value       = NULL;
             gpointer              typed_property_value = NULL;
-            const char *          newkey               = map_by_mapping(mapping, key);
+            const char           *newkey               = map_by_mapping(mapping, key);
             IfupdownStrDupeFunc   dupe_func            = map_by_mapping(dupe_mapping, key);
             IfupdownStrToTypeFunc type_map_func        = map_by_mapping(type_mapping, key);
             GFreeFunc             free_func            = map_by_mapping(free_type_mapping, key);
@@ -391,7 +391,7 @@ static void
 ifupdown_ip4_add_dns(NMSettingIPConfig *s_ip4, const char *dns)
 {
     gs_free const char **list = NULL;
-    const char **        iter;
+    const char         **iter;
     guint32              addr;
 
     if (dns == NULL)
@@ -413,19 +413,19 @@ static gboolean
 update_ip4_setting_from_if_block(NMConnection *connection, if_block *block, GError **error)
 {
     gs_unref_object NMSettingIPConfig *s_ip4 = NM_SETTING_IP_CONFIG(nm_setting_ip4_config_new());
-    const char *                       type  = ifparser_getkey(block, "inet");
+    const char                        *type  = ifparser_getkey(block, "inet");
 
     if (!nm_streq0(type, "static")) {
         g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
     } else {
         guint32      tmp_mask;
         NMIPAddress *addr;
-        const char * address_v;
-        const char * netmask_v;
-        const char * gateway_v;
-        const char * nameserver_v;
-        const char * nameservers_v;
-        const char * search_v;
+        const char  *address_v;
+        const char  *netmask_v;
+        const char  *gateway_v;
+        const char  *nameserver_v;
+        const char  *nameservers_v;
+        const char  *search_v;
         guint32      netmask_int = 32;
 
         /* Address */
@@ -495,7 +495,7 @@ update_ip4_setting_from_if_block(NMConnection *connection, if_block *block, GErr
         search_v = ifparser_getkey(block, "dns-search");
         if (search_v) {
             gs_free const char **list = NULL;
-            const char **        iter;
+            const char         **iter;
 
             list = nm_strsplit_set(search_v, " \t");
             for (iter = list; iter && *iter; iter++) {
@@ -515,7 +515,7 @@ static void
 ifupdown_ip6_add_dns(NMSettingIPConfig *s_ip6, const char *dns)
 {
     gs_free const char **list = NULL;
-    const char **        iter;
+    const char         **iter;
     struct in6_addr      addr;
 
     if (dns == NULL)
@@ -537,18 +537,18 @@ static gboolean
 update_ip6_setting_from_if_block(NMConnection *connection, if_block *block, GError **error)
 {
     gs_unref_object NMSettingIPConfig *s_ip6 = NM_SETTING_IP_CONFIG(nm_setting_ip6_config_new());
-    const char *                       type  = ifparser_getkey(block, "inet6");
+    const char                        *type  = ifparser_getkey(block, "inet6");
 
     if (!NM_IN_STRSET(type, "static", "v4tunnel")) {
         g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
     } else {
         NMIPAddress *addr;
-        const char * address_v;
-        const char * prefix_v;
-        const char * gateway_v;
-        const char * nameserver_v;
-        const char * nameservers_v;
-        const char * search_v;
+        const char  *address_v;
+        const char  *prefix_v;
+        const char  *gateway_v;
+        const char  *nameserver_v;
+        const char  *nameservers_v;
+        const char  *search_v;
         guint        prefix_int;
 
         address_v = ifparser_getkey(block, "address");
@@ -603,7 +603,7 @@ update_ip6_setting_from_if_block(NMConnection *connection, if_block *block, GErr
         search_v = ifparser_getkey(block, "dns-search");
         if (search_v) {
             gs_free const char **list = NULL;
-            const char **        iter;
+            const char         **iter;
 
             list = nm_strsplit_set(search_v, " \t");
             for (iter = list; iter && *iter; iter++) {
@@ -623,10 +623,10 @@ NMConnection *
 ifupdown_new_connection_from_if_block(if_block *block, gboolean autoconnect, GError **error)
 {
     gs_unref_object NMConnection *connection = NULL;
-    const char *                  type;
-    gs_free char *                idstr = NULL;
-    gs_free char *                uuid  = NULL;
-    NMSettingConnection *         s_con;
+    const char                   *type;
+    gs_free char                 *idstr = NULL;
+    gs_free char                 *uuid  = NULL;
+    NMSettingConnection          *s_con;
 
     connection = nm_simple_connection_new();
 

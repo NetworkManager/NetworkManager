@@ -107,15 +107,15 @@ nm_keyfile_plugin_get_setting_name_for_alias(const char *alias)
 /*****************************************************************************/
 
 char **
-nm_keyfile_plugin_kf_get_string_list(GKeyFile *  kf,
+nm_keyfile_plugin_kf_get_string_list(GKeyFile   *kf,
                                      const char *group,
                                      const char *key,
-                                     gsize *     out_length,
-                                     GError **   error)
+                                     gsize      *out_length,
+                                     GError    **error)
 {
-    char **     list;
+    char      **list;
     const char *alias;
-    GError *    local = NULL;
+    GError     *local = NULL;
     gsize       l;
 
     list = g_key_file_get_string_list(kf, group, key, &l, &local);
@@ -135,16 +135,16 @@ nm_keyfile_plugin_kf_get_string_list(GKeyFile *  kf,
 }
 
 guint *
-nm_keyfile_plugin_kf_get_integer_list_uint(GKeyFile *  key_file,
+nm_keyfile_plugin_kf_get_integer_list_uint(GKeyFile   *key_file,
                                            const char *group_name,
                                            const char *key,
-                                           gsize *     out_length,
-                                           GError **   error)
+                                           gsize      *out_length,
+                                           GError    **error)
 {
-    GError *           key_file_error = NULL;
+    GError            *key_file_error = NULL;
     gs_strfreev char **values         = NULL;
-    gs_free guint *int_values         = NULL;
-    gsize          i, num_ints;
+    gs_free guint     *int_values     = NULL;
+    gsize              i, num_ints;
 
     NM_SET_OUT(out_length, 0);
 
@@ -183,9 +183,9 @@ nm_keyfile_plugin_kf_get_integer_list_uint(GKeyFile *  key_file,
 }
 
 void
-nm_keyfile_plugin_kf_set_string_list(GKeyFile *         kf,
-                                     const char *       group,
-                                     const char *       key,
+nm_keyfile_plugin_kf_set_string_list(GKeyFile          *kf,
+                                     const char        *group,
+                                     const char        *key,
                                      const char *const *list,
                                      gsize              length)
 {
@@ -196,9 +196,9 @@ nm_keyfile_plugin_kf_set_string_list(GKeyFile *         kf,
 }
 
 void
-nm_keyfile_plugin_kf_set_integer_list_uint(GKeyFile *   kf,
-                                           const char * group,
-                                           const char * key,
+nm_keyfile_plugin_kf_set_integer_list_uint(GKeyFile    *kf,
+                                           const char  *group,
+                                           const char  *key,
                                            const guint *data,
                                            gsize        length)
 {
@@ -217,9 +217,9 @@ nm_keyfile_plugin_kf_set_integer_list_uint(GKeyFile *   kf,
 }
 
 void
-nm_keyfile_plugin_kf_set_integer_list_uint8(GKeyFile *    kf,
-                                            const char *  group,
-                                            const char *  key,
+nm_keyfile_plugin_kf_set_integer_list_uint8(GKeyFile     *kf,
+                                            const char   *group,
+                                            const char   *key,
                                             const guint8 *data,
                                             gsize         length)
 {
@@ -242,7 +242,7 @@ nm_keyfile_plugin_kf_set_integer_list_uint8(GKeyFile *    kf,
     {                                                                                        \
         get_ctype   val;                                                                     \
         const char *alias;                                                                   \
-        GError *    local = NULL;                                                            \
+        GError     *local = NULL;                                                            \
                                                                                              \
         val = key_file_get_fcn(kf, group, key, &local);                                      \
         if (nm_g_error_matches(local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) { \
@@ -275,14 +275,14 @@ DEFINE_KF_WRAPPER_SET(nm_keyfile_plugin_kf_set_boolean, gboolean, g_key_file_set
 DEFINE_KF_WRAPPER_SET(nm_keyfile_plugin_kf_set_value, const char *, g_key_file_set_value);
 
 gint64
-nm_keyfile_plugin_kf_get_int64(GKeyFile *  kf,
+nm_keyfile_plugin_kf_get_int64(GKeyFile   *kf,
                                const char *group,
                                const char *key,
                                guint       base,
                                gint64      min,
                                gint64      max,
                                gint64      fallback,
-                               GError **   error)
+                               GError    **error)
 {
     gs_free char *s = NULL;
     int           errsv;
@@ -311,9 +311,9 @@ nm_keyfile_plugin_kf_get_int64(GKeyFile *  kf,
 char **
 nm_keyfile_plugin_kf_get_keys(GKeyFile *kf, const char *group, gsize *out_length, GError **error)
 {
-    char **     keys;
+    char      **keys;
     const char *alias;
-    GError *    local = NULL;
+    GError     *local = NULL;
     gsize       l;
 
     keys = g_key_file_get_keys(kf, group, &l, &local);
@@ -339,7 +339,7 @@ nm_keyfile_plugin_kf_has_key(GKeyFile *kf, const char *group, const char *key, G
 {
     gboolean    has;
     const char *alias;
-    GError *    local = NULL;
+    GError     *local = NULL;
 
     has = g_key_file_has_key(kf, group, key, &local);
     if (nm_g_error_matches(local, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_GROUP_NOT_FOUND)) {
@@ -364,7 +364,7 @@ _nm_keyfile_copy(GKeyFile *dst, GKeyFile *src)
 
     groups = g_key_file_get_groups(src, NULL);
     for (g = 0; groups && groups[g]; g++) {
-        const char *       group = groups[g];
+        const char        *group = groups[g];
         gs_strfreev char **keys  = NULL;
 
         keys = g_key_file_get_keys(src, group, NULL, NULL);
@@ -372,7 +372,7 @@ _nm_keyfile_copy(GKeyFile *dst, GKeyFile *src)
             continue;
 
         for (k = 0; keys[k]; k++) {
-            const char *  key   = keys[k];
+            const char   *key   = keys[k];
             gs_free char *value = NULL;
 
             value = g_key_file_get_value(src, group, key, NULL);
@@ -644,7 +644,7 @@ nm_keyfile_key_encode(const char *name, char **out_to_free)
     nm_assert(!*out_to_free || !nm_streq0(name, key));
     {
         gs_free char *to_free2 = NULL;
-        const char *  name2;
+        const char   *name2;
 
         name2 = _keyfile_key_decode(key, &to_free2);
         /* name2, the result of encode()+decode() is identical to name.
@@ -669,7 +669,7 @@ nm_keyfile_key_decode(const char *key, char **out_to_free)
     nm_assert(!*out_to_free || name == *out_to_free);
     {
         gs_free char *to_free2 = NULL;
-        const char *  key2;
+        const char   *key2;
 
         key2 = _keyfile_key_encode(name, &to_free2);
         /* key2, the result of decode+encode may not be identical

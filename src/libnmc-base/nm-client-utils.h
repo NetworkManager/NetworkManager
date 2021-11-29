@@ -17,7 +17,7 @@ const char *_nmc_string_is_valid(const char *input, const char *const *allowed, 
 #define nmc_string_is_valid(input, allowed, error) \
     _nmc_string_is_valid((input), NM_CAST_STRV_CC(allowed), (error))
 
-gboolean nmc_string_to_uint(const char *       str,
+gboolean nmc_string_to_uint(const char        *str,
                             gboolean           range_check,
                             unsigned long int  min,
                             unsigned long int  max,
@@ -29,10 +29,10 @@ typedef enum {
     NMC_STRING_TO_TERNARY_FLAGS_IGNORE_FOR_DEFAULT = (1LL << 0),
 } NMCStringToTernaryFlags;
 
-gboolean nmc_string_to_ternary_full(const char *            str,
+gboolean nmc_string_to_ternary_full(const char             *str,
                                     NMCStringToTernaryFlags flags,
-                                    NMTernary *             val,
-                                    GError **               error);
+                                    NMTernary              *val,
+                                    GError                **error);
 
 static inline gboolean
 nmc_string_to_ternary(const char *str, NMTernary *val, GError **error)
@@ -53,8 +53,8 @@ const char *nmc_device_reason_to_string(NMDeviceStateReason reason);
 const char *nmc_device_metered_to_string(NMMetered value);
 
 NMActiveConnectionState nmc_activation_get_effective_state(NMActiveConnection *active,
-                                                           NMDevice *          device,
-                                                           const char **       reason);
+                                                           NMDevice           *device,
+                                                           const char        **reason);
 
 const char *nmc_wifi_strength_bars(guint8 strength);
 

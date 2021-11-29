@@ -39,8 +39,8 @@ _nm_dhcp_client_get_domain(NMDhcpClient *self)
          * expensive to determine the correct value then what we could
          * safe. */                   \
         if (nm_logging_enabled(_level, _NMLOG_DOMAIN)) {                                 \
-            NMDhcpClient *    _self    = (NMDhcpClient *) (self);                        \
-            const char *      __ifname = _self ? nm_dhcp_client_get_iface(_self) : NULL; \
+            NMDhcpClient     *_self    = (NMDhcpClient *) (self);                        \
+            const char       *__ifname = _self ? nm_dhcp_client_get_iface(_self) : NULL; \
             const NMLogDomain _domain  = _nm_dhcp_client_get_domain(_self);              \
                                                                                          \
             nm_log(_level,                                                               \

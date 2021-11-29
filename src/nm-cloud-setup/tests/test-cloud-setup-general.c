@@ -41,10 +41,10 @@ static void
 _test_ri4a(const char *const *addrs_before, const char *const *addrs_new)
 {
     gs_unref_object NMSettingIPConfig *s_ip = NULL;
-    gs_unref_ptrarray GPtrArray *arr        = NULL;
-    const gsize                  n          = NM_PTRARRAY_LEN(addrs_new);
-    gboolean                     changed;
-    gsize                        i;
+    gs_unref_ptrarray GPtrArray       *arr  = NULL;
+    const gsize                        n    = NM_PTRARRAY_LEN(addrs_new);
+    gboolean                           changed;
+    gsize                              i;
 
     s_ip = _ri4a_new_s_ip(addrs_before);
     arr  = _ri4a_new_arr(addrs_new);

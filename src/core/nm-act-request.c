@@ -72,7 +72,7 @@ nm_act_request_get_applied_connection(NMActRequest *req)
 
 struct _NMActRequestGetSecretsCallId {
     CList                       call_ids_lst;
-    NMActRequest *              self;
+    NMActRequest               *self;
     NMActRequestSecretsFunc     callback;
     gpointer                    callback_data;
     NMSettingsConnectionCallId *call_id;
@@ -91,15 +91,15 @@ _get_secrets_call_id_free(NMActRequestGetSecretsCallId *call_id)
 }
 
 static void
-get_secrets_cb(NMSettingsConnection *      connection,
+get_secrets_cb(NMSettingsConnection       *connection,
                NMSettingsConnectionCallId *call_id_s,
-               const char *                agent_username,
-               const char *                setting_name,
-               GError *                    error,
+               const char                 *agent_username,
+               const char                 *setting_name,
+               GError                     *error,
                gpointer                    user_data)
 {
     NMActRequestGetSecretsCallId *call_id = user_data;
-    NMActRequestPrivate *         priv;
+    NMActRequestPrivate          *priv;
 
     g_return_if_fail(call_id && call_id->call_id == call_id_s);
     g_return_if_fail(NM_IS_ACT_REQUEST(call_id->self));
@@ -141,19 +141,19 @@ get_secrets_cb(NMSettingsConnection *      connection,
  * Returns: a call-id.
  */
 NMActRequestGetSecretsCallId *
-nm_act_request_get_secrets(NMActRequest *               self,
+nm_act_request_get_secrets(NMActRequest                *self,
                            gboolean                     ref_self,
-                           const char *                 setting_name,
+                           const char                  *setting_name,
                            NMSecretAgentGetSecretsFlags flags,
-                           const char *const *          hints,
+                           const char *const           *hints,
                            NMActRequestSecretsFunc      callback,
                            gpointer                     callback_data)
 {
-    NMActRequestPrivate *         priv;
+    NMActRequestPrivate          *priv;
     NMActRequestGetSecretsCallId *call_id;
-    NMSettingsConnectionCallId *  call_id_s;
-    NMSettingsConnection *        settings_connection;
-    NMConnection *                applied_connection;
+    NMSettingsConnectionCallId   *call_id_s;
+    NMSettingsConnection         *settings_connection;
+    NMConnection                 *applied_connection;
 
     g_return_val_if_fail(NM_IS_ACT_REQUEST(self), NULL);
 
@@ -257,7 +257,7 @@ device_notify(GObject *object, GParamSpec *pspec, gpointer self)
 
 static void
 device_state_changed(NMActiveConnection *active,
-                     NMDevice *          device,
+                     NMDevice           *device,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state)
 {
@@ -344,7 +344,7 @@ device_state_changed(NMActiveConnection *active,
 static void
 master_failed(NMActiveConnection *self)
 {
-    NMDevice *    device;
+    NMDevice     *device;
     NMDeviceState device_state;
 
     /* If the connection has an active device, fail it */
@@ -371,8 +371,8 @@ static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
     NMActiveConnection *active;
-    NMDevice *          device;
-    char *              name;
+    NMDevice           *device;
+    char               *name;
 
     switch (prop_id) {
     case PROP_IP4_CONFIG:
@@ -432,14 +432,14 @@ nm_act_request_init(NMActRequest *req)
  * Returns: the new activation request on success, %NULL on error.
  */
 NMActRequest *
-nm_act_request_new(NMSettingsConnection * settings_connection,
-                   NMConnection *         applied_connection,
-                   const char *           specific_object,
-                   NMAuthSubject *        subject,
+nm_act_request_new(NMSettingsConnection  *settings_connection,
+                   NMConnection          *applied_connection,
+                   const char            *specific_object,
+                   NMAuthSubject         *subject,
                    NMActivationType       activation_type,
                    NMActivationReason     activation_reason,
                    NMActivationStateFlags initial_state_flags,
-                   NMDevice *             device)
+                   NMDevice              *device)
 {
     g_return_val_if_fail(!settings_connection || NM_IS_SETTINGS_CONNECTION(settings_connection),
                          NULL);
@@ -469,8 +469,8 @@ nm_act_request_new(NMSettingsConnection * settings_connection,
 static void
 dispose(GObject *object)
 {
-    NMActRequest *                self = NM_ACT_REQUEST(object);
-    NMActRequestPrivate *         priv = NM_ACT_REQUEST_GET_PRIVATE(self);
+    NMActRequest                 *self = NM_ACT_REQUEST(object);
+    NMActRequestPrivate          *priv = NM_ACT_REQUEST_GET_PRIVATE(self);
     NMActRequestGetSecretsCallId *call_id, *call_id_safe;
 
     /* Kill any in-progress secrets requests */
@@ -483,7 +483,7 @@ dispose(GObject *object)
 static void
 nm_act_request_class_init(NMActRequestClass *req_class)
 {
-    GObjectClass *           object_class = G_OBJECT_CLASS(req_class);
+    GObjectClass            *object_class = G_OBJECT_CLASS(req_class);
     NMActiveConnectionClass *active_class = NM_ACTIVE_CONNECTION_CLASS(req_class);
 
     /* virtual methods */

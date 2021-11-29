@@ -40,8 +40,8 @@ _meta_type_nmc_generic_info_get_name(const NMMetaAbstractInfo *abstract_info, gb
 
 static const NMMetaAbstractInfo *const *
 _meta_type_nmc_generic_info_get_nested(const NMMetaAbstractInfo *abstract_info,
-                                       guint *                   out_len,
-                                       gpointer *                out_to_free)
+                                       guint                    *out_len,
+                                       gpointer                 *out_to_free)
 {
     const NmcMetaGenericInfo *info;
 
@@ -52,16 +52,16 @@ _meta_type_nmc_generic_info_get_nested(const NMMetaAbstractInfo *abstract_info,
 }
 
 static gconstpointer
-_meta_type_nmc_generic_info_get_fcn(const NMMetaAbstractInfo * abstract_info,
-                                    const NMMetaEnvironment *  environment,
+_meta_type_nmc_generic_info_get_fcn(const NMMetaAbstractInfo  *abstract_info,
+                                    const NMMetaEnvironment   *environment,
                                     gpointer                   environment_user_data,
                                     gpointer                   target,
                                     gpointer                   target_data,
                                     NMMetaAccessorGetType      get_type,
                                     NMMetaAccessorGetFlags     get_flags,
                                     NMMetaAccessorGetOutFlags *out_flags,
-                                    gboolean *                 out_is_default,
-                                    gpointer *                 out_to_free)
+                                    gboolean                  *out_is_default,
+                                    gpointer                  *out_to_free)
 {
     const NmcMetaGenericInfo *info = (const NmcMetaGenericInfo *) abstract_info;
 
@@ -244,11 +244,11 @@ nmc_arg_is_option(const char *str, const char *opt_name)
  * Returns: TRUE on success, FALSE on an error and sets 'error'
  */
 gboolean
-nmc_parse_args(nmc_arg_t *         arg_arr,
+nmc_parse_args(nmc_arg_t          *arg_arr,
                gboolean            last,
-               int *               argc,
+               int                *argc,
                const char *const **argv,
-               GError **           error)
+               GError            **error)
 {
     nmc_arg_t *p;
     gboolean   found;
@@ -376,7 +376,7 @@ nmc_colorize(const NmcConfig *nmc_config, NMMetaColor color, const char *fmt, ..
 {
     va_list       args;
     gs_free char *str      = NULL;
-    const char *  ansi_seq = NULL;
+    const char   *ansi_seq = NULL;
 
     va_start(args, fmt);
     str = g_strdup_vprintf(fmt, args);
@@ -423,7 +423,7 @@ void
 nmc_filter_out_colors_inplace(char *str)
 {
     const char *p1;
-    char *      p2;
+    char       *p2;
     gboolean    copy_char = TRUE;
 
     if (!str)
@@ -463,7 +463,7 @@ nmc_filter_out_colors(const char *str)
 char *
 nmc_get_user_input(const char *ask_str)
 {
-    char *  line    = NULL;
+    char   *line    = NULL;
     size_t  line_ln = 0;
     ssize_t num;
 
@@ -489,11 +489,11 @@ int
 nmc_string_to_arg_array(const char *line,
                         const char *delim,
                         gboolean    unquote,
-                        char ***    argv,
-                        int *       argc)
+                        char     ***argv,
+                        int        *argc)
 {
     gs_free const char **arr0 = NULL;
-    char **              arr;
+    char               **arr;
 
     arr0 = nm_strsplit_set(line ?: "", delim ?: " \t");
     if (!arr0)
@@ -503,7 +503,7 @@ nmc_string_to_arg_array(const char *line,
 
     if (unquote) {
         int         i = 0;
-        char *      s;
+        char       *s;
         size_t      l;
         const char *quotes = "\"'";
 
@@ -658,17 +658,17 @@ typedef struct _PrintDataCol {
 } PrintDataCol;
 
 static gboolean
-_output_selection_append(GArray *                   cols,
+_output_selection_append(GArray                    *cols,
                          guint                      parent_idx,
                          const NMMetaSelectionItem *selection_item,
-                         GPtrArray *                gfree_keeper,
-                         GError **                  error)
+                         GPtrArray                 *gfree_keeper,
+                         GError                   **error)
 {
     gs_free gpointer                 nested_to_free = NULL;
     guint                            col_idx;
     guint                            i;
     const NMMetaAbstractInfo *const *nested;
-    NMMetaSelectionResultList *      selection;
+    NMMetaSelectionResultList       *selection;
 
     col_idx = cols->len;
 
@@ -787,16 +787,16 @@ _output_selection_complete(GArray *cols)
  */
 static gboolean
 _output_selection_parse(const NMMetaAbstractInfo *const *fields,
-                        const char *                     fields_str,
-                        PrintDataCol **                  out_cols_data,
-                        guint *                          out_cols_len,
-                        GPtrArray **                     out_gfree_keeper,
-                        GError **                        error)
+                        const char                      *fields_str,
+                        PrintDataCol                   **out_cols_data,
+                        guint                           *out_cols_len,
+                        GPtrArray                      **out_gfree_keeper,
+                        GError                         **error)
 {
-    NMMetaSelectionResultList *selection;
+    NMMetaSelectionResultList   *selection;
     gs_unref_ptrarray GPtrArray *gfree_keeper = NULL;
-    gs_unref_array GArray *cols               = NULL;
-    guint                  i;
+    gs_unref_array GArray       *cols         = NULL;
+    guint                        i;
 
     selection = nm_meta_selection_create_parse_list(fields, fields_str, FALSE, error);
     if (!selection)
@@ -853,15 +853,15 @@ _output_selection_parse(const NMMetaAbstractInfo *const *fields,
  *   Caller is responsible for freeing the array.
  */
 GArray *
-parse_output_fields(const char *                     fields_str,
+parse_output_fields(const char                      *fields_str,
                     const NMMetaAbstractInfo *const *fields_array,
                     gboolean                         parse_groups,
-                    GPtrArray **                     out_group_fields,
-                    GError **                        error)
+                    GPtrArray                      **out_group_fields,
+                    GError                         **error)
 {
     gs_free NMMetaSelectionResultList *selection = NULL;
-    GArray *                           array;
-    GPtrArray *                        group_fields = NULL;
+    GArray                            *array;
+    GPtrArray                         *group_fields = NULL;
     guint                              i;
 
     g_return_val_if_fail(!error || !*error, NULL);
@@ -926,7 +926,7 @@ nmc_empty_output_fields(NmcOutputData *output_data)
 typedef struct {
     guint               col_idx;
     const PrintDataCol *col;
-    const char *        title;
+    const char         *title;
     bool                title_to_free : 1;
 
     /* whether the column should be printed. If not %TRUE,
@@ -946,7 +946,7 @@ typedef struct {
     const PrintDataHeaderCell *header_cell;
     NMMetaColor                color;
     union {
-        const char *       plain;
+        const char        *plain;
         const char *const *strv;
     } text;
     PrintDataCellFormatType text_format : 3;
@@ -993,16 +993,16 @@ _print_data_cell_clear(gpointer cell_p)
 }
 
 static void
-_print_fill(const NmcConfig *   nmc_config,
-            gpointer const *    targets,
+_print_fill(const NmcConfig    *nmc_config,
+            gpointer const     *targets,
             gpointer            targets_data,
             const PrintDataCol *cols,
             guint               cols_len,
-            GArray **           out_header_row,
-            GArray **           out_cells)
+            GArray            **out_header_row,
+            GArray            **out_cells)
 {
-    GArray *               cells;
-    GArray *               header_row;
+    GArray                *cells;
+    GArray                *header_row;
     guint                  i_row, i_col;
     guint                  targets_len;
     NMMetaAccessorGetType  text_get_type;
@@ -1012,8 +1012,8 @@ _print_fill(const NmcConfig *   nmc_config,
     g_array_set_clear_func(header_row, _print_data_header_cell_clear);
 
     for (i_col = 0; i_col < cols_len; i_col++) {
-        const PrintDataCol *      col;
-        PrintDataHeaderCell *     header_cell;
+        const PrintDataCol       *col;
+        PrintDataHeaderCell      *header_cell;
         guint                     col_idx;
         const NMMetaAbstractInfo *info;
 
@@ -1064,9 +1064,9 @@ _print_fill(const NmcConfig *   nmc_config,
         PrintDataCell *cells_line = &g_array_index(cells, PrintDataCell, i_row * header_row->len);
 
         for (i_col = 0; i_col < header_row->len; i_col++) {
-            char *                    to_free = NULL;
-            PrintDataCell *           cell    = &cells_line[i_col];
-            PrintDataHeaderCell *     header_cell;
+            char                     *to_free = NULL;
+            PrintDataCell            *cell    = &cells_line[i_col];
+            PrintDataHeaderCell      *header_cell;
             const NMMetaAbstractInfo *info;
             NMMetaAccessorGetOutFlags text_out_flags, color_out_flags;
             gconstpointer             value;
@@ -1155,7 +1155,7 @@ _print_fill(const NmcConfig *   nmc_config,
             const PrintDataCell *cells_line =
                 &g_array_index(cells, PrintDataCell, i_row * header_row->len);
             const PrintDataCell *cell = &cells_line[i_col];
-            const char *const *  i_strv;
+            const char *const   *i_strv;
 
             switch (cell->text_format) {
             case PRINT_DATA_CELL_FORMAT_TYPE_PLAIN:
@@ -1185,7 +1185,7 @@ static gboolean
 _print_skip_column(const NmcConfig *nmc_config, const PrintDataHeaderCell *header_cell)
 {
     const NMMetaSelectionItem *selection_item;
-    const NMMetaAbstractInfo * info;
+    const NMMetaAbstractInfo  *info;
 
     selection_item = header_cell->col->selection_item;
     info           = selection_item->info;
@@ -1217,16 +1217,16 @@ _print_skip_column(const NmcConfig *nmc_config, const PrintDataHeaderCell *heade
 }
 
 static void
-_print_do(const NmcConfig *          nmc_config,
-          const char *               header_name_no_l10n,
+_print_do(const NmcConfig           *nmc_config,
+          const char                *header_name_no_l10n,
           guint                      col_len,
           guint                      row_len,
           const PrintDataHeaderCell *header_row,
-          const PrintDataCell *      cells)
+          const PrintDataCell       *cells)
 {
-    int                  width1, width2;
-    int                  table_width = 0;
-    guint                i_row, i_col;
+    int                           width1, width2;
+    int                           table_width = 0;
+    guint                         i_row, i_col;
     nm_auto_free_gstring GString *str = NULL;
 
     g_assert(col_len);
@@ -1235,7 +1235,7 @@ _print_do(const NmcConfig *          nmc_config,
     if (nmc_config->print_output == NMC_PRINT_PRETTY && header_name_no_l10n) {
         gs_free char *line = NULL;
         int           header_width;
-        const char *  header_name = _(header_name_no_l10n);
+        const char   *header_name = _(header_name_no_l10n);
 
         header_width = nmc_string_screen_width(header_name, NULL) + 4;
 
@@ -1261,7 +1261,7 @@ _print_do(const NmcConfig *          nmc_config,
         && !nmc_config->multiline_output) {
         for (i_col = 0; i_col < col_len; i_col++) {
             const PrintDataHeaderCell *header_cell = &header_row[i_col];
-            const char *               title;
+            const char                *title;
 
             if (_print_skip_column(nmc_config, header_cell))
                 continue;
@@ -1297,7 +1297,7 @@ _print_do(const NmcConfig *          nmc_config,
 
         for (i_col = 0; i_col < col_len; i_col++) {
             const PrintDataCell *cell  = &current_line[i_col];
-            const char *const *  lines = NULL;
+            const char *const   *lines = NULL;
             guint                i_lines, lines_len;
 
             if (_print_skip_column(nmc_config, cell->header_cell))
@@ -1318,7 +1318,7 @@ _print_do(const NmcConfig *          nmc_config,
 
             for (i_lines = 0; i_lines < lines_len; i_lines++) {
                 gs_free char *text_to_free = NULL;
-                const char *  text;
+                const char   *text;
 
                 text = colorize_string(nmc_config, cell->color, lines[i_lines], &text_to_free);
                 if (nmc_config->multiline_output) {
@@ -1385,19 +1385,19 @@ _print_do(const NmcConfig *          nmc_config,
 }
 
 gboolean
-nmc_print(const NmcConfig *                nmc_config,
-          gpointer const *                 targets,
+nmc_print(const NmcConfig                 *nmc_config,
+          gpointer const                  *targets,
           gpointer                         targets_data,
-          const char *                     header_name_no_l10n,
+          const char                      *header_name_no_l10n,
           const NMMetaAbstractInfo *const *fields,
-          const char *                     fields_str,
-          GError **                        error)
+          const char                      *fields_str,
+          GError                         **error)
 {
     gs_unref_ptrarray GPtrArray *gfree_keeper = NULL;
-    gs_free PrintDataCol *cols_data           = NULL;
-    guint                 cols_len;
-    gs_unref_array GArray *header_row = NULL;
-    gs_unref_array GArray *cells      = NULL;
+    gs_free PrintDataCol        *cols_data    = NULL;
+    guint                        cols_len;
+    gs_unref_array GArray       *header_row = NULL;
+    gs_unref_array GArray       *cells      = NULL;
 
     if (!_output_selection_parse(fields, fields_str, &cols_data, &cols_len, &gfree_keeper, error))
         return FALSE;
@@ -1528,15 +1528,15 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
 /*****************************************************************************/
 
 static const char *
-get_value_to_print(const NmcConfig *     nmc_config,
+get_value_to_print(const NmcConfig      *nmc_config,
                    const NmcOutputField *field,
                    gboolean              field_name,
-                   const char *          not_set_str,
-                   char **               out_to_free)
+                   const char           *not_set_str,
+                   char                **out_to_free)
 {
     gboolean      is_array = field->value_is_array;
-    const char *  value;
-    const char *  out;
+    const char   *value;
+    const char   *out;
     gs_free char *free_value = NULL;
 
     nm_assert(out_to_free && !*out_to_free);
@@ -1569,18 +1569,18 @@ get_value_to_print(const NmcConfig *     nmc_config,
  * of 'field_values' array.
  */
 void
-print_required_fields(const NmcConfig *     nmc_config,
-                      NmcPagerData *        pager_data,
+print_required_fields(const NmcConfig      *nmc_config,
+                      NmcPagerData         *pager_data,
                       NmcOfFlags            of_flags,
-                      const GArray *        indices,
-                      const char *          header_name,
+                      const GArray         *indices,
+                      const char           *header_name,
                       int                   indent,
                       const NmcOutputField *field_values)
 {
     nm_auto_free_gstring GString *str = NULL;
     int                           width1, width2;
     int                           table_width = 0;
-    const char *                  not_set_str;
+    const char                   *not_set_str;
     int                           i;
     gboolean                      main_header_add  = of_flags & NMC_OF_FLAG_MAIN_HEADER_ADD;
     gboolean                      main_header_only = of_flags & NMC_OF_FLAG_MAIN_HEADER_ONLY;
@@ -1635,7 +1635,7 @@ print_required_fields(const NmcConfig *     nmc_config,
 
             if (is_array) {
                 gs_free char *val_to_free = NULL;
-                const char ** p, *val, *print_val;
+                const char  **p, *val, *print_val;
                 int           j;
 
                 /* value is a null-terminated string array */
@@ -1664,9 +1664,9 @@ print_required_fields(const NmcConfig *     nmc_config,
             } else {
                 gs_free char *val_to_free = NULL;
                 gs_free char *tmp         = NULL;
-                const char *  hdr_name    = (const char *) field_values[0].value;
-                const char *  val         = (const char *) field_values[idx].value;
-                const char *  print_val;
+                const char   *hdr_name    = (const char *) field_values[0].value;
+                const char   *val         = (const char *) field_values[idx].value;
+                const char   *print_val;
 
                 /* value is a string */
 
@@ -1703,7 +1703,7 @@ print_required_fields(const NmcConfig *     nmc_config,
     for (i = 0; i < indices->len; i++) {
         gs_free char *val_to_free = NULL;
         int           idx;
-        const char *  value;
+        const char   *value;
 
         idx = g_array_index(indices, int, i);
 
@@ -1782,7 +1782,7 @@ print_data_prepare_width(GPtrArray *output_data)
         for (j = 0; j < output_data->len; j++) {
             gboolean      field_names;
             gs_free char *val_to_free = NULL;
-            const char *  value;
+            const char   *value;
 
             row         = g_ptr_array_index(output_data, j);
             field_names = row[0].flags & NMC_OF_FLAG_FIELD_NAMES;
@@ -1798,10 +1798,10 @@ print_data_prepare_width(GPtrArray *output_data)
 }
 
 void
-print_data(const NmcConfig *    nmc_config,
-           NmcPagerData *       pager_data,
-           const GArray *       indices,
-           const char *         header_name,
+print_data(const NmcConfig     *nmc_config,
+           NmcPagerData        *pager_data,
+           const GArray        *indices,
+           const char          *header_name,
            int                  indent,
            const NmcOutputData *out)
 {

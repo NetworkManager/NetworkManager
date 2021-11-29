@@ -7,10 +7,10 @@
 /*****************************************************************************/
 
 NMClient *
-nmc_client_new_async_valist(GCancellable *      cancellable,
+nmc_client_new_async_valist(GCancellable       *cancellable,
                             GAsyncReadyCallback callback,
                             gpointer            user_data,
-                            const char *        first_property_name,
+                            const char         *first_property_name,
                             va_list             ap)
 {
     NMClient *nmc;
@@ -25,10 +25,10 @@ nmc_client_new_async_valist(GCancellable *      cancellable,
 }
 
 NMClient *
-nmc_client_new_async(GCancellable *      cancellable,
+nmc_client_new_async(GCancellable       *cancellable,
                      GAsyncReadyCallback callback,
                      gpointer            user_data,
-                     const char *        first_property_name,
+                     const char         *first_property_name,
                      ...)
 {
     NMClient *nmc;
@@ -44,8 +44,8 @@ nmc_client_new_async(GCancellable *      cancellable,
 
 typedef struct {
     GMainLoop *main_loop;
-    NMClient * nmc;
-    GError *   error;
+    NMClient  *nmc;
+    GError    *error;
 } ClientCreateData;
 
 static void
@@ -82,12 +82,12 @@ _nmc_client_new_waitsync_cb(GObject *source_object, GAsyncResult *result, gpoint
  */
 gboolean
 nmc_client_new_waitsync(GCancellable *cancellable,
-                        NMClient **   out_nmc,
-                        GError **     error,
-                        const char *  first_property_name,
+                        NMClient    **out_nmc,
+                        GError      **error,
+                        const char   *first_property_name,
                         ...)
 {
-    gs_unref_object NMClient *nmc = NULL;
+    gs_unref_object NMClient          *nmc = NULL;
     nm_auto_unref_gmainloop GMainLoop *main_loop =
         g_main_loop_new(g_main_context_get_thread_default(), FALSE);
     ClientCreateData data = {

@@ -39,13 +39,13 @@ static NmtNewtPopupEntry transport_mode[] = {{N_("Datagram"), "datagram"},
 static void
 nmt_page_infiniband_constructed(GObject *object)
 {
-    NmtPageInfiniband *  infiniband = NMT_PAGE_INFINIBAND(object);
-    NmtDeviceEntry *     deventry;
-    NmtEditorSection *   section;
-    NmtEditorGrid *      grid;
+    NmtPageInfiniband   *infiniband = NMT_PAGE_INFINIBAND(object);
+    NmtDeviceEntry      *deventry;
+    NmtEditorSection    *section;
+    NmtEditorGrid       *grid;
     NMSettingInfiniband *s_ib;
-    NmtNewtWidget *      widget;
-    NMConnection *       conn;
+    NmtNewtWidget       *widget;
+    NMConnection        *conn;
 
     conn = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(infiniband));
     s_ib = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_INFINIBAND);

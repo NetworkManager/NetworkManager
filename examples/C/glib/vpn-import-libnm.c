@@ -17,18 +17,18 @@ static NMConnection *
 vpn_connection_import(const char *filename)
 {
     NMConnection *conn = NULL;
-    GSList *      plugins;
-    GSList *      iter;
+    GSList       *plugins;
+    GSList       *iter;
 
     g_print("Try to import file \"%s\"...\n", filename);
 
     plugins = nm_vpn_plugin_info_list_load();
 
     for (iter = plugins; iter; iter = iter->next) {
-        GError *           error  = NULL;
-        NMVpnPluginInfo *  plugin = iter->data;
+        GError            *error  = NULL;
+        NMVpnPluginInfo   *plugin = iter->data;
         NMVpnEditorPlugin *editor;
-        const char *       plugin_name = nm_vpn_plugin_info_get_name(plugin);
+        const char        *plugin_name = nm_vpn_plugin_info_get_name(plugin);
 
         g_print("plugin[%s]: trying import...\n", plugin_name);
 
@@ -72,8 +72,8 @@ vpn_connection_import(const char *filename)
 /*****************************************************************************/
 
 typedef struct {
-    GMainLoop *         loop;
-    GError *            error;
+    GMainLoop          *loop;
+    GError             *error;
     NMRemoteConnection *rconn;
 } RequestData;
 
@@ -89,8 +89,8 @@ add_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 static NMRemoteConnection *
 connection_add(NMConnection *conn)
 {
-    GError *    error = NULL;
-    NMClient *  client;
+    GError     *error = NULL;
+    NMClient   *client;
     RequestData rdata;
 
     g_print("Adding connection \"%s\" (%s)\n",
@@ -137,8 +137,8 @@ int
 main(int argc, char **argv)
 {
     NMRemoteConnection *rconn;
-    NMConnection *      conn;
-    const char *        filename;
+    NMConnection       *conn;
+    const char         *filename;
     gboolean            success;
 
     if (argc < 2) {

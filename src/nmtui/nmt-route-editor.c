@@ -56,9 +56,9 @@ nmt_route_editor_init(NmtRouteEditor *entry)
 static void
 save_routes_and_exit(NmtNewtButton *button, gpointer user_data)
 {
-    NmtRouteEditor *       editor = user_data;
+    NmtRouteEditor        *editor = user_data;
     NmtRouteEditorPrivate *priv   = NMT_ROUTE_EDITOR_GET_PRIVATE(editor);
-    GPtrArray *            routes;
+    GPtrArray             *routes;
 
     g_object_get(priv->edit_setting, NM_SETTING_IP_CONFIG_ROUTES, &routes, NULL);
     g_object_set(priv->orig_setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);
@@ -70,9 +70,9 @@ save_routes_and_exit(NmtNewtButton *button, gpointer user_data)
 static void
 nmt_route_editor_constructed(GObject *object)
 {
-    NmtRouteEditor *       editor = NMT_ROUTE_EDITOR(object);
+    NmtRouteEditor        *editor = NMT_ROUTE_EDITOR(object);
     NmtRouteEditorPrivate *priv   = NMT_ROUTE_EDITOR_GET_PRIVATE(editor);
-    NmtNewtWidget *        vbox, *routes, *buttons, *ok, *cancel;
+    NmtNewtWidget         *vbox, *routes, *buttons, *ok, *cancel;
 
     if (G_OBJECT_CLASS(nmt_route_editor_parent_class)->constructed)
         G_OBJECT_CLASS(nmt_route_editor_parent_class)->constructed(object);
@@ -123,10 +123,10 @@ nmt_route_editor_finalize(GObject *object)
 }
 
 static void
-nmt_route_editor_set_property(GObject *     object,
+nmt_route_editor_set_property(GObject      *object,
                               guint         prop_id,
                               const GValue *value,
-                              GParamSpec *  pspec)
+                              GParamSpec   *pspec)
 {
     NmtRouteEditorPrivate *priv = NMT_ROUTE_EDITOR_GET_PRIVATE(object);
 

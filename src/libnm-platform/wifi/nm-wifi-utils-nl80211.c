@@ -43,7 +43,7 @@
 typedef struct {
     NMWifiUtils     parent;
     struct nl_sock *nl_sock;
-    guint32 *       freqs;
+    guint32        *freqs;
     int             id;
     int             num_freqs;
     int             phy;
@@ -104,21 +104,21 @@ nl80211_alloc_msg(NMWifiUtilsNl80211 *self, guint32 cmd, guint32 flags)
 
 static int
 nl80211_send_and_recv(NMWifiUtilsNl80211 *self,
-                      struct nl_msg *     msg,
+                      struct nl_msg      *msg,
                       int (*valid_handler)(struct nl_msg *, void *),
                       void *valid_data)
 {
     int                err;
     int                done = 0;
     const struct nl_cb cb   = {
-        .err_cb     = error_handler,
-        .err_arg    = &done,
-        .finish_cb  = finish_handler,
-        .finish_arg = &done,
-        .ack_cb     = ack_handler,
-        .ack_arg    = &done,
-        .valid_cb   = valid_handler,
-        .valid_arg  = valid_data,
+          .err_cb     = error_handler,
+          .err_arg    = &done,
+          .finish_cb  = finish_handler,
+          .finish_arg = &done,
+          .ack_cb     = ack_handler,
+          .ack_arg    = &done,
+          .valid_cb   = valid_handler,
+          .valid_arg  = valid_data,
     };
 
     g_return_val_if_fail(msg != NULL, -ENOMEM);
@@ -169,8 +169,8 @@ static int
 nl80211_iface_info_handler(struct nl_msg *msg, void *arg)
 {
     struct nl80211_iface_info *info = arg;
-    struct genlmsghdr *        gnlh = nlmsg_data(nlmsg_hdr(msg));
-    struct nlattr *            tb[NL80211_ATTR_MAX + 1];
+    struct genlmsghdr         *gnlh = nlmsg_data(nlmsg_hdr(msg));
+    struct nlattr             *tb[NL80211_ATTR_MAX + 1];
 
     if (nla_parse_arr(tb, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
         return NL_SKIP;
@@ -202,7 +202,7 @@ nl80211_iface_info_handler(struct nl_msg *msg, void *arg)
 static _NM80211Mode
 wifi_nl80211_get_mode(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *      self       = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211       *self       = (NMWifiUtilsNl80211 *) data;
     struct nl80211_iface_info iface_info = {
         .mode = _NM_802_11_MODE_UNKNOWN,
     };
@@ -219,7 +219,7 @@ wifi_nl80211_get_mode(NMWifiUtils *data)
 static gboolean
 wifi_nl80211_set_mode(NMWifiUtils *data, const _NM80211Mode mode)
 {
-    NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
     int                          err;
 
@@ -252,7 +252,7 @@ nla_put_failure:
 static gboolean
 wifi_nl80211_set_powersave(NMWifiUtils *data, guint32 powersave)
 {
-    NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
     int                          err;
 
@@ -271,9 +271,9 @@ static int
 nl80211_get_wake_on_wlan_handler(struct nl_msg *msg, void *arg)
 {
     _NMSettingWirelessWakeOnWLan *wowl = arg;
-    struct nlattr *               attrs[NL80211_ATTR_MAX + 1];
-    struct nlattr *               trig[NUM_NL80211_WOWLAN_TRIG];
-    struct genlmsghdr *           gnlh = nlmsg_data(nlmsg_hdr(msg));
+    struct nlattr                *attrs[NL80211_ATTR_MAX + 1];
+    struct nlattr                *trig[NUM_NL80211_WOWLAN_TRIG];
+    struct genlmsghdr            *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
     nla_parse_arr(attrs, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
@@ -309,7 +309,7 @@ nl80211_get_wake_on_wlan_handler(struct nl_msg *msg, void *arg)
 static _NMSettingWirelessWakeOnWLan
 wifi_nl80211_get_wake_on_wlan(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
     _NMSettingWirelessWakeOnWLan wowl = _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
 
@@ -323,9 +323,9 @@ wifi_nl80211_get_wake_on_wlan(NMWifiUtils *data)
 static gboolean
 wifi_nl80211_set_wake_on_wlan(NMWifiUtils *data, _NMSettingWirelessWakeOnWLan wowl)
 {
-    NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
-    struct nlattr *              triggers;
+    struct nlattr               *triggers;
     int                          err;
 
     if (wowl == _NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE)
@@ -365,7 +365,7 @@ nla_put_failure:
 static guint32
 wifi_nl80211_get_freq(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *         self       = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self       = (NMWifiUtilsNl80211 *) data;
     struct nl80211_iface_info    iface_info = {};
     nm_auto_nlmsg struct nl_msg *msg        = NULL;
 
@@ -441,11 +441,11 @@ nl80211_station_dump_handler(struct nl_msg *msg, void *arg)
         [NL80211_RATE_INFO_40_MHZ_WIDTH] = {.type = NLA_FLAG},
         [NL80211_RATE_INFO_SHORT_GI]     = {.type = NLA_FLAG},
     };
-    struct nlattr *              rinfo[G_N_ELEMENTS(rate_policy)];
-    struct nlattr *              sinfo[G_N_ELEMENTS(stats_policy)];
+    struct nlattr               *rinfo[G_N_ELEMENTS(rate_policy)];
+    struct nlattr               *sinfo[G_N_ELEMENTS(stats_policy)];
     struct nl80211_station_info *info = arg;
-    struct nlattr *              tb[NL80211_ATTR_MAX + 1];
-    struct genlmsghdr *          gnlh = nlmsg_data(nlmsg_hdr(msg));
+    struct nlattr               *tb[NL80211_ATTR_MAX + 1];
+    struct genlmsghdr           *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
     if (nla_parse_arr(tb, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL) < 0)
         return NL_SKIP;
@@ -495,10 +495,10 @@ nl80211_station_dump_handler(struct nl_msg *msg, void *arg)
 static gboolean
 wifi_nl80211_get_station(NMWifiUtils *data,
                          NMEtherAddr *out_bssid,
-                         int *        out_quality,
-                         guint32 *    out_rate)
+                         int         *out_quality,
+                         guint32     *out_rate)
 {
-    NMWifiUtilsNl80211 *         self     = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self     = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg      = NULL;
     struct nl80211_station_info  sta_info = {};
 
@@ -525,7 +525,7 @@ wifi_nl80211_get_station(NMWifiUtils *data,
 static gboolean
 wifi_nl80211_indicate_addressing_running(NMWifiUtils *data, gboolean running)
 {
-    NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
     int                          err;
 
@@ -552,7 +552,7 @@ nla_put_failure:
 struct nl80211_device_info {
     NMWifiUtilsNl80211 *self;
     int                 phy;
-    guint32 *           freqs;
+    guint32            *freqs;
     int                 num_freqs;
     guint32             freq;
     guint32             caps;
@@ -587,14 +587,14 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
         [NL80211_FREQUENCY_ATTR_RADAR]        = {.type = NLA_FLAG},
         [NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = {.type = NLA_U32},
     };
-    struct nlattr *             tb[NL80211_ATTR_MAX + 1];
-    struct genlmsghdr *         gnlh = nlmsg_data(nlmsg_hdr(msg));
+    struct nlattr              *tb[NL80211_ATTR_MAX + 1];
+    struct genlmsghdr          *gnlh = nlmsg_data(nlmsg_hdr(msg));
     struct nl80211_device_info *info = arg;
-    NMWifiUtilsNl80211 *        self = info->self;
-    struct nlattr *             tb_band[NL80211_BAND_ATTR_MAX + 1];
-    struct nlattr *             tb_freq[G_N_ELEMENTS(freq_policy)];
-    struct nlattr *             nl_band;
-    struct nlattr *             nl_freq;
+    NMWifiUtilsNl80211         *self = info->self;
+    struct nlattr              *tb_band[NL80211_BAND_ATTR_MAX + 1];
+    struct nlattr              *tb_freq[G_N_ELEMENTS(freq_policy)];
+    struct nlattr              *nl_band;
+    struct nlattr              *nl_freq;
     int                         rem_freq;
     int                         rem_band;
     int                         freq_idx;
@@ -761,7 +761,7 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
 static guint32
 wifi_nl80211_get_mesh_channel(NMWifiUtils *data)
 {
-    NMWifiUtilsNl80211 *         self        = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self        = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg         = NULL;
     struct nl80211_device_info   device_info = {.self = self};
     int                          i;
@@ -783,7 +783,7 @@ wifi_nl80211_get_mesh_channel(NMWifiUtils *data)
 static gboolean
 wifi_nl80211_set_mesh_channel(NMWifiUtils *data, guint32 channel)
 {
-    NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
     int                          err;
 
@@ -802,7 +802,7 @@ nla_put_failure:
 static gboolean
 wifi_nl80211_set_mesh_ssid(NMWifiUtils *data, const guint8 *ssid, gsize len)
 {
-    NMWifiUtilsNl80211 *         self = (NMWifiUtilsNl80211 *) data;
+    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
     nm_auto_nlmsg struct nl_msg *msg  = NULL;
     int                          err;
 
@@ -822,7 +822,7 @@ nm_wifi_utils_nl80211_init(NMWifiUtilsNl80211 *self)
 static void
 nm_wifi_utils_nl80211_class_init(NMWifiUtilsNl80211Class *klass)
 {
-    GObjectClass *    object_class     = G_OBJECT_CLASS(klass);
+    GObjectClass     *object_class     = G_OBJECT_CLASS(klass);
     NMWifiUtilsClass *wifi_utils_class = NM_WIFI_UTILS_CLASS(klass);
 
     object_class->dispose = dispose;
@@ -845,7 +845,7 @@ NMWifiUtils *
 nm_wifi_utils_nl80211_new(int ifindex, struct nl_sock *genl)
 {
     gs_unref_object NMWifiUtilsNl80211 *self        = NULL;
-    nm_auto_nlmsg struct nl_msg *       msg         = NULL;
+    nm_auto_nlmsg struct nl_msg        *msg         = NULL;
     struct nl80211_device_info          device_info = {};
 
     if (!genl)

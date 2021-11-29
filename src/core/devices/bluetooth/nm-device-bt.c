@@ -114,7 +114,7 @@ static NMBluetoothCapabilities
 get_connection_bt_type(NMConnection *connection)
 {
     NMSettingBluetooth *s_bt;
-    const char *        bt_type;
+    const char         *bt_type;
 
     s_bt = nm_connection_get_setting_bluetooth(connection);
 
@@ -132,10 +132,10 @@ get_connection_bt_type(NMConnection *connection)
 }
 
 static gboolean
-get_connection_bt_type_check(NMDeviceBt *             self,
-                             NMConnection *           connection,
+get_connection_bt_type_check(NMDeviceBt              *self,
+                             NMConnection            *connection,
                              NMBluetoothCapabilities *out_bt_type,
-                             GError **                error)
+                             GError                 **error)
 {
     NMBluetoothCapabilities bt_type;
 
@@ -169,8 +169,8 @@ get_generic_capabilities(NMDevice *device)
 static gboolean
 can_auto_connect(NMDevice *device, NMSettingsConnection *sett_conn, char **specific_object)
 {
-    NMDeviceBt *            self = NM_DEVICE_BT(device);
-    NMDeviceBtPrivate *     priv = NM_DEVICE_BT_GET_PRIVATE(self);
+    NMDeviceBt             *self = NM_DEVICE_BT(device);
+    NMDeviceBtPrivate      *priv = NM_DEVICE_BT_GET_PRIVATE(self);
     NMBluetoothCapabilities bt_type;
 
     nm_assert(!specific_object || !*specific_object);
@@ -194,10 +194,10 @@ can_auto_connect(NMDevice *device, NMSettingsConnection *sett_conn, char **speci
 static gboolean
 check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
-    NMDeviceBt *        self = NM_DEVICE_BT(device);
-    NMDeviceBtPrivate * priv = NM_DEVICE_BT_GET_PRIVATE(self);
+    NMDeviceBt         *self = NM_DEVICE_BT(device);
+    NMDeviceBtPrivate  *priv = NM_DEVICE_BT_GET_PRIVATE(self);
     NMSettingBluetooth *s_bt;
-    const char *        bdaddr;
+    const char         *bdaddr;
 
     if (!NM_DEVICE_CLASS(nm_device_bt_parent_class)
              ->check_connection_compatible(device, connection, error))
@@ -226,14 +226,14 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
 }
 
 static gboolean
-check_connection_available(NMDevice *                     device,
-                           NMConnection *                 connection,
+check_connection_available(NMDevice                      *device,
+                           NMConnection                  *connection,
                            NMDeviceCheckConAvailableFlags flags,
-                           const char *                   specific_object,
-                           GError **                      error)
+                           const char                    *specific_object,
+                           GError                       **error)
 {
-    NMDeviceBt *            self = NM_DEVICE_BT(device);
-    NMDeviceBtPrivate *     priv = NM_DEVICE_BT_GET_PRIVATE(self);
+    NMDeviceBt             *self = NM_DEVICE_BT(device);
+    NMDeviceBtPrivate      *priv = NM_DEVICE_BT_GET_PRIVATE(self);
     NMBluetoothCapabilities bt_type;
 
     if (!get_connection_bt_type_check(self, connection, &bt_type, error))
@@ -250,23 +250,23 @@ check_connection_available(NMDevice *                     device,
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
-    NMDeviceBtPrivate * priv = NM_DEVICE_BT_GET_PRIVATE(device);
+    NMDeviceBtPrivate  *priv = NM_DEVICE_BT_GET_PRIVATE(device);
     NMSettingBluetooth *s_bt;
-    const char *        setting_bdaddr;
-    const char *        ctype;
+    const char         *setting_bdaddr;
+    const char         *ctype;
     gboolean            is_dun = FALSE;
     gboolean            is_pan = FALSE;
-    NMSettingGsm *      s_gsm;
-    NMSettingCdma *     s_cdma;
-    NMSettingSerial *   s_serial;
-    NMSettingPpp *      s_ppp;
-    const char *        fallback_prefix = NULL, *preferred = NULL;
+    NMSettingGsm       *s_gsm;
+    NMSettingCdma      *s_cdma;
+    NMSettingSerial    *s_serial;
+    NMSettingPpp       *s_ppp;
+    const char         *fallback_prefix = NULL, *preferred = NULL;
 
     s_gsm    = nm_connection_get_setting_gsm(connection);
     s_cdma   = nm_connection_get_setting_cdma(connection);
@@ -423,7 +423,7 @@ ppp_stats(NMModem *modem, guint i_in_bytes, guint i_out_bytes, gpointer user_dat
 static void
 ppp_failed(NMModem *modem, guint i_reason, gpointer user_data)
 {
-    NMDevice *          device = NM_DEVICE(user_data);
+    NMDevice           *device = NM_DEVICE(user_data);
     NMDeviceStateReason reason = i_reason;
 
     nm_device_state_changed(device, NM_DEVICE_STATE_FAILED, reason);
@@ -446,7 +446,7 @@ modem_auth_requested(NMModem *modem, gpointer user_data)
 static void
 modem_auth_result(NMModem *modem, GError *error, gpointer user_data)
 {
-    NMDevice *         device = NM_DEVICE(user_data);
+    NMDevice          *device = NM_DEVICE(user_data);
     NMDeviceBtPrivate *priv   = NM_DEVICE_BT_GET_PRIVATE(device);
 
     g_return_if_fail(nm_device_get_state(device) == NM_DEVICE_STATE_NEED_AUTH);
@@ -463,8 +463,8 @@ modem_auth_result(NMModem *modem, GError *error, gpointer user_data)
 static void
 modem_prepare_result(NMModem *modem, gboolean success, guint i_reason, gpointer user_data)
 {
-    NMDeviceBt *        self   = user_data;
-    NMDeviceBtPrivate * priv   = NM_DEVICE_BT_GET_PRIVATE(self);
+    NMDeviceBt         *self   = user_data;
+    NMDeviceBtPrivate  *priv   = NM_DEVICE_BT_GET_PRIVATE(self);
     NMDeviceStateReason reason = i_reason;
     NMDeviceState       state;
 
@@ -493,7 +493,7 @@ modem_prepare_result(NMModem *modem, gboolean success, guint i_reason, gpointer 
 }
 
 static void
-device_state_changed(NMDevice *          device,
+device_state_changed(NMDevice           *device,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state,
                      NMDeviceStateReason reason)
@@ -512,18 +512,18 @@ device_state_changed(NMDevice *          device,
 }
 
 static void
-modem_new_config(NMModem *                 modem,
+modem_new_config(NMModem                  *modem,
                  int                       addr_family,
-                 const NML3ConfigData *    l3cd,
+                 const NML3ConfigData     *l3cd,
                  gboolean                  do_auto,
                  const NMUtilsIPv6IfaceId *iid,
                  int                       failure_reason_i,
-                 GError *                  error,
+                 GError                   *error,
                  gpointer                  user_data)
 {
     const int   IS_IPv4 = NM_IS_IPv4(addr_family);
     NMDeviceBt *self    = NM_DEVICE_BT(user_data);
-    NMDevice *  device  = NM_DEVICE(self);
+    NMDevice   *device  = NM_DEVICE(self);
 
     g_return_if_fail(nm_device_devip_get_state(device, addr_family) == NM_DEVICE_IP_STATE_PENDING);
 
@@ -582,7 +582,7 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
 {
     NMModemState  new_state = new_state_i;
     NMModemState  old_state = old_state_i;
-    NMDevice *    device    = NM_DEVICE(user_data);
+    NMDevice     *device    = NM_DEVICE(user_data);
     NMDeviceState dev_state = nm_device_get_state(device);
 
     if (new_state <= NM_MODEM_STATE_DISABLING && old_state > NM_MODEM_STATE_DISABLING) {
@@ -611,7 +611,7 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
 static void
 modem_removed_cb(NMModem *modem, gpointer user_data)
 {
-    NMDeviceBt *  self = NM_DEVICE_BT(user_data);
+    NMDeviceBt   *self = NM_DEVICE_BT(user_data);
     NMDeviceState state;
 
     state = nm_device_get_state(NM_DEVICE(self));
@@ -629,7 +629,7 @@ static gboolean
 modem_try_claim(NMDeviceBt *self, NMModem *modem)
 {
     NMDeviceBtPrivate *priv             = NM_DEVICE_BT_GET_PRIVATE(self);
-    gs_free char *     rfcomm_base_name = NULL;
+    gs_free char      *rfcomm_base_name = NULL;
     NMDeviceState      state;
 
     if (priv->modem) {
@@ -683,7 +683,7 @@ modem_try_claim(NMDeviceBt *self, NMModem *modem)
 static void
 mm_modem_added_cb(NMModemManager *manager, NMModem *modem, gpointer user_data)
 {
-    NMDeviceBt *       self = user_data;
+    NMDeviceBt        *self = user_data;
     NMDeviceBtPrivate *priv;
 
     if (!modem_try_claim(user_data, modem))
@@ -723,7 +723,7 @@ _nm_device_bt_notify_set_connected(NMDeviceBt *self, gboolean connected)
 static gboolean
 connect_watch_link_idle_cb(gpointer user_data)
 {
-    NMDeviceBt *       self = user_data;
+    NMDeviceBt        *self = user_data;
     NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE(self);
     int                ifindex;
 
@@ -744,15 +744,15 @@ connect_watch_link_idle_cb(gpointer user_data)
 }
 
 static void
-connect_watch_link_cb(NMPlatform *    platform,
+connect_watch_link_cb(NMPlatform     *platform,
                       int             obj_type_i,
                       int             ifindex,
                       NMPlatformLink *info,
                       int             change_type_i,
-                      NMDevice *      self)
+                      NMDevice       *self)
 {
     const NMPlatformSignalChangeType change_type = change_type_i;
-    NMDeviceBtPrivate *              priv;
+    NMDeviceBtPrivate               *priv;
 
     /* bluez doesn't notify us when the connection disconnects.
      * Neither does NMManager (or NMDevice) tell us when the ip-ifindex goes away.
@@ -768,7 +768,7 @@ connect_watch_link_cb(NMPlatform *    platform,
 static gboolean
 connect_wait_modem_timeout(gpointer user_data)
 {
-    NMDeviceBt *       self = NM_DEVICE_BT(user_data);
+    NMDeviceBt        *self = NM_DEVICE_BT(user_data);
     NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE(self);
 
     /* since this timeout is longer than the connect timeout, we must have already
@@ -792,11 +792,11 @@ connect_wait_modem_timeout(gpointer user_data)
 static void
 connect_bz_cb(NMBluezManager *bz_mgr,
               gboolean        is_complete,
-              const char *    device_name,
-              GError *        error,
+              const char     *device_name,
+              GError         *error,
               gpointer        user_data)
 {
-    NMDeviceBt *       self;
+    NMDeviceBt        *self;
     NMDeviceBtPrivate *priv;
     char               sbuf[100];
 
@@ -884,10 +884,10 @@ connect_bz_cb(NMBluezManager *bz_mgr,
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceBt *       self     = NM_DEVICE_BT(device);
-    NMDeviceBtPrivate *priv     = NM_DEVICE_BT_GET_PRIVATE(self);
+    NMDeviceBt           *self  = NM_DEVICE_BT(device);
+    NMDeviceBtPrivate    *priv  = NM_DEVICE_BT_GET_PRIVATE(self);
     gs_free_error GError *error = NULL;
-    NMConnection *        connection;
+    NMConnection         *connection;
 
     connection = nm_device_get_applied_connection(device);
     g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
@@ -967,7 +967,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceBt *       self = NM_DEVICE_BT(device);
+    NMDeviceBt        *self = NM_DEVICE_BT(device);
     NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE(self);
 
     if (priv->connect_bt_type != NM_BT_CAPABILITY_DUN)
@@ -1035,10 +1035,10 @@ _nm_device_bt_notify_removed(NMDeviceBt *self)
 /*****************************************************************************/
 
 gboolean
-_nm_device_bt_for_same_device(NMDeviceBt *            self,
-                              const char *            dbus_path,
-                              const char *            bdaddr,
-                              const char *            name,
+_nm_device_bt_for_same_device(NMDeviceBt             *self,
+                              const char             *dbus_path,
+                              const char             *bdaddr,
+                              const char             *name,
                               NMBluetoothCapabilities capabilities)
 {
     NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE(self);
@@ -1067,7 +1067,7 @@ _nm_device_bt_notify_set_name(NMDeviceBt *self, const char *name)
 static gboolean
 is_available(NMDevice *dev, NMDeviceCheckDevAvailableFlags flags)
 {
-    NMDeviceBt *       self = NM_DEVICE_BT(dev);
+    NMDeviceBt        *self = NM_DEVICE_BT(dev);
     NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE(self);
 
     /* PAN doesn't need ModemManager, so devices that support it are always available */
@@ -1171,7 +1171,7 @@ nm_device_bt_init(NMDeviceBt *self)
 static void
 constructed(GObject *object)
 {
-    NMDeviceBt *       self = NM_DEVICE_BT(object);
+    NMDeviceBt        *self = NM_DEVICE_BT(object);
     NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE(self);
 
     G_OBJECT_CLASS(nm_device_bt_parent_class)->constructed(object);
@@ -1194,10 +1194,10 @@ constructed(GObject *object)
 }
 
 NMDeviceBt *
-nm_device_bt_new(NMBluezManager *        bz_mgr,
-                 const char *            dbus_path,
-                 const char *            bdaddr,
-                 const char *            name,
+nm_device_bt_new(NMBluezManager         *bz_mgr,
+                 const char             *dbus_path,
+                 const char             *bdaddr,
+                 const char             *name,
                  NMBluetoothCapabilities capabilities)
 {
     g_return_val_if_fail(NM_IS_BLUEZ_MANAGER(bz_mgr), NULL);
@@ -1235,7 +1235,7 @@ nm_device_bt_new(NMBluezManager *        bz_mgr,
 static void
 dispose(GObject *object)
 {
-    NMDeviceBt *       self = NM_DEVICE_BT(object);
+    NMDeviceBt        *self = NM_DEVICE_BT(object);
     NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE(self);
 
     nm_clear_g_signal_handler(nm_device_get_platform(NM_DEVICE(self)),
@@ -1290,9 +1290,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_bluetooth = {
 static void
 nm_device_bt_class_init(NMDeviceBtClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->constructed  = constructed;
     object_class->get_property = get_property;

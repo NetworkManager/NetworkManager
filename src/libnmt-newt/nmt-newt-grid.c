@@ -37,16 +37,16 @@ G_DEFINE_TYPE(NmtNewtGrid, nmt_newt_grid, NMT_TYPE_NEWT_CONTAINER)
     (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_NEWT_GRID, NmtNewtGridPrivate))
 
 typedef struct {
-    NmtNewtWidget *  widget;
+    NmtNewtWidget   *widget;
     int              x, y;
     NmtNewtGridFlags flags;
     int              req_height, req_width;
 } NmtNewtGridChild;
 
 typedef struct {
-    GArray *  children;
+    GArray   *children;
     int       max_x, max_y;
-    int *     row_heights, *col_widths;
+    int      *row_heights, *col_widths;
     gboolean *expand_rows, *expand_cols;
     int       n_expand_rows, n_expand_cols;
     int       req_height, req_width;
@@ -103,9 +103,9 @@ static newtComponent *
 nmt_newt_grid_get_components(NmtNewtWidget *widget)
 {
     NmtNewtGridPrivate *priv = NMT_NEWT_GRID_GET_PRIVATE(widget);
-    NmtNewtGridChild *  children;
-    GPtrArray *         cos;
-    newtComponent *     child_cos;
+    NmtNewtGridChild   *children;
+    GPtrArray          *cos;
+    newtComponent      *child_cos;
     int                 i, c;
 
     g_array_sort(priv->children, child_sort_func);
@@ -130,9 +130,9 @@ nmt_newt_grid_get_components(NmtNewtWidget *widget)
 static void
 nmt_newt_grid_size_request(NmtNewtWidget *widget, int *width, int *height)
 {
-    NmtNewtGrid *       grid     = NMT_NEWT_GRID(widget);
+    NmtNewtGrid        *grid     = NMT_NEWT_GRID(widget);
     NmtNewtGridPrivate *priv     = NMT_NEWT_GRID_GET_PRIVATE(grid);
-    NmtNewtGridChild *  children = (NmtNewtGridChild *) priv->children->data;
+    NmtNewtGridChild   *children = (NmtNewtGridChild *) priv->children->data;
     int                 row, col, i;
 
     g_free(priv->row_heights);
@@ -190,7 +190,7 @@ static void
 nmt_newt_grid_size_allocate(NmtNewtWidget *widget, int x, int y, int width, int height)
 {
     NmtNewtGridPrivate *priv     = NMT_NEWT_GRID_GET_PRIVATE(widget);
-    NmtNewtGridChild *  children = (NmtNewtGridChild *) priv->children->data, *child;
+    NmtNewtGridChild   *children = (NmtNewtGridChild *) priv->children->data, *child;
     int                 i, row, col;
     int                 child_x, child_y, child_width, child_height;
     int                 extra, extra_all, extra_some;
@@ -268,7 +268,7 @@ static void
 nmt_newt_grid_find_size(NmtNewtGrid *grid)
 {
     NmtNewtGridPrivate *priv     = NMT_NEWT_GRID_GET_PRIVATE(grid);
-    NmtNewtGridChild *  children = (NmtNewtGridChild *) priv->children->data;
+    NmtNewtGridChild   *children = (NmtNewtGridChild *) priv->children->data;
     int                 i;
 
     priv->max_x = priv->max_y = 0;
@@ -315,7 +315,7 @@ static int
 find_child(NmtNewtGrid *grid, NmtNewtWidget *widget)
 {
     NmtNewtGridPrivate *priv     = NMT_NEWT_GRID_GET_PRIVATE(grid);
-    NmtNewtGridChild *  children = (NmtNewtGridChild *) priv->children->data;
+    NmtNewtGridChild   *children = (NmtNewtGridChild *) priv->children->data;
     int                 i;
 
     for (i = 0; i < priv->children->len; i++) {
@@ -329,7 +329,7 @@ find_child(NmtNewtGrid *grid, NmtNewtWidget *widget)
 static void
 nmt_newt_grid_remove(NmtNewtContainer *container, NmtNewtWidget *widget)
 {
-    NmtNewtGrid *       grid = NMT_NEWT_GRID(container);
+    NmtNewtGrid        *grid = NMT_NEWT_GRID(container);
     NmtNewtGridPrivate *priv = NMT_NEWT_GRID_GET_PRIVATE(grid);
     int                 i;
 
@@ -355,7 +355,7 @@ void
 nmt_newt_grid_move(NmtNewtGrid *grid, NmtNewtWidget *widget, int x, int y)
 {
     NmtNewtGridPrivate *priv     = NMT_NEWT_GRID_GET_PRIVATE(grid);
-    NmtNewtGridChild *  children = (NmtNewtGridChild *) priv->children->data;
+    NmtNewtGridChild   *children = (NmtNewtGridChild *) priv->children->data;
     int                 i;
 
     i = find_child(grid, widget);
@@ -411,7 +411,7 @@ void
 nmt_newt_grid_set_flags(NmtNewtGrid *grid, NmtNewtWidget *widget, NmtNewtGridFlags flags)
 {
     NmtNewtGridPrivate *priv     = NMT_NEWT_GRID_GET_PRIVATE(grid);
-    NmtNewtGridChild *  children = (NmtNewtGridChild *) priv->children->data;
+    NmtNewtGridChild   *children = (NmtNewtGridChild *) priv->children->data;
     int                 i;
 
     i = find_child(grid, widget);
@@ -422,8 +422,8 @@ nmt_newt_grid_set_flags(NmtNewtGrid *grid, NmtNewtWidget *widget, NmtNewtGridFla
 static void
 nmt_newt_grid_class_init(NmtNewtGridClass *grid_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(grid_class);
-    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(grid_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(grid_class);
+    NmtNewtWidgetClass    *widget_class    = NMT_NEWT_WIDGET_CLASS(grid_class);
     NmtNewtContainerClass *container_class = NMT_NEWT_CONTAINER_CLASS(grid_class);
 
     g_type_class_add_private(grid_class, sizeof(NmtNewtGridPrivate));

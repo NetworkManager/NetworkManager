@@ -42,9 +42,9 @@ void
 _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
 {
     NMLDBusLogLevel configured_log_level;
-    gs_free char *  msg = NULL;
+    gs_free char   *msg = NULL;
     va_list         args;
-    const char *    prefix = "";
+    const char     *prefix = "";
     gint64          ts;
     pid_t           pid;
 
@@ -116,7 +116,7 @@ char *
 nm_utils_wincaps_to_dash(const char *caps)
 {
     const char *p;
-    GString *   str;
+    GString    *str;
 
     str = g_string_new(NULL);
     p   = caps;
@@ -136,14 +136,14 @@ nm_utils_wincaps_to_dash(const char *caps)
 /*****************************************************************************/
 
 static char *
-_fixup_string(const char *       desc,
+_fixup_string(const char        *desc,
               const char *const *ignored_phrases,
               const char *const *ignored_words,
               gboolean           square_brackets_sensible)
 {
-    char *   desc_full;
+    char    *desc_full;
     gboolean in_paren = FALSE;
-    char *   p, *q;
+    char    *p, *q;
     int      i;
 
     if (!desc || !desc[0])
@@ -727,7 +727,7 @@ static int
 _strcmp_common_prefix(gconstpointer a, gconstpointer b, gpointer user_data)
 {
     const NMLDBusMetaIface *iface           = a;
-    const char *            dbus_iface_name = b;
+    const char             *dbus_iface_name = b;
 
     nm_assert(g_str_has_prefix(iface->dbus_iface_name, COMMON_PREFIX));
 
@@ -765,8 +765,8 @@ nml_dbus_meta_iface_get(const char *dbus_iface_name)
 
 const NMLDBusMetaProperty *
 nml_dbus_meta_property_get(const NMLDBusMetaIface *meta_iface,
-                           const char *            dbus_property_name,
-                           guint *                 out_idx)
+                           const char             *dbus_property_name,
+                           guint                  *out_idx)
 {
     gssize idx;
 
@@ -788,7 +788,7 @@ nml_dbus_meta_property_get(const NMLDBusMetaIface *meta_iface,
 }
 
 void
-_nml_dbus_meta_class_init_with_properties_impl(GObjectClass *                 object_class,
+_nml_dbus_meta_class_init_with_properties_impl(GObjectClass                  *object_class,
                                                const NMLDBusMetaIface *const *meta_ifaces)
 {
     int i_iface;
@@ -799,7 +799,7 @@ _nml_dbus_meta_class_init_with_properties_impl(GObjectClass *                 ob
 
     for (i_iface = 0; meta_ifaces[i_iface]; i_iface++) {
         const NMLDBusMetaIface *meta_iface = meta_ifaces[i_iface];
-        guint8 *                reverse_idx;
+        guint8                 *reverse_idx;
         guint8                  i;
 
         nm_assert(g_type_is_a(meta_iface->get_type_fcn(), G_OBJECT_CLASS_TYPE(object_class)));

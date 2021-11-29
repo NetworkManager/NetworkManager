@@ -27,7 +27,7 @@ char *
 nm_utils_uuid_generate(void)
 {
     uuid_t uuid;
-    char * buf;
+    char  *buf;
 
     buf = g_malloc0(37);
     uuid_generate_random(uuid);
@@ -40,10 +40,10 @@ add_connection(GDBusProxy *proxy, const char *con_name)
 {
     GVariantBuilder connection_builder;
     GVariantBuilder setting_builder;
-    char *          uuid;
-    const char *    new_con_path;
-    GVariant *      ret;
-    GError *        error = NULL;
+    char           *uuid;
+    const char     *new_con_path;
+    GVariant       *ret;
+    GError         *error = NULL;
 
     /* Initialize connection GVariantBuilder */
     g_variant_builder_init(&connection_builder, G_VARIANT_TYPE("a{sa{sv}}"));
@@ -117,7 +117,7 @@ int
 main(int argc, char *argv[])
 {
     GDBusProxy *proxy;
-    GError *    error = NULL;
+    GError     *error = NULL;
 
     /* Create a D-Bus proxy; NM_DBUS_* defined in nm-dbus-interface.h */
     proxy = g_dbus_proxy_new_for_bus_sync(G_BUS_TYPE_SYSTEM,

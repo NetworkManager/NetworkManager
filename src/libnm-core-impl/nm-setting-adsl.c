@@ -31,10 +31,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_USERNAME,
                                   PROP_VCI, );
 
 typedef struct {
-    char *  username;
-    char *  password;
-    char *  protocol;
-    char *  encapsulation;
+    char   *username;
+    char   *password;
+    char   *protocol;
+    char   *encapsulation;
     guint   password_flags;
     guint32 vpi;
     guint32 vci;
@@ -228,7 +228,7 @@ static GPtrArray *
 need_secrets(NMSetting *setting)
 {
     NMSettingAdslPrivate *priv    = NM_SETTING_ADSL_GET_PRIVATE(setting);
-    GPtrArray *           secrets = NULL;
+    GPtrArray            *secrets = NULL;
 
     if (priv->password && *priv->password)
         return NULL;
@@ -263,9 +263,9 @@ nm_setting_adsl_new(void)
 static void
 nm_setting_adsl_class_init(NMSettingAdslClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingAdslPrivate));
 

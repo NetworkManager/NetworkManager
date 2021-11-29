@@ -60,7 +60,7 @@ _ppp_mgr_cleanup(NMDevicePpp *self)
 static void
 _ppp_mgr_stage3_maybe_ready(NMDevicePpp *self)
 {
-    NMDevice *          device = NM_DEVICE(self);
+    NMDevice           *device = NM_DEVICE(self);
     NMDevicePppPrivate *priv   = NM_DEVICE_PPP_GET_PRIVATE(self);
     int                 IS_IPv4;
 
@@ -80,8 +80,8 @@ _ppp_mgr_stage3_maybe_ready(NMDevicePpp *self)
 static void
 _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, gpointer user_data)
 {
-    NMDevicePpp * self   = NM_DEVICE_PPP(user_data);
-    NMDevice *    device = NM_DEVICE(self);
+    NMDevicePpp  *self   = NM_DEVICE_PPP(user_data);
+    NMDevice     *device = NM_DEVICE(self);
     NMDeviceState device_state;
 
     if (callback_data->callback_type != NM_PPP_MGR_CALLBACK_TYPE_STATE_CHANGED)
@@ -97,8 +97,8 @@ _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, 
 
     if (device_state < NM_DEVICE_STATE_IP_CONFIG) {
         if (callback_data->data.state >= NM_PPP_MGR_STATE_HAVE_IFINDEX) {
-            gs_free char *old_name      = NULL;
-            gs_free_error GError *error = NULL;
+            gs_free char         *old_name = NULL;
+            gs_free_error GError *error    = NULL;
 
             if (!nm_device_take_over_link(device, callback_data->data.ifindex, &old_name, &error)) {
                 _LOGW(LOGD_DEVICE | LOGD_PPP,
@@ -148,10 +148,10 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDevicePpp *       self = NM_DEVICE_PPP(device);
+    NMDevicePpp        *self = NM_DEVICE_PPP(device);
     NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
-    NMSettingPppoe *    s_pppoe;
-    NMActRequest *      req;
+    NMSettingPppoe     *s_pppoe;
+    NMActRequest       *req;
 
     if (!priv->ppp_mgr) {
         gs_free_error GError *error = NULL;
@@ -191,7 +191,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 act_stage3_ip_config(NMDevice *device, int addr_family)
 {
-    NMDevicePpp *       self = NM_DEVICE_PPP(device);
+    NMDevicePpp        *self = NM_DEVICE_PPP(device);
     NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
     NMPppMgrState       ppp_state;
 
@@ -229,11 +229,11 @@ get_ip_method_auto(NMDevice *device, int addr_family)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
     int parent_ifindex;
 
@@ -286,9 +286,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_ppp = {
 static void
 nm_device_ppp_class_init(NMDevicePppClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->dispose = dispose;
 
@@ -314,11 +314,11 @@ nm_device_ppp_class_init(NMDevicePppClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PPP_DEVICE_FACTORY, NMPppDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     return g_object_new(NM_TYPE_DEVICE_PPP,
                         NM_DEVICE_IFACE,

@@ -23,8 +23,8 @@
 struct {
     int                argc;
     const char *const *argv;
-    const char *       argv_cmd;
-    GMainLoop *        loop;
+    const char        *argv_cmd;
+    GMainLoop         *loop;
 } gl;
 
 typedef struct _MainCmdInfo {
@@ -38,7 +38,7 @@ typedef struct _MainCmdInfo {
 
 typedef struct {
     NMBluez5DunContext *dun_context;
-    GCancellable *      cancellable;
+    GCancellable       *cancellable;
     guint               timeout_id;
     guint               sig_term_id;
     guint               sig_int_id;
@@ -46,8 +46,8 @@ typedef struct {
 
 static void
 _dun_connect_cb(NMBluez5DunContext *context,
-                const char *        rfcomm_dev,
-                GError *            error,
+                const char         *rfcomm_dev,
+                GError             *error,
                 gpointer            user_data)
 {
     DunConnectData *dun_connect_data = user_data;
@@ -118,10 +118,10 @@ do_dun_connect(const MainCmdInfo *main_cmd_info)
 {
 #if WITH_BLUEZ5_DUN
     gs_unref_object GCancellable *cancellable = NULL;
-    gs_free_error GError *error               = NULL;
-    const char *          adapter;
-    const char *          remote;
-    DunConnectData        dun_connect_data = {};
+    gs_free_error GError         *error       = NULL;
+    const char                   *adapter;
+    const char                   *remote;
+    DunConnectData                dun_connect_data = {};
 
     if (gl.argc < 4) {
         _LOGE("missing arguments \"adapter\" and \"remote\"");

@@ -37,7 +37,7 @@ typedef struct {
 GType nmt_edit_connection_list_get_type(void);
 
 typedef gboolean (*NmtEditConnectionListFilter)(NmtEditConnectionList *list,
-                                                NMConnection *         connection,
+                                                NMConnection          *connection,
                                                 gpointer               user_data);
 
 void nmt_edit_connection_list_recommit(NmtEditConnectionList *list);

@@ -50,7 +50,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES(
                                                 NM_SETTING_OLPC_MESH_SETTING_NAME))
 
 G_MODULE_EXPORT NMDeviceFactory *
-                nm_device_factory_create(GError **error)
+nm_device_factory_create(GError **error)
 {
     return g_object_new(NM_TYPE_WIFI_FACTORY, NULL);
 }
@@ -68,14 +68,14 @@ p2p_device_created(NMDeviceWifi *device, NMDeviceWifiP2P *p2p_device, NMDeviceFa
 }
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     gs_free char *backend_free = NULL;
-    const char *  backend;
+    const char   *backend;
 
     g_return_val_if_fail(iface != NULL, NULL);
     g_return_val_if_fail(plink != NULL, NULL);
@@ -98,7 +98,7 @@ create_device(NMDeviceFactory *     factory,
                NM_PRINT_FMT_QUOTE_STRING(backend),
                WITH_IWD ? " (iwd support enabled)" : "");
     if (!backend || !g_ascii_strcasecmp(backend, "wpa_supplicant")) {
-        NMDevice *                device;
+        NMDevice                 *device;
         _NMDeviceWifiCapabilities capabilities;
         _NM80211Mode              mode;
 

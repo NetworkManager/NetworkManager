@@ -31,16 +31,16 @@ struct _NML3IPv4LLRegistration {
 G_STATIC_ASSERT(G_STRUCT_OFFSET(NML3IPv4LLRegistration, self) == 0);
 
 struct _NML3IPv4LL {
-    NML3Cfg *                l3cfg;
+    NML3Cfg                 *l3cfg;
     int                      ref_count;
     in_addr_t                addr;
     guint                    reg_timeout_msec;
     CList                    reg_lst_head;
     NML3CfgCommitTypeHandle *l3cfg_commit_handle;
-    GSource *                state_change_on_idle_source;
-    GSource *                timed_out_source;
-    const NML3ConfigData *   l3cd;
-    const NMPObject *        plobj;
+    GSource                 *state_change_on_idle_source;
+    GSource                 *timed_out_source;
+    const NML3ConfigData    *l3cd;
+    const NMPObject         *plobj;
     struct {
         nm_le64_t value;
         nm_le64_t generation;
@@ -202,7 +202,7 @@ _ipv4ll_emit_signal_notify(NML3IPv4LL *self)
 /*****************************************************************************/
 
 static NML3IPv4LLRegistration *
-_registration_update(NML3IPv4LL *            self,
+_registration_update(NML3IPv4LL             *self,
                      NML3IPv4LLRegistration *reg,
                      gboolean                add,
                      guint                   timeout_msec)
@@ -503,9 +503,9 @@ gen_addr:
 static void
 _ipv4ll_update_link(NML3IPv4LL *self, const NMPObject *plobj)
 {
-    char                 sbuf[ETH_ALEN * 3];
+    char                            sbuf[ETH_ALEN * 3];
     nm_auto_nmpobj const NMPObject *pllink_old = NULL;
-    const NMEtherAddr *             mac_new;
+    const NMEtherAddr              *mac_new;
     gboolean                        changed;
 
     if (self->plobj == plobj)
@@ -668,8 +668,8 @@ _ipv4ll_platform_find_addr(NML3IPv4LL *self, const NML3AcdAddrInfo **out_acd_inf
     const NMPlatformIP4Address *addr_without_acd_info = NULL;
     NMDedupMultiIter            iter;
     NMPLookup                   lookup;
-    const NMPObject *           obj;
-    const NML3AcdAddrInfo *     acd_info;
+    const NMPObject            *obj;
+    const NML3AcdAddrInfo      *acd_info;
     const NMPlatformIP4Address *addr;
 
     nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, nm_l3_ipv4ll_get_ifindex(self));
@@ -785,12 +785,12 @@ static void
 _ipv4ll_state_change(NML3IPv4LL *self, gboolean is_on_idle_handler)
 {
     nm_auto_unref_l3ipv4ll NML3IPv4LL *self_keep_alive = NULL;
-    const NMPlatformIP4Address *       pladdr;
-    const NML3AcdAddrInfo *            acd_info;
+    const NMPlatformIP4Address        *pladdr;
+    const NML3AcdAddrInfo             *acd_info;
     gboolean                           generate_new_addr;
     NML3IPv4LLState                    new_state;
     in_addr_t                          addr0;
-    NML3IPv4LLRegistration *           reg;
+    NML3IPv4LLRegistration            *reg;
 
     _ASSERT(self);
 

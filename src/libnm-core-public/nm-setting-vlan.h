@@ -89,27 +89,27 @@ guint32     nm_setting_vlan_get_flags(NMSettingVlan *setting);
 
 gint32 nm_setting_vlan_get_num_priorities(NMSettingVlan *setting, NMVlanPriorityMap map);
 
-gboolean nm_setting_vlan_get_priority(NMSettingVlan *   setting,
+gboolean nm_setting_vlan_get_priority(NMSettingVlan    *setting,
                                       NMVlanPriorityMap map,
                                       guint32           idx,
-                                      guint32 *         out_from,
-                                      guint32 *         out_to);
+                                      guint32          *out_from,
+                                      guint32          *out_to);
 
-gboolean nm_setting_vlan_add_priority(NMSettingVlan *   setting,
+gboolean nm_setting_vlan_add_priority(NMSettingVlan    *setting,
                                       NMVlanPriorityMap map,
                                       guint32           from,
                                       guint32           to);
 
 void nm_setting_vlan_remove_priority(NMSettingVlan *setting, NMVlanPriorityMap map, guint32 idx);
 
-gboolean nm_setting_vlan_remove_priority_by_value(NMSettingVlan *   setting,
+gboolean nm_setting_vlan_remove_priority_by_value(NMSettingVlan    *setting,
                                                   NMVlanPriorityMap map,
                                                   guint32           from,
                                                   guint32           to);
 
-gboolean nm_setting_vlan_remove_priority_str_by_value(NMSettingVlan *   setting,
+gboolean nm_setting_vlan_remove_priority_str_by_value(NMSettingVlan    *setting,
                                                       NMVlanPriorityMap map,
-                                                      const char *      str);
+                                                      const char       *str);
 
 void nm_setting_vlan_clear_priorities(NMSettingVlan *setting, NMVlanPriorityMap map);
 

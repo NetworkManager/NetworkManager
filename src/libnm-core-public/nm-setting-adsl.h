@@ -45,11 +45,11 @@ typedef struct _NMSettingAdslClass NMSettingAdslClass;
 
 GType nm_setting_adsl_get_type(void);
 
-NMSetting *          nm_setting_adsl_new(void);
-const char *         nm_setting_adsl_get_username(NMSettingAdsl *setting);
-const char *         nm_setting_adsl_get_password(NMSettingAdsl *setting);
-const char *         nm_setting_adsl_get_protocol(NMSettingAdsl *setting);
-const char *         nm_setting_adsl_get_encapsulation(NMSettingAdsl *setting);
+NMSetting           *nm_setting_adsl_new(void);
+const char          *nm_setting_adsl_get_username(NMSettingAdsl *setting);
+const char          *nm_setting_adsl_get_password(NMSettingAdsl *setting);
+const char          *nm_setting_adsl_get_protocol(NMSettingAdsl *setting);
+const char          *nm_setting_adsl_get_encapsulation(NMSettingAdsl *setting);
 guint32              nm_setting_adsl_get_vpi(NMSettingAdsl *setting);
 guint32              nm_setting_adsl_get_vci(NMSettingAdsl *setting);
 NMSettingSecretFlags nm_setting_adsl_get_password_flags(NMSettingAdsl *setting);

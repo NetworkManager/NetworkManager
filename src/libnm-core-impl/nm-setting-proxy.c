@@ -29,8 +29,8 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_METHOD, PROP_BROWSER_ONLY, PROP_PAC_URL, PROP_PAC_SCRIPT, );
 
 typedef struct {
-    char * pac_url;
-    char * pac_script;
+    char  *pac_url;
+    char  *pac_script;
     gint32 method;
     bool   browser_only;
 } NMSettingProxyPrivate;
@@ -229,9 +229,9 @@ nm_setting_proxy_new(void)
 static void
 nm_setting_proxy_class_init(NMSettingProxyClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingProxyPrivate));
 

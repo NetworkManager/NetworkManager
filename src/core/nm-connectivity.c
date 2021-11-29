@@ -59,22 +59,22 @@ typedef struct {
 
 struct _NMConnectivityCheckHandle {
     CList                       handles_lst;
-    NMConnectivity *            self;
+    NMConnectivity             *self;
     NMConnectivityCheckCallback callback;
     gpointer                    user_data;
 
     char *ifspec;
 
     const char *completed_log_message;
-    char *      completed_log_message_free;
+    char       *completed_log_message_free;
 
 #if WITH_CONCHECK
     struct {
         ConConfig *con_config;
 
-        GCancellable *     resolve_cancellable;
-        CURLM *            curl_mhandle;
-        CURL *             curl_ehandle;
+        GCancellable      *resolve_cancellable;
+        CURLM             *curl_mhandle;
+        CURL              *curl_ehandle;
         struct curl_slist *request_headers;
         struct curl_slist *hosts;
 
@@ -92,7 +92,7 @@ struct _NMConnectivityCheckHandle {
     guint timeout_id;
 
     NMConnectivityState completed_state;
-    const char *        completed_reason;
+    const char         *completed_reason;
 };
 
 enum {
@@ -106,7 +106,7 @@ static guint signals[LAST_SIGNAL] = {0};
 typedef struct {
     CList      handles_lst_head;
     CList      completed_handles_lst_head;
-    NMConfig * config;
+    NMConfig  *config;
     ConConfig *con_config;
     guint      interval;
 
@@ -200,7 +200,7 @@ _con_config_get_response(const ConConfig *con_config)
 static void
 cb_data_complete(NMConnectivityCheckHandle *cb_data,
                  NMConnectivityState        state,
-                 const char *               log_message)
+                 const char                *log_message)
 {
     NMConnectivity *self;
 
@@ -271,8 +271,8 @@ cb_data_complete(NMConnectivityCheckHandle *cb_data,
 static void
 cb_data_queue_completed(NMConnectivityCheckHandle *cb_data,
                         NMConnectivityState        state,
-                        const char *               log_message_static,
-                        char *                     log_message_take /* take */)
+                        const char                *log_message_static,
+                        char                      *log_message_take /* take */)
 {
     nm_assert(cb_data);
     nm_assert(NM_IS_CONNECTIVITY(cb_data->self));
@@ -295,8 +295,8 @@ cb_data_queue_completed(NMConnectivityCheckHandle *cb_data,
 static void
 _complete_queued(NMConnectivity *self)
 {
-    NMConnectivity *           self_keep_alive = NULL;
-    NMConnectivityPrivate *    priv            = NM_CONNECTIVITY_GET_PRIVATE(self);
+    NMConnectivity            *self_keep_alive = NULL;
+    NMConnectivityPrivate     *priv            = NM_CONNECTIVITY_GET_PRIVATE(self);
     NMConnectivityCheckHandle *cb_data;
 
     while ((cb_data = c_list_first_entry(&priv->completed_handles_lst_head,
@@ -313,7 +313,7 @@ static gboolean
 _con_curl_check_connectivity(CURLM *mhandle, int sockfd, int ev_bitmask)
 {
     NMConnectivityCheckHandle *cb_data;
-    CURLMsg *                  msg;
+    CURLMsg                   *msg;
     int                        m_left;
     long                       response_code;
     CURLMcode                  ret;
@@ -439,7 +439,7 @@ typedef struct {
 static gboolean
 _con_curl_socketevent_cb(int fd, GIOCondition condition, gpointer user_data)
 {
-    ConCurlSockData *          fdp           = user_data;
+    ConCurlSockData           *fdp           = user_data;
     NMConnectivityCheckHandle *cb_data       = fdp->cb_data;
     int                        action        = 0;
     gboolean                   fdp_destroyed = FALSE;
@@ -476,7 +476,7 @@ static int
 multi_socket_cb(CURL *e_handle, curl_socket_t fd, int what, void *userdata, void *socketp)
 {
     NMConnectivityCheckHandle *cb_data = userdata;
-    ConCurlSockData *          fdp     = socketp;
+    ConCurlSockData           *fdp     = socketp;
 
     (void) _NM_ENSURE_TYPE(int, fd);
 
@@ -543,7 +543,7 @@ easy_write_cb(void *buffer, size_t size, size_t nmemb, void *userdata)
     size_t                     len     = size * nmemb;
     size_t                     response_len;
     size_t                     check_len;
-    const char *               response;
+    const char                *response;
 
     if (cb_data->completed_state != NM_CONNECTIVITY_UNKNOWN) {
         /* already completed. */
@@ -643,7 +643,7 @@ static void
 do_curl_request(NMConnectivityCheckHandle *cb_data)
 {
     CURLM *mhandle;
-    CURL * ehandle;
+    CURL  *ehandle;
     long   resolve;
 
     mhandle = curl_multi_init();
@@ -709,7 +709,7 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
     int                        addr_family;
     gsize                      len = 0;
     gsize                      i;
-    gs_free_error GError *error = NULL;
+    gs_free_error GError      *error = NULL;
 
     result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(object), res, &error);
     if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -732,8 +732,8 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
     for (i = 0; i < no_addresses; i++) {
         gs_unref_variant GVariant *address = NULL;
         char                       str_addr[NM_UTILS_INET_ADDRSTRLEN];
-        gs_free char *             host_entry = NULL;
-        const guchar *             address_buf;
+        gs_free char              *host_entry = NULL;
+        const guchar              *address_buf;
 
         g_variant_get_child(addresses, i, "(ii@ay)", &ifindex, &addr_family, &address);
 
@@ -761,10 +761,10 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
 
 static NMConnectivityState
 check_platform_config(NMConnectivity *self,
-                      NMPlatform *    platform,
+                      NMPlatform     *platform,
                       int             ifindex,
                       int             addr_family,
-                      const char **   reason)
+                      const char    **reason)
 {
     const NMDedupMultiHeadEntry *addresses;
     const NMDedupMultiHeadEntry *routes;
@@ -798,7 +798,7 @@ check_platform_config(NMConnectivity *self,
         const NMPlatformIP4Route *route;
         gboolean                  found_global = FALSE;
         NMDedupMultiIter          iter;
-        const NMPObject *         plobj;
+        const NMPObject          *plobj;
 
         /* For IPv4 also require a route with global scope. */
         nmp_cache_iter_for_each (&iter, routes, &plobj) {
@@ -827,15 +827,15 @@ check_platform_config(NMConnectivity *self,
 }
 
 NMConnectivityCheckHandle *
-nm_connectivity_check_start(NMConnectivity *            self,
+nm_connectivity_check_start(NMConnectivity             *self,
                             int                         addr_family,
-                            NMPlatform *                platform,
+                            NMPlatform                 *platform,
                             int                         ifindex,
-                            const char *                iface,
+                            const char                 *iface,
                             NMConnectivityCheckCallback callback,
                             gpointer                    user_data)
 {
-    NMConnectivityPrivate *    priv;
+    NMConnectivityPrivate     *priv;
     NMConnectivityCheckHandle *cb_data;
     static guint64             request_counter = 0;
 
@@ -863,7 +863,7 @@ nm_connectivity_check_start(NMConnectivity *            self,
     if (iface && ifindex > 0 && priv->enabled && priv->uri_valid) {
         gboolean            has_systemd_resolved;
         NMConnectivityState state;
-        const char *        reason;
+        const char         *reason;
 
         cb_data->concheck.ch_ifindex = ifindex;
 
@@ -1046,14 +1046,14 @@ update_config(NMConnectivity *self, NMConfigData *config_data)
     guint                  interval;
     gboolean               enabled;
     gboolean               changed      = FALSE;
-    const char *           cur_uri      = priv->con_config ? priv->con_config->uri : NULL;
-    const char *           cur_response = priv->con_config ? priv->con_config->response : NULL;
-    const char *           new_response;
-    const char *           new_uri;
+    const char            *cur_uri      = priv->con_config ? priv->con_config->uri : NULL;
+    const char            *cur_response = priv->con_config ? priv->con_config->response : NULL;
+    const char            *new_response;
+    const char            *new_uri;
     gboolean               new_uri_valid = priv->uri_valid;
     gboolean               new_host_port = FALSE;
-    gs_free char *         new_host      = NULL;
-    gs_free char *         new_port      = NULL;
+    gs_free char          *new_host      = NULL;
+    gs_free char          *new_port      = NULL;
 
     new_uri = nm_config_data_get_connectivity_uri(config_data);
     if (!nm_streq0(new_uri, cur_uri)) {
@@ -1135,11 +1135,11 @@ update_config(NMConnectivity *self, NMConfigData *config_data)
 }
 
 static void
-config_changed_cb(NMConfig *          config,
-                  NMConfigData *      config_data,
+config_changed_cb(NMConfig           *config,
+                  NMConfigData       *config_data,
                   NMConfigChangeFlags changes,
-                  NMConfigData *      old_data,
-                  NMConnectivity *    self)
+                  NMConfigData       *old_data,
+                  NMConnectivity     *self)
 {
     update_config(self, config_data);
 }
@@ -1178,8 +1178,8 @@ nm_connectivity_init(NMConnectivity *self)
 static void
 dispose(GObject *object)
 {
-    NMConnectivity *           self = NM_CONNECTIVITY(object);
-    NMConnectivityPrivate *    priv = NM_CONNECTIVITY_GET_PRIVATE(self);
+    NMConnectivity            *self = NM_CONNECTIVITY(object);
+    NMConnectivityPrivate     *priv = NM_CONNECTIVITY_GET_PRIVATE(self);
     NMConnectivityCheckHandle *cb_data;
 
     nm_assert(c_list_is_empty(&priv->completed_handles_lst_head));

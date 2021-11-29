@@ -20,7 +20,7 @@ G_DEFINE_TYPE(NmtNewtToggleButton, nmt_newt_toggle_button, NMT_TYPE_NEWT_BUTTON)
     (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_NEWT_TOGGLE_BUTTON, NmtNewtToggleButtonPrivate))
 
 typedef struct {
-    char *   on_label, *off_label;
+    char    *on_label, *off_label;
     gboolean active;
 } NmtNewtToggleButtonPrivate;
 
@@ -115,10 +115,10 @@ nmt_newt_toggle_button_activated(NmtNewtWidget *widget)
 }
 
 static void
-nmt_newt_toggle_button_set_property(GObject *     object,
+nmt_newt_toggle_button_set_property(GObject      *object,
                                     guint         prop_id,
                                     const GValue *value,
-                                    GParamSpec *  pspec)
+                                    GParamSpec   *pspec)
 {
     NmtNewtToggleButtonPrivate *priv = NMT_NEWT_TOGGLE_BUTTON_GET_PRIVATE(object);
 
@@ -146,9 +146,9 @@ nmt_newt_toggle_button_set_property(GObject *     object,
 }
 
 static void
-nmt_newt_toggle_button_get_property(GObject *   object,
+nmt_newt_toggle_button_get_property(GObject    *object,
                                     guint       prop_id,
-                                    GValue *    value,
+                                    GValue     *value,
                                     GParamSpec *pspec)
 {
     NmtNewtToggleButtonPrivate *priv = NMT_NEWT_TOGGLE_BUTTON_GET_PRIVATE(object);
@@ -172,7 +172,7 @@ nmt_newt_toggle_button_get_property(GObject *   object,
 static void
 nmt_newt_toggle_button_class_init(NmtNewtToggleButtonClass *button_class)
 {
-    GObjectClass *      object_class = G_OBJECT_CLASS(button_class);
+    GObjectClass       *object_class = G_OBJECT_CLASS(button_class);
     NmtNewtWidgetClass *widget_class = NMT_NEWT_WIDGET_CLASS(button_class);
 
     g_type_class_add_private(button_class, sizeof(NmtNewtToggleButtonPrivate));

@@ -2280,18 +2280,18 @@ typedef struct {
 #define READ_VPN_DETAIL_DATA(...) ((ReadVpnDetailData[]){__VA_ARGS__})
 
 static gboolean
-_do_read_vpn_details_impl1(const char *             file,
+_do_read_vpn_details_impl1(const char              *file,
                            int                      line,
                            int                      memfd,
-                           char *                   mem,
+                           char                    *mem,
                            gsize                    len,
                            const ReadVpnDetailData *expected_data,
                            guint                    expected_data_len,
                            const ReadVpnDetailData *expected_secrets,
                            guint                    expected_secrets_len)
 {
-    gssize             written;
-    off_t              lseeked;
+    gssize                         written;
+    off_t                          lseeked;
     gs_unref_hashtable GHashTable *data    = NULL;
     gs_unref_hashtable GHashTable *secrets = NULL;
 
@@ -2312,11 +2312,11 @@ _do_read_vpn_details_impl1(const char *             file,
 #define _assert_hash(hash, expected, expected_len)                                            \
     G_STMT_START                                                                              \
     {                                                                                         \
-        GHashTable *             _hash         = (hash);                                      \
+        GHashTable              *_hash         = (hash);                                      \
         guint                    _expected_len = (expected_len);                              \
         const ReadVpnDetailData *_expected     = (expected);                                  \
         GHashTableIter           _iter;                                                       \
-        const char *             _k, *_v;                                                     \
+        const char              *_k, *_v;                                                     \
         guint                    _i;                                                          \
                                                                                               \
         g_assert(_hash);                                                                      \
@@ -2759,7 +2759,7 @@ test_types(void)
     for (i_type = 0; i_type < G_N_ELEMENTS(get_type_fcns); i_type++) {
         nm_auto_unref_gtypeclass GObjectClass *klass_unref = NULL;
         GType                                  gtype       = (get_type_fcns[i_type])();
-        GObjectClass *                         klass;
+        GObjectClass                          *klass;
 
         g_assert(g_str_has_prefix(g_type_name(gtype), "NM"));
 
@@ -2803,16 +2803,16 @@ test_types(void)
 static void
 test_nml_dbus_meta(void)
 {
-    const NMLDBusMetaIface *   meta_iface;
+    const NMLDBusMetaIface    *meta_iface;
     const NMLDBusMetaProperty *meta_property;
     guint                      prop_idx;
     gsize                      i, j;
     guint                      l, m;
 
     for (i = 0; i < G_N_ELEMENTS(_nml_dbus_meta_ifaces); i++) {
-        const NMLDBusMetaIface * mif                       = _nml_dbus_meta_ifaces[i];
+        const NMLDBusMetaIface                *mif         = _nml_dbus_meta_ifaces[i];
         nm_auto_unref_gtypeclass GObjectClass *klass_unref = NULL;
-        GObjectClass *                         klass;
+        GObjectClass                          *klass;
         GType                                  gtype;
 
 #define COMMON_PREFIX "org.freedesktop.NetworkManager"
@@ -3004,7 +3004,7 @@ test_nml_dbus_meta(void)
 check_dbus_properties:
         for (l = 0; l < mif->n_dbus_properties; l++) {
             const NMLDBusMetaProperty *mpr               = &mif->dbus_properties[l];
-            gs_free char *             obj_property_name = NULL;
+            gs_free char              *obj_property_name = NULL;
             const struct {
                 const char *dbus_type;
                 GType       default_gtype;
@@ -3218,7 +3218,7 @@ static void
 test_dbus_meta_types(void)
 {
     struct list_data {
-        const char *            dbus_iface_name;
+        const char             *dbus_iface_name;
         GType                   gtype;
         NMLDBusMetaInteracePrio interface_prio;
     } list[] = {
@@ -3464,8 +3464,8 @@ test_nm_auth_permissions(void)
     for (i = 1; i < NM_CLIENT_PERMISSION_LAST; i++) {
         NMClientPermission a   = nm_auth_permission_sorted[i - 1];
         NMClientPermission b   = nm_auth_permission_sorted[i];
-        const char *       s_a = nm_auth_permission_names_by_idx[a - 1];
-        const char *       s_b = nm_auth_permission_names_by_idx[b - 1];
+        const char        *s_a = nm_auth_permission_names_by_idx[a - 1];
+        const char        *s_b = nm_auth_permission_names_by_idx[b - 1];
 
         g_assert_cmpstr(s_a, <, s_b);
         g_assert(a != b);

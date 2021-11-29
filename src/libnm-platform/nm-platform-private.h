@@ -21,7 +21,7 @@ NMPCache *nm_platform_get_cache(NMPlatform *self);
     }                                                                                          \
     G_STMT_END
 
-void nm_platform_cache_update_emit_signal(NMPlatform *     platform,
+void nm_platform_cache_update_emit_signal(NMPlatform      *platform,
                                           NMPCacheOpsType  cache_op,
                                           const NMPObject *obj_old,
                                           const NMPObject *obj_new);

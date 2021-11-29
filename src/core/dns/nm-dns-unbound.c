@@ -25,14 +25,14 @@ G_DEFINE_TYPE(NMDnsUnbound, nm_dns_unbound, NM_TYPE_DNS_PLUGIN)
 /*****************************************************************************/
 
 static gboolean
-update(NMDnsPlugin *            plugin,
+update(NMDnsPlugin             *plugin,
        const NMGlobalDnsConfig *global_config,
-       const CList *            ip_config_lst_head,
-       const char *             hostname,
-       GError **                error)
+       const CList             *ip_config_lst_head,
+       const char              *hostname,
+       GError                 **error)
 {
-    char *        argv[]        = {DNSSEC_TRIGGER_PATH, "--async", "--update", NULL};
-    gs_free_error GError *local = NULL;
+    char                 *argv[] = {DNSSEC_TRIGGER_PATH, "--async", "--update", NULL};
+    gs_free_error GError *local  = NULL;
     int                   status;
 
     /* TODO: We currently call a script installed with the dnssec-trigger

@@ -91,16 +91,16 @@ typedef enum {
 } IoctlCallDataType;
 
 static int
-_ioctl_call(const char *      log_ioctl_type,
-            const char *      log_subtype,
+_ioctl_call(const char       *log_ioctl_type,
+            const char       *log_subtype,
             unsigned long int ioctl_request,
             int               ifindex,
-            int *             inout_fd,
-            char *            inout_ifname,
+            int              *inout_fd,
+            char             *inout_ifname,
             IoctlCallDataType edata_type,
             gpointer          edata,
             gsize             edata_size,
-            struct ifreq *    out_ifreq)
+            struct ifreq     *out_ifreq)
 {
     nm_auto_close int fd_close = -1;
     int               fd;
@@ -109,7 +109,7 @@ _ioctl_call(const char *      log_ioctl_type,
     gs_free gpointer  edata_backup_free = NULL;
     guint             try_count;
     char              known_ifnames[2][IFNAMSIZ];
-    const char *      failure_reason = NULL;
+    const char       *failure_reason = NULL;
     struct ifreq      ifr;
 
     nm_assert(ifindex > 0);
@@ -365,7 +365,7 @@ ethtool_get_stringset(SocketHandle *shandle, int stringset_id)
         .info.reserved  = 0,
         .info.sset_mask = (1ULL << stringset_id),
     };
-    const guint32 *                  pdata;
+    const guint32                   *pdata;
     gs_free struct ethtool_gstrings *gstrings = NULL;
     gsize                            gstrings_len;
     guint32                          i, len;
@@ -574,7 +574,7 @@ _ASSERT_ethtool_feature_infos(void)
 static NMEthtoolFeatureStates *
 ethtool_get_features(SocketHandle *shandle)
 {
-    gs_free NMEthtoolFeatureStates * states      = NULL;
+    gs_free NMEthtoolFeatureStates  *states      = NULL;
     gs_free struct ethtool_gstrings *ss_features = NULL;
 
     _ASSERT_ethtool_feature_infos();
@@ -584,11 +584,11 @@ ethtool_get_features(SocketHandle *shandle)
         return NULL;
 
     if (ss_features->len > 0) {
-        gs_free struct ethtool_gfeatures *  gfeatures_free = NULL;
-        struct ethtool_gfeatures *          gfeatures;
+        gs_free struct ethtool_gfeatures   *gfeatures_free = NULL;
+        struct ethtool_gfeatures           *gfeatures;
         gsize                               gfeatures_len;
         guint                               idx;
-        const NMEthtoolFeatureState *       states_list0   = NULL;
+        const NMEthtoolFeatureState        *states_list0   = NULL;
         const NMEthtoolFeatureState *const *states_plist0  = NULL;
         guint                               states_plist_n = 0;
 
@@ -606,7 +606,7 @@ ethtool_get_features(SocketHandle *shandle)
 
             for (idx_kernel_name = 0; idx_kernel_name < info->n_kernel_names; idx_kernel_name++) {
                 NMEthtoolFeatureState *kstate;
-                const char *           kernel_name = info->kernel_names[idx_kernel_name];
+                const char            *kernel_name = info->kernel_names[idx_kernel_name];
                 int                    i_feature;
                 guint                  i_block;
                 guint32                i_flag;
@@ -667,7 +667,7 @@ NMEthtoolFeatureStates *
 nmp_utils_ethtool_get_features(int ifindex)
 {
     nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
-    NMEthtoolFeatureStates *           features;
+    NMEthtoolFeatureStates            *features;
 
     g_return_val_if_fail(ifindex > 0, 0);
 
@@ -689,10 +689,10 @@ nmp_utils_ethtool_get_features(int ifindex)
 }
 
 static const char *
-_ethtool_feature_state_to_string(char *                       buf,
+_ethtool_feature_state_to_string(char                        *buf,
                                  gsize                        buf_size,
                                  const NMEthtoolFeatureState *s,
-                                 const char *                 prefix)
+                                 const char                  *prefix)
 {
     int l;
 
@@ -718,8 +718,8 @@ nmp_utils_ethtool_set_features(
     gboolean            do_set /* or reset */)
 {
     nm_auto_socket_handle SocketHandle shandle        = SOCKET_HANDLE_INIT(ifindex);
-    gs_free struct ethtool_sfeatures * sfeatures_free = NULL;
-    struct ethtool_sfeatures *         sfeatures;
+    gs_free struct ethtool_sfeatures  *sfeatures_free = NULL;
+    struct ethtool_sfeatures          *sfeatures;
     gsize                              sfeatures_len;
     int                                r;
     guint                              i, j;
@@ -1215,8 +1215,8 @@ gboolean
 nmp_utils_ethtool_supports_vlans(int ifindex)
 {
     nm_auto_socket_handle SocketHandle shandle       = SOCKET_HANDLE_INIT(ifindex);
-    gs_free struct ethtool_gfeatures * features_free = NULL;
-    struct ethtool_gfeatures *         features;
+    gs_free struct ethtool_gfeatures  *features_free = NULL;
+    struct ethtool_gfeatures          *features;
     gsize                              features_len;
     int                                idx, block, bit, size;
 
@@ -1250,8 +1250,8 @@ nmp_utils_ethtool_get_peer_ifindex(int ifindex)
 {
     nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
     gsize                              stats_len;
-    gs_free struct ethtool_stats *     stats_free = NULL;
-    struct ethtool_stats *             stats;
+    gs_free struct ethtool_stats      *stats_free = NULL;
+    struct ethtool_stats              *stats;
     int                                peer_ifindex_stat;
 
     g_return_val_if_fail(ifindex > 0, 0);
@@ -1289,8 +1289,8 @@ nmp_utils_ethtool_get_wake_on_lan(int ifindex)
 
 gboolean
 nmp_utils_ethtool_get_link_settings(int                       ifindex,
-                                    gboolean *                out_autoneg,
-                                    guint32 *                 out_speed,
+                                    gboolean                 *out_autoneg,
+                                    guint32                  *out_speed,
                                     NMPlatformLinkDuplexType *out_duplex)
 {
     struct ethtool_cmd edata = {
@@ -1474,7 +1474,7 @@ const guint32 _nmp_link_mode_all_advertised_modes[] = {
 };
 
 static NMOptionBool
-set_link_settings_new(SocketHandle *           shandle,
+set_link_settings_new(SocketHandle            *shandle,
                       gboolean                 autoneg,
                       guint32                  speed,
                       NMPlatformLinkDuplexType duplex)
@@ -1512,8 +1512,8 @@ set_link_settings_new(SocketHandle *           shandle,
 
     {
         const guint32 *v_map_supported      = &edata->link_mode_masks[0];
-        guint32 *      v_map_advertising    = &edata->link_mode_masks[nwords];
-        guint32 *      v_map_lp_advertising = &edata->link_mode_masks[2 * nwords];
+        guint32       *v_map_advertising    = &edata->link_mode_masks[nwords];
+        guint32       *v_map_lp_advertising = &edata->link_mode_masks[2 * nwords];
 
         memcpy(v_map_advertising, v_map_supported, sizeof(guint32) * nwords);
         (void) v_map_lp_advertising;
@@ -1574,7 +1574,7 @@ nmp_utils_ethtool_set_link_settings(int                      ifindex,
 {
     nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
     struct ethtool_cmd                 edata   = {
-        .cmd = ETHTOOL_GSET,
+                          .cmd = ETHTOOL_GSET,
     };
     NMOptionBool ret;
 
@@ -1651,7 +1651,7 @@ set_autoneg:
 gboolean
 nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
                                   _NMSettingWiredWakeOnLan wol,
-                                  const char *             wol_password)
+                                  const char              *wol_password)
 {
     struct ethtool_wolinfo wol_info = {
         .cmd     = ETHTOOL_SWOL,
@@ -1706,7 +1706,7 @@ nmp_utils_mii_supports_carrier_detect(int ifindex)
     nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
     int                                r;
     struct ifreq                       ifr;
-    struct mii_ioctl_data *            mii;
+    struct mii_ioctl_data             *mii;
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
@@ -1757,7 +1757,7 @@ const char *
 nmp_utils_udev_get_driver(struct udev_device *udevice)
 {
     struct udev_device *parent = NULL, *grandparent = NULL;
-    const char *        driver, *subsys;
+    const char         *driver, *subsys;
 
     driver = udev_device_get_driver(udevice);
     if (driver)
@@ -2194,10 +2194,10 @@ nmp_utils_modprobe(GError **error, gboolean suppress_error_logging, const char *
 {
     gs_unref_ptrarray GPtrArray *argv = NULL;
     int                          exit_status;
-    gs_free char *               _log_str = NULL;
+    gs_free char                *_log_str = NULL;
 #define ARGV_TO_STR(argv) \
     (_log_str ? _log_str : (_log_str = g_strjoinv(" ", (char **) argv->pdata)))
-    GError *      local = NULL;
+    GError       *local = NULL;
     va_list       ap;
     NMLogLevel    llevel  = suppress_error_logging ? LOGL_DEBUG : LOGL_ERR;
     gs_free char *std_out = NULL, *std_err = NULL;

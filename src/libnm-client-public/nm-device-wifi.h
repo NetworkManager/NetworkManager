@@ -43,11 +43,11 @@ GType nm_device_wifi_get_type(void);
 NM_DEPRECATED_IN_1_24_FOR(nm_device_get_hw_address)
 const char *nm_device_wifi_get_hw_address(NMDeviceWifi *device);
 
-const char *             nm_device_wifi_get_permanent_hw_address(NMDeviceWifi *device);
+const char              *nm_device_wifi_get_permanent_hw_address(NMDeviceWifi *device);
 NM80211Mode              nm_device_wifi_get_mode(NMDeviceWifi *device);
 guint32                  nm_device_wifi_get_bitrate(NMDeviceWifi *device);
 NMDeviceWifiCapabilities nm_device_wifi_get_capabilities(NMDeviceWifi *device);
-NMAccessPoint *          nm_device_wifi_get_active_access_point(NMDeviceWifi *device);
+NMAccessPoint           *nm_device_wifi_get_active_access_point(NMDeviceWifi *device);
 
 NMAccessPoint *nm_device_wifi_get_access_point_by_path(NMDeviceWifi *device, const char *path);
 
@@ -62,17 +62,17 @@ nm_device_wifi_request_scan(NMDeviceWifi *device, GCancellable *cancellable, GEr
 NM_AVAILABLE_IN_1_2
 _NM_DEPRECATED_SYNC_METHOD
 gboolean nm_device_wifi_request_scan_options(NMDeviceWifi *device,
-                                             GVariant *    options,
+                                             GVariant     *options,
                                              GCancellable *cancellable,
-                                             GError **     error);
-void     nm_device_wifi_request_scan_async(NMDeviceWifi *      device,
-                                           GCancellable *      cancellable,
+                                             GError      **error);
+void     nm_device_wifi_request_scan_async(NMDeviceWifi       *device,
+                                           GCancellable       *cancellable,
                                            GAsyncReadyCallback callback,
                                            gpointer            user_data);
 NM_AVAILABLE_IN_1_2
-void nm_device_wifi_request_scan_options_async(NMDeviceWifi *      device,
-                                               GVariant *          options,
-                                               GCancellable *      cancellable,
+void nm_device_wifi_request_scan_options_async(NMDeviceWifi       *device,
+                                               GVariant           *options,
+                                               GCancellable       *cancellable,
                                                GAsyncReadyCallback callback,
                                                gpointer            user_data);
 gboolean

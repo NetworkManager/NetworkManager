@@ -28,8 +28,8 @@ G_DEFINE_TYPE(NmtWireguardPeerEditor, nmt_wireguard_peer_editor, NMT_TYPE_NEWT_F
 typedef struct {
     NMSettingWireGuard *orig_setting;
     NMSettingWireGuard *edit_setting;
-    NMWireGuardPeer *   peer;
-    NmtNewtEntry *      private_key;
+    NMWireGuardPeer    *peer;
+    NmtNewtEntry       *private_key;
 } NmtWireguardPeerEditorPrivate;
 
 enum {
@@ -55,7 +55,7 @@ nmt_wireguard_peer_editor_init(NmtWireguardPeerEditor *peer)
 static void
 save_peer_and_exit(NmtNewtButton *button, gpointer user_data)
 {
-    NmtWireguardPeerEditor *       editor = user_data;
+    NmtWireguardPeerEditor        *editor = user_data;
     NmtWireguardPeerEditorPrivate *priv   = NMT_WIREGUARD_PEER_EDITOR_GET_PRIVATE(editor);
 
     nm_setting_wireguard_append_peer(priv->orig_setting, priv->peer);
@@ -67,10 +67,10 @@ static void
 nmt_wireguard_peer_editor_constructed(GObject *object)
 {
     NmtWireguardPeerEditor *peer = NMT_WIREGUARD_PEER_EDITOR(object);
-    NmtEditorSection *      section;
-    NmtEditorGrid *         grid;
-    NmtNewtWidget *         widget, *label;
-    NmtNewtWidget *         buttons, *ok, *cancel;
+    NmtEditorSection       *section;
+    NmtEditorGrid          *grid;
+    NmtNewtWidget          *widget, *label;
+    NmtNewtWidget          *buttons, *ok, *cancel;
 
     if (G_OBJECT_CLASS(nmt_wireguard_peer_editor_parent_class)->constructed)
         G_OBJECT_CLASS(nmt_wireguard_peer_editor_parent_class)->constructed(object);
@@ -161,10 +161,10 @@ nmt_wireguard_peer_editor_constructed(GObject *object)
 }
 
 static void
-nmt_wireguard_peer_editor_set_property(GObject *     object,
+nmt_wireguard_peer_editor_set_property(GObject      *object,
                                        guint         prop_id,
                                        const GValue *value,
-                                       GParamSpec *  pspec)
+                                       GParamSpec   *pspec)
 {
     NmtWireguardPeerEditorPrivate *priv = NMT_WIREGUARD_PEER_EDITOR_GET_PRIVATE(object);
 
@@ -184,9 +184,9 @@ nmt_wireguard_peer_editor_set_property(GObject *     object,
 }
 
 static void
-nmt_wireguard_peer_editor_get_property(GObject *   object,
+nmt_wireguard_peer_editor_get_property(GObject    *object,
                                        guint       prop_id,
-                                       GValue *    value,
+                                       GValue     *value,
                                        GParamSpec *pspec)
 {
     NmtWireguardPeerEditorPrivate *priv = NMT_WIREGUARD_PEER_EDITOR_GET_PRIVATE(object);

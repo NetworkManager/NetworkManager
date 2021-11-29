@@ -41,22 +41,22 @@
 typedef struct _ParseInfoProperty ParseInfoProperty;
 
 typedef struct {
-    NMConnection *       connection;
-    GKeyFile *           keyfile;
-    const char *         base_dir;
+    NMConnection        *connection;
+    GKeyFile            *keyfile;
+    const char          *base_dir;
     NMKeyfileReadHandler read_handler;
-    void *               user_data;
-    GError *             error;
-    const char *         group;
-    NMSetting *          setting;
+    void                *user_data;
+    GError              *error;
+    const char          *group;
+    NMSetting           *setting;
 } KeyfileReaderInfo;
 
 typedef struct {
-    NMConnection *        connection;
-    GKeyFile *            keyfile;
-    GError *              error;
+    NMConnection         *connection;
+    GKeyFile             *keyfile;
+    GError               *error;
     NMKeyfileWriteHandler write_handler;
-    void *                user_data;
+    void                 *user_data;
 } KeyfileWriterInfo;
 
 /*****************************************************************************/
@@ -64,11 +64,11 @@ typedef struct {
 static void
 _key_file_handler_data_init(NMKeyfileHandlerData *handler_data,
                             NMKeyfileHandlerType  handler_type,
-                            const char *          kf_group_name,
-                            const char *          kf_key,
-                            NMSetting *           cur_setting,
-                            const char *          cur_property,
-                            GError **             p_error)
+                            const char           *kf_group_name,
+                            const char           *kf_key,
+                            NMSetting            *cur_setting,
+                            const char           *cur_property,
+                            GError              **p_error)
 {
     nm_assert(handler_data);
     nm_assert(p_error && !*p_error);
@@ -84,9 +84,9 @@ _key_file_handler_data_init(NMKeyfileHandlerData *handler_data,
 static void
 _key_file_handler_data_init_read(NMKeyfileHandlerData *handler_data,
                                  NMKeyfileHandlerType  handler_type,
-                                 KeyfileReaderInfo *   info,
-                                 const char *          kf_key,
-                                 const char *          cur_property)
+                                 KeyfileReaderInfo    *info,
+                                 const char           *kf_key,
+                                 const char           *cur_property)
 {
     _key_file_handler_data_init(handler_data,
                                 handler_type,
@@ -100,11 +100,11 @@ _key_file_handler_data_init_read(NMKeyfileHandlerData *handler_data,
 static void
 _key_file_handler_data_init_write(NMKeyfileHandlerData *handler_data,
                                   NMKeyfileHandlerType  handler_type,
-                                  KeyfileWriterInfo *   info,
-                                  const char *          kf_group,
-                                  const char *          kf_key,
-                                  NMSetting *           cur_setting,
-                                  const char *          cur_property)
+                                  KeyfileWriterInfo    *info,
+                                  const char           *kf_group,
+                                  const char           *kf_key,
+                                  NMSetting            *cur_setting,
+                                  const char           *cur_property)
 {
     _key_file_handler_data_init(handler_data,
                                 handler_type,
@@ -115,11 +115,11 @@ _key_file_handler_data_init_write(NMKeyfileHandlerData *handler_data,
                                 &info->error);
 }
 
-_nm_printf(5, 6) static void _handle_warn(KeyfileReaderInfo *   info,
-                                          const char *          kf_key,
-                                          const char *          cur_property,
+_nm_printf(5, 6) static void _handle_warn(KeyfileReaderInfo    *info,
+                                          const char           *kf_key,
+                                          const char           *cur_property,
                                           NMKeyfileWarnSeverity severity,
-                                          const char *          fmt,
+                                          const char           *fmt,
                                           ...)
 {
     NMKeyfileHandlerData handler_data;
@@ -178,8 +178,8 @@ _secret_flags_persist_secret(NMSettingSecretFlags flags)
 static void
 setting_alias_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-    const char *  setting_name = nm_setting_get_name(setting);
-    const char *  key_setting_name;
+    const char   *setting_name = nm_setting_get_name(setting);
+    const char   *key_setting_name;
     gs_free char *s = NULL;
 
     s = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
@@ -193,10 +193,10 @@ setting_alias_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *ke
 static void
 sriov_vfs_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-    const char *      setting_name      = nm_setting_get_name(setting);
-    gs_unref_ptrarray GPtrArray *vfs    = NULL;
-    gs_strfreev char **          keys   = NULL;
-    gsize                        n_keys = 0;
+    const char                  *setting_name = nm_setting_get_name(setting);
+    gs_unref_ptrarray GPtrArray *vfs          = NULL;
+    gs_strfreev char           **keys         = NULL;
+    gsize                        n_keys       = 0;
     int                          i;
 
     keys = nm_keyfile_plugin_kf_get_keys(info->keyfile, setting_name, &n_keys, NULL);
@@ -207,8 +207,8 @@ sriov_vfs_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 
     for (i = 0; i < n_keys; i++) {
         gs_free char *value = NULL;
-        NMSriovVF *   vf;
-        const char *  rest;
+        NMSriovVF    *vf;
+        const char   *rest;
 
         if (!g_str_has_prefix(keys[i], "vf."))
             continue;
@@ -232,9 +232,9 @@ static void
 read_array_of_uint(GKeyFile *file, NMSetting *setting, const char *key)
 {
     gs_unref_array GArray *array = NULL;
-    gs_free_error GError *error  = NULL;
-    gs_free guint *tmp           = NULL;
-    gsize          length;
+    gs_free_error GError  *error = NULL;
+    gs_free guint         *tmp   = NULL;
+    gsize                  length;
 
     tmp = nm_keyfile_plugin_kf_get_integer_list_uint(file,
                                                      nm_setting_get_name(setting),
@@ -251,11 +251,11 @@ read_array_of_uint(GKeyFile *file, NMSetting *setting, const char *key)
 
 static gboolean
 get_one_int(KeyfileReaderInfo *info,
-            const char *       kf_key,
-            const char *       property_name,
-            const char *       str,
+            const char        *kf_key,
+            const char        *property_name,
+            const char        *str,
             guint32            max_val,
-            guint32 *          out)
+            guint32           *out)
 {
     gint64 tmp;
 
@@ -292,14 +292,14 @@ get_one_int(KeyfileReaderInfo *info,
 
 static gpointer
 build_address(KeyfileReaderInfo *info,
-              const char *       kf_key,
-              const char *       property_name,
+              const char        *kf_key,
+              const char        *property_name,
               int                family,
-              const char *       address_str,
+              const char        *address_str,
               guint32            plen)
 {
     NMIPAddress *addr;
-    GError *     error = NULL;
+    GError      *error = NULL;
 
     g_return_val_if_fail(address_str, NULL);
 
@@ -320,18 +320,18 @@ build_address(KeyfileReaderInfo *info,
 
 static gpointer
 build_route(KeyfileReaderInfo *info,
-            const char *       kf_key,
-            const char *       property_name,
+            const char        *kf_key,
+            const char        *property_name,
             int                family,
-            const char *       dest_str,
+            const char        *dest_str,
             guint32            plen,
-            const char *       gateway_str,
-            const char *       metric_str)
+            const char        *gateway_str,
+            const char        *metric_str)
 {
     NMIPRoute *route;
     guint32    u32;
     gint64     metric = -1;
-    GError *   error  = NULL;
+    GError    *error  = NULL;
 
     g_return_val_if_fail(dest_str, NULL);
 
@@ -455,7 +455,7 @@ read_field(char **current, const char **out_err_str, const char *characters, con
 static void
 openconnect_fix_secret_flags(NMSetting *setting)
 {
-    NMSettingVpn *       s_vpn;
+    NMSettingVpn        *s_vpn;
     NMSettingSecretFlags flags;
 
     /* Huge hack.  There were some openconnect changes that needed to happen
@@ -518,22 +518,22 @@ openconnect_fix_secret_flags(NMSetting *setting)
  */
 static gpointer
 read_one_ip_address_or_route(KeyfileReaderInfo *info,
-                             const char *       property_name,
-                             const char *       setting_name,
-                             const char *       kf_key,
+                             const char        *property_name,
+                             const char        *setting_name,
+                             const char        *kf_key,
                              gboolean           ipv6,
                              gboolean           route,
-                             char **            out_gateway,
-                             NMSetting *        setting)
+                             char             **out_gateway,
+                             NMSetting         *setting)
 {
     guint         plen;
     gpointer      result;
-    const char *  address_str;
-    const char *  plen_str;
-    const char *  gateway_str;
-    const char *  metric_str;
-    const char *  err_str = NULL;
-    char *        current;
+    const char   *address_str;
+    const char   *plen_str;
+    const char   *gateway_str;
+    const char   *metric_str;
+    const char   *err_str = NULL;
+    char         *current;
     gs_free char *value      = NULL;
     gs_free char *value_orig = NULL;
 
@@ -680,17 +680,17 @@ read_one_ip_address_or_route(KeyfileReaderInfo *info,
 }
 
 static void
-fill_route_attributes(GKeyFile *  kf,
-                      NMIPRoute * route,
+fill_route_attributes(GKeyFile   *kf,
+                      NMIPRoute  *route,
                       const char *setting,
                       const char *key,
                       int         family)
 {
-    gs_free char *     value            = NULL;
-    gs_unref_hashtable GHashTable *hash = NULL;
+    gs_free char                  *value = NULL;
+    gs_unref_hashtable GHashTable *hash  = NULL;
     GHashTableIter                 iter;
-    char *                         name;
-    GVariant *                     variant;
+    char                          *name;
+    GVariant                      *variant;
 
     value = nm_keyfile_plugin_kf_get_string(kf, setting, key, NULL);
     if (!value || !value[0])
@@ -751,7 +751,7 @@ static gboolean
 _build_list_match_key_w_name_impl(const char *key,
                                   const char *base_name,
                                   gsize       base_name_l,
-                                  gint32 *    out_key_idx)
+                                  gint32     *out_key_idx)
 {
     gint64 v;
 
@@ -798,14 +798,14 @@ _build_list_match_key_w_name_impl(const char *key,
     _build_list_match_key_w_name_impl(key, base_name, NM_STRLEN(base_name), out_key_idx)
 
 static BuildListData *
-_build_list_create(GKeyFile *    keyfile,
-                   const char *  group_name,
+_build_list_create(GKeyFile     *keyfile,
+                   const char   *group_name,
                    BuildListType build_list_type,
-                   gsize *       out_build_list_len,
-                   char ***      out_keys_strv)
+                   gsize        *out_build_list_len,
+                   char       ***out_keys_strv)
 {
-    gs_strfreev char **keys = NULL;
-    gsize              i_keys, n_keys;
+    gs_strfreev char     **keys = NULL;
+    gsize                  i_keys, n_keys;
     gs_free BuildListData *build_list     = NULL;
     gsize                  build_list_len = 0;
 
@@ -878,14 +878,14 @@ _build_list_create(GKeyFile *    keyfile,
 static void
 ip_address_or_route_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *setting_key)
 {
-    const char *      setting_name    = nm_setting_get_name(setting);
-    gboolean          is_ipv6         = nm_streq(setting_name, "ipv6");
-    gboolean          is_routes       = nm_streq(setting_key, "routes");
-    gs_free char *    gateway         = NULL;
-    gs_unref_ptrarray GPtrArray *list = NULL;
-    gs_strfreev char **          keys = NULL;
-    gs_free BuildListData *build_list = NULL;
-    gsize                  i_build_list, build_list_len = 0;
+    const char                  *setting_name = nm_setting_get_name(setting);
+    gboolean                     is_ipv6      = nm_streq(setting_name, "ipv6");
+    gboolean                     is_routes    = nm_streq(setting_key, "routes");
+    gs_free char                *gateway      = NULL;
+    gs_unref_ptrarray GPtrArray *list         = NULL;
+    gs_strfreev char           **keys         = NULL;
+    gs_free BuildListData       *build_list   = NULL;
+    gsize                        i_build_list, build_list_len = 0;
 
     build_list = _build_list_create(info->keyfile,
                                     setting_name,
@@ -940,16 +940,16 @@ ip_address_or_route_parser(KeyfileReaderInfo *info, NMSetting *setting, const ch
 }
 
 static void
-ip_routing_rule_parser_full(KeyfileReaderInfo *       info,
-                            const NMMetaSettingInfo * setting_info,
+ip_routing_rule_parser_full(KeyfileReaderInfo        *info,
+                            const NMMetaSettingInfo  *setting_info,
                             const NMSettInfoProperty *property_info,
-                            const ParseInfoProperty * pip,
-                            NMSetting *               setting)
+                            const ParseInfoProperty  *pip,
+                            NMSetting                *setting)
 {
-    const char *       setting_name   = nm_setting_get_name(setting);
-    gboolean           is_ipv6        = nm_streq(setting_name, "ipv6");
-    gs_strfreev char **keys           = NULL;
-    gs_free BuildListData *build_list = NULL;
+    const char            *setting_name = nm_setting_get_name(setting);
+    gboolean               is_ipv6      = nm_streq(setting_name, "ipv6");
+    gs_strfreev char     **keys         = NULL;
+    gs_free BuildListData *build_list   = NULL;
     gsize                  i_build_list, build_list_len = 0;
 
     build_list = _build_list_create(info->keyfile,
@@ -962,8 +962,8 @@ ip_routing_rule_parser_full(KeyfileReaderInfo *       info,
 
     for (i_build_list = 0; i_build_list < build_list_len; i_build_list++) {
         nm_auto_unref_ip_routing_rule NMIPRoutingRule *rule  = NULL;
-        gs_free char *                                 value = NULL;
-        gs_free_error GError *local                          = NULL;
+        gs_free char                                  *value = NULL;
+        gs_free_error GError                          *local = NULL;
 
         if (_build_list_data_is_shadowed(build_list, build_list_len, i_build_list))
             continue;
@@ -999,13 +999,13 @@ ip_routing_rule_parser_full(KeyfileReaderInfo *       info,
 }
 
 static void
-_parser_full_ovs_external_ids_data(KeyfileReaderInfo *       info,
-                                   const NMMetaSettingInfo * setting_info,
+_parser_full_ovs_external_ids_data(KeyfileReaderInfo        *info,
+                                   const NMMetaSettingInfo  *setting_info,
                                    const NMSettInfoProperty *property_info,
-                                   const ParseInfoProperty * pip,
-                                   NMSetting *               setting)
+                                   const ParseInfoProperty  *pip,
+                                   NMSetting                *setting)
 {
-    const char *       setting_name = NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME;
+    const char        *setting_name = NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME;
     gs_strfreev char **keys         = NULL;
     gsize              n_keys;
     gsize              i;
@@ -1018,10 +1018,10 @@ _parser_full_ovs_external_ids_data(KeyfileReaderInfo *       info,
     keys = nm_keyfile_plugin_kf_get_keys(info->keyfile, setting_name, &n_keys, NULL);
 
     for (i = 0; i < n_keys; i++) {
-        const char *  key          = keys[i];
+        const char   *key          = keys[i];
         gs_free char *name_to_free = NULL;
         gs_free char *value        = NULL;
-        const char *  name;
+        const char   *name;
 
         if (!NM_STR_HAS_PREFIX(key, OVS_EXTERNAL_IDS_DATA_PREFIX))
             continue;
@@ -1089,8 +1089,8 @@ static void
 ip6_addr_gen_mode_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
     NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-    const char *                  setting_name = nm_setting_get_name(setting);
-    gs_free char *                s            = NULL;
+    const char                   *setting_name = nm_setting_get_name(setting);
+    gs_free char                 *s            = NULL;
 
     s = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
     if (s) {
@@ -1115,17 +1115,17 @@ ip6_addr_gen_mode_parser(KeyfileReaderInfo *info, NMSetting *setting, const char
 
 static void
 mac_address_parser(KeyfileReaderInfo *info,
-                   NMSetting *        setting,
-                   const char *       key,
+                   NMSetting         *setting,
+                   const char        *key,
                    gsize              addr_len,
                    gboolean           cloned_mac_addr)
 {
-    const char *  setting_name = nm_setting_get_name(setting);
-    char          addr_str[NM_UTILS_HWADDR_LEN_MAX * 3];
-    guint8        addr_bin[NM_UTILS_HWADDR_LEN_MAX];
-    gs_free char *tmp_string = NULL;
-    gs_free guint *int_list  = NULL;
-    const char *   mac_str;
+    const char    *setting_name = nm_setting_get_name(setting);
+    char           addr_str[NM_UTILS_HWADDR_LEN_MAX * 3];
+    guint8         addr_bin[NM_UTILS_HWADDR_LEN_MAX];
+    gs_free char  *tmp_string = NULL;
+    gs_free guint *int_list   = NULL;
+    const char    *mac_str;
     gsize          int_list_len;
     gsize          i;
 
@@ -1191,13 +1191,13 @@ mac_address_parser_INFINIBAND(KeyfileReaderInfo *info, NMSetting *setting, const
 
 static void
 read_hash_of_string(KeyfileReaderInfo *info,
-                    GKeyFile *         file,
-                    NMSetting *        setting,
-                    const char *       kf_group)
+                    GKeyFile          *file,
+                    NMSetting         *setting,
+                    const char        *kf_group)
 {
     gs_strfreev char **keys = NULL;
     const char *const *iter;
-    const char *       setting_name = nm_setting_get_name(setting);
+    const char        *setting_name = nm_setting_get_name(setting);
     gboolean           is_vpn;
     gsize              n_keys;
 
@@ -1212,10 +1212,10 @@ read_hash_of_string(KeyfileReaderInfo *info,
 
     if ((is_vpn = NM_IS_SETTING_VPN(setting)) || NM_IS_SETTING_BOND(setting)) {
         for (iter = (const char *const *) keys; *iter; iter++) {
-            const char *  kf_key  = *iter;
+            const char   *kf_key  = *iter;
             gs_free char *to_free = NULL;
             gs_free char *value   = NULL;
-            const char *  name;
+            const char   *name;
 
             value = nm_keyfile_plugin_kf_get_string(file, setting_name, kf_key, NULL);
             if (!value)
@@ -1256,8 +1256,8 @@ read_hash_of_string(KeyfileReaderInfo *info,
         data = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
         for (iter = (const char *const *) keys; *iter; iter++) {
             gs_free char *to_free = NULL;
-            char *        value   = NULL;
-            const char *  name;
+            char         *value   = NULL;
+            const char   *name;
 
             value = nm_keyfile_plugin_kf_get_string(file, setting_name, *iter, NULL);
             if (!value)
@@ -1288,15 +1288,15 @@ unescape_semicolons(char *str)
 
 static GBytes *
 get_bytes(KeyfileReaderInfo *info,
-          const char *       setting_name,
-          const char *       key,
+          const char        *setting_name,
+          const char        *key,
           gboolean           zero_terminate,
           gboolean           unescape_semicolon)
 {
     nm_auto_free_secret char *tmp_string      = NULL;
     gboolean                  may_be_int_list = TRUE;
     gsize                     length;
-    GBytes *                  result;
+    GBytes                   *result;
 
     /* New format: just a string
      * Old format: integer list; e.g. 11;25;38;
@@ -1421,8 +1421,8 @@ get_bytes(KeyfileReaderInfo *info,
 static void
 ssid_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-    const char *   setting_name  = nm_setting_get_name(setting);
-    gs_unref_bytes GBytes *bytes = NULL;
+    const char            *setting_name = nm_setting_get_name(setting);
+    gs_unref_bytes GBytes *bytes        = NULL;
 
     bytes = get_bytes(info, setting_name, key, FALSE, TRUE);
     if (!bytes) {
@@ -1435,8 +1435,8 @@ ssid_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 static void
 password_raw_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-    const char *   setting_name  = nm_setting_get_name(setting);
-    gs_unref_bytes GBytes *bytes = NULL;
+    const char            *setting_name = nm_setting_get_name(setting);
+    gs_unref_bytes GBytes *bytes        = NULL;
 
     bytes = get_bytes(info, setting_name, key, FALSE, TRUE);
     if (!bytes) {
@@ -1454,7 +1454,7 @@ static char *
 get_cert_path(const char *base_dir, const guint8 *cert_path, gsize cert_path_len)
 {
     const char *base;
-    char *      p = NULL, *path, *tmp;
+    char       *p = NULL, *path, *tmp;
 
     g_return_val_if_fail(base_dir != NULL, NULL);
     g_return_val_if_fail(cert_path != NULL, NULL);
@@ -1489,13 +1489,13 @@ has_cert_ext(const char *path)
 }
 
 char *
-nm_keyfile_detect_unqualified_path_scheme(const char *  base_dir,
+nm_keyfile_detect_unqualified_path_scheme(const char   *base_dir,
                                           gconstpointer pdata,
                                           gsize         data_len,
                                           gboolean      consider_exists,
-                                          gboolean *    out_exists)
+                                          gboolean     *out_exists)
 {
-    const char *  data   = pdata;
+    const char   *data   = pdata;
     gboolean      exists = FALSE;
     gsize         validate_len;
     gsize         path_len, pathuri_len;
@@ -1573,11 +1573,11 @@ nm_keyfile_detect_unqualified_path_scheme(const char *  base_dir,
 static void
 cert_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-    const char *   setting_name    = nm_setting_get_name(setting);
-    gs_unref_bytes GBytes *bytes   = NULL;
-    const char *           bin     = NULL;
-    gsize                  bin_len = 0;
-    char *                 path;
+    const char            *setting_name = nm_setting_get_name(setting);
+    gs_unref_bytes GBytes *bytes        = NULL;
+    const char            *bin          = NULL;
+    gsize                  bin_len      = 0;
+    char                  *path;
     gboolean               path_exists;
 
     bytes = get_bytes(info, setting_name, key, TRUE, FALSE);
@@ -1591,7 +1591,7 @@ cert_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     }
 
     if (HAS_SCHEME_PREFIX(bin, bin_len, NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)) {
-        const char *  path2      = &bin[NM_STRLEN(NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)];
+        const char   *path2      = &bin[NM_STRLEN(NM_KEYFILE_CERT_SCHEME_PREFIX_PATH)];
         gs_free char *path2_free = NULL;
 
         if (nm_setting_802_1x_check_cert_scheme(bin, bin_len, NULL)
@@ -1648,8 +1648,8 @@ cert_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     }
 
     if (HAS_SCHEME_PREFIX(bin, bin_len, NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB)) {
-        const char *cdata           = bin + NM_STRLEN(NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
-        gsize       cdata_len       = bin_len - NM_STRLEN(NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB) - 1;
+        const char     *cdata       = bin + NM_STRLEN(NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB);
+        gsize           cdata_len   = bin_len - NM_STRLEN(NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB) - 1;
         gs_free guchar *bin_decoded = NULL;
         gsize           bin_decoded_len = 0;
         gsize           i;
@@ -1801,10 +1801,10 @@ _parity_from_char(int ch)
 static void
 parity_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-    const char *  setting_name = nm_setting_get_name(setting);
-    gs_free_error GError *err  = NULL;
+    const char           *setting_name = nm_setting_get_name(setting);
+    gs_free_error GError *err          = NULL;
     int                   parity;
-    gs_free char *        tmp_str = NULL;
+    gs_free char         *tmp_str = NULL;
     gint64                i64;
 
     /* Keyfile traditionally stored this as the ASCII value for 'E', 'o', or 'n'.
@@ -1869,9 +1869,9 @@ out_err:
 static void
 team_config_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-    const char *  setting_name  = nm_setting_get_name(setting);
-    gs_free char *conf          = NULL;
-    gs_free_error GError *error = NULL;
+    const char           *setting_name = nm_setting_get_name(setting);
+    gs_free char         *conf         = NULL;
+    gs_free_error GError *error        = NULL;
 
     conf = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
 
@@ -1892,11 +1892,11 @@ static void
 bridge_vlan_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
     gs_unref_ptrarray GPtrArray *vlans = NULL;
-    gs_free char *               value = NULL;
-    gs_free const char **        strv  = NULL;
-    const char *const *          iter;
-    GError *                     local = NULL;
-    NMBridgeVlan *               vlan;
+    gs_free char                *value = NULL;
+    gs_free const char         **strv  = NULL;
+    const char *const           *iter;
+    GError                      *local = NULL;
+    NMBridgeVlan                *vlan;
 
     value = nm_keyfile_plugin_kf_get_string(info->keyfile, nm_setting_get_name(setting), key, NULL);
     if (!value || !value[0])
@@ -1929,10 +1929,10 @@ bridge_vlan_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 static void
 qdisc_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-    const char *      setting_name      = nm_setting_get_name(setting);
-    gs_unref_ptrarray GPtrArray *qdiscs = NULL;
-    gs_strfreev char **          keys   = NULL;
-    gsize                        n_keys = 0;
+    const char                  *setting_name = nm_setting_get_name(setting);
+    gs_unref_ptrarray GPtrArray *qdiscs       = NULL;
+    gs_strfreev char           **keys         = NULL;
+    gsize                        n_keys       = 0;
     int                          i;
 
     keys = nm_keyfile_plugin_kf_get_keys(info->keyfile, setting_name, &n_keys, NULL);
@@ -1942,11 +1942,11 @@ qdisc_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     qdiscs = g_ptr_array_new_with_free_func((GDestroyNotify) nm_tc_qdisc_unref);
 
     for (i = 0; i < n_keys; i++) {
-        NMTCQdisc *   qdisc;
-        const char *  qdisc_parent;
-        gs_free char *qdisc_rest  = NULL;
-        gs_free char *qdisc_str   = NULL;
-        gs_free_error GError *err = NULL;
+        NMTCQdisc            *qdisc;
+        const char           *qdisc_parent;
+        gs_free char         *qdisc_rest = NULL;
+        gs_free char         *qdisc_str  = NULL;
+        gs_free_error GError *err        = NULL;
 
         if (!g_str_has_prefix(keys[i], "qdisc."))
             continue;
@@ -1979,10 +1979,10 @@ qdisc_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 static void
 tfilter_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
-    const char *      setting_name        = nm_setting_get_name(setting);
-    gs_unref_ptrarray GPtrArray *tfilters = NULL;
-    gs_strfreev char **          keys     = NULL;
-    gsize                        n_keys   = 0;
+    const char                  *setting_name = nm_setting_get_name(setting);
+    gs_unref_ptrarray GPtrArray *tfilters     = NULL;
+    gs_strfreev char           **keys         = NULL;
+    gsize                        n_keys       = 0;
     int                          i;
 
     keys = nm_keyfile_plugin_kf_get_keys(info->keyfile, setting_name, &n_keys, NULL);
@@ -1992,11 +1992,11 @@ tfilter_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     tfilters = g_ptr_array_new_with_free_func((GDestroyNotify) nm_tc_tfilter_unref);
 
     for (i = 0; i < n_keys; i++) {
-        NMTCTfilter * tfilter;
-        const char *  tfilter_parent;
-        gs_free char *tfilter_rest = NULL;
-        gs_free char *tfilter_str  = NULL;
-        gs_free_error GError *err  = NULL;
+        NMTCTfilter          *tfilter;
+        const char           *tfilter_parent;
+        gs_free char         *tfilter_rest = NULL;
+        gs_free char         *tfilter_str  = NULL;
+        gs_free_error GError *err          = NULL;
 
         if (!g_str_has_prefix(keys[i], "tfilter."))
             continue;
@@ -2037,9 +2037,9 @@ tfilter_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
  */
 static void
 setting_alias_writer(KeyfileWriterInfo *info,
-                     NMSetting *        setting,
-                     const char *       key,
-                     const GValue *     value)
+                     NMSetting         *setting,
+                     const char        *key,
+                     const GValue      *value)
 {
     const char *str, *alias;
 
@@ -2060,7 +2060,7 @@ sriov_vfs_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, c
 
     for (i = 0; i < vfs->len; i++) {
         const NMSriovVF *vf       = vfs->pdata[i];
-        gs_free char *   kf_value = NULL;
+        gs_free char    *kf_value = NULL;
         char             kf_key[32];
 
         kf_value = nm_utils_sriov_vf_to_str(vf, TRUE, NULL);
@@ -2112,12 +2112,12 @@ dns_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const G
 
 static void
 ip6_addr_gen_mode_writer(KeyfileWriterInfo *info,
-                         NMSetting *        setting,
-                         const char *       key,
-                         const GValue *     value)
+                         NMSetting         *setting,
+                         const char        *key,
+                         const GValue      *value)
 {
     NMSettingIP6ConfigAddrGenMode addr_gen_mode;
-    gs_free char *                str = NULL;
+    gs_free char                 *str = NULL;
 
     addr_gen_mode = (NMSettingIP6ConfigAddrGenMode) g_value_get_int(value);
     str = nm_utils_enum_to_str(nm_setting_ip6_config_addr_gen_mode_get_type(), addr_gen_mode);
@@ -2125,9 +2125,9 @@ ip6_addr_gen_mode_writer(KeyfileWriterInfo *info,
 }
 
 static void
-write_ip_values(GKeyFile *  file,
+write_ip_values(GKeyFile   *file,
                 const char *setting_name,
-                GPtrArray * array,
+                GPtrArray  *array,
                 const char *gateway,
                 gboolean    is_route)
 {
@@ -2135,11 +2135,11 @@ write_ip_values(GKeyFile *  file,
         nm_auto_str_buf NMStrBuf output = NM_STR_BUF_INIT(2 * INET_ADDRSTRLEN + 10, FALSE);
         int                      addr_family;
         guint                    i;
-        const char *             addr;
-        const char *             gw;
+        const char              *addr;
+        const char              *gw;
         guint32                  plen;
         char                     key_name[64];
-        char *                   key_name_idx;
+        char                    *key_name_idx;
 
         addr_family =
             nm_streq(setting_name, NM_SETTING_IP4_CONFIG_SETTING_NAME) ? AF_INET : AF_INET6;
@@ -2211,7 +2211,7 @@ write_ip_values(GKeyFile *  file,
 static void
 addr_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const GValue *value)
 {
-    GPtrArray * array;
+    GPtrArray  *array;
     const char *setting_name = nm_setting_get_name(setting);
     const char *gateway      = nm_setting_ip_config_get_gateway(NM_SETTING_IP_CONFIG(setting));
 
@@ -2223,7 +2223,7 @@ addr_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const 
 static void
 route_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const GValue *value)
 {
-    GPtrArray * array;
+    GPtrArray  *array;
     const char *setting_name = nm_setting_get_name(setting);
 
     array = (GPtrArray *) g_value_get_boxed(value);
@@ -2233,9 +2233,9 @@ route_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const
 
 static void
 bridge_vlan_writer(KeyfileWriterInfo *info,
-                   NMSetting *        setting,
-                   const char *       key,
-                   const GValue *     value)
+                   NMSetting         *setting,
+                   const char        *key,
+                   const GValue      *value)
 {
     GPtrArray *vlans;
 
@@ -2262,13 +2262,13 @@ bridge_vlan_writer(KeyfileWriterInfo *info,
 }
 
 static void
-wired_s390_options_parser_full(KeyfileReaderInfo *       info,
-                               const NMMetaSettingInfo * setting_info,
+wired_s390_options_parser_full(KeyfileReaderInfo        *info,
+                               const NMMetaSettingInfo  *setting_info,
                                const NMSettInfoProperty *property_info,
-                               const ParseInfoProperty * pip,
-                               NMSetting *               setting)
+                               const ParseInfoProperty  *pip,
+                               NMSetting                *setting)
 {
-    NMSettingWired *   s_wired = NM_SETTING_WIRED(setting);
+    NMSettingWired    *s_wired = NM_SETTING_WIRED(setting);
     gs_strfreev char **keys    = NULL;
     gsize              n_keys;
     gsize              i;
@@ -2297,11 +2297,11 @@ wired_s390_options_parser_full(KeyfileReaderInfo *       info,
 }
 
 static void
-wired_s390_options_writer_full(KeyfileWriterInfo *       info,
-                               const NMMetaSettingInfo * setting_info,
+wired_s390_options_writer_full(KeyfileWriterInfo        *info,
+                               const NMMetaSettingInfo  *setting_info,
                                const NMSettInfoProperty *property_info,
-                               const ParseInfoProperty * pip,
-                               NMSetting *               setting)
+                               const ParseInfoProperty  *pip,
+                               NMSetting                *setting)
 {
     NMSettingWired *s_wired = NM_SETTING_WIRED(setting);
     guint           i, n;
@@ -2309,8 +2309,8 @@ wired_s390_options_writer_full(KeyfileWriterInfo *       info,
     n = nm_setting_wired_get_num_s390_options(s_wired);
     for (i = 0; i < n; i++) {
         gs_free char *key_to_free = NULL;
-        const char *  opt_key;
-        const char *  opt_val;
+        const char   *opt_key;
+        const char   *opt_val;
 
         nm_setting_wired_get_s390_option(s_wired, i, &opt_key, &opt_val);
         nm_keyfile_plugin_kf_set_string(info->keyfile,
@@ -2321,23 +2321,23 @@ wired_s390_options_writer_full(KeyfileWriterInfo *       info,
 }
 
 static void
-ip_routing_rule_writer_full(KeyfileWriterInfo *       info,
-                            const NMMetaSettingInfo * setting_info,
+ip_routing_rule_writer_full(KeyfileWriterInfo        *info,
+                            const NMMetaSettingInfo  *setting_info,
                             const NMSettInfoProperty *property_info,
-                            const ParseInfoProperty * pip,
-                            NMSetting *               setting)
+                            const ParseInfoProperty  *pip,
+                            NMSetting                *setting)
 {
-    const char *       setting_name = nm_setting_get_name(setting);
+    const char        *setting_name = nm_setting_get_name(setting);
     NMSettingIPConfig *s_ip         = NM_SETTING_IP_CONFIG(setting);
     guint              i, j, n;
     char               key_name_full[100] = "routing-rule";
-    char *             key_name_num       = &key_name_full[NM_STRLEN("routing-rule")];
+    char              *key_name_num       = &key_name_full[NM_STRLEN("routing-rule")];
 
     n = nm_setting_ip_config_get_num_routing_rules(s_ip);
     j = 0;
     for (i = 0; i < n; i++) {
         NMIPRoutingRule *rule = nm_setting_ip_config_get_routing_rule(s_ip, i);
-        gs_free char *   str  = NULL;
+        gs_free char    *str  = NULL;
 
         str =
             nm_ip_routing_rule_to_string(rule, NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE, NULL, NULL);
@@ -2354,7 +2354,7 @@ qdisc_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const
 {
     nm_auto_free_gstring GString *key_name  = NULL;
     nm_auto_free_gstring GString *value_str = NULL;
-    GPtrArray *                   array;
+    GPtrArray                    *array;
     guint                         i;
 
     array = g_value_get_boxed(value);
@@ -2383,7 +2383,7 @@ tfilter_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, con
 {
     nm_auto_free_gstring GString *key_name  = NULL;
     nm_auto_free_gstring GString *value_str = NULL;
-    GPtrArray *                   array;
+    GPtrArray                    *array;
     guint                         i;
 
     array = g_value_get_boxed(value);
@@ -2408,16 +2408,16 @@ tfilter_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, con
 }
 
 static void
-_writer_full_ovs_external_ids_data(KeyfileWriterInfo *       info,
-                                   const NMMetaSettingInfo * setting_info,
+_writer_full_ovs_external_ids_data(KeyfileWriterInfo        *info,
+                                   const NMMetaSettingInfo  *setting_info,
                                    const NMSettInfoProperty *property_info,
-                                   const ParseInfoProperty * pip,
-                                   NMSetting *               setting)
+                                   const ParseInfoProperty  *pip,
+                                   NMSetting                *setting)
 {
-    GHashTable *      hash;
-    NMUtilsNamedValue data_static[300u / sizeof(NMUtilsNamedValue)];
+    GHashTable                *hash;
+    NMUtilsNamedValue          data_static[300u / sizeof(NMUtilsNamedValue)];
     gs_free NMUtilsNamedValue *data_free = NULL;
-    const NMUtilsNamedValue *  data;
+    const NMUtilsNamedValue   *data;
     guint                      data_len;
     char                       full_key_static[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX) + 300u];
     guint                      i;
@@ -2436,13 +2436,13 @@ _writer_full_ovs_external_ids_data(KeyfileWriterInfo *       info,
     memcpy(full_key_static, OVS_EXTERNAL_IDS_DATA_PREFIX, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX));
 
     for (i = 0; i < data_len; i++) {
-        const char *  key                 = data[i].name;
-        const char *  val                 = data[i].value_str;
+        const char   *key                 = data[i].name;
+        const char   *val                 = data[i].value_str;
         gs_free char *escaped_key_to_free = NULL;
-        const char *  escaped_key;
+        const char   *escaped_key;
         gsize         len;
         gs_free char *full_key_free = NULL;
-        char *        full_key      = full_key_static;
+        char         *full_key      = full_key_static;
 
         escaped_key = nm_keyfile_key_encode(key, &escaped_key_to_free);
 
@@ -2464,8 +2464,8 @@ _writer_full_ovs_external_ids_data(KeyfileWriterInfo *       info,
 static void
 write_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key, const GValue *value)
 {
-    GHashTable *         hash;
-    const char *         group_name  = nm_setting_get_name(setting);
+    GHashTable          *hash;
+    const char          *group_name  = nm_setting_get_name(setting);
     gboolean             vpn_secrets = FALSE;
     gs_free const char **keys        = NULL;
     guint                i, l;
@@ -2486,7 +2486,7 @@ write_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key, const 
     keys = nm_strdict_get_keys(hash, TRUE, &l);
     for (i = 0; i < l; i++) {
         gs_free char *to_free = NULL;
-        const char *  property, *data;
+        const char   *property, *data;
 
         property = keys[i];
 
@@ -2514,10 +2514,10 @@ write_hash_of_string(GKeyFile *file, NMSetting *setting, const char *key, const 
 static void
 ssid_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const GValue *value)
 {
-    GBytes *      bytes;
+    GBytes       *bytes;
     const guint8 *ssid_data;
     gsize         ssid_len;
-    const char *  setting_name = nm_setting_get_name(setting);
+    const char   *setting_name = nm_setting_get_name(setting);
     gboolean      new_format   = TRUE;
     gsize         semicolons   = 0;
     gsize         i;
@@ -2576,12 +2576,12 @@ ssid_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const 
 
 static void
 password_raw_writer(KeyfileWriterInfo *info,
-                    NMSetting *        setting,
-                    const char *       key,
-                    const GValue *     value)
+                    NMSetting         *setting,
+                    const char        *key,
+                    const GValue      *value)
 {
-    const char *  setting_name = nm_setting_get_name(setting);
-    GBytes *      array;
+    const char   *setting_name = nm_setting_get_name(setting);
+    GBytes       *array;
     gsize         len;
     const guint8 *data;
 
@@ -2599,10 +2599,10 @@ password_raw_writer(KeyfileWriterInfo *info,
 /*****************************************************************************/
 
 static void
-cert_writer_default(NMConnection *                    connection,
-                    GKeyFile *                        file,
-                    NMSetting8021x *                  setting,
-                    const char *                      setting_name,
+cert_writer_default(NMConnection                     *connection,
+                    GKeyFile                         *file,
+                    NMSetting8021x                   *setting,
+                    const char                       *setting_name,
                     const NMSetting8021xSchemeVtable *vtable)
 {
     NMSetting8021xCKScheme scheme;
@@ -2612,7 +2612,7 @@ cert_writer_default(NMConnection *                    connection,
         gs_free char *path_free = NULL;
         gs_free char *base_dir  = NULL;
         gs_free char *tmp       = NULL;
-        const char *  path;
+        const char   *path;
 
         path = vtable->path_func(setting);
         g_assert(path);
@@ -2643,7 +2643,7 @@ cert_writer_default(NMConnection *                    connection,
 
         nm_keyfile_plugin_kf_set_string(file, setting_name, vtable->setting_key, path);
     } else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-        GBytes *      blob;
+        GBytes       *blob;
         const guint8 *blob_data;
         gsize         blob_len;
         gs_free char *blob_base64 = NULL;
@@ -2677,7 +2677,7 @@ static void
 cert_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const GValue *value)
 {
     const NMSetting8021xSchemeVtable *vtable = NULL;
-    const char *                      setting_name;
+    const char                       *setting_name;
     guint                             i;
 
     for (i = 0; nm_setting_8021x_scheme_vtable[i].setting_key; i++) {
@@ -2728,22 +2728,22 @@ struct _ParseInfoProperty {
     const char *property_name;
     union {
         void (*parser)(KeyfileReaderInfo *info, NMSetting *setting, const char *key);
-        void (*parser_full)(KeyfileReaderInfo *       info,
-                            const NMMetaSettingInfo * setting_info,
+        void (*parser_full)(KeyfileReaderInfo        *info,
+                            const NMMetaSettingInfo  *setting_info,
                             const NMSettInfoProperty *property_info,
-                            const ParseInfoProperty * pip,
-                            NMSetting *               setting);
+                            const ParseInfoProperty  *pip,
+                            NMSetting                *setting);
     };
     union {
         void (*writer)(KeyfileWriterInfo *info,
-                       NMSetting *        setting,
-                       const char *       key,
-                       const GValue *     value);
-        void (*writer_full)(KeyfileWriterInfo *       info,
-                            const NMMetaSettingInfo * setting_info,
+                       NMSetting         *setting,
+                       const char        *key,
+                       const GValue      *value);
+        void (*writer_full)(KeyfileWriterInfo        *info,
+                            const NMMetaSettingInfo  *setting_info,
                             const NMSettInfoProperty *property_info,
-                            const ParseInfoProperty * pip,
-                            NMSetting *               setting);
+                            const ParseInfoProperty  *pip,
+                            NMSetting                *setting);
     };
     bool parser_skip;
     bool parser_no_check_key : 1;
@@ -3021,14 +3021,14 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
 };
 
 static void
-_parse_info_find(NMSetting *               setting,
-                 const char *              property_name,
+_parse_info_find(NMSetting                *setting,
+                 const char               *property_name,
                  const NMMetaSettingInfo **out_setting_info,
-                 const ParseInfoSetting ** out_parse_info_setting,
+                 const ParseInfoSetting  **out_parse_info_setting,
                  const ParseInfoProperty **out_parse_info_property)
 {
     const NMMetaSettingInfo *setting_info;
-    const ParseInfoSetting * pis;
+    const ParseInfoSetting  *pis;
     const ParseInfoProperty *pip;
 
 #if NM_MORE_ASSERTS > 10
@@ -3105,16 +3105,16 @@ _parse_info_find(NMSetting *               setting,
 /*****************************************************************************/
 
 static void
-read_one_setting_value(KeyfileReaderInfo *       info,
-                       NMSetting *               setting,
+read_one_setting_value(KeyfileReaderInfo        *info,
+                       NMSetting                *setting,
                        const NMSettInfoProperty *property_info)
 {
-    GKeyFile *    keyfile        = info->keyfile;
-    gs_free_error GError *   err = NULL;
+    GKeyFile                *keyfile = info->keyfile;
+    gs_free_error GError    *err     = NULL;
     const NMMetaSettingInfo *setting_info;
     const ParseInfoProperty *pip;
-    gs_free char *           tmp_str = NULL;
-    const char *             key;
+    gs_free char            *tmp_str = NULL;
+    const char              *key;
     GType                    type;
     guint64                  u64;
     gint64                   i64;
@@ -3255,11 +3255,11 @@ read_one_setting_value(KeyfileReaderInfo *       info,
         }
     } else if (type == G_TYPE_BYTES) {
         nm_auto_unref_bytearray GByteArray *array = NULL;
-        gs_unref_bytes GBytes *bytes              = NULL;
-        gs_free guint *tmp                        = NULL;
-        gsize          length;
-        int            i;
-        gboolean       already_warned = FALSE;
+        gs_unref_bytes GBytes              *bytes = NULL;
+        gs_free guint                      *tmp   = NULL;
+        gsize                               length;
+        int                                 i;
+        gboolean                            already_warned = FALSE;
 
         tmp = nm_keyfile_plugin_kf_get_integer_list_uint(keyfile,
                                                          setting_info->setting_name,
@@ -3347,9 +3347,9 @@ read_one_setting_value(KeyfileReaderInfo *       info,
 static void
 _read_setting(KeyfileReaderInfo *info)
 {
-    const NMSettInfoSetting *sett_info;
+    const NMSettInfoSetting   *sett_info;
     gs_unref_object NMSetting *setting = NULL;
-    const char *               alias;
+    const char                *alias;
     GType                      type;
     guint16                    i;
 
@@ -3386,10 +3386,10 @@ _read_setting(KeyfileReaderInfo *info)
 
             nm_strv_sort(keys, n_keys);
             for (k = 0; k < n_keys; k++) {
-                gs_free char *key           = keys[k];
+                gs_free char         *key   = keys[k];
                 gs_free_error GError *local = NULL;
-                const GVariantType *  variant_type;
-                GVariant *            variant;
+                const GVariantType   *variant_type;
+                GVariant             *variant;
 
                 /* a GKeyFile can return duplicate keys, there is just no API to make sense
                  * of them. Skip them. */
@@ -3477,16 +3477,16 @@ out:
 static void
 _read_setting_wireguard_peer(KeyfileReaderInfo *info)
 {
-    gs_unref_object NMSettingWireGuard *s_wg_new = NULL;
-    nm_auto_unref_wgpeer NMWireGuardPeer *peer   = NULL;
-    gs_free_error GError *error                  = NULL;
-    NMSettingWireGuard *  s_wg;
-    gs_free char *        str  = NULL;
-    const char *          cstr = NULL;
-    const char *          key;
-    gint64                i64;
-    gs_strfreev char **   sa = NULL;
-    gsize                 n_sa;
+    gs_unref_object NMSettingWireGuard   *s_wg_new = NULL;
+    nm_auto_unref_wgpeer NMWireGuardPeer *peer     = NULL;
+    gs_free_error GError                 *error    = NULL;
+    NMSettingWireGuard                   *s_wg;
+    gs_free char                         *str  = NULL;
+    const char                           *cstr = NULL;
+    const char                           *key;
+    gint64                                i64;
+    gs_strfreev char                    **sa = NULL;
+    gsize                                 n_sa;
 
     peer = nm_wireguard_peer_new();
 
@@ -3643,7 +3643,7 @@ _read_setting_vpn_secrets(KeyfileReaderInfo *info)
 {
     gs_strfreev char **keys = NULL;
     gsize              i, n_keys;
-    NMSettingVpn *     s_vpn;
+    NMSettingVpn      *s_vpn;
 
     s_vpn = nm_connection_get_setting_vpn(info->connection);
     if (!s_vpn) {
@@ -3689,7 +3689,7 @@ gboolean
 nm_keyfile_read_ensure_uuid(NMConnection *connection, const char *fallback_uuid_seed)
 {
     NMSettingConnection *s_con;
-    gs_free char *       hashed_uuid = NULL;
+    gs_free char        *hashed_uuid = NULL;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), FALSE);
     g_return_val_if_fail(fallback_uuid_seed, FALSE);
@@ -3724,16 +3724,16 @@ nm_keyfile_read_ensure_uuid(NMConnection *connection, const char *fallback_uuid_
  * Since: 1.30
  */
 NMConnection *
-nm_keyfile_read(GKeyFile *            keyfile,
-                const char *          base_dir,
+nm_keyfile_read(GKeyFile             *keyfile,
+                const char           *base_dir,
                 NMKeyfileHandlerFlags handler_flags,
                 NMKeyfileReadHandler  handler,
-                void *                user_data,
-                GError **             error)
+                void                 *user_data,
+                GError              **error)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    gs_strfreev char **           groups = NULL;
+    NMSettingConnection          *s_con;
+    gs_strfreev char            **groups = NULL;
     gsize                         n_groups;
     gsize                         i;
     gboolean                      vpn_secrets = FALSE;
@@ -3814,13 +3814,13 @@ out_with_info_error:
 /*****************************************************************************/
 
 static void
-write_setting_value(KeyfileWriterInfo *       info,
-                    NMSetting *               setting,
+write_setting_value(KeyfileWriterInfo        *info,
+                    NMSetting                *setting,
                     const NMSettInfoProperty *property_info)
 {
     const NMMetaSettingInfo *setting_info;
     const ParseInfoProperty *pip;
-    const char *             key;
+    const char              *key;
     char                     numstr[64];
     GValue                   value;
     GType                    type;
@@ -3919,7 +3919,7 @@ write_setting_value(KeyfileWriterInfo *       info,
         nm_sprintf_buf(numstr, "%d", (int) g_value_get_schar(&value));
         nm_keyfile_plugin_kf_set_value(info->keyfile, setting_info->setting_name, key, numstr);
     } else if (type == G_TYPE_BYTES) {
-        GBytes *      bytes;
+        GBytes       *bytes;
         const guint8 *data;
         gsize         len = 0;
 
@@ -3968,13 +3968,13 @@ _write_setting_wireguard(NMSetting *setting, KeyfileWriterInfo *info)
 
     n_peers = nm_setting_wireguard_get_peers_len(s_wg);
     for (i_peer = 0; i_peer < n_peers; i_peer++) {
-        NMWireGuardPeer *    peer = nm_setting_wireguard_get_peer(s_wg, i_peer);
-        const char *         public_key;
+        NMWireGuardPeer     *peer = nm_setting_wireguard_get_peer(s_wg, i_peer);
+        const char          *public_key;
         char                 group[NM_STRLEN(NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER) + 200];
         NMSettingSecretFlags secret_flags;
         gboolean             any_key = FALSE;
         guint                i_aip, n_aip;
-        const char *         cstr;
+        const char          *cstr;
         guint32              u32;
 
         public_key = nm_wireguard_peer_get_public_key(peer);
@@ -4073,16 +4073,16 @@ _write_setting_wireguard(NMSetting *setting, KeyfileWriterInfo *info)
  * Since: 1.30
  */
 GKeyFile *
-nm_keyfile_write(NMConnection *        connection,
+nm_keyfile_write(NMConnection         *connection,
                  NMKeyfileHandlerFlags handler_flags,
                  NMKeyfileWriteHandler handler,
-                 void *                user_data,
-                 GError **             error)
+                 void                 *user_data,
+                 GError              **error)
 {
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    GError *                        local   = NULL;
+    GError                         *local   = NULL;
     KeyfileWriterInfo               info;
-    NMSetting **                    settings;
+    NMSetting                     **settings;
     int                             i;
     guint16                         j;
 
@@ -4124,10 +4124,10 @@ nm_keyfile_write(NMConnection *        connection,
 
     settings = _nm_connection_get_settings_arr(connection);
     for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
-        NMSetting *              setting = settings[nm_meta_setting_types_by_priority[i]];
+        NMSetting               *setting = settings[nm_meta_setting_types_by_priority[i]];
         const NMSettInfoSetting *sett_info;
-        const char *             setting_name;
-        const char *             setting_alias;
+        const char              *setting_name;
+        const char              *setting_alias;
 
         if (!setting)
             continue;
@@ -4150,7 +4150,7 @@ nm_keyfile_write(NMConnection *        connection,
 
                 for (k = 0; k < n_keys; k++) {
                     const char *key = keys[k];
-                    GVariant *  v;
+                    GVariant   *v;
 
                     v = g_hash_table_lookup(h, key);
 
@@ -4305,7 +4305,7 @@ nm_keyfile_utils_create_filename(const char *name, gboolean with_extension)
     const char ESCAPE_CHAR  = with_extension ? '_' : '*';
     const char ESCAPE_CHAR2 = '_';
     NMStrBuf   str;
-    char *     p;
+    char      *p;
     gsize      len;
     gsize      i;
 
@@ -4392,10 +4392,10 @@ nm_keyfile_handler_data_fail_with_error(NMKeyfileHandlerData *handler_data, GErr
  */
 void
 nm_keyfile_handler_data_get_context(const NMKeyfileHandlerData *handler_data,
-                                    const char **               out_kf_group_name,
-                                    const char **               out_kf_key_name,
-                                    NMSetting **                out_cur_setting,
-                                    const char **               out_cur_property_name)
+                                    const char                **out_kf_group_name,
+                                    const char                **out_kf_key_name,
+                                    NMSetting                 **out_cur_setting,
+                                    const char                **out_cur_property_name)
 {
     g_return_if_fail(handler_data);
 
@@ -4435,8 +4435,8 @@ _nm_keyfile_handler_data_warn_get_message(const NMKeyfileHandlerData *handler_da
  */
 void
 nm_keyfile_handler_data_warn_get(const NMKeyfileHandlerData *handler_data,
-                                 const char **               out_message,
-                                 NMKeyfileWarnSeverity *     out_severity)
+                                 const char                **out_message,
+                                 NMKeyfileWarnSeverity      *out_severity)
 {
     g_return_if_fail(handler_data);
     g_return_if_fail(handler_data->type == NM_KEYFILE_HANDLER_TYPE_WARN);

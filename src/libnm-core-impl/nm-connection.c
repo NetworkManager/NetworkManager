@@ -126,7 +126,7 @@ _nm_connection_get_private_from_qdata(NMConnection *connection)
 
 #define NM_CONNECTION_GET_PRIVATE(connection)                                                     \
     ({                                                                                            \
-        NMConnection *       _connection = (connection);                                          \
+        NMConnection        *_connection = (connection);                                          \
         NMConnectionPrivate *_priv;                                                               \
                                                                                                   \
         if (G_LIKELY(NM_IS_SIMPLE_CONNECTION(_connection)))                                       \
@@ -215,8 +215,8 @@ static void
 _nm_connection_add_setting(NMConnection *connection, NMSetting *setting)
 {
     const NMMetaSettingInfo *setting_info;
-    NMConnectionPrivate *    priv;
-    NMSetting *              s_old;
+    NMConnectionPrivate     *priv;
+    NMSetting               *s_old;
 
     nm_assert(NM_IS_CONNECTION(connection));
     nm_assert(NM_IS_SETTING(setting));
@@ -264,8 +264,8 @@ nm_connection_add_setting(NMConnection *connection, NMSetting *setting)
 gboolean
 _nm_connection_remove_setting(NMConnection *connection, GType setting_type)
 {
-    NMConnectionPrivate *    priv;
-    NMSetting *              setting;
+    NMConnectionPrivate     *priv;
+    NMSetting               *setting;
     const NMMetaSettingInfo *setting_info;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), FALSE);
@@ -302,7 +302,7 @@ nm_connection_remove_setting(NMConnection *connection, GType setting_type)
 static gpointer
 _connection_get_setting(NMConnection *connection, GType setting_type)
 {
-    NMSetting *              setting;
+    NMSetting               *setting;
     const NMMetaSettingInfo *setting_info;
 
     nm_assert(NM_IS_CONNECTION(connection));
@@ -399,8 +399,8 @@ nm_connection_get_setting_by_name(NMConnection *connection, const char *name)
 
 gpointer /* (NMSetting *) */
 _nm_connection_check_main_setting(NMConnection *connection,
-                                  const char *  setting_name,
-                                  GError **     error)
+                                  const char   *setting_name,
+                                  GError      **error)
 {
     NMSetting *setting;
 
@@ -498,16 +498,16 @@ _auto_settings(NMSetting ***p_settings)
  *   are lost.
  **/
 gboolean
-_nm_connection_replace_settings(NMConnection *      connection,
-                                GVariant *          new_settings,
+_nm_connection_replace_settings(NMConnection       *connection,
+                                GVariant           *new_settings,
                                 NMSettingParseFlags parse_flags,
-                                GError **           error)
+                                GError            **error)
 {
-    NMSetting *                         settings[_NM_META_SETTING_TYPE_NUM] = {};
+    NMSetting                          *settings[_NM_META_SETTING_TYPE_NUM] = {};
     nm_auto(_auto_settings) NMSetting **settings_cleanup                    = settings;
     GVariantIter                        iter;
-    const char *                        setting_name;
-    GVariant *                          setting_dict;
+    const char                         *setting_name;
+    GVariant                           *setting_dict;
     gboolean                            changed;
     gboolean                            success;
     guint                               n_settings = 0;
@@ -528,9 +528,9 @@ _nm_connection_replace_settings(NMConnection *      connection,
     g_variant_iter_init(&iter, new_settings);
     while (g_variant_iter_next(&iter, "{&s@a{sv}}", &setting_name, &setting_dict)) {
         gs_unref_variant GVariant *setting_dict_free = NULL;
-        GError *                   local             = NULL;
-        NMSetting *                setting;
-        const NMMetaSettingInfo *  setting_info;
+        GError                    *local             = NULL;
+        NMSetting                 *setting;
+        const NMMetaSettingInfo   *setting_info;
 
         setting_dict_free = setting_dict;
 
@@ -748,11 +748,11 @@ nm_connection_compare(NMConnection *a, NMConnection *b, NMSettingCompareFlags fl
 }
 
 static gboolean
-diff_one_connection(NMConnection *        a,
-                    NMConnection *        b,
+diff_one_connection(NMConnection         *a,
+                    NMConnection         *b,
                     NMSettingCompareFlags flags,
                     gboolean              invert_results,
-                    GHashTable *          diffs)
+                    GHashTable           *diffs)
 {
     NMConnectionPrivate *a_priv     = NM_CONNECTION_GET_PRIVATE(a);
     NMConnectionPrivate *b_priv     = b ? NM_CONNECTION_GET_PRIVATE(b) : NULL;
@@ -763,7 +763,7 @@ diff_one_connection(NMConnection *        a,
         NMSetting *a_setting = a_priv->settings[i];
 
         if (a_setting) {
-            NMSetting * b_setting    = b ? b_priv->settings[i] : NULL;
+            NMSetting  *b_setting    = b ? b_priv->settings[i] : NULL;
             const char *setting_name = nm_setting_get_name(a_setting);
             GHashTable *results;
             gboolean    new_results = TRUE;
@@ -803,10 +803,10 @@ diff_one_connection(NMConnection *        a,
  * not
  **/
 gboolean
-nm_connection_diff(NMConnection *        a,
-                   NMConnection *        b,
+nm_connection_diff(NMConnection         *a,
+                   NMConnection         *b,
                    NMSettingCompareFlags flags,
-                   GHashTable **         out_settings)
+                   GHashTable          **out_settings)
 {
     GHashTable *diffs;
     gboolean    diff_found = FALSE;
@@ -845,12 +845,12 @@ NMSetting *
 _nm_connection_find_base_type_setting(NMConnection *connection)
 {
     NMConnectionPrivate *priv         = NM_CONNECTION_GET_PRIVATE(connection);
-    NMSetting *          setting      = NULL;
+    NMSetting           *setting      = NULL;
     NMSettingPriority    setting_prio = NM_SETTING_PRIORITY_USER;
     int                  i;
 
     for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
-        NMSetting *       s_iter = priv->settings[i];
+        NMSetting        *s_iter = priv->settings[i];
         NMSettingPriority s_iter_prio;
 
         if (!s_iter)
@@ -865,7 +865,7 @@ _nm_connection_find_base_type_setting(NMConnection *connection)
                 continue;
             } else if (s_iter_prio == setting_prio) {
                 NMSettingConnection *s_con = nm_connection_get_setting_connection(connection);
-                const char *         type;
+                const char          *type;
 
                 if (s_con) {
                     type = nm_setting_connection_get_connection_type(s_con);
@@ -886,7 +886,7 @@ _normalize_connection_uuid(NMConnection *self)
 {
     NMSettingConnection *s_con = nm_connection_get_setting_connection(self);
     char                 uuid_normalized[37];
-    const char *         uuid;
+    const char          *uuid;
 
     nm_assert(s_con);
 
@@ -942,7 +942,7 @@ _nm_setting_connection_verify_secondaries(GArray *secondaries, GError **error)
 
     if (len > 1) {
         gs_free const char **strv_to_free = NULL;
-        const char **        strv2;
+        const char         **strv2;
 
         strv2 = nm_strv_dup_shallow_maybe_a(20, strv, len, &strv_to_free);
         nm_strv_sort(strv2, len);
@@ -979,8 +979,8 @@ static gboolean
 _normalize_connection_secondaries(NMConnection *self)
 {
     NMSettingConnection *s_con = nm_connection_get_setting_connection(self);
-    GArray *             secondaries;
-    gs_strfreev char **  strv = NULL;
+    GArray              *secondaries;
+    gs_strfreev char   **strv = NULL;
     guint                i;
     guint                j;
 
@@ -1017,8 +1017,8 @@ static gboolean
 _normalize_connection_type(NMConnection *self)
 {
     NMSettingConnection *s_con  = nm_connection_get_setting_connection(self);
-    NMSetting *          s_base = NULL;
-    const char *         type;
+    NMSetting           *s_base = NULL;
+    const char          *type;
 
     type = nm_setting_connection_get_connection_type(s_con);
 
@@ -1066,12 +1066,12 @@ const char *
 _nm_connection_detect_slave_type(NMConnection *connection, NMSetting **out_s_port)
 {
     NMConnectionPrivate *priv       = NM_CONNECTION_GET_PRIVATE(connection);
-    const char *         slave_type = NULL;
-    NMSetting *          s_port     = NULL;
+    const char          *slave_type = NULL;
+    NMSetting           *s_port     = NULL;
     int                  i;
     static const struct {
         NMMetaSettingType meta_type;
-        const char *      controller_type_name;
+        const char       *controller_type_name;
     } infos[] = {
         {NM_META_SETTING_TYPE_BRIDGE_PORT, NM_SETTING_BRIDGE_SETTING_NAME},
         {NM_META_SETTING_TYPE_BOND_PORT, NM_SETTING_BOND_SETTING_NAME},
@@ -1105,7 +1105,7 @@ static gboolean
 _normalize_connection_slave_type(NMConnection *self)
 {
     NMSettingConnection *s_con = nm_connection_get_setting_connection(self);
-    const char *         slave_type, *port_type;
+    const char          *slave_type, *port_type;
 
     if (!s_con)
         return FALSE;
@@ -1177,7 +1177,7 @@ _normalize_ethernet_link_neg(NMConnection *self)
 static gboolean
 _supports_addr_family(NMConnection *self, int family)
 {
-    const char *         connection_type = nm_connection_get_connection_type(self);
+    const char          *connection_type = nm_connection_get_connection_type(self);
     NMSettingConnection *s_con;
 
     g_return_val_if_fail(connection_type, TRUE);
@@ -1198,8 +1198,8 @@ static gboolean
 _normalize_ip_config(NMConnection *self, GHashTable *parameters)
 {
     NMSettingIPConfig *s_ip4, *s_ip6;
-    NMSettingProxy *   s_proxy;
-    NMSetting *        setting;
+    NMSettingProxy    *s_proxy;
+    NMSetting         *setting;
     gboolean           changed = FALSE;
     guint              num, i;
 
@@ -1397,7 +1397,7 @@ _normalize_bond_options(NMConnection *self)
 {
     NMSettingBond *s_bond  = nm_connection_get_setting_bond(self);
     gboolean       changed = FALSE;
-    const char *   name, *mode_str;
+    const char    *name, *mode_str;
     NMBondMode     mode;
     guint32        num, i;
 
@@ -1425,8 +1425,8 @@ again:
 static gboolean
 _normalize_wireless_mac_address_randomization(NMConnection *self)
 {
-    NMSettingWireless *       s_wifi = nm_connection_get_setting_wireless(self);
-    const char *              cloned_mac_address;
+    NMSettingWireless        *s_wifi = nm_connection_get_setting_wireless(self);
+    const char               *cloned_mac_address;
     NMSettingMacRandomization mac_address_randomization;
 
     if (!s_wifi)
@@ -1645,7 +1645,7 @@ static gboolean
 _normalize_required_settings(NMConnection *self)
 {
     NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth(self);
-    NMSetting *         s_bridge;
+    NMSetting          *s_bridge;
     gboolean            changed = FALSE;
 
     if (nm_connection_get_setting_vlan(self)) {
@@ -1671,7 +1671,7 @@ static gboolean
 _normalize_invalid_slave_port_settings(NMConnection *self)
 {
     NMSettingConnection *s_con = nm_connection_get_setting_connection(self);
-    const char *         slave_type;
+    const char          *slave_type;
     gboolean             changed = FALSE;
 
     slave_type = nm_setting_connection_get_slave_type(s_con);
@@ -1725,10 +1725,10 @@ nm_connection_verify(NMConnection *connection, GError **error)
 NMSettingVerifyResult
 _nm_connection_verify(NMConnection *connection, GError **error)
 {
-    NMConnectionPrivate *priv;
-    NMSettingIPConfig *  s_ip4;
-    NMSettingIPConfig *  s_ip6;
-    NMSettingProxy *     s_proxy;
+    NMConnectionPrivate  *priv;
+    NMSettingIPConfig    *s_ip4;
+    NMSettingIPConfig    *s_ip6;
+    NMSettingProxy       *s_proxy;
     gs_free_error GError *normalizable_error      = NULL;
     NMSettingVerifyResult normalizable_error_type = NM_SETTING_VERIFY_SUCCESS;
     int                   i;
@@ -1748,8 +1748,8 @@ _nm_connection_verify(NMConnection *connection, GError **error)
     }
 
     for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
-        NMSetting *           setting      = priv->settings[nm_meta_setting_types_by_priority[i]];
-        GError *              verify_error = NULL;
+        NMSetting            *setting      = priv->settings[nm_meta_setting_types_by_priority[i]];
+        GError               *verify_error = NULL;
         NMSettingVerifyResult verify_result;
 
         if (!setting)
@@ -1909,9 +1909,9 @@ nm_connection_verify_secrets(NMConnection *connection, GError **error)
 
 static gboolean
 _connection_normalize(NMConnection *connection,
-                      GHashTable *  parameters,
-                      gboolean *    modified,
-                      GError **     error)
+                      GHashTable   *parameters,
+                      gboolean     *modified,
+                      GError      **error)
 {
     NMSettingVerifyResult success;
     gboolean              was_modified;
@@ -2006,9 +2006,9 @@ _connection_normalize(NMConnection *connection,
  **/
 gboolean
 nm_connection_normalize(NMConnection *connection,
-                        GHashTable *  parameters,
-                        gboolean *    modified,
-                        GError **     error)
+                        GHashTable   *parameters,
+                        gboolean     *modified,
+                        GError      **error)
 {
     NMSettingVerifyResult success;
     gs_free_error GError *normalizable_error = NULL;
@@ -2044,16 +2044,16 @@ nm_connection_normalize(NMConnection *connection,
 }
 
 gboolean
-_nm_connection_ensure_normalized(NMConnection * connection,
+_nm_connection_ensure_normalized(NMConnection  *connection,
                                  gboolean       allow_modify,
-                                 const char *   expected_uuid,
+                                 const char    *expected_uuid,
                                  gboolean       coerce_uuid,
                                  NMConnection **out_connection_clone,
-                                 GError **      error)
+                                 GError       **error)
 {
     gs_unref_object NMConnection *connection_clone = NULL;
-    gs_free_error GError *local                    = NULL;
-    NMSettingVerifyResult vresult;
+    gs_free_error GError         *local            = NULL;
+    NMSettingVerifyResult         vresult;
 
     nm_assert(NM_IS_CONNECTION(connection));
     nm_assert(!out_connection_clone || !*out_connection_clone);
@@ -2122,7 +2122,7 @@ _nm_assert_connection_unchanging_changed_cb(NMConnection *connection, gpointer u
 
 static void
 _nm_assert_connection_unchanging_secrets_updated_cb(NMConnection *connection,
-                                                    const char *  setting_name,
+                                                    const char   *setting_name,
                                                     gpointer      user_data)
 {
     nm_assert_not_reached();
@@ -2187,16 +2187,16 @@ nm_assert_connection_unchanging(NMConnection *connection)
  **/
 gboolean
 nm_connection_update_secrets(NMConnection *connection,
-                             const char *  setting_name,
-                             GVariant *    secrets,
-                             GError **     error)
+                             const char   *setting_name,
+                             GVariant     *secrets,
+                             GError      **error)
 {
-    NMSetting *  setting;
+    NMSetting   *setting;
     gboolean     success      = TRUE;
     gboolean     updated      = FALSE;
-    GVariant *   setting_dict = NULL;
+    GVariant    *setting_dict = NULL;
     GVariantIter iter;
-    const char * key;
+    const char  *key;
     gboolean     full_connection;
     int          success_detail;
 
@@ -2320,7 +2320,7 @@ nm_connection_update_secrets(NMConnection *connection,
 const char *
 nm_connection_need_secrets(NMConnection *connection, GPtrArray **hints)
 {
-    NMSetting *          setting_before = NULL;
+    NMSetting           *setting_before = NULL;
     NMConnectionPrivate *priv;
     int                  i;
 
@@ -2380,7 +2380,7 @@ nm_connection_clear_secrets(NMConnection *connection)
  * Clears and frees secrets determined by @func.
  **/
 void
-nm_connection_clear_secrets_with_flags(NMConnection *                   connection,
+nm_connection_clear_secrets_with_flags(NMConnection                    *connection,
                                        NMSettingClearSecretsWithFlagsFn func,
                                        gpointer                         user_data)
 {
@@ -2406,8 +2406,8 @@ nm_connection_clear_secrets_with_flags(NMConnection *                   connecti
 }
 
 static gboolean
-_clear_secrets_by_secret_flags_cb(NMSetting *          setting,
-                                  const char *         secret,
+_clear_secrets_by_secret_flags_cb(NMSetting           *setting,
+                                  const char          *secret,
                                   NMSettingSecretFlags flags,
                                   gpointer             user_data)
 {
@@ -2454,8 +2454,8 @@ _nm_connection_clear_secrets_by_secret_flags(NMConnection *self, NMSettingSecret
 /* Returns always a non-NULL, floating variant that must
  * be unrefed by the caller. */
 GVariant *
-_nm_connection_for_each_secret(NMConnection *                 self,
-                               GVariant *                     secrets,
+_nm_connection_for_each_secret(NMConnection                  *self,
+                               GVariant                      *secrets,
                                gboolean                       remove_non_secrets,
                                _NMConnectionForEachSecretFunc callback,
                                gpointer                       callback_data)
@@ -2463,8 +2463,8 @@ _nm_connection_for_each_secret(NMConnection *                 self,
     GVariantBuilder secrets_builder;
     GVariantBuilder setting_builder;
     GVariantIter    secrets_iter;
-    GVariantIter *  setting_iter;
-    const char *    setting_name;
+    GVariantIter   *setting_iter;
+    const char     *setting_name;
 
     /* This function, given a dict of dicts representing new secrets of
      * an NMConnection, walks through each toplevel dict (which represents a
@@ -2486,9 +2486,9 @@ _nm_connection_for_each_secret(NMConnection *                 self,
     g_variant_builder_init(&secrets_builder, NM_VARIANT_TYPE_CONNECTION);
     while (g_variant_iter_next(&secrets_iter, "{&sa{sv}}", &setting_name, &setting_iter)) {
         _nm_unused nm_auto_free_variant_iter GVariantIter *setting_iter_free = setting_iter;
-        NMSetting *                                        setting;
-        const char *                                       secret_name;
-        GVariant *                                         val;
+        NMSetting                                         *setting;
+        const char                                        *secret_name;
+        GVariant                                          *val;
 
         setting = nm_connection_get_setting_by_name(self, setting_name);
         if (!setting)
@@ -2532,16 +2532,16 @@ find_secret_for_each_func(NMSettingSecretFlags flags, gpointer user_data)
 }
 
 gboolean
-_nm_connection_find_secret(NMConnection *             self,
-                           GVariant *                 secrets,
+_nm_connection_find_secret(NMConnection              *self,
+                           GVariant                  *secrets,
                            NMConnectionFindSecretFunc callback,
                            gpointer                   callback_data)
 {
     gs_unref_variant GVariant *dummy = NULL;
     FindSecretData             data  = {
-        .find_func      = callback,
-        .find_func_data = callback_data,
-        .found          = FALSE,
+                     .find_func      = callback,
+                     .find_func_data = callback_data,
+                     .found          = FALSE,
     };
 
     dummy = _nm_connection_for_each_secret(self, secrets, FALSE, find_secret_for_each_func, &data);
@@ -2600,7 +2600,7 @@ nm_connection_to_dbus(NMConnection *connection, NMConnectionSerializationFlags f
 }
 
 GVariant *
-nm_connection_to_dbus_full(NMConnection *                          connection,
+nm_connection_to_dbus_full(NMConnection                           *connection,
                            NMConnectionSerializationFlags          flags,
                            const NMConnectionSerializationOptions *options)
 {
@@ -2618,7 +2618,7 @@ nm_connection_to_dbus_full(NMConnection *                          connection,
 
     for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
         NMSetting *setting = priv->settings[nm_meta_setting_types_by_priority[i]];
-        GVariant * setting_dict;
+        GVariant  *setting_dict;
 
         if (!setting)
             continue;
@@ -2702,7 +2702,7 @@ NMSetting **
 nm_connection_get_settings(NMConnection *connection, guint *out_length)
 {
     NMConnectionPrivate *priv;
-    NMSetting **         arr;
+    NMSetting          **arr;
     int                  len;
     int                  i;
     int                  j;
@@ -2746,7 +2746,7 @@ nm_connection_get_settings(NMConnection *connection, guint *out_length)
  * calling the supplied user function for each property.
  **/
 void
-nm_connection_for_each_setting_value(NMConnection *       connection,
+nm_connection_for_each_setting_value(NMConnection        *connection,
                                      NMSettingValueIterFn func,
                                      gpointer             user_data)
 {
@@ -2931,7 +2931,7 @@ nm_connection_get_interface_name(NMConnection *connection)
 NMConnectionMultiConnect
 _nm_connection_get_multi_connect(NMConnection *connection)
 {
-    NMSettingConnection *          s_con;
+    NMSettingConnection           *s_con;
     NMConnectionMultiConnect       multi_connect;
     const NMConnectionMultiConnect DEFAULT = NM_CONNECTION_MULTI_CONNECT_SINGLE;
 

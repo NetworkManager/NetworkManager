@@ -95,21 +95,21 @@ nms_keyfile_nmmeta_filename(const char *dirname, const char *uuid, gboolean temp
 }
 
 gboolean
-nms_keyfile_nmmeta_read(const char * dirname,
-                        const char * filename,
-                        char **      out_full_filename,
-                        char **      out_uuid,
-                        char **      out_loaded_path,
-                        char **      out_shadowed_storage,
+nms_keyfile_nmmeta_read(const char  *dirname,
+                        const char  *filename,
+                        char       **out_full_filename,
+                        char       **out_uuid,
+                        char       **out_loaded_path,
+                        char       **out_shadowed_storage,
                         struct stat *out_st)
 {
-    const char *  uuid;
+    const char   *uuid;
     guint         uuid_len;
     gs_free char *full_filename    = NULL;
     gs_free char *loaded_path      = NULL;
     gs_free char *shadowed_storage = NULL;
     struct stat   st_stack;
-    struct stat * st = out_st ?: &st_stack;
+    struct stat  *st = out_st ?: &st_stack;
 
     nm_assert(dirname && dirname[0] == '/');
     nm_assert(filename && filename[0] && !strchr(filename, '/'));
@@ -128,7 +128,7 @@ nms_keyfile_nmmeta_read(const char * dirname,
 
     if (S_ISREG(st->st_mode)) {
         nm_auto_unref_keyfile GKeyFile *kf     = NULL;
-        gs_free char *                  v_uuid = NULL;
+        gs_free char                   *v_uuid = NULL;
 
         kf = g_key_file_new();
 
@@ -176,11 +176,11 @@ nms_keyfile_nmmeta_read(const char * dirname,
 
 gboolean
 nms_keyfile_nmmeta_read_from_file(const char *full_filename,
-                                  char **     out_dirname,
-                                  char **     out_filename,
-                                  char **     out_uuid,
-                                  char **     out_loaded_path,
-                                  char **     out_shadowed_storage)
+                                  char      **out_dirname,
+                                  char      **out_filename,
+                                  char      **out_uuid,
+                                  char      **out_loaded_path,
+                                  char      **out_shadowed_storage)
 {
     gs_free char *dirname  = NULL;
     gs_free char *filename = NULL;
@@ -210,7 +210,7 @@ nms_keyfile_nmmeta_write(const char *dirname,
                          const char *loaded_path,
                          gboolean    loaded_path_allow_relative,
                          const char *shadowed_storage,
-                         char **     out_full_filename)
+                         char      **out_full_filename)
 {
     gs_free char *full_filename_tmp = NULL;
     gs_free char *full_filename     = NULL;
@@ -255,7 +255,7 @@ nms_keyfile_nmmeta_write(const char *dirname,
 
     if (shadowed_storage) {
         nm_auto_unref_keyfile GKeyFile *kf       = NULL;
-        gs_free char *                  contents = NULL;
+        gs_free char                   *contents = NULL;
         gsize                           length;
 
         kf = g_key_file_new();
@@ -313,7 +313,7 @@ nms_keyfile_nmmeta_write(const char *dirname,
 gboolean
 nms_keyfile_utils_check_file_permissions_stat(NMSKeyfileFiletype filetype,
                                               const struct stat *st,
-                                              GError **          error)
+                                              GError           **error)
 {
     g_return_val_if_fail(st, FALSE);
 
@@ -361,9 +361,9 @@ nms_keyfile_utils_check_file_permissions_stat(NMSKeyfileFiletype filetype,
 
 gboolean
 nms_keyfile_utils_check_file_permissions(NMSKeyfileFiletype filetype,
-                                         const char *       filename,
-                                         struct stat *      out_st,
-                                         GError **          error)
+                                         const char        *filename,
+                                         struct stat       *out_st,
+                                         GError           **error)
 {
     struct stat st;
     int         errsv;

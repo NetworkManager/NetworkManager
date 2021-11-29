@@ -66,13 +66,13 @@ nm_dhcp_dhcpcd_get_path(void)
 static gboolean
 ip4_start(NMDhcpClient *client, GError **error)
 {
-    NMDhcpDhcpcd *            self = NM_DHCP_DHCPCD(client);
-    const NMDhcpClientConfig *client_config;
+    NMDhcpDhcpcd                *self = NM_DHCP_DHCPCD(client);
+    const NMDhcpClientConfig    *client_config;
     gs_unref_ptrarray GPtrArray *argv = NULL;
     pid_t                        pid;
-    GError *                     local;
-    gs_free char *               cmd_str = NULL;
-    const char *                 dhcpcd_path;
+    GError                      *local;
+    gs_free char                *cmd_str = NULL;
+    const char                  *dhcpcd_path;
 
     pid = nm_dhcp_client_get_pid(client);
     g_return_val_if_fail(pid == -1, FALSE);
@@ -219,7 +219,7 @@ static void
 nm_dhcp_dhcpcd_class_init(NMDhcpDhcpcdClass *dhcpcd_class)
 {
     NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS(dhcpcd_class);
-    GObjectClass *     object_class = G_OBJECT_CLASS(dhcpcd_class);
+    GObjectClass      *object_class = G_OBJECT_CLASS(dhcpcd_class);
 
     object_class->dispose = dispose;
 

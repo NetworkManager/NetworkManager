@@ -27,7 +27,7 @@ test_defaults(GType type, const char *name)
 {
     GParamSpec **property_specs;
     guint        n_property_specs;
-    GObject *    setting;
+    GObject     *setting;
     int          i;
 
     setting = g_object_new(type, NULL);
@@ -39,7 +39,7 @@ test_defaults(GType type, const char *name)
         GParamSpec *prop_spec = property_specs[i];
         GValue      value     = G_VALUE_INIT;
         GValue      defvalue  = G_VALUE_INIT;
-        char *      actual, *expected;
+        char       *actual, *expected;
         gboolean    ok = FALSE;
 
         /* Ignore non-fundamental types since they won't really have

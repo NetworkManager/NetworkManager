@@ -32,10 +32,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_MAC_ADDRESS,
                                   PROP_PARENT, );
 
 typedef struct {
-    char *  mac_address;
-    char *  transport_mode;
-    char *  parent;
-    char *  virtual_iface_name;
+    char   *mac_address;
+    char   *transport_mode;
+    char   *parent;
+    char   *virtual_iface_name;
     int     p_key;
     guint32 mtu;
 } NMSettingInfinibandPrivate;
@@ -169,7 +169,7 @@ nm_setting_infiniband_get_virtual_interface_name(NMSettingInfiniband *setting)
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingConnection *       s_con = NULL;
+    NMSettingConnection        *s_con = NULL;
     NMSettingInfinibandPrivate *priv  = NM_SETTING_INFINIBAND_GET_PRIVATE(setting);
 
     if (priv->mac_address && !nm_utils_hwaddr_valid(priv->mac_address, INFINIBAND_ALEN)) {
@@ -388,9 +388,9 @@ finalize(GObject *object)
 static void
 nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingInfinibandPrivate));
 

@@ -46,7 +46,7 @@ NM_AVAILABLE_IN_1_14
 void nm_setting_match_remove_interface_name(NMSettingMatch *setting, int idx);
 NM_AVAILABLE_IN_1_14
 gboolean nm_setting_match_remove_interface_name_by_value(NMSettingMatch *setting,
-                                                         const char *    interface_name);
+                                                         const char     *interface_name);
 NM_AVAILABLE_IN_1_14
 void nm_setting_match_add_interface_name(NMSettingMatch *setting, const char *interface_name);
 NM_AVAILABLE_IN_1_14
@@ -62,15 +62,15 @@ NM_AVAILABLE_IN_1_26
 void nm_setting_match_remove_kernel_command_line(NMSettingMatch *setting, guint idx);
 NM_AVAILABLE_IN_1_26
 gboolean nm_setting_match_remove_kernel_command_line_by_value(NMSettingMatch *setting,
-                                                              const char *    kernel_command_line);
+                                                              const char     *kernel_command_line);
 NM_AVAILABLE_IN_1_26
 void nm_setting_match_add_kernel_command_line(NMSettingMatch *setting,
-                                              const char *    kernel_command_line);
+                                              const char     *kernel_command_line);
 NM_AVAILABLE_IN_1_26
 void nm_setting_match_clear_kernel_command_lines(NMSettingMatch *setting);
 NM_AVAILABLE_IN_1_26
 const char *const *nm_setting_match_get_kernel_command_lines(NMSettingMatch *setting,
-                                                             guint *         length);
+                                                             guint          *length);
 
 NM_AVAILABLE_IN_1_26
 guint nm_setting_match_get_num_drivers(NMSettingMatch *setting);

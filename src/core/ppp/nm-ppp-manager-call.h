@@ -12,13 +12,13 @@ NMPPPManager *nm_ppp_manager_create(const char *iface, GError **error);
 
 gboolean nm_ppp_manager_start(NMPPPManager *self,
                               NMActRequest *req,
-                              const char *  ppp_name,
+                              const char   *ppp_name,
                               guint32       timeout_secs,
                               guint         baud_override,
-                              GError **     error);
+                              GError      **error);
 
-NMPPPManagerStopHandle *nm_ppp_manager_stop(NMPPPManager *           self,
-                                            GCancellable *           cancellable,
+NMPPPManagerStopHandle *nm_ppp_manager_stop(NMPPPManager            *self,
+                                            GCancellable            *cancellable,
                                             NMPPPManagerStopCallback callback,
                                             gpointer                 user_data);
 

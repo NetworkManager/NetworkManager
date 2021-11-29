@@ -131,9 +131,9 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting);
-    NMSettingIPConfig *        s_ip = NM_SETTING_IP_CONFIG(setting);
+    NMSettingIPConfig         *s_ip = NM_SETTING_IP_CONFIG(setting);
     NMSettingVerifyResult      ret;
-    const char *               method;
+    const char                *method;
 
     ret = NM_SETTING_CLASS(nm_setting_ip4_config_parent_class)->verify(setting, connection, error);
     if (ret != NM_SETTING_VERIFY_SUCCESS)
@@ -344,7 +344,7 @@ static GVariant *
 ip4_addresses_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *addrs = NULL;
-    const char *                 gateway;
+    const char                  *gateway;
 
     g_object_get(setting, NM_SETTING_IP_CONFIG_ADDRESSES, &addrs, NULL);
     gateway = nm_setting_ip_config_get_gateway(NM_SETTING_IP_CONFIG(setting));
@@ -355,8 +355,8 @@ static gboolean
 ip4_addresses_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *addrs;
-    GVariant * s_ip4;
-    char **    labels, *gateway = NULL;
+    GVariant  *s_ip4;
+    char     **labels, *gateway = NULL;
     int        i;
 
     /* FIXME: properly handle errors */
@@ -397,8 +397,8 @@ ip4_address_labels_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingIPConfig *s_ip        = NM_SETTING_IP_CONFIG(setting);
     gboolean           have_labels = FALSE;
-    GPtrArray *        labels;
-    GVariant *         ret;
+    GPtrArray         *labels;
+    GVariant          *ret;
     int                num_addrs, i;
 
     if (!_nm_connection_serialize_non_secret(flags))
@@ -407,7 +407,7 @@ ip4_address_labels_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     num_addrs = nm_setting_ip_config_get_num_addresses(s_ip);
     for (i = 0; i < num_addrs; i++) {
         NMIPAddress *addr  = nm_setting_ip_config_get_address(s_ip, i);
-        GVariant *   label = nm_ip_address_get_attribute(addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
+        GVariant    *label = nm_ip_address_get_attribute(addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 
         if (label) {
             have_labels = TRUE;
@@ -420,7 +420,7 @@ ip4_address_labels_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     labels = g_ptr_array_sized_new(num_addrs);
     for (i = 0; i < num_addrs; i++) {
         NMIPAddress *addr  = nm_setting_ip_config_get_address(s_ip, i);
-        GVariant *   label = nm_ip_address_get_attribute(addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
+        GVariant    *label = nm_ip_address_get_attribute(addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 
         g_ptr_array_add(labels, (char *) (label ? g_variant_get_string(label, NULL) : ""));
     }
@@ -593,8 +593,8 @@ nm_setting_ip4_config_new(void)
 static void
 nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
 {
-    GObjectClass *          object_class            = G_OBJECT_CLASS(klass);
-    NMSettingClass *        setting_class           = NM_SETTING_CLASS(klass);
+    GObjectClass           *object_class            = G_OBJECT_CLASS(klass);
+    NMSettingClass         *setting_class           = NM_SETTING_CLASS(klass);
     NMSettingIPConfigClass *setting_ip_config_class = NM_SETTING_IP_CONFIG_CLASS(klass);
     GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config(AF_INET);
 

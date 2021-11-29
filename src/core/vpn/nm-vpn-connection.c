@@ -123,28 +123,28 @@ typedef struct {
 
     NMSettingsConnectionCallId *secrets_id;
     SecretsReq                  secrets_idx;
-    char *                      username;
+    char                       *username;
 
     VpnState                      vpn_state;
-    NMDispatcherCallId *          dispatcher_id;
+    NMDispatcherCallId           *dispatcher_id;
     NMActiveConnectionStateReason failure_reason;
 
     NMVpnServiceState service_state;
-    GSource *         start_timeout_source;
-    NMVpnPluginInfo * plugin_info;
+    GSource          *start_timeout_source;
+    NMVpnPluginInfo  *plugin_info;
 
     NMNetns *netns;
 
-    NML3Cfg *                l3cfg_if;
+    NML3Cfg                 *l3cfg_if;
     NML3CfgCommitTypeHandle *l3cfg_commit_type_if;
 
-    NML3Cfg *                l3cfg_dev;
+    NML3Cfg                 *l3cfg_dev;
     NML3CfgCommitTypeHandle *l3cfg_commit_type_dev;
 
     struct {
         GDBusConnection *connection;
-        char *           bus_name;
-        char *           owner;
+        char            *bus_name;
+        char            *owner;
         guint            signal_id_vpn;
         guint            signal_id_name_changed;
         bool             name_owner_initialized : 1;
@@ -154,7 +154,7 @@ typedef struct {
 
     union {
         const NML3ConfigData *const l3cds[_L3CD_TYPE_NUM];
-        const NML3ConfigData *      l3cds_[_L3CD_TYPE_NUM];
+        const NML3ConfigData       *l3cds_[_L3CD_TYPE_NUM];
     };
 
     /* This combines the l3cds of the VPN (basically, excluding l3cd_gw_extern which
@@ -170,11 +170,11 @@ typedef struct {
         IPData ip_data_x[2];
     };
 
-    GSource *          init_fail_on_idle_source;
-    GSource *          connect_timeout_source;
-    GCancellable *     main_cancellable;
-    GVariant *         connect_hash;
-    char *             banner;
+    GSource           *init_fail_on_idle_source;
+    GSource           *connect_timeout_source;
+    GCancellable      *main_cancellable;
+    GVariant          *connect_hash;
+    char              *banner;
     NMPacrunnerConfId *pacrunner_conf_id;
 
     int ifindex_if;
@@ -217,7 +217,7 @@ static void _secrets_get(NMVpnConnection *self, SecretsReq secrets_idx, const ch
 
 static guint32 get_route_table(NMVpnConnection *self, int addr_family, gboolean fallback_main);
 
-static void _set_vpn_state(NMVpnConnection *             self,
+static void _set_vpn_state(NMVpnConnection              *self,
                            VpnState                      vpn_state,
                            NMActiveConnectionStateReason reason,
                            gboolean                      quitting);
@@ -236,8 +236,8 @@ static const char *
 __LOG_create_prefix(char *buf, NMVpnConnection *self, NMSettingsConnection *con)
 {
     NMVpnConnectionPrivate *priv;
-    const char *            id;
-    const char *            iface;
+    const char             *id;
+    const char             *iface;
     char                    buf1[100];
     char                    buf2[100];
 
@@ -438,9 +438,9 @@ _get_applied_connection(NMVpnConnection *connection)
 /*****************************************************************************/
 
 static void
-_dbus_connection_call(NMVpnConnection *   self,
-                      const char *        method_name,
-                      GVariant *          parameters,
+_dbus_connection_call(NMVpnConnection    *self,
+                      const char         *method_name,
+                      GVariant           *parameters,
                       const GVariantType *reply_type,
                       GAsyncReadyCallback callback)
 {
@@ -466,9 +466,9 @@ _dbus_connection_call(NMVpnConnection *   self,
 static NML3ConfigMergeFlags
 _l3cfg_get_merge_flags(NMVpnConnection *self, L3CDType l3cd_type)
 {
-    NMConnection *       applied;
-    NMSettingIPConfig *  s_ip4;
-    NMSettingIPConfig *  s_ip6;
+    NMConnection        *applied;
+    NMSettingIPConfig   *s_ip4;
+    NMSettingIPConfig   *s_ip6;
     NML3ConfigMergeFlags merge_flags;
 
     merge_flags = NM_L3_CONFIG_MERGE_FLAGS_NONE;
@@ -714,8 +714,8 @@ _l3cfg_l3cd_set(NMVpnConnection *self, L3CDType l3cd_type, const NML3ConfigData 
 static void
 _l3cfg_l3cd_update(NMVpnConnection *self, L3CDType l3cd_type)
 {
-    NMVpnConnectionPrivate *     priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    NML3Cfg *                    l3cfg;
+    NMVpnConnectionPrivate      *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    NML3Cfg                     *l3cfg;
     int                          priority;
     const NML3ConfigData *const *p_l3cd;
 
@@ -843,9 +843,9 @@ _l3cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMVpnC
 static gboolean
 _set_ip_ifindex(NMVpnConnection *self, int ifindex, gboolean is_if)
 {
-    NMVpnConnectionPrivate *  priv      = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    int *                     p_ifindex = is_if ? &priv->ifindex_if : &priv->ifindex_dev;
-    NML3Cfg **                p_l3cfg   = is_if ? &priv->l3cfg_if : &priv->l3cfg_dev;
+    NMVpnConnectionPrivate   *priv      = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    int                      *p_ifindex = is_if ? &priv->ifindex_if : &priv->ifindex_dev;
+    NML3Cfg                 **p_l3cfg   = is_if ? &priv->l3cfg_if : &priv->l3cfg_dev;
     NML3CfgCommitTypeHandle **p_l3cfg_commit_type =
         is_if ? &priv->l3cfg_commit_type_if : &priv->l3cfg_commit_type_dev;
     gs_unref_object NML3Cfg *l3cfg_old = NULL;
@@ -877,9 +877,9 @@ _set_ip_ifindex(NMVpnConnection *self, int ifindex, gboolean is_if)
 static void
 disconnect_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMVpnConnection *self;
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
+    NMVpnConnection           *self;
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -923,7 +923,7 @@ vpn_cleanup(NMVpnConnection *self, NMDevice *parent_dev)
 static void
 dispatcher_pre_down_done(NMDispatcherCallId *call_id, gpointer user_data)
 {
-    NMVpnConnection *       self = NM_VPN_CONNECTION(user_data);
+    NMVpnConnection        *self = NM_VPN_CONNECTION(user_data);
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     nm_assert(call_id);
@@ -939,7 +939,7 @@ dispatcher_pre_down_done(NMDispatcherCallId *call_id, gpointer user_data)
 static void
 dispatcher_pre_up_done(NMDispatcherCallId *call_id, gpointer user_data)
 {
-    NMVpnConnection *       self = NM_VPN_CONNECTION(user_data);
+    NMVpnConnection        *self = NM_VPN_CONNECTION(user_data);
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     nm_assert(call_id);
@@ -959,7 +959,7 @@ dispatcher_cleanup(NMVpnConnection *self)
 }
 
 static void
-_set_vpn_state(NMVpnConnection *             self,
+_set_vpn_state(NMVpnConnection              *self,
                VpnState                      vpn_state,
                NMActiveConnectionStateReason reason,
                gboolean                      quitting)
@@ -968,7 +968,7 @@ _set_vpn_state(NMVpnConnection *             self,
     VpnState                old_vpn_state;
     NMVpnConnectionState    new_external_state;
     NMVpnConnectionState    old_external_state;
-    NMDevice *    parent_dev = nm_active_connection_get_device(NM_ACTIVE_CONNECTION(self));
+    NMDevice     *parent_dev = nm_active_connection_get_device(NM_ACTIVE_CONNECTION(self));
     NMConnection *applied;
 
     if (vpn_state == priv->vpn_state)
@@ -1142,7 +1142,7 @@ _connection_only_can_persist(NMVpnConnection *self)
 
 static void
 device_state_changed(NMActiveConnection *active,
-                     NMDevice *          device,
+                     NMDevice           *device,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state)
 {
@@ -1173,13 +1173,13 @@ device_state_changed(NMActiveConnection *active,
 static gboolean
 _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
                                       int             addr_family,
-                                      NMDevice *      parent_device,
+                                      NMDevice       *parent_device,
                                       const NMIPAddr *vpn_gw,
-                                      NMPlatform *    platform)
+                                      NMPlatform     *platform)
 {
-    const int            IS_IPv4                   = NM_IS_IPv4(addr_family);
-    NMIPAddr             parent_gw                 = NM_IP_ADDR_INIT;
-    gboolean             has_parent_gw             = FALSE;
+    const int                       IS_IPv4        = NM_IS_IPv4(addr_family);
+    NMIPAddr                        parent_gw      = NM_IP_ADDR_INIT;
+    gboolean                        has_parent_gw  = FALSE;
     nm_auto_nmpobj const NMPObject *route_resolved = NULL;
     int                             ifindex;
     NMPlatformIPXRoute              route;
@@ -1207,7 +1207,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
                                  (NMPObject **) &route_resolved);
     if (r >= 0) {
         const NMPlatformIPXRoute *rx = NMP_OBJECT_CAST_IPX_ROUTE(route_resolved);
-        const NMPObject *         obj;
+        const NMPObject          *obj;
 
         if (rx->rx.ifindex == ifindex && nm_platform_route_table_is_main(rx->rx.table_coerced)) {
             gconstpointer gw = nm_platform_ip_route_get_gateway(addr_family, &rx->rx);
@@ -1285,7 +1285,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
 static gboolean
 _l3cfg_l3cd_gw_extern_update(NMVpnConnection *self)
 {
-    NMVpnConnectionPrivate *priv                 = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    NMVpnConnectionPrivate                 *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     int                                     ifindex;
     gboolean                                changed;
@@ -1363,12 +1363,12 @@ _apply_config(NMVpnConnection *self)
 }
 
 static void
-fw_change_zone_cb(NMFirewalldManager *      firewalld_manager,
+fw_change_zone_cb(NMFirewalldManager       *firewalld_manager,
                   NMFirewalldManagerCallId *call_id,
-                  GError *                  error,
+                  GError                   *error,
                   gpointer                  user_data)
 {
-    NMVpnConnection *       self = user_data;
+    NMVpnConnection        *self = user_data;
     NMVpnConnectionPrivate *priv;
 
     g_return_if_fail(NM_IS_VPN_CONNECTION(self));
@@ -1387,12 +1387,12 @@ fw_change_zone_cb(NMFirewalldManager *      firewalld_manager,
 static void
 _check_complete(NMVpnConnection *self, gboolean success)
 {
-    NMVpnConnectionPrivate *priv                 = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    NMVpnConnectionPrivate                 *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    NMConnection *                          connection;
-    NMSettingConnection *                   s_con;
-    const char *                            zone;
-    const char *                            iface;
+    NMConnection                           *connection;
+    NMSettingConnection                    *s_con;
+    const char                             *zone;
+    const char                             *iface;
 
     if (priv->vpn_state < STATE_IP_CONFIG_GET || priv->vpn_state > STATE_ACTIVATED)
         return;
@@ -1494,7 +1494,7 @@ nm_vpn_connection_get_ip_route_metric(NMVpnConnection *self, int addr_family)
 static guint32
 get_route_table(NMVpnConnection *self, int addr_family, gboolean fallback_main)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     NMSettingIPConfig *s_ip;
     guint32            route_table = 0;
 
@@ -1513,7 +1513,7 @@ get_route_table(NMVpnConnection *self, int addr_family, gboolean fallback_main)
 static gboolean
 connect_timeout_cb(gpointer user_data)
 {
-    NMVpnConnection *       self = NM_VPN_CONNECTION(user_data);
+    NMVpnConnection        *self = NM_VPN_CONNECTION(user_data);
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     nm_clear_g_source_inst(&priv->connect_timeout_source);
@@ -1544,9 +1544,9 @@ connect_success(NMVpnConnection *self)
 static void
 connect_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMVpnConnection *self;
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
+    NMVpnConnection           *self;
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -1568,10 +1568,10 @@ connect_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 static void
 connect_interactive_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMVpnConnection *       self;
-    NMVpnConnectionPrivate *priv;
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
+    NMVpnConnection           *self;
+    NMVpnConnectionPrivate    *priv;
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -1609,7 +1609,7 @@ static GVariant *
 _hash_with_username(NMConnection *connection, const char *username)
 {
     gs_unref_object NMConnection *dup = NULL;
-    NMSettingVpn *                s_vpn;
+    NMSettingVpn                 *s_vpn;
 
     /* Shortcut if we weren't given a username or if there already was one in
      * the VPN setting; don't bother duplicating the connection and everything.
@@ -1744,12 +1744,12 @@ _dbus_signal_state_changed_cb(NMVpnConnection *self, guint32 new_service_state)
 static gboolean
 _config_process_generic(NMVpnConnection *self, GVariant *dict)
 {
-    nm_auto_g_object_thaw_notify GObject *self_thaw = NULL;
-    NMVpnConnectionPrivate *              priv      = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
+    nm_auto_g_object_thaw_notify GObject   *self_thaw = NULL;
+    NMVpnConnectionPrivate                 *priv      = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd      = NULL;
     int                                     IS_IPv4;
     int                                     ip_ifindex = 0;
-    const char *                            v_str;
+    const char                             *v_str;
     guint32                                 v_u32;
     gboolean                                v_b;
 
@@ -1787,7 +1787,7 @@ _config_process_generic(NMVpnConnection *self, GVariant *dict)
     }
 
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
-        NML3Cfg *       l3cfg                    = priv->l3cfg_if ?: priv->l3cfg_dev;
+        NML3Cfg                    *l3cfg        = priv->l3cfg_if ?: priv->l3cfg_dev;
         gs_unref_object NMIPConfig *ipconfig_old = NULL;
 
         ipconfig_old = g_steal_pointer(&priv->ip_data_x[IS_IPv4].ip_config);
@@ -1891,14 +1891,14 @@ _dbus_signal_config_cb(NMVpnConnection *self, GVariant *dict)
 static void
 _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict)
 {
-    const int               IS_IPv4              = NM_IS_IPv4(addr_family);
-    NMVpnConnectionPrivate *priv                 = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    GVariantIter *                          var_iter;
+    const int                               IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMVpnConnectionPrivate                 *priv    = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
+    GVariantIter                           *var_iter;
     guint32                                 u32;
-    const char *                            v_str;
+    const char                             *v_str;
     NMIPAddr                                v_addr;
-    GVariant *                              v;
+    GVariant                               *v;
     gboolean                                v_b;
     int                                     ip_ifindex;
     guint32                                 mss = 0;
@@ -2083,8 +2083,8 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
         _nm_unused nm_auto_free_variant_iter GVariantIter *var_iter_ref_owner = var_iter;
         NMPlatformIPXRoute                                 route              = {};
         guint32                                            plen;
-        GVariant *                                         next_hop;
-        GVariant *                                         dest;
+        GVariant                                          *next_hop;
+        GVariant                                          *dest;
         guint32                                            prefix;
         guint32                                            metric;
 
@@ -2209,7 +2209,7 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
 }
 
 void
-nm_vpn_connection_disconnect(NMVpnConnection *             self,
+nm_vpn_connection_disconnect(NMVpnConnection              *self,
                              NMActiveConnectionStateReason reason,
                              gboolean                      quitting)
 {
@@ -2219,7 +2219,7 @@ nm_vpn_connection_disconnect(NMVpnConnection *             self,
 }
 
 gboolean
-nm_vpn_connection_deactivate(NMVpnConnection *             self,
+nm_vpn_connection_deactivate(NMVpnConnection              *self,
                              NMActiveConnectionStateReason reason,
                              gboolean                      quitting)
 {
@@ -2241,11 +2241,11 @@ nm_vpn_connection_deactivate(NMVpnConnection *             self,
 static void
 _secrets_dbus_need_secrets_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMVpnConnection *       self;
-    NMVpnConnectionPrivate *priv;
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
-    const char *          setting_name;
+    NMVpnConnection           *self;
+    NMVpnConnectionPrivate    *priv;
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
+    const char                *setting_name;
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -2282,9 +2282,9 @@ _secrets_dbus_need_secrets_cb(GObject *source, GAsyncResult *result, gpointer us
 static void
 _secrets_dbus_new_secrets_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMVpnConnection *self;
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
+    NMVpnConnection           *self;
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -2302,16 +2302,16 @@ _secrets_dbus_new_secrets_cb(GObject *source, GAsyncResult *result, gpointer use
 }
 
 static void
-_secrets_get_secrets_cb(NMSettingsConnection *      connection,
+_secrets_get_secrets_cb(NMSettingsConnection       *connection,
                         NMSettingsConnectionCallId *call_id,
-                        const char *                agent_username,
-                        const char *                setting_name,
-                        GError *                    error,
+                        const char                 *agent_username,
+                        const char                 *setting_name,
+                        GError                     *error,
                         gpointer                    user_data)
 {
-    NMVpnConnection *       self = NM_VPN_CONNECTION(user_data);
+    NMVpnConnection        *self = NM_VPN_CONNECTION(user_data);
     NMVpnConnectionPrivate *priv;
-    GVariant *              dict;
+    GVariant               *dict;
 
     g_return_if_fail(NM_IS_VPN_CONNECTION(self));
 
@@ -2368,7 +2368,7 @@ _secrets_get_secrets_cb(NMSettingsConnection *      connection,
 static void
 _secrets_get(NMVpnConnection *self, SecretsReq secrets_idx, const char *const *hints)
 {
-    NMVpnConnectionPrivate *     priv  = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    NMVpnConnectionPrivate      *priv  = NM_VPN_CONNECTION_GET_PRIVATE(self);
     NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_NONE;
 
     g_return_if_fail(secrets_idx < SECRETS_REQ_LAST);
@@ -2411,15 +2411,15 @@ _secrets_get(NMVpnConnection *self, SecretsReq secrets_idx, const char *const *h
 }
 
 static void
-_dbus_signal_secrets_required_cb(NMVpnConnection *  self,
-                                 const char *       message,
+_dbus_signal_secrets_required_cb(NMVpnConnection   *self,
+                                 const char        *message,
                                  const char *const *secrets)
 {
     NMVpnConnectionPrivate *priv        = NM_VPN_CONNECTION_GET_PRIVATE(self);
     const gsize             secrets_len = NM_PTRARRAY_LEN(secrets);
     gsize                   i;
-    gs_free const char **   hints        = NULL;
-    gs_free char *          message_hint = NULL;
+    gs_free const char    **hints        = NULL;
+    gs_free char           *message_hint = NULL;
 
     if (!NM_IN_SET(priv->vpn_state, STATE_CONNECT, STATE_NEED_AUTH)) {
         _LOGD("secrets: request ignored in current state %s",
@@ -2488,12 +2488,12 @@ nm_vpn_service_daemon_exec(NMVpnConnection *self, GError **error)
 {
     NMVpnConnectionPrivate *priv;
     GPid                    pid;
-    char *                  vpn_argv[4];
-    gs_free char **         envp = NULL;
+    char                   *vpn_argv[4];
+    gs_free char          **envp = NULL;
     char                    env_log_level[NM_STRLEN("NM_VPN_LOG_LEVEL=") + 100];
     char                    env_log_syslog[NM_STRLEN("NM_VPN_LOG_SYSLOG=") + 10];
     const gsize             N_ENVIRON_EXTRA = 3;
-    char **                 p_environ;
+    char                  **p_environ;
     gsize                   n_environ;
     gsize                   i;
     gsize                   j;
@@ -2548,7 +2548,7 @@ nm_vpn_service_daemon_exec(NMVpnConnection *self, GError **error)
 static gboolean
 _start_timeout_cb(gpointer data)
 {
-    NMVpnConnection *       self = NM_VPN_CONNECTION(data);
+    NMVpnConnection        *self = NM_VPN_CONNECTION(data);
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     nm_clear_g_source_inst(&priv->start_timeout_source);
@@ -2567,14 +2567,14 @@ _start_timeout_cb(gpointer data)
 
 static void
 _dbus_dispatch_cb(GDBusConnection *connection,
-                  const char *     sender_name,
-                  const char *     object_path,
-                  const char *     interface_name,
-                  const char *     signal_name,
-                  GVariant *       parameters,
+                  const char      *sender_name,
+                  const char      *object_path,
+                  const char      *interface_name,
+                  const char      *signal_name,
+                  GVariant        *parameters,
                   gpointer         user_data)
 {
-    NMVpnConnection *       self = user_data;
+    NMVpnConnection        *self = user_data;
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
     guint32                 v_u;
 
@@ -2593,7 +2593,7 @@ _dbus_dispatch_cb(GDBusConnection *connection,
             _dbus_signal_state_changed_cb(self, v_u);
     } else if (nm_streq(signal_name, "SecretsRequired")) {
         if (g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sas)"))) {
-            const char *         v_s;
+            const char          *v_s;
             gs_free const char **v_strv = NULL;
 
             g_variant_get(parameters, "(&s^a&s)", &v_s, &v_strv);
@@ -2618,7 +2618,7 @@ static void
 _name_owner_changed(NMVpnConnection *self, const char *owner, gboolean initializing)
 {
     _nm_unused gs_unref_object NMVpnConnection *self_keep_alive = g_object_ref(self);
-    NMVpnConnectionPrivate *                    priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    NMVpnConnectionPrivate                     *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     owner = nm_str_not_empty(owner);
 
@@ -2674,16 +2674,16 @@ _name_owner_changed(NMVpnConnection *self, const char *owner, gboolean initializ
 
 static void
 _name_owner_changed_cb(GDBusConnection *connection,
-                       const char *     sender_name,
-                       const char *     object_path,
-                       const char *     interface_name,
-                       const char *     signal_name,
-                       GVariant *       parameters,
+                       const char      *sender_name,
+                       const char      *object_path,
+                       const char      *interface_name,
+                       const char      *signal_name,
+                       GVariant        *parameters,
                        gpointer         user_data)
 {
-    NMVpnConnection *       self = user_data;
+    NMVpnConnection        *self = user_data;
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
-    const char *            new_owner;
+    const char             *new_owner;
 
     if (!priv->dbus.name_owner_initialized)
         return;
@@ -2699,7 +2699,7 @@ _name_owner_changed_cb(GDBusConnection *connection,
 static void
 _name_owner_get_cb(const char *name_owner, GError *error, gpointer user_data)
 {
-    NMVpnConnection *       self;
+    NMVpnConnection        *self;
     NMVpnConnectionPrivate *priv;
 
     if (nm_utils_error_is_cancelled(error))
@@ -2715,7 +2715,7 @@ _name_owner_get_cb(const char *name_owner, GError *error, gpointer user_data)
 static gboolean
 _init_fail_on_idle_cb(gpointer user_data)
 {
-    NMVpnConnection *       self = user_data;
+    NMVpnConnection        *self = user_data;
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     nm_clear_g_source_inst(&priv->init_fail_on_idle_source);
@@ -2732,9 +2732,9 @@ void
 nm_vpn_connection_activate(NMVpnConnection *self, NMVpnPluginInfo *plugin_info)
 {
     NMVpnConnectionPrivate *priv;
-    NMConnection *          connection;
-    NMSettingVpn *          s_vpn;
-    const char *            service;
+    NMConnection           *connection;
+    NMSettingVpn           *s_vpn;
+    const char             *service;
 
     g_return_if_fail(NM_IS_VPN_CONNECTION(self));
     g_return_if_fail(NM_IS_VPN_PLUGIN_INFO(plugin_info));
@@ -2812,8 +2812,8 @@ out:
 static void
 device_changed(NMActiveConnection *active, NMDevice *new_device, NMDevice *old_device)
 {
-    NMVpnConnection *       self       = NM_VPN_CONNECTION(active);
-    NMVpnConnectionPrivate *priv       = NM_VPN_CONNECTION_GET_PRIVATE(active);
+    NMVpnConnection         *self      = NM_VPN_CONNECTION(active);
+    NMVpnConnectionPrivate  *priv      = NM_VPN_CONNECTION_GET_PRIVATE(active);
     gs_unref_object NML3Cfg *l3cfg_old = NULL;
     int                      ifindex;
 
@@ -2865,7 +2865,7 @@ device_changed(NMActiveConnection *active, NMDevice *new_device, NMDevice *old_d
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMVpnConnection *       self = NM_VPN_CONNECTION(object);
+    NMVpnConnection        *self = NM_VPN_CONNECTION(object);
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -2905,12 +2905,12 @@ nm_vpn_connection_init(NMVpnConnection *self)
 }
 
 NMVpnConnection *
-nm_vpn_connection_new(NMSettingsConnection * settings_connection,
-                      NMDevice *             parent_device,
-                      const char *           specific_object,
+nm_vpn_connection_new(NMSettingsConnection  *settings_connection,
+                      NMDevice              *parent_device,
+                      const char            *specific_object,
                       NMActivationReason     activation_reason,
                       NMActivationStateFlags initial_state_flags,
-                      NMAuthSubject *        subject)
+                      NMAuthSubject         *subject)
 {
     g_return_val_if_fail(!settings_connection || NM_IS_SETTINGS_CONNECTION(settings_connection),
                          NULL);
@@ -2938,7 +2938,7 @@ nm_vpn_connection_new(NMSettingsConnection * settings_connection,
 static void
 dispose(GObject *object)
 {
-    NMVpnConnection *       self = NM_VPN_CONNECTION(object);
+    NMVpnConnection        *self = NM_VPN_CONNECTION(object);
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     nm_clear_g_dbus_connection_signal(priv->dbus.connection, &priv->dbus.signal_id_vpn);
@@ -2977,7 +2977,7 @@ dispose(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMVpnConnection *       self = NM_VPN_CONNECTION(object);
+    NMVpnConnection        *self = NM_VPN_CONNECTION(object);
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     G_OBJECT_CLASS(nm_vpn_connection_parent_class)->finalize(object);
@@ -3018,9 +3018,9 @@ static const NMDBusInterfaceInfoExtended interface_info_vpn_connection = {
 static void
 nm_vpn_connection_class_init(NMVpnConnectionClass *klass)
 {
-    GObjectClass *           object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass            *object_class      = G_OBJECT_CLASS(klass);
     NMActiveConnectionClass *active_class      = NM_ACTIVE_CONNECTION_CLASS(klass);
-    NMDBusObjectClass *      dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
+    NMDBusObjectClass       *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
 
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_vpn_connection);
 

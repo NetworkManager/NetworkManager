@@ -38,9 +38,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT,
                                   PROP_SEND_SCI, );
 
 typedef struct {
-    char *                    parent;
-    char *                    mka_cak;
-    char *                    mka_ckn;
+    char                     *parent;
+    char                     *mka_cak;
+    char                     *mka_ckn;
     int                       port;
     NMSettingMacsecMode       mode;
     NMSettingSecretFlags      mka_cak_flags;
@@ -212,7 +212,7 @@ static GPtrArray *
 need_secrets(NMSetting *setting)
 {
     NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
-    GPtrArray *             secrets = NULL;
+    GPtrArray              *secrets = NULL;
 
     if (priv->mode == NM_SETTING_MACSEC_MODE_PSK) {
         if (!priv->mka_cak
@@ -271,9 +271,9 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
-    NMSettingConnection *   s_con   = NULL;
-    NMSettingWired *        s_wired = NULL;
-    NMSetting8021x *        s_8021x = NULL;
+    NMSettingConnection    *s_con   = NULL;
+    NMSettingWired         *s_wired = NULL;
+    NMSetting8021x         *s_8021x = NULL;
 
     if (connection) {
         s_con   = nm_connection_get_setting_connection(connection);
@@ -404,7 +404,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingMacsec *       setting = NM_SETTING_MACSEC(object);
+    NMSettingMacsec        *setting = NM_SETTING_MACSEC(object);
     NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -444,7 +444,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingMacsec *       setting = NM_SETTING_MACSEC(object);
+    NMSettingMacsec        *setting = NM_SETTING_MACSEC(object);
     NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -514,7 +514,7 @@ nm_setting_macsec_new(void)
 static void
 finalize(GObject *object)
 {
-    NMSettingMacsec *       setting = NM_SETTING_MACSEC(object);
+    NMSettingMacsec        *setting = NM_SETTING_MACSEC(object);
     NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
 
     g_free(priv->parent);
@@ -527,9 +527,9 @@ finalize(GObject *object)
 static void
 nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingMacsecPrivate));
 

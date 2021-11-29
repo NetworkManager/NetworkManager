@@ -35,7 +35,7 @@ typedef struct Request Request;
 
 typedef struct {
     GDBusConnection *dbus_connection;
-    GCancellable *   quit_cancellable;
+    GCancellable    *quit_cancellable;
 
     bool log_verbose;
     bool log_stdout;
@@ -50,7 +50,7 @@ typedef struct {
     gboolean persist;
 
     Request *current_request;
-    GQueue * requests_waiting;
+    GQueue  *requests_waiting;
     int      num_requests_pending;
 
     bool exit_with_failure;
@@ -67,23 +67,23 @@ GlobalData gl;
 typedef struct {
     Request *request;
 
-    char *         script;
+    char          *script;
     GPid           pid;
     DispatchResult result;
-    char *         error;
+    char          *error;
     gboolean       wait;
     gboolean       dispatched;
-    GSource *      watch_source;
-    GSource *      timeout_source;
+    GSource       *watch_source;
+    GSource       *timeout_source;
 } ScriptInfo;
 
 struct Request {
     guint request_id;
 
     GDBusMethodInvocation *context;
-    char *                 action;
-    char *                 iface;
-    char **                envp;
+    char                  *action;
+    char                  *iface;
+    char                 **envp;
     gboolean               debug;
 
     GPtrArray *scripts; /* list of ScriptInfo */
@@ -293,7 +293,7 @@ static void
 complete_request(Request *request)
 {
     GVariantBuilder results;
-    GVariant *      ret;
+    GVariant       *ret;
     guint           i;
 
     nm_assert(request);
@@ -397,7 +397,7 @@ complete_script(ScriptInfo *script)
 static void
 script_watch_cb(GPid pid, int status, gpointer user_data)
 {
-    ScriptInfo *  script      = user_data;
+    ScriptInfo   *script      = user_data;
     gs_free char *status_desc = NULL;
 
     g_assert(pid == script->pid);
@@ -518,8 +518,8 @@ static gboolean
 script_dispatch(ScriptInfo *script)
 {
     gs_free_error GError *error = NULL;
-    char *                argv[4];
-    Request *             request = script->request;
+    char                 *argv[4];
+    Request              *request = script->request;
 
     if (script->dispatched)
         return FALSE;
@@ -596,10 +596,10 @@ _compare_basenames(gconstpointer a, gconstpointer b)
 static void
 _find_scripts(Request *request, GHashTable *scripts, const char *base, const char *subdir)
 {
-    const char *  filename;
+    const char   *filename;
     gs_free char *dirname = NULL;
-    GError *      error   = NULL;
-    GDir *        dir;
+    GError       *error   = NULL;
+    GDir         *dir;
 
     dirname = g_build_filename(base, "dispatcher.d", subdir, NULL);
 
@@ -628,11 +628,11 @@ static GSList *
 find_scripts(Request *request)
 {
     gs_unref_hashtable GHashTable *scripts     = NULL;
-    GSList *                       script_list = NULL;
+    GSList                        *script_list = NULL;
     GHashTableIter                 iter;
-    const char *                   subdir;
-    char *                         path;
-    char *                         filename;
+    const char                    *subdir;
+    char                          *path;
+    char                          *filename;
 
     if (NM_IN_STRSET(request->action, NMD_ACTION_PRE_UP, NMD_ACTION_VPN_PRE_UP))
         subdir = "pre-up.d";
@@ -649,7 +649,7 @@ find_scripts(Request *request)
     g_hash_table_iter_init(&iter, scripts);
     while (g_hash_table_iter_next(&iter, (gpointer *) &filename, (gpointer *) &path)) {
         gs_free char *link_target = NULL;
-        const char *  err_msg     = NULL;
+        const char   *err_msg     = NULL;
         struct stat   st;
         int           err;
 
@@ -681,7 +681,7 @@ script_must_wait(const char *path)
 
     link = g_file_read_link(path, NULL);
     if (link) {
-        gs_free char *     dir  = NULL;
+        gs_free char      *dir  = NULL;
         nm_auto_free char *real = NULL;
 
         if (!g_path_is_absolute(link)) {
@@ -706,7 +706,7 @@ script_must_wait(const char *path)
 static void
 _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
 {
-    const char *     action;
+    const char                *action;
     gs_unref_variant GVariant *connection              = NULL;
     gs_unref_variant GVariant *connection_properties   = NULL;
     gs_unref_variant GVariant *device_properties       = NULL;
@@ -715,18 +715,18 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
     gs_unref_variant GVariant *device_ip6_config       = NULL;
     gs_unref_variant GVariant *device_dhcp4_config     = NULL;
     gs_unref_variant GVariant *device_dhcp6_config     = NULL;
-    const char *               connectivity_state;
-    const char *               vpn_ip_iface;
+    const char                *connectivity_state;
+    const char                *vpn_ip_iface;
     gs_unref_variant GVariant *vpn_proxy_properties = NULL;
     gs_unref_variant GVariant *vpn_ip4_config       = NULL;
     gs_unref_variant GVariant *vpn_ip6_config       = NULL;
     gboolean                   debug;
-    GSList *                   sorted_scripts = NULL;
-    GSList *                   iter;
-    Request *                  request;
-    char **                    p;
+    GSList                    *sorted_scripts = NULL;
+    GSList                    *iter;
+    Request                   *request;
+    char                     **p;
     guint                      i, num_nowait = 0;
-    const char *               error_message = NULL;
+    const char                *error_message = NULL;
 
     g_variant_get(parameters,
                   "("
@@ -872,7 +872,7 @@ _handle_ping(GDBusMethodInvocation *invocation, GVariant *parameters)
 {
     gs_free char *msg = NULL;
     gint64        running_msec;
-    const char *  arg_s;
+    const char   *arg_s;
 
     g_variant_get(parameters, "(&s)", &arg_s);
 
@@ -888,12 +888,12 @@ _handle_ping(GDBusMethodInvocation *invocation, GVariant *parameters)
 }
 
 static void
-_bus_method_call(GDBusConnection *      connection,
-                 const char *           sender,
-                 const char *           object_path,
-                 const char *           interface_name,
-                 const char *           method_name,
-                 GVariant *             parameters,
+_bus_method_call(GDBusConnection       *connection,
+                 const char            *sender,
+                 const char            *object_path,
+                 const char            *interface_name,
+                 const char            *method_name,
+                 GVariant              *parameters,
                  GDBusMethodInvocation *invocation,
                  gpointer               user_data)
 {
@@ -955,9 +955,9 @@ _bus_register_service(void)
     static const GDBusInterfaceVTable interface_vtable = {
         .method_call = _bus_method_call,
     };
-    gs_free_error GError *           error = NULL;
+    gs_free_error GError            *error = NULL;
     NMDBusConnectionCallBlockingData data  = {
-        .result = NULL,
+         .result = NULL,
     };
     gs_unref_variant GVariant *ret = NULL;
     guint32                    ret_val;
@@ -1185,8 +1185,8 @@ int
 main(int argc, char **argv)
 {
     gs_free_error GError *error       = NULL;
-    GSource *             source_term = NULL;
-    GSource *             source_int  = NULL;
+    GSource              *source_term = NULL;
+    GSource              *source_int  = NULL;
 
     signal(SIGPIPE, SIG_IGN);
     source_term =

@@ -29,12 +29,12 @@ void nm_keep_alive_disarm(NMKeepAlive *self);
 
 void nm_keep_alive_destroy(NMKeepAlive *self);
 
-void nm_keep_alive_set_settings_connection_watch_visible(NMKeepAlive *         self,
+void nm_keep_alive_set_settings_connection_watch_visible(NMKeepAlive          *self,
                                                          NMSettingsConnection *connection);
 
-void nm_keep_alive_set_dbus_client_watch(NMKeepAlive *    self,
+void nm_keep_alive_set_dbus_client_watch(NMKeepAlive     *self,
                                          GDBusConnection *connection,
-                                         const char *     client_address);
+                                         const char      *client_address);
 
 gpointer /* GObject * */ nm_keep_alive_get_owner(NMKeepAlive *self);
 

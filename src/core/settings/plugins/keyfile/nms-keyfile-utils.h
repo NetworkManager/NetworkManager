@@ -34,38 +34,38 @@ const char *nms_keyfile_nmmeta_check_filename(const char *filename, guint *out_u
 
 char *nms_keyfile_nmmeta_filename(const char *dirname, const char *uuid, gboolean temporary);
 
-gboolean nms_keyfile_nmmeta_read(const char * dirname,
-                                 const char * filename,
-                                 char **      out_full_filename,
-                                 char **      out_uuid,
-                                 char **      out_loaded_path,
-                                 char **      out_shadowed_storage,
+gboolean nms_keyfile_nmmeta_read(const char  *dirname,
+                                 const char  *filename,
+                                 char       **out_full_filename,
+                                 char       **out_uuid,
+                                 char       **out_loaded_path,
+                                 char       **out_shadowed_storage,
                                  struct stat *out_st);
 
 gboolean nms_keyfile_nmmeta_read_from_file(const char *full_filename,
-                                           char **     out_dirname,
-                                           char **     out_filename,
-                                           char **     out_uuid,
-                                           char **     out_loaded_path,
-                                           char **     out_shadowed_storage);
+                                           char      **out_dirname,
+                                           char      **out_filename,
+                                           char      **out_uuid,
+                                           char      **out_loaded_path,
+                                           char      **out_shadowed_storage);
 
 int nms_keyfile_nmmeta_write(const char *dirname,
                              const char *uuid,
                              const char *loaded_path,
                              gboolean    loaded_path_allow_relative,
                              const char *shadowed_storage,
-                             char **     out_full_filename);
+                             char      **out_full_filename);
 
 /*****************************************************************************/
 
 struct stat;
 gboolean nms_keyfile_utils_check_file_permissions_stat(NMSKeyfileFiletype filetype,
                                                        const struct stat *st,
-                                                       GError **          error);
+                                                       GError           **error);
 
 gboolean nms_keyfile_utils_check_file_permissions(NMSKeyfileFiletype filetype,
-                                                  const char *       filename,
-                                                  struct stat *      out_st,
-                                                  GError **          error);
+                                                  const char        *filename,
+                                                  struct stat       *out_st,
+                                                  GError           **error);
 
 #endif /* __NMS_KEYFILE_UTILS_H__ */

@@ -19,8 +19,8 @@ struct _NMKeyFileDB {
     NMKeyFileDBLogFcn      log_fcn;
     NMKeyFileDBGotDirtyFcn got_dirty_fcn;
     gpointer               user_data;
-    const char *           group_name;
-    GKeyFile *             kf;
+    const char            *group_name;
+    GKeyFile              *kf;
     guint                  ref_count;
 
     bool is_started : 1;
@@ -77,8 +77,8 @@ _key_file_new(void)
 /*****************************************************************************/
 
 NMKeyFileDB *
-nm_key_file_db_new(const char *           filename,
-                   const char *           group_name,
+nm_key_file_db_new(const char            *filename,
+                   const char            *group_name,
                    NMKeyFileDBLogFcn      log_fcn,
                    NMKeyFileDBGotDirtyFcn got_dirty_fcn,
                    gpointer               user_data)
@@ -175,8 +175,8 @@ nm_key_file_db_destroy(NMKeyFileDB *self)
 void
 nm_key_file_db_start(NMKeyFileDB *self)
 {
-    gs_free char *contents = NULL;
-    gsize         contents_len;
+    gs_free char         *contents = NULL;
+    gsize                 contents_len;
     gs_free_error GError *error = NULL;
 
     g_return_if_fail(_IS_KEY_FILE_DB(self, FALSE, FALSE));
@@ -309,7 +309,7 @@ nm_key_file_db_set_value(NMKeyFileDB *self, const char *key, const char *value)
 
     if (!self->dirty && !got_dirty) {
         gs_free_error GError *error     = NULL;
-        gs_free char *        new_value = NULL;
+        gs_free char         *new_value = NULL;
 
         new_value = g_key_file_get_value(self->kf, self->group_name, key, &error);
         if (error || !new_value || !nm_streq0(old_value, new_value))
@@ -321,8 +321,8 @@ nm_key_file_db_set_value(NMKeyFileDB *self, const char *key, const char *value)
 }
 
 void
-nm_key_file_db_set_string_list(NMKeyFileDB *      self,
-                               const char *       key,
+nm_key_file_db_set_string_list(NMKeyFileDB       *self,
+                               const char        *key,
                                const char *const *value,
                                gssize             len)
 {
@@ -352,7 +352,7 @@ nm_key_file_db_set_string_list(NMKeyFileDB *      self,
 
     if (!self->dirty && !got_dirty) {
         gs_free_error GError *error     = NULL;
-        gs_free char *        new_value = NULL;
+        gs_free char         *new_value = NULL;
 
         new_value = g_key_file_get_value(self->kf, self->group_name, key, &error);
         if (error || !new_value || !nm_streq0(old_value, new_value))
@@ -388,8 +388,8 @@ nm_key_file_db_to_file(NMKeyFileDB *self, gboolean force)
 void
 nm_key_file_db_prune_tmp_files(NMKeyFileDB *self)
 {
-    gs_free char *     n_file   = NULL;
-    gs_free char *     n_dir    = NULL;
+    gs_free char      *n_file   = NULL;
+    gs_free char      *n_dir    = NULL;
     gs_strfreev char **tmpfiles = NULL;
     gsize              i;
 
@@ -401,7 +401,7 @@ nm_key_file_db_prune_tmp_files(NMKeyFileDB *self)
         return;
 
     for (i = 0; tmpfiles[i]; i++) {
-        const char *  tmpfile   = tmpfiles[i];
+        const char   *tmpfile   = tmpfiles[i];
         gs_free char *full_file = NULL;
         int           r;
 
@@ -430,10 +430,10 @@ nm_key_file_db_prune(NMKeyFileDB *self,
                      gboolean (*predicate)(const char *key, gpointer user_data),
                      gpointer user_data)
 {
-    gs_strfreev char **   keys                 = NULL;
+    gs_strfreev char              **keys       = NULL;
     nm_auto_unref_keyfile GKeyFile *kf_to_free = NULL;
-    GKeyFile *                      kf_src     = NULL;
-    GKeyFile *                      kf_dst     = NULL;
+    GKeyFile                       *kf_src     = NULL;
+    GKeyFile                       *kf_dst     = NULL;
     guint                           k;
 
     g_return_if_fail(_IS_KEY_FILE_DB(self, TRUE, FALSE));

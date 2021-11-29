@@ -68,17 +68,17 @@ gboolean nm_auth_manager_get_polkit_enabled(NMAuthManager *self);
 
 typedef struct _NMAuthManagerCallId NMAuthManagerCallId;
 
-typedef void (*NMAuthManagerCheckAuthorizationCallback)(NMAuthManager *      self,
+typedef void (*NMAuthManagerCheckAuthorizationCallback)(NMAuthManager       *self,
                                                         NMAuthManagerCallId *call_id,
                                                         gboolean             is_authorized,
                                                         gboolean             is_challenge,
-                                                        GError *             error,
+                                                        GError              *error,
                                                         gpointer             user_data);
 
 NMAuthManagerCallId *
-nm_auth_manager_check_authorization(NMAuthManager *                         self,
-                                    NMAuthSubject *                         subject,
-                                    const char *                            action_id,
+nm_auth_manager_check_authorization(NMAuthManager                          *self,
+                                    NMAuthSubject                          *subject,
+                                    const char                             *action_id,
                                     gboolean                                allow_user_interaction,
                                     NMAuthManagerCheckAuthorizationCallback callback,
                                     gpointer                                user_data);

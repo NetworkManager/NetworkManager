@@ -15,7 +15,7 @@ static NMConnection *
 _new_connection(const char *id)
 {
     NMConnection *a;
-    NMSetting *   setting;
+    NMSetting    *setting;
 
     a       = nm_simple_connection_new();
     setting = nm_setting_connection_new();
@@ -55,7 +55,7 @@ test_defname_no_connections(void)
 static void
 test_defname_no_conflict(void)
 {
-    GSList *      list = NULL;
+    GSList       *list = NULL;
     gs_free char *name = NULL;
 
     list = g_slist_append(list, _new_connection("asdfasdfasdfadf"));
@@ -73,7 +73,7 @@ test_defname_no_conflict(void)
 static void
 test_defname_conflict(void)
 {
-    GSList *      list = NULL;
+    GSList       *list = NULL;
     gs_free char *name = NULL;
 
     list = g_slist_append(list, _new_connection("asdfasdfasdfadf"));
@@ -91,7 +91,7 @@ test_defname_conflict(void)
 static void
 test_defname_multiple_conflicts(void)
 {
-    GSList *      list = NULL;
+    GSList       *list = NULL;
     gs_free char *name = NULL;
 
     list = g_slist_append(list, _new_connection("random gsm connection"));

@@ -87,7 +87,7 @@ _l3cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMIPCo
 static void
 get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMIPConfig *       self        = NM_IP_CONFIG(object);
+    NMIPConfig        *self        = NM_IP_CONFIG(object);
     NMIPConfigPrivate *priv        = NM_IP_CONFIG_GET_PRIVATE(self);
     const int          addr_family = nm_ip_config_get_addr_family(self);
     char               sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
@@ -141,7 +141,7 @@ get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMIPConfig *       self = NM_IP_CONFIG(object);
+    NMIPConfig        *self = NM_IP_CONFIG(object);
     NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE(self);
     gpointer           ptr;
 
@@ -180,7 +180,7 @@ nm_ip_config_new(int addr_family, NML3Cfg *l3cfg)
 static void
 constructed(GObject *object)
 {
-    NMIPConfig *       self = NM_IP_CONFIG(object);
+    NMIPConfig        *self = NM_IP_CONFIG(object);
     NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE(self);
 
     priv->l3cfg_notify_id =
@@ -203,7 +203,7 @@ nm_ip_config_take_and_unexport_on_idle(NMIPConfig *self_take)
 static void
 finalize(GObject *object)
 {
-    NMIPConfig *       self = NM_IP_CONFIG(object);
+    NMIPConfig        *self = NM_IP_CONFIG(object);
     NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE(self);
 
     nm_clear_g_signal_handler(priv->l3cfg, &priv->l3cfg_notify_id);
@@ -225,7 +225,7 @@ finalize(GObject *object)
 static void
 nm_ip_config_class_init(NMIPConfigClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
 
     object_class->get_property = get_property_ip;
@@ -331,11 +331,11 @@ G_DEFINE_TYPE(NMIP4Config, nm_ip4_config, NM_TYPE_IP_CONFIG)
 static void
 get_property_ip4(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMIPConfig *       self = NM_IP_CONFIG(object);
+    NMIPConfig        *self = NM_IP_CONFIG(object);
     NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE(self);
     char               addr_str[NM_UTILS_INET_ADDRSTRLEN];
     GVariantBuilder    builder;
-    const in_addr_t *  addrs;
+    const in_addr_t   *addrs;
     guint              len;
     guint              i;
 
@@ -441,9 +441,9 @@ nm_ip4_config_init(NMIP4Config *self)
 static void
 nm_ip4_config_class_init(NMIP4ConfigClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMIPConfigClass *  ip_config_class   = NM_IP_CONFIG_CLASS(klass);
+    NMIPConfigClass   *ip_config_class   = NM_IP_CONFIG_CLASS(klass);
 
     ip_config_class->addr_family = AF_INET;
 
@@ -504,7 +504,7 @@ nm_ip_config_dns_hash(const NML3ConfigData *l3cd, GChecksum *sum, int addr_famil
     guint              i;
     int                val;
     const char *const *nameservers;
-    const in_addr_t *  wins;
+    const in_addr_t   *wins;
     const char *const *domains;
     const char *const *searches;
     const char *const *options;
@@ -630,8 +630,8 @@ static const NMDBusInterfaceInfoExtended interface_info_ip6_config = {
 static void
 get_property_ip6(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMIPConfig *           self = NM_IP_CONFIG(object);
-    NMIPConfigPrivate *    priv = NM_IP_CONFIG_GET_PRIVATE(self);
+    NMIPConfig            *self = NM_IP_CONFIG(object);
+    NMIPConfigPrivate     *priv = NM_IP_CONFIG_GET_PRIVATE(self);
     GVariantBuilder        builder;
     guint                  len;
     guint                  i;
@@ -669,9 +669,9 @@ nm_ip6_config_init(NMIP6Config *self)
 static void
 nm_ip6_config_class_init(NMIP6ConfigClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMIPConfigClass *  ip_config_class   = NM_IP_CONFIG_CLASS(klass);
+    NMIPConfigClass   *ip_config_class   = NM_IP_CONFIG_CLASS(klass);
 
     ip_config_class->addr_family = AF_INET6;
 
@@ -730,14 +730,14 @@ nm_ip6_config_class_init(NMIP6ConfigClass *klass)
 static void
 _handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd)
 {
-    const int                addr_family              = nm_ip_config_get_addr_family(self);
-    const int                IS_IPv4                  = NM_IS_IPv4(addr_family);
-    NMIPConfigPrivate *      priv                     = NM_IP_CONFIG_GET_PRIVATE(self);
-    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old = NULL;
-    GParamSpec *                             changed_params[8];
+    const int                                addr_family = nm_ip_config_get_addr_family(self);
+    const int                                IS_IPv4     = NM_IS_IPv4(addr_family);
+    NMIPConfigPrivate                       *priv        = NM_IP_CONFIG_GET_PRIVATE(self);
+    nm_auto_unref_l3cd const NML3ConfigData *l3cd_old    = NULL;
+    GParamSpec                              *changed_params[8];
     guint                                    n_changed_params = 0;
-    const char *const *                      strv;
-    const char *const *                      strv_old;
+    const char *const                       *strv;
+    const char *const                       *strv_old;
     gconstpointer                            addrs;
     gconstpointer                            addrs_old;
     guint                                    len;
@@ -795,8 +795,8 @@ _handle_platform_change(NMIPConfig *self, guint32 obj_type_flags, gboolean is_in
 {
     const int                    addr_family = nm_ip_config_get_addr_family(self);
     const int                    IS_IPv4     = NM_IS_IPv4(addr_family);
-    NMIPConfigPrivate *          priv        = NM_IP_CONFIG_GET_PRIVATE(self);
-    GParamSpec *                 changed_params[5];
+    NMIPConfigPrivate           *priv        = NM_IP_CONFIG_GET_PRIVATE(self);
+    GParamSpec                  *changed_params[5];
     guint                        n_changed_params           = 0;
     const NMDedupMultiHeadEntry *head_entry_routes          = NULL;
     gboolean                     best_default_route_changed = FALSE;

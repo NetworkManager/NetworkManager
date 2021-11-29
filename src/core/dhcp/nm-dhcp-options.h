@@ -210,7 +210,7 @@ nm_dhcp_option_request_string(int addr_family, guint option)
 void nm_dhcp_option_take_option(GHashTable *options, int addr_family, guint option, char *value);
 void
 nm_dhcp_option_add_option(GHashTable *options, int addr_family, guint option, const char *value);
-void nm_dhcp_option_add_option_utf8safe_escape(GHashTable *  options,
+void nm_dhcp_option_add_option_utf8safe_escape(GHashTable   *options,
                                                int           addr_family,
                                                guint         option,
                                                const guint8 *data,

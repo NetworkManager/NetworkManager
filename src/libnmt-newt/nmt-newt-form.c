@@ -34,7 +34,7 @@ typedef struct {
     guint    padding;
     gboolean fixed_x, fixed_y;
     gboolean fixed_width, fixed_height;
-    char *   title_lc;
+    char    *title_lc;
 
     gboolean       dirty, escape_exits;
     NmtNewtWidget *focus;
@@ -137,7 +137,7 @@ nmt_newt_form_needs_rebuild(NmtNewtWidget *widget)
 static void
 nmt_newt_form_remove(NmtNewtContainer *container, NmtNewtWidget *widget)
 {
-    NmtNewtFormPrivate *   priv         = NMT_NEWT_FORM_GET_PRIVATE(container);
+    NmtNewtFormPrivate    *priv         = NMT_NEWT_FORM_GET_PRIVATE(container);
     NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS(nmt_newt_form_parent_class);
 
     g_return_if_fail(widget == priv->content);
@@ -156,7 +156,7 @@ nmt_newt_form_remove(NmtNewtContainer *container, NmtNewtWidget *widget)
 void
 nmt_newt_form_set_content(NmtNewtForm *form, NmtNewtWidget *content)
 {
-    NmtNewtFormPrivate *   priv         = NMT_NEWT_FORM_GET_PRIVATE(form);
+    NmtNewtFormPrivate    *priv         = NMT_NEWT_FORM_GET_PRIVATE(form);
     NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS(nmt_newt_form_parent_class);
 
     if (priv->content)
@@ -173,7 +173,7 @@ nmt_newt_form_build(NmtNewtForm *form)
 {
     NmtNewtFormPrivate *priv = NMT_NEWT_FORM_GET_PRIVATE(form);
     int                 screen_height, screen_width, form_height, form_width;
-    newtComponent *     cos;
+    newtComponent      *cos;
     int                 i;
 
     priv->dirty = FALSE;
@@ -260,8 +260,8 @@ nmt_newt_form_destroy(NmtNewtForm *form)
 static void
 nmt_newt_form_iterate(NmtNewtForm *form)
 {
-    NmtNewtFormPrivate *  priv = NMT_NEWT_FORM_GET_PRIVATE(form);
-    NmtNewtWidget *       focus;
+    NmtNewtFormPrivate   *priv = NMT_NEWT_FORM_GET_PRIVATE(form);
+    NmtNewtWidget        *focus;
     struct newtExitStruct es;
 
     if (priv->dirty) {
@@ -301,7 +301,7 @@ nmt_newt_form_iterate(NmtNewtForm *form)
  * nmt_newt_form_keypress_callback() iterates the top-most form, so it can
  * process the keypress.
  */
-static GSList * form_stack;
+static GSList  *form_stack;
 static GSource *keypress_source;
 
 static gboolean
@@ -552,9 +552,9 @@ nmt_newt_form_get_property(GObject *object, guint prop_id, GValue *value, GParam
 static void
 nmt_newt_form_class_init(NmtNewtFormClass *form_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(form_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(form_class);
     NmtNewtContainerClass *container_class = NMT_NEWT_CONTAINER_CLASS(form_class);
-    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(form_class);
+    NmtNewtWidgetClass    *widget_class    = NMT_NEWT_WIDGET_CLASS(form_class);
 
     g_type_class_add_private(form_class, sizeof(NmtNewtFormPrivate));
 

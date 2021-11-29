@@ -21,7 +21,7 @@ G_DEFINE_TYPE(NmtNewtCheckbox, nmt_newt_checkbox, NMT_TYPE_NEWT_COMPONENT)
     (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_NEWT_CHECKBOX, NmtNewtCheckboxPrivate))
 
 typedef struct {
-    char *   label_lc;
+    char    *label_lc;
     gboolean active;
 } NmtNewtCheckboxPrivate;
 
@@ -139,12 +139,12 @@ nmt_newt_checkbox_build_component(NmtNewtComponent *component, gboolean sensitiv
 }
 
 static void
-nmt_newt_checkbox_set_property(GObject *     object,
+nmt_newt_checkbox_set_property(GObject      *object,
                                guint         prop_id,
                                const GValue *value,
-                               GParamSpec *  pspec)
+                               GParamSpec   *pspec)
 {
-    NmtNewtCheckbox *       checkbox = NMT_NEWT_CHECKBOX(object);
+    NmtNewtCheckbox        *checkbox = NMT_NEWT_CHECKBOX(object);
     NmtNewtCheckboxPrivate *priv     = NMT_NEWT_CHECKBOX_GET_PRIVATE(object);
 
     switch (prop_id) {
@@ -182,7 +182,7 @@ nmt_newt_checkbox_get_property(GObject *object, guint prop_id, GValue *value, GP
 static void
 nmt_newt_checkbox_class_init(NmtNewtCheckboxClass *checkbox_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(checkbox_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(checkbox_class);
     NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS(checkbox_class);
 
     g_type_class_add_private(checkbox_class, sizeof(NmtNewtCheckboxPrivate));

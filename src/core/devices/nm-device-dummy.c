@@ -42,11 +42,11 @@ get_generic_capabilities(NMDevice *dev)
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
     nm_utils_complete_generic_with_params(nm_device_get_platform(device),
                                           connection,
@@ -69,13 +69,13 @@ update_connection(NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
-    const char *    iface = nm_device_get_iface(device);
+    const char     *iface = nm_device_get_iface(device);
     NMSettingDummy *s_dummy;
     int             r;
 
@@ -116,7 +116,7 @@ static void
 nm_device_dummy_class_init(NMDeviceDummyClass *klass)
 {
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_device_dummy);
 
@@ -139,11 +139,11 @@ nm_device_dummy_class_init(NMDeviceDummyClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DUMMY_DEVICE_FACTORY, NMDummyDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     return g_object_new(NM_TYPE_DEVICE_DUMMY,
                         NM_DEVICE_IFACE,

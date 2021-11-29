@@ -23,8 +23,8 @@
 /*****************************************************************************/
 
 typedef struct {
-    char *                 connection_path;
-    char *                 setting_name;
+    char                  *connection_path;
+    char                  *setting_name;
     GDBusMethodInvocation *context;
     CList                  gsi_lst;
     bool                   is_cancelling : 1;
@@ -39,12 +39,12 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSecretAgentOld,
 
 typedef struct {
     GDBusConnection *dbus_connection;
-    GMainContext *   main_context;
-    GMainContext *   dbus_context;
-    GObject *        context_busy_watcher;
-    GCancellable *   name_owner_cancellable;
-    GCancellable *   registering_cancellable;
-    GSource *        registering_retry_source;
+    GMainContext    *main_context;
+    GMainContext    *dbus_context;
+    GObject         *context_busy_watcher;
+    GCancellable    *name_owner_cancellable;
+    GCancellable    *registering_cancellable;
+    GSource         *registering_retry_source;
 
     NMLInitData *init_data;
 
@@ -289,7 +289,7 @@ static void
 get_secret_info_complete_and_free_error(GetSecretsInfo *info,
                                         GQuark          error_domain,
                                         int             error_code,
-                                        const char *    error_message)
+                                        const char     *error_message)
 {
     g_dbus_method_invocation_return_error_literal(g_steal_pointer(&info->context),
                                                   error_domain,
@@ -312,16 +312,16 @@ _dbus_connection_call_cb(GObject *source, GAsyncResult *result, gpointer user_da
 }
 
 static void
-_dbus_connection_call(NMSecretAgentOld *  self,
-                      const char *        bus_name,
-                      const char *        object_path,
-                      const char *        interface_name,
-                      const char *        method_name,
-                      GVariant *          parameters,
+_dbus_connection_call(NMSecretAgentOld   *self,
+                      const char         *bus_name,
+                      const char         *object_path,
+                      const char         *interface_name,
+                      const char         *method_name,
+                      GVariant           *parameters,
                       const GVariantType *reply_type,
                       GDBusCallFlags      flags,
                       int                 timeout_msec,
-                      GCancellable *      cancellable,
+                      GCancellable       *cancellable,
                       GAsyncReadyCallback callback,
                       gpointer            user_data)
 {
@@ -350,8 +350,8 @@ _dbus_connection_call(NMSecretAgentOld *  self,
 
 static GetSecretsInfo *
 find_get_secrets_info(NMSecretAgentOldPrivate *priv,
-                      const char *             connection_path,
-                      const char *             setting_name)
+                      const char              *connection_path,
+                      const char              *setting_name)
 {
     GetSecretsInfo *info;
 
@@ -385,15 +385,15 @@ _cancel_get_secret_request(NMSecretAgentOld *self, GetSecretsInfo *info, const c
 }
 
 static gboolean
-verify_request(NMSecretAgentOld *     self,
+verify_request(NMSecretAgentOld      *self,
                GDBusMethodInvocation *context,
-               GVariant *             connection_dict,
-               const char *           connection_path,
-               NMConnection **        out_connection,
-               GError **              error)
+               GVariant              *connection_dict,
+               const char            *connection_path,
+               NMConnection         **out_connection,
+               GError               **error)
 {
     gs_unref_object NMConnection *connection = NULL;
-    gs_free_error GError *local              = NULL;
+    gs_free_error GError         *local      = NULL;
 
     if (!nm_dbus_path_not_empty(connection_path)) {
         g_set_error_literal(error,
@@ -422,9 +422,9 @@ verify_request(NMSecretAgentOld *     self,
 
 static void
 get_secrets_cb(NMSecretAgentOld *self,
-               NMConnection *    connection,
-               GVariant *        secrets,
-               GError *          error,
+               NMConnection     *connection,
+               GVariant         *secrets,
+               GError           *error,
                gpointer          user_data)
 {
     GetSecretsInfo *info = user_data;
@@ -446,15 +446,15 @@ get_secrets_cb(NMSecretAgentOld *self,
 static void
 impl_get_secrets(NMSecretAgentOld *self, GVariant *parameters, GDBusMethodInvocation *context)
 {
-    NMSecretAgentOldPrivate *priv            = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
-    GError *                 error           = NULL;
+    NMSecretAgentOldPrivate      *priv       = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
+    GError                       *error      = NULL;
     gs_unref_object NMConnection *connection = NULL;
-    GetSecretsInfo *              info;
-    gs_unref_variant GVariant *arg_connection = NULL;
-    const char *               arg_connection_path;
-    const char *               arg_setting_name;
-    gs_free const char **      arg_hints = NULL;
-    guint32                    arg_flags;
+    GetSecretsInfo               *info;
+    gs_unref_variant GVariant    *arg_connection = NULL;
+    const char                   *arg_connection_path;
+    const char                   *arg_setting_name;
+    gs_free const char          **arg_hints = NULL;
+    guint32                       arg_flags;
 
     g_variant_get(parameters,
                   "(@a{sa{sv}}&o&s^a&su)",
@@ -494,14 +494,14 @@ impl_get_secrets(NMSecretAgentOld *self, GVariant *parameters, GDBusMethodInvoca
 }
 
 static void
-impl_cancel_get_secrets(NMSecretAgentOld *     self,
-                        GVariant *             parameters,
+impl_cancel_get_secrets(NMSecretAgentOld      *self,
+                        GVariant              *parameters,
                         GDBusMethodInvocation *context)
 {
     NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
-    GetSecretsInfo *         info;
-    const char *             arg_connection_path;
-    const char *             arg_setting_name;
+    GetSecretsInfo          *info;
+    const char              *arg_connection_path;
+    const char              *arg_setting_name;
 
     g_variant_get(parameters, "(&o&s)", &arg_connection_path, &arg_setting_name);
 
@@ -534,10 +534,10 @@ save_secrets_cb(NMSecretAgentOld *self, NMConnection *connection, GError *error,
 static void
 impl_save_secrets(NMSecretAgentOld *self, GVariant *parameters, GDBusMethodInvocation *context)
 {
-    gs_unref_object NMConnection *connection  = NULL;
-    gs_unref_variant GVariant *arg_connection = NULL;
-    const char *               arg_connection_path;
-    GError *                   error = NULL;
+    gs_unref_object NMConnection *connection     = NULL;
+    gs_unref_variant GVariant    *arg_connection = NULL;
+    const char                   *arg_connection_path;
+    GError                       *error = NULL;
 
     g_variant_get(parameters, "(@a{sa{sv}}&o)", &arg_connection, &arg_connection_path);
 
@@ -557,8 +557,8 @@ impl_save_secrets(NMSecretAgentOld *self, GVariant *parameters, GDBusMethodInvoc
 
 static void
 delete_secrets_cb(NMSecretAgentOld *self,
-                  NMConnection *    connection,
-                  GError *          error,
+                  NMConnection     *connection,
+                  GError           *error,
                   gpointer          user_data)
 {
     GDBusMethodInvocation *context = user_data;
@@ -572,10 +572,10 @@ delete_secrets_cb(NMSecretAgentOld *self,
 static void
 impl_delete_secrets(NMSecretAgentOld *self, GVariant *parameters, GDBusMethodInvocation *context)
 {
-    gs_unref_object NMConnection *connection  = NULL;
-    gs_unref_variant GVariant *arg_connection = NULL;
-    const char *               arg_connection_path;
-    GError *                   error = NULL;
+    gs_unref_object NMConnection *connection     = NULL;
+    gs_unref_variant GVariant    *arg_connection = NULL;
+    const char                   *arg_connection_path;
+    GError                       *error = NULL;
 
     g_variant_get(parameters, "(@a{sa{sv}}&o)", &arg_connection, &arg_connection_path);
 
@@ -739,13 +739,13 @@ nm_secret_agent_old_register(NMSecretAgentOld *self, GCancellable *cancellable, 
 static void
 _register_cancelled_cb(GObject *object, gpointer user_data)
 {
-    GTask *         task0         = user_data;
-    gs_unref_object GTask *  task = NULL;
-    NMSecretAgentOld *       self = g_task_get_source_object(task0);
-    NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
-    gulong *                 p_cancelled_id;
-    NMCListElem *            elem;
-    gs_free_error GError *error = NULL;
+    GTask                   *task0 = user_data;
+    gs_unref_object GTask   *task  = NULL;
+    NMSecretAgentOld        *self  = g_task_get_source_object(task0);
+    NMSecretAgentOldPrivate *priv  = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
+    gulong                  *p_cancelled_id;
+    NMCListElem             *elem;
+    gs_free_error GError    *error = NULL;
 
     elem = nm_c_list_elem_find_first(&priv->pending_tasks_register_lst_head, x, x == task0);
 
@@ -786,8 +786,8 @@ _register_cancelled_cb(GObject *object, gpointer user_data)
  * you want to check and ensure that the agent is registered.
  **/
 void
-nm_secret_agent_old_register_async(NMSecretAgentOld *  self,
-                                   GCancellable *      cancellable,
+nm_secret_agent_old_register_async(NMSecretAgentOld   *self,
+                                   GCancellable       *cancellable,
                                    GAsyncReadyCallback callback,
                                    gpointer            user_data)
 {
@@ -906,8 +906,8 @@ nm_secret_agent_old_unregister(NMSecretAgentOld *self, GCancellable *cancellable
  * Deprecated: 1.24: Use nm_secret_agent_old_enable().
  **/
 void
-nm_secret_agent_old_unregister_async(NMSecretAgentOld *  self,
-                                     GCancellable *      cancellable,
+nm_secret_agent_old_unregister_async(NMSecretAgentOld   *self,
+                                     GCancellable       *cancellable,
                                      GAsyncReadyCallback callback,
                                      gpointer            user_data)
 {
@@ -980,10 +980,10 @@ nm_secret_agent_old_unregister_finish(NMSecretAgentOld *self, GAsyncResult *resu
  * secrets from the user.
  */
 void
-nm_secret_agent_old_get_secrets(NMSecretAgentOld *             self,
-                                NMConnection *                 connection,
-                                const char *                   setting_name,
-                                const char **                  hints,
+nm_secret_agent_old_get_secrets(NMSecretAgentOld              *self,
+                                NMConnection                  *connection,
+                                const char                    *setting_name,
+                                const char                   **hints,
                                 NMSecretAgentGetSecretsFlags   flags,
                                 NMSecretAgentOldGetSecretsFunc callback,
                                 gpointer                       user_data)
@@ -1017,8 +1017,8 @@ nm_secret_agent_old_get_secrets(NMSecretAgentOld *             self,
  * disk.
  */
 void
-nm_secret_agent_old_save_secrets(NMSecretAgentOld *              self,
-                                 NMConnection *                  connection,
+nm_secret_agent_old_save_secrets(NMSecretAgentOld               *self,
+                                 NMConnection                   *connection,
                                  NMSecretAgentOldSaveSecretsFunc callback,
                                  gpointer                        user_data)
 {
@@ -1044,8 +1044,8 @@ nm_secret_agent_old_save_secrets(NMSecretAgentOld *              self,
  * @connection.
  */
 void
-nm_secret_agent_old_delete_secrets(NMSecretAgentOld *                self,
-                                   NMConnection *                    connection,
+nm_secret_agent_old_delete_secrets(NMSecretAgentOld                 *self,
+                                   NMConnection                     *connection,
                                    NMSecretAgentOldDeleteSecretsFunc callback,
                                    gpointer                          user_data)
 {
@@ -1093,8 +1093,8 @@ validate_identifier(const char *identifier)
 static gboolean
 _register_retry_cb(gpointer user_data)
 {
-    NMSecretAgentOld *       self                       = user_data;
-    NMSecretAgentOldPrivate *priv                       = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
+    NMSecretAgentOld                      *self         = user_data;
+    NMSecretAgentOldPrivate               *priv         = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
     nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
 
     dbus_context = nm_g_main_context_push_thread_default_if_necessary(priv->dbus_context);
@@ -1107,10 +1107,10 @@ _register_retry_cb(gpointer user_data)
 static void
 _register_call_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMSecretAgentOld *       self  = user_data;
-    NMSecretAgentOldPrivate *priv  = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
-    gs_unref_variant GVariant *ret = NULL;
-    gs_free_error GError *error    = NULL;
+    NMSecretAgentOld          *self  = user_data;
+    NMSecretAgentOldPrivate   *priv  = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
+    gs_unref_variant GVariant *ret   = NULL;
+    gs_free_error GError      *error = NULL;
 
     ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
 
@@ -1187,11 +1187,11 @@ _register_dbus_call(NMSecretAgentOld *self)
 static void
 _get_connection_unix_user_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMSecretAgentOld *       self;
-    NMSecretAgentOldPrivate *priv;
-    gs_unref_variant GVariant *ret   = NULL;
-    gs_free_error GError *error      = NULL;
-    guint32               sender_uid = 0;
+    NMSecretAgentOld          *self;
+    NMSecretAgentOldPrivate   *priv;
+    gs_unref_variant GVariant *ret        = NULL;
+    gs_free_error GError      *error      = NULL;
+    guint32                    sender_uid = 0;
 
     ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
     if (nm_utils_error_is_cancelled(error))
@@ -1275,15 +1275,15 @@ _name_owner_changed(NMSecretAgentOld *self, const char *name_owner, gboolean is_
 
 static void
 _name_owner_changed_cb(GDBusConnection *connection,
-                       const char *     sender_name,
-                       const char *     object_path,
-                       const char *     interface_name,
-                       const char *     signal_name,
-                       GVariant *       parameters,
+                       const char      *sender_name,
+                       const char      *object_path,
+                       const char      *interface_name,
+                       const char      *signal_name,
+                       GVariant        *parameters,
                        gpointer         user_data)
 {
     NMSecretAgentOld *self = user_data;
-    const char *      new_owner;
+    const char       *new_owner;
 
     if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sss)")))
         return;
@@ -1303,16 +1303,16 @@ _name_owner_get_cb(const char *name_owner, GError *error, gpointer user_data)
 /*****************************************************************************/
 
 static void
-_method_call(GDBusConnection *      connection,
-             const char *           sender,
-             const char *           object_path,
-             const char *           interface_name,
-             const char *           method_name,
-             GVariant *             parameters,
+_method_call(GDBusConnection       *connection,
+             const char            *sender,
+             const char            *object_path,
+             const char            *interface_name,
+             const char            *method_name,
+             GVariant              *parameters,
              GDBusMethodInvocation *context,
              gpointer               user_data)
 {
-    NMSecretAgentOld *       self = user_data;
+    NMSecretAgentOld        *self = user_data;
     NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
 
     nm_assert(nm_streq0(object_path, NM_DBUS_PATH_SECRET_AGENT));
@@ -1349,7 +1349,7 @@ static void
 _register_state_complete(NMSecretAgentOld *self)
 {
     NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
-    NMCListElem *            elem;
+    NMCListElem             *elem;
     gboolean                 any_tasks_to_complete = FALSE;
 
     if (!c_list_is_empty(&priv->pending_tasks_register_lst_head)) {
@@ -1367,7 +1367,7 @@ _register_state_complete(NMSecretAgentOld *self)
     if (any_tasks_to_complete) {
         while (
             (elem = c_list_first_entry(&priv->pending_tasks_register_lst_head, NMCListElem, lst))) {
-            gpointer        data        = nm_c_list_elem_free_steal(elem);
+            gpointer               data = nm_c_list_elem_free_steal(elem);
             gs_unref_object GTask *task = NULL;
 
             if (data == &any_tasks_to_complete) {
@@ -1525,8 +1525,8 @@ static void
 _register_state_change(NMSecretAgentOld *self)
 {
     _nm_unused gs_unref_object NMSecretAgentOld *self_keep_alive = g_object_ref(self);
-    NMSecretAgentOldPrivate *                    priv   = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
-    nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
+    NMSecretAgentOldPrivate                     *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
+    nm_auto_pop_gmaincontext GMainContext       *dbus_context = NULL;
 
     if (priv->register_state_change_reenter == 0) {
         /* We are not yet initialized. Do nothing. */
@@ -1558,9 +1558,9 @@ again:
 static void
 _init_complete(NMSecretAgentOld *self, GError *error_take)
 {
-    NMSecretAgentOldPrivate *priv         = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
-    gs_free_error GError *error           = g_steal_pointer(&error_take);
-    GError *              error_cancelled = NULL;
+    NMSecretAgentOldPrivate *priv            = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
+    gs_free_error GError    *error           = g_steal_pointer(&error_take);
+    GError                  *error_cancelled = NULL;
 
     if (!priv->init_data)
         return;
@@ -1582,10 +1582,10 @@ _init_complete(NMSecretAgentOld *self, GError *error_take)
 static void
 _init_register_object(NMSecretAgentOld *self)
 {
-    NMSecretAgentOldPrivate *priv          = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
-    gs_free_error GError *error            = NULL;
-    GDBusInterfaceVTable  interface_vtable = {
-        .method_call = _method_call,
+    NMSecretAgentOldPrivate *priv             = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
+    gs_free_error GError    *error            = NULL;
+    GDBusInterfaceVTable     interface_vtable = {
+            .method_call = _method_call,
     };
 
     if (g_cancellable_set_error_if_cancelled(priv->init_data->cancellable, &error)) {
@@ -1613,9 +1613,9 @@ _init_register_object(NMSecretAgentOld *self)
 static void
 _init_got_bus(GObject *initable, GAsyncResult *result, gpointer user_data)
 {
-    NMSecretAgentOld *       self = user_data;
-    NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
-    gs_free_error GError *error   = NULL;
+    NMSecretAgentOld        *self  = user_data;
+    NMSecretAgentOldPrivate *priv  = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
+    gs_free_error GError    *error = NULL;
 
     priv->dbus_connection = g_bus_get_finish(result, &error);
     if (!priv->dbus_connection) {
@@ -1650,17 +1650,17 @@ _init_start(NMSecretAgentOld *self)
 }
 
 static void
-init_async(GAsyncInitable *    initable,
+init_async(GAsyncInitable     *initable,
            int                 io_priority,
-           GCancellable *      cancellable,
+           GCancellable       *cancellable,
            GAsyncReadyCallback callback,
            gpointer            user_data)
 {
-    NMSecretAgentOld *       self;
-    NMSecretAgentOldClass *  klass;
-    NMSecretAgentOldPrivate *priv;
+    NMSecretAgentOld                      *self;
+    NMSecretAgentOldClass                 *klass;
+    NMSecretAgentOldPrivate               *priv;
     nm_auto_pop_gmaincontext GMainContext *dbus_context = NULL;
-    gs_unref_object GTask *task                         = NULL;
+    gs_unref_object GTask                 *task         = NULL;
 
     g_return_if_fail(NM_IS_SECRET_AGENT_OLD(initable));
 
@@ -1705,10 +1705,10 @@ static gboolean
 init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
 {
     gs_unref_object NMSecretAgentOld *self = NULL;
-    NMSecretAgentOldPrivate *         priv;
-    NMSecretAgentOldClass *           klass;
-    GMainLoop *                       main_loop;
-    GError *                          local_error = NULL;
+    NMSecretAgentOldPrivate          *priv;
+    NMSecretAgentOldClass            *klass;
+    GMainLoop                        *main_loop;
+    GError                           *local_error = NULL;
 
     g_return_val_if_fail(NM_IS_SECRET_AGENT_OLD(initable), FALSE);
 
@@ -1789,7 +1789,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSecretAgentOld *       self = NM_SECRET_AGENT_OLD(object);
+    NMSecretAgentOld        *self = NM_SECRET_AGENT_OLD(object);
     NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
     guint                    u;
 
@@ -1855,7 +1855,7 @@ dispose(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMSecretAgentOld *       self = NM_SECRET_AGENT_OLD(object);
+    NMSecretAgentOld        *self = NM_SECRET_AGENT_OLD(object);
     NMSecretAgentOldPrivate *priv = NM_SECRET_AGENT_OLD_GET_PRIVATE(self);
 
     _LOGT("finalizing");

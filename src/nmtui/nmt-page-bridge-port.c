@@ -29,12 +29,12 @@ nmt_page_bridge_port_init(NmtPageBridgePort *bridge)
 static void
 nmt_page_bridge_port_constructed(GObject *object)
 {
-    NmtPageBridgePort *  bridge = NMT_PAGE_BRIDGE_PORT(object);
-    NmtEditorSection *   section;
-    NmtEditorGrid *      grid;
+    NmtPageBridgePort   *bridge = NMT_PAGE_BRIDGE_PORT(object);
+    NmtEditorSection    *section;
+    NmtEditorGrid       *grid;
     NMSettingBridgePort *s_port;
-    NmtNewtWidget *      widget;
-    NMConnection *       conn;
+    NmtNewtWidget       *widget;
+    NMConnection        *conn;
 
     conn   = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(bridge));
     s_port = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_BRIDGE_PORT);

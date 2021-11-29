@@ -56,17 +56,17 @@ _dispatch_request_scan(NMDevice *device, GVariant *options, GDBusMethodInvocatio
 }
 
 static void
-impl_device_wifi_get_access_points(NMDBusObject *                     obj,
+impl_device_wifi_get_access_points(NMDBusObject                      *obj,
                                    const NMDBusInterfaceInfoExtended *interface_info,
-                                   const NMDBusMethodInfoExtended *   method_info,
-                                   GDBusConnection *                  connection,
-                                   const char *                       sender,
-                                   GDBusMethodInvocation *            invocation,
-                                   GVariant *                         parameters)
+                                   const NMDBusMethodInfoExtended    *method_info,
+                                   GDBusConnection                   *connection,
+                                   const char                        *sender,
+                                   GDBusMethodInvocation             *invocation,
+                                   GVariant                          *parameters)
 {
     gs_free const char **list = NULL;
-    GVariant *           v;
-    const CList *        all_aps;
+    GVariant            *v;
+    const CList         *all_aps;
 
     /* NOTE: this handler is called both for NMDevicwWifi and NMDeviceIwd. */
 
@@ -77,17 +77,17 @@ impl_device_wifi_get_access_points(NMDBusObject *                     obj,
 }
 
 static void
-impl_device_wifi_get_all_access_points(NMDBusObject *                     obj,
+impl_device_wifi_get_all_access_points(NMDBusObject                      *obj,
                                        const NMDBusInterfaceInfoExtended *interface_info,
-                                       const NMDBusMethodInfoExtended *   method_info,
-                                       GDBusConnection *                  connection,
-                                       const char *                       sender,
-                                       GDBusMethodInvocation *            invocation,
-                                       GVariant *                         parameters)
+                                       const NMDBusMethodInfoExtended    *method_info,
+                                       GDBusConnection                   *connection,
+                                       const char                        *sender,
+                                       GDBusMethodInvocation             *invocation,
+                                       GVariant                          *parameters)
 {
     gs_free const char **list = NULL;
-    GVariant *           v;
-    const CList *        all_aps;
+    GVariant            *v;
+    const CList         *all_aps;
 
     /* NOTE: this handler is called both for NMDevicwWifi and NMDeviceIwd. */
 
@@ -98,13 +98,13 @@ impl_device_wifi_get_all_access_points(NMDBusObject *                     obj,
 }
 
 static void
-impl_device_wifi_request_scan(NMDBusObject *                     obj,
+impl_device_wifi_request_scan(NMDBusObject                      *obj,
                               const NMDBusInterfaceInfoExtended *interface_info,
-                              const NMDBusMethodInfoExtended *   method_info,
-                              GDBusConnection *                  connection,
-                              const char *                       sender,
-                              GDBusMethodInvocation *            invocation,
-                              GVariant *                         parameters)
+                              const NMDBusMethodInfoExtended    *method_info,
+                              GDBusConnection                   *connection,
+                              const char                        *sender,
+                              GDBusMethodInvocation             *invocation,
+                              GVariant                          *parameters)
 {
     gs_unref_variant GVariant *options = NULL;
 

@@ -51,7 +51,7 @@ typedef struct _NMSettingSerialClass NMSettingSerialClass;
 
 GType nm_setting_serial_get_type(void);
 
-NMSetting *           nm_setting_serial_new(void);
+NMSetting            *nm_setting_serial_new(void);
 guint                 nm_setting_serial_get_baud(NMSettingSerial *setting);
 guint                 nm_setting_serial_get_bits(NMSettingSerial *setting);
 NMSettingSerialParity nm_setting_serial_get_parity(NMSettingSerial *setting);

@@ -23,12 +23,12 @@ main(int argc, char **argv)
 {
     gs_unref_object NML3Cfg *l3cfg = NULL;
     NMNDiscConfig            config;
-    GMainLoop *              loop;
-    NMNDisc *                ndisc;
+    GMainLoop               *loop;
+    NMNDisc                 *ndisc;
     int                      ifindex = 1;
-    const char *             ifname;
+    const char              *ifname;
     NMUtilsIPv6IfaceId       iid   = {};
-    GError *                 error = NULL;
+    GError                  *error = NULL;
     int                      max_addresses;
     int                      router_solicitations;
     int                      router_solicitation_interval;

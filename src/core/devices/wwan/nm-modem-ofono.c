@@ -75,7 +75,7 @@ G_DEFINE_TYPE(NMModemOfono, nm_modem_ofono, NM_TYPE_MODEM)
         if (nm_logging_enabled(_level, (_NMLOG_DOMAIN))) {                  \
             NMModemOfono *const __self = (self);                            \
             char                __prefix_name[128];                         \
-            const char *        __uid;                                      \
+            const char         *__uid;                                      \
                                                                             \
             _nm_log(_level,                                                 \
                     (_NMLOG_DOMAIN),                                        \
@@ -97,7 +97,7 @@ G_DEFINE_TYPE(NMModemOfono, nm_modem_ofono, NM_TYPE_MODEM)
 /*****************************************************************************/
 
 static void
-get_capabilities(NMModem *                  _self,
+get_capabilities(NMModem                   *_self,
                  NMDeviceModemCapabilities *modem_caps,
                  NMDeviceModemCapabilities *current_caps)
 {
@@ -112,7 +112,7 @@ update_modem_state(NMModemOfono *self)
     NMModemOfonoPrivate *priv      = NM_MODEM_OFONO_GET_PRIVATE(self);
     NMModemState         state     = nm_modem_get_state(NM_MODEM(self));
     NMModemState         new_state = NM_MODEM_STATE_DISABLED;
-    const char *         reason    = NULL;
+    const char          *reason    = NULL;
 
     _LOGI("'Attached': %s 'Online': %s 'IMSI': %s",
           priv->gprs_attached ? "true" : "false",
@@ -137,10 +137,10 @@ update_modem_state(NMModemOfono *self)
 
 /* Disconnect */
 typedef struct {
-    NMModemOfono *             self;
+    NMModemOfono              *self;
     _NMModemDisconnectCallback callback;
     gpointer                   callback_user_data;
-    GCancellable *             cancellable;
+    GCancellable              *cancellable;
     gboolean                   warn;
 } DisconnectContext;
 
@@ -157,7 +157,7 @@ disconnect_context_complete(DisconnectContext *ctx, GError *error)
 static void
 disconnect_context_complete_on_idle(gpointer user_data, GCancellable *cancellable)
 {
-    DisconnectContext *ctx      = user_data;
+    DisconnectContext    *ctx   = user_data;
     gs_free_error GError *error = NULL;
 
     if (!g_cancellable_set_error_if_cancelled(cancellable, &error)) {
@@ -172,10 +172,10 @@ disconnect_context_complete_on_idle(gpointer user_data, GCancellable *cancellabl
 static void
 disconnect_done(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    DisconnectContext *ctx       = user_data;
-    NMModemOfono *     self      = ctx->self;
-    gs_free_error GError *error  = NULL;
-    gs_unref_variant GVariant *v = NULL;
+    DisconnectContext         *ctx   = user_data;
+    NMModemOfono              *self  = ctx->self;
+    gs_free_error GError      *error = NULL;
+    gs_unref_variant GVariant *v     = NULL;
 
     v = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), result, &error);
     if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED)) {
@@ -193,15 +193,15 @@ disconnect_done(GObject *source, GAsyncResult *result, gpointer user_data)
 }
 
 static void
-disconnect(NMModem *                  modem,
+disconnect(NMModem                   *modem,
            gboolean                   warn,
-           GCancellable *             cancellable,
+           GCancellable              *cancellable,
            _NMModemDisconnectCallback callback,
            gpointer                   user_data)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(modem);
+    NMModemOfono        *self = NM_MODEM_OFONO(modem);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
-    DisconnectContext *  ctx;
+    DisconnectContext   *ctx;
     NMModemState         state = nm_modem_get_state(NM_MODEM(self));
 
     _LOGD("warn: %s modem_state: %s", warn ? "TRUE" : "FALSE", nm_modem_state_to_string(state));
@@ -235,7 +235,7 @@ disconnect(NMModem *                  modem,
 static void
 deactivate_cleanup(NMModem *modem, NMDevice *device, gboolean stop_ppp_manager)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(modem);
+    NMModemOfono        *self = NM_MODEM_OFONO(modem);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
 
     /* TODO: cancel SimpleConnect() if any */
@@ -249,9 +249,9 @@ deactivate_cleanup(NMModem *modem, NMDevice *device, gboolean stop_ppp_manager)
 static gboolean
 check_connection_compatible_with_modem(NMModem *modem, NMConnection *connection, GError **error)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(modem);
+    NMModemOfono        *self = NM_MODEM_OFONO(modem);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
-    const char *         id;
+    const char          *id;
 
     if (!_nm_connection_check_main_setting(connection, NM_SETTING_GSM_SETTING_NAME, NULL)) {
         nm_utils_error_set(error,
@@ -290,7 +290,7 @@ check_connection_compatible_with_modem(NMModem *modem, NMConnection *connection,
 static void
 handle_sim_property(GDBusProxy *proxy, const char *property, GVariant *v, gpointer user_data)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(user_data);
+    NMModemOfono        *self = NM_MODEM_OFONO(user_data);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
 
     if (g_strcmp0(property, "SubscriberIdentity") == 0 && VARIANT_IS_OF_TYPE_STRING(v)) {
@@ -324,14 +324,14 @@ sim_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, gpoin
 static void
 sim_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMModemOfono *       self;
-    NMModemOfonoPrivate *priv;
-    gs_free_error GError *error             = NULL;
+    NMModemOfono              *self;
+    NMModemOfonoPrivate       *priv;
+    gs_free_error GError      *error        = NULL;
     gs_unref_variant GVariant *v_properties = NULL;
     gs_unref_variant GVariant *v_dict       = NULL;
     gs_unref_variant GVariant *v            = NULL;
     GVariantIter               i;
-    const char *               property;
+    const char                *property;
 
     v_properties =
         _nm_dbus_proxy_call_finish(G_DBUS_PROXY(source), result, G_VARIANT_TYPE("(a{sv})"), &error);
@@ -377,10 +377,10 @@ sim_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_dat
 static void
 _sim_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMModemOfono *       self;
-    NMModemOfonoPrivate *priv;
+    NMModemOfono         *self;
+    NMModemOfonoPrivate  *priv;
     gs_free_error GError *error = NULL;
-    GDBusProxy *          proxy;
+    GDBusProxy           *proxy;
 
     proxy = g_dbus_proxy_new_for_bus_finish(result, &error);
     if (!proxy && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -451,7 +451,7 @@ handle_sim_iface(NMModemOfono *self, gboolean found)
 static void
 handle_connman_property(GDBusProxy *proxy, const char *property, GVariant *v, gpointer user_data)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(user_data);
+    NMModemOfono        *self = NM_MODEM_OFONO(user_data);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
 
     if (g_strcmp0(property, "Attached") == 0 && VARIANT_IS_OF_TYPE_BOOLEAN(v)) {
@@ -483,14 +483,14 @@ connman_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, g
 static void
 connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMModemOfono *       self;
-    NMModemOfonoPrivate *priv;
-    gs_free_error GError *error             = NULL;
+    NMModemOfono              *self;
+    NMModemOfonoPrivate       *priv;
+    gs_free_error GError      *error        = NULL;
     gs_unref_variant GVariant *v_properties = NULL;
     gs_unref_variant GVariant *v_dict       = NULL;
     gs_unref_variant GVariant *v            = NULL;
     GVariantIter               i;
-    const char *               property;
+    const char                *property;
 
     v_properties =
         _nm_dbus_proxy_call_finish(G_DBUS_PROXY(source), result, G_VARIANT_TYPE("(a{sv})"), &error);
@@ -528,10 +528,10 @@ connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user
 static void
 _connman_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMModemOfono *       self;
-    NMModemOfonoPrivate *priv;
+    NMModemOfono         *self;
+    NMModemOfonoPrivate  *priv;
     gs_free_error GError *error = NULL;
-    GDBusProxy *          proxy;
+    GDBusProxy           *proxy;
 
     proxy = g_dbus_proxy_new_for_bus_finish(result, &error);
     if (!proxy && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -606,7 +606,7 @@ handle_connman_iface(NMModemOfono *self, gboolean found)
 static void
 handle_modem_property(GDBusProxy *proxy, const char *property, GVariant *v, gpointer user_data)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(user_data);
+    NMModemOfono        *self = NM_MODEM_OFONO(user_data);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
 
     if ((g_strcmp0(property, "Online") == 0) && VARIANT_IS_OF_TYPE_BOOLEAN(v)) {
@@ -655,14 +655,14 @@ modem_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, gpo
 static void
 modem_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMModemOfono *       self;
-    NMModemOfonoPrivate *priv;
-    gs_free_error GError *error             = NULL;
+    NMModemOfono              *self;
+    NMModemOfonoPrivate       *priv;
+    gs_free_error GError      *error        = NULL;
     gs_unref_variant GVariant *v_properties = NULL;
     gs_unref_variant GVariant *v_dict       = NULL;
-    GVariant *                 v;
+    GVariant                  *v;
     GVariantIter               i;
-    const char *               property;
+    const char                *property;
 
     v_properties =
         _nm_dbus_proxy_call_finish(G_DBUS_PROXY(source), result, G_VARIANT_TYPE("(a{sv})"), &error);
@@ -704,10 +704,10 @@ modem_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_d
 static void
 stage1_prepare_done(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMModemOfono *       self;
-    NMModemOfonoPrivate *priv;
-    gs_free_error GError *error  = NULL;
-    gs_unref_variant GVariant *v = NULL;
+    NMModemOfono              *self;
+    NMModemOfonoPrivate       *priv;
+    gs_free_error GError      *error = NULL;
+    gs_unref_variant GVariant *v     = NULL;
 
     v = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), result, &error);
     if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -732,17 +732,17 @@ stage1_prepare_done(GObject *source, GAsyncResult *result, gpointer user_data)
 static void
 handle_settings(GVariant *v_dict, gpointer user_data)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(user_data);
+    NMModemOfono        *self = NM_MODEM_OFONO(user_data);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
     char                 sbuf[sizeof(_nm_utils_to_string_buffer)];
     NMPlatformIP4Address address;
     gboolean             ret = FALSE;
-    const char *         interface;
-    const char *         s;
-    const char **        array;
+    const char          *interface;
+    const char          *s;
+    const char         **array;
     guint32              address_network, gateway_network;
     int                  ifindex;
-    GError *             error = NULL;
+    GError              *error = NULL;
 
     //_LOGD("PropertyChanged: %s", property);
 
@@ -894,7 +894,7 @@ out:
 static void
 context_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, gpointer user_data)
 {
-    NMModemOfono *   self             = NM_MODEM_OFONO(user_data);
+    NMModemOfono              *self   = NM_MODEM_OFONO(user_data);
     gs_unref_variant GVariant *v_dict = NULL;
 
     _LOGD("PropertyChanged: %s", property);
@@ -916,8 +916,8 @@ context_property_changed(GDBusProxy *proxy, const char *property, GVariant *v, g
 static void
 stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_method)
 {
-    NMModemOfono *       self   = NM_MODEM_OFONO(modem);
-    NMModemOfonoPrivate *priv   = NM_MODEM_OFONO_GET_PRIVATE(self);
+    NMModemOfono         *self  = NM_MODEM_OFONO(modem);
+    NMModemOfonoPrivate  *priv  = NM_MODEM_OFONO_GET_PRIVATE(self);
     gs_free_error GError *error = NULL;
 
     _LOGD("IP4 config is done; setting modem_state -> CONNECTED");
@@ -947,9 +947,9 @@ out:
 static void
 context_properties_cb(GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
-    NMModemOfono *       self;
-    NMModemOfonoPrivate *priv;
-    gs_free_error GError *error           = NULL;
+    NMModemOfono              *self;
+    NMModemOfonoPrivate       *priv;
+    gs_free_error GError      *error      = NULL;
     gs_unref_variant GVariant *properties = NULL;
     gs_unref_variant GVariant *settings   = NULL;
     gs_unref_variant GVariant *v_dict     = NULL;
@@ -1013,10 +1013,10 @@ error:
 static void
 context_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMModemOfono *       self;
-    NMModemOfonoPrivate *priv;
+    NMModemOfono         *self;
+    NMModemOfonoPrivate  *priv;
     gs_free_error GError *error = NULL;
-    GDBusProxy *          proxy;
+    GDBusProxy           *proxy;
 
     proxy = g_dbus_proxy_new_for_bus_finish(result, &error);
     if (!proxy || g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -1087,8 +1087,8 @@ static GHashTable *
 create_connect_properties(NMConnection *connection)
 {
     NMSettingGsm *setting;
-    GHashTable *  properties;
-    const char *  str;
+    GHashTable   *properties;
+    const char   *str;
 
     setting    = nm_connection_get_setting_gsm(connection);
     properties = g_hash_table_new(nm_str_hash, g_str_equal);
@@ -1109,14 +1109,14 @@ create_connect_properties(NMConnection *connection)
 }
 
 static NMActStageReturn
-modem_act_stage1_prepare(NMModem *            modem,
-                         NMConnection *       connection,
+modem_act_stage1_prepare(NMModem             *modem,
+                         NMConnection        *connection,
                          NMDeviceStateReason *out_failure_reason)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(modem);
+    NMModemOfono        *self = NM_MODEM_OFONO(modem);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
-    const char *         context_id;
-    char **              id = NULL;
+    const char          *context_id;
+    char               **id = NULL;
 
     context_id = nm_connection_get_id(connection);
     id         = g_strsplit(context_id, "/", 0);
@@ -1155,10 +1155,10 @@ modem_act_stage1_prepare(NMModem *            modem,
 static void
 modem_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMModemOfono *       self;
-    NMModemOfonoPrivate *priv;
+    NMModemOfono         *self;
+    NMModemOfonoPrivate  *priv;
     gs_free_error GError *error = NULL;
-    GDBusProxy *          proxy;
+    GDBusProxy           *proxy;
 
     proxy = g_dbus_proxy_new_for_bus_finish(result, &error);
     if (!proxy && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -1200,7 +1200,7 @@ nm_modem_ofono_init(NMModemOfono *self)
 static void
 constructed(GObject *object)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(object);
+    NMModemOfono        *self = NM_MODEM_OFONO(object);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
 
     priv->modem_proxy_cancellable = g_cancellable_new();
@@ -1251,7 +1251,7 @@ nm_modem_ofono_new(const char *path)
 static void
 dispose(GObject *object)
 {
-    NMModemOfono *       self = NM_MODEM_OFONO(object);
+    NMModemOfono        *self = NM_MODEM_OFONO(object);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
 
     nm_clear_g_cancellable(&priv->modem_proxy_cancellable);

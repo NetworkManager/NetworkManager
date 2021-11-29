@@ -9,8 +9,8 @@
 #include "libnm-platform/nm-platform.h"
 
 gboolean nm_dnsmasq_utils_get_range(const NMPlatformIP4Address *addr,
-                                    char *                      out_first,
-                                    char *                      out_last,
-                                    char **                     out_error_desc);
+                                    char                       *out_first,
+                                    char                       *out_last,
+                                    char                      **out_error_desc);
 
 #endif /* __NETWORKMANAGER_DNSMASQ_UTILS_H__ */

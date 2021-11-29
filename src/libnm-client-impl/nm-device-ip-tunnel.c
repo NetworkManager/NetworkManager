@@ -30,10 +30,10 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_MODE,
 
 typedef struct {
     NMLDBusPropertyO parent;
-    char *           local;
-    char *           remote;
-    char *           input_key;
-    char *           output_key;
+    char            *local;
+    char            *remote;
+    char            *input_key;
+    char            *output_key;
     guint32          mode;
     guint32          flow_label;
     guint32          flags;
@@ -383,7 +383,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_iptunnel = NML_DBUS_META_I
 static void
 nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
     NMDeviceClass *device_class    = NM_DEVICE_CLASS(klass);
 

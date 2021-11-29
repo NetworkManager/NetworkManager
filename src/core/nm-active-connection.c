@@ -23,9 +23,9 @@
 
 typedef struct _NMActiveConnectionPrivate {
     NMDBusTrackObjPath settings_connection;
-    NMConnection *     applied_connection;
-    char *             specific_object;
-    NMDevice *         device;
+    NMConnection      *applied_connection;
+    char              *specific_object;
+    NMDevice          *device;
 
     guint64 version_id;
 
@@ -48,7 +48,7 @@ typedef struct _NMActiveConnectionPrivate {
      * reason never changes. */
     NMActivationReason activation_reason : 4;
 
-    NMAuthSubject *     subject;
+    NMAuthSubject      *subject;
     NMActiveConnection *master;
 
     NMActiveConnection *parent;
@@ -107,7 +107,7 @@ static const GDBusSignalInfo             signal_info_state_changed;
 static void check_master_ready(NMActiveConnection *self);
 static void _device_cleanup(NMActiveConnection *self);
 static void _settings_connection_flags_changed(NMSettingsConnection *settings_connection,
-                                               NMActiveConnection *  self);
+                                               NMActiveConnection   *self);
 static void _set_activation_type_managed(NMActiveConnection *self);
 
 static void auth_complete(NMActiveConnection *self, gboolean result, const char *message);
@@ -239,7 +239,7 @@ emit_state_changed(NMActiveConnection *self, guint state, guint reason)
 }
 
 void
-nm_active_connection_set_state(NMActiveConnection *          self,
+nm_active_connection_set_state(NMActiveConnection           *self,
                                NMActiveConnectionState       new_state,
                                NMActiveConnectionStateReason reason)
 {
@@ -314,9 +314,9 @@ nm_active_connection_set_state(NMActiveConnection *          self,
 }
 
 void
-nm_active_connection_set_state_fail(NMActiveConnection *          self,
+nm_active_connection_set_state_fail(NMActiveConnection           *self,
                                     NMActiveConnectionStateReason reason,
-                                    const char *                  error_desc)
+                                    const char                   *error_desc)
 {
     NMActiveConnectionState s;
 
@@ -350,7 +350,7 @@ nm_active_connection_get_state_flags(NMActiveConnection *self)
 }
 
 void
-nm_active_connection_set_state_flags_full(NMActiveConnection *   self,
+nm_active_connection_set_state_flags_full(NMActiveConnection    *self,
                                           NMActivationStateFlags state_flags,
                                           NMActivationStateFlags mask)
 {
@@ -432,7 +432,7 @@ static void
 _set_applied_connection_take(NMActiveConnection *self, NMConnection *applied_connection)
 {
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
-    NMSettingConnection *      s_con;
+    NMSettingConnection       *s_con;
     NMActivationStateFlags     flags_val = 0;
 
     nm_assert(NM_IS_CONNECTION(applied_connection));
@@ -458,7 +458,7 @@ _set_applied_connection_take(NMActiveConnection *self, NMConnection *applied_con
 }
 
 void
-nm_active_connection_set_settings_connection(NMActiveConnection *  self,
+nm_active_connection_set_settings_connection(NMActiveConnection   *self,
                                              NMSettingsConnection *sett_conn)
 {
     NMActiveConnectionPrivate *priv;
@@ -489,7 +489,7 @@ nm_active_connection_set_settings_connection(NMActiveConnection *  self,
 }
 
 gboolean
-nm_active_connection_has_unmodified_applied_connection(NMActiveConnection *  self,
+nm_active_connection_has_unmodified_applied_connection(NMActiveConnection   *self,
                                                        NMSettingCompareFlags compare_flags)
 {
     NMActiveConnectionPrivate *priv;
@@ -615,13 +615,13 @@ nm_active_connection_get_device(NMActiveConnection *self)
 }
 
 static void
-device_state_changed(NMDevice *          device,
+device_state_changed(NMDevice           *device,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state,
                      NMDeviceStateReason reason,
                      gpointer            user_data)
 {
-    NMActiveConnection *       self = NM_ACTIVE_CONNECTION(user_data);
+    NMActiveConnection        *self = NM_ACTIVE_CONNECTION(user_data);
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
     /* When already deactivated or before activation, device state changes are useless */
@@ -641,9 +641,9 @@ device_state_changed(NMDevice *          device,
 static void
 device_master_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-    NMDevice *              device = NM_DEVICE(object);
-    NMActiveConnection *    self   = NM_ACTIVE_CONNECTION(user_data);
-    NMActiveConnection *    master;
+    NMDevice               *device = NM_DEVICE(object);
+    NMActiveConnection     *self   = NM_ACTIVE_CONNECTION(user_data);
+    NMActiveConnection     *master;
     NMActiveConnectionState master_state;
 
     if (NM_ACTIVE_CONNECTION(nm_device_get_act_request(device)) != self)
@@ -667,7 +667,7 @@ static void
 device_metered_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
     NMActiveConnection *self   = (NMActiveConnection *) user_data;
-    NMDevice *          device = NM_DEVICE(object);
+    NMDevice           *device = NM_DEVICE(object);
 
     g_return_if_fail(NM_IS_ACTIVE_CONNECTION(self));
     g_signal_emit(self, signals[DEVICE_METERED_CHANGED], 0, nm_device_get_metered(device));
@@ -677,8 +677,8 @@ gboolean
 nm_active_connection_set_device(NMActiveConnection *self, NMDevice *device)
 {
     NMActiveConnectionPrivate *priv;
-    gs_unref_object NMDevice *old_device = NULL;
-    NMMetered                 old_metered, new_metered;
+    gs_unref_object NMDevice  *old_device = NULL;
+    NMMetered                  old_metered, new_metered;
 
     g_return_val_if_fail(NM_IS_ACTIVE_CONNECTION(self), FALSE);
     g_return_val_if_fail(!device || NM_IS_DEVICE(device), FALSE);
@@ -810,7 +810,7 @@ check_master_ready(NMActiveConnection *self)
 static void
 master_state_cb(NMActiveConnection *master, GParamSpec *pspec, gpointer user_data)
 {
-    NMActiveConnection *       self         = NM_ACTIVE_CONNECTION(user_data);
+    NMActiveConnection        *self         = NM_ACTIVE_CONNECTION(user_data);
     NMActiveConnectionPrivate *priv         = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
     NMActiveConnectionState    master_state = nm_active_connection_get_state(master);
 
@@ -961,7 +961,7 @@ nm_active_connection_get_keep_alive(NMActiveConnection *self)
 
 static void
 _settings_connection_flags_changed(NMSettingsConnection *settings_connection,
-                                   NMActiveConnection *  self)
+                                   NMActiveConnection   *self)
 {
     NMDevice *device;
 
@@ -1008,7 +1008,7 @@ parent_destroyed(gpointer user_data, GObject *parent)
 static void
 parent_state_cb(NMActiveConnection *parent_ac, GParamSpec *pspec, gpointer user_data)
 {
-    NMActiveConnection *    self         = user_data;
+    NMActiveConnection     *self         = user_data;
     NMActiveConnectionState parent_state = nm_active_connection_get_state(parent_ac);
 
     if (parent_state < NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
@@ -1059,7 +1059,7 @@ nm_active_connection_set_parent(NMActiveConnection *self, NMActiveConnection *pa
 static void
 auth_complete(NMActiveConnection *self, gboolean result, const char *message)
 {
-    NMActiveConnectionPrivate *      priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
+    NMActiveConnectionPrivate       *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
     NMActiveConnectionAuthResultFunc result_func;
     gpointer                         user_data;
 
@@ -1092,15 +1092,15 @@ auth_complete_keep_alive(NMActiveConnection *self, gboolean result, const char *
 }
 
 static void
-auth_done(NMAuthManager *      auth_mgr,
+auth_done(NMAuthManager       *auth_mgr,
           NMAuthManagerCallId *auth_call_id,
           gboolean             is_authorized,
           gboolean             is_challenge,
-          GError *             error,
+          GError              *error,
           gpointer             user_data)
 
 {
-    NMActiveConnection *       self = NM_ACTIVE_CONNECTION(user_data);
+    NMActiveConnection        *self = NM_ACTIVE_CONNECTION(user_data);
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
     NMAuthCallResult           result;
 
@@ -1163,14 +1163,14 @@ auth_done(NMAuthManager *      auth_mgr,
  * activation request.
  */
 void
-nm_active_connection_authorize(NMActiveConnection *             self,
-                               NMConnection *                   initial_connection,
+nm_active_connection_authorize(NMActiveConnection              *self,
+                               NMConnection                    *initial_connection,
                                NMActiveConnectionAuthResultFunc result_func,
                                gpointer                         user_data)
 {
     NMActiveConnectionPrivate *priv            = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
-    const char *               wifi_permission = NULL;
-    NMConnection *             connection;
+    const char                *wifi_permission = NULL;
+    NMConnection              *connection;
 
     g_return_if_fail(result_func);
     g_return_if_fail(!priv->auth.call_id_network_control);
@@ -1270,10 +1270,10 @@ _device_cleanup(NMActiveConnection *self)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMActiveConnection *       self = NM_ACTIVE_CONNECTION(object);
+    NMActiveConnection        *self = NM_ACTIVE_CONNECTION(object);
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
-    char **                    strv;
-    NMDevice *                 master_device = NULL;
+    char                     **strv;
+    NMDevice                  *master_device = NULL;
 
     switch (prop_id) {
     /* note that while priv->settings_connection.obj might not be set initially,
@@ -1363,11 +1363,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMActiveConnection *       self = (NMActiveConnection *) object;
+    NMActiveConnection        *self = (NMActiveConnection *) object;
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
-    const char *               tmp;
-    NMSettingsConnection *     sett_conn;
-    NMConnection *             acon;
+    const char                *tmp;
+    NMSettingsConnection      *sett_conn;
+    NMConnection              *acon;
     int                        i;
 
     switch (prop_id) {
@@ -1477,7 +1477,7 @@ nm_active_connection_init(NMActiveConnection *self)
 static void
 constructed(GObject *object)
 {
-    NMActiveConnection *       self = (NMActiveConnection *) object;
+    NMActiveConnection        *self = (NMActiveConnection *) object;
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
     G_OBJECT_CLASS(nm_active_connection_parent_class)->constructed(object);
@@ -1512,7 +1512,7 @@ constructed(GObject *object)
 static void
 dispose(GObject *object)
 {
-    NMActiveConnection *       self = NM_ACTIVE_CONNECTION(object);
+    NMActiveConnection        *self = NM_ACTIVE_CONNECTION(object);
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
     nm_assert(!c_list_is_linked(&self->active_connections_lst));
@@ -1544,7 +1544,7 @@ dispose(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMActiveConnection *       self = NM_ACTIVE_CONNECTION(object);
+    NMActiveConnection        *self = NM_ACTIVE_CONNECTION(object);
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
     nm_dbus_track_obj_path_set(&priv->settings_connection, NULL, FALSE);
@@ -1609,7 +1609,7 @@ static const NMDBusInterfaceInfoExtended interface_info_active_connection = {
 static void
 nm_active_connection_class_init(NMActiveConnectionClass *ac_class)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(ac_class);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(ac_class);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(ac_class);
 
     g_type_class_add_private(ac_class, sizeof(NMActiveConnectionPrivate));

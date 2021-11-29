@@ -37,10 +37,10 @@ typedef struct _NMSettingCdmaClass NMSettingCdmaClass;
 
 GType nm_setting_cdma_get_type(void);
 
-NMSetting *          nm_setting_cdma_new(void);
-const char *         nm_setting_cdma_get_number(NMSettingCdma *setting);
-const char *         nm_setting_cdma_get_username(NMSettingCdma *setting);
-const char *         nm_setting_cdma_get_password(NMSettingCdma *setting);
+NMSetting           *nm_setting_cdma_new(void);
+const char          *nm_setting_cdma_get_number(NMSettingCdma *setting);
+const char          *nm_setting_cdma_get_username(NMSettingCdma *setting);
+const char          *nm_setting_cdma_get_password(NMSettingCdma *setting);
 NMSettingSecretFlags nm_setting_cdma_get_password_flags(NMSettingCdma *setting);
 
 NM_AVAILABLE_IN_1_8

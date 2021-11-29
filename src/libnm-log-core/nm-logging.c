@@ -257,7 +257,7 @@ match_log_level(const char *level, NMLogLevel *out_level, GError **error)
 gboolean
 nm_logging_setup(const char *level, const char *domains, char **bad_domains, GError **error)
 {
-    GString *            unrecognized = NULL;
+    GString             *unrecognized = NULL;
     NMLogDomain          cur_log_state[_LOGL_N_REAL];
     NMLogDomain          new_log_state[_LOGL_N_REAL];
     NMLogLevel           cur_log_level;
@@ -266,7 +266,7 @@ nm_logging_setup(const char *level, const char *domains, char **bad_domains, GEr
     gsize                i_d;
     int                  i;
     gboolean             had_platform_debug;
-    gs_free char *       domains_free = NULL;
+    gs_free char        *domains_free = NULL;
 
     NM_ASSERT_ON_MAIN_THREAD();
 
@@ -298,8 +298,8 @@ nm_logging_setup(const char *level, const char *domains, char **bad_domains, GEr
 
     domains_v = nm_strsplit_set(domains, ", ");
     for (i_d = 0; domains_v && domains_v[i_d]; i_d++) {
-        const char *   s = domains_v[i_d];
-        const char *   p;
+        const char    *s = domains_v[i_d];
+        const char    *p;
         const LogDesc *diter;
         NMLogLevel     domain_log_level;
         NMLogDomain    bits;
@@ -517,7 +517,7 @@ again:
         static gsize   once = 0;
         const LogDesc *diter;
         gsize          buf_l;
-        char *         buf_p;
+        char          *buf_p;
 
         if (!g_once_init_enter(&once))
             goto again;
@@ -603,12 +603,12 @@ _iovec_set_string(struct iovec *iov, const char *str)
 #define _iovec_set_string_literal(iov, str) _iovec_set((iov), "" str "", NM_STRLEN(str))
 
 _nm_printf(3, 4) static void _iovec_set_format(struct iovec *iov,
-                                               char **       iov_free,
-                                               const char *  format,
+                                               char        **iov_free,
+                                               const char   *format,
                                                ...)
 {
     va_list ap;
-    char *  str;
+    char   *str;
 
     va_start(ap, format);
     str = g_strdup_vprintf(format, ap);
@@ -663,14 +663,14 @@ _nm_log_impl(const char *file,
              ...)
 {
     char               msg_stack[400];
-    gs_free char *     msg_heap = NULL;
-    const char *       msg;
+    gs_free char      *msg_heap = NULL;
+    const char        *msg;
     GTimeVal           tv;
     int                errsv;
     const NMLogDomain *cur_log_state;
     NMLogDomain        cur_log_state_copy[_LOGL_N_REAL];
     Global             g_copy;
-    const Global *     g;
+    const Global      *g;
 
     if (G_UNLIKELY(mt_require_locking)) {
         G_LOCK(log);
@@ -722,9 +722,9 @@ _nm_log_impl(const char *file,
     {
         gint64         now, boottime;
         struct iovec   iov_data[15];
-        struct iovec * iov = iov_data;
-        char *         iov_free_data[5];
-        char **        iov_free = iov_free_data;
+        struct iovec  *iov = iov_data;
+        char          *iov_free_data[5];
+        char         **iov_free = iov_free_data;
         const LogDesc *diter;
         NMLogDomain    dom_all;
         char  s_log_domains_buf[NM_STRLEN("NM_LOG_DOMAINS=") + sizeof(_all_logging_domains_to_str)];

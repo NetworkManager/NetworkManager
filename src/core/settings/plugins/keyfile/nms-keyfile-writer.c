@@ -26,21 +26,21 @@ typedef struct {
 } WriteInfo;
 
 static void
-cert_writer(NMConnection *                    connection,
-            GKeyFile *                        file,
-            NMSetting8021x *                  setting,
+cert_writer(NMConnection                     *connection,
+            GKeyFile                         *file,
+            NMSetting8021x                   *setting,
             const NMSetting8021xSchemeVtable *vtable,
-            WriteInfo *                       info,
-            GError **                         error)
+            WriteInfo                        *info,
+            GError                          **error)
 {
-    const char *           setting_name = nm_setting_get_name(NM_SETTING(setting));
+    const char            *setting_name = nm_setting_get_name(NM_SETTING(setting));
     NMSetting8021xCKScheme scheme;
     NMSetting8021xCKFormat format;
-    const char *           path = NULL, *ext = "pem";
+    const char            *path = NULL, *ext = "pem";
 
     scheme = vtable->scheme_func(setting);
     if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
-        char *      tmp           = NULL;
+        char       *tmp           = NULL;
         const char *accepted_path = NULL;
 
         path = vtable->path_func(setting);
@@ -92,12 +92,12 @@ cert_writer(NMConnection *                    connection,
                                         vtable->setting_key,
                                         vtable->uri_func(setting));
     } else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
-        GBytes *      blob;
+        GBytes       *blob;
         const guint8 *blob_data;
         gsize         blob_len;
         gboolean      success;
-        GError *      local = NULL;
-        char *        new_path;
+        GError       *local = NULL;
+        char         *new_path;
 
         blob = vtable->blob_func(setting);
         g_assert(blob);
@@ -163,11 +163,11 @@ cert_writer(NMConnection *                    connection,
 }
 
 static gboolean
-_handler_write(NMConnection *        connection,
-               GKeyFile *            keyfile,
+_handler_write(NMConnection         *connection,
+               GKeyFile             *keyfile,
                NMKeyfileHandlerType  type,
                NMKeyfileHandlerData *type_data,
-               void *                user_data)
+               void                 *user_data)
 {
     if (type == NM_KEYFILE_HANDLER_TYPE_WRITE_CERT) {
         cert_writer(connection,
@@ -182,39 +182,39 @@ _handler_write(NMConnection *        connection,
 }
 
 static gboolean
-_internal_write_connection(NMConnection *                  connection,
+_internal_write_connection(NMConnection                   *connection,
                            gboolean                        is_nm_generated,
                            gboolean                        is_volatile,
                            gboolean                        is_external,
-                           const char *                    shadowed_storage,
+                           const char                     *shadowed_storage,
                            gboolean                        shadowed_owned,
-                           const char *                    keyfile_dir,
-                           const char *                    profile_dir,
+                           const char                     *keyfile_dir,
+                           const char                     *profile_dir,
                            gboolean                        with_extension,
                            uid_t                           owner_uid,
                            pid_t                           owner_grp,
-                           const char *                    existing_path,
+                           const char                     *existing_path,
                            gboolean                        existing_path_read_only,
                            gboolean                        force_rename,
                            NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
                            gpointer                        allow_filename_user_data,
-                           char **                         out_path,
-                           NMConnection **                 out_reread,
-                           gboolean *                      out_reread_same,
-                           GError **                       error)
+                           char                          **out_path,
+                           NMConnection                  **out_reread,
+                           gboolean                       *out_reread_same,
+                           GError                        **error)
 {
     nm_auto_unref_keyfile GKeyFile *kf_file        = NULL;
-    gs_free char *                  kf_content_buf = NULL;
+    gs_free char                   *kf_content_buf = NULL;
     gsize                           kf_content_len;
-    gs_free char *                  path = NULL;
-    const char *                    id;
-    WriteInfo                       info = {0};
-    gs_free_error GError *local_err      = NULL;
-    int                   errsv;
-    gboolean              rename;
-    int                   i_path;
-    gs_unref_object NMConnection *reread      = NULL;
-    gboolean                      reread_same = FALSE;
+    gs_free char                   *path = NULL;
+    const char                     *id;
+    WriteInfo                       info      = {0};
+    gs_free_error GError           *local_err = NULL;
+    int                             errsv;
+    gboolean                        rename;
+    int                             i_path;
+    gs_unref_object NMConnection   *reread      = NULL;
+    gboolean                        reread_same = FALSE;
 
     g_return_val_if_fail(!out_path || !*out_path, FALSE);
     g_return_val_if_fail(keyfile_dir && keyfile_dir[0] == '/', FALSE);
@@ -417,23 +417,23 @@ _internal_write_connection(NMConnection *                  connection,
 }
 
 gboolean
-nms_keyfile_writer_connection(NMConnection *                  connection,
+nms_keyfile_writer_connection(NMConnection                   *connection,
                               gboolean                        is_nm_generated,
                               gboolean                        is_volatile,
                               gboolean                        is_external,
-                              const char *                    shadowed_storage,
+                              const char                     *shadowed_storage,
                               gboolean                        shadowed_owned,
-                              const char *                    keyfile_dir,
-                              const char *                    profile_dir,
-                              const char *                    existing_path,
+                              const char                     *keyfile_dir,
+                              const char                     *profile_dir,
+                              const char                     *existing_path,
                               gboolean                        existing_path_read_only,
                               gboolean                        force_rename,
                               NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
                               gpointer                        allow_filename_user_data,
-                              char **                         out_path,
-                              NMConnection **                 out_reread,
-                              gboolean *                      out_reread_same,
-                              GError **                       error)
+                              char                          **out_path,
+                              NMConnection                  **out_reread,
+                              gboolean                       *out_reread_same,
+                              GError                        **error)
 {
     return _internal_write_connection(connection,
                                       is_nm_generated,
@@ -458,14 +458,14 @@ nms_keyfile_writer_connection(NMConnection *                  connection,
 }
 
 gboolean
-nms_keyfile_writer_test_connection(NMConnection * connection,
-                                   const char *   keyfile_dir,
+nms_keyfile_writer_test_connection(NMConnection  *connection,
+                                   const char    *keyfile_dir,
                                    uid_t          owner_uid,
                                    pid_t          owner_grp,
-                                   char **        out_path,
+                                   char         **out_path,
                                    NMConnection **out_reread,
-                                   gboolean *     out_reread_same,
-                                   GError **      error)
+                                   gboolean      *out_reread_same,
+                                   GError       **error)
 {
     return _internal_write_connection(connection,
                                       FALSE,

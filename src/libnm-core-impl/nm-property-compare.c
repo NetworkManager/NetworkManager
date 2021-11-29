@@ -43,8 +43,8 @@ _nm_property_compare_vardict(GVariant *value1, GVariant *value2)
 {
     GVariantIter iter;
     int          len1, len2;
-    const char * key;
-    GVariant *   val1, *val2;
+    const char  *key;
+    GVariant    *val1, *val2;
 
     len1 = g_variant_n_children(value1);
     len2 = g_variant_n_children(value2);
@@ -75,7 +75,7 @@ _nm_property_compare_strdict(GVariant *value1, GVariant *value2)
 {
     GVariantIter iter;
     int          len1, len2;
-    const char * key, *val1, *val2;
+    const char  *key, *val1, *val2;
     int          ret;
 
     len1 = g_variant_n_children(value1);

@@ -34,7 +34,7 @@
 struct _NMLldpListener {
     sd_lldp_rx *lldp_handle;
     GHashTable *lldp_neighbors;
-    GVariant *  variant;
+    GVariant   *variant;
 
     NMLldpListenerNotify notify_callback;
     gpointer             notify_user_data;
@@ -49,10 +49,10 @@ struct _NMLldpListener {
 /*****************************************************************************/
 
 typedef struct {
-    GVariant *        variant;
+    GVariant         *variant;
     sd_lldp_neighbor *neighbor_sd;
-    char *            chassis_id;
-    char *            port_id;
+    char             *chassis_id;
+    char             *port_id;
     guint8            chassis_id_type;
     guint8            port_id_type;
 } LldpNeighbor;
@@ -112,12 +112,12 @@ lldp_neighbor_get_raw(LldpNeighbor *neigh, const guint8 **out_raw_data, gsize *o
 
 static gboolean
 lldp_neighbor_id_get(struct sd_lldp_neighbor *neighbor_sd,
-                     guint8 *                 out_chassis_id_type,
-                     const guint8 **          out_chassis_id,
-                     gsize *                  out_chassis_id_len,
-                     guint8 *                 out_port_id_type,
-                     const guint8 **          out_port_id,
-                     gsize *                  out_port_id_len)
+                     guint8                  *out_chassis_id_type,
+                     const guint8           **out_chassis_id,
+                     gsize                   *out_chassis_id_len,
+                     guint8                  *out_port_id_type,
+                     const guint8           **out_port_id,
+                     gsize                   *out_port_id_len)
 {
     int r;
 
@@ -144,8 +144,8 @@ lldp_neighbor_id_hash(gconstpointer ptr)
     const LldpNeighbor *neigh = ptr;
     guint8              chassis_id_type;
     guint8              port_id_type;
-    const guint8 *      chassis_id;
-    const guint8 *      port_id;
+    const guint8       *chassis_id;
+    const guint8       *port_id;
     gsize               chassis_id_len;
     gsize               port_id_len;
     NMHashState         h;
@@ -270,9 +270,9 @@ parse_management_address_tlv(const uint8_t *data, gsize len)
 {
     GVariantBuilder builder;
     gsize           addr_len;
-    const guint8 *  v_object_id_arr;
+    const guint8   *v_object_id_arr;
     gsize           v_object_id_len;
-    const guint8 *  v_address_arr;
+    const guint8   *v_address_arr;
     gsize           v_address_len;
     guint32         v_interface_number;
     guint32         v_interface_number_subtype;
@@ -393,7 +393,7 @@ format_string(const guint8 *data, gsize len, gboolean allow_trim, char **out_to_
 static char *
 format_string_cp(const guint8 *data, gsize len, gboolean allow_trim)
 {
-    char *      s_free = NULL;
+    char       *s_free = NULL;
     const char *s;
 
     s = format_string(data, len, allow_trim, &s_free);
@@ -482,11 +482,11 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
 {
     struct ether_addr destination_address;
     GVariantBuilder   builder;
-    const char *      str;
-    const guint8 *    raw_data;
+    const char       *str;
+    const guint8     *raw_data;
     gsize             raw_len;
     uint16_t          u16;
-    uint8_t *         data8;
+    uint8_t          *data8;
     gsize             len;
     int               r;
 
@@ -537,19 +537,19 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
     else {
         gboolean        v_management_addresses_has = FALSE;
         GVariantBuilder v_management_addresses;
-        GVariant *      v_ieee_802_1_pvid        = NULL;
-        GVariant *      v_ieee_802_1_ppvid       = NULL;
-        GVariant *      v_ieee_802_1_ppvid_flags = NULL;
+        GVariant       *v_ieee_802_1_pvid        = NULL;
+        GVariant       *v_ieee_802_1_ppvid       = NULL;
+        GVariant       *v_ieee_802_1_ppvid_flags = NULL;
         GVariantBuilder v_ieee_802_1_ppvids;
-        GVariant *      v_ieee_802_1_vid       = NULL;
-        GVariant *      v_ieee_802_1_vlan_name = NULL;
+        GVariant       *v_ieee_802_1_vid       = NULL;
+        GVariant       *v_ieee_802_1_vlan_name = NULL;
         GVariantBuilder v_ieee_802_1_vlans;
-        GVariant *      v_ieee_802_3_mac_phy_conf   = NULL;
-        GVariant *      v_ieee_802_3_power_via_mdi  = NULL;
-        GVariant *      v_ieee_802_3_max_frame_size = NULL;
-        GVariant *      v_mud_url                   = NULL;
+        GVariant       *v_ieee_802_3_mac_phy_conf   = NULL;
+        GVariant       *v_ieee_802_3_power_via_mdi  = NULL;
+        GVariant       *v_ieee_802_3_max_frame_size = NULL;
+        GVariant       *v_mud_url                   = NULL;
         GVariantBuilder tmp_builder;
-        GVariant *      tmp_variant;
+        GVariant       *tmp_variant;
 
         do {
             guint8 oui[3];
@@ -636,7 +636,7 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                 case SD_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME:
                 {
                     gs_free char *name_to_free = NULL;
-                    const char *  name;
+                    const char   *name;
                     guint32       vid;
                     gsize         l;
 
@@ -716,7 +716,7 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                 case SD_LLDP_OUI_IANA_SUBTYPE_MUD:
                     if (!v_mud_url) {
                         gs_free char *s_free = NULL;
-                        const char *  s;
+                        const char   *s;
 
                         s = format_string(data8, len, TRUE, &s_free);
                         if (s)
@@ -778,8 +778,8 @@ GVariant *
 nmtst_lldp_parse_from_raw(const guint8 *raw_data, gsize raw_len)
 {
     nm_auto(sd_lldp_neighbor_unrefp) sd_lldp_neighbor *neighbor_sd = NULL;
-    nm_auto(lldp_neighbor_freep) LldpNeighbor *        neigh       = NULL;
-    GVariant *                                         variant;
+    nm_auto(lldp_neighbor_freep) LldpNeighbor         *neigh       = NULL;
+    GVariant                                          *variant;
     int                                                r;
 
     g_assert(raw_data);
@@ -846,7 +846,7 @@ static void
 process_lldp_neighbor(NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboolean remove)
 {
     nm_auto(lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
-    LldpNeighbor *                             neigh_old;
+    LldpNeighbor                              *neigh_old;
 
     nm_assert(self);
     nm_assert(self->lldp_handle);
@@ -933,10 +933,10 @@ NMLldpListener *
 nm_lldp_listener_new(int                  ifindex,
                      NMLldpListenerNotify notify_callback,
                      gpointer             notify_user_data,
-                     GError **            error)
+                     GError             **error)
 {
     NMLldpListener *self = NULL;
-    sd_lldp_rx *    lldp_handle;
+    sd_lldp_rx     *lldp_handle;
     int             r;
 
     g_return_val_if_fail(ifindex > 0, FALSE);

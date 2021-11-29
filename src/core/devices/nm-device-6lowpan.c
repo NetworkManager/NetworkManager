@@ -41,7 +41,7 @@ G_DEFINE_TYPE(NMDevice6Lowpan, nm_device_6lowpan, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 static void
-parent_state_changed(NMDevice *          parent,
+parent_state_changed(NMDevice           *parent,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state,
                      NMDeviceStateReason reason,
@@ -62,7 +62,7 @@ parent_changed_notify(NMDevice *device,
                       int       new_ifindex,
                       NMDevice *new_parent)
 {
-    NMDevice6Lowpan *       self = NM_DEVICE_6LOWPAN(device);
+    NMDevice6Lowpan        *self = NM_DEVICE_6LOWPAN(device);
     NMDevice6LowpanPrivate *priv = NM_DEVICE_6LOWPAN_GET_PRIVATE(self);
 
     NM_DEVICE_CLASS(nm_device_6lowpan_parent_class)
@@ -95,13 +95,13 @@ parent_changed_notify(NMDevice *device,
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
-    const char *      iface = nm_device_get_iface(device);
+    const char       *iface = nm_device_get_iface(device);
     NMSetting6Lowpan *s_6lowpan;
     int               parent_ifindex;
     int               r;
@@ -175,11 +175,11 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
     NMSetting6Lowpan *s_6lowpan;
 
@@ -249,7 +249,7 @@ static void
 nm_device_6lowpan_class_init(NMDevice6LowpanClass *klass)
 {
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_device_6lowpan);
 
@@ -275,11 +275,11 @@ nm_device_6lowpan_class_init(NMDevice6LowpanClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_6LOWPAN_DEVICE_FACTORY, NM6LowpanDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     return g_object_new(NM_TYPE_DEVICE_6LOWPAN,
                         NM_DEVICE_IFACE,
@@ -310,7 +310,7 @@ static char *
 get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
 {
     NMSetting6Lowpan *s_6lowpan;
-    const char *      ifname;
+    const char       *ifname;
 
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_6LOWPAN_SETTING_NAME), NULL);
 

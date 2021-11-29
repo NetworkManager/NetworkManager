@@ -26,8 +26,8 @@
 NM_GOBJECT_PROPERTIES_DEFINE(NMSettingUser, PROP_DATA, );
 
 typedef struct {
-    GHashTable * data;
-    GHashTable * data_invalid;
+    GHashTable  *data;
+    GHashTable  *data_invalid;
     const char **keys;
 } NMSettingUserPrivate;
 
@@ -220,7 +220,7 @@ _create_data_hash(void)
 const char *const *
 nm_setting_user_get_keys(NMSettingUser *setting, guint *out_len)
 {
-    NMSettingUser *       self = setting;
+    NMSettingUser        *self = setting;
     NMSettingUserPrivate *priv;
 
     g_return_val_if_fail(NM_IS_SETTING_USER(self), NULL);
@@ -276,7 +276,7 @@ nm_setting_user_get_data(NMSettingUser *setting, const char *key)
 gboolean
 nm_setting_user_set_data(NMSettingUser *setting, const char *key, const char *val, GError **error)
 {
-    NMSettingUser *       self = setting;
+    NMSettingUser        *self = setting;
     NMSettingUserPrivate *priv;
     gboolean              changed = FALSE;
 
@@ -340,12 +340,12 @@ out:
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingUser *       self = NM_SETTING_USER(setting);
+    NMSettingUser        *self = NM_SETTING_USER(setting);
     NMSettingUserPrivate *priv = NM_SETTING_USER_GET_PRIVATE(self);
 
     if (priv->data_invalid) {
-        const char *   key, *val;
-        GHashTableIter iter;
+        const char           *key, *val;
+        GHashTableIter        iter;
         gs_free_error GError *local = NULL;
 
         g_hash_table_iter_init(&iter, priv->data_invalid);
@@ -411,11 +411,11 @@ compare_fcn_data(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingUser *       self = NM_SETTING_USER(object);
+    NMSettingUser        *self = NM_SETTING_USER(object);
     NMSettingUserPrivate *priv = NM_SETTING_USER_GET_PRIVATE(self);
     GHashTableIter        iter;
-    GHashTable *          data;
-    const char *          key, *val;
+    GHashTable           *data;
+    const char           *key, *val;
 
     switch (prop_id) {
     case PROP_DATA:
@@ -441,11 +441,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingUser *       self = NM_SETTING_USER(object);
+    NMSettingUser        *self = NM_SETTING_USER(object);
     NMSettingUserPrivate *priv = NM_SETTING_USER_GET_PRIVATE(self);
     GHashTableIter        iter;
-    GHashTable *          data;
-    const char *          key, *val;
+    GHashTable           *data;
+    const char           *key, *val;
 
     switch (prop_id) {
     case PROP_DATA:
@@ -508,7 +508,7 @@ nm_setting_user_new(void)
 static void
 finalize(GObject *object)
 {
-    NMSettingUser *       self = NM_SETTING_USER(object);
+    NMSettingUser        *self = NM_SETTING_USER(object);
     NMSettingUserPrivate *priv = NM_SETTING_USER_GET_PRIVATE(self);
 
     g_free(priv->keys);
@@ -523,9 +523,9 @@ finalize(GObject *object)
 static void
 nm_setting_user_class_init(NMSettingUserClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;

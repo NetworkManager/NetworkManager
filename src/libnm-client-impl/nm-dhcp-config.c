@@ -30,21 +30,21 @@ G_DEFINE_ABSTRACT_TYPE(NMDhcpConfig, nm_dhcp_config, NM_TYPE_OBJECT)
 /*****************************************************************************/
 
 static NMLDBusNotifyUpdatePropFlags
-_notify_update_prop_options(NMClient *              client,
-                            NMLDBusObject *         dbobj,
+_notify_update_prop_options(NMClient               *client,
+                            NMLDBusObject          *dbobj,
                             const NMLDBusMetaIface *meta_iface,
                             guint                   dbus_property_idx,
-                            GVariant *              value)
+                            GVariant               *value)
 {
-    NMDhcpConfig *       self = NM_DHCP_CONFIG(dbobj->nmobj);
+    NMDhcpConfig        *self = NM_DHCP_CONFIG(dbobj->nmobj);
     NMDhcpConfigPrivate *priv = NM_DHCP_CONFIG_GET_PRIVATE(self);
 
     g_hash_table_remove_all(priv->options);
 
     if (value) {
         GVariantIter iter;
-        const char * key;
-        GVariant *   opt;
+        const char  *key;
+        GVariant    *opt;
 
         g_variant_iter_init(&iter, value);
         while (g_variant_iter_next(&iter, "{&sv}", &key, &opt)) {

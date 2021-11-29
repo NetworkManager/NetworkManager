@@ -44,7 +44,7 @@ typedef union {
 
     /* for convenience, also let the union contain other pointer types. These are
      * for NM_VALUE_TYPE_UNSPEC. */
-    gconstpointer *  v_ptr;
+    gconstpointer   *v_ptr;
     const GPtrArray *v_ptrarray;
 
 } NMValueTypUnion;
@@ -181,7 +181,7 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
 static inline void
 nm_value_type_get_from_variant(NMValueType value_type,
                                gpointer    dst,
-                               GVariant *  variant,
+                               GVariant   *variant,
                                gboolean    clone)
 {
     switch (value_type) {
@@ -230,7 +230,7 @@ nm_value_type_get_from_variant(NMValueType value_type,
 static inline GVariant *
 nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
 {
-    const char *  v_string;
+    const char   *v_string;
     const GBytes *v_bytes;
 
     switch (value_type) {

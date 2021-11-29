@@ -125,49 +125,49 @@ typedef struct _NMGlobalDnsDomain NMGlobalDnsDomain;
 
 GType nm_config_data_get_type(void);
 
-NMConfigData *nm_config_data_new(const char *       config_main_file,
-                                 const char *       config_description,
+NMConfigData *nm_config_data_new(const char        *config_main_file,
+                                 const char        *config_description,
                                  const char *const *no_auto_default,
-                                 GKeyFile *         keyfile_user,
-                                 GKeyFile *         keyfile_intern);
+                                 GKeyFile          *keyfile_user,
+                                 GKeyFile          *keyfile_intern);
 NMConfigData *nm_config_data_new_update_keyfile_intern(const NMConfigData *base,
-                                                       GKeyFile *          keyfile_intern);
+                                                       GKeyFile           *keyfile_intern);
 NMConfigData *nm_config_data_new_update_no_auto_default(const NMConfigData *base,
-                                                        const char *const * no_auto_default);
+                                                        const char *const  *no_auto_default);
 
 NMConfigChangeFlags nm_config_data_diff(NMConfigData *old_data, NMConfigData *new_data);
 
-void nm_config_data_log(const NMConfigData * self,
-                        const char *         prefix,
-                        const char *         key_prefix,
-                        const char *         no_auto_default_file,
+void nm_config_data_log(const NMConfigData  *self,
+                        const char          *prefix,
+                        const char          *key_prefix,
+                        const char          *no_auto_default_file,
                         /* FILE* */ gpointer print_stream);
 
 const char *nm_config_data_get_config_main_file(const NMConfigData *config_data);
 const char *nm_config_data_get_config_description(const NMConfigData *config_data);
 
 gboolean nm_config_data_has_group(const NMConfigData *self, const char *group);
-gboolean nm_config_data_has_value(const NMConfigData *  self,
-                                  const char *          group,
-                                  const char *          key,
+gboolean nm_config_data_has_value(const NMConfigData   *self,
+                                  const char           *group,
+                                  const char           *key,
                                   NMConfigGetValueFlags flags);
-char *   nm_config_data_get_value(const NMConfigData *  config_data,
-                                  const char *          group,
-                                  const char *          key,
+char    *nm_config_data_get_value(const NMConfigData   *config_data,
+                                  const char           *group,
+                                  const char           *key,
                                   NMConfigGetValueFlags flags);
 int      nm_config_data_get_value_boolean(const NMConfigData *self,
-                                          const char *        group,
-                                          const char *        key,
+                                          const char         *group,
+                                          const char         *key,
                                           int                 default_value);
 gint64   nm_config_data_get_value_int64(const NMConfigData *self,
-                                        const char *        group,
-                                        const char *        key,
+                                        const char         *group,
+                                        const char         *key,
                                         guint               base,
                                         gint64              min,
                                         gint64              max,
                                         gint64              fallback);
 
-char **     nm_config_data_get_plugins(const NMConfigData *config_data, gboolean allow_default);
+char      **nm_config_data_get_plugins(const NMConfigData *config_data, gboolean allow_default);
 gboolean    nm_config_data_get_connectivity_enabled(const NMConfigData *config_data);
 const char *nm_config_data_get_connectivity_uri(const NMConfigData *config_data);
 guint       nm_config_data_get_connectivity_interval(const NMConfigData *config_data);
@@ -195,9 +195,9 @@ const char *nm_config_data_get_iwd_config_path(const NMConfigData *self);
 extern const char *__start_connection_defaults[];
 extern const char *__stop_connection_defaults[];
 
-#define NM_CON_DEFAULT_NOP(name)                                   \
-    static const char *     NM_UNIQ_T(connection_default, NM_UNIQ) \
-        _nm_used _nm_retain _nm_section("connection_defaults") = "" name
+#define NM_CON_DEFAULT_NOP(name)                               \
+    static const char  *NM_UNIQ_T(connection_default, NM_UNIQ) \
+    _nm_used _nm_retain _nm_section("connection_defaults") = "" name
 
 #define NM_CON_DEFAULT(name)                                                   \
     ({                                                                         \
@@ -208,35 +208,35 @@ extern const char *__stop_connection_defaults[];
     })
 
 const char *nm_config_data_get_connection_default(const NMConfigData *self,
-                                                  const char *        property,
-                                                  NMDevice *          device);
+                                                  const char         *property,
+                                                  NMDevice           *device);
 
 gint64 nm_config_data_get_connection_default_int64(const NMConfigData *self,
-                                                   const char *        property,
-                                                   NMDevice *          device,
+                                                   const char         *property,
+                                                   NMDevice           *device,
                                                    gint64              min,
                                                    gint64              max,
                                                    gint64              fallback);
 
 const char *nm_config_data_get_device_config(const NMConfigData *self,
-                                             const char *        property,
-                                             NMDevice *          device,
-                                             gboolean *          has_match);
+                                             const char         *property,
+                                             NMDevice           *device,
+                                             gboolean           *has_match);
 
-const char *nm_config_data_get_device_config_by_pllink(const NMConfigData *  self,
-                                                       const char *          property,
+const char *nm_config_data_get_device_config_by_pllink(const NMConfigData   *self,
+                                                       const char           *property,
                                                        const NMPlatformLink *pllink,
-                                                       const char *          match_device_type,
-                                                       gboolean *            has_match);
+                                                       const char           *match_device_type,
+                                                       gboolean             *has_match);
 
 gboolean nm_config_data_get_device_config_boolean(const NMConfigData *self,
-                                                  const char *        property,
-                                                  NMDevice *          device,
+                                                  const char         *property,
+                                                  NMDevice           *device,
                                                   int                 val_no_match,
                                                   int                 val_invalid);
 gint64   nm_config_data_get_device_config_int64(const NMConfigData *self,
-                                                const char *        property,
-                                                NMDevice *          device,
+                                                const char         *property,
+                                                NMDevice           *device,
                                                 int                 base,
                                                 gint64              min,
                                                 gint64              max,
@@ -244,11 +244,11 @@ gint64   nm_config_data_get_device_config_int64(const NMConfigData *self,
                                                 gint64              val_invalid);
 
 const GSList *nm_config_data_get_device_allowed_connections_specs(const NMConfigData *self,
-                                                                  NMDevice *          device,
-                                                                  gboolean *          has_match);
+                                                                  NMDevice           *device,
+                                                                  gboolean           *has_match);
 
-char **  nm_config_data_get_groups(const NMConfigData *self);
-char **  nm_config_data_get_keys(const NMConfigData *self, const char *group);
+char   **nm_config_data_get_groups(const NMConfigData *self);
+char   **nm_config_data_get_keys(const NMConfigData *self, const char *group);
 gboolean nm_config_data_is_intern_atomic_group(const NMConfigData *self, const char *group);
 
 GKeyFile *nm_config_data_clone_keyfile_intern(const NMConfigData *self);
@@ -258,8 +258,8 @@ const char *const *nm_global_dns_config_get_options(const NMGlobalDnsConfig *dns
 guint              nm_global_dns_config_get_num_domains(const NMGlobalDnsConfig *dns_config);
 NMGlobalDnsDomain *nm_global_dns_config_get_domain(const NMGlobalDnsConfig *dns_config, guint i);
 NMGlobalDnsDomain *nm_global_dns_config_lookup_domain(const NMGlobalDnsConfig *dns_config,
-                                                      const char *             name);
-const char *       nm_global_dns_domain_get_name(const NMGlobalDnsDomain *domain);
+                                                      const char              *name);
+const char        *nm_global_dns_domain_get_name(const NMGlobalDnsDomain *domain);
 const char *const *nm_global_dns_domain_get_servers(const NMGlobalDnsDomain *domain);
 const char *const *nm_global_dns_domain_get_options(const NMGlobalDnsDomain *domain);
 gboolean           nm_global_dns_config_is_internal(const NMGlobalDnsConfig *dns_config);
@@ -287,6 +287,6 @@ GKeyFile *_nm_config_data_get_keyfile_intern(const NMConfigData *self);
  * including the header, forward declare the two functions that we need. */
 struct _NMDhcpManager;
 struct _NMDhcpManager *nm_dhcp_manager_get(void);
-const char *           nm_dhcp_manager_get_config(struct _NMDhcpManager *self);
+const char            *nm_dhcp_manager_get_config(struct _NMDhcpManager *self);
 
 #endif /* NM_CONFIG_DATA_H */

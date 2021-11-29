@@ -39,8 +39,8 @@ test_init_linux_platform(void)
 static void
 test_link_get_all(void)
 {
-    gs_unref_object NMPlatform *platform = NULL;
-    gs_unref_ptrarray GPtrArray *links   = NULL;
+    gs_unref_object NMPlatform  *platform = NULL;
+    gs_unref_ptrarray GPtrArray *links    = NULL;
 
     platform = nm_linux_platform_new(TRUE, NM_PLATFORM_NETNS_SUPPORT_DEFAULT, TRUE);
 
@@ -548,11 +548,11 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
     const guint N_ADDRESSES      = 100;
     const gsize ELM_SIZE =
         addr_family == AF_INET ? sizeof(NMPlatformIP4Address) : sizeof(NMPlatformIP6Address);
-    const gboolean DO_REGENERATE = FALSE;
-    const gboolean PRINT_RESULT  = DO_REGENERATE;
-    const gboolean CHECK_RESULT  = !DO_REGENERATE;
-    gs_free guint8 *addresses    = NULL;
-    gs_free guint64 *rand_map    = NULL;
+    const gboolean   DO_REGENERATE = FALSE;
+    const gboolean   PRINT_RESULT  = DO_REGENERATE;
+    const gboolean   CHECK_RESULT  = !DO_REGENERATE;
+    gs_free guint8  *addresses     = NULL;
+    gs_free guint64 *rand_map      = NULL;
     gsize            i, j;
 
 #if !defined(__amd64__)
@@ -586,7 +586,7 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
     for (i = 0; i < N_ADDRESSES; i++) {
         NMPlatformIPXAddress *a = (gpointer) (&addresses[i * ELM_SIZE]);
         guint64               r = rand_map[i];
-        struct in6_addr *     a6;
+        struct in6_addr      *a6;
 
 #define CONSUME_BITS(r, nbits)                        \
     ({                                                \

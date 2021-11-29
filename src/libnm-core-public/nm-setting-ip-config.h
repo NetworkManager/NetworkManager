@@ -61,7 +61,7 @@ void        nm_ip_address_set_address_binary(NMIPAddress *address, gconstpointer
 guint       nm_ip_address_get_prefix(NMIPAddress *address);
 void        nm_ip_address_set_prefix(NMIPAddress *address, guint prefix);
 
-char **   nm_ip_address_get_attribute_names(NMIPAddress *address);
+char    **nm_ip_address_get_attribute_names(NMIPAddress *address);
 GVariant *nm_ip_address_get_attribute(NMIPAddress *address, const char *name);
 void      nm_ip_address_set_attribute(NMIPAddress *address, const char *name, GVariant *value);
 
@@ -74,13 +74,13 @@ NMIPRoute *nm_ip_route_new(int         family,
                            guint       prefix,
                            const char *next_hop,
                            gint64      metric,
-                           GError **   error);
+                           GError    **error);
 NMIPRoute *nm_ip_route_new_binary(int           family,
                                   gconstpointer dest,
                                   guint         prefix,
                                   gconstpointer next_hop,
                                   gint64        metric,
-                                  GError **     error);
+                                  GError      **error);
 
 void     nm_ip_route_ref(NMIPRoute *route);
 void     nm_ip_route_unref(NMIPRoute *route);
@@ -111,17 +111,17 @@ void        nm_ip_route_set_next_hop_binary(NMIPRoute *route, gconstpointer next
 gint64      nm_ip_route_get_metric(NMIPRoute *route);
 void        nm_ip_route_set_metric(NMIPRoute *route, gint64 metric);
 
-char **   nm_ip_route_get_attribute_names(NMIPRoute *route);
+char    **nm_ip_route_get_attribute_names(NMIPRoute *route);
 GVariant *nm_ip_route_get_attribute(NMIPRoute *route, const char *name);
 void      nm_ip_route_set_attribute(NMIPRoute *route, const char *name, GVariant *value);
 NM_AVAILABLE_IN_1_8
 const NMVariantAttributeSpec *const *nm_ip_route_get_variant_attribute_spec(void);
 NM_AVAILABLE_IN_1_8
 gboolean nm_ip_route_attribute_validate(const char *name,
-                                        GVariant *  value,
+                                        GVariant   *value,
                                         int         family,
-                                        gboolean *  known,
-                                        GError **   error);
+                                        gboolean   *known,
+                                        GError    **error);
 
 #define NM_IP_ROUTE_ATTRIBUTE_CWND          "cwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_FROM          "from"
@@ -250,8 +250,8 @@ void nm_ip_routing_rule_set_suppress_prefixlength(NMIPRoutingRule *self,
 
 NM_AVAILABLE_IN_1_34
 gboolean nm_ip_routing_rule_get_uid_range(const NMIPRoutingRule *self,
-                                          guint32 *              out_range_start,
-                                          guint32 *              out_range_end);
+                                          guint32               *out_range_start,
+                                          guint32               *out_range_end);
 NM_AVAILABLE_IN_1_34
 void nm_ip_routing_rule_set_uid_range(NMIPRoutingRule *self,
                                       guint32          uid_range_start,
@@ -286,16 +286,16 @@ typedef enum { /*< flags >*/
 } NMIPRoutingRuleAsStringFlags;
 
 NM_AVAILABLE_IN_1_18
-NMIPRoutingRule *nm_ip_routing_rule_from_string(const char *                 str,
+NMIPRoutingRule *nm_ip_routing_rule_from_string(const char                  *str,
                                                 NMIPRoutingRuleAsStringFlags to_string_flags,
-                                                GHashTable *                 extra_args,
-                                                GError **                    error);
+                                                GHashTable                  *extra_args,
+                                                GError                     **error);
 
 NM_AVAILABLE_IN_1_18
-char *nm_ip_routing_rule_to_string(const NMIPRoutingRule *      self,
+char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
                                    NMIPRoutingRuleAsStringFlags to_string_flags,
-                                   GHashTable *                 extra_args,
-                                   GError **                    error);
+                                   GHashTable                  *extra_args,
+                                   GError                     **error);
 
 /*****************************************************************************/
 
@@ -413,7 +413,7 @@ const char *nm_setting_ip_config_get_dns_search(NMSettingIPConfig *setting, int 
 gboolean    nm_setting_ip_config_add_dns_search(NMSettingIPConfig *setting, const char *dns_search);
 void        nm_setting_ip_config_remove_dns_search(NMSettingIPConfig *setting, int idx);
 gboolean    nm_setting_ip_config_remove_dns_search_by_value(NMSettingIPConfig *setting,
-                                                            const char *       dns_search);
+                                                            const char        *dns_search);
 void        nm_setting_ip_config_clear_dns_searches(NMSettingIPConfig *setting);
 
 guint       nm_setting_ip_config_get_num_dns_options(NMSettingIPConfig *setting);
@@ -422,7 +422,7 @@ const char *nm_setting_ip_config_get_dns_option(NMSettingIPConfig *setting, guin
 gboolean    nm_setting_ip_config_add_dns_option(NMSettingIPConfig *setting, const char *dns_option);
 void        nm_setting_ip_config_remove_dns_option(NMSettingIPConfig *setting, int idx);
 gboolean    nm_setting_ip_config_remove_dns_option_by_value(NMSettingIPConfig *setting,
-                                                            const char *       dns_option);
+                                                            const char        *dns_option);
 void        nm_setting_ip_config_clear_dns_options(NMSettingIPConfig *setting, gboolean is_set);
 
 NM_AVAILABLE_IN_1_4
@@ -433,7 +433,7 @@ NMIPAddress *nm_setting_ip_config_get_address(NMSettingIPConfig *setting, int id
 gboolean     nm_setting_ip_config_add_address(NMSettingIPConfig *setting, NMIPAddress *address);
 void         nm_setting_ip_config_remove_address(NMSettingIPConfig *setting, int idx);
 gboolean     nm_setting_ip_config_remove_address_by_value(NMSettingIPConfig *setting,
-                                                          NMIPAddress *      address);
+                                                          NMIPAddress       *address);
 void         nm_setting_ip_config_clear_addresses(NMSettingIPConfig *setting);
 
 const char *nm_setting_ip_config_get_gateway(NMSettingIPConfig *setting);
@@ -456,7 +456,7 @@ NM_AVAILABLE_IN_1_18
 NMIPRoutingRule *nm_setting_ip_config_get_routing_rule(NMSettingIPConfig *setting, guint idx);
 NM_AVAILABLE_IN_1_18
 void nm_setting_ip_config_add_routing_rule(NMSettingIPConfig *setting,
-                                           NMIPRoutingRule *  routing_rule);
+                                           NMIPRoutingRule   *routing_rule);
 NM_AVAILABLE_IN_1_18
 void nm_setting_ip_config_remove_routing_rule(NMSettingIPConfig *setting, guint idx);
 NM_AVAILABLE_IN_1_18
@@ -484,7 +484,7 @@ NMDhcpHostnameFlags nm_setting_ip_config_get_dhcp_hostname_flags(NMSettingIPConf
 
 NM_AVAILABLE_IN_1_28
 const char *const *nm_setting_ip_config_get_dhcp_reject_servers(NMSettingIPConfig *setting,
-                                                                guint *            out_len);
+                                                                guint             *out_len);
 NM_AVAILABLE_IN_1_28
 void nm_setting_ip_config_add_dhcp_reject_server(NMSettingIPConfig *setting, const char *server);
 NM_AVAILABLE_IN_1_28

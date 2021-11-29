@@ -53,15 +53,15 @@ typedef struct {
         guint              len;
         guint              n_alloc;
     } s390_options;
-    GArray *                mac_address_blacklist;
-    char **                 s390_subchannels;
-    char *                  port;
-    char *                  duplex;
-    char *                  device_mac_address;
-    char *                  cloned_mac_address;
-    char *                  generate_mac_address_mask;
-    char *                  s390_nettype;
-    char *                  wol_password;
+    GArray                 *mac_address_blacklist;
+    char                  **s390_subchannels;
+    char                   *port;
+    char                   *duplex;
+    char                   *device_mac_address;
+    char                   *cloned_mac_address;
+    char                   *generate_mac_address_mask;
+    char                   *s390_nettype;
+    char                   *wol_password;
     NMSettingWiredWakeOnLan wol;
     NMTernary               accept_all_mac_addresses;
     guint32                 speed;
@@ -344,7 +344,7 @@ gboolean
 nm_setting_wired_add_mac_blacklist_item(NMSettingWired *setting, const char *mac)
 {
     NMSettingWiredPrivate *priv;
-    const char *           candidate;
+    const char            *candidate;
     int                    i;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
@@ -401,7 +401,7 @@ gboolean
 nm_setting_wired_remove_mac_blacklist_item_by_value(NMSettingWired *setting, const char *mac)
 {
     NMSettingWiredPrivate *priv;
-    const char *           candidate;
+    const char            *candidate;
     int                    i;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
@@ -526,8 +526,8 @@ nm_setting_wired_get_num_s390_options(NMSettingWired *setting)
 gboolean
 nm_setting_wired_get_s390_option(NMSettingWired *setting,
                                  guint32         idx,
-                                 const char **   out_key,
-                                 const char **   out_value)
+                                 const char    **out_key,
+                                 const char    **out_value)
 {
     NMSettingWiredPrivate *priv;
 
@@ -773,7 +773,7 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingWiredPrivate *priv  = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    GError *               local = NULL;
+    GError                *local = NULL;
     guint                  i;
 
     if (!NM_IN_STRSET(priv->port, NULL, "tp", "aui", "bnc", "mii")) {
@@ -996,9 +996,9 @@ clear_blacklist_item(char **item_p)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingWired *       setting = NM_SETTING_WIRED(object);
+    NMSettingWired        *setting = NM_SETTING_WIRED(object);
     NMSettingWiredPrivate *priv    = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    GHashTable *           hash;
+    GHashTable            *hash;
     guint                  i;
 
     switch (prop_id) {
@@ -1063,8 +1063,8 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE(object);
-    const char *const *    blacklist;
-    const char *           mac;
+    const char *const     *blacklist;
+    const char            *mac;
 
     switch (prop_id) {
     case PROP_PORT:
@@ -1132,8 +1132,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         if (priv->s390_options.n_alloc > 0u) {
             gboolean       invalid_content = FALSE;
             GHashTableIter iter;
-            const char *   key;
-            const char *   val;
+            const char    *key;
+            const char    *val;
             guint          j;
             guint          i;
 
@@ -1244,9 +1244,9 @@ finalize(GObject *object)
 static void
 nm_setting_wired_class_init(NMSettingWiredClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingWiredPrivate));
 

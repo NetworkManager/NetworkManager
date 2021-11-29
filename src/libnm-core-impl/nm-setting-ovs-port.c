@@ -36,9 +36,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_VLAN_MODE,
 struct _NMSettingOvsPort {
     NMSetting parent;
 
-    char *  vlan_mode;
-    char *  lacp;
-    char *  bond_mode;
+    char   *vlan_mode;
+    char   *lacp;
+    char   *bond_mode;
     guint32 tag;
     guint32 bond_updelay;
     guint32 bond_downdelay;
@@ -160,7 +160,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (connection) {
         NMSettingConnection *s_con;
-        const char *         slave_type;
+        const char          *slave_type;
 
         s_con = nm_connection_get_setting_connection(connection);
         if (!s_con) {
@@ -284,9 +284,9 @@ nm_setting_ovs_port_new(void)
 static void
 nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;

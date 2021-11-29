@@ -24,7 +24,7 @@ _print_env(const char *const *denv, GHashTable *expected_env)
 {
     const char *const *iter;
     GHashTableIter     k;
-    const char *       key;
+    const char        *key;
 
     g_print("\n******* Generated environment:\n");
     for (iter = denv; iter && *iter; iter++)
@@ -37,22 +37,22 @@ _print_env(const char *const *denv, GHashTable *expected_env)
 }
 
 static gboolean
-parse_main(GKeyFile *  kf,
+parse_main(GKeyFile   *kf,
            const char *filename,
-           GVariant ** out_con_dict,
-           GVariant ** out_con_props,
-           char **     out_expected_iface,
-           char **     out_action,
-           char **     out_connectivity_state,
-           char **     out_vpn_ip_iface,
-           GError **   error)
+           GVariant  **out_con_dict,
+           GVariant  **out_con_props,
+           char      **out_expected_iface,
+           char      **out_action,
+           char      **out_connectivity_state,
+           char      **out_vpn_ip_iface,
+           GError    **error)
 {
-    nm_auto_clear_variant_builder GVariantBuilder props = {};
-    gs_free char *                                uuid  = NULL;
-    gs_free char *                                id    = NULL;
-    gs_unref_object NMConnection *connection            = NULL;
-    NMSettingConnection *         s_con;
-    const char *                  s;
+    nm_auto_clear_variant_builder GVariantBuilder props      = {};
+    gs_free char                                 *uuid       = NULL;
+    gs_free char                                 *id         = NULL;
+    gs_unref_object NMConnection                 *connection = NULL;
+    NMSettingConnection                          *s_con;
+    const char                                   *s;
 
     *out_expected_iface = g_key_file_get_string(kf, "main", "expected-iface", NULL);
 
@@ -108,7 +108,7 @@ static gboolean
 parse_device(GKeyFile *kf, GVariant **out_device_props, GError **error)
 {
     nm_auto_clear_variant_builder GVariantBuilder props = {};
-    gs_free char *                                tmp   = NULL;
+    gs_free char                                 *tmp   = NULL;
     int                                           i;
 
     g_variant_builder_init(&props, G_VARIANT_TYPE("a{sv}"));
@@ -145,13 +145,13 @@ parse_device(GKeyFile *kf, GVariant **out_device_props, GError **error)
 }
 
 static gboolean
-add_uint_array(GKeyFile *       kf,
+add_uint_array(GKeyFile        *kf,
                GVariantBuilder *props,
-               const char *     section,
-               const char *     key,
-               GError **        error)
+               const char      *section,
+               const char      *key,
+               GError         **error)
 {
-    gs_free char *       tmp   = NULL;
+    gs_free char        *tmp   = NULL;
     gs_free const char **split = NULL;
     gsize                i;
 
@@ -193,7 +193,7 @@ static gboolean
 parse_proxy(GKeyFile *kf, GVariant **out_props, const char *section, GError **error)
 {
     nm_auto_clear_variant_builder GVariantBuilder props = {};
-    gs_free char *                                tmp   = NULL;
+    gs_free char                                 *tmp   = NULL;
 
     g_variant_builder_init(&props, G_VARIANT_TYPE("a{sv}"));
 
@@ -216,9 +216,9 @@ static gboolean
 parse_ip4(GKeyFile *kf, GVariant **out_props, const char *section, GError **error)
 {
     nm_auto_clear_variant_builder GVariantBuilder props = {};
-    gs_free char *                                tmp   = NULL;
-    gs_free const char **                         split = NULL;
-    const char **                                 iter;
+    gs_free char                                 *tmp   = NULL;
+    gs_free const char                          **split = NULL;
+    const char                                  **iter;
 
     g_variant_builder_init(&props, G_VARIANT_TYPE("a{sv}"));
 
@@ -250,14 +250,14 @@ parse_ip4(GKeyFile *kf, GVariant **out_props, const char *section, GError **erro
     split = nm_strsplit_set_with_empty(tmp, ",");
     if (split) {
         gs_unref_ptrarray GPtrArray *addresses = NULL;
-        const char *                 gateway   = NULL;
+        const char                  *gateway   = NULL;
 
         addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
         for (iter = split; *iter; iter++) {
-            const char * s = *iter;
+            const char  *s = *iter;
             NMIPAddress *addr;
-            const char * ip;
-            const char * prefix;
+            const char  *ip;
+            const char  *prefix;
 
             g_strstrip((char *) s);
             if (s[0] == '\0')
@@ -298,7 +298,7 @@ parse_ip4(GKeyFile *kf, GVariant **out_props, const char *section, GError **erro
         routes = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
         for (iter = split; *iter; iter++) {
             const char *s = *iter;
-            NMIPRoute * route;
+            NMIPRoute  *route;
             const char *dest;
             const char *prefix;
             const char *next_hop;
@@ -344,8 +344,8 @@ static gboolean
 parse_dhcp(GKeyFile *kf, const char *group_name, GVariant **out_props, GError **error)
 {
     nm_auto_clear_variant_builder GVariantBuilder props = {};
-    gs_strfreev char **                           keys  = NULL;
-    char **                                       iter;
+    gs_strfreev char                            **keys  = NULL;
+    char                                        **iter;
 
     keys = g_key_file_get_keys(kf, group_name, NULL, error);
     if (!keys)
@@ -366,28 +366,28 @@ parse_dhcp(GKeyFile *kf, const char *group_name, GVariant **out_props, GError **
 }
 
 static gboolean
-get_dispatcher_file(const char * file,
-                    GVariant **  out_con_dict,
-                    GVariant **  out_con_props,
-                    GVariant **  out_device_props,
-                    GVariant **  out_device_proxy_props,
-                    GVariant **  out_device_ip4_props,
-                    GVariant **  out_device_ip6_props,
-                    GVariant **  out_device_dhcp4_props,
-                    GVariant **  out_device_dhcp6_props,
-                    char **      out_connectivity_state,
-                    char **      out_vpn_ip_iface,
-                    GVariant **  out_vpn_proxy_props,
-                    GVariant **  out_vpn_ip4_props,
-                    GVariant **  out_vpn_ip6_props,
-                    char **      out_expected_iface,
-                    char **      out_action,
+get_dispatcher_file(const char  *file,
+                    GVariant   **out_con_dict,
+                    GVariant   **out_con_props,
+                    GVariant   **out_device_props,
+                    GVariant   **out_device_proxy_props,
+                    GVariant   **out_device_ip4_props,
+                    GVariant   **out_device_ip6_props,
+                    GVariant   **out_device_dhcp4_props,
+                    GVariant   **out_device_dhcp6_props,
+                    char       **out_connectivity_state,
+                    char       **out_vpn_ip_iface,
+                    GVariant   **out_vpn_proxy_props,
+                    GVariant   **out_vpn_ip4_props,
+                    GVariant   **out_vpn_ip6_props,
+                    char       **out_expected_iface,
+                    char       **out_action,
                     GHashTable **out_env,
-                    GError **    error)
+                    GError     **error)
 {
     nm_auto_unref_keyfile GKeyFile *kf   = NULL;
-    gs_strfreev char **             keys = NULL;
-    char **                         iter;
+    gs_strfreev char              **keys = NULL;
+    char                          **iter;
 
     g_assert(!error || !*error);
     g_assert(out_con_dict && !*out_con_dict);
@@ -465,29 +465,29 @@ get_dispatcher_file(const char * file,
 static void
 test_generic(const char *file, const char *override_vpn_ip_iface)
 {
-    gs_unref_variant GVariant *con_dict            = NULL;
-    gs_unref_variant GVariant *con_props           = NULL;
-    gs_unref_variant GVariant *device_props        = NULL;
-    gs_unref_variant GVariant *device_proxy_props  = NULL;
-    gs_unref_variant GVariant *device_ip4_props    = NULL;
-    gs_unref_variant GVariant *device_ip6_props    = NULL;
-    gs_unref_variant GVariant *device_dhcp4_props  = NULL;
-    gs_unref_variant GVariant *device_dhcp6_props  = NULL;
-    gs_free char *             connectivity_change = NULL;
-    gs_free char *             vpn_ip_iface        = NULL;
-    gs_unref_variant GVariant *vpn_proxy_props     = NULL;
-    gs_unref_variant GVariant *vpn_ip4_props       = NULL;
-    gs_unref_variant GVariant *vpn_ip6_props       = NULL;
-    gs_free char *             expected_iface      = NULL;
-    gs_free char *             action              = NULL;
-    gs_free char *             out_iface           = NULL;
-    const char *               error_message       = NULL;
-    gs_unref_hashtable GHashTable *expected_env    = NULL;
-    GError *                       error           = NULL;
+    gs_unref_variant GVariant     *con_dict            = NULL;
+    gs_unref_variant GVariant     *con_props           = NULL;
+    gs_unref_variant GVariant     *device_props        = NULL;
+    gs_unref_variant GVariant     *device_proxy_props  = NULL;
+    gs_unref_variant GVariant     *device_ip4_props    = NULL;
+    gs_unref_variant GVariant     *device_ip6_props    = NULL;
+    gs_unref_variant GVariant     *device_dhcp4_props  = NULL;
+    gs_unref_variant GVariant     *device_dhcp6_props  = NULL;
+    gs_free char                  *connectivity_change = NULL;
+    gs_free char                  *vpn_ip_iface        = NULL;
+    gs_unref_variant GVariant     *vpn_proxy_props     = NULL;
+    gs_unref_variant GVariant     *vpn_ip4_props       = NULL;
+    gs_unref_variant GVariant     *vpn_ip6_props       = NULL;
+    gs_free char                  *expected_iface      = NULL;
+    gs_free char                  *action              = NULL;
+    gs_free char                  *out_iface           = NULL;
+    const char                    *error_message       = NULL;
+    gs_unref_hashtable GHashTable *expected_env        = NULL;
+    GError                        *error               = NULL;
     gboolean                       success;
-    gs_free char *                 filename = NULL;
-    gs_strfreev char **            denv     = NULL;
-    char **                        iter;
+    gs_free char                  *filename = NULL;
+    gs_strfreev char             **denv     = NULL;
+    char                         **iter;
 
     filename = g_build_filename(TEST_DIR, file, NULL);
     success  = get_dispatcher_file(filename,

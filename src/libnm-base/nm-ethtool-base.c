@@ -253,7 +253,7 @@ static int
 _by_name_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
 {
     const guint8 *p_id    = a;
-    const char *  optname = b;
+    const char   *optname = b;
 
     nm_assert(p_id && p_id >= _by_name && p_id <= &_by_name[_NM_ETHTOOL_ID_NUM]);
     nm_assert(*p_id < _NM_ETHTOOL_ID_NUM);

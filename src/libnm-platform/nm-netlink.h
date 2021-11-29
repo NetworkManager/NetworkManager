@@ -328,9 +328,9 @@ void           nla_nest_cancel(struct nl_msg *msg, const struct nlattr *attr);
 struct nlattr *nla_nest_start(struct nl_msg *msg, int attrtype);
 int            nla_nest_end(struct nl_msg *msg, struct nlattr *start);
 
-int nla_parse(struct nlattr *          tb[],
+int nla_parse(struct nlattr           *tb[],
               int                      maxtype,
-              struct nlattr *          head,
+              struct nlattr           *head,
               int                      len,
               const struct nla_policy *policy);
 
@@ -342,9 +342,9 @@ int nla_parse(struct nlattr *          tb[],
     })
 
 static inline int
-nla_parse_nested(struct nlattr *          tb[],
+nla_parse_nested(struct nlattr           *tb[],
                  int                      maxtype,
-                 struct nlattr *          nla,
+                 struct nlattr           *nla,
                  const struct nla_policy *policy)
 {
     return nla_parse(tb, maxtype, nla_data(nla), nla_len(nla), policy);
@@ -468,9 +468,9 @@ nlmsg_find_attr(struct nlmsghdr *nlh, int hdrlen, int attrtype)
     return nla_find(nlmsg_attrdata(nlh, hdrlen), nlmsg_attrlen(nlh, hdrlen), attrtype);
 }
 
-int nlmsg_parse(struct nlmsghdr *        nlh,
+int nlmsg_parse(struct nlmsghdr         *nlh,
                 int                      hdrlen,
-                struct nlattr *          tb[],
+                struct nlattr           *tb[],
                 int                      maxtype,
                 const struct nla_policy *policy);
 
@@ -517,11 +517,11 @@ int nl_socket_add_memberships(struct nl_sock *sk, int group, ...);
 
 int nl_connect(struct nl_sock *sk, int protocol);
 
-int nl_recv(struct nl_sock *    sk,
+int nl_recv(struct nl_sock     *sk,
             struct sockaddr_nl *nla,
-            unsigned char **    buf,
-            struct ucred *      out_creds,
-            gboolean *          out_creds_has);
+            unsigned char     **buf,
+            struct ucred       *out_creds,
+            gboolean           *out_creds_has);
 
 int nl_send(struct nl_sock *sk, struct nl_msg *msg);
 
@@ -544,16 +544,16 @@ typedef int (*nl_recvmsg_err_cb_t)(struct sockaddr_nl *nla, struct nlmsgerr *nle
 
 struct nl_cb {
     nl_recvmsg_msg_cb_t valid_cb;
-    void *              valid_arg;
+    void               *valid_arg;
 
     nl_recvmsg_msg_cb_t finish_cb;
-    void *              finish_arg;
+    void               *finish_arg;
 
     nl_recvmsg_msg_cb_t ack_cb;
-    void *              ack_arg;
+    void               *ack_arg;
 
     nl_recvmsg_err_cb_t err_cb;
-    void *              err_arg;
+    void               *err_arg;
 };
 
 int nl_sendmsg(struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr);
@@ -570,7 +570,7 @@ int nl_socket_set_ext_ack(struct nl_sock *sk, gboolean enable);
 
 /*****************************************************************************/
 
-void *             genlmsg_put(struct nl_msg *msg,
+void              *genlmsg_put(struct nl_msg *msg,
                                uint32_t       port,
                                uint32_t       seq,
                                int            family,
@@ -578,18 +578,18 @@ void *             genlmsg_put(struct nl_msg *msg,
                                int            flags,
                                uint8_t        cmd,
                                uint8_t        version);
-void *             genlmsg_data(const struct genlmsghdr *gnlh);
-void *             genlmsg_user_hdr(const struct genlmsghdr *gnlh);
+void              *genlmsg_data(const struct genlmsghdr *gnlh);
+void              *genlmsg_user_hdr(const struct genlmsghdr *gnlh);
 struct genlmsghdr *genlmsg_hdr(struct nlmsghdr *nlh);
-void *             genlmsg_user_data(const struct genlmsghdr *gnlh, const int hdrlen);
-struct nlattr *    genlmsg_attrdata(const struct genlmsghdr *gnlh, int hdrlen);
+void              *genlmsg_user_data(const struct genlmsghdr *gnlh, const int hdrlen);
+struct nlattr     *genlmsg_attrdata(const struct genlmsghdr *gnlh, int hdrlen);
 int                genlmsg_len(const struct genlmsghdr *gnlh);
 int                genlmsg_attrlen(const struct genlmsghdr *gnlh, int hdrlen);
 int                genlmsg_valid_hdr(struct nlmsghdr *nlh, int hdrlen);
 
-int genlmsg_parse(struct nlmsghdr *        nlh,
+int genlmsg_parse(struct nlmsghdr         *nlh,
                   int                      hdrlen,
-                  struct nlattr *          tb[],
+                  struct nlattr           *tb[],
                   int                      maxtype,
                   const struct nla_policy *policy);
 

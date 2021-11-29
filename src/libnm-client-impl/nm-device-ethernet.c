@@ -27,8 +27,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PERM_HW_ADDRESS,
                                   PROP_S390_SUBCHANNELS, );
 
 typedef struct _NMDeviceEthernetPrivate {
-    char ** s390_subchannels;
-    char *  perm_hw_address;
+    char  **s390_subchannels;
+    char   *perm_hw_address;
     guint32 speed;
     bool    carrier;
 } NMDeviceEthernetPrivate;
@@ -132,7 +132,7 @@ static gboolean
 match_subchans(NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_mac)
 {
     NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE(self);
-    const char *const *      subchans;
+    const char *const       *subchans;
     gsize                    num1, num2;
     gsize                    i, j;
 
@@ -193,7 +193,7 @@ connection_compatible(NMDevice *device, NMConnection *connection, GError **error
     s_wired = nm_connection_get_setting_wired(connection);
     /* Wired setting optional for PPPoE */
     if (s_wired) {
-        const char *       perm_addr, *s_mac;
+        const char        *perm_addr, *s_mac;
         gboolean           try_mac = TRUE;
         const char *const *mac_blacklist;
         int                i;
@@ -292,7 +292,7 @@ finalize(GObject *object)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMDeviceEthernet *       device = NM_DEVICE_ETHERNET(object);
+    NMDeviceEthernet        *device = NM_DEVICE_ETHERNET(object);
     NMDeviceEthernetPrivate *priv   = NM_DEVICE_ETHERNET_GET_PRIVATE(device);
 
     switch (prop_id) {
@@ -338,7 +338,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wired = NML_DBUS_META_IFAC
 static void
 nm_device_ethernet_class_init(NMDeviceEthernetClass *klass)
 {
-    GObjectClass * object_class = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class = G_OBJECT_CLASS(klass);
     NMDeviceClass *device_class = NM_DEVICE_CLASS(klass);
 
     g_type_class_add_private(klass, sizeof(NMDeviceEthernetPrivate));

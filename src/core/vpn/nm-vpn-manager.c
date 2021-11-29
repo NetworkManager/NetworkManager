@@ -15,7 +15,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 
 typedef struct {
-    GSList *      plugins;
+    GSList       *plugins;
     GFileMonitor *monitor_etc;
     GFileMonitor *monitor_lib;
     gulong        monitor_id_etc;
@@ -44,9 +44,9 @@ G_DEFINE_TYPE(NMVpnManager, nm_vpn_manager, G_TYPE_OBJECT)
 static void
 vpn_state_changed(NMVpnConnection *vpn, GParamSpec *pspec, NMVpnManager *manager)
 {
-    NMVpnManagerPrivate *   priv  = NM_VPN_MANAGER_GET_PRIVATE(manager);
+    NMVpnManagerPrivate    *priv  = NM_VPN_MANAGER_GET_PRIVATE(manager);
     NMActiveConnectionState state = nm_active_connection_get_state(NM_ACTIVE_CONNECTION(vpn));
-    const char *            service_name = nm_vpn_connection_get_service(vpn);
+    const char             *service_name = nm_vpn_connection_get_service(vpn);
 
     if (state == NM_ACTIVE_CONNECTION_STATE_DEACTIVATED) {
         g_hash_table_remove(priv->active_services, service_name);
@@ -59,9 +59,9 @@ gboolean
 nm_vpn_manager_activate_connection(NMVpnManager *manager, NMVpnConnection *vpn, GError **error)
 {
     NMVpnManagerPrivate *priv;
-    NMVpnPluginInfo *    plugin_info;
-    const char *         service_name;
-    NMDevice *           device;
+    NMVpnPluginInfo     *plugin_info;
+    const char          *service_name;
+    NMDevice            *device;
 
     g_return_val_if_fail(NM_IS_VPN_MANAGER(manager), FALSE);
     g_return_val_if_fail(NM_IS_VPN_CONNECTION(vpn), FALSE);
@@ -121,7 +121,7 @@ static void
 try_add_plugin(NMVpnManager *self, NMVpnPluginInfo *plugin_info)
 {
     NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE(self);
-    const char *         program;
+    const char          *program;
 
     program = nm_vpn_plugin_info_get_program(plugin_info);
     if (!program || !*program)
@@ -138,17 +138,17 @@ try_add_plugin(NMVpnManager *self, NMVpnPluginInfo *plugin_info)
 }
 
 static void
-vpn_dir_changed(GFileMonitor *    monitor,
-                GFile *           file,
-                GFile *           other_file,
+vpn_dir_changed(GFileMonitor     *monitor,
+                GFile            *file,
+                GFile            *other_file,
                 GFileMonitorEvent event_type,
                 gpointer          user_data)
 {
-    NMVpnManager *       self = NM_VPN_MANAGER(user_data);
+    NMVpnManager        *self = NM_VPN_MANAGER(user_data);
     NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE(self);
-    NMVpnPluginInfo *    plugin_info;
-    gs_free char *       path  = NULL;
-    GError *             error = NULL;
+    NMVpnPluginInfo     *plugin_info;
+    gs_free char        *path  = NULL;
+    GError              *error = NULL;
 
     path = g_file_get_path(file);
     if (!nm_vpn_plugin_info_validate_filename(path))
@@ -207,10 +207,10 @@ static void
 nm_vpn_manager_init(NMVpnManager *self)
 {
     NMVpnManagerPrivate *priv = NM_VPN_MANAGER_GET_PRIVATE(self);
-    GFile *              file;
-    GSList *             infos, *info;
-    const char *         conf_dir_etc = _nm_vpn_plugin_info_get_default_dir_etc();
-    const char *         conf_dir_lib = _nm_vpn_plugin_info_get_default_dir_lib();
+    GFile               *file;
+    GSList              *infos, *info;
+    const char          *conf_dir_etc = _nm_vpn_plugin_info_get_default_dir_etc();
+    const char          *conf_dir_lib = _nm_vpn_plugin_info_get_default_dir_lib();
 
     /* Watch the VPN directory for changes */
     file              = g_file_new_for_path(conf_dir_lib);

@@ -32,7 +32,7 @@ typedef struct {
     NmtEditConnectionListFilter connection_filter;
     gpointer                    connection_filter_data;
 
-    NmtNewtListbox *  listbox;
+    NmtNewtListbox   *listbox;
     NmtNewtButtonBox *buttons;
 
     NmtNewtWidget *add;
@@ -73,8 +73,8 @@ static void
 nmt_edit_connection_list_init(NmtEditConnectionList *list)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
-    NmtNewtWidget *               listbox, *buttons;
-    NmtNewtGrid *                 grid = NMT_NEWT_GRID(list);
+    NmtNewtWidget                *listbox, *buttons;
+    NmtNewtGrid                  *grid = NMT_NEWT_GRID(list);
 
     listbox       = g_object_new(NMT_TYPE_NEWT_LISTBOX,
                            "flags",
@@ -135,8 +135,8 @@ static void
 free_connections(NmtEditConnectionList *list)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
-    NMConnection *                conn;
-    GSList *                      iter;
+    NMConnection                 *conn;
+    GSList                       *iter;
 
     for (iter = priv->connections; iter; iter = iter->next) {
         conn = iter->data;
@@ -152,11 +152,11 @@ static void
 nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
-    const GPtrArray *             connections;
-    GSList *                      iter;
+    const GPtrArray              *connections;
+    GSList                       *iter;
     gboolean                      did_header = FALSE, did_vpn = FALSE;
-    NMEditorConnectionTypeData ** types;
-    NMConnection *                conn, *selected_conn;
+    NMEditorConnectionTypeData  **types;
+    NMConnection                 *conn, *selected_conn;
     int                           i, row, selected_row;
 
     selected_row  = nmt_newt_listbox_get_active(priv->listbox);
@@ -213,7 +213,7 @@ nmt_edit_connection_list_rebuild(NmtEditConnectionList *list)
 
         for (iter = priv->connections; iter; iter = iter->next) {
             NMSetting *setting;
-            char *     indented;
+            char      *indented;
 
             conn    = iter->data;
             setting = nm_connection_get_setting(conn, types[i]->setting_type);
@@ -254,7 +254,7 @@ rebuild_on_connections_changed(GObject *object, GParamSpec *pspec, gpointer list
 static void
 nmt_edit_connection_list_constructed(GObject *object)
 {
-    NmtEditConnectionList *       list = NMT_EDIT_CONNECTION_LIST(object);
+    NmtEditConnectionList        *list = NMT_EDIT_CONNECTION_LIST(object);
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
 
     if (priv->extra)
@@ -280,7 +280,7 @@ static void
 edit_clicked(NmtNewtButton *button, gpointer list)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
-    NMConnection *                connection;
+    NMConnection                 *connection;
 
     connection = nmt_newt_listbox_get_active_key(priv->listbox);
     g_return_if_fail(connection != NULL);
@@ -292,7 +292,7 @@ static void
 delete_clicked(NmtNewtButton *button, gpointer list)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
-    NMRemoteConnection *          connection;
+    NMRemoteConnection           *connection;
 
     connection = nmt_newt_listbox_get_active_key(priv->listbox);
     g_return_if_fail(connection != NULL);
@@ -318,8 +318,8 @@ void
 nmt_edit_connection_list_recommit(NmtEditConnectionList *list)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(list);
-    NMConnection *                conn;
-    GSList *                      iter;
+    NMConnection                 *conn;
+    GSList                       *iter;
 
     for (iter = priv->connections; iter; iter = iter->next) {
         conn = iter->data;
@@ -346,10 +346,10 @@ nmt_edit_connection_list_finalize(GObject *object)
 }
 
 static void
-nmt_edit_connection_list_set_property(GObject *     object,
+nmt_edit_connection_list_set_property(GObject      *object,
                                       guint         prop_id,
                                       const GValue *value,
-                                      GParamSpec *  pspec)
+                                      GParamSpec   *pspec)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(object);
 
@@ -375,14 +375,14 @@ nmt_edit_connection_list_set_property(GObject *     object,
 }
 
 static void
-nmt_edit_connection_list_get_property(GObject *   object,
+nmt_edit_connection_list_get_property(GObject    *object,
                                       guint       prop_id,
-                                      GValue *    value,
+                                      GValue     *value,
                                       GParamSpec *pspec)
 {
     NmtEditConnectionListPrivate *priv = NMT_EDIT_CONNECTION_LIST_GET_PRIVATE(object);
-    GPtrArray *                   connections;
-    GSList *                      iter;
+    GPtrArray                    *connections;
+    GSList                       *iter;
 
     switch (prop_id) {
     case PROP_GROUPED:

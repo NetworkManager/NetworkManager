@@ -37,8 +37,8 @@ NMDevice *nm_device_wifi_new(const char *iface, _NMDeviceWifiCapabilities capabi
 
 const CList *_nm_device_wifi_get_aps(NMDeviceWifi *self);
 
-void _nm_device_wifi_request_scan(NMDeviceWifi *         self,
-                                  GVariant *             options,
+void _nm_device_wifi_request_scan(NMDeviceWifi          *self,
+                                  GVariant              *options,
                                   GDBusMethodInvocation *invocation);
 
 GPtrArray *nmtst_ssids_options_to_ptrarray(GVariant *value, GError **error);

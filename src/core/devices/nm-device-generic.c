@@ -58,7 +58,7 @@ get_type_description(NMDevice *device)
 static void
 realize_start_notify(NMDevice *device, const NMPlatformLink *plink)
 {
-    NMDeviceGeneric *       self = NM_DEVICE_GENERIC(device);
+    NMDeviceGeneric        *self = NM_DEVICE_GENERIC(device);
     NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE(self);
     int                     ifindex;
 
@@ -112,7 +112,7 @@ update_connection(NMDevice *device, NMConnection *connection)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMDeviceGeneric *       self = NM_DEVICE_GENERIC(object);
+    NMDeviceGeneric        *self = NM_DEVICE_GENERIC(object);
     NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -128,7 +128,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMDeviceGeneric *       self = NM_DEVICE_GENERIC(object);
+    NMDeviceGeneric        *self = NM_DEVICE_GENERIC(object);
     NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -180,7 +180,7 @@ nm_device_generic_new(const NMPlatformLink *plink, gboolean nm_plugin_missing)
 static void
 dispose(GObject *object)
 {
-    NMDeviceGeneric *       self = NM_DEVICE_GENERIC(object);
+    NMDeviceGeneric        *self = NM_DEVICE_GENERIC(object);
     NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE(self);
 
     nm_clear_g_free(&priv->type_description);
@@ -202,9 +202,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_generic = {
 static void
 nm_device_generic_class_init(NMDeviceGenericClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->constructor  = constructor;
     object_class->dispose      = dispose;

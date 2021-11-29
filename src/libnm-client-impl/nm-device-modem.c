@@ -23,9 +23,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_MODEM_CAPABILITIES,
                                   PROP_APN, );
 
 typedef struct {
-    char *  device_id;
-    char *  operator_code;
-    char *  apn;
+    char   *device_id;
+    char   *operator_code;
+    char   *apn;
     guint32 modem_capabilities;
     guint32 current_capabilities;
 } NMDeviceModemPrivate;
@@ -161,8 +161,8 @@ get_type_description(NMDevice *device)
 static gboolean
 connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
-    NMSettingGsm *            s_gsm;
-    NMSettingCdma *           s_cdma;
+    NMSettingGsm             *s_gsm;
+    NMSettingCdma            *s_cdma;
     NMDeviceModemCapabilities current_caps;
 
     if (!NM_DEVICE_CLASS(nm_device_modem_parent_class)
@@ -282,7 +282,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_modem = NML_DBUS_META_IFAC
 static void
 nm_device_modem_class_init(NMDeviceModemClass *modem_class)
 {
-    GObjectClass * object_class = G_OBJECT_CLASS(modem_class);
+    GObjectClass  *object_class = G_OBJECT_CLASS(modem_class);
     NMDeviceClass *device_class = NM_DEVICE_CLASS(modem_class);
 
     object_class->get_property = get_property;

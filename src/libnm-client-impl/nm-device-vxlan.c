@@ -34,8 +34,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_CARRIER,
 
 typedef struct {
     NMLDBusPropertyO parent;
-    char *           group;
-    char *           local;
+    char            *group;
+    char            *local;
     guint32          id;
     guint32          limit;
     guint32          ageing;
@@ -522,7 +522,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_vxlan = NML_DBUS_META_IFAC
 static void
 nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
     NMDeviceClass *device_class    = NM_DEVICE_CLASS(klass);
 

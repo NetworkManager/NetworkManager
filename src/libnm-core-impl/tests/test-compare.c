@@ -37,7 +37,7 @@ compare_ints(void)
 static void
 compare_strings(void)
 {
-    GVariant *  value1, *value2;
+    GVariant   *value1, *value2;
     const char *str1 = "hello";
     const char *str2 = "world";
 
@@ -58,7 +58,7 @@ compare_strings(void)
 static void
 compare_strv(void)
 {
-    GVariant *        value1, *value2;
+    GVariant         *value1, *value2;
     const char *const strv1[] = {"foo", "bar", "baz", NULL};
     const char *const strv2[] = {"foo", "bar", "bar", NULL};
     const char *const strv3[] = {"foo", "bar", NULL};
@@ -123,7 +123,7 @@ compare_arrays(void)
 static void
 compare_str_hash(void)
 {
-    GVariant *      value1, *value2;
+    GVariant       *value1, *value2;
     GVariantBuilder builder;
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE("a{ss}"));
@@ -165,7 +165,7 @@ compare_str_hash(void)
 static void
 compare_ip6_addresses(void)
 {
-    GVariant *      value1, *value2;
+    GVariant       *value1, *value2;
     struct in6_addr addr1;
     struct in6_addr addr2;
     struct in6_addr addr3;

@@ -28,7 +28,7 @@ G_DEFINE_TYPE(NmtNewtEntry, nmt_newt_entry, NMT_TYPE_NEWT_COMPONENT)
 typedef struct {
     int               width;
     NmtNewtEntryFlags flags;
-    char *            text;
+    char             *text;
     int               last_cursor_pos;
     guint             idle_update;
 
@@ -150,7 +150,7 @@ nmt_newt_entry_check_valid(NmtNewtEntry *entry)
  * will not be considered #NmtNewtWidget:valid.
  */
 void
-nmt_newt_entry_set_validator(NmtNewtEntry *        entry,
+nmt_newt_entry_set_validator(NmtNewtEntry         *entry,
                              NmtNewtEntryValidator validator,
                              gpointer              user_data)
 {
@@ -296,7 +296,7 @@ idle_update_entry(gpointer entry)
 {
     NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
     newtComponent        co   = nmt_newt_component_get_component(entry);
-    char *               text;
+    char                *text;
 
     priv->idle_update = 0;
     if (!co)
@@ -351,7 +351,7 @@ nmt_newt_entry_build_component(NmtNewtComponent *component, gboolean sensitive)
 {
     NmtNewtEntryPrivate *priv = NMT_NEWT_ENTRY_GET_PRIVATE(component);
     newtComponent        co;
-    char *               text_lc;
+    char                *text_lc;
     int                  flags;
 
     flags = convert_flags(priv->flags);
@@ -385,7 +385,7 @@ nmt_newt_entry_activated(NmtNewtWidget *widget)
 static void
 nmt_newt_entry_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NmtNewtEntry *       entry = NMT_NEWT_ENTRY(object);
+    NmtNewtEntry        *entry = NMT_NEWT_ENTRY(object);
     NmtNewtEntryPrivate *priv  = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
     switch (prop_id) {
@@ -415,7 +415,7 @@ nmt_newt_entry_set_property(GObject *object, guint prop_id, const GValue *value,
 static void
 nmt_newt_entry_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NmtNewtEntry *       entry = NMT_NEWT_ENTRY(object);
+    NmtNewtEntry        *entry = NMT_NEWT_ENTRY(object);
     NmtNewtEntryPrivate *priv  = NMT_NEWT_ENTRY_GET_PRIVATE(entry);
 
     switch (prop_id) {
@@ -440,8 +440,8 @@ nmt_newt_entry_get_property(GObject *object, guint prop_id, GValue *value, GPara
 static void
 nmt_newt_entry_class_init(NmtNewtEntryClass *entry_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(entry_class);
-    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(entry_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(entry_class);
+    NmtNewtWidgetClass    *widget_class    = NMT_NEWT_WIDGET_CLASS(entry_class);
     NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS(entry_class);
 
     g_type_class_add_private(entry_class, sizeof(NmtNewtEntryPrivate));

@@ -60,8 +60,8 @@ struct NMTeamLinkWatcher {
             int         missed_max;
         } nsna_ping;
         struct {
-            const char *                  target_host;
-            const char *                  source_host;
+            const char                   *target_host;
+            const char                   *source_host;
             int                           init_wait;
             int                           interval;
             int                           missed_max;
@@ -106,7 +106,7 @@ NMTeamLinkWatcher *
 nm_team_link_watcher_new_ethtool(int delay_up, int delay_down, GError **error)
 {
     NMTeamLinkWatcher *watcher;
-    const char *       val_fail = NULL;
+    const char        *val_fail = NULL;
 
     if (delay_up < 0 || !_NM_INT_LE_MAXINT32(delay_up))
         val_fail = "delay-up";
@@ -156,11 +156,11 @@ nm_team_link_watcher_new_nsna_ping(int         init_wait,
                                    int         interval,
                                    int         missed_max,
                                    const char *target_host,
-                                   GError **   error)
+                                   GError    **error)
 {
     NMTeamLinkWatcher *watcher;
-    const char *       val_fail = NULL;
-    char *             str;
+    const char        *val_fail = NULL;
+    char              *str;
     gsize              l_target_host;
 
     if (!target_host) {
@@ -235,10 +235,10 @@ NMTeamLinkWatcher *
 nm_team_link_watcher_new_arp_ping(int                           init_wait,
                                   int                           interval,
                                   int                           missed_max,
-                                  const char *                  target_host,
-                                  const char *                  source_host,
+                                  const char                   *target_host,
+                                  const char                   *source_host,
                                   NMTeamLinkWatcherArpPingFlags flags,
-                                  GError **                     error)
+                                  GError                      **error)
 {
     return nm_team_link_watcher_new_arp_ping2(init_wait,
                                               interval,
@@ -274,14 +274,14 @@ nm_team_link_watcher_new_arp_ping2(int                           init_wait,
                                    int                           interval,
                                    int                           missed_max,
                                    int                           vlanid,
-                                   const char *                  target_host,
-                                   const char *                  source_host,
+                                   const char                   *target_host,
+                                   const char                   *source_host,
                                    NMTeamLinkWatcherArpPingFlags flags,
-                                   GError **                     error)
+                                   GError                      **error)
 {
     NMTeamLinkWatcher *watcher;
-    const char *       val_fail = NULL;
-    char *             str;
+    const char        *val_fail = NULL;
+    char              *str;
     gsize              l_target_host;
     gsize              l_source_host;
 
@@ -1016,7 +1016,7 @@ gboolean
 nm_setting_team_remove_runner_tx_hash_by_value(NMSettingTeam *setting, const char *txhash)
 {
     NMSettingTeamPrivate *priv = NM_SETTING_TEAM_GET_PRIVATE(setting);
-    const GPtrArray *     arr;
+    const GPtrArray      *arr;
     guint                 i;
 
     g_return_val_if_fail(NM_IS_SETTING_TEAM(setting), FALSE);
@@ -1228,7 +1228,7 @@ nm_setting_team_remove_link_watcher(NMSettingTeam *setting, guint idx)
  * Since: 1.12
  **/
 gboolean
-nm_setting_team_remove_link_watcher_by_value(NMSettingTeam *    setting,
+nm_setting_team_remove_link_watcher_by_value(NMSettingTeam     *setting,
                                              NMTeamLinkWatcher *link_watcher)
 {
     g_return_val_if_fail(NM_IS_SETTING_TEAM(setting), FALSE);
@@ -1325,12 +1325,12 @@ duplicate_copy_properties(const NMSettInfoSetting *sett_info, NMSetting *src, NM
 }
 
 static gboolean
-init_from_dbus(NMSetting *                     setting,
-               GHashTable *                    keys,
-               GVariant *                      setting_dict,
-               GVariant *                      connection_dict,
+init_from_dbus(NMSetting                      *setting,
+               GHashTable                     *keys,
+               GVariant                       *setting_dict,
+               GVariant                       *connection_dict,
                guint /* NMSettingParseFlags */ parse_flags,
-               GError **                       error)
+               GError                        **error)
 {
     guint32  changed = 0;
     gboolean success;
@@ -1353,9 +1353,9 @@ init_from_dbus(NMSetting *                     setting,
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingTeam *       setting = NM_SETTING_TEAM(object);
+    NMSettingTeam        *setting = NM_SETTING_TEAM(object);
     NMSettingTeamPrivate *priv    = NM_SETTING_TEAM_GET_PRIVATE(setting);
-    const GPtrArray *     v_ptrarr;
+    const GPtrArray      *v_ptrarr;
 
     switch (prop_id) {
     case NM_TEAM_ATTRIBUTE_CONFIG:
@@ -1400,10 +1400,10 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingTeam *       setting = NM_SETTING_TEAM(object);
+    NMSettingTeam        *setting = NM_SETTING_TEAM(object);
     NMSettingTeamPrivate *priv    = NM_SETTING_TEAM_GET_PRIVATE(object);
     guint32               changed;
-    const GPtrArray *     v_ptrarr;
+    const GPtrArray      *v_ptrarr;
 
     switch (prop_id) {
     case NM_TEAM_ATTRIBUTE_CONFIG:
@@ -1490,9 +1490,9 @@ finalize(GObject *object)
 static void
 nm_setting_team_class_init(NMSettingTeamClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingTeamPrivate));
 

@@ -25,9 +25,9 @@ static const NMPPPOps *_ppp_ops = NULL;
 NMPPPManager *
 nm_ppp_manager_create(const char *iface, GError **error)
 {
-    NMPPPManager *  ret;
-    GModule *       plugin;
-    GError *        error_local = NULL;
+    NMPPPManager   *ret;
+    GModule        *plugin;
+    GError         *error_local = NULL;
     struct stat     st;
     const NMPPPOps *ppp_ops;
 
@@ -97,10 +97,10 @@ again:
 gboolean
 nm_ppp_manager_start(NMPPPManager *self,
                      NMActRequest *req,
-                     const char *  ppp_name,
+                     const char   *ppp_name,
                      guint32       timeout_secs,
                      guint         baud_override,
-                     GError **     err)
+                     GError      **err)
 {
     const NMPPPOps *ppp_ops = ppp_ops_get();
 
@@ -110,8 +110,8 @@ nm_ppp_manager_start(NMPPPManager *self,
 }
 
 NMPPPManagerStopHandle *
-nm_ppp_manager_stop(NMPPPManager *           self,
-                    GCancellable *           cancellable,
+nm_ppp_manager_stop(NMPPPManager            *self,
+                    GCancellable            *cancellable,
                     NMPPPManagerStopCallback callback,
                     gpointer                 user_data)
 {

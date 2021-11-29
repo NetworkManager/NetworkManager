@@ -42,7 +42,7 @@ typedef NmtNewtWidget *(*NmtWidgetListCallback)(NmtWidgetList *list, int n, gpoi
 NmtNewtWidget *nmt_widget_list_new(NmtWidgetListCallback create_callback,
                                    gpointer              user_data,
                                    GDestroyNotify        destroy_notify,
-                                   NmtNewtWidget *       empty_widget);
+                                   NmtNewtWidget        *empty_widget);
 
 int  nmt_widget_list_get_length(NmtWidgetList *list);
 void nmt_widget_list_set_length(NmtWidgetList *list, int length);

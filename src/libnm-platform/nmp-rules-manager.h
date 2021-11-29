@@ -19,7 +19,7 @@ void nmp_rules_manager_unref(NMPRulesManager *self);
 #define nm_auto_unref_rules_manager nm_auto(_nmp_rules_manager_unref)
 NM_AUTO_DEFINE_FCN0(NMPRulesManager *, _nmp_rules_manager_unref, nmp_rules_manager_unref);
 
-void nmp_rules_manager_track(NMPRulesManager *            self,
+void nmp_rules_manager_track(NMPRulesManager             *self,
                              const NMPlatformRoutingRule *routing_rule,
                              gint32                       track_priority,
                              gconstpointer                user_tag,
@@ -31,12 +31,12 @@ void nmp_rules_manager_track_default(NMPRulesManager *self,
                                      gconstpointer    user_tag);
 
 void nmp_rules_manager_track_from_platform(NMPRulesManager *self,
-                                           NMPlatform *     platform,
+                                           NMPlatform      *platform,
                                            int              addr_family,
                                            gint32           tracking_priority,
                                            gconstpointer    user_tag);
 
-void nmp_rules_manager_untrack(NMPRulesManager *            self,
+void nmp_rules_manager_untrack(NMPRulesManager             *self,
                                const NMPlatformRoutingRule *routing_rule,
                                gconstpointer                user_tag);
 

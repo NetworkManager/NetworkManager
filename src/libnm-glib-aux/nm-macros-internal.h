@@ -137,7 +137,7 @@ static inline void
 _nm_auto_freev(gpointer ptr)
 {
     gpointer **p = ptr;
-    gpointer * _ptr;
+    gpointer  *_ptr;
 
     if (*p) {
         for (_ptr = *p; *_ptr; _ptr++)
@@ -552,12 +552,12 @@ nm_str_realloc(char *str)
 
 #define NM_GOBJECT_PROPERTIES_DEFINE_NOTIFY(suffix, obj_type)                                 \
     static inline void _nm_gobject_notify_together_impl##suffix(                              \
-        obj_type *                    obj,                                                    \
+        obj_type                     *obj,                                                    \
         guint                         n,                                                      \
         const _PropertyEnums##suffix *props)                                                  \
     {                                                                                         \
         GObject *const gobj        = (GObject *) obj;                                         \
-        GParamSpec *   pspec_first = NULL;                                                    \
+        GParamSpec    *pspec_first = NULL;                                                    \
         gboolean       frozen      = FALSE;                                                   \
                                                                                               \
         nm_assert(G_IS_OBJECT(obj));                                                          \
@@ -565,7 +565,7 @@ nm_str_realloc(char *str)
                                                                                               \
         while (n-- > 0) {                                                                     \
             const _PropertyEnums##suffix prop = *props++;                                     \
-            GParamSpec *                 pspec;                                               \
+            GParamSpec                  *pspec;                                               \
                                                                                               \
             if (prop == PROP_0##suffix)                                                       \
                 continue;                                                                     \
@@ -1040,7 +1040,7 @@ nm_g_variant_equal(GVariant *a, GVariant *b)
 
 #define nm_str_skip_leading_spaces(str)                          \
     ({                                                           \
-        typeof(*(str)) *             _str_sls        = (str);    \
+        typeof(*(str))              *_str_sls        = (str);    \
         _nm_unused const char *const _str_type_check = _str_sls; \
                                                                  \
         if (_str_sls) {                                          \
@@ -1085,7 +1085,7 @@ nm_strstrip_avoid_copy(const char *str, char **str_free)
 #define nm_strstrip_avoid_copy_a(alloca_maxlen, str, out_str_free)                                \
     ({                                                                                            \
         const char *_str_ssac          = (str);                                                   \
-        char **     _out_str_free_ssac = (out_str_free);                                          \
+        char      **_out_str_free_ssac = (out_str_free);                                          \
                                                                                                   \
         G_STATIC_ASSERT_EXPR((alloca_maxlen) > 0);                                                \
                                                                                                   \
@@ -1315,7 +1315,7 @@ _nm_strndup_a_step(char *s, const char *str, gsize len)
         const char *const _str_snd           = (str);              \
         const gsize       _len_snd           = (len);              \
         char **const      _out_str_free_snd  = (out_str_free);     \
-        char *            _s_snd;                                  \
+        char             *_s_snd;                                  \
                                                                    \
         G_STATIC_ASSERT_EXPR((alloca_maxlen) <= 300);              \
                                                                    \
@@ -1423,7 +1423,7 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
         (_str ? ({                                                       \
             const gsize _trunc_at     = (trunc_at);                      \
             const gsize _strlen_trunc = NM_MIN(strlen(_str), _trunc_at); \
-            char *      _buf;                                            \
+            char       *_buf;                                            \
                                                                          \
             G_STATIC_ASSERT_EXPR((trunc_at) <= 300);                     \
                                                                          \
@@ -1456,7 +1456,7 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
         char *const       _sbuf_stack    = (sbuf_stack);                                  \
         char **const      _out_sbuf_heap = (out_sbuf_heap);                               \
         gsize *const      _out_len       = (out_len);                                     \
-        const char *      _msg;                                                           \
+        const char       *_msg;                                                           \
         va_list           _va_args;                                                       \
         int               _l;                                                             \
                                                                                           \
@@ -1470,7 +1470,7 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
                                                                                           \
         if ((gsize) _l >= sizeof(sbuf_stack)) {                                           \
             const gsize _l2 = ((gsize) _l) + 1u;                                          \
-            char *      _sbuf_heap;                                                       \
+            char       *_sbuf_heap;                                                       \
                                                                                           \
             /* Don't use g_strdup_vprintf() here either, because that also needs
              * to first determine the length (which is commonly does by printing
@@ -1503,7 +1503,7 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
  * must not be larger than 300 bytes, as this gets stack allocated. */
 #define nm_sprintf_buf_unsafe_a(bufsize, format, ...)                       \
     ({                                                                      \
-        char *          _buf;                                               \
+        char           *_buf;                                               \
         int             _buf_len;                                           \
         typeof(bufsize) _bufsize = (bufsize);                               \
                                                                             \
@@ -1531,7 +1531,7 @@ nm_decode_version(guint version, guint *major, guint *minor, guint *micro)
         const char *const _name          = (name);                                         \
         char **const      _p_val_to_free = (p_val_to_free);                                \
         const gsize       _name_len      = strlen(_name);                                  \
-        char *            _buf2;                                                           \
+        char             *_buf2;                                                           \
                                                                                            \
         nm_assert(_p_val_to_free && !*_p_val_to_free);                                     \
         if (NM_STRLEN(format) <= 290 && _name_len < (gsize) (290 - NM_STRLEN(format)))     \

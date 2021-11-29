@@ -100,7 +100,7 @@ struct _NMSupplicantInterface {
 GType nm_supplicant_interface_get_type(void);
 
 NMSupplicantInterface *nm_supplicant_interface_new(NMSupplicantManager *supplicant_manager,
-                                                   NMRefString *        object_path,
+                                                   NMRefString         *object_path,
                                                    int                  ifindex,
                                                    NMSupplicantDriver   driver);
 
@@ -109,36 +109,36 @@ NMRefString *nm_supplicant_interface_get_object_path(NMSupplicantInterface *ifac
 
 void _nm_supplicant_interface_set_state_down(NMSupplicantInterface *self,
                                              gboolean               force_remove_from_supplicant,
-                                             const char *           reason);
+                                             const char            *reason);
 
 typedef void (*NMSupplicantInterfaceAssocCb)(NMSupplicantInterface *iface,
-                                             GError *               error,
+                                             GError                *error,
                                              gpointer               user_data);
 
-void nm_supplicant_interface_assoc(NMSupplicantInterface *      self,
-                                   NMSupplicantConfig *         cfg,
+void nm_supplicant_interface_assoc(NMSupplicantInterface       *self,
+                                   NMSupplicantConfig          *cfg,
                                    NMSupplicantInterfaceAssocCb callback,
                                    gpointer                     user_data);
 
 void nm_supplicant_interface_disconnect(NMSupplicantInterface *iface);
 
 typedef void (*NMSupplicantInterfaceDisconnectCb)(NMSupplicantInterface *iface,
-                                                  GError *               error,
+                                                  GError                *error,
                                                   gpointer               user_data);
 
-void nm_supplicant_interface_disconnect_async(NMSupplicantInterface *           self,
-                                              GCancellable *                    cancellable,
+void nm_supplicant_interface_disconnect_async(NMSupplicantInterface            *self,
+                                              GCancellable                     *cancellable,
                                               NMSupplicantInterfaceDisconnectCb callback,
                                               gpointer                          user_data);
 
 typedef void (*NMSupplicantInterfaceRequestScanCallback)(NMSupplicantInterface *self,
-                                                         GCancellable *         cancellable,
+                                                         GCancellable          *cancellable,
                                                          gpointer               user_data);
 
-void nm_supplicant_interface_request_scan(NMSupplicantInterface *                  self,
-                                          GBytes *const *                          ssids,
+void nm_supplicant_interface_request_scan(NMSupplicantInterface                   *self,
+                                          GBytes *const                           *ssids,
                                           guint                                    ssids_len,
-                                          GCancellable *                           cancellable,
+                                          GCancellable                            *cancellable,
                                           NMSupplicantInterfaceRequestScanCallback callback,
                                           gpointer                                 user_data);
 
@@ -165,16 +165,16 @@ const char *nm_supplicant_interface_get_p2p_group_path(NMSupplicantInterface *se
 gboolean nm_supplicant_interface_get_p2p_group_owner(NMSupplicantInterface *self);
 
 gboolean nm_supplicant_interface_get_p2p_assigned_addr(NMSupplicantInterface *self,
-                                                       in_addr_t *            assigned_addr,
-                                                       guint8 *               plen);
+                                                       in_addr_t             *assigned_addr,
+                                                       guint8                *plen);
 
 void nm_supplicant_interface_p2p_start_find(NMSupplicantInterface *self, guint timeout);
 void nm_supplicant_interface_p2p_stop_find(NMSupplicantInterface *self);
 
 void nm_supplicant_interface_p2p_connect(NMSupplicantInterface *self,
-                                         const char *           peer,
-                                         const char *           wps_method,
-                                         const char *           wps_pin);
+                                         const char            *peer,
+                                         const char            *wps_method,
+                                         const char            *wps_pin);
 void nm_supplicant_interface_p2p_cancel_connect(NMSupplicantInterface *self);
 void nm_supplicant_interface_p2p_disconnect(NMSupplicantInterface *self);
 
@@ -187,8 +187,8 @@ NMSupplCapMask nm_supplicant_interface_get_capabilities(NMSupplicantInterface *s
 
 void nm_supplicant_interface_enroll_wps(NMSupplicantInterface *self,
                                         const char *const      type,
-                                        const char *           bssid,
-                                        const char *           pin);
+                                        const char            *bssid,
+                                        const char            *pin);
 
 void nm_supplicant_interface_cancel_wps(NMSupplicantInterface *self);
 

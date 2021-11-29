@@ -27,18 +27,18 @@
 /*****************************************************************************/
 
 typedef struct {
-    GHashTable *  hash;
-    GPtrArray *   array;
-    GPtrArray *   vlan_parents;
-    GHashTable *  explicit_ip_connections;
+    GHashTable   *hash;
+    GPtrArray    *array;
+    GPtrArray    *vlan_parents;
+    GHashTable   *explicit_ip_connections;
     NMConnection *bootdev_connection; /* connection for bootdev=$ifname */
     NMConnection *default_connection; /* connection not bound to any ifname */
-    char *        hostname;
+    char         *hostname;
 
     /* Parameters to be set for all connections */
     gboolean ignore_auto_dns;
     int      dhcp_timeout;
-    char *   dhcp4_vci;
+    char    *dhcp4_vci;
 
     gint64 carrier_timeout_sec;
 } Reader;
@@ -91,16 +91,16 @@ reader_add_connection(Reader *reader, const char *name, NMConnection *connection
 
 /* Returns a new connection owned by the reader */
 static NMConnection *
-reader_create_connection(Reader *                 reader,
-                         const char *             basename,
-                         const char *             id,
-                         const char *             ifname,
-                         const char *             mac,
-                         const char *             type_name,
+reader_create_connection(Reader                  *reader,
+                         const char              *basename,
+                         const char              *id,
+                         const char              *ifname,
+                         const char              *mac,
+                         const char              *type_name,
                          NMConnectionMultiConnect multi_connect)
 {
     NMConnection *connection;
-    NMSetting *   setting;
+    NMSetting    *setting;
 
     connection = reader_add_connection(reader, basename, nm_simple_connection_new());
 
@@ -195,14 +195,14 @@ reader_get_default_connection(Reader *reader)
 }
 
 static NMConnection *
-reader_get_connection(Reader *    reader,
+reader_get_connection(Reader     *reader,
                       const char *iface_spec,
                       const char *type_name,
                       gboolean    create_if_missing)
 {
     NMConnection *connection = NULL;
-    NMSetting *   setting;
-    const char *  ifname = NULL;
+    NMSetting    *setting;
+    const char   *ifname = NULL;
     gs_free char *mac    = NULL;
 
     if (iface_spec) {
@@ -216,7 +216,7 @@ reader_get_connection(Reader *    reader,
     }
 
     if (!ifname && !mac) {
-        NMConnection *       candidate;
+        NMConnection        *candidate;
         NMSettingConnection *s_con;
         guint                i;
 
@@ -314,14 +314,14 @@ get_word(char **argument, const char separator)
 
 static void
 connection_set(NMConnection *connection,
-               const char *  setting_name,
-               const char *  property,
-               const char *  value)
+               const char   *setting_name,
+               const char   *property,
+               const char   *value)
 {
-    NMSetting *              setting;
-    GType                    setting_type;
+    NMSetting                             *setting;
+    GType                                  setting_type;
     nm_auto_unref_gtypeclass GObjectClass *object_class = NULL;
-    GParamSpec *                           spec;
+    GParamSpec                            *spec;
 
     setting_type = nm_setting_lookup_type(setting_name);
     object_class = g_type_class_ref(setting_type);
@@ -355,20 +355,20 @@ static void
 reader_read_all_connections_from_fw(Reader *reader, const char *sysfs_dir)
 {
     gs_unref_hashtable GHashTable *ibft = NULL;
-    NMConnection *                 dt_connection;
-    const char *                   mac;
-    GHashTable *                   nic;
-    const char *                   index;
-    GError *                       error = NULL;
+    NMConnection                  *dt_connection;
+    const char                    *mac;
+    GHashTable                    *nic;
+    const char                    *index;
+    GError                        *error = NULL;
     guint                          i, length;
-    gs_free const char **          keys = NULL;
+    gs_free const char           **keys = NULL;
 
     ibft = nmi_ibft_read(sysfs_dir);
     keys = nm_strdict_get_keys(ibft, TRUE, &length);
 
     for (i = 0; i < length; i++) {
         gs_unref_object NMConnection *connection = NULL;
-        gs_free char *                name       = NULL;
+        gs_free char                 *name       = NULL;
 
         mac        = keys[i];
         nic        = g_hash_table_lookup(ibft, mac);
@@ -426,7 +426,7 @@ _parse_ip_method(const char *kind)
         "auto",
         "ibft",
     };
-    gs_free char *       kind_to_free = NULL;
+    gs_free char        *kind_to_free = NULL;
     gs_free const char **strv         = NULL;
     gsize                i;
 
@@ -512,26 +512,26 @@ _parse_ip_method(const char *kind)
 static void
 reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
 {
-    NMConnection *       connection;
-    NMSettingConnection *s_con;
-    NMSettingIPConfig *  s_ip4 = NULL, *s_ip6 = NULL;
+    NMConnection                  *connection;
+    NMSettingConnection           *s_con;
+    NMSettingIPConfig             *s_ip4 = NULL, *s_ip6 = NULL;
     gs_unref_hashtable GHashTable *ibft = NULL;
-    const char *                   tmp;
-    const char *                   tmp2;
-    const char *                   tmp3;
-    const char *                   kind;
-    const char *                   client_ip                  = NULL;
-    const char *                   peer                       = NULL;
-    const char *                   gateway_ip                 = NULL;
-    const char *                   netmask                    = NULL;
-    const char *                   client_hostname            = NULL;
-    const char *                   iface_spec                 = NULL;
-    const char *                   mtu                        = NULL;
-    const char *                   macaddr                    = NULL;
+    const char                    *tmp;
+    const char                    *tmp2;
+    const char                    *tmp3;
+    const char                    *kind;
+    const char                    *client_ip                  = NULL;
+    const char                    *peer                       = NULL;
+    const char                    *gateway_ip                 = NULL;
+    const char                    *netmask                    = NULL;
+    const char                    *client_hostname            = NULL;
+    const char                    *iface_spec                 = NULL;
+    const char                    *mtu                        = NULL;
+    const char                    *macaddr                    = NULL;
     int                            client_ip_family           = AF_UNSPEC;
     int                            client_ip_prefix           = -1;
     gboolean                       clear_ip4_required_timeout = TRUE;
-    const char *                   dns[2]                     = {
+    const char                    *dns[2]                     = {
         NULL,
         NULL,
     };
@@ -770,11 +770,11 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         }
     } else if (nm_streq(kind, "ibft")) {
         NMSettingWired *s_wired;
-        const char *    mac = NULL;
-        const char *    ifname;
-        gs_free char *  mac_free     = NULL;
-        gs_free char *  address_path = NULL;
-        GHashTable *    nic          = NULL;
+        const char     *mac = NULL;
+        const char     *ifname;
+        gs_free char   *mac_free     = NULL;
+        gs_free char   *address_path = NULL;
+        GHashTable     *nic          = NULL;
 
         if ((s_wired = nm_connection_get_setting_wired(connection))
             && (mac = nm_setting_wired_get_mac_address(s_wired))) {
@@ -857,14 +857,14 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
 static void
 reader_parse_master(Reader *reader, char *argument, const char *type_name, const char *default_name)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    gs_free char *       master_to_free = NULL;
-    const char *         master;
-    char *               slaves;
-    const char *         slave;
-    char *               opts;
-    const char *         mtu = NULL;
+    gs_free char        *master_to_free = NULL;
+    const char          *master;
+    char                *slaves;
+    const char          *slave;
+    char                *opts;
+    const char          *mtu = NULL;
 
     master = get_word(&argument, ':');
     if (!master)
@@ -886,8 +886,8 @@ reader_parse_master(Reader *reader, char *argument, const char *type_name, const
         opts = get_word(&argument, ':');
         while (opts && *opts) {
             gs_free_error GError *error = NULL;
-            char *                opt;
-            const char *          opt_name;
+            char                 *opt;
+            const char           *opt_name;
 
             opt      = get_word(&opts, ',');
             opt_name = get_word(&opt, '=');
@@ -934,17 +934,17 @@ reader_add_routes(Reader *reader, GPtrArray *array)
     guint i;
 
     for (i = 0; i < array->len; i++) {
-        NMConnection *     connection = NULL;
-        const char *       net;
-        const char *       gateway;
-        const char *       interface;
-        int                family       = AF_UNSPEC;
-        NMIPAddr           net_addr     = {};
-        NMIPAddr           gateway_addr = {};
-        int                net_prefix   = -1;
-        NMIPRoute *        route;
-        NMSettingIPConfig *s_ip;
-        char *             argument;
+        NMConnection         *connection = NULL;
+        const char           *net;
+        const char           *gateway;
+        const char           *interface;
+        int                   family       = AF_UNSPEC;
+        NMIPAddr              net_addr     = {};
+        NMIPAddr              gateway_addr = {};
+        int                   net_prefix   = -1;
+        NMIPRoute            *route;
+        NMSettingIPConfig    *s_ip;
+        char                 *argument;
         gs_free_error GError *error = NULL;
 
         argument  = array->pdata[i];
@@ -1010,11 +1010,11 @@ reader_add_routes(Reader *reader, GPtrArray *array)
 static void
 reader_parse_vlan(Reader *reader, char *argument)
 {
-    NMConnection * connection;
+    NMConnection  *connection;
     NMSettingVlan *s_vlan;
-    const char *   vlan;
-    const char *   phy;
-    const char *   vlanid;
+    const char    *vlan;
+    const char    *phy;
+    const char    *vlanid;
 
     vlan = get_word(&argument, ':');
     phy  = get_word(&argument, ':');
@@ -1044,11 +1044,11 @@ reader_parse_vlan(Reader *reader, char *argument)
 static void
 reader_parse_ib_pkey(Reader *reader, char *argument)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingInfiniband *s_ib;
-    char *               ifname;
-    gs_free char *       parent = NULL;
-    char *               pkey;
+    char                *ifname;
+    gs_free char        *parent = NULL;
+    char                *pkey;
     gint64               pkey_int;
 
     /* At the moment we only support ib.pkey=<parent>.<pkey>;
@@ -1094,12 +1094,12 @@ reader_parse_ib_pkey(Reader *reader, char *argument)
 static void
 reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 {
-    const char *    nettype;
-    const char *    subchannels[4] = {0, 0, 0, 0};
-    const char *    tmp;
-    gs_free char *  ifname = NULL;
-    const char *    prefix;
-    NMConnection *  connection;
+    const char     *nettype;
+    const char     *subchannels[4] = {0, 0, 0, 0};
+    const char     *tmp;
+    gs_free char   *ifname = NULL;
+    const char     *prefix;
+    NMConnection   *connection;
     NMSettingWired *s_wired;
     static int      count_ctc = 0;
     static int      count_eth = 0;
@@ -1160,7 +1160,7 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 
     while ((tmp = get_word(&argument, ',')) != NULL) {
         const char *key;
-        char *      val;
+        char       *val;
 
         val = strchr(tmp, '=');
         if (!val) {
@@ -1184,11 +1184,11 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 static void
 reader_parse_ethtool(Reader *reader, char *argument)
 {
-    NMConnection *  connection;
+    NMConnection   *connection;
     NMSettingWired *s_wired;
-    const char *    autoneg_str;
-    const char *    speed_str;
-    const char *    interface;
+    const char     *autoneg_str;
+    const char     *speed_str;
+    const char     *interface;
     int             autoneg;
     guint           speed;
 
@@ -1251,11 +1251,11 @@ _normalize_conn(gpointer key, gpointer value, gpointer user_data)
 static void
 reader_add_nameservers(Reader *reader, GPtrArray *nameservers)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     NMSettingIPConfig *s_ip;
     GHashTableIter     iter;
     int                addr_family;
-    const char *       ns;
+    const char        *ns;
     guint              i;
 
     for (i = 0; i < nameservers->len; i++) {
@@ -1316,21 +1316,21 @@ connection_set_needed_cb(gpointer key, gpointer value, gpointer user_data)
 }
 
 GHashTable *
-nmi_cmdline_reader_parse(const char *       sysfs_dir,
+nmi_cmdline_reader_parse(const char        *sysfs_dir,
                          const char *const *argv,
-                         char **            hostname,
-                         gint64 *           carrier_timeout_sec)
+                         char             **hostname,
+                         gint64            *carrier_timeout_sec)
 {
-    Reader *          reader;
-    const char *      tag;
-    gboolean          ignore_bootif          = FALSE;
-    gboolean          neednet                = FALSE;
-    gs_free char *    bootif_val             = NULL;
-    gs_free char *    bootdev                = NULL;
-    gboolean          net_ifnames            = TRUE;
-    gs_unref_ptrarray GPtrArray *nameservers = NULL;
-    gs_unref_ptrarray GPtrArray *routes      = NULL;
-    gs_unref_ptrarray GPtrArray *znets       = NULL;
+    Reader                      *reader;
+    const char                  *tag;
+    gboolean                     ignore_bootif = FALSE;
+    gboolean                     neednet       = FALSE;
+    gs_free char                *bootif_val    = NULL;
+    gs_free char                *bootdev       = NULL;
+    gboolean                     net_ifnames   = TRUE;
+    gs_unref_ptrarray GPtrArray *nameservers   = NULL;
+    gs_unref_ptrarray GPtrArray *routes        = NULL;
+    gs_unref_ptrarray GPtrArray *znets         = NULL;
     int                          i;
     guint64                      dhcp_timeout   = 90;
     guint64                      dhcp_num_tries = 1;
@@ -1339,7 +1339,7 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
 
     for (i = 0; argv[i]; i++) {
         gs_free char *argument_clone = NULL;
-        char *        argument;
+        char         *argument;
 
         argument_clone = g_strdup(argv[i]);
         argument       = argument_clone;
@@ -1375,8 +1375,8 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
 
     for (i = 0; argv[i]; i++) {
         gs_free char *argument_clone = NULL;
-        char *        argument;
-        char *        word;
+        char         *argument;
+        char         *word;
 
         argument_clone = g_strdup(argv[i]);
         argument       = argument_clone;
@@ -1430,7 +1430,7 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
     }
 
     for (i = 0; i < reader->vlan_parents->len; i++) {
-        NMConnection *     connection;
+        NMConnection      *connection;
         NMSettingIPConfig *s_ip;
 
         /* Disable IP configuration for parent connections of VLANs,
@@ -1459,9 +1459,9 @@ nmi_cmdline_reader_parse(const char *       sysfs_dir,
     if (ignore_bootif)
         nm_clear_g_free(&bootif_val);
     if (bootif_val) {
-        NMConnection *  connection;
+        NMConnection   *connection;
         NMSettingWired *s_wired;
-        const char *    bootif = bootif_val;
+        const char     *bootif = bootif_val;
         char            prefix[4];
 
         if (!nm_utils_hwaddr_valid(bootif, ETH_ALEN)) {

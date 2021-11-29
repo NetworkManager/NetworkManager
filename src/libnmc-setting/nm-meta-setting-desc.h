@@ -203,32 +203,32 @@ struct _NMMetaPropertyType {
     /* should return a translated string */
     const char *(*describe_fcn)(const NMMetaPropertyInfo *property_info, char **out_to_free);
 
-    gconstpointer (*get_fcn)(const NMMetaPropertyInfo * property_info,
-                             const NMMetaEnvironment *  environment,
+    gconstpointer (*get_fcn)(const NMMetaPropertyInfo  *property_info,
+                             const NMMetaEnvironment   *environment,
                              gpointer                   environment_user_data,
-                             NMSetting *                setting,
+                             NMSetting                 *setting,
                              NMMetaAccessorGetType      get_type,
                              NMMetaAccessorGetFlags     get_flags,
                              NMMetaAccessorGetOutFlags *out_flags,
-                             gboolean *                 out_is_default,
-                             gpointer *                 out_to_free);
+                             gboolean                  *out_is_default,
+                             gpointer                  *out_to_free);
     gboolean (*set_fcn)(const NMMetaPropertyInfo *property_info,
-                        const NMMetaEnvironment * environment,
+                        const NMMetaEnvironment  *environment,
                         gpointer                  environment_user_data,
-                        NMSetting *               setting,
+                        NMSetting                *setting,
                         NMMetaAccessorModifier    modifier,
-                        const char *              value,
-                        GError **                 error);
+                        const char               *value,
+                        GError                  **error);
 
     const char *const *(*values_fcn)(const NMMetaPropertyInfo *property_info, char ***out_to_free);
 
-    const char *const *(*complete_fcn)(const NMMetaPropertyInfo *    property_info,
-                                       const NMMetaEnvironment *     environment,
+    const char *const *(*complete_fcn)(const NMMetaPropertyInfo     *property_info,
+                                       const NMMetaEnvironment      *environment,
                                        gpointer                      environment_user_data,
                                        const NMMetaOperationContext *operation_context,
-                                       const char *                  text,
-                                       gboolean *                    out_complete_filename,
-                                       char ***                      out_to_free);
+                                       const char                   *text,
+                                       gboolean                     *out_complete_filename,
+                                       char                       ***out_to_free);
 
     /* Whether set_fcn() supports the '-' modifier. That is, whether the property
      * is a list type. */
@@ -243,7 +243,7 @@ typedef union {
 } NMMetaSignUnsignInt64;
 
 typedef struct {
-    const char *          nick;
+    const char           *nick;
     NMMetaSignUnsignInt64 value;
 } NMMetaUtilsIntValueInfo;
 
@@ -256,9 +256,9 @@ struct _NMMetaPropertyTypData {
             const struct _NMUtilsEnumValueInfo *value_infos_get; /* nicks for get function */
             const struct _NMUtilsEnumValueInfo *value_infos;     /* nicks for set function */
             void (*pre_set_notify)(const NMMetaPropertyInfo *property_info,
-                                   const NMMetaEnvironment * environment,
+                                   const NMMetaEnvironment  *environment,
                                    gpointer                  environment_user_data,
-                                   NMSetting *               setting,
+                                   NMSetting                *setting,
                                    int                       value);
         } gobject_enum;
         struct {
@@ -299,13 +299,13 @@ struct _NMMetaPropertyTypData {
         struct {
             guint (*get_num_fcn)(NMSetting *setting);
             void (*obj_to_str_fcn)(NMMetaAccessorGetType get_type,
-                                   NMSetting *           setting,
+                                   NMSetting            *setting,
                                    guint                 idx,
-                                   GString *             str);
-            gboolean (*set_fcn)(NMSetting * setting,
+                                   GString              *str);
+            gboolean (*set_fcn)(NMSetting  *setting,
                                 gboolean    do_add /* or else remove. */,
                                 const char *value,
-                                GError **   error);
+                                GError    **error);
             void (*clear_all_fcn)(NMSetting *setting);
             void (*remove_by_idx_fcn_u)(NMSetting *setting, guint idx);
             void (*remove_by_idx_fcn_s)(NMSetting *setting, int idx);
@@ -313,10 +313,10 @@ struct _NMMetaPropertyTypData {
             bool strsplit_plain : 1;
         } objlist;
         struct {
-            gboolean (*set_fcn)(NMSetting * setting,
+            gboolean (*set_fcn)(NMSetting  *setting,
                                 const char *option,
                                 const char *value,
-                                GError **   error);
+                                GError    **error);
             bool no_empty_value : 1;
         } optionlist;
         struct {
@@ -345,7 +345,7 @@ struct _NMMetaPropertyTypData {
         } ethtool;
     } subtype;
     gboolean (*is_default_fcn)(NMSetting *setting);
-    const char *const *                values_static;
+    const char *const                 *values_static;
     const NMMetaPropertyTypDataNested *nested;
     NMMetaPropertyTypFlags             typ_flags;
 };
@@ -396,7 +396,7 @@ struct _NMMetaPropertyInfo {
     /* a non-translated but translatable static description (marked with N_()). */
     const char *describe_message;
 
-    const NMMetaPropertyType *   property_type;
+    const NMMetaPropertyType    *property_type;
     const NMMetaPropertyTypData *property_typ_data;
 };
 
@@ -410,9 +410,9 @@ struct _NMMetaSettingInfoEditor {
         NMObjBaseInst     parent;
         const NMMetaType *meta_type;
     };
-    const NMMetaSettingInfo *        general;
-    const char *                     alias;
-    const char *                     pretty_name;
+    const NMMetaSettingInfo         *general;
+    const char                      *alias;
+    const char                      *pretty_name;
     const NMMetaPropertyInfo *const *properties;
     guint                            properties_num;
 
@@ -429,34 +429,34 @@ struct _NMMetaSettingInfoEditor {
     const NMMetaSettingValidPartItem *const *valid_parts;
 
     void (*setting_init_fcn)(const NMMetaSettingInfoEditor *setting_info,
-                             NMSetting *                    setting,
+                             NMSetting                     *setting,
                              NMMetaAccessorSettingInitType  init_type);
 };
 
 struct _NMMetaType {
     NMObjBaseClass parent;
-    const char *   type_name;
+    const char    *type_name;
     const char *(*get_name)(const NMMetaAbstractInfo *abstract_info, gboolean for_header);
     const NMMetaAbstractInfo *const *(*get_nested)(const NMMetaAbstractInfo *abstract_info,
-                                                   guint *                   out_len,
-                                                   gpointer *                out_to_free);
-    gconstpointer (*get_fcn)(const NMMetaAbstractInfo * info,
-                             const NMMetaEnvironment *  environment,
+                                                   guint                    *out_len,
+                                                   gpointer                 *out_to_free);
+    gconstpointer (*get_fcn)(const NMMetaAbstractInfo  *info,
+                             const NMMetaEnvironment   *environment,
                              gpointer                   environment_user_data,
                              gpointer                   target,
                              gpointer                   target_data,
                              NMMetaAccessorGetType      get_type,
                              NMMetaAccessorGetFlags     get_flags,
                              NMMetaAccessorGetOutFlags *out_flags,
-                             gboolean *                 out_is_default,
-                             gpointer *                 out_to_free);
-    const char *const *(*complete_fcn)(const NMMetaAbstractInfo *    info,
-                                       const NMMetaEnvironment *     environment,
+                             gboolean                  *out_is_default,
+                             gpointer                  *out_to_free);
+    const char *const *(*complete_fcn)(const NMMetaAbstractInfo     *info,
+                                       const NMMetaEnvironment      *environment,
                                        gpointer                      environment_user_data,
                                        const NMMetaOperationContext *operation_context,
-                                       const char *                  text,
-                                       gboolean *                    out_complete_filename,
-                                       char ***                      out_to_free);
+                                       const char                   *text,
+                                       gboolean                     *out_complete_filename,
+                                       char                       ***out_to_free);
 };
 
 struct _NMMetaAbstractInfo {
@@ -474,7 +474,7 @@ extern const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[_NM_META_SETTI
 extern const NMMetaSettingValidPartItem *const nm_meta_setting_info_valid_parts_default[];
 
 const NMMetaSettingValidPartItem *const *
-nm_meta_setting_info_valid_parts_for_slave_type(const char * slave_type,
+nm_meta_setting_info_valid_parts_for_slave_type(const char  *slave_type,
                                                 const char **out_slave_name);
 
 /*****************************************************************************/
@@ -499,11 +499,11 @@ struct _NMMetaEnvironment {
 
     struct _NMDevice *const *(*get_nm_devices)(const NMMetaEnvironment *environment,
                                                gpointer                 environment_user_data,
-                                               guint *                  out_len);
+                                               guint                   *out_len);
 
     struct _NMRemoteConnection *const *(*get_nm_connections)(const NMMetaEnvironment *environment,
                                                              gpointer environment_user_data,
-                                                             guint *  out_len);
+                                                             guint   *out_len);
 };
 
 /*****************************************************************************/
@@ -516,7 +516,7 @@ extern const NMMetaType nm_meta_type_nested_property_info;
 
 struct _NMMetaNestedPropertyInfo {
     union {
-        const NMMetaType * meta_type;
+        const NMMetaType  *meta_type;
         NMMetaPropertyInfo base;
     };
     const NMMetaPropertyInfo *parent_info;
@@ -531,10 +531,10 @@ extern const NMMetaPropertyTypDataNested nm_meta_property_typ_data_bond;
 
 /*****************************************************************************/
 
-gboolean _nm_meta_setting_bond_add_option(NMSetting * setting,
+gboolean _nm_meta_setting_bond_add_option(NMSetting  *setting,
                                           const char *name,
                                           const char *value,
-                                          GError **   error);
+                                          GError    **error);
 
 /*****************************************************************************/
 

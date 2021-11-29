@@ -22,7 +22,7 @@ G_DEFINE_TYPE(NmtSlaveList, nmt_slave_list, NMT_TYPE_EDIT_CONNECTION_LIST)
 
 typedef struct {
     NMConnection *master;
-    const char *  master_type, *master_uuid;
+    const char   *master_type, *master_uuid;
 
     NmtAddConnectionTypeFilter type_filter;
     gpointer                   type_filter_data;
@@ -38,7 +38,7 @@ enum {
 };
 
 static gboolean nmt_slave_list_connection_filter(NmtEditConnectionList *list,
-                                                 NMConnection *         connection,
+                                                 NMConnection          *connection,
                                                  gpointer               user_data);
 
 /**
@@ -59,7 +59,7 @@ static gboolean nmt_slave_list_connection_filter(NmtEditConnectionList *list,
  * Returns: a new #NmtSlaveList.
  */
 NmtNewtWidget *
-nmt_slave_list_new(NMConnection *             master,
+nmt_slave_list_new(NMConnection              *master,
                    NmtAddConnectionTypeFilter type_filter,
                    gpointer                   type_filter_data)
 {
@@ -93,12 +93,12 @@ nmt_slave_list_finalize(GObject *object)
 
 static gboolean
 nmt_slave_list_connection_filter(NmtEditConnectionList *list,
-                                 NMConnection *         connection,
+                                 NMConnection          *connection,
                                  gpointer               user_data)
 {
     NmtSlaveListPrivate *priv = NMT_SLAVE_LIST_GET_PRIVATE(list);
     NMSettingConnection *s_con;
-    const char *         master, *master_ifname, *slave_type;
+    const char          *master, *master_ifname, *slave_type;
 
     s_con = nm_connection_get_setting_connection(connection);
     g_return_val_if_fail(s_con != NULL, FALSE);
@@ -193,7 +193,7 @@ nmt_slave_list_get_property(GObject *object, guint prop_id, GValue *value, GPara
 static void
 nmt_slave_list_class_init(NmtSlaveListClass *list_class)
 {
-    GObjectClass *              object_class          = G_OBJECT_CLASS(list_class);
+    GObjectClass               *object_class          = G_OBJECT_CLASS(list_class);
     NmtEditConnectionListClass *connection_list_class = NMT_EDIT_CONNECTION_LIST_CLASS(list_class);
 
     g_type_class_add_private(list_class, sizeof(NmtSlaveListPrivate));

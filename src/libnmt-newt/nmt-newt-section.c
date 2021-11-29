@@ -47,7 +47,7 @@ typedef struct {
     NmtNewtWidget *border_open_label;
     NmtNewtWidget *border_closed_label;
     NmtNewtWidget *border_end_label;
-    GPtrArray *    border_line_labels;
+    GPtrArray     *border_line_labels;
 
     gboolean open;
 } NmtNewtSectionPrivate;
@@ -124,7 +124,7 @@ nmt_newt_section_set_header(NmtNewtSection *section, NmtNewtWidget *header)
 {
     NmtNewtSectionPrivate *priv         = NMT_NEWT_SECTION_GET_PRIVATE(section);
     NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS(nmt_newt_section_parent_class);
-    NmtNewtContainer *     container    = NMT_NEWT_CONTAINER(section);
+    NmtNewtContainer      *container    = NMT_NEWT_CONTAINER(section);
 
     if (priv->header)
         parent_class->remove(container, priv->header);
@@ -160,7 +160,7 @@ nmt_newt_section_set_body(NmtNewtSection *section, NmtNewtWidget *body)
 {
     NmtNewtSectionPrivate *priv         = NMT_NEWT_SECTION_GET_PRIVATE(section);
     NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS(nmt_newt_section_parent_class);
-    NmtNewtContainer *     container    = NMT_NEWT_CONTAINER(section);
+    NmtNewtContainer      *container    = NMT_NEWT_CONTAINER(section);
 
     if (priv->body)
         parent_class->remove(container, priv->body);
@@ -187,7 +187,7 @@ nmt_newt_section_get_body(NmtNewtSection *section)
 static void
 nmt_newt_section_remove(NmtNewtContainer *container, NmtNewtWidget *widget)
 {
-    NmtNewtSection *       section      = NMT_NEWT_SECTION(container);
+    NmtNewtSection        *section      = NMT_NEWT_SECTION(container);
     NmtNewtSectionPrivate *priv         = NMT_NEWT_SECTION_GET_PRIVATE(section);
     NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS(nmt_newt_section_parent_class);
 
@@ -205,8 +205,8 @@ static newtComponent *
 nmt_newt_section_get_components(NmtNewtWidget *widget)
 {
     NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE(widget);
-    newtComponent *        child_cos;
-    GPtrArray *            cos;
+    newtComponent         *child_cos;
+    GPtrArray             *cos;
     int                    i;
 
     g_return_val_if_fail(priv->header != NULL && priv->body != NULL, NULL);
@@ -316,10 +316,10 @@ nmt_newt_section_size_allocate(NmtNewtWidget *widget, int x, int y, int width, i
 }
 
 static void
-nmt_newt_section_set_property(GObject *     object,
+nmt_newt_section_set_property(GObject      *object,
                               guint         prop_id,
                               const GValue *value,
-                              GParamSpec *  pspec)
+                              GParamSpec   *pspec)
 {
     NmtNewtSectionPrivate *priv = NMT_NEWT_SECTION_GET_PRIVATE(object);
 
@@ -359,8 +359,8 @@ nmt_newt_section_get_property(GObject *object, guint prop_id, GValue *value, GPa
 static void
 nmt_newt_section_class_init(NmtNewtSectionClass *section_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(section_class);
-    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(section_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(section_class);
+    NmtNewtWidgetClass    *widget_class    = NMT_NEWT_WIDGET_CLASS(section_class);
     NmtNewtContainerClass *container_class = NMT_NEWT_CONTAINER_CLASS(section_class);
 
     g_type_class_add_private(section_class, sizeof(NmtNewtSectionPrivate));

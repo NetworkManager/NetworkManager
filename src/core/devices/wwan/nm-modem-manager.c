@@ -45,7 +45,7 @@ typedef struct {
     GCancellable *main_cancellable;
 
     struct {
-        MMManager *   manager;
+        MMManager    *manager;
         GCancellable *poke_cancellable;
         gulong        handle_name_owner_changed_id;
         gulong        handle_object_added_id;
@@ -61,15 +61,15 @@ typedef struct {
             LOG_AVAILABLE_NO,
         } log_available : 3;
 
-        GDBusProxy *  proxy;
+        GDBusProxy   *proxy;
         GCancellable *proxy_cancellable;
         guint         proxy_ref_count;
-        char *        proxy_name_owner;
+        char         *proxy_name_owner;
     } modm;
 
 #if WITH_OFONO
     struct {
-        GDBusProxy *  proxy;
+        GDBusProxy   *proxy;
         GCancellable *cancellable;
     } ofono;
 #endif
@@ -111,7 +111,7 @@ static void
 handle_new_modem(NMModemManager *self, NMModem *modem)
 {
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    const char *           path;
+    const char            *path;
 
     path = nm_modem_get_path(modem);
     if (g_hash_table_lookup(priv->modems, path)) {
@@ -163,10 +163,10 @@ static void
 modm_handle_object_added(MMManager *modem_manager, MMObject *modem_object, NMModemManager *self)
 {
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    const char *           path;
-    MMModem *              modem_iface;
-    NMModem *              modem;
-    GError *               error = NULL;
+    const char            *path;
+    MMModem               *modem_iface;
+    NMModem               *modem;
+    GError                *error = NULL;
 
     /* Ensure we don't have the same modem already */
     path = mm_object_get_path(modem_object);
@@ -201,8 +201,8 @@ static void
 modm_handle_object_removed(MMManager *manager, MMObject *modem_object, NMModemManager *self)
 {
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    NMModem *              modem;
-    const char *           path;
+    NMModem               *modem;
+    const char            *path;
 
     path  = mm_object_get_path(modem_object);
     modem = (NMModem *) g_hash_table_lookup(priv->modems, path);
@@ -217,7 +217,7 @@ static void
 modm_manager_available(NMModemManager *self)
 {
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    GList *                modems, *l;
+    GList                 *modems, *l;
 
     if (priv->modm.log_available != LOG_AVAILABLE_YES) {
         _LOGI("ModemManager %savailable", priv->modm.log_available ? "now " : "");
@@ -235,7 +235,7 @@ static void
 modm_handle_name_owner_changed(MMManager *modem_manager, GParamSpec *pspec, NMModemManager *self)
 {
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    char *                 name_owner;
+    char                  *name_owner;
 
     /* Quit poking, if any */
     nm_clear_g_source(&priv->modm.relaunch_id);
@@ -273,9 +273,9 @@ modm_handle_name_owner_changed(MMManager *modem_manager, GParamSpec *pspec, NMMo
 static void
 modm_manager_poke_cb(GObject *connection, GAsyncResult *res, gpointer user_data)
 {
-    NMModemManager *       self;
-    NMModemManagerPrivate *priv;
-    gs_free_error GError *error       = NULL;
+    NMModemManager            *self;
+    NMModemManagerPrivate     *priv;
+    gs_free_error GError      *error  = NULL;
     gs_unref_variant GVariant *result = NULL;
 
     result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(connection), res, &error);
@@ -327,7 +327,7 @@ static void
 modm_manager_check_name_owner(NMModemManager *self)
 {
     NMModemManagerPrivate *priv       = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    gs_free char *         name_owner = NULL;
+    gs_free char          *name_owner = NULL;
 
     name_owner = g_dbus_object_manager_client_get_name_owner(
         G_DBUS_OBJECT_MANAGER_CLIENT(priv->modm.manager));
@@ -344,10 +344,10 @@ modm_manager_check_name_owner(NMModemManager *self)
 static void
 modm_manager_new_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 {
-    NMModemManager *       self;
+    NMModemManager        *self;
     NMModemManagerPrivate *priv;
-    gs_free_error GError *error = NULL;
-    MMManager *           modem_manager;
+    gs_free_error GError  *error = NULL;
+    MMManager             *modem_manager;
 
     modem_manager = mm_manager_new_finish(res, &error);
     if (!modem_manager && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -445,7 +445,7 @@ static void
 modm_proxy_name_owner_reset(NMModemManager *self)
 {
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    char *                 name = NULL;
+    char                  *name = NULL;
 
     if (priv->modm.proxy)
         name = g_dbus_proxy_get_name_owner(priv->modm.proxy);
@@ -469,10 +469,10 @@ modm_proxy_name_owner_changed_cb(GObject *object, GParamSpec *pspec, gpointer us
 static void
 modm_proxy_new_cb(GObject *source_object, GAsyncResult *result, gpointer user_data)
 {
-    NMModemManager *       self;
+    NMModemManager        *self;
     NMModemManagerPrivate *priv;
-    GDBusProxy *           proxy;
-    gs_free_error GError *error = NULL;
+    GDBusProxy            *proxy;
+    gs_free_error GError  *error = NULL;
 
     proxy = g_dbus_proxy_new_for_bus_finish(result, &error);
     if (!proxy && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -567,7 +567,7 @@ static void
 ofono_create_modem(NMModemManager *self, const char *path)
 {
     NMModemManagerPrivate *priv  = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    NMModem *              modem = NULL;
+    NMModem               *modem = NULL;
 
     /* Ensure duplicate modems aren't created.  Because we're not using the
      * ObjectManager interface there's a race during oFono startup where we
@@ -585,15 +585,15 @@ ofono_create_modem(NMModemManager *self, const char *path)
 
 static void
 ofono_signal_cb(GDBusProxy *proxy,
-                char *      sender_name,
-                char *      signal_name,
-                GVariant *  parameters,
+                char       *sender_name,
+                char       *signal_name,
+                GVariant   *parameters,
                 gpointer    user_data)
 {
-    NMModemManager *       self = NM_MODEM_MANAGER(user_data);
+    NMModemManager        *self = NM_MODEM_MANAGER(user_data);
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    char *                 object_path;
-    NMModem *              modem;
+    char                  *object_path;
+    NMModem               *modem;
 
     if (g_strcmp0(signal_name, "ModemAdded") == 0) {
         g_variant_get(parameters, "(oa{sv})", &object_path, NULL);
@@ -619,12 +619,12 @@ ofono_signal_cb(GDBusProxy *proxy,
 static void
 ofono_enumerate_devices_done(GObject *proxy, GAsyncResult *res, gpointer user_data)
 {
-    NMModemManager *       self;
+    NMModemManager        *self;
     NMModemManagerPrivate *priv;
-    gs_free_error GError *error = NULL;
-    GVariant *            results;
-    GVariantIter *        iter;
-    const char *          path;
+    gs_free_error GError  *error = NULL;
+    GVariant              *results;
+    GVariantIter          *iter;
+    const char            *path;
 
     results = g_dbus_proxy_call_finish(G_DBUS_PROXY(proxy), res, &error);
     if (!results && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -651,7 +651,7 @@ static void
 ofono_check_name_owner(NMModemManager *self, gboolean first_invocation)
 {
     NMModemManagerPrivate *priv       = NM_MODEM_MANAGER_GET_PRIVATE(self);
-    gs_free char *         name_owner = NULL;
+    gs_free char          *name_owner = NULL;
 
     name_owner = g_dbus_proxy_get_name_owner(G_DBUS_PROXY(priv->ofono.proxy));
     if (name_owner) {
@@ -670,7 +670,7 @@ ofono_check_name_owner(NMModemManager *self, gboolean first_invocation)
                           self);
     } else {
         GHashTableIter iter;
-        NMModem *      modem;
+        NMModem       *modem;
 
         _LOGI("oFono is %savailable", first_invocation ? "not " : "no longer ");
 
@@ -694,10 +694,10 @@ ofono_name_owner_changed(GDBusProxy *ofono_proxy, GParamSpec *pspec, NMModemMana
 static void
 ofono_proxy_new_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMModemManager *       self;
+    NMModemManager        *self;
     NMModemManagerPrivate *priv;
-    gs_free_error GError *error = NULL;
-    GDBusProxy *          proxy;
+    gs_free_error GError  *error = NULL;
+    GDBusProxy            *proxy;
 
     proxy = g_dbus_proxy_new_finish(res, &error);
     if (!proxy && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -752,10 +752,10 @@ ofono_init_proxy(NMModemManager *self)
 static void
 bus_get_ready(GObject *source, GAsyncResult *res, gpointer user_data)
 {
-    NMModemManager *       self;
+    NMModemManager        *self;
     NMModemManagerPrivate *priv;
-    gs_free_error GError *error = NULL;
-    GDBusConnection *     connection;
+    gs_free_error GError  *error = NULL;
+    GDBusConnection       *connection;
 
     connection = g_bus_get_finish(res, &error);
     if (!connection && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -782,7 +782,7 @@ bus_get_ready(GObject *source, GAsyncResult *res, gpointer user_data)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMModemManager *       self = NM_MODEM_MANAGER(object);
+    NMModemManager        *self = NM_MODEM_MANAGER(object);
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -812,7 +812,7 @@ nm_modem_manager_init(NMModemManager *self)
 static void
 dispose(GObject *object)
 {
-    NMModemManager *       self = NM_MODEM_MANAGER(object);
+    NMModemManager        *self = NM_MODEM_MANAGER(object);
     NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE(self);
 
     nm_clear_g_cancellable(&priv->main_cancellable);

@@ -66,7 +66,7 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSetting6LowpanPrivate *priv  = NM_SETTING_6LOWPAN_GET_PRIVATE(setting);
-    NMSettingConnection *    s_con = NULL;
+    NMSettingConnection     *s_con = NULL;
 
     if (connection)
         s_con = nm_connection_get_setting_connection(connection);
@@ -150,9 +150,9 @@ nm_setting_6lowpan_new(void)
 static void
 nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSetting6LowpanPrivate));
 

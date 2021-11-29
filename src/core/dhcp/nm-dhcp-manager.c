@@ -130,7 +130,7 @@ _client_factory_get_gtype(const NMDhcpClientFactory *client_factory, int addr_fa
 NMDhcpClient *
 nm_dhcp_manager_start_client(NMDhcpManager *self, NMDhcpClientConfig *config, GError **error)
 {
-    NMDhcpManagerPrivate *priv;
+    NMDhcpManagerPrivate         *priv;
     gs_unref_object NMDhcpClient *client  = NULL;
     gboolean                      success = FALSE;
     gsize                         hwaddr_len;
@@ -238,10 +238,10 @@ nmtst_dhcp_manager_unget(gpointer self)
 static void
 nm_dhcp_manager_init(NMDhcpManager *self)
 {
-    NMDhcpManagerPrivate *     priv        = NM_DHCP_MANAGER_GET_PRIVATE(self);
-    NMConfig *                 config      = nm_config_get();
-    gs_free char *             client_free = NULL;
-    const char *               client;
+    NMDhcpManagerPrivate      *priv        = NM_DHCP_MANAGER_GET_PRIVATE(self);
+    NMConfig                  *config      = nm_config_get();
+    gs_free char              *client_free = NULL;
+    const char                *client;
     int                        i;
     const NMDhcpClientFactory *client_factory = NULL;
 

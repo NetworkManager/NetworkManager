@@ -47,9 +47,9 @@ static GType nm_dhcp_systemd_get_type(void);
 /*****************************************************************************/
 
 typedef struct {
-    sd_dhcp_client * client4;
+    sd_dhcp_client  *client4;
     sd_dhcp6_client *client6;
-    char *           lease_file;
+    char            *lease_file;
 
     guint request_count;
 } NMDhcpSystemdPrivate;
@@ -71,39 +71,39 @@ G_DEFINE_TYPE(NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
 
 static NML3ConfigData *
 lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
-                    const char *       iface,
+                    const char        *iface,
                     int                ifindex,
-                    sd_dhcp_lease *    lease,
-                    GError **          error)
+                    sd_dhcp_lease     *lease,
+                    GError           **error)
 {
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    gs_unref_hashtable GHashTable *options       = NULL;
-    const struct in_addr *         addr_list;
-    char                           addr_str[NM_UTILS_INET_ADDRSTRLEN];
-    const char *                   s;
-    nm_auto_free_gstring GString *str           = NULL;
-    nm_auto_free sd_dhcp_route **routes         = NULL;
-    const char *const *          search_domains = NULL;
-    guint16                      mtu;
-    int                          i, num;
-    const void *                 data;
-    gsize                        data_len;
-    gboolean                     has_router_from_classless = FALSE;
-    gboolean                     has_classless_route       = FALSE;
-    gboolean                     has_static_route          = FALSE;
-    const gint32                 ts                        = nm_utils_get_monotonic_timestamp_sec();
-    gint64                       ts_time                   = time(NULL);
-    struct in_addr               a_address;
-    struct in_addr               a_netmask;
-    struct in_addr               a_next_server;
-    struct in_addr               server_id;
-    struct in_addr               broadcast;
-    const struct in_addr *       a_router;
-    guint32                      a_plen;
-    guint32                      a_lifetime;
-    guint32                      renewal;
-    guint32                      rebinding;
-    gs_free nm_sd_dhcp_option *private_options = NULL;
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
+    gs_unref_hashtable GHashTable          *options = NULL;
+    const struct in_addr                   *addr_list;
+    char                                    addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    const char                             *s;
+    nm_auto_free_gstring GString           *str            = NULL;
+    nm_auto_free sd_dhcp_route            **routes         = NULL;
+    const char *const                      *search_domains = NULL;
+    guint16                                 mtu;
+    int                                     i, num;
+    const void                             *data;
+    gsize                                   data_len;
+    gboolean                                has_router_from_classless = FALSE;
+    gboolean                                has_classless_route       = FALSE;
+    gboolean                                has_static_route          = FALSE;
+    const gint32                            ts      = nm_utils_get_monotonic_timestamp_sec();
+    gint64                                  ts_time = time(NULL);
+    struct in_addr                          a_address;
+    struct in_addr                          a_netmask;
+    struct in_addr                          a_next_server;
+    struct in_addr                          server_id;
+    struct in_addr                          broadcast;
+    const struct in_addr                   *a_router;
+    guint32                                 a_plen;
+    guint32                                 a_lifetime;
+    guint32                                 renewal;
+    guint32                                 rebinding;
+    gs_free nm_sd_dhcp_option              *private_options = NULL;
 
     nm_assert(lease != NULL);
 
@@ -211,7 +211,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 
     if (sd_dhcp_lease_get_domainname(lease, &s) >= 0) {
         gs_strfreev char **domains = NULL;
-        char **            d;
+        char             **d;
 
         nm_dhcp_option_add_option(options, AF_INET, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME, s);
 
@@ -423,12 +423,12 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
             guint8        code       = private_options[i].code;
             const guint8 *l_data     = private_options[i].data;
             gsize         l_data_len = private_options[i].data_len;
-            char *        option_string;
+            char         *option_string;
 
             if (code == NM_DHCP_OPTION_DHCP4_PRIVATE_PROXY_AUTODISCOVERY) {
                 if (nm_dhcp_lease_data_parse_cstr(l_data, l_data_len, &l_data_len)) {
                     gs_free char *to_free = NULL;
-                    const char *  escaped;
+                    const char   *escaped;
 
                     escaped =
                         nm_utils_buf_utf8safe_escape((char *) l_data, l_data_len, 0, &to_free);
@@ -468,11 +468,11 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 static void
 bound4_handle(NMDhcpSystemd *self, gboolean extended)
 {
-    NMDhcpSystemdPrivate *  priv                  = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
-    const char *            iface                 = nm_dhcp_client_get_iface(NM_DHCP_CLIENT(self));
+    NMDhcpSystemdPrivate                   *priv  = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
+    const char                             *iface = nm_dhcp_client_get_iface(NM_DHCP_CLIENT(self));
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd  = NULL;
-    sd_dhcp_lease *                         lease = NULL;
-    GError *                                error = NULL;
+    sd_dhcp_lease                          *lease = NULL;
+    GError                                 *error = NULL;
 
     if (sd_dhcp_client_get_lease(priv->client4, &lease) < 0 || !lease) {
         _LOGW("no lease!");
@@ -504,10 +504,10 @@ bound4_handle(NMDhcpSystemd *self, gboolean extended)
 static int
 dhcp_event_cb(sd_dhcp_client *client, int event, gpointer user_data)
 {
-    NMDhcpSystemd *       self = NM_DHCP_SYSTEMD(user_data);
+    NMDhcpSystemd        *self = NM_DHCP_SYSTEMD(user_data);
     NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
     char                  addr_str[INET_ADDRSTRLEN];
-    sd_dhcp_lease *       lease = NULL;
+    sd_dhcp_lease        *lease = NULL;
     struct in_addr        addr;
     int                   r;
 
@@ -556,26 +556,26 @@ static gboolean
 ip4_start(NMDhcpClient *client, GError **error)
 {
     nm_auto(sd_dhcp_client_unrefp) sd_dhcp_client *sd_client = NULL;
-    NMDhcpSystemd *                                self      = NM_DHCP_SYSTEMD(client);
-    NMDhcpSystemdPrivate *                         priv      = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
-    const NMDhcpClientConfig *                     client_config;
-    gs_free char *                                 lease_file = NULL;
-    GBytes *                                       hwaddr;
-    const uint8_t *                                hwaddr_arr;
+    NMDhcpSystemd                                 *self      = NM_DHCP_SYSTEMD(client);
+    NMDhcpSystemdPrivate                          *priv      = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
+    const NMDhcpClientConfig                      *client_config;
+    gs_free char                                  *lease_file = NULL;
+    GBytes                                        *hwaddr;
+    const uint8_t                                 *hwaddr_arr;
     gsize                                          hwaddr_len;
     int                                            arp_type;
-    GBytes *                                       client_id;
-    gs_unref_bytes GBytes *client_id_new = NULL;
-    GBytes *               vendor_class_identifier;
-    const uint8_t *        client_id_arr;
-    size_t                 client_id_len;
-    struct in_addr         last_addr = {0};
-    const char *           hostname;
-    const char *           mud_url;
-    int                    r, i;
-    GBytes *               bcast_hwaddr;
-    const uint8_t *        bcast_hwaddr_arr;
-    gsize                  bcast_hwaddr_len;
+    GBytes                                        *client_id;
+    gs_unref_bytes GBytes                         *client_id_new = NULL;
+    GBytes                                        *vendor_class_identifier;
+    const uint8_t                                 *client_id_arr;
+    size_t                                         client_id_len;
+    struct in_addr                                 last_addr = {0};
+    const char                                    *hostname;
+    const char                                    *mud_url;
+    int                                            r, i;
+    GBytes                                        *bcast_hwaddr;
+    const uint8_t                                 *bcast_hwaddr_arr;
+    gsize                                          bcast_hwaddr_len;
 
     g_return_val_if_fail(!priv->client4, FALSE);
     g_return_val_if_fail(!priv->client6, FALSE);
@@ -757,24 +757,24 @@ ip4_start(NMDhcpClient *client, GError **error)
 
 static NML3ConfigData *
 lease_to_ip6_config(NMDedupMultiIndex *multi_idx,
-                    const char *       iface,
+                    const char        *iface,
                     int                ifindex,
-                    sd_dhcp6_lease *   lease,
+                    sd_dhcp6_lease    *lease,
                     gboolean           info_only,
                     gint32             ts,
-                    GError **          error)
+                    GError           **error)
 {
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    gs_unref_hashtable GHashTable *options       = NULL;
-    struct in6_addr                tmp_addr;
-    const struct in6_addr *        dns;
-    uint32_t                       lft_pref, lft_valid;
-    char                           addr_str[NM_UTILS_INET_ADDRSTRLEN];
-    char **                        domains;
-    const char *                   s;
-    nm_auto_free_gstring GString *str               = NULL;
-    gboolean                      has_any_addresses = FALSE;
-    int                           num, i;
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
+    gs_unref_hashtable GHashTable          *options = NULL;
+    struct in6_addr                         tmp_addr;
+    const struct in6_addr                  *dns;
+    uint32_t                                lft_pref, lft_valid;
+    char                                    addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char                                  **domains;
+    const char                             *s;
+    nm_auto_free_gstring GString           *str               = NULL;
+    gboolean                                has_any_addresses = FALSE;
+    int                                     num, i;
 
     nm_assert(lease);
 
@@ -847,14 +847,14 @@ lease_to_ip6_config(NMDedupMultiIndex *multi_idx,
 static void
 bound6_handle(NMDhcpSystemd *self)
 {
-    NMDhcpSystemdPrivate *    priv  = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
-    const gint32              ts    = nm_utils_get_monotonic_timestamp_sec();
-    const char *              iface = nm_dhcp_client_get_iface(NM_DHCP_CLIENT(self));
-    const NMDhcpClientConfig *client_config;
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    gs_free_error GError *error                  = NULL;
-    NMPlatformIP6Address  prefix                 = {0};
-    sd_dhcp6_lease *      lease                  = NULL;
+    NMDhcpSystemdPrivate                   *priv  = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
+    const gint32                            ts    = nm_utils_get_monotonic_timestamp_sec();
+    const char                             *iface = nm_dhcp_client_get_iface(NM_DHCP_CLIENT(self));
+    const NMDhcpClientConfig               *client_config;
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd   = NULL;
+    gs_free_error GError                   *error  = NULL;
+    NMPlatformIP6Address                    prefix = {0};
+    sd_dhcp6_lease                         *lease  = NULL;
 
     client_config = nm_dhcp_client_get_config(NM_DHCP_CLIENT(self));
 
@@ -896,7 +896,7 @@ bound6_handle(NMDhcpSystemd *self)
 static void
 dhcp6_event_cb(sd_dhcp6_client *client, int event, gpointer user_data)
 {
-    NMDhcpSystemd *       self = NM_DHCP_SYSTEMD(user_data);
+    NMDhcpSystemd        *self = NM_DHCP_SYSTEMD(user_data);
     NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
 
     nm_assert(priv->client6 == client);
@@ -924,16 +924,16 @@ dhcp6_event_cb(sd_dhcp6_client *client, int event, gpointer user_data)
 static gboolean
 ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
 {
-    NMDhcpSystemd *                                  self      = NM_DHCP_SYSTEMD(client);
-    NMDhcpSystemdPrivate *                           priv      = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
+    NMDhcpSystemd                                   *self      = NM_DHCP_SYSTEMD(client);
+    NMDhcpSystemdPrivate                            *priv      = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
     nm_auto(sd_dhcp6_client_unrefp) sd_dhcp6_client *sd_client = NULL;
-    const NMDhcpClientConfig *                       client_config;
-    const char *                                     hostname;
-    const char *                                     mud_url;
+    const NMDhcpClientConfig                        *client_config;
+    const char                                      *hostname;
+    const char                                      *mud_url;
     int                                              r, i;
-    const guint8 *                                   duid_arr;
+    const guint8                                    *duid_arr;
     gsize                                            duid_len;
-    GBytes *                                         duid;
+    GBytes                                          *duid;
 
     g_return_val_if_fail(!priv->client4, FALSE);
     g_return_val_if_fail(!priv->client6, FALSE);
@@ -1054,7 +1054,7 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
 static void
 stop(NMDhcpClient *client, gboolean release)
 {
-    NMDhcpSystemd *       self = NM_DHCP_SYSTEMD(client);
+    NMDhcpSystemd        *self = NM_DHCP_SYSTEMD(client);
     NMDhcpSystemdPrivate *priv = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
     int                   r    = 0;
 
@@ -1108,7 +1108,7 @@ static void
 nm_dhcp_systemd_class_init(NMDhcpSystemdClass *sdhcp_class)
 {
     NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS(sdhcp_class);
-    GObjectClass *     object_class = G_OBJECT_CLASS(sdhcp_class);
+    GObjectClass      *object_class = G_OBJECT_CLASS(sdhcp_class);
 
     object_class->dispose = dispose;
 

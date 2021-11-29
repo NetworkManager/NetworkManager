@@ -75,13 +75,13 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
-    const char *   iface = nm_device_get_iface(device);
+    const char    *iface = nm_device_get_iface(device);
     NMSettingVeth *s_veth;
     int            r;
 
@@ -143,7 +143,7 @@ static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
     NMDeviceVeth *self = NM_DEVICE_VETH(object);
-    NMDevice *    peer;
+    NMDevice     *peer;
 
     switch (prop_id) {
     case PROP_PEER:
@@ -168,9 +168,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_veth = {
 static void
 nm_device_veth_class_init(NMDeviceVethClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;
 
@@ -201,11 +201,11 @@ nm_device_veth_class_init(NMDeviceVethClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VETH_DEVICE_FACTORY, NMVethDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     return g_object_new(NM_TYPE_DEVICE_VETH,
                         NM_DEVICE_IFACE,

@@ -34,8 +34,8 @@
 #define EXIT_FAILURE_UNSPECIFIED 43
 
 typedef struct {
-    GMainLoop *   loop;
-    NMClient *    client;
+    GMainLoop    *loop;
+    NMClient     *client;
     GCancellable *client_new_cancellable;
     guint         client_new_timeout_id;
     guint         handle_timeout_id;
@@ -139,7 +139,7 @@ client_properties_changed(GObject *object, GParamSpec *pspec, gpointer user_data
 static gboolean
 handle_timeout(gpointer user_data)
 {
-    OnlineData * data                 = user_data;
+    OnlineData  *data                 = user_data;
     const gint64 now                  = _now_ms();
     gint64       remaining_ms         = data->end_timestamp_ms - now;
     const gint64 elapsed_ms           = now - data->start_timestamp_ms;
@@ -194,7 +194,7 @@ got_client_timeout(gpointer user_data)
 static void
 got_client(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    OnlineData *  data          = user_data;
+    OnlineData           *data  = user_data;
     gs_free_error GError *error = NULL;
 
     nm_assert(NM_IS_CLIENT(source_object));

@@ -169,12 +169,12 @@ software_add(NMLinkType link_type, const char *name)
 }
 
 static void
-test_link_changed_signal_cb(NMPlatform *              platform,
+test_link_changed_signal_cb(NMPlatform               *platform,
                             int                       obj_type_i,
                             int                       ifindex,
                             const NMPlatformIP4Route *route,
                             int                       change_type_i,
-                            gboolean *                p_test_link_changed_signal_arg)
+                            gboolean                 *p_test_link_changed_signal_arg)
 {
     const NMPObjectType              obj_type    = obj_type_i;
     const NMPlatformSignalChangeType change_type = change_type_i;
@@ -211,7 +211,7 @@ test_slave(int master, int type, SignalData *master_changed)
                                                link_callback,
                                                SLAVE_NAME);
     SignalData *link_changed, *link_removed;
-    char *      value;
+    char       *value;
     NMLinkType  link_type = nm_platform_link_get_type(NM_PLATFORM_GET, master);
     gboolean    test_link_changed_signal_arg1;
     gboolean    test_link_changed_signal_arg2;
@@ -422,7 +422,7 @@ test_software(NMLinkType link_type, const char *link_typename)
                                       link_callback,
                                       ifindex);
     if (link_type == NM_LINK_TYPE_VLAN) {
-        const NMPlatformLink *   plink;
+        const NMPlatformLink    *plink;
         const NMPlatformLnkVlan *plnk;
 
         plnk = nm_platform_link_get_lnk_vlan(NM_PLATFORM_GET, ifindex, &plink);
@@ -754,7 +754,7 @@ test_external(void)
 {
     const NMPlatformLink *pllink;
     NMPLinkAddress        hw_perm_addr;
-    SignalData *          link_added, *link_changed, *link_removed;
+    SignalData           *link_added, *link_changed, *link_removed;
     int                   ifindex;
 
     link_added = add_signal_ifname(NM_PLATFORM_SIGNAL_LINK_CHANGED,
@@ -1157,10 +1157,10 @@ _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
          "wmjW2wDT2EzFkyaGui7YWNLTRu8Q4eD/GVKM2utZkEs="},
     };
     gs_unref_ptrarray GPtrArray *allowed_ips_keep_alive = NULL;
-    gs_unref_array GArray *peers                        = NULL;
-    NMPlatformLnkWireGuard lnk_wireguard;
-    int                    r;
-    guint                  i;
+    gs_unref_array GArray       *peers                  = NULL;
+    NMPlatformLnkWireGuard       lnk_wireguard;
+    int                          r;
+    guint                        i;
 
     allowed_ips_keep_alive = g_ptr_array_new_with_free_func(g_free);
 
@@ -1270,8 +1270,8 @@ test_software_detect(gconstpointer user_data)
 {
     const TestAddSoftwareDetectData *test_data = user_data;
     int                              ifindex, ifindex_parent;
-    const NMPlatformLink *           plink;
-    const NMPObject *                lnk;
+    const NMPlatformLink            *plink;
+    const NMPObject                 *lnk;
     int                              r;
     guint                            i_step;
     const gboolean                   ext        = test_data->external_command;
@@ -1991,7 +1991,7 @@ static void
 test_software_detect_add(const char *testpath, NMLinkType link_type, int test_mode)
 {
     TestAddSoftwareDetectData *test_data;
-    char *                     path;
+    char                      *path;
 
     test_data                   = g_new0(TestAddSoftwareDetectData, 1);
     test_data->link_type        = link_type;
@@ -2026,8 +2026,8 @@ test_software_detect_add(const char *testpath, NMLinkType link_type, int test_mo
 static void
 _assert_xgress_qos_mappings_impl(int ifindex, gboolean is_ingress_map, int n_entries, int n, ...)
 {
-    const NMPlatformLink *  plink;
-    const NMPObject *       lnk;
+    const NMPlatformLink   *plink;
+    const NMPObject        *lnk;
     guint                   n_map;
     const NMVlanQosMapping *map;
     va_list                 ap;
@@ -2460,10 +2460,10 @@ test_vlan_set_xgress(void)
 static void
 test_create_many_links_do(guint n_devices)
 {
-    gint64                time, start_time = nm_utils_get_monotonic_timestamp_nsec();
-    guint                 i;
-    char                  name[64];
-    const NMPlatformLink *pllink;
+    gint64                 time, start_time = nm_utils_get_monotonic_timestamp_nsec();
+    guint                  i;
+    char                   name[64];
+    const NMPlatformLink  *pllink;
     gs_unref_array GArray *ifindexes = g_array_sized_new(FALSE, FALSE, sizeof(int), n_devices);
     const int              EX        = ((int) (nmtst_get_rand_uint32() % 4)) - 1;
 
@@ -2540,12 +2540,12 @@ test_create_many_links(gconstpointer user_data)
 static void
 test_nl_bugs_veth(void)
 {
-    const char *          IFACE_VETH0 = "nm-test-veth0";
-    const char *          IFACE_VETH1 = "nm-test-veth1";
-    int                   ifindex_veth0, ifindex_veth1;
-    int                   i;
-    const NMPlatformLink *pllink_veth0, *pllink_veth1;
-    gs_free_error GError * error     = NULL;
+    const char            *IFACE_VETH0 = "nm-test-veth0";
+    const char            *IFACE_VETH1 = "nm-test-veth1";
+    int                    ifindex_veth0, ifindex_veth1;
+    int                    i;
+    const NMPlatformLink  *pllink_veth0, *pllink_veth1;
+    gs_free_error GError  *error     = NULL;
     NMTstpNamespaceHandle *ns_handle = NULL;
     NMPLinkAddress         hw_perm_addr;
 
@@ -2612,8 +2612,8 @@ out:
 static void
 test_nl_bugs_spuroius_newlink(void)
 {
-    const char *          IFACE_BOND0  = "nm-test-bond0";
-    const char *          IFACE_DUMMY0 = "nm-test-dummy0";
+    const char           *IFACE_BOND0  = "nm-test-bond0";
+    const char           *IFACE_DUMMY0 = "nm-test-dummy0";
     int                   ifindex_bond0, ifindex_dummy0;
     const NMPlatformLink *pllink;
     NMPLinkAddress        hw_perm_addr;
@@ -2668,8 +2668,8 @@ again:
 static void
 test_nl_bugs_spuroius_dellink(void)
 {
-    const char *          IFACE_BRIDGE0 = "nm-test-bridge0";
-    const char *          IFACE_DUMMY0  = "nm-test-dummy0";
+    const char           *IFACE_BRIDGE0 = "nm-test-bridge0";
+    const char           *IFACE_DUMMY0  = "nm-test-dummy0";
     int                   ifindex_bridge0, ifindex_dummy0;
     const NMPlatformLink *pllink;
     NMPLinkAddress        hw_perm_addr;
@@ -2745,7 +2745,7 @@ _test_netns_teardown(gpointer fixture, gconstpointer test_data)
 static NMPlatform *
 _test_netns_create_platform(void)
 {
-    NMPNetns *  netns;
+    NMPNetns   *netns;
     NMPlatform *platform;
 
     netns = nmp_netns_new();
@@ -2763,9 +2763,9 @@ _test_netns_create_platform(void)
 static gboolean
 _test_netns_check_skip(void)
 {
-    static int      support       = -1;
-    static int      support_errsv = 0;
-    NMPNetns *      netns;
+    static int                support       = -1;
+    static int                support_errsv = 0;
+    NMPNetns                 *netns;
     gs_unref_object NMPNetns *netns2 = NULL;
 
     netns = nmp_netns_get_current();
@@ -2828,7 +2828,7 @@ test_netns_general(gpointer fixture, gconstpointer test_data)
 {
     gs_unref_object NMPlatform *platform_1 = NULL;
     gs_unref_object NMPlatform *platform_2 = NULL;
-    NMPNetns *                  netns_tmp;
+    NMPNetns                   *netns_tmp;
     char                        sbuf[100];
     int                         i, j, k;
     gboolean                    ethtool_support;
@@ -2959,7 +2959,7 @@ test_netns_general(gpointer fixture, gconstpointer test_data)
 static void
 test_netns_set_netns(gpointer fixture, gconstpointer test_data)
 {
-    NMPlatform *    platforms[3];
+    NMPlatform                 *platforms[3];
     gs_unref_object NMPlatform *platform_0 = NULL;
     gs_unref_object NMPlatform *platform_1 = NULL;
     gs_unref_object NMPlatform *platform_2 = NULL;
@@ -2997,8 +2997,8 @@ static char *
 _get_current_namespace_id(int ns_type)
 {
     const char *p;
-    GError *    error = NULL;
-    char *      id;
+    GError     *error = NULL;
+    char       *id;
 
     switch (ns_type) {
     case CLONE_NEWNET:
@@ -3020,7 +3020,7 @@ _get_current_namespace_id(int ns_type)
 static char *
 _get_sysctl_value(const char *path)
 {
-    char *        data          = NULL;
+    char                 *data  = NULL;
     gs_free_error GError *error = NULL;
 
     if (!g_file_get_contents(path, &data, NULL, &error)) {
@@ -3037,10 +3037,10 @@ _get_sysctl_value(const char *path)
 static void
 test_netns_push(gpointer fixture, gconstpointer test_data)
 {
-    gs_unref_object NMPlatform *platform_0    = NULL;
-    gs_unref_object NMPlatform *platform_1    = NULL;
-    gs_unref_object NMPlatform *platform_2    = NULL;
-    nm_auto_pop_netns NMPNetns *netns_pop     = NULL;
+    gs_unref_object NMPlatform  *platform_0   = NULL;
+    gs_unref_object NMPlatform  *platform_1   = NULL;
+    gs_unref_object NMPlatform  *platform_2   = NULL;
+    nm_auto_pop_netns NMPNetns  *netns_pop    = NULL;
     gs_unref_ptrarray GPtrArray *device_names = g_ptr_array_new_with_free_func(g_free);
     int                          i, j;
     const int ns_types_list[] = {CLONE_NEWNET, CLONE_NEWNS, CLONE_NEWNET | CLONE_NEWNS};
@@ -3080,7 +3080,7 @@ test_netns_push(gpointer fixture, gconstpointer test_data)
 
     for (i = 0; i < G_N_ELEMENTS(pl); i++) {
         nm_auto_pop_netns NMPNetns *netns_free = NULL;
-        char *                      tmp;
+        char                       *tmp;
 
         g_assert(nm_platform_netns_push(pl[i].platform, &netns_free));
 
@@ -3207,8 +3207,8 @@ test_netns_bind_to_path(gpointer fixture, gconstpointer test_data)
     gs_unref_object NMPlatform *platform_1 = NULL;
     gs_unref_object NMPlatform *platform_2 = NULL;
     nm_auto_pop_netns NMPNetns *netns_pop  = NULL;
-    NMPlatform *                platforms[3];
-    NMPNetns *                  netns;
+    NMPlatform                 *platforms[3];
+    NMPNetns                   *netns;
     int                         i;
 
     if (_test_netns_check_skip())
@@ -3270,7 +3270,7 @@ test_sysctl_rename(void)
     nm_auto_close int     dirfd                         = -1;
     int                   i;
     char                  ifname_buf[IFNAMSIZ];
-    char *                s;
+    char                 *s;
     const NMPlatformLink *pllink;
 
     ifindex[0] = nmtstp_link_dummy_add(PL, -1, IFNAME[0])->ifindex;
@@ -3362,19 +3362,19 @@ test_sysctl_rename(void)
 static void
 test_sysctl_netns_switch(void)
 {
-    const char *const IFNAME = "nm-dummy-0";
-    int               ifindex, ifindex_tmp;
-    nm_auto_close int dirfd = -1;
-    char              ifname_buf[IFNAMSIZ];
-    char *            s;
+    const char *const           IFNAME = "nm-dummy-0";
+    int                         ifindex, ifindex_tmp;
+    nm_auto_close int           dirfd = -1;
+    char                        ifname_buf[IFNAMSIZ];
+    char                       *s;
     gs_unref_object NMPlatform *platform_0  = NULL;
     gs_unref_object NMPlatform *platform_1  = NULL;
     gs_unref_object NMPlatform *platform_2  = NULL;
     nm_auto_pop_netns NMPNetns *netns_pop_1 = NULL;
     nm_auto_pop_netns NMPNetns *netns_pop_2 = NULL;
     nm_auto_pop_netns NMPNetns *netns_pop_3 = NULL;
-    NMPlatform *                PL;
-    NMPlatform *                platforms[3];
+    NMPlatform                 *PL;
+    NMPlatform                 *platforms[3];
 
     if (_test_netns_check_skip())
         return;
@@ -3432,7 +3432,7 @@ test_sysctl_netns_switch(void)
     {
         gint64 i64;
         int    errsv;
-        char * v;
+        char  *v;
 
         errno = ESRCH;
         v     = nm_platform_sysctl_get(
@@ -3501,7 +3501,7 @@ test_sysctl_netns_switch(void)
 }
 
 typedef struct {
-    GMainLoop * loop;
+    GMainLoop  *loop;
     const char *path;
     gboolean    expected_success;
     gint32      expected_value;
@@ -3528,10 +3528,10 @@ sysctl_set_async_cb(GError *error, gpointer user_data)
 static void
 test_sysctl_set_async(void)
 {
-    NMPlatform *const PL     = NM_PLATFORM_GET;
-    const char *const IFNAME = "nm-dummy-0";
-    const char *const PATH   = "/proc/sys/net/ipv4/conf/nm-dummy-0/rp_filter";
-    GMainLoop *       loop;
+    NMPlatform *const             PL     = NM_PLATFORM_GET;
+    const char *const             IFNAME = "nm-dummy-0";
+    const char *const             PATH   = "/proc/sys/net/ipv4/conf/nm-dummy-0/rp_filter";
+    GMainLoop                    *loop;
     gs_unref_object GCancellable *cancellable = NULL;
     gboolean                      proc_writable;
     SetAsyncData                  data;
@@ -3583,10 +3583,10 @@ test_sysctl_set_async(void)
 static void
 test_sysctl_set_async_fail(void)
 {
-    NMPlatform *const PL     = NM_PLATFORM_GET;
-    const char *const IFNAME = "nm-dummy-0";
-    const char *const PATH   = "/proc/sys/net/ipv4/conf/nm-dummy-0/does-not-exist";
-    GMainLoop *       loop;
+    NMPlatform *const             PL     = NM_PLATFORM_GET;
+    const char *const             IFNAME = "nm-dummy-0";
+    const char *const             PATH   = "/proc/sys/net/ipv4/conf/nm-dummy-0/does-not-exist";
+    GMainLoop                    *loop;
     gs_unref_object GCancellable *cancellable = NULL;
     SetAsyncData                  data;
     int                           ifindex;
@@ -3620,10 +3620,10 @@ test_sysctl_set_async_fail(void)
 static gpointer
 _test_netns_mt_thread(gpointer data)
 {
-    NMPNetns *      netns1           = data;
+    NMPNetns                 *netns1 = data;
     gs_unref_object NMPNetns *netns2 = NULL;
-    NMPNetns *                netns_bottom;
-    NMPNetns *                initial;
+    NMPNetns                 *netns_bottom;
+    NMPNetns                 *initial;
 
     netns_bottom = nmp_netns_get_initial();
     g_assert(netns_bottom);
@@ -3654,8 +3654,8 @@ static void
 test_netns_mt(void)
 {
     gs_unref_object NMPNetns *netns1 = NULL;
-    NMPNetns *                initial_from_other_thread;
-    GThread *                 th;
+    NMPNetns                 *initial_from_other_thread;
+    GThread                  *th;
 
     if (_test_netns_check_skip())
         return;
@@ -3732,7 +3732,7 @@ test_ethtool_features_get(void)
 
     for (i_run = 0; i_run < 5; i_run++) {
         NMEthtoolFeatureStates *features;
-        NMOptionBool *          requested;
+        NMOptionBool           *requested;
         gboolean                do_set = TRUE;
 
         requested = g_new(NMOptionBool, _NM_ETHTOOL_ID_FEATURE_NUM);

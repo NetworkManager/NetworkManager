@@ -108,7 +108,7 @@ nmt_newt_button_build_component(NmtNewtComponent *component, gboolean sensitive)
 {
     NmtNewtButtonPrivate *priv = NMT_NEWT_BUTTON_GET_PRIVATE(component);
     newtComponent         co;
-    gs_free char *        label_lc = NULL;
+    gs_free char         *label_lc = NULL;
 
     if (sensitive) {
         label_lc = nmt_newt_locale_from_utf8(priv->label);
@@ -183,9 +183,9 @@ nmt_newt_button_get_property(GObject *object, guint prop_id, GValue *value, GPar
 static void
 nmt_newt_button_class_init(NmtNewtButtonClass *button_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(button_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(button_class);
     NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS(button_class);
-    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(button_class);
+    NmtNewtWidgetClass    *widget_class    = NMT_NEWT_WIDGET_CLASS(button_class);
 
     g_type_class_add_private(button_class, sizeof(NmtNewtButtonPrivate));
 

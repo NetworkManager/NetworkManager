@@ -130,7 +130,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_ovsbridge = NML_DBUS_META_
 static void
 nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
 {
-    GObjectClass * object_class = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class = G_OBJECT_CLASS(klass);
     NMDeviceClass *device_class = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;

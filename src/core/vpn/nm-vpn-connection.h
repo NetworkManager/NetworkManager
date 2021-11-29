@@ -35,28 +35,28 @@ typedef struct _NMVpnConnectionClass NMVpnConnectionClass;
 
 GType nm_vpn_connection_get_type(void);
 
-NMVpnConnection *nm_vpn_connection_new(NMSettingsConnection * settings_connection,
-                                       NMDevice *             parent_device,
-                                       const char *           specific_object,
+NMVpnConnection *nm_vpn_connection_new(NMSettingsConnection  *settings_connection,
+                                       NMDevice              *parent_device,
+                                       const char            *specific_object,
                                        NMActivationReason     activation_reason,
                                        NMActivationStateFlags initial_state_flags,
-                                       NMAuthSubject *        subject);
+                                       NMAuthSubject         *subject);
 
 void nm_vpn_connection_activate(NMVpnConnection *self, NMVpnPluginInfo *plugin_info);
 NMVpnConnectionState nm_vpn_connection_get_vpn_state(NMVpnConnection *self);
-const char *         nm_vpn_connection_get_banner(NMVpnConnection *self);
-const char *         nm_vpn_connection_get_service(NMVpnConnection *self);
+const char          *nm_vpn_connection_get_banner(NMVpnConnection *self);
+const char          *nm_vpn_connection_get_service(NMVpnConnection *self);
 
-gboolean nm_vpn_connection_deactivate(NMVpnConnection *             self,
+gboolean nm_vpn_connection_deactivate(NMVpnConnection              *self,
                                       NMActiveConnectionStateReason reason,
                                       gboolean                      quitting);
-void     nm_vpn_connection_disconnect(NMVpnConnection *             self,
+void     nm_vpn_connection_disconnect(NMVpnConnection              *self,
                                       NMActiveConnectionStateReason reason,
                                       gboolean                      quitting);
 
 const NML3ConfigData *nm_vpn_connection_get_l3cd(NMVpnConnection *self);
 
-const char *     nm_vpn_connection_get_ip_iface(NMVpnConnection *self, gboolean fallback_device);
+const char      *nm_vpn_connection_get_ip_iface(NMVpnConnection *self, gboolean fallback_device);
 int              nm_vpn_connection_get_ip_ifindex(NMVpnConnection *self, gboolean fallback_device);
 guint32          nm_vpn_connection_get_ip4_internal_gateway(NMVpnConnection *self);
 struct in6_addr *nm_vpn_connection_get_ip6_internal_gateway(NMVpnConnection *self);

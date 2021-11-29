@@ -133,7 +133,7 @@ static const RunnerCompatElem _runner_compat_lst[] = {
 
 typedef struct {
     const char *const *js_keys;
-    const char *       property_name;
+    const char        *property_name;
     NMValueTypUnion    default_val;
     union {
         struct {
@@ -377,8 +377,8 @@ typedef enum {
         LINK_WATCHER_ATTRIBUTE_VLANID, LINK_WATCHER_ATTRIBUTE_SEND_ALWAYS
 
 typedef struct {
-    const char *         js_key;
-    const char *         dbus_name;
+    const char          *js_key;
+    const char          *dbus_name;
     NMValueTypUnion      default_val;
     LinkWatcherAttribute link_watcher_attr;
     NMValueType          value_type;
@@ -389,9 +389,9 @@ static const LinkWatcherAttrData link_watcher_attr_datas[] = {
     [_link_watcher_attr] = {.link_watcher_attr = (_link_watcher_attr),   \
                             .value_type        = (_value_type),          \
                             .js_key            = (""_js_key              \
-                                       ""),                   \
+                                                  ""),                   \
                             .dbus_name         = (""_dbus_name           \
-                                          ""),                   \
+                                                  ""),                   \
                             __VA_ARGS__}
     _INIT(LINK_WATCHER_ATTRIBUTE_NAME, "name", "name", NM_VALUE_TYPE_STRING, ),
     _INIT(LINK_WATCHER_ATTRIBUTE_DELAY_UP, "delay_up", "delay-up", NM_VALUE_TYPE_INT, ),
@@ -547,9 +547,9 @@ _team_attr_data_copy(const TeamAttrData *attr_data,
                      gpointer            dst,
                      gconstpointer       src)
 {
-    GPtrArray *      v_ptrarray_dst;
+    GPtrArray       *v_ptrarray_dst;
     const GPtrArray *v_ptrarray_src;
-    GPtrArray *      dst_array;
+    GPtrArray       *dst_array;
     guint            i, len;
 
     if (attr_data->value_type != NM_VALUE_TYPE_UNSPEC)
@@ -595,7 +595,7 @@ _team_attr_data_copy(const TeamAttrData *attr_data,
 static void
 _team_attr_data_to_json(const TeamAttrData *attr_data,
                         gboolean            is_port,
-                        GString *           gstr,
+                        GString            *gstr,
                         gconstpointer       p_field)
 {
     guint i;
@@ -677,7 +677,7 @@ _team_setting_has_field(const NMTeamSetting *self, const TeamAttrData *attr_data
 }
 
 static gboolean
-_team_setting_has_fields_any_v(const NMTeamSetting *  self,
+_team_setting_has_fields_any_v(const NMTeamSetting   *self,
                                const NMTeamAttribute *team_attrs,
                                gsize                  n_team_attrs)
 {
@@ -698,7 +698,7 @@ _team_setting_has_fields_any_v(const NMTeamSetting *  self,
                                    NM_NARG(__VA_ARGS__))
 
 static void
-_team_setting_has_field_set(NMTeamSetting *     self,
+_team_setting_has_field_set(NMTeamSetting      *self,
                             const TeamAttrData *attr_data,
                             SetFieldModeEnum    set_field_mode)
 {
@@ -745,7 +745,7 @@ _team_setting_get_field(const NMTeamSetting *self, const TeamAttrData *attr_data
 }
 
 static guint32
-_team_setting_attribute_changed(NMTeamSetting *     self,
+_team_setting_attribute_changed(NMTeamSetting      *self,
                                 const TeamAttrData *attr_data,
                                 gboolean            changed,
                                 SetFieldModeEnum    set_field_mode,
@@ -785,7 +785,7 @@ _team_setting_attribute_changed(NMTeamSetting *     self,
 }
 
 static guint32
-_team_setting_attribute_changed_attr(NMTeamSetting *  self,
+_team_setting_attribute_changed_attr(NMTeamSetting   *self,
                                      NMTeamAttribute  team_attr,
                                      gboolean         changed,
                                      SetFieldModeEnum set_field_mode,
@@ -800,9 +800,9 @@ _team_setting_attribute_changed_attr(NMTeamSetting *  self,
 
 static gboolean
 _team_setting_field_to_json(const NMTeamSetting *self,
-                            GString *            gstr,
+                            GString             *gstr,
                             gboolean             prepend_delimiter,
-                            const TeamAttrData * attr_data)
+                            const TeamAttrData  *attr_data)
 {
     if (!_team_setting_has_field(self, attr_data))
         return FALSE;
@@ -817,8 +817,8 @@ _team_setting_field_to_json(const NMTeamSetting *self,
 }
 
 static gboolean
-_team_setting_fields_to_json_maybe(const NMTeamSetting *  self,
-                                   GString *              gstr,
+_team_setting_fields_to_json_maybe(const NMTeamSetting   *self,
+                                   GString               *gstr,
                                    gboolean               prepend_delimiter,
                                    const NMTeamAttribute *team_attrs_lst,
                                    gsize                  team_attrs_lst_len)
@@ -839,9 +839,9 @@ _team_setting_fields_to_json_maybe(const NMTeamSetting *  self,
 }
 
 static guint32
-_team_setting_set(NMTeamSetting *        self,
+_team_setting_set(NMTeamSetting         *self,
                   gboolean               modify,
-                  const bool *           has_lst,
+                  const bool            *has_lst,
                   const NMValueTypUnion *val_lst)
 {
     guint32             changed_flags = 0;
@@ -914,7 +914,7 @@ _nm_team_setting_value_get(const NMTeamSetting *self,
 }
 
 static guint32
-_team_setting_value_set(NMTeamSetting *     self,
+_team_setting_value_set(NMTeamSetting      *self,
                         const TeamAttrData *attr_data,
                         gconstpointer       val,
                         SetFieldModeEnum    set_field_mode,
@@ -936,7 +936,7 @@ _team_setting_value_set(NMTeamSetting *     self,
 }
 
 guint32
-nm_team_setting_value_reset(NMTeamSetting * self,
+nm_team_setting_value_reset(NMTeamSetting  *self,
                             NMTeamAttribute team_attr,
                             gboolean        to_default /* or else unset */)
 {
@@ -954,7 +954,7 @@ nm_team_setting_value_reset(NMTeamSetting * self,
 }
 
 guint32
-_nm_team_setting_value_set(NMTeamSetting * self,
+_nm_team_setting_value_set(NMTeamSetting  *self,
                            NMTeamAttribute team_attr,
                            NMValueType     value_type,
                            gconstpointer   val)
@@ -998,7 +998,7 @@ out:
 }
 
 guint32
-nm_team_setting_value_link_watchers_remove_by_value(NMTeamSetting *          self,
+nm_team_setting_value_link_watchers_remove_by_value(NMTeamSetting           *self,
                                                     const NMTeamLinkWatcher *link_watcher)
 {
     guint i;
@@ -1026,7 +1026,7 @@ nm_team_setting_value_link_watchers_remove(NMTeamSetting *self, guint idx)
 }
 
 static guint32
-_team_setting_value_link_watchers_set_list(NMTeamSetting *                 self,
+_team_setting_value_link_watchers_set_list(NMTeamSetting                  *self,
                                            const NMTeamLinkWatcher *const *arr,
                                            guint                           len,
                                            SetFieldModeEnum                set_field_mode,
@@ -1074,7 +1074,7 @@ out:
 }
 
 guint32
-nm_team_setting_value_link_watchers_set_list(NMTeamSetting *                 self,
+nm_team_setting_value_link_watchers_set_list(NMTeamSetting                  *self,
                                              const NMTeamLinkWatcher *const *arr,
                                              guint                           len)
 {
@@ -1125,7 +1125,7 @@ nm_team_setting_value_master_runner_tx_hash_remove(NMTeamSetting *self, guint id
 }
 
 static guint32
-_team_setting_value_master_runner_tx_hash_set_list(NMTeamSetting *    self,
+_team_setting_value_master_runner_tx_hash_set_list(NMTeamSetting     *self,
                                                    const char *const *arr,
                                                    guint              len,
                                                    SetFieldModeEnum   set_field_mode,
@@ -1167,7 +1167,7 @@ out:
 }
 
 guint32
-nm_team_setting_value_master_runner_tx_hash_set_list(NMTeamSetting *    self,
+nm_team_setting_value_master_runner_tx_hash_set_list(NMTeamSetting     *self,
                                                      const char *const *arr,
                                                      guint              len)
 {
@@ -1214,7 +1214,7 @@ static void
 _link_watcher_unpack(const NMTeamLinkWatcher *link_watcher,
                      NMValueTypUnioMaybe      args[static G_N_ELEMENTS(link_watcher_attr_datas)])
 {
-    const char *                  v_name = nm_team_link_watcher_get_name(link_watcher);
+    const char                   *v_name = nm_team_link_watcher_get_name(link_watcher);
     NMTeamLinkWatcherArpPingFlags v_arp_ping_flags;
 
     memset(args, 0, sizeof(args[0]) * G_N_ELEMENTS(link_watcher_attr_datas));
@@ -1305,22 +1305,22 @@ _link_watcher_to_json(const NMTeamLinkWatcher *link_watcher, GString *gstr)
 }
 
 static NMTeamLinkWatcher *
-_link_watcher_from_json(const NMJsonVt * vt,
+_link_watcher_from_json(const NMJsonVt  *vt,
                         const nm_json_t *root_js_obj,
-                        gboolean *       out_unrecognized_content)
+                        gboolean        *out_unrecognized_content)
 {
     NMValueTypUnioMaybe args[G_N_ELEMENTS(link_watcher_attr_datas)] = {};
-    const char *        j_key;
-    nm_json_t *         j_val;
-    const char *        v_name;
-    NMTeamLinkWatcher * result = NULL;
+    const char         *j_key;
+    nm_json_t          *j_val;
+    const char         *v_name;
+    NMTeamLinkWatcher  *result = NULL;
 
     if (!nm_json_is_object(root_js_obj))
         goto fail;
 
     nm_json_object_foreach (vt, (nm_json_t *) root_js_obj, j_key, j_val) {
         const LinkWatcherAttrData *attr_data = NULL;
-        NMValueTypUnioMaybe *      parse_result;
+        NMValueTypUnioMaybe       *parse_result;
 
         if (j_key) {
             int i;
@@ -1434,7 +1434,7 @@ _link_watcher_to_variant(const NMTeamLinkWatcher *link_watcher)
     for (i = 0; i < (int) G_N_ELEMENTS(link_watcher_attr_datas); i++) {
         const NMValueTypUnioMaybe *p_val     = &args[i];
         const LinkWatcherAttrData *attr_data = &link_watcher_attr_datas[i];
-        GVariant *                 v;
+        GVariant                  *v;
 
         if (!p_val->has)
             continue;
@@ -1459,7 +1459,7 @@ _link_watcher_to_variant(const NMTeamLinkWatcher *link_watcher)
 #define _LINK_WATCHER_ATTR_VARGET(variants, link_watcher_attribute, _value_type, c_type, _cmd)    \
     ({                                                                                            \
         GVariant *const *_variants = (variants);                                                  \
-        GVariant *       _cc;                                                                     \
+        GVariant        *_cc;                                                                     \
                                                                                                   \
         nm_assert(link_watcher_attr_datas[(link_watcher_attribute)].value_type == (_value_type)); \
                                                                                                   \
@@ -1502,9 +1502,9 @@ _link_watcher_from_variant(GVariant *watcher_var, gboolean strict_parsing, GErro
         GVariant *variants[G_N_ELEMENTS(link_watcher_attr_datas)] = {
             NULL,
         };
-    const char * v_key;
-    GVariant *   v_val;
-    const char * v_name;
+    const char  *v_key;
+    GVariant    *v_val;
+    const char  *v_name;
     GVariantIter iter;
 
     g_return_val_if_fail(g_variant_is_of_type(watcher_var, G_VARIANT_TYPE("a{sv}")), NULL);
@@ -1512,8 +1512,8 @@ _link_watcher_from_variant(GVariant *watcher_var, gboolean strict_parsing, GErro
     g_variant_iter_init(&iter, watcher_var);
     while (g_variant_iter_next(&iter, "{&sv}", &v_key, &v_val)) {
         _nm_unused gs_unref_variant GVariant *v_val_free = v_val;
-        const LinkWatcherAttrData *           attr_data  = NULL;
-        const GVariantType *                  variant_type;
+        const LinkWatcherAttrData            *attr_data  = NULL;
+        const GVariantType                   *variant_type;
         int                                   i;
 
         for (i = 0; i < (int) G_N_ELEMENTS(link_watcher_attr_datas); i++) {
@@ -1704,7 +1704,7 @@ _nm_utils_team_link_watchers_from_variant(GVariant *value, gboolean strict_parsi
 {
     gs_unref_ptrarray GPtrArray *link_watchers = NULL;
     GVariantIter                 iter;
-    GVariant *                   watcher_var;
+    GVariant                    *watcher_var;
 
     g_return_val_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")), NULL);
 
@@ -1713,7 +1713,7 @@ _nm_utils_team_link_watchers_from_variant(GVariant *value, gboolean strict_parsi
     g_variant_iter_init(&iter, value);
     while (g_variant_iter_next(&iter, "@a{sv}", &watcher_var)) {
         _nm_unused gs_unref_variant GVariant *watcher_var_free = watcher_var;
-        NMTeamLinkWatcher *                   watcher;
+        NMTeamLinkWatcher                    *watcher;
 
         watcher = _link_watcher_from_variant(watcher_var, strict_parsing, error);
         if (error && *error)
@@ -1942,18 +1942,18 @@ _attr_data_find_by_json_key(gboolean is_port, const char *const *keys, guint8 n_
 
 static void
 _js_parse_locate_keys(const NMJsonVt *vt,
-                      NMTeamSetting * self,
-                      nm_json_t *     root_js_obj,
-                      nm_json_t *     found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
-                      gboolean *      out_unrecognized_content)
+                      NMTeamSetting  *self,
+                      nm_json_t      *root_js_obj,
+                      nm_json_t      *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
+                      gboolean       *out_unrecognized_content)
 {
     const char *keys[3];
     const char *cur_key1;
     const char *cur_key2;
     const char *cur_key3;
-    nm_json_t * cur_val1;
-    nm_json_t * cur_val2;
-    nm_json_t * cur_val3;
+    nm_json_t  *cur_val1;
+    nm_json_t  *cur_val2;
+    nm_json_t  *cur_val3;
 
     nm_assert(vt);
 
@@ -2007,12 +2007,12 @@ _js_parse_locate_keys(const NMJsonVt *vt,
 static void
 _js_parse_unpack(const NMJsonVt *vt,
                  gboolean        is_port,
-                 nm_json_t *     found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
+                 nm_json_t      *found_keys[static _NM_TEAM_ATTRIBUTE_NUM],
                  bool            out_has_lst[static _NM_TEAM_ATTRIBUTE_NUM],
                  NMValueTypUnion out_val_lst[static _NM_TEAM_ATTRIBUTE_NUM],
-                 gboolean *      out_unrecognized_content,
-                 GPtrArray **    out_ptr_array_link_watchers_free,
-                 GPtrArray **    out_ptr_array_master_runner_tx_hash_free)
+                 gboolean       *out_unrecognized_content,
+                 GPtrArray     **out_ptr_array_link_watchers_free,
+                 GPtrArray     **out_ptr_array_master_runner_tx_hash_free)
 {
     const TeamAttrData *attr_data;
 
@@ -2023,7 +2023,7 @@ _js_parse_unpack(const NMJsonVt *vt,
          attr_data++) {
         NMValueTypUnion *p_out_val;
         gboolean         valid = FALSE;
-        nm_json_t *      arg_js_obj;
+        nm_json_t       *arg_js_obj;
 
         if (!_team_attr_data_is_relevant(attr_data, is_port))
             continue;
@@ -2039,7 +2039,7 @@ _js_parse_unpack(const NMJsonVt *vt,
         if (attr_data->value_type != NM_VALUE_TYPE_UNSPEC)
             valid = nm_value_type_from_json(vt, attr_data->value_type, arg_js_obj, p_out_val);
         else if (attr_data->team_attr == NM_TEAM_ATTRIBUTE_LINK_WATCHERS) {
-            GPtrArray *        link_watchers = NULL;
+            GPtrArray         *link_watchers = NULL;
             NMTeamLinkWatcher *link_watcher;
 
             nm_assert(out_ptr_array_link_watchers_free && !*out_ptr_array_link_watchers_free);
@@ -2151,7 +2151,7 @@ nm_team_setting_config_set(NMTeamSetting *self, const char *js_str)
                 FALSE,
             };
             NMValueTypUnion val_lst[_NM_TEAM_ATTRIBUTE_NUM];
-            nm_json_t *     found_keys[_NM_TEAM_ATTRIBUTE_NUM] = {
+            nm_json_t      *found_keys[_NM_TEAM_ATTRIBUTE_NUM] = {
                 NULL,
             };
             gs_unref_ptrarray GPtrArray *ptr_array_master_runner_tx_hash_free = NULL;
@@ -2199,9 +2199,9 @@ _team_setting_prefix_error_plain(gboolean is_port, const char *property_name, GE
 
 static void
 _team_setting_prefix_error(const NMTeamSetting *self,
-                           const char *         prop_name_master,
-                           const char *         prop_name_port,
-                           GError **            error)
+                           const char          *prop_name_master,
+                           const char          *prop_name_port,
+                           GError             **error)
 {
     _team_setting_ASSERT(self);
     nm_assert(self->d.is_port ? (!!prop_name_port) : (!!prop_name_master));
@@ -2501,29 +2501,29 @@ _variants_list_team_unref_auto(GVariant *(*p_variants)[])
 }
 
 gboolean
-nm_team_setting_reset_from_dbus(NMTeamSetting *                 self,
-                                GVariant *                      setting_dict,
-                                GHashTable *                    keys,
-                                guint32 *                       out_changed,
+nm_team_setting_reset_from_dbus(NMTeamSetting                  *self,
+                                GVariant                       *setting_dict,
+                                GHashTable                     *keys,
+                                guint32                        *out_changed,
                                 guint /* NMSettingParseFlags */ parse_flags,
-                                GError **                       error)
+                                GError                        **error)
 {
     nm_auto(_variants_list_team_unref_auto) GVariant *variants[_NM_TEAM_ATTRIBUTE_NUM] = {
         NULL,
     };
     gs_unref_ptrarray GPtrArray *v_link_watchers = NULL;
-    const TeamAttrData *         attr_data;
+    const TeamAttrData          *attr_data;
     GVariantIter                 iter;
-    const char *                 v_key;
-    GVariant *                   v_val;
-    const NMJsonVt *             vt;
+    const char                  *v_key;
+    GVariant                    *v_val;
+    const NMJsonVt              *vt;
 
     *out_changed = 0;
 
     g_variant_iter_init(&iter, setting_dict);
     while (g_variant_iter_next(&iter, "{&sv}", &v_key, &v_val)) {
         _nm_unused gs_unref_variant GVariant *v_val_free   = v_val;
-        const GVariantType *                  variant_type = NULL;
+        const GVariantType                   *variant_type = NULL;
 
         attr_data = _team_attr_data_find_for_property_name(self->d.is_port, v_key);
         if (!attr_data) {
@@ -2678,7 +2678,7 @@ nm_team_setting_reset_from_dbus(NMTeamSetting *                 self,
 /*****************************************************************************/
 
 gboolean
-nm_team_setting_maybe_changed(NMSetting *              source,
+nm_team_setting_maybe_changed(NMSetting               *source,
                               const GParamSpec *const *obj_properties,
                               guint32                  changed_flags)
 {
@@ -2727,7 +2727,7 @@ _nm_setting_get_team_setting(struct _NMSetting *setting)
 GVariant *
 _nm_team_settings_property_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
-    NMTeamSetting *     self = _nm_setting_get_team_setting(setting);
+    NMTeamSetting      *self = _nm_setting_get_team_setting(setting);
     const TeamAttrData *attr_data =
         _team_attr_data_get(self->d.is_port, property_info->param_spec->param_id);
 

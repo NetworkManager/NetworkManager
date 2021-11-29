@@ -46,15 +46,15 @@ NMSetting *nm_setting_ovs_external_ids_new(void);
 
 NM_AVAILABLE_IN_1_30
 const char *const *nm_setting_ovs_external_ids_get_data_keys(NMSettingOvsExternalIDs *setting,
-                                                             guint *                  out_len);
+                                                             guint                   *out_len);
 
 NM_AVAILABLE_IN_1_30
 const char *nm_setting_ovs_external_ids_get_data(NMSettingOvsExternalIDs *setting, const char *key);
 
 NM_AVAILABLE_IN_1_30
 void nm_setting_ovs_external_ids_set_data(NMSettingOvsExternalIDs *setting,
-                                          const char *             key,
-                                          const char *             val);
+                                          const char              *key,
+                                          const char              *val);
 
 /*****************************************************************************/
 

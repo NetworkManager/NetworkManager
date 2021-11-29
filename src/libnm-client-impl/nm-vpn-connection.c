@@ -27,7 +27,7 @@ enum {
 static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
-    char *  banner;
+    char   *banner;
     guint32 vpn_state;
     guint32 reason;
 } NMVpnConnectionPrivate;
@@ -89,7 +89,7 @@ static void
 _notify_event_state_changed(NMClient *client, NMClientNotifyEventWithPtr *notify_event)
 {
     gs_unref_object NMVpnConnection *self = notify_event->user_data;
-    NMVpnConnectionPrivate *         priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
+    NMVpnConnectionPrivate          *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     /* we expose here the value cache in @priv. In practice, this is the same
      * value as we received from the signal. In the unexpected case where they
@@ -104,7 +104,7 @@ _notify_event_state_changed(NMClient *client, NMClientNotifyEventWithPtr *notify
 void
 _nm_vpn_connection_state_changed_commit(NMVpnConnection *self, guint32 state, guint32 reason)
 {
-    NMClient *              client;
+    NMClient               *client;
     NMVpnConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
 
     client = _nm_object_get_client(self);
