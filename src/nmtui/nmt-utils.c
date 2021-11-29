@@ -42,7 +42,7 @@
 
 typedef struct {
     gpointer result;
-    GError * error;
+    GError  *error;
     gpointer complete;
 } NmtSyncOpReal;
 

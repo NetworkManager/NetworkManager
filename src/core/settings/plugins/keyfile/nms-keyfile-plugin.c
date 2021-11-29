@@ -92,7 +92,7 @@ G_DEFINE_TYPE(NMSKeyfilePlugin, nms_keyfile_plugin, NM_TYPE_SETTINGS_PLUGIN)
 /*****************************************************************************/
 
 static const char *
-_extra_flags_to_string(char *   str,
+_extra_flags_to_string(char    *str,
                        gsize    str_len,
                        gboolean is_nm_generated,
                        gboolean is_volatile,
@@ -147,19 +147,19 @@ _get_plugin_dir(NMSKeyfilePluginPrivate *priv)
 }
 
 static gboolean
-_path_detect_storage_type(const char *           full_filename,
-                          const char *const *    dirname_libs,
-                          const char *           dirname_etc,
-                          const char *           dirname_run,
+_path_detect_storage_type(const char            *full_filename,
+                          const char *const     *dirname_libs,
+                          const char            *dirname_etc,
+                          const char            *dirname_run,
                           NMSKeyfileStorageType *out_storage_type,
-                          const char **          out_dirname,
-                          const char **          out_filename,
-                          gboolean *             out_is_nmmeta_file,
-                          gboolean *             out_failed_due_to_invalid_filename)
+                          const char           **out_dirname,
+                          const char           **out_filename,
+                          gboolean              *out_is_nmmeta_file,
+                          gboolean              *out_failed_due_to_invalid_filename)
 {
     NMSKeyfileStorageType storage_type;
-    const char *          filename = NULL;
-    const char *          dirname  = NULL;
+    const char           *filename = NULL;
+    const char           *dirname  = NULL;
     guint                 i;
     gboolean              is_nmmeta_file = FALSE;
 
@@ -208,15 +208,15 @@ _path_detect_storage_type(const char *           full_filename,
 /*****************************************************************************/
 
 static NMConnection *
-_read_from_file(const char * full_filename,
-                const char * plugin_dir,
+_read_from_file(const char  *full_filename,
+                const char  *plugin_dir,
                 struct stat *out_stat,
-                NMTernary *  out_is_nm_generated,
-                NMTernary *  out_is_volatile,
-                NMTernary *  out_is_external,
-                char **      out_shadowed_storage,
-                NMTernary *  out_shadowed_owned,
-                GError **    error)
+                NMTernary   *out_is_nm_generated,
+                NMTernary   *out_is_volatile,
+                NMTernary   *out_is_external,
+                char       **out_shadowed_storage,
+                NMTernary   *out_shadowed_owned,
+                GError     **error)
 {
     NMConnection *connection;
 
@@ -248,7 +248,7 @@ _nm_assert_storage(gpointer plugin /* NMSKeyfilePlugin  */,
 {
 #if NM_MORE_ASSERTS
     NMSettUtilStorageByUuidHead *sbuh;
-    const char *                 uuid;
+    const char                  *uuid;
 
     nm_assert(!plugin || NMS_IS_KEYFILE_PLUGIN(plugin));
     nm_assert(NMS_IS_KEYFILE_STORAGE(storage));
@@ -256,7 +256,7 @@ _nm_assert_storage(gpointer plugin /* NMSKeyfilePlugin  */,
 
     nm_assert(({
         const char *f = nms_keyfile_storage_get_filename(storage);
-        f &&        f[0] == '/';
+        f         &&f[0] == '/';
     }));
 
     uuid = nms_keyfile_storage_get_uuid(storage);
@@ -294,22 +294,22 @@ _nm_assert_storage(gpointer plugin /* NMSKeyfilePlugin  */,
 /*****************************************************************************/
 
 static NMSKeyfileStorage *
-_load_file(NMSKeyfilePlugin *    self,
-           const char *          dirname,
-           const char *          filename,
+_load_file(NMSKeyfilePlugin     *self,
+           const char           *dirname,
+           const char           *filename,
            NMSKeyfileStorageType storage_type,
-           GError **             error)
+           GError              **error)
 {
-    NMSKeyfilePluginPrivate *priv;
+    NMSKeyfilePluginPrivate      *priv;
     gs_unref_object NMConnection *connection = NULL;
     NMTernary                     is_nm_generated_opt;
     NMTernary                     is_volatile_opt;
     NMTernary                     is_external_opt;
     NMTernary                     shadowed_owned_opt;
-    gs_free char *                shadowed_storage = NULL;
-    gs_free_error GError *local                    = NULL;
-    gs_free char *        full_filename            = NULL;
-    struct stat           st;
+    gs_free char                 *shadowed_storage = NULL;
+    gs_free_error GError         *local            = NULL;
+    gs_free char                 *full_filename    = NULL;
+    struct stat                   st;
 
     if (_ignore_filename(storage_type, filename)) {
         gs_free char *nmmeta                    = NULL;
@@ -403,14 +403,14 @@ _load_file(NMSKeyfilePlugin *    self,
 }
 
 static NMSKeyfileStorage *
-_load_file_from_path(NMSKeyfilePlugin *    self,
-                     const char *          full_filename,
+_load_file_from_path(NMSKeyfilePlugin     *self,
+                     const char           *full_filename,
                      NMSKeyfileStorageType storage_type,
-                     GError **             error)
+                     GError              **error)
 {
     gs_free char *f_dirname_free = NULL;
-    const char *  f_filename;
-    const char *  f_dirname;
+    const char   *f_filename;
+    const char   *f_dirname;
 
     nm_assert(full_filename && full_filename[0] == '/');
 
@@ -421,13 +421,13 @@ _load_file_from_path(NMSKeyfilePlugin *    self,
 }
 
 static void
-_load_dir(NMSKeyfilePlugin *    self,
+_load_dir(NMSKeyfilePlugin     *self,
           NMSKeyfileStorageType storage_type,
-          const char *          dirname,
-          NMSettUtilStorages *  storages)
+          const char           *dirname,
+          NMSettUtilStorages   *storages)
 {
-    const char *       filename;
-    GDir *             dir;
+    const char                    *filename;
+    GDir                          *dir;
     gs_unref_hashtable GHashTable *dupl_filenames = NULL;
 
     dir = g_dir_open(dirname, 0, NULL);
@@ -465,21 +465,21 @@ _load_dir(NMSKeyfilePlugin *    self,
 /*****************************************************************************/
 
 static void
-_storages_consolidate(NMSKeyfilePlugin *                     self,
-                      NMSettUtilStorages *                   storages_new,
+_storages_consolidate(NMSKeyfilePlugin                      *self,
+                      NMSettUtilStorages                    *storages_new,
                       gboolean                               replace_all,
-                      GHashTable *                           storages_replaced,
+                      GHashTable                            *storages_replaced,
                       NMSettingsPluginConnectionLoadCallback callback,
                       gpointer                               user_data)
 {
-    NMSKeyfilePluginPrivate *priv                  = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
-    CList                    lst_conn_info_deleted = C_LIST_INIT(lst_conn_info_deleted);
-    gs_unref_ptrarray GPtrArray *storages_modified = NULL;
+    NMSKeyfilePluginPrivate     *priv                  = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
+    CList                        lst_conn_info_deleted = C_LIST_INIT(lst_conn_info_deleted);
+    gs_unref_ptrarray GPtrArray *storages_modified     = NULL;
     CList                        storages_deleted;
-    NMSKeyfileStorage *          storage_safe;
-    NMSKeyfileStorage *          storage_new;
-    NMSKeyfileStorage *          storage_old;
-    NMSKeyfileStorage *          storage;
+    NMSKeyfileStorage           *storage_safe;
+    NMSKeyfileStorage           *storage_new;
+    NMSKeyfileStorage           *storage_old;
+    NMSKeyfileStorage           *storage;
     guint                        i;
 
     storages_modified = g_ptr_array_new_with_free_func(g_object_unref);
@@ -576,12 +576,12 @@ _storages_consolidate(NMSKeyfilePlugin *                     self,
 }
 
 static void
-reload_connections(NMSettingsPlugin *                     plugin,
+reload_connections(NMSettingsPlugin                      *plugin,
                    NMSettingsPluginConnectionLoadCallback callback,
                    gpointer                               user_data)
 {
-    NMSKeyfilePlugin *                                  self = NMS_KEYFILE_PLUGIN(plugin);
-    NMSKeyfilePluginPrivate *                           priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
+    NMSKeyfilePlugin                                   *self = NMS_KEYFILE_PLUGIN(plugin);
+    NMSKeyfilePluginPrivate                            *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
     nm_auto_clear_sett_util_storages NMSettUtilStorages storages_new =
         NM_SETT_UTIL_STORAGES_INIT(storages_new, nms_keyfile_storage_destroy);
     int i;
@@ -596,20 +596,20 @@ reload_connections(NMSettingsPlugin *                     plugin,
 }
 
 static void
-load_connections(NMSettingsPlugin *                     plugin,
-                 NMSettingsPluginConnectionLoadEntry *  entries,
+load_connections(NMSettingsPlugin                      *plugin,
+                 NMSettingsPluginConnectionLoadEntry   *entries,
                  gsize                                  n_entries,
                  NMSettingsPluginConnectionLoadCallback callback,
                  gpointer                               user_data)
 {
-    NMSKeyfilePlugin *                                  self = NMS_KEYFILE_PLUGIN(plugin);
-    NMSKeyfilePluginPrivate *                           priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
+    NMSKeyfilePlugin                                   *self = NMS_KEYFILE_PLUGIN(plugin);
+    NMSKeyfilePluginPrivate                            *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
     nm_auto_clear_sett_util_storages NMSettUtilStorages storages_new =
         NM_SETT_UTIL_STORAGES_INIT(storages_new, nms_keyfile_storage_destroy);
     gs_unref_hashtable GHashTable *dupl_filenames    = NULL;
     gs_unref_hashtable GHashTable *storages_replaced = NULL;
     gs_unref_hashtable GHashTable *loaded_uuids      = NULL;
-    const char *                   loaded_uuid;
+    const char                    *loaded_uuid;
     GHashTableIter                 h_iter;
     gsize                          i;
 
@@ -625,15 +625,15 @@ load_connections(NMSettingsPlugin *                     plugin,
     for (i = 0; i < n_entries; i++) {
         NMSettingsPluginConnectionLoadEntry *const entry = &entries[i];
         NMSKeyfileStorageType                      storage_type;
-        gs_free_error GError *               local = NULL;
-        const char *                         f_filename;
-        const char *                         f_dirname;
-        const char *                         full_filename;
-        gs_free char *                       full_filename_keep = NULL;
-        gboolean                             is_nmmeta_file;
-        NMSettingsPluginConnectionLoadEntry *dupl_content_entry;
-        gboolean                             failed_due_to_invalid_filename;
-        gs_unref_object NMSKeyfileStorage *storage = NULL;
+        gs_free_error GError                      *local = NULL;
+        const char                                *f_filename;
+        const char                                *f_dirname;
+        const char                                *full_filename;
+        gs_free char                              *full_filename_keep = NULL;
+        gboolean                                   is_nmmeta_file;
+        NMSettingsPluginConnectionLoadEntry       *dupl_content_entry;
+        gboolean                                   failed_due_to_invalid_filename;
+        gs_unref_object NMSKeyfileStorage         *storage = NULL;
 
         if (entry->handled)
             continue;
@@ -700,7 +700,7 @@ load_connections(NMSettingsPlugin *                     plugin,
     /* now we visit all UUIDs that are about to change... */
     g_hash_table_iter_init(&h_iter, loaded_uuids);
     while (g_hash_table_iter_next(&h_iter, (gpointer *) &loaded_uuid, NULL)) {
-        NMSKeyfileStorage *          storage;
+        NMSKeyfileStorage           *storage;
         NMSettUtilStorageByUuidHead *sbuh;
 
         sbuh = nm_sett_util_storages_lookup_by_uuid(&priv->storages, loaded_uuid);
@@ -710,9 +710,9 @@ load_connections(NMSettingsPlugin *                     plugin,
         c_list_for_each_entry (storage,
                                &sbuh->_storage_by_uuid_lst_head,
                                parent._storage_by_uuid_lst) {
-            const char *    full_filename = nms_keyfile_storage_get_filename(storage);
+            const char *full_filename = nms_keyfile_storage_get_filename(storage);
             gs_unref_object NMSKeyfileStorage *storage_new = NULL;
-            gs_free_error GError *local                    = NULL;
+            gs_free_error GError              *local       = NULL;
 
             if (g_hash_table_contains(dupl_filenames, full_filename)) {
                 /* already re-loaded. */
@@ -744,25 +744,25 @@ load_connections(NMSettingsPlugin *                     plugin,
 }
 
 gboolean
-nms_keyfile_plugin_add_connection(NMSKeyfilePlugin *  self,
-                                  NMConnection *      connection,
+nms_keyfile_plugin_add_connection(NMSKeyfilePlugin   *self,
+                                  NMConnection       *connection,
                                   gboolean            in_memory,
                                   gboolean            is_nm_generated,
                                   gboolean            is_volatile,
                                   gboolean            is_external,
-                                  const char *        shadowed_storage,
+                                  const char         *shadowed_storage,
                                   gboolean            shadowed_owned,
                                   NMSettingsStorage **out_storage,
-                                  NMConnection **     out_connection,
-                                  GError **           error)
+                                  NMConnection      **out_connection,
+                                  GError            **error)
 {
-    NMSKeyfilePluginPrivate *priv               = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
-    gs_unref_object NMConnection *reread        = NULL;
-    gs_free char *                full_filename = NULL;
-    NMSKeyfileStorageType         storage_type;
+    NMSKeyfilePluginPrivate           *priv          = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
+    gs_unref_object NMConnection      *reread        = NULL;
+    gs_free char                      *full_filename = NULL;
+    NMSKeyfileStorageType              storage_type;
     gs_unref_object NMSKeyfileStorage *storage = NULL;
-    GError *                           local   = NULL;
-    const char *                       uuid;
+    GError                            *local   = NULL;
+    const char                        *uuid;
     gboolean                           reread_same;
     struct timespec                    mtime;
     char                               strbuf[100];
@@ -849,11 +849,11 @@ nms_keyfile_plugin_add_connection(NMSKeyfilePlugin *  self,
 }
 
 static gboolean
-add_connection(NMSettingsPlugin *  plugin,
-               NMConnection *      connection,
+add_connection(NMSettingsPlugin   *plugin,
+               NMConnection       *connection,
                NMSettingsStorage **out_storage,
-               NMConnection **     out_connection,
-               GError **           error)
+               NMConnection      **out_connection,
+               GError            **error)
 {
     return nms_keyfile_plugin_add_connection(NMS_KEYFILE_PLUGIN(plugin),
                                              connection,
@@ -869,30 +869,30 @@ add_connection(NMSettingsPlugin *  plugin,
 }
 
 gboolean
-nms_keyfile_plugin_update_connection(NMSKeyfilePlugin *  self,
-                                     NMSettingsStorage * storage_x,
-                                     NMConnection *      connection,
+nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
+                                     NMSettingsStorage  *storage_x,
+                                     NMConnection       *connection,
                                      gboolean            is_nm_generated,
                                      gboolean            is_volatile,
                                      gboolean            is_external,
-                                     const char *        shadowed_storage,
+                                     const char         *shadowed_storage,
                                      gboolean            shadowed_owned,
                                      gboolean            force_rename,
                                      NMSettingsStorage **out_storage,
-                                     NMConnection **     out_connection,
-                                     GError **           error)
+                                     NMConnection      **out_connection,
+                                     GError            **error)
 {
-    NMSKeyfilePluginPrivate *priv                  = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
-    NMSKeyfileStorage *      storage               = NMS_KEYFILE_STORAGE(storage_x);
+    NMSKeyfilePluginPrivate      *priv             = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
+    NMSKeyfileStorage            *storage          = NMS_KEYFILE_STORAGE(storage_x);
     gs_unref_object NMConnection *connection_clone = NULL;
     gs_unref_object NMConnection *reread           = NULL;
-    gs_free char *                full_filename    = NULL;
-    gs_free_error GError *local                    = NULL;
-    struct timespec       mtime;
-    const char *          previous_filename;
-    gboolean              reread_same;
-    const char *          uuid;
-    char                  strbuf[100];
+    gs_free char                 *full_filename    = NULL;
+    gs_free_error GError         *local            = NULL;
+    struct timespec               mtime;
+    const char                   *previous_filename;
+    gboolean                      reread_same;
+    const char                   *uuid;
+    char                          strbuf[100];
 
     _nm_assert_storage(self, storage, TRUE);
     nm_assert(NM_IS_CONNECTION(connection));
@@ -971,12 +971,12 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin *  self,
 }
 
 static gboolean
-update_connection(NMSettingsPlugin *  plugin,
-                  NMSettingsStorage * storage,
-                  NMConnection *      connection,
+update_connection(NMSettingsPlugin   *plugin,
+                  NMSettingsStorage  *storage,
+                  NMConnection       *connection,
                   NMSettingsStorage **out_storage,
-                  NMConnection **     out_connection,
-                  GError **           error)
+                  NMConnection      **out_connection,
+                  GError            **error)
 {
     return nms_keyfile_plugin_update_connection(NMS_KEYFILE_PLUGIN(plugin),
                                                 storage,
@@ -995,13 +995,13 @@ update_connection(NMSettingsPlugin *  plugin,
 static gboolean
 delete_connection(NMSettingsPlugin *plugin, NMSettingsStorage *storage_x, GError **error)
 {
-    NMSKeyfilePlugin *       self              = NMS_KEYFILE_PLUGIN(plugin);
-    NMSKeyfilePluginPrivate *priv              = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
+    NMSKeyfilePlugin                  *self    = NMS_KEYFILE_PLUGIN(plugin);
+    NMSKeyfilePluginPrivate           *priv    = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
     gs_unref_object NMSKeyfileStorage *storage = g_object_ref(NMS_KEYFILE_STORAGE(storage_x));
-    const char *                       remove_from_disk_errmsg = NULL;
-    const char *                       operation_message;
-    const char *                       previous_filename;
-    const char *                       uuid;
+    const char                        *remove_from_disk_errmsg = NULL;
+    const char                        *operation_message;
+    const char                        *previous_filename;
+    const char                        *uuid;
     gboolean                           success = TRUE;
 
     _nm_assert_storage(self, storage, TRUE);
@@ -1087,24 +1087,24 @@ delete_connection(NMSettingsPlugin *plugin, NMSettingsStorage *storage_x, GError
  * Returns: %TRUE on success.
  */
 gboolean
-nms_keyfile_plugin_set_nmmeta_tombstone(NMSKeyfilePlugin *  self,
+nms_keyfile_plugin_set_nmmeta_tombstone(NMSKeyfilePlugin   *self,
                                         gboolean            simulate,
-                                        const char *        uuid,
+                                        const char         *uuid,
                                         gboolean            in_memory,
                                         gboolean            set,
-                                        const char *        shadowed_storage,
+                                        const char         *shadowed_storage,
                                         NMSettingsStorage **out_storage,
-                                        gboolean *          out_hard_failure)
+                                        gboolean           *out_hard_failure)
 {
-    NMSKeyfilePluginPrivate *priv;
-    gboolean                 hard_failure = FALSE;
-    NMSKeyfileStorage *      storage;
+    NMSKeyfilePluginPrivate           *priv;
+    gboolean                           hard_failure = FALSE;
+    NMSKeyfileStorage                 *storage;
     gs_unref_object NMSKeyfileStorage *storage_result = NULL;
     gboolean                           nmmeta_errno;
-    gs_free char *                     nmmeta_filename = NULL;
+    gs_free char                      *nmmeta_filename = NULL;
     NMSKeyfileStorageType              storage_type;
-    const char *                       loaded_path;
-    const char *                       dirname;
+    const char                        *loaded_path;
+    const char                        *dirname;
 
     nm_assert(NMS_IS_KEYFILE_PLUGIN(self));
     nm_assert(nm_uuid_is_normalized(uuid));
@@ -1197,11 +1197,11 @@ out:
 /*****************************************************************************/
 
 static void
-config_changed_cb(NMConfig *          config,
-                  NMConfigData *      config_data,
+config_changed_cb(NMConfig           *config,
+                  NMConfigData       *config_data,
                   NMConfigChangeFlags changes,
-                  NMConfigData *      old_data,
-                  NMSKeyfilePlugin *  self)
+                  NMConfigData       *old_data,
+                  NMSKeyfilePlugin   *self)
 {
     gs_free char *old_value = NULL;
     gs_free char *new_value = NULL;
@@ -1223,7 +1223,7 @@ static GSList *
 get_unmanaged_specs(NMSettingsPlugin *config)
 {
     NMSKeyfilePluginPrivate *priv  = NMS_KEYFILE_PLUGIN_GET_PRIVATE(config);
-    gs_free char *           value = NULL;
+    gs_free char            *value = NULL;
 
     value = nm_config_data_get_value(nm_config_get_data(priv->config),
                                      NM_CONFIG_KEYFILE_GROUP_KEYFILE,
@@ -1280,7 +1280,7 @@ nms_keyfile_plugin_init(NMSKeyfilePlugin *plugin)
 static void
 constructed(GObject *object)
 {
-    NMSKeyfilePlugin *       self = NMS_KEYFILE_PLUGIN(object);
+    NMSKeyfilePlugin        *self = NMS_KEYFILE_PLUGIN(object);
     NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
 
     G_OBJECT_CLASS(nms_keyfile_plugin_parent_class)->constructed(object);
@@ -1312,7 +1312,7 @@ nms_keyfile_plugin_new(void)
 static void
 dispose(GObject *object)
 {
-    NMSKeyfilePlugin *       self = NMS_KEYFILE_PLUGIN(object);
+    NMSKeyfilePlugin        *self = NMS_KEYFILE_PLUGIN(object);
     NMSKeyfilePluginPrivate *priv = NMS_KEYFILE_PLUGIN_GET_PRIVATE(self);
 
     if (priv->config)
@@ -1332,7 +1332,7 @@ dispose(GObject *object)
 static void
 nms_keyfile_plugin_class_init(NMSKeyfilePluginClass *klass)
 {
-    GObjectClass *         object_class = G_OBJECT_CLASS(klass);
+    GObjectClass          *object_class = G_OBJECT_CLASS(klass);
     NMSettingsPluginClass *plugin_class = NM_SETTINGS_PLUGIN_CLASS(klass);
 
     object_class->constructed = constructed;

@@ -34,7 +34,7 @@ typedef struct {
         gulong  pid;
         gulong  uid;
         guint64 start_time;
-        char *  dbus_sender;
+        char   *dbus_sender;
     } unix_process;
 
     struct {
@@ -273,7 +273,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMAuthSubjectPrivate *priv = NM_AUTH_SUBJECT_GET_PRIVATE(object);
     NMAuthSubjectType     subject_type;
     int                   i;
-    const char *          str;
+    const char           *str;
     gulong                id;
 
     switch (prop_id) {
@@ -348,7 +348,7 @@ nm_auth_subject_init(NMAuthSubject *self)
 static void
 constructed(GObject *object)
 {
-    NMAuthSubject *       self = NM_AUTH_SUBJECT(object);
+    NMAuthSubject        *self = NM_AUTH_SUBJECT(object);
     NMAuthSubjectPrivate *priv = NM_AUTH_SUBJECT_GET_PRIVATE(self);
 
     /* validate that the created instance. */

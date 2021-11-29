@@ -42,9 +42,9 @@ check_ip_address(NMSettingIPConfig *config, int idx, const char *address, int pl
 static void
 check_ip_route(NMSettingIPConfig *config,
                int                idx,
-               const char *       destination,
+               const char        *destination,
                int                plen,
-               const char *       next_hop,
+               const char        *next_hop,
                gint64             metric)
 {
     NMIPRoute *route = nm_setting_ip_config_get_route(config, idx);
@@ -59,7 +59,7 @@ check_ip_route(NMSettingIPConfig *config,
 #define keyfile_read_connection_from_file(full_filename)                                  \
     ({                                                                                    \
         gs_free_error GError *_error = NULL;                                              \
-        NMConnection *        _connection;                                                \
+        NMConnection         *_connection;                                                \
                                                                                           \
         g_assert(full_filename &&full_filename[0] == '/');                                \
                                                                                           \
@@ -84,7 +84,7 @@ assert_reread(NMConnection *connection, gboolean normalize_connection, const cha
 {
     gs_unref_object NMConnection *reread           = NULL;
     gs_unref_object NMConnection *connection_clone = NULL;
-    NMSettingConnection *         s_con;
+    NMSettingConnection          *s_con;
 
     g_assert(NM_IS_CONNECTION(connection));
 
@@ -104,7 +104,7 @@ assert_reread(NMConnection *connection, gboolean normalize_connection, const cha
 static void
 assert_reread_and_unlink(NMConnection *connection,
                          gboolean      normalize_connection,
-                         const char *  testfile)
+                         const char   *testfile)
 {
     assert_reread(connection, normalize_connection, testfile);
     unlink(testfile);
@@ -118,16 +118,16 @@ assert_reread_same(NMConnection *connection, NMConnection *reread)
 }
 
 static void
-write_test_connection_reread(NMConnection * connection,
-                             char **        testfile,
+write_test_connection_reread(NMConnection  *connection,
+                             char         **testfile,
                              NMConnection **out_reread,
-                             gboolean *     out_reread_same)
+                             gboolean      *out_reread_same)
 {
-    uid_t           owner_uid;
-    gid_t           owner_grp;
-    gboolean        success;
-    GError *        error   = NULL;
-    GError **       p_error = (nmtst_get_rand_uint32() % 2) ? &error : NULL;
+    uid_t                         owner_uid;
+    gid_t                         owner_grp;
+    gboolean                      success;
+    GError                       *error   = NULL;
+    GError                      **p_error = (nmtst_get_rand_uint32() % 2) ? &error : NULL;
     gs_unref_object NMConnection *connection_normalized = NULL;
 
     g_assert(NM_IS_CONNECTION(connection));
@@ -177,7 +177,7 @@ static GKeyFile *
 keyfile_load_from_file(const char *testfile)
 {
     GKeyFile *keyfile;
-    GError *  error = NULL;
+    GError   *error = NULL;
     gboolean  success;
 
     g_assert(testfile && *testfile);
@@ -193,12 +193,12 @@ keyfile_load_from_file(const char *testfile)
 static void
 _setting_copy_property_gbytes(NMConnection *src,
                               NMConnection *dst,
-                              const char *  setting_name,
-                              const char *  property_name)
+                              const char   *setting_name,
+                              const char   *property_name)
 {
     gs_unref_bytes GBytes *blob = NULL;
-    NMSetting *            s_src;
-    NMSetting *            s_dst;
+    NMSetting             *s_src;
+    NMSetting             *s_dst;
 
     g_assert(NM_IS_CONNECTION(src));
     g_assert(NM_IS_CONNECTION(dst));
@@ -220,12 +220,12 @@ static void
 test_read_valid_wired_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWired *              s_wired;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingIPConfig *           s_ip6;
-    NMIPRoute *                   route;
-    const char *                  mac;
+    NMSettingConnection          *s_con;
+    NMSettingWired               *s_wired;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingIPConfig            *s_ip6;
+    NMIPRoute                    *route;
+    const char                   *mac;
     char expected_mac_address[ETH_ALEN] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 
     NMTST_EXPECT_NM_INFO("*ipv4.addresses:*semicolon at the end*addresses1*");
@@ -370,7 +370,7 @@ test_read_valid_wired_connection(void)
 static void
 add_one_ip_address(NMSettingIPConfig *s_ip, const char *addr, guint32 prefix)
 {
-    NMIPAddress * ip_addr;
+    NMIPAddress          *ip_addr;
     gs_free_error GError *error = NULL;
 
     ip_addr = nm_ip_address_new(NM_IS_SETTING_IP4_CONFIG(s_ip) ? AF_INET : AF_INET6,
@@ -384,12 +384,12 @@ add_one_ip_address(NMSettingIPConfig *s_ip, const char *addr, guint32 prefix)
 
 static void
 add_one_ip_route(NMSettingIPConfig *s_ip,
-                 const char *       dest,
-                 const char *       nh,
+                 const char        *dest,
+                 const char        *nh,
                  guint32            prefix,
                  gint64             metric)
 {
-    NMIPRoute *   route;
+    NMIPRoute            *route;
     gs_free_error GError *error = NULL;
 
     g_assert(prefix > 0);
@@ -409,39 +409,39 @@ test_write_wired_connection(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWired *              s_wired;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingIPConfig *           s_ip6;
-    NMIPRoute *                   rt;
-    const char *                  mac         = "99:88:77:66:55:44";
-    const char *                  dns1        = "4.2.2.1";
-    const char *                  dns2        = "4.2.2.2";
-    const char *                  address1    = "192.168.0.5";
-    const char *                  address2    = "1.2.3.4";
-    const char *                  gw          = "192.168.0.1";
-    const char *                  route1      = "10.10.10.2";
-    const char *                  route1_nh   = "10.10.10.1";
-    const char *                  route2      = "1.1.1.1";
-    const char *                  route2_nh   = "1.2.1.1";
-    const char *                  route3      = "2.2.2.2";
-    const char *                  route3_nh   = NULL;
-    const char *                  route4      = "3.3.3.3";
-    const char *                  route4_nh   = NULL;
-    const char *                  dns6_1      = "1::cafe";
-    const char *                  dns6_2      = "2::cafe";
-    const char *                  address6_1  = "abcd::beef";
-    const char *                  address6_2  = "dcba::beef";
-    const char *                  route6_1    = "1:2:3:4:5:6:7:8";
-    const char *                  route6_1_nh = "8:7:6:5:4:3:2:1";
-    const char *                  route6_2    = "2001::1000";
-    const char *                  route6_2_nh = "2001::1111";
-    const char *                  route6_3    = "4:5:6:7:8:9:0:1";
-    const char *                  route6_3_nh = "::";
-    const char *                  route6_4    = "5:6:7:8:9:0:1:2";
-    const char *                  route6_4_nh = "::";
+    NMSettingConnection          *s_con;
+    NMSettingWired               *s_wired;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingIPConfig            *s_ip6;
+    NMIPRoute                    *rt;
+    const char                   *mac         = "99:88:77:66:55:44";
+    const char                   *dns1        = "4.2.2.1";
+    const char                   *dns2        = "4.2.2.2";
+    const char                   *address1    = "192.168.0.5";
+    const char                   *address2    = "1.2.3.4";
+    const char                   *gw          = "192.168.0.1";
+    const char                   *route1      = "10.10.10.2";
+    const char                   *route1_nh   = "10.10.10.1";
+    const char                   *route2      = "1.1.1.1";
+    const char                   *route2_nh   = "1.2.1.1";
+    const char                   *route3      = "2.2.2.2";
+    const char                   *route3_nh   = NULL;
+    const char                   *route4      = "3.3.3.3";
+    const char                   *route4_nh   = NULL;
+    const char                   *dns6_1      = "1::cafe";
+    const char                   *dns6_2      = "2::cafe";
+    const char                   *address6_1  = "abcd::beef";
+    const char                   *address6_2  = "dcba::beef";
+    const char                   *route6_1    = "1:2:3:4:5:6:7:8";
+    const char                   *route6_1_nh = "8:7:6:5:4:3:2:1";
+    const char                   *route6_2    = "2001::1000";
+    const char                   *route6_2_nh = "2001::1111";
+    const char                   *route6_3    = "4:5:6:7:8:9:0:1";
+    const char                   *route6_3_nh = "::";
+    const char                   *route6_4    = "5:6:7:8:9:0:1:2";
+    const char                   *route6_4_nh = "::";
     guint64                       timestamp   = 0x12345678L;
-    GError *                      error       = NULL;
+    GError                       *error       = NULL;
 
     connection = nm_simple_connection_new();
 
@@ -534,10 +534,10 @@ static void
 test_read_ip6_wired_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWired *              s_wired;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingIPConfig *           s_ip6;
+    NMSettingConnection          *s_con;
+    NMSettingWired               *s_wired;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingIPConfig            *s_ip6;
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Wired_Connection_IP6");
 
@@ -573,13 +573,13 @@ test_write_ip6_wired_connection(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWired *              s_wired;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingIPConfig *           s_ip6;
-    const char *                  dns     = "1::cafe";
-    const char *                  address = "abcd::beef";
-    const char *                  gw      = "dcba::beef";
+    NMSettingConnection          *s_con;
+    NMSettingWired               *s_wired;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingIPConfig            *s_ip6;
+    const char                   *dns     = "1::cafe";
+    const char                   *address = "abcd::beef";
+    const char                   *gw      = "dcba::beef";
 
     connection = nm_simple_connection_new();
 
@@ -639,9 +639,9 @@ static void
 test_read_wired_mac_case(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWired *              s_wired;
-    const char *                  mac;
+    NMSettingConnection          *s_con;
+    NMSettingWired               *s_wired;
+    const char                   *mac;
     char expected_mac_address[ETH_ALEN] = {0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55};
 
     NMTST_EXPECT_NM_INFO("*ipv4.addresses*semicolon at the end*addresses1*");
@@ -669,8 +669,8 @@ static void
 test_read_mac_old_format(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWired *              s_wired;
-    const char *                  mac;
+    NMSettingWired               *s_wired;
+    const char                   *mac;
     char                          expected_mac[ETH_ALEN] = {0x00, 0x11, 0xaa, 0xbb, 0xcc, 0x55};
     char expected_cloned_mac[ETH_ALEN]                   = {0x00, 0x16, 0xaa, 0xbb, 0xcc, 0xfe};
 
@@ -692,8 +692,8 @@ static void
 test_read_mac_ib_old_format(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingInfiniband *         s_ib;
-    const char *                  mac;
+    NMSettingInfiniband          *s_ib;
+    const char                   *mac;
     guint8 expected_mac[INFINIBAND_ALEN] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
                                             0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34,
                                             0x45, 0x56, 0x67, 0x78, 0x89, 0x90};
@@ -713,10 +713,10 @@ static void
 test_read_valid_wireless_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWireless *           s_wireless;
-    NMSettingIPConfig *           s_ip4;
-    const char *                  bssid;
+    NMSettingConnection          *s_con;
+    NMSettingWireless            *s_wireless;
+    NMSettingIPConfig            *s_ip4;
+    const char                   *bssid;
     const guint8                  expected_bssid[ETH_ALEN] = {0x00, 0x1a, 0x33, 0x44, 0x99, 0x82};
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Wireless_Connection");
@@ -746,12 +746,12 @@ test_write_wireless_connection(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWireless *           s_wireless;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingIPConfig *           s_ip6;
-    const char *                  bssid = "aa:b9:a1:74:55:44";
-    GBytes *                      ssid;
+    NMSettingConnection          *s_con;
+    NMSettingWireless            *s_wireless;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingIPConfig            *s_ip6;
+    const char                   *bssid = "aa:b9:a1:74:55:44";
+    GBytes                       *ssid;
     unsigned char                 tmpssid[] = {0x31, 0x33, 0x33, 0x37};
     guint64                       timestamp = 0x12344433L;
 
@@ -814,11 +814,11 @@ static void
 test_read_string_ssid(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWireless *           s_wireless;
-    GBytes *                      ssid;
-    const guint8 *                ssid_data;
+    NMSettingWireless            *s_wireless;
+    GBytes                       *ssid;
+    const guint8                 *ssid_data;
     gsize                         ssid_len;
-    const char *                  expected_ssid = "blah blah ssid 1234";
+    const char                   *expected_ssid = "blah blah ssid 1234";
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_String_SSID");
 
@@ -836,15 +836,15 @@ static void
 test_write_string_ssid(void)
 {
     NMTST_UUID_INIT(uuid);
-    gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWireless *           s_wireless;
-    NMSettingIPConfig *           s_ip4;
-    char *                        tmp;
-    gs_free char *                testfile = NULL;
-    GBytes *                      ssid;
-    unsigned char                 tmpssid[] = {65, 49, 50, 51, 32, 46, 92, 46, 36, 37, 126, 93};
-    nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
+    gs_unref_object NMConnection   *connection = NULL;
+    NMSettingConnection            *s_con;
+    NMSettingWireless              *s_wireless;
+    NMSettingIPConfig              *s_ip4;
+    char                           *tmp;
+    gs_free char                   *testfile = NULL;
+    GBytes                         *ssid;
+    unsigned char                   tmpssid[] = {65, 49, 50, 51, 32, 46, 92, 46, 36, 37, 126, 93};
+    nm_auto_unref_keyfile GKeyFile *keyfile   = NULL;
 
     connection = nm_simple_connection_new();
 
@@ -894,11 +894,11 @@ static void
 test_read_intlist_ssid(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWireless *           s_wifi;
-    GBytes *                      ssid;
-    const guint8 *                ssid_data;
+    NMSettingWireless            *s_wifi;
+    GBytes                       *ssid;
+    const guint8                 *ssid_data;
     gsize                         ssid_len;
-    const char *                  expected_ssid = "blah1234";
+    const char                   *expected_ssid = "blah1234";
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Intlist_SSID");
 
@@ -915,16 +915,16 @@ static void
 test_write_intlist_ssid(void)
 {
     NMTST_UUID_INIT(uuid);
-    gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWireless *           s_wifi;
-    NMSettingIPConfig *           s_ip4;
-    gs_free char *                testfile = NULL;
-    GBytes *                      ssid;
-    unsigned char                 tmpssid[] = {65, 49, 50, 51, 0, 50, 50};
-    gs_free_error GError *error             = NULL;
-    nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    int *                           intlist;
+    gs_unref_object NMConnection   *connection = NULL;
+    NMSettingConnection            *s_con;
+    NMSettingWireless              *s_wifi;
+    NMSettingIPConfig              *s_ip4;
+    gs_free char                   *testfile = NULL;
+    GBytes                         *ssid;
+    unsigned char                   tmpssid[] = {65, 49, 50, 51, 0, 50, 50};
+    gs_free_error GError           *error     = NULL;
+    nm_auto_unref_keyfile GKeyFile *keyfile   = NULL;
+    int                            *intlist;
     gsize                           len = 0, i;
 
     connection = nm_simple_connection_new();
@@ -981,9 +981,9 @@ static void
 test_read_intlike_ssid(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWireless *           s_wifi;
-    GBytes *                      ssid;
-    const char *                  expected_ssid = "101";
+    NMSettingWireless            *s_wifi;
+    GBytes                       *ssid;
+    const char                   *expected_ssid = "101";
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Intlike_SSID");
 
@@ -999,9 +999,9 @@ static void
 test_read_intlike_ssid_2(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWireless *           s_wifi;
-    GBytes *                      ssid;
-    const char *                  expected_ssid = "11;12;13;";
+    NMSettingWireless            *s_wifi;
+    GBytes                       *ssid;
+    const char                   *expected_ssid = "11;12;13;";
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Intlike_SSID_2");
 
@@ -1017,16 +1017,16 @@ static void
 test_write_intlike_ssid(void)
 {
     NMTST_UUID_INIT(uuid);
-    gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWireless *           s_wifi;
-    NMSettingIPConfig *           s_ip4;
-    gs_free char *                testfile = NULL;
-    GBytes *                      ssid;
-    unsigned char                 tmpssid[] = {49, 48, 49};
-    gs_free_error GError *error             = NULL;
-    nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    char *                          tmp;
+    gs_unref_object NMConnection   *connection = NULL;
+    NMSettingConnection            *s_con;
+    NMSettingWireless              *s_wifi;
+    NMSettingIPConfig              *s_ip4;
+    gs_free char                   *testfile = NULL;
+    GBytes                         *ssid;
+    unsigned char                   tmpssid[] = {49, 48, 49};
+    gs_free_error GError           *error     = NULL;
+    nm_auto_unref_keyfile GKeyFile *keyfile   = NULL;
+    char                           *tmp;
 
     connection = nm_simple_connection_new();
 
@@ -1078,16 +1078,16 @@ static void
 test_write_intlike_ssid_2(void)
 {
     NMTST_UUID_INIT(uuid);
-    gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWireless *           s_wifi;
-    NMSettingIPConfig *           s_ip4;
-    gs_free char *                testfile = NULL;
-    GBytes *                      ssid;
-    unsigned char                 tmpssid[] = {49, 49, 59, 49, 50, 59, 49, 51, 59};
-    gs_free_error GError *error             = NULL;
-    nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    char *                          tmp;
+    gs_unref_object NMConnection   *connection = NULL;
+    NMSettingConnection            *s_con;
+    NMSettingWireless              *s_wifi;
+    NMSettingIPConfig              *s_ip4;
+    gs_free char                   *testfile = NULL;
+    GBytes                         *ssid;
+    unsigned char                   tmpssid[] = {49, 49, 59, 49, 50, 59, 49, 51, 59};
+    gs_free_error GError           *error     = NULL;
+    nm_auto_unref_keyfile GKeyFile *keyfile   = NULL;
+    char                           *tmp;
 
     connection = nm_simple_connection_new();
     g_assert(connection);
@@ -1140,11 +1140,11 @@ static void
 test_read_bt_dun_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingBluetooth *          s_bluetooth;
-    NMSettingSerial *             s_serial;
-    NMSettingGsm *                s_gsm;
-    const char *                  bdaddr;
+    NMSettingConnection          *s_con;
+    NMSettingBluetooth           *s_bluetooth;
+    NMSettingSerial              *s_serial;
+    NMSettingGsm                 *s_gsm;
+    const char                   *bdaddr;
     const guint8                  expected_bdaddr[ETH_ALEN] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/ATT_Data_Connect_BT");
@@ -1181,11 +1181,11 @@ test_write_bt_dun_connection(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingBluetooth *          s_bt;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingGsm *                s_gsm;
-    const char *                  bdaddr    = "aa:b9:a1:74:55:44";
+    NMSettingConnection          *s_con;
+    NMSettingBluetooth           *s_bt;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingGsm                 *s_gsm;
+    const char                   *bdaddr    = "aa:b9:a1:74:55:44";
     guint64                       timestamp = 0x12344433L;
 
     connection = nm_simple_connection_new();
@@ -1247,9 +1247,9 @@ static void
 test_read_gsm_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingSerial *             s_serial;
-    NMSettingGsm *                s_gsm;
+    NMSettingConnection          *s_con;
+    NMSettingSerial              *s_serial;
+    NMSettingGsm                 *s_gsm;
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/ATT_Data_Connect_Plain");
 
@@ -1286,9 +1286,9 @@ test_write_gsm_connection(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingGsm *                s_gsm;
+    NMSettingConnection          *s_con;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingGsm                 *s_gsm;
     guint64                       timestamp = 0x12344433L;
 
     connection = nm_simple_connection_new();
@@ -1350,10 +1350,10 @@ static void
 test_read_wired_8021x_tls_blob_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWired *              s_wired;
-    NMSetting8021x *              s_8021x;
-    const char *                  tmp;
-    GBytes *                      blob;
+    NMSettingWired               *s_wired;
+    NMSetting8021x               *s_8021x;
+    const char                   *tmp;
+    GBytes                       *blob;
 
     NMTST_EXPECT_NM_WARN("keyfile: 802-1x.client-cert: certificate or key file "
                          "'/CASA/dcbw/Desktop/certinfra/client.pem' does not exist*");
@@ -1403,10 +1403,10 @@ static void
 test_read_wired_8021x_tls_bad_path_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWired *              s_wired;
-    NMSetting8021x *              s_8021x;
-    const char *                  tmp;
-    char *                        tmp2;
+    NMSettingWired               *s_wired;
+    NMSetting8021x               *s_8021x;
+    const char                   *tmp;
+    char                         *tmp2;
 
     NMTST_EXPECT_NM_WARN("*does not exist*");
     connection =
@@ -1451,9 +1451,9 @@ static void
 test_read_wired_8021x_tls_old_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWired *              s_wired;
-    NMSetting8021x *              s_8021x;
-    const char *                  tmp;
+    NMSettingWired               *s_wired;
+    NMSetting8021x               *s_8021x;
+    const char                   *tmp;
 
     NMTST_EXPECT_NM_WARN("keyfile: 802-1x.ca-cert: certificate or key file "
                          "'/CASA/dcbw/Desktop/certinfra/CA/eaptest_ca_cert.pem' does not exist*");
@@ -1493,10 +1493,10 @@ static void
 test_read_wired_8021x_tls_new_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWired *              s_wired;
-    NMSetting8021x *              s_8021x;
-    const char *                  tmp;
-    char *                        tmp2;
+    NMSettingWired               *s_wired;
+    NMSetting8021x               *s_8021x;
+    const char                   *tmp;
+    char                         *tmp2;
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Wired_TLS_New");
 
@@ -1540,12 +1540,12 @@ static NMConnection *
 create_wired_tls_connection(NMSetting8021xCKScheme scheme)
 {
     NMTST_UUID_INIT(uuid);
-    NMConnection *       connection;
-    NMSettingConnection *s_con;
-    NMSettingIPConfig *  s_ip4;
-    NMSetting *          s_wired;
-    NMSetting8021x *     s_8021x;
-    gboolean             success;
+    NMConnection         *connection;
+    NMSettingConnection  *s_con;
+    NMSettingIPConfig    *s_ip4;
+    NMSetting            *s_wired;
+    NMSetting8021x       *s_8021x;
+    gboolean              success;
     gs_free_error GError *error = NULL;
 
     connection = nm_simple_connection_new();
@@ -1617,11 +1617,11 @@ get_path(const char *file, gboolean relative)
 static void
 test_write_wired_8021x_tls_connection_path(void)
 {
-    gs_unref_object NMConnection *connection = NULL;
-    gs_unref_object NMConnection *reread     = NULL;
-    char *                        tmp, *tmp2;
-    gboolean                      success;
-    gs_free char *                testfile      = NULL;
+    gs_unref_object NMConnection   *connection = NULL;
+    gs_unref_object NMConnection   *reread     = NULL;
+    char                           *tmp, *tmp2;
+    gboolean                        success;
+    gs_free char                   *testfile    = NULL;
     nm_auto_unref_keyfile GKeyFile *keyfile     = NULL;
     gboolean                        relative    = FALSE;
     gboolean                        reread_same = FALSE;
@@ -1705,15 +1705,15 @@ test_write_wired_8021x_tls_connection_blob(void)
 {
     gs_unref_object NMConnection *connection = NULL;
     gs_unref_object NMConnection *reread     = NULL;
-    NMSettingConnection *         s_con;
-    NMSetting8021x *              s_8021x;
-    gs_free char *                testfile = NULL;
-    char *                        new_ca_cert;
-    char *                        new_client_cert;
-    char *                        new_priv_key;
-    const char *                  uuid;
+    NMSettingConnection          *s_con;
+    NMSetting8021x               *s_8021x;
+    gs_free char                 *testfile = NULL;
+    char                         *new_ca_cert;
+    char                         *new_client_cert;
+    char                         *new_priv_key;
+    const char                   *uuid;
     gboolean                      reread_same = FALSE;
-    GBytes *                      password_raw;
+    GBytes                       *password_raw;
 
 #define PASSWORD_RAW "password-raw\0test"
 
@@ -1801,9 +1801,9 @@ static void
 test_read_infiniband_connection(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingInfiniband *         s_ib;
-    const char *                  mac;
+    NMSettingConnection          *s_con;
+    NMSettingInfiniband          *s_ib;
+    const char                   *mac;
     guint8      expected_mac[INFINIBAND_ALEN] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
                                             0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34,
                                             0x45, 0x56, 0x67, 0x78, 0x89, 0x90};
@@ -1830,10 +1830,10 @@ test_write_infiniband_connection(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingInfiniband *         s_ib;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingIPConfig *           s_ip6;
+    NMSettingConnection          *s_con;
+    NMSettingInfiniband          *s_ib;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingIPConfig            *s_ip6;
     const char *mac = "99:88:77:66:55:44:ab:bc:cd:de:ef:f0:0a:1b:2c:3d:4e:5f:6f:ba";
 
     connection = nm_simple_connection_new();
@@ -1888,11 +1888,11 @@ static void
 test_read_bridge_main(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingBridge *             s_bridge;
-    const char *                  expected_id   = "Test Bridge Main";
-    const char *                  expected_uuid = "8f061643-fe41-4d4c-a8d9-097d26e2ad3a";
+    NMSettingConnection          *s_con;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingBridge              *s_bridge;
+    const char                   *expected_id   = "Test Bridge Main";
+    const char                   *expected_uuid = "8f061643-fe41-4d4c-a8d9-097d26e2ad3a";
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Bridge_Main");
 
@@ -1922,10 +1922,10 @@ test_write_bridge_main(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingBridge *             s_bridge;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingIPConfig *           s_ip6;
+    NMSettingConnection          *s_con;
+    NMSettingBridge              *s_bridge;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingIPConfig            *s_ip6;
 
     connection = nm_simple_connection_new();
     g_assert(connection);
@@ -1981,13 +1981,13 @@ static void
 test_read_bridge_component(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingBridgePort *         s_port;
-    NMSettingWired *              s_wired;
-    const char *                  mac;
+    NMSettingConnection          *s_con;
+    NMSettingBridgePort          *s_port;
+    NMSettingWired               *s_wired;
+    const char                   *mac;
     guint8                        expected_mac[ETH_ALEN] = {0x00, 0x22, 0x15, 0x59, 0x62, 0x97};
-    const char *                  expected_id            = "Test Bridge Component";
-    const char *                  expected_uuid          = "d7b4f96c-c45e-4298-bef8-f48574f8c1c0";
+    const char                   *expected_id            = "Test Bridge Component";
+    const char                   *expected_uuid          = "d7b4f96c-c45e-4298-bef8-f48574f8c1c0";
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Bridge_Component");
 
@@ -2016,10 +2016,10 @@ test_write_bridge_component(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingBridgePort *         s_port;
-    NMSettingWired *              s_wired;
-    const char *                  mac = "99:88:77:66:55:44";
+    NMSettingConnection          *s_con;
+    NMSettingBridgePort          *s_port;
+    NMSettingWired               *s_wired;
+    const char                   *mac = "99:88:77:66:55:44";
 
     connection = nm_simple_connection_new();
     g_assert(connection);
@@ -2070,8 +2070,8 @@ static void
 test_read_new_wired_group_name(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWired *              s_wired;
-    const char *                  mac;
+    NMSettingWired               *s_wired;
+    const char                   *mac;
     guint8                        expected_mac[ETH_ALEN] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_New_Wired_Group_Name");
@@ -2089,14 +2089,14 @@ static void
 test_write_new_wired_group_name(void)
 {
     NMTST_UUID_INIT(uuid);
-    gs_unref_object NMConnection *connection = NULL;
-    nm_auto_unref_keyfile GKeyFile *kf       = NULL;
-    NMSettingConnection *           s_con;
-    NMSettingWired *                s_wired;
-    gs_free char *                  testfile = NULL;
-    gs_free_error GError *error              = NULL;
-    char *                s;
-    int                   mtu;
+    gs_unref_object NMConnection   *connection = NULL;
+    nm_auto_unref_keyfile GKeyFile *kf         = NULL;
+    NMSettingConnection            *s_con;
+    NMSettingWired                 *s_wired;
+    gs_free char                   *testfile = NULL;
+    gs_free_error GError           *error    = NULL;
+    char                           *s;
+    int                             mtu;
 
     connection = nm_simple_connection_new();
     g_assert(connection);
@@ -2147,10 +2147,10 @@ static void
 test_read_new_wireless_group_names(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingWireless *           s_wifi;
-    NMSettingWirelessSecurity *   s_wsec;
-    GBytes *                      ssid;
-    const char *                  expected_ssid = "foobar";
+    NMSettingWireless            *s_wifi;
+    NMSettingWirelessSecurity    *s_wsec;
+    GBytes                       *ssid;
+    const char                   *expected_ssid = "foobar";
 
     connection =
         keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_New_Wireless_Group_Names");
@@ -2174,17 +2174,17 @@ static void
 test_write_new_wireless_group_names(void)
 {
     NMTST_UUID_INIT(uuid);
-    gs_unref_object NMConnection *connection = NULL;
-    nm_auto_unref_keyfile GKeyFile *kf       = NULL;
-    NMSettingConnection *           s_con;
-    NMSettingWireless *             s_wifi;
-    NMSettingWirelessSecurity *     s_wsec;
-    GBytes *                        ssid;
+    gs_unref_object NMConnection   *connection = NULL;
+    nm_auto_unref_keyfile GKeyFile *kf         = NULL;
+    NMSettingConnection            *s_con;
+    NMSettingWireless              *s_wifi;
+    NMSettingWirelessSecurity      *s_wsec;
+    GBytes                         *ssid;
     unsigned char                   tmpssid[]    = {0x31, 0x33, 0x33, 0x37};
-    const char *                    expected_psk = "asdfasdfasdfa12315";
-    gs_free char *                  testfile     = NULL;
-    gs_free_error GError *error                  = NULL;
-    char *                s;
+    const char                     *expected_psk = "asdfasdfasdfa12315";
+    gs_free char                   *testfile     = NULL;
+    gs_free_error GError           *error        = NULL;
+    char                           *s;
 
     connection = nm_simple_connection_new();
 
@@ -2257,7 +2257,7 @@ static void
 test_read_missing_vlan_setting(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingVlan *               s_vlan;
+    NMSettingVlan                *s_vlan;
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Missing_Vlan_Setting");
 
@@ -2271,7 +2271,7 @@ static void
 test_read_missing_vlan_flags(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingVlan *               s_vlan;
+    NMSettingVlan                *s_vlan;
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Missing_Vlan_Flags");
 
@@ -2287,8 +2287,8 @@ static void
 test_read_missing_id_uuid(void)
 {
     gs_unref_object NMConnection *connection    = NULL;
-    gs_free char *                expected_uuid = NULL;
-    const char *                  FILENAME      = TEST_KEYFILES_DIR "/Test_Missing_ID_UUID";
+    gs_free char                 *expected_uuid = NULL;
+    const char                   *FILENAME      = TEST_KEYFILES_DIR "/Test_Missing_ID_UUID";
 
     expected_uuid = nm_uuid_generate_from_strings("keyfile", FILENAME, NULL);
 
@@ -2303,7 +2303,7 @@ test_read_minimal(void)
 {
     gs_unref_object NMConnection *connection    = NULL;
     gs_unref_object NMConnection *con_archetype = NULL;
-    NMSettingConnection *         s_con;
+    NMSettingConnection          *s_con;
 
     con_archetype = nmtst_create_minimal_connection("Test_minimal_x",
                                                     "a15bd68f-c32b-40b8-8d27-49e472a85919",
@@ -2337,7 +2337,7 @@ test_read_minimal_slave(void)
 {
     gs_unref_object NMConnection *connection    = NULL;
     gs_unref_object NMConnection *con_archetype = NULL;
-    NMSettingConnection *         s_con;
+    NMSettingConnection          *s_con;
 
     con_archetype = nmtst_create_minimal_connection("Test_minimal_slave_x",
                                                     "a56b4ca5-7075-43d4-82c7-5d0cb15f7654",
@@ -2396,7 +2396,7 @@ static void
 test_read_enum_property(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingIPConfig *           s_ip6;
+    NMSettingIPConfig            *s_ip6;
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Enum_Property");
 
@@ -2412,9 +2412,9 @@ test_write_enum_property(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingWired *              s_wired;
-    NMSettingIPConfig *           s_ip6;
+    NMSettingConnection          *s_con;
+    NMSettingWired               *s_wired;
+    NMSettingIPConfig            *s_ip6;
 
     connection = nm_simple_connection_new();
 
@@ -2455,7 +2455,7 @@ static void
 test_read_flags_property(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingGsm *                s_gsm;
+    NMSettingGsm                 *s_gsm;
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_Flags_Property");
 
@@ -2471,8 +2471,8 @@ test_write_flags_property(void)
 {
     NMTST_UUID_INIT(uuid);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSetting *                   s_gsm;
+    NMSettingConnection          *s_con;
+    NMSetting                    *s_gsm;
 
     connection = nm_simple_connection_new();
 
@@ -2513,10 +2513,10 @@ static void
 test_read_tc_config(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingTCConfig *           s_tc;
-    NMTCQdisc *                   qdisc1, *qdisc2;
-    NMTCAction *                  action1, *action2;
-    NMTCTfilter *                 tfilter1, *tfilter2;
+    NMSettingTCConfig            *s_tc;
+    NMTCQdisc                    *qdisc1, *qdisc2;
+    NMTCAction                   *action1, *action2;
+    NMTCTfilter                  *tfilter1, *tfilter2;
 
     connection = keyfile_read_connection_from_file(TEST_KEYFILES_DIR "/Test_TC_Config");
 
@@ -2567,11 +2567,11 @@ static void
 test_write_tc_config(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSetting *                   s_tc;
-    NMTCQdisc *                   qdisc1, *qdisc2;
-    NMTCTfilter *                 tfilter1, *tfilter2;
-    NMTCAction *                  action;
-    GError *                      error = NULL;
+    NMSetting                    *s_tc;
+    NMTCQdisc                    *qdisc1, *qdisc2;
+    NMTCTfilter                  *tfilter1, *tfilter2;
+    NMTCAction                   *action;
+    GError                       *error = NULL;
 
     connection =
         nmtst_create_minimal_connection("Test TC", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
@@ -2751,12 +2751,12 @@ _assert_keyfile_nmmeta(const char *dirname,
 static void
 test_nmmeta(void)
 {
-    const char *  uuid          = "3c03fd17-ddc3-4100-a954-88b6fafff959";
+    const char   *uuid          = "3c03fd17-ddc3-4100-a954-88b6fafff959";
     gs_free char *filename      = g_strdup_printf("%s%s", uuid, NM_KEYFILE_PATH_SUFFIX_NMMETA);
     gs_free char *full_filename = g_strdup_printf("%s/%s", TEST_SCRATCH_DIR, filename);
-    const char *  loaded_path0  = NM_KEYFILE_PATH_NMMETA_SYMLINK_NULL;
-    const char *  loaded_path1  = "/some/where/but/not/scratch/dir";
-    const char *  filename2     = "foo1";
+    const char   *loaded_path0  = NM_KEYFILE_PATH_NMMETA_SYMLINK_NULL;
+    const char   *loaded_path1  = "/some/where/but/not/scratch/dir";
+    const char   *filename2     = "foo1";
     gs_free char *loaded_path2  = g_strdup_printf("%s/%s", TEST_SCRATCH_DIR, filename2);
 
     _assert_keyfile_nmmeta(TEST_SCRATCH_DIR, uuid, NULL, FALSE, full_filename, NULL, NULL, NULL);

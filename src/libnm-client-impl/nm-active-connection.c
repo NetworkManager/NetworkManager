@@ -62,10 +62,10 @@ enum {
 typedef struct _NMActiveConnectionPrivate {
     NMLDBusPropertyO  property_o[_PROPERTY_O_IDX_NUM];
     NMLDBusPropertyAO devices;
-    NMRefString *     specific_object_path;
-    char *            id;
-    char *            uuid;
-    char *            type;
+    NMRefString      *specific_object_path;
+    char             *id;
+    char             *uuid;
+    char             *type;
 
     guint32 state;
     guint32 state_flags;
@@ -397,7 +397,7 @@ static void
 _notify_event_state_changed(NMClient *client, NMClientNotifyEventWithPtr *notify_event)
 {
     gs_unref_object NMActiveConnection *self = notify_event->user_data;
-    NMActiveConnectionPrivate *         priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
+    NMActiveConnectionPrivate          *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
     /* we expose here the value cache in @priv. In practice, this is the same
      * value as we received from the signal. In the unexpected case where they
@@ -408,7 +408,7 @@ _notify_event_state_changed(NMClient *client, NMClientNotifyEventWithPtr *notify
 void
 _nm_active_connection_state_changed_commit(NMActiveConnection *self, guint32 state, guint32 reason)
 {
-    NMClient *                 client;
+    NMClient                  *client;
     NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
 
     client = _nm_object_get_client(self);
@@ -605,7 +605,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_connection_active = NML_DBUS_META
 static void
 nm_active_connection_class_init(NMActiveConnectionClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
 
     g_type_class_add_private(klass, sizeof(NMActiveConnectionPrivate));

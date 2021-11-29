@@ -38,9 +38,9 @@ G_DEFINE_TYPE(NMCSProviderAzure, nmcs_provider_azure, NMCS_TYPE_PROVIDER);
 static void
 _detect_get_meta_data_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    gs_unref_object GTask *task     = user_data;
-    gs_free_error GError *get_error = NULL;
-    gs_free_error GError *error     = NULL;
+    gs_unref_object GTask *task      = user_data;
+    gs_free_error GError  *get_error = NULL;
+    gs_free_error GError  *error     = NULL;
 
     nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
 
@@ -92,7 +92,7 @@ typedef enum {
 } GetConfigFetchType;
 
 typedef struct {
-    NMCSProviderGetConfigTaskData * get_config_data;
+    NMCSProviderGetConfigTaskData  *get_config_data;
     NMCSProviderGetConfigIfaceData *iface_get_config;
     gssize                          intern_iface_idx;
     gssize                          extern_iface_idx;
@@ -106,20 +106,20 @@ _azure_iface_data_destroy(AzureIfaceData *iface_data)
 }
 
 static void
-_get_config_fetch_done_cb(NMHttpClient *     http_client,
-                          GAsyncResult *     result,
-                          AzureIfaceData *   iface_data,
+_get_config_fetch_done_cb(NMHttpClient      *http_client,
+                          GAsyncResult      *result,
+                          AzureIfaceData    *iface_data,
                           GetConfigFetchType fetch_type)
 {
-    NMCSProviderGetConfigTaskData * get_config_data;
+    NMCSProviderGetConfigTaskData  *get_config_data;
     NMCSProviderGetConfigIfaceData *iface_get_config;
-    gs_unref_bytes GBytes *response = NULL;
-    gs_free_error GError *error     = NULL;
-    const char *          resp_str  = NULL;
-    gsize                 resp_len;
-    char                  tmp_addr_str[NM_UTILS_INET_ADDRSTRLEN];
-    in_addr_t             tmp_addr;
-    int                   tmp_prefix = -1;
+    gs_unref_bytes GBytes          *response = NULL;
+    gs_free_error GError           *error    = NULL;
+    const char                     *resp_str = NULL;
+    gsize                           resp_len;
+    char                            tmp_addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    in_addr_t                       tmp_addr;
+    int                             tmp_prefix = -1;
 
     nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
 
@@ -196,7 +196,7 @@ out_done:
 }
 
 static void
-_get_config_fetch_done_cb_ipv4_ipaddress_x_privateipaddress(GObject *     source,
+_get_config_fetch_done_cb_ipv4_ipaddress_x_privateipaddress(GObject      *source,
                                                             GAsyncResult *result,
                                                             gpointer      user_data)
 {
@@ -207,7 +207,7 @@ _get_config_fetch_done_cb_ipv4_ipaddress_x_privateipaddress(GObject *     source
 }
 
 static void
-_get_config_fetch_done_cb_ipv4_subnet_0_address(GObject *     source,
+_get_config_fetch_done_cb_ipv4_subnet_0_address(GObject      *source,
                                                 GAsyncResult *result,
                                                 gpointer      user_data)
 {
@@ -218,7 +218,7 @@ _get_config_fetch_done_cb_ipv4_subnet_0_address(GObject *     source,
 }
 
 static void
-_get_config_fetch_done_cb_ipv4_subnet_0_prefix(GObject *     source,
+_get_config_fetch_done_cb_ipv4_subnet_0_prefix(GObject      *source,
                                                GAsyncResult *result,
                                                gpointer      user_data)
 {
@@ -231,13 +231,13 @@ _get_config_fetch_done_cb_ipv4_subnet_0_prefix(GObject *     source,
 static void
 _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    gs_unref_bytes GBytes *response             = NULL;
-    AzureIfaceData *       iface_data           = user_data;
-    gs_free_error GError *         error        = NULL;
-    const char *                   response_str = NULL;
+    gs_unref_bytes GBytes         *response     = NULL;
+    AzureIfaceData                *iface_data   = user_data;
+    gs_free_error GError          *error        = NULL;
+    const char                    *response_str = NULL;
     gsize                          response_len;
     NMCSProviderGetConfigTaskData *get_config_data;
-    const char *                   line;
+    const char                    *line;
     gsize                          line_len;
     char                           iface_idx_str[30];
 
@@ -350,12 +350,12 @@ static void
 _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     NMCSProviderGetConfigTaskData *get_config_data;
-    gs_unref_bytes GBytes *response   = NULL;
-    AzureIfaceData *       iface_data = user_data;
-    gs_free char *         v_hwaddr   = NULL;
-    gs_free_error GError *error       = NULL;
-    gs_free const char *  uri         = NULL;
-    char                  buf[100];
+    gs_unref_bytes GBytes         *response   = NULL;
+    AzureIfaceData                *iface_data = user_data;
+    gs_free char                  *v_hwaddr   = NULL;
+    gs_free_error GError          *error      = NULL;
+    gs_free const char            *uri        = NULL;
+    char                           buf[100];
 
     nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
@@ -433,15 +433,15 @@ static void
 _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     NMCSProviderGetConfigTaskData *get_config_data;
-    gs_unref_ptrarray GPtrArray *ifaces_arr = NULL;
-    gs_unref_bytes GBytes *response         = NULL;
-    gs_free_error GError *error             = NULL;
-    const char *          response_str;
-    gsize                 response_len;
-    const char *          line;
-    gsize                 line_len;
-    guint                 i;
-    gssize                extern_iface_idx_cnt = 0;
+    gs_unref_ptrarray GPtrArray   *ifaces_arr = NULL;
+    gs_unref_bytes GBytes         *response   = NULL;
+    gs_free_error GError          *error      = NULL;
+    const char                    *response_str;
+    gsize                          response_len;
+    const char                    *line;
+    gsize                          line_len;
+    guint                          i;
+    gssize                         extern_iface_idx_cnt = 0;
 
     nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
@@ -500,7 +500,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
     }
 
     for (i = 0; i < ifaces_arr->len; ++i) {
-        AzureIfaceData *    iface_data = ifaces_arr->pdata[i];
+        AzureIfaceData     *iface_data = ifaces_arr->pdata[i];
         gs_free const char *uri        = NULL;
         char                buf[100];
 

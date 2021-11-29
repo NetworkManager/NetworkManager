@@ -8,7 +8,7 @@
 #
 
 # We're happy to rebuild all containers when one changes.
-.default_tag: &default_tag '2021-08-30.0'
+.default_tag: &default_tag '2021-11-09.0'
 
 
 # The list of all distributions we want to create job for.
@@ -64,4 +64,4 @@ distributions:
 # specifies which of the above distros is used as source for pages
 pages_build:
   name: fedora
-  version: '34'
+  version: '35'

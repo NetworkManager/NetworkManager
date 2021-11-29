@@ -98,7 +98,7 @@ test_nm_utils_kill_child_async_do(const char *name,
                                   int         sig,
                                   guint32     wait_before_kill_msec,
                                   gboolean    expected_success,
-                                  const int * expected_child_status)
+                                  const int  *expected_child_status)
 {
     gboolean                                   success;
     struct test_nm_utils_kill_child_async_data data = {};
@@ -135,7 +135,7 @@ test_nm_utils_kill_child_sync_do(const char *name,
                                  int         sig,
                                  guint32     wait_before_kill_msec,
                                  gboolean    expected_success,
-                                 const int * expected_child_status)
+                                 const int  *expected_child_status)
 {
     gboolean success;
     int      child_status = -1;
@@ -226,11 +226,11 @@ static void
 do_test_nm_utils_kill_child(void)
 {
     GLogLevelFlags fatal_mask;
-    char *         argv_watchdog[] = {
+    char          *argv_watchdog[] = {
         "bash",
         "-c",
         "sleep 4; "
-        "kill -KILL 0; #watchdog for #" TEST_TOKEN,
+                 "kill -KILL 0; #watchdog for #" TEST_TOKEN,
         NULL,
     };
     char *argv1[] = {
@@ -464,7 +464,7 @@ test_nm_utils_kill_child(void)
 static void
 _remove_at_indexes_init_random_idx(GArray *idx, guint array_len, guint idx_len)
 {
-    GRand *       rand = nmtst_get_rand();
+    GRand        *rand = nmtst_get_rand();
     gs_free char *mask = NULL;
     guint         i, max_test_idx;
 
@@ -515,7 +515,7 @@ _remove_at_indexes_init_random_idx(GArray *idx, guint array_len, guint idx_len)
 static void
 test_nm_utils_array_remove_at_indexes(void)
 {
-    gs_unref_array GArray *idx = NULL, *array = NULL;
+    gs_unref_array GArray         *idx = NULL, *array = NULL;
     gs_unref_hashtable GHashTable *unique = NULL;
     guint                          i_len, i_idx_len, i_rnd, i;
 

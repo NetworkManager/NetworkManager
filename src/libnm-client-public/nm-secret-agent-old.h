@@ -80,9 +80,9 @@ typedef struct {
  * </example>
  */
 typedef void (*NMSecretAgentOldGetSecretsFunc)(NMSecretAgentOld *agent,
-                                               NMConnection *    connection,
-                                               GVariant *        secrets,
-                                               GError *          error,
+                                               NMConnection     *connection,
+                                               GVariant         *secrets,
+                                               GError           *error,
                                                gpointer          user_data);
 
 /**
@@ -100,8 +100,8 @@ typedef void (*NMSecretAgentOldGetSecretsFunc)(NMSecretAgentOld *agent,
  * should be called.
  */
 typedef void (*NMSecretAgentOldSaveSecretsFunc)(NMSecretAgentOld *agent,
-                                                NMConnection *    connection,
-                                                GError *          error,
+                                                NMConnection     *connection,
+                                                GError           *error,
                                                 gpointer          user_data);
 
 /**
@@ -119,8 +119,8 @@ typedef void (*NMSecretAgentOldSaveSecretsFunc)(NMSecretAgentOld *agent,
  * should be called.
  */
 typedef void (*NMSecretAgentOldDeleteSecretsFunc)(NMSecretAgentOld *agent,
-                                                  NMConnection *    connection,
-                                                  GError *          error,
+                                                  NMConnection     *connection,
+                                                  GError           *error,
                                                   gpointer          user_data);
 
 typedef struct {
@@ -138,11 +138,11 @@ typedef struct {
      * error. Since 1.24, invoking the callback has no effect during cancellation
      * and may be omitted.
      */
-    void (*get_secrets)(NMSecretAgentOld *             self,
-                        NMConnection *                 connection,
-                        const char *                   connection_path,
-                        const char *                   setting_name,
-                        const char **                  hints,
+    void (*get_secrets)(NMSecretAgentOld              *self,
+                        NMConnection                  *connection,
+                        const char                    *connection_path,
+                        const char                    *setting_name,
+                        const char                   **hints,
                         NMSecretAgentGetSecretsFlags   flags,
                         NMSecretAgentOldGetSecretsFunc callback,
                         gpointer                       user_data);
@@ -156,8 +156,8 @@ typedef struct {
      * the get_secrets callback will be ignored during cancellation and may be omitted.
      */
     void (*cancel_get_secrets)(NMSecretAgentOld *self,
-                               const char *      connection_path,
-                               const char *      setting_name);
+                               const char       *connection_path,
+                               const char       *setting_name);
 
     /* Called when the subclass should save the secrets contained in the
      * connection to backing storage.  Subclass must copy or reference any
@@ -165,9 +165,9 @@ typedef struct {
      * arguments will freed (except for 'self', 'callback', and 'user_data'
      * of course).
      */
-    void (*save_secrets)(NMSecretAgentOld *              self,
-                         NMConnection *                  connection,
-                         const char *                    connection_path,
+    void (*save_secrets)(NMSecretAgentOld               *self,
+                         NMConnection                   *connection,
+                         const char                     *connection_path,
                          NMSecretAgentOldSaveSecretsFunc callback,
                          gpointer                        user_data);
 
@@ -177,9 +177,9 @@ typedef struct {
      * arguments will freed (except for 'self', 'callback', and 'user_data'
      * of course).
      */
-    void (*delete_secrets)(NMSecretAgentOld *                self,
-                           NMConnection *                    connection,
-                           const char *                      connection_path,
+    void (*delete_secrets)(NMSecretAgentOld                 *self,
+                           NMConnection                     *connection,
+                           const char                       *connection_path,
                            NMSecretAgentOldDeleteSecretsFunc callback,
                            gpointer                          user_data);
 
@@ -208,8 +208,8 @@ gboolean nm_secret_agent_old_get_registered(NMSecretAgentOld *self);
 NM_AVAILABLE_IN_1_24
 void nm_secret_agent_old_enable(NMSecretAgentOld *self, gboolean enable);
 
-void nm_secret_agent_old_register_async(NMSecretAgentOld *  self,
-                                        GCancellable *      cancellable,
+void nm_secret_agent_old_register_async(NMSecretAgentOld   *self,
+                                        GCancellable       *cancellable,
                                         GAsyncReadyCallback callback,
                                         gpointer            user_data);
 gboolean
@@ -229,8 +229,8 @@ gboolean
 nm_secret_agent_old_unregister(NMSecretAgentOld *self, GCancellable *cancellable, GError **error);
 
 NM_DEPRECATED_IN_1_24_FOR(nm_secret_agent_old_enable)
-void nm_secret_agent_old_unregister_async(NMSecretAgentOld *  self,
-                                          GCancellable *      cancellable,
+void nm_secret_agent_old_unregister_async(NMSecretAgentOld   *self,
+                                          GCancellable       *cancellable,
                                           GAsyncReadyCallback callback,
                                           gpointer            user_data);
 
@@ -240,21 +240,21 @@ nm_secret_agent_old_unregister_finish(NMSecretAgentOld *self, GAsyncResult *resu
 
 /*****************************************************************************/
 
-void nm_secret_agent_old_get_secrets(NMSecretAgentOld *             self,
-                                     NMConnection *                 connection,
-                                     const char *                   setting_name,
-                                     const char **                  hints,
+void nm_secret_agent_old_get_secrets(NMSecretAgentOld              *self,
+                                     NMConnection                  *connection,
+                                     const char                    *setting_name,
+                                     const char                   **hints,
                                      NMSecretAgentGetSecretsFlags   flags,
                                      NMSecretAgentOldGetSecretsFunc callback,
                                      gpointer                       user_data);
 
-void nm_secret_agent_old_save_secrets(NMSecretAgentOld *              self,
-                                      NMConnection *                  connection,
+void nm_secret_agent_old_save_secrets(NMSecretAgentOld               *self,
+                                      NMConnection                   *connection,
                                       NMSecretAgentOldSaveSecretsFunc callback,
                                       gpointer                        user_data);
 
-void nm_secret_agent_old_delete_secrets(NMSecretAgentOld *                self,
-                                        NMConnection *                    connection,
+void nm_secret_agent_old_delete_secrets(NMSecretAgentOld                 *self,
+                                        NMConnection                     *connection,
                                         NMSecretAgentOldDeleteSecretsFunc callback,
                                         gpointer                          user_data);
 

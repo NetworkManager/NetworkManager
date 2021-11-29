@@ -43,7 +43,7 @@ void nm_device_take_down(NMDevice *self, gboolean block);
 
 gboolean nm_device_take_over_link(NMDevice *self, int ifindex, char **old_name, GError **error);
 
-gboolean nm_device_hw_addr_set(NMDevice *  device,
+gboolean nm_device_hw_addr_set(NMDevice   *device,
                                const char *addr,
                                const char *detail,
                                gboolean    set_permanent);
@@ -66,7 +66,7 @@ void nm_device_master_release_slaves(NMDevice *self);
 void nm_device_set_carrier(NMDevice *self, gboolean carrier);
 
 void nm_device_queue_recheck_assume(NMDevice *device);
-void nm_device_queue_recheck_available(NMDevice *          device,
+void nm_device_queue_recheck_available(NMDevice           *device,
                                        NMDeviceStateReason available_reason,
                                        NMDeviceStateReason unavailable_reason);
 
@@ -74,14 +74,14 @@ gboolean nm_device_hw_addr_is_explict(NMDevice *device);
 
 NMDeviceIPState nm_device_devip_get_state(NMDevice *self, int addr_family);
 
-void nm_device_devip_set_state_full(NMDevice *            self,
+void nm_device_devip_set_state_full(NMDevice             *self,
                                     int                   addr_family,
                                     NMDeviceIPState       ip_state,
                                     const NML3ConfigData *l3cd,
                                     NMDeviceStateReason   failed_reason);
 
 static inline void
-nm_device_devip_set_state(NMDevice *            self,
+nm_device_devip_set_state(NMDevice             *self,
                           int                   addr_family,
                           NMDeviceIPState       ip_state,
                           const NML3ConfigData *l3cd)
@@ -104,14 +104,14 @@ nm_device_devip_set_failed(NMDevice *self, int addr_family, NMDeviceStateReason 
     nm_device_devip_set_state_full(self, addr_family, NM_DEVICE_IP_STATE_FAILED, NULL, reason);
 }
 
-gboolean nm_device_sysctl_ip_conf_set(NMDevice *  self,
+gboolean nm_device_sysctl_ip_conf_set(NMDevice   *self,
                                       int         addr_family,
                                       const char *property,
                                       const char *value);
 
 NML3ConfigData *nm_device_create_l3_config_data(NMDevice *self, NMIPConfigSource source);
 
-const NML3ConfigData *nm_device_create_l3_config_data_from_connection(NMDevice *    self,
+const NML3ConfigData *nm_device_create_l3_config_data_from_connection(NMDevice     *self,
                                                                       NMConnection *connection);
 
 void nm_device_ip_method_dhcp4_start(NMDevice *self);
@@ -120,21 +120,21 @@ void nm_device_ip_method_autoconf6_start(NMDevice *self);
 
 /*****************************************************************************/
 
-gint64 nm_device_get_configured_mtu_from_connection_default(NMDevice *  self,
+gint64 nm_device_get_configured_mtu_from_connection_default(NMDevice   *self,
                                                             const char *property_name,
                                                             guint32     max_mtu);
 
-guint32 nm_device_get_configured_mtu_from_connection(NMDevice *         device,
+guint32 nm_device_get_configured_mtu_from_connection(NMDevice          *device,
                                                      GType              setting_type,
                                                      NMDeviceMtuSource *out_source);
 
-guint32 nm_device_get_configured_mtu_for_wired(NMDevice *         self,
+guint32 nm_device_get_configured_mtu_for_wired(NMDevice          *self,
                                                NMDeviceMtuSource *out_source,
-                                               gboolean *         out_force);
+                                               gboolean          *out_force);
 
-guint32 nm_device_get_configured_mtu_wired_parent(NMDevice *         self,
+guint32 nm_device_get_configured_mtu_wired_parent(NMDevice          *self,
                                                   NMDeviceMtuSource *out_source,
-                                                  gboolean *         out_force);
+                                                  gboolean          *out_force);
 
 void nm_device_commit_mtu(NMDevice *self);
 
@@ -150,26 +150,26 @@ void nm_device_commit_mtu(NMDevice *self);
         _types;                                                                 \
     }))
 
-gboolean _nm_device_hash_check_invalid_keys(GHashTable *       hash,
-                                            const char *       setting_name,
-                                            GError **          error,
+gboolean _nm_device_hash_check_invalid_keys(GHashTable        *hash,
+                                            const char        *setting_name,
+                                            GError           **error,
                                             const char *const *whitelist);
 #define nm_device_hash_check_invalid_keys(hash, setting_name, error, ...) \
     _nm_device_hash_check_invalid_keys(hash, setting_name, error, NM_MAKE_STRV(__VA_ARGS__))
 
 gboolean nm_device_match_parent(NMDevice *device, const char *parent);
-gboolean nm_device_match_parent_hwaddr(NMDevice *    device,
+gboolean nm_device_match_parent_hwaddr(NMDevice     *device,
                                        NMConnection *connection,
                                        gboolean      fail_if_no_hwaddr);
 
 /*****************************************************************************/
 
-void nm_device_auth_request(NMDevice *                     self,
-                            GDBusMethodInvocation *        context,
-                            NMConnection *                 connection,
-                            const char *                   permission,
+void nm_device_auth_request(NMDevice                      *self,
+                            GDBusMethodInvocation         *context,
+                            NMConnection                  *connection,
+                            const char                    *permission,
                             gboolean                       allow_interaction,
-                            GCancellable *                 cancellable,
+                            GCancellable                  *cancellable,
                             NMManagerDeviceAuthRequestFunc callback,
                             gpointer                       user_data);
 

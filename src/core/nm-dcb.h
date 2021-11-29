@@ -22,7 +22,7 @@ gboolean do_helper(const char *iface,
                    guint       which,
                    DcbFunc     run_func,
                    gpointer    user_data,
-                   GError **   error,
+                   GError    **error,
                    const char *fmt,
                    ...) G_GNUC_PRINTF(6, 7);
 
@@ -30,21 +30,21 @@ gboolean _dcb_enable(const char *iface,
                      gboolean    enable,
                      DcbFunc     run_func,
                      gpointer    user_data,
-                     GError **   error);
+                     GError    **error);
 
-gboolean _dcb_setup(const char *  iface,
+gboolean _dcb_setup(const char   *iface,
                     NMSettingDcb *s_dcb,
                     DcbFunc       run_func,
                     gpointer      user_data,
-                    GError **     error);
+                    GError      **error);
 
 gboolean _dcb_cleanup(const char *iface, DcbFunc run_func, gpointer user_data, GError **error);
 
-gboolean _fcoe_setup(const char *  iface,
+gboolean _fcoe_setup(const char   *iface,
                      NMSettingDcb *s_dcb,
                      DcbFunc       run_func,
                      gpointer      user_data,
-                     GError **     error);
+                     GError      **error);
 
 gboolean _fcoe_cleanup(const char *iface, DcbFunc run_func, gpointer user_data, GError **error);
 

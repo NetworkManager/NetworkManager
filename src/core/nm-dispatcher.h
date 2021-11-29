@@ -36,31 +36,31 @@ gboolean nm_dispatcher_call_hostname(NMDispatcherFunc     callback,
                                      NMDispatcherCallId **out_call_id);
 
 gboolean nm_dispatcher_call_device(NMDispatcherAction   action,
-                                   NMDevice *           device,
-                                   NMActRequest *       act_request,
+                                   NMDevice            *device,
+                                   NMActRequest        *act_request,
                                    NMDispatcherFunc     callback,
                                    gpointer             user_data,
                                    NMDispatcherCallId **out_call_id);
 
 gboolean nm_dispatcher_call_device_sync(NMDispatcherAction action,
-                                        NMDevice *         device,
-                                        NMActRequest *     act_request);
+                                        NMDevice          *device,
+                                        NMActRequest      *act_request);
 
 gboolean nm_dispatcher_call_vpn(NMDispatcherAction    action,
                                 NMSettingsConnection *settings_connection,
-                                NMConnection *        applied_connection,
-                                NMDevice *            parent_device,
-                                const char *          vpn_iface,
+                                NMConnection         *applied_connection,
+                                NMDevice             *parent_device,
+                                const char           *vpn_iface,
                                 const NML3ConfigData *l3cd,
                                 NMDispatcherFunc      callback,
                                 gpointer              user_data,
-                                NMDispatcherCallId ** out_call_id);
+                                NMDispatcherCallId  **out_call_id);
 
 gboolean nm_dispatcher_call_vpn_sync(NMDispatcherAction    action,
                                      NMSettingsConnection *settings_connection,
-                                     NMConnection *        applied_connection,
-                                     NMDevice *            parent_device,
-                                     const char *          vpn_iface,
+                                     NMConnection         *applied_connection,
+                                     NMDevice             *parent_device,
+                                     const char           *vpn_iface,
                                      const NML3ConfigData *l3cd);
 
 gboolean nm_dispatcher_call_connectivity(NMConnectivityState  state,

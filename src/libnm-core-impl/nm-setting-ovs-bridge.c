@@ -289,9 +289,9 @@ finalize(GObject *object)
 static void
 nm_setting_ovs_bridge_class_init(NMSettingOvsBridgeClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;

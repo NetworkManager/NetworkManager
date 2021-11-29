@@ -158,7 +158,7 @@ finalize(GObject *object)
 static void
 nm_setting_ovs_patch_class_init(NMSettingOvsPatchClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
 
     object_class->set_property = set_property;

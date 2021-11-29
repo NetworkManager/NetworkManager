@@ -54,8 +54,8 @@
 struct NMDispatcherCallId {
     NMDispatcherFunc   callback;
     gpointer           user_data;
-    const char *       log_ifname;
-    const char *       log_con_uuid;
+    const char        *log_ifname;
+    const char        *log_con_uuid;
     NMDispatcherAction action;
     guint              idle_id;
     guint32            request_id;
@@ -74,7 +74,7 @@ struct NMDispatcherCallId {
  *   Finally, cleanup the global structures. */
 static struct {
     GDBusConnection *dbus_connection;
-    GHashTable *     requests;
+    GHashTable      *requests;
     guint            request_id_counter;
 } gl;
 
@@ -85,13 +85,13 @@ dispatcher_call_id_new(guint32            request_id,
                        NMDispatcherAction action,
                        NMDispatcherFunc   callback,
                        gpointer           user_data,
-                       const char *       log_ifname,
-                       const char *       log_con_uuid)
+                       const char        *log_ifname,
+                       const char        *log_con_uuid)
 {
     NMDispatcherCallId *call_id;
     gsize               l_log_ifname;
     gsize               l_log_con_uuid;
-    char *              extra_strings;
+    char               *extra_strings;
 
     l_log_ifname   = log_ifname ? (strlen(log_ifname) + 1) : 0u;
     l_log_con_uuid = log_con_uuid ? (strlen(log_con_uuid) + 1) : 0u;
@@ -166,16 +166,16 @@ static void
 dump_ip_to_props(const NML3ConfigData *l3cd, int addr_family, GVariantBuilder *builder)
 {
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
-    const NMPObject *  obj;
+    const NMPObject   *obj;
     GVariantBuilder    int_builder;
     NMDedupMultiIter   ipconf_iter;
-    GVariant *         var1;
-    GVariant *         var2;
+    GVariant          *var1;
+    GVariant          *var2;
     guint              n;
     guint              i;
-    const NMPObject *  default_route;
+    const NMPObject   *default_route;
     const char *const *strarr;
-    const in_addr_t *  ip4arr;
+    const in_addr_t   *ip4arr;
     gconstpointer      iparr;
 
     if (IS_IPv4)
@@ -281,16 +281,16 @@ dump_ip_to_props(const NML3ConfigData *l3cd, int addr_family, GVariantBuilder *b
 }
 
 static void
-fill_device_props(NMDevice *       device,
+fill_device_props(NMDevice        *device,
                   GVariantBuilder *dev_builder,
                   GVariantBuilder *proxy_builder,
                   GVariantBuilder *ip4_builder,
                   GVariantBuilder *ip6_builder,
-                  GVariant **      dhcp4_props,
-                  GVariant **      dhcp6_props)
+                  GVariant       **dhcp4_props,
+                  GVariant       **dhcp6_props)
 {
     const NML3ConfigData *l3cd;
-    NMDhcpConfig *        dhcp_config;
+    NMDhcpConfig         *dhcp_config;
 
     /* If the action is for a VPN, send the VPN's IP interface instead of the device's */
     g_variant_builder_add(dev_builder,
@@ -335,9 +335,9 @@ fill_device_props(NMDevice *       device,
 
 static void
 fill_vpn_props(const NML3ConfigData *l3cd,
-               GVariantBuilder *     proxy_builder,
-               GVariantBuilder *     ip4_builder,
-               GVariantBuilder *     ip6_builder)
+               GVariantBuilder      *proxy_builder,
+               GVariantBuilder      *ip4_builder,
+               GVariantBuilder      *ip6_builder)
 {
     if (l3cd) {
         dump_ip_to_props(l3cd, AF_INET, ip4_builder);
@@ -368,10 +368,10 @@ static void
 dispatcher_results_process(guint32     request_id,
                            const char *log_ifname,
                            const char *log_con_uuid,
-                           GVariant *  v_results)
+                           GVariant   *v_results)
 {
     nm_auto_free_variant_iter GVariantIter *results = NULL;
-    const char *                            script, *err;
+    const char                             *script, *err;
     guint32                                 result;
 
     g_variant_get(v_results, "(a(sus))", &results);
@@ -399,9 +399,9 @@ dispatcher_results_process(guint32     request_id,
 static void
 dispatcher_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    gs_unref_variant GVariant *ret = NULL;
-    gs_free_error GError *error    = NULL;
-    NMDispatcherCallId *  call_id  = user_data;
+    gs_unref_variant GVariant *ret     = NULL;
+    gs_free_error GError      *error   = NULL;
+    NMDispatcherCallId        *call_id = user_data;
 
     nm_assert((gpointer) source == gl.dbus_connection);
 
@@ -453,34 +453,34 @@ action_to_string(NMDispatcherAction action)
 static gboolean
 _dispatcher_call(NMDispatcherAction    action,
                  gboolean              blocking,
-                 NMDevice *            device,
+                 NMDevice             *device,
                  NMSettingsConnection *settings_connection,
-                 NMConnection *        applied_connection,
+                 NMConnection         *applied_connection,
                  gboolean              activation_type_external,
                  NMConnectivityState   connectivity_state,
-                 const char *          vpn_iface,
+                 const char           *vpn_iface,
                  const NML3ConfigData *l3cd,
                  NMDispatcherFunc      callback,
                  gpointer              user_data,
-                 NMDispatcherCallId ** out_call_id)
+                 NMDispatcherCallId  **out_call_id)
 {
-    GVariant *       connection_dict;
-    GVariantBuilder  connection_props;
-    GVariantBuilder  device_props;
-    GVariantBuilder  device_proxy_props;
-    GVariantBuilder  device_ip4_props;
-    GVariantBuilder  device_ip6_props;
+    GVariant                  *connection_dict;
+    GVariantBuilder            connection_props;
+    GVariantBuilder            device_props;
+    GVariantBuilder            device_proxy_props;
+    GVariantBuilder            device_ip4_props;
+    GVariantBuilder            device_ip6_props;
     gs_unref_variant GVariant *parameters_floating = NULL;
     gs_unref_variant GVariant *device_dhcp4_props  = NULL;
     gs_unref_variant GVariant *device_dhcp6_props  = NULL;
     GVariantBuilder            vpn_proxy_props;
     GVariantBuilder            vpn_ip4_props;
     GVariantBuilder            vpn_ip6_props;
-    NMDispatcherCallId *       call_id;
+    NMDispatcherCallId        *call_id;
     guint                      request_id;
-    const char *               connectivity_state_string = "UNKNOWN";
-    const char *               log_ifname;
-    const char *               log_con_uuid;
+    const char                *connectivity_state_string = "UNKNOWN";
+    const char                *log_ifname;
+    const char                *log_con_uuid;
 
     g_return_val_if_fail(!blocking || (!callback && !user_data), FALSE);
 
@@ -598,8 +598,8 @@ _dispatcher_call(NMDispatcherAction    action,
 
     /* Send the action to the dispatcher */
     if (blocking) {
-        gs_unref_variant GVariant *ret = NULL;
-        gs_free_error GError *error    = NULL;
+        gs_unref_variant GVariant *ret   = NULL;
+        gs_free_error GError      *error = NULL;
 
         ret = g_dbus_connection_call_sync(gl.dbus_connection,
                                           NM_DISPATCHER_DBUS_SERVICE,
@@ -689,8 +689,8 @@ nm_dispatcher_call_hostname(NMDispatcherFunc     callback,
  */
 gboolean
 nm_dispatcher_call_device(NMDispatcherAction   action,
-                          NMDevice *           device,
-                          NMActRequest *       act_request,
+                          NMDevice            *device,
+                          NMActRequest        *act_request,
                           NMDispatcherFunc     callback,
                           gpointer             user_data,
                           NMDispatcherCallId **out_call_id)
@@ -734,8 +734,8 @@ nm_dispatcher_call_device(NMDispatcherAction   action,
  */
 gboolean
 nm_dispatcher_call_device_sync(NMDispatcherAction action,
-                               NMDevice *         device,
-                               NMActRequest *     act_request)
+                               NMDevice          *device,
+                               NMActRequest      *act_request)
 {
     nm_assert(NM_IS_DEVICE(device));
     if (!act_request) {
@@ -783,13 +783,13 @@ nm_dispatcher_call_device_sync(NMDispatcherAction action,
 gboolean
 nm_dispatcher_call_vpn(NMDispatcherAction    action,
                        NMSettingsConnection *settings_connection,
-                       NMConnection *        applied_connection,
-                       NMDevice *            parent_device,
-                       const char *          vpn_iface,
+                       NMConnection         *applied_connection,
+                       NMDevice             *parent_device,
+                       const char           *vpn_iface,
                        const NML3ConfigData *l3cd,
                        NMDispatcherFunc      callback,
                        gpointer              user_data,
-                       NMDispatcherCallId ** out_call_id)
+                       NMDispatcherCallId  **out_call_id)
 {
     return _dispatcher_call(action,
                             FALSE,
@@ -822,9 +822,9 @@ nm_dispatcher_call_vpn(NMDispatcherAction    action,
 gboolean
 nm_dispatcher_call_vpn_sync(NMDispatcherAction    action,
                             NMSettingsConnection *settings_connection,
-                            NMConnection *        applied_connection,
-                            NMDevice *            parent_device,
-                            const char *          vpn_iface,
+                            NMConnection         *applied_connection,
+                            NMDevice             *parent_device,
+                            const char           *vpn_iface,
                             const NML3ConfigData *l3cd)
 {
     return _dispatcher_call(action,

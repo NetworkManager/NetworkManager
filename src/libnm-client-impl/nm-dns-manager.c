@@ -23,9 +23,9 @@ G_DEFINE_BOXED_TYPE(NMDnsEntry, nm_dns_entry, nm_dns_entry_dup, nm_dns_entry_unr
 struct NMDnsEntry {
     guint refcount;
 
-    char *   interface;
-    char **  nameservers;
-    char **  domains;
+    char    *interface;
+    char   **nameservers;
+    char   **domains;
     int      priority;
     gboolean vpn;
 };
@@ -38,7 +38,7 @@ struct NMDnsEntry {
  * Returns: (transfer full): the new #NMDnsEntry object, or %NULL on error
  **/
 NMDnsEntry *
-nm_dns_entry_new(const char *       interface,
+nm_dns_entry_new(const char        *interface,
                  const char *const *nameservers,
                  const char *const *domains,
                  int                priority,

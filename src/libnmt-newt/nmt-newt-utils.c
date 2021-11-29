@@ -19,13 +19,13 @@
 #include "libnm-glib-aux/nm-io-utils.h"
 
 static void
-nmt_newt_dialog_g_log_handler(const char *   log_domain,
+nmt_newt_dialog_g_log_handler(const char    *log_domain,
                               GLogLevelFlags log_level,
-                              const char *   message,
+                              const char    *message,
                               gpointer       user_data)
 {
-    const char *  level_name;
-    char *        full_message;
+    const char   *level_name;
+    char         *full_message;
     int           screen_width, screen_height;
     newtComponent text, ok, form;
     newtGrid      grid;
@@ -85,9 +85,9 @@ nmt_newt_dialog_g_log_handler(const char *   log_domain,
 }
 
 static void
-nmt_newt_basic_g_log_handler(const char *   log_domain,
+nmt_newt_basic_g_log_handler(const char    *log_domain,
                              GLogLevelFlags log_level,
-                             const char *   message,
+                             const char    *message,
                              gpointer       user_data)
 {
     newtSuspend();
@@ -133,7 +133,7 @@ nmt_newt_parse_colors(const char *s, bool is_newt)
         const char *name;
         const char *fg;
         const char *bg;
-        char *      parsed_s;
+        char       *parsed_s;
 
         parsed_s = (char *) lines[i];
         name     = parsed_s;
@@ -178,7 +178,7 @@ nmt_newt_parse_colors(const char *s, bool is_newt)
 static void
 nmt_newt_init_colors(gboolean is_newt)
 {
-    const char *  colors;
+    const char   *colors;
     gs_free char *file_content = NULL;
 
     colors = getenv(is_newt ? "NEWT_COLORS" : "NMT_NEWT_COLORS");
@@ -257,7 +257,7 @@ void
 nmt_newt_message_dialog(const char *message, ...)
 {
     va_list ap;
-    char *  msg, *msg_lc, *ok_lc;
+    char   *msg, *msg_lc, *ok_lc;
 
     va_start(ap, message);
     msg = g_strdup_vprintf(message, ap);
@@ -288,7 +288,7 @@ int
 nmt_newt_choice_dialog(const char *button1, const char *button2, const char *message, ...)
 {
     va_list ap;
-    char *  msg, *msg_lc, *button1_lc, *button2_lc;
+    char   *msg, *msg_lc, *button1_lc, *button2_lc;
     int     choice;
 
     va_start(ap, message);
@@ -402,10 +402,10 @@ char *
 nmt_newt_edit_string(const char *data)
 {
     gssize  len, nwrote;
-    char *  filename, *argv[3];
+    char   *filename, *argv[3];
     GError *error = NULL;
     int     fd, status;
-    char *  new_data = NULL;
+    char   *new_data = NULL;
 
     fd = g_file_open_tmp("XXXXXX.json", &filename, &error);
     if (fd == -1) {

@@ -34,12 +34,12 @@ typedef struct {
 
     NMSecretAgentSimple *self;
 
-    NMConnection *                 connection;
-    const char *                   setting_name;
-    char **                        hints;
+    NMConnection                  *connection;
+    const char                    *setting_name;
+    char                         **hints;
     NMSecretAgentOldGetSecretsFunc callback;
     gpointer                       callback_data;
-    GCancellable *                 cancellable;
+    GCancellable                  *cancellable;
     NMSecretAgentGetSecretsFlags   flags;
 } RequestData;
 
@@ -54,7 +54,7 @@ static guint signals[LAST_SIGNAL] = {0};
 typedef struct {
     GHashTable *requests;
 
-    char *   path;
+    char    *path;
     gboolean enabled;
 } NMSecretAgentSimplePrivate;
 
@@ -88,12 +88,12 @@ _request_data_free(gpointer data)
 }
 
 static void
-_request_data_complete(RequestData *   request,
-                       GVariant *      secrets,
-                       GError *        error,
+_request_data_complete(RequestData    *request,
+                       GVariant       *secrets,
+                       GError         *error,
                        GHashTableIter *iter_to_remove)
 {
-    NMSecretAgentSimple *       self = request->self;
+    NMSecretAgentSimple        *self = request->self;
     NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(self);
 
     nm_assert((secrets != NULL) != (error != NULL));
@@ -124,8 +124,8 @@ _request_data_complete(RequestData *   request,
 
 typedef struct {
     NMSecretAgentSimpleSecret base;
-    NMSetting *               setting;
-    char *                    property;
+    NMSetting                *setting;
+    char                     *property;
 } SecretReal;
 
 static void
@@ -145,11 +145,11 @@ _secret_real_free(NMSecretAgentSimpleSecret *secret)
 
 static NMSecretAgentSimpleSecret *
 _secret_real_new_plain(NMSecretAgentSecretType secret_type,
-                       const char *            pretty_name,
-                       NMSetting *             setting,
-                       const char *            property)
+                       const char             *pretty_name,
+                       NMSetting              *setting,
+                       const char             *property)
 {
-    SecretReal *  real;
+    SecretReal   *real;
     gs_free char *value = NULL;
 
     nm_assert(property);
@@ -178,7 +178,7 @@ _secret_real_new_plain(NMSecretAgentSecretType secret_type,
 
 static NMSecretAgentSimpleSecret *
 _secret_real_new_vpn_secret(const char *pretty_name,
-                            NMSetting * setting,
+                            NMSetting  *setting,
                             const char *property,
                             const char *vpn_type)
 {
@@ -208,8 +208,8 @@ _secret_real_new_vpn_secret(const char *pretty_name,
 
 static NMSecretAgentSimpleSecret *
 _secret_real_new_wireguard_peer_psk(NMSettingWireGuard *s_wg,
-                                    const char *        public_key,
-                                    const char *        preshared_key)
+                                    const char         *public_key,
+                                    const char         *preshared_key)
 {
     SecretReal *real;
 
@@ -238,8 +238,8 @@ _secret_real_new_wireguard_peer_psk(NMSettingWireGuard *s_wg,
 static gboolean
 add_8021x_secrets(RequestData *request, GPtrArray *secrets)
 {
-    NMSetting8021x *           s_8021x = nm_connection_get_setting_802_1x(request->connection);
-    const char *               eap_method;
+    NMSetting8021x            *s_8021x = nm_connection_get_setting_802_1x(request->connection);
+    const char                *eap_method;
     NMSecretAgentSimpleSecret *secret;
 
     /* If hints are given, then always ask for what the hints require */
@@ -301,7 +301,7 @@ add_wireless_secrets(RequestData *request, GPtrArray *secrets)
 {
     NMSettingWirelessSecurity *s_wsec =
         nm_connection_get_setting_wireless_security(request->connection);
-    const char *               key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
+    const char                *key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
     NMSecretAgentSimpleSecret *secret;
 
     if (!key_mgmt || nm_streq(key_mgmt, "owe"))
@@ -350,7 +350,7 @@ add_wireless_secrets(RequestData *request, GPtrArray *secrets)
 static gboolean
 add_pppoe_secrets(RequestData *request, GPtrArray *secrets)
 {
-    NMSettingPppoe *           s_pppoe = nm_connection_get_setting_pppoe(request->connection);
+    NMSettingPppoe            *s_pppoe = nm_connection_get_setting_pppoe(request->connection);
     NMSecretAgentSimpleSecret *secret;
 
     secret = _secret_real_new_plain(NM_SECRET_AGENT_SECRET_TYPE_PROPERTY,
@@ -375,7 +375,7 @@ static NMSettingSecretFlags
 get_vpn_secret_flags(NMSettingVpn *s_vpn, const char *secret_name)
 {
     NMSettingSecretFlags flags = NM_SETTING_SECRET_FLAG_NONE;
-    GHashTable *         vpn_data;
+    GHashTable          *vpn_data;
 
     g_object_get(s_vpn, NM_SETTING_VPN_DATA, &vpn_data, NULL);
     nm_vpn_service_plugin_get_secret_flags(vpn_data, secret_name, &flags);
@@ -385,10 +385,10 @@ get_vpn_secret_flags(NMSettingVpn *s_vpn, const char *secret_name)
 }
 
 static void
-add_vpn_secret_helper(GPtrArray *   secrets,
+add_vpn_secret_helper(GPtrArray    *secrets,
                       NMSettingVpn *s_vpn,
-                      const char *  name,
-                      const char *  ui_name)
+                      const char   *name,
+                      const char   *ui_name)
 {
     NMSecretAgentSimpleSecret *secret;
     NMSettingSecretFlags       flags;
@@ -421,10 +421,10 @@ add_vpn_secret_helper(GPtrArray *   secrets,
 static gboolean
 add_vpn_secrets(RequestData *request, GPtrArray *secrets, char **msg)
 {
-    NMSettingVpn *            s_vpn = nm_connection_get_setting_vpn(request->connection);
+    NMSettingVpn             *s_vpn = nm_connection_get_setting_vpn(request->connection);
     const NmcVpnPasswordName *p;
-    const char *              vpn_msg = NULL;
-    char **                   iter;
+    const char               *vpn_msg = NULL;
+    char                    **iter;
 
     /* If hints are given, then always ask for what the hints require */
     if (request->hints) {
@@ -451,7 +451,7 @@ add_vpn_secrets(RequestData *request, GPtrArray *secrets, char **msg)
 static gboolean
 add_wireguard_secrets(RequestData *request, GPtrArray *secrets, char **msg, GError **error)
 {
-    NMSettingWireGuard *       s_wg;
+    NMSettingWireGuard        *s_wg;
     NMSecretAgentSimpleSecret *secret;
     guint                      i;
 
@@ -479,8 +479,8 @@ add_wireguard_secrets(RequestData *request, GPtrArray *secrets, char **msg, GErr
     if (request->hints) {
         for (i = 0; request->hints[i]; i++) {
             NMWireGuardPeer *peer;
-            const char *     name       = request->hints[i];
-            gs_free char *   public_key = NULL;
+            const char      *name       = request->hints[i];
+            gs_free char    *public_key = NULL;
 
             if (nm_streq(name, NM_SETTING_WIREGUARD_PRIVATE_KEY))
                 continue;
@@ -516,13 +516,13 @@ add_wireguard_secrets(RequestData *request, GPtrArray *secrets, char **msg, GErr
 
 typedef struct {
     GPid           auth_dialog_pid;
-    GString *      auth_dialog_response;
-    RequestData *  request;
-    GPtrArray *    secrets;
-    GCancellable * cancellable;
+    GString       *auth_dialog_response;
+    RequestData   *request;
+    GPtrArray     *secrets;
+    GCancellable  *cancellable;
     gulong         cancellable_id;
     guint          child_watch_id;
-    GInputStream * input_stream;
+    GInputStream  *input_stream;
     GOutputStream *output_stream;
     char           read_buf[5];
 } AuthDialogData;
@@ -544,16 +544,16 @@ _auth_dialog_data_free(AuthDialogData *data)
 static void
 _auth_dialog_exited(GPid pid, int status, gpointer user_data)
 {
-    AuthDialogData *      data              = user_data;
-    RequestData *         request           = data->request;
-    GPtrArray *           secrets           = data->secrets;
-    NMSettingVpn *        s_vpn             = nm_connection_get_setting_vpn(request->connection);
+    AuthDialogData                 *data    = user_data;
+    RequestData                    *request = data->request;
+    GPtrArray                      *secrets = data->secrets;
+    NMSettingVpn                   *s_vpn   = nm_connection_get_setting_vpn(request->connection);
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    gs_strfreev char **             groups  = NULL;
-    gs_free char *                  title   = NULL;
-    gs_free char *                  message = NULL;
+    gs_strfreev char              **groups  = NULL;
+    gs_free char                   *title   = NULL;
+    gs_free char                   *message = NULL;
     int                             i;
-    gs_free_error GError *error = NULL;
+    gs_free_error GError           *error = NULL;
 
     data->child_watch_id = 0;
 
@@ -646,9 +646,9 @@ _request_cancelled(GObject *object, gpointer user_data)
 static void
 _auth_dialog_read_done(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    GInputStream *  auth_dialog_out = G_INPUT_STREAM(source_object);
-    AuthDialogData *data            = user_data;
-    gssize          read_size;
+    GInputStream         *auth_dialog_out = G_INPUT_STREAM(source_object);
+    AuthDialogData       *data            = user_data;
+    gssize                read_size;
     gs_free_error GError *error = NULL;
 
     read_size = g_input_stream_read_finish(auth_dialog_out, res, &error);
@@ -684,7 +684,7 @@ _auth_dialog_read_done(GObject *source_object, GAsyncResult *res, gpointer user_
 static void
 _auth_dialog_write_done(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    GOutputStream *auth_dialog_out                    = G_OUTPUT_STREAM(source_object);
+    GOutputStream           *auth_dialog_out          = G_OUTPUT_STREAM(source_object);
     _nm_unused gs_free char *auth_dialog_request_free = user_data;
 
     /* We don't care about write errors. If there are any problems, the
@@ -732,20 +732,20 @@ _add_secret_to_string(const char *key, const char *value, gpointer user_data)
 static gboolean
 try_spawn_vpn_auth_helper(RequestData *request, GPtrArray *secrets)
 {
-    NMSettingVpn *    s_vpn = nm_connection_get_setting_vpn(request->connection);
+    NMSettingVpn                *s_vpn = nm_connection_get_setting_vpn(request->connection);
     gs_unref_ptrarray GPtrArray *auth_dialog_argv = NULL;
-    NMVpnPluginInfo *            plugin_info;
-    const char *                 s;
+    NMVpnPluginInfo             *plugin_info;
+    const char                  *s;
     GPid                         auth_dialog_pid;
     int                          auth_dialog_in_fd;
     int                          auth_dialog_out_fd;
-    GOutputStream *              auth_dialog_in;
-    GInputStream *               auth_dialog_out;
-    GError *                     error = NULL;
-    GString *                    auth_dialog_request;
-    gs_free char *               auth_dialog_request_str = NULL;
+    GOutputStream               *auth_dialog_in;
+    GInputStream                *auth_dialog_out;
+    GError                      *error = NULL;
+    GString                     *auth_dialog_request;
+    gs_free char                *auth_dialog_request_str = NULL;
     gsize                        auth_dialog_request_len;
-    AuthDialogData *             data;
+    AuthDialogData              *data;
     int                          i;
 
     plugin_info = nm_vpn_plugin_info_list_find_by_service(nm_vpn_get_plugin_infos(),
@@ -845,11 +845,11 @@ static void
 request_secrets_from_ui(RequestData *request)
 {
     gs_unref_ptrarray GPtrArray *secrets = NULL;
-    gs_free_error GError *      error    = NULL;
-    NMSecretAgentSimplePrivate *priv;
-    NMSecretAgentSimpleSecret * secret;
-    const char *                title;
-    gs_free char *              msg = NULL;
+    gs_free_error GError        *error   = NULL;
+    NMSecretAgentSimplePrivate  *priv;
+    NMSecretAgentSimpleSecret   *secret;
+    const char                  *title;
+    gs_free char                *msg = NULL;
 
     priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(request->self);
     g_return_if_fail(priv->enabled);
@@ -869,8 +869,8 @@ request_secrets_from_ui(RequestData *request)
 
     if (nm_connection_is_type(request->connection, NM_SETTING_WIRELESS_SETTING_NAME)) {
         NMSettingWireless *s_wireless;
-        GBytes *           ssid;
-        gs_free char *     ssid_utf8 = NULL;
+        GBytes            *ssid;
+        gs_free char      *ssid_utf8 = NULL;
 
         s_wireless = nm_connection_get_setting_wireless(request->connection);
         ssid       = nm_setting_wireless_get_ssid(s_wireless);
@@ -1022,21 +1022,21 @@ out_fail_error:
 }
 
 static void
-get_secrets(NMSecretAgentOld *             agent,
-            NMConnection *                 connection,
-            const char *                   connection_path,
-            const char *                   setting_name,
-            const char **                  hints,
+get_secrets(NMSecretAgentOld              *agent,
+            NMConnection                  *connection,
+            const char                    *connection_path,
+            const char                    *setting_name,
+            const char                   **hints,
             NMSecretAgentGetSecretsFlags   flags,
             NMSecretAgentOldGetSecretsFunc callback,
             gpointer                       callback_data)
 {
-    NMSecretAgentSimple *       self = NM_SECRET_AGENT_SIMPLE(agent);
+    NMSecretAgentSimple        *self = NM_SECRET_AGENT_SIMPLE(agent);
     NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(self);
-    RequestData *               request;
-    gs_free_error GError *error      = NULL;
-    gs_free char *        request_id = NULL;
-    const char *          request_id_setting_name;
+    RequestData                *request;
+    gs_free_error GError       *error      = NULL;
+    gs_free char               *request_id = NULL;
+    const char                 *request_id_setting_name;
 
     request_id = g_strdup_printf("%s/%s", connection_path, setting_name);
 
@@ -1097,14 +1097,14 @@ get_secrets(NMSecretAgentOld *             agent,
  */
 void
 nm_secret_agent_simple_response(NMSecretAgentSimple *self,
-                                const char *         request_id,
-                                GPtrArray *          secrets)
+                                const char          *request_id,
+                                GPtrArray           *secrets)
 {
     NMSecretAgentSimplePrivate *priv;
-    RequestData *               request;
-    gs_unref_variant GVariant *secrets_dict = NULL;
-    gs_free_error GError *error             = NULL;
-    int                   i;
+    RequestData                *request;
+    gs_unref_variant GVariant  *secrets_dict = NULL;
+    gs_free_error GError       *error        = NULL;
+    int                         i;
 
     g_return_if_fail(NM_IS_SECRET_AGENT_SIMPLE(self));
 
@@ -1117,9 +1117,9 @@ nm_secret_agent_simple_response(NMSecretAgentSimple *self,
         GVariantBuilder vpn_secrets_builder;
         GVariantBuilder wg_secrets_builder;
         GVariantBuilder wg_peer_builder;
-        GHashTable *    settings;
+        GHashTable     *settings;
         GHashTableIter  iter;
-        const char *    name;
+        const char     *name;
         gboolean        has_vpn = FALSE;
         gboolean        has_wg  = FALSE;
 
@@ -1207,11 +1207,11 @@ nm_secret_agent_simple_response(NMSecretAgentSimple *self,
 static void
 cancel_get_secrets(NMSecretAgentOld *agent, const char *connection_path, const char *setting_name)
 {
-    NMSecretAgentSimple *       self = NM_SECRET_AGENT_SIMPLE(agent);
-    NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(self);
-    gs_free_error GError *error      = NULL;
-    gs_free char *        request_id = NULL;
-    RequestData *         request;
+    NMSecretAgentSimple        *self       = NM_SECRET_AGENT_SIMPLE(agent);
+    NMSecretAgentSimplePrivate *priv       = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(self);
+    gs_free_error GError       *error      = NULL;
+    gs_free char               *request_id = NULL;
+    RequestData                *request;
 
     request_id = g_strdup_printf("%s/%s", connection_path, setting_name);
     request    = g_hash_table_lookup(priv->requests, &request_id);
@@ -1229,9 +1229,9 @@ cancel_get_secrets(NMSecretAgentOld *agent, const char *connection_path, const c
 }
 
 static void
-save_secrets(NMSecretAgentOld *              agent,
-             NMConnection *                  connection,
-             const char *                    connection_path,
+save_secrets(NMSecretAgentOld               *agent,
+             NMConnection                   *connection,
+             const char                     *connection_path,
              NMSecretAgentOldSaveSecretsFunc callback,
              gpointer                        callback_data)
 {
@@ -1240,9 +1240,9 @@ save_secrets(NMSecretAgentOld *              agent,
 }
 
 static void
-delete_secrets(NMSecretAgentOld *                agent,
-               NMConnection *                    connection,
-               const char *                      connection_path,
+delete_secrets(NMSecretAgentOld                 *agent,
+               NMConnection                     *connection,
+               const char                       *connection_path,
                NMSecretAgentOldDeleteSecretsFunc callback,
                gpointer                          callback_data)
 {
@@ -1263,10 +1263,10 @@ delete_secrets(NMSecretAgentOld *                agent,
 void
 nm_secret_agent_simple_enable(NMSecretAgentSimple *self, const char *path)
 {
-    NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(self);
-    gs_free RequestData **requests   = NULL;
-    gsize                 i;
-    gs_free char *        path_full = NULL;
+    NMSecretAgentSimplePrivate *priv     = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(self);
+    gs_free RequestData       **requests = NULL;
+    gsize                       i;
+    gs_free char               *path_full = NULL;
 
     /* The path is only used to match a request_id with the current
      * connection. Since the request_id is "${CONNECTION_PATH}/${SETTING}",
@@ -1326,10 +1326,10 @@ nm_secret_agent_simple_new(const char *name)
 static void
 dispose(GObject *object)
 {
-    NMSecretAgentSimplePrivate *priv = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(object);
-    gs_free_error GError *error      = NULL;
-    GHashTableIter        iter;
-    RequestData *         request;
+    NMSecretAgentSimplePrivate *priv  = NM_SECRET_AGENT_SIMPLE_GET_PRIVATE(object);
+    gs_free_error GError       *error = NULL;
+    GHashTableIter              iter;
+    RequestData                *request;
 
     g_hash_table_iter_init(&iter, priv->requests);
     while (g_hash_table_iter_next(&iter, NULL, (gpointer *) &request)) {
@@ -1356,7 +1356,7 @@ finalize(GObject *object)
 void
 nm_secret_agent_simple_class_init(NMSecretAgentSimpleClass *klass)
 {
-    GObjectClass *         object_class = G_OBJECT_CLASS(klass);
+    GObjectClass          *object_class = G_OBJECT_CLASS(klass);
     NMSecretAgentOldClass *agent_class  = NM_SECRET_AGENT_OLD_CLASS(klass);
 
     object_class->dispose  = dispose;

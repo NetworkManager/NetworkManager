@@ -59,7 +59,7 @@ enum {
 NmtNewtWidget *
 nmt_newt_popup_new(NmtNewtPopupEntry *entries)
 {
-    NmtNewtWidget *      widget;
+    NmtNewtWidget       *widget;
     NmtNewtPopupPrivate *priv;
     int                  i;
 
@@ -107,7 +107,7 @@ static newtComponent
 nmt_newt_popup_build_component(NmtNewtComponent *component, gboolean sensitive)
 {
     NmtNewtPopupPrivate *priv    = NMT_NEWT_POPUP_GET_PRIVATE(component);
-    NmtNewtPopupEntry *  entries = (NmtNewtPopupEntry *) priv->entries->data;
+    NmtNewtPopupEntry   *entries = (NmtNewtPopupEntry *) priv->entries->data;
 
     nmt_newt_button_set_label(NMT_NEWT_BUTTON(component), entries[priv->active].label);
     return NMT_NEWT_COMPONENT_CLASS(nmt_newt_popup_parent_class)
@@ -118,9 +118,9 @@ static void
 nmt_newt_popup_activated(NmtNewtWidget *widget)
 {
     NmtNewtPopupPrivate *priv    = NMT_NEWT_POPUP_GET_PRIVATE(widget);
-    NmtNewtPopupEntry *  entries = (NmtNewtPopupEntry *) priv->entries->data;
-    NmtNewtForm *        form;
-    NmtNewtWidget *      listbox, *ret;
+    NmtNewtPopupEntry   *entries = (NmtNewtPopupEntry *) priv->entries->data;
+    NmtNewtForm         *form;
+    NmtNewtWidget       *listbox, *ret;
     int                  button_x, button_y;
     int                  window_x, window_y;
     int                  list_w, list_h;
@@ -234,7 +234,7 @@ const char *
 nmt_newt_popup_get_active_id(NmtNewtPopup *popup)
 {
     NmtNewtPopupPrivate *priv    = NMT_NEWT_POPUP_GET_PRIVATE(popup);
-    NmtNewtPopupEntry *  entries = (NmtNewtPopupEntry *) priv->entries->data;
+    NmtNewtPopupEntry   *entries = (NmtNewtPopupEntry *) priv->entries->data;
 
     return entries[priv->active].id;
 }
@@ -250,7 +250,7 @@ void
 nmt_newt_popup_set_active_id(NmtNewtPopup *popup, const char *active_id)
 {
     NmtNewtPopupPrivate *priv    = NMT_NEWT_POPUP_GET_PRIVATE(popup);
-    NmtNewtPopupEntry *  entries = (NmtNewtPopupEntry *) priv->entries->data;
+    NmtNewtPopupEntry   *entries = (NmtNewtPopupEntry *) priv->entries->data;
     int                  i;
 
     for (i = 0; i < priv->entries->len; i++) {
@@ -300,8 +300,8 @@ nmt_newt_popup_get_property(GObject *object, guint prop_id, GValue *value, GPara
 static void
 nmt_newt_popup_class_init(NmtNewtPopupClass *popup_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(popup_class);
-    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(popup_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(popup_class);
+    NmtNewtWidgetClass    *widget_class    = NMT_NEWT_WIDGET_CLASS(popup_class);
     NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS(popup_class);
 
     g_type_class_add_private(popup_class, sizeof(NmtNewtPopupPrivate));

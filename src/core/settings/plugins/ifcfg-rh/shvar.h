@@ -43,10 +43,10 @@ const char *svFindFirstNumberedKey(shvarFile *s, const char *key_prefix);
  * be freed by the caller.
  */
 const char *svGetValue(shvarFile *s, const char *key, char **to_free);
-char *      svGetValue_cp(shvarFile *s, const char *key);
+char       *svGetValue_cp(shvarFile *s, const char *key);
 
 const char *svGetValueStr(shvarFile *s, const char *key, char **to_free);
-char *      svGetValueStr_cp(shvarFile *s, const char *key);
+char       *svGetValueStr_cp(shvarFile *s, const char *key);
 
 int svParseBoolean(const char *value, int def);
 

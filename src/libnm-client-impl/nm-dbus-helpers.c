@@ -54,7 +54,7 @@ _nm_dbus_bind_properties(gpointer object, gpointer skeleton)
 static char *
 signal_name_from_method_name(const char *method_name)
 {
-    GString *   signal_name;
+    GString    *signal_name;
     const char *p;
 
     signal_name = g_string_new("handle");
@@ -68,8 +68,8 @@ signal_name_from_method_name(const char *method_name)
 }
 
 static void
-_nm_dbus_method_meta_marshal(GClosure *    closure,
-                             GValue *      return_value,
+_nm_dbus_method_meta_marshal(GClosure     *closure,
+                             GValue       *return_value,
                              guint         n_param_values,
                              const GValue *param_values,
                              gpointer      invocation_hint,
@@ -94,9 +94,9 @@ _nm_dbus_bind_methods(gpointer object, gpointer skeleton, ...)
 {
     va_list     ap;
     const char *method_name;
-    char *      signal_name;
+    char       *signal_name;
     GCallback   handler;
-    GClosure *  closure;
+    GClosure   *closure;
 
     va_start(ap, skeleton);
     while ((method_name = va_arg(ap, const char *)) && (handler = va_arg(ap, GCallback))) {

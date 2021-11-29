@@ -147,7 +147,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_generic = NML_DBUS_META_IF
 static void
 nm_device_generic_class_init(NMDeviceGenericClass *klass)
 {
-    GObjectClass * object_class = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class = G_OBJECT_CLASS(klass);
     NMDeviceClass *device_class = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;

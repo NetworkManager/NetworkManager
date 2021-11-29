@@ -103,9 +103,9 @@ _storage_new(NMSIfcfgRHPlugin *plugin, const char *uuid, const char *filename)
 }
 
 NMSIfcfgRHStorage *
-nms_ifcfg_rh_storage_new_connection(NMSIfcfgRHPlugin *     plugin,
-                                    const char *           filename,
-                                    NMConnection *         connection_take,
+nms_ifcfg_rh_storage_new_connection(NMSIfcfgRHPlugin      *plugin,
+                                    const char            *filename,
+                                    NMConnection          *connection_take,
                                     const struct timespec *mtime)
 {
     NMSIfcfgRHStorage *self;
@@ -123,9 +123,9 @@ nms_ifcfg_rh_storage_new_connection(NMSIfcfgRHPlugin *     plugin,
 
 NMSIfcfgRHStorage *
 nms_ifcfg_rh_storage_new_unhandled(NMSIfcfgRHPlugin *plugin,
-                                   const char *      filename,
-                                   const char *      unmanaged_spec,
-                                   const char *      unrecognized_spec)
+                                   const char       *filename,
+                                   const char       *unmanaged_spec,
+                                   const char       *unrecognized_spec)
 {
     NMSIfcfgRHStorage *self;
 
@@ -167,7 +167,7 @@ nms_ifcfg_rh_storage_destroy(NMSIfcfgRHStorage *self)
 static void
 nms_ifcfg_rh_storage_class_init(NMSIfcfgRHStorageClass *klass)
 {
-    GObjectClass *          object_class  = G_OBJECT_CLASS(klass);
+    GObjectClass           *object_class  = G_OBJECT_CLASS(klass);
     NMSettingsStorageClass *storage_class = NM_SETTINGS_STORAGE_CLASS(klass);
 
     object_class->dispose = dispose;

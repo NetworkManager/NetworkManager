@@ -22,12 +22,12 @@
 /*****************************************************************************/
 
 typedef struct {
-    char *             original_dev_path;
-    char *             original_dev_name;
+    char              *original_dev_path;
+    char              *original_dev_name;
     NMDeviceType       dev_type;
-    NMDevice *         device;
-    NMConnection *     applied_connection;
-    NMConnection *     settings_connection;
+    NMDevice          *device;
+    NMConnection      *applied_connection;
+    NMConnection      *settings_connection;
     guint64            ac_version_id;
     NMDeviceState      state;
     bool               is_software : 1;
@@ -43,14 +43,14 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMCheckpoint, PROP_DEVICES, PROP_CREATED, PROP_ROLL
 struct _NMCheckpointPrivate {
     /* properties */
     GHashTable *devices;
-    GPtrArray * removed_devices;
+    GPtrArray  *removed_devices;
     gint64      created_at_ms;
     guint32     rollback_timeout_s;
     guint       timeout_id;
     /* private members */
-    NMManager *             manager;
+    NMManager              *manager;
     NMCheckpointCreateFlags flags;
-    GHashTable *            connection_uuids;
+    GHashTable             *connection_uuids;
     gulong                  dev_removed_id;
 
     NMCheckpointTimeoutCallback timeout_cb;
@@ -105,7 +105,7 @@ nm_checkpoint_log_destroy(NMCheckpoint *self)
 }
 
 void
-nm_checkpoint_set_timeout_callback(NMCheckpoint *              self,
+nm_checkpoint_set_timeout_callback(NMCheckpoint               *self,
                                    NMCheckpointTimeoutCallback callback,
                                    gpointer                    user_data)
 {
@@ -137,7 +137,7 @@ nm_checkpoint_includes_devices_of(NMCheckpoint *self, NMCheckpoint *cp_for_devic
     NMCheckpointPrivate *priv  = NM_CHECKPOINT_GET_PRIVATE(self);
     NMCheckpointPrivate *priv2 = NM_CHECKPOINT_GET_PRIVATE(cp_for_devices);
     GHashTableIter       iter;
-    NMDevice *           device;
+    NMDevice            *device;
 
     g_hash_table_iter_init(&iter, priv2->devices);
     while (g_hash_table_iter_next(&iter, (gpointer *) &device, NULL)) {
@@ -148,16 +148,16 @@ nm_checkpoint_includes_devices_of(NMCheckpoint *self, NMCheckpoint *cp_for_devic
 }
 
 static NMSettingsConnection *
-find_settings_connection(NMCheckpoint *    self,
+find_settings_connection(NMCheckpoint     *self,
                          DeviceCheckpoint *dev_checkpoint,
-                         gboolean *        need_update,
-                         gboolean *        need_activation)
+                         gboolean         *need_update,
+                         gboolean         *need_activation)
 {
-    NMCheckpointPrivate * priv = NM_CHECKPOINT_GET_PRIVATE(self);
-    NMActiveConnection *  active;
+    NMCheckpointPrivate  *priv = NM_CHECKPOINT_GET_PRIVATE(self);
+    NMActiveConnection   *active;
     NMSettingsConnection *sett_conn;
-    const char *          uuid, *ac_uuid;
-    const CList *         tmp_clist;
+    const char           *uuid, *ac_uuid;
+    const CList          *tmp_clist;
 
     *need_activation = FALSE;
     *need_update     = FALSE;
@@ -205,10 +205,10 @@ find_settings_connection(NMCheckpoint *    self,
 static gboolean
 restore_and_activate_connection(NMCheckpoint *self, DeviceCheckpoint *dev_checkpoint)
 {
-    NMCheckpointPrivate * priv = NM_CHECKPOINT_GET_PRIVATE(self);
-    NMSettingsConnection *connection;
-    gs_unref_object NMAuthSubject * subject     = NULL;
-    GError *                        local_error = NULL;
+    NMCheckpointPrivate            *priv = NM_CHECKPOINT_GET_PRIVATE(self);
+    NMSettingsConnection           *connection;
+    gs_unref_object NMAuthSubject  *subject     = NULL;
+    GError                         *local_error = NULL;
     gboolean                        need_update, need_activation;
     NMSettingsConnectionPersistMode persist_mode;
     NMSettingsConnectionIntFlags    sett_flags;
@@ -315,9 +315,9 @@ GVariant *
 nm_checkpoint_rollback(NMCheckpoint *self)
 {
     NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE(self);
-    DeviceCheckpoint *   dev_checkpoint;
+    DeviceCheckpoint    *dev_checkpoint;
     GHashTableIter       iter;
-    NMDevice *           device;
+    NMDevice            *device;
     GVariantBuilder      builder;
     uint                 i;
 
@@ -424,7 +424,7 @@ next_dev:
     }
 
     if (NM_FLAGS_HAS(priv->flags, NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS)) {
-        NMSettingsConnection *con;
+        NMSettingsConnection          *con;
         gs_free NMSettingsConnection **list = NULL;
 
         g_return_val_if_fail(priv->connection_uuids, NULL);
@@ -447,7 +447,7 @@ next_dev:
     }
 
     if (NM_FLAGS_HAS(priv->flags, NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES)) {
-        const CList * tmp_lst;
+        const CList  *tmp_lst;
         NMDeviceState state;
 
         nm_manager_for_each_device (priv->manager, device, tmp_lst) {
@@ -485,7 +485,7 @@ static void
 _move_dev_to_removed_devices(NMDevice *device, NMCheckpoint *checkpoint)
 {
     NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE(checkpoint);
-    DeviceCheckpoint *   dev_checkpoint;
+    DeviceCheckpoint    *dev_checkpoint;
 
     g_return_if_fail(device);
 
@@ -514,11 +514,11 @@ _dev_exported_changed(NMDBusObject *obj, NMCheckpoint *checkpoint)
 static DeviceCheckpoint *
 device_checkpoint_create(NMCheckpoint *checkpoint, NMDevice *device)
 {
-    DeviceCheckpoint *    dev_checkpoint;
-    NMConnection *        applied_connection;
+    DeviceCheckpoint     *dev_checkpoint;
+    NMConnection         *applied_connection;
     NMSettingsConnection *settings_connection;
-    const char *          path;
-    NMActRequest *        act_request;
+    const char           *path;
+    NMActRequest         *act_request;
 
     nm_assert(NM_IS_DEVICE(device));
     nm_assert(nm_device_is_real(device));
@@ -567,7 +567,7 @@ device_checkpoint_create(NMCheckpoint *checkpoint, NMDevice *device)
 static gboolean
 _timeout_cb(gpointer user_data)
 {
-    NMCheckpoint *       self = user_data;
+    NMCheckpoint        *self = user_data;
     NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE(self);
 
     priv->timeout_id = 0;
@@ -619,7 +619,7 @@ nm_checkpoint_adjust_rollback_timeout(NMCheckpoint *self, guint32 add_timeout)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMCheckpoint *       self = NM_CHECKPOINT(object);
+    NMCheckpoint        *self = NM_CHECKPOINT(object);
     NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -663,13 +663,13 @@ _device_removed(NMManager *manager, NMDevice *device, gpointer user_data)
 }
 
 NMCheckpoint *
-nm_checkpoint_new(NMManager *             manager,
-                  GPtrArray *             devices,
+nm_checkpoint_new(NMManager              *manager,
+                  GPtrArray              *devices,
                   guint32                 rollback_timeout_s,
                   NMCheckpointCreateFlags flags)
 {
-    NMCheckpoint *               self;
-    NMCheckpointPrivate *        priv;
+    NMCheckpoint                *self;
+    NMCheckpointPrivate         *priv;
     NMSettingsConnection *const *con;
     gint64                       rollback_timeout_ms;
     guint                        i;
@@ -719,7 +719,7 @@ nm_checkpoint_new(NMManager *             manager,
 static void
 dispose(GObject *object)
 {
-    NMCheckpoint *       self = NM_CHECKPOINT(object);
+    NMCheckpoint        *self = NM_CHECKPOINT(object);
     NMCheckpointPrivate *priv = NM_CHECKPOINT_GET_PRIVATE(self);
 
     nm_assert(c_list_is_empty(&self->checkpoints_lst));
@@ -750,7 +750,7 @@ static const NMDBusInterfaceInfoExtended interface_info_checkpoint = {
 static void
 nm_checkpoint_class_init(NMCheckpointClass *checkpoint_class)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(checkpoint_class);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(checkpoint_class);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(checkpoint_class);
 
     g_type_class_add_private(object_class, sizeof(NMCheckpointPrivate));

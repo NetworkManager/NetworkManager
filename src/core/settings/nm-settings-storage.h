@@ -30,8 +30,8 @@ struct _NMSettingsPlugin;
 typedef struct NMSettingsStorage {
     GObject                   parent;
     struct _NMSettingsPlugin *_plugin;
-    char *                    _uuid;
-    char *                    _filename;
+    char                     *_uuid;
+    char                     *_filename;
     CList                     _storage_lst;
     CList                     _storage_by_uuid_lst;
 } NMSettingsStorage;
@@ -106,6 +106,6 @@ nm_settings_storage_get_filename(const NMSettingsStorage *self)
 
 int nm_settings_storage_cmp(NMSettingsStorage *sd_a,
                             NMSettingsStorage *sd_b,
-                            const GSList *     plugin_list);
+                            const GSList      *plugin_list);
 
 #endif /* __NM_SETTINGS_STORAGE_H__ */

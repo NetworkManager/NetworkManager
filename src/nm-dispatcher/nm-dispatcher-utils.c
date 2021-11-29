@@ -131,7 +131,7 @@ static void
 _items_add_printf(GPtrArray *items, const char *fmt, ...)
 {
     va_list ap;
-    char *  line;
+    char   *line;
 
     nm_assert(items);
     nm_assert(fmt);
@@ -225,8 +225,8 @@ construct_ip_items(GPtrArray *items, int addr_family, GVariant *ip_config, const
                                                         : G_VARIANT_TYPE("a(ayuay)"));
     if (val) {
         gs_unref_ptrarray GPtrArray *addresses    = NULL;
-        gs_free char *               gateway_free = NULL;
-        const char *                 gateway;
+        gs_free char                *gateway_free = NULL;
+        const char                  *gateway;
 
         if (addr_family == AF_INET)
             addresses = nm_utils_ip4_addresses_from_variant(val, &gateway_free);
@@ -346,12 +346,12 @@ construct_ip_items(GPtrArray *items, int addr_family, GVariant *ip_config, const
 static void
 construct_device_dhcp_items(GPtrArray *items, int addr_family, GVariant *dhcp_config)
 {
-    GVariantIter     iter;
-    const char *     key;
-    GVariant *       val;
-    char             four_or_six;
-    gboolean         found_unknown_245         = FALSE;
-    gs_unref_variant GVariant *private_245_val = NULL;
+    GVariantIter               iter;
+    const char                *key;
+    GVariant                  *val;
+    char                       four_or_six;
+    gboolean                   found_unknown_245 = FALSE;
+    gs_unref_variant GVariant *private_245_val   = NULL;
 
     if (!dhcp_config)
         return;
@@ -415,34 +415,34 @@ construct_device_dhcp_items(GPtrArray *items, int addr_family, GVariant *dhcp_co
 /*****************************************************************************/
 
 char **
-nm_dispatcher_utils_construct_envp(const char * action,
-                                   GVariant *   connection_dict,
-                                   GVariant *   connection_props,
-                                   GVariant *   device_props,
-                                   GVariant *   device_proxy_props,
-                                   GVariant *   device_ip4_props,
-                                   GVariant *   device_ip6_props,
-                                   GVariant *   device_dhcp4_props,
-                                   GVariant *   device_dhcp6_props,
-                                   const char * connectivity_state,
-                                   const char * vpn_ip_iface,
-                                   GVariant *   vpn_proxy_props,
-                                   GVariant *   vpn_ip4_props,
-                                   GVariant *   vpn_ip6_props,
-                                   char **      out_iface,
+nm_dispatcher_utils_construct_envp(const char  *action,
+                                   GVariant    *connection_dict,
+                                   GVariant    *connection_props,
+                                   GVariant    *device_props,
+                                   GVariant    *device_proxy_props,
+                                   GVariant    *device_ip4_props,
+                                   GVariant    *device_ip6_props,
+                                   GVariant    *device_dhcp4_props,
+                                   GVariant    *device_dhcp6_props,
+                                   const char  *connectivity_state,
+                                   const char  *vpn_ip_iface,
+                                   GVariant    *vpn_proxy_props,
+                                   GVariant    *vpn_ip4_props,
+                                   GVariant    *vpn_ip6_props,
+                                   char       **out_iface,
                                    const char **out_error_message)
 {
-    const char *      iface    = NULL;
-    const char *      ip_iface = NULL;
-    const char *      uuid     = NULL;
-    const char *      id       = NULL;
-    const char *      path     = NULL;
-    const char *      filename = NULL;
-    gboolean          external;
-    NMDeviceState     dev_state = NM_DEVICE_STATE_UNKNOWN;
-    GVariant *        variant;
+    const char                  *iface    = NULL;
+    const char                  *ip_iface = NULL;
+    const char                  *uuid     = NULL;
+    const char                  *id       = NULL;
+    const char                  *path     = NULL;
+    const char                  *filename = NULL;
+    gboolean                     external;
+    NMDeviceState                dev_state = NM_DEVICE_STATE_UNKNOWN;
+    GVariant                    *variant;
     gs_unref_ptrarray GPtrArray *items = NULL;
-    const char *                 error_message_backup;
+    const char                  *error_message_backup;
 
     if (!out_error_message)
         out_error_message = &error_message_backup;

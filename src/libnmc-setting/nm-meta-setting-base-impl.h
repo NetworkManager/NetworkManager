@@ -73,18 +73,18 @@ typedef struct {
     const char *(*uri_func)(NMSetting8021x *setting);
     const char *(*passwd_func)(NMSetting8021x *setting);
     NMSettingSecretFlags (*pwflag_func)(NMSetting8021x *setting);
-    gboolean (*set_cert_func)(NMSetting8021x *        setting,
-                              const char *            value,
+    gboolean (*set_cert_func)(NMSetting8021x         *setting,
+                              const char             *value,
                               NMSetting8021xCKScheme  scheme,
                               NMSetting8021xCKFormat *out_format,
-                              GError **               error);
-    gboolean (*set_private_key_func)(NMSetting8021x *        setting,
-                                     const char *            value,
-                                     const char *            password,
+                              GError                **error);
+    gboolean (*set_private_key_func)(NMSetting8021x         *setting,
+                                     const char             *value,
+                                     const char             *password,
                                      NMSetting8021xCKScheme  scheme,
                                      NMSetting8021xCKFormat *out_format,
-                                     GError **               error);
-    const char *             file_suffix;
+                                     GError                **error);
+    const char              *file_suffix;
     NMSetting8021xSchemeType scheme_type;
     bool                     is_secret : 1;
 } NMSetting8021xSchemeVtable;

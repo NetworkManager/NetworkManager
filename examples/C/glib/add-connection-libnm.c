@@ -19,9 +19,9 @@
 static void
 added_cb(GObject *client, GAsyncResult *result, gpointer user_data)
 {
-    GMainLoop *         loop = user_data;
+    GMainLoop          *loop = user_data;
     NMRemoteConnection *remote;
-    GError *            error = NULL;
+    GError             *error = NULL;
 
     /* NM responded to our request; either handle the resulting error or
      * print out the object path of the connection we just added.
@@ -43,11 +43,11 @@ added_cb(GObject *client, GAsyncResult *result, gpointer user_data)
 static void
 add_connection(NMClient *client, GMainLoop *loop, const char *con_name)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSettingWired *     s_wired;
-    NMSettingIP4Config * s_ip4;
-    char *               uuid;
+    NMSettingWired      *s_wired;
+    NMSettingIP4Config  *s_ip4;
+    char                *uuid;
 
     /* Create a new connection object */
     connection = nm_simple_connection_new();
@@ -88,9 +88,9 @@ add_connection(NMClient *client, GMainLoop *loop, const char *con_name)
 int
 main(int argc, char *argv[])
 {
-    NMClient * client;
+    NMClient  *client;
     GMainLoop *loop;
-    GError *   error = NULL;
+    GError    *error = NULL;
 
     loop = g_main_loop_new(NULL, FALSE);
 

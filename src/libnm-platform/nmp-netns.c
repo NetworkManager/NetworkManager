@@ -147,8 +147,8 @@ static GArray *
 _netns_stack_get_impl(void)
 {
     gs_unref_object NMPNetns *netns = NULL;
-    gs_free_error GError *error     = NULL;
-    GArray *              s;
+    gs_free_error GError     *error = NULL;
+    GArray                   *s;
 
     s = g_array_new(FALSE, FALSE, sizeof(NetnsInfo));
     g_array_set_clear_func(s, _netns_stack_clear_cb);
@@ -444,7 +444,7 @@ nmp_netns_get_fd_mnt(NMPNetns *self)
 static gboolean
 _nmp_netns_push_type(NMPNetns *self, int ns_types)
 {
-    GArray *   netns_stack = _netns_stack_get();
+    GArray    *netns_stack = _netns_stack_get();
     NetnsInfo *info;
     char       sbuf[100];
 
@@ -493,10 +493,10 @@ nmp_netns_push_type(NMPNetns *self, int ns_types)
 NMPNetns *
 nmp_netns_new(void)
 {
-    GArray *      netns_stack = _netns_stack_get();
-    NMPNetns *    self;
+    GArray       *netns_stack = _netns_stack_get();
+    NMPNetns     *self;
     int           errsv;
-    GError *      error      = NULL;
+    GError       *error      = NULL;
     unsigned long mountflags = 0;
 
     if (!_stack_peek(netns_stack)) {
@@ -553,7 +553,7 @@ err_out:
 gboolean
 nmp_netns_pop(NMPNetns *self)
 {
-    GArray *   netns_stack = _netns_stack_get();
+    GArray    *netns_stack = _netns_stack_get();
     NetnsInfo *info;
     int        ns_types;
 
@@ -608,9 +608,9 @@ nmp_netns_is_initial(void)
 gboolean
 nmp_netns_bind_to_path(NMPNetns *self, const char *filename, int *out_fd)
 {
-    gs_free char *    dirname = NULL;
-    int               errsv;
-    int               fd;
+    gs_free char               *dirname = NULL;
+    int                         errsv;
+    int                         fd;
     nm_auto_pop_netns NMPNetns *netns_pop = NULL;
 
     g_return_val_if_fail(NMP_IS_NETNS(self), FALSE);
@@ -690,7 +690,7 @@ nmp_netns_bind_to_path_destroy(NMPNetns *self, const char *filename)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMPNetns *       self = NMP_NETNS(object);
+    NMPNetns        *self = NMP_NETNS(object);
     NMPNetnsPrivate *priv = NMP_NETNS_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -717,7 +717,7 @@ nmp_netns_init(NMPNetns *self)
 static void
 dispose(GObject *object)
 {
-    NMPNetns *       self = NMP_NETNS(object);
+    NMPNetns        *self = NMP_NETNS(object);
     NMPNetnsPrivate *priv = NMP_NETNS_GET_PRIVATE(self);
 
     nm_close(priv->fd_net);

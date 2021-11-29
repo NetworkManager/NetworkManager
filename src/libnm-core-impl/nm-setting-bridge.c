@@ -57,10 +57,10 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingBridge,
 
 typedef struct {
     GPtrArray *vlans;
-    char *     mac_address;
-    char *     multicast_router;
-    char *     group_address;
-    char *     vlan_protocol;
+    char      *mac_address;
+    char      *multicast_router;
+    char      *group_address;
+    char      *vlan_protocol;
     guint64    multicast_last_member_interval;
     guint64    multicast_membership_interval;
     guint64    multicast_querier_interval;
@@ -465,12 +465,12 @@ nm_bridge_vlan_to_str(const NMBridgeVlan *vlan, GError **error)
 NMBridgeVlan *
 nm_bridge_vlan_from_str(const char *str, GError **error)
 {
-    NMBridgeVlan *       vlan   = NULL;
+    NMBridgeVlan        *vlan   = NULL;
     gs_free const char **tokens = NULL;
     guint                i, vid_start, vid_end = 0;
     gboolean             pvid     = FALSE;
     gboolean             untagged = FALSE;
-    char *               c;
+    char                *c;
 
     g_return_val_if_fail(str, NULL);
     g_return_val_if_fail(!error || !*error, NULL);
@@ -868,7 +868,7 @@ gboolean
 nm_setting_bridge_remove_vlan_by_vid(NMSettingBridge *setting, guint16 vid_start, guint16 vid_end)
 {
     NMSettingBridgePrivate *priv;
-    NMBridgeVlan *          vlan;
+    NMBridgeVlan           *vlan;
     guint                   i;
 
     g_return_val_if_fail(NM_IS_SETTING_BRIDGE(setting), FALSE);
@@ -1398,9 +1398,9 @@ finalize(GObject *object)
 static void
 nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;

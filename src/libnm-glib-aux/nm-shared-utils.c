@@ -54,7 +54,7 @@ nm_ip_addr_set_from_untrusted(int           addr_family,
                               gpointer      dst,
                               gconstpointer src,
                               gsize         src_len,
-                              int *         out_addr_family)
+                              int          *out_addr_family)
 {
     nm_assert(dst);
 
@@ -177,7 +177,7 @@ nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *addr, const NMUtils
  * the interface identifier.
  */
 void
-nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId *   iid,
+nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId    *iid,
                                                  const struct in6_addr *addr)
 {
     memcpy(iid, addr->s6_addr + 8, 8);
@@ -377,7 +377,7 @@ nm_strbuf_append_str(char **buf, gsize *len, const char *str)
 void
 nm_strbuf_append(char **buf, gsize *len, const char *format, ...)
 {
-    char *  p = *buf;
+    char   *p = *buf;
     va_list args;
     int     retval;
 
@@ -480,7 +480,7 @@ GBytes *
 nm_g_bytes_get_empty(void)
 {
     static GBytes *bytes = NULL;
-    GBytes *       b;
+    GBytes        *b;
 
 again:
     b = g_atomic_pointer_get(&bytes);
@@ -566,7 +566,7 @@ nm_g_bytes_to_variant_ay(const GBytes *bytes)
 #define _variant_singleton_get(create_variant)                                       \
     ({                                                                               \
         static GVariant *_singleton = NULL;                                          \
-        GVariant *       _v;                                                         \
+        GVariant        *_v;                                                         \
                                                                                      \
         while (TRUE) {                                                               \
             _v = g_atomic_pointer_get(&_singleton);                                  \
@@ -629,7 +629,7 @@ _variant_singleton_get_array_init(GVariant **p_singleton, const char *variant_ty
 #define _variant_singleton_get_array(variant_type)                                   \
     ({                                                                               \
         static GVariant *_singleton = NULL;                                          \
-        GVariant *       _v;                                                         \
+        GVariant        *_v;                                                         \
                                                                                      \
         _v = g_atomic_pointer_get(&_singleton);                                      \
         if (G_UNLIKELY(!_v)) {                                                       \
@@ -708,10 +708,10 @@ nm_g_variant_maybe_singleton_i(gint32 value)
 GHashTable *
 nm_strdict_clone(GHashTable *src)
 {
-    GHashTable *   dst;
+    GHashTable    *dst;
     GHashTableIter iter;
-    const char *   key;
-    const char *   val;
+    const char    *key;
+    const char    *val;
 
     if (!src)
         return NULL;
@@ -732,7 +732,7 @@ nm_strdict_to_variant_ass(GHashTable *strdict)
 {
     gs_free NMUtilsNamedValue *values_free = NULL;
     NMUtilsNamedValue          values_prepared[20];
-    const NMUtilsNamedValue *  values;
+    const NMUtilsNamedValue   *values;
     GVariantBuilder            builder;
     guint                      i;
     guint                      n;
@@ -753,7 +753,7 @@ nm_strdict_to_variant_asv(GHashTable *strdict)
 {
     gs_free NMUtilsNamedValue *values_free = NULL;
     NMUtilsNamedValue          values_prepared[20];
-    const NMUtilsNamedValue *  values;
+    const NMUtilsNamedValue   *values;
     GVariantBuilder            builder;
     guint                      i;
     guint                      n;
@@ -873,7 +873,7 @@ const char *
 nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
                    gsize                       n_descs,
                    unsigned                    flags,
-                   char *                      buf,
+                   char                       *buf,
                    gsize                       len)
 {
     gsize i;
@@ -986,10 +986,10 @@ nm_utils_ip_is_site_local(int addr_family, const void *address)
 static gboolean
 _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
 {
-    gs_free char * s_free = NULL;
+    gs_free char  *s_free = NULL;
     struct in_addr a1;
     guint8         bin[sizeof(a1)];
-    char *         s;
+    char          *s;
     int            i;
 
     if (inet_aton(text, &a1) != 1) {
@@ -1024,7 +1024,7 @@ _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
     s = nm_memdup_maybe_a(300, text, strlen(text) + 1, &s_free);
 
     for (i = 0; i < G_N_ELEMENTS(bin); i++) {
-        char * current_token = s;
+        char  *current_token = s;
         gint32 v;
 
         s = strchr(s, '.');
@@ -1088,7 +1088,7 @@ gboolean
 nm_utils_parse_inaddr_bin_full(int         addr_family,
                                gboolean    accept_legacy,
                                const char *text,
-                               int *       out_addr_family,
+                               int        *out_addr_family,
                                gpointer    out_addr)
 {
     NMIPAddr addrbin;
@@ -1160,14 +1160,14 @@ nm_utils_parse_inaddr(int addr_family, const char *text, char **out_addr)
 gboolean
 nm_utils_parse_inaddr_prefix_bin(int         addr_family,
                                  const char *text,
-                                 int *       out_addr_family,
+                                 int        *out_addr_family,
                                  gpointer    out_addr,
-                                 int *       out_prefix)
+                                 int        *out_prefix)
 {
     gs_free char *addrstr_free = NULL;
     int           prefix       = -1;
-    const char *  slash;
-    const char *  addrstr;
+    const char   *slash;
+    const char   *addrstr;
     NMIPAddr      addrbin;
 
     g_return_val_if_fail(text, FALSE);
@@ -1218,9 +1218,9 @@ nm_utils_parse_inaddr_prefix(int addr_family, const char *text, char **out_addr,
 
 gboolean
 nm_utils_parse_next_line(const char **inout_ptr,
-                         gsize *      inout_len,
+                         gsize       *inout_len,
                          const char **out_line,
-                         gsize *      out_line_len)
+                         gsize       *out_line_len)
 {
     gboolean    eol_is_carriage_return;
     const char *line_start;
@@ -1843,12 +1843,12 @@ _char_lookup_has_all(const CharLookupTable *lookup, const char *candidates)
 const char **
 nm_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsplitSetFlags flags)
 {
-    const char **   ptr;
+    const char    **ptr;
     gsize           num_tokens;
     gsize           i_token;
     gsize           str_len_p1;
-    const char *    c_str;
-    char *          s;
+    const char     *c_str;
+    char           *s;
     CharLookupTable ch_lookup;
     const gboolean  f_escaped = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_ESCAPED);
     const gboolean  f_allow_escaping =
@@ -1884,7 +1884,7 @@ nm_strsplit_set_full(const char *str, const char *delimiters, NMUtilsStrsplitSet
     ({                                                    \
         const char *const _str_start = (str_start);       \
         const char *const _str_cur   = (str_cur);         \
-        const char *      _str_i     = (_str_cur);        \
+        const char       *_str_i     = (_str_cur);        \
                                                           \
         while (_str_i > _str_start && _str_i[-1] == '\\') \
             _str_i--;                                     \
@@ -2030,16 +2030,16 @@ done2:
 /*****************************************************************************/
 
 const char *
-nm_utils_escaped_tokens_escape_full(const char *                    str,
-                                    const char *                    delimiters,
-                                    const char *                    delimiters_as_needed,
+nm_utils_escaped_tokens_escape_full(const char                     *str,
+                                    const char                     *delimiters,
+                                    const char                     *delimiters_as_needed,
                                     NMUtilsEscapedTokensEscapeFlags flags,
-                                    char **                         out_to_free)
+                                    char                          **out_to_free)
 {
     CharLookupTable ch_lookup;
     CharLookupTable ch_lookup_as_needed;
     gboolean        has_ch_lookup_as_needed = FALSE;
-    char *          ret;
+    char           *ret;
     gsize           str_len;
     gsize           alloc_len;
     gsize           n_escapes;
@@ -2268,7 +2268,7 @@ char **
 nm_utils_strsplit_quoted(const char *str)
 {
     gs_unref_ptrarray GPtrArray *arr     = NULL;
-    gs_free char *               str_out = NULL;
+    gs_free char                *str_out = NULL;
     CharLookupTable              ch_lookup;
 
     nm_assert(str);
@@ -2520,7 +2520,7 @@ nm_strv_cleanup(char **strv, gboolean strip_whitespace, gboolean skip_empty, gbo
 /*****************************************************************************/
 
 GPtrArray *
-_nm_g_ptr_array_copy(GPtrArray *    array,
+_nm_g_ptr_array_copy(GPtrArray     *array,
                      GCopyFunc      func,
                      gpointer       user_data,
                      GDestroyNotify element_free_func)
@@ -2624,14 +2624,14 @@ nm_utils_error_is_notfound(GError *error)
  * Returns: whether the value was successfully set.
  */
 gboolean
-nm_g_object_set_property(GObject *     object,
-                         const char *  property_name,
+nm_g_object_set_property(GObject      *object,
+                         const char   *property_name,
                          const GValue *value,
-                         GError **     error)
+                         GError      **error)
 {
-    GParamSpec *                pspec;
+    GParamSpec                 *pspec;
     nm_auto_unset_gvalue GValue tmp_value = G_VALUE_INIT;
-    GObjectClass *              klass;
+    GObjectClass               *klass;
 
     g_return_val_if_fail(G_IS_OBJECT(object), FALSE);
     g_return_val_if_fail(property_name != NULL, FALSE);
@@ -2725,46 +2725,46 @@ nm_g_object_set_property(GObject *     object,
     G_STMT_END
 
 gboolean
-nm_g_object_set_property_string(GObject *   object,
+nm_g_object_set_property_string(GObject    *object,
                                 const char *property_name,
                                 const char *value,
-                                GError **   error)
+                                GError    **error)
 {
     _set_property(object, property_name, G_TYPE_STRING, g_value_set_string, value, error);
 }
 
 gboolean
-nm_g_object_set_property_string_static(GObject *   object,
+nm_g_object_set_property_string_static(GObject    *object,
                                        const char *property_name,
                                        const char *value,
-                                       GError **   error)
+                                       GError    **error)
 {
     _set_property(object, property_name, G_TYPE_STRING, g_value_set_static_string, value, error);
 }
 
 gboolean
-nm_g_object_set_property_string_take(GObject *   object,
+nm_g_object_set_property_string_take(GObject    *object,
                                      const char *property_name,
-                                     char *      value,
-                                     GError **   error)
+                                     char       *value,
+                                     GError    **error)
 {
     _set_property(object, property_name, G_TYPE_STRING, g_value_take_string, value, error);
 }
 
 gboolean
-nm_g_object_set_property_boolean(GObject *   object,
+nm_g_object_set_property_boolean(GObject    *object,
                                  const char *property_name,
                                  gboolean    value,
-                                 GError **   error)
+                                 GError    **error)
 {
     _set_property(object, property_name, G_TYPE_BOOLEAN, g_value_set_boolean, !!value, error);
 }
 
 gboolean
-nm_g_object_set_property_char(GObject *   object,
+nm_g_object_set_property_char(GObject    *object,
                               const char *property_name,
                               gint8       value,
-                              GError **   error)
+                              GError    **error)
 {
     /* glib says about G_TYPE_CHAR:
      *
@@ -2775,10 +2775,10 @@ nm_g_object_set_property_char(GObject *   object,
 }
 
 gboolean
-nm_g_object_set_property_uchar(GObject *   object,
+nm_g_object_set_property_uchar(GObject    *object,
                                const char *property_name,
                                guint8      value,
-                               GError **   error)
+                               GError    **error)
 {
     _set_property(object, property_name, G_TYPE_UCHAR, g_value_set_uchar, value, error);
 }
@@ -2790,38 +2790,38 @@ nm_g_object_set_property_int(GObject *object, const char *property_name, int val
 }
 
 gboolean
-nm_g_object_set_property_int64(GObject *   object,
+nm_g_object_set_property_int64(GObject    *object,
                                const char *property_name,
                                gint64      value,
-                               GError **   error)
+                               GError    **error)
 {
     _set_property(object, property_name, G_TYPE_INT64, g_value_set_int64, value, error);
 }
 
 gboolean
-nm_g_object_set_property_uint(GObject *   object,
+nm_g_object_set_property_uint(GObject    *object,
                               const char *property_name,
                               guint       value,
-                              GError **   error)
+                              GError    **error)
 {
     _set_property(object, property_name, G_TYPE_UINT, g_value_set_uint, value, error);
 }
 
 gboolean
-nm_g_object_set_property_uint64(GObject *   object,
+nm_g_object_set_property_uint64(GObject    *object,
                                 const char *property_name,
                                 guint64     value,
-                                GError **   error)
+                                GError    **error)
 {
     _set_property(object, property_name, G_TYPE_UINT64, g_value_set_uint64, value, error);
 }
 
 gboolean
-nm_g_object_set_property_flags(GObject *   object,
+nm_g_object_set_property_flags(GObject    *object,
                                const char *property_name,
                                GType       gtype,
                                guint       value,
-                               GError **   error)
+                               GError    **error)
 {
     nm_assert(({
         nm_auto_unref_gtypeclass GTypeClass *gtypeclass = g_type_class_ref(gtype);
@@ -2831,11 +2831,11 @@ nm_g_object_set_property_flags(GObject *   object,
 }
 
 gboolean
-nm_g_object_set_property_enum(GObject *   object,
+nm_g_object_set_property_enum(GObject    *object,
                               const char *property_name,
                               GType       gtype,
                               int         value,
-                              GError **   error)
+                              GError    **error)
 {
     nm_assert(({
         nm_auto_unref_gtypeclass GTypeClass *gtypeclass = g_type_class_ref(gtype);
@@ -2873,7 +2873,7 @@ GType
 nm_g_type_find_implementing_class_for_property(GType gtype, const char *pname)
 {
     nm_auto_unref_gtypeclass GObjectClass *klass = NULL;
-    GParamSpec *                           pspec;
+    GParamSpec                            *pspec;
 
     g_return_val_if_fail(pname, G_TYPE_INVALID);
 
@@ -2949,10 +2949,10 @@ _str_buf_append_c_escape_octal(NMStrBuf *strbuf, char ch)
  *   containing the unescaped string and returned.
  */
 gconstpointer
-nm_utils_buf_utf8safe_unescape(const char *            str,
+nm_utils_buf_utf8safe_unescape(const char             *str,
                                NMUtilsStrUtf8SafeFlags flags,
-                               gsize *                 out_len,
-                               gpointer *              to_free)
+                               gsize                  *out_len,
+                               gpointer               *to_free)
 {
     gboolean    strip_spaces = NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_UNESCAPE_STRIP_SPACES);
     NMStrBuf    strbuf;
@@ -3114,11 +3114,11 @@ const char *
 nm_utils_buf_utf8safe_escape(gconstpointer           buf,
                              gssize                  buflen,
                              NMUtilsStrUtf8SafeFlags flags,
-                             char **                 to_free)
+                             char                  **to_free)
 {
     const char *const str = buf;
-    const char *      p   = NULL;
-    const char *      s;
+    const char       *p   = NULL;
+    const char       *s;
     gboolean          nul_terminated = FALSE;
     NMStrBuf          strbuf;
 
@@ -3209,7 +3209,7 @@ char *
 nm_utils_buf_utf8safe_escape_cp(gconstpointer buf, gssize buflen, NMUtilsStrUtf8SafeFlags flags)
 {
     const char *s_const;
-    char *      s;
+    char       *s;
 
     s_const = nm_utils_buf_utf8safe_escape(buf, buflen, flags, &s);
     nm_assert(!s || s == s_const);
@@ -3419,11 +3419,11 @@ nm_utils_named_value_clear_with_g_free(NMUtilsNamedValue *val)
 G_STATIC_ASSERT(G_STRUCT_OFFSET(NMUtilsNamedValue, name) == 0);
 
 NMUtilsNamedValue *
-nm_utils_named_values_from_strdict_full(GHashTable *        hash,
-                                        guint *             out_len,
+nm_utils_named_values_from_strdict_full(GHashTable         *hash,
+                                        guint              *out_len,
                                         GCompareDataFunc    compare_func,
                                         gpointer            user_data,
-                                        NMUtilsNamedValue * provided_buffer,
+                                        NMUtilsNamedValue  *provided_buffer,
                                         guint               provided_buffer_len,
                                         NMUtilsNamedValue **out_allocated_buffer)
 {
@@ -3466,7 +3466,7 @@ nm_utils_named_values_from_strdict_full(GHashTable *        hash,
 gssize
 nm_utils_named_value_list_find(const NMUtilsNamedValue *arr,
                                gsize                    len,
-                               const char *             name,
+                               const char              *name,
                                gboolean                 sorted)
 {
     gsize i;
@@ -3556,10 +3556,10 @@ nm_utils_named_value_list_sort(NMUtilsNamedValue *arr,
 /*****************************************************************************/
 
 gpointer *
-nm_utils_hash_keys_to_array(GHashTable *     hash,
+nm_utils_hash_keys_to_array(GHashTable      *hash,
                             GCompareDataFunc compare_func,
                             gpointer         user_data,
-                            guint *          out_len)
+                            guint           *out_len)
 {
     guint     len;
     gpointer *keys;
@@ -3580,14 +3580,14 @@ nm_utils_hash_keys_to_array(GHashTable *     hash,
 }
 
 gpointer *
-nm_utils_hash_values_to_array(GHashTable *     hash,
+nm_utils_hash_values_to_array(GHashTable      *hash,
                               GCompareDataFunc compare_func,
                               gpointer         user_data,
-                              guint *          out_len)
+                              guint           *out_len)
 {
     GHashTableIter iter;
     gpointer       value;
-    gpointer *     arr;
+    gpointer      *arr;
     guint          i, len;
 
     if (!hash || (len = g_hash_table_size(hash)) == 0u) {
@@ -3669,8 +3669,8 @@ nm_utils_hashtable_equal(const GHashTable *a,
 }
 
 static gboolean
-_utils_hashtable_equal(GHashTable *     hash_a,
-                       GHashTable *     hash_b,
+_utils_hashtable_equal(GHashTable      *hash_a,
+                       GHashTable      *hash_b,
                        GCompareDataFunc cmp_values,
                        gpointer         user_data)
 {
@@ -3768,8 +3768,8 @@ static int
 _hashtable_cmp_func(gconstpointer a, gconstpointer b, gpointer user_data)
 {
     const HashTableUserData *d   = user_data;
-    const HashTableCmpData * d_a = *((const HashTableCmpData *const *) a);
-    const HashTableCmpData * d_b = *((const HashTableCmpData *const *) b);
+    const HashTableCmpData  *d_a = *((const HashTableCmpData *const *) a);
+    const HashTableCmpData  *d_b = *((const HashTableCmpData *const *) b);
 
     NM_CMP_RETURN(d->cmp_keys(d_a, d_b, d->user_data));
     return 0;
@@ -3805,11 +3805,11 @@ nm_utils_hashtable_cmp(const GHashTable *a,
                        GCompareDataFunc  cmp_values,
                        gpointer          user_data)
 {
-    GHashTable *hash_a                       = (GHashTable *) a;
-    GHashTable *hash_b                       = (GHashTable *) b;
+    GHashTable               *hash_a         = (GHashTable *) a;
+    GHashTable               *hash_b         = (GHashTable *) b;
     gs_free HashTableCmpData *cmp_array_free = NULL;
-    HashTableCmpData *        cmp_array_a;
-    HashTableCmpData *        cmp_array_b;
+    HashTableCmpData         *cmp_array_a;
+    HashTableCmpData         *cmp_array_b;
     GHashTableIter            h;
     gpointer                  i_key;
     gpointer                  i_val;
@@ -4011,12 +4011,12 @@ _nm_strv_dup_packed(const char *const *strv, gssize len)
 
 {
     gs_free gsize *str_len_free = NULL;
-    gsize *        str_len;
-    const char **  result;
+    gsize         *str_len;
+    const char   **result;
     gsize          mem_len;
     gsize          pre_len;
     gsize          len2;
-    char *         sbuf;
+    char          *sbuf;
     gsize          i;
 
     nm_assert(len >= -1);
@@ -4113,7 +4113,7 @@ nm_utils_ptrarray_find_first(gconstpointer *list, gssize len, gconstpointer need
 /*****************************************************************************/
 
 gboolean
-nm_utils_ptrarray_is_sorted(gconstpointer *  list,
+nm_utils_ptrarray_is_sorted(gconstpointer   *list,
                             gsize            len,
                             gboolean         require_strict,
                             GCompareDataFunc cmpfcn,
@@ -4135,7 +4135,7 @@ nm_utils_ptrarray_is_sorted(gconstpointer *  list,
 }
 
 gssize
-nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
+nm_utils_ptrarray_find_binary_search(gconstpointer   *list,
                                      gsize            len,
                                      gconstpointer    needle,
                                      GCompareDataFunc cmpfcn,
@@ -4172,13 +4172,13 @@ nm_utils_ptrarray_find_binary_search(gconstpointer *  list,
 }
 
 gssize
-nm_utils_ptrarray_find_binary_search_range(gconstpointer *  list,
+nm_utils_ptrarray_find_binary_search_range(gconstpointer   *list,
                                            gsize            len,
                                            gconstpointer    needle,
                                            GCompareDataFunc cmpfcn,
                                            gpointer         user_data,
-                                           gssize *         out_idx_first,
-                                           gssize *         out_idx_last)
+                                           gssize          *out_idx_first,
+                                           gssize          *out_idx_last)
 {
     gssize imin, imax, imid, i2min, i2max, i2mid;
     int    cmp;
@@ -4336,10 +4336,10 @@ nm_utils_get_start_time_for_pid(pid_t pid, char *out_state, pid_t *out_ppid)
 {
     guint64              start_time;
     char                 filename[256];
-    gs_free char *       contents = NULL;
+    gs_free char        *contents = NULL;
     size_t               length;
     gs_free const char **tokens = NULL;
-    char *               p;
+    char                *p;
     char                 state = ' ';
     gint64               ppid  = 0;
 
@@ -4593,8 +4593,8 @@ _nm_utils_user_data_unpack(NMUtilsUserData *user_data, int nargs, ...)
 
 typedef struct {
     gpointer                    callback_user_data;
-    GCancellable *              cancellable;
-    GSource *                   source;
+    GCancellable               *cancellable;
+    GSource                    *source;
     NMUtilsInvokeOnIdleCallback callback;
     gulong                      cancelled_id;
 } InvokeOnIdleData;
@@ -4639,12 +4639,12 @@ _nm_utils_invoke_on_idle_cb_cancelled(GCancellable *cancellable, InvokeOnIdleDat
 static void
 _nm_utils_invoke_on_idle_start(gboolean                    use_timeout,
                                guint                       timeout_msec,
-                               GCancellable *              cancellable,
+                               GCancellable               *cancellable,
                                NMUtilsInvokeOnIdleCallback callback,
                                gpointer                    callback_user_data)
 {
     InvokeOnIdleData *data;
-    GSource *         source;
+    GSource          *source;
 
     g_return_if_fail(callback);
 
@@ -4688,7 +4688,7 @@ _nm_utils_invoke_on_idle_start(gboolean                    use_timeout,
 }
 
 void
-nm_utils_invoke_on_idle(GCancellable *              cancellable,
+nm_utils_invoke_on_idle(GCancellable               *cancellable,
                         NMUtilsInvokeOnIdleCallback callback,
                         gpointer                    callback_user_data)
 {
@@ -4697,7 +4697,7 @@ nm_utils_invoke_on_idle(GCancellable *              cancellable,
 
 void
 nm_utils_invoke_on_timeout(guint                       timeout_msec,
-                           GCancellable *              cancellable,
+                           GCancellable               *cancellable,
                            NMUtilsInvokeOnIdleCallback callback,
                            gpointer                    callback_user_data)
 {
@@ -4787,11 +4787,11 @@ nm_utils_bin2hexstr_full(gconstpointer addr,
                          gsize         length,
                          char          delimiter,
                          gboolean      upper_case,
-                         char *        out)
+                         char         *out)
 {
     const guint8 *in     = addr;
-    const char *  LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
-    char *        out0;
+    const char   *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
+    char         *out0;
 
     if (out)
         out0 = out;
@@ -4829,12 +4829,12 @@ nm_utils_hexstr2bin_full(const char *hexstr,
                          gboolean    hexdigit_pairs_required,
                          const char *delimiter_candidates,
                          gsize       required_len,
-                         guint8 *    buffer,
+                         guint8     *buffer,
                          gsize       buffer_len,
-                         gsize *     out_len)
+                         gsize      *out_len)
 {
     const char *in            = hexstr;
-    guint8 *    out           = buffer;
+    guint8     *out           = buffer;
     gboolean    delimiter_has = TRUE;
     guint8      delimiter     = '\0';
     gsize       len;
@@ -4918,7 +4918,7 @@ nm_utils_hexstr2bin_alloc(const char *hexstr,
                           gboolean    delimiter_required,
                           const char *delimiter_candidates,
                           gsize       required_len,
-                          gsize *     out_len)
+                          gsize      *out_len)
 {
     guint8 *buffer;
     gsize   buffer_len, len;
@@ -4968,16 +4968,16 @@ fail:
 GVariant *
 nm_utils_gvariant_vardict_filter(GVariant *src,
                                  gboolean (*filter_fcn)(const char *key,
-                                                        GVariant *  val,
-                                                        char **     out_key,
-                                                        GVariant ** out_val,
+                                                        GVariant   *val,
+                                                        char      **out_key,
+                                                        GVariant  **out_val,
                                                         gpointer    user_data),
                                  gpointer user_data)
 {
     GVariantIter    iter;
     GVariantBuilder builder;
-    const char *    key;
-    GVariant *      val;
+    const char     *key;
+    GVariant       *val;
 
     g_return_val_if_fail(src && g_variant_is_of_type(src, G_VARIANT_TYPE_VARDICT), NULL);
     g_return_val_if_fail(filter_fcn, NULL);
@@ -4987,8 +4987,8 @@ nm_utils_gvariant_vardict_filter(GVariant *src,
     g_variant_iter_init(&iter, src);
     while (g_variant_iter_next(&iter, "{&sv}", &key, &val)) {
         _nm_unused gs_unref_variant GVariant *val_free = val;
-        gs_free char *                        key2     = NULL;
-        gs_unref_variant GVariant *val2                = NULL;
+        gs_free char                         *key2     = NULL;
+        gs_unref_variant GVariant            *val2     = NULL;
 
         if (filter_fcn(key, val, &key2, &val2, user_data)) {
             g_variant_builder_add(&builder, "{sv}", key2 ?: key, val2 ?: val);
@@ -5000,9 +5000,9 @@ nm_utils_gvariant_vardict_filter(GVariant *src,
 
 static gboolean
 _gvariant_vardict_filter_drop_one(const char *key,
-                                  GVariant *  val,
-                                  char **     out_key,
-                                  GVariant ** out_val,
+                                  GVariant   *val,
+                                  char      **out_key,
+                                  GVariant  **out_val,
                                   gpointer    user_data)
 {
     return !nm_streq(key, user_data);
@@ -5231,8 +5231,8 @@ typedef struct {
 typedef struct {
     GSource       source;
     GMainContext *context;
-    GHashTable *  fds;
-    GPollFD *     fds_arr;
+    GHashTable   *fds;
+    GPollFD      *fds_arr;
     guint         fds_len;
     int           max_priority;
     bool          acquired : 1;
@@ -5272,16 +5272,16 @@ _ctx_integ_source_reacquire(CtxIntegSource *ctx_src)
 static gboolean
 _ctx_integ_source_prepare(GSource *source, int *out_timeout)
 {
-    CtxIntegSource *ctx_src = ((CtxIntegSource *) source);
-    int             max_priority;
-    int             timeout = -1;
-    gboolean        any_ready;
-    GHashTableIter  h_iter;
-    PollData *      poll_data;
-    gboolean        fds_changed;
-    GPollFD         new_fds_stack[300u / sizeof(GPollFD)];
+    CtxIntegSource  *ctx_src = ((CtxIntegSource *) source);
+    int              max_priority;
+    int              timeout = -1;
+    gboolean         any_ready;
+    GHashTableIter   h_iter;
+    PollData        *poll_data;
+    gboolean         fds_changed;
+    GPollFD          new_fds_stack[300u / sizeof(GPollFD)];
     gs_free GPollFD *new_fds_heap = NULL;
-    GPollFD *        new_fds;
+    GPollFD         *new_fds;
     guint            new_fds_len;
     guint            new_fds_alloc;
     guint            i;
@@ -5455,7 +5455,7 @@ _ctx_integ_source_check(GSource *source)
     CtxIntegSource *ctx_src = ((CtxIntegSource *) source);
     GHashTableIter  h_iter;
     gboolean        some_ready;
-    PollData *      poll_data;
+    PollData       *poll_data;
 
     nm_assert(ctx_src->context);
 
@@ -5511,7 +5511,7 @@ _ctx_integ_source_finalize(GSource *source)
 {
     CtxIntegSource *ctx_src = ((CtxIntegSource *) source);
     GHashTableIter  h_iter;
-    PollData *      poll_data;
+    PollData       *poll_data;
 
     g_return_if_fail(ctx_src->context);
 
@@ -5890,17 +5890,17 @@ attribute_escape(const char *src, char c1, char c2)
 }
 
 void
-_nm_utils_format_variant_attributes_full(GString *                            str,
-                                         const NMUtilsNamedValue *            values,
+_nm_utils_format_variant_attributes_full(GString                             *str,
+                                         const NMUtilsNamedValue             *values,
                                          guint                                num_values,
                                          const NMVariantAttributeSpec *const *spec,
                                          char                                 attr_separator,
                                          char                                 key_value_separator)
 {
     const NMVariantAttributeSpec *const *s;
-    const char *                         name, *value;
-    GVariant *                           variant;
-    char *                               escaped;
+    const char                          *name, *value;
+    GVariant                            *variant;
+    char                                *escaped;
     char                                 buf[64];
     char                                 sep = 0;
     guint                                i;
@@ -5960,15 +5960,15 @@ _nm_utils_format_variant_attributes_full(GString *                            st
 }
 
 char *
-_nm_utils_format_variant_attributes(GHashTable *                         attributes,
+_nm_utils_format_variant_attributes(GHashTable                          *attributes,
                                     const NMVariantAttributeSpec *const *spec,
                                     char                                 attr_separator,
                                     char                                 key_value_separator)
 {
     gs_free NMUtilsNamedValue *values_free = NULL;
     NMUtilsNamedValue          values_prepared[20];
-    const NMUtilsNamedValue *  values;
-    GString *                  str = NULL;
+    const NMUtilsNamedValue   *values;
+    GString                   *str = NULL;
     guint                      len;
 
     g_return_val_if_fail(attr_separator, NULL);
@@ -6078,7 +6078,7 @@ nm_utils_uid_to_name(uid_t uid)
     gs_free char *buf_heap = NULL;
     char          buf_stack[4096];
     gsize         bufsize;
-    char *        buf;
+    char         *buf;
 
     bufsize = sizeof(buf_stack);
     buf     = buf_stack;
@@ -6112,7 +6112,7 @@ nm_utils_name_to_uid(const char *name, uid_t *out_uid)
     gs_free char *buf_heap = NULL;
     char          buf_stack[4096];
     gsize         bufsize;
-    char *        buf;
+    char         *buf;
 
     if (!name)
         return nm_assert_unreachable_val(FALSE);
@@ -6210,7 +6210,7 @@ char *
 _nm_utils_ssid_to_string_arr(const guint8 *ssid, gsize len)
 {
     gs_free char *s_copy = NULL;
-    const char *  s_cnst;
+    const char   *s_cnst;
 
     if (len == 0)
         return g_strdup("(empty)");
@@ -6286,7 +6286,7 @@ nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen)
  * @dst and @src to the same destination or set @src NULL.
  */
 const struct in6_addr *
-nm_utils_ip6_address_clear_host_address(struct in6_addr *      dst,
+nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
                                         const struct in6_addr *src,
                                         guint8                 plen)
 {
@@ -6475,10 +6475,10 @@ nm_crypto_md5_hash(const guint8 *salt,
                    gsize         salt_len,
                    const guint8 *password,
                    gsize         password_len,
-                   guint8 *      buffer,
+                   guint8       *buffer,
                    gsize         buflen)
 {
-    nm_auto_free_checksum GChecksum *                 ctx = NULL;
+    nm_auto_free_checksum GChecksum                  *ctx = NULL;
     nm_auto_clear_static_secret_ptr const NMSecretPtr digest =
         NM_SECRET_PTR_STATIC(NM_UTILS_CHECKSUM_LENGTH_MD5);
     gsize bufidx = 0;
@@ -6569,7 +6569,7 @@ static pthread_key_t _tls_reg_key;
 static void
 _tls_reg_destroy(gpointer data)
 {
-    CList *     lst_head = data;
+    CList      *lst_head = data;
     TlsRegData *entry;
 
     if (!lst_head)
@@ -6612,8 +6612,8 @@ nm_utils_thread_local_register_destroy(gpointer tls_data, GDestroyNotify destroy
 {
     NM_AUTO_PROTECT_ERRNO(errsv);
     static pthread_once_t key_once = PTHREAD_ONCE_INIT;
-    CList *               lst_head;
-    TlsRegData *          entry;
+    CList                *lst_head;
+    TlsRegData           *entry;
 
     nm_assert(destroy_notify);
 

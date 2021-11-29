@@ -89,7 +89,7 @@ NMVpnPluginInfo *nm_vpn_plugin_info_list_find_by_service(GSList *list, const cha
 NM_AVAILABLE_IN_1_4
 char *nm_vpn_plugin_info_list_find_service_type(GSList *list, const char *name);
 NM_AVAILABLE_IN_1_4
-char **nm_vpn_plugin_info_list_get_service_types(GSList * list,
+char **nm_vpn_plugin_info_list_get_service_types(GSList  *list,
                                                  gboolean only_existing,
                                                  gboolean with_abbreviations);
 

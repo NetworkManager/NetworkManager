@@ -52,7 +52,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDhcpConfig, PROP_L3CD, PROP_OPTIONS, );
 
 typedef struct {
     const NML3ConfigData *l3cd;
-    GVariant *            options;
+    GVariant             *options;
 } NMDhcpConfigPrivate;
 
 struct _NMDhcpConfig {
@@ -101,8 +101,8 @@ void
 nm_dhcp_config_set_lease(NMDhcpConfig *self, const NML3ConfigData *l3cd)
 {
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_old = NULL;
-    gs_unref_variant GVariant *options2               = NULL;
-    NMDhcpConfigPrivate *      priv;
+    gs_unref_variant GVariant               *options2 = NULL;
+    NMDhcpConfigPrivate                     *priv;
 
     g_return_if_fail(NM_IS_DHCP_CONFIG(self));
 
@@ -129,7 +129,7 @@ const char *
 nm_dhcp_config_get_option(NMDhcpConfig *self, const char *key)
 {
     NMDhcpConfigPrivate *priv;
-    NMDhcpLease *        lease;
+    NMDhcpLease         *lease;
 
     g_return_val_if_fail(NM_IS_DHCP_CONFIG(self), NULL);
     g_return_val_if_fail(key, NULL);
@@ -173,7 +173,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMDhcpConfig *       self = NM_DHCP_CONFIG(object);
+    NMDhcpConfig        *self = NM_DHCP_CONFIG(object);
     NMDhcpConfigPrivate *priv = NM_DHCP_CONFIG_GET_PRIVATE(self);
 
     switch (prop_id) {

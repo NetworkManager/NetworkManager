@@ -93,11 +93,11 @@ nm_utils_vlan_priority_map_get_max_prio(NMVlanPriorityMap map, gboolean from)
 }
 
 gboolean nm_utils_vlan_priority_map_parse_str(NMVlanPriorityMap map_type,
-                                              const char *      str,
+                                              const char       *str,
                                               gboolean          allow_wildcard_to,
-                                              guint32 *         out_from,
-                                              guint32 *         out_to,
-                                              gboolean *        out_has_wildcard_to);
+                                              guint32          *out_from,
+                                              guint32          *out_to,
+                                              gboolean         *out_has_wildcard_to);
 
 /*****************************************************************************/
 
@@ -149,13 +149,13 @@ nm_setting_ip_config_get_addr_family(NMSettingIPConfig *s_ip)
 extern const char *const        nm_auth_permission_names_by_idx[NM_CLIENT_PERMISSION_LAST];
 extern const NMClientPermission nm_auth_permission_sorted[NM_CLIENT_PERMISSION_LAST];
 
-const char *       nm_auth_permission_to_string(NMClientPermission permission);
+const char        *nm_auth_permission_to_string(NMClientPermission permission);
 NMClientPermission nm_auth_permission_from_string(const char *str);
 
 /*****************************************************************************/
 
 NMClientPermissionResult nm_client_permission_result_from_string(const char *nm);
-const char *             nm_client_permission_result_to_string(NMClientPermissionResult permission);
+const char              *nm_client_permission_result_to_string(NMClientPermissionResult permission);
 
 gboolean nm_utils_validate_dhcp4_vendor_class_id(const char *vci, GError **error);
 

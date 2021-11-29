@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2021-08-30.0-7ff339b89ca1'
-  UBUNTU_TAG:  '2021-08-30.0-432f46c6a3a4'
-  DEBIAN_TAG:  '2021-08-30.0-432f46c6a3a4'
-  CENTOS_TAG:  '2021-08-30.0-7ff339b89ca1'
-  ALPINE_TAG:  '2021-08-30.0-20e22c5d34b7'
+  FEDORA_TAG:  '2021-11-09.0-9dd1e1db773a'
+  UBUNTU_TAG:  '2021-11-09.0-577176f5eb6c'
+  DEBIAN_TAG:  '2021-11-09.0-577176f5eb6c'
+  CENTOS_TAG:  '2021-11-09.0-9dd1e1db773a'
+  ALPINE_TAG:  '2021-11-09.0-a28badea28eb'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -680,23 +680,23 @@ t_fedora:34:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
-    - .nm_artifacts
   variables:
     FDO_DISTRIBUTION_VERSION: '34'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:34@container-prep"
+  when: manual
 
 t_fedora:35:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
+    - .nm_artifacts
   variables:
     FDO_DISTRIBUTION_VERSION: '35'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:35@container-prep"
-  when: manual
 
 t_fedora:36:
   extends:
@@ -926,7 +926,7 @@ t_alpine:latest:
 
 check-patch:
   extends:
-   - t_fedora:34
+   - t_fedora:35
    - .nm_artifacts_undo
   stage: test
   script:
@@ -935,7 +935,7 @@ check-patch:
 
 check-tree:
   extends:
-   - t_fedora:34
+   - t_fedora:35
    - .nm_artifacts_undo
   stage: test
   script:
@@ -955,9 +955,9 @@ pages:
   only:
     - main
   dependencies:
-    - t_fedora:34
+    - t_fedora:35
   needs:
-    - t_fedora:34
+    - t_fedora:35
 
 triage:issues:
   stage: triage

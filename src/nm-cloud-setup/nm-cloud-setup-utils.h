@@ -40,15 +40,15 @@ gboolean nmcs_wait_for_objects_iterate_until_done(GMainContext *context, int tim
 
 /*****************************************************************************/
 
-typedef void (*NMCSUtilsPollProbeStartFcn)(GCancellable *      cancellable,
+typedef void (*NMCSUtilsPollProbeStartFcn)(GCancellable       *cancellable,
                                            gpointer            probe_user_data,
                                            GAsyncReadyCallback callback,
                                            gpointer            user_data);
 
-typedef gboolean (*NMCSUtilsPollProbeFinishFcn)(GObject *     source,
+typedef gboolean (*NMCSUtilsPollProbeFinishFcn)(GObject      *source,
                                                 GAsyncResult *result,
                                                 gpointer      probe_user_data,
-                                                GError **     error);
+                                                GError      **error);
 
 void nmcs_utils_poll(int                         poll_timeout_ms,
                      int                         ratelimit_timeout_ms,
@@ -56,7 +56,7 @@ void nmcs_utils_poll(int                         poll_timeout_ms,
                      NMCSUtilsPollProbeStartFcn  probe_start_fcn,
                      NMCSUtilsPollProbeFinishFcn probe_finish_fcn,
                      gpointer                    probe_user_data,
-                     GCancellable *              cancellable,
+                     GCancellable               *cancellable,
                      GAsyncReadyCallback         callback,
                      gpointer                    user_data);
 
@@ -81,7 +81,7 @@ nmcs_utils_hwaddr_normalize_gbytes(GBytes *hwaddr)
 gboolean nmcs_utils_ipaddr_normalize_bin(int         addr_family,
                                          const char *addr,
                                          gssize      len,
-                                         int *       out_addr_family,
+                                         int        *out_addr_family,
                                          gpointer    out_addr_bin);
 
 char *nmcs_utils_ipaddr_normalize(int addr_family, const char *addr, gssize len);
@@ -114,29 +114,29 @@ const char *nmcs_utils_uri_complete_interned(const char *uri);
 /*****************************************************************************/
 
 gboolean nmcs_setting_ip_replace_ipv4_addresses(NMSettingIPConfig *s_ip,
-                                                NMIPAddress **     entries_arr,
+                                                NMIPAddress      **entries_arr,
                                                 guint              entries_len);
 
 gboolean nmcs_setting_ip_replace_ipv4_routes(NMSettingIPConfig *s_ip,
-                                             NMIPRoute **       entries_arr,
+                                             NMIPRoute        **entries_arr,
                                              guint              entries_len);
 
 gboolean nmcs_setting_ip_replace_ipv4_rules(NMSettingIPConfig *s_ip,
-                                            NMIPRoutingRule ** entries_arr,
+                                            NMIPRoutingRule  **entries_arr,
                                             guint              entries_len);
 
 /*****************************************************************************/
 
-NMConnection *nmcs_device_get_applied_connection(NMDevice *    device,
+NMConnection *nmcs_device_get_applied_connection(NMDevice     *device,
                                                  GCancellable *cancellable,
-                                                 guint64 *     version_id,
-                                                 GError **     error);
+                                                 guint64      *version_id,
+                                                 GError      **error);
 
-gboolean nmcs_device_reapply(NMDevice *    device,
+gboolean nmcs_device_reapply(NMDevice     *device,
                              GCancellable *sigterm_cancellable,
                              NMConnection *connection,
                              guint64       version_id,
-                             gboolean *    out_version_id_changed,
-                             GError **     error);
+                             gboolean     *out_version_id_changed,
+                             GError      **error);
 
 #endif /* __NM_CLOUD_SETUP_UTILS_H__ */

@@ -55,7 +55,7 @@ typedef struct {
 
     NMEditorConnectionTypeData *type_data;
 
-    GSList *       pages;
+    GSList        *pages;
     NmtNewtWidget *ok, *cancel;
     gboolean       running;
 } NmtEditorPrivate;
@@ -128,7 +128,7 @@ static void
 connection_added(GObject *client, GAsyncResult *result, gpointer op)
 {
     NMRemoteConnection *connection;
-    GError *            error = NULL;
+    GError             *error = NULL;
 
     connection = nm_client_add_connection_finish(NM_CLIENT(client), result, &error);
     nmt_sync_op_complete_boolean(op, error == NULL, error);
@@ -147,10 +147,10 @@ page_saved(gpointer data, gpointer user_data)
 static void
 save_connection_and_exit(NmtNewtButton *button, gpointer user_data)
 {
-    NmtEditor *       editor = user_data;
+    NmtEditor        *editor = user_data;
     NmtEditorPrivate *priv   = NMT_EDITOR_GET_PRIVATE(editor);
     NmtSyncOp         op;
-    GError *          error = NULL;
+    GError           *error = NULL;
 
     nm_connection_replace_settings_from_connection(priv->orig_connection, priv->edit_connection);
 
@@ -195,7 +195,7 @@ static void
 got_secrets(GObject *object, GAsyncResult *result, gpointer op)
 {
     GVariant *secrets;
-    GError *  error = NULL;
+    GError   *error = NULL;
 
     secrets = nm_remote_connection_get_secrets_finish(NM_REMOTE_CONNECTION(object), result, &error);
     if (secrets)
@@ -208,9 +208,9 @@ static NMConnection *
 build_edit_connection(NMConnection *orig_connection)
 {
     NMConnection *edit_connection;
-    GVariant *    settings, *secrets;
+    GVariant     *settings, *secrets;
     GVariantIter  iter;
-    const char *  setting_name;
+    const char   *setting_name;
     NmtSyncOp     op;
 
     edit_connection = nm_simple_connection_new_clone(orig_connection);
@@ -243,9 +243,9 @@ build_edit_connection(NMConnection *orig_connection)
 }
 
 static gboolean
-permissions_transform_to_allusers(GBinding *    binding,
+permissions_transform_to_allusers(GBinding     *binding,
                                   const GValue *source_value,
-                                  GValue *      target_value,
+                                  GValue       *target_value,
                                   gpointer      user_data)
 {
     char **perms = g_value_get_boxed(source_value);
@@ -255,13 +255,13 @@ permissions_transform_to_allusers(GBinding *    binding,
 }
 
 static gboolean
-permissions_transform_from_allusers(GBinding *    binding,
+permissions_transform_from_allusers(GBinding     *binding,
                                     const GValue *source_value,
-                                    GValue *      target_value,
+                                    GValue       *target_value,
                                     gpointer      user_data)
 {
     gboolean allusers = g_value_get_boolean(source_value);
-    char **  perms    = NULL;
+    char   **perms    = NULL;
 
     if (!allusers) {
         perms = g_new(char *, 2);
@@ -277,8 +277,8 @@ static NmtNewtWidget *
 add_sections_for_page(NmtEditor *editor, NmtEditorGrid *grid, NmtEditorPage *page)
 {
     NmtEditorPrivate *priv          = NMT_EDITOR_GET_PRIVATE(editor);
-    NmtNewtWidget *   first_section = NULL;
-    const GSList *    sections, *iter;
+    NmtNewtWidget    *first_section = NULL;
+    const GSList     *sections, *iter;
 
     g_return_val_if_fail(NMT_IS_EDITOR_PAGE(page), NULL);
 
@@ -297,16 +297,16 @@ add_sections_for_page(NmtEditor *editor, NmtEditorGrid *grid, NmtEditorPage *pag
 static void
 nmt_editor_constructed(GObject *object)
 {
-    NmtEditor *          editor = NMT_EDITOR(object);
-    NmtEditorPrivate *   priv   = NMT_EDITOR_GET_PRIVATE(editor);
+    NmtEditor           *editor = NMT_EDITOR(object);
+    NmtEditorPrivate    *priv   = NMT_EDITOR_GET_PRIVATE(editor);
     NMSettingConnection *s_con;
-    NmtNewtWidget *      vbox, *widget, *buttons;
-    NmtEditorGrid *      grid;
-    const char *         deventry_label;
-    NmtDeviceEntry *     deventry;
+    NmtNewtWidget       *vbox, *widget, *buttons;
+    NmtEditorGrid       *grid;
+    const char          *deventry_label;
+    NmtDeviceEntry      *deventry;
     GType                hardware_type;
-    const char *         slave_type;
-    NmtEditorPage *      page;
+    const char          *slave_type;
+    NmtEditorPage       *page;
 
     if (G_OBJECT_CLASS(nmt_editor_parent_class)->constructed)
         G_OBJECT_CLASS(nmt_editor_parent_class)->constructed(object);

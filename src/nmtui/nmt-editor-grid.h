@@ -38,11 +38,11 @@ typedef enum {
 NmtNewtWidget *nmt_editor_grid_new(void);
 
 void nmt_editor_grid_append(NmtEditorGrid *grid,
-                            const char *   label,
+                            const char    *label,
                             NmtNewtWidget *widget,
                             NmtNewtWidget *extra);
-void nmt_editor_grid_set_row_flags(NmtEditorGrid *       grid,
-                                   NmtNewtWidget *       widget,
+void nmt_editor_grid_set_row_flags(NmtEditorGrid        *grid,
+                                   NmtNewtWidget        *widget,
                                    NmtEditorGridRowFlags flags);
 
 #endif /* NMT_EDITOR_GRID_H */

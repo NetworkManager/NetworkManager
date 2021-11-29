@@ -84,7 +84,7 @@ nmt_newt_entry_numeric_new_full(int width, gint64 min, gint64 max, gboolean opti
 
 static gboolean
 newt_entry_numeric_filter(NmtNewtEntry *entry,
-                          const char *  text,
+                          const char   *text,
                           int           ch,
                           int           position,
                           gpointer      user_data)
@@ -136,10 +136,10 @@ nmt_newt_entry_numeric_constructed(GObject *object)
 }
 
 static void
-nmt_newt_entry_numeric_set_property(GObject *     object,
+nmt_newt_entry_numeric_set_property(GObject      *object,
                                     guint         prop_id,
                                     const GValue *value,
-                                    GParamSpec *  pspec)
+                                    GParamSpec   *pspec)
 {
     NmtNewtEntryNumericPrivate *priv = NMT_NEWT_ENTRY_NUMERIC_GET_PRIVATE(object);
 
@@ -160,9 +160,9 @@ nmt_newt_entry_numeric_set_property(GObject *     object,
 }
 
 static void
-nmt_newt_entry_numeric_get_property(GObject *   object,
+nmt_newt_entry_numeric_get_property(GObject    *object,
                                     guint       prop_id,
-                                    GValue *    value,
+                                    GValue     *value,
                                     GParamSpec *pspec)
 {
     NmtNewtEntryNumericPrivate *priv = NMT_NEWT_ENTRY_NUMERIC_GET_PRIVATE(object);

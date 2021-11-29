@@ -72,7 +72,7 @@ typedef void (*EAPMethodNeedSecretsFunc)(NMSetting8021x *self, GPtrArray *secret
 typedef gboolean (*EAPMethodValidateFunc)(NMSetting8021x *self, gboolean phase2, GError **error);
 
 typedef struct {
-    const char *             method;
+    const char              *method;
     EAPMethodNeedSecretsFunc ns_func;
     EAPMethodValidateFunc    v_func;
 } EAPMethodsTable;
@@ -132,39 +132,39 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSetting8021x,
 
 typedef struct {
     GSList *eap; /* GSList of strings */
-    char *  identity;
-    char *  anonymous_identity;
-    char *  pac_file;
+    char   *identity;
+    char   *anonymous_identity;
+    char   *pac_file;
     GBytes *ca_cert;
-    char *  ca_cert_password;
-    char *  ca_path;
-    char *  subject_match;
+    char   *ca_cert_password;
+    char   *ca_path;
+    char   *subject_match;
     GSList *altsubject_matches;
-    char *  domain_suffix_match;
-    char *  domain_match;
+    char   *domain_suffix_match;
+    char   *domain_match;
     GBytes *client_cert;
-    char *  client_cert_password;
-    char *  phase1_peapver;
-    char *  phase1_peaplabel;
-    char *  phase1_fast_provisioning;
-    char *  phase2_auth;
-    char *  phase2_autheap;
+    char   *client_cert_password;
+    char   *phase1_peapver;
+    char   *phase1_peaplabel;
+    char   *phase1_fast_provisioning;
+    char   *phase2_auth;
+    char   *phase2_autheap;
     GBytes *phase2_ca_cert;
-    char *  phase2_ca_cert_password;
-    char *  phase2_ca_path;
-    char *  phase2_subject_match;
+    char   *phase2_ca_cert_password;
+    char   *phase2_ca_path;
+    char   *phase2_subject_match;
     GSList *phase2_altsubject_matches;
-    char *  phase2_domain_suffix_match;
-    char *  phase2_domain_match;
+    char   *phase2_domain_suffix_match;
+    char   *phase2_domain_match;
     GBytes *phase2_client_cert;
-    char *  phase2_client_cert_password;
-    char *  password;
+    char   *phase2_client_cert_password;
+    char   *password;
     GBytes *password_raw;
-    char *  pin;
+    char   *pin;
     GBytes *private_key;
-    char *  private_key_password;
+    char   *private_key_password;
     GBytes *phase2_private_key;
-    char *  phase2_private_key_password;
+    char   *phase2_private_key_password;
     guint   ca_cert_password_flags;
     guint   client_cert_password_flags;
     guint   phase2_ca_cert_password_flags;
@@ -221,7 +221,7 @@ G_DEFINE_TYPE(NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
 NMSetting8021xCKScheme
 nm_setting_802_1x_check_cert_scheme(gconstpointer pdata, gsize length, GError **error)
 {
-    const char *           data = pdata;
+    const char            *data = pdata;
     NMSetting8021xCKScheme scheme;
     gsize                  prefix_length;
 
@@ -309,7 +309,7 @@ _nm_setting_802_1x_cert_get_scheme(GBytes *bytes, GError **error)
 static gboolean
 _cert_verify_scheme(NMSetting8021xCKScheme scheme, GBytes *bytes, GError **error)
 {
-    GError *               local = NULL;
+    GError                *local = NULL;
     NMSetting8021xCKScheme scheme_detected;
 
     nm_assert(bytes);
@@ -337,12 +337,12 @@ _cert_verify_scheme(NMSetting8021xCKScheme scheme, GBytes *bytes, GError **error
 
 GBytes *
 _nm_setting_802_1x_cert_value_to_bytes(NMSetting8021xCKScheme scheme,
-                                       const guint8 *         val_bin,
+                                       const guint8          *val_bin,
                                        gssize                 val_len,
-                                       GError **              error)
+                                       GError               **error)
 {
     gs_unref_bytes GBytes *bytes = NULL;
-    guint8 *               mem;
+    guint8                *mem;
     gsize                  total_len;
 
     nm_assert(val_bin);
@@ -411,7 +411,7 @@ _cert_get_path(GBytes *bytes)
     G_STMT_START                                                                                   \
     {                                                                                              \
         NMSetting8021x *const _setting = (setting);                                                \
-        GBytes *              _cert;                                                               \
+        GBytes               *_cert;                                                               \
                                                                                                    \
         g_return_val_if_fail(NM_IS_SETTING_802_1X(_setting), NM_SETTING_802_1X_CK_SCHEME_UNKNOWN); \
                                                                                                    \
@@ -425,7 +425,7 @@ _cert_get_path(GBytes *bytes)
     G_STMT_START                                                            \
     {                                                                       \
         NMSetting8021x *const _setting = (setting);                         \
-        GBytes *              _cert;                                        \
+        GBytes               *_cert;                                        \
                                                                             \
         g_return_val_if_fail(NM_IS_SETTING_802_1X(_setting), NULL);         \
                                                                             \
@@ -441,7 +441,7 @@ _cert_get_path(GBytes *bytes)
     G_STMT_START                                                            \
     {                                                                       \
         NMSetting8021x *const _setting = (setting);                         \
-        GBytes *              _cert;                                        \
+        GBytes               *_cert;                                        \
                                                                             \
         g_return_val_if_fail(NM_IS_SETTING_802_1X(_setting), NULL);         \
                                                                             \
@@ -457,7 +457,7 @@ _cert_get_path(GBytes *bytes)
     G_STMT_START                                                              \
     {                                                                         \
         NMSetting8021x *const _setting = (setting);                           \
-        GBytes *              _cert;                                          \
+        GBytes               *_cert;                                          \
                                                                               \
         g_return_val_if_fail(NM_IS_SETTING_802_1X(_setting), NULL);           \
                                                                               \
@@ -470,20 +470,20 @@ _cert_get_path(GBytes *bytes)
     G_STMT_END
 
 static gboolean
-_cert_impl_set(NMSetting8021x *        setting,
+_cert_impl_set(NMSetting8021x         *setting,
                _PropertyEnums          property,
-               const char *            value,
-               const char *            password,
+               const char             *value,
+               const char             *password,
                NMSetting8021xCKScheme  scheme,
                NMSetting8021xCKFormat *out_format,
-               GError **               error)
+               GError                **error)
 {
     NMSetting8021xPrivate *priv;
     NMCryptoFileFormat     format             = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
     gs_unref_bytes GBytes *cert               = NULL;
-    GBytes **              p_cert             = NULL;
-    GBytes **              p_client_cert      = NULL;
-    char **                p_password         = NULL;
+    GBytes               **p_cert             = NULL;
+    GBytes               **p_client_cert      = NULL;
+    char                 **p_password         = NULL;
     _PropertyEnums         notify_cert        = property;
     _PropertyEnums         notify_password    = PROP_0;
     _PropertyEnums         notify_client_cert = PROP_0;
@@ -630,7 +630,7 @@ static NMSetting8021xCKFormat
 _cert_impl_get_key_format_from_bytes(GBytes *private_key)
 {
     const char *path;
-    GError *    error = NULL;
+    GError     *error = NULL;
 
     if (!private_key)
         return NM_SETTING_802_1X_CK_FORMAT_UNKNOWN;
@@ -660,7 +660,7 @@ _cert_impl_get_key_format_from_bytes(GBytes *private_key)
 }
 #define _cert_impl_get_key_format(setting, private_key_field)                                      \
     ({                                                                                             \
-        NMSetting8021x *       _setting = (setting);                                               \
+        NMSetting8021x        *_setting = (setting);                                               \
         NMSetting8021xPrivate *_priv;                                                              \
                                                                                                    \
         g_return_val_if_fail(NM_IS_SETTING_802_1X(_setting), NM_SETTING_802_1X_CK_FORMAT_UNKNOWN); \
@@ -670,13 +670,13 @@ _cert_impl_get_key_format_from_bytes(GBytes *private_key)
     })
 
 static gboolean
-_cert_verify_property(GBytes *    bytes,
+_cert_verify_property(GBytes     *bytes,
                       const char *prop_name,
                       const char *password,
                       const char *password_prop_name,
-                      GError **   error)
+                      GError    **error)
 {
-    GError *               local = NULL;
+    GError                *local = NULL;
     NMSetting8021xCKScheme scheme;
 
     if (!bytes)
@@ -766,7 +766,7 @@ gboolean
 nm_setting_802_1x_add_eap_method(NMSetting8021x *setting, const char *eap)
 {
     NMSetting8021xPrivate *priv;
-    GSList *               iter;
+    GSList                *iter;
 
     g_return_val_if_fail(NM_IS_SETTING_802_1X(setting), FALSE);
     g_return_val_if_fail(eap != NULL, FALSE);
@@ -793,7 +793,7 @@ void
 nm_setting_802_1x_remove_eap_method(NMSetting8021x *setting, guint32 i)
 {
     NMSetting8021xPrivate *priv;
-    GSList *               elt;
+    GSList                *elt;
 
     g_return_if_fail(NM_IS_SETTING_802_1X(setting));
 
@@ -819,7 +819,7 @@ gboolean
 nm_setting_802_1x_remove_eap_method_by_value(NMSetting8021x *setting, const char *eap)
 {
     NMSetting8021xPrivate *priv;
-    GSList *               iter;
+    GSList                *iter;
 
     g_return_val_if_fail(NM_IS_SETTING_802_1X(setting), FALSE);
     g_return_val_if_fail(eap != NULL, FALSE);
@@ -1044,11 +1044,11 @@ nm_setting_802_1x_get_ca_cert_uri(NMSetting8021x *setting)
  * Returns: %TRUE if the operation succeeded, %FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_ca_cert(NMSetting8021x *        setting,
-                              const char *            value,
+nm_setting_802_1x_set_ca_cert(NMSetting8021x         *setting,
+                              const char             *value,
                               NMSetting8021xCKScheme  scheme,
                               NMSetting8021xCKFormat *out_format,
-                              GError **               error)
+                              GError                **error)
 {
     return _cert_impl_set(setting, PROP_CA_CERT, value, NULL, scheme, out_format, error);
 }
@@ -1160,7 +1160,7 @@ gboolean
 nm_setting_802_1x_add_altsubject_match(NMSetting8021x *setting, const char *altsubject_match)
 {
     NMSetting8021xPrivate *priv;
-    GSList *               iter;
+    GSList                *iter;
 
     g_return_val_if_fail(NM_IS_SETTING_802_1X(setting), FALSE);
     g_return_val_if_fail(altsubject_match != NULL, FALSE);
@@ -1187,7 +1187,7 @@ void
 nm_setting_802_1x_remove_altsubject_match(NMSetting8021x *setting, guint32 i)
 {
     NMSetting8021xPrivate *priv;
-    GSList *               elt;
+    GSList                *elt;
 
     g_return_if_fail(NM_IS_SETTING_802_1X(setting));
 
@@ -1212,10 +1212,10 @@ nm_setting_802_1x_remove_altsubject_match(NMSetting8021x *setting, guint32 i)
  **/
 gboolean
 nm_setting_802_1x_remove_altsubject_match_by_value(NMSetting8021x *setting,
-                                                   const char *    altsubject_match)
+                                                   const char     *altsubject_match)
 {
     NMSetting8021xPrivate *priv;
-    GSList *               iter;
+    GSList                *iter;
 
     g_return_val_if_fail(NM_IS_SETTING_802_1X(setting), FALSE);
     g_return_val_if_fail(altsubject_match != NULL, FALSE);
@@ -1377,11 +1377,11 @@ nm_setting_802_1x_get_client_cert_uri(NMSetting8021x *setting)
  * Returns: %TRUE if the operation succeeded, %FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_client_cert(NMSetting8021x *        setting,
-                                  const char *            value,
+nm_setting_802_1x_set_client_cert(NMSetting8021x         *setting,
+                                  const char             *value,
                                   NMSetting8021xCKScheme  scheme,
                                   NMSetting8021xCKFormat *out_format,
-                                  GError **               error)
+                                  GError                **error)
 {
     return _cert_impl_set(setting, PROP_CLIENT_CERT, value, NULL, scheme, out_format, error);
 }
@@ -1635,11 +1635,11 @@ nm_setting_802_1x_get_phase2_ca_cert_uri(NMSetting8021x *setting)
  * Returns: %TRUE if the operation succeeded, %FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_phase2_ca_cert(NMSetting8021x *        setting,
-                                     const char *            value,
+nm_setting_802_1x_set_phase2_ca_cert(NMSetting8021x         *setting,
+                                     const char             *value,
                                      NMSetting8021xCKScheme  scheme,
                                      NMSetting8021xCKFormat *out_format,
-                                     GError **               error)
+                                     GError                **error)
 {
     return _cert_impl_set(setting, PROP_PHASE2_CA_CERT, value, NULL, scheme, out_format, error);
 }
@@ -1782,10 +1782,10 @@ nm_setting_802_1x_get_phase2_altsubject_match(NMSetting8021x *setting, guint32 i
  **/
 gboolean
 nm_setting_802_1x_add_phase2_altsubject_match(NMSetting8021x *setting,
-                                              const char *    phase2_altsubject_match)
+                                              const char     *phase2_altsubject_match)
 {
     NMSetting8021xPrivate *priv;
-    GSList *               iter;
+    GSList                *iter;
 
     g_return_val_if_fail(NM_IS_SETTING_802_1X(setting), FALSE);
     g_return_val_if_fail(phase2_altsubject_match != NULL, FALSE);
@@ -1813,7 +1813,7 @@ void
 nm_setting_802_1x_remove_phase2_altsubject_match(NMSetting8021x *setting, guint32 i)
 {
     NMSetting8021xPrivate *priv;
-    GSList *               elt;
+    GSList                *elt;
 
     g_return_if_fail(NM_IS_SETTING_802_1X(setting));
 
@@ -1838,10 +1838,10 @@ nm_setting_802_1x_remove_phase2_altsubject_match(NMSetting8021x *setting, guint3
  **/
 gboolean
 nm_setting_802_1x_remove_phase2_altsubject_match_by_value(NMSetting8021x *setting,
-                                                          const char *    phase2_altsubject_match)
+                                                          const char     *phase2_altsubject_match)
 {
     NMSetting8021xPrivate *priv;
-    GSList *               iter;
+    GSList                *iter;
 
     g_return_val_if_fail(NM_IS_SETTING_802_1X(setting), FALSE);
     g_return_val_if_fail(phase2_altsubject_match != NULL, FALSE);
@@ -1975,11 +1975,11 @@ nm_setting_802_1x_get_phase2_client_cert_uri(NMSetting8021x *setting)
  * Returns: %TRUE if the operation succeeded, %FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_phase2_client_cert(NMSetting8021x *        setting,
-                                         const char *            value,
+nm_setting_802_1x_set_phase2_client_cert(NMSetting8021x         *setting,
+                                         const char             *value,
                                          NMSetting8021xCKScheme  scheme,
                                          NMSetting8021xCKFormat *out_format,
-                                         GError **               error)
+                                         GError                **error)
 {
     return _cert_impl_set(setting, PROP_PHASE2_CLIENT_CERT, value, NULL, scheme, out_format, error);
 }
@@ -2227,12 +2227,12 @@ nm_setting_802_1x_get_private_key_uri(NMSetting8021x *setting)
  * Returns: %TRUE if the operation succeeded, %FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_private_key(NMSetting8021x *        setting,
-                                  const char *            value,
-                                  const char *            password,
+nm_setting_802_1x_set_private_key(NMSetting8021x         *setting,
+                                  const char             *value,
+                                  const char             *password,
                                   NMSetting8021xCKScheme  scheme,
                                   NMSetting8021xCKFormat *out_format,
-                                  GError **               error)
+                                  GError                **error)
 {
     return _cert_impl_set(setting, PROP_PRIVATE_KEY, value, password, scheme, out_format, error);
 }
@@ -2430,12 +2430,12 @@ nm_setting_802_1x_get_phase2_private_key_uri(NMSetting8021x *setting)
  * Returns: %TRUE if the operation succeeded, %FALSE if it was unsuccessful
  **/
 gboolean
-nm_setting_802_1x_set_phase2_private_key(NMSetting8021x *        setting,
-                                         const char *            value,
-                                         const char *            password,
+nm_setting_802_1x_set_phase2_private_key(NMSetting8021x         *setting,
+                                         const char             *value,
+                                         const char             *password,
                                          NMSetting8021xCKScheme  scheme,
                                          NMSetting8021xCKFormat *out_format,
-                                         GError **               error)
+                                         GError                **error)
 {
     return _cert_impl_set(setting,
                           PROP_PHASE2_PRIVATE_KEY,
@@ -2521,10 +2521,10 @@ need_secrets_sim(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
 }
 
 static gboolean
-need_private_key_password(GBytes *               blob,
+need_private_key_password(GBytes                *blob,
                           NMSetting8021xCKScheme scheme,
-                          const char *           path,
-                          const char *           password,
+                          const char            *path,
+                          const char            *password,
                           NMSettingSecretFlags   flags)
 {
     NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
@@ -2554,8 +2554,8 @@ need_secrets_tls(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
     NMSetting8021xCKScheme scheme;
-    GBytes *               blob = NULL;
-    const char *           path = NULL;
+    GBytes                *blob = NULL;
+    const char            *path = NULL;
 
     if (phase2) {
         scheme = nm_setting_802_1x_get_phase2_private_key_scheme(self);
@@ -2823,7 +2823,7 @@ static void
 need_secrets_phase2(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
 {
     NMSetting8021xPrivate *priv   = NM_SETTING_802_1X_GET_PRIVATE(self);
-    char *                 method = NULL;
+    char                  *method = NULL;
     int                    i;
 
     g_return_if_fail(phase2 == FALSE);
@@ -2871,9 +2871,9 @@ static const EAPMethodsTable eap_methods_table[] = {
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSetting8021x *       self = NM_SETTING_802_1X(setting);
+    NMSetting8021x        *self = NM_SETTING_802_1X(setting);
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
-    const char *           valid_eap[] =
+    const char            *valid_eap[] =
         {"leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd", "external", NULL};
     GSList *iter;
 
@@ -3057,10 +3057,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 static GPtrArray *
 need_secrets(NMSetting *setting)
 {
-    NMSetting8021x *       self = NM_SETTING_802_1X(setting);
+    NMSetting8021x        *self = NM_SETTING_802_1X(setting);
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
-    GSList *               iter;
-    GPtrArray *            secrets;
+    GSList                *iter;
+    GPtrArray             *secrets;
     gboolean               eap_method_found = FALSE;
 
     secrets = g_ptr_array_sized_new(4);
@@ -3099,7 +3099,7 @@ need_secrets(NMSetting *setting)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSetting8021x *       setting = NM_SETTING_802_1X(object);
+    NMSetting8021x        *setting = NM_SETTING_802_1X(object);
     NMSetting8021xPrivate *priv    = NM_SETTING_802_1X_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -3121,7 +3121,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSetting8021x *       setting = NM_SETTING_802_1X(object);
+    NMSetting8021x        *setting = NM_SETTING_802_1X(object);
     NMSetting8021xPrivate *priv    = NM_SETTING_802_1X_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -3165,7 +3165,7 @@ nm_setting_802_1x_new(void)
 static void
 finalize(GObject *object)
 {
-    NMSetting8021x *       self = NM_SETTING_802_1X(object);
+    NMSetting8021x        *self = NM_SETTING_802_1X(object);
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
 
     g_slist_free_full(priv->eap, g_free);
@@ -3178,9 +3178,9 @@ finalize(GObject *object)
 static void
 nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSetting8021xPrivate));
 

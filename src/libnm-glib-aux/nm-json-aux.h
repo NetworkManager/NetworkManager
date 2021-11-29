@@ -399,7 +399,7 @@ nm_value_type_to_json(NMValueType value_type, GString *gstr, gconstpointer p_fie
 }
 
 static inline gboolean
-nm_value_type_from_json(const NMJsonVt * vt,
+nm_value_type_from_json(const NMJsonVt  *vt,
                         NMValueType      value_type,
                         const nm_json_t *elem,
                         gpointer         out_val)

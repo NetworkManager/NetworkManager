@@ -24,18 +24,18 @@ GType nm_bluez_manager_get_type(void);
 typedef void (*NMBluezManagerConnectCb)(
     NMBluezManager *self,
     gboolean        is_completed /* or else is early notification with DUN path */,
-    const char *    device_name,
-    GError *        error,
+    const char     *device_name,
+    GError         *error,
     gpointer        user_data);
 
-gboolean nm_bluez_manager_connect(NMBluezManager *        self,
-                                  const char *            object_path,
+gboolean nm_bluez_manager_connect(NMBluezManager         *self,
+                                  const char             *object_path,
                                   NMBluetoothCapabilities connection_bt_type,
                                   int                     timeout_msec,
-                                  GCancellable *          cancellable,
+                                  GCancellable           *cancellable,
                                   NMBluezManagerConnectCb callback,
                                   gpointer                callback_user_data,
-                                  GError **               error);
+                                  GError                **error);
 
 void nm_bluez_manager_disconnect(NMBluezManager *self, const char *object_path);
 

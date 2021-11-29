@@ -64,9 +64,9 @@ G_DEFINE_TYPE(NMDeviceVxlan, nm_device_vxlan, NM_TYPE_DEVICE)
 static void
 update_properties(NMDevice *device)
 {
-    NMDeviceVxlan *           self   = NM_DEVICE_VXLAN(device);
-    NMDeviceVxlanPrivate *    priv   = NM_DEVICE_VXLAN_GET_PRIVATE(self);
-    GObject *                 object = G_OBJECT(device);
+    NMDeviceVxlan            *self   = NM_DEVICE_VXLAN(device);
+    NMDeviceVxlanPrivate     *priv   = NM_DEVICE_VXLAN_GET_PRIVATE(self);
+    GObject                  *object = G_OBJECT(device);
     const NMPlatformLnkVxlan *props;
 
     props = nm_platform_link_get_lnk_vxlan(nm_device_get_platform(device),
@@ -139,7 +139,7 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
 static void
 unrealize_notify(NMDevice *device)
 {
-    NMDeviceVxlan *       self = NM_DEVICE_VXLAN(device);
+    NMDeviceVxlan        *self = NM_DEVICE_VXLAN(device);
     NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE(self);
     guint                 i;
 
@@ -152,16 +152,16 @@ unrealize_notify(NMDevice *device)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
-    const char *       iface = nm_device_get_iface(device);
+    const char        *iface = nm_device_get_iface(device);
     NMPlatformLnkVxlan props = {};
-    NMSettingVxlan *   s_vxlan;
-    const char *       str;
+    NMSettingVxlan    *s_vxlan;
+    const char        *str;
     int                r;
 
     s_vxlan = nm_connection_get_setting_vxlan(connection);
@@ -241,8 +241,8 @@ static gboolean
 check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
     NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE(device);
-    NMSettingVxlan *      s_vxlan;
-    const char *          parent;
+    NMSettingVxlan       *s_vxlan;
+    const char           *parent;
 
     if (!NM_DEVICE_CLASS(nm_device_vxlan_parent_class)
              ->check_connection_compatible(device, connection, error))
@@ -366,11 +366,11 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
     NMSettingVxlan *s_vxlan;
 
@@ -604,9 +604,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_vxlan = {
 static void
 nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;
 
@@ -744,11 +744,11 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VXLAN_DEVICE_FACTORY, NMVxlanDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     return g_object_new(NM_TYPE_DEVICE_VXLAN,
                         NM_DEVICE_IFACE,
@@ -778,7 +778,7 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
 static char *
 get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
 {
-    const char *    ifname;
+    const char     *ifname;
     NMSettingVxlan *s_vxlan;
 
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_VXLAN_SETTING_NAME), NULL);

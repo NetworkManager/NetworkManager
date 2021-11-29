@@ -66,9 +66,9 @@ typedef struct {
 
     NM_DEPRECATED_IN_1_2
     gboolean (*need_secrets)(NMVpnPluginOld *plugin,
-                             NMConnection *  connection,
-                             const char **   setting_name,
-                             GError **       error);
+                             NMConnection   *connection,
+                             const char    **setting_name,
+                             GError        **error);
 
     NM_DEPRECATED_IN_1_2
     gboolean (*disconnect)(NMVpnPluginOld *plugin, GError **err);
@@ -78,9 +78,9 @@ typedef struct {
 
     NM_DEPRECATED_IN_1_2
     gboolean (*connect_interactive)(NMVpnPluginOld *plugin,
-                                    NMConnection *  connection,
-                                    GVariant *      details,
-                                    GError **       error);
+                                    NMConnection   *connection,
+                                    GVariant       *details,
+                                    GError        **error);
 
     /*< private >*/
     NM_DEPRECATED_IN_1_2
@@ -126,8 +126,8 @@ gboolean
 nm_vpn_plugin_old_read_vpn_details(int fd, GHashTable **out_data, GHashTable **out_secrets);
 
 NM_DEPRECATED_IN_1_2
-gboolean nm_vpn_plugin_old_get_secret_flags(GHashTable *          data,
-                                            const char *          secret_name,
+gboolean nm_vpn_plugin_old_get_secret_flags(GHashTable           *data,
+                                            const char           *secret_name,
                                             NMSettingSecretFlags *out_flags);
 
 G_END_DECLS

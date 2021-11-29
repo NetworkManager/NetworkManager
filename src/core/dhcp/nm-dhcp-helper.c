@@ -61,9 +61,9 @@ build_signal_parameters(void)
     for (environ_iter = (const char *const *) environ; *environ_iter; environ_iter++) {
         static const char *const ignore_with_prefix_list[] =
             {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
-        const char *       item = *environ_iter;
-        gs_free char *     name = NULL;
-        const char *       val;
+        const char        *item = *environ_iter;
+        gs_free char      *name = NULL;
+        const char        *val;
         const char *const *p;
 
         val = strchr(item, '=');
@@ -119,13 +119,13 @@ int
 main(int argc, char *argv[])
 {
     gs_unref_object GDBusConnection *connection = NULL;
-    gs_free_error GError *error                 = NULL;
-    gs_unref_variant GVariant *parameters       = NULL;
-    gs_unref_variant GVariant *result           = NULL;
-    gboolean                   success          = FALSE;
-    guint                      try_count;
-    gint64                     time_start;
-    gint64                     time_end;
+    gs_free_error GError            *error      = NULL;
+    gs_unref_variant GVariant       *parameters = NULL;
+    gs_unref_variant GVariant       *result     = NULL;
+    gboolean                         success    = FALSE;
+    guint                            try_count;
+    gint64                           time_start;
+    gint64                           time_end;
 
     /* Connecting to the unix socket can fail with EAGAIN if there are too
      * many pending connections and the server can't accept them in time

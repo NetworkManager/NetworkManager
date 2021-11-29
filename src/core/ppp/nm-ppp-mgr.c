@@ -17,9 +17,9 @@
 
 struct _NMPppMgr {
     NMPppMgrConfig config;
-    NMPPPManager * ppp_manager;
-    GSource *      idle_start;
-    GSource *      connect_timeout_source;
+    NMPPPManager  *ppp_manager;
+    GSource       *idle_start;
+    GSource       *connect_timeout_source;
     union {
         struct {
             NMPppMgrIPData ip_data_6;
@@ -116,13 +116,13 @@ _callback_emit_with_data(NMPppMgr *self, const NMPppMgrCallbackData *callback_da
 }
 
 static void
-_callback_emit_state_change(NMPppMgr *           self,
+_callback_emit_state_change(NMPppMgr            *self,
                             NMPppMgrCallbackType callback_type,
                             NMPppMgrState        old_state,
                             gboolean             ip_changed_4,
                             gboolean             ip_changed_6,
                             NMDeviceStateReason  reason,
-                            const char *         reason_msg)
+                            const char          *reason_msg)
 {
     const NMPppMgrCallbackData callback_data = {
         .callback_type = callback_type,
@@ -249,12 +249,12 @@ _state_ready_for_have_ifindex(NMPppMgr *self)
 static void
 _ppp_signal_state_changed(NMPPPManager *ppp_manager, guint ppp_state_u, gpointer user_data)
 {
-    NMPppMgr *          self      = SELF_FROM_USERDATA(user_data);
+    NMPppMgr           *self      = SELF_FROM_USERDATA(user_data);
     NMPPPStatus         ppp_state = ppp_state_u;
     NMPppMgrState       state;
     NMPppMgrState       old_state;
     NMDeviceStateReason reason;
-    const char *        reason_msg;
+    const char         *reason_msg;
 
     if ((guint) ppp_state != ppp_state_u)
         ppp_state = NM_PPP_STATUS_UNKNOWN;
@@ -295,10 +295,10 @@ _ppp_signal_state_changed(NMPPPManager *ppp_manager, guint ppp_state_u, gpointer
 static void
 _ppp_signal_ifindex_set(NMPPPManager *ppp_manager,
                         int           ifindex,
-                        const char *  ifname,
+                        const char   *ifname,
                         gpointer      user_data)
 {
-    NMPppMgr *    self = SELF_FROM_USERDATA(user_data);
+    NMPppMgr     *self = SELF_FROM_USERDATA(user_data);
     NMPppMgrState old_state;
     NMPppMgrState new_state;
     gboolean      ip_changed_4;
@@ -352,13 +352,13 @@ _ppp_signal_ifindex_set(NMPPPManager *ppp_manager,
 }
 
 static void
-_ppp_signal_new_config(NMPPPManager *            ppp_manager,
+_ppp_signal_new_config(NMPPPManager             *ppp_manager,
                        int                       addr_family,
-                       const NML3ConfigData *    l3cd,
+                       const NML3ConfigData     *l3cd,
                        const NMUtilsIPv6IfaceId *iid,
                        gpointer                  user_data)
 {
-    NMPppMgr *    self    = SELF_FROM_USERDATA(user_data);
+    NMPppMgr     *self    = SELF_FROM_USERDATA(user_data);
     const int     IS_IPv4 = NM_IS_IPv4(addr_family);
     NMPppMgrState old_state;
     gboolean      ip_changed_4;
@@ -436,7 +436,7 @@ _ppp_signal_stats(NMPPPManager *ppp_manager, guint in_bytes, guint out_bytes, gp
 static gboolean
 _ifindex_timeout_cb(gpointer user_data)
 {
-    NMPppMgr *    self = user_data;
+    NMPppMgr     *self = user_data;
     NMPppMgrState old_state;
 
     nm_clear_g_source_inst(&self->connect_timeout_source);
@@ -457,12 +457,12 @@ _ifindex_timeout_cb(gpointer user_data)
 static gboolean
 _idle_start_cb(gpointer user_data)
 {
-    NMPppMgr *    self          = user_data;
+    NMPppMgr             *self  = user_data;
     gs_free_error GError *error = NULL;
     NMPppMgrState         old_state;
     gboolean              ip4_enabled;
     gboolean              ip6_enabled;
-    NMPlatform *          platform;
+    NMPlatform           *platform;
     const NMPlatformLink *plink;
 
     nm_clear_g_source_inst(&self->idle_start);
@@ -546,7 +546,7 @@ _idle_start_cb(gpointer user_data)
 NMPppMgr *
 nm_ppp_mgr_start(const NMPppMgrConfig *config, GError **error)
 {
-    NMPppMgr *    self;
+    NMPppMgr     *self;
     NMPPPManager *ppp_manager;
 
     g_return_val_if_fail(config, NULL);

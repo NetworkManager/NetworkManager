@@ -46,15 +46,15 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingWireless,
                              PROP_AP_ISOLATION, );
 
 typedef struct {
-    GBytes *                  ssid;
-    GArray *                  mac_address_blacklist;
-    GPtrArray *               seen_bssids;
-    char *                    mode;
-    char *                    band;
-    char *                    bssid;
-    char *                    device_mac_address;
-    char *                    cloned_mac_address;
-    char *                    generate_mac_address_mask;
+    GBytes                   *ssid;
+    GArray                   *mac_address_blacklist;
+    GPtrArray                *seen_bssids;
+    char                     *mode;
+    char                     *band;
+    char                     *bssid;
+    char                     *device_mac_address;
+    char                     *cloned_mac_address;
+    char                     *generate_mac_address_mask;
     NMSettingMacRandomization mac_address_randomization;
     NMTernary                 ap_isolation;
     guint32                   channel;
@@ -127,7 +127,7 @@ match_cipher(const char *cipher,
  * security flags and mode, %FALSE if they are not.
  */
 gboolean
-nm_setting_wireless_ap_security_compatible(NMSettingWireless *        s_wireless,
+nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless,
                                            NMSettingWirelessSecurity *s_wireless_sec,
                                            NM80211ApFlags             ap_flags,
                                            NM80211ApSecurityFlags     ap_wpa,
@@ -511,7 +511,7 @@ gboolean
 nm_setting_wireless_add_mac_blacklist_item(NMSettingWireless *setting, const char *mac)
 {
     NMSettingWirelessPrivate *priv;
-    const char *              candidate;
+    const char               *candidate;
     int                       i;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRELESS(setting), FALSE);
@@ -568,7 +568,7 @@ gboolean
 nm_setting_wireless_remove_mac_blacklist_item_by_value(NMSettingWireless *setting, const char *mac)
 {
     NMSettingWirelessPrivate *priv;
-    const char *              candidate;
+    const char               *candidate;
     int                       i;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRELESS(setting), FALSE);
@@ -678,7 +678,7 @@ gboolean
 nm_setting_wireless_add_seen_bssid(NMSettingWireless *setting, const char *bssid)
 {
     NMSettingWirelessPrivate *priv;
-    gs_free char *            lower_bssid = NULL;
+    gs_free char             *lower_bssid = NULL;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRELESS(setting), FALSE);
     g_return_val_if_fail(bssid != NULL, FALSE);
@@ -764,7 +764,7 @@ static gboolean
 _from_dbus_fcn_seen_bssids(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingWirelessPrivate *priv;
-    gs_free const char **     s = NULL;
+    gs_free const char      **s = NULL;
     gsize                     len;
     gsize                     i;
 
@@ -810,15 +810,15 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingWirelessPrivate *priv          = NM_SETTING_WIRELESS_GET_PRIVATE(setting);
-    const char *              valid_modes[] = {NM_SETTING_WIRELESS_MODE_INFRA,
+    const char               *valid_modes[] = {NM_SETTING_WIRELESS_MODE_INFRA,
                                  NM_SETTING_WIRELESS_MODE_ADHOC,
                                  NM_SETTING_WIRELESS_MODE_AP,
                                  NM_SETTING_WIRELESS_MODE_MESH,
                                  NULL};
-    const char *              valid_bands[] = {"a", "bg", NULL};
+    const char               *valid_bands[] = {"a", "bg", NULL};
     guint                     i;
     gsize                     length;
-    GError *                  local = NULL;
+    GError                   *local = NULL;
 
     if (!priv->ssid) {
         g_set_error_literal(error,
@@ -1152,7 +1152,7 @@ clear_blacklist_item(char **item_p)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingWireless *       setting = NM_SETTING_WIRELESS(object);
+    NMSettingWireless        *setting = NM_SETTING_WIRELESS(object);
     NMSettingWirelessPrivate *priv    = NM_SETTING_WIRELESS_GET_PRIVATE(object);
 
     switch (prop_id) {
@@ -1212,8 +1212,8 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE(object);
-    const char *const *       blacklist;
-    const char *              mac;
+    const char *const        *blacklist;
+    const char               *mac;
     gboolean                  bool_val;
 
     switch (prop_id) {
@@ -1270,7 +1270,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_SEEN_BSSIDS:
     {
         gs_unref_ptrarray GPtrArray *arr_old = NULL;
-        const char *const *          strv;
+        const char *const           *strv;
 
         arr_old = g_steal_pointer(&priv->seen_bssids);
 
@@ -1350,9 +1350,9 @@ finalize(GObject *object)
 static void
 nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingWirelessPrivate));
 

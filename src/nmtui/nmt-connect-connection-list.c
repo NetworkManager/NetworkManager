@@ -27,7 +27,7 @@ G_DEFINE_TYPE(NmtConnectConnectionList, nmt_connect_connection_list, NMT_TYPE_NE
                                  NmtConnectConnectionListPrivate))
 
 typedef struct {
-    char *    name;
+    char     *name;
     NMDevice *device;
 
     int sort_order;
@@ -37,11 +37,11 @@ typedef struct {
 
 typedef struct {
     const char *name;
-    char *      ssid;
+    char       *ssid;
 
-    NMConnection *      conn;
-    NMAccessPoint *     ap;
-    NMDevice *          device;
+    NMConnection       *conn;
+    NMAccessPoint      *ap;
+    NMDevice           *device;
     NMActiveConnection *active;
 } NmtConnectConnection;
 
@@ -124,7 +124,7 @@ static int
 get_sort_order_for_connection(NMConnection *conn)
 {
     NMSettingConnection *s_con;
-    const char *         type;
+    const char          *type;
     int                  i;
 
     s_con = nm_connection_get_setting_connection(conn);
@@ -178,7 +178,7 @@ add_connections_for_device(NmtConnectDevice *nmtdev, const GPtrArray *connection
     int i;
 
     for (i = 0; i < connections->len; i++) {
-        NMConnection *       conn = connections->pdata[i];
+        NMConnection        *conn = connections->pdata[i];
         NMSettingConnection *s_con;
 
         s_con = nm_connection_get_setting_connection(conn);
@@ -201,7 +201,7 @@ static char *
 hash_ap(NMAccessPoint *ap)
 {
     unsigned char input[66];
-    GBytes *      ssid;
+    GBytes       *ssid;
     NM80211Mode   mode;
     guint32       flags;
     guint32       wpa_flags;
@@ -246,12 +246,12 @@ static void
 add_connections_for_aps(NmtConnectDevice *nmtdev, const GPtrArray *connections)
 {
     NmtConnectConnection *nmtconn;
-    NMConnection *        conn;
-    NMAccessPoint *       ap;
-    const GPtrArray *     aps;
-    GHashTable *          seen_ssids;
-    GBytes *              ssid;
-    char *                ap_hash;
+    NMConnection         *conn;
+    NMAccessPoint        *ap;
+    const GPtrArray      *aps;
+    GHashTable           *seen_ssids;
+    GBytes               *ssid;
+    char                 *ap_hash;
     int                   i, c;
 
     aps = nm_device_wifi_get_access_points(NM_DEVICE_WIFI(nmtdev->device));
@@ -301,13 +301,13 @@ add_connections_for_aps(NmtConnectDevice *nmtdev, const GPtrArray *connections)
 }
 
 static GSList *
-append_nmt_devices_for_devices(GSList *         nmt_devices,
+append_nmt_devices_for_devices(GSList          *nmt_devices,
                                const GPtrArray *devices,
-                               char **          names,
+                               char           **names,
                                const GPtrArray *connections)
 {
     NmtConnectDevice *nmtdev;
-    NMDevice *        device;
+    NMDevice         *device;
     int               i, sort_order;
 
     for (i = 0; i < devices->len; i++) {
@@ -337,11 +337,11 @@ append_nmt_devices_for_devices(GSList *         nmt_devices,
 static GSList *
 append_nmt_devices_for_virtual_devices(GSList *nmt_devices, const GPtrArray *connections)
 {
-    NmtConnectDevice *    nmtdev = NULL;
+    NmtConnectDevice     *nmtdev = NULL;
     int                   i;
-    GHashTable *          devices_by_name;
-    char *                name;
-    NMConnection *        conn;
+    GHashTable           *devices_by_name;
+    char                 *name;
+    NMConnection         *conn;
     NmtConnectConnection *nmtconn;
     int                   sort_order;
 
@@ -381,9 +381,9 @@ append_nmt_devices_for_virtual_devices(GSList *nmt_devices, const GPtrArray *con
 static GSList *
 append_nmt_devices_for_vpns(GSList *nmt_devices, const GPtrArray *connections)
 {
-    NmtConnectDevice *    nmtdev;
+    NmtConnectDevice     *nmtdev;
     int                   i;
-    NMConnection *        conn;
+    NMConnection         *conn;
     NmtConnectConnection *nmtconn;
 
     nmtdev             = g_slice_new0(NmtConnectDevice);
@@ -444,14 +444,14 @@ static void
 nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
 {
     NmtConnectConnectionListPrivate *priv    = NMT_CONNECT_CONNECTION_LIST_GET_PRIVATE(list);
-    NmtNewtListbox *                 listbox = NMT_NEWT_LISTBOX(list);
-    const GPtrArray *                devices, *acs, *connections;
+    NmtNewtListbox                  *listbox = NMT_NEWT_LISTBOX(list);
+    const GPtrArray                 *devices, *acs, *connections;
     int                              max_width;
-    char **                          names, *row, active_col;
-    const char *                     strength_col;
-    GSList *                         nmt_devices, *diter, *citer;
-    NmtConnectDevice *               nmtdev;
-    NmtConnectConnection *           nmtconn;
+    char                           **names, *row, active_col;
+    const char                      *strength_col;
+    GSList                          *nmt_devices, *diter, *citer;
+    NmtConnectDevice                *nmtdev;
+    NmtConnectConnection            *nmtconn;
 
     g_slist_free_full(priv->nmt_devices, (GDestroyNotify) nmt_connect_device_free);
     priv->nmt_devices = NULL;
@@ -599,17 +599,17 @@ nmt_connect_connection_list_class_init(NmtConnectConnectionListClass *list_class
  */
 gboolean
 nmt_connect_connection_list_get_connection(NmtConnectConnectionList *list,
-                                           const char *              identifier,
-                                           NMConnection **           connection,
-                                           NMDevice **               device,
-                                           NMObject **               specific_object,
-                                           NMActiveConnection **     active)
+                                           const char               *identifier,
+                                           NMConnection            **connection,
+                                           NMDevice                **device,
+                                           NMObject                **specific_object,
+                                           NMActiveConnection      **active)
 {
     NmtConnectConnectionListPrivate *priv = NMT_CONNECT_CONNECTION_LIST_GET_PRIVATE(list);
-    GSList *                         diter, *citer;
-    NmtConnectDevice *               nmtdev;
-    NmtConnectConnection *           nmtconn = NULL;
-    NMConnection *                   conn    = NULL;
+    GSList                          *diter, *citer;
+    NmtConnectDevice                *nmtdev;
+    NmtConnectConnection            *nmtconn = NULL;
+    NMConnection                    *conn    = NULL;
 
     g_return_val_if_fail(identifier, FALSE);
 
@@ -669,10 +669,10 @@ found:
  */
 gboolean
 nmt_connect_connection_list_get_selection(NmtConnectConnectionList *list,
-                                          NMConnection **           connection,
-                                          NMDevice **               device,
-                                          NMObject **               specific_object,
-                                          NMActiveConnection **     active)
+                                          NMConnection            **connection,
+                                          NMDevice                **device,
+                                          NMObject                **specific_object,
+                                          NMActiveConnection      **active)
 {
     NmtConnectConnection *nmtconn;
 

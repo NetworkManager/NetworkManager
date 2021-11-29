@@ -24,7 +24,7 @@ G_DEFINE_TYPE(NmtPasswordFields, nmt_password_fields, NMT_TYPE_NEWT_GRID)
 typedef struct {
     NmtPasswordFieldsExtras extras;
 
-    NmtNewtEntry *   entry;
+    NmtNewtEntry    *entry;
     NmtNewtCheckbox *always_ask;
     NmtNewtCheckbox *show_password;
 
@@ -113,7 +113,7 @@ static void
 nmt_password_fields_constructed(GObject *object)
 {
     NmtPasswordFieldsPrivate *priv = NMT_PASSWORD_FIELDS_GET_PRIVATE(object);
-    NmtNewtGrid *             grid = NMT_NEWT_GRID(object);
+    NmtNewtGrid              *grid = NMT_NEWT_GRID(object);
 
     nmt_newt_grid_add(grid, NMT_NEWT_WIDGET(priv->entry), 0, 0);
 
@@ -169,12 +169,12 @@ nmt_password_fields_finalize(GObject *object)
 }
 
 static void
-nmt_password_fields_set_property(GObject *     object,
+nmt_password_fields_set_property(GObject      *object,
                                  guint         prop_id,
                                  const GValue *value,
-                                 GParamSpec *  pspec)
+                                 GParamSpec   *pspec)
 {
-    NmtPasswordFields *       fields = NMT_PASSWORD_FIELDS(object);
+    NmtPasswordFields        *fields = NMT_PASSWORD_FIELDS(object);
     NmtPasswordFieldsPrivate *priv   = NMT_PASSWORD_FIELDS_GET_PRIVATE(fields);
 
     switch (prop_id) {
@@ -205,7 +205,7 @@ nmt_password_fields_set_property(GObject *     object,
 static void
 nmt_password_fields_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NmtPasswordFields *       entry = NMT_PASSWORD_FIELDS(object);
+    NmtPasswordFields        *entry = NMT_PASSWORD_FIELDS(object);
     NmtPasswordFieldsPrivate *priv  = NMT_PASSWORD_FIELDS_GET_PRIVATE(entry);
 
     switch (prop_id) {

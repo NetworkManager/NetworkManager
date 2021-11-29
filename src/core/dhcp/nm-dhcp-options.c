@@ -396,14 +396,14 @@ nm_dhcp_option_add_option(GHashTable *options, int addr_family, guint option, co
 }
 
 void
-nm_dhcp_option_add_option_utf8safe_escape(GHashTable *  options,
+nm_dhcp_option_add_option_utf8safe_escape(GHashTable   *options,
                                           int           addr_family,
                                           guint         option,
                                           const guint8 *data,
                                           gsize         n_data)
 {
     gs_free char *to_free = NULL;
-    const char *  escaped;
+    const char   *escaped;
 
     escaped = nm_utils_buf_utf8safe_escape((char *) data,
                                            n_data,

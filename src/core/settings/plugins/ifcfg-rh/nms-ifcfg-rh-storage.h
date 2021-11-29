@@ -45,14 +45,14 @@ GType nms_ifcfg_rh_storage_get_type(void);
 struct _NMSIfcfgRHPlugin;
 
 NMSIfcfgRHStorage *nms_ifcfg_rh_storage_new_connection(struct _NMSIfcfgRHPlugin *plugin,
-                                                       const char *              filename,
-                                                       NMConnection *            connection_take,
-                                                       const struct timespec *   mtime);
+                                                       const char               *filename,
+                                                       NMConnection             *connection_take,
+                                                       const struct timespec    *mtime);
 
 NMSIfcfgRHStorage *nms_ifcfg_rh_storage_new_unhandled(struct _NMSIfcfgRHPlugin *plugin,
-                                                      const char *              filename,
-                                                      const char *              unmanaged_spec,
-                                                      const char *              unrecognized_spec);
+                                                      const char               *filename,
+                                                      const char               *unmanaged_spec,
+                                                      const char               *unrecognized_spec);
 
 void nms_ifcfg_rh_storage_destroy(NMSIfcfgRHStorage *self);
 

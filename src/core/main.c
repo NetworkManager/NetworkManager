@@ -54,9 +54,9 @@ static struct {
     gboolean become_daemon;
     gboolean g_fatal_warnings;
     gboolean run_from_build_dir;
-    char *   opt_log_level;
-    char *   opt_log_domains;
-    char *   pidfile;
+    char    *opt_log_level;
+    char    *opt_log_domains;
+    char    *pidfile;
 } global_opt = {
     .become_daemon = TRUE,
 };
@@ -153,9 +153,9 @@ static int
 print_config(NMConfigCmdLineOptions *config_cli)
 {
     gs_unref_object NMConfig *config = NULL;
-    gs_free_error GError *error      = NULL;
-    NMConfigData *        config_data;
-    const char *const *   warnings;
+    gs_free_error GError     *error  = NULL;
+    NMConfigData             *config_data;
+    const char *const        *warnings;
 
     nm_logging_setup("OFF", "ALL", NULL, NULL);
 
@@ -259,7 +259,7 @@ do_early_setup(int *argc, char **argv[], NMConfigCmdLineOptions *config_cli)
 static gboolean
 _dbus_manager_init(NMConfig *config)
 {
-    NMDBusManager *              busmgr;
+    NMDBusManager               *busmgr;
     NMConfigConfigureAndQuitType c_a_q_type;
 
     busmgr = nm_dbus_manager_get();
@@ -282,16 +282,16 @@ _dbus_manager_init(NMConfig *config)
 int
 main(int argc, char *argv[])
 {
-    gboolean      success = FALSE;
-    NMManager *   manager = NULL;
-    NMConfig *    config;
-    gs_free_error GError *  error         = NULL;
+    gboolean                success = FALSE;
+    NMManager              *manager = NULL;
+    NMConfig               *config;
+    gs_free_error GError   *error         = NULL;
     gboolean                wrote_pidfile = FALSE;
-    char *                  bad_domains   = NULL;
+    char                   *bad_domains   = NULL;
     NMConfigCmdLineOptions *config_cli;
     guint                   sd_id                        = 0;
-    GError *                error_invalid_logging_config = NULL;
-    const char *const *     warnings;
+    GError                 *error_invalid_logging_config = NULL;
+    const char *const      *warnings;
     int                     errsv;
 
     _nm_utils_is_manager_process = TRUE;

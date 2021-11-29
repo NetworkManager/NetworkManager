@@ -39,8 +39,8 @@ typedef struct {
      */
     gboolean (*get_station)(NMWifiUtils *data,
                             NMEtherAddr *out_bssid,
-                            int *        out_quality,
-                            guint32 *    out_rate);
+                            int         *out_quality,
+                            guint32     *out_rate);
 
     /* OLPC Mesh-only functions */
 

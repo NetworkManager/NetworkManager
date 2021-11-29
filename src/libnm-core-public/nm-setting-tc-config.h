@@ -153,7 +153,7 @@ NM_AVAILABLE_IN_1_12
 void nm_setting_tc_config_remove_tfilter(NMSettingTCConfig *setting, guint idx);
 NM_AVAILABLE_IN_1_12
 gboolean nm_setting_tc_config_remove_tfilter_by_value(NMSettingTCConfig *setting,
-                                                      NMTCTfilter *      tfilter);
+                                                      NMTCTfilter       *tfilter);
 NM_AVAILABLE_IN_1_12
 void nm_setting_tc_config_clear_tfilters(NMSettingTCConfig *setting);
 

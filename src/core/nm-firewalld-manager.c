@@ -78,7 +78,7 @@ struct _NMFirewalldManagerCallId {
     union {
         struct {
             GCancellable *cancellable;
-            GVariant *    arg;
+            GVariant     *arg;
         } dbus;
         struct {
             guint id;
@@ -179,15 +179,15 @@ nm_firewalld_manager_get_running(NMFirewalldManager *self)
 /*****************************************************************************/
 
 static NMFirewalldManagerCallId *
-_cb_info_create(NMFirewalldManager *                self,
+_cb_info_create(NMFirewalldManager                 *self,
                 OpsType                             ops_type,
-                const char *                        iface,
-                const char *                        zone,
+                const char                         *iface,
+                const char                         *zone,
                 NMFirewalldManagerAddRemoveCallback callback,
                 gpointer                            user_data)
 {
     NMFirewalldManagerPrivate *priv = NM_FIREWALLD_MANAGER_GET_PRIVATE(self);
-    NMFirewalldManagerCallId * call_id;
+    NMFirewalldManagerCallId  *call_id;
 
     call_id = g_slice_new0(NMFirewalldManagerCallId);
 
@@ -230,7 +230,7 @@ _cb_info_complete(NMFirewalldManagerCallId *call_id, GError *error)
 static gboolean
 _handle_idle_cb(gpointer user_data)
 {
-    NMFirewalldManager *      self;
+    NMFirewalldManager       *self;
     NMFirewalldManagerCallId *call_id = user_data;
 
     nm_assert(call_id);
@@ -267,10 +267,10 @@ _handle_idle_start(NMFirewalldManager *self, NMFirewalldManagerCallId *call_id)
 static void
 _handle_dbus_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMFirewalldManager *      self;
-    NMFirewalldManagerCallId *call_id;
-    gs_free_error GError *error    = NULL;
-    gs_unref_variant GVariant *ret = NULL;
+    NMFirewalldManager        *self;
+    NMFirewalldManagerCallId  *call_id;
+    gs_free_error GError      *error = NULL;
+    gs_unref_variant GVariant *ret   = NULL;
 
     ret = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
 
@@ -322,8 +322,8 @@ static void
 _handle_dbus_start(NMFirewalldManager *self, NMFirewalldManagerCallId *call_id)
 {
     NMFirewalldManagerPrivate *priv        = NM_FIREWALLD_MANAGER_GET_PRIVATE(self);
-    const char *               dbus_method = NULL;
-    GVariant *                 arg;
+    const char                *dbus_method = NULL;
+    GVariant                  *arg;
 
     nm_assert(call_id);
     nm_assert(priv->name_owner);
@@ -366,15 +366,15 @@ _handle_dbus_start(NMFirewalldManager *self, NMFirewalldManagerCallId *call_id)
 }
 
 static NMFirewalldManagerCallId *
-_start_request(NMFirewalldManager *                self,
+_start_request(NMFirewalldManager                 *self,
                OpsType                             ops_type,
-               const char *                        iface,
-               const char *                        zone,
+               const char                         *iface,
+               const char                         *zone,
                NMFirewalldManagerAddRemoveCallback callback,
                gpointer                            user_data)
 {
     NMFirewalldManagerPrivate *priv;
-    NMFirewalldManagerCallId * call_id;
+    NMFirewalldManagerCallId  *call_id;
 
     g_return_val_if_fail(NM_IS_FIREWALLD_MANAGER(self), NULL);
     g_return_val_if_fail(iface && *iface, NULL);
@@ -417,8 +417,8 @@ _start_request(NMFirewalldManager *                self,
 
 NMFirewalldManagerCallId *
 nm_firewalld_manager_add_or_change_zone(NMFirewalldManager *self,
-                                        const char *        iface,
-                                        const char *        zone,
+                                        const char         *iface,
+                                        const char         *zone,
                                         gboolean            add, /* TRUE == add, FALSE == change */
                                         NMFirewalldManagerAddRemoveCallback callback,
                                         gpointer                            user_data)
@@ -432,9 +432,9 @@ nm_firewalld_manager_add_or_change_zone(NMFirewalldManager *self,
 }
 
 NMFirewalldManagerCallId *
-nm_firewalld_manager_remove_from_zone(NMFirewalldManager *                self,
-                                      const char *                        iface,
-                                      const char *                        zone,
+nm_firewalld_manager_remove_from_zone(NMFirewalldManager                 *self,
+                                      const char                         *iface,
+                                      const char                         *zone,
                                       NMFirewalldManagerAddRemoveCallback callback,
                                       gpointer                            user_data)
 {
@@ -444,9 +444,9 @@ nm_firewalld_manager_remove_from_zone(NMFirewalldManager *                self,
 void
 nm_firewalld_manager_cancel_call(NMFirewalldManagerCallId *call_id)
 {
-    NMFirewalldManager *       self;
+    NMFirewalldManager        *self;
     NMFirewalldManagerPrivate *priv;
-    gs_free_error GError *error = NULL;
+    gs_free_error GError      *error = NULL;
 
     g_return_if_fail(call_id);
     g_return_if_fail(NM_IS_FIREWALLD_MANAGER(call_id->self));
@@ -470,7 +470,7 @@ static void
 name_owner_changed(NMFirewalldManager *self, const char *owner)
 {
     _nm_unused gs_unref_object NMFirewalldManager *self_keep_alive = g_object_ref(self);
-    NMFirewalldManagerPrivate *                    priv = NM_FIREWALLD_MANAGER_GET_PRIVATE(self);
+    NMFirewalldManagerPrivate                     *priv = NM_FIREWALLD_MANAGER_GET_PRIVATE(self);
     gboolean                                       was_running;
     gboolean                                       now_running;
     gboolean                                       just_initied;
@@ -532,14 +532,14 @@ name_owner_changed(NMFirewalldManager *self, const char *owner)
 
 static void
 reloaded_cb(GDBusConnection *connection,
-            const char *     sender_name,
-            const char *     object_path,
-            const char *     interface_name,
-            const char *     signal_name,
-            GVariant *       parameters,
+            const char      *sender_name,
+            const char      *object_path,
+            const char      *interface_name,
+            const char      *signal_name,
+            GVariant        *parameters,
             gpointer         user_data)
 {
-    NMFirewalldManager *       self = user_data;
+    NMFirewalldManager        *self = user_data;
     NMFirewalldManagerPrivate *priv = NM_FIREWALLD_MANAGER_GET_PRIVATE(self);
 
     if (!nm_streq0(sender_name, priv->name_owner))
@@ -551,15 +551,15 @@ reloaded_cb(GDBusConnection *connection,
 
 static void
 name_owner_changed_cb(GDBusConnection *connection,
-                      const char *     sender_name,
-                      const char *     object_path,
-                      const char *     interface_name,
-                      const char *     signal_name,
-                      GVariant *       parameters,
+                      const char      *sender_name,
+                      const char      *object_path,
+                      const char      *interface_name,
+                      const char      *signal_name,
+                      GVariant        *parameters,
                       gpointer         user_data)
 {
     NMFirewalldManager *self = user_data;
-    const char *        new_owner;
+    const char         *new_owner;
 
     if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sss)")))
         return;
@@ -572,7 +572,7 @@ name_owner_changed_cb(GDBusConnection *connection,
 static void
 get_name_owner_cb(const char *name_owner, GError *error, gpointer user_data)
 {
-    NMFirewalldManager *       self;
+    NMFirewalldManager        *self;
     NMFirewalldManagerPrivate *priv;
 
     if (nm_utils_error_is_cancelled(error))
@@ -632,7 +632,7 @@ nm_firewalld_manager_init(NMFirewalldManager *self)
 static void
 dispose(GObject *object)
 {
-    NMFirewalldManager *       self = NM_FIREWALLD_MANAGER(object);
+    NMFirewalldManager        *self = NM_FIREWALLD_MANAGER(object);
     NMFirewalldManagerPrivate *priv = NM_FIREWALLD_MANAGER_GET_PRIVATE(self);
 
     /* as every pending operation takes a reference to the manager,

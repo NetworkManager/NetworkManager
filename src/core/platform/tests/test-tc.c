@@ -39,11 +39,11 @@ qdiscs_lookup(int ifindex)
 static void
 test_qdisc1(void)
 {
-    int               ifindex;
+    int                          ifindex;
     gs_unref_ptrarray GPtrArray *known = NULL;
     gs_unref_ptrarray GPtrArray *plat  = NULL;
-    NMPObject *                  obj;
-    NMPlatformQdisc *            qdisc;
+    NMPObject                   *obj;
+    NMPlatformQdisc             *qdisc;
 
     ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     g_assert_cmpint(ifindex, >, 0);
@@ -76,11 +76,11 @@ test_qdisc1(void)
 static void
 test_qdisc_fq_codel(void)
 {
-    int               ifindex;
+    int                          ifindex;
     gs_unref_ptrarray GPtrArray *known = NULL;
     gs_unref_ptrarray GPtrArray *plat  = NULL;
-    NMPObject *                  obj;
-    NMPlatformQdisc *            qdisc;
+    NMPObject                   *obj;
+    NMPlatformQdisc             *qdisc;
 
     ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     g_assert_cmpint(ifindex, >, 0);
@@ -115,11 +115,11 @@ test_qdisc_fq_codel(void)
 static void
 test_qdisc_sfq(void)
 {
-    int               ifindex;
+    int                          ifindex;
     gs_unref_ptrarray GPtrArray *known = NULL;
     gs_unref_ptrarray GPtrArray *plat  = NULL;
-    NMPObject *                  obj;
-    NMPlatformQdisc *            qdisc;
+    NMPObject                   *obj;
+    NMPlatformQdisc             *qdisc;
 
     ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     g_assert_cmpint(ifindex, >, 0);
@@ -154,11 +154,11 @@ test_qdisc_sfq(void)
 static void
 test_qdisc_tbf(void)
 {
-    int               ifindex;
+    int                          ifindex;
     gs_unref_ptrarray GPtrArray *known = NULL;
     gs_unref_ptrarray GPtrArray *plat  = NULL;
-    NMPObject *                  obj;
-    NMPlatformQdisc *            qdisc;
+    NMPObject                   *obj;
+    NMPlatformQdisc             *qdisc;
 
     ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, DEVICE_NAME);
     g_assert_cmpint(ifindex, >, 0);

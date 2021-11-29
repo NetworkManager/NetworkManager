@@ -43,14 +43,14 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDeviceIPTunnel,
 
 typedef struct {
     NMIPTunnelMode  mode;
-    char *          local;
-    char *          remote;
+    char           *local;
+    char           *remote;
     guint8          ttl;
     guint8          tos;
     gboolean        path_mtu_discovery;
     int             addr_family;
-    char *          input_key;
-    char *          output_key;
+    char           *input_key;
+    char           *output_key;
     guint8          encap_limit;
     guint32         flow_label;
     NMIPTunnelFlags flags;
@@ -152,7 +152,7 @@ address_set(int addr_family, char **p_addr, const NMIPAddr *addr_new)
 static void
 update_properties_from_ifindex(NMDevice *device, int ifindex)
 {
-    NMDeviceIPTunnel *       self           = NM_DEVICE_IP_TUNNEL(device);
+    NMDeviceIPTunnel        *self           = NM_DEVICE_IP_TUNNEL(device);
     NMDeviceIPTunnelPrivate *priv           = NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self);
     int                      parent_ifindex = 0;
     NMIPAddr                 local          = NM_IP_ADDR_INIT;
@@ -163,7 +163,7 @@ update_properties_from_ifindex(NMDevice *device, int ifindex)
     gboolean                 pmtud          = FALSE;
     guint32                  flow_label     = 0;
     NMIPTunnelFlags          flags          = NM_IP_TUNNEL_FLAG_NONE;
-    char *                   key;
+    char                    *key;
 
     if (ifindex <= 0) {
 clear:
@@ -272,7 +272,7 @@ clear:
                          NM_IP_TUNNEL_MODE_IP6GRE,
                          NM_IP_TUNNEL_MODE_IP6GRETAP)) {
         const NMPlatformLnkIp6Tnl *lnk;
-        NMPlatform *               plat = nm_device_get_platform(device);
+        NMPlatform                *plat = nm_device_get_platform(device);
 
         if (priv->mode == NM_IP_TUNNEL_MODE_IP6GRE)
             lnk = nm_platform_link_get_lnk_ip6gre(plat, ifindex, NULL);
@@ -383,11 +383,11 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
     NMSettingIPTunnel *s_ip_tunnel;
 
@@ -416,9 +416,9 @@ complete_connection(NMDevice *           device,
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMDeviceIPTunnel *       self = NM_DEVICE_IP_TUNNEL(device);
+    NMDeviceIPTunnel        *self = NM_DEVICE_IP_TUNNEL(device);
     NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self);
-    NMSettingIPTunnel *      s_ip_tunnel =
+    NMSettingIPTunnel       *s_ip_tunnel =
         _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_IP_TUNNEL);
 
     if (nm_setting_ip_tunnel_get_mode(s_ip_tunnel) != priv->mode)
@@ -490,10 +490,10 @@ update_connection(NMDevice *device, NMConnection *connection)
 static gboolean
 check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
-    NMDeviceIPTunnel *       self = NM_DEVICE_IP_TUNNEL(device);
+    NMDeviceIPTunnel        *self = NM_DEVICE_IP_TUNNEL(device);
     NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self);
-    NMSettingIPTunnel *      s_ip_tunnel;
-    const char *             parent;
+    NMSettingIPTunnel       *s_ip_tunnel;
+    const char              *parent;
 
     if (!NM_DEVICE_CLASS(nm_device_ip_tunnel_parent_class)
              ->check_connection_compatible(device, connection, error))
@@ -642,23 +642,23 @@ tunnel_mode_to_link_type(NMIPTunnelMode tunnel_mode)
 /*****************************************************************************/
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
-    const char *        iface = nm_device_get_iface(device);
-    NMSettingIPTunnel * s_ip_tunnel;
+    const char         *iface = nm_device_get_iface(device);
+    NMSettingIPTunnel  *s_ip_tunnel;
     NMPlatformLnkGre    lnk_gre    = {};
     NMPlatformLnkSit    lnk_sit    = {};
     NMPlatformLnkIpIp   lnk_ipip   = {};
     NMPlatformLnkIp6Tnl lnk_ip6tnl = {};
-    const char *        str;
+    const char         *str;
     gint64              val;
     NMIPTunnelMode      mode;
     int                 r;
-    gs_free char *      hwaddr = NULL;
+    gs_free char       *hwaddr = NULL;
     guint8              mac_address[ETH_ALEN];
     gboolean            mac_address_valid = FALSE;
 
@@ -908,12 +908,12 @@ unrealize_notify(NMDevice *device)
 }
 
 static gboolean
-can_reapply_change(NMDevice *  device,
+can_reapply_change(NMDevice   *device,
                    const char *setting_name,
-                   NMSetting * s_old,
-                   NMSetting * s_new,
+                   NMSetting  *s_old,
+                   NMSetting  *s_new,
                    GHashTable *diffs,
-                   GError **   error)
+                   GError    **error)
 {
     NMDeviceClass *device_class;
 
@@ -933,7 +933,7 @@ can_reapply_change(NMDevice *  device,
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceIPTunnel *       self = NM_DEVICE_IP_TUNNEL(device);
+    NMDeviceIPTunnel        *self = NM_DEVICE_IP_TUNNEL(device);
     NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self);
 
     if (_nm_ip_tunnel_mode_is_layer2(priv->mode)
@@ -1032,7 +1032,7 @@ constructed(GObject *object)
 static void
 dispose(GObject *object)
 {
-    NMDeviceIPTunnel *       self = NM_DEVICE_IP_TUNNEL(object);
+    NMDeviceIPTunnel        *self = NM_DEVICE_IP_TUNNEL(object);
     NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self);
 
     nm_clear_g_free(&priv->local);
@@ -1078,9 +1078,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_ip_tunnel = {
 static void
 nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->constructed  = constructed;
     object_class->dispose      = dispose;
@@ -1202,11 +1202,11 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_IP_TUNNEL_DEVICE_FACTORY, NMIPTunnelDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     NMSettingIPTunnel *s_ip_tunnel;
     NMIPTunnelMode     mode;
@@ -1255,7 +1255,7 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
 static char *
 get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
 {
-    const char *       ifname;
+    const char        *ifname;
     NMSettingIPTunnel *s_ip_tunnel;
 
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_IP_TUNNEL_SETTING_NAME),

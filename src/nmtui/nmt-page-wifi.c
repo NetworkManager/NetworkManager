@@ -80,9 +80,9 @@ static NmtNewtPopupEntry wep_auth[] = {{N_("Open System"), "open"},
                                        {NULL, NULL}};
 
 static gboolean
-mode_transform_to_band_visibility(GBinding *    binding,
+mode_transform_to_band_visibility(GBinding     *binding,
                                   const GValue *source_value,
-                                  GValue *      target_value,
+                                  GValue       *target_value,
                                   gpointer      user_data)
 {
     if (!g_strcmp0(g_value_get_string(source_value), NM_SETTING_WIRELESS_MODE_INFRA))
@@ -93,9 +93,9 @@ mode_transform_to_band_visibility(GBinding *    binding,
 }
 
 static gboolean
-band_transform_to_channel_visibility(GBinding *    binding,
+band_transform_to_channel_visibility(GBinding     *binding,
                                      const GValue *source_value,
-                                     GValue *      target_value,
+                                     GValue       *target_value,
                                      gpointer      user_data)
 {
     g_value_set_boolean(target_value, g_value_get_string(source_value) != NULL);
@@ -103,13 +103,13 @@ band_transform_to_channel_visibility(GBinding *    binding,
 }
 
 static gboolean
-ssid_transform_to_entry(GBinding *    binding,
+ssid_transform_to_entry(GBinding     *binding,
                         const GValue *source_value,
-                        GValue *      target_value,
+                        GValue       *target_value,
                         gpointer      user_data)
 {
     GBytes *ssid;
-    char *  utf8;
+    char   *utf8;
 
     ssid = g_value_get_boxed(source_value);
     if (ssid)
@@ -121,15 +121,15 @@ ssid_transform_to_entry(GBinding *    binding,
 }
 
 static gboolean
-ssid_transform_from_entry(GBinding *    binding,
+ssid_transform_from_entry(GBinding     *binding,
                           const GValue *source_value,
-                          GValue *      target_value,
+                          GValue       *target_value,
                           gpointer      user_data)
 {
     NMSettingWireless *s_wireless = user_data;
-    const char *       text;
-    GBytes *           old_ssid, *ssid;
-    char *             utf8;
+    const char        *text;
+    GBytes            *old_ssid, *ssid;
+    char              *utf8;
 
     text = g_value_get_string(source_value);
 
@@ -153,17 +153,17 @@ ssid_transform_from_entry(GBinding *    binding,
 static void
 nmt_page_wifi_constructed(GObject *object)
 {
-    NmtPageWifiPrivate *       priv = NMT_PAGE_WIFI_GET_PRIVATE(object);
-    NmtPageWifi *              wifi = NMT_PAGE_WIFI(object);
-    NmtDeviceEntry *           deventry;
-    NmtEditorSection *         section;
-    NmtEditorGrid *            grid;
-    NMSettingWireless *        s_wireless;
+    NmtPageWifiPrivate        *priv = NMT_PAGE_WIFI_GET_PRIVATE(object);
+    NmtPageWifi               *wifi = NMT_PAGE_WIFI(object);
+    NmtDeviceEntry            *deventry;
+    NmtEditorSection          *section;
+    NmtEditorGrid             *grid;
+    NMSettingWireless         *s_wireless;
     NMSettingWirelessSecurity *s_wsec;
-    NmtNewtWidget *            widget, *hbox, *subgrid;
-    NmtNewtWidget *            mode, *band, *security, *entry;
-    NmtNewtStack *             stack;
-    NMConnection *             conn;
+    NmtNewtWidget             *widget, *hbox, *subgrid;
+    NmtNewtWidget             *mode, *band, *security, *entry;
+    NmtNewtStack              *stack;
+    NMConnection              *conn;
 
     conn       = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(wifi));
     s_wireless = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_WIRELESS);

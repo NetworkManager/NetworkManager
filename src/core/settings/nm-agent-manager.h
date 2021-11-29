@@ -34,45 +34,45 @@ NMAgentManager *nm_agent_manager_get(void);
 guint64 nm_agent_manager_get_agent_version_id(NMAgentManager *self);
 
 /* If no agent fulfilled the secrets request, agent_dbus_owner will be NULL */
-typedef void (*NMAgentSecretsResultFunc)(NMAgentManager *             manager,
+typedef void (*NMAgentSecretsResultFunc)(NMAgentManager              *manager,
                                          NMAgentManagerCallId         call_id,
-                                         const char *                 agent_dbus_owner,
-                                         const char *                 agent_uname,
+                                         const char                  *agent_dbus_owner,
+                                         const char                  *agent_uname,
                                          gboolean                     agent_has_modify,
-                                         const char *                 setting_name,
+                                         const char                  *setting_name,
                                          NMSecretAgentGetSecretsFlags flags,
-                                         GVariant *                   secrets,
-                                         GError *                     error,
+                                         GVariant                    *secrets,
+                                         GError                      *error,
                                          gpointer                     user_data);
 
-NMAgentManagerCallId nm_agent_manager_get_secrets(NMAgentManager *             manager,
-                                                  const char *                 path,
-                                                  NMConnection *               connection,
-                                                  NMAuthSubject *              subject,
-                                                  GVariant *                   existing_secrets,
-                                                  const char *                 setting_name,
+NMAgentManagerCallId nm_agent_manager_get_secrets(NMAgentManager              *manager,
+                                                  const char                  *path,
+                                                  NMConnection                *connection,
+                                                  NMAuthSubject               *subject,
+                                                  GVariant                    *existing_secrets,
+                                                  const char                  *setting_name,
                                                   NMSecretAgentGetSecretsFlags flags,
-                                                  const char *const *          hints,
+                                                  const char *const           *hints,
                                                   NMAgentSecretsResultFunc     callback,
                                                   gpointer                     callback_data);
 
 void nm_agent_manager_cancel_secrets(NMAgentManager *manager, NMAgentManagerCallId request_id);
 
 void nm_agent_manager_save_secrets(NMAgentManager *manager,
-                                   const char *    path,
-                                   NMConnection *  connection,
-                                   NMAuthSubject * subject);
+                                   const char     *path,
+                                   NMConnection   *connection,
+                                   NMAuthSubject  *subject);
 
 void nm_agent_manager_delete_secrets(NMAgentManager *manager,
-                                     const char *    path,
-                                     NMConnection *  connection);
+                                     const char     *path,
+                                     NMConnection   *connection);
 
 gboolean nm_agent_manager_has_agent_with_permission(NMAgentManager *self,
-                                                    const char *    username,
-                                                    const char *    permission);
+                                                    const char     *username,
+                                                    const char     *permission);
 
-gboolean nm_agent_manager_all_agents_have_capability(NMAgentManager *          manager,
-                                                     NMAuthSubject *           subject,
+gboolean nm_agent_manager_all_agents_have_capability(NMAgentManager           *manager,
+                                                     NMAuthSubject            *subject,
                                                      NMSecretAgentCapabilities capability);
 
 #endif /* __NETWORKMANAGER_AGENT_MANAGER_H__ */

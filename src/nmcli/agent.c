@@ -56,7 +56,8 @@ usage_agent_all(void)
 
 static char *pre_input_deftext;
 
-static int set_deftext(_NMC_RL_STARTUPHOOK_ARGS)
+static int
+set_deftext(_NMC_RL_STARTUPHOOK_ARGS)
 {
     if (pre_input_deftext && rl_startup_hook) {
         rl_insert_text(pre_input_deftext);
@@ -68,16 +69,16 @@ static int set_deftext(_NMC_RL_STARTUPHOOK_ARGS)
 
 static gboolean
 get_secrets_from_user(const NmcConfig *nmc_config,
-                      const char *     request_id,
-                      const char *     title,
-                      const char *     msg,
-                      GPtrArray *      secrets)
+                      const char      *request_id,
+                      const char      *title,
+                      const char      *msg,
+                      GPtrArray       *secrets)
 {
     int i;
 
     for (i = 0; i < secrets->len; i++) {
         NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
-        char *                     pwd    = NULL;
+        char                      *pwd    = NULL;
 
         /* Ask user for the password */
         if (msg)
@@ -103,13 +104,13 @@ get_secrets_from_user(const NmcConfig *nmc_config,
 
 static void
 secrets_requested(NMSecretAgentSimple *agent,
-                  const char *         request_id,
-                  const char *         title,
-                  const char *         msg,
-                  GPtrArray *          secrets,
+                  const char          *request_id,
+                  const char          *title,
+                  const char          *msg,
+                  GPtrArray           *secrets,
                   gpointer             user_data)
 {
-    NmCli *  nmc = user_data;
+    NmCli   *nmc = user_data;
     gboolean success;
 
     if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)

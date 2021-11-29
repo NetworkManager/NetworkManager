@@ -110,8 +110,8 @@ static void
 test_wired_wake_on_lan_enum(void)
 {
     nm_auto_unref_gtypeclass GFlagsClass *flags_class = NULL;
-    gs_unref_hashtable GHashTable *vals               = g_hash_table_new(nm_direct_hash, NULL);
-    guint                          i;
+    gs_unref_hashtable GHashTable        *vals        = g_hash_table_new(nm_direct_hash, NULL);
+    guint                                 i;
 
     G_STATIC_ASSERT_EXPR(sizeof(NMSettingWiredWakeOnLan) == sizeof(_NMSettingWiredWakeOnLan));
     G_STATIC_ASSERT_EXPR(sizeof(NMSettingWiredWakeOnLan) < sizeof(gint64));
@@ -161,8 +161,8 @@ static void
 test_wireless_wake_on_wlan_enum(void)
 {
     nm_auto_unref_gtypeclass GFlagsClass *flags_class = NULL;
-    gs_unref_hashtable GHashTable *vals               = g_hash_table_new(nm_direct_hash, NULL);
-    guint                          i;
+    gs_unref_hashtable GHashTable        *vals        = g_hash_table_new(nm_direct_hash, NULL);
+    guint                                 i;
 
     G_STATIC_ASSERT_EXPR(sizeof(NMSettingWirelessWakeOnWLan)
                          == sizeof(_NMSettingWirelessWakeOnWLan));
@@ -215,8 +215,8 @@ static void
 test_device_wifi_capabilities(void)
 {
     nm_auto_unref_gtypeclass GFlagsClass *flags_class = NULL;
-    gs_unref_hashtable GHashTable *vals               = g_hash_table_new(nm_direct_hash, NULL);
-    guint                          i;
+    gs_unref_hashtable GHashTable        *vals        = g_hash_table_new(nm_direct_hash, NULL);
+    guint                                 i;
 
     G_STATIC_ASSERT_EXPR(sizeof(NMDeviceWifiCapabilities) == sizeof(_NMDeviceWifiCapabilities));
     G_STATIC_ASSERT_EXPR(sizeof(NMDeviceWifiCapabilities) < sizeof(gint64));
@@ -268,8 +268,8 @@ static void
 test_80211_mode(void)
 {
     nm_auto_unref_gtypeclass GEnumClass *enum_class = NULL;
-    gs_unref_hashtable GHashTable *vals             = g_hash_table_new(nm_direct_hash, NULL);
-    guint                          i;
+    gs_unref_hashtable GHashTable       *vals       = g_hash_table_new(nm_direct_hash, NULL);
+    guint                                i;
 
     G_STATIC_ASSERT_EXPR(sizeof(NM80211Mode) == sizeof(_NM80211Mode));
     G_STATIC_ASSERT_EXPR(sizeof(NM80211Mode) < sizeof(gint64));
@@ -312,8 +312,8 @@ static void
 test_vlan_flags(void)
 {
     nm_auto_unref_gtypeclass GFlagsClass *flags_class = NULL;
-    gs_unref_hashtable GHashTable *vals               = g_hash_table_new(nm_direct_hash, NULL);
-    guint                          i;
+    gs_unref_hashtable GHashTable        *vals        = g_hash_table_new(nm_direct_hash, NULL);
+    guint                                 i;
 
     G_STATIC_ASSERT_EXPR(sizeof(NMVlanFlags) == sizeof(_NMVlanFlags));
     G_STATIC_ASSERT_EXPR(sizeof(NMVlanFlags) < sizeof(gint64));
@@ -543,9 +543,9 @@ test_nm_g_slice_free_fcn(void)
 
 static void
 _do_test_nm_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
-                               const char *            str,
+                               const char             *str,
                                gsize                   words_len,
-                               const char *const *     exp_words)
+                               const char *const      *exp_words)
 {
 #define DELIMITERS   " \n"
 #define DELIMITERS_C ' ', '\n'
@@ -554,7 +554,7 @@ _do_test_nm_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
     gsize                i, j, k;
     const gboolean     f_allow_escaping = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_ALLOW_ESCAPING);
     const gboolean     f_preserve_empty = NM_FLAGS_HAS(flags, NM_STRSPLIT_SET_FLAGS_PRESERVE_EMPTY);
-    const char *       s1;
+    const char        *s1;
     gsize              initial_offset;
     gs_strfreev char **words_g = NULL;
 
@@ -750,9 +750,9 @@ _do_test_nm_strsplit_set_f_one(NMUtilsStrsplitSetFlags flags,
 
 static void
 _do_test_nm_strsplit_set_f(NMUtilsStrsplitSetFlags flags,
-                           const char *            str,
+                           const char             *str,
                            gsize                   words_len,
-                           const char *const *     exp_words)
+                           const char *const      *exp_words)
 {
     _do_test_nm_strsplit_set_f_one(flags, str, words_len, exp_words);
 
@@ -784,9 +784,9 @@ _do_test_nm_strsplit_set_f(NMUtilsStrsplitSetFlags flags,
 
 static void
 _do_test_nm_strsplit_set_simple(NMUtilsStrsplitSetFlags flags,
-                                const char *            str,
+                                const char             *str,
                                 gsize                   words_len,
-                                const char *const *     exp_words)
+                                const char *const      *exp_words)
 {
     gs_free const char **tokens = NULL;
     gsize                n_tokens;
@@ -1108,7 +1108,7 @@ _escaped_tokens_split(char *str, const char **out_key, const char **out_val)
 }
 
 static void
-_escaped_tokens_combine(GString *   combined,
+_escaped_tokens_combine(GString    *combined,
                         const char *key,
                         const char *val,
                         gboolean    strict,
@@ -1139,9 +1139,9 @@ _escaped_tokens_combine(GString *   combined,
 }
 
 static void
-_escaped_tokens_check_one_impl(const char *       expected_key,
-                               const char *       expected_val,
-                               const char *       expected_combination,
+_escaped_tokens_check_one_impl(const char        *expected_key,
+                               const char        *expected_val,
+                               const char        *expected_combination,
                                const char *const *other,
                                gsize              n_other)
 {
@@ -1158,11 +1158,11 @@ _escaped_tokens_check_one_impl(const char *       expected_key,
 
     for (i = 0; i < n_other + 2u; i++) {
         nm_auto_free_gstring GString *str0        = NULL;
-        gs_free const char **         strv_split  = NULL;
-        gs_free char *                strv_split0 = NULL;
-        const char *                  comb;
-        const char *                  key;
-        const char *                  val;
+        gs_free const char          **strv_split  = NULL;
+        gs_free char                 *strv_split0 = NULL;
+        const char                   *comb;
+        const char                   *key;
+        const char                   *val;
 
         if (i == 0)
             comb = expected_combination;
@@ -1208,10 +1208,10 @@ test_nm_utils_escaped_tokens(void)
     int i_run;
 
     for (i_run = 0; i_run < 1000; i_run++) {
-        const guint       num_options            = nmtst_get_rand_word_length(NULL);
-        gs_unref_ptrarray GPtrArray *options     = g_ptr_array_new_with_free_func(g_free);
-        nm_auto_free_gstring GString *combined   = g_string_new(NULL);
-        gs_free const char **         strv_split = NULL;
+        const guint                   num_options = nmtst_get_rand_word_length(NULL);
+        gs_unref_ptrarray GPtrArray  *options     = g_ptr_array_new_with_free_func(g_free);
+        nm_auto_free_gstring GString *combined    = g_string_new(NULL);
+        gs_free const char          **strv_split  = NULL;
         guint                         i_option;
         guint                         i;
 
@@ -1244,8 +1244,8 @@ test_nm_utils_escaped_tokens(void)
         /* ensure that we can split and parse the options without difference. */
         strv_split = nm_utils_escaped_tokens_options_split_list(combined->str);
         for (i_option = 0; i_option < num_options; i_option++) {
-            const char *  expected_key = options->pdata[2u * i_option + 0u];
-            const char *  expected_val = options->pdata[2u * i_option + 1u];
+            const char   *expected_key = options->pdata[2u * i_option + 0u];
+            const char   *expected_val = options->pdata[2u * i_option + 1u];
             gs_free char *s_split =
                 i_option < NM_PTRARRAY_LEN(strv_split) ? g_strdup(strv_split[i_option]) : NULL;
             const char *key = NULL;
@@ -1301,7 +1301,7 @@ test_nm_utils_escaped_tokens(void)
          */
         for (i = 0; i < 1u + 2u * i_option; i++) {
             gs_free char *str = NULL;
-            const char *  cstr;
+            const char   *cstr;
 
             if (i == 0)
                 cstr = combined->str;
@@ -1359,7 +1359,7 @@ _do_test_c_list_sort(CListSort *elements, guint n_list, gboolean headless)
     CList            head, *iter, *iter_prev, *lst;
     guint            i;
     const CListSort *el_prev;
-    CListSort *      el;
+    CListSort       *el;
 
     c_list_init(&head);
     for (i = 0; i < n_list; i++) {
@@ -1409,8 +1409,8 @@ _do_test_c_list_sort(CListSort *elements, guint n_list, gboolean headless)
 static void
 test_c_list_sort(void)
 {
-    const guint N_ELEMENTS = 10000;
-    guint       n_list, repeat;
+    const guint        N_ELEMENTS = 10000;
+    guint              n_list, repeat;
     gs_free CListSort *elements = NULL;
 
     {
@@ -1545,11 +1545,11 @@ _dedup_idx_assert(const NMDedupMultiIdxType *idx_type)
 
 static void
 _dedup_idx_obj_id_hash_update(const NMDedupMultiIdxType *idx_type,
-                              const NMDedupMultiObj *    obj,
-                              NMHashState *              h)
+                              const NMDedupMultiObj     *obj,
+                              NMHashState               *h)
 {
     const DedupIdxType *t;
-    const DedupObj *    o;
+    const DedupObj     *o;
 
     t = _dedup_idx_assert(idx_type);
     o = _dedup_obj_assert(obj);
@@ -1560,12 +1560,12 @@ _dedup_idx_obj_id_hash_update(const NMDedupMultiIdxType *idx_type,
 
 static gboolean
 _dedup_idx_obj_id_equal(const NMDedupMultiIdxType *idx_type,
-                        const NMDedupMultiObj *    obj_a,
-                        const NMDedupMultiObj *    obj_b)
+                        const NMDedupMultiObj     *obj_a,
+                        const NMDedupMultiObj     *obj_b)
 {
     const DedupIdxType *t;
-    const DedupObj *    o_a;
-    const DedupObj *    o_b;
+    const DedupObj     *o_a;
+    const DedupObj     *o_b;
 
     t   = _dedup_idx_assert(idx_type);
     o_a = _dedup_obj_assert(obj_a);
@@ -1577,11 +1577,11 @@ _dedup_idx_obj_id_equal(const NMDedupMultiIdxType *idx_type,
 
 static void
 _dedup_idx_obj_partition_hash_update(const NMDedupMultiIdxType *idx_type,
-                                     const NMDedupMultiObj *    obj,
-                                     NMHashState *              h)
+                                     const NMDedupMultiObj     *obj,
+                                     NMHashState               *h)
 {
     const DedupIdxType *t;
-    const DedupObj *    o;
+    const DedupObj     *o;
 
     t = _dedup_idx_assert(idx_type);
     o = _dedup_obj_assert(obj);
@@ -1591,12 +1591,12 @@ _dedup_idx_obj_partition_hash_update(const NMDedupMultiIdxType *idx_type,
 
 static gboolean
 _dedup_idx_obj_partition_equal(const NMDedupMultiIdxType *idx_type,
-                               const NMDedupMultiObj *    obj_a,
-                               const NMDedupMultiObj *    obj_b)
+                               const NMDedupMultiObj     *obj_a,
+                               const NMDedupMultiObj     *obj_b)
 {
     const DedupIdxType *t;
-    const DedupObj *    o_a;
-    const DedupObj *    o_b;
+    const DedupObj     *o_a;
+    const DedupObj     *o_b;
 
     t   = _dedup_idx_assert(idx_type);
     o_a = _dedup_obj_assert(obj_a);
@@ -1622,9 +1622,9 @@ DEDUP_IDX_TYPE_INIT(DedupIdxType *idx_type, guint partition_size, guint val_mod)
 }
 
 static gboolean
-_dedup_idx_add(NMDedupMultiIndex *       idx,
-               const DedupIdxType *      idx_type,
-               const DedupObj *          obj,
+_dedup_idx_add(NMDedupMultiIndex        *idx,
+               const DedupIdxType       *idx_type,
+               const DedupObj           *obj,
                NMDedupMultiIdxMode       mode,
                const NMDedupMultiEntry **out_entry)
 {
@@ -1675,7 +1675,7 @@ _dedup_entry_get_idx_type(const NMDedupMultiEntry *entry)
 static void
 _dedup_entry_assert_all(const NMDedupMultiEntry *entry,
                         gssize                   expected_idx,
-                        const DedupObj *const *  expected_obj)
+                        const DedupObj *const   *expected_obj)
 {
     gsize  n, i;
     CList *iter;
@@ -1698,8 +1698,8 @@ _dedup_entry_assert_all(const NMDedupMultiEntry *entry,
     i = 0;
     c_list_for_each (iter, &entry->head->lst_entries_head) {
         const NMDedupMultiEntry *entry_current = c_list_entry(iter, NMDedupMultiEntry, lst_entries);
-        const DedupObj *         obj_current;
-        const DedupIdxType *     idx_type = _dedup_entry_get_idx_type(entry_current);
+        const DedupObj          *obj_current;
+        const DedupIdxType      *idx_type = _dedup_entry_get_idx_type(entry_current);
 
         obj_current = _dedup_entry_assert(entry_current);
         g_assert(obj_current);
@@ -1719,10 +1719,10 @@ _dedup_entry_assert_all(const NMDedupMultiEntry *entry,
 static void
 test_dedup_multi(void)
 {
-    NMDedupMultiIndex *       idx;
+    NMDedupMultiIndex        *idx;
     DedupIdxType              IDX_20_3_a_stack;
     const DedupIdxType *const IDX_20_3_a = DEDUP_IDX_TYPE_INIT(&IDX_20_3_a_stack, 20, 3);
-    const NMDedupMultiEntry * entry1;
+    const NMDedupMultiEntry  *entry1;
 
     idx = nm_dedup_multi_index_new();
 
@@ -1800,7 +1800,7 @@ static void
 test_setting_vpn_items(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingVpn *                s_vpn;
+    NMSettingVpn                 *s_vpn;
 
     connection =
         nmtst_create_minimal_connection("vpn-items", NULL, NM_SETTING_VPN_SETTING_NAME, NULL);
@@ -1919,17 +1919,17 @@ test_setting_vpn_items(void)
 static void
 test_setting_vpn_update_secrets(void)
 {
-    NMConnection *  connection;
-    NMSettingVpn *  s_vpn;
+    NMConnection   *connection;
+    NMSettingVpn   *s_vpn;
     GVariantBuilder settings_builder, vpn_builder, secrets_builder;
-    GVariant *      settings;
+    GVariant       *settings;
     gboolean        success;
-    GError *        error = NULL;
-    const char *    tmp;
-    const char *    key1 = "foobar";
-    const char *    key2 = "blahblah";
-    const char *    val1 = "value1";
-    const char *    val2 = "value2";
+    GError         *error = NULL;
+    const char     *tmp;
+    const char     *key1 = "foobar";
+    const char     *key2 = "blahblah";
+    const char     *val1 = "value1";
+    const char     *val2 = "value2";
 
     connection = nm_simple_connection_new();
     s_vpn      = (NMSettingVpn *) nm_setting_vpn_new();
@@ -1970,7 +1970,7 @@ test_setting_vpn_update_secrets(void)
 #define TO_DEL_NUM 50
 typedef struct {
     NMSettingVpn *s_vpn;
-    char *        to_del[TO_DEL_NUM];
+    char         *to_del[TO_DEL_NUM];
     guint         called;
 } IterInfo;
 
@@ -1998,7 +1998,7 @@ test_setting_vpn_modify_during_foreach(void)
 {
     NMSettingVpn *s_vpn;
     IterInfo      info;
-    char *        key, *val;
+    char         *key, *val;
     int           i, u = 0;
 
     s_vpn = (NMSettingVpn *) nm_setting_vpn_new();
@@ -2040,13 +2040,13 @@ static void
 test_setting_ip4_config_labels(void)
 {
     NMSettingIPConfig *s_ip4;
-    NMIPAddress *      addr;
-    GVariant *         label;
-    GPtrArray *        addrs;
-    char **            labels;
-    NMConnection *     conn;
-    GVariant *         dict, *dict2, *setting_dict, *value;
-    GError *           error = NULL;
+    NMIPAddress       *addr;
+    GVariant          *label;
+    GPtrArray         *addrs;
+    char             **labels;
+    NMConnection      *conn;
+    GVariant          *dict, *dict2, *setting_dict, *value;
+    GError            *error = NULL;
 
     s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
     g_object_set(G_OBJECT(s_ip4),
@@ -2242,11 +2242,11 @@ static void
 test_setting_ip4_config_address_data(void)
 {
     NMSettingIPConfig *s_ip4;
-    NMIPAddress *      addr;
-    GPtrArray *        addrs;
-    NMConnection *     conn;
-    GVariant *         dict, *setting_dict, *value;
-    GError *           error = NULL;
+    NMIPAddress       *addr;
+    GPtrArray         *addrs;
+    NMConnection      *conn;
+    GVariant          *dict, *setting_dict, *value;
+    GError            *error = NULL;
 
     s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();
     g_object_set(G_OBJECT(s_ip4),
@@ -2412,7 +2412,7 @@ static void
 test_setting_gsm_apn_spaces(void)
 {
     gs_unref_object NMSettingGsm *s_gsm = NULL;
-    const char *                  tmp;
+    const char                   *tmp;
 
     s_gsm = (NMSettingGsm *) nm_setting_gsm_new();
     g_assert(s_gsm);
@@ -2558,7 +2558,7 @@ static void
 test_setting_to_dbus_all(void)
 {
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 dict;
+    GVariant                  *dict;
 
     s_wsec = make_test_wsec_setting("setting-to-dbus-all");
 
@@ -2578,7 +2578,7 @@ static void
 test_setting_to_dbus_no_secrets(void)
 {
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 dict;
+    GVariant                  *dict;
 
     s_wsec = make_test_wsec_setting("setting-to-dbus-no-secrets");
 
@@ -2603,7 +2603,7 @@ static void
 test_setting_to_dbus_only_secrets(void)
 {
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 dict;
+    GVariant                  *dict;
 
     s_wsec = make_test_wsec_setting("setting-to-dbus-only-secrets");
 
@@ -2625,9 +2625,9 @@ test_setting_to_dbus_only_secrets(void)
 static void
 test_setting_to_dbus_transform(void)
 {
-    NMSetting *   s_wired;
-    GVariant *    dict, *val;
-    const char *  test_mac_address = "11:22:33:44:55:66";
+    NMSetting    *s_wired;
+    GVariant     *dict, *val;
+    const char   *test_mac_address = "11:22:33:44:55:66";
     const guint8 *dbus_mac_address;
     guint8        cmp_mac_address[ETH_ALEN];
     gsize         len;
@@ -2660,7 +2660,7 @@ static void
 test_setting_to_dbus_enum(void)
 {
     NMSetting *s_ip6, *s_wsec, *s_serial;
-    GVariant * dict, *val;
+    GVariant  *dict, *val;
 
     /* enum */
     s_ip6 = nm_setting_ip6_config_new();
@@ -2730,9 +2730,9 @@ test_setting_to_dbus_enum(void)
 static void
 test_connection_to_dbus_setting_name(void)
 {
-    NMConnection *             connection;
+    NMConnection              *connection;
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 dict;
+    GVariant                  *dict;
 
     connection = nm_simple_connection_new();
     s_wsec     = make_test_wsec_setting("connection-to-dbus-setting-name");
@@ -2781,11 +2781,11 @@ test_connection_to_dbus_setting_name(void)
 static void
 test_connection_to_dbus_deprecated_props(void)
 {
-    NMConnection *             connection;
-    NMSetting *                s_wireless;
-    GBytes *                   ssid;
+    NMConnection              *connection;
+    NMSetting                 *s_wireless;
+    GBytes                    *ssid;
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 dict, *wireless_dict, *sec_val;
+    GVariant                  *dict, *wireless_dict, *sec_val;
 
     connection = nmtst_create_minimal_connection("test-connection-to-dbus-deprecated-props",
                                                  NULL,
@@ -2839,7 +2839,7 @@ static void
 test_setting_new_from_dbus(void)
 {
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 dict;
+    GVariant                  *dict;
 
     s_wsec = make_test_wsec_setting("setting-new-from-dbus");
     dict   = _nm_setting_to_dbus(NM_SETTING(s_wsec), NULL, NM_CONNECTION_SERIALIZE_ALL, NULL);
@@ -2863,12 +2863,12 @@ test_setting_new_from_dbus(void)
 static void
 test_setting_new_from_dbus_transform(void)
 {
-    NMSetting *     s_wired;
-    GVariant *      dict;
+    NMSetting      *s_wired;
+    GVariant       *dict;
     GVariantBuilder builder;
-    const char *    test_mac_address = "11:22:33:44:55:66";
+    const char     *test_mac_address = "11:22:33:44:55:66";
     guint8          dbus_mac_address[ETH_ALEN];
-    GError *        error = NULL;
+    GError         *error = NULL;
 
     nm_utils_hwaddr_aton(test_mac_address, dbus_mac_address, ETH_ALEN);
 
@@ -2898,12 +2898,12 @@ test_setting_new_from_dbus_transform(void)
 static void
 test_setting_new_from_dbus_enum(void)
 {
-    NMSettingIP6Config *       s_ip6;
+    NMSettingIP6Config        *s_ip6;
     NMSettingWirelessSecurity *s_wsec;
-    NMSettingSerial *          s_serial;
-    GVariant *                 dict;
+    NMSettingSerial           *s_serial;
+    GVariant                  *dict;
     GVariantBuilder            builder;
-    GError *                   error = NULL;
+    GError                    *error = NULL;
 
     /* enum */
     g_variant_builder_init(&builder, NM_VARIANT_TYPE_SETTING);
@@ -2977,12 +2977,12 @@ test_setting_new_from_dbus_enum(void)
 static void
 test_setting_new_from_dbus_bad(void)
 {
-    NMSetting *   setting;
+    NMSetting    *setting;
     NMConnection *conn;
-    GBytes *      ssid;
-    GPtrArray *   addrs;
-    GVariant *    orig_dict, *dict;
-    GError *      error = NULL;
+    GBytes       *ssid;
+    GPtrArray    *addrs;
+    GVariant     *orig_dict, *dict;
+    GError       *error = NULL;
 
     /* We want to test:
      * - ordinary scalar properties
@@ -3166,8 +3166,8 @@ static NMConnection *
 new_test_connection(void)
 {
     NMConnection *connection;
-    NMSetting *   setting;
-    char *        uuid;
+    NMSetting    *setting;
+    char         *uuid;
     guint64       timestamp = time(NULL);
 
     connection = nm_simple_connection_new();
@@ -3204,7 +3204,7 @@ new_test_connection(void)
 }
 
 static GVariant *
-new_connection_dict(char **      out_uuid,
+new_connection_dict(char       **out_uuid,
                     const char **out_expected_id,
                     const char **out_expected_ip6_method)
 {
@@ -3264,14 +3264,14 @@ new_connection_dict(char **      out_uuid,
 static void
 test_connection_replace_settings(void)
 {
-    NMConnection *       connection;
-    GVariant *           new_settings;
-    GError *             error = NULL;
+    NMConnection        *connection;
+    GVariant            *new_settings;
+    GError              *error = NULL;
     gboolean             success;
     NMSettingConnection *s_con;
-    NMSettingIPConfig *  s_ip6;
-    char *               uuid        = NULL;
-    const char *         expected_id = NULL, *expected_method = NULL;
+    NMSettingIPConfig   *s_ip6;
+    char                *uuid        = NULL;
+    const char          *expected_id = NULL, *expected_method = NULL;
 
     connection = new_test_connection();
 
@@ -3303,12 +3303,12 @@ test_connection_replace_settings(void)
 static void
 test_connection_replace_settings_from_connection(void)
 {
-    NMConnection *       connection, *replacement;
+    NMConnection        *connection, *replacement;
     NMSettingConnection *s_con;
-    NMSetting *          setting;
-    GBytes *             ssid;
-    char *               uuid        = NULL;
-    const char *         expected_id = "Awesome connection";
+    NMSetting           *setting;
+    GBytes              *ssid;
+    char                *uuid        = NULL;
+    const char          *expected_id = "Awesome connection";
 
     connection = new_test_connection();
     g_assert(connection);
@@ -3365,10 +3365,10 @@ test_connection_replace_settings_from_connection(void)
 static void
 test_connection_replace_settings_bad(void)
 {
-    NMConnection *       connection, *new_connection;
-    GVariant *           new_settings;
+    NMConnection        *connection, *new_connection;
+    GVariant            *new_settings;
     GVariantBuilder      builder, setting_builder;
-    GError *             error = NULL;
+    GError              *error = NULL;
     gboolean             success;
     NMSettingConnection *s_con;
 
@@ -3426,13 +3426,13 @@ test_connection_replace_settings_bad(void)
 static void
 test_connection_new_from_dbus(void)
 {
-    NMConnection *       connection;
-    GVariant *           new_settings;
-    GError *             error = NULL;
+    NMConnection        *connection;
+    GVariant            *new_settings;
+    GError              *error = NULL;
     NMSettingConnection *s_con;
-    NMSettingIPConfig *  s_ip6;
-    char *               uuid        = NULL;
-    const char *         expected_id = NULL, *expected_method = NULL;
+    NMSettingIPConfig   *s_ip6;
+    char                *uuid        = NULL;
+    const char          *expected_id = NULL, *expected_method = NULL;
 
     new_settings = new_connection_dict(&uuid, &expected_id, &expected_method);
     g_assert(new_settings);
@@ -3484,8 +3484,8 @@ test_setting_connection_permissions_helpers(void)
     NMSettingConnection *s_con;
     gboolean             success;
     char                 buf[9] = {0x61, 0x62, 0x63, 0xff, 0xfe, 0xfd, 0x23, 0x01, 0x00};
-    char **              perms;
-    const char *         expected_perm = "user:" TEST_UNAME ":";
+    char               **perms;
+    const char          *expected_perm = "user:" TEST_UNAME ":";
 
     s_con = NM_SETTING_CONNECTION(nm_setting_connection_new());
 
@@ -3552,13 +3552,13 @@ test_setting_connection_permissions_helpers(void)
 
 static void
 add_permission_property(NMSettingConnection *s_con,
-                        const char *         ptype,
-                        const char *         pitem,
+                        const char          *ptype,
+                        const char          *pitem,
                         int                  pitem_len,
-                        const char *         detail)
+                        const char          *detail)
 {
     GString *str;
-    char *   perms[2];
+    char    *perms[2];
 
     str = g_string_sized_new(50);
     if (ptype)
@@ -3598,12 +3598,12 @@ test_setting_connection_permissions_property(void)
     {                                                                                           \
         NMSettingConnection *_s_con = (s_con);                                                  \
         guint                _idx   = (idx);                                                    \
-        const char *         _ptype;                                                            \
-        const char *         _pitem;                                                            \
-        const char *         _detail;                                                           \
-        const char **        _p_ptype  = nmtst_get_rand_bool() ? &_ptype : NULL;                \
-        const char **        _p_pitem  = nmtst_get_rand_bool() ? &_pitem : NULL;                \
-        const char **        _p_detail = nmtst_get_rand_bool() ? &_detail : NULL;               \
+        const char          *_ptype;                                                            \
+        const char          *_pitem;                                                            \
+        const char          *_detail;                                                           \
+        const char         **_p_ptype  = nmtst_get_rand_bool() ? &_ptype : NULL;                \
+        const char         **_p_pitem  = nmtst_get_rand_bool() ? &_pitem : NULL;                \
+        const char         **_p_detail = nmtst_get_rand_bool() ? &_detail : NULL;               \
                                                                                                 \
         g_assert_cmpint(_idx, <, nm_setting_connection_get_num_permissions(_s_con));            \
         g_assert(                                                                               \
@@ -3690,7 +3690,7 @@ test_connection_compare_same(void)
 static void
 test_connection_compare_key_only_in_a(void)
 {
-    NMConnection *       a, *b;
+    NMConnection        *a, *b;
     NMSettingConnection *s_con;
 
     a     = new_test_connection();
@@ -3720,7 +3720,7 @@ test_connection_compare_setting_only_in_a(void)
 static void
 test_connection_compare_key_only_in_b(void)
 {
-    NMConnection *       a, *b;
+    NMConnection        *a, *b;
     NMSettingConnection *s_con;
 
     a     = new_test_connection();
@@ -3792,8 +3792,8 @@ ensure_diffs(GHashTable *diffs, const DiffSetting *check, gsize n_check)
 static void
 test_connection_diff_a_only(void)
 {
-    NMConnection *    connection;
-    GHashTable *      out_diffs = NULL;
+    NMConnection     *connection;
+    GHashTable       *out_diffs = NULL;
     gboolean          same;
     const DiffSetting settings[] = {
         {NM_SETTING_CONNECTION_SETTING_NAME,
@@ -3892,7 +3892,7 @@ static void
 test_connection_diff_same(void)
 {
     NMConnection *a, *b;
-    GHashTable *  out_diffs = NULL;
+    GHashTable   *out_diffs = NULL;
     gboolean      same;
 
     a = new_test_connection();
@@ -3908,8 +3908,8 @@ test_connection_diff_same(void)
 static void
 test_connection_diff_different(void)
 {
-    NMConnection *     a, *b;
-    GHashTable *       out_diffs = NULL;
+    NMConnection      *a, *b;
+    GHashTable        *out_diffs = NULL;
     NMSettingIPConfig *s_ip4;
     gboolean           same;
     const DiffSetting  settings[] = {
@@ -3945,9 +3945,9 @@ test_connection_diff_different(void)
 static void
 test_connection_diff_no_secrets(void)
 {
-    NMConnection *    a, *b;
-    GHashTable *      out_diffs = NULL;
-    NMSetting *       s_pppoe;
+    NMConnection     *a, *b;
+    GHashTable       *out_diffs = NULL;
+    NMSetting        *s_pppoe;
     gboolean          same;
     const DiffSetting settings[] = {
         {NM_SETTING_PPPOE_SETTING_NAME,
@@ -3990,13 +3990,13 @@ test_connection_diff_no_secrets(void)
 static void
 test_connection_diff_inferrable(void)
 {
-    NMConnection *       a, *b;
-    GHashTable *         out_diffs = NULL;
+    NMConnection        *a, *b;
+    GHashTable          *out_diffs = NULL;
     gboolean             same;
     NMSettingConnection *s_con;
-    NMSettingWired *     s_wired;
-    NMSettingIPConfig *  s_ip4;
-    char *               uuid;
+    NMSettingWired      *s_wired;
+    NMSettingIPConfig   *s_ip4;
+    char                *uuid;
     const DiffSetting    settings[] = {
         {NM_SETTING_CONNECTION_SETTING_NAME,
          {
@@ -4053,7 +4053,7 @@ static void
 add_generic_settings(NMConnection *connection, const char *ctype)
 {
     NMSetting *setting;
-    char *     uuid;
+    char      *uuid;
 
     uuid = nm_utils_uuid_generate();
 
@@ -4083,11 +4083,11 @@ static void
 test_connection_good_base_types(void)
 {
     NMConnection *connection;
-    NMSetting *   setting;
+    NMSetting    *setting;
     gboolean      success;
-    GError *      error = NULL;
-    GBytes *      ssid;
-    const char *  bdaddr = "11:22:33:44:55:66";
+    GError       *error = NULL;
+    GBytes       *ssid;
+    const char   *bdaddr = "11:22:33:44:55:66";
 
     /* Try a basic wired connection */
     connection = nm_simple_connection_new();
@@ -4193,9 +4193,9 @@ static void
 test_connection_bad_base_types(void)
 {
     NMConnection *connection;
-    NMSetting *   setting;
+    NMSetting    *setting;
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test various non-base connection types to make sure they are rejected;
      * using a fake 'wired' connection so the rest of it verifies
@@ -4303,8 +4303,8 @@ test_setting_compare_addresses(void)
 {
     gs_unref_object NMSetting *s1 = NULL, *s2 = NULL;
     gboolean                   success;
-    NMIPAddress *              a;
-    GHashTable *               result = NULL;
+    NMIPAddress               *a;
+    GHashTable                *result = NULL;
 
     s1 = nm_setting_ip4_config_new();
     s2 = nm_setting_ip4_config_new();
@@ -4335,8 +4335,8 @@ test_setting_compare_routes(void)
 {
     gs_unref_object NMSetting *s1 = NULL, *s2 = NULL;
     gboolean                   success;
-    NMIPRoute *                r;
-    GHashTable *               result = NULL;
+    NMIPRoute                 *r;
+    GHashTable                *result = NULL;
 
     s1 = nm_setting_ip4_config_new();
     s2 = nm_setting_ip4_config_new();
@@ -4367,7 +4367,7 @@ test_setting_compare_wired_cloned_mac_address(void)
 {
     gs_unref_object NMSetting *old = NULL, *new = NULL;
     gboolean                   success;
-    gs_free char *             str1 = NULL;
+    gs_free char              *str1 = NULL;
 
     old = nm_setting_wired_new();
     g_object_set(old, NM_SETTING_WIRED_CLONED_MAC_ADDRESS, "stable", NULL);
@@ -4411,7 +4411,7 @@ test_setting_compare_wireless_cloned_mac_address(void)
 {
     gs_unref_object NMSetting *old = NULL, *new = NULL;
     gboolean                   success;
-    gs_free char *             str1 = NULL;
+    gs_free char              *str1 = NULL;
 
     old = nm_setting_wireless_new();
     g_object_set(old, NM_SETTING_WIRELESS_CLONED_MAC_ADDRESS, "stable", NULL);
@@ -4501,8 +4501,8 @@ test_data_compare_secrets_new(NMSettingSecretFlags  secret_flags,
 }
 
 static void
-_test_compare_secrets_check_diff(NMSetting *           a,
-                                 NMSetting *           b,
+_test_compare_secrets_check_diff(NMSetting            *a,
+                                 NMSetting            *b,
                                  NMSettingCompareFlags flags,
                                  gboolean              exp_same_psk,
                                  gboolean              exp_same_psk_flags)
@@ -4617,11 +4617,11 @@ _test_compare_secrets_check_diff(NMSetting *           a,
 static void
 test_setting_compare_secrets(gconstpointer test_data)
 {
-    const TestDataCompareSecrets *data        = test_data;
-    gs_unref_object NMConnection *conn_old    = NULL;
-    gs_unref_object NMConnection *conn_new    = NULL;
-    gs_unref_object NMSetting *old            = NULL;
-    gs_unref_object            NMSetting *new = NULL;
+    const TestDataCompareSecrets *data     = test_data;
+    gs_unref_object NMConnection *conn_old = NULL;
+    gs_unref_object NMConnection *conn_new = NULL;
+    gs_unref_object NMSetting    *old      = NULL;
+    gs_unref_object NMSetting *new         = NULL;
 
     /* Make sure that a connection with transient/unsaved secrets compares
      * successfully to the same connection without those secrets.
@@ -4700,8 +4700,8 @@ static void
 test_setting_compare_vpn_secrets(gconstpointer test_data)
 {
     const TestDataCompareSecrets *data = test_data;
-    gs_unref_object NMSetting *old = NULL, *new = NULL;
-    gboolean                   success;
+    gs_unref_object NMSetting    *old = NULL, *new = NULL;
+    gboolean                      success;
 
     /* Make sure that a connection with transient/unsaved secrets compares
      * successfully to the same connection without those secrets.
@@ -4773,15 +4773,15 @@ test_hwaddr_aton_malformed(void)
 static void
 test_hwaddr_equal(void)
 {
-    const char * string                 = "00:1a:2b:03:44:05";
-    const char * upper_string           = "00:1A:2B:03:44:05";
-    const char * bad_string             = "0:1a:2b:3:44:5";
+    const char  *string                 = "00:1a:2b:03:44:05";
+    const char  *upper_string           = "00:1A:2B:03:44:05";
+    const char  *bad_string             = "0:1a:2b:3:44:5";
     const guint8 binary[ETH_ALEN]       = {0x00, 0x1A, 0x2B, 0x03, 0x44, 0x05};
-    const char * other_string           = "1a:2b:03:44:05:00";
+    const char  *other_string           = "1a:2b:03:44:05:00";
     const guint8 other_binary[ETH_ALEN] = {0x1A, 0x2B, 0x03, 0x44, 0x05, 0x00};
-    const char * long_string            = "00:1a:2b:03:44:05:06:07";
+    const char  *long_string            = "00:1a:2b:03:44:05:06:07";
     const guint8 long_binary[8]         = {0x00, 0x1A, 0x2B, 0x03, 0x44, 0x05, 0x06, 0x07};
-    const char * null_string            = "00:00:00:00:00:00";
+    const char  *null_string            = "00:00:00:00:00:00";
     const guint8 null_binary[ETH_ALEN]  = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
     g_assert(nm_utils_hwaddr_matches(string, -1, string, -1));
@@ -4860,7 +4860,7 @@ test_hwaddr_canonical(void)
     const char *short_string   = "0:1a:2b:3:44:5";
     const char *hyphen_string  = "00-1a-2b-03-44-05";
     const char *invalid_string = "00:1A:2B";
-    char *      canonical;
+    char       *canonical;
 
     canonical = nm_utils_hwaddr_canonical(string, ETH_ALEN);
     g_assert_cmpstr(canonical, ==, string);
@@ -5032,10 +5032,10 @@ test_connection_changed_signal(void)
 static void
 test_setting_connection_changed_signal(void)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     gboolean             changed = FALSE;
     NMSettingConnection *s_con;
-    gs_free char *       uuid = NULL;
+    gs_free char        *uuid = NULL;
 
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
@@ -5069,7 +5069,7 @@ test_setting_connection_changed_signal(void)
 static void
 test_setting_bond_changed_signal(void)
 {
-    NMConnection * connection;
+    NMConnection  *connection;
     gboolean       changed = FALSE;
     NMSettingBond *s_bond;
 
@@ -5092,12 +5092,12 @@ test_setting_bond_changed_signal(void)
 static void
 test_setting_ip4_changed_signal(void)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     gboolean           changed = FALSE;
     NMSettingIPConfig *s_ip4;
-    NMIPAddress *      addr;
-    NMIPRoute *        route;
-    GError *           error = NULL;
+    NMIPAddress       *addr;
+    NMIPRoute         *route;
+    GError            *error = NULL;
 
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
@@ -5168,12 +5168,12 @@ test_setting_ip4_changed_signal(void)
 static void
 test_setting_ip6_changed_signal(void)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     gboolean           changed = FALSE;
     NMSettingIPConfig *s_ip6;
-    NMIPAddress *      addr;
-    NMIPRoute *        route;
-    GError *           error = NULL;
+    NMIPAddress       *addr;
+    NMIPRoute         *route;
+    GError            *error = NULL;
 
     connection = nm_simple_connection_new();
     g_signal_connect(connection,
@@ -5238,7 +5238,7 @@ test_setting_ip6_changed_signal(void)
 static void
 test_setting_vlan_changed_signal(void)
 {
-    NMConnection * connection;
+    NMConnection  *connection;
     gboolean       changed = FALSE;
     NMSettingVlan *s_vlan;
 
@@ -5300,7 +5300,7 @@ test_setting_vpn_changed_signal(void)
 static void
 test_setting_wired_changed_signal(void)
 {
-    NMConnection *  connection;
+    NMConnection   *connection;
     gboolean        changed = FALSE;
     NMSettingWired *s_wired;
 
@@ -5323,7 +5323,7 @@ test_setting_wired_changed_signal(void)
 static void
 test_setting_wireless_changed_signal(void)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     gboolean           changed = FALSE;
     NMSettingWireless *s_wifi;
 
@@ -5344,7 +5344,7 @@ test_setting_wireless_changed_signal(void)
 static void
 test_setting_wireless_security_changed_signal(void)
 {
-    NMConnection *             connection;
+    NMConnection              *connection;
     gboolean                   changed = FALSE;
     NMSettingWirelessSecurity *s_wsec;
 
@@ -5411,7 +5411,7 @@ test_setting_wireless_security_changed_signal(void)
 static void
 test_setting_802_1x_changed_signal(void)
 {
-    NMConnection *  connection;
+    NMConnection   *connection;
     gboolean        changed = FALSE;
     NMSetting8021x *s_8021x;
 
@@ -5505,13 +5505,13 @@ test_connection_normalize_uuid(void)
 static void
 test_connection_normalize_virtual_iface_name(void)
 {
-    NMConnection *       con = NULL;
+    NMConnection        *con = NULL;
     NMSettingConnection *s_con;
-    NMSettingVlan *      s_vlan;
-    GVariant *           connection_dict, *setting_dict, *var;
-    GError *             error      = NULL;
-    const char *         IFACE_NAME = "iface";
-    const char *         IFACE_VIRT = "iface-X";
+    NMSettingVlan       *s_vlan;
+    GVariant            *connection_dict, *setting_dict, *var;
+    GError              *error      = NULL;
+    const char          *IFACE_NAME = "iface";
+    const char          *IFACE_VIRT = "iface-X";
 
     con = nmtst_create_minimal_connection("test1",
                                           "22001632-bbb4-4616-b277-363dce3dfb5b",
@@ -5605,11 +5605,11 @@ _test_connection_normalize_type_normalizable_setting(
     const char *type,
     void (*prepare_normalizable_fcn)(NMConnection *con))
 {
-    NMSettingConnection *s_con;
-    NMSetting *          s_base;
-    GType                base_type;
+    NMSettingConnection          *s_con;
+    NMSetting                    *s_base;
+    GType                         base_type;
     gs_unref_object NMConnection *con = NULL;
-    gs_free char *                id  = g_strdup_printf("%s[%s]", G_STRFUNC, type);
+    gs_free char                 *id  = g_strdup_printf("%s[%s]", G_STRFUNC, type);
 
     base_type = nm_setting_lookup_type(type);
     g_assert(base_type != G_TYPE_INVALID);
@@ -5640,10 +5640,10 @@ _test_connection_normalize_type_normalizable_setting(
 static void
 _test_connection_normalize_type_unnormalizable_setting(const char *type)
 {
-    NMSettingConnection *s_con;
-    GType                base_type;
+    NMSettingConnection          *s_con;
+    GType                         base_type;
     gs_unref_object NMConnection *con = NULL;
-    gs_free char *                id  = g_strdup_printf("%s[%s]", G_STRFUNC, type);
+    gs_free char                 *id  = g_strdup_printf("%s[%s]", G_STRFUNC, type);
 
     base_type = nm_setting_lookup_type(type);
     g_assert(base_type != G_TYPE_INVALID);
@@ -5666,11 +5666,11 @@ static void
 _test_connection_normalize_type_normalizable_type(const char *type,
                                                   NMSetting *(*add_setting_fcn)(NMConnection *con))
 {
-    NMSettingConnection *s_con;
-    NMSetting *          s_base;
-    GType                base_type;
+    NMSettingConnection          *s_con;
+    NMSetting                    *s_base;
+    GType                         base_type;
     gs_unref_object NMConnection *con = NULL;
-    gs_free char *                id  = g_strdup_printf("%s[%s]", G_STRFUNC, type);
+    gs_free char                 *id  = g_strdup_printf("%s[%s]", G_STRFUNC, type);
 
     base_type = nm_setting_lookup_type(type);
     g_assert(base_type != G_TYPE_INVALID);
@@ -5738,7 +5738,7 @@ _add_setting_fcn_bluetooth(NMConnection *con)
 static NMSetting *
 _add_setting_fcn_bond(NMConnection *con)
 {
-    NMSetting *          setting;
+    NMSetting           *setting;
     NMSettingConnection *s_con;
 
     setting = g_object_new(NM_TYPE_SETTING_BOND, NULL);
@@ -5755,7 +5755,7 @@ _add_setting_fcn_bond(NMConnection *con)
 static NMSetting *
 _add_setting_fcn_bridge(NMConnection *con)
 {
-    NMSetting *          setting;
+    NMSetting           *setting;
     NMSettingConnection *s_con;
 
     setting = g_object_new(NM_TYPE_SETTING_BRIDGE, NULL);
@@ -5797,9 +5797,9 @@ _add_setting_fcn_infiniband(NMConnection *con)
 static NMSetting *
 _add_setting_fcn_olpc_mesh(NMConnection *con)
 {
-    NMSetting * setting;
+    NMSetting  *setting;
     const char *ssid_data = "ssid-test";
-    GBytes *    ssid;
+    GBytes     *ssid;
 
     ssid    = g_bytes_new(ssid_data, strlen(ssid_data));
     setting = g_object_new(NM_TYPE_SETTING_OLPC_MESH,
@@ -5817,7 +5817,7 @@ _add_setting_fcn_olpc_mesh(NMConnection *con)
 static NMSetting *
 _add_setting_fcn_team(NMConnection *con)
 {
-    NMSetting *          setting;
+    NMSetting           *setting;
     NMSettingConnection *s_con;
 
     setting = g_object_new(NM_TYPE_SETTING_TEAM, NULL);
@@ -5871,9 +5871,9 @@ _add_setting_fcn_wimax(NMConnection *con)
 static NMSetting *
 _add_setting_fcn_wireless(NMConnection *con)
 {
-    NMSetting * setting;
+    NMSetting  *setting;
     const char *ssid_data = "ssid-test";
-    GBytes *    ssid;
+    GBytes     *ssid;
 
     ssid    = g_bytes_new(ssid_data, strlen(ssid_data));
     setting = g_object_new(NM_TYPE_SETTING_WIRELESS, NM_SETTING_WIRELESS_SSID, ssid, NULL);
@@ -5939,7 +5939,7 @@ static void
 test_connection_normalize_slave_type_1(void)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingConnection *         s_con;
+    NMSettingConnection          *s_con;
 
     con = nmtst_create_minimal_connection("test_connection_normalize_slave_type_1",
                                           "cc4cd5df-45dc-483e-b291-6b76c2338ecb",
@@ -5975,7 +5975,7 @@ static void
 test_connection_normalize_slave_type_2(void)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingConnection *         s_con;
+    NMSettingConnection          *s_con;
 
     con = nmtst_create_minimal_connection("test_connection_normalize_slave_type_2",
                                           "40bea008-ca72-439a-946b-e65f827656f9",
@@ -6013,7 +6013,7 @@ static void
 test_connection_normalize_infiniband_mtu(void)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingInfiniband *         s_infini;
+    NMSettingInfiniband          *s_infini;
     guint                         mtu_regular = nmtst_rand_select(2044, 2045, 65520);
 
     con = nmtst_create_minimal_connection("test_connection_normalize_infiniband_mtu",
@@ -6073,9 +6073,9 @@ static void
 test_connection_normalize_gateway_never_default(void)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingIPConfig *           s_ip4, *s_ip6;
-    NMIPAddress *                 addr;
-    gs_free_error GError *error = NULL;
+    NMSettingIPConfig            *s_ip4, *s_ip6;
+    NMIPAddress                  *addr;
+    gs_free_error GError         *error = NULL;
 
     con = nmtst_create_minimal_connection("test1", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
     nmtst_assert_connection_verifies_and_normalizable(con);
@@ -6124,7 +6124,7 @@ static void
 test_connection_normalize_may_fail(void)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingIPConfig *           s_ip4, *s_ip6;
+    NMSettingIPConfig            *s_ip4, *s_ip6;
 
     con = nmtst_create_minimal_connection("test2", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
     nmtst_assert_connection_verifies_and_normalizable(con);
@@ -6166,9 +6166,9 @@ static void
 test_connection_normalize_shared_addresses(void)
 {
     gs_unref_object NMConnection *con = NULL;
-    NMSettingIPConfig *           s_ip4, *s_ip6;
-    NMIPAddress *                 addr;
-    gs_free_error GError *error = NULL;
+    NMSettingIPConfig            *s_ip4, *s_ip6;
+    NMIPAddress                  *addr;
+    gs_free_error GError         *error = NULL;
 
     con = nmtst_create_minimal_connection("test1", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
     nmtst_assert_connection_verifies_and_normalizable(con);
@@ -6217,10 +6217,10 @@ test_connection_normalize_shared_addresses(void)
 static void
 test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
 {
-    const guint     TEST_CASE         = GPOINTER_TO_UINT(test_data);
-    gs_unref_object NMConnection *con = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingOvsInterface *       s_ovs_if;
+    const guint                   TEST_CASE = GPOINTER_TO_UINT(test_data);
+    gs_unref_object NMConnection *con       = NULL;
+    NMSettingConnection          *s_con;
+    NMSettingOvsInterface        *s_ovs_if;
 
     con = nmtst_create_minimal_connection("test_connection_normalize_ovs_interface_type_system",
                                           NULL,
@@ -6370,13 +6370,13 @@ test_connection_normalize_ovs_interface_type_system(gconstpointer test_data)
 static void
 test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_data)
 {
-    const guint     TEST_CASE         = GPOINTER_TO_UINT(test_data);
-    gs_unref_object NMConnection *con = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingOvsInterface *       s_ovs_if;
-    NMSettingOvsPatch *           s_ovs_patch;
-    NMSettingIP4Config *          s_ip4;
-    NMSettingIP6Config *          s_ip6;
+    const guint                   TEST_CASE = GPOINTER_TO_UINT(test_data);
+    gs_unref_object NMConnection *con       = NULL;
+    NMSettingConnection          *s_con;
+    NMSettingOvsInterface        *s_ovs_if;
+    NMSettingOvsPatch            *s_ovs_patch;
+    NMSettingIP4Config           *s_ip4;
+    NMSettingIP6Config           *s_ip6;
 
     con = nmtst_create_minimal_connection(
         "test_connection_normalize_ovs_interface_type_ovs_interface",
@@ -6602,16 +6602,16 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
 static void
 test_setting_ip4_gateway(void)
 {
-    NMConnection *     conn;
+    NMConnection      *conn;
     NMSettingIPConfig *s_ip4;
-    NMIPAddress *      addr;
-    GVariant *         conn_dict, *ip4_dict, *value;
+    NMIPAddress       *addr;
+    GVariant          *conn_dict, *ip4_dict, *value;
     GVariantIter       iter;
-    GVariant *         addr_var;
+    GVariant          *addr_var;
     guint32            addr_vals_0[] = {htonl(0xc0a8010a), 0x00000018, htonl(0x00000000)};
     guint32            addr_vals_1[] = {htonl(0xc0a8010b), 0x00000018, htonl(0xc0a80101)};
     GVariantBuilder    addrs_builder;
-    GError *           error = NULL;
+    GError            *error = NULL;
 
     nmtst_assert_ip4_address(addr_vals_0[0], "192.168.1.10");
 
@@ -6713,12 +6713,12 @@ test_setting_ip4_gateway(void)
 static void
 test_setting_ip6_gateway(void)
 {
-    NMConnection *     conn;
+    NMConnection      *conn;
     NMSettingIPConfig *s_ip6;
-    NMIPAddress *      addr;
-    GVariant *         conn_dict, *ip6_dict, *value;
+    NMIPAddress       *addr;
+    GVariant          *conn_dict, *ip6_dict, *value;
     GVariantIter       iter;
-    GVariant *         gateway_var;
+    GVariant          *gateway_var;
     GVariantBuilder    addrs_builder;
     guint8             addr_bytes_0[]    = {0xab,
                              0xcd,
@@ -6768,7 +6768,7 @@ test_setting_ip6_gateway(void)
                                 0x00,
                                 0x00,
                                 0x01};
-    GError *           error             = NULL;
+    GError            *error             = NULL;
 
     /* When serializing on the daemon side, ipv6.gateway is copied to the first
      * entry of ipv6.addresses
@@ -6872,7 +6872,7 @@ test_setting_ip6_gateway(void)
 }
 
 typedef struct {
-    const char * str;
+    const char  *str;
     const guint8 expected[20];
     const guint  expected_len;
 } HexItem;
@@ -6881,10 +6881,10 @@ static void
 test_setting_compare_default_strv(void)
 {
     gs_unref_object NMConnection *c1 = NULL, *c2 = NULL;
-    char **                       strv;
-    NMSettingIPConfig *           s_ip2, *s_ip1;
+    char                        **strv;
+    NMSettingIPConfig            *s_ip2, *s_ip1;
     gboolean                      compare;
-    GHashTable *                  out_settings = NULL;
+    GHashTable                   *out_settings = NULL;
 
     c1 = nmtst_create_minimal_connection("test_compare_default_strv",
                                          NULL,
@@ -6951,8 +6951,8 @@ static void
 _sock_addr_endpoint(const char *endpoint, const char *host, gint32 port)
 {
     nm_auto_unref_sockaddrendpoint NMSockAddrEndpoint *ep = NULL;
-    const char *                                       s_endpoint;
-    const char *                                       s_host;
+    const char                                        *s_endpoint;
+    const char                                        *s_host;
     gint32                                             s_port;
     SockAddrUnion                                      sockaddr = {};
 
@@ -6993,8 +6993,8 @@ static void
 _sock_addr_endpoint_fixed(const char *endpoint, const char *host, guint16 port, guint scope_id)
 {
     nm_auto_unref_sockaddrendpoint NMSockAddrEndpoint *ep = NULL;
-    const char *                                       s_endpoint;
-    const char *                                       s_host;
+    const char                                        *s_endpoint;
+    const char                                        *s_host;
     gint32                                             s_port;
     int                                                addr_family;
     NMIPAddr                                           addrbin;
@@ -7130,8 +7130,8 @@ _do_strquote(const char *str, gsize buf_len, const char *expected)
 {
     char          canary   = (char) nmtst_get_rand_uint32();
     gs_free char *buf_full = g_malloc(buf_len + 2);
-    char *        buf      = &buf_full[1];
-    const char *  b;
+    char         *buf      = &buf_full[1];
+    const char   *b;
 
     buf[-1]      = canary;
     buf[buf_len] = canary;
@@ -7932,8 +7932,8 @@ test_nm_utils_ascii_str_to_int64_do(const char *str,
                                     int         exp_errno,
                                     gint64      exp_val)
 {
-    const char *       sign = "";
-    const char *       val;
+    const char        *sign = "";
+    const char        *val;
     static const char *whitespaces[] = {
         "",
         " ",
@@ -7972,7 +7972,7 @@ test_nm_utils_ascii_str_to_int64_do(const char *str,
         for (ws_post = whitespaces; *ws_post; ws_post++) {
             for (null = nulls; *null; null++) {
                 for (i = 0;; i++) {
-                    char *      s;
+                    char       *s;
                     const char *str_base = "";
 
                     if (base == 16) {
@@ -8145,8 +8145,8 @@ test_nm_utils_strstrdictkey(void)
         .v1 = _v1, .v2 = _v2, .v_static = _nm_utils_strstrdictkey_static(_v1, _v2), \
     }
     const struct {
-        const char *          v1;
-        const char *          v2;
+        const char           *v1;
+        const char           *v2;
         NMUtilsStrStrDictKey *v_static;
     } * val1, *val2,
         values[] = {
@@ -8210,11 +8210,11 @@ test_nm_ptrarray_len(void)
 #define _PTRARRAY_LEN0(T)                \
     G_STMT_START                         \
     {                                    \
-        T **            vnull  = NULL;   \
-        T *const *      vnull1 = NULL;   \
+        T             **vnull  = NULL;   \
+        T *const       *vnull1 = NULL;   \
         T *const *const vnull2 = NULL;   \
-        T *             v0[]   = {NULL}; \
-        T *const *      v01    = v0;     \
+        T              *v0[]   = {NULL}; \
+        T *const       *v01    = v0;     \
         T *const *const v02    = v0;     \
         T **const       v03    = v0;     \
                                          \
@@ -8241,13 +8241,13 @@ test_nm_ptrarray_len(void)
     {                                                \
         T x[5] = {0};                                \
                                                      \
-        T *             v1[] = {&x[0], NULL};        \
-        T *const *      v11  = v1;                   \
+        T              *v1[] = {&x[0], NULL};        \
+        T *const       *v11  = v1;                   \
         T *const *const v12  = v1;                   \
         T **const       v13  = v1;                   \
                                                      \
-        T *             v2[] = {&x[0], &x[1], NULL}; \
-        T *const *      v21  = v2;                   \
+        T              *v2[] = {&x[0], &x[1], NULL}; \
+        T *const       *v21  = v2;                   \
         T *const *const v22  = v2;                   \
         T **const       v23  = v2;                   \
                                                      \
@@ -8273,14 +8273,14 @@ test_nm_ptrarray_len(void)
 /*****************************************************************************/
 
 static void
-test_nm_utils_dns_option_validate_do(char *                      option,
+test_nm_utils_dns_option_validate_do(char                       *option,
                                      gboolean                    ipv6,
                                      const NMUtilsDNSOptionDesc *descs,
                                      gboolean                    exp_result,
-                                     char *                      exp_name,
+                                     char                       *exp_name,
                                      gboolean                    exp_value)
 {
-    char *   name;
+    char    *name;
     long     value = 0;
     gboolean result;
 
@@ -8556,7 +8556,7 @@ test_nm_utils_is_power_of_two(void)
 {
     guint64 xyes, xno;
     int     i, j;
-    GRand * rand = nmtst_get_rand();
+    GRand  *rand = nmtst_get_rand();
     int     numbits;
 
     g_assert(!nm_utils_is_power_of_two(0));
@@ -8636,8 +8636,8 @@ _test_find_binary_search_cmp(gconstpointer a, gconstpointer b, gpointer dummy)
 static void
 _test_find_binary_search_do(const int *array, gsize len)
 {
-    gsize   i;
-    gssize  idx, idx2, idx_first, idx_last;
+    gsize                  i;
+    gssize                 idx, idx2, idx_first, idx_last;
     gs_free gconstpointer *parray  = g_new(gconstpointer, len);
     const int              NEEDLE  = 0;
     gconstpointer          pneedle = GINT_TO_POINTER(NEEDLE);
@@ -8884,7 +8884,7 @@ test_nm_utils_ptrarray_find_binary_search_with_duplicates(void)
 static void
 _test_nm_utils_enum_to_str_do_full(GType                       type,
                                    int                         flags,
-                                   const char *                exp_str,
+                                   const char                 *exp_str,
                                    const NMUtilsEnumValueInfo *value_infos)
 {
     gs_free char *str = NULL;
@@ -8914,10 +8914,10 @@ _test_nm_utils_enum_to_str_do_full(GType                       type,
 
 static void
 _test_nm_utils_enum_from_str_do_full(GType                       type,
-                                     const char *                str,
+                                     const char                 *str,
                                      gboolean                    exp_result,
                                      int                         exp_flags,
-                                     const char *                exp_err_token,
+                                     const char                 *exp_err_token,
                                      const NMUtilsEnumValueInfo *value_infos)
 {
     int           flags;
@@ -8962,7 +8962,7 @@ static void
 _test_nm_utils_enum_get_values_do(GType type, int from, int to, const char *exp_str)
 {
     gs_free const char **strv = NULL;
-    gs_free char *       str  = NULL;
+    gs_free char        *str  = NULL;
 
     g_assert(exp_str);
 
@@ -9132,9 +9132,9 @@ static void
 _do_test_utils_str_utf8safe_unescape(const char *str, const char *expected, gsize expected_len)
 {
     gsize            l;
-    const char *     s;
+    const char      *s;
     gs_free gpointer buf_free_1 = NULL;
-    gs_free char *   str_free_1 = NULL;
+    gs_free char    *str_free_1 = NULL;
 
     s = nm_utils_buf_utf8safe_unescape(str, NM_UTILS_STR_UTF8_SAFE_FLAG_NONE, &l, &buf_free_1);
     g_assert_cmpint(expected_len, ==, l);
@@ -9174,14 +9174,14 @@ _do_test_utils_str_utf8safe_unescape(const char *str, const char *expected, gsiz
     _do_test_utils_str_utf8safe_unescape("" str "", expected, NM_STRLEN(expected))
 
 static void
-_do_test_utils_str_utf8safe(const char *            str,
+_do_test_utils_str_utf8safe(const char             *str,
                             gsize                   str_len,
-                            const char *            expected,
+                            const char             *expected,
                             NMUtilsStrUtf8SafeFlags flags)
 {
-    const char *  str_safe;
-    const char *  buf_safe;
-    const char *  s;
+    const char   *str_safe;
+    const char   *buf_safe;
+    const char   *s;
     gs_free char *str_free_1  = NULL;
     gs_free char *str_free_2  = NULL;
     gs_free char *str_free_3  = NULL;
@@ -9623,8 +9623,8 @@ static void
 test_route_attributes_parse(void)
 {
     GHashTable *ht;
-    GError *    error = NULL;
-    GVariant *  variant;
+    GError     *error = NULL;
+    GVariant   *variant;
 
     ht = nm_utils_parse_variant_attributes("mtu=1400  src=1.2.3.4 cwnd=14",
                                            ' ',
@@ -9689,7 +9689,7 @@ static void
 test_route_attributes_format(void)
 {
     gs_unref_hashtable GHashTable *ht = NULL;
-    char *                         str;
+    char                          *str;
 
     ht = g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, (GDestroyNotify) g_variant_unref);
 
@@ -9918,9 +9918,9 @@ test_ethtool_offload(void)
 /*****************************************************************************/
 
 typedef struct {
-    GMainLoop *   loop1;
+    GMainLoop    *loop1;
     GMainContext *c2;
-    GSource *     extra_sources[2];
+    GSource      *extra_sources[2];
     bool          got_signal[5];
     int           fd_2;
 } IntegData;
@@ -9971,7 +9971,7 @@ static gboolean
 _test_integrate_cb_idle_2(gpointer user_data)
 {
     IntegData *d = user_data;
-    GSource *  extra_source;
+    GSource   *extra_source;
 
     g_assert(d->got_signal[1]);
     g_assert(d->got_signal[2]);
@@ -9995,7 +9995,7 @@ static gboolean
 _test_integrate_cb_idle_1(gpointer user_data)
 {
     IntegData *d = user_data;
-    GSource *  extra_source;
+    GSource   *extra_source;
 
     g_assert(d->got_signal[2]);
     g_assert(!d->extra_sources[0]);
@@ -10032,9 +10032,9 @@ _test_integrate_maincontext_cb_idle1(gpointer user_data)
 static void
 test_integrate_maincontext(gconstpointer test_data)
 {
-    const guint                TEST_IDX                     = GPOINTER_TO_UINT(test_data);
-    GMainContext *             c1                           = g_main_context_default();
-    nm_auto_unref_gmaincontext GMainContext *c2             = g_main_context_new();
+    const guint                                TEST_IDX     = GPOINTER_TO_UINT(test_data);
+    GMainContext                              *c1           = g_main_context_default();
+    nm_auto_unref_gmaincontext GMainContext   *c2           = g_main_context_new();
     nm_auto_destroy_and_unref_gsource GSource *integ_source = NULL;
 
     integ_source = nm_utils_g_main_context_create_integrate_source(c2);
@@ -10056,11 +10056,11 @@ test_integrate_maincontext(gconstpointer test_data)
         nm_auto_destroy_and_unref_gsource GSource *timeout_source_1    = NULL;
         nm_auto_destroy_and_unref_gsource GSource *idle_source_1       = NULL;
         nm_auto_destroy_and_unref_gsource GSource *fd_source_1         = NULL;
-        nm_auto_unref_gmainloop GMainLoop *loop1                       = NULL;
-        nm_auto_close int                  fd_1                        = -1;
-        nm_auto_close int                  fd_2                        = -1;
-        IntegData                          d;
-        int                                i;
+        nm_auto_unref_gmainloop GMainLoop         *loop1               = NULL;
+        nm_auto_close int                          fd_1                = -1;
+        nm_auto_close int                          fd_2                = -1;
+        IntegData                                  d;
+        int                                        i;
 
         main_timeout_source = g_timeout_source_new(3000);
         g_source_set_callback(main_timeout_source, nmtst_g_source_assert_not_called, NULL, NULL);
@@ -10134,14 +10134,14 @@ test_nm_ip_addr_zero(void)
 static void
 test_connection_ovs_ifname(gconstpointer test_data)
 {
-    const guint     TEST_CASE                    = GPOINTER_TO_UINT(test_data);
+    const guint                   TEST_CASE      = GPOINTER_TO_UINT(test_data);
     gs_unref_object NMConnection *con            = NULL;
-    NMSettingConnection *         s_con          = NULL;
-    NMSettingOvsBridge *          s_ovs_bridge   = NULL;
-    NMSettingOvsPort *            s_ovs_port     = NULL;
-    NMSettingOvsInterface *       s_ovs_iface    = NULL;
-    NMSettingOvsPatch *           s_ovs_patch    = NULL;
-    const char *                  ovs_iface_type = NULL;
+    NMSettingConnection          *s_con          = NULL;
+    NMSettingOvsBridge           *s_ovs_bridge   = NULL;
+    NMSettingOvsPort             *s_ovs_port     = NULL;
+    NMSettingOvsInterface        *s_ovs_iface    = NULL;
+    NMSettingOvsPatch            *s_ovs_patch    = NULL;
+    const char                   *ovs_iface_type = NULL;
 
     switch (TEST_CASE) {
     case 1:
@@ -10345,10 +10345,10 @@ static char *
 _strsplit_quoted_join_strv_rand(const char *const *strv)
 {
     NMStrBuf strbuf = NM_STR_BUF_INIT(nmtst_get_rand_uint32() % 200, nmtst_get_rand_bool());
-    char *   result;
+    char    *result;
     gsize    l;
     gsize    l2;
-    gsize *  p_l2 = nmtst_get_rand_bool() ? &l2 : NULL;
+    gsize   *p_l2 = nmtst_get_rand_bool() ? &l2 : NULL;
     gsize    i;
 
     g_assert(strv);
@@ -10419,14 +10419,14 @@ next_maybe_quote:
 }
 
 static void
-_strsplit_quoted_assert_strv(const char *       topic,
-                             const char *       str,
+_strsplit_quoted_assert_strv(const char        *topic,
+                             const char        *str,
                              const char *const *strv1,
                              const char *const *strv2)
 {
     nm_auto_str_buf NMStrBuf s1          = {};
     nm_auto_str_buf NMStrBuf s2          = {};
-    gs_free char *           str_escaped = NULL;
+    gs_free char            *str_escaped = NULL;
     int                      i;
 
     g_assert(str);
@@ -10504,7 +10504,7 @@ test_strsplit_quoted(void)
 
     for (i_run = 0; i_run < 1000; i_run++) {
         gs_strfreev char **strv = NULL;
-        gs_free char *     str  = NULL;
+        gs_free char      *str  = NULL;
 
         /* create random strv array and join them carefully so that splitting
          * them will yield the original value. */
@@ -10530,7 +10530,7 @@ test_nm_property_variant_to_gvalue(void)
 #define _test_variant_to_gvalue_bad(variant, gtype)                                     \
     G_STMT_START                                                                        \
     {                                                                                   \
-        gs_unref_variant GVariant * _variant = (variant);                               \
+        gs_unref_variant GVariant  *_variant = (variant);                               \
         GType                       _gtype   = (gtype);                                 \
         nm_auto_unset_gvalue GValue _gvalue  = G_VALUE_INIT;                            \
                                                                                         \
@@ -10542,10 +10542,10 @@ test_nm_property_variant_to_gvalue(void)
 #define _test_variant_to_gvalue(variant, gtype, check)                                 \
     G_STMT_START                                                                       \
     {                                                                                  \
-        gs_unref_variant GVariant * _variant = (variant);                              \
+        gs_unref_variant GVariant  *_variant = (variant);                              \
         GType                       _gtype   = (gtype);                                \
         nm_auto_unset_gvalue GValue _gvalue  = G_VALUE_INIT;                           \
-        _nm_unused GValue *const gg          = &_gvalue;                               \
+        _nm_unused GValue *const    gg       = &_gvalue;                               \
                                                                                        \
         g_value_init(&_gvalue, _gtype);                                                \
         g_assert_cmpint(_nm_property_variant_to_gvalue(_variant, &_gvalue), ==, TRUE); \

@@ -42,13 +42,13 @@ vlan_device_filter(NmtDeviceEntry *deventry, NMDevice *device, gpointer user_dat
 static void
 nmt_page_vlan_constructed(GObject *object)
 {
-    NmtPageVlan *     vlan = NMT_PAGE_VLAN(object);
+    NmtPageVlan      *vlan = NMT_PAGE_VLAN(object);
     NmtEditorSection *section;
-    NmtEditorGrid *   grid;
-    NMSettingWired *  s_wired;
-    NMSettingVlan *   s_vlan;
-    NmtNewtWidget *   widget, *parent, *id_entry;
-    NMConnection *    conn;
+    NmtEditorGrid    *grid;
+    NMSettingWired   *s_wired;
+    NMSettingVlan    *s_vlan;
+    NmtNewtWidget    *widget, *parent, *id_entry;
+    NMConnection     *conn;
 
     conn    = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(vlan));
     s_vlan  = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_VLAN);

@@ -24,7 +24,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PATH, PROP_CLIENT, );
 
 typedef struct _NMObjectPrivate {
-    NMClient *     client;
+    NMClient      *client;
     NMLDBusObject *dbobj;
 } NMObjectPrivate;
 
@@ -117,7 +117,7 @@ nm_object_get_client(NMObject *object)
 static void
 clear_properties(NMObject *self, NMClient *client)
 {
-    NMObjectClass *                klass = NM_OBJECT_GET_CLASS(self);
+    NMObjectClass                 *klass = NM_OBJECT_GET_CLASS(self);
     const _NMObjectClassFieldInfo *p;
 
     nm_assert(NM_IS_OBJECT(self));
@@ -141,8 +141,8 @@ clear_properties(NMObject *self, NMClient *client)
 static gboolean
 is_ready(NMObject *self)
 {
-    NMObjectClass *                klass  = NM_OBJECT_GET_CLASS(self);
-    NMClient *                     client = _nm_object_get_client(self);
+    NMObjectClass                 *klass  = NM_OBJECT_GET_CLASS(self);
+    NMClient                      *client = _nm_object_get_client(self);
     const _NMObjectClassFieldInfo *p;
     guint16                        i;
 
@@ -172,8 +172,8 @@ is_ready(NMObject *self)
 static void
 obj_changed_notify(NMObject *self)
 {
-    NMObjectClass *                klass  = NM_OBJECT_GET_CLASS(self);
-    NMClient *                     client = _nm_object_get_client(self);
+    NMObjectClass                 *klass  = NM_OBJECT_GET_CLASS(self);
+    NMClient                      *client = _nm_object_get_client(self);
     const _NMObjectClassFieldInfo *p;
 
     nm_assert(NM_IS_CLIENT(client));
@@ -245,7 +245,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 nm_object_init(NMObject *object)
 {
-    NMObject *       self = NM_OBJECT(object);
+    NMObject        *self = NM_OBJECT(object);
     NMObjectPrivate *priv;
 
     priv = G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_OBJECT, NMObjectPrivate);
@@ -262,7 +262,7 @@ nm_object_init(NMObject *object)
 static void
 dispose(GObject *object)
 {
-    NMObject *       self = NM_OBJECT(object);
+    NMObject        *self = NM_OBJECT(object);
     NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE(self);
 
     if (!self->obj_base.is_disposing) {

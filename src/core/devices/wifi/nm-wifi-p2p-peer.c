@@ -77,8 +77,8 @@ const char **
 nm_wifi_p2p_peers_get_paths(const CList *peers_lst_head)
 {
     NMWifiP2PPeer *peer;
-    const char **  list;
-    const char *   path;
+    const char   **list;
+    const char    *path;
     gsize          i, n;
 
     n    = c_list_length(peers_lst_head);
@@ -261,7 +261,7 @@ nm_wifi_p2p_peer_get_wfd_ies(const NMWifiP2PPeer *peer)
 gboolean
 nm_wifi_p2p_peer_set_wfd_ies(NMWifiP2PPeer *peer, GBytes *wfd_ies)
 {
-    NMWifiP2PPeerPrivate *priv;
+    NMWifiP2PPeerPrivate  *priv;
     gs_unref_bytes GBytes *wfd_ies_old = NULL;
 
     g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(peer), FALSE);
@@ -423,8 +423,8 @@ const char *
 nm_wifi_p2p_peer_to_string(const NMWifiP2PPeer *self, char *str_buf, gsize buf_len, gint32 now_s)
 {
     const NMWifiP2PPeerPrivate *priv;
-    const char *                supplicant_id = "-";
-    const char *                export_path;
+    const char                 *supplicant_id = "-";
+    const char                 *export_path;
 
     g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(self), NULL);
 
@@ -461,8 +461,8 @@ gboolean
 nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection)
 {
     NMWifiP2PPeerPrivate *priv;
-    NMSettingWifiP2P *    s_wifi_p2p;
-    const char *          hwaddr;
+    NMSettingWifiP2P     *s_wifi_p2p;
+    const char           *hwaddr;
 
     g_return_val_if_fail(NM_IS_WIFI_P2P_PEER(self), FALSE);
     g_return_val_if_fail(NM_IS_CONNECTION(connection), FALSE);
@@ -486,7 +486,7 @@ nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMWifiP2PPeer *       self = NM_WIFI_P2P_PEER(object);
+    NMWifiP2PPeer        *self = NM_WIFI_P2P_PEER(object);
     NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -562,7 +562,7 @@ nm_wifi_p2p_peer_new_from_properties(const NMSupplicantPeerInfo *peer_info)
 static void
 finalize(GObject *object)
 {
-    NMWifiP2PPeer *       self = NM_WIFI_P2P_PEER(object);
+    NMWifiP2PPeer        *self = NM_WIFI_P2P_PEER(object);
     NMWifiP2PPeerPrivate *priv = NM_WIFI_P2P_PEER_GET_PRIVATE(self);
 
     nm_assert(!self->wifi_device);
@@ -613,7 +613,7 @@ static const NMDBusInterfaceInfoExtended interface_info_p2p_peer = {
 static void
 nm_wifi_p2p_peer_class_init(NMWifiP2PPeerClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
 
     g_type_class_add_private(object_class, sizeof(NMWifiP2PPeerPrivate));

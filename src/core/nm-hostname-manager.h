@@ -38,8 +38,8 @@ const char *nm_hostname_manager_get_hostname(NMHostnameManager *self);
 
 gboolean nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname);
 
-void nm_hostname_manager_set_transient_hostname(NMHostnameManager *            self,
-                                                const char *                   hostname,
+void nm_hostname_manager_set_transient_hostname(NMHostnameManager             *self,
+                                                const char                    *hostname,
                                                 NMHostnameManagerSetHostnameCb cb,
                                                 gpointer                       user_data);
 

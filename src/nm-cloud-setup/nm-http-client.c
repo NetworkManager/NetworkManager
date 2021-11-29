@@ -15,9 +15,9 @@
 
 typedef struct {
     GMainContext *context;
-    CURLM *       mhandle;
-    GSource *     mhandle_source_timeout;
-    GHashTable *  source_sockets_hashtable;
+    CURLM        *mhandle;
+    GSource      *mhandle_source_timeout;
+    GHashTable   *source_sockets_hashtable;
 } NMHttpClientPrivate;
 
 struct _NMHttpClient {
@@ -113,11 +113,11 @@ _get_result_free(gpointer data)
 }
 
 typedef struct {
-    GTask *            task;
-    GSource *          timeout_source;
+    GTask             *task;
+    GSource           *timeout_source;
     CURLcode           ehandle_result;
-    CURL *             ehandle;
-    char *             url;
+    CURL              *ehandle;
+    char              *url;
     NMStrBuf           recv_data;
     struct curl_slist *headers;
     gssize             max_data;
@@ -128,7 +128,7 @@ static void
 _ehandle_free_ehandle(EHandleData *edata)
 {
     if (edata->ehandle) {
-        NMHttpClient *       self = g_task_get_source_object(edata->task);
+        NMHttpClient        *self = g_task_get_source_object(edata->task);
         NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
 
         curl_multi_remove_handle(priv->mhandle, edata->ehandle);
@@ -154,7 +154,7 @@ _ehandle_free(EHandleData *edata)
 static void
 _ehandle_complete(EHandleData *edata, GError *error_take)
 {
-    GetResult *   get_result;
+    GetResult    *get_result;
     gs_free char *str_tmp_1     = NULL;
     long          response_code = -1;
 
@@ -249,7 +249,7 @@ static void
 _get_cancelled_cb(GObject *object, gpointer user_data)
 {
     EHandleData *edata = user_data;
-    GError *     error = NULL;
+    GError      *error = NULL;
 
     nm_clear_g_signal_handler(g_task_get_cancellable(edata->task), &edata->cancellable_id);
     nm_utils_error_set_cancelled(&error, FALSE, NULL);
@@ -257,17 +257,17 @@ _get_cancelled_cb(GObject *object, gpointer user_data)
 }
 
 void
-nm_http_client_get(NMHttpClient *      self,
-                   const char *        url,
+nm_http_client_get(NMHttpClient       *self,
+                   const char         *url,
                    int                 timeout_msec,
                    gssize              max_data,
-                   const char *const * http_headers,
-                   GCancellable *      cancellable,
+                   const char *const  *http_headers,
+                   GCancellable       *cancellable,
                    GAsyncReadyCallback callback,
                    gpointer            user_data)
 {
     NMHttpClientPrivate *priv;
-    EHandleData *        edata;
+    EHandleData         *edata;
     guint                i;
 
     g_return_if_fail(NM_IS_HTTP_CLIENT(self));
@@ -363,9 +363,9 @@ nm_http_client_get(NMHttpClient *      self,
 gboolean
 nm_http_client_get_finish(NMHttpClient *self,
                           GAsyncResult *result,
-                          long *        out_response_code,
-                          GBytes **     out_response_data,
-                          GError **     error)
+                          long         *out_response_code,
+                          GBytes      **out_response_data,
+                          GError      **error)
 {
     GetResult *get_result;
 
@@ -394,12 +394,12 @@ nm_http_client_get_finish(NMHttpClient *self,
 /*****************************************************************************/
 
 typedef struct {
-    GTask *                     task;
-    char *                      uri;
-    const char *const *         http_headers;
+    GTask                      *task;
+    char                       *uri;
+    const char *const          *http_headers;
     NMHttpClientPollGetCheckFcn check_fcn;
     gpointer                    check_user_data;
-    GBytes *                    response_data;
+    GBytes                     *response_data;
     gsize                       request_max_data;
     long                        response_code;
     int                         request_timeout_ms;
@@ -419,7 +419,7 @@ _poll_get_data_free(gpointer data)
 }
 
 static void
-_poll_get_probe_start_fcn(GCancellable *      cancellable,
+_poll_get_probe_start_fcn(GCancellable       *cancellable,
                           gpointer            probe_user_data,
                           GAsyncReadyCallback callback,
                           gpointer            user_data)
@@ -440,16 +440,16 @@ _poll_get_probe_start_fcn(GCancellable *      cancellable,
 }
 
 static gboolean
-_poll_get_probe_finish_fcn(GObject *     source,
+_poll_get_probe_finish_fcn(GObject      *source,
                            GAsyncResult *result,
                            gpointer      probe_user_data,
-                           GError **     error)
+                           GError      **error)
 {
-    PollGetData *              poll_get_data = probe_user_data;
+    PollGetData                      *poll_get_data = probe_user_data;
     _nm_unused gs_unref_object GTask *task =
         poll_get_data->task; /* balance ref from _poll_get_probe_start_fcn() */
-    gboolean      success;
-    gs_free_error GError *local_error    = NULL;
+    gboolean               success;
+    gs_free_error GError  *local_error   = NULL;
     gs_unref_bytes GBytes *response_data = NULL;
     long                   response_code = -1;
 
@@ -496,8 +496,8 @@ _poll_get_probe_finish_fcn(GObject *     source,
 static void
 _poll_get_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    PollGetData * poll_get_data = user_data;
-    gs_free_error GError *error = NULL;
+    PollGetData          *poll_get_data = user_data;
+    gs_free_error GError *error         = NULL;
     gboolean              success;
 
     success = nmcs_utils_poll_finish(result, NULL, &error);
@@ -513,21 +513,21 @@ _poll_get_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 }
 
 void
-nm_http_client_poll_get(NMHttpClient *              self,
-                        const char *                uri,
+nm_http_client_poll_get(NMHttpClient               *self,
+                        const char                 *uri,
                         int                         request_timeout_ms,
                         gssize                      request_max_data,
                         int                         poll_timeout_ms,
                         int                         ratelimit_timeout_ms,
-                        const char *const *         http_headers,
-                        GCancellable *              cancellable,
+                        const char *const          *http_headers,
+                        GCancellable               *cancellable,
                         NMHttpClientPollGetCheckFcn check_fcn,
                         gpointer                    check_user_data,
                         GAsyncReadyCallback         callback,
                         gpointer                    user_data)
 {
     nm_auto_pop_gmaincontext GMainContext *context = NULL;
-    PollGetData *                          poll_get_data;
+    PollGetData                           *poll_get_data;
 
     g_return_if_fail(NM_IS_HTTP_CLIENT(self));
     g_return_if_fail(uri && uri[0]);
@@ -570,13 +570,13 @@ nm_http_client_poll_get(NMHttpClient *              self,
 gboolean
 nm_http_client_poll_get_finish(NMHttpClient *self,
                                GAsyncResult *result,
-                               long *        out_response_code,
-                               GBytes **     out_response_data,
-                               GError **     error)
+                               long         *out_response_code,
+                               GBytes      **out_response_data,
+                               GError      **error)
 {
-    PollGetData * poll_get_data;
-    GTask *       task;
-    gboolean      success;
+    PollGetData          *poll_get_data;
+    GTask                *task;
+    gboolean              success;
     gs_free_error GError *local_error = NULL;
 
     g_return_val_if_fail(NM_HTTP_CLIENT(self), FALSE);
@@ -608,8 +608,8 @@ static void
 _mhandle_action(NMHttpClient *self, int sockfd, int ev_bitmask)
 {
     NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
-    EHandleData *        edata;
-    CURLMsg *            msg;
+    EHandleData         *edata;
+    CURLMsg             *msg;
     CURLcode             eret;
     int                  m_left;
     CURLMcode            ret;
@@ -652,14 +652,14 @@ _mhandle_socket_cb(int fd, GIOCondition condition, gpointer user_data)
 }
 
 static int
-_mhandle_socketfunction_cb(CURL *        e_handle,
+_mhandle_socketfunction_cb(CURL         *e_handle,
                            curl_socket_t fd,
                            int           what,
-                           void *        user_data,
-                           void *        socketp)
+                           void         *user_data,
+                           void         *socketp)
 {
-    GSource *            source_socket;
-    NMHttpClient *       self = user_data;
+    GSource             *source_socket;
+    NMHttpClient        *self = user_data;
     NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
 
     (void) _NM_ENSURE_TYPE(int, fd);
@@ -704,7 +704,7 @@ _mhandle_timeout_cb(gpointer user_data)
 static int
 _mhandle_timerfunction_cb(CURLM *multi, long timeout_msec, void *user_data)
 {
-    NMHttpClient *       self = user_data;
+    NMHttpClient        *self = user_data;
     NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
 
     nm_clear_pointer(&priv->mhandle_source_timeout, nm_g_source_destroy_and_unref);
@@ -737,7 +737,7 @@ nm_http_client_init(NMHttpClient *self)
 static void
 constructed(GObject *object)
 {
-    NMHttpClient *       self = NM_HTTP_CLIENT(object);
+    NMHttpClient        *self = NM_HTTP_CLIENT(object);
     NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
 
     priv->context = g_main_context_ref_thread_default();
@@ -764,7 +764,7 @@ nm_http_client_new(void)
 static void
 dispose(GObject *object)
 {
-    NMHttpClient *       self = NM_HTTP_CLIENT(object);
+    NMHttpClient        *self = NM_HTTP_CLIENT(object);
     NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
 
     nm_clear_pointer(&priv->mhandle, curl_multi_cleanup);
@@ -778,7 +778,7 @@ dispose(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMHttpClient *       self = NM_HTTP_CLIENT(object);
+    NMHttpClient        *self = NM_HTTP_CLIENT(object);
     NMHttpClientPrivate *priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
 
     G_OBJECT_CLASS(nm_http_client_parent_class)->finalize(object);

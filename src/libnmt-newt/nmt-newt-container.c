@@ -42,7 +42,7 @@ nmt_newt_container_init(NmtNewtContainer *container)
 static void
 nmt_newt_container_finalize(GObject *object)
 {
-    NmtNewtContainer *       container = NMT_NEWT_CONTAINER(object);
+    NmtNewtContainer        *container = NMT_NEWT_CONTAINER(object);
     NmtNewtContainerPrivate *priv      = NMT_NEWT_CONTAINER_GET_PRIVATE(object);
 
     while (priv->children->len)
@@ -178,7 +178,7 @@ static NmtNewtWidget *
 nmt_newt_container_find_component(NmtNewtWidget *widget, newtComponent co)
 {
     NmtNewtContainerPrivate *priv = NMT_NEWT_CONTAINER_GET_PRIVATE(widget);
-    NmtNewtWidget *          found, *child;
+    NmtNewtWidget           *found, *child;
     int                      i;
 
     for (i = 0; i < priv->children->len; i++) {
@@ -204,7 +204,7 @@ GSList *
 nmt_newt_container_get_children(NmtNewtContainer *container)
 {
     NmtNewtContainerPrivate *priv = NMT_NEWT_CONTAINER_GET_PRIVATE(container);
-    GSList *                 ret;
+    GSList                  *ret;
     int                      i;
 
     for (i = 0, ret = NULL; i < priv->children->len; i++)
@@ -215,7 +215,7 @@ nmt_newt_container_get_children(NmtNewtContainer *container)
 static void
 nmt_newt_container_class_init(NmtNewtContainerClass *container_class)
 {
-    GObjectClass *      object_class = G_OBJECT_CLASS(container_class);
+    GObjectClass       *object_class = G_OBJECT_CLASS(container_class);
     NmtNewtWidgetClass *widget_class = NMT_NEWT_WIDGET_CLASS(container_class);
 
     g_type_class_add_private(container_class, sizeof(NmtNewtContainerPrivate));

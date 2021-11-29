@@ -39,7 +39,7 @@ typedef enum _nm_packed {
 
 typedef struct {
     PermType ptype;
-    char *   item;
+    char    *item;
 } Permission;
 
 NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
@@ -73,15 +73,15 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
 typedef struct {
     GArray *permissions;
     GArray *secondaries;
-    char *  id;
-    char *  uuid;
-    char *  stable_id;
-    char *  interface_name;
-    char *  type;
-    char *  master;
-    char *  slave_type;
-    char *  zone;
-    char *  mud_url;
+    char   *id;
+    char   *uuid;
+    char   *stable_id;
+    char   *interface_name;
+    char   *type;
+    char   *master;
+    char   *slave_type;
+    char   *zone;
+    char   *mud_url;
     guint64 timestamp;
     int     autoconnect_slaves;
     int     metered;
@@ -322,12 +322,12 @@ nm_setting_connection_get_num_permissions(NMSettingConnection *setting)
 gboolean
 nm_setting_connection_get_permission(NMSettingConnection *setting,
                                      guint32              idx,
-                                     const char **        out_ptype,
-                                     const char **        out_pitem,
-                                     const char **        out_detail)
+                                     const char         **out_ptype,
+                                     const char         **out_pitem,
+                                     const char         **out_detail)
 {
     NMSettingConnectionPrivate *priv;
-    Permission *                permission;
+    Permission                 *permission;
 
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
 
@@ -408,9 +408,9 @@ nm_setting_connection_permissions_user_allowed(NMSettingConnection *setting, con
  */
 gboolean
 nm_setting_connection_add_permission(NMSettingConnection *setting,
-                                     const char *         ptype,
-                                     const char *         pitem,
-                                     const char *         detail)
+                                     const char          *ptype,
+                                     const char          *pitem,
+                                     const char          *detail)
 {
     NMSettingConnectionPrivate *priv;
     guint                       i;
@@ -487,9 +487,9 @@ nm_setting_connection_remove_permission(NMSettingConnection *setting, guint32 id
  */
 gboolean
 nm_setting_connection_remove_permission_by_value(NMSettingConnection *setting,
-                                                 const char *         ptype,
-                                                 const char *         pitem,
-                                                 const char *         detail)
+                                                 const char          *ptype,
+                                                 const char          *pitem,
+                                                 const char          *detail)
 {
     NMSettingConnectionPrivate *priv;
     guint                       i;
@@ -1009,20 +1009,20 @@ _set_error_missing_base_setting(GError **error, const char *type)
 
 gboolean
 _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
-                                      NMConnection *       connection,
-                                      const char **        out_slave_type,
-                                      const char **        out_normerr_slave_setting_type,
-                                      const char **        out_normerr_missing_slave_type,
-                                      const char **        out_normerr_missing_slave_type_port,
-                                      GError **            error)
+                                      NMConnection        *connection,
+                                      const char         **out_slave_type,
+                                      const char         **out_normerr_slave_setting_type,
+                                      const char         **out_normerr_missing_slave_type,
+                                      const char         **out_normerr_missing_slave_type_port,
+                                      GError             **error)
 {
     NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(s_con);
     gboolean                    is_slave;
-    const char *                slave_setting_type;
-    const char *                slave_type;
-    const char *                normerr_slave_setting_type      = NULL;
-    const char *                normerr_missing_slave_type      = NULL;
-    const char *                normerr_missing_slave_type_port = NULL;
+    const char                 *slave_setting_type;
+    const char                 *slave_type;
+    const char                 *normerr_slave_setting_type      = NULL;
+    const char                 *normerr_missing_slave_type      = NULL;
+    const char                 *normerr_missing_slave_type_port = NULL;
 
     is_slave           = FALSE;
     slave_setting_type = NULL;
@@ -1094,14 +1094,14 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingConnection *       self              = NM_SETTING_CONNECTION(setting);
+    NMSettingConnection        *self              = NM_SETTING_CONNECTION(setting);
     NMSettingConnectionPrivate *priv              = NM_SETTING_CONNECTION_GET_PRIVATE(self);
-    NMSetting *                 normerr_base_type = NULL;
-    const char *                type;
-    const char *                slave_type;
-    const char *                normerr_slave_setting_type      = NULL;
-    const char *                normerr_missing_slave_type      = NULL;
-    const char *                normerr_missing_slave_type_port = NULL;
+    NMSetting                  *normerr_base_type = NULL;
+    const char                 *type;
+    const char                 *slave_type;
+    const char                 *normerr_slave_setting_type      = NULL;
+    const char                 *normerr_missing_slave_type      = NULL;
+    const char                 *normerr_missing_slave_type_port = NULL;
     gboolean                    normerr_base_setting            = FALSE;
     gboolean                    uuid_was_normalized             = FALSE;
 
@@ -1187,7 +1187,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
         /* Make sure the corresponding 'type' item is present */
         if (connection && !nm_connection_get_setting_by_name(connection, type)) {
-            NMSetting *   s_base;
+            NMSetting    *s_base;
             NMConnection *connection2;
 
             s_base      = g_object_new(base_type, NULL);
@@ -1206,7 +1206,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (priv->interface_name) {
-        GError *         tmp_error = NULL;
+        GError          *tmp_error = NULL;
         NMUtilsIfaceType iface_type;
 
         if (NM_IN_STRSET(type,
@@ -1215,7 +1215,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             iface_type = NMU_IFACE_OVS;
         else if (nm_streq(type, NM_SETTING_OVS_INTERFACE_SETTING_NAME)) {
             NMSettingOvsInterface *s_ovs_iface = NULL;
-            const char *           ovs_iface_type;
+            const char            *ovs_iface_type;
 
             if (connection)
                 s_ovs_iface = nm_connection_get_setting_ovs_interface(connection);
@@ -1533,7 +1533,7 @@ after_interface_name:
 static const char *
 find_virtual_interface_name(GVariant *connection_dict, GVariant **variant_to_free)
 {
-    GVariant *  setting_dict;
+    GVariant   *setting_dict;
     const char *interface_name;
 
     nm_assert(variant_to_free && !*variant_to_free);
@@ -1569,7 +1569,7 @@ find_virtual_interface_name(GVariant *connection_dict, GVariant **variant_to_fre
 static gboolean
 nm_setting_connection_no_interface_name(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    const char *     virtual_interface_name;
+    const char                *virtual_interface_name;
     gs_unref_variant GVariant *variant_to_free = NULL;
 
     virtual_interface_name = find_virtual_interface_name(connection_dict, &variant_to_free);
@@ -1615,7 +1615,7 @@ compare_fcn_timestamp(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingConnection *       setting = NM_SETTING_CONNECTION(object);
+    NMSettingConnection        *setting = NM_SETTING_CONNECTION(object);
     NMSettingConnectionPrivate *priv    = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -1717,9 +1717,9 @@ finalize(GObject *object)
 static void
 nm_setting_connection_class_init(NMSettingConnectionClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingConnectionPrivate));
 

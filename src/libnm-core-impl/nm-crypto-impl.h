@@ -21,29 +21,29 @@ _nm_crypto_verify_pkcs12(const guint8 *data, gsize data_len, const char *passwor
 gboolean _nm_crypto_verify_pkcs8(const guint8 *data,
                                  gsize         data_len,
                                  gboolean      is_encrypted,
-                                 const char *  password,
-                                 GError **     error);
+                                 const char   *password,
+                                 GError      **error);
 
 /*****************************************************************************/
 
 guint8 *_nmtst_crypto_encrypt(NMCryptoCipherType cipher,
-                              const guint8 *     data,
+                              const guint8      *data,
                               gsize              data_len,
-                              const guint8 *     iv,
+                              const guint8      *iv,
                               gsize              iv_len,
-                              const guint8 *     key,
+                              const guint8      *key,
                               gsize              key_len,
-                              gsize *            out_len,
-                              GError **          error);
+                              gsize             *out_len,
+                              GError           **error);
 
 guint8 *_nmtst_crypto_decrypt(NMCryptoCipherType cipher,
-                              const guint8 *     data,
+                              const guint8      *data,
                               gsize              data_len,
-                              const guint8 *     iv,
+                              const guint8      *iv,
                               gsize              iv_len,
-                              const guint8 *     key,
+                              const guint8      *key,
                               gsize              key_len,
-                              gsize *            out_len,
-                              GError **          error);
+                              gsize             *out_len,
+                              GError           **error);
 
 #endif /* __NM_CRYPTO_IMPL_H__ */

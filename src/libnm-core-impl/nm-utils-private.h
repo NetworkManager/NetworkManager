@@ -19,16 +19,16 @@
 gboolean _nm_utils_string_slist_validate(GSList *list, const char **valid_values);
 
 gboolean _nm_utils_secret_flags_validate(NMSettingSecretFlags secret_flags,
-                                         const char *         setting_name,
-                                         const char *         property_name,
+                                         const char          *setting_name,
+                                         const char          *property_name,
                                          NMSettingSecretFlags disallowed_flags,
-                                         GError **            error);
+                                         GError             **error);
 
 gboolean _nm_utils_wps_method_validate(NMSettingWirelessSecurityWpsMethod wps_method,
-                                       const char *                       setting_name,
-                                       const char *                       property_name,
+                                       const char                        *setting_name,
+                                       const char                        *property_name,
                                        gboolean                           wps_required,
-                                       GError **                          error);
+                                       GError                           **error);
 
 /* D-Bus transform funcs */
 
@@ -50,9 +50,9 @@ gboolean _nm_utils_hwaddr_link_local_valid(const char *mac);
 
 gboolean _nm_sriov_vf_parse_vlans(NMSriovVF *vf, const char *str, GError **error);
 
-gboolean _nm_utils_bridge_vlan_verify_list(GPtrArray * vlans,
+gboolean _nm_utils_bridge_vlan_verify_list(GPtrArray  *vlans,
                                            gboolean    check_normalizable,
-                                           GError **   error,
+                                           GError    **error,
                                            const char *setting,
                                            const char *property);
 

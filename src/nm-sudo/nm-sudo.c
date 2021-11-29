@@ -38,7 +38,7 @@ typedef struct {
 
 struct _GlobalData {
     GDBusConnection *dbus_connection;
-    GCancellable *   quit_cancellable;
+    GCancellable    *quit_cancellable;
 
     GSource *source_sigterm;
 
@@ -112,9 +112,9 @@ _handle_ping(GlobalData *gl, GDBusMethodInvocation *invocation, const char *arg)
 static void
 _handle_get_fd(GlobalData *gl, GDBusMethodInvocation *invocation, guint32 fd_type)
 {
-    nm_auto_close int fd                 = -1;
+    nm_auto_close int            fd      = -1;
     gs_unref_object GUnixFDList *fd_list = NULL;
-    gs_free_error GError *error          = NULL;
+    gs_free_error GError        *error   = NULL;
 
     if (fd_type != (NMSudoGetFDType) fd_type)
         fd_type = NM_SUDO_GET_FD_TYPE_NONE;
@@ -151,7 +151,7 @@ _signal_callback_term(gpointer user_data)
 static GDBusConnection *
 _bus_get(GCancellable *cancellable, int *out_exit_code)
 {
-    gs_free_error GError *error                      = NULL;
+    gs_free_error GError            *error           = NULL;
     gs_unref_object GDBusConnection *dbus_connection = NULL;
 
     dbus_connection = nm_g_bus_get_blocking(cancellable, &error);
@@ -178,11 +178,11 @@ _bus_get(GCancellable *cancellable, int *out_exit_code)
 
 static void
 _name_owner_changed_cb(GDBusConnection *connection,
-                       const char *     sender_name,
-                       const char *     object_path,
-                       const char *     interface_name,
-                       const char *     signal_name,
-                       GVariant *       parameters,
+                       const char      *sender_name,
+                       const char      *object_path,
+                       const char      *interface_name,
+                       const char      *signal_name,
+                       GVariant        *parameters,
                        gpointer         user_data)
 {
     GlobalData *gl = user_data;
@@ -207,7 +207,7 @@ _name_owner_changed_cb(GDBusConnection *connection,
 
 typedef struct {
     GlobalData *gl;
-    char **     p_name_owner;
+    char      **p_name_owner;
     gboolean    is_cancelled;
 } BusFindNMNameOwnerData;
 
@@ -226,7 +226,7 @@ _bus_find_nm_nameowner(GlobalData *gl)
 {
     BusFindNMNameOwnerData data;
     guint                  name_owner_changed_id;
-    gs_free char *         name_owner = NULL;
+    gs_free char          *name_owner = NULL;
 
     name_owner_changed_id =
         nm_dbus_connection_signal_subscribe_name_owner_changed(gl->dbus_connection,
@@ -262,12 +262,12 @@ _bus_find_nm_nameowner(GlobalData *gl)
 /*****************************************************************************/
 
 static void
-_bus_method_call(GDBusConnection *      connection,
-                 const char *           sender,
-                 const char *           object_path,
-                 const char *           interface_name,
-                 const char *           method_name,
-                 GVariant *             parameters,
+_bus_method_call(GDBusConnection       *connection,
+                 const char            *sender,
+                 const char            *object_path,
+                 const char            *interface_name,
+                 const char            *method_name,
+                 GVariant              *parameters,
                  GDBusMethodInvocation *invocation,
                  gpointer               user_data)
 {
@@ -351,9 +351,9 @@ _bus_register_service(GlobalData *gl)
     static const GDBusInterfaceVTable interface_vtable = {
         .method_call = _bus_method_call,
     };
-    gs_free_error GError *           error = NULL;
+    gs_free_error GError            *error = NULL;
     NMDBusConnectionCallBlockingData data  = {
-        .result = NULL,
+         .result = NULL,
     };
     gs_unref_variant GVariant *ret = NULL;
     guint32                    ret_val;
@@ -453,7 +453,7 @@ static gboolean
 _pending_job_register_object_release_on_idle_cb(gpointer data)
 {
     PendingJobData *idle_data = data;
-    GlobalData *    gl        = idle_data->gl;
+    GlobalData     *gl        = idle_data->gl;
 
     c_list_unlink_stale(&idle_data->pending_jobs_lst);
     nm_g_slice_free(idle_data);
@@ -496,7 +496,7 @@ static void
 _bus_release_name_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     _nm_unused gs_unref_object GObject *keep_alive_object = NULL;
-    GlobalData *                        gl;
+    GlobalData                         *gl;
 
     nm_utils_user_data_unpack(user_data, &gl, &keep_alive_object);
 

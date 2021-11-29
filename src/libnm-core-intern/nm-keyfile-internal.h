@@ -26,11 +26,11 @@
 #define NM_KEYFILE_CERT_SCHEME_PREFIX_PKCS11 "pkcs11:"
 #define NM_KEYFILE_CERT_SCHEME_PREFIX_BLOB   "data:;base64,"
 
-char *nm_keyfile_detect_unqualified_path_scheme(const char *  base_dir,
+char *nm_keyfile_detect_unqualified_path_scheme(const char   *base_dir,
                                                 gconstpointer pdata,
                                                 gsize         data_len,
                                                 gboolean      consider_exists,
-                                                gboolean *    out_exists);
+                                                gboolean     *out_exists);
 
 gboolean nm_keyfile_read_ensure_id(NMConnection *connection, const char *fallback_id);
 
@@ -46,8 +46,8 @@ gboolean nm_keyfile_read_ensure_uuid(NMConnection *connection, const char *fallb
  */
 typedef struct {
     NMKeyfileWarnSeverity severity;
-    char *                message;
-    const char *          fmt;
+    char                 *message;
+    const char           *fmt;
     va_list               ap;
 } NMKeyfileHandlerDataWarn;
 
@@ -69,7 +69,7 @@ struct _NMKeyfileHandlerData {
     const char *kf_group_name;
     const char *kf_key;
 
-    NMSetting * cur_setting;
+    NMSetting  *cur_setting;
     const char *cur_property;
 
     union {
@@ -86,7 +86,7 @@ const char *_nm_keyfile_handler_data_warn_get_message(const NMKeyfileHandlerData
 
 char *
 nm_keyfile_plugin_kf_get_string(GKeyFile *kf, const char *group, const char *key, GError **error);
-void nm_keyfile_plugin_kf_set_string(GKeyFile *  kf,
+void nm_keyfile_plugin_kf_set_string(GKeyFile   *kf,
                                      const char *group,
                                      const char *key,
                                      const char *value);

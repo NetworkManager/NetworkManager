@@ -13,13 +13,13 @@ typedef const struct {
 
     gboolean (*start)(NMPPPManager *manager,
                       NMActRequest *req,
-                      const char *  ppp_name,
+                      const char   *ppp_name,
                       guint32       timeout_secs,
                       guint         baud_override,
-                      GError **     err);
+                      GError      **err);
 
-    NMPPPManagerStopHandle *(*stop)(NMPPPManager *           manager,
-                                    GCancellable *           cancellable,
+    NMPPPManagerStopHandle *(*stop)(NMPPPManager            *manager,
+                                    GCancellable            *cancellable,
                                     NMPPPManagerStopCallback callback,
                                     gpointer                 user_data);
 

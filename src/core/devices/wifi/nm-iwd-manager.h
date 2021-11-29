@@ -42,8 +42,8 @@ GType nm_iwd_manager_get_type(void);
 
 NMIwdManager *nm_iwd_manager_get(void);
 
-gboolean nm_iwd_manager_is_known_network(NMIwdManager *       self,
-                                         const char *         name,
+gboolean nm_iwd_manager_is_known_network(NMIwdManager        *self,
+                                         const char          *name,
                                          NMIwdNetworkSecurity security);
 
 NMSettingsConnection *nm_iwd_manager_get_ap_mirror_connection(NMIwdManager *self, NMWifiAP *ap);

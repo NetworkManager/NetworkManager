@@ -17,7 +17,7 @@ typedef enum {
 } NMCryptoCipherType;
 
 typedef struct {
-    const char *       name;
+    const char        *name;
     NMCryptoCipherType cipher;
     guint8             digest_len;
     guint8             real_iv_len;
@@ -43,10 +43,10 @@ typedef enum {
 
 GBytes *nm_crypto_read_file(const char *filename, GError **error);
 
-gboolean nm_crypto_load_and_verify_certificate(const char *        file,
+gboolean nm_crypto_load_and_verify_certificate(const char         *file,
                                                NMCryptoFileFormat *out_file_format,
-                                               GBytes **           out_certificat,
-                                               GError **           error);
+                                               GBytes            **out_certificat,
+                                               GError            **error);
 
 gboolean nm_crypto_is_pkcs12_file(const char *file, GError **error);
 
@@ -54,42 +54,42 @@ gboolean nm_crypto_is_pkcs12_data(const guint8 *data, gsize len, GError **error)
 
 NMCryptoFileFormat nm_crypto_verify_private_key_data(const guint8 *data,
                                                      gsize         data_len,
-                                                     const char *  password,
-                                                     gboolean *    out_is_encrypted,
-                                                     GError **     error);
+                                                     const char   *password,
+                                                     gboolean     *out_is_encrypted,
+                                                     GError      **error);
 
 NMCryptoFileFormat nm_crypto_verify_private_key(const char *file,
                                                 const char *password,
-                                                gboolean *  out_is_encrypted,
-                                                GError **   error);
+                                                gboolean   *out_is_encrypted,
+                                                GError    **error);
 
 gboolean nm_crypto_randomize(void *buffer, gsize buffer_len, GError **error);
 
 /*****************************************************************************/
 
-GBytes *nmtst_crypto_decrypt_openssl_private_key_data(const guint8 *   data,
+GBytes *nmtst_crypto_decrypt_openssl_private_key_data(const guint8    *data,
                                                       gsize            data_len,
-                                                      const char *     password,
+                                                      const char      *password,
                                                       NMCryptoKeyType *out_key_type,
-                                                      GError **        error);
+                                                      GError         **error);
 
-GBytes *nmtst_crypto_decrypt_openssl_private_key(const char *     file,
-                                                 const char *     password,
+GBytes *nmtst_crypto_decrypt_openssl_private_key(const char      *file,
+                                                 const char      *password,
                                                  NMCryptoKeyType *out_key_type,
-                                                 GError **        error);
+                                                 GError         **error);
 
 GBytes *nmtst_crypto_rsa_key_encrypt(const guint8 *data,
                                      gsize         len,
-                                     const char *  in_password,
-                                     char **       out_password,
-                                     GError **     error);
+                                     const char   *in_password,
+                                     char        **out_password,
+                                     GError      **error);
 
 guint8 *nmtst_crypto_make_des_aes_key(NMCryptoCipherType cipher,
-                                      const guint8 *     salt,
+                                      const guint8      *salt,
                                       gsize              salt_len,
-                                      const char *       password,
-                                      gsize *            out_len,
-                                      GError **          error);
+                                      const char        *password,
+                                      gsize             *out_len,
+                                      GError           **error);
 
 /*****************************************************************************/
 

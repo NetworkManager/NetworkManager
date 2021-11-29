@@ -38,7 +38,7 @@ typedef struct {
     /* RFC 2684 bridging (PPPoE over ATM) */
     int      brfd;
     int      nas_ifindex;
-    char *   nas_ifname;
+    char    *nas_ifname;
     GSource *nas_update_source;
     guint    nas_update_count;
 } NMDeviceAdslPrivate;
@@ -70,7 +70,7 @@ static gboolean
 check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
     NMSettingAdsl *s_adsl;
-    const char *   protocol;
+    const char    *protocol;
 
     if (!NM_DEVICE_CLASS(nm_device_adsl_parent_class)
              ->check_connection_compatible(device, connection, error))
@@ -91,11 +91,11 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
     NMSettingAdsl *s_adsl;
 
@@ -124,12 +124,12 @@ complete_connection(NMDevice *           device,
 static gboolean
 br2684_assign_vcc(NMDeviceAdsl *self, NMSettingAdsl *s_adsl)
 {
-    NMDeviceAdslPrivate *     priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
+    NMDeviceAdslPrivate      *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
     struct sockaddr_atmpvc    addr;
     struct atm_backend_br2684 be;
     struct atm_qos            qos;
     int                       errsv, err, bufsize = 8192;
-    const char *              encapsulation;
+    const char               *encapsulation;
     gboolean                  is_llc;
 
     g_return_val_if_fail(priv->brfd == -1, FALSE);
@@ -214,18 +214,18 @@ error:
 }
 
 static void
-link_changed_cb(NMPlatform *    platform,
+link_changed_cb(NMPlatform     *platform,
                 int             obj_type_i,
                 int             ifindex,
                 NMPlatformLink *info,
                 int             change_type_i,
-                NMDeviceAdsl *  self)
+                NMDeviceAdsl   *self)
 {
     const NMPlatformSignalChangeType change_type = change_type_i;
 
     if (change_type == NM_PLATFORM_SIGNAL_REMOVED) {
         NMDeviceAdslPrivate *priv   = NM_DEVICE_ADSL_GET_PRIVATE(self);
-        NMDevice *           device = NM_DEVICE(self);
+        NMDevice            *device = NM_DEVICE(self);
 
         /* This only gets called for PPPoE connections and "nas" interfaces */
 
@@ -243,8 +243,8 @@ static gboolean
 pppoe_vcc_config(NMDeviceAdsl *self)
 {
     NMDeviceAdslPrivate *priv   = NM_DEVICE_ADSL_GET_PRIVATE(self);
-    NMDevice *           device = NM_DEVICE(self);
-    NMSettingAdsl *      s_adsl;
+    NMDevice            *device = NM_DEVICE(self);
+    NMSettingAdsl       *s_adsl;
 
     s_adsl = nm_device_get_applied_setting(device, NM_TYPE_SETTING_ADSL);
 
@@ -271,9 +271,9 @@ pppoe_vcc_config(NMDeviceAdsl *self)
 static gboolean
 nas_update_timeout_cb(gpointer user_data)
 {
-    NMDeviceAdsl *       self   = NM_DEVICE_ADSL(user_data);
+    NMDeviceAdsl        *self   = NM_DEVICE_ADSL(user_data);
     NMDeviceAdslPrivate *priv   = NM_DEVICE_ADSL_GET_PRIVATE(self);
-    NMDevice *           device = NM_DEVICE(self);
+    NMDevice            *device = NM_DEVICE(self);
 
     nm_assert(priv->nas_ifname);
 
@@ -316,7 +316,7 @@ nas_update_timeout_cb(gpointer user_data)
 static gboolean
 br2684_create_iface(NMDeviceAdsl *self)
 {
-    NMDeviceAdslPrivate *   priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
+    NMDeviceAdslPrivate    *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
     struct atm_newif_br2684 ni;
     nm_auto_close int       fd = -1;
     int                     err;
@@ -377,7 +377,7 @@ _ppp_mgr_cleanup(NMDeviceAdsl *self)
 static void
 _ppp_mgr_stage3_maybe_ready(NMDeviceAdsl *self)
 {
-    NMDevice *           device = NM_DEVICE(self);
+    NMDevice            *device = NM_DEVICE(self);
     NMDeviceAdslPrivate *priv   = NM_DEVICE_ADSL_GET_PRIVATE(self);
     int                  IS_IPv4;
 
@@ -398,7 +398,7 @@ static void
 _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, gpointer user_data)
 {
     NMDeviceAdsl *self   = NM_DEVICE_ADSL(user_data);
-    NMDevice *    device = NM_DEVICE(self);
+    NMDevice     *device = NM_DEVICE(self);
     NMDeviceState device_state;
 
     if (callback_data->callback_type != NM_PPP_MGR_CALLBACK_TYPE_STATE_CHANGED)
@@ -414,8 +414,8 @@ _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, 
 
     if (device_state < NM_DEVICE_STATE_IP_CONFIG) {
         if (callback_data->data.state >= NM_PPP_MGR_STATE_HAVE_IFINDEX) {
-            gs_free char *old_name      = NULL;
-            gs_free_error GError *error = NULL;
+            gs_free char         *old_name = NULL;
+            gs_free_error GError *error    = NULL;
 
             if (!nm_device_take_over_link(device, callback_data->data.ifindex, &old_name, &error)) {
                 _LOGW(LOGD_DEVICE | LOGD_PPP,
@@ -445,15 +445,15 @@ _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, 
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceAdsl *       self = NM_DEVICE_ADSL(device);
+    NMDeviceAdsl        *self = NM_DEVICE_ADSL(device);
     NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
 
     if (!priv->ppp_mgr) {
         gs_free_error GError *error = NULL;
-        NMSettingAdsl *       s_adsl;
-        const char *          protocol;
-        NMActRequest *        req;
-        const char *          ppp_iface;
+        NMSettingAdsl        *s_adsl;
+        const char           *protocol;
+        NMActRequest         *req;
+        const char           *ppp_iface;
 
         req = nm_device_get_act_request(device);
         g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
@@ -520,7 +520,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 act_stage3_ip_config(NMDevice *device, int addr_family)
 {
-    NMDeviceAdsl *       self = NM_DEVICE_ADSL(device);
+    NMDeviceAdsl        *self = NM_DEVICE_ADSL(device);
     NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
     NMPppMgrState        ppp_state;
 
@@ -577,7 +577,7 @@ carrier_update_cb(gpointer user_data)
 {
     NMDeviceAdsl *self = NM_DEVICE_ADSL(user_data);
     int           carrier;
-    char *        path;
+    char         *path;
 
     path    = g_strdup_printf("/sys/class/atm/%s/carrier",
                            NM_ASSERT_VALID_PATH_COMPONENT(nm_device_get_iface(NM_DEVICE(self))));
@@ -632,7 +632,7 @@ nm_device_adsl_init(NMDeviceAdsl *self)
 static void
 constructed(GObject *object)
 {
-    NMDeviceAdsl *       self = NM_DEVICE_ADSL(object);
+    NMDeviceAdsl        *self = NM_DEVICE_ADSL(object);
     NMDeviceAdslPrivate *priv = NM_DEVICE_ADSL_GET_PRIVATE(self);
 
     G_OBJECT_CLASS(nm_device_adsl_parent_class)->constructed(object);
@@ -686,9 +686,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_adsl = {
 static void
 nm_device_adsl_class_init(NMDeviceAdslClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->constructed  = constructed;
     object_class->dispose      = dispose;

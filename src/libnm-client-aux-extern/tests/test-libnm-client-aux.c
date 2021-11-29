@@ -15,9 +15,9 @@
 static NMTeamLinkWatcher *
 _team_link_watcher_from_string_impl(const char *str, gsize nextra, const char *const *vextra)
 {
-    NMTeamLinkWatcher *watcher;
-    gs_free char *     str1_free = NULL;
-    gs_free_error GError *error  = NULL;
+    NMTeamLinkWatcher    *watcher;
+    gs_free char         *str1_free = NULL;
+    gs_free_error GError *error     = NULL;
     gsize                 i;
 
     g_assert(str);
@@ -27,7 +27,7 @@ _team_link_watcher_from_string_impl(const char *str, gsize nextra, const char *c
 
     for (i = 0; i < 1 + nextra; i++) {
         nm_auto_unref_team_link_watcher NMTeamLinkWatcher *watcher1 = NULL;
-        const char *                                       str1;
+        const char                                        *str1;
 
         if (i == 0) {
             str1_free = nm_utils_team_link_watcher_to_string(watcher);

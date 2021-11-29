@@ -169,7 +169,7 @@ nm_c_list_move_after(CList *lst, CList *elem)
     G_STMT_START                                                   \
     {                                                              \
         CList *const _lst = (lst);                                 \
-        type *       _elem;                                        \
+        type        *_elem;                                        \
                                                                    \
         while ((_elem = c_list_first_entry(_lst, type, member))) { \
             destroy_fcn(_elem);                                    \

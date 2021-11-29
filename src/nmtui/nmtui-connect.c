@@ -33,11 +33,11 @@
 static gboolean
 openconnect_authenticate(NMConnection *connection, char **cookie, char **gateway, char **gwcert)
 {
-    GError *      error = NULL;
+    GError       *error = NULL;
     NMSettingVpn *s_vpn;
     gboolean      ret;
     int           status = 0;
-    const char *  gw, *port;
+    const char   *gw, *port;
 
     nmt_newt_message_dialog(
         _("openconnect will be run to authenticate.\nIt will return to nmtui when completed."));
@@ -80,13 +80,13 @@ openconnect_authenticate(NMConnection *connection, char **cookie, char **gateway
 
 static void
 secrets_requested(NMSecretAgentSimple *agent,
-                  const char *         request_id,
-                  const char *         title,
-                  const char *         msg,
-                  GPtrArray *          secrets,
+                  const char          *request_id,
+                  const char          *title,
+                  const char          *msg,
+                  GPtrArray           *secrets,
                   gpointer             user_data)
 {
-    NmtNewtForm * form;
+    NmtNewtForm  *form;
     NMConnection *connection = NM_CONNECTION(user_data);
     int           i;
 
@@ -138,16 +138,16 @@ secrets_requested(NMSecretAgentSimple *agent,
 }
 
 typedef struct {
-    NMDevice *          device;
+    NMDevice           *device;
     NMActiveConnection *active;
-    NmtSyncOp *         op;
+    NmtSyncOp          *op;
 } ActivateConnectionInfo;
 
 static void
 connect_cancelled(NmtNewtForm *form, gpointer user_data)
 {
     ActivateConnectionInfo *info  = user_data;
-    GError *                error = NULL;
+    GError                 *error = NULL;
 
     error = g_error_new_literal(G_IO_ERROR, G_IO_ERROR_CANCELLED, "Cancelled");
     nmt_sync_op_complete_boolean(info->op, FALSE, error);
@@ -158,8 +158,8 @@ static void
 check_activated(ActivateConnectionInfo *info)
 {
     NMActiveConnectionState ac_state;
-    const char *            reason = NULL;
-    gs_free_error GError *error    = NULL;
+    const char             *reason = NULL;
+    gs_free_error GError   *error  = NULL;
 
     ac_state = nmc_activation_get_effective_state(info->active, info->device, &reason);
     if (!NM_IN_SET(ac_state,
@@ -193,9 +193,9 @@ activate_device_state_changed(GObject *object, GParamSpec *pspec, gpointer user_
 static void
 activate_callback(GObject *client, GAsyncResult *result, gpointer user_data)
 {
-    NmtSyncOp *         op = user_data;
+    NmtSyncOp          *op = user_data;
     NMActiveConnection *ac;
-    GError *            error = NULL;
+    GError             *error = NULL;
 
     ac = nm_client_activate_connection_finish(NM_CLIENT(client), result, &error);
     if (error)
@@ -207,9 +207,9 @@ activate_callback(GObject *client, GAsyncResult *result, gpointer user_data)
 static void
 add_and_activate_callback(GObject *client, GAsyncResult *result, gpointer user_data)
 {
-    NmtSyncOp *         op = user_data;
+    NmtSyncOp          *op = user_data;
     NMActiveConnection *ac;
-    GError *            error = NULL;
+    GError             *error = NULL;
 
     ac = nm_client_add_and_activate_connection_finish(NM_CLIENT(client), result, &error);
     if (error)
@@ -232,13 +232,13 @@ deactivate_connection(NMActiveConnection *ac)
 static void
 activate_connection(NMConnection *connection, NMDevice *device, NMObject *specific_object)
 {
-    NmtNewtForm *   form;
+    NmtNewtForm                         *form;
     gs_unref_object NMSecretAgentSimple *agent = NULL;
-    NmtNewtWidget *                      label;
+    NmtNewtWidget                       *label;
     NmtSyncOp                            op;
-    const char *                         specific_object_path;
-    NMActiveConnection *                 ac;
-    GError *                             error = NULL;
+    const char                          *specific_object_path;
+    NMActiveConnection                  *ac;
+    GError                              *error = NULL;
     ActivateConnectionInfo               info  = {};
 
     form  = g_object_new(NMT_TYPE_NEWT_FORM, "escape-exits", TRUE, NULL);
@@ -351,10 +351,10 @@ static void
 listbox_activated(NmtNewtListbox *listbox, gpointer user_data)
 {
     NmtConnectConnectionList *list = NMT_CONNECT_CONNECTION_LIST(listbox);
-    NMConnection *            connection;
-    NMDevice *                device;
-    NMObject *                specific_object;
-    NMActiveConnection *      ac;
+    NMConnection             *connection;
+    NMDevice                 *device;
+    NMObject                 *specific_object;
+    NMActiveConnection       *ac;
 
     if (!nmt_connect_connection_list_get_selection(list,
                                                    &connection,
@@ -379,9 +379,9 @@ static void
 listbox_active_changed(GObject *object, GParamSpec *pspec, gpointer button)
 {
     NmtConnectConnectionList *list = NMT_CONNECT_CONNECTION_LIST(object);
-    static const char *       activate, *deactivate;
+    static const char        *activate, *deactivate;
     static int                deactivate_padding, activate_padding;
-    NMActiveConnection *      ac;
+    NMActiveConnection       *ac;
     gboolean                  has_selection;
 
     if (G_UNLIKELY(activate == NULL)) {
@@ -412,7 +412,7 @@ static NmtNewtForm *
 nmt_connect_connection_list(gboolean is_top)
 {
     int            screen_width, screen_height;
-    NmtNewtForm *  form;
+    NmtNewtForm   *form;
     NmtNewtWidget *list, *activate, *quit, *bbox, *grid;
 
     newtGetScreenSize(&screen_width, &screen_height);
@@ -455,10 +455,10 @@ nmt_connect_connection_list(gboolean is_top)
 static NmtNewtForm *
 nmt_connect_connection(const char *identifier)
 {
-    NmtNewtWidget *     list;
-    NMConnection *      connection;
-    NMDevice *          device;
-    NMObject *          specific_object;
+    NmtNewtWidget      *list;
+    NMConnection       *connection;
+    NMDevice           *device;
+    NMObject           *specific_object;
     NMActiveConnection *ac;
 
     list = nmt_connect_connection_list_new();

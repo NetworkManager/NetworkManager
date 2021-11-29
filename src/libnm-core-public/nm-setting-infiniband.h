@@ -38,7 +38,7 @@ typedef struct _NMSettingInfinibandClass NMSettingInfinibandClass;
 
 GType nm_setting_infiniband_get_type(void);
 
-NMSetting * nm_setting_infiniband_new(void);
+NMSetting  *nm_setting_infiniband_new(void);
 const char *nm_setting_infiniband_get_mac_address(NMSettingInfiniband *setting);
 guint32     nm_setting_infiniband_get_mtu(NMSettingInfiniband *setting);
 const char *nm_setting_infiniband_get_transport_mode(NMSettingInfiniband *setting);

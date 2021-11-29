@@ -272,7 +272,7 @@ static void
 foreach_item_helper(NMSettingVpn *self, GHashTable **p_hash, NMVpnIterFunc func, gpointer user_data)
 {
     gs_unref_object NMSettingVpn *self_keep_alive = NULL;
-    gs_strfreev char **           keys            = NULL;
+    gs_strfreev char            **keys            = NULL;
     guint                         i, len;
 
     nm_assert(NM_IS_SETTING_VPN(self));
@@ -457,10 +457,10 @@ nm_setting_vpn_foreach_secret(NMSettingVpn *setting, NMVpnIterFunc func, gpointe
 static gboolean
 aggregate(NMSetting *setting, int type_i, gpointer arg)
 {
-    NMSettingVpnPrivate *     priv = NM_SETTING_VPN_GET_PRIVATE(setting);
+    NMSettingVpnPrivate      *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
     NMConnectionAggregateType type = type_i;
     NMSettingSecretFlags      secret_flags;
-    const char *              key_name;
+    const char               *key_name;
     GHashTableIter            iter;
 
     switch (type) {
@@ -597,9 +597,9 @@ update_secret_string(NMSetting *setting, const char *key, const char *value, GEr
 static NMSettingUpdateSecretResult
 update_secret_dict(NMSetting *setting, GVariant *secrets, GError **error)
 {
-    NMSettingVpnPrivate *       priv = NM_SETTING_VPN_GET_PRIVATE(setting);
+    NMSettingVpnPrivate        *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
     GVariantIter                iter;
-    const char *                name, *value;
+    const char                 *name, *value;
     NMSettingUpdateSecretResult result = NM_SETTING_UPDATE_SECRET_SUCCESS_UNCHANGED;
 
     g_return_val_if_fail(secrets != NULL, NM_SETTING_UPDATE_SECRET_ERROR);
@@ -669,18 +669,18 @@ update_one_secret(NMSetting *setting, const char *key, GVariant *value, GError *
 }
 
 static void
-for_each_secret(NMSetting *                    setting,
-                const char *                   secret_name,
-                GVariant *                     val,
+for_each_secret(NMSetting                     *setting,
+                const char                    *secret_name,
+                GVariant                      *val,
                 gboolean                       remove_non_secrets,
                 _NMConnectionForEachSecretFunc callback,
                 gpointer                       callback_data,
-                GVariantBuilder *              setting_builder)
+                GVariantBuilder               *setting_builder)
 {
     GVariantBuilder vpn_secrets_builder;
     GVariantIter    vpn_secrets_iter;
-    const char *    vpn_secret_name;
-    const char *    secret;
+    const char     *vpn_secret_name;
+    const char     *secret;
 
     if (!nm_streq(secret_name, NM_SETTING_VPN_SECRETS)) {
         NM_SETTING_CLASS(nm_setting_vpn_parent_class)
@@ -723,15 +723,15 @@ for_each_secret(NMSetting *                    setting,
 }
 
 static gboolean
-get_secret_flags(NMSetting *           setting,
-                 const char *          secret_name,
+get_secret_flags(NMSetting            *setting,
+                 const char           *secret_name,
                  NMSettingSecretFlags *out_flags,
-                 GError **             error)
+                 GError              **error)
 {
     NMSettingVpnPrivate *priv           = NM_SETTING_VPN_GET_PRIVATE(setting);
-    gs_free char *       flags_key_free = NULL;
-    const char *         flags_key;
-    const char *         flags_val;
+    gs_free char        *flags_key_free = NULL;
+    const char          *flags_key;
+    const char          *flags_val;
     gint64               i64;
 
     nm_assert(secret_name);
@@ -779,10 +779,10 @@ get_secret_flags(NMSetting *           setting,
 }
 
 static gboolean
-set_secret_flags(NMSetting *          setting,
-                 const char *         secret_name,
+set_secret_flags(NMSetting           *setting,
+                 const char          *secret_name,
                  NMSettingSecretFlags flags,
-                 GError **            error)
+                 GError             **error)
 {
     nm_assert(secret_name);
 
@@ -812,7 +812,7 @@ static NMTernary
 compare_property_secrets(NMSettingVpn *a, NMSettingVpn *b, NMSettingCompareFlags flags)
 {
     GHashTableIter iter;
-    const char *   key, *val;
+    const char    *key, *val;
     int            run;
 
     if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_FUZZY))
@@ -824,8 +824,8 @@ compare_property_secrets(NMSettingVpn *a, NMSettingVpn *b, NMSettingCompareFlags
         return TRUE;
 
     for (run = 0; run < 2; run++) {
-        NMSettingVpn *       current_a = (run == 0) ? a : b;
-        NMSettingVpn *       current_b = (run == 0) ? b : a;
+        NMSettingVpn        *current_a = (run == 0) ? a : b;
+        NMSettingVpn        *current_b = (run == 0) ? b : a;
         NMSettingVpnPrivate *priv_a    = NM_SETTING_VPN_GET_PRIVATE(current_a);
 
         if (!priv_a->secrets)
@@ -857,15 +857,15 @@ compare_fcn_secrets(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-clear_secrets(const NMSettInfoSetting *        sett_info,
-              const NMSettInfoProperty *       property_info,
-              NMSetting *                      setting,
+clear_secrets(const NMSettInfoSetting         *sett_info,
+              const NMSettInfoProperty        *property_info,
+              NMSetting                       *setting,
               NMSettingClearSecretsWithFlagsFn func,
               gpointer                         user_data)
 {
     NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE(setting);
     GHashTableIter       iter;
-    const char *         secret;
+    const char          *secret;
     gboolean             changed = TRUE;
 
     if (!property_info->param_spec
@@ -903,12 +903,12 @@ clear_secrets(const NMSettInfoSetting *        sett_info,
 static gboolean
 vpn_secrets_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    NMSettingVpn *       self                = NM_SETTING_VPN(setting);
-    NMSettingVpnPrivate *priv                = NM_SETTING_VPN_GET_PRIVATE(self);
+    NMSettingVpn                  *self      = NM_SETTING_VPN(setting);
+    NMSettingVpnPrivate           *priv      = NM_SETTING_VPN_GET_PRIVATE(self);
     gs_unref_hashtable GHashTable *hash_free = NULL;
     GVariantIter                   iter;
-    const char *                   key;
-    const char *                   val;
+    const char                    *key;
+    const char                    *val;
 
     hash_free = g_steal_pointer(&priv->secrets);
 
@@ -943,7 +943,7 @@ vpn_secrets_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 
     keys = nm_strdict_get_keys(priv->secrets, TRUE, &len);
     for (i = 0; i < len; i++) {
-        const char *         key          = keys[i];
+        const char          *key          = keys[i];
         NMSettingSecretFlags secret_flags = NM_SETTING_SECRET_FLAG_NONE;
 
         if (NM_FLAGS_ANY(flags,
@@ -966,7 +966,7 @@ vpn_secrets_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingVpn *       setting = NM_SETTING_VPN(object);
+    NMSettingVpn        *setting = NM_SETTING_VPN(object);
     NMSettingVpnPrivate *priv    = NM_SETTING_VPN_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -1015,8 +1015,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_SECRETS:
     {
         gs_unref_hashtable GHashTable *hash_free = NULL;
-        GHashTable *                   src_hash  = g_value_get_boxed(value);
-        GHashTable **                  p_hash;
+        GHashTable                    *src_hash  = g_value_get_boxed(value);
+        GHashTable                   **p_hash;
         const gboolean                 is_secrets = (prop_id == PROP_SECRETS);
 
         if (is_secrets)
@@ -1028,8 +1028,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
         if (src_hash && g_hash_table_size(src_hash) > 0) {
             GHashTableIter iter;
-            const char *   key;
-            const char *   val;
+            const char    *key;
+            const char    *val;
 
             g_hash_table_iter_init(&iter, src_hash);
             while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &val)) {
@@ -1092,9 +1092,9 @@ finalize(GObject *object)
 static void
 nm_setting_vpn_class_init(NMSettingVpnClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingVpnPrivate));
 

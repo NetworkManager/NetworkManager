@@ -43,7 +43,7 @@
  *
  * Returns: %TRUE to allow the connection, %FALSE to ignore it
  */
-typedef gboolean (*NMSettingsConnectionFilterFunc)(NMSettings *          settings,
+typedef gboolean (*NMSettingsConnectionFilterFunc)(NMSettings           *settings,
                                                    NMSettingsConnection *connection,
                                                    gpointer              func_data);
 
@@ -60,20 +60,20 @@ NMSettings *nm_settings_new(NMManager *manager);
 
 gboolean nm_settings_start(NMSettings *self, GError **error);
 
-typedef void (*NMSettingsAddCallback)(NMSettings *           settings,
-                                      NMSettingsConnection * connection,
-                                      GError *               error,
+typedef void (*NMSettingsAddCallback)(NMSettings            *settings,
+                                      NMSettingsConnection  *connection,
+                                      GError                *error,
                                       GDBusMethodInvocation *context,
-                                      NMAuthSubject *        subject,
+                                      NMAuthSubject         *subject,
                                       gpointer               user_data);
 
-void nm_settings_add_connection_dbus(NMSettings *                    self,
-                                     NMConnection *                  connection,
+void nm_settings_add_connection_dbus(NMSettings                     *self,
+                                     NMConnection                   *connection,
                                      NMSettingsConnectionPersistMode persist_mode,
                                      NMSettingsConnectionAddReason   add_reason,
                                      NMSettingsConnectionIntFlags    sett_flags,
-                                     NMAuthSubject *                 subject,
-                                     GDBusMethodInvocation *         context,
+                                     NMAuthSubject                  *subject,
+                                     GDBusMethodInvocation          *context,
                                      NMSettingsAddCallback           callback,
                                      gpointer                        user_data);
 
@@ -82,32 +82,32 @@ NMSettingsConnection *const *nm_settings_get_connections(NMSettings *settings, g
 NMSettingsConnection *const *
 nm_settings_get_connections_sorted_by_autoconnect_priority(NMSettings *self, guint *out_len);
 
-NMSettingsConnection **nm_settings_get_connections_clone(NMSettings *                   self,
-                                                         guint *                        out_len,
+NMSettingsConnection **nm_settings_get_connections_clone(NMSettings                    *self,
+                                                         guint                         *out_len,
                                                          NMSettingsConnectionFilterFunc func,
                                                          gpointer                       func_data,
                                                          GCompareDataFunc sort_compare_func,
                                                          gpointer         sort_data);
 
-gboolean nm_settings_add_connection(NMSettings *                    settings,
-                                    NMConnection *                  connection,
+gboolean nm_settings_add_connection(NMSettings                     *settings,
+                                    NMConnection                   *connection,
                                     NMSettingsConnectionPersistMode persist_mode,
                                     NMSettingsConnectionAddReason   add_reason,
                                     NMSettingsConnectionIntFlags    sett_flags,
-                                    NMSettingsConnection **         out_sett_conn,
-                                    GError **                       error);
+                                    NMSettingsConnection          **out_sett_conn,
+                                    GError                        **error);
 
-gboolean nm_settings_update_connection(NMSettings *                     self,
-                                       NMSettingsConnection *           sett_conn,
-                                       NMConnection *                   new_connection,
+gboolean nm_settings_update_connection(NMSettings                      *self,
+                                       NMSettingsConnection            *sett_conn,
+                                       NMConnection                    *new_connection,
                                        NMSettingsConnectionPersistMode  persist_mode,
                                        NMSettingsConnectionIntFlags     sett_flags,
                                        NMSettingsConnectionIntFlags     sett_mask,
                                        NMSettingsConnectionUpdateReason update_reason,
-                                       const char *                     log_context_name,
-                                       GError **                        error);
+                                       const char                      *log_context_name,
+                                       GError                         **error);
 
-void nm_settings_delete_connection(NMSettings *          self,
+void nm_settings_delete_connection(NMSettings           *self,
                                    NMSettingsConnection *sett_conn,
                                    gboolean              allow_add_to_no_auto_default);
 

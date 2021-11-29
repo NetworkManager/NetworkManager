@@ -62,12 +62,12 @@ typedef struct _NMSettingBondClass NMSettingBondClass;
 
 GType nm_setting_bond_get_type(void);
 
-NMSetting * nm_setting_bond_new(void);
+NMSetting  *nm_setting_bond_new(void);
 guint32     nm_setting_bond_get_num_options(NMSettingBond *setting);
 gboolean    nm_setting_bond_get_option(NMSettingBond *setting,
                                        guint32        idx,
-                                       const char **  out_name,
-                                       const char **  out_value);
+                                       const char   **out_name,
+                                       const char   **out_value);
 const char *nm_setting_bond_get_option_by_name(NMSettingBond *setting, const char *name);
 gboolean    nm_setting_bond_add_option(NMSettingBond *setting, const char *name, const char *value);
 gboolean    nm_setting_bond_remove_option(NMSettingBond *setting, const char *name);

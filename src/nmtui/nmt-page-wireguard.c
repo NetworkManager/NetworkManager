@@ -43,13 +43,13 @@ nmt_page_wireguard_init(NmtPageWireGuard *wireguard)
 static void
 nmt_page_wireguard_constructed(GObject *object)
 {
-    NmtPageWireGuard *       wireguard = NMT_PAGE_WIREGUARD(object);
+    NmtPageWireGuard        *wireguard = NMT_PAGE_WIREGUARD(object);
     NmtPageWireGuardPrivate *priv      = NMT_PAGE_WIREGUARD_GET_PRIVATE(wireguard);
-    NmtEditorSection *       section;
-    NmtEditorGrid *          grid;
-    NMSettingWireGuard *     s_wireguard;
-    NmtNewtWidget *          widget;
-    NMConnection *           conn;
+    NmtEditorSection        *section;
+    NmtEditorGrid           *grid;
+    NMSettingWireGuard      *s_wireguard;
+    NmtNewtWidget           *widget;
+    NMConnection            *conn;
 
     conn        = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(wireguard));
     s_wireguard = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_WIREGUARD);

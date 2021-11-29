@@ -90,16 +90,16 @@ enum {
 typedef struct _NMDevicePrivate {
     NMLDBusPropertyO  property_o[_PROPERTY_O_IDX_NUM];
     NMLDBusPropertyAO property_ao[_PROPERTY_AO_IDX_NUM];
-    GPtrArray *       lldp_neighbors;
-    char *            driver;
-    char *            driver_version;
-    char *            hw_address;
-    char *            interface;
-    char *            ip_interface;
-    char *            firmware_version;
-    char *            physical_port_id;
-    char *            udi;
-    char *            path;
+    GPtrArray        *lldp_neighbors;
+    char             *driver;
+    char             *driver_version;
+    char             *hw_address;
+    char             *interface;
+    char             *ip_interface;
+    char             *firmware_version;
+    char             *physical_port_id;
+    char             *udi;
+    char             *path;
     guint32           capabilities;
     guint32           device_type;
     guint32           ip4_connectivity;
@@ -121,12 +121,12 @@ typedef struct _NMDevicePrivate {
     guint32 old_state;
 
     struct udev *udev;
-    char *       type_description;
-    char *       product;
-    char *       vendor;
-    char *       short_vendor;
-    char *       description;
-    char *       bus_name;
+    char        *type_description;
+    char        *product;
+    char        *vendor;
+    char        *short_vendor;
+    char        *description;
+    char        *bus_name;
 
 } NMDevicePrivate;
 
@@ -168,7 +168,7 @@ static void
 _notify_event_state_changed(NMClient *client, NMClientNotifyEventWithPtr *notify_event)
 {
     gs_unref_object NMDevice *self = notify_event->user_data;
-    NMDevicePrivate *         priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate          *priv = NM_DEVICE_GET_PRIVATE(self);
 
     NML_NMCLIENT_LOG_T(client,
                        "[%s] emit Device's StateChanged signal %u -> %u, reason: %u",
@@ -186,13 +186,13 @@ _notify_event_state_changed(NMClient *client, NMClientNotifyEventWithPtr *notify
 }
 
 static NMLDBusNotifyUpdatePropFlags
-_notify_update_prop_state_reason(NMClient *              client,
-                                 NMLDBusObject *         dbobj,
+_notify_update_prop_state_reason(NMClient               *client,
+                                 NMLDBusObject          *dbobj,
                                  const NMLDBusMetaIface *meta_iface,
                                  guint                   dbus_property_idx,
-                                 GVariant *              value)
+                                 GVariant               *value)
 {
-    NMDevice *       self      = NM_DEVICE(dbobj->nmobj);
+    NMDevice        *self      = NM_DEVICE(dbobj->nmobj);
     NMDevicePrivate *priv      = NM_DEVICE_GET_PRIVATE(self);
     guint32          new_state = NM_DEVICE_STATE_UNKNOWN;
     guint32          reason    = NM_DEVICE_STATE_REASON_NONE;
@@ -230,26 +230,26 @@ _notify_update_prop_state_reason(NMClient *              client,
 }
 
 static NMLDBusNotifyUpdatePropFlags
-_notify_update_prop_lldp_neighbors(NMClient *              client,
-                                   NMLDBusObject *         dbobj,
+_notify_update_prop_lldp_neighbors(NMClient               *client,
+                                   NMLDBusObject          *dbobj,
                                    const NMLDBusMetaIface *meta_iface,
                                    guint                   dbus_property_idx,
-                                   GVariant *              value)
+                                   GVariant               *value)
 {
-    NMDevice *        self                      = NM_DEVICE(dbobj->nmobj);
-    NMDevicePrivate * priv                      = NM_DEVICE_GET_PRIVATE(self);
-    gs_unref_ptrarray GPtrArray *old            = NULL;
-    gs_unref_ptrarray            GPtrArray *new = NULL;
-    GVariantIter *               attrs_iter;
-    GVariantIter                 iter;
+    NMDevice                    *self = NM_DEVICE(dbobj->nmobj);
+    NMDevicePrivate             *priv = NM_DEVICE_GET_PRIVATE(self);
+    gs_unref_ptrarray GPtrArray *old  = NULL;
+    gs_unref_ptrarray GPtrArray *new  = NULL;
+    GVariantIter *attrs_iter;
+    GVariantIter  iter;
 
     new = g_ptr_array_new_with_free_func((GDestroyNotify) nm_lldp_neighbor_unref);
 
     if (value) {
         g_variant_iter_init(&iter, value);
         while (g_variant_iter_next(&iter, "a{sv}", &attrs_iter)) {
-            GVariant *      attr_variant;
-            const char *    attr_name;
+            GVariant       *attr_variant;
+            const char     *attr_name;
             NMLldpNeighbor *neigh;
 
             /* Note that there is no public API to mutate a NMLldpNeighbor instance.
@@ -477,7 +477,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMDevice *       self = NM_DEVICE(object);
+    NMDevice        *self = NM_DEVICE(object);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     gboolean         b;
 
@@ -621,7 +621,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device = NML_DBUS_META_IFACE_INIT
 static void
 nm_device_class_init(NMDeviceClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
 
     g_type_class_add_private(klass, sizeof(NMDevicePrivate));
@@ -1247,7 +1247,7 @@ const char *
 nm_device_get_type_description(NMDevice *device)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(device);
-    const char *     desc, *typename;
+    const char      *desc, *typename;
 
     /* BEWARE: this function should return the same value
      * as nm_device_get_type_description() in nm-core. */
@@ -1296,13 +1296,13 @@ nm_device_get_ports(NMDevice *device)
 }
 
 NMLDBusNotifyUpdatePropFlags
-_nm_device_notify_update_prop_hw_address(NMClient *              client,
-                                         NMLDBusObject *         dbobj,
+_nm_device_notify_update_prop_hw_address(NMClient               *client,
+                                         NMLDBusObject          *dbobj,
                                          const NMLDBusMetaIface *meta_iface,
                                          guint                   dbus_property_idx,
-                                         GVariant *              value)
+                                         GVariant               *value)
 {
-    NMDevice *       self    = NM_DEVICE(dbobj->nmobj);
+    NMDevice        *self    = NM_DEVICE(dbobj->nmobj);
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     gboolean         is_new  = (meta_iface == &_nml_dbus_meta_iface_nm_device);
     gboolean         changed = FALSE;
@@ -1360,18 +1360,18 @@ nm_device_get_hw_address(NMDevice *device)
 }
 
 NMLDBusNotifyUpdatePropFlags
-_nm_device_notify_update_prop_ports(NMClient *              client,
-                                    NMLDBusObject *         dbobj,
+_nm_device_notify_update_prop_ports(NMClient               *client,
+                                    NMLDBusObject          *dbobj,
                                     const NMLDBusMetaIface *meta_iface,
                                     guint                   dbus_property_idx,
-                                    GVariant *              value)
+                                    GVariant               *value)
 {
     const NMLDBusMetaProperty *meta_property =
         &_nml_dbus_meta_iface_nm_device.dbus_properties[_NML_DEVICE_META_PROPERTY_INDEX_PORTS];
     NMLDBusNotifyUpdatePropFlags notify_update_prop_flags;
-    NMDevice *                   self = NM_DEVICE(dbobj->nmobj);
-    NMDevicePrivate *            priv = NM_DEVICE_GET_PRIVATE(self);
-    NMDeviceClass *              klass;
+    NMDevice                    *self = NM_DEVICE(dbobj->nmobj);
+    NMDevicePrivate             *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDeviceClass               *klass;
     gboolean                     is_new = (meta_iface == &_nml_dbus_meta_iface_nm_device);
 
     nm_assert(nm_streq(meta_property->dbus_property_name, "Ports"));
@@ -1851,10 +1851,10 @@ get_device_generic_type_name_with_iface(NMDevice *device)
 static const char *
 get_bus_name(NMDevice *device)
 {
-    NMDevicePrivate *   priv = NM_DEVICE_GET_PRIVATE(device);
+    NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(device);
     struct udev_device *udevice;
-    const char *        ifname;
-    const char *        bus;
+    const char         *ifname;
+    const char         *bus;
 
     if (priv->bus_name)
         goto out;
@@ -1893,17 +1893,17 @@ out:
 }
 
 static char *
-_get_udev_property(NMDevice *  device,
+_get_udev_property(NMDevice   *device,
                    const char *enc_prop, /* ID_XXX_ENC */
                    const char *db_prop)  /* ID_XXX_FROM_DATABASE */
 {
-    NMDevicePrivate *   priv = NM_DEVICE_GET_PRIVATE(device);
+    NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(device);
     struct udev_device *udev_device;
     struct udev_device *tmpdev;
-    const char *        ifname;
+    const char         *ifname;
     guint32             count     = 0;
-    char *              enc_value = NULL;
-    char *              db_value  = NULL;
+    char               *enc_value = NULL;
+    char               *db_value  = NULL;
 
     if (!priv->udev)
         return NULL;
@@ -1944,7 +1944,7 @@ _get_udev_property(NMDevice *  device,
 }
 
 static char *
-_get_udev_property_utf8safe(NMDevice *  device,
+_get_udev_property_utf8safe(NMDevice   *device,
                             const char *enc_prop, /* ID_XXX_ENC */
                             const char *db_prop)  /* ID_XXX_FROM_DATABASE */
 {
@@ -2023,8 +2023,8 @@ static void
 ensure_description(NMDevice *device)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(device);
-    GParamSpec *     name_prop;
-    gs_free char *   short_product = NULL;
+    GParamSpec      *name_prop;
+    gs_free char    *short_product = NULL;
 
     priv->short_vendor = nm_str_realloc(nm_utils_fixup_vendor_string(nm_device_get_vendor(device)));
 
@@ -2133,7 +2133,7 @@ find_duplicates(char **names, gboolean *duplicates, int num_devices)
 char **
 nm_device_disambiguate_names(NMDevice **devices, int num_devices)
 {
-    char **   names;
+    char    **names;
     gboolean *duplicates;
     int       i;
 
@@ -2162,7 +2162,7 @@ nm_device_disambiguate_names(NMDevice **devices, int num_devices)
     for (i = 0; i < num_devices; i++) {
         if (duplicates[i]) {
             const char *bus = get_bus_name(devices[i]);
-            char *      name;
+            char       *name;
 
             if (!bus)
                 continue;
@@ -2186,7 +2186,7 @@ nm_device_disambiguate_names(NMDevice **devices, int num_devices)
     for (i = 0; i < num_devices; i++) {
         if (duplicates[i]) {
             const char *vendor = get_short_vendor(devices[i]);
-            char *      name;
+            char       *name;
 
             if (!vendor)
                 continue;
@@ -2207,7 +2207,7 @@ nm_device_disambiguate_names(NMDevice **devices, int num_devices)
     for (i = 0; i < num_devices; i++) {
         if (duplicates[i] && NM_IS_DEVICE_BT(devices[i])) {
             const char *devname = nm_device_bt_get_name(NM_DEVICE_BT(devices[i]));
-            char *      name;
+            char       *name;
 
             if (!devname)
                 continue;
@@ -2382,12 +2382,12 @@ nm_device_is_software(NMDevice *device)
  * Deprecated: 1.22: Use nm_device_reapply_async() or GDBusConnection.
  **/
 gboolean
-nm_device_reapply(NMDevice *    device,
+nm_device_reapply(NMDevice     *device,
                   NMConnection *connection,
                   guint64       version_id,
                   guint32       flags,
                   GCancellable *cancellable,
-                  GError **     error)
+                  GError      **error)
 {
     GVariant *arg_connection = NULL;
 
@@ -2434,11 +2434,11 @@ nm_device_reapply(NMDevice *    device,
  * Since: 1.2
  **/
 void
-nm_device_reapply_async(NMDevice *          device,
-                        NMConnection *      connection,
+nm_device_reapply_async(NMDevice           *device,
+                        NMConnection       *connection,
                         guint64             version_id,
                         guint32             flags,
-                        GCancellable *      cancellable,
+                        GCancellable       *cancellable,
                         GAsyncReadyCallback callback,
                         gpointer            user_data)
 {
@@ -2515,16 +2515,16 @@ nm_device_reapply_finish(NMDevice *device, GAsyncResult *result, GError **error)
  * Deprecated: 1.22: Use nm_device_get_applied_connection_async() or GDBusConnection.
  **/
 NMConnection *
-nm_device_get_applied_connection(NMDevice *    device,
+nm_device_get_applied_connection(NMDevice     *device,
                                  guint32       flags,
-                                 guint64 *     version_id,
+                                 guint64      *version_id,
                                  GCancellable *cancellable,
-                                 GError **     error)
+                                 GError      **error)
 {
     gs_unref_variant GVariant *ret          = NULL;
     gs_unref_variant GVariant *v_connection = NULL;
     guint64                    v_version_id;
-    NMConnection *             connection;
+    NMConnection              *connection;
 
     g_return_val_if_fail(NM_IS_DEVICE(device), NULL);
     g_return_val_if_fail(!cancellable || G_IS_CANCELLABLE(cancellable), NULL);
@@ -2569,9 +2569,9 @@ nm_device_get_applied_connection(NMDevice *    device,
  * Since: 1.2
  **/
 void
-nm_device_get_applied_connection_async(NMDevice *          device,
+nm_device_get_applied_connection_async(NMDevice           *device,
                                        guint32             flags,
-                                       GCancellable *      cancellable,
+                                       GCancellable       *cancellable,
                                        GAsyncReadyCallback callback,
                                        gpointer            user_data)
 {
@@ -2613,15 +2613,15 @@ nm_device_get_applied_connection_async(NMDevice *          device,
  * Since: 1.2
  **/
 NMConnection *
-nm_device_get_applied_connection_finish(NMDevice *    device,
+nm_device_get_applied_connection_finish(NMDevice     *device,
                                         GAsyncResult *result,
-                                        guint64 *     version_id,
-                                        GError **     error)
+                                        guint64      *version_id,
+                                        GError      **error)
 {
     gs_unref_variant GVariant *ret          = NULL;
     gs_unref_variant GVariant *v_connection = NULL;
     guint64                    v_version_id;
-    NMConnection *             connection;
+    NMConnection              *connection;
 
     g_return_val_if_fail(NM_IS_DEVICE(device), NULL);
     g_return_val_if_fail(nm_g_task_is_valid(result, device, nm_device_get_applied_connection_async),
@@ -2691,8 +2691,8 @@ nm_device_disconnect(NMDevice *device, GCancellable *cancellable, GError **error
  * manual network connection request.
  **/
 void
-nm_device_disconnect_async(NMDevice *          device,
-                           GCancellable *      cancellable,
+nm_device_disconnect_async(NMDevice           *device,
+                           GCancellable       *cancellable,
                            GAsyncReadyCallback callback,
                            gpointer            user_data)
 {
@@ -2778,8 +2778,8 @@ nm_device_delete(NMDevice *device, GCancellable *cancellable, GError **error)
  * be deleted.
  **/
 void
-nm_device_delete_async(NMDevice *          device,
-                       GCancellable *      cancellable,
+nm_device_delete_async(NMDevice           *device,
+                       GCancellable       *cancellable,
                        GAsyncReadyCallback callback,
                        gpointer            user_data)
 {
@@ -2848,7 +2848,7 @@ static gboolean
 connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
     const char *config_iface, *device_iface;
-    GError *    local = NULL;
+    GError     *local = NULL;
 
     if (!nm_connection_verify(connection, &local)) {
         g_set_error(error,
@@ -3114,8 +3114,8 @@ nm_lldp_neighbor_get_attr_names(NMLldpNeighbor *neighbor)
  **/
 gboolean
 nm_lldp_neighbor_get_attr_string_value(NMLldpNeighbor *neighbor,
-                                       const char *    name,
-                                       const char **   out_value)
+                                       const char     *name,
+                                       const char    **out_value)
 {
     GVariant *variant;
 

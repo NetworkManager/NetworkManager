@@ -33,14 +33,14 @@ char pppd_version[] = VERSION;
 
 static struct {
     GDBusConnection *dbus_connection;
-    char *           ipparam;
+    char            *ipparam;
 } gl;
 
 static void
 nm_phasechange(int arg)
 {
     NMPPPStatus ppp_status = NM_PPP_STATUS_UNKNOWN;
-    char *      ppp_phase;
+    char       *ppp_phase;
 
     g_return_if_fail(G_IS_DBUS_CONNECTION(gl.dbus_connection));
 
@@ -332,10 +332,10 @@ get_pap_check(void)
 static int
 get_credentials(char *username, char *password)
 {
-    gs_unref_variant GVariant *ret = NULL;
-    gs_free_error GError *error    = NULL;
-    const char *          my_username;
-    const char *          my_password;
+    gs_unref_variant GVariant *ret   = NULL;
+    gs_free_error GError      *error = NULL;
+    const char                *my_username;
+    const char                *my_password;
 
     if (!password) {
         /* pppd is checking pap support; return 1 for supported */

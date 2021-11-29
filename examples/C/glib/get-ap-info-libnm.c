@@ -65,11 +65,11 @@ show_access_point_info(NMAccessPoint *ap)
 {
     guint32     flags, wpa_flags, rsn_flags, freq, bitrate;
     guint8      strength;
-    GBytes *    ssid;
+    GBytes     *ssid;
     const char *hwaddr;
     NM80211Mode mode;
-    char *      freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
-    GString *   security_str;
+    char       *freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
+    GString    *security_str;
 
     /* Get AP properties */
     flags     = nm_access_point_get_flags(ap);
@@ -138,13 +138,13 @@ show_access_point_info(NMAccessPoint *ap)
 static void
 show_wifi_device_info(NMDevice *device)
 {
-    NMAccessPoint *  active_ap = NULL;
+    NMAccessPoint   *active_ap = NULL;
     const GPtrArray *aps;
-    const char *     iface;
-    const char *     driver;
+    const char      *iface;
+    const char      *driver;
     guint32          speed;
-    GBytes *         active_ssid;
-    char *           active_ssid_str = NULL;
+    GBytes          *active_ssid;
+    char            *active_ssid_str = NULL;
     int              i;
 
     /* Get active AP */
@@ -185,10 +185,10 @@ show_wifi_device_info(NMDevice *device)
 int
 main(int argc, char *argv[])
 {
-    NMClient *       client;
+    NMClient        *client;
     const GPtrArray *devices;
     int              i;
-    GError *         error = NULL;
+    GError          *error = NULL;
 
     /* Get NMClient object */
     client = nm_client_new(NULL, &error);

@@ -31,16 +31,16 @@ struct _NMSecretAgentPrivate;
 struct _NMSecretAgent {
     GObject                       parent;
     CList                         agent_lst;
-    struct _NMAuthChain *         auth_chain;
+    struct _NMAuthChain          *auth_chain;
     struct _NMSecretAgentPrivate *_priv;
     bool                          fully_registered : 1;
 };
 
 GType nm_secret_agent_get_type(void);
 
-NMSecretAgent *nm_secret_agent_new(GDBusMethodInvocation *   context,
-                                   NMAuthSubject *           subject,
-                                   const char *              identifier,
+NMSecretAgent *nm_secret_agent_new(GDBusMethodInvocation    *context,
+                                   NMAuthSubject            *subject,
+                                   const char               *identifier,
                                    NMSecretAgentCapabilities capabilities);
 
 const char *nm_secret_agent_get_description(NMSecretAgent *agent);
@@ -63,30 +63,30 @@ void nm_secret_agent_add_permission(NMSecretAgent *agent, const char *permission
 
 gboolean nm_secret_agent_has_permission(NMSecretAgent *agent, const char *permission);
 
-typedef void (*NMSecretAgentCallback)(NMSecretAgent *      agent,
+typedef void (*NMSecretAgentCallback)(NMSecretAgent       *agent,
                                       NMSecretAgentCallId *call_id,
-                                      GVariant *           new_secrets, /* NULL for save & delete */
-                                      GError *             error,
+                                      GVariant            *new_secrets, /* NULL for save & delete */
+                                      GError              *error,
                                       gpointer             user_data);
 
-NMSecretAgentCallId *nm_secret_agent_get_secrets(NMSecretAgent *              agent,
-                                                 const char *                 path,
-                                                 NMConnection *               connection,
-                                                 const char *                 setting_name,
-                                                 const char **                hints,
+NMSecretAgentCallId *nm_secret_agent_get_secrets(NMSecretAgent               *agent,
+                                                 const char                  *path,
+                                                 NMConnection                *connection,
+                                                 const char                  *setting_name,
+                                                 const char                 **hints,
                                                  NMSecretAgentGetSecretsFlags flags,
                                                  NMSecretAgentCallback        callback,
                                                  gpointer                     callback_data);
 
-NMSecretAgentCallId *nm_secret_agent_save_secrets(NMSecretAgent *       agent,
-                                                  const char *          path,
-                                                  NMConnection *        connection,
+NMSecretAgentCallId *nm_secret_agent_save_secrets(NMSecretAgent        *agent,
+                                                  const char           *path,
+                                                  NMConnection         *connection,
                                                   NMSecretAgentCallback callback,
                                                   gpointer              callback_data);
 
-NMSecretAgentCallId *nm_secret_agent_delete_secrets(NMSecretAgent *       agent,
-                                                    const char *          path,
-                                                    NMConnection *        connection,
+NMSecretAgentCallId *nm_secret_agent_delete_secrets(NMSecretAgent        *agent,
+                                                    const char           *path,
+                                                    NMConnection         *connection,
                                                     NMSecretAgentCallback callback,
                                                     gpointer              callback_data);
 

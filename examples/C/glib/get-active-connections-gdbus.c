@@ -25,9 +25,9 @@ static void
 print_setting(const char *setting_name, GVariant *setting)
 {
     GVariantIter iter;
-    const char * property_name;
-    GVariant *   value;
-    char *       printed_value;
+    const char  *property_name;
+    GVariant    *value;
+    char        *printed_value;
 
     g_print("  %s:\n", setting_name);
     g_variant_iter_init(&iter, setting);
@@ -43,14 +43,14 @@ print_setting(const char *setting_name, GVariant *setting)
 static void
 print_connection(const char *path)
 {
-    GDBusProxy * proxy;
-    GError *     error = NULL;
-    GVariant *   ret, *connection = NULL, *s_con = NULL;
-    const char * id, *type;
+    GDBusProxy  *proxy;
+    GError      *error = NULL;
+    GVariant    *ret, *connection = NULL, *s_con = NULL;
+    const char  *id, *type;
     gboolean     found;
     GVariantIter iter;
-    const char * setting_name;
-    GVariant *   setting;
+    const char  *setting_name;
+    GVariant    *setting;
 
     /* This function asks NetworkManager for the details of the connection */
 
@@ -125,9 +125,9 @@ static void
 get_active_connection_details(const char *obj_path)
 {
     GDBusProxy *props_proxy;
-    GVariant *  ret = NULL, *path_value = NULL;
+    GVariant   *ret = NULL, *path_value = NULL;
     const char *path  = NULL;
-    GError *    error = NULL;
+    GError     *error = NULL;
 
     /* This function gets the backing Connection object that describes the
      * network configuration that the ActiveConnection object is actually using.
@@ -185,9 +185,9 @@ out:
 static void
 get_active_connections(GDBusProxy *proxy)
 {
-    GError *  error = NULL;
+    GError   *error = NULL;
     GVariant *ret = NULL, *value = NULL;
-    char **   paths;
+    char    **paths;
     int       i;
 
     /* Get the ActiveConnections property from the NM Manager object */

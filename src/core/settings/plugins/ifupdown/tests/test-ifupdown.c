@@ -19,8 +19,8 @@
 #define _connection_from_if_block(block)                                      \
     ({                                                                        \
         NMConnection *_con;                                                   \
-        if_block *    _block = (block);                                       \
-        GError *      _local = NULL;                                          \
+        if_block     *_block = (block);                                       \
+        GError       *_local = NULL;                                          \
                                                                               \
         g_assert(_block);                                                     \
         _con = ifupdown_new_connection_from_if_block(_block, FALSE, &_local); \
@@ -45,8 +45,8 @@ typedef struct {
 } ExpectedKey;
 
 typedef struct {
-    char *  type;
-    char *  name;
+    char   *type;
+    char   *name;
     GSList *keys;
 } ExpectedBlock;
 
@@ -142,13 +142,13 @@ static void
 compare_expected_to_ifparser(if_parser *parser, Expected *e)
 {
     if_block *n;
-    GSList *  biter, *kiter;
+    GSList   *biter, *kiter;
 
     g_assert_cmpint(g_slist_length(e->blocks), ==, ifparser_get_num_blocks(parser));
 
     biter = e->blocks;
     c_list_for_each_entry (n, &parser->block_lst_head, block_lst) {
-        if_data *      m;
+        if_data       *m;
         ExpectedBlock *b = biter->data;
 
         g_assert(b->type && n->type);
@@ -203,7 +203,7 @@ dump_blocks(if_parser *parser)
 static if_parser *
 init_ifparser_with_file(const char *file)
 {
-    if_parser *   parser;
+    if_parser    *parser;
     gs_free char *tmp = NULL;
 
     tmp    = g_strdup_printf("%s/%s", TEST_DIR, file);
@@ -216,8 +216,8 @@ static void
 test1_ignore_line_before_first_block(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test1");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test1");
 
     e = expected_new();
     b = expected_block_new("auto", "eth0");
@@ -233,8 +233,8 @@ static void
 test2_wrapped_line(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test2");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test2");
 
     e = expected_new();
     b = expected_block_new("auto", "lo");
@@ -247,8 +247,8 @@ static void
 test3_wrapped_multiline_multiarg(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test3");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test3");
 
     e = expected_new();
     b = expected_block_new("allow-hotplug", "eth0");
@@ -265,8 +265,8 @@ static void
 test4_allow_auto_is_auto(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test4");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test4");
 
     e = expected_new();
     b = expected_block_new("auto", "eth0");
@@ -279,8 +279,8 @@ static void
 test5_allow_auto_multiarg(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test5");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test5");
 
     e = expected_new();
     b = expected_block_new("allow-hotplug", "eth0");
@@ -295,8 +295,8 @@ static void
 test6_mixed_whitespace(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test6");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test6");
 
     e = expected_new();
     b = expected_block_new("iface", "lo");
@@ -326,8 +326,8 @@ static void
 test9_wrapped_lines_in_block(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test9");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test9");
 
     e = expected_new();
     b = expected_block_new("iface", "eth0");
@@ -345,8 +345,8 @@ static void
 test11_complex_wrap(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test11");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test11");
 
     e = expected_new();
     b = expected_block_new("iface", "pppoe");
@@ -361,8 +361,8 @@ static void
 test12_complex_wrap_split_word(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test12");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test12");
 
     e = expected_new();
     b = expected_block_new("iface", "pppoe");
@@ -377,8 +377,8 @@ static void
 test13_more_mixed_whitespace(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test13");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test13");
 
     e = expected_new();
     b = expected_block_new("iface", "dsl");
@@ -392,8 +392,8 @@ static void
 test14_mixed_whitespace_block_start(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test14");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test14");
 
     e = expected_new();
     b = expected_block_new("iface", "wlan0");
@@ -413,8 +413,8 @@ static void
 test15_trailing_space(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test15");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test15");
 
     e = expected_new();
     b = expected_block_new("iface", "bnep0");
@@ -427,8 +427,8 @@ test15_trailing_space(void)
 static void
 test16_missing_newline(void)
 {
-    nm_auto_free_expected Expected *e  = NULL;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test16");
+    nm_auto_free_expected Expected *e      = NULL;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test16");
 
     e = expected_new();
     expected_add_block(e, expected_block_new("mapping", "eth0"));
@@ -440,10 +440,10 @@ static void
 test17_read_static_ipv4(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingWired *              s_wired;
-    NMIPAddress *                 ip4_addr;
+    NMSettingConnection          *s_con;
+    NMSettingIPConfig            *s_ip4;
+    NMSettingWired               *s_wired;
+    NMIPAddress                  *ip4_addr;
     nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test17-wired-static-verify-ip4");
 
     connection = _connection_first_from_parser(parser);
@@ -483,10 +483,10 @@ static void
 test18_read_static_ipv6(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingIPConfig *           s_ip6;
-    NMSettingWired *              s_wired;
-    NMIPAddress *                 ip6_addr;
+    NMSettingConnection          *s_con;
+    NMSettingIPConfig            *s_ip6;
+    NMSettingWired               *s_wired;
+    NMIPAddress                  *ip6_addr;
     nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test18-wired-static-verify-ip6");
 
     connection = _connection_first_from_parser(parser);
@@ -526,9 +526,9 @@ static void
 test19_read_static_ipv4_plen(void)
 {
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingIPConfig *           s_ip4;
-    NMIPAddress *                 ip4_addr;
-    nm_auto_ifparser if_parser *parser =
+    NMSettingIPConfig            *s_ip4;
+    NMIPAddress                  *ip4_addr;
+    nm_auto_ifparser if_parser   *parser =
         init_ifparser_with_file("test19-wired-static-verify-ip4-plen");
 
     connection = _connection_first_from_parser(parser);
@@ -548,8 +548,8 @@ static void
 test20_source_stanza(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test20-source-stanza");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test20-source-stanza");
 
     e = expected_new();
 
@@ -572,8 +572,8 @@ static void
 test21_source_dir_stanza(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test21-source-dir-stanza");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test21-source-dir-stanza");
 
     e = expected_new();
 
@@ -590,8 +590,8 @@ static void
 test22_duplicate_stanzas(void)
 {
     nm_auto_free_expected Expected *e = NULL;
-    ExpectedBlock *                 b;
-    nm_auto_ifparser if_parser *parser = init_ifparser_with_file("test22-duplicate-stanzas");
+    ExpectedBlock                  *b;
+    nm_auto_ifparser if_parser     *parser = init_ifparser_with_file("test22-duplicate-stanzas");
 
     e = expected_new();
 

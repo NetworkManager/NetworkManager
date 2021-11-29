@@ -33,7 +33,7 @@
 
 typedef struct {
     NMDBusObject                  parent;
-    NMDevice *                    wifi_device;
+    NMDevice                     *wifi_device;
     CList                         peers_lst;
     struct _NMWifiP2PPeerPrivate *_priv;
 } NMWifiP2PPeer;
@@ -46,7 +46,7 @@ GType nm_wifi_p2p_peer_get_type(void);
 
 NMWifiP2PPeer *nm_wifi_p2p_peer_new_from_properties(const struct _NMSupplicantPeerInfo *peer_info);
 
-gboolean nm_wifi_p2p_peer_update_from_properties(NMWifiP2PPeer *                     peer,
+gboolean nm_wifi_p2p_peer_update_from_properties(NMWifiP2PPeer                      *peer,
                                                  const struct _NMSupplicantPeerInfo *peer_info);
 
 gboolean nm_wifi_p2p_peer_check_compatible(NMWifiP2PPeer *self, NMConnection *connection);
@@ -64,12 +64,12 @@ gboolean    nm_wifi_p2p_peer_set_model_number(NMWifiP2PPeer *peer, const char *n
 const char *nm_wifi_p2p_peer_get_serial(const NMWifiP2PPeer *peer);
 gboolean    nm_wifi_p2p_peer_set_serial(NMWifiP2PPeer *peer, const char *serial);
 
-GBytes * nm_wifi_p2p_peer_get_wfd_ies(const NMWifiP2PPeer *peer);
+GBytes  *nm_wifi_p2p_peer_get_wfd_ies(const NMWifiP2PPeer *peer);
 gboolean nm_wifi_p2p_peer_set_wfd_ies(NMWifiP2PPeer *peer, GBytes *bytes);
 
 const char *const *nm_wifi_p2p_peer_get_groups(const NMWifiP2PPeer *peer);
 
-const char *   nm_wifi_p2p_peer_get_address(const NMWifiP2PPeer *peer);
+const char    *nm_wifi_p2p_peer_get_address(const NMWifiP2PPeer *peer);
 gboolean       nm_wifi_p2p_peer_set_address(NMWifiP2PPeer *peer, const char *addr);
 gint8          nm_wifi_p2p_peer_get_strength(NMWifiP2PPeer *peer);
 gboolean       nm_wifi_p2p_peer_set_strength(NMWifiP2PPeer *peer, gint8 strength);
@@ -80,11 +80,11 @@ nm_wifi_p2p_peer_to_string(const NMWifiP2PPeer *self, char *str_buf, gsize buf_l
 
 const char **nm_wifi_p2p_peers_get_paths(const CList *peers_lst_head);
 
-NMWifiP2PPeer *nm_wifi_p2p_peers_find_first_compatible(const CList * peers_lst_head,
+NMWifiP2PPeer *nm_wifi_p2p_peers_find_first_compatible(const CList  *peers_lst_head,
                                                        NMConnection *connection);
 
 NMWifiP2PPeer *nm_wifi_p2p_peers_find_by_supplicant_path(const CList *peers_lst_head,
-                                                         const char * path);
+                                                         const char  *path);
 
 NMWifiP2PPeer *nm_wifi_p2p_peer_lookup_for_device(NMDevice *device, const char *exported_path);
 

@@ -18,8 +18,8 @@ typedef struct {
     GObject *owner;
 
     NMSettingsConnection *connection;
-    GDBusConnection *     dbus_connection;
-    char *                dbus_client;
+    GDBusConnection      *dbus_connection;
+    char                 *dbus_client;
 
     GCancellable *dbus_client_confirm_cancellable;
     guint         subscription_id;
@@ -150,11 +150,11 @@ connection_flags_changed(NMSettingsConnection *connection, NMKeepAlive *self)
 }
 
 static void
-_set_settings_connection_watch_visible(NMKeepAlive *         self,
+_set_settings_connection_watch_visible(NMKeepAlive          *self,
                                        NMSettingsConnection *connection,
                                        gboolean              emit_signal)
 {
-    NMKeepAlivePrivate *priv                             = NM_KEEP_ALIVE_GET_PRIVATE(self);
+    NMKeepAlivePrivate                   *priv           = NM_KEEP_ALIVE_GET_PRIVATE(self);
     gs_unref_object NMSettingsConnection *old_connection = NULL;
 
     if (priv->connection == connection)
@@ -183,7 +183,7 @@ _set_settings_connection_watch_visible(NMKeepAlive *         self,
 }
 
 void
-nm_keep_alive_set_settings_connection_watch_visible(NMKeepAlive *         self,
+nm_keep_alive_set_settings_connection_watch_visible(NMKeepAlive          *self,
                                                     NMSettingsConnection *connection)
 {
     _set_settings_connection_watch_visible(self, connection, TRUE);
@@ -194,7 +194,7 @@ nm_keep_alive_set_settings_connection_watch_visible(NMKeepAlive *         self,
 static void
 get_name_owner_cb(const char *name_owner, GError *error, gpointer user_data)
 {
-    NMKeepAlive *       self;
+    NMKeepAlive        *self;
     NMKeepAlivePrivate *priv;
 
     if (!name_owner && g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -259,16 +259,16 @@ cleanup_dbus_watch(NMKeepAlive *self)
 
 static void
 name_owner_changed_cb(GDBusConnection *connection,
-                      const char *     sender_name,
-                      const char *     object_path,
-                      const char *     interface_name,
-                      const char *     signal_name,
-                      GVariant *       parameters,
+                      const char      *sender_name,
+                      const char      *object_path,
+                      const char      *interface_name,
+                      const char      *signal_name,
+                      GVariant        *parameters,
                       gpointer         user_data)
 {
     NMKeepAlive *self = NM_KEEP_ALIVE(user_data);
-    const char * old_owner;
-    const char * new_owner;
+    const char  *old_owner;
+    const char  *new_owner;
 
     g_variant_get(parameters, "(&s&s&s)", NULL, &old_owner, &new_owner);
 
@@ -281,9 +281,9 @@ name_owner_changed_cb(GDBusConnection *connection,
 }
 
 void
-nm_keep_alive_set_dbus_client_watch(NMKeepAlive *    self,
+nm_keep_alive_set_dbus_client_watch(NMKeepAlive     *self,
                                     GDBusConnection *connection,
-                                    const char *     client_address)
+                                    const char      *client_address)
 {
     NMKeepAlivePrivate *priv = NM_KEEP_ALIVE_GET_PRIVATE(self);
 

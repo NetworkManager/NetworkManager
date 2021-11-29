@@ -104,8 +104,8 @@ _nm_log_simple_printf(NMLogLevel level, const char *fmt, ...)
 {
     gs_free char *msg_heap = NULL;
     char          msg_stack[700];
-    const char *  msg;
-    const char *  level_str;
+    const char   *msg;
+    const char   *level_str;
     gint64        ts;
 
     ts = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);

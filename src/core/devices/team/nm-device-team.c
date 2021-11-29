@@ -33,15 +33,15 @@
 NM_GOBJECT_PROPERTIES_DEFINE(NMDeviceTeam, PROP_CONFIG, );
 
 typedef struct {
-    struct teamdctl *  tdc;
-    char *             config;
+    struct teamdctl   *tdc;
+    char              *config;
     GPid               teamd_pid;
     guint              teamd_process_watch;
     guint              teamd_timeout;
     guint              teamd_read_timeout;
     guint              teamd_dbus_watch;
     bool               kill_in_progress : 1;
-    GFileMonitor *     usock_monitor;
+    GFileMonitor      *usock_monitor;
     NMDeviceStageState stage1_state : 3;
 } NMDeviceTeamPrivate;
 
@@ -72,11 +72,11 @@ get_generic_capabilities(NMDevice *device)
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
     nm_utils_complete_generic(nm_device_get_platform(device),
                               connection,
@@ -96,7 +96,7 @@ complete_connection(NMDevice *           device,
 static gboolean
 ensure_teamd_connection(NMDevice *device)
 {
-    NMDeviceTeam *       self = NM_DEVICE_TEAM(device);
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(device);
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
     int                  err;
 
@@ -125,7 +125,7 @@ static gboolean
 teamd_read_config(NMDeviceTeam *self)
 {
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    const char *         config = NULL;
+    const char          *config = NULL;
     int                  err;
 
     if (priv->tdc) {
@@ -150,7 +150,7 @@ teamd_read_config(NMDeviceTeam *self)
 static gboolean
 teamd_read_timeout_cb(gpointer user_data)
 {
-    NMDeviceTeam *       self = user_data;
+    NMDeviceTeam        *self = user_data;
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     priv->teamd_read_timeout = 0;
@@ -161,10 +161,10 @@ teamd_read_timeout_cb(gpointer user_data)
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMDeviceTeam *       self   = NM_DEVICE_TEAM(device);
-    NMSettingTeam *      s_team = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM);
+    NMDeviceTeam        *self   = NM_DEVICE_TEAM(device);
+    NMSettingTeam       *s_team = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM);
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    struct teamdctl *    tdc    = priv->tdc;
+    struct teamdctl     *tdc    = priv->tdc;
 
     /* Read the configuration only if not already set */
     if (!priv->config && ensure_teamd_connection(device))
@@ -183,18 +183,18 @@ update_connection(NMDevice *device, NMConnection *connection)
 /*****************************************************************************/
 
 static gboolean
-master_update_slave_connection(NMDevice *    self,
-                               NMDevice *    slave,
+master_update_slave_connection(NMDevice     *self,
+                               NMDevice     *slave,
                                NMConnection *connection,
-                               GError **     error)
+                               GError      **error)
 {
     NMSettingTeamPort *s_port;
-    char *             port_config = NULL;
+    char              *port_config = NULL;
     int                err         = 0;
-    struct teamdctl *  tdc;
-    const char *       team_port_config = NULL;
-    const char *       iface            = nm_device_get_iface(self);
-    const char *       iface_slave      = nm_device_get_iface(slave);
+    struct teamdctl   *tdc;
+    const char        *team_port_config = NULL;
+    const char        *iface            = nm_device_get_iface(self);
+    const char        *iface_slave      = nm_device_get_iface(slave);
 
     tdc = teamdctl_alloc();
     if (!tdc) {
@@ -259,7 +259,7 @@ static void
 teamd_kill_cb(pid_t pid, gboolean success, int child_status, void *user_data)
 {
     gs_unref_object NMDeviceTeam *self = user_data;
-    NMDeviceTeamPrivate *         priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    NMDeviceTeamPrivate          *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     priv->kill_in_progress = FALSE;
 
@@ -307,8 +307,8 @@ teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
 static gboolean
 teamd_timeout_cb(gpointer user_data)
 {
-    NMDeviceTeam *       self   = NM_DEVICE_TEAM(user_data);
-    NMDevice *           device = NM_DEVICE(self);
+    NMDeviceTeam        *self   = NM_DEVICE_TEAM(user_data);
+    NMDevice            *device = NM_DEVICE(self);
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     g_return_val_if_fail(priv->teamd_timeout, FALSE);
@@ -342,7 +342,7 @@ static void
 teamd_ready(NMDeviceTeam *self)
 {
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    NMDevice *           device = NM_DEVICE(self);
+    NMDevice            *device = NM_DEVICE(self);
     gboolean             success;
 
     if (priv->kill_in_progress) {
@@ -381,7 +381,7 @@ teamd_ready(NMDeviceTeam *self)
 static void
 teamd_gone(NMDeviceTeam *self)
 {
-    NMDevice *    device = NM_DEVICE(self);
+    NMDevice     *device = NM_DEVICE(self);
     NMDeviceState state;
 
     teamd_cleanup(self, TRUE);
@@ -399,11 +399,11 @@ teamd_gone(NMDeviceTeam *self)
 
 static void
 teamd_dbus_appeared(GDBusConnection *connection,
-                    const char *     name,
-                    const char *     name_owner,
+                    const char      *name,
+                    const char      *name_owner,
                     gpointer         user_data)
 {
-    NMDeviceTeam *       self = NM_DEVICE_TEAM(user_data);
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(user_data);
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     g_return_if_fail(priv->teamd_dbus_watch);
@@ -451,7 +451,7 @@ teamd_dbus_appeared(GDBusConnection *connection,
 static void
 teamd_dbus_vanished(GDBusConnection *dbus_connection, const char *name, gpointer user_data)
 {
-    NMDeviceTeam *       self = NM_DEVICE_TEAM(user_data);
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(user_data);
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     g_return_if_fail(priv->teamd_dbus_watch);
@@ -471,9 +471,9 @@ teamd_dbus_vanished(GDBusConnection *dbus_connection, const char *name, gpointer
 }
 
 static void
-monitor_changed_cb(GFileMonitor *    monitor,
-                   GFile *           file,
-                   GFile *           other_file,
+monitor_changed_cb(GFileMonitor     *monitor,
+                   GFile            *file,
+                   GFile            *other_file,
                    GFileMonitorEvent event_type,
                    gpointer          user_data)
 {
@@ -495,9 +495,9 @@ monitor_changed_cb(GFileMonitor *    monitor,
 static void
 teamd_process_watch_cb(GPid pid, int status, gpointer user_data)
 {
-    NMDeviceTeam *       self   = NM_DEVICE_TEAM(user_data);
+    NMDeviceTeam        *self   = NM_DEVICE_TEAM(user_data);
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    NMDevice *           device = NM_DEVICE(self);
+    NMDevice            *device = NM_DEVICE(self);
     NMDeviceState        state  = nm_device_get_state(device);
 
     g_return_if_fail(priv->teamd_process_watch);
@@ -545,8 +545,8 @@ static gboolean
 teamd_kill(NMDeviceTeam *self, const char *teamd_binary, GError **error)
 {
     gs_unref_ptrarray GPtrArray *argv    = NULL;
-    gs_free char *               tmp_str = NULL;
-    gs_free const char **        envp    = NULL;
+    gs_free char                *tmp_str = NULL;
+    gs_free const char         **envp    = NULL;
 
     if (!teamd_binary) {
         teamd_binary = nm_utils_find_helper("teamd", NULL, error);
@@ -581,18 +581,18 @@ teamd_kill(NMDeviceTeam *self, const char *teamd_binary, GError **error)
 static gboolean
 teamd_start(NMDeviceTeam *self)
 {
-    NMDeviceTeamPrivate *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    const char *         iface = nm_device_get_ip_iface(NM_DEVICE(self));
-    NMConnection *       connection;
-    gs_unref_ptrarray GPtrArray *argv = NULL;
-    gs_free_error GError *   error    = NULL;
-    gs_free char *           tmp_str  = NULL;
-    const char *             teamd_binary;
-    const char *             config;
-    nm_auto_free const char *config_free = NULL;
-    NMSettingTeam *          s_team;
-    gs_free char *           cloned_mac = NULL;
-    gs_free const char **    envp       = NULL;
+    NMDeviceTeamPrivate         *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    const char                  *iface = nm_device_get_ip_iface(NM_DEVICE(self));
+    NMConnection                *connection;
+    gs_unref_ptrarray GPtrArray *argv    = NULL;
+    gs_free_error GError        *error   = NULL;
+    gs_free char                *tmp_str = NULL;
+    const char                  *teamd_binary;
+    const char                  *config;
+    nm_auto_free const char     *config_free = NULL;
+    NMSettingTeam               *s_team;
+    gs_free char                *cloned_mac = NULL;
+    gs_free const char         **envp       = NULL;
 
     connection = nm_device_get_applied_connection(NM_DEVICE(self));
 
@@ -639,7 +639,7 @@ teamd_start(NMDeviceTeam *self)
     }
 
     if (cloned_mac) {
-        json_t *     json, *hwaddr;
+        json_t      *json, *hwaddr;
         json_error_t jerror;
 
         /* Inject the hwaddr property into the JSON configuration.
@@ -706,11 +706,11 @@ teamd_start(NMDeviceTeam *self)
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceTeam *       self   = NM_DEVICE_TEAM(device);
-    NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    NMDeviceTeam         *self  = NM_DEVICE_TEAM(device);
+    NMDeviceTeamPrivate  *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
     gs_free_error GError *error = NULL;
-    NMSettingTeam *       s_team;
-    const char *          cfg;
+    NMSettingTeam        *s_team;
+    const char           *cfg;
 
     if (nm_device_sys_iface_state_is_external(device))
         return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -773,7 +773,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 deactivate(NMDevice *device)
 {
-    NMDeviceTeam *       self = NM_DEVICE_TEAM(device);
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(device);
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     priv->stage1_state = NM_DEVICE_STAGE_STATE_INIT;
@@ -793,11 +793,11 @@ deactivate(NMDevice *device)
 static gboolean
 enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gboolean configure)
 {
-    NMDeviceTeam *       self        = NM_DEVICE_TEAM(device);
+    NMDeviceTeam        *self        = NM_DEVICE_TEAM(device);
     NMDeviceTeamPrivate *priv        = NM_DEVICE_TEAM_GET_PRIVATE(self);
     gboolean             success     = TRUE;
-    const char *         slave_iface = nm_device_get_ip_iface(slave);
-    NMSettingTeamPort *  s_team_port;
+    const char          *slave_iface = nm_device_get_ip_iface(slave);
+    NMSettingTeamPort   *s_team_port;
 
     nm_device_master_check_slave_physical_port(device, slave, LOGD_TEAM);
 
@@ -851,10 +851,10 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
 static void
 release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
 {
-    NMDeviceTeam *       self = NM_DEVICE_TEAM(device);
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(device);
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
     gboolean             do_release, success;
-    NMSettingTeamPort *  s_port;
+    NMSettingTeamPort   *s_port;
     int                  ifindex_slave;
     int                  ifindex;
 
@@ -901,11 +901,11 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
     const char *iface = nm_device_get_iface(device);
     int         r;
@@ -953,11 +953,11 @@ nm_device_team_init(NMDeviceTeam *self)
 static void
 constructed(GObject *object)
 {
-    NMDevice *           device  = NM_DEVICE(object);
-    NMDeviceTeamPrivate *priv    = NM_DEVICE_TEAM_GET_PRIVATE(device);
-    gs_free char *       tmp_str = NULL;
-    gs_unref_object GFile *file  = NULL;
-    GError *               error;
+    NMDevice              *device  = NM_DEVICE(object);
+    NMDeviceTeamPrivate   *priv    = NM_DEVICE_TEAM_GET_PRIVATE(device);
+    gs_free char          *tmp_str = NULL;
+    gs_unref_object GFile *file    = NULL;
+    GError                *error;
 
     G_OBJECT_CLASS(nm_device_team_parent_class)->constructed(object);
 
@@ -1005,7 +1005,7 @@ nm_device_team_new(const char *iface)
 static void
 dispose(GObject *object)
 {
-    NMDeviceTeam *       self = NM_DEVICE_TEAM(object);
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(object);
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     if (priv->teamd_dbus_watch) {
@@ -1039,9 +1039,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_team = {
 static void
 nm_device_team_class_init(NMDeviceTeamClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->constructed  = constructed;
     object_class->dispose      = dispose;

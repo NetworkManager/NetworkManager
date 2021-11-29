@@ -48,11 +48,11 @@ typedef struct _NMDhcpNettoolsClass NMDhcpNettoolsClass;
 /*****************************************************************************/
 
 typedef struct {
-    NDhcp4Client *     client;
+    NDhcp4Client      *client;
     NDhcp4ClientProbe *probe;
     NDhcp4ClientLease *lease;
-    GSource *          event_source;
-    char *             lease_file;
+    GSource           *event_source;
+    char              *lease_file;
 } NMDhcpNettoolsPrivate;
 
 struct _NMDhcpNettools {
@@ -86,8 +86,8 @@ set_error_nettools(GError **error, int r, const char *message)
 static inline int
 _client_lease_query(NDhcp4ClientLease *lease,
                     uint8_t            option,
-                    const uint8_t **   datap,
-                    size_t *           n_datap)
+                    const uint8_t    **datap,
+                    size_t            *n_datap)
 {
     return n_dhcp4_client_lease_query(lease, option, (guint8 **) datap, n_datap);
 }
@@ -100,11 +100,11 @@ _client_lease_query(NDhcp4ClientLease *lease,
 
 static gboolean
 lease_option_consume_route(const uint8_t **datap,
-                           size_t *        n_datap,
+                           size_t         *n_datap,
                            gboolean        classless,
-                           in_addr_t *     destp,
-                           uint8_t *       plenp,
-                           in_addr_t *     gatewayp)
+                           in_addr_t      *destp,
+                           uint8_t        *plenp,
+                           in_addr_t      *gatewayp)
 {
     in_addr_t      dest;
     in_addr_t      gateway;
@@ -152,9 +152,9 @@ lease_option_consume_route(const uint8_t **datap,
 
 static gboolean
 lease_parse_address(NDhcp4ClientLease *lease,
-                    NML3ConfigData *   l3cd,
-                    GHashTable *       options,
-                    GError **          error)
+                    NML3ConfigData    *l3cd,
+                    GHashTable        *options,
+                    GError           **error)
 {
     struct in_addr a_address;
     in_addr_t      a_netmask;
@@ -164,7 +164,7 @@ lease_parse_address(NDhcp4ClientLease *lease,
     guint32        a_lifetime;
     guint32        a_timestamp;
     guint64        a_expiry;
-    const guint8 * l_data;
+    const guint8  *l_data;
     gsize          l_data_len;
     int            r;
 
@@ -272,11 +272,11 @@ lease_parse_address(NDhcp4ClientLease *lease,
 }
 
 static void
-lease_parse_address_list(NDhcp4ClientLease *      lease,
-                         NML3ConfigData *         l3cd,
+lease_parse_address_list(NDhcp4ClientLease       *lease,
+                         NML3ConfigData          *l3cd,
                          NMDhcpOptionDhcp4Options option,
-                         GHashTable *             options,
-                         NMStrBuf *               sbuf)
+                         GHashTable              *options,
+                         NMStrBuf                *sbuf)
 {
     const guint8 *l_data;
     gsize         l_data_len;
@@ -325,9 +325,9 @@ lease_parse_address_list(NDhcp4ClientLease *      lease,
 
 static void
 lease_parse_routes(NDhcp4ClientLease *lease,
-                   NML3ConfigData *   l3cd,
-                   GHashTable *       options,
-                   NMStrBuf *         sbuf)
+                   NML3ConfigData    *l3cd,
+                   GHashTable        *options,
+                   NMStrBuf          *sbuf)
 {
     char          dest_str[NM_UTILS_INET_ADDRSTRLEN];
     char          gateway_str[NM_UTILS_INET_ADDRSTRLEN];
@@ -482,7 +482,7 @@ static void
 lease_parse_search_domains(NDhcp4ClientLease *lease, NML3ConfigData *l3cd, GHashTable *options)
 {
     gs_strfreev char **domains = NULL;
-    const guint8 *     l_data;
+    const guint8      *l_data;
     gsize              l_data_len;
     guint              i;
     int                r;
@@ -534,21 +534,21 @@ lease_parse_private_options(NDhcp4ClientLease *lease, GHashTable *options)
 
 static NML3ConfigData *
 lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
-                    const char *       iface,
+                    const char        *iface,
                     int                ifindex,
                     NDhcp4ClientLease *lease,
-                    GError **          error)
+                    GError           **error)
 {
-    nm_auto_str_buf NMStrBuf sbuf                = NM_STR_BUF_INIT(0, FALSE);
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    gs_unref_hashtable GHashTable *options       = NULL;
-    const guint8 *                 l_data;
-    gsize                          l_data_len;
-    const char *                   v_str;
-    guint16                        v_u16;
-    in_addr_t                      v_inaddr;
-    struct in_addr                 v_inaddr_s;
-    int                            r;
+    nm_auto_str_buf NMStrBuf                sbuf    = NM_STR_BUF_INIT(0, FALSE);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
+    gs_unref_hashtable GHashTable          *options = NULL;
+    const guint8                           *l_data;
+    gsize                                   l_data_len;
+    const char                             *v_str;
+    guint16                                 v_u16;
+    in_addr_t                               v_inaddr;
+    struct in_addr                          v_inaddr_s;
+    int                                     r;
 
     g_return_val_if_fail(lease != NULL, NULL);
 
@@ -667,7 +667,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
          * Otherwise, we allow any encoding and backslash-escape the result to
          * UTF-8. */
         gs_free char *to_free = NULL;
-        const char *  escaped;
+        const char   *escaped;
 
         escaped = nm_utils_buf_utf8safe_escape((char *) l_data, l_data_len, 0, &to_free);
         nm_dhcp_option_add_option(options,
@@ -740,7 +740,7 @@ lease_save(NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_fil
     struct in_addr           a_address;
     nm_auto_str_buf NMStrBuf sbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
     char                     addr_str[NM_UTILS_INET_ADDRSTRLEN];
-    gs_free_error GError *error = NULL;
+    gs_free_error GError    *error = NULL;
 
     nm_assert(lease);
     nm_assert(lease_file);
@@ -761,11 +761,11 @@ lease_save(NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_fil
 static void
 bound4_handle(NMDhcpNettools *self, NDhcp4ClientLease *lease, gboolean extended)
 {
-    NMDhcpNettoolsPrivate *   priv   = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
-    NMDhcpClient *            client = NM_DHCP_CLIENT(self);
-    const NMDhcpClientConfig *client_config;
+    NMDhcpNettoolsPrivate                  *priv   = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
+    NMDhcpClient                           *client = NM_DHCP_CLIENT(self);
+    const NMDhcpClientConfig               *client_config;
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd  = NULL;
-    GError *                                error = NULL;
+    GError                                 *error = NULL;
 
     _LOGT("lease available (%s)", extended ? "extended" : "new");
     client_config = nm_dhcp_client_get_config(client);
@@ -791,7 +791,7 @@ bound4_handle(NMDhcpNettools *self, NDhcp4ClientLease *lease, gboolean extended)
 static void
 dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
 {
-    NMDhcpNettoolsPrivate *   priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
+    NMDhcpNettoolsPrivate    *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     const NMDhcpClientConfig *client_config;
     struct in_addr            server_id;
     char                      addr_str[INET_ADDRSTRLEN];
@@ -861,9 +861,9 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
 static gboolean
 dhcp4_event_cb(int fd, GIOCondition condition, gpointer user_data)
 {
-    NMDhcpNettools *       self = user_data;
+    NMDhcpNettools        *self = user_data;
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
-    NDhcp4ClientEvent *    event;
+    NDhcp4ClientEvent     *event;
     int                    r;
 
     r = n_dhcp4_client_dispatch(priv->client);
@@ -892,19 +892,19 @@ nettools_create(NMDhcpNettools *self, GError **error)
 {
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     nm_auto(n_dhcp4_client_config_freep) NDhcp4ClientConfig *config = NULL;
-    nm_auto(n_dhcp4_client_unrefp) NDhcp4Client *            client = NULL;
-    GBytes *                                                 hwaddr;
-    GBytes *                                                 bcast_hwaddr;
-    const uint8_t *                                          hwaddr_arr;
-    const uint8_t *                                          bcast_hwaddr_arr;
+    nm_auto(n_dhcp4_client_unrefp) NDhcp4Client             *client = NULL;
+    GBytes                                                  *hwaddr;
+    GBytes                                                  *bcast_hwaddr;
+    const uint8_t                                           *hwaddr_arr;
+    const uint8_t                                           *bcast_hwaddr_arr;
     gsize                                                    hwaddr_len;
     gsize                                                    bcast_hwaddr_len;
-    GBytes *                                                 client_id;
-    gs_unref_bytes GBytes *   client_id_new = NULL;
-    const uint8_t *           client_id_arr;
-    size_t                    client_id_len;
-    int                       r, fd, arp_type, transport;
-    const NMDhcpClientConfig *client_config;
+    GBytes                                                  *client_id;
+    gs_unref_bytes GBytes                                   *client_id_new = NULL;
+    const uint8_t                                           *client_id_arr;
+    size_t                                                   client_id_len;
+    int                                                      r, fd, arp_type, transport;
+    const NMDhcpClientConfig                                *client_config;
 
     client_config = nm_dhcp_client_get_config(NM_DHCP_CLIENT(self));
 
@@ -991,7 +991,7 @@ nettools_create(NMDhcpNettools *self, GError **error)
 static gboolean
 _accept(NMDhcpClient *client, GError **error)
 {
-    NMDhcpNettools *       self = NM_DHCP_NETTOOLS(client);
+    NMDhcpNettools        *self = NM_DHCP_NETTOOLS(client);
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     int                    r;
 
@@ -1013,7 +1013,7 @@ _accept(NMDhcpClient *client, GError **error)
 static gboolean
 decline(NMDhcpClient *client, const char *error_message, GError **error)
 {
-    NMDhcpNettools *       self = NM_DHCP_NETTOOLS(client);
+    NMDhcpNettools        *self = NM_DHCP_NETTOOLS(client);
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     int                    r;
 
@@ -1052,10 +1052,10 @@ static gboolean
 ip4_start(NMDhcpClient *client, GError **error)
 {
     nm_auto(n_dhcp4_client_probe_config_freep) NDhcp4ClientProbeConfig *config = NULL;
-    NMDhcpNettools *          self = NM_DHCP_NETTOOLS(client);
-    NMDhcpNettoolsPrivate *   priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
+    NMDhcpNettools           *self = NM_DHCP_NETTOOLS(client);
+    NMDhcpNettoolsPrivate    *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     const NMDhcpClientConfig *client_config;
-    gs_free char *            lease_file = NULL;
+    gs_free char             *lease_file = NULL;
     struct in_addr            last_addr  = {0};
     int                       r, i;
 
@@ -1214,7 +1214,7 @@ ip4_start(NMDhcpClient *client, GError **error)
 static void
 stop(NMDhcpClient *client, gboolean release)
 {
-    NMDhcpNettools *       self = NM_DHCP_NETTOOLS(client);
+    NMDhcpNettools        *self = NM_DHCP_NETTOOLS(client);
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
 
     NM_DHCP_CLIENT_CLASS(nm_dhcp_nettools_parent_class)->stop(client, release);
@@ -1248,7 +1248,7 @@ static void
 nm_dhcp_nettools_class_init(NMDhcpNettoolsClass *class)
 {
     NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS(class);
-    GObjectClass *     object_class = G_OBJECT_CLASS(class);
+    GObjectClass      *object_class = G_OBJECT_CLASS(class);
 
     object_class->dispose = dispose;
 

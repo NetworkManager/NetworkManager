@@ -31,11 +31,11 @@ typedef struct {
      * 'global_config' is the optional global DNS
      * configuration.
      */
-    gboolean (*update)(NMDnsPlugin *            self,
+    gboolean (*update)(NMDnsPlugin             *self,
                        const NMGlobalDnsConfig *global_config,
-                       const CList *            ip_config_lst_head,
-                       const char *             hostname,
-                       GError **                error);
+                       const CList             *ip_config_lst_head,
+                       const char              *hostname,
+                       GError                 **error);
 
     void (*stop)(NMDnsPlugin *self);
 
@@ -55,11 +55,11 @@ gboolean nm_dns_plugin_is_caching(NMDnsPlugin *self);
 
 const char *nm_dns_plugin_get_name(NMDnsPlugin *self);
 
-gboolean nm_dns_plugin_update(NMDnsPlugin *            self,
+gboolean nm_dns_plugin_update(NMDnsPlugin             *self,
                               const NMGlobalDnsConfig *global_config,
-                              const CList *            ip_config_lst_head,
-                              const char *             hostname,
-                              GError **                error);
+                              const CList             *ip_config_lst_head,
+                              const char              *hostname,
+                              GError                 **error);
 
 void nm_dns_plugin_stop(NMDnsPlugin *self);
 

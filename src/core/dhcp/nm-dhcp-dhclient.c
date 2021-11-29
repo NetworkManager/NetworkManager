@@ -59,10 +59,10 @@ static GType nm_dhcp_dhclient_get_type(void);
 /*****************************************************************************/
 
 typedef struct {
-    char *          conf_file;
-    const char *    def_leasefile;
-    char *          lease_file;
-    char *          pid_file;
+    char           *conf_file;
+    const char     *def_leasefile;
+    char           *lease_file;
+    char           *pid_file;
     NMDhcpListener *dhcp_listener;
 } NMDhcpDhclientPrivate;
 
@@ -105,7 +105,7 @@ static char *
 get_dhclient_leasefile(int         addr_family,
                        const char *iface,
                        const char *uuid,
-                       char **     out_preferred_path)
+                       char      **out_preferred_path)
 {
     gs_free char *path = NULL;
 
@@ -145,21 +145,21 @@ get_dhclient_leasefile(int         addr_family,
 }
 
 static gboolean
-merge_dhclient_config(NMDhcpDhclient *    self,
+merge_dhclient_config(NMDhcpDhclient     *self,
                       int                 addr_family,
-                      const char *        iface,
-                      const char *        conf_file,
-                      GBytes *            client_id,
-                      const char *        anycast_address,
-                      const char *        hostname,
+                      const char         *iface,
+                      const char         *conf_file,
+                      GBytes             *client_id,
+                      const char         *anycast_address,
+                      const char         *hostname,
                       guint32             timeout,
                       gboolean            use_fqdn,
                       NMDhcpHostnameFlags hostname_flags,
-                      const char *        mud_url,
-                      const char *const * reject_servers,
-                      const char *        orig_path,
-                      GBytes **           out_new_client_id,
-                      GError **           error)
+                      const char         *mud_url,
+                      const char *const  *reject_servers,
+                      const char         *orig_path,
+                      GBytes            **out_new_client_id,
+                      GError            **error)
 {
     gs_free char *orig = NULL;
     gs_free char *new  = NULL;
@@ -274,19 +274,19 @@ find_existing_config(NMDhcpDhclient *self, int addr_family, const char *iface, c
  * config file along with the NM options.
  */
 static char *
-create_dhclient_config(NMDhcpDhclient *    self,
+create_dhclient_config(NMDhcpDhclient     *self,
                        int                 addr_family,
-                       const char *        iface,
-                       const char *        uuid,
-                       GBytes *            client_id,
-                       const char *        anycast_address,
-                       const char *        hostname,
+                       const char         *iface,
+                       const char         *uuid,
+                       GBytes             *client_id,
+                       const char         *anycast_address,
+                       const char         *hostname,
                        guint32             timeout,
                        gboolean            use_fqdn,
                        NMDhcpHostnameFlags hostname_flags,
-                       const char *        mud_url,
-                       const char *const * reject_servers,
-                       GBytes **           out_new_client_id)
+                       const char         *mud_url,
+                       const char *const  *reject_servers,
+                       GBytes            **out_new_client_id)
 {
     gs_free char *orig = NULL;
     char *new          = NULL;
@@ -330,27 +330,27 @@ create_dhclient_config(NMDhcpDhclient *    self,
 
 static gboolean
 dhclient_start(NMDhcpClient *client,
-               const char *  mode_opt,
+               const char   *mode_opt,
                gboolean      release,
-               pid_t *       out_pid,
-               GError **     error)
+               pid_t        *out_pid,
+               GError      **error)
 {
-    NMDhcpDhclient *       self       = NM_DHCP_DHCLIENT(client);
-    NMDhcpDhclientPrivate *priv       = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
+    NMDhcpDhclient              *self = NM_DHCP_DHCLIENT(client);
+    NMDhcpDhclientPrivate       *priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
     gs_unref_ptrarray GPtrArray *argv = NULL;
     pid_t                        pid;
-    gs_free_error GError *    local = NULL;
-    const char *              iface;
-    const char *              uuid;
-    const char *              system_bus_address;
-    const char *              dhclient_path;
-    char *                    binary_name;
-    gs_free char *            cmd_str                  = NULL;
-    gs_free char *            pid_file                 = NULL;
-    gs_free char *            system_bus_address_env   = NULL;
-    gs_free char *            preferred_leasefile_path = NULL;
-    int                       addr_family;
-    const NMDhcpClientConfig *client_config;
+    gs_free_error GError        *local = NULL;
+    const char                  *iface;
+    const char                  *uuid;
+    const char                  *system_bus_address;
+    const char                  *dhclient_path;
+    char                        *binary_name;
+    gs_free char                *cmd_str                  = NULL;
+    gs_free char                *pid_file                 = NULL;
+    gs_free char                *system_bus_address_env   = NULL;
+    gs_free char                *preferred_leasefile_path = NULL;
+    int                          addr_family;
+    const NMDhcpClientConfig    *client_config;
 
     g_return_val_if_fail(!priv->pid_file, FALSE);
     client_config = nm_dhcp_client_get_config(client);
@@ -515,9 +515,9 @@ dhclient_start(NMDhcpClient *client,
 static gboolean
 ip4_start(NMDhcpClient *client, GError **error)
 {
-    NMDhcpDhclient *       self             = NM_DHCP_DHCLIENT(client);
-    NMDhcpDhclientPrivate *priv             = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
-    gs_unref_bytes GBytes *   new_client_id = NULL;
+    NMDhcpDhclient           *self          = NM_DHCP_DHCLIENT(client);
+    NMDhcpDhclientPrivate    *priv          = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
+    gs_unref_bytes GBytes    *new_client_id = NULL;
     const NMDhcpClientConfig *client_config;
 
     client_config = nm_dhcp_client_get_config(client);
@@ -552,8 +552,8 @@ ip4_start(NMDhcpClient *client, GError **error)
 static gboolean
 ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
 {
-    NMDhcpDhclient *          self = NM_DHCP_DHCLIENT(client);
-    NMDhcpDhclientPrivate *   priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
+    NMDhcpDhclient           *self = NM_DHCP_DHCLIENT(client);
+    NMDhcpDhclientPrivate    *priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
     const NMDhcpClientConfig *config;
 
     config = nm_dhcp_client_get_config(client);
@@ -587,7 +587,7 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
 static void
 stop(NMDhcpClient *client, gboolean release)
 {
-    NMDhcpDhclient *       self = NM_DHCP_DHCLIENT(client);
+    NMDhcpDhclient        *self = NM_DHCP_DHCLIENT(client);
     NMDhcpDhclientPrivate *priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
     int                    errsv;
 
@@ -625,12 +625,12 @@ stop(NMDhcpClient *client, gboolean release)
 static GBytes *
 get_duid(NMDhcpClient *client)
 {
-    NMDhcpDhclient *          self = NM_DHCP_DHCLIENT(client);
-    NMDhcpDhclientPrivate *   priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
+    NMDhcpDhclient           *self = NM_DHCP_DHCLIENT(client);
+    NMDhcpDhclientPrivate    *priv = NM_DHCP_DHCLIENT_GET_PRIVATE(self);
     const NMDhcpClientConfig *client_config;
-    GBytes *                  duid      = NULL;
-    gs_free char *            leasefile = NULL;
-    GError *                  error     = NULL;
+    GBytes                   *duid      = NULL;
+    gs_free char             *leasefile = NULL;
+    GError                   *error     = NULL;
 
     client_config = nm_dhcp_client_get_config(client);
 
@@ -712,7 +712,7 @@ static void
 nm_dhcp_dhclient_class_init(NMDhcpDhclientClass *dhclient_class)
 {
     NMDhcpClientClass *client_class = NM_DHCP_CLIENT_CLASS(dhclient_class);
-    GObjectClass *     object_class = G_OBJECT_CLASS(dhclient_class);
+    GObjectClass      *object_class = G_OBJECT_CLASS(dhclient_class);
 
     object_class->dispose = dispose;
 

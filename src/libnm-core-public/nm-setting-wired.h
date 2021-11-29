@@ -85,7 +85,7 @@ typedef struct _NMSettingWiredClass NMSettingWiredClass;
 
 GType nm_setting_wired_get_type(void);
 
-NMSetting * nm_setting_wired_new(void);
+NMSetting  *nm_setting_wired_new(void);
 const char *nm_setting_wired_get_port(NMSettingWired *setting);
 guint32     nm_setting_wired_get_speed(NMSettingWired *setting);
 const char *nm_setting_wired_get_duplex(NMSettingWired *setting);
@@ -101,23 +101,23 @@ const char *nm_setting_wired_get_generate_mac_address_mask(NMSettingWired *setti
 
 const char *const *nm_setting_wired_get_mac_address_blacklist(NMSettingWired *setting);
 guint32            nm_setting_wired_get_num_mac_blacklist_items(NMSettingWired *setting);
-const char *       nm_setting_wired_get_mac_blacklist_item(NMSettingWired *setting, guint32 idx);
+const char        *nm_setting_wired_get_mac_blacklist_item(NMSettingWired *setting, guint32 idx);
 gboolean nm_setting_wired_add_mac_blacklist_item(NMSettingWired *setting, const char *mac);
 void     nm_setting_wired_remove_mac_blacklist_item(NMSettingWired *setting, guint32 idx);
 gboolean nm_setting_wired_remove_mac_blacklist_item_by_value(NMSettingWired *setting,
-                                                             const char *    mac);
+                                                             const char     *mac);
 void     nm_setting_wired_clear_mac_blacklist_items(NMSettingWired *setting);
 
 guint32 nm_setting_wired_get_mtu(NMSettingWired *setting);
 
 const char *const *nm_setting_wired_get_s390_subchannels(NMSettingWired *setting);
-const char *       nm_setting_wired_get_s390_nettype(NMSettingWired *setting);
+const char        *nm_setting_wired_get_s390_nettype(NMSettingWired *setting);
 
 guint32     nm_setting_wired_get_num_s390_options(NMSettingWired *setting);
 gboolean    nm_setting_wired_get_s390_option(NMSettingWired *setting,
                                              guint32         idx,
-                                             const char **   out_key,
-                                             const char **   out_value);
+                                             const char    **out_key,
+                                             const char    **out_value);
 const char *nm_setting_wired_get_s390_option_by_key(NMSettingWired *setting, const char *key);
 gboolean
 nm_setting_wired_add_s390_option(NMSettingWired *setting, const char *key, const char *value);
@@ -125,7 +125,7 @@ gboolean     nm_setting_wired_remove_s390_option(NMSettingWired *setting, const 
 const char **nm_setting_wired_get_valid_s390_options(NMSettingWired *setting);
 
 NMSettingWiredWakeOnLan nm_setting_wired_get_wake_on_lan(NMSettingWired *setting);
-const char *            nm_setting_wired_get_wake_on_lan_password(NMSettingWired *setting);
+const char             *nm_setting_wired_get_wake_on_lan_password(NMSettingWired *setting);
 
 G_END_DECLS
 

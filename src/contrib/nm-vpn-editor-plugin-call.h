@@ -33,21 +33,21 @@ typedef enum { /*< skip >*/
 } NMVpnEditorPluginServiceFlags;
 
 struct _NMVpnEditorPluginVT {
-    gboolean (*fcn_get_service_info)(NMVpnEditorPlugin *            plugin,
-                                     const char *                   service_type,
-                                     char **                        out_short_name,
-                                     char **                        out_pretty_name,
-                                     char **                        out_description,
+    gboolean (*fcn_get_service_info)(NMVpnEditorPlugin             *plugin,
+                                     const char                    *service_type,
+                                     char                         **out_short_name,
+                                     char                         **out_pretty_name,
+                                     char                         **out_description,
                                      NMVpnEditorPluginServiceFlags *out_flags);
     char **(*fcn_get_service_add_details)(NMVpnEditorPlugin *plugin, const char *service_name);
     gboolean (*fcn_get_service_add_detail)(NMVpnEditorPlugin *plugin,
-                                           const char *       service_type,
-                                           const char *       add_detail,
-                                           char **            out_pretty_name,
-                                           char **            out_description,
-                                           char **            out_add_detail_key,
-                                           char **            out_add_detail_val,
-                                           guint *            out_flags);
+                                           const char        *service_type,
+                                           const char        *add_detail,
+                                           char             **out_pretty_name,
+                                           char             **out_description,
+                                           char             **out_add_detail_key,
+                                           char             **out_add_detail_val,
+                                           guint             *out_flags);
 };
 
 /*****************************************************************************
@@ -58,17 +58,17 @@ struct _NMVpnEditorPluginVT {
  *****************************************************************************/
 
 static inline gboolean
-nm_vpn_editor_plugin_get_service_info(NMVpnEditorPlugin *            plugin,
-                                      const char *                   service_type,
-                                      char **                        out_short_name,
-                                      char **                        out_pretty_name,
-                                      char **                        out_description,
+nm_vpn_editor_plugin_get_service_info(NMVpnEditorPlugin             *plugin,
+                                      const char                    *service_type,
+                                      char                         **out_short_name,
+                                      char                         **out_pretty_name,
+                                      char                         **out_description,
                                       NMVpnEditorPluginServiceFlags *out_flags)
 {
     NMVpnEditorPluginVT vt;
-    gs_free char *      short_name_local  = NULL;
-    gs_free char *      pretty_name_local = NULL;
-    gs_free char *      description_local = NULL;
+    gs_free char       *short_name_local  = NULL;
+    gs_free char       *pretty_name_local = NULL;
+    gs_free char       *description_local = NULL;
     guint               flags_local       = 0;
 
     g_return_val_if_fail(NM_IS_VPN_EDITOR_PLUGIN(plugin), FALSE);
@@ -94,7 +94,7 @@ static inline char **
 nm_vpn_editor_plugin_get_service_add_details(NMVpnEditorPlugin *plugin, const char *service_name)
 {
     NMVpnEditorPluginVT vt;
-    char **             details = NULL;
+    char              **details = NULL;
 
     g_return_val_if_fail(NM_IS_VPN_EDITOR_PLUGIN(plugin), NULL);
     g_return_val_if_fail(service_name, NULL);
@@ -109,19 +109,19 @@ nm_vpn_editor_plugin_get_service_add_details(NMVpnEditorPlugin *plugin, const ch
 
 static inline gboolean
 nm_vpn_editor_plugin_get_service_add_detail(NMVpnEditorPlugin *plugin,
-                                            const char *       service_type,
-                                            const char *       add_detail,
-                                            char **            out_pretty_name,
-                                            char **            out_description,
-                                            char **            out_add_detail_key,
-                                            char **            out_add_detail_val,
-                                            guint *            out_flags)
+                                            const char        *service_type,
+                                            const char        *add_detail,
+                                            char             **out_pretty_name,
+                                            char             **out_description,
+                                            char             **out_add_detail_key,
+                                            char             **out_add_detail_val,
+                                            guint             *out_flags)
 {
     NMVpnEditorPluginVT vt;
-    gs_free char *      pretty_name_local    = NULL;
-    gs_free char *      description_local    = NULL;
-    gs_free char *      add_detail_key_local = NULL;
-    gs_free char *      add_detail_val_local = NULL;
+    gs_free char       *pretty_name_local    = NULL;
+    gs_free char       *description_local    = NULL;
+    gs_free char       *add_detail_key_local = NULL;
+    gs_free char       *add_detail_val_local = NULL;
     guint               flags_local          = 0;
 
     g_return_val_if_fail(NM_IS_VPN_EDITOR_PLUGIN(plugin), FALSE);

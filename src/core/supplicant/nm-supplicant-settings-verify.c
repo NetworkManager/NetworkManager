@@ -11,8 +11,8 @@
 #include <stdlib.h>
 
 struct Opt {
-    const char *         key;
-    const char *const *  str_allowed;
+    const char          *key;
+    const char *const   *str_allowed;
     const NMSupplOptType type;
     const guint32        int_low;  /* Inclusive */
     const guint32        int_high; /* Inclusive; max length for strings */

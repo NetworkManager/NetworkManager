@@ -34,11 +34,11 @@ GType nmt_password_dialog_get_type(void);
 NmtNewtForm *nmt_password_dialog_new(const char *request_id,
                                      const char *title,
                                      const char *prompt,
-                                     GPtrArray * secrets);
+                                     GPtrArray  *secrets);
 
 gboolean nmt_password_dialog_succeeded(NmtPasswordDialog *dialog);
 
 const char *nmt_password_dialog_get_request_id(NmtPasswordDialog *dialog);
-GPtrArray * nmt_password_dialog_get_secrets(NmtPasswordDialog *dialog);
+GPtrArray  *nmt_password_dialog_get_secrets(NmtPasswordDialog *dialog);
 
 #endif /* NMT_PASSWORD_DIALOG_H */

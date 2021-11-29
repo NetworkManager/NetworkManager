@@ -50,7 +50,7 @@ typedef struct {
     NMDBusManager *dbus_mgr;
     gulong         new_conn_id;
     gulong         dis_conn_id;
-    GHashTable *   connections;
+    GHashTable    *connections;
 } NMDhcpListenerPrivate;
 
 struct _NMDhcpListener {
@@ -98,10 +98,10 @@ NM_DEFINE_SINGLETON_GETTER(NMDhcpListener, nm_dhcp_listener_get, NM_TYPE_DHCP_LI
 static char *
 get_option(GVariant *options, const char *key)
 {
-    GVariant *    value;
+    GVariant     *value;
     const guchar *bytes, *s;
     gsize         len;
-    char *        converted, *d;
+    char         *converted, *d;
 
     if (!g_variant_lookup(options, key, "@ay", &value))
         return NULL;
@@ -130,9 +130,9 @@ get_option(GVariant *options, const char *key)
 static void
 _method_call_handle(NMDhcpListener *self, GVariant *parameters)
 {
-    gs_free char *   iface             = NULL;
-    gs_free char *   pid_str           = NULL;
-    gs_free char *   reason            = NULL;
+    gs_free char              *iface   = NULL;
+    gs_free char              *pid_str = NULL;
+    gs_free char              *reason  = NULL;
     gs_unref_variant GVariant *options = NULL;
     int                        pid;
     gboolean                   handled = FALSE;
@@ -169,12 +169,12 @@ _method_call_handle(NMDhcpListener *self, GVariant *parameters)
 }
 
 static void
-_method_call(GDBusConnection *      connection,
-             const char *           sender,
-             const char *           object_path,
-             const char *           interface_name,
-             const char *           method_name,
-             GVariant *             parameters,
+_method_call(GDBusConnection       *connection,
+             const char            *sender,
+             const char            *object_path,
+             const char            *interface_name,
+             const char            *method_name,
+             GVariant              *parameters,
              GDBusMethodInvocation *invocation,
              gpointer               user_data)
 {
@@ -219,14 +219,14 @@ _dbus_connection_register_object(NMDhcpListener *self, GDBusConnection *connecti
 }
 
 static void
-new_connection_cb(NMDBusManager *     mgr,
-                  GDBusConnection *   connection,
+new_connection_cb(NMDBusManager      *mgr,
+                  GDBusConnection    *connection,
                   GDBusObjectManager *manager,
-                  NMDhcpListener *    self)
+                  NMDhcpListener     *self)
 {
     NMDhcpListenerPrivate *priv = NM_DHCP_LISTENER_GET_PRIVATE(self);
     guint                  registration_id;
-    GError *               error = NULL;
+    GError                *error = NULL;
 
     /* it is important to register the object during the new-connection signal,
      * as this avoids races with the connecting object. */

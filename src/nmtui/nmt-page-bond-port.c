@@ -29,12 +29,12 @@ nmt_page_bond_port_new(NMConnection *conn)
 static void
 nmt_page_bond_port_constructed(GObject *object)
 {
-    NmtPageBondPort *  bond = NMT_PAGE_BOND_PORT(object);
-    NmtEditorSection * section;
-    NmtEditorGrid *    grid;
+    NmtPageBondPort   *bond = NMT_PAGE_BOND_PORT(object);
+    NmtEditorSection  *section;
+    NmtEditorGrid     *grid;
     NMSettingBondPort *s_port;
-    NmtNewtWidget *    widget;
-    NMConnection *     conn;
+    NmtNewtWidget     *widget;
+    NMConnection      *conn;
 
     conn   = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(bond));
     s_port = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_BOND_PORT);

@@ -85,7 +85,7 @@ static gboolean
 mac_validator(NmtNewtEntry *entry, const char *text, gpointer user_data)
 {
     NmtMacEntryPrivate *priv = NMT_MAC_ENTRY_GET_PRIVATE(entry);
-    const char *        p;
+    const char         *p;
 
     if (!*text)
         return TRUE;

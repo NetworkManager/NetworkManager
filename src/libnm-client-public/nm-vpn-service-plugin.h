@@ -73,9 +73,9 @@ typedef struct {
 
     NM_AVAILABLE_IN_1_2
     gboolean (*need_secrets)(NMVpnServicePlugin *plugin,
-                             NMConnection *      connection,
-                             const char **       setting_name,
-                             GError **           error);
+                             NMConnection       *connection,
+                             const char        **setting_name,
+                             GError            **error);
 
     NM_AVAILABLE_IN_1_2
     gboolean (*disconnect)(NMVpnServicePlugin *plugin, GError **err);
@@ -85,9 +85,9 @@ typedef struct {
 
     NM_AVAILABLE_IN_1_2
     gboolean (*connect_interactive)(NMVpnServicePlugin *plugin,
-                                    NMConnection *      connection,
-                                    GVariant *          details,
-                                    GError **           error);
+                                    NMConnection       *connection,
+                                    GVariant           *details,
+                                    GError            **error);
 
     /*< private >*/
     NM_AVAILABLE_IN_1_2
@@ -102,8 +102,8 @@ GDBusConnection *nm_vpn_service_plugin_get_connection(NMVpnServicePlugin *plugin
 
 NM_AVAILABLE_IN_1_2
 void nm_vpn_service_plugin_secrets_required(NMVpnServicePlugin *plugin,
-                                            const char *        message,
-                                            const char **       hints);
+                                            const char         *message,
+                                            const char        **hints);
 
 NM_AVAILABLE_IN_1_2
 void nm_vpn_service_plugin_set_login_banner(NMVpnServicePlugin *plugin, const char *banner);
@@ -133,8 +133,8 @@ gboolean
 nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable **out_secrets);
 
 NM_AVAILABLE_IN_1_2
-gboolean nm_vpn_service_plugin_get_secret_flags(GHashTable *          data,
-                                                const char *          secret_name,
+gboolean nm_vpn_service_plugin_get_secret_flags(GHashTable           *data,
+                                                const char           *secret_name,
                                                 NMSettingSecretFlags *out_flags);
 
 G_END_DECLS

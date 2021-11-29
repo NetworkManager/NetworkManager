@@ -41,14 +41,14 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDhcpClient, PROP_CONFIG, );
 typedef struct _NMDhcpClientPrivate {
     NMDhcpClientConfig    config;
     const NML3ConfigData *l3cd;
-    GSource *             no_lease_timeout_source;
-    GSource *             ipv6_lladdr_timeout_source;
+    GSource              *no_lease_timeout_source;
+    GSource              *ipv6_lladdr_timeout_source;
     pid_t                 pid;
     guint                 watch_id;
     NMDhcpState           state;
     bool                  iaid_explicit : 1;
     bool                  is_stopped : 1;
-    GBytes *              effective_client_id;
+    GBytes               *effective_client_id;
 } NMDhcpClientPrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
@@ -209,7 +209,7 @@ stop(NMDhcpClient *self, gboolean release)
 static gboolean
 _no_lease_timeout(gpointer user_data)
 {
-    NMDhcpClient *       self = user_data;
+    NMDhcpClient        *self = user_data;
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     nm_clear_g_source_inst(&priv->no_lease_timeout_source);
@@ -251,9 +251,9 @@ schedule_no_lease_timeout(NMDhcpClient *self)
 void
 nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3ConfigData *l3cd)
 {
-    NMDhcpClientPrivate *    priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    GHashTable *             options;
-    const int                IS_IPv4                     = NM_IS_IPv4(priv->config.addr_family);
+    NMDhcpClientPrivate                     *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    GHashTable                              *options;
+    const int                                IS_IPv4     = NM_IS_IPv4(priv->config.addr_family);
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_merged = NULL;
 
     g_return_if_fail(NM_IS_DHCP_CLIENT(self));
@@ -364,9 +364,9 @@ nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3Co
 static void
 daemon_watch_cb(GPid pid, int status, gpointer user_data)
 {
-    NMDhcpClient *       self = NM_DHCP_CLIENT(user_data);
+    NMDhcpClient        *self = NM_DHCP_CLIENT(user_data);
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    gs_free char *       desc = NULL;
+    gs_free char        *desc = NULL;
 
     g_return_if_fail(priv->watch_id);
     priv->watch_id = 0;
@@ -477,7 +477,7 @@ get_duid(NMDhcpClient *self)
 static gboolean
 ipv6_lladdr_timeout(gpointer user_data)
 {
-    NMDhcpClient *       self = user_data;
+    NMDhcpClient        *self = user_data;
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     nm_clear_g_source_inst(&priv->ipv6_lladdr_timeout_source);
@@ -495,10 +495,10 @@ static const NMPlatformIP6Address *
 ipv6_lladdr_find(NMDhcpClient *self)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    NML3Cfg *            l3cfg;
+    NML3Cfg             *l3cfg;
     NMPLookup            lookup;
     NMDedupMultiIter     iter;
-    const NMPObject *    obj;
+    const NMPObject     *obj;
 
     l3cfg = priv->config.l3cfg;
     nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, nm_l3cfg_get_ifindex(l3cfg));
@@ -525,7 +525,7 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 
     if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE) {
         const NMPlatformIP6Address *addr;
-        gs_free_error GError *error = NULL;
+        gs_free_error GError       *error = NULL;
 
         addr = ipv6_lladdr_find(self);
         if (addr) {
@@ -549,8 +549,8 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 gboolean
 nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error)
 {
-    NMDhcpClientPrivate *priv;
-    gs_unref_bytes GBytes *     own_client_id = NULL;
+    NMDhcpClientPrivate        *priv;
+    gs_unref_bytes GBytes      *own_client_id = NULL;
     const NMPlatformIP6Address *addr;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
@@ -588,7 +588,7 @@ nm_dhcp_client_stop_existing(const char *pid_file, const char *binary_name)
 {
     guint64       start_time;
     pid_t         pid, ppid;
-    const char *  exe;
+    const char   *exe;
     char          proc_path[NM_STRLEN("/proc/%lu/cmdline") + 100];
     gs_free char *pid_contents = NULL, *proc_contents = NULL;
 
@@ -678,10 +678,10 @@ bytearray_variant_to_string(NMDhcpClient *self, GVariant *value, const char *key
 {
     const guint8 *array;
     gsize         length;
-    GString *     str;
+    GString      *str;
     int           i;
     unsigned char c;
-    char *        converted = NULL;
+    char         *converted = NULL;
 
     g_return_val_if_fail(value != NULL, NULL);
 
@@ -758,7 +758,7 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
          */
         if ((priv_opt_num = label_is_unknown_xyz(key)) > 0) {
             gs_free guint8 *check_val = NULL;
-            char *          hex_str   = NULL;
+            char           *hex_str   = NULL;
             gsize           len;
 
             /* dhclient passes values from dhcp private options in its own "string" format:
@@ -794,14 +794,14 @@ nm_dhcp_client_emit_ipv6_prefix_delegated(NMDhcpClient *self, const NMPlatformIP
 
 gboolean
 nm_dhcp_client_handle_event(gpointer      unused,
-                            const char *  iface,
+                            const char   *iface,
                             int           pid,
-                            GVariant *    options,
-                            const char *  reason,
+                            GVariant     *options,
+                            const char   *reason,
                             NMDhcpClient *self)
 {
-    NMDhcpClientPrivate *   priv;
-    guint32                 new_state;
+    NMDhcpClientPrivate                    *priv;
+    guint32                                 new_state;
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd   = NULL;
     NMPlatformIP6Address                    prefix = {
         0,
@@ -833,8 +833,8 @@ nm_dhcp_client_handle_event(gpointer      unused,
     if (NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
         gs_unref_hashtable GHashTable *str_options = NULL;
         GVariantIter                   iter;
-        const char *                   name;
-        GVariant *                     value;
+        const char                    *name;
+        GVariant                      *value;
 
         /* Copy options */
         str_options = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
@@ -956,7 +956,7 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
     }
 
     if (!config->hostname && config->send_hostname) {
-        const char *  hostname;
+        const char   *hostname;
         gs_free char *hostname_tmp = NULL;
 
         hostname = nm_hostname_manager_get_hostname(nm_hostname_manager_get());
@@ -1086,7 +1086,7 @@ nm_dhcp_client_init(NMDhcpClient *self)
 static void
 dispose(GObject *object)
 {
-    NMDhcpClient *       self = NM_DHCP_CLIENT(object);
+    NMDhcpClient        *self = NM_DHCP_CLIENT(object);
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     nm_dhcp_client_stop(self, FALSE);
@@ -1102,7 +1102,7 @@ dispose(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMDhcpClient *       self = NM_DHCP_CLIENT(object);
+    NMDhcpClient        *self = NM_DHCP_CLIENT(object);
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     config_clear(&priv->config);

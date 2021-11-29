@@ -48,8 +48,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_IP6_PRIVACY,
 typedef struct {
     NMSettingIPConfigPrivate parent;
 
-    char *                        token;
-    char *                        dhcp_duid;
+    char                         *token;
+    char                         *dhcp_duid;
     NMSettingIP6ConfigPrivacy     ip6_privacy;
     NMSettingIP6ConfigAddrGenMode addr_gen_mode;
     gint32                        ra_timeout;
@@ -175,9 +175,9 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting);
-    NMSettingIPConfig *        s_ip = NM_SETTING_IP_CONFIG(setting);
+    NMSettingIPConfig         *s_ip = NM_SETTING_IP_CONFIG(setting);
     NMSettingVerifyResult      ret;
-    const char *               method;
+    const char                *method;
     gboolean                   token_needs_normalization = FALSE;
 
     ret = NM_SETTING_CLASS(nm_setting_ip6_config_parent_class)->verify(setting, connection, error);
@@ -385,7 +385,7 @@ static GVariant *
 ip6_addresses_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *addrs = NULL;
-    const char *                 gateway;
+    const char                  *gateway;
 
     g_object_get(setting, NM_SETTING_IP_CONFIG_ADDRESSES, &addrs, NULL);
     gateway = nm_setting_ip_config_get_gateway(NM_SETTING_IP_CONFIG(setting));
@@ -396,7 +396,7 @@ static gboolean
 ip6_addresses_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *addrs;
-    char *     gateway = NULL;
+    char      *gateway = NULL;
 
     if (!_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "address-data")) {
         *out_is_modified = FALSE;
@@ -586,8 +586,8 @@ nm_setting_ip6_config_new(void)
 static void
 nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
 {
-    GObjectClass *          object_class            = G_OBJECT_CLASS(klass);
-    NMSettingClass *        setting_class           = NM_SETTING_CLASS(klass);
+    GObjectClass           *object_class            = G_OBJECT_CLASS(klass);
+    NMSettingClass         *setting_class           = NM_SETTING_CLASS(klass);
     NMSettingIPConfigClass *setting_ip_config_class = NM_SETTING_IP_CONFIG_CLASS(klass);
     GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config(AF_INET6);
 

@@ -97,9 +97,9 @@ grab_request_options(GPtrArray *store, const char *line)
 }
 
 static void
-add_ip4_config(GString *           str,
-               GBytes *            client_id,
-               const char *        hostname,
+add_ip4_config(GString            *str,
+               GBytes             *client_id,
+               const char         *hostname,
                gboolean            use_fqdn,
                NMDhcpHostnameFlags hostname_flags)
 {
@@ -204,7 +204,7 @@ static GBytes *
 read_client_id(const char *str)
 {
     gs_free char *s = NULL;
-    char *        p;
+    char         *p;
     int           i = 0, j = 0;
 
     nm_assert(!strncmp(str, CLIENTID_TAG, NM_STRLEN(CLIENTID_TAG)));
@@ -258,7 +258,7 @@ static gboolean
 read_interface(const char *line, char *interface, guint size)
 {
     gs_free char *dup = g_strdup(line + NM_STRLEN("interface"));
-    char *        ptr = dup, *end;
+    char         *ptr = dup, *end;
 
     while (g_ascii_isspace(*ptr))
         ptr++;
@@ -287,25 +287,25 @@ read_interface(const char *line, char *interface, guint size)
 }
 
 char *
-nm_dhcp_dhclient_create_config(const char *        interface,
+nm_dhcp_dhclient_create_config(const char         *interface,
                                int                 addr_family,
-                               GBytes *            client_id,
-                               const char *        anycast_address,
-                               const char *        hostname,
+                               GBytes             *client_id,
+                               const char         *anycast_address,
+                               const char         *hostname,
                                guint32             timeout,
                                gboolean            use_fqdn,
                                NMDhcpHostnameFlags hostname_flags,
-                               const char *        mud_url,
-                               const char *const * reject_servers,
-                               const char *        orig_path,
-                               const char *        orig_contents,
-                               GBytes **           out_new_client_id)
+                               const char         *mud_url,
+                               const char *const  *reject_servers,
+                               const char         *orig_path,
+                               const char         *orig_contents,
+                               GBytes            **out_new_client_id)
 {
-    nm_auto_free_gstring GString *new_contents = NULL;
-    gs_unref_ptrarray GPtrArray *fqdn_opts     = NULL;
-    gs_unref_ptrarray GPtrArray *reqs          = NULL;
-    gboolean                     reset_reqlist = FALSE;
-    int                          i;
+    nm_auto_free_gstring GString *new_contents  = NULL;
+    gs_unref_ptrarray GPtrArray  *fqdn_opts     = NULL;
+    gs_unref_ptrarray GPtrArray  *reqs          = NULL;
+    gboolean                      reset_reqlist = FALSE;
+    int                           i;
 
     g_return_val_if_fail(!anycast_address || nm_utils_hwaddr_valid(anycast_address, ETH_ALEN),
                          NULL);
@@ -317,8 +317,8 @@ nm_dhcp_dhclient_create_config(const char *        interface,
     reqs         = g_ptr_array_new_full(5, g_free);
 
     if (orig_contents) {
-        gs_free const char **lines = NULL;
-        gsize                line_i;
+        gs_free const char          **lines = NULL;
+        gsize                         line_i;
         nm_auto_free_gstring GString *blocks_stack = NULL;
         guint                         blocks_skip  = 0;
         gboolean                      in_alsoreq   = FALSE;
@@ -525,10 +525,10 @@ nm_dhcp_dhclient_create_config(const char *        interface,
 char *
 nm_dhcp_dhclient_escape_duid(GBytes *duid)
 {
-    char *        escaped;
+    char         *escaped;
     const guint8 *s, *s0;
     gsize         len;
-    char *        d;
+    char         *d;
 
     g_return_val_if_fail(duid, NULL);
 
@@ -562,7 +562,7 @@ isoctal(const guint8 *p)
 GBytes *
 nm_dhcp_dhclient_unescape_duid(const char *duid)
 {
-    GByteArray *  unescaped;
+    GByteArray   *unescaped;
     const guint8 *p = (const guint8 *) duid;
     guint         i, len;
     guint8        octal;
@@ -609,7 +609,7 @@ error:
 GBytes *
 nm_dhcp_dhclient_read_duid(const char *leasefile, GError **error)
 {
-    gs_free char *       contents   = NULL;
+    gs_free char        *contents   = NULL;
     gs_free const char **contents_v = NULL;
     gsize                i;
 
@@ -622,7 +622,7 @@ nm_dhcp_dhclient_read_duid(const char *leasefile, GError **error)
     contents_v = nm_strsplit_set(contents, "\n\r");
     for (i = 0; contents_v && contents_v[i]; i++) {
         const char *p = nm_str_skip_leading_spaces(contents_v[i]);
-        GBytes *    duid;
+        GBytes     *duid;
 
         if (!NM_STR_HAS_PREFIX(p, DUID_PREFIX))
             continue;
@@ -647,10 +647,10 @@ nm_dhcp_dhclient_read_duid(const char *leasefile, GError **error)
 gboolean
 nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
 {
-    gs_free char *       escaped_duid = NULL;
-    gs_free const char **lines        = NULL;
-    nm_auto_free_gstring GString *s   = NULL;
-    const char *const *           iter;
+    gs_free char                 *escaped_duid = NULL;
+    gs_free const char          **lines        = NULL;
+    nm_auto_free_gstring GString *s            = NULL;
+    const char *const            *iter;
     gsize                         len = 0;
 
     g_return_val_if_fail(leasefile != NULL, FALSE);

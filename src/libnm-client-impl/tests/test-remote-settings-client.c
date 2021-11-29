@@ -13,9 +13,9 @@
 #include "libnm-client-test/nm-test-libnm-utils.h"
 
 static struct {
-    NMTstcServiceInfo * sinfo;
-    NMClient *          client;
-    GDBusConnection *   bus;
+    NMTstcServiceInfo  *sinfo;
+    NMClient           *client;
+    GDBusConnection    *bus;
     NMRemoteConnection *remote;
 } gl = {};
 
@@ -25,7 +25,7 @@ static void
 add_cb(GObject *s, GAsyncResult *result, gpointer user_data)
 {
     gboolean *done  = user_data;
-    GError *  error = NULL;
+    GError   *error = NULL;
 
     gl.remote = nm_client_add_connection_finish(gl.client, result, &error);
     g_assert_no_error(error);
@@ -72,7 +72,7 @@ test_add_connection(void)
 static void
 set_visible_cb(GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
-    GError *  error = NULL;
+    GError   *error = NULL;
     GVariant *ret;
 
     ret = g_dbus_proxy_call_finish(G_DBUS_PROXY(proxy), result, &error);
@@ -95,8 +95,8 @@ connection_removed_cb(NMClient *s, NMRemoteConnection *connection, gboolean *don
 }
 
 static void
-invis_has_settings_cb(NMSetting *   setting,
-                      const char *  key,
+invis_has_settings_cb(NMSetting    *setting,
+                      const char   *key,
                       const GValue *value,
                       GParamFlags   flags,
                       gpointer      user_data)
@@ -109,10 +109,10 @@ test_make_invisible(void)
 {
     const GPtrArray *conns;
     int              i;
-    GDBusProxy *     proxy;
+    GDBusProxy      *proxy;
     gboolean         visible_changed = FALSE, connection_removed = FALSE;
     gboolean         has_settings = FALSE;
-    char *           path;
+    char            *path;
 
     if (!nmtstc_service_available(gl.sinfo))
         return;
@@ -193,9 +193,9 @@ test_make_visible(void)
 {
     const GPtrArray *conns;
     int              i;
-    GDBusProxy *     proxy;
+    GDBusProxy      *proxy;
     gboolean         found = FALSE;
-    char *           path;
+    char            *path;
     NMRemoteConnection *new = NULL;
 
     if (!nmtstc_service_available(gl.sinfo))
@@ -261,7 +261,7 @@ test_make_visible(void)
 static void
 deleted_cb(GObject *proxy, GAsyncResult *result, gpointer user_data)
 {
-    GError *  error = NULL;
+    GError   *error = NULL;
     GVariant *ret;
 
     ret = g_dbus_proxy_call_finish(G_DBUS_PROXY(proxy), result, &error);
@@ -280,11 +280,11 @@ static void
 test_remove_connection(void)
 {
     NMRemoteConnection *connection;
-    const GPtrArray *   conns;
+    const GPtrArray    *conns;
     int                 i;
-    GDBusProxy *        proxy;
+    GDBusProxy         *proxy;
     gboolean            done = FALSE;
-    char *              path;
+    char               *path;
 
     if (!nmtstc_service_available(gl.sinfo))
         return;
@@ -334,8 +334,8 @@ test_remove_connection(void)
 static void
 add_remove_cb(GObject *s, GAsyncResult *result, gpointer user_data)
 {
-    NMRemoteConnection *connection;
-    gboolean *          done    = user_data;
+    NMRemoteConnection   *connection;
+    gboolean             *done  = user_data;
     gs_free_error GError *error = NULL;
 
     connection = nm_client_add_connection_finish(gl.client, result, &error);
@@ -348,8 +348,8 @@ add_remove_cb(GObject *s, GAsyncResult *result, gpointer user_data)
 static void
 test_add_remove_connection(void)
 {
-    gs_unref_variant GVariant *ret           = NULL;
-    GError *                   error         = NULL;
+    gs_unref_variant GVariant    *ret        = NULL;
+    GError                       *error      = NULL;
     gs_unref_object NMConnection *connection = NULL;
     gboolean                      done       = FALSE;
 
@@ -382,7 +382,7 @@ test_add_remove_connection(void)
 static void
 add_bad_cb(GObject *s, GAsyncResult *result, gpointer user_data)
 {
-    gboolean *    done          = user_data;
+    gboolean             *done  = user_data;
     gs_free_error GError *error = NULL;
 
     gl.remote = nm_client_add_connection_finish(gl.client, result, &error);
@@ -418,7 +418,7 @@ test_add_bad_connection(void)
 static void
 save_hostname_cb(GObject *s, GAsyncResult *result, gpointer user_data)
 {
-    gboolean *    done          = user_data;
+    gboolean             *done  = user_data;
     gs_free_error GError *error = NULL;
 
     nm_client_save_hostname_finish(gl.client, result, &error);
@@ -432,7 +432,7 @@ test_save_hostname(void)
 {
     gint64   until_ts;
     gboolean done  = FALSE;
-    GError * error = NULL;
+    GError  *error = NULL;
 
     if (!nmtstc_service_available(gl.sinfo))
         return;

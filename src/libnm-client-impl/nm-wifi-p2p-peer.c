@@ -29,12 +29,12 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_FLAGS,
 
 typedef struct {
     GBytes *wfd_ies;
-    char *  name;
-    char *  manufacturer;
-    char *  model;
-    char *  model_number;
-    char *  serial;
-    char *  hw_address;
+    char   *name;
+    char   *manufacturer;
+    char   *model;
+    char   *model_number;
+    char   *serial;
+    char   *hw_address;
     gint32  last_seen;
     guint32 flags;
     guint8  strength;
@@ -261,10 +261,10 @@ gboolean
 nm_wifi_p2p_peer_connection_valid(NMWifiP2PPeer *peer, NMConnection *connection)
 {
     NMSettingConnection *s_con;
-    NMSettingWifiP2P *   s_wifi_p2p;
-    const char *         ctype;
-    const char *         hw_address;
-    const char *         setting_peer;
+    NMSettingWifiP2P    *s_wifi_p2p;
+    const char          *ctype;
+    const char          *hw_address;
+    const char          *setting_peer;
 
     s_wifi_p2p =
         (NMSettingWifiP2P *) nm_connection_get_setting(connection, NM_TYPE_SETTING_WIFI_P2P);

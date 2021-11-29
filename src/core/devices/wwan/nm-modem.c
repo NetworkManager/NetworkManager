@@ -72,18 +72,18 @@ typedef struct _NMModemPrivate {
     NMModemIPMethod ip6_method;
     NMModemState    state;
     NMModemState    prev_state; /* revert to this state if enable/disable fails */
-    char *          device_id;
-    char *          sim_id;
+    char           *device_id;
+    char           *sim_id;
     NMModemIPType   ip_types;
-    char *          sim_operator_id;
-    char *          operator_code;
-    char *          apn;
+    char           *sim_operator_id;
+    char           *operator_code;
+    char           *apn;
 
     NMPPPManager *ppp_manager;
-    NMPppMgr *    ppp_mgr;
+    NMPppMgr     *ppp_mgr;
 
-    NMActRequest *                act_req;
-    NMDevice *                    device;
+    NMActRequest                 *act_req;
+    NMDevice                     *device;
     guint32                       secrets_tries;
     NMActRequestGetSecretsCallId *secrets_id;
 
@@ -195,13 +195,13 @@ _get_platform(NMModem *self)
 /*****************************************************************************/
 
 void
-nm_modem_emit_signal_new_config(NMModem *                 self,
+nm_modem_emit_signal_new_config(NMModem                  *self,
                                 int                       addr_family,
-                                const NML3ConfigData *    l3cd,
+                                const NML3ConfigData     *l3cd,
                                 gboolean                  do_auto,
                                 const NMUtilsIPv6IfaceId *iid,
                                 NMDeviceStateReason       failure_reason,
-                                GError *                  error)
+                                GError                   *error)
 {
     nm_assert(NM_IS_MODEM(self));
     nm_assert_addr_family(addr_family);
@@ -241,9 +241,9 @@ nm_modem_emit_signal_new_config(NMModem *                 self,
 }
 
 void
-nm_modem_emit_signal_new_config_success(NMModem *                 self,
+nm_modem_emit_signal_new_config_success(NMModem                  *self,
                                         int                       addr_family,
-                                        const NML3ConfigData *    l3cd,
+                                        const NML3ConfigData     *l3cd,
                                         gboolean                  do_auto,
                                         const NMUtilsIPv6IfaceId *iid)
 {
@@ -257,10 +257,10 @@ nm_modem_emit_signal_new_config_success(NMModem *                 self,
 }
 
 void
-nm_modem_emit_signal_new_config_failure(NMModem *           self,
+nm_modem_emit_signal_new_config_failure(NMModem            *self,
                                         int                 addr_family,
                                         NMDeviceStateReason failure_reason,
-                                        GError *            error)
+                                        GError             *error)
 {
     nm_assert(error);
     nm_modem_emit_signal_new_config(self, addr_family, NULL, FALSE, NULL, failure_reason, error);
@@ -461,9 +461,9 @@ build_single_ip_type_array(NMModemIPType type)
 GArray *
 nm_modem_get_connection_ip_type(NMModem *self, NMConnection *connection, GError **error)
 {
-    NMModemPrivate *   priv = NM_MODEM_GET_PRIVATE(self);
+    NMModemPrivate    *priv = NM_MODEM_GET_PRIVATE(self);
     NMSettingIPConfig *s_ip4, *s_ip6;
-    const char *       method;
+    const char        *method;
     gboolean           ip4 = TRUE, ip6 = TRUE;
     gboolean           ip4_may_fail = TRUE, ip6_may_fail = TRUE;
 
@@ -511,7 +511,7 @@ nm_modem_get_connection_ip_type(NMModem *self, NMConnection *connection, GError 
 
     if (ip4 && ip6) {
         NMModemIPType type;
-        GArray *      out;
+        GArray       *out;
 
         out = g_array_sized_new(FALSE, FALSE, sizeof(NMModemIPType), 3);
 
@@ -597,7 +597,7 @@ _ppp_mgr_cleanup(NMModem *self)
 static void
 _ppp_maybe_emit_new_config(NMModem *self, int addr_family)
 {
-    NMModemPrivate *      priv    = NM_MODEM_GET_PRIVATE(self);
+    NMModemPrivate       *priv    = NM_MODEM_GET_PRIVATE(self);
     const int             IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMPppMgrIPData *ip_data;
     gboolean              do_auto;
@@ -628,7 +628,7 @@ _ppp_maybe_emit_new_config(NMModem *self, int addr_family)
 static void
 _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, gpointer user_data)
 {
-    NMModem *       self = NM_MODEM(user_data);
+    NMModem        *self = NM_MODEM(user_data);
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
     int             IS_IPv4;
 
@@ -675,7 +675,7 @@ port_speed_is_zero(const char *port)
 {
     struct termios    options;
     nm_auto_close int fd   = -1;
-    gs_free char *    path = NULL;
+    gs_free char     *path = NULL;
 
     nm_assert(port);
 
@@ -702,11 +702,11 @@ port_speed_is_zero(const char *port)
 static gboolean
 _stage3_ip_config_start_on_idle(NMModem *self, int addr_family)
 {
-    const int       IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMModemPrivate *priv    = NM_MODEM_GET_PRIVATE(self);
-    NMModemIPMethod ip_method;
-    NMConnection *  connection;
-    const char *    method;
+    const int             IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMModemPrivate       *priv    = NM_MODEM_GET_PRIVATE(self);
+    NMModemIPMethod       ip_method;
+    NMConnection         *connection;
+    const char           *method;
     gs_free_error GError *error = NULL;
     NMDeviceStateReason   failure_reason;
 
@@ -803,10 +803,10 @@ guint32
 nm_modem_get_configured_mtu(NMDevice *self, NMDeviceMtuSource *out_source, gboolean *out_force)
 {
     NMConnection *connection;
-    NMSetting *   setting;
+    NMSetting    *setting;
     gint64        mtu_default;
     guint         mtu = 0;
-    const char *  property_name;
+    const char   *property_name;
 
     nm_assert(NM_IS_DEVICE(self));
     nm_assert(out_source);
@@ -851,13 +851,13 @@ cancel_get_secrets(NMModem *self)
 }
 
 static void
-modem_secrets_cb(NMActRequest *                req,
+modem_secrets_cb(NMActRequest                 *req,
                  NMActRequestGetSecretsCallId *call_id,
-                 NMSettingsConnection *        connection,
-                 GError *                      error,
+                 NMSettingsConnection         *connection,
+                 GError                       *error,
                  gpointer                      user_data)
 {
-    NMModem *       self = NM_MODEM(user_data);
+    NMModem        *self = NM_MODEM(user_data);
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
 
     g_return_if_fail(call_id == priv->secrets_id);
@@ -877,12 +877,12 @@ modem_secrets_cb(NMActRequest *                req,
 }
 
 void
-nm_modem_get_secrets(NMModem *   self,
+nm_modem_get_secrets(NMModem    *self,
                      const char *setting_name,
                      gboolean    request_new,
                      const char *hint)
 {
-    NMModemPrivate *             priv  = NM_MODEM_GET_PRIVATE(self);
+    NMModemPrivate              *priv  = NM_MODEM_GET_PRIVATE(self);
     NMSecretAgentGetSecretsFlags flags = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
 
     cancel_get_secrets(self);
@@ -903,8 +903,8 @@ nm_modem_get_secrets(NMModem *   self,
 /*****************************************************************************/
 
 static NMActStageReturn
-modem_act_stage1_prepare(NMModem *            modem,
-                         NMConnection *       connection,
+modem_act_stage1_prepare(NMModem             *modem,
+                         NMConnection        *connection,
                          NMDeviceStateReason *out_failure_reason)
 {
     NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_UNKNOWN);
@@ -912,16 +912,16 @@ modem_act_stage1_prepare(NMModem *            modem,
 }
 
 NMActStageReturn
-nm_modem_act_stage1_prepare(NMModem *            self,
-                            NMActRequest *       req,
+nm_modem_act_stage1_prepare(NMModem             *self,
+                            NMActRequest        *req,
                             NMDeviceStateReason *out_failure_reason)
 {
-    NMModemPrivate *  priv                    = NM_MODEM_GET_PRIVATE(self);
+    NMModemPrivate              *priv         = NM_MODEM_GET_PRIVATE(self);
     gs_unref_ptrarray GPtrArray *hints        = NULL;
-    const char *                 setting_name = NULL;
+    const char                  *setting_name = NULL;
     NMSecretAgentGetSecretsFlags flags        = NM_SECRET_AGENT_GET_SECRETS_FLAG_ALLOW_INTERACTION;
-    NMConnection *               connection;
-    NMDevice *                   device;
+    NMConnection                *connection;
+    NMDevice                    *device;
 
     g_return_val_if_fail(NM_IS_ACT_REQUEST(req), NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -985,11 +985,11 @@ nm_modem_act_stage2_config(NMModem *self, NMDevice *device, NMDeviceStateReason 
         (priv->ip4_method == NM_MODEM_IP_METHOD_PPP || priv->ip6_method == NM_MODEM_IP_METHOD_PPP);
 
     if (needs_ppp && !priv->ppp_mgr) {
-        const char *  ppp_name      = NULL;
-        gs_free_error GError *error = NULL;
+        const char           *ppp_name = NULL;
+        gs_free_error GError *error    = NULL;
         guint                 ip_timeout;
         guint                 baud_override;
-        NMActRequest *        req;
+        NMActRequest         *req;
 
         req = nm_device_get_act_request(device);
         g_return_val_if_fail(req, NM_ACT_STAGE_RETURN_FAILURE);
@@ -1061,7 +1061,7 @@ nm_modem_check_connection_compatible(NMModem *self, NMConnection *connection, GE
 
     if (nm_streq0(nm_connection_get_connection_type(connection), NM_SETTING_GSM_SETTING_NAME)) {
         NMSettingGsm *s_gsm;
-        const char *  str;
+        const char   *str;
 
         s_gsm = _nm_connection_check_main_setting(connection, NM_SETTING_GSM_SETTING_NAME, error);
         if (!s_gsm)
@@ -1115,11 +1115,11 @@ nm_modem_check_connection_compatible(NMModem *self, NMConnection *connection, GE
 /*****************************************************************************/
 
 gboolean
-nm_modem_complete_connection(NMModem *            self,
-                             const char *         iface,
-                             NMConnection *       connection,
+nm_modem_complete_connection(NMModem             *self,
+                             const char          *iface,
+                             NMConnection        *connection,
                              NMConnection *const *existing_connections,
-                             GError **            error)
+                             GError             **error)
 {
     NMModemClass *klass;
 
@@ -1192,9 +1192,9 @@ deactivate_cleanup(NMModem *self, NMDevice *device, gboolean stop_ppp_manager)
 /*****************************************************************************/
 
 typedef struct {
-    NMModem *                 self;
-    NMDevice *                device;
-    GCancellable *            cancellable;
+    NMModem                  *self;
+    NMDevice                 *device;
+    GCancellable             *cancellable;
     NMModemDeactivateCallback callback;
     gpointer                  callback_user_data;
 } DeactivateContext;
@@ -1232,7 +1232,7 @@ _deactivate_call_disconnect(DeactivateContext *ctx)
 }
 
 static void
-_deactivate_ppp_manager_stop_cb(NMPPPManager *          ppp_manager,
+_deactivate_ppp_manager_stop_cb(NMPPPManager           *ppp_manager,
                                 NMPPPManagerStopHandle *handle,
                                 gboolean                was_cancelled,
                                 gpointer                user_data)
@@ -1255,15 +1255,15 @@ _deactivate_ppp_manager_stop_cb(NMPPPManager *          ppp_manager,
 }
 
 void
-nm_modem_deactivate_async(NMModem *                 self,
-                          NMDevice *                device,
-                          GCancellable *            cancellable,
+nm_modem_deactivate_async(NMModem                  *self,
+                          NMDevice                 *device,
+                          GCancellable             *cancellable,
                           NMModemDeactivateCallback callback,
                           gpointer                  user_data)
 {
-    NMModemPrivate *   priv = NM_MODEM_GET_PRIVATE(self);
+    NMModemPrivate    *priv = NM_MODEM_GET_PRIVATE(self);
     DeactivateContext *ctx;
-    NMPPPManager *     ppp_manager;
+    NMPPPManager      *ppp_manager;
 
     g_return_if_fail(NM_IS_MODEM(self));
     g_return_if_fail(NM_IS_DEVICE(device));
@@ -1407,13 +1407,13 @@ _set_ip_ifindex(NMModem *self, int ifindex)
 }
 
 gboolean
-nm_modem_set_data_port(NMModem *       self,
-                       NMPlatform *    platform,
-                       const char *    data_port,
+nm_modem_set_data_port(NMModem        *self,
+                       NMPlatform     *platform,
+                       const char     *data_port,
                        NMModemIPMethod ip4_method,
                        NMModemIPMethod ip6_method,
                        guint           timeout,
-                       GError **       error)
+                       GError        **error)
 {
     NMModemPrivate *priv;
     gboolean        is_ppp;
@@ -1499,8 +1499,8 @@ nm_modem_set_data_port(NMModem *       self,
 gboolean
 nm_modem_owns_port(NMModem *self, const char *iface)
 {
-    NMModemPrivate *      priv = NM_MODEM_GET_PRIVATE(self);
-    NMPlatform *          platform;
+    NMModemPrivate       *priv = NM_MODEM_GET_PRIVATE(self);
+    NMPlatform           *platform;
     const NMPlatformLink *plink;
 
     g_return_val_if_fail(iface != NULL, FALSE);
@@ -1526,7 +1526,7 @@ nm_modem_owns_port(NMModem *self, const char *iface)
 /*****************************************************************************/
 
 void
-nm_modem_get_capabilities(NMModem *                  self,
+nm_modem_get_capabilities(NMModem                   *self,
                           NMDeviceModemCapabilities *modem_caps,
                           NMDeviceModemCapabilities *current_caps)
 {
@@ -1566,7 +1566,7 @@ _nm_modem_set_apn(NMModem *self, const char *apn)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMModem *       self = NM_MODEM(object);
+    NMModem        *self = NM_MODEM(object);
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -1616,7 +1616,7 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMModemPrivate *priv = NM_MODEM_GET_PRIVATE(object);
-    const char *    s;
+    const char     *s;
 
     switch (prop_id) {
     case PROP_PATH:
