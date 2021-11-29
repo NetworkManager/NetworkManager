@@ -2629,11 +2629,12 @@ handle_init:
             acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
             _l3_acd_data_timeout_schedule(acd_data, 0);
             return;
-        case NM_L3_ACD_ADDR_STATE_READY:
         case NM_L3_ACD_ADDR_STATE_USED:
         case NM_L3_ACD_ADDR_STATE_CONFLICT:
         case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
             nm_assert(!acd_data->nacd_probe);
+            return;
+        case NM_L3_ACD_ADDR_STATE_READY:
             return;
         }
         nm_assert_not_reached();
