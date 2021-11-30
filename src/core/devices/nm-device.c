@@ -745,6 +745,7 @@ typedef struct _NMDevicePrivate {
     NMOptionBool promisc_reset;
 
     GVariant *ports_variant; /* Array of port devices D-Bus path */
+    char     *prop_ip_iface; /* IP interface D-Bus property */
 } NMDevicePrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDevice, nm_device, NM_TYPE_DBUS_OBJECT)
@@ -929,6 +930,38 @@ _hostname_resolver_free(HostnameResolver *resolver)
     nm_g_object_unref(resolver->address);
     g_free(resolver->hostname);
     nm_g_slice_free(resolver);
+}
+
+/*****************************************************************************/
+
+/**
+ * Update the "ip_iface" property when something changes (device
+ * state, ifindex) and emit a notify signal if needed. Note that
+ * the property must be NULL for devices without an ifindex and
+ * when the device is not activated. This behavior is part of the
+ * API and should not be changed.
+ */
+static void
+update_prop_ip_iface(NMDevice *self)
+{
+    NMDevicePrivate *priv     = NM_DEVICE_GET_PRIVATE(self);
+    const char      *ip_iface = NULL;
+    gs_free char    *to_free  = NULL;
+
+    if (nm_device_get_ip_ifindex(self) > 0
+        && (priv->state == NM_DEVICE_STATE_UNMANAGED
+            || (priv->state >= NM_DEVICE_STATE_IP_CHECK
+                && priv->state <= NM_DEVICE_STATE_DEACTIVATING))) {
+        ip_iface = nm_utils_str_utf8safe_escape(nm_device_get_ip_iface(self),
+                                                NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                                &to_free);
+    }
+
+    if (!nm_streq0(priv->prop_ip_iface, ip_iface)) {
+        g_free(priv->prop_ip_iface);
+        priv->prop_ip_iface = to_free ? g_steal_pointer(&to_free) : g_strdup(ip_iface);
+        _notify(self, PROP_IP_IFACE);
+    }
 }
 
 /*****************************************************************************/
@@ -4081,6 +4114,8 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
     if (l3cfg_commit_type_old)
         nm_l3cfg_commit_type_unregister(l3cfg_old, l3cfg_commit_type_old);
 
+    update_prop_ip_iface(self);
+
     return TRUE;
 }
 
@@ -4250,7 +4285,7 @@ _set_ip_ifindex(NMDevice *self, int ifindex, const char *ifname)
     if (!eq_name) {
         g_free(priv->ip_iface_);
         priv->ip_iface_ = g_strdup(ifname);
-        _notify(self, PROP_IP_IFACE);
+        update_prop_ip_iface(self);
     }
     _set_ifindex(self, ifindex, TRUE);
 
@@ -6426,7 +6461,7 @@ device_link_changed(gpointer user_data)
 
         _notify(self, PROP_IFACE);
         if (ip_ifname_changed)
-            _notify(self, PROP_IP_IFACE);
+            update_prop_ip_iface(self);
 
         /* Re-match available connections against the new interface name */
         nm_device_recheck_available_connections(self);
@@ -6559,7 +6594,7 @@ device_ip_link_changed(gpointer user_data)
               ip_iface);
         g_free(priv->ip_iface_);
         priv->ip_iface_ = g_strdup(ip_iface);
-        _notify(self, PROP_IP_IFACE);
+        update_prop_ip_iface(self);
 
         nm_device_update_dynamic_ip_setup(self);
     }
@@ -7289,7 +7324,7 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     _set_ifindex(self, 0, FALSE);
     _set_ifindex(self, 0, TRUE);
     if (nm_clear_g_free(&priv->ip_iface_))
-        _notify(self, PROP_IP_IFACE);
+        update_prop_ip_iface(self);
 
     priv->master_ifindex = 0;
 
@@ -15582,6 +15617,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             fw_change_zone(self);
         } else
             nm_device_start_ip_check(self);
+
         break;
     }
     case NM_DEVICE_STATE_SECONDARIES:
@@ -15608,6 +15644,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                    || old_state >= NM_DEVICE_STATE_ACTIVATED;
     concheck_update_interval(self, AF_INET, concheck_now);
     concheck_update_interval(self, AF_INET6, concheck_now);
+
+    update_prop_ip_iface(self);
 
     priv->in_state_changed--;
 
@@ -16868,10 +16906,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
             nm_utils_str_utf8safe_escape_cp(priv->iface, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
         break;
     case PROP_IP_IFACE:
-        g_value_take_string(
-            value,
-            nm_utils_str_utf8safe_escape_cp(nm_device_get_ip_iface(self),
-                                            NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL));
+        g_value_set_string(value, priv->prop_ip_iface);
         break;
     case PROP_IFINDEX:
         g_value_set_int(value, priv->ifindex);
