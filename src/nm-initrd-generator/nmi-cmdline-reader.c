@@ -1316,7 +1316,8 @@ connection_set_needed_cb(gpointer key, gpointer value, gpointer user_data)
 }
 
 GHashTable *
-nmi_cmdline_reader_parse(const char        *sysfs_dir,
+nmi_cmdline_reader_parse(const char        *etc_connections_dir,
+                         const char        *sysfs_dir,
                          const char *const *argv,
                          char             **hostname,
                          gint64            *carrier_timeout_sec)
@@ -1512,7 +1513,8 @@ nmi_cmdline_reader_parse(const char        *sysfs_dir,
     }
 
     if (neednet) {
-        if (g_hash_table_size(reader->hash) == 0) {
+        if (!(etc_connections_dir && g_file_test(etc_connections_dir, G_FILE_TEST_IS_DIR))
+            && g_hash_table_size(reader->hash) == 0) {
             /* Make sure there's some connection. */
             reader_get_default_connection(reader);
         }

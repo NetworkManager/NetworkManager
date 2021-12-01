@@ -29,7 +29,8 @@
         gint64 *const            _out_carrier_timeout_sec = (out_carrier_timeout_sec); \
         GHashTable              *_connections;                                         \
                                                                                        \
-        _connections = nmi_cmdline_reader_parse(TEST_INITRD_DIR "/sysfs",              \
+        _connections = nmi_cmdline_reader_parse(NULL,                                  \
+                                                TEST_INITRD_DIR "/sysfs",              \
                                                 _ARGV,                                 \
                                                 _out_hostname,                         \
                                                 _out_carrier_timeout_sec);             \
