@@ -427,6 +427,7 @@ static const Option slave_options[] = {
     OPTION(NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode", OPTION_TYPE_BOOL(FALSE), ),
     {0}};
 
+
 static void
 commit_option(NMDevice *device, NMSetting *setting, const Option *option, gboolean slave)
 {
@@ -435,6 +436,10 @@ commit_option(NMDevice *device, NMSetting *setting, const Option *option, gboole
     GParamSpec                 *pspec;
     const char                 *value;
     char                        value_buf[100];
+
+    if(!slave) {
+       return;
+    }
 
     if (slave)
         nm_assert(NM_IS_SETTING_BRIDGE_PORT(setting));
@@ -805,7 +810,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     g_return_val_if_fail(s_bridge, NM_ACT_STAGE_RETURN_FAILURE);
 
     for (option = master_options; option->name; option++)
-        commit_option(device, s_bridge, option, FALSE);
+       commit_option(device, s_bridge, option, FALSE);
 
     if (!bridge_set_vlan_options(device, (NMSettingBridge *) s_bridge)) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
