@@ -1237,6 +1237,7 @@ managed=1
             <para>
               Specify the Wi-Fi backend used for the device. Currently, supported
               are <literal>wpa_supplicant</literal> and <literal>iwd</literal> (experimental).
+              If unspecified, the default is "<literal>&NM_CONFIG_DEFAULT_WIFI_BACKEND_TEXT;</literal>".
             </para>
           </listitem>
         </varlistentry>

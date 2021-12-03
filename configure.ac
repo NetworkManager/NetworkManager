@@ -404,6 +404,25 @@ AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_LOGGING_BACKEND, "$nm_config_logging_backen
 NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT="$nm_config_logging_backend_default"
 AC_SUBST(NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT)
 
+AC_ARG_WITH(config-wifi-backend-default,
+            AS_HELP_STRING([--with-config-wifi-backend-default=backend],
+                           [Default value for wifi.backend]),
+            nm_config_wifi_backend_default="$withval",
+            nm_config_wifi_backend_default="wpa_supplicant")
+
+if test "$nm_config_wifi_backend_default" != 'iwd' \
+     -a "$nm_config_wifi_backend_default" != 'wpa_supplicant'; then
+	AC_MSG_ERROR([The default Wi-Fi backend must be either wpa_supplicant or iwd.])
+fi
+if test "$nm_config_wifi_backend_default" = "iwd"; then
+	if test "$ac_with_iwd" != "yes"; then
+		AC_MSG_ERROR([Setting the default Wi-Fi backend to iwd requires iwd support.])
+	fi
+fi
+AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_WIFI_BACKEND, "$nm_config_wifi_backend_default", [Default configuration option for wifi.backend])
+NM_CONFIG_DEFAULT_WIFI_BACKEND_TEXT="$nm_config_wifi_backend_default"
+AC_SUBST(NM_CONFIG_DEFAULT_WIFI_BACKEND_TEXT)
+
 # Session tracking support
 AC_ARG_WITH(systemd-logind,
             AS_HELP_STRING([--with-systemd-logind=yes|no],

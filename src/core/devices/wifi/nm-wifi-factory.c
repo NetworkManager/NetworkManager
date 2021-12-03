@@ -92,12 +92,15 @@ create_device(NMDeviceFactory      *factory,
                                                          NULL);
     backend = nm_strstrip_avoid_copy_a(300, backend, &backend_free);
 
+    if (!backend)
+        backend = "" NM_CONFIG_DEFAULT_WIFI_BACKEND;
+
     nm_log_dbg(LOGD_PLATFORM | LOGD_WIFI,
                "(%s) config: backend is %s%s%s%s",
                iface,
                NM_PRINT_FMT_QUOTE_STRING(backend),
                WITH_IWD ? " (iwd support enabled)" : "");
-    if (!backend || !g_ascii_strcasecmp(backend, "wpa_supplicant")) {
+    if (!g_ascii_strcasecmp(backend, "wpa_supplicant")) {
         NMDevice                 *device;
         _NMDeviceWifiCapabilities capabilities;
         _NM80211Mode              mode;
