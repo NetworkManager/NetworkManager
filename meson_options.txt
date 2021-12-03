@@ -21,6 +21,7 @@ option('polkit_agent_helper_1', type: 'string', value: '', description: 'Path na
 option('selinux', type: 'boolean', value: true, description: 'Build with SELinux')
 option('systemd_journal', type: 'boolean', value: true, description: 'Use systemd journal for logging')
 option('config_logging_backend_default', type: 'combo', choices: ['default', 'syslog', 'journal'], value: 'default', description: 'Default value for logging.backend')
+option('config_wifi_backend_default', type: 'combo', choices: ['default', 'wpa_supplicant', 'iwd'], value: 'default', description: 'Default value for wifi.backend')
 option('hostname_persist', type: 'combo', choices: ['default', 'suse', 'gentoo', 'slackware'], value: 'default', description: 'Hostname persist method')
 option('libaudit', type: 'combo', choices: ['yes', 'yes-disabled-by-default', 'no'], value: 'yes', description: 'Build with audit daemon support. yes-disabled-by-default enables support, but disables it unless explicitly configured via NetworkManager.conf')
 
