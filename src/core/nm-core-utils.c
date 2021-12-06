@@ -704,8 +704,8 @@ nm_utils_kill_child_sync(pid_t       pid,
 
         sleep_duration_usec = _sleep_duration_convert_ms_to_us(sleep_duration_msec);
         wait_until          = wait_before_kill_msec <= 0
-                                  ? 0
-                                  : wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
+                        ? 0
+                        : wait_start_us + (((gint64) wait_before_kill_msec) * 1000L);
 
         while (TRUE) {
             ret = waitpid(pid, &status, WNOHANG);
@@ -2701,7 +2701,7 @@ _host_id_read_timestamp(gboolean      use_secret_key_file,
     now = time(NULL);
     *out_timestamp_ns =
         NM_MAX((gint64) 1,
-               (now * NM_UTILS_NSEC_PER_SEC) - ((gint64) (v % ((guint64) (EPOCH_TWO_YEARS)))));
+               (now * NM_UTILS_NSEC_PER_SEC) - ((gint64)(v % ((guint64)(EPOCH_TWO_YEARS)))));
     return FALSE;
 }
 
@@ -4735,13 +4735,15 @@ get_max_rate_vht(const guint8 *bytes, guint len, guint32 *out_maxrate)
 #define WLAN_EID_HT_CAPABILITY   45
 #define WLAN_EID_VHT_CAPABILITY  191
 #define WLAN_EID_VENDOR_SPECIFIC 221
+#define WLAN_EID_EXTENSION       255
 
 void
 nm_wifi_utils_parse_ies(const guint8 *bytes,
                         gsize         len,
-                        guint32      *out_max_rate,
-                        gboolean     *out_metered,
-                        gboolean     *out_owe_transition_mode)
+                        guint32 *     out_max_rate,
+                        gboolean *    out_metered,
+                        gboolean *    out_owe_transition_mode,
+                        gboolean *    out_he_support)
 {
     guint8  id, elem_len;
     guint32 m;
@@ -4749,6 +4751,7 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
     NM_SET_OUT(out_max_rate, 0);
     NM_SET_OUT(out_metered, FALSE);
     NM_SET_OUT(out_owe_transition_mode, FALSE);
+    NM_SET_OUT(out_he_support, FALSE);
 
     while (len) {
         if (len < 2)
@@ -4786,6 +4789,10 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
                 && bytes[1] == 0x6f && bytes[2] == 0x9a
                 && bytes[3] == 0x1c) /* OUI type: OWE Transition Mode */
                 NM_SET_OUT(out_owe_transition_mode, TRUE);
+            break;
+        case WLAN_EID_EXTENSION:
+            if (elem_len > 0 && bytes[0] == 0x23)
+                NM_SET_OUT(out_he_support, TRUE);
             break;
         }
 
