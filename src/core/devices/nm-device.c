@@ -11252,6 +11252,18 @@ _dev_ipac6_start(NMDevice *self)
     guint32             default_ra_timeout;
     NMUtilsIPv6IfaceId  iid;
     gboolean            is_token;
+    const char         *ifname;
+
+    if (!priv->l3cfg) {
+        _LOGD(LOGD_IP6, "addrconf6: no IP link for IPv6");
+        return;
+    }
+
+    ifname = nm_device_get_ip_iface(self);
+    if (!ifname) {
+        _LOGD(LOGD_IP6, "addrconf6: no interface name for IPv6");
+        return;
+    }
 
     if (priv->ipac6_data.state == NM_DEVICE_IP_STATE_NONE) {
         if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR)) {
@@ -11306,8 +11318,8 @@ _dev_ipac6_start(NMDevice *self)
 
     {
         const NMNDiscConfig config = {
-            .l3cfg                        = nm_device_get_l3cfg(self),
-            .ifname                       = nm_device_get_ip_iface(self),
+            .l3cfg                        = priv->l3cfg,
+            .ifname                       = ifname,
             .stable_type                  = stable_type,
             .network_id                   = stable_id,
             .addr_gen_mode                = nm_setting_ip6_config_get_addr_gen_mode(s_ip),
