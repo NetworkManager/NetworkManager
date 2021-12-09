@@ -4020,6 +4020,10 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
         _dev_l3_cfg_commit_type_reset(self);
         l3cfg_was_reset = TRUE;
     }
+    if (!priv->l3cfg) {
+        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_KEEP, FALSE);
+        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_KEEP, FALSE);
+    }
 
     _LOGD(LOGD_DEVICE,
           "ifindex: set %sifindex %d%s%s%s%s%s%s",
