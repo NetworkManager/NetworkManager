@@ -11231,7 +11231,7 @@ msgid "Error: 'connection show': %s"
 msgstr "エラー: 'connection show': %s"
 
 #: ../src/nmcli/connections.c:1497
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "アクティブな接続の詳細"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

@@ -9620,7 +9620,7 @@ msgid "Error: 'connection show': %s"
 msgstr "Error : « conneccion show » : %s"
 
 #: ../src/nmcli/connections.c:1497
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "Informacions d'activacion de connexion"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

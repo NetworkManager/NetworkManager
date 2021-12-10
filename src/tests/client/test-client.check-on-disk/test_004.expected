@@ -7398,12 +7398,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 6335
+size: 6334
 location: src/tests/client/test-client.py:test_004()/125
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6191 bytes
+stdout: 6190 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -7501,7 +7501,7 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -7658,12 +7658,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6335
+size: 6334
 location: src/tests/client/test-client.py:test_004()/127
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6191 bytes
+stdout: 6190 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -7761,7 +7761,7 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -8164,15 +8164,15 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 1181
+size: 1180
 location: src/tests/client/test-client.py:test_004()/133
 cmd: $NMCLI --pretty -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1026 bytes
+stdout: 1025 bytes
 >>>
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -11324,12 +11324,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6347
+size: 6346
 location: src/tests/client/test-client.py:test_004()/175
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6191 bytes
+stdout: 6190 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -11427,7 +11427,7 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -11584,12 +11584,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6347
+size: 6346
 location: src/tests/client/test-client.py:test_004()/177
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6191 bytes
+stdout: 6190 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -11687,7 +11687,7 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -12090,15 +12090,15 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 1193
+size: 1192
 location: src/tests/client/test-client.py:test_004()/183
 cmd: $NMCLI --pretty --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1026 bytes
+stdout: 1025 bytes
 >>>
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -25006,12 +25006,12 @@ interface-name
 
 
 <<<
-size: 5499
+size: 5493
 location: src/tests/client/test-client.py:test_004()/425
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5340 bytes
+stdout: 5334 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -25036,9 +25036,9 @@ name   method  browser-only  pac-url  pac-script
 --------------------------------------------------
 proxy  none    no            --       --         
 
-======================================================================
-  Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
-======================================================================
+====================================================================
+  Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+====================================================================
 GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    wlan0     activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
@@ -25090,12 +25090,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 5499
+size: 5493
 location: src/tests/client/test-client.py:test_004()/427
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5340 bytes
+stdout: 5334 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -25120,9 +25120,9 @@ name   method  browser-only  pac-url  pac-script
 --------------------------------------------------
 proxy  none    no            --       --         
 
-======================================================================
-  Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
-======================================================================
+====================================================================
+  Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+====================================================================
 GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    wlan0     activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
@@ -25268,16 +25268,16 @@ name  service-type                            user-name  data                   
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
-size: 1134
+size: 1128
 location: src/tests/client/test-client.py:test_004()/433
 cmd: $NMCLI --mode tabular --pretty -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 965 bytes
+stdout: 959 bytes
 >>>
-======================================================================
-  Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
-======================================================================
+====================================================================
+  Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+====================================================================
 GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    wlan0     activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
@@ -27314,12 +27314,12 @@ interface-name
 
 
 <<<
-size: 5511
+size: 5505
 location: src/tests/client/test-client.py:test_004()/475
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5340 bytes
+stdout: 5334 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -27344,9 +27344,9 @@ name   method  browser-only  pac-url  pac-script
 --------------------------------------------------
 proxy  none    no            --       --         
 
-======================================================================
-  Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
-======================================================================
+====================================================================
+  Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+====================================================================
 GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    wlan0     activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
@@ -27398,12 +27398,12 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 5511
+size: 5505
 location: src/tests/client/test-client.py:test_004()/477
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5340 bytes
+stdout: 5334 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
@@ -27428,9 +27428,9 @@ name   method  browser-only  pac-url  pac-script
 --------------------------------------------------
 proxy  none    no            --       --         
 
-======================================================================
-  Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
-======================================================================
+====================================================================
+  Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+====================================================================
 GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    wlan0     activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
@@ -27576,16 +27576,16 @@ name  service-type                            user-name  data                   
 vpn   org.freedesktop.NetworkManager.openvpn  --         key1 = val1, key2 = val2, key3 = val3  <hidden>  nie         0       
 
 <<<
-size: 1146
+size: 1140
 location: src/tests/client/test-client.py:test_004()/483
 cmd: $NMCLI --mode tabular --pretty --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 965 bytes
+stdout: 959 bytes
 >>>
-======================================================================
-  Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
-======================================================================
+====================================================================
+  Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+====================================================================
 GROUP    NAME       UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 GENERAL  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  wlan0    wlan0     activated  no       no        --           yes  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/3  --    --          
@@ -39006,12 +39006,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 6352
+size: 6351
 location: src/tests/client/test-client.py:test_004()/725
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6191 bytes
+stdout: 6190 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -39109,7 +39109,7 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -39266,12 +39266,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6352
+size: 6351
 location: src/tests/client/test-client.py:test_004()/727
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6191 bytes
+stdout: 6190 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -39369,7 +39369,7 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -39772,15 +39772,15 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 1198
+size: 1197
 location: src/tests/client/test-client.py:test_004()/733
 cmd: $NMCLI --mode multiline --pretty -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1026 bytes
+stdout: 1025 bytes
 >>>
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43462,12 +43462,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6364
+size: 6363
 location: src/tests/client/test-client.py:test_004()/775
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6191 bytes
+stdout: 6190 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -43565,7 +43565,7 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -43722,12 +43722,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6364
+size: 6363
 location: src/tests/client/test-client.py:test_004()/777
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6191 bytes
+stdout: 6190 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -43825,7 +43825,7 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -44228,15 +44228,15 @@ vpn.timeout:                            0
 -------------------------------------------------------------------------------
 
 <<<
-size: 1210
+size: 1209
 location: src/tests/client/test-client.py:test_004()/783
 cmd: $NMCLI --mode multiline --pretty --color yes -f GENERAL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1026 bytes
+stdout: 1025 bytes
 >>>
 ===============================================================================
-      Activate connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
+       Active connection details (UUID-con-vpn-1-REPLACED-REPLACED-REP)
 ===============================================================================
 GENERAL.NAME:                           con-vpn-1
 GENERAL.UUID:                           UUID-con-vpn-1-REPLACED-REPLACED-REP

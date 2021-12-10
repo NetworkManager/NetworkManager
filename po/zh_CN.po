@@ -10705,7 +10705,7 @@ msgid "Error: 'connection show': %s"
 msgstr "错误：\"connection show\"：%s"
 
 #: ../src/nmcli/connections.c:1496
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "激活连接详情"
 
 #: ../src/nmcli/connections.c:1625 ../src/nmcli/devices.c:1602
