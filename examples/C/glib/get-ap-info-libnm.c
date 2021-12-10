@@ -45,6 +45,14 @@ ap_wpa_rsn_flags_to_string(guint32 flags)
         flags_str[i++] = g_strdup("psk");
     if (flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
         flags_str[i++] = g_strdup("802.1X");
+    if (flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)
+        flags_str[i++] = g_strdup("sae");
+    if (flags & NM_802_11_AP_SEC_KEY_MGMT_OWE)
+        flags_str[i++] = g_strdup("owe");
+    if (flags & NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)
+        flags_str[i++] = g_strdup("owe_transition_mode");
+    if (flags & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)
+        flags_str[i++] = g_strdup("wpa-eap-suite-b-192");
 
     if (i == 0)
         flags_str[i++] = g_strdup("none");
@@ -103,11 +111,21 @@ show_access_point_info(NMAccessPoint *ap)
         g_string_append(security_str, "WEP ");
     if (wpa_flags != NM_802_11_AP_SEC_NONE)
         g_string_append(security_str, "WPA ");
-    if (rsn_flags != NM_802_11_AP_SEC_NONE)
+    if ((rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+        || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
         g_string_append(security_str, "WPA2 ");
+    }
+    if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
+        g_string_append(security_str, "WPA3 ");
+    }
+    if ((rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE)
+	|| (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
+        g_string_append(security_str, "OWE ");
+    }
     if ((wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
-        || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
-        g_string_append(security_str, "Enterprise ");
+        || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+        g_string_append(security_str, "802.1X ");
+    }
 
     if (security_str->len > 0)
         g_string_truncate(security_str, security_str->len - 1); /* Chop off last space */
