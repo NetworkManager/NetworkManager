@@ -5,15 +5,15 @@
 #include <gio/gunixfdlist.h>
 
 #include "c-list/src/c-list.h"
-#include "libnm-base/nm-sudo-utils.h"
+#include "libnm-base/nm-priv-helper-utils.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-logging-base.h"
 #include "libnm-glib-aux/nm-shared-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 
-/* nm-sudo doesn't link with libnm-core nor libnm-base, but these headers
- * can be used independently. */
+/* nm-priv-helper doesn't link with libnm-core nor libnm-base, but these
+ * headers can be used independently. */
 #include "libnm-core-public/nm-dbus-interface.h"
 
 /*****************************************************************************/
@@ -57,7 +57,7 @@ struct _GlobalData {
 
     bool name_owner_initialized;
 
-    /* This is controlled by $NM_SUDO_NO_AUTH_FOR_TESTING. It disables authentication
+    /* This is controlled by $NM_PRIV_HELPER_NO_AUTH_FOR_TESTING. It disables authentication
      * of the request, so it is ONLY for testing. */
     bool no_auth_for_testing;
 
@@ -116,10 +116,10 @@ _handle_get_fd(GlobalData *gl, GDBusMethodInvocation *invocation, guint32 fd_typ
     gs_unref_object GUnixFDList *fd_list = NULL;
     gs_free_error GError *error          = NULL;
 
-    if (fd_type != (NMSudoGetFDType) fd_type)
-        fd_type = NM_SUDO_GET_FD_TYPE_NONE;
+    if (fd_type != (NMPrivHelperGetFDType) fd_type)
+        fd_type = NM_PRIV_HELPER_GET_FD_TYPE_NONE;
 
-    fd = nm_sudo_utils_open_fd(fd_type, &error);
+    fd = nm_priv_helper_utils_open_fd(fd_type, &error);
     if (fd < 0) {
         g_dbus_method_invocation_take_error(invocation, g_steal_pointer(&error));
         return;
@@ -275,8 +275,8 @@ _bus_method_call(GDBusConnection *      connection,
     const char *arg_s;
     guint32     arg_u;
 
-    nm_assert(nm_streq(object_path, NM_SUDO_DBUS_OBJECT_PATH));
-    nm_assert(nm_streq(interface_name, NM_SUDO_DBUS_IFACE_NAME));
+    nm_assert(nm_streq(object_path, NM_PRIV_HELPER_DBUS_OBJECT_PATH));
+    nm_assert(nm_streq(interface_name, NM_PRIV_HELPER_DBUS_IFACE_NAME));
 
     if (!gl->no_auth_for_testing && !nm_streq0(sender, gl->name_owner)) {
         _LOGT("dbus: request sender=%s, %s%s, ACCESS DENIED",
@@ -312,7 +312,7 @@ _bus_method_call(GDBusConnection *      connection,
           method_name,
           g_variant_get_type_string(parameters));
 
-    if (!nm_streq(interface_name, NM_SUDO_DBUS_IFACE_NAME))
+    if (!nm_streq(interface_name, NM_PRIV_HELPER_DBUS_IFACE_NAME))
         goto out_unknown_method;
 
     if (nm_streq(method_name, "GetFD")) {
@@ -335,7 +335,7 @@ out_unknown_method:
 }
 
 static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO(
-    NM_SUDO_DBUS_IFACE_NAME,
+    NM_PRIV_HELPER_DBUS_IFACE_NAME,
     .methods = NM_DEFINE_GDBUS_METHOD_INFOS(
         NM_DEFINE_GDBUS_METHOD_INFO(
             "Ping",
@@ -360,25 +360,27 @@ _bus_register_service(GlobalData *gl)
 
     gl->service_regist_id =
         g_dbus_connection_register_object(gl->dbus_connection,
-                                          NM_SUDO_DBUS_OBJECT_PATH,
+                                          NM_PRIV_HELPER_DBUS_OBJECT_PATH,
                                           interface_info,
                                           NM_UNCONST_PTR(GDBusInterfaceVTable, &interface_vtable),
                                           gl,
                                           NULL,
                                           &error);
     if (gl->service_regist_id == 0) {
-        _LOGE("dbus: error registering object %s: %s", NM_SUDO_DBUS_OBJECT_PATH, error->message);
+        _LOGE("dbus: error registering object %s: %s",
+              NM_PRIV_HELPER_DBUS_OBJECT_PATH,
+              error->message);
         return FALSE;
     }
 
-    _LOGD("dbus: object %s registered", NM_SUDO_DBUS_OBJECT_PATH);
+    _LOGD("dbus: object %s registered", NM_PRIV_HELPER_DBUS_OBJECT_PATH);
 
     /* regardless whether the request is successful, after we start calling
      * RequestName, we remember that we need to ReleaseName it. */
     gl->name_requested = TRUE;
 
     nm_dbus_connection_call_request_name(gl->dbus_connection,
-                                         NM_SUDO_DBUS_BUS_NAME,
+                                         NM_PRIV_HELPER_DBUS_BUS_NAME,
                                          DBUS_NAME_FLAG_ALLOW_REPLACEMENT
                                              | DBUS_NAME_FLAG_REPLACE_EXISTING,
                                          10000,
@@ -396,7 +398,7 @@ _bus_register_service(GlobalData *gl)
         return FALSE;
 
     if (error) {
-        _LOGE("d-bus: failed to request name %s: %s", NM_SUDO_DBUS_BUS_NAME, error->message);
+        _LOGE("d-bus: failed to request name %s: %s", NM_PRIV_HELPER_DBUS_BUS_NAME, error->message);
         return FALSE;
     }
 
@@ -404,12 +406,12 @@ _bus_register_service(GlobalData *gl)
 
     if (ret_val != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
         _LOGW("dbus: request name for %s failed to take name (response %u)",
-              NM_SUDO_DBUS_BUS_NAME,
+              NM_PRIV_HELPER_DBUS_BUS_NAME,
               ret_val);
         return FALSE;
     }
 
-    _LOGD("dbus: request name for %s succeeded", NM_SUDO_DBUS_BUS_NAME);
+    _LOGD("dbus: request name for %s succeeded", NM_PRIV_HELPER_DBUS_BUS_NAME);
     return TRUE;
 }
 
@@ -538,7 +540,7 @@ _bus_release_name(GlobalData *gl)
                            DBUS_PATH_DBUS,
                            DBUS_INTERFACE_DBUS,
                            "ReleaseName",
-                           g_variant_new("(s)", NM_SUDO_DBUS_BUS_NAME),
+                           g_variant_new("(s)", NM_PRIV_HELPER_DBUS_BUS_NAME),
                            G_VARIANT_TYPE("(u)"),
                            G_DBUS_CALL_FLAGS_NONE,
                            10000,
@@ -554,12 +556,17 @@ static void
 _initial_setup(GlobalData *gl)
 {
     gl->no_auth_for_testing =
-        _nm_utils_ascii_str_to_int64(g_getenv(_ENV("NM_SUDO_NO_AUTH_FOR_TESTING")), 0, 0, 1, 0);
-    gl->timeout_msec = _nm_utils_ascii_str_to_int64(g_getenv(_ENV("NM_SUDO_IDLE_TIMEOUT_MSEC")),
-                                                    0,
-                                                    0,
-                                                    G_MAXINT32,
-                                                    IDLE_TIMEOUT_MSEC);
+        _nm_utils_ascii_str_to_int64(g_getenv(_ENV("NM_PRIV_HELPER_NO_AUTH_FOR_TESTING")),
+                                     0,
+                                     0,
+                                     1,
+                                     0);
+    gl->timeout_msec =
+        _nm_utils_ascii_str_to_int64(g_getenv(_ENV("NM_PRIV_HELPER_IDLE_TIMEOUT_MSEC")),
+                                     0,
+                                     0,
+                                     G_MAXINT32,
+                                     IDLE_TIMEOUT_MSEC);
 
     gl->quit_cancellable = g_cancellable_new();
 
@@ -580,17 +587,17 @@ main(int argc, char **argv)
     int               exit_code;
     int               r = 0;
 
-    _nm_logging_enabled_init(g_getenv(_ENV("NM_SUDO_LOG")));
+    _nm_logging_enabled_init(g_getenv(_ENV("NM_PRIV_HELPER_LOG")));
 
     gl->start_timestamp_msec = nm_utils_clock_gettime_msec(CLOCK_BOOTTIME);
 
-    _LOGD("starting nm-sudo (%s)", NM_DIST_VERSION);
+    _LOGD("starting nm-priv-helper (%s)", NM_DIST_VERSION);
 
     _initial_setup(gl);
 
     if (gl->no_auth_for_testing) {
         _LOGW("WARNING: running in debug mode without authentication "
-              "(NM_SUDO_NO_AUTH_FOR_TESTING). ");
+              "(NM_PRIV_HELPER_NO_AUTH_FOR_TESTING). ");
     }
 
     if (gl->timeout_msec != IDLE_TIMEOUT_INFINITY)

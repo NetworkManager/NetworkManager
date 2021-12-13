@@ -17,7 +17,7 @@
 #include "devices/nm-device.h"
 #include "nm-manager.h"
 #include "nm-setting-ovs-external-ids.h"
-#include "nm-sudo-call.h"
+#include "nm-priv-helper-call.h"
 
 /*****************************************************************************/
 
@@ -2368,7 +2368,7 @@ _ovsdb_connect_complete_with_fd(NMOvsdb *self, int fd_take)
 }
 
 static void
-_ovsdb_connect_sudo_cb(int fd_take, GError *error, gpointer user_data)
+_ovsdb_connect_priv_helper_cb(int fd_take, GError *error, gpointer user_data)
 {
     nm_auto_close int fd = fd_take;
     NMOvsdb *         self;
@@ -2379,12 +2379,12 @@ _ovsdb_connect_sudo_cb(int fd_take, GError *error, gpointer user_data)
     self = user_data;
 
     if (error) {
-        _LOGT("connect: failure to get FD from nm-sudo: %s", error->message);
+        _LOGT("connect: failure to get FD from nm-priv-helper: %s", error->message);
         ovsdb_disconnect(self, FALSE, FALSE);
         return;
     }
 
-    _LOGT("connect: connected successfully with FD from nm-sudo");
+    _LOGT("connect: connected successfully with FD from nm-priv-helper");
     _ovsdb_connect_complete_with_fd(self, nm_steal_fd(&fd));
 }
 
@@ -2402,20 +2402,20 @@ _ovsdb_connect_idle(gpointer user_data, GCancellable *cancellable)
     self = user_data;
     priv = NM_OVSDB_GET_PRIVATE(self);
 
-    fd = nm_sudo_utils_open_fd(NM_SUDO_GET_FD_TYPE_OVSDB_SOCKET, &error);
+    fd = nm_priv_helper_utils_open_fd(NM_PRIV_HELPER_GET_FD_TYPE_OVSDB_SOCKET, &error);
     if (fd == -ENOENT) {
         _LOGT("connect: opening %s failed (\"%s\")", NM_OVSDB_SOCKET, error->message);
         ovsdb_disconnect(self, FALSE, FALSE);
         return;
     }
     if (fd < 0) {
-        _LOGT("connect: opening %s failed (\"%s\"). Retry with nm-sudo",
+        _LOGT("connect: opening %s failed (\"%s\"). Retry with nm-priv-helper",
               NM_OVSDB_SOCKET,
               error->message);
-        nm_sudo_call_get_fd(NM_SUDO_GET_FD_TYPE_OVSDB_SOCKET,
-                            priv->conn_cancellable,
-                            _ovsdb_connect_sudo_cb,
-                            self);
+        nm_priv_helper_call_get_fd(NM_PRIV_HELPER_GET_FD_TYPE_OVSDB_SOCKET,
+                                   priv->conn_cancellable,
+                                   _ovsdb_connect_priv_helper_cb,
+                                   self);
         return;
     }
 
