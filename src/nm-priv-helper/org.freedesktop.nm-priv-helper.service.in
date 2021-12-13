@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=org.freedesktop.nm-priv-helper
+Exec=@libexecdir@/nm-priv-helper
+User=root
+SystemdService=dbus-org.freedesktop.nm-priv-helper.service

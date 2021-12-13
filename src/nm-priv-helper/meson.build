@@ -1,20 +1,20 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 configure_file(
-  input: 'org.freedesktop.nm.sudo.service.in',
+  input: 'org.freedesktop.nm-priv-helper.service.in',
   output: '@BASENAME@',
   install_dir: dbus_system_bus_services_dir,
   configuration: data_conf,
 )
 
 install_data(
-  'nm-sudo.conf',
+  'nm-priv-helper.conf',
   install_dir: dbus_conf_dir,
 )
 
 executable(
-  'nm-sudo',
-  'nm-sudo.c',
+  'nm-priv-helper',
+  'nm-priv-helper.c',
   include_directories : [
     src_inc,
     top_inc,

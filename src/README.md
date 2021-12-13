@@ -27,7 +27,7 @@ Read the individual README.md files in the subdirectories for details:
 | [nm-initrd-generator/](nm-initrd-generator/)         | generates NetworkManager configuration by parsing kernel command line options for dracut/initrd |
 | [nm-dispatcher/](nm-dispatcher/)                     | NetworkManager-dispatcher service to run user scripts |
 | [nm-online/](nm-online/)                             | application which checks whether NetworkManager is done, for implementing NetworkManager-wait-online.service |
-| [nm-sudo/](nm-sudo/)                                 | internal service for privileged operations |
+| [nm-priv-helper/](nm-priv-helper/)                   | internal service for privileged operations |
 | [nm-daemon-helper/](nm-daemon-helper/)               | internal helper binary spawned by NetworkManager |
 |                                                      | |
 | [libnm-std-aux/](libnm-std-aux/)                     | internal helper library for standard C |
