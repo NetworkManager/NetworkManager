@@ -3533,6 +3533,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                     IS_IPv4 ? AF_INET : AF_INET6,
                     l3cd_data->default_route_table_x[IS_IPv4],
                     l3cd_data->default_route_metric_x[IS_IPv4],
+                    l3cd_data->force_commit_once,
                     l3cd_data->l3cd);
             }
         }

@@ -8560,6 +8560,7 @@ nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
                                               int                         ifindex,
                                               guint32                     route_table,
                                               guint32                     route_metric,
+                                              gboolean                    force_commit,
                                               NMPlatformIP4Route         *dst)
 {
     in_addr_t network_4;
@@ -8591,14 +8592,15 @@ nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
     }
 
     *dst = (NMPlatformIP4Route){
-        .ifindex       = ifindex,
-        .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
-        .network       = network_4,
-        .plen          = addr->plen,
-        .pref_src      = addr->address,
-        .table_coerced = nm_platform_route_table_coerce(route_table),
-        .metric        = route_metric,
-        .scope_inv     = nm_platform_route_scope_inv(NM_RT_SCOPE_LINK),
+        .ifindex        = ifindex,
+        .rt_source      = NM_IP_CONFIG_SOURCE_KERNEL,
+        .network        = network_4,
+        .plen           = addr->plen,
+        .pref_src       = addr->address,
+        .table_coerced  = nm_platform_route_table_coerce(route_table),
+        .metric         = route_metric,
+        .scope_inv      = nm_platform_route_scope_inv(NM_RT_SCOPE_LINK),
+        .r_force_commit = force_commit,
     };
 
     nm_platform_ip_route_normalize(AF_INET, (NMPlatformIPRoute *) dst);

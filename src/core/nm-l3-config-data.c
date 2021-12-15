@@ -2428,6 +2428,7 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                                               int                   addr_family,
                                               guint32               route_table,
                                               guint32               route_metric,
+                                              gboolean              force_commit,
                                               const NML3ConfigData *source)
 {
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
@@ -2472,6 +2473,7 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                                                                                     self->ifindex,
                                                                                     route_table,
                                                                                     route_metric,
+                                                                                    force_commit,
                                                                                     &r_stack.r4);
             if (r)
                 nm_l3_config_data_add_route(self, addr_family, NULL, r);
@@ -2510,12 +2512,13 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                 }
 
                 rx.r6 = (NMPlatformIP6Route){
-                    .ifindex       = self->ifindex,
-                    .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
-                    .table_coerced = nm_platform_route_table_coerce(route_table),
-                    .metric        = route_metric,
-                    .network       = *a6,
-                    .plen          = plen,
+                    .ifindex        = self->ifindex,
+                    .rt_source      = NM_IP_CONFIG_SOURCE_KERNEL,
+                    .table_coerced  = nm_platform_route_table_coerce(route_table),
+                    .metric         = route_metric,
+                    .network        = *a6,
+                    .plen           = plen,
+                    .r_force_commit = force_commit,
                 };
 
                 nm_platform_ip_route_normalize(addr_family, &rx.rx);
