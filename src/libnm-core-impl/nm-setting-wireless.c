@@ -300,6 +300,16 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless
         return TRUE;
     }
 
+    /* WPA3 Enterprise Suite B 192 */
+    if (!strcmp(key_mgmt, "wpa-eap-suite-b-192")) {
+        if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)) {
+            return FALSE;
+        }
+
+        /* Since NetworkManager doesn't handle GCMP-256 directly, cipher check can be skipped */
+        return TRUE;
+    }
+
     return FALSE;
 }
 
