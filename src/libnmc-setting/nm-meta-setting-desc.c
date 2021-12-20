@@ -4383,7 +4383,7 @@ _set_fcn_ethtool(ARGS_SET_FCN)
     if (!nmc_string_to_ternary_full(value,
                                     NMC_STRING_TO_TERNARY_FLAGS_IGNORE_FOR_DEFAULT,
                                     &t,
-                                    error)) {
+                                    NULL)) {
         g_set_error(error,
                     NM_UTILS_ERROR,
                     NM_UTILS_ERROR_INVALID_ARGUMENT,
