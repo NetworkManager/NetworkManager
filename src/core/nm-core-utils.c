@@ -2215,6 +2215,8 @@ _log_connection_get_property(NMSetting *setting, const char *name)
             s = g_strdup_printf("'%s'", escaped);
             g_free(escaped);
         }
+    } else if (G_VALUE_HOLDS_VARIANT(&val)) {
+        s = g_variant_print(g_value_get_variant(&val), FALSE);
     } else {
         s = g_strdup_value_contents(&val);
         if (s == NULL)
