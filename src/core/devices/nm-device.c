@@ -3900,7 +3900,8 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
                           signals[L3CD_CHANGED],
                           0,
                           notify_data->l3cd_changed.l3cd_old,
-                          notify_data->l3cd_changed.l3cd_new);
+                          notify_data->l3cd_changed.l3cd_new,
+                          notify_data->l3cd_changed.diff);
         }
         return;
     case NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT:
@@ -4064,7 +4065,12 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
                  */
                 l3cd_old = nm_l3cfg_get_combined_l3cd(priv->l3cfg, TRUE);
                 if (l3cd_old)
-                    g_signal_emit(self, signals[L3CD_CHANGED], 0, l3cd_old, NULL);
+                    g_signal_emit(self,
+                                  signals[L3CD_CHANGED],
+                                  0,
+                                  l3cd_old,
+                                  NULL,
+                                  NM_L3_CONFIG_DIFF_DNS);
             }
 
             g_signal_handlers_disconnect_by_func(priv->l3cfg,
@@ -17941,9 +17947,10 @@ nm_device_class_init(NMDeviceClass *klass)
                                          NULL,
                                          NULL,
                                          G_TYPE_NONE,
-                                         2,
+                                         3,
                                          G_TYPE_POINTER, /* (const NML3ConfigData *l3cd_old) */
-                                         G_TYPE_POINTER /* (const NML3ConfigData *l3cd_new) */);
+                                         G_TYPE_POINTER, /* (const NML3ConfigData *l3cd_new) */
+                                         G_TYPE_UINT);   /* NML3ConfigDiff */
 
     signals[IP6_PREFIX_DELEGATED] =
         g_signal_new(NM_DEVICE_IP6_PREFIX_DELEGATED,

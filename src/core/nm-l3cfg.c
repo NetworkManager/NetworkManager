@@ -591,6 +591,7 @@ static void
 _nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
                                           const NML3ConfigData *l3cd_old,
                                           const NML3ConfigData *l3cd_new,
+                                          NML3ConfigDiff        diff,
                                           gboolean              commited)
 {
     NML3ConfigNotifyData notify_data;
@@ -599,6 +600,7 @@ _nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
     notify_data.l3cd_changed = (typeof(notify_data.l3cd_changed)){
         .l3cd_old = l3cd_old,
         .l3cd_new = l3cd_new,
+        .diff     = diff,
         .commited = commited,
     };
     _nm_l3cfg_emit_signal_notify(self, &notify_data);
@@ -3476,6 +3478,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     guint                                    i;
     gboolean                                 merged_changed   = FALSE;
     gboolean                                 commited_changed = FALSE;
+    NML3ConfigDiff                           diff;
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(!out_old || !*out_old);
@@ -3575,7 +3578,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
         nm_l3_config_data_seal(l3cd);
     }
 
-    if (nm_l3_config_data_equal(l3cd, self->priv.p->combined_l3cd_merged))
+    if (nm_l3_config_data_equal_full(l3cd, self->priv.p->combined_l3cd_merged, &diff))
         goto out;
 
     l3cd_old                           = g_steal_pointer(&self->priv.p->combined_l3cd_merged);
@@ -3585,6 +3588,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     _nm_l3cfg_emit_signal_notify_l3cd_changed(self,
                                               l3cd_old,
                                               self->priv.p->combined_l3cd_merged,
+                                              diff,
                                               FALSE);
 
     if (!to_commit) {
@@ -3601,9 +3605,14 @@ out:
 
         _obj_states_update_all(self);
 
+        nm_l3_config_data_equal_full(l3cd_commited_old,
+                                     self->priv.p->combined_l3cd_commited,
+                                     &diff);
+
         _nm_l3cfg_emit_signal_notify_l3cd_changed(self,
                                                   l3cd_commited_old,
                                                   self->priv.p->combined_l3cd_commited,
+                                                  diff,
                                                   TRUE);
 
         NM_SET_OUT(out_old, g_steal_pointer(&l3cd_commited_old));

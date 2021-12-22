@@ -172,6 +172,7 @@ typedef struct {
         struct {
             const NML3ConfigData *l3cd_old;
             const NML3ConfigData *l3cd_new;
+            NML3ConfigDiff        diff;
             bool                  commited;
         } l3cd_changed;
 

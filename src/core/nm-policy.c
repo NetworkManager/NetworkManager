@@ -2097,14 +2097,22 @@ static void
 device_l3cd_changed(NMDevice             *device,
                     const NML3ConfigData *l3cd_old,
                     const NML3ConfigData *l3cd_new,
+                    guint                 diff_uint,
                     gpointer              user_data)
+
 {
     NMPolicyPrivate *priv = user_data;
     NMPolicy        *self = _PRIV_TO_SELF(priv);
     NMDeviceState    state;
+    NML3ConfigDiff   diff = diff_uint;
 
     nm_assert(!l3cd_new || NM_IS_L3_CONFIG_DATA(l3cd_new));
     nm_assert(!l3cd_old || NM_IS_L3_CONFIG_DATA(l3cd_old));
+
+    if (!NM_FLAGS_ANY(diff, NM_L3_CONFIG_DIFF_DNS | NM_L3_CONFIG_DIFF_ADDR_ROUTE)) {
+        _LOGW(LOGD_DEVICE, " ---- ignore l3cd changed with flags %08x", diff_uint);
+        return;
+    }
 
     nm_dns_manager_begin_updates(priv->dns_manager, __func__);
 
