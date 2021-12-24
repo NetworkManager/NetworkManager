@@ -5834,6 +5834,34 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
 
     _nm_properties_override_gobj(
         properties_override,
+        obj_properties[PROP_DNS_PRIORITY],
+        &nm_sett_info_propert_type_direct_int32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, dns_priority));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_TIMEOUT],
+        &nm_sett_info_propert_type_direct_int32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, dhcp_timeout));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_REQUIRED_TIMEOUT],
+        &nm_sett_info_propert_type_direct_int32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, required_timeout));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DAD_TIMEOUT],
+        &nm_sett_info_propert_type_direct_int32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, dad_timeout));
+
+    _nm_properties_override_gobj(
+        properties_override,
         obj_properties[PROP_DHCP_SEND_HOSTNAME],
         &nm_sett_info_propert_type_direct_boolean,
         .direct_offset =
@@ -5878,9 +5906,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                            priv->dns_options ? _nm_utils_ptrarray_to_strv(priv->dns_options)
                                              : NULL);
         break;
-    case PROP_DNS_PRIORITY:
-        g_value_set_int(value, priv->dns_priority);
-        break;
     case PROP_ADDRESSES:
         g_value_take_boxed(value,
                            _nm_utils_copy_array(priv->addresses,
@@ -5920,15 +5945,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_MAY_FAIL:
         g_value_set_boolean(value, priv->may_fail);
         break;
-    case PROP_DAD_TIMEOUT:
-        g_value_set_int(value, nm_setting_ip_config_get_dad_timeout(setting));
-        break;
-    case PROP_DHCP_TIMEOUT:
-        g_value_set_int(value, nm_setting_ip_config_get_dhcp_timeout(setting));
-        break;
-    case PROP_REQUIRED_TIMEOUT:
-        g_value_set_int(value, nm_setting_ip_config_get_required_timeout(setting));
-        break;
     case PROP_DHCP_IAID:
         g_value_set_string(value, nm_setting_ip_config_get_dhcp_iaid(setting));
         break;
@@ -5939,7 +5955,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(priv->dhcp_reject_servers, NULL));
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -5983,9 +5999,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                     g_ptr_array_add(priv->dns_options, g_strdup(strv[i]));
             }
         }
-        break;
-    case PROP_DNS_PRIORITY:
-        priv->dns_priority = g_value_get_int(value);
         break;
     case PROP_ADDRESSES:
         g_ptr_array_unref(priv->addresses);
@@ -6031,15 +6044,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_MAY_FAIL:
         priv->may_fail = g_value_get_boolean(value);
         break;
-    case PROP_DAD_TIMEOUT:
-        priv->dad_timeout = g_value_get_int(value);
-        break;
-    case PROP_DHCP_TIMEOUT:
-        priv->dhcp_timeout = g_value_get_int(value);
-        break;
-    case PROP_REQUIRED_TIMEOUT:
-        priv->required_timeout = g_value_get_int(value);
-        break;
     case PROP_DHCP_IAID:
         g_free(priv->dhcp_iaid);
         priv->dhcp_iaid = g_value_dup_string(value);
@@ -6051,7 +6055,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         nm_strvarray_set_strv(&priv->dhcp_reject_servers, g_value_get_boxed(value));
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -6063,13 +6067,11 @@ _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv
 {
     nm_assert(NM_IS_SETTING_IP_CONFIG(self));
 
-    priv->dns              = g_ptr_array_new_with_free_func(g_free);
-    priv->dns_search       = g_ptr_array_new_with_free_func(g_free);
-    priv->addresses        = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
-    priv->routes           = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
-    priv->route_metric     = -1;
-    priv->dad_timeout      = -1;
-    priv->required_timeout = -1;
+    priv->dns          = g_ptr_array_new_with_free_func(g_free);
+    priv->dns_search   = g_ptr_array_new_with_free_func(g_free);
+    priv->addresses    = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    priv->routes       = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
+    priv->route_metric = -1;
 }
 
 static void
