@@ -376,9 +376,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         nm_assert(p->param_spec);
 
         vtype = p->param_spec->value_type;
-        if (vtype == G_TYPE_INT)
-            p->property_type = &nm_sett_info_propert_type_plain_i;
-        else if (vtype == G_TYPE_UINT)
+        if (vtype == G_TYPE_UINT)
             p->property_type = &nm_sett_info_propert_type_plain_u;
         else if (vtype == G_TYPE_INT64)
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
@@ -3492,12 +3490,6 @@ const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u =
         G_VARIANT_TYPE_UINT32,
         /* No functions set. This property type is to silently ignore the value on D-Bus. */
         .compare_fcn = _nm_setting_property_compare_fcn_ignore);
-
-const NMSettInfoPropertType nm_sett_info_propert_type_plain_i =
-    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_INT32,
-                                         .compare_fcn   = _nm_setting_property_compare_fcn_default,
-                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
-                                         .from_dbus_is_full = TRUE);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
     NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_UINT32,

@@ -77,10 +77,10 @@ typedef struct {
     guint                              leap_password_flags;
     guint                              wep_key_flags;
     guint                              psk_flags;
-    NMSettingWirelessSecurityPmf       pmf;
     NMWepKeyType                       wep_key_type;
     NMSettingWirelessSecurityWpsMethod wps_method;
-    NMSettingWirelessSecurityFils      fils;
+    gint32                             pmf;
+    gint32                             fils;
     guint32                            wep_tx_keyidx;
 } NMSettingWirelessSecurityPrivate;
 
@@ -1332,9 +1332,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_GROUP:
         g_value_take_boxed(value, _nm_utils_slist_to_strv(priv->group, TRUE));
         break;
-    case PROP_PMF:
-        g_value_set_int(value, nm_setting_wireless_security_get_pmf(setting));
-        break;
     case PROP_LEAP_USERNAME:
         g_value_set_string(value, priv->leap_username);
         break;
@@ -1361,9 +1358,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case PROP_WPS_METHOD:
         g_value_set_uint(value, priv->wps_method);
-        break;
-    case PROP_FILS:
-        g_value_set_int(value, nm_setting_wireless_security_get_fils(setting));
         break;
     default:
         _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
@@ -1404,9 +1398,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_slist_free_full(priv->group, g_free);
         priv->group = nm_strv_to_gslist(g_value_get_boxed(value), TRUE);
         break;
-    case PROP_PMF:
-        priv->pmf = g_value_get_int(value);
-        break;
     case PROP_LEAP_USERNAME:
         g_free(priv->leap_username);
         priv->leap_username = g_value_dup_string(value);
@@ -1440,9 +1431,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_WPS_METHOD:
         priv->wps_method = g_value_get_uint(value);
-        break;
-    case PROP_FILS:
-        priv->fils = g_value_get_int(value);
         break;
     default:
         _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
@@ -1675,14 +1663,16 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
      * example: PMF=required
      * ---end---
      */
-    obj_properties[PROP_PMF] = g_param_spec_int(NM_SETTING_WIRELESS_SECURITY_PMF,
-                                                "",
-                                                "",
-                                                G_MININT32,
-                                                G_MAXINT32,
-                                                0,
-                                                G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE
-                                                    | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_WIRELESS_SECURITY_PMF,
+                                             PROP_PMF,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             0,
+                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                             NMSettingWirelessSecurityPrivate,
+                                             pmf);
 
     /**
      * NMSettingWirelessSecurity:leap-username:
@@ -1973,14 +1963,16 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
      * example: FILS=required
      * ---end---
      */
-    obj_properties[PROP_FILS] = g_param_spec_int(NM_SETTING_WIRELESS_SECURITY_FILS,
-                                                 "",
-                                                 "",
-                                                 G_MININT32,
-                                                 G_MAXINT32,
-                                                 0,
-                                                 G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE
-                                                     | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_WIRELESS_SECURITY_FILS,
+                                             PROP_FILS,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             0,
+                                             NM_SETTING_PARAM_FUZZY_IGNORE,
+                                             NMSettingWirelessSecurityPrivate,
+                                             fils);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

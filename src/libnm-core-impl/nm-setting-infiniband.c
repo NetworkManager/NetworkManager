@@ -37,8 +37,8 @@ typedef struct {
     char   *parent;
     char   *virtual_iface_name;
     gsize   virtual_iface_name_parent_length;
-    int     virtual_iface_name_p_key;
-    int     p_key;
+    gint32  virtual_iface_name_p_key;
+    gint32  p_key;
     guint32 mtu;
 } NMSettingInfinibandPrivate;
 
@@ -319,14 +319,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_TRANSPORT_MODE:
         g_value_set_string(value, nm_setting_infiniband_get_transport_mode(setting));
         break;
-    case PROP_P_KEY:
-        g_value_set_int(value, nm_setting_infiniband_get_p_key(setting));
-        break;
     case PROP_PARENT:
         g_value_set_string(value, nm_setting_infiniband_get_parent(setting));
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -357,7 +354,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         priv->parent = g_value_dup_string(value);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -366,11 +363,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_infiniband_init(NMSettingInfiniband *self)
-{
-    NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE(self);
-
-    priv->p_key = -1;
-}
+{}
 
 /**
  * nm_setting_infiniband_new:
@@ -507,14 +500,16 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
      * ---end---
      */
-    obj_properties[PROP_P_KEY] =
-        g_param_spec_int(NM_SETTING_INFINIBAND_P_KEY,
-                         "",
-                         "",
-                         -1,
-                         0xFFFF,
-                         -1,
-                         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_INFINIBAND_P_KEY,
+                                             PROP_P_KEY,
+                                             -1,
+                                             0xFFFF,
+                                             -1,
+                                             NM_SETTING_PARAM_INFERRABLE,
+                                             NMSettingInfinibandPrivate,
+                                             p_key);
 
     /**
      * NMSettingInfiniband:parent:
