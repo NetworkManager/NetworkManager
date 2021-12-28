@@ -305,57 +305,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingInfiniband *setting = NM_SETTING_INFINIBAND(object);
-
-    switch (prop_id) {
-    case PROP_MAC_ADDRESS:
-        g_value_set_string(value, nm_setting_infiniband_get_mac_address(setting));
-        break;
-    case PROP_TRANSPORT_MODE:
-        g_value_set_string(value, nm_setting_infiniband_get_transport_mode(setting));
-        break;
-    case PROP_PARENT:
-        g_value_set_string(value, nm_setting_infiniband_get_parent(setting));
-        break;
-    default:
-        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE(object);
-
-    switch (prop_id) {
-    case PROP_MAC_ADDRESS:
-        g_free(priv->mac_address);
-        priv->mac_address =
-            _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), INFINIBAND_ALEN);
-        break;
-    case PROP_TRANSPORT_MODE:
-        g_free(priv->transport_mode);
-        priv->transport_mode = g_value_dup_string(value);
-        break;
-    case PROP_P_KEY:
-        priv->p_key = g_value_get_int(value);
-        break;
-    case PROP_PARENT:
-        g_free(priv->parent);
-        priv->parent = g_value_dup_string(value);
-        break;
-    default:
-        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_infiniband_init(NMSettingInfiniband *self)
 {}
 
@@ -377,8 +326,6 @@ finalize(GObject *object)
 {
     NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE(object);
 
-    g_free(priv->transport_mode);
-    g_free(priv->parent);
     g_free(priv->virtual_iface_name);
 
     G_OBJECT_CLASS(nm_setting_infiniband_parent_class)->finalize(object);
@@ -393,8 +340,8 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingInfinibandPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
     object_class->finalize     = finalize;
 
     setting_class->verify = verify;
@@ -471,12 +418,13 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      *   "datagram" mode
      * ---end---
      */
-    obj_properties[PROP_TRANSPORT_MODE] = g_param_spec_string(
-        NM_SETTING_INFINIBAND_TRANSPORT_MODE,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_INFINIBAND_TRANSPORT_MODE,
+                                              PROP_TRANSPORT_MODE,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingInfinibandPrivate,
+                                              transport_mode);
 
     /**
      * NMSettingInfiniband:p-key:
@@ -523,12 +471,13 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * example: PHYSDEV=ib0
      * ---end---
      */
-    obj_properties[PROP_PARENT] = g_param_spec_string(
-        NM_SETTING_INFINIBAND_PARENT,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_INFINIBAND_PARENT,
+                                              PROP_PARENT,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingInfinibandPrivate,
+                                              parent);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

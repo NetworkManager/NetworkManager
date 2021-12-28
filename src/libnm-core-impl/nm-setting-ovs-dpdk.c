@@ -79,39 +79,6 @@ nm_setting_ovs_dpdk_get_n_rxq(NMSettingOvsDpdk *self)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingOvsDpdk *self = NM_SETTING_OVS_DPDK(object);
-
-    switch (prop_id) {
-    case PROP_DEVARGS:
-        g_value_set_string(value, self->devargs);
-        break;
-    default:
-        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingOvsDpdk *self = NM_SETTING_OVS_DPDK(object);
-
-    switch (prop_id) {
-    case PROP_DEVARGS:
-        g_free(self->devargs);
-        self->devargs = g_value_dup_string(value);
-        break;
-    default:
-        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_ovs_dpdk_init(NMSettingOvsDpdk *self)
 {}
 
@@ -131,25 +98,14 @@ nm_setting_ovs_dpdk_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingOvsDpdk *self = NM_SETTING_OVS_DPDK(object);
-
-    g_free(self->devargs);
-
-    G_OBJECT_CLASS(nm_setting_ovs_dpdk_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_ovs_dpdk_class_init(NMSettingOvsDpdkClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    object_class->set_property = set_property;
-    object_class->get_property = get_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     /**
      * NMSettingOvsDpdk:devargs:
@@ -158,12 +114,13 @@ nm_setting_ovs_dpdk_class_init(NMSettingOvsDpdkClass *klass)
      *
      * Since: 1.20
      **/
-    obj_properties[PROP_DEVARGS] = g_param_spec_string(
-        NM_SETTING_OVS_DPDK_DEVARGS,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_OVS_DPDK_DEVARGS,
+                                              PROP_DEVARGS,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingOvsDpdk,
+                                              devargs);
 
     /**
      * NMSettingOvsDpdk:n-rxq:

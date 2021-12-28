@@ -63,6 +63,7 @@ const char *
 nm_setting_veth_get_peer(NMSettingVeth *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_VETH(setting), NULL);
+
     return NM_SETTING_VETH_GET_PRIVATE(setting)->peer;
 }
 
@@ -101,35 +102,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingVeth        *setting = NM_SETTING_VETH(object);
-    NMSettingVethPrivate *priv    = NM_SETTING_VETH_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PEER:
-        g_value_set_string(value, priv->peer);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingVeth        *setting = NM_SETTING_VETH(object);
-    NMSettingVethPrivate *priv    = NM_SETTING_VETH_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PEER:
-        g_free(priv->peer);
-        priv->peer = g_value_dup_string(value);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_veth_init(NMSettingVeth *setting)
 {}
 
@@ -149,25 +121,14 @@ nm_setting_veth_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingVeth        *setting = NM_SETTING_VETH(object);
-    NMSettingVethPrivate *priv    = NM_SETTING_VETH_GET_PRIVATE(setting);
-
-    g_free(priv->peer);
-
-    G_OBJECT_CLASS(nm_setting_veth_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_veth_class_init(NMSettingVethClass *klass)
 {
-    GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
@@ -179,14 +140,19 @@ nm_setting_veth_class_init(NMSettingVethClass *klass)
      *
      * Since: 1.30
      **/
-    obj_properties[PROP_PEER] = g_param_spec_string(NM_SETTING_VETH_PEER,
-                                                    "",
-                                                    "",
-                                                    NULL,
-                                                    G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                        | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VETH_PEER,
+                                              PROP_PEER,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingVeth,
+                                              _priv.peer);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_VETH, NULL, NULL, 0);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_VETH,
+                             NULL,
+                             properties_override,
+                             0);
 }

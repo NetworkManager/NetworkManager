@@ -4751,9 +4751,10 @@ check_done:;
                                     NULL);
                     g_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(sip->param_spec));
 
-                    if (nm_streq(sip->name, NM_SETTING_NAME))
+                    if (nm_streq(sip->name, NM_SETTING_NAME)) {
                         g_assert_cmpstr(g_value_get_string(&val), ==, msi->setting_name);
-                    else
+                        g_assert(sip->property_type == &nm_sett_info_propert_type_setting_name);
+                    } else
                         g_assert_cmpstr(g_value_get_string(&val), ==, NULL);
                 }
 

@@ -94,39 +94,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH(object);
-
-    switch (prop_id) {
-    case PROP_PEER:
-        g_value_set_string(value, self->peer);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH(object);
-
-    switch (prop_id) {
-    case PROP_PEER:
-        g_free(self->peer);
-        self->peer = g_value_dup_string(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_ovs_patch_init(NMSettingOvsPatch *self)
 {}
 
@@ -146,24 +113,14 @@ nm_setting_ovs_patch_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingOvsPatch *self = NM_SETTING_OVS_PATCH(object);
-
-    g_free(self->peer);
-
-    G_OBJECT_CLASS(nm_setting_ovs_patch_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_ovs_patch_class_init(NMSettingOvsPatchClass *klass)
 {
-    GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    object_class->set_property = set_property;
-    object_class->get_property = get_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
@@ -175,14 +132,19 @@ nm_setting_ovs_patch_class_init(NMSettingOvsPatchClass *klass)
      *
      * Since: 1.10
      **/
-    obj_properties[PROP_PEER] = g_param_spec_string(NM_SETTING_OVS_PATCH_PEER,
-                                                    "",
-                                                    "",
-                                                    NULL,
-                                                    G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                        | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_OVS_PATCH_PEER,
+                                              PROP_PEER,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingOvsPatch,
+                                              peer);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_OVS_PATCH, NULL, NULL, 0);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_OVS_PATCH,
+                             NULL,
+                             properties_override,
+                             0);
 }

@@ -690,7 +690,7 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                                                                   \
         G_STATIC_ASSERT(!NM_FLAGS_ANY((param_flags),                                              \
                                       ~(NM_SETTING_PARAM_SECRET | NM_SETTING_PARAM_FUZZY_IGNORE   \
-                                        | NM_SETTING_PARAM_INFERRABLE                             \
+                                        | NM_SETTING_PARAM_INFERRABLE | NM_SETTING_PARAM_REQUIRED \
                                         | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY)));                \
                                                                                                   \
         nm_assert(_property_type);                                                                \
