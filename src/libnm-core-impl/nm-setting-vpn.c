@@ -65,7 +65,6 @@ typedef struct {
      */
     GHashTable *secrets;
 
-    /* Timeout for the VPN service to establish the connection */
     guint32 timeout;
 
     /* Whether the VPN stays up across link changes, until the user
@@ -985,11 +984,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_SECRETS:
         g_value_take_boxed(value, _nm_utils_copy_strdict(priv->secrets));
         break;
-    case PROP_TIMEOUT:
-        g_value_set_uint(value, nm_setting_vpn_get_timeout(setting));
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1046,11 +1042,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             }
         }
     } break;
-    case PROP_TIMEOUT:
-        priv->timeout = g_value_get_uint(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1221,13 +1214,16 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_TIMEOUT] = g_param_spec_uint(NM_SETTING_VPN_TIMEOUT,
-                                                     "",
-                                                     "",
-                                                     0,
-                                                     G_MAXUINT32,
-                                                     0,
-                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VPN_TIMEOUT,
+                                              PROP_TIMEOUT,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingVpnPrivate,
+                                              timeout);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

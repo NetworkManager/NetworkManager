@@ -28,10 +28,10 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT, PROP_MODE, PROP_PROMISCUOUS, PROP_TAP, );
 
 typedef struct {
-    char                *parent;
-    NMSettingMacvlanMode mode;
-    bool                 promiscuous;
-    bool                 tap;
+    char   *parent;
+    guint32 mode;
+    bool    promiscuous;
+    bool    tap;
 } NMSettingMacvlanPrivate;
 
 /**
@@ -84,6 +84,7 @@ NMSettingMacvlanMode
 nm_setting_macvlan_get_mode(NMSettingMacvlan *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACVLAN(setting), NM_SETTING_MACVLAN_MODE_UNKNOWN);
+
     return NM_SETTING_MACVLAN_GET_PRIVATE(setting)->mode;
 }
 
@@ -189,9 +190,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_PARENT:
         g_value_set_string(value, priv->parent);
         break;
-    case PROP_MODE:
-        g_value_set_uint(value, priv->mode);
-        break;
     case PROP_PROMISCUOUS:
         g_value_set_boolean(value, priv->promiscuous);
         break;
@@ -199,7 +197,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_boolean(value, priv->tap);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -215,9 +213,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_free(priv->parent);
         priv->parent = g_value_dup_string(value);
         break;
-    case PROP_MODE:
-        priv->mode = g_value_get_uint(value);
-        break;
     case PROP_PROMISCUOUS:
         priv->promiscuous = g_value_get_boolean(value);
         break;
@@ -225,7 +220,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         priv->tap = g_value_get_boolean(value);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -302,14 +297,16 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_MODE] =
-        g_param_spec_uint(NM_SETTING_MACVLAN_MODE,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_MACVLAN_MODE,
+                                              PROP_MODE,
+                                              0,
+                                              G_MAXUINT32,
+                                              NM_SETTING_MACVLAN_MODE_UNKNOWN,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingMacvlanPrivate,
+                                              mode);
 
     /**
      * NMSettingMacvlan:promiscuous:

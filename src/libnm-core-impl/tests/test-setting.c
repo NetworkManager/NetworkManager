@@ -4898,18 +4898,6 @@ check_done:;
                            != 0)
                     continue;
 
-                if ((pt == &nm_sett_info_propert_type_plain_u
-                     && pt_2 == &nm_sett_info_propert_type_deprecated_ignore_u)
-                    || (pt_2 == &nm_sett_info_propert_type_plain_u
-                        && pt == &nm_sett_info_propert_type_deprecated_ignore_u)) {
-                    /* These are known to be duplicated. This is the case for
-                     *   "gsm.allowed-bands" and plain properties like "802-11-olpc-mesh.channel" ("u" D-Bus type)
-                     * While the content/behaviour of the property types are identical, their purpose
-                     * is different. So allow them.
-                     */
-                    continue;
-                }
-
                 /* the property-types with same content should all be shared. Here we have two that
                  * are the same content, but different instances. Bug. */
                 g_error("The identical property type for D-Bus type \"%s\" is used by: %s and %s. "

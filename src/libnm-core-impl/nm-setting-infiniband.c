@@ -313,9 +313,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_MAC_ADDRESS:
         g_value_set_string(value, nm_setting_infiniband_get_mac_address(setting));
         break;
-    case PROP_MTU:
-        g_value_set_uint(value, nm_setting_infiniband_get_mtu(setting));
-        break;
     case PROP_TRANSPORT_MODE:
         g_value_set_string(value, nm_setting_infiniband_get_transport_mode(setting));
         break;
@@ -338,9 +335,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_free(priv->mac_address);
         priv->mac_address =
             _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), INFINIBAND_ALEN);
-        break;
-    case PROP_MTU:
-        priv->mtu = g_value_get_uint(value);
         break;
     case PROP_TRANSPORT_MODE:
         g_free(priv->transport_mode);
@@ -452,14 +446,16 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * description: MTU of the interface.
      * ---end---
      */
-    obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_INFINIBAND_MTU,
-                                                 "",
-                                                 "",
-                                                 0,
-                                                 G_MAXUINT32,
-                                                 0,
-                                                 G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE
-                                                     | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_INFINIBAND_MTU,
+                                              PROP_MTU,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingInfinibandPrivate,
+                                              mtu);
 
     /**
      * NMSettingInfiniband:transport-mode:

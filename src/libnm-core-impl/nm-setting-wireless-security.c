@@ -62,26 +62,26 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingWirelessSecurity,
                              PROP_FILS, );
 
 typedef struct {
-    GSList                            *proto;    /* GSList of strings */
-    GSList                            *pairwise; /* GSList of strings */
-    GSList                            *group;    /* GSList of strings */
-    char                              *key_mgmt;
-    char                              *auth_alg;
-    char                              *leap_username;
-    char                              *leap_password;
-    char                              *wep_key0;
-    char                              *wep_key1;
-    char                              *wep_key2;
-    char                              *wep_key3;
-    char                              *psk;
-    guint                              leap_password_flags;
-    guint                              wep_key_flags;
-    guint                              psk_flags;
-    NMWepKeyType                       wep_key_type;
-    NMSettingWirelessSecurityWpsMethod wps_method;
-    gint32                             pmf;
-    gint32                             fils;
-    guint32                            wep_tx_keyidx;
+    GSList      *proto;    /* GSList of strings */
+    GSList      *pairwise; /* GSList of strings */
+    GSList      *group;    /* GSList of strings */
+    char        *key_mgmt;
+    char        *auth_alg;
+    char        *leap_username;
+    char        *leap_password;
+    char        *wep_key0;
+    char        *wep_key1;
+    char        *wep_key2;
+    char        *wep_key3;
+    char        *psk;
+    guint        leap_password_flags;
+    guint        wep_key_flags;
+    guint        psk_flags;
+    NMWepKeyType wep_key_type;
+    gint32       pmf;
+    gint32       fils;
+    guint32      wep_tx_keyidx;
+    guint32      wps_method;
 } NMSettingWirelessSecurityPrivate;
 
 /**
@@ -1005,19 +1005,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (priv->wep_tx_keyidx > 3) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%d' value is out of range <0-3>"),
-                    priv->wep_tx_keyidx);
-        g_prefix_error(error,
-                       "%s.%s: ",
-                       NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-                       NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
-        return FALSE;
-    }
-
     if (priv->wep_key_type > NM_WEP_KEY_TYPE_LAST) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
@@ -1317,9 +1304,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_KEY_MGMT:
         g_value_set_string(value, priv->key_mgmt);
         break;
-    case PROP_WEP_TX_KEYIDX:
-        g_value_set_uint(value, priv->wep_tx_keyidx);
-        break;
     case PROP_AUTH_ALG:
         g_value_set_string(value, priv->auth_alg);
         break;
@@ -1356,9 +1340,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_WEP_KEY_TYPE:
         g_value_set_enum(value, priv->wep_key_type);
         break;
-    case PROP_WPS_METHOD:
-        g_value_set_uint(value, priv->wps_method);
-        break;
     default:
         _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
@@ -1377,9 +1358,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_free(priv->key_mgmt);
         str            = g_value_get_string(value);
         priv->key_mgmt = str ? g_ascii_strdown(str, -1) : NULL;
-        break;
-    case PROP_WEP_TX_KEYIDX:
-        priv->wep_tx_keyidx = g_value_get_uint(value);
         break;
     case PROP_AUTH_ALG:
         g_free(priv->auth_alg);
@@ -1429,9 +1407,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_WEP_KEY_TYPE:
         priv->wep_key_type = g_value_get_enum(value);
         break;
-    case PROP_WPS_METHOD:
-        priv->wps_method = g_value_get_uint(value);
-        break;
     default:
         _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
@@ -1445,8 +1420,6 @@ nm_setting_wireless_security_init(NMSettingWirelessSecurity *self)
 {
     nm_assert(NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(self)->wep_key_type
               == NM_WEP_KEY_TYPE_UNKNOWN);
-    nm_assert(NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(self)->wps_method
-              == NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT);
 }
 
 /**
@@ -1542,17 +1515,20 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
      * variable: DEFAULTKEY
      * values: 1, 2, 3, 4
      * default: 1
-     * description: Index of active WEP key.
+     * description: Index of active WEP key. Note that in ifcfg format the index starts counting
+     *   at 1, while NetworkManager API otherwise is zero based.
      * ---end---
      */
-    obj_properties[PROP_WEP_TX_KEYIDX] =
-        g_param_spec_uint(NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX,
-                          "",
-                          "",
-                          0,
-                          3,
-                          0,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX,
+                                              PROP_WEP_TX_KEYIDX,
+                                              0,
+                                              3,
+                                              0,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingWirelessSecurityPrivate,
+                                              wep_tx_keyidx);
 
     /**
      * NMSettingWirelessSecurity:auth-alg:
@@ -1932,14 +1908,16 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
      * example: WPS_METHOD=disabled, WPS_METHOD="pin pbc"
      * ---end---
      */
-    obj_properties[PROP_WPS_METHOD] = g_param_spec_uint(
-        NM_SETTING_WIRELESS_SECURITY_WPS_METHOD,
-        "",
-        "",
-        0,
-        G_MAXUINT32,
-        NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIRELESS_SECURITY_WPS_METHOD,
+                                              PROP_WPS_METHOD,
+                                              0,
+                                              G_MAXUINT32,
+                                              NM_SETTING_WIRELESS_SECURITY_WPS_METHOD_DEFAULT,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingWirelessSecurityPrivate,
+                                              wps_method);
 
     /**
      * NMSettingWirelessSecurity:fils:

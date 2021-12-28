@@ -30,8 +30,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingSriov, PROP_TOTAL_VFS, PROP_VFS, PROP_AUTO
 struct _NMSettingSriov {
     NMSetting  parent;
     GPtrArray *vfs;
-    guint      total_vfs;
     int        autoprobe_drivers;
+    guint32    total_vfs;
 };
 
 struct _NMSettingSriovClass {
@@ -1138,9 +1138,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingSriov *self = NM_SETTING_SRIOV(object);
 
     switch (prop_id) {
-    case PROP_TOTAL_VFS:
-        g_value_set_uint(value, self->total_vfs);
-        break;
     case PROP_VFS:
         g_value_take_boxed(value,
                            _nm_utils_copy_array(self->vfs,
@@ -1159,9 +1156,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMSettingSriov *self = NM_SETTING_SRIOV(object);
 
     switch (prop_id) {
-    case PROP_TOTAL_VFS:
-        self->total_vfs = g_value_get_uint(value);
-        break;
     case PROP_VFS:
         g_ptr_array_unref(self->vfs);
         self->vfs = _nm_utils_copy_array(g_value_get_boxed(value),
@@ -1240,14 +1234,16 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
      * example: SRIOV_TOTAL_VFS=16
      * ---end---
      */
-    obj_properties[PROP_TOTAL_VFS] = g_param_spec_uint(
-        NM_SETTING_SRIOV_TOTAL_VFS,
-        "",
-        "",
-        0,
-        G_MAXUINT32,
-        0,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_SRIOV_TOTAL_VFS,
+                                              PROP_TOTAL_VFS,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingSriov,
+                                              total_vfs);
 
     /**
      * NMSettingSriov:vfs: (type GPtrArray(NMSriovVF))
