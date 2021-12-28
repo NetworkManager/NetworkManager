@@ -901,7 +901,7 @@ typedef struct {
     int         ip6_auto_default_route;
     guint32     fwmark;
     guint32     mtu;
-    guint16     listen_port;
+    guint32     listen_port;
     bool        peer_routes;
     bool        private_key_valid : 1;
 } NMSettingWireGuardPrivate;
@@ -2265,15 +2265,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingWireGuardPrivate *priv    = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
 
     switch (prop_id) {
-    case PROP_FWMARK:
-        g_value_set_uint(value, priv->fwmark);
-        break;
-    case PROP_LISTEN_PORT:
-        g_value_set_uint(value, priv->listen_port);
-        break;
-    case PROP_MTU:
-        g_value_set_uint(value, priv->mtu);
-        break;
     case PROP_PEER_ROUTES:
         g_value_set_boolean(value, priv->peer_routes);
         break;
@@ -2293,15 +2284,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     const char                *str;
 
     switch (prop_id) {
-    case PROP_FWMARK:
-        priv->fwmark = g_value_get_uint(value);
-        break;
-    case PROP_LISTEN_PORT:
-        priv->listen_port = g_value_get_uint(value);
-        break;
-    case PROP_MTU:
-        priv->mtu = g_value_get_uint(value);
-        break;
     case PROP_PEER_ROUTES:
         priv->peer_routes = g_value_get_boolean(value);
         break;
@@ -2428,14 +2410,16 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_FWMARK] =
-        g_param_spec_uint(NM_SETTING_WIREGUARD_FWMARK,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT32,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIREGUARD_FWMARK,
+                                              PROP_FWMARK,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingWireGuardPrivate,
+                                              fwmark);
 
     /**
      * NMSettingWireGuard:listen-port:
@@ -2445,14 +2429,16 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_LISTEN_PORT] =
-        g_param_spec_uint(NM_SETTING_WIREGUARD_LISTEN_PORT,
-                          "",
-                          "",
-                          0,
-                          65535,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIREGUARD_LISTEN_PORT,
+                                              PROP_LISTEN_PORT,
+                                              0,
+                                              65535,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingWireGuardPrivate,
+                                              listen_port);
 
     /**
      * NMSettingWireGuard:peer-routes:
@@ -2492,14 +2478,16 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_MTU] =
-        g_param_spec_uint(NM_SETTING_WIREGUARD_MTU,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT32,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIREGUARD_MTU,
+                                              PROP_MTU,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingWireGuardPrivate,
+                                              mtu);
 
     /**
      * NMSettingWireGuard:ip4-auto-default-route:

@@ -140,12 +140,12 @@ typedef struct {
     char      *dhcp_hostname;
     char      *dhcp_iaid;
     gint64     route_metric;
-    guint      dhcp_hostname_flags;
     gint32     required_timeout;
     gint32     dad_timeout;
     gint32     dhcp_timeout;
     gint32     dns_priority;
     guint32    route_table;
+    guint32    dhcp_hostname_flags;
     bool       ignore_auto_routes;
     bool       ignore_auto_dns;
     bool       dhcp_send_hostname;
@@ -269,8 +269,6 @@ extern const NMSettInfoPropertType nm_sett_info_propert_type_setting_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u;
-
-extern const NMSettInfoPropertType nm_sett_info_propert_type_plain_u;
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_int32;

@@ -516,9 +516,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_SIM_OPERATOR_ID:
         g_value_set_string(value, nm_setting_gsm_get_sim_operator_id(setting));
         break;
-    case PROP_MTU:
-        g_value_set_uint(value, nm_setting_gsm_get_mtu(setting));
-        break;
     default:
         _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
@@ -572,9 +569,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_SIM_OPERATOR_ID:
         g_free(priv->sim_operator_id);
         priv->sim_operator_id = g_value_dup_string(value);
-        break;
-    case PROP_MTU:
-        priv->mtu = g_value_get_uint(value);
         break;
     default:
         _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
@@ -840,14 +834,16 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
      *
      * Since: 1.8
      **/
-    obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_GSM_MTU,
-                                                 "",
-                                                 "",
-                                                 0,
-                                                 G_MAXUINT32,
-                                                 0,
-                                                 G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE
-                                                     | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_GSM_MTU,
+                                              PROP_MTU,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingGsmPrivate,
+                                              mtu);
 
     /* Ignore incoming deprecated properties */
     _nm_properties_override_dbus(properties_override,

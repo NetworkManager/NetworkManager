@@ -32,19 +32,19 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT,
                                   PROP_FLAGS, );
 
 typedef struct {
-    char          *parent;
-    char          *local;
-    char          *remote;
-    char          *input_key;
-    char          *output_key;
-    guint          ttl;
-    guint          tos;
-    guint          encapsulation_limit;
-    guint          flow_label;
-    NMIPTunnelMode mode;
-    guint32        mtu;
-    guint32        flags;
-    bool           path_mtu_discovery;
+    char   *parent;
+    char   *local;
+    char   *remote;
+    char   *input_key;
+    char   *output_key;
+    guint32 ttl;
+    guint32 tos;
+    guint32 encapsulation_limit;
+    guint32 flow_label;
+    guint32 mode;
+    guint32 mtu;
+    guint32 flags;
+    bool    path_mtu_discovery;
 } NMSettingIPTunnelPrivate;
 
 /**
@@ -512,23 +512,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_PARENT:
         g_value_set_string(value, priv->parent);
         break;
-    case PROP_MODE:
-        g_value_set_uint(value, priv->mode);
-        break;
     case PROP_LOCAL:
         g_value_set_string(value, priv->local);
         break;
     case PROP_REMOTE:
         g_value_set_string(value, priv->remote);
-        break;
-    case PROP_TTL:
-        g_value_set_uint(value, priv->ttl);
-        break;
-    case PROP_TOS:
-        g_value_set_uint(value, priv->tos);
-        break;
-    case PROP_PATH_MTU_DISCOVERY:
-        g_value_set_boolean(value, priv->path_mtu_discovery);
         break;
     case PROP_INPUT_KEY:
         g_value_set_string(value, priv->input_key);
@@ -536,20 +524,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_OUTPUT_KEY:
         g_value_set_string(value, priv->output_key);
         break;
-    case PROP_ENCAPSULATION_LIMIT:
-        g_value_set_uint(value, priv->encapsulation_limit);
-        break;
-    case PROP_FLOW_LABEL:
-        g_value_set_uint(value, priv->flow_label);
-        break;
-    case PROP_MTU:
-        g_value_set_uint(value, priv->mtu);
-        break;
-    case PROP_FLAGS:
-        g_value_set_uint(value, priv->flags);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -565,9 +541,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_free(priv->parent);
         priv->parent = g_value_dup_string(value);
         break;
-    case PROP_MODE:
-        priv->mode = g_value_get_uint(value);
-        break;
     case PROP_LOCAL:
         g_free(priv->local);
         priv->local = g_value_dup_string(value);
@@ -575,15 +548,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_REMOTE:
         g_free(priv->remote);
         priv->remote = g_value_dup_string(value);
-        break;
-    case PROP_TTL:
-        priv->ttl = g_value_get_uint(value);
-        break;
-    case PROP_TOS:
-        priv->tos = g_value_get_uint(value);
-        break;
-    case PROP_PATH_MTU_DISCOVERY:
-        priv->path_mtu_discovery = g_value_get_boolean(value);
         break;
     case PROP_INPUT_KEY:
         g_free(priv->input_key);
@@ -593,20 +557,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_free(priv->output_key);
         priv->output_key = g_value_dup_string(value);
         break;
-    case PROP_ENCAPSULATION_LIMIT:
-        priv->encapsulation_limit = g_value_get_uint(value);
-        break;
-    case PROP_FLOW_LABEL:
-        priv->flow_label = g_value_get_uint(value);
-        break;
-    case PROP_MTU:
-        priv->mtu = g_value_get_uint(value);
-        break;
-    case PROP_FLAGS:
-        priv->flags = g_value_get_uint(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -671,14 +623,16 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_MODE] =
-        g_param_spec_uint(NM_SETTING_IP_TUNNEL_MODE,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_MODE,
+                                              PROP_MODE,
+                                              0,
+                                              G_MAXUINT32,
+                                              NM_IP_TUNNEL_MODE_UNKNOWN,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              mode);
 
     /**
      * NMSettingIPTunnel:local:
@@ -720,14 +674,16 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_TTL] =
-        g_param_spec_uint(NM_SETTING_IP_TUNNEL_TTL,
-                          "",
-                          "",
-                          0,
-                          255,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_TTL,
+                                              PROP_TTL,
+                                              0,
+                                              255,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              ttl);
 
     /**
      * NMSettingIPTunnel:tos
@@ -737,14 +693,16 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_TOS] =
-        g_param_spec_uint(NM_SETTING_IP_TUNNEL_TOS,
-                          "",
-                          "",
-                          0,
-                          255,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_TOS,
+                                              PROP_TOS,
+                                              0,
+                                              255,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              tos);
 
     /**
      * NMSettingIPTunnel:path-mtu-discovery
@@ -802,14 +760,16 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_ENCAPSULATION_LIMIT] =
-        g_param_spec_uint(NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT,
-                          "",
-                          "",
-                          0,
-                          255,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT,
+                                              PROP_ENCAPSULATION_LIMIT,
+                                              0,
+                                              255,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              encapsulation_limit);
 
     /**
      * NMSettingIPTunnel:flow-label:
@@ -819,14 +779,16 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_FLOW_LABEL] =
-        g_param_spec_uint(NM_SETTING_IP_TUNNEL_FLOW_LABEL,
-                          "",
-                          "",
-                          0,
-                          (1 << 20) - 1,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_FLOW_LABEL,
+                                              PROP_FLOW_LABEL,
+                                              0,
+                                              (1 << 20) - 1,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              flow_label);
 
     /**
      * NMSettingIPTunnel:mtu:
@@ -836,14 +798,16 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_IP_TUNNEL_MTU,
-                                                 "",
-                                                 "",
-                                                 0,
-                                                 G_MAXUINT32,
-                                                 0,
-                                                 G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE
-                                                     | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_MTU,
+                                              PROP_MTU,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingIPTunnelPrivate,
+                                              mtu);
 
     /**
      * NMSettingIPTunnel:flags:
@@ -856,14 +820,16 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.12
      **/
-    obj_properties[PROP_FLAGS] = g_param_spec_uint(NM_SETTING_IP_TUNNEL_FLAGS,
-                                                   "",
-                                                   "",
-                                                   0,
-                                                   G_MAXUINT32,
-                                                   0,
-                                                   G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE
-                                                       | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_FLAGS,
+                                              PROP_FLAGS,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingIPTunnelPrivate,
+                                              flags);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

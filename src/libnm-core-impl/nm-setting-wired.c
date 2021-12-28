@@ -53,20 +53,20 @@ typedef struct {
         guint              len;
         guint              n_alloc;
     } s390_options;
-    GArray                 *mac_address_blacklist;
-    char                  **s390_subchannels;
-    char                   *port;
-    char                   *duplex;
-    char                   *device_mac_address;
-    char                   *cloned_mac_address;
-    char                   *generate_mac_address_mask;
-    char                   *s390_nettype;
-    char                   *wol_password;
-    int                     accept_all_mac_addresses;
-    NMSettingWiredWakeOnLan wol;
-    guint32                 speed;
-    guint32                 mtu;
-    bool                    auto_negotiate;
+    GArray *mac_address_blacklist;
+    char  **s390_subchannels;
+    char   *port;
+    char   *duplex;
+    char   *device_mac_address;
+    char   *cloned_mac_address;
+    char   *generate_mac_address_mask;
+    char   *s390_nettype;
+    char   *wol_password;
+    int     accept_all_mac_addresses;
+    guint32 wake_on_lan;
+    guint32 speed;
+    guint32 mtu;
+    bool    auto_negotiate;
 } NMSettingWiredPrivate;
 
 /**
@@ -731,7 +731,7 @@ nm_setting_wired_get_wake_on_lan(NMSettingWired *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NM_SETTING_WIRED_WAKE_ON_LAN_NONE);
 
-    return NM_SETTING_WIRED_GET_PRIVATE(setting)->wol;
+    return NM_SETTING_WIRED_GET_PRIVATE(setting)->wake_on_lan;
 }
 
 /**
@@ -919,8 +919,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (NM_FLAGS_ANY(priv->wol, NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS)
-        && !nm_utils_is_power_of_two(priv->wol)) {
+    if (NM_FLAGS_ANY(priv->wake_on_lan, NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS)
+        && !nm_utils_is_power_of_two(priv->wake_on_lan)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -932,7 +932,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (priv->wol_password && !NM_FLAGS_HAS(priv->wol, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC)) {
+    if (priv->wol_password
+        && !NM_FLAGS_HAS(priv->wake_on_lan, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1005,9 +1006,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_PORT:
         g_value_set_string(value, nm_setting_wired_get_port(setting));
         break;
-    case PROP_SPEED:
-        g_value_set_uint(value, nm_setting_wired_get_speed(setting));
-        break;
     case PROP_DUPLEX:
         g_value_set_string(value, nm_setting_wired_get_duplex(setting));
         break;
@@ -1026,9 +1024,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_MAC_ADDRESS_BLACKLIST:
         g_value_set_boxed(value, (char **) priv->mac_address_blacklist->data);
         break;
-    case PROP_MTU:
-        g_value_set_uint(value, nm_setting_wired_get_mtu(setting));
-        break;
     case PROP_S390_SUBCHANNELS:
         g_value_set_boxed(value, priv->s390_subchannels);
         break;
@@ -1043,9 +1038,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                                 g_strdup(priv->s390_options.arr[i].value_str));
         }
         g_value_take_boxed(value, hash);
-        break;
-    case PROP_WAKE_ON_LAN:
-        g_value_set_uint(value, priv->wol);
         break;
     case PROP_WAKE_ON_LAN_PASSWORD:
         g_value_set_string(value, priv->wol_password);
@@ -1067,9 +1059,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_PORT:
         g_free(priv->port);
         priv->port = g_value_dup_string(value);
-        break;
-    case PROP_SPEED:
-        priv->speed = g_value_get_uint(value);
         break;
     case PROP_DUPLEX:
         g_free(priv->duplex);
@@ -1103,9 +1092,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                 g_array_append_val(priv->mac_address_blacklist, mac);
             }
         }
-        break;
-    case PROP_MTU:
-        priv->mtu = g_value_get_uint(value);
         break;
     case PROP_S390_SUBCHANNELS:
         if (priv->s390_subchannels)
@@ -1178,9 +1164,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             g_return_if_fail(!invalid_content);
         }
     } break;
-    case PROP_WAKE_ON_LAN:
-        priv->wol = g_value_get_uint(value);
-        break;
     case PROP_WAKE_ON_LAN_PASSWORD:
         g_free(priv->wol_password);
         priv->wol_password = g_value_dup_string(value);
@@ -1201,8 +1184,6 @@ nm_setting_wired_init(NMSettingWired *setting)
     /* We use GArray rather than GPtrArray so it will automatically be NULL-terminated */
     priv->mac_address_blacklist = g_array_new(TRUE, FALSE, sizeof(char *));
     g_array_set_clear_func(priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
-
-    priv->wol = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
 }
 
 /**
@@ -1295,13 +1276,16 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      *    parameter in the ETHTOOL_OPTS variable.
      * ---end---
      */
-    obj_properties[PROP_SPEED] = g_param_spec_uint(NM_SETTING_WIRED_SPEED,
-                                                   "",
-                                                   "",
-                                                   0,
-                                                   G_MAXUINT32,
-                                                   0,
-                                                   G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIRED_SPEED,
+                                              PROP_SPEED,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingWiredPrivate,
+                                              speed);
 
     /**
      * NMSettingWired:duplex:
@@ -1559,14 +1543,16 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * description: MTU of the interface.
      * ---end---
      */
-    obj_properties[PROP_MTU] = g_param_spec_uint(NM_SETTING_WIRED_MTU,
-                                                 "",
-                                                 "",
-                                                 0,
-                                                 G_MAXUINT32,
-                                                 0,
-                                                 G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE
-                                                     | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIRED_MTU,
+                                              PROP_MTU,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingWiredPrivate,
+                                              mtu);
 
     /**
      * NMSettingWired:s390-subchannels:
@@ -1667,14 +1653,16 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * in the ethtool manual page.
      * ---end---
      */
-    obj_properties[PROP_WAKE_ON_LAN] =
-        g_param_spec_uint(NM_SETTING_WIRED_WAKE_ON_LAN,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT32,
-                          NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIRED_WAKE_ON_LAN,
+                                              PROP_WAKE_ON_LAN,
+                                              0,
+                                              G_MAXUINT32,
+                                              NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingWiredPrivate,
+                                              wake_on_lan);
 
     /**
      * NMSettingWired:wake-on-lan-password:
