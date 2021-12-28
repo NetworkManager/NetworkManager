@@ -84,6 +84,7 @@ const char *
 nm_setting_macsec_get_parent(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), NULL);
+
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->parent;
 }
 
@@ -130,6 +131,7 @@ const char *
 nm_setting_macsec_get_mka_cak(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), NULL);
+
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->mka_cak;
 }
 
@@ -161,6 +163,7 @@ const char *
 nm_setting_macsec_get_mka_ckn(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), NULL);
+
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->mka_ckn;
 }
 
@@ -397,67 +400,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingMacsec        *setting = NM_SETTING_MACSEC(object);
-    NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_value_set_string(value, priv->parent);
-        break;
-    case PROP_ENCRYPT:
-        g_value_set_boolean(value, priv->encrypt);
-        break;
-    case PROP_MKA_CAK:
-        g_value_set_string(value, priv->mka_cak);
-        break;
-    case PROP_MKA_CKN:
-        g_value_set_string(value, priv->mka_ckn);
-        break;
-    case PROP_SEND_SCI:
-        g_value_set_boolean(value, priv->send_sci);
-        break;
-    default:
-        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingMacsec        *setting = NM_SETTING_MACSEC(object);
-    NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_free(priv->parent);
-        priv->parent = g_value_dup_string(value);
-        break;
-    case PROP_ENCRYPT:
-        priv->encrypt = g_value_get_boolean(value);
-        break;
-    case PROP_MKA_CAK:
-        nm_free_secret(priv->mka_cak);
-        priv->mka_cak = g_value_dup_string(value);
-        break;
-    case PROP_MKA_CKN:
-        g_free(priv->mka_ckn);
-        priv->mka_ckn = g_value_dup_string(value);
-        break;
-    case PROP_SEND_SCI:
-        priv->send_sci = g_value_get_boolean(value);
-        break;
-    default:
-        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_macsec_init(NMSettingMacsec *self)
 {}
 
@@ -477,19 +419,6 @@ nm_setting_macsec_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingMacsec        *setting = NM_SETTING_MACSEC(object);
-    NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
-
-    g_free(priv->parent);
-    nm_free_secret(priv->mka_cak);
-    g_free(priv->mka_ckn);
-
-    G_OBJECT_CLASS(nm_setting_macsec_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
@@ -498,9 +427,8 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingMacsecPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify       = verify;
     setting_class->need_secrets = need_secrets;
@@ -515,12 +443,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_PARENT] = g_param_spec_string(
-        NM_SETTING_MACSEC_PARENT,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_MACSEC_PARENT,
+                                              PROP_PARENT,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingMacsecPrivate,
+                                              parent);
 
     /**
      * NMSettingMacsec:mode:
@@ -565,12 +494,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_MKA_CAK] =
-        g_param_spec_string(NM_SETTING_MACSEC_MKA_CAK,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_MACSEC_MKA_CAK,
+                                              PROP_MKA_CAK,
+                                              NM_SETTING_PARAM_SECRET,
+                                              NMSettingMacsecPrivate,
+                                              mka_cak);
 
     /**
      * NMSettingMacsec:mka-cak-flags:
@@ -595,11 +525,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_MKA_CKN] = g_param_spec_string(NM_SETTING_MACSEC_MKA_CKN,
-                                                       "",
-                                                       "",
-                                                       NULL,
-                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_MACSEC_MKA_CKN,
+                                              PROP_MKA_CKN,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingMacsecPrivate,
+                                              mka_ckn);
 
     /**
      * NMSettingMacsec:port:

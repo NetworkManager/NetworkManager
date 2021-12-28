@@ -334,39 +334,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingOvsInterface *self = NM_SETTING_OVS_INTERFACE(object);
-
-    switch (prop_id) {
-    case PROP_TYPE:
-        g_value_set_string(value, self->type);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingOvsInterface *self = NM_SETTING_OVS_INTERFACE(object);
-
-    switch (prop_id) {
-    case PROP_TYPE:
-        g_free(self->type);
-        self->type = g_value_dup_string(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_ovs_interface_init(NMSettingOvsInterface *self)
 {}
 
@@ -386,24 +353,14 @@ nm_setting_ovs_interface_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingOvsInterface *self = NM_SETTING_OVS_INTERFACE(object);
-
-    g_free(self->type);
-
-    G_OBJECT_CLASS(nm_setting_ovs_interface_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_ovs_interface_class_init(NMSettingOvsInterfaceClass *klass)
 {
-    GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
@@ -414,14 +371,19 @@ nm_setting_ovs_interface_class_init(NMSettingOvsInterfaceClass *klass)
      *
      * Since: 1.10
      **/
-    obj_properties[PROP_TYPE] = g_param_spec_string(NM_SETTING_OVS_INTERFACE_TYPE,
-                                                    "",
-                                                    "",
-                                                    NULL,
-                                                    G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                        | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_OVS_INTERFACE_TYPE,
+                                              PROP_TYPE,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingOvsInterface,
+                                              type);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_OVS_INTERFACE, NULL, NULL, 0);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_OVS_INTERFACE,
+                             NULL,
+                             properties_override,
+                             0);
 }

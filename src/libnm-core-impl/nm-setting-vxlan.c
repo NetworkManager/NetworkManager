@@ -95,6 +95,7 @@ const char *
 nm_setting_vxlan_get_parent(NMSettingVxlan *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_VXLAN(setting), NULL);
+
     return NM_SETTING_VXLAN_GET_PRIVATE(setting)->parent;
 }
 
@@ -126,6 +127,7 @@ const char *
 nm_setting_vxlan_get_local(NMSettingVxlan *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_VXLAN(setting), NULL);
+
     return NM_SETTING_VXLAN_GET_PRIVATE(setting)->local;
 }
 
@@ -141,6 +143,7 @@ const char *
 nm_setting_vxlan_get_remote(NMSettingVxlan *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_VXLAN(setting), NULL);
+
     return NM_SETTING_VXLAN_GET_PRIVATE(setting)->remote;
 }
 
@@ -400,96 +403,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-_addrstr_set(char **dst, const char *src)
-{
-    gs_free char *old = NULL;
-
-    old = *dst;
-    if (!src)
-        *dst = NULL;
-    else if (!nm_utils_parse_inaddr(AF_UNSPEC, src, dst))
-        *dst = g_strdup(src);
-}
-/*****************************************************************************/
-
-static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingVxlan        *setting = NM_SETTING_VXLAN(object);
-    NMSettingVxlanPrivate *priv    = NM_SETTING_VXLAN_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_value_set_string(value, priv->parent);
-        break;
-    case PROP_LOCAL:
-        g_value_set_string(value, priv->local);
-        break;
-    case PROP_REMOTE:
-        g_value_set_string(value, priv->remote);
-        break;
-    case PROP_PROXY:
-        g_value_set_boolean(value, priv->proxy);
-        break;
-    case PROP_LEARNING:
-        g_value_set_boolean(value, priv->learning);
-        break;
-    case PROP_RSC:
-        g_value_set_boolean(value, priv->rsc);
-        break;
-    case PROP_L2_MISS:
-        g_value_set_boolean(value, priv->l2_miss);
-        break;
-    case PROP_L3_MISS:
-        g_value_set_boolean(value, priv->l3_miss);
-        break;
-    default:
-        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingVxlan        *setting = NM_SETTING_VXLAN(object);
-    NMSettingVxlanPrivate *priv    = NM_SETTING_VXLAN_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_free(priv->parent);
-        priv->parent = g_value_dup_string(value);
-        break;
-    case PROP_LOCAL:
-        _addrstr_set(&priv->local, g_value_get_string(value));
-        break;
-    case PROP_REMOTE:
-        _addrstr_set(&priv->remote, g_value_get_string(value));
-        break;
-    case PROP_PROXY:
-        priv->proxy = g_value_get_boolean(value);
-        break;
-    case PROP_LEARNING:
-        priv->learning = g_value_get_boolean(value);
-        break;
-    case PROP_RSC:
-        priv->rsc = g_value_get_boolean(value);
-        break;
-    case PROP_L2_MISS:
-        priv->l2_miss = g_value_get_boolean(value);
-        break;
-    case PROP_L3_MISS:
-        priv->l3_miss = g_value_get_boolean(value);
-        break;
-    default:
-        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_vxlan_init(NMSettingVxlan *self)
 {}
 
@@ -509,19 +422,6 @@ nm_setting_vxlan_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingVxlan        *setting = NM_SETTING_VXLAN(object);
-    NMSettingVxlanPrivate *priv    = NM_SETTING_VXLAN_GET_PRIVATE(setting);
-
-    g_free(priv->parent);
-    g_free(priv->local);
-    g_free(priv->remote);
-
-    G_OBJECT_CLASS(nm_setting_vxlan_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
@@ -530,9 +430,8 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingVxlanPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
@@ -543,12 +442,13 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_PARENT] = g_param_spec_string(
-        NM_SETTING_VXLAN_PARENT,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VXLAN_PARENT,
+                                              PROP_PARENT,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingVxlanPrivate,
+                                              parent);
 
     /**
      * NMSettingVxlan:id:
@@ -576,12 +476,15 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_LOCAL] = g_param_spec_string(NM_SETTING_VXLAN_LOCAL,
-                                                     "",
-                                                     "",
-                                                     NULL,
-                                                     G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
-                                                         | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VXLAN_LOCAL,
+                                              PROP_LOCAL,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingVxlanPrivate,
+                                              local,
+                                              .direct_set_string_ip_address_addr_family =
+                                                  AF_UNSPEC + 1);
 
     /**
      * NMSettingVxlan:remote:
@@ -592,12 +495,15 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_REMOTE] = g_param_spec_string(
-        NM_SETTING_VXLAN_REMOTE,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VXLAN_REMOTE,
+                                              PROP_REMOTE,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingVxlanPrivate,
+                                              remote,
+                                              .direct_set_string_ip_address_addr_family =
+                                                  AF_UNSPEC + 1);
 
     /**
      * NMSettingVxlan:source-port-min:

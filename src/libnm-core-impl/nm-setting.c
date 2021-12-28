@@ -376,25 +376,27 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         nm_assert(p->param_spec);
 
         vtype = p->param_spec->value_type;
+
+        if (vtype == G_TYPE_STRING) {
+            /* The "name" property is a bit special because it's defined in the
+             * parent class NMSetting. We set the property_type here, because
+             * it's more convenient (albeit a bit ugly).
+             *
+             * FIXME: let _nm_sett_info_property_override_create_array() always add
+             *   the handling of the name property.*/
+            nm_assert(nm_streq(p->name, NM_SETTING_NAME));
+            nm_assert(!NM_FLAGS_HAS(p->param_spec->flags, G_PARAM_WRITABLE));
+            p->property_type = &nm_sett_info_propert_type_setting_name;
+            goto has_property_type;
+        }
+
         if (vtype == G_TYPE_INT64)
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
                 G_VARIANT_TYPE_INT64,
                 .compare_fcn       = _nm_setting_property_compare_fcn_default,
                 .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
                 .from_dbus_is_full = TRUE);
-        else if (vtype == G_TYPE_STRING) {
-            nm_assert(nm_streq(p->name, NM_SETTING_NAME)
-                      == (!NM_FLAGS_HAS(p->param_spec->flags, G_PARAM_WRITABLE)));
-            if (!NM_FLAGS_HAS(p->param_spec->flags, G_PARAM_WRITABLE))
-                p->property_type = &nm_sett_info_propert_type_setting_name;
-            else {
-                p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                    G_VARIANT_TYPE_STRING,
-                    .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                    .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                    .from_dbus_is_full = TRUE);
-            }
-        } else if (vtype == G_TYPE_STRV)
+        else if (vtype == G_TYPE_STRV)
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
                 G_VARIANT_TYPE_STRING_ARRAY,
                 .compare_fcn       = _nm_setting_property_compare_fcn_default,
