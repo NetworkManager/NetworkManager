@@ -5835,6 +5835,13 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
 
     _nm_properties_override_gobj(
         properties_override,
+        obj_properties[PROP_ROUTE_METRIC],
+        &nm_sett_info_propert_type_direct_int64,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint64, NMSettingIPConfigPrivate, route_metric));
+
+    _nm_properties_override_gobj(
+        properties_override,
         obj_properties[PROP_IGNORE_AUTO_DNS],
         &nm_sett_info_propert_type_direct_boolean,
         .direct_offset =
@@ -5936,9 +5943,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
                                                 (GDestroyNotify) nm_ip_route_unref));
         break;
-    case PROP_ROUTE_METRIC:
-        g_value_set_int64(value, priv->route_metric);
-        break;
     case PROP_IGNORE_AUTO_ROUTES:
         g_value_set_boolean(value, nm_setting_ip_config_get_ignore_auto_routes(setting));
         break;
@@ -6028,9 +6032,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                             (NMUtilsCopyFunc) nm_ip_route_dup,
                                             (GDestroyNotify) nm_ip_route_unref);
         break;
-    case PROP_ROUTE_METRIC:
-        priv->route_metric = g_value_get_int64(value);
-        break;
     case PROP_IGNORE_AUTO_ROUTES:
         priv->ignore_auto_routes = g_value_get_boolean(value);
         break;
@@ -6074,7 +6075,6 @@ _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv
     priv->dns_search   = g_ptr_array_new_with_free_func(g_free);
     priv->addresses    = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
     priv->routes       = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
-    priv->route_metric = -1;
 }
 
 static void
