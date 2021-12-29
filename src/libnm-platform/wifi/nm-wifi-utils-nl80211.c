@@ -381,6 +381,7 @@ static guint32
 wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs)
 {
     NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
+    const guint32      *temp = freqs;
     int                 i;
 
     for (i = 0; i < self->num_freqs; i++) {
@@ -389,6 +390,7 @@ wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs)
                 return *freqs;
             freqs++;
         }
+        freqs = temp;
     }
     return 0;
 }

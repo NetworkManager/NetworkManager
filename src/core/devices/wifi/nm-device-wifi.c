@@ -3106,8 +3106,13 @@ ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP
     NMDevice     *device     = NM_DEVICE(self);
     const char   *band       = nm_setting_wireless_get_band(s_wifi);
     const guint32 a_freqs[]  = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
-    const guint32 bg_freqs[] = {2412, 2437, 2462, 2472, 0};
+    const guint32 bg_freqs[] = {2412, 2422, 2432, 2437, 2452, 2462, 2472, 0};
     guint32       freq       = 0;
+    guint32       rand_num   = 0;
+
+    /*Create a random number for random channel*/
+    srand(time(NULL));
+    rand_num = rand() % ((guint32) sizeof(a_freqs) / sizeof(a_freqs[0]) - 1);
 
     g_assert(ap);
 
@@ -3117,11 +3122,11 @@ ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP
     if (g_strcmp0(band, "a") == 0)
         freq = nm_platform_wifi_find_frequency(nm_device_get_platform(device),
                                                nm_device_get_ifindex(device),
-                                               a_freqs);
+                                               a_freqs + rand_num);
     else
         freq = nm_platform_wifi_find_frequency(nm_device_get_platform(device),
                                                nm_device_get_ifindex(device),
-                                               bg_freqs);
+                                               bg_freqs + rand_num);
 
     if (!freq)
         freq = (g_strcmp0(band, "a") == 0) ? 5180 : 2462;
