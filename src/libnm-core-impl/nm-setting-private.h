@@ -236,7 +236,7 @@ gboolean _nm_setting_clear_secrets(NMSetting                       *setting,
 
 /* The property of the #NMSetting should be considered during comparisons that
  * use the %NM_SETTING_COMPARE_FLAG_INFERRABLE flag. Properties that don't have
- * this flag, are ignored when doing an infrerrable comparison.  This flag should
+ * this flag, are ignored when doing an inferrable comparison.  This flag should
  * be set on all properties that are read from the kernel or the system when a
  * connection is generated.  eg, IP addresses/routes can be read from the
  * kernel, but the 'autoconnect' property cannot, so

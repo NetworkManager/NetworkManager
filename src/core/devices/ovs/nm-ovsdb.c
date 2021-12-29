@@ -741,7 +741,7 @@ _j_create_external_ids_array_update(const char *connection_uuid,
 /**
  * _insert_interface:
  *
- * Returns an commands that adds new interface from a given connection.
+ * Returns a command that adds new interface from a given connection.
  */
 static void
 _insert_interface(json_t       *params,
