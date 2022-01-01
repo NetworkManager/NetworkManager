@@ -757,6 +757,10 @@ struct _NMSettInfoProperty {
      * normalize the string via g_ascii_strdown(). */
     bool direct_set_string_ascii_strdown : 1;
 
+    /* If TRUE, this is a NM_VALUE_TYPE_STRING direct property, and the setter will
+     * normalize the string via g_strstrip(). */
+    bool direct_set_string_strip : 1;
+
     /* If non-zero, this is a NM_VALUE_TYPE_STRING direct property. Actually, it is
      * a _nm_setting_property_define_direct_mac_address(), and the setter will
      * call _nm_utils_hwaddr_canonical_or_invalid() on the string, with the specified
