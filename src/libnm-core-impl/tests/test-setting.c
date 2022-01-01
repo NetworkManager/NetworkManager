@@ -4569,6 +4569,8 @@ test_setting_metadata(void)
 
             if (sip->direct_set_string_ascii_strdown)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+            if (sip->direct_set_string_strip)
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
 
             if (sip->direct_set_string_mac_address_len != 0) {
                 g_assert(NM_IN_SET(sip->property_type,
@@ -4578,7 +4580,7 @@ test_setting_metadata(void)
             }
 
             g_assert(((sip->direct_set_string_mac_address_len != 0)
-                      + (!!sip->direct_set_string_ascii_strdown)
+                      + (!!sip->direct_set_string_strip) + (!!sip->direct_set_string_ascii_strdown)
                       + (sip->direct_set_string_ip_address_addr_family != 0))
                      <= 1);
 

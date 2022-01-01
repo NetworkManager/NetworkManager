@@ -644,21 +644,38 @@ _nm_setting_use_legacy_property(NMSetting  *setting,
 static gboolean
 _property_direct_set_string(const NMSettInfoProperty *property_info, char **dst, const char *src)
 {
-    if (property_info->direct_set_string_ascii_strdown)
-        return nm_strdup_reset_take(dst, src ? g_ascii_strdown(src, -1) : NULL);
+    char *s;
+
+    nm_assert(((!!property_info->direct_set_string_ascii_strdown)
+               + (!!property_info->direct_set_string_strip)
+               + (property_info->direct_set_string_mac_address_len > 0)
+               + (property_info->direct_set_string_ip_address_addr_family != 0))
+              <= 1);
+
+    if (property_info->direct_set_string_ascii_strdown) {
+        s = src ? g_ascii_strdown(src, -1) : NULL;
+        goto out_take;
+    }
+    if (property_info->direct_set_string_strip) {
+        s = nm_strstrip_dup(src);
+        goto out_take;
+    }
     if (property_info->direct_set_string_mac_address_len > 0) {
-        return nm_strdup_reset_take(dst,
-                                    _nm_utils_hwaddr_canonical_or_invalid(
-                                        src,
-                                        property_info->direct_set_string_mac_address_len));
+        s = _nm_utils_hwaddr_canonical_or_invalid(src,
+                                                  property_info->direct_set_string_mac_address_len);
+        goto out_take;
     }
     if (property_info->direct_set_string_ip_address_addr_family != 0) {
-        return nm_strdup_reset_take(dst,
-                                    _nm_utils_ipaddr_canonical_or_invalid(
-                                        property_info->direct_set_string_ip_address_addr_family,
-                                        src));
+        s = _nm_utils_ipaddr_canonical_or_invalid(
+            property_info->direct_set_string_ip_address_addr_family,
+            src);
+        goto out_take;
     }
+
     return nm_strdup_reset(dst, src);
+
+out_take:
+    return nm_strdup_reset_take(dst, s);
 }
 
 void
