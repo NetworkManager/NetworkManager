@@ -1057,6 +1057,27 @@ nm_strstrip(char *str)
     return str ? g_strstrip(str) : NULL;
 }
 
+static inline char *
+nm_strstrip_dup(const char *str)
+{
+    gsize l;
+    char *s;
+
+    if (!str)
+        return NULL;
+
+    str = nm_str_skip_leading_spaces(str);
+    l   = strlen(str);
+
+    while (l > 0 && g_ascii_isspace(str[l - 1]))
+        l--;
+
+    s = g_new(char, l + 1);
+    memcpy(s, str, l);
+    s[l] = '\0';
+    return s;
+}
+
 static inline const char *
 nm_strstrip_avoid_copy(const char *str, char **str_free)
 {
