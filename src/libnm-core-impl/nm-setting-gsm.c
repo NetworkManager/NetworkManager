@@ -45,7 +45,7 @@ typedef struct {
     char   *device_id;
     char   *sim_id;
     char   *sim_operator_id;
-    char   *apn;        /* NULL for dynamic */
+    char   *apn;
     char   *network_id; /* for manual registration or NULL for automatic */
     char   *pin;
     guint   password_flags;
@@ -498,9 +498,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_PASSWORD:
         g_value_set_string(value, nm_setting_gsm_get_password(setting));
         break;
-    case PROP_APN:
-        g_value_set_string(value, nm_setting_gsm_get_apn(setting));
-        break;
     case PROP_NETWORK_ID:
         g_value_set_string(value, nm_setting_gsm_get_network_id(setting));
         break;
@@ -549,13 +546,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_PASSWORD:
         g_free(priv->password);
         priv->password = g_value_dup_string(value);
-        break;
-    case PROP_APN:
-        g_free(priv->apn);
-        priv->apn = NULL;
-        tmp       = g_value_dup_string(value);
-        if (tmp)
-            priv->apn = g_strstrip(tmp);
         break;
     case PROP_NETWORK_ID:
         g_free(priv->network_id);
@@ -619,7 +609,6 @@ finalize(GObject *object)
     g_free(priv->number);
     g_free(priv->username);
     g_free(priv->password);
-    g_free(priv->apn);
     g_free(priv->network_id);
     g_free(priv->pin);
     g_free(priv->device_id);
@@ -727,11 +716,14 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
      * The APN may only be composed of the characters a-z, 0-9, ., and - per GSM
      * 03.60 Section 14.9.
      **/
-    obj_properties[PROP_APN] = g_param_spec_string(NM_SETTING_GSM_APN,
-                                                   "",
-                                                   "",
-                                                   NULL,
-                                                   G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_GSM_APN,
+                                              PROP_APN,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingGsmPrivate,
+                                              apn,
+                                              .direct_set_string_strip = TRUE);
 
     /**
      * NMSettingGsm:network-id:
