@@ -66,4 +66,8 @@ void _nm_team_settings_property_from_dbus_link_watchers(
 GVariant *_nm_utils_ip4_dns_to_variant(const char *const *dns, gssize len);
 GVariant *_nm_utils_ip6_dns_to_variant(const char *const *dns, gssize len);
 
+const char *const *nmtst_system_encodings_for_lang(const char *lang);
+const char *const *nmtst_system_encodings_get_default(void);
+const char *const *nmtst_system_encodings_get(void);
+
 #endif
