@@ -209,7 +209,7 @@ read_client_id(const char *str)
     int           j = 0;
     gsize         l;
 
-    nm_assert(!strncmp(str, CLIENTID_TAG, NM_STRLEN(CLIENTID_TAG)));
+    nm_assert(NM_STR_HAS_PREFIX(str, CLIENTID_TAG));
     str += NM_STRLEN(CLIENTID_TAG);
 
     if (!g_ascii_isspace(*str))
@@ -387,11 +387,10 @@ nm_dhcp_dhclient_create_config(const char         *interface,
              * fail the dhcp process before dhcp-timeout. So, always skip importing timeout
              * as we will need to add one greater than dhcp-timeout.
              */
-            if (!strncmp(p, TIMEOUT_TAG, strlen(TIMEOUT_TAG))
-                || !strncmp(p, RETRY_TAG, strlen(RETRY_TAG)))
+            if (NM_STR_HAS_PREFIX(p, TIMEOUT_TAG) || NM_STR_HAS_PREFIX(p, RETRY_TAG))
                 continue;
 
-            if (!strncmp(p, CLIENTID_TAG, strlen(CLIENTID_TAG))) {
+            if (NM_STR_HAS_PREFIX(p, CLIENTID_TAG)) {
                 /* Override config file "dhcp-client-id" and use one from the connection */
                 if (client_id)
                     continue;
@@ -404,16 +403,16 @@ nm_dhcp_dhclient_create_config(const char         *interface,
 
             /* Override config file hostname and use one from the connection */
             if (hostname) {
-                if (strncmp(p, HOSTNAME4_TAG, strlen(HOSTNAME4_TAG)) == 0)
+                if (NM_STR_HAS_PREFIX(p, HOSTNAME4_TAG))
                     continue;
-                if (strncmp(p, FQDN_TAG, strlen(FQDN_TAG)) == 0)
+                if (NM_STR_HAS_PREFIX(p, FQDN_TAG))
                     continue;
             }
 
             /* To let user's FQDN options (except "fqdn.fqdn") override the
              * default ones set by NM, add them later
              */
-            if (!strncmp(p, FQDN_TAG_PREFIX, NM_STRLEN(FQDN_TAG_PREFIX))) {
+            if (NM_STR_HAS_PREFIX(p, FQDN_TAG_PREFIX)) {
                 if (!fqdn_opts)
                     fqdn_opts = g_ptr_array_new_full(5, g_free);
                 g_ptr_array_add(fqdn_opts, g_strdup(p + NM_STRLEN(FQDN_TAG_PREFIX)));
@@ -425,9 +424,9 @@ nm_dhcp_dhclient_create_config(const char         *interface,
                 continue;
 
             /* Check for "request" */
-            if (!strncmp(p, REQ_TAG, strlen(REQ_TAG))) {
+            if (NM_STR_HAS_PREFIX(p, REQ_TAG)) {
                 in_req = TRUE;
-                p += strlen(REQ_TAG);
+                p += NM_STRLEN(REQ_TAG);
                 g_ptr_array_set_size(reqs, 0);
                 reset_reqlist = TRUE;
             }
@@ -439,9 +438,9 @@ nm_dhcp_dhclient_create_config(const char         *interface,
             }
 
             /* Check for "also require" */
-            if (!strncmp(p, ALSOREQ_TAG, strlen(ALSOREQ_TAG))) {
+            if (NM_STR_HAS_PREFIX(p, ALSOREQ_TAG)) {
                 in_alsoreq = TRUE;
-                p += strlen(ALSOREQ_TAG);
+                p += NM_STRLEN(ALSOREQ_TAG);
             }
 
             if (in_alsoreq) {
