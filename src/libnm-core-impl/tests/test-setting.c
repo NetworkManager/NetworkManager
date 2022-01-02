@@ -4430,6 +4430,7 @@ test_setting_metadata(void)
             GArray                   *property_types_data;
             guint                     prop_idx_val;
             gboolean                  can_set_including_default = FALSE;
+            int                       n_special_options;
 
             g_assert(sip->name);
 
@@ -4579,10 +4580,24 @@ test_setting_metadata(void)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
             }
 
-            g_assert(((sip->direct_set_string_mac_address_len != 0)
-                      + (!!sip->direct_set_string_strip) + (!!sip->direct_set_string_ascii_strdown)
-                      + (sip->direct_set_string_ip_address_addr_family != 0))
-                     <= 1);
+            n_special_options = (sip->direct_set_string_mac_address_len != 0)
+                                + (!!sip->direct_set_string_strip)
+                                + (!!sip->direct_set_string_ascii_strdown)
+                                + (sip->direct_set_string_ip_address_addr_family != 0);
+
+            /* currently, we have no cases where special options are mixed. There is no problem to support
+             * that, but as it's not needed, don't do it for now. */
+            g_assert_cmpint(n_special_options, <=, 1);
+
+            if (n_special_options > 0) {
+                /* currently, special options are only relevant for string properties. */
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+            }
+
+            if (sip->param_spec && NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
+                /* Currently, special options are not supported for secrets. */
+                g_assert_cmpint(n_special_options, ==, 0);
+            }
 
             if (!sip->property_type->to_dbus_fcn) {
                 /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
