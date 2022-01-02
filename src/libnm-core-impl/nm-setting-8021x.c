@@ -2504,7 +2504,7 @@ need_secrets_password(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
 
-    if ((!priv->password || !strlen(priv->password))
+    if (nm_str_is_empty(priv->password)
         && (!priv->password_raw || !g_bytes_get_size(priv->password_raw))) {
         g_ptr_array_add(secrets, NM_SETTING_802_1X_PASSWORD);
         g_ptr_array_add(secrets, NM_SETTING_802_1X_PASSWORD_RAW);

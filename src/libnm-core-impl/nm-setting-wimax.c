@@ -101,23 +101,12 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE(setting);
 
-    if (!priv->network_name) {
+    if (nm_str_is_empty(priv->network_name)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                            _("property is missing"));
-        g_prefix_error(error,
-                       "%s.%s: ",
-                       NM_SETTING_WIMAX_SETTING_NAME,
-                       NM_SETTING_WIMAX_NETWORK_NAME);
-        return FALSE;
-    }
-
-    if (!strlen(priv->network_name)) {
-        g_set_error_literal(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("property is empty"));
+                            !priv->network_name ? _("property is missing")
+                                                : _("property is empty"));
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_WIMAX_SETTING_NAME,

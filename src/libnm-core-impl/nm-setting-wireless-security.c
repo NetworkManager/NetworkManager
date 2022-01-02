@@ -993,7 +993,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    if (priv->leap_username && !strlen(priv->leap_username)) {
+    if (priv->leap_username && nm_str_is_empty(priv->leap_username)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,

@@ -205,7 +205,9 @@ read_client_id(const char *str)
 {
     gs_free char *s = NULL;
     char         *p;
-    int           i = 0, j = 0;
+    int           i = 0;
+    int           j = 0;
+    gsize         l;
 
     nm_assert(!strncmp(str, CLIENTID_TAG, NM_STRLEN(CLIENTID_TAG)));
     str += NM_STRLEN(CLIENTID_TAG);
@@ -248,8 +250,9 @@ read_client_id(const char *str)
     /* Otherwise, try to read a hexadecimal sequence */
     s = g_strdup(str);
     g_strchomp(s);
-    if (s[strlen(s) - 1] == ';')
-        s[strlen(s) - 1] = '\0';
+    l = strlen(s);
+    if (l > 0 && s[l - 1] == ';')
+        s[l - 1] = '\0';
 
     return nm_utils_hexstr2bin(s);
 }

@@ -711,7 +711,7 @@ write_wireless_security_setting(NMConnection *connection,
                     numbered_tag(tag, "KEY", i + 1);
 
                     /* Add 's:' prefix for ASCII keys */
-                    if (strlen(key) == 5 || strlen(key) == 13) {
+                    if (NM_IN_SET(strlen(key), 5, 13)) {
                         ascii_key = g_strdup_printf("s:%s", key);
                         key       = ascii_key;
                     }
@@ -759,7 +759,7 @@ write_wireless_security_setting(NMConnection *connection,
             g_free(tmp);
         }
     }
-    if (strlen(str->str) && (dynamic_wep == FALSE))
+    if (nm_str_not_empty(str->str) && !dynamic_wep)
         svSetValueStr(ifcfg, "CIPHER_PAIRWISE", str->str);
     g_string_free(str, TRUE);
 
@@ -2915,7 +2915,7 @@ write_ip4_aliases(NMConnection *connection, const char *base_ifcfg_path)
     base_ifcfg_name_len = strlen(base_ifcfg_name);
     if (!g_str_has_prefix(base_ifcfg_name, IFCFG_TAG))
         g_return_if_reached();
-    base_name     = base_ifcfg_name + strlen(IFCFG_TAG);
+    base_name     = base_ifcfg_name + NM_STRLEN(IFCFG_TAG);
     base_name_len = strlen(base_name);
 
     /* Remove all existing aliases for this file first */
