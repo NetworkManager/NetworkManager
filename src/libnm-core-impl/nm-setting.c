@@ -8,11 +8,12 @@
 
 #include "nm-setting.h"
 
-#include "nm-setting-private.h"
-#include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "nm-utils-private.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-property-compare.h"
+#include "nm-setting-private.h"
+#include "nm-utils-private.h"
+#include "nm-utils.h"
 
 /**
  * SECTION:nm-setting
@@ -672,9 +673,13 @@ _property_direct_set_string(const NMSettInfoProperty *property_info, char **dst,
         goto out_take;
     }
 
+    if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
+        return nm_strdup_reset_secret(dst, src);
+
     return nm_strdup_reset(dst, src);
 
 out_take:
+    nm_assert(!NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET));
     return nm_strdup_reset_take(dst, s);
 }
 
@@ -1039,7 +1044,10 @@ _finalize_direct(NMSetting *setting)
             char **p_val =
                 _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
 
-            nm_clear_g_free(p_val);
+            if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
+                nm_clear_pointer(p_val, nm_free_secret);
+            else
+                nm_clear_g_free(p_val);
             break;
         }
         case NM_VALUE_TYPE_BYTES:
@@ -1458,6 +1466,7 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
         gs_free char *v_free = NULL;
         char        **p_val;
         const char   *v;
+        gboolean      changed;
 
         if (g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)) {
             v = g_variant_get_string(value, NULL);
@@ -1472,9 +1481,14 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
         }
 
         p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
-        if (!_property_direct_set_string(property_info, p_val, v))
-            goto out_unchanged;
 
+        changed = _property_direct_set_string(property_info, p_val, v);
+
+        if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
+            nm_clear_pointer(&v_free, nm_free_secret);
+
+        if (!changed)
+            goto out_unchanged;
         goto out_notify;
     }
     case NM_VALUE_TYPE_BYTES:
