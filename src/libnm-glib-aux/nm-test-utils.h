@@ -182,6 +182,23 @@
     }                                           \
     G_STMT_END
 
+#define nmtst_assert_strv(strv, ...)                              \
+    G_STMT_START                                                  \
+    {                                                             \
+        const char *const *const _strv  = (strv);                 \
+        const char *const        _exp[] = {__VA_ARGS__, NULL};    \
+        const gsize              _n     = G_N_ELEMENTS(_exp) - 1; \
+        gsize                    _i;                              \
+                                                                  \
+        g_assert(_n == NM_NARG(__VA_ARGS__));                     \
+        g_assert(_strv);                                          \
+        for (_i = 0; _i < _n; _i++) {                             \
+            g_assert(_exp[_i]);                                   \
+            g_assert_cmpstr(_strv[_i], ==, _exp[_i]);             \
+        }                                                         \
+    }                                                             \
+    G_STMT_END
+
 /*****************************************************************************/
 
 /* Our nm-error error numbers use negative values to signal failure.
