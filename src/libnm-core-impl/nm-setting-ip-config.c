@@ -1398,7 +1398,10 @@ nm_ip_route_attribute_validate(const char *name,
             break;
         }
         case 'T': /* route type. */
-            if (!NM_IN_SET(nm_net_aux_rtnl_rtntype_a2n(string), RTN_UNICAST, RTN_LOCAL)) {
+            if (!NM_IN_SET(nm_net_aux_rtnl_rtntype_a2n(string),
+                           RTN_UNICAST,
+                           RTN_LOCAL,
+                           RTN_BLACKHOLE)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
