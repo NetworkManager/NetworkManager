@@ -164,8 +164,6 @@ dispose(GObject *object)
                                          (gpointer) &_nm_assert_connection_unchanging_user_data);
 #endif
 
-    nm_connection_clear_secrets(connection);
-
     _nm_connection_private_clear(_GET_PRIVATE(connection));
 
     G_OBJECT_CLASS(nm_simple_connection_parent_class)->dispose(object);
