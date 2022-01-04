@@ -10854,9 +10854,21 @@ ndisc_config_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int
 {
     NMNDiscConfigMap changed = changed_int;
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
+    int              ifindex;
     guint            i;
 
     g_return_if_fail(priv->act_request.obj);
+
+    ifindex = nm_device_get_ip_ifindex(self);
+
+    if (ifindex <= 0
+        || (applied_config_get_current(&priv->ac_ip6_config)
+            && ifindex
+                   != nm_ip_config_get_ifindex(applied_config_get_current(&priv->ac_ip6_config))))
+        applied_config_clear(&priv->ac_ip6_config);
+
+    if (ifindex <= 0)
+        return;
 
     if (!applied_config_get_current(&priv->ac_ip6_config))
         applied_config_init_new(&priv->ac_ip6_config, self, AF_INET6);
