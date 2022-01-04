@@ -327,7 +327,7 @@ _sett_conn_entry_find_shadowed_storage(SettConnEntry     *sett_conn_entry,
 NM_GOBJECT_PROPERTIES_DEFINE(NMSettings,
                              PROP_MANAGER,
                              PROP_UNMANAGED_SPECS,
-                             PROP_HOSTNAME,
+                             PROP_STATIC_HOSTNAME,
                              PROP_CAN_MODIFY,
                              PROP_CONNECTIONS,
                              PROP_STARTUP_COMPLETE, );
@@ -3480,9 +3480,11 @@ err:
 /*****************************************************************************/
 
 static void
-_hostname_changed_cb(NMHostnameManager *hostname_manager, GParamSpec *pspec, gpointer user_data)
+_static_hostname_changed_cb(NMHostnameManager *hostname_manager,
+                            GParamSpec        *pspec,
+                            gpointer           user_data)
 {
-    _notify(user_data, PROP_HOSTNAME);
+    _notify(user_data, PROP_STATIC_HOSTNAME);
 }
 
 /*****************************************************************************/
@@ -3892,11 +3894,11 @@ nm_settings_start(NMSettings *self, GError **error)
     _plugin_connections_reload(self);
 
     g_signal_connect(priv->hostname_manager,
-                     "notify::" NM_HOSTNAME_MANAGER_HOSTNAME,
-                     G_CALLBACK(_hostname_changed_cb),
+                     "notify::" NM_HOSTNAME_MANAGER_STATIC_HOSTNAME,
+                     G_CALLBACK(_static_hostname_changed_cb),
                      self);
-    if (nm_hostname_manager_get_hostname(priv->hostname_manager))
-        _notify(self, PROP_HOSTNAME);
+    if (nm_hostname_manager_get_static_hostname(priv->hostname_manager))
+        _notify(self, PROP_STATIC_HOSTNAME);
 
     priv->started = TRUE;
     _startup_complete_check(self, 0);
@@ -3923,10 +3925,10 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_take_boxed(value,
                            _nm_utils_slist_to_strv(nm_settings_get_unmanaged_specs(self), TRUE));
         break;
-    case PROP_HOSTNAME:
+    case PROP_STATIC_HOSTNAME:
         g_value_set_string(value,
                            priv->hostname_manager
-                               ? nm_hostname_manager_get_hostname(priv->hostname_manager)
+                               ? nm_hostname_manager_get_static_hostname(priv->hostname_manager)
                                : NULL);
         break;
     case PROP_CAN_MODIFY:
@@ -4025,7 +4027,7 @@ dispose(GObject *object)
 
     if (priv->hostname_manager) {
         g_signal_handlers_disconnect_by_func(priv->hostname_manager,
-                                             G_CALLBACK(_hostname_changed_cb),
+                                             G_CALLBACK(_static_hostname_changed_cb),
                                              self);
         g_clear_object(&priv->hostname_manager);
     }
@@ -4167,7 +4169,9 @@ static const NMDBusInterfaceInfoExtended interface_info_settings = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Connections",
                                                            "ao",
                                                            NM_SETTINGS_CONNECTIONS),
-            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Hostname", "s", NM_SETTINGS_HOSTNAME),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Hostname",
+                                                           "s",
+                                                           NM_SETTINGS_STATIC_HOSTNAME),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("CanModify",
                                                            "b",
                                                            NM_SETTINGS_CAN_MODIFY), ), ),
@@ -4200,11 +4204,12 @@ nm_settings_class_init(NMSettingsClass *class)
                            G_TYPE_STRV,
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
-    obj_properties[PROP_HOSTNAME] = g_param_spec_string(NM_SETTINGS_HOSTNAME,
-                                                        "",
-                                                        "",
-                                                        NULL,
-                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_STATIC_HOSTNAME] =
+        g_param_spec_string(NM_SETTINGS_STATIC_HOSTNAME,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_CAN_MODIFY] =
         g_param_spec_boolean(NM_SETTINGS_CAN_MODIFY,

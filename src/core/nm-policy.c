@@ -830,7 +830,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
      */
 
     /* Try a persistent hostname first */
-    configured_hostname = nm_hostname_manager_get_hostname(priv->hostname_manager);
+    configured_hostname = nm_hostname_manager_get_static_hostname(priv->hostname_manager);
     if (configured_hostname && nm_utils_is_specific_hostname(configured_hostname)) {
         _set_hostname(self, configured_hostname, "from system configuration");
         priv->dhcp_hostname = FALSE;
@@ -1518,7 +1518,9 @@ process_secondaries(NMPolicy *self, NMActiveConnection *active, gboolean connect
 }
 
 static void
-hostname_changed(NMHostnameManager *hostname_manager, GParamSpec *pspec, gpointer user_data)
+_static_hostname_changed_cb(NMHostnameManager *hostname_manager,
+                            GParamSpec        *pspec,
+                            gpointer           user_data)
 {
     NMPolicyPrivate *priv = user_data;
     NMPolicy        *self = _PRIV_TO_SELF(priv);
@@ -2744,8 +2746,8 @@ constructed(GObject *object)
                                                self);
 
     g_signal_connect(priv->hostname_manager,
-                     "notify::" NM_HOSTNAME_MANAGER_HOSTNAME,
-                     G_CALLBACK(hostname_changed),
+                     "notify::" NM_HOSTNAME_MANAGER_STATIC_HOSTNAME,
+                     G_CALLBACK(_static_hostname_changed_cb),
                      priv);
 
     g_signal_connect(priv->manager,
