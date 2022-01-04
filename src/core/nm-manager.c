@@ -2270,7 +2270,7 @@ system_unmanaged_devices_changed_cb(NMSettings *settings, GParamSpec *pspec, gpo
 }
 
 static void
-hostname_changed_cb(NMHostnameManager *hostname_manager, GParamSpec *pspec, NMManager *self)
+_static_hostname_changed_cb(NMHostnameManager *hostname_manager, GParamSpec *pspec, NMManager *self)
 {
     nm_dispatcher_call_hostname(NULL, NULL, NULL);
 }
@@ -6954,7 +6954,7 @@ nm_manager_start(NMManager *self, GError **error)
 
     system_unmanaged_devices_changed_cb(priv->settings, NULL, self);
 
-    hostname_changed_cb(priv->hostname_manager, NULL, self);
+    _static_hostname_changed_cb(priv->hostname_manager, NULL, self);
 
     if (!nm_settings_start(priv->settings, error))
         return FALSE;
@@ -7838,8 +7838,8 @@ constructed(GObject *object)
 
     priv->hostname_manager = g_object_ref(nm_hostname_manager_get());
     g_signal_connect(priv->hostname_manager,
-                     "notify::" NM_HOSTNAME_MANAGER_HOSTNAME,
-                     G_CALLBACK(hostname_changed_cb),
+                     "notify::" NM_HOSTNAME_MANAGER_STATIC_HOSTNAME,
+                     G_CALLBACK(_static_hostname_changed_cb),
                      self);
 
     /*
@@ -8227,7 +8227,9 @@ dispose(GObject *object)
     }
 
     if (priv->hostname_manager) {
-        g_signal_handlers_disconnect_by_func(priv->hostname_manager, hostname_changed_cb, self);
+        g_signal_handlers_disconnect_by_func(priv->hostname_manager,
+                                             _static_hostname_changed_cb,
+                                             self);
         g_clear_object(&priv->hostname_manager);
     }
 

@@ -52,10 +52,10 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMHostnameManager, PROP_HOSTNAME, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMHostnameManager, PROP_STATIC_HOSTNAME, );
 
 typedef struct {
-    char         *current_hostname;
+    char         *static_hostname;
     GFileMonitor *monitor;
     GFileMonitor *dhcp_monitor;
     gulong        monitor_id;
@@ -178,10 +178,11 @@ hostname_is_dynamic(void)
 /*****************************************************************************/
 
 const char *
-nm_hostname_manager_get_hostname(NMHostnameManager *self)
+nm_hostname_manager_get_static_hostname(NMHostnameManager *self)
 {
     g_return_val_if_fail(NM_IS_HOSTNAME_MANAGER(self), NULL);
-    return NM_HOSTNAME_MANAGER_GET_PRIVATE(self)->current_hostname;
+
+    return NM_HOSTNAME_MANAGER_GET_PRIVATE(self)->static_hostname;
 }
 
 static void
@@ -192,18 +193,18 @@ _set_hostname(NMHostnameManager *self, const char *hostname)
 
     hostname = nm_str_not_empty(hostname);
 
-    if (nm_streq0(hostname, priv->current_hostname))
+    if (nm_streq0(hostname, priv->static_hostname))
         return;
 
-    _LOGI("hostname changed from %s%s%s to %s%s%s",
-          NM_PRINT_FMT_QUOTED(priv->current_hostname, "\"", priv->current_hostname, "\"", "(none)"),
+    _LOGI("static hostname changed from %s%s%s to %s%s%s",
+          NM_PRINT_FMT_QUOTED(priv->static_hostname, "\"", priv->static_hostname, "\"", "(none)"),
           NM_PRINT_FMT_QUOTED(hostname, "\"", hostname, "\"", "(none)"));
 
-    old_hostname           = priv->current_hostname;
-    priv->current_hostname = g_strdup(hostname);
+    old_hostname          = priv->static_hostname;
+    priv->static_hostname = g_strdup(hostname);
     g_free(old_hostname);
 
-    _notify(self, PROP_HOSTNAME);
+    _notify(self, PROP_STATIC_HOSTNAME);
 }
 
 static void
@@ -499,8 +500,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMHostnameManager *self = NM_HOSTNAME_MANAGER(object);
 
     switch (prop_id) {
-    case PROP_HOSTNAME:
-        g_value_set_string(value, nm_hostname_manager_get_hostname(self));
+    case PROP_STATIC_HOSTNAME:
+        g_value_set_string(value, nm_hostname_manager_get_static_hostname(self));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -572,7 +573,7 @@ dispose(GObject *object)
 
     _file_monitors_clear(self);
 
-    nm_clear_g_free(&priv->current_hostname);
+    nm_clear_g_free(&priv->static_hostname);
 
     G_OBJECT_CLASS(nm_hostname_manager_parent_class)->dispose(object);
 }
@@ -586,11 +587,12 @@ nm_hostname_manager_class_init(NMHostnameManagerClass *class)
     object_class->get_property = get_property;
     object_class->dispose      = dispose;
 
-    obj_properties[PROP_HOSTNAME] = g_param_spec_string(NM_HOSTNAME_MANAGER_HOSTNAME,
-                                                        "",
-                                                        "",
-                                                        NULL,
-                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_STATIC_HOSTNAME] =
+        g_param_spec_string(NM_HOSTNAME_MANAGER_STATIC_HOSTNAME,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

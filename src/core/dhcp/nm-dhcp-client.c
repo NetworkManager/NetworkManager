@@ -959,7 +959,7 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
         const char   *hostname;
         gs_free char *hostname_tmp = NULL;
 
-        hostname = nm_hostname_manager_get_hostname(nm_hostname_manager_get());
+        hostname = nm_hostname_manager_get_static_hostname(nm_hostname_manager_get());
 
         if (nm_utils_is_specific_hostname(hostname)) {
             if (config->addr_family == AF_INET) {
