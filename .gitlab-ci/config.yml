@@ -23,7 +23,7 @@ distributions:
       - '32'
       - '33'
       - '34'
-      - 'rawhide'
+      - '35'
     # always:
     #   - '33'
   - name: ubuntu
