@@ -188,10 +188,23 @@ nm_hostname_manager_get_static_hostname(NMHostnameManager *self)
 static void
 _set_hostname(NMHostnameManager *self, const char *hostname)
 {
-    NMHostnameManagerPrivate *priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+    NMHostnameManagerPrivate *priv          = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+    gs_free char             *hostname_free = NULL;
     char                     *old_hostname;
 
     hostname = nm_str_not_empty(hostname);
+
+    if (hostname) {
+        /* as we also read the file from disk, it might not be in UTF-8 encoding.
+         *
+         * A hostname in non-UTF-8 encoding would be odd and cause issues when we
+         * try to expose them on D-Bus via the NM_SETTINGS_STATIC_HOSTNAME property.
+         *
+         * Sanitize somewhat. It's wrong anyway. */
+        hostname = nm_utils_str_utf8safe_escape(hostname,
+                                                NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                                &hostname_free);
+    }
 
     if (nm_streq0(hostname, priv->static_hostname))
         return;
