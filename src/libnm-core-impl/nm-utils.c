@@ -3915,12 +3915,12 @@ _nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip)
 {
     NMIPAddr addr_bin;
 
-    nm_assert_addr_family(addr_family);
+    nm_assert_addr_family_or_unspec(addr_family);
 
     if (!ip)
         return NULL;
 
-    if (!nm_utils_parse_inaddr_bin(addr_family, ip, NULL, &addr_bin))
+    if (!nm_utils_parse_inaddr_bin(addr_family, ip, &addr_family, &addr_bin))
         return g_strdup(ip);
 
     if (nm_ip_addr_is_null(addr_family, &addr_bin))
