@@ -172,6 +172,48 @@ nm_ref_string_new_len(const char *cstr, gsize len)
     return rstr;
 }
 
+/**
+ * nmtst_ref_string_find_len:
+ * @cstr: the string to find.
+ * @len: length of @cstr.
+ *
+ * Returns: (transfer none): %NULL, if the string is currently
+ *   not interned. Otherwise a reference to the interned string.
+ *   Beware: this does not return ownership of the reference,
+ *   it is thus not thread safe. Only use this from unit tests
+ *   when you know that your thread holds a reference to the string
+ *   to keep it alive. Otherwise, this might be a dangling pointer.
+ */
+NMRefString *
+nmtst_ref_string_find_len(const char *cstr, gsize len)
+{
+    NMRefString *rstr = NULL;
+
+    /* @len cannot be close to G_MAXSIZE. For one, that would mean our call
+     * to malloc() below overflows. Also, we use G_MAXSIZE as special length
+     * to indicate using _priv_lookup. */
+    nm_assert(len < G_MAXSIZE - G_STRUCT_OFFSET(NMRefString, str) - 1u);
+
+    G_LOCK(gl_lock);
+
+    if (G_LIKELY(gl_hash)) {
+        NMRefString rr_lookup = {
+            .len = G_MAXSIZE,
+            ._priv_lookup =
+                {
+                    .l_len = len,
+                    .l_str = cstr,
+                },
+        };
+
+        rstr = g_hash_table_lookup(gl_hash, &rr_lookup);
+    }
+
+    G_UNLOCK(gl_lock);
+
+    return rstr;
+}
+
 void
 _nm_ref_string_unref_slow_path(NMRefString *rstr)
 {
