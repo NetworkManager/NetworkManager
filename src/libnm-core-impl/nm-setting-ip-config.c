@@ -5788,7 +5788,7 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
             .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
             .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct_ip_config_gateway),
         .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, gateway),
-        .direct_set_string_ip_address_addr_family = addr_family);
+        .direct_set_string_ip_address_addr_family = addr_family + 1);
 
     _nm_properties_override_gobj(
         properties_override,
