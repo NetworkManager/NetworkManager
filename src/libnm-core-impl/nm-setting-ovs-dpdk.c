@@ -10,6 +10,7 @@
 #include "nm-connection-private.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-private.h"
+#include "nm-utils-private.h"
 
 /**
  * SECTION:nm-setting-ovs-dpdk
@@ -21,7 +22,7 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DEVARGS, );
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DEVARGS, PROP_N_RXQ, );
 
 /**
  * NMSettingOvsDpdk:
@@ -31,7 +32,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DEVARGS, );
 struct _NMSettingOvsDpdk {
     NMSetting parent;
 
-    char *devargs;
+    char   *devargs;
+    guint32 n_rxq;
 };
 
 struct _NMSettingOvsDpdkClass {
@@ -58,6 +60,22 @@ nm_setting_ovs_dpdk_get_devargs(NMSettingOvsDpdk *self)
     return self->devargs;
 }
 
+/**
+ * nm_setting_ovs_dpdk_get_n_rxq:
+ * @self: the #NMSettingOvsDpdk
+ *
+ * Returns: the #NMSettingOvsDpdk:n-rxq property of the setting
+ *
+ * Since: 1.36
+ **/
+guint32
+nm_setting_ovs_dpdk_get_n_rxq(NMSettingOvsDpdk *self)
+{
+    g_return_val_if_fail(NM_IS_SETTING_OVS_DPDK(self), 0);
+
+    return self->n_rxq;
+}
+
 /*****************************************************************************/
 
 static void
@@ -70,7 +88,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_string(value, self->devargs);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -86,7 +104,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         self->devargs = g_value_dup_string(value);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -125,8 +143,9 @@ finalize(GObject *object)
 static void
 nm_setting_ovs_dpdk_class_init(NMSettingOvsDpdkClass *klass)
 {
-    GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->set_property = set_property;
     object_class->get_property = get_property;
@@ -146,7 +165,31 @@ nm_setting_ovs_dpdk_class_init(NMSettingOvsDpdkClass *klass)
         NULL,
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
+    /**
+     * NMSettingOvsDpdk:n-rxq:
+     *
+     * Open vSwitch DPDK number of rx queues.
+     * Defaults to zero which means to leave the parameter in OVS unspecified
+     * and effectively configures one queue.
+     *
+     * Since: 1.36
+     **/
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_OVS_DPDK_N_RXQ,
+                                              PROP_N_RXQ,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingOvsDpdk,
+                                              n_rxq);
+
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_OVS_DPDK, NULL, NULL, 0);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_OVS_DPDK,
+                             NULL,
+                             properties_override,
+                             0);
 }

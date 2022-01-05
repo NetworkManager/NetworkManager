@@ -818,6 +818,8 @@
     <setting name="ovs-dpdk" >
         <property name="devargs"
                   description="Open vSwitch DPDK device arguments." />
+        <property name="n-rxq"
+                  description="Open vSwitch DPDK number of rx queues. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures one queue." />
     </setting>
     <setting name="ovs-external-ids" >
     </setting>
