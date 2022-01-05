@@ -729,6 +729,14 @@ _nm_setting_property_get_property_direct(GObject    *object,
         g_value_set_uint(value, *p_val);
         return;
     }
+    case NM_VALUE_TYPE_INT64:
+    {
+        const gint64 *p_val =
+            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+
+        g_value_set_int64(value, *p_val);
+        return;
+    }
     case NM_VALUE_TYPE_UINT64:
     {
         const guint64 *p_val =
@@ -838,6 +846,17 @@ _nm_setting_property_set_property_direct(GObject      *object,
         /* truncation cannot happen, because the param_spec is supposed to have suitable
          * minimum/maximum values so that we are in range for uint32. */
         nm_assert(*p_val == v);
+        goto out_notify;
+    }
+    case NM_VALUE_TYPE_INT64:
+    {
+        gint64 *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        gint64  v;
+
+        v = g_value_get_int64(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
         goto out_notify;
     }
     case NM_VALUE_TYPE_UINT64:
@@ -963,6 +982,17 @@ _init_direct(NMSetting *setting)
             *p_val = def_val;
             break;
         }
+        case NM_VALUE_TYPE_INT64:
+        {
+            gint64 *p_val =
+                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+            gint64 def_val;
+
+            def_val = NM_G_PARAM_SPEC_GET_DEFAULT_INT64(property_info->param_spec);
+            nm_assert(*p_val == 0);
+            *p_val = def_val;
+            break;
+        }
         case NM_VALUE_TYPE_UINT64:
         {
             guint64 *p_val =
@@ -1037,6 +1067,7 @@ _finalize_direct(NMSetting *setting)
         case NM_VALUE_TYPE_BOOL:
         case NM_VALUE_TYPE_INT32:
         case NM_VALUE_TYPE_UINT32:
+        case NM_VALUE_TYPE_INT64:
         case NM_VALUE_TYPE_UINT64:
         case NM_VALUE_TYPE_ENUM:
         case NM_VALUE_TYPE_FLAGS:
@@ -1104,6 +1135,17 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_UINT(property_info->param_spec))
             return NULL;
         return g_variant_new_uint32(val);
+    }
+    case NM_VALUE_TYPE_INT64:
+    {
+        gint64 val;
+
+        val =
+            *((gint64 *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
+        if (!property_info->to_dbus_including_default
+            && val == NM_G_PARAM_SPEC_GET_DEFAULT_INT64(property_info->param_spec))
+            return NULL;
+        return g_variant_new_int64(val);
     }
     case NM_VALUE_TYPE_UINT64:
     {
@@ -1373,6 +1415,33 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
             goto out_unchanged;
 
         param_spec = NM_G_PARAM_SPEC_CAST_UINT(property_info->param_spec);
+        if (v < param_spec->minimum || v > param_spec->maximum)
+            goto out_error_param_spec_validation;
+        *p_val = v;
+        goto out_notify;
+    }
+    case NM_VALUE_TYPE_INT64:
+    {
+        const GParamSpecInt64 *param_spec;
+        gint64                *p_val;
+        gint64                 v;
+
+        if (g_variant_is_of_type(value, G_VARIANT_TYPE_INT64))
+            v = g_variant_get_int64(value);
+        else {
+            if (!_variant_get_value_transform(property_info,
+                                              value,
+                                              G_TYPE_INT64,
+                                              g_value_get_int64,
+                                              &v))
+                goto out_error_wrong_dbus_type;
+        }
+
+        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        if (*p_val == v)
+            goto out_unchanged;
+
+        param_spec = NM_G_PARAM_SPEC_CAST_INT64(property_info->param_spec);
         if (v < param_spec->minimum || v > param_spec->maximum)
             goto out_error_param_spec_validation;
         *p_val = v;
@@ -2406,6 +2475,8 @@ _nm_setting_property_compare_fcn_direct(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_
         return *((const gint32 *) p_a) == *((const gint32 *) p_b);
     case NM_VALUE_TYPE_UINT32:
         return *((const guint32 *) p_a) == *((const guint32 *) p_b);
+    case NM_VALUE_TYPE_INT64:
+        return *((const gint64 *) p_a) == *((const gint64 *) p_b);
     case NM_VALUE_TYPE_UINT64:
         return *((const guint64 *) p_a) == *((const guint64 *) p_b);
     case NM_VALUE_TYPE_ENUM:
@@ -3453,6 +3524,15 @@ const NMSettInfoPropertType nm_sett_info_propert_type_direct_int32 =
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_uint32 =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_UINT32,
                                         .direct_type   = NM_VALUE_TYPE_UINT32,
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+                                        .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,
+                                        .from_dbus_is_full                = TRUE,
+                                        .from_dbus_direct_allow_transform = TRUE);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_direct_int64 =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_INT64,
+                                        .direct_type   = NM_VALUE_TYPE_INT64,
                                         .compare_fcn   = _nm_setting_property_compare_fcn_direct,
                                         .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,
