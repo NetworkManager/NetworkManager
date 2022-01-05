@@ -276,6 +276,7 @@ extern const NMSettInfoPropertType nm_sett_info_propert_type_plain_u;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_int32;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_uint32;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_int64;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_uint64;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_string;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_bytes;
@@ -579,6 +580,52 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
             &nm_sett_info_propert_type_direct_int32,                                             \
             .direct_offset =                                                                     \
                 NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, private_struct_type, private_struct_field), \
+            __VA_ARGS__);                                                                        \
+    }                                                                                            \
+    G_STMT_END
+
+/*****************************************************************************/
+
+#define _nm_setting_property_define_direct_int64(properties_override,                            \
+                                                 obj_properties,                                 \
+                                                 prop_name,                                      \
+                                                 prop_id,                                        \
+                                                 min_value,                                      \
+                                                 max_value,                                      \
+                                                 default_value,                                  \
+                                                 param_flags,                                    \
+                                                 private_struct_type,                            \
+                                                 private_struct_field,                           \
+                                                 ... /* extra NMSettInfoProperty fields */)      \
+    G_STMT_START                                                                                 \
+    {                                                                                            \
+        GParamSpec *_param_spec;                                                                 \
+                                                                                                 \
+        G_STATIC_ASSERT(                                                                         \
+            !NM_FLAGS_ANY((param_flags),                                                         \
+                          ~(NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE)));      \
+        G_STATIC_ASSERT((min_value) >= G_MININT64);                                              \
+        G_STATIC_ASSERT((min_value) <= (default_value));                                         \
+        G_STATIC_ASSERT((default_value) <= (max_value));                                         \
+        G_STATIC_ASSERT((max_value) <= G_MAXINT64);                                              \
+                                                                                                 \
+        _param_spec =                                                                            \
+            g_param_spec_int64("" prop_name "",                                                  \
+                               "",                                                               \
+                               "",                                                               \
+                               (min_value),                                                      \
+                               (max_value),                                                      \
+                               (default_value),                                                  \
+                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));      \
+                                                                                                 \
+        (obj_properties)[(prop_id)] = _param_spec;                                               \
+                                                                                                 \
+        _nm_properties_override_gobj(                                                            \
+            (properties_override),                                                               \
+            _param_spec,                                                                         \
+            &nm_sett_info_propert_type_direct_int64,                                             \
+            .direct_offset =                                                                     \
+                NM_STRUCT_OFFSET_ENSURE_TYPE(gint64, private_struct_type, private_struct_field), \
             __VA_ARGS__);                                                                        \
     }                                                                                            \
     G_STMT_END
