@@ -9,6 +9,7 @@
 #include "nm-setting.h"
 
 #include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-glib-aux/nm-ref-string.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-property-compare.h"
 #include "nm-setting-private.h"
@@ -640,6 +641,7 @@ _property_direct_set_string(const NMSettInfoSetting  *sett_info,
     nm_assert(property_info->property_type->direct_type == NM_VALUE_TYPE_STRING);
     nm_assert(((!!property_info->direct_set_string_ascii_strdown)
                + (!!property_info->direct_set_string_strip)
+               + (!!property_info->direct_string_is_refstr)
                + (property_info->direct_set_string_mac_address_len > 0)
                + (property_info->direct_set_string_ip_address_addr_family != 0))
               <= (property_info->direct_hook.set_string_fcn ? 0 : 1));
@@ -649,6 +651,12 @@ _property_direct_set_string(const NMSettInfoSetting  *sett_info,
     }
 
     dst = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+
+    if (property_info->direct_string_is_refstr) {
+        nm_assert(property_info->param_spec);
+        nm_assert(!NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET));
+        return nm_ref_string_reset_str_upcast((const char **) dst, src);
+    }
 
     if (property_info->direct_set_string_ascii_strdown) {
         s = src ? g_ascii_strdown(src, -1) : NULL;
@@ -1074,7 +1082,9 @@ _finalize_direct(NMSetting *setting)
             char **p_val =
                 _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
 
-            if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
+            if (property_info->direct_string_is_refstr)
+                nm_clear_pointer(p_val, nm_ref_string_unref_upcast);
+            else if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
                 nm_clear_pointer(p_val, nm_free_secret);
             else
                 nm_clear_g_free(p_val);
