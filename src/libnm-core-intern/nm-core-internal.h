@@ -807,6 +807,9 @@ struct _NMSettInfoProperty {
      * is passed to _nm_utils_ipaddr_canonical_or_invalid(). */
     bool direct_set_string_ip_address_addr_family_map_zero_to_null : 1;
 
+    /* Whether the string property is implemented as a (downcast) NMRefString. */
+    bool direct_string_is_refstr : 1;
+
     /* Usually, properties that are set to the default value for the GParamSpec
      * are not serialized to GVariant (and NULL is returned by to_dbus_data().
      * Set this flag to force always converting the property even if the value

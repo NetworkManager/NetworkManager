@@ -4590,6 +4590,11 @@ test_setting_metadata(void)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
             if (sip->direct_set_string_strip)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+            if (sip->direct_string_is_refstr) {
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+                g_assert(sip->param_spec);
+                g_assert(!NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_SECRET));
+            }
 
             if (sip->direct_set_string_mac_address_len != 0) {
                 g_assert(NM_IN_SET(sip->property_type,
@@ -4604,7 +4609,8 @@ test_setting_metadata(void)
             n_special_options = (sip->direct_set_string_mac_address_len != 0)
                                 + (!!sip->direct_set_string_strip)
                                 + (!!sip->direct_set_string_ascii_strdown)
-                                + (sip->direct_set_string_ip_address_addr_family != 0);
+                                + (sip->direct_set_string_ip_address_addr_family != 0)
+                                + (!!sip->direct_string_is_refstr);
 
             G_STATIC_ASSERT_EXPR(AF_UNSPEC + 1 != 0);
             g_assert(NM_IN_SET((int) sip->direct_set_string_ip_address_addr_family,
