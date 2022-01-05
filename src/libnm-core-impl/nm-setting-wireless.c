@@ -1276,7 +1276,7 @@ finalize(GObject *object)
 
     g_free(priv->cloned_mac_address);
     g_array_unref(priv->mac_address_blacklist);
-    nm_clear_pointer(&priv->seen_bssids, g_ptr_array_unref);
+    nm_g_ptr_array_unref(priv->seen_bssids);
 
     G_OBJECT_CLASS(nm_setting_wireless_parent_class)->finalize(object);
 }

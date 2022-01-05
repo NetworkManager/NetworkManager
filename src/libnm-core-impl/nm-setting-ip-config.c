@@ -5914,9 +5914,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingIPConfigPrivate *priv    = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
     switch (prop_id) {
-    case PROP_METHOD:
-        g_value_set_string(value, nm_setting_ip_config_get_method(setting));
-        break;
     case PROP_DNS:
         g_value_take_boxed(value, _nm_utils_ptrarray_to_strv(priv->dns));
         break;
@@ -5934,35 +5931,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                                                 (NMUtilsCopyFunc) nm_ip_address_dup,
                                                 (GDestroyNotify) nm_ip_address_unref));
         break;
-    case PROP_GATEWAY:
-        g_value_set_string(value, nm_setting_ip_config_get_gateway(setting));
-        break;
     case PROP_ROUTES:
         g_value_take_boxed(value,
                            _nm_utils_copy_array(priv->routes,
                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
                                                 (GDestroyNotify) nm_ip_route_unref));
-        break;
-    case PROP_IGNORE_AUTO_ROUTES:
-        g_value_set_boolean(value, nm_setting_ip_config_get_ignore_auto_routes(setting));
-        break;
-    case PROP_IGNORE_AUTO_DNS:
-        g_value_set_boolean(value, nm_setting_ip_config_get_ignore_auto_dns(setting));
-        break;
-    case PROP_DHCP_HOSTNAME:
-        g_value_set_string(value, nm_setting_ip_config_get_dhcp_hostname(setting));
-        break;
-    case PROP_DHCP_SEND_HOSTNAME:
-        g_value_set_boolean(value, nm_setting_ip_config_get_dhcp_send_hostname(setting));
-        break;
-    case PROP_NEVER_DEFAULT:
-        g_value_set_boolean(value, priv->never_default);
-        break;
-    case PROP_MAY_FAIL:
-        g_value_set_boolean(value, priv->may_fail);
-        break;
-    case PROP_DHCP_IAID:
-        g_value_set_string(value, nm_setting_ip_config_get_dhcp_iaid(setting));
         break;
     case PROP_DHCP_REJECT_SERVERS:
         g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(priv->dhcp_reject_servers, NULL));
@@ -5982,10 +5955,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     guint                     i;
 
     switch (prop_id) {
-    case PROP_METHOD:
-        g_free(priv->method);
-        priv->method = g_value_dup_string(value);
-        break;
     case PROP_DNS:
         g_ptr_array_unref(priv->dns);
         priv->dns = nm_strv_to_ptrarray(g_value_get_boxed(value));
@@ -6019,41 +5988,11 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                                (NMUtilsCopyFunc) nm_ip_address_dup,
                                                (GDestroyNotify) nm_ip_address_unref);
         break;
-    case PROP_GATEWAY:
-        g_free(priv->gateway);
-        priv->gateway =
-            _nm_utils_ipaddr_canonical_or_invalid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
-                                                  g_value_get_string(value),
-                                                  TRUE);
-        break;
     case PROP_ROUTES:
         g_ptr_array_unref(priv->routes);
         priv->routes = _nm_utils_copy_array(g_value_get_boxed(value),
                                             (NMUtilsCopyFunc) nm_ip_route_dup,
                                             (GDestroyNotify) nm_ip_route_unref);
-        break;
-    case PROP_IGNORE_AUTO_ROUTES:
-        priv->ignore_auto_routes = g_value_get_boolean(value);
-        break;
-    case PROP_IGNORE_AUTO_DNS:
-        priv->ignore_auto_dns = g_value_get_boolean(value);
-        break;
-    case PROP_DHCP_HOSTNAME:
-        g_free(priv->dhcp_hostname);
-        priv->dhcp_hostname = g_value_dup_string(value);
-        break;
-    case PROP_DHCP_SEND_HOSTNAME:
-        priv->dhcp_send_hostname = g_value_get_boolean(value);
-        break;
-    case PROP_NEVER_DEFAULT:
-        priv->never_default = g_value_get_boolean(value);
-        break;
-    case PROP_MAY_FAIL:
-        priv->may_fail = g_value_get_boolean(value);
-        break;
-    case PROP_DHCP_IAID:
-        g_free(priv->dhcp_iaid);
-        priv->dhcp_iaid = g_value_dup_string(value);
         break;
     case PROP_DHCP_REJECT_SERVERS:
         nm_strvarray_set_strv(&priv->dhcp_reject_servers, g_value_get_boxed(value));
@@ -6071,10 +6010,10 @@ _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv
 {
     nm_assert(NM_IS_SETTING_IP_CONFIG(self));
 
-    priv->dns          = g_ptr_array_new_with_free_func(g_free);
-    priv->dns_search   = g_ptr_array_new_with_free_func(g_free);
-    priv->addresses    = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
-    priv->routes       = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
+    priv->dns        = g_ptr_array_new_with_free_func(g_free);
+    priv->dns_search = g_ptr_array_new_with_free_func(g_free);
+    priv->addresses  = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    priv->routes     = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
 }
 
 static void
@@ -6091,13 +6030,11 @@ finalize(GObject *object)
 
     g_ptr_array_unref(priv->dns);
     g_ptr_array_unref(priv->dns_search);
-    if (priv->dns_options)
-        g_ptr_array_unref(priv->dns_options);
+    nm_g_ptr_array_unref(priv->dns_options);
     g_ptr_array_unref(priv->addresses);
     g_ptr_array_unref(priv->routes);
-    if (priv->routing_rules)
-        g_ptr_array_unref(priv->routing_rules);
-    nm_clear_pointer(&priv->dhcp_reject_servers, g_array_unref);
+    nm_g_ptr_array_unref(priv->routing_rules);
+    nm_g_array_unref(priv->dhcp_reject_servers);
 
     G_OBJECT_CLASS(nm_setting_ip_config_parent_class)->finalize(object);
 }
