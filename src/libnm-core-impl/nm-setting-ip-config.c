@@ -5788,7 +5788,8 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
             .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
             .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct_ip_config_gateway),
         .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, gateway),
-        .direct_set_string_ip_address_addr_family = addr_family + 1);
+        .direct_set_string_ip_address_addr_family                  = addr_family + 1,
+        .direct_set_string_ip_address_addr_family_map_zero_to_null = TRUE);
 
     _nm_properties_override_gobj(
         properties_override,
@@ -5996,7 +5997,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_free(priv->gateway);
         priv->gateway =
             _nm_utils_ipaddr_canonical_or_invalid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
-                                                  g_value_get_string(value));
+                                                  g_value_get_string(value),
+                                                  TRUE);
         break;
     case PROP_ROUTES:
         g_ptr_array_unref(priv->routes);
