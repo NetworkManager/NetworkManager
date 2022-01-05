@@ -77,7 +77,7 @@ def git_merge_base(a, b):
 
 def git_all_commits_grep(rnge, grep=None):
     if grep:
-        grep = ["--grep=%s" % (str(grep))]
+        grep = [("--grep=%s" % g) for g in grep]
         notes = ["-c", "notes.displayref=refs/notes/bugs"]
     else:
         grep = []
@@ -204,7 +204,7 @@ def git_ref_commit_body_get_cherry_picked_recurse(ref):
 def git_commits_annotate_fixes(rnge):
     commits = git_all_commits(rnge)
     c_dict = _keys_to_dict(commits)
-    for c in git_all_commits_grep(rnge, grep="[Ff]ixes:"):
+    for c in git_all_commits_grep(rnge, grep=["[Ff]ixes:"]):
         ff = git_ref_commit_body_get_fixes(c)
         if ff:
             c_dict[c] = ff
@@ -214,7 +214,9 @@ def git_commits_annotate_fixes(rnge):
 def git_commits_annotate_cherry_picked(rnge):
     commits = git_all_commits(rnge)
     c_dict = _keys_to_dict(commits)
-    for c in git_all_commits_grep(ref_head, grep="cherry picked from commit"):
+    for c in git_all_commits_grep(
+        ref_head, grep=["cherry picked from commit", "Ignore-Backport:"]
+    ):
         ff = git_ref_commit_body_get_cherry_picked_recurse(c)
         if ff:
             c_dict[c] = ff
