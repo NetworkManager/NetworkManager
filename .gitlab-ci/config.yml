@@ -8,7 +8,7 @@
 #
 
 # We're happy to rebuild all containers when one changes.
-.default_tag: &default_tag '2021-07-12.0'
+.default_tag: &default_tag '2022-01-04.0'
 
 
 # The list of all distributions we want to create job for.
@@ -18,14 +18,12 @@ distributions:
     tag: *default_tag
     base_type: fedora
     versions:
-      - '28'
-      - '29'
       - '30'
       - '31'
       - '32'
       - '33'
       - '34'
-      - 'rawhide'
+      - '35'
     # always:
     #   - '33'
   - name: ubuntu

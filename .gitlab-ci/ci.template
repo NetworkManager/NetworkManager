@@ -9,7 +9,7 @@
 ########################################
 
 
-.templates_sha: &template_sha b18e53bf67b9ed493a006d83dbadd1ecc0daa61a # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+.templates_sha: &template_sha 14731f78c23c7b523a85a26a068ade9ac1ecd2f3 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
 include:
 {% for distro in distributions|sort(attribute="name") %}
