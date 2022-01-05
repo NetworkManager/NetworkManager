@@ -13,12 +13,13 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "libnm-std-aux/c-list-util.h"
-#include "libnm-glib-aux/nm-uuid.h"
-#include "libnm-glib-aux/nm-enum-utils.h"
-#include "libnm-glib-aux/nm-str-buf.h"
-#include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-base/nm-base.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-json-aux.h"
+#include "libnm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-uuid.h"
+#include "libnm-std-aux/c-list-util.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"
@@ -10758,6 +10759,54 @@ test_system_encodings(void)
 
 /*****************************************************************************/
 
+static void
+test_direct_string_is_refstr(void)
+{
+    gs_unref_object NMSetting *s1       = NULL;
+    gs_unref_object NMSetting *s2       = NULL;
+    const char                *TEST_STR = "adfdsff";
+    NMRefString               *rstr0;
+    NMRefString               *rstr = NULL;
+
+    g_assert(!nmtst_ref_string_find(TEST_STR));
+
+    s1 = nm_setting_connection_new();
+    g_object_set(s1,
+                 NM_SETTING_CONNECTION_ID,
+                 "uuidtest",
+                 NM_SETTING_CONNECTION_UUID,
+                 nm_uuid_generate_random_str_a(),
+                 NM_SETTING_CONNECTION_TYPE,
+                 TEST_STR,
+                 NULL);
+
+    rstr0 = nmtst_ref_string_find(TEST_STR);
+    g_assert(rstr0);
+
+    if (nmtst_get_rand_bool()) {
+        rstr = nm_ref_string_new(TEST_STR);
+        g_assert(rstr);
+        g_assert(rstr == rstr0);
+        g_assert(rstr->str
+                 == nm_setting_connection_get_connection_type((NMSettingConnection *) s1));
+    }
+
+    s2 = nm_setting_duplicate(s1);
+    g_assert(rstr0->str == nm_setting_connection_get_connection_type((NMSettingConnection *) s2));
+
+    g_clear_object(&s1);
+    if (nmtst_get_rand_bool())
+        g_clear_object(&s2);
+    else {
+        g_object_set(s2, NM_SETTING_CONNECTION_TYPE, nmtst_get_rand_bool() ? "hallo" : NULL, NULL);
+    }
+    nm_ref_string_unref(rstr);
+
+    g_assert(!nmtst_ref_string_find(TEST_STR));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -11101,6 +11150,7 @@ main(int argc, char **argv)
                     test_vpn_connection_state_reason);
 
     g_test_add_func("/core/general/test_system_encodings", test_system_encodings);
+    g_test_add_func("/core/general/test_direct_string_is_refstr", test_direct_string_is_refstr);
 
     return g_test_run();
 }
