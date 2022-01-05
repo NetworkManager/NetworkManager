@@ -1908,7 +1908,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               PROP_TYPE,
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingConnectionPrivate,
-                                              type);
+                                              type,
+                                              .direct_string_is_refstr = TRUE);
 
     /**
      * NMSettingConnection:permissions:
