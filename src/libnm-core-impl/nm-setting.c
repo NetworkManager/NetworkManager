@@ -398,13 +398,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
                     .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
                     .from_dbus_is_full = TRUE);
             }
-        } else if (vtype == G_TYPE_DOUBLE)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_DOUBLE,
-                .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full = TRUE);
-        else if (vtype == G_TYPE_STRV)
+        } else if (vtype == G_TYPE_STRV)
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
                 G_VARIANT_TYPE_STRING_ARRAY,
                 .compare_fcn       = _nm_setting_property_compare_fcn_default,
