@@ -767,8 +767,10 @@ struct _NMSettInfoProperty {
      * MAC address length. */
     guint8 direct_set_string_mac_address_len : 5;
 
-    /* If non-zero, this is the addr-family (AF_INET/AF_INET6) for normalizing an IP
-     * address. */
+    /* If non-zero, this is the addr-family (AF_UNSPEC/AF_INET/AF_INET6) for normalizing an IP
+     * address. Note that AF_UNSPEC is zero, so to differentiate between zero and AF_UNSPEC
+     * this value is actually the address family + 1. So either zero or AF_UNSPEC+1, AF_INET+1,
+     * or AF_INET6+1. */
     guint8 direct_set_string_ip_address_addr_family : 5;
 
     /* Usually, properties that are set to the default value for the GParamSpec

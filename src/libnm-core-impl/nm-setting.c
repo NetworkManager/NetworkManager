@@ -668,7 +668,7 @@ _property_direct_set_string(const NMSettInfoProperty *property_info, char **dst,
     }
     if (property_info->direct_set_string_ip_address_addr_family != 0) {
         s = _nm_utils_ipaddr_canonical_or_invalid(
-            property_info->direct_set_string_ip_address_addr_family,
+            property_info->direct_set_string_ip_address_addr_family - 1,
             src);
         goto out_take;
     }
