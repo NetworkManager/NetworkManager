@@ -523,53 +523,6 @@ ip4_route_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingIP4Config *s_ip4 = NM_SETTING_IP4_CONFIG(object);
-
-    switch (prop_id) {
-    case PROP_DHCP_CLIENT_ID:
-        g_value_set_string(value, nm_setting_ip4_config_get_dhcp_client_id(s_ip4));
-        break;
-    case PROP_DHCP_FQDN:
-        g_value_set_string(value, nm_setting_ip4_config_get_dhcp_fqdn(s_ip4));
-        break;
-    case PROP_DHCP_VENDOR_CLASS_IDENTIFIER:
-        g_value_set_string(value, nm_setting_ip4_config_get_dhcp_vendor_class_identifier(s_ip4));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE(object);
-
-    switch (prop_id) {
-    case PROP_DHCP_CLIENT_ID:
-        g_free(priv->dhcp_client_id);
-        priv->dhcp_client_id = g_value_dup_string(value);
-        break;
-    case PROP_DHCP_FQDN:
-        g_free(priv->dhcp_fqdn);
-        priv->dhcp_fqdn = g_value_dup_string(value);
-        break;
-    case PROP_DHCP_VENDOR_CLASS_IDENTIFIER:
-        g_free(priv->dhcp_vendor_class_identifier);
-        priv->dhcp_vendor_class_identifier = g_value_dup_string(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_ip4_config_init(NMSettingIP4Config *setting)
 {
     NMSettingIP4ConfigPrivate *priv = NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting);
@@ -600,8 +553,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingIP4ConfigPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 

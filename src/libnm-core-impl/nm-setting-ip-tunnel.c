@@ -503,69 +503,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingIPTunnel        *setting = NM_SETTING_IP_TUNNEL(object);
-    NMSettingIPTunnelPrivate *priv    = NM_SETTING_IP_TUNNEL_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_value_set_string(value, priv->parent);
-        break;
-    case PROP_LOCAL:
-        g_value_set_string(value, priv->local);
-        break;
-    case PROP_REMOTE:
-        g_value_set_string(value, priv->remote);
-        break;
-    case PROP_INPUT_KEY:
-        g_value_set_string(value, priv->input_key);
-        break;
-    case PROP_OUTPUT_KEY:
-        g_value_set_string(value, priv->output_key);
-        break;
-    default:
-        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingIPTunnel        *setting = NM_SETTING_IP_TUNNEL(object);
-    NMSettingIPTunnelPrivate *priv    = NM_SETTING_IP_TUNNEL_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_free(priv->parent);
-        priv->parent = g_value_dup_string(value);
-        break;
-    case PROP_LOCAL:
-        g_free(priv->local);
-        priv->local = g_value_dup_string(value);
-        break;
-    case PROP_REMOTE:
-        g_free(priv->remote);
-        priv->remote = g_value_dup_string(value);
-        break;
-    case PROP_INPUT_KEY:
-        g_free(priv->input_key);
-        priv->input_key = g_value_dup_string(value);
-        break;
-    case PROP_OUTPUT_KEY:
-        g_free(priv->output_key);
-        priv->output_key = g_value_dup_string(value);
-        break;
-    default:
-        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_ip_tunnel_init(NMSettingIPTunnel *self)
 {}
 
@@ -593,8 +530,8 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingIPTunnelPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
