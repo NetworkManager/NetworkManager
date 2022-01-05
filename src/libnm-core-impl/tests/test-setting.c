@@ -4592,6 +4592,9 @@ test_setting_metadata(void)
                                AF_INET + 1,
                                AF_INET6 + 1));
 
+            if (sip->direct_set_string_ip_address_addr_family == 0)
+                g_assert(!sip->direct_set_string_ip_address_addr_family_map_zero_to_null);
+
             /* currently, we have no cases where special options are mixed. There is no problem to support
              * that, but as it's not needed, don't do it for now. */
             g_assert_cmpint(n_special_options, <=, 1);

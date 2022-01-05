@@ -3911,7 +3911,7 @@ _nm_utils_hwaddr_canonical_or_invalid(const char *mac, gssize length)
 }
 
 char *
-_nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip)
+_nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip, gboolean map_zero_to_null)
 {
     NMIPAddr addr_bin;
 
@@ -3923,7 +3923,7 @@ _nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip)
     if (!nm_utils_parse_inaddr_bin(addr_family, ip, &addr_family, &addr_bin))
         return g_strdup(ip);
 
-    if (nm_ip_addr_is_null(addr_family, &addr_bin))
+    if (map_zero_to_null && nm_ip_addr_is_null(addr_family, &addr_bin))
         return NULL;
 
     return nm_utils_inet_ntop_dup(addr_family, &addr_bin);

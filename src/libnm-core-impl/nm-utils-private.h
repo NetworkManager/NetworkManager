@@ -44,7 +44,8 @@ void _nm_utils_bytes_from_dbus(GVariant *dbus_value, GValue *prop_value);
 
 char *_nm_utils_hwaddr_canonical_or_invalid(const char *mac, gssize length);
 
-char *_nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip);
+char *
+_nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip, gboolean map_zero_to_null);
 
 gboolean _nm_utils_hwaddr_link_local_valid(const char *mac);
 

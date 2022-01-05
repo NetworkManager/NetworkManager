@@ -669,9 +669,11 @@ _property_direct_set_string(const NMSettInfoProperty *property_info, char **dst,
     if (property_info->direct_set_string_ip_address_addr_family != 0) {
         s = _nm_utils_ipaddr_canonical_or_invalid(
             property_info->direct_set_string_ip_address_addr_family - 1,
-            src);
+            src,
+            property_info->direct_set_string_ip_address_addr_family_map_zero_to_null);
         goto out_take;
-    }
+    } else
+        nm_assert(!property_info->direct_set_string_ip_address_addr_family_map_zero_to_null);
 
     if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
         return nm_strdup_reset_secret(dst, src);
