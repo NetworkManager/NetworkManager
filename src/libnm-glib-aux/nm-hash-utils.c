@@ -284,3 +284,31 @@ nm_pg_bytes_equal(gconstpointer a, gconstpointer b)
 
     return g_bytes_equal(*ptr_a, *ptr_b);
 }
+
+/*****************************************************************************/
+
+guint64
+nm_hash_obfuscate_ptr(guint static_seed, gconstpointer val)
+{
+    NMHashState h;
+
+    if (NM_MORE_ASSERTS > 0) {
+        static int obfuscate_static = -1;
+        int        obfuscate;
+
+again:
+        obfuscate = g_atomic_int_get(&obfuscate_static);
+        if (G_UNLIKELY(obfuscate == -1)) {
+            obfuscate = _nm_utils_ascii_str_to_int64(g_getenv("NM_OBFUSCATE_PTR"), 10, 0, 1, 1);
+            if (!g_atomic_int_compare_and_exchange(&obfuscate_static, -1, obfuscate))
+                goto again;
+        }
+
+        if (!obfuscate)
+            return (uintptr_t) val;
+    }
+
+    nm_hash_init(&h, static_seed);
+    nm_hash_update_val(&h, val);
+    return nm_hash_complete_u64(&h);
+}
