@@ -46,6 +46,19 @@ nm_ref_string_new(const char *cstr)
 
 /*****************************************************************************/
 
+NMRefString *nmtst_ref_string_find_len(const char *cstr, gsize len);
+
+static inline NMRefString *
+nmtst_ref_string_find(const char *cstr)
+{
+    /* WARNING: only use for testing. See nmtst_ref_string_find_len() why. */
+    if (!cstr)
+        return FALSE;
+    return nmtst_ref_string_find_len(cstr, strlen(cstr));
+}
+
+/*****************************************************************************/
+
 static inline NMRefString *
 nm_ref_string_ref(NMRefString *rstr)
 {
