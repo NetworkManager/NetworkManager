@@ -753,6 +753,7 @@ _insert_interface(json_t       *params,
     NMSettingOvsInterface *s_ovs_iface;
     NMSettingOvsDpdk      *s_ovs_dpdk;
     NMSettingOvsPatch     *s_ovs_patch;
+    char                  *dpdk_devargs;
     json_t                *options = json_array();
     json_t                *row;
     guint32                mtu = 0;
@@ -777,9 +778,11 @@ _insert_interface(json_t       *params,
         s_ovs_patch = nm_connection_get_setting_ovs_patch(interface);
 
     if (s_ovs_dpdk) {
-        json_array_append_new(
-            options,
-            json_pack("[[s, s]]", "dpdk-devargs", nm_setting_ovs_dpdk_get_devargs(s_ovs_dpdk)));
+        dpdk_devargs = nm_setting_ovs_dpdk_get_devargs(s_ovs_dpdk);
+        if (dpdk_devargs)
+            json_array_append_new(options, json_pack("[[s, s]]", "dpdk-devargs", dpdk_devargs));
+        else
+            json_array_append_new(options, json_array());
     } else if (s_ovs_patch) {
         json_array_append_new(
             options,
