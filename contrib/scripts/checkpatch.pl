@@ -198,7 +198,7 @@ complain ("Don't use API that uses the numeric source id. Instead, use GSource a
 complain ("Prefer g_snprintf() over snprintf() (for consistency)") if $line =~ /\b(snprintf)\b/;
 complain ("Avoid g_clear_pointer() and use nm_clear_pointer() (or nm_clear_g_free(), g_clear_object(), etc.)") if $line =~ /\b(g_clear_pointer)\b/;
 complain ("Define setting properties with _nm_setting_property_define_direct_*() API") if $line =~ /g_param_spec_/ and $filename =~ /\/libnm-core-impl\/nm-setting/;
-#complain ("Use spaces instead of tabs") if $line =~ /\t/;
+complain ("Use spaces instead of tabs") if $line =~ /\t/;
 
 # Further on we process stuff without comments.
 $_ = $line;
