@@ -303,6 +303,7 @@
 #define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_RSTP_ENABLE N_("Enable or disable RSTP.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_STP_ENABLE N_("Enable or disable STP.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_DEVARGS N_("Open vSwitch DPDK device arguments.")
+#define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_N_RXQ N_("Open vSwitch DPDK number of rx queues. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures one queue.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_EXTERNAL_IDS_DATA N_("A dictionary of key/value pairs with exernal-ids for OVS.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_INTERFACE_TYPE N_("The interface type. Either \"internal\", \"system\", \"patch\", \"dpdk\", or empty.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PATCH_PEER N_("Specifies the name of the interface for the other side of the patch. The patch on the other side must also set this interface as peer.")
