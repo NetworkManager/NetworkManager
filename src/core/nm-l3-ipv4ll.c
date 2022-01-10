@@ -305,8 +305,8 @@ _acd_info_is_good(const NML3AcdAddrInfo *acd_info)
     case NM_L3_ACD_ADDR_STATE_PROBING:
     case NM_L3_ACD_ADDR_STATE_READY:
     case NM_L3_ACD_ADDR_STATE_DEFENDING:
-    case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
         return TRUE;
+    case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
     case NM_L3_ACD_ADDR_STATE_USED:
     case NM_L3_ACD_ADDR_STATE_CONFLICT:
         return FALSE;
