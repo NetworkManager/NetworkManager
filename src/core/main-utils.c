@@ -218,6 +218,42 @@ nm_main_utils_ensure_root()
     }
 }
 
+uid_t nm_uid;
+/**
+ * nm_main_utils_get_nm_uid:
+ *
+ * Checks what EUID NetworkManager is running as.
+ * Saves the EUID so it can be reused without making many syscalls.
+ */
+uid_t
+nm_main_utils_get_nm_uid(void)
+{
+    static uint8_t nm_uid_flag = 0;
+    if (!nm_uid_flag) {
+        nm_uid      = geteuid();
+        nm_uid_flag = 1;
+    }
+    return nm_uid;
+}
+
+gid_t nm_gid;
+/**
+ * nm_main_utils_get_nm_gid:
+ *
+ * Checks what EGID NetworkManager is running as.
+ * Saves the EGID so it can be reused without making many syscalls.
+ */
+gid_t
+nm_main_utils_get_nm_gid(void)
+{
+    static uint8_t nm_gid_flag = 0;
+    if (!nm_gid_flag) {
+        nm_gid      = getegid();
+        nm_gid_flag = 1;
+    }
+    return nm_gid;
+}
+
 gboolean
 nm_main_utils_early_setup(const char *  progname,
                           int *         argc,
