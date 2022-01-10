@@ -5942,7 +5942,7 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform *            platf
     guint                   i;
     guint32                 next_seq_number     = 0;
     gint64                  next_timeout_abs_ns = 0;
-    int                     now_ns              = 0;
+    gint64                  now_ns              = 0;
 
     for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len;) {
         const DelayedActionWaitForNlResponseData *data =
