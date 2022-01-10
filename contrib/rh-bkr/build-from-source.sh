@@ -62,6 +62,7 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       libubsan \
       libudev-devel \
       libuuid-devel \
+      make \
       mobile-broadband-provider-info-devel \
       newt-devel \
       nss-devel \
