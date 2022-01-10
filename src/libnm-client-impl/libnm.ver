@@ -1816,3 +1816,8 @@ global:
 	nm_setting_connection_get_dns_over_tls;
 	nm_setting_connection_dns_over_tls_get_type;
 } libnm_1_32_4;
+
+libnm_1_36_0 {
+global:
+	nm_setting_ovs_dpdk_get_n_rxq;
+} libnm_1_34_0;

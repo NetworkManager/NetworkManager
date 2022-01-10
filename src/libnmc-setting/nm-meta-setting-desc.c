@@ -6685,7 +6685,10 @@ static const NMMetaPropertyInfo *const property_infos_OVS_BRIDGE[] = {
 static const NMMetaPropertyInfo *const property_infos_OVS_DPDK[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_DPDK_DEVARGS,
         .property_type =                &_pt_gobject_string,
-    ),
+   ),
+   PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_DPDK_N_RXQ,
+        .property_type =                &_pt_gobject_int,
+   ),
     NULL
 };
 

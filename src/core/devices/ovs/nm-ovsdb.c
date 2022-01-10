@@ -741,7 +741,7 @@ _j_create_external_ids_array_update(const char *connection_uuid,
 /**
  * _insert_interface:
  *
- * Returns an commands that adds new interface from a given connection.
+ * Returns a command that adds new interface from a given connection.
  */
 static void
 _insert_interface(json_t       *params,
@@ -752,6 +752,10 @@ _insert_interface(json_t       *params,
     const char            *type = NULL;
     NMSettingOvsInterface *s_ovs_iface;
     NMSettingOvsDpdk      *s_ovs_dpdk;
+    const char            *devargs;
+    guint32                n_rxq;
+    char                   sbuf[64];
+    json_t                *dpdk_array;
     NMSettingOvsPatch     *s_ovs_patch;
     json_t                *options = json_array();
     json_t                *row;
@@ -777,9 +781,21 @@ _insert_interface(json_t       *params,
         s_ovs_patch = nm_connection_get_setting_ovs_patch(interface);
 
     if (s_ovs_dpdk) {
-        json_array_append_new(
-            options,
-            json_pack("[[s, s]]", "dpdk-devargs", nm_setting_ovs_dpdk_get_devargs(s_ovs_dpdk)));
+        devargs = nm_setting_ovs_dpdk_get_devargs(s_ovs_dpdk);
+        n_rxq   = nm_setting_ovs_dpdk_get_n_rxq(s_ovs_dpdk);
+
+        dpdk_array = json_array();
+
+        if (devargs)
+            json_array_append_new(dpdk_array, json_pack("[s,s]", "dpdk-devargs", devargs));
+
+        if (n_rxq != 0) {
+            json_array_append_new(dpdk_array,
+                                  json_pack("[s,s]", "n_rxq", nm_sprintf_buf(sbuf, "%u", n_rxq)));
+        }
+
+        json_array_append_new(options, dpdk_array);
+
     } else if (s_ovs_patch) {
         json_array_append_new(
             options,
