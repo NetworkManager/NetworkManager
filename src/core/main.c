@@ -328,8 +328,6 @@ main(int argc, char *argv[])
         exit(result);
     }
 
-    nm_main_utils_ensure_root();
-
     nm_main_utils_ensure_not_running_pidfile(global_opt.pidfile);
 
     nm_main_utils_ensure_statedir();
