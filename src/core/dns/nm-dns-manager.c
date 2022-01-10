@@ -2001,21 +2001,17 @@ nm_dns_manager_set_initial_hostname(NMDnsManager *self, const char *hostname)
 void
 nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean skip_update)
 {
-    NMDnsManagerPrivate *priv     = NM_DNS_MANAGER_GET_PRIVATE(self);
-    const char          *filtered = NULL;
+    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
 
     /* Certain hostnames we don't want to include in resolv.conf 'searches' */
     if (hostname && nm_utils_is_specific_hostname(hostname) && !strstr(hostname, ".in-addr.arpa")
         && strchr(hostname, '.')) {
-        filtered = hostname;
-    }
+        /* pass */
+    } else
+        hostname = NULL;
 
-    if ((!priv->hostname && !filtered)
-        || (priv->hostname && filtered && !strcmp(priv->hostname, filtered)))
+    if (!nm_strdup_reset(&priv->hostname, hostname))
         return;
-
-    g_free(priv->hostname);
-    priv->hostname = g_strdup(filtered);
 
     if (skip_update)
         return;
