@@ -9290,9 +9290,11 @@ after_read:
         nm_assert(next.now_ns > 0);
         nm_assert(next.timeout_abs_ns > next.now_ns);
 
-        _LOGT("netlink: read: wait for ACK for sequence number %u...", next.seq_number);
-
         timeout_msec = (next.timeout_abs_ns - next.now_ns) / (NM_UTILS_NSEC_PER_SEC / 1000);
+
+        _LOGT("netlink: read: wait for ACK for sequence number %u... (%d msec)",
+              next.seq_number,
+              timeout_msec);
 
         memset(&pfd, 0, sizeof(pfd));
         pfd.fd     = nl_socket_get_fd(priv->nlh);
