@@ -9305,6 +9305,8 @@ after_read:
         pfd.events = POLLIN;
         r          = poll(&pfd, 1, timeout_msec);
 
+        _LOGT("netlink: read: poll done (r=%d)", r);
+
         if (r == 0) {
             /* timeout and there is nothing to read. */
             goto after_read;
