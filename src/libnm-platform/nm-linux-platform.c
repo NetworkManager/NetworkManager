@@ -9289,8 +9289,12 @@ after_read:
         nm_assert(next.seq_number);
         nm_assert(next.now_nsec > 0);
         nm_assert(next.timeout_abs_nsec > next.now_nsec);
+        nm_assert(next.timeout_abs_nsec - next.now_nsec <= 200 * (NM_UTILS_NSEC_PER_SEC / 1000));
 
-        timeout_msec = (next.timeout_abs_nsec - next.now_nsec) / (NM_UTILS_NSEC_PER_SEC / 1000);
+        timeout_msec =
+            NM_CLAMP((next.timeout_abs_nsec - next.now_nsec) / (NM_UTILS_NSEC_PER_SEC / 1000),
+                     1,
+                     1000);
 
         _LOGT("netlink: read: wait for ACK for sequence number %u... (%d msec)",
               next.seq_number,
@@ -9299,7 +9303,7 @@ after_read:
         memset(&pfd, 0, sizeof(pfd));
         pfd.fd     = nl_socket_get_fd(priv->nlh);
         pfd.events = POLLIN;
-        r          = poll(&pfd, 1, MAX(1, timeout_msec));
+        r          = poll(&pfd, 1, timeout_msec);
 
         if (r == 0) {
             /* timeout and there is nothing to read. */
