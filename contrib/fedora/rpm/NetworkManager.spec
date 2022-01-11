@@ -19,8 +19,9 @@
 %global snapshot __SNAPSHOT__
 %global git_sha __COMMIT__
 
-%global obsoletes_device_plugins 1:0.9.9.95-1
-%global obsoletes_ppp_plugin     1:1.5.3
+%global obsoletes_device_plugins     1:0.9.9.95-1
+%global obsoletes_ppp_plugin         1:1.5.3
+%global obsoletes_initscripts_updown 1:1.35.4
 
 %global systemd_dir %{_prefix}/lib/systemd/system
 %global sysctl_dir %{_prefix}/lib/sysctl.d
@@ -214,6 +215,10 @@ Requires: libndp >= %{libndp_version}
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 Obsoletes: NetworkManager-wimax < 1.2
+%if 0%{?rhel} && 0%{?rhel} <= 8
+Suggests: NetworkManager-initscripts-updown
+%endif
+Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
 
 %if 0%{?rhel} && 0%{?rhel} <= 7
 # Kept for RHEL to ensure that wired 802.1x works out of the box
@@ -561,6 +566,20 @@ This tool is still experimental.
 %endif
 
 
+%package initscripts-updown
+Summary: Legacy ifup/ifdown scripts for NetworkManager that replace initscripts (network-scripts)
+Group: System Environment/Base
+BuildArch: noarch
+Requires: NetworkManager
+Requires: /usr/bin/nmcli
+Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
+
+%description initscripts-updown
+Installs alternative ifup/ifdown scripts that talk to NetworkManager.
+This is only for backward compatibility with initscripts (network-scripts).
+Preferably use nmcli instead.
+
+
 %prep
 %autosetup -p1 -n NetworkManager-%{real_version}
 
@@ -874,7 +893,8 @@ mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 %endif
 
-touch %{buildroot}%{_sbindir}/ifup %{buildroot}%{_sbindir}/ifdown
+touch %{buildroot}%{_sbindir}/ifup
+touch %{buildroot}%{_sbindir}/ifdown
 
 
 %check
@@ -917,7 +937,8 @@ fi
 
 %systemd_post %{systemd_units}
 
-%triggerin -- initscripts
+
+%post initscripts-updown
 if [ -f %{_sbindir}/ifup -a ! -L %{_sbindir}/ifup ]; then
     # initscripts package too old, won't let us set an alternative
     /usr/sbin/update-alternatives --remove ifup %{_libexecdir}/nm-ifup >/dev/null 2>&1 || :
@@ -940,10 +961,14 @@ if [ $1 -eq 0 ]; then
 
     # Don't kill networking entirely just on package remove
     #/bin/systemctl stop NetworkManager.service >/dev/null 2>&1 || :
-
-    /usr/sbin/update-alternatives --remove ifup %{_libexecdir}/nm-ifup >/dev/null 2>&1 || :
 fi
 %systemd_preun NetworkManager-wait-online.service NetworkManager-dispatcher.service nm-priv-helper.service
+
+
+%preun initscripts-updown
+if [ $1 -eq 0 ]; then
+    /usr/sbin/update-alternatives --remove ifup %{_libexecdir}/nm-ifup >/dev/null 2>&1 || :
+fi
 
 
 %if %{with nm_cloud_setup}
@@ -994,10 +1019,6 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/NetworkManager.conf
 %ghost %{_sysconfdir}/%{name}/VPN
 %{_bindir}/nm-online
-%{_libexecdir}/nm-ifup
-%ghost %attr(755, root, root) %{_sbindir}/ifup
-%{_libexecdir}/nm-ifdown
-%ghost %attr(755, root, root) %{_sbindir}/ifdown
 %{_libexecdir}/nm-dhcp-helper
 %{_libexecdir}/nm-dispatcher
 %{_libexecdir}/nm-initrd-generator
@@ -1161,6 +1182,13 @@ fi
 %{nmlibdir}/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh
 %{_mandir}/man8/nm-cloud-setup.8*
 %endif
+
+
+%files initscripts-updown
+%{_libexecdir}/nm-ifup
+%ghost %attr(755, root, root) %{_sbindir}/ifup
+%{_libexecdir}/nm-ifdown
+%ghost %attr(755, root, root) %{_sbindir}/ifdown
 
 
 %changelog
