@@ -170,7 +170,7 @@ libNetworkManager = static_library(
     'nm-rfkill-manager.c',
     'nm-session-monitor.c',
     'nm-sleep-monitor.c',
-    'nm-sudo-call.c',
+    'nm-priv-helper-call.c',
   ),
   dependencies: nm_deps,
   link_with: [

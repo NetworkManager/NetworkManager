@@ -11,7 +11,7 @@ if install_systemdunitdir
   services = [
     'NetworkManager-dispatcher.service.in',
     'NetworkManager.service.in',
-    'nm-sudo.service.in',
+    'nm-priv-helper.service.in',
   ]
 
   if have_systemd_200

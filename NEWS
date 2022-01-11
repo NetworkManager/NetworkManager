@@ -30,8 +30,8 @@ Overview of changes since NetworkManager-1.32
   Adjust the "dns-priority" to your liking after import yourself.
 * NetworkManager no longer listens for netlink events for traffic
   control objects (qdiscs and filters).
-* core: add internal nm-sudo service for separating privileges and have
-  a way to drop capabilities from NetworkManager daemon.
+* core: add internal nm-priv-helper service for separating privileges
+  and have a way to drop capabilities from NetworkManager daemon.
 * bond: add support for setting queue-id of bond port.
 * dns: support configuring DNS over TLS (DoT) with systemd-resolved.
 * nmtui: add support for WireGuard profiles.

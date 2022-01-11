@@ -2,7 +2,7 @@
 
 #include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
-#include "nm-sudo-utils.h"
+#include "nm-priv-helper-utils.h"
 
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -12,14 +12,14 @@
 /*****************************************************************************/
 
 int
-nm_sudo_utils_open_fd(NMSudoGetFDType fd_type, GError **error)
+nm_priv_helper_utils_open_fd(NMPrivHelperGetFDType fd_type, GError **error)
 {
     nm_auto_close int fd = -1;
     int               r;
     int               errsv;
 
     switch (fd_type) {
-    case NM_SUDO_GET_FD_TYPE_OVSDB_SOCKET:
+    case NM_PRIV_HELPER_GET_FD_TYPE_OVSDB_SOCKET:
     {
         struct sockaddr_un sock;
         int                sock_len;
@@ -48,7 +48,7 @@ nm_sudo_utils_open_fd(NMSudoGetFDType fd_type, GError **error)
 
         return nm_steal_fd(&fd);
     }
-    case NM_SUDO_GET_FD_TYPE_NONE:
+    case NM_PRIV_HELPER_GET_FD_TYPE_NONE:
     default:
         nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "invalid fd_type");
         return -EINVAL;

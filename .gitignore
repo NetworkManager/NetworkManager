@@ -71,8 +71,8 @@ test-*.trs
 /src/nm-dispatcher/org.freedesktop.nm_dispatcher.service
 /src/nm-dispatcher/tests/test-dispatcher-envp
 
-/src/nm-sudo/nm-sudo
-/src/nm-sudo/org.freedesktop.nm.sudo.service
+/src/nm-priv-helper/nm-priv-helper
+/src/nm-priv-helper/org.freedesktop.nm-priv-helper.service
 
 /data/NetworkManager.service
 /data/NetworkManager-wait-online.service
@@ -82,6 +82,7 @@ test-*.trs
 /data/org.freedesktop.NetworkManager.policy
 /data/org.freedesktop.NetworkManager.policy.in
 /data/nm-sudo.service
+/data/nm-priv-helper.service
 
 /docs/api/version.xml
 /docs/api/settings-spec.html
@@ -436,6 +437,8 @@ test-*.trs
 /src/ndisc/tests/test-ndisc-linux
 /src/nm-daemon-helper/nm-daemon-helper
 /src/nm-iface-helper
+/src/nm-sudo/nm-sudo
+/src/nm-sudo/org.freedesktop.nm.sudo.service
 /src/platform/tests/dump
 /src/platform/tests/monitor
 /src/platform/tests/platform
