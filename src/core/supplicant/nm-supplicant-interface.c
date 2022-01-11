@@ -173,6 +173,8 @@ G_DEFINE_TYPE(NMSupplicantInterface, nm_supplicant_interface, G_TYPE_OBJECT)
 #define NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self) \
     _NM_GET_PRIVATE_PTR(self, NMSupplicantInterface, NM_IS_SUPPLICANT_INTERFACE)
 
+static NMTernary _get_capability(NMSupplicantInterfacePrivate *priv, NMSupplCapType type);
+
 /*****************************************************************************/
 
 static const char *
@@ -1319,6 +1321,22 @@ _starting_check_ready(NMSupplicantInterface *self)
           NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_AP),
           NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_FT),
           NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_SAE));
+
+    /* Other global properties are set in constructed() because they don't
+     * depend on interface capabilities. */
+    if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SAE) == NM_TERNARY_TRUE) {
+        _LOGD("enabling SAE-H2E (SaePwe=2)");
+        nm_dbus_connection_call_set(priv->dbus_connection,
+                                    priv->name_owner->str,
+                                    priv->object_path->str,
+                                    NM_WPAS_DBUS_IFACE_INTERFACE,
+                                    "SaePwe",
+                                    g_variant_new_string("2"),
+                                    DBUS_TIMEOUT_MSEC,
+                                    NULL,
+                                    NULL,
+                                    NULL);
+    }
 
     set_state(self, priv->supp_state);
 }
