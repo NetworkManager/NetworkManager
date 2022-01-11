@@ -4461,6 +4461,7 @@ src_nm_dispatcher_nm_dispatcher_LDADD = \
 	src/nm-dispatcher/libnm-dispatcher-core.la \
 	src/libnm-client-impl/libnm.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
@@ -4583,6 +4584,7 @@ src_nm_priv_helper_nm_priv_helper_LDFLAGS = \
 src_nm_priv_helper_nm_priv_helper_LDADD = \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
@@ -4655,6 +4657,7 @@ src_nm_online_nm_online_LDADD = \
 	src/libnm-client-impl/libnm.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
@@ -4833,6 +4836,7 @@ src_nmcli_nmcli_LDADD = \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
@@ -4881,6 +4885,7 @@ src_nmcli_generate_docs_nm_settings_nmcli_LDADD = \
 	src/libnm-base/libnm-base.la \
 	src/libnm-client-impl/libnm.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	$(GLIB_LIBS) \
@@ -5087,6 +5092,7 @@ src_nmtui_nmtui_LDADD = \
 	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
 	src/libnm-base/libnm-base.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-log-null/libnm-log-null.la \
 	src/libnm-std-aux/libnm-std-aux.la \
 	src/c-siphash/libc-siphash.la \
 	src/libnm-client-impl/libnm.la \
