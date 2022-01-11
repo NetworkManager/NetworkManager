@@ -2852,9 +2852,7 @@ dispose(GObject *object)
      *   BzDBusObj instances and do necessary cleanup actions (like disconnecting devices
      *   or deleting panu_connection). */
 
-    nm_assert(c_list_is_empty(&priv->network_server_lst_head));
-    nm_assert(c_list_is_empty(&priv->process_change_lst_head));
-    nm_assert(priv->process_change_idle_id == 0);
+    nm_clear_g_source(&priv->process_change_idle_id);
 
     g_atomic_pointer_compare_and_exchange(&nm_bt_vtable_network_server,
                                           &priv->vtable_network_server,
@@ -2871,6 +2869,9 @@ dispose(GObject *object)
     nm_clear_pointer(&priv->bzobjs, g_hash_table_destroy);
     nm_clear_pointer(&priv->conn_data_heads, g_hash_table_destroy);
     nm_clear_pointer(&priv->conn_data_elems, g_hash_table_destroy);
+
+    nm_assert(c_list_is_empty(&priv->network_server_lst_head));
+    nm_assert(c_list_is_empty(&priv->process_change_lst_head));
 }
 
 static void
