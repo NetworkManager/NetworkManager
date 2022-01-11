@@ -69,8 +69,24 @@ $ git config --add 'blame.ignoreRevsFile' '.git-blame-ignore-revs'
 
 ### Style
 
-Since our coding style is entirely automated, the following are just
-some details of the style we use:
+As we use clang-format, our style is in parts determined by the tool.
+Run the tool to format the code. See the earlier point.
+
+The formatting tool cannot cover all questions. The most important rule is
+to mimic the existing code and *imitate the surrounding style*.
+
+In general, we require to build without compiler warnings, for the warnings
+that we enable. Our language is C11 with some GCC-isms (like typeof(),
+expression statements, cleanup attribute). In practice, we support various versions
+of GCC and clang. The supported C "dialect", compilers and libc are those that we
+can practically build and test in our CI. We don't target a theoretical, pure C11/POSIX
+standard or a libc/compiler that we cannot test.
+Patches for making NetworkManager more portable are welcome, if there is a
+practical use and checked by CI. Glibc and musl libc are supported.
+
+We follow a mixture of [glib's](https://developer.gnome.org/documentation/guidelines/programming/coding-style.html)
+and [systemd's](https://github.com/systemd/systemd/blob/main/docs/CODING_STYLE.md) style, which already have extensive
+guidelines. Following there are a few noteworthy points.
 
 * Use cleanup functions (`gs_free`, `gs_*`, `nm_auto*`) to let a stack
   variable own a resource instead of explicit free. Combine them with
@@ -103,15 +119,6 @@ some details of the style we use:
 
 * Always use curly braces for blocks that span multiple lines. For single lines
   the braces may be omitted, but are not prohibited.
-
-Additionally, we require to build without compiler warnings for the warnings
-that we enable. Also, our language is C11 with some GCC-isms (like typeof(),
-expression statements, cleanup attribute). In practice, we support various versions
-of GCC and clang. The supported C "dialect", compilers and libc are those that we
-can practically build and test in our CI. We don't target a theoretical, pure C11/POSIX
-standard or a libc/compiler that we cannot test.
-Patches for making NetworkManager more portable are welcome, if there is a
-practical use and CI tests. Glibc and musl libc are supported.
 
 ### Checkpatch
 
