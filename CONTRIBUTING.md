@@ -101,6 +101,9 @@ some details of the style we use:
   - GOOD: `#define MY_CONSTANT 42`
   - BAD:  `static const unsigned myConstant = 42;`
 
+* Always use curly braces for blocks that span multiple lines. For single lines
+  the braces may be omitted, but are not prohibited.
+
 Additionally, we require to build without compiler warnings for the warnings
 that we enable. Also, our language is C11 with some GCC-isms (like typeof(),
 expression statements, cleanup attribute). In practice, we support various versions
