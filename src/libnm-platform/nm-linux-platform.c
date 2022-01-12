@@ -402,7 +402,7 @@ typedef struct {
     guint32                            seq_number;
     WaitForNlResponseResult            seq_result;
     DelayedActionWaitForNlResponseType response_type;
-    gint64                             timeout_abs_ns;
+    gint64                             timeout_abs_nsec;
     WaitForNlResponseResult           *out_seq_result;
     char                             **out_errmsg;
     union {
@@ -5835,7 +5835,7 @@ delayed_action_to_string_full(DelayedActionType action_type,
         data = user_data;
 
         if (data) {
-            gint64 timeout = data->timeout_abs_ns - nm_utils_get_monotonic_timestamp_nsec();
+            gint64 timeout = data->timeout_abs_nsec - nm_utils_get_monotonic_timestamp_nsec();
             char   b[255];
 
             nm_strbuf_append(
@@ -5940,13 +5940,13 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platf
                                                    WaitForNlResponseResult force_result,
                                                    guint32                *out_next_seq_number,
                                                    gint64                 *out_next_timeout_abs_ns,
-                                                   gint64                 *p_now_ns)
+                                                   gint64                 *p_now_nsec)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     guint                   i;
     guint32                 next_seq_number     = 0;
     gint64                  next_timeout_abs_ns = 0;
-    int                     now_ns              = 0;
+    gint64                  now_nsec            = 0;
 
     for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len;) {
         const DelayedActionWaitForNlResponseData *data =
@@ -5956,10 +5956,10 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platf
 
         if (data->seq_result)
             delayed_action_wait_for_nl_response_complete(platform, i, data->seq_result);
-        else if (p_now_ns
-                 && ((now_ns ?: (now_ns = nm_utils_get_monotonic_timestamp_nsec()))
-                     >= data->timeout_abs_ns)) {
-            /* the caller can optionally check for timeout by providing a p_now_ns argument. */
+        else if (p_now_nsec
+                 && ((now_nsec ?: (now_nsec = nm_utils_get_monotonic_timestamp_nsec()))
+                     >= data->timeout_abs_nsec)) {
+            /* the caller can optionally check for timeout by providing a p_now_nsec argument. */
             delayed_action_wait_for_nl_response_complete(
                 platform,
                 i,
@@ -5967,9 +5967,9 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platf
         } else if (force_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
             delayed_action_wait_for_nl_response_complete(platform, i, force_result);
         else {
-            if (next_seq_number == 0 || next_timeout_abs_ns > data->timeout_abs_ns) {
+            if (next_seq_number == 0 || next_timeout_abs_ns > data->timeout_abs_nsec) {
                 next_seq_number     = data->seq_number;
-                next_timeout_abs_ns = data->timeout_abs_ns;
+                next_timeout_abs_ns = data->timeout_abs_nsec;
             }
             i++;
         }
@@ -5983,7 +5983,7 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platf
 
     NM_SET_OUT(out_next_seq_number, next_seq_number);
     NM_SET_OUT(out_next_timeout_abs_ns, next_timeout_abs_ns);
-    NM_SET_OUT(p_now_ns, now_ns);
+    NM_SET_OUT(p_now_nsec, now_nsec);
 }
 
 static void
@@ -6196,7 +6196,7 @@ delayed_action_schedule_WAIT_FOR_NL_RESPONSE(NMPlatform                        *
 {
     DelayedActionWaitForNlResponseData data = {
         .seq_number = seq_number,
-        .timeout_abs_ns =
+        .timeout_abs_nsec =
             nm_utils_get_monotonic_timestamp_nsec() + (200 * (NM_UTILS_NSEC_PER_SEC / 1000)),
         .out_seq_result    = out_seq_result,
         .out_errmsg        = out_errmsg,
@@ -9206,8 +9206,8 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
     int                         timeout_msec;
     struct {
         guint32 seq_number;
-        gint64  timeout_abs_ns;
-        gint64  now_ns;
+        gint64  timeout_abs_nsec;
+        gint64  now_nsec;
     } next;
 
     if (!nm_platform_netns_push(platform, &netns)) {
@@ -9279,25 +9279,33 @@ after_read:
         delayed_action_wait_for_nl_response_complete_check(platform,
                                                            WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN,
                                                            &next.seq_number,
-                                                           &next.timeout_abs_ns,
-                                                           &next.now_ns);
+                                                           &next.timeout_abs_nsec,
+                                                           &next.now_nsec);
 
         if (!wait_for_acks
             || !NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE))
             return any;
 
         nm_assert(next.seq_number);
-        nm_assert(next.now_ns > 0);
-        nm_assert(next.timeout_abs_ns > next.now_ns);
+        nm_assert(next.now_nsec > 0);
+        nm_assert(next.timeout_abs_nsec > next.now_nsec);
+        nm_assert(next.timeout_abs_nsec - next.now_nsec <= 200 * (NM_UTILS_NSEC_PER_SEC / 1000));
 
-        _LOGT("netlink: read: wait for ACK for sequence number %u...", next.seq_number);
+        timeout_msec =
+            NM_CLAMP((next.timeout_abs_nsec - next.now_nsec) / (NM_UTILS_NSEC_PER_SEC / 1000),
+                     1,
+                     1000);
 
-        timeout_msec = (next.timeout_abs_ns - next.now_ns) / (NM_UTILS_NSEC_PER_SEC / 1000);
+        _LOGT("netlink: read: wait for ACK for sequence number %u... (%d msec)",
+              next.seq_number,
+              timeout_msec);
 
         memset(&pfd, 0, sizeof(pfd));
         pfd.fd     = nl_socket_get_fd(priv->nlh);
         pfd.events = POLLIN;
-        r          = poll(&pfd, 1, MAX(1, timeout_msec));
+        r          = poll(&pfd, 1, timeout_msec);
+
+        _LOGT("netlink: read: poll done (r=%d)", r);
 
         if (r == 0) {
             /* timeout and there is nothing to read. */
