@@ -6084,8 +6084,8 @@ delayed_action_handle_one(NMPlatform *platform)
         priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_ALL;
 
         if (_LOGt_ENABLED()) {
-            FOR_EACH_DELAYED_ACTION(iflags, flags)
-            _LOGt_delayed_action(iflags, NULL, "handle");
+            FOR_EACH_DELAYED_ACTION (iflags, flags)
+                _LOGt_delayed_action(iflags, NULL, "handle");
         }
 
         delayed_action_handle_REFRESH_ALL(platform, flags);
@@ -6181,8 +6181,8 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
     priv->delayed_action.flags |= action_type;
 
     if (_LOGt_ENABLED()) {
-        FOR_EACH_DELAYED_ACTION(iflags, action_type)
-        _LOGt_delayed_action(iflags, user_data, "schedule");
+        FOR_EACH_DELAYED_ACTION (iflags, action_type)
+            _LOGt_delayed_action(iflags, user_data, "schedule");
     }
 }
 
@@ -6757,8 +6757,7 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
         action_type_prune &= ~DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL;
     }
 
-    FOR_EACH_DELAYED_ACTION(iflags, action_type_prune)
-    {
+    FOR_EACH_DELAYED_ACTION (iflags, action_type_prune) {
         RefreshAllType refresh_all_type = delayed_action_type_to_refresh_all_type(iflags);
         NMPLookup      lookup;
 
@@ -6767,8 +6766,7 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
         nmp_cache_dirty_set_all_main(nm_platform_get_cache(platform), &lookup);
     }
 
-    FOR_EACH_DELAYED_ACTION(iflags, action_type)
-    {
+    FOR_EACH_DELAYED_ACTION (iflags, action_type) {
         RefreshAllType        refresh_all_type = delayed_action_type_to_refresh_all_type(iflags);
         const RefreshAllInfo *refresh_all_info = refresh_all_type_get_info(refresh_all_type);
         nm_auto_nlmsg struct nl_msg *nlmsg     = NULL;
