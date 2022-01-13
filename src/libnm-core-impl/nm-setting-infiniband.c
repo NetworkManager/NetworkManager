@@ -36,6 +36,8 @@ typedef struct {
     char   *transport_mode;
     char   *parent;
     char   *virtual_iface_name;
+    gsize   virtual_iface_name_parent_length;
+    int     virtual_iface_name_p_key;
     int     p_key;
     guint32 mtu;
 } NMSettingInfinibandPrivate;
@@ -156,14 +158,24 @@ const char *
 nm_setting_infiniband_get_virtual_interface_name(NMSettingInfiniband *setting)
 {
     NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE(setting);
+    gsize                       len;
 
-    if (priv->p_key == -1 || !priv->parent)
+    if (priv->p_key == -1 || !priv->parent) {
+        nm_clear_g_free(&priv->virtual_iface_name);
         return NULL;
+    }
 
-    if (!priv->virtual_iface_name)
+    len = strlen(priv->parent);
+    if (!priv->virtual_iface_name || priv->virtual_iface_name_p_key != priv->p_key
+        || priv->virtual_iface_name_parent_length != len
+        || memcmp(priv->parent, priv->virtual_iface_name, len) != 0) {
+        priv->virtual_iface_name_p_key         = priv->p_key;
+        priv->virtual_iface_name_parent_length = len;
+        g_free(priv->virtual_iface_name);
         priv->virtual_iface_name = g_strdup_printf("%s.%04x", priv->parent, priv->p_key);
+    }
 
-    return NM_SETTING_INFINIBAND_GET_PRIVATE(setting)->virtual_iface_name;
+    return priv->virtual_iface_name;
 }
 
 static gboolean
@@ -237,10 +249,12 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         const char *interface_name = nm_setting_connection_get_interface_name(s_con);
 
         if (interface_name && priv->p_key != -1) {
-            if (!priv->virtual_iface_name)
-                priv->virtual_iface_name = g_strdup_printf("%s.%04x", priv->parent, priv->p_key);
+            const char *virtual_iface_name;
 
-            if (strcmp(interface_name, priv->virtual_iface_name) != 0) {
+            virtual_iface_name =
+                nm_setting_infiniband_get_virtual_interface_name(NM_SETTING_INFINIBAND(setting));
+
+            if (!nm_streq(interface_name, virtual_iface_name)) {
                 /* We don't support renaming software infiniband devices. Later we might, but
                  * for now just reject such connections.
                  **/
@@ -249,7 +263,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
                             _("interface name of software infiniband device must be '%s' or unset "
                               "(instead it is '%s')"),
-                            priv->virtual_iface_name,
+                            virtual_iface_name,
                             interface_name);
                 g_prefix_error(error,
                                "%s.%s: ",
@@ -337,12 +351,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         break;
     case PROP_P_KEY:
         priv->p_key = g_value_get_int(value);
-        nm_clear_g_free(&priv->virtual_iface_name);
         break;
     case PROP_PARENT:
         g_free(priv->parent);
         priv->parent = g_value_dup_string(value);
-        nm_clear_g_free(&priv->virtual_iface_name);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
