@@ -36,12 +36,7 @@ pid_t nm_utils_gettid(void);
 gboolean _nm_assert_on_main_thread(void);
 
 #if NM_MORE_ASSERTS > 5
-#define NM_ASSERT_ON_MAIN_THREAD()              \
-    G_STMT_START                                \
-    {                                           \
-        nm_assert(_nm_assert_on_main_thread()); \
-    }                                           \
-    G_STMT_END
+#define NM_ASSERT_ON_MAIN_THREAD() nm_assert(_nm_assert_on_main_thread())
 #else
 #define NM_ASSERT_ON_MAIN_THREAD() \
     G_STMT_START                   \

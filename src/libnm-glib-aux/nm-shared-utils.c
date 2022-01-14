@@ -245,40 +245,58 @@ nm_utils_gettid(void)
  * The main-thread is determined by remembering the thread-id
  * of when the function was called the first time.
  *
- * When forking, the thread-id is again reset upon first call. */
+ * When forking, the thread-id is again reset upon first call.
+ *
+ * Note that this is only used for asserting, to check that we don't
+ * call the function on the wrong thread. As it's difficult to correctly
+ * cache the tid/pid, we might get this wrong during fork. That is not
+ * a problem, because we err on the side of pretending all is good. */
 gboolean
 _nm_assert_on_main_thread(void)
 {
-    G_LOCK_DEFINE_STATIC(lock);
-    static pid_t seen_tid;
-    static pid_t seen_pid;
-    pid_t        tid;
-    pid_t        pid;
-    gboolean     success = FALSE;
+    static GMutex lock;
+    static int    seen_tid;
+    pid_t         tid;
+    int           t;
+    gboolean      success = FALSE;
 
     tid = nm_utils_gettid();
     nm_assert(tid != 0);
+    nm_assert(({
+        const int tt = tid;
 
-    G_LOCK(lock);
+        tt == tid;
+    }));
 
-    if (G_LIKELY(tid == seen_tid)) {
+    t = g_atomic_int_get(&seen_tid);
+    if (G_LIKELY(t == tid)) {
         /* we don't care about false positives (when the process forked, and the thread-id
          * is accidentally re-used) . It's for assertions only. */
+        return TRUE;
+    }
+
+    g_mutex_lock(&lock);
+
+    t = g_atomic_int_get(&seen_tid);
+    if (G_UNLIKELY(t == tid))
         success = TRUE;
-    } else {
+    else {
+        static pid_t seen_pid;
+        pid_t        pid;
+
         pid = getpid();
         nm_assert(pid != 0);
 
-        if (seen_tid == 0 || seen_pid != pid) {
+        if (t == 0 || seen_pid != pid) {
             /* either this is the first time we call the function, or the process
-             * forked. In both cases, remember the thread-id. */
-            seen_tid = tid;
+             * forked. In both cases, update the thread-id. */
+            g_atomic_int_set(&seen_tid, tid);
             seen_pid = pid;
             success  = TRUE;
         }
     }
 
-    G_UNLOCK(lock);
+    g_mutex_unlock(&lock);
 
     return success;
 }
