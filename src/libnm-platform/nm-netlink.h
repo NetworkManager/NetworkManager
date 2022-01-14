@@ -568,8 +568,6 @@ int nl_wait_for_ack(struct nl_sock *sk, const struct nl_cb *cb);
 
 int nl_socket_set_ext_ack(struct nl_sock *sk, gboolean enable);
 
-int nl_socket_set_rtprot_filter(struct nl_sock *sk);
-
 /*****************************************************************************/
 
 void              *genlmsg_put(struct nl_msg *msg,

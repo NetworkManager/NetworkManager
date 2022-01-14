@@ -9,7 +9,6 @@
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <linux/filter.h>
 
 /*****************************************************************************/
 
@@ -1040,55 +1039,6 @@ nl_socket_set_ext_ack(struct nl_sock *sk, gboolean enable)
 
     val = !!enable;
     err = setsockopt(sk->s_fd, SOL_NETLINK, NETLINK_EXT_ACK, &val, sizeof(val));
-    if (err < 0)
-        return -nm_errno_from_native(errno);
-
-    return 0;
-}
-
-int
-nl_socket_set_rtprot_filter(struct nl_sock *sk)
-{
-    struct sock_filter filter[] = {
-        /*
-         * if (h->nlmsg_type != RTM_NEWROUTE && h->nlmsg_type != RTM_DELROUTE)
-         *     return KEEP;
-         */
-        BPF_STMT(BPF_LD | BPF_ABS | BPF_H, offsetof(struct nlmsghdr, nlmsg_type)),
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, htons(RTM_NEWROUTE), 2, 0),
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, htons(RTM_DELROUTE), 1, 0),
-        BPF_STMT(BPF_RET | BPF_K, 0xFFFF),
-
-        /*
-         * if (rtm->rtm_protocol <= RTPROT_STATIC)
-         *     return KEEP;
-         */
-        BPF_STMT(BPF_LD | BPF_ABS | BPF_B,
-                 sizeof(struct nlmsghdr) + offsetof(struct rtmsg, rtm_protocol)),
-        BPF_JUMP(BPF_JMP | BPF_JGT | BPF_K, RTPROT_STATIC, 1, 0),
-        BPF_STMT(BPF_RET | BPF_K, 0xFFFF),
-
-        /*
-         * if (rtm->rtm_protocol == RTPROT_DHCP || rtm->rtm_protocol == RTPROT_RA)
-         *     return KEEP;
-         */
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, RTPROT_DHCP, 1, 0),
-        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, RTPROT_RA, 0, 1),
-        BPF_STMT(BPF_RET | BPF_K, 0xFFFF),
-
-        /* return DROP; */
-        BPF_STMT(BPF_RET | BPF_K, 0),
-    };
-    struct sock_fprog prog = {
-        .len    = sizeof(filter) / sizeof(filter[0]),
-        .filter = filter,
-    };
-    int err;
-
-    if (sk->s_fd == -1)
-        return -NME_NL_BAD_SOCK;
-
-    err = setsockopt(sk->s_fd, SOL_SOCKET, SO_ATTACH_FILTER, &prog, sizeof(prog));
     if (err < 0)
         return -nm_errno_from_native(errno);
 
