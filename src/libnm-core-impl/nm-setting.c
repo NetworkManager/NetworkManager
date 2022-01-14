@@ -637,15 +637,21 @@ _nm_setting_use_legacy_property(NMSetting  *setting,
 /*****************************************************************************/
 
 static gboolean
-_property_direct_set_string(const NMSettInfoProperty *property_info, char **dst, const char *src)
+_property_direct_set_string(const NMSettInfoSetting  *sett_info,
+                            const NMSettInfoProperty *property_info,
+                            NMSetting                *setting,
+                            const char               *src)
 {
-    char *s;
+    char **dst;
+    char  *s;
 
     nm_assert(((!!property_info->direct_set_string_ascii_strdown)
                + (!!property_info->direct_set_string_strip)
                + (property_info->direct_set_string_mac_address_len > 0)
                + (property_info->direct_set_string_ip_address_addr_family != 0))
               <= 1);
+
+    dst = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
 
     if (property_info->direct_set_string_ascii_strdown) {
         s = src ? g_ascii_strdown(src, -1) : NULL;
@@ -887,10 +893,10 @@ _nm_setting_property_set_property_direct(GObject      *object,
         goto out_notify;
     }
     case NM_VALUE_TYPE_STRING:
-        if (!_property_direct_set_string(
-                property_info,
-                _nm_setting_get_private(setting, sett_info, property_info->direct_offset),
-                g_value_get_string(value)))
+        if (!_property_direct_set_string(sett_info,
+                                         property_info,
+                                         setting,
+                                         g_value_get_string(value)))
             return;
         goto out_notify;
     case NM_VALUE_TYPE_BYTES:
@@ -1529,7 +1535,6 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
     case NM_VALUE_TYPE_STRING:
     {
         gs_free char *v_free = NULL;
-        char        **p_val;
         const char   *v;
         gboolean      changed;
 
@@ -1545,9 +1550,7 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
             v = v_free;
         }
 
-        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
-
-        changed = _property_direct_set_string(property_info, p_val, v);
+        changed = _property_direct_set_string(sett_info, property_info, setting, v);
 
         if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
             nm_clear_pointer(&v_free, nm_free_secret);
