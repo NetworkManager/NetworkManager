@@ -746,7 +746,36 @@ struct _NMSettInfoProperty {
 
     GParamSpec *param_spec;
 
+    /* We want that our properties follow a small number of "default" types
+     * and behaviors. For example, we have int32 and string properties, but
+     * most properties of a certain type should behave in a similar way.
+     *
+     * That common behavior is realized via the property_type, which defines
+     * general behaviors for the property.
+     *
+     * Note that we still will need some property-specific additional tweaks.
+     * Of course, the name and param_spec are per-property. But below there are
+     * also flags and hooks, that can augment the behavior in the property_type.
+     * For example, the property_type in general might be of type string, but
+     * then we might want for some properties that the setter will strip
+     * whitespace. That is for example express with the flag direct_set_string_strip,
+     * which now is per-property-info, and no longer per-property-type.
+     *
+     * The distinction between those two is fixed. At the most extreme, we could
+     * move all fields from property_type to NMSettInfoProperty or we could move
+     * behavioral tweaks into the classes themselves. It's chosen this way so
+     * that we still have sensible common behaviors (string type), but minor
+     * tweaks are per property-info (and don't require a separate property-type). */
     const NMSettInfoPropertType *property_type;
+
+    union {
+        /* Optional hook for direct string properties, this gets called when setting the string.
+         * Return whether the value changed. */
+        gboolean (*set_string_fcn)(const NMSettInfoSetting  *sett_info,
+                                   const NMSettInfoProperty *property_info,
+                                   NMSetting                *setting,
+                                   const char               *src);
+    } direct_hook;
 
     /* This only has meaning for direct properties (property_type->direct_type != NM_VALUE_TYPE_UNSPEC).
      * In that case, this is the offset where _nm_setting_get_private() can find
