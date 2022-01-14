@@ -198,6 +198,7 @@ if [[ $NO_DIST != 1 ]]; then
         --enable-ifcfg-rh \
         --enable-ifupdown \
         --with-config-logging-backend-default=syslog \
+        --with-config-wifi-backend-default=wpa_supplicant \
         --with-libaudit=yes-disabled-by-default \
         --enable-polkit=yes \
         --with-nm-cloud-setup=yes \

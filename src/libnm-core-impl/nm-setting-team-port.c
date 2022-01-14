@@ -313,7 +313,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (connection) {
         NMSettingConnection *s_con;
-        const char *         slave_type;
+        const char          *slave_type;
 
         s_con = nm_connection_get_setting_connection(connection);
         if (!s_con) {
@@ -400,12 +400,12 @@ duplicate_copy_properties(const NMSettInfoSetting *sett_info, NMSetting *src, NM
 }
 
 static gboolean
-init_from_dbus(NMSetting *                     setting,
-               GHashTable *                    keys,
-               GVariant *                      setting_dict,
-               GVariant *                      connection_dict,
+init_from_dbus(NMSetting                      *setting,
+               GHashTable                     *keys,
+               GVariant                       *setting_dict,
+               GVariant                       *connection_dict,
                guint /* NMSettingParseFlags */ parse_flags,
-               GError **                       error)
+               GError                        **error)
 {
     guint32  changed = 0;
     gboolean success;
@@ -426,7 +426,7 @@ init_from_dbus(NMSetting *                     setting,
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingTeamPort *       setting = NM_SETTING_TEAM_PORT(object);
+    NMSettingTeamPort        *setting = NM_SETTING_TEAM_PORT(object);
     NMSettingTeamPortPrivate *priv    = NM_SETTING_TEAM_PORT_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -457,10 +457,10 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingTeamPort *       setting = NM_SETTING_TEAM_PORT(object);
+    NMSettingTeamPort        *setting = NM_SETTING_TEAM_PORT(object);
     NMSettingTeamPortPrivate *priv    = NM_SETTING_TEAM_PORT_GET_PRIVATE(setting);
     guint32                   changed;
-    const GPtrArray *         v_ptrarr;
+    const GPtrArray          *v_ptrarr;
 
     switch (prop_id) {
     case NM_TEAM_ATTRIBUTE_CONFIG:
@@ -528,9 +528,9 @@ finalize(GObject *object)
 static void
 nm_setting_team_port_class_init(NMSettingTeamPortClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingTeamPortPrivate));
 

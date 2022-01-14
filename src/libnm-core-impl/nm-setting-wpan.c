@@ -42,7 +42,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_MAC_ADDRESS,
                                   PROP_CHANNEL, );
 
 typedef struct {
-    char *  mac_address;
+    char   *mac_address;
     guint32 pan_id;
     guint32 short_address;
     gint32  page;
@@ -222,9 +222,9 @@ nm_setting_wpan_new(void)
 static void
 nm_setting_wpan_class_init(NMSettingWpanClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(setting_class, sizeof(NMSettingWpanPrivate));
 

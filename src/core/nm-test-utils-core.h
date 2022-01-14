@@ -36,8 +36,8 @@ nmtst_platform_ip4_address(const char *address, const char *peer_address, guint 
 }
 
 static inline NMPlatformIP4Address *
-nmtst_platform_ip4_address_full(const char *     address,
-                                const char *     peer_address,
+nmtst_platform_ip4_address_full(const char      *address,
+                                const char      *peer_address,
                                 guint            plen,
                                 int              ifindex,
                                 NMIPConfigSource source,
@@ -45,7 +45,7 @@ nmtst_platform_ip4_address_full(const char *     address,
                                 guint32          lifetime,
                                 guint32          preferred,
                                 guint32          flags,
-                                const char *     label)
+                                const char      *label)
 {
     NMPlatformIP4Address *addr = nmtst_platform_ip4_address(address, peer_address, plen);
 
@@ -80,8 +80,8 @@ nmtst_platform_ip6_address(const char *address, const char *peer_address, guint 
 }
 
 static inline NMPlatformIP6Address *
-nmtst_platform_ip6_address_full(const char *     address,
-                                const char *     peer_address,
+nmtst_platform_ip6_address_full(const char      *address,
+                                const char      *peer_address,
                                 guint            plen,
                                 int              ifindex,
                                 NMIPConfigSource source,
@@ -118,15 +118,15 @@ nmtst_platform_ip4_route(const char *network, guint plen, const char *gateway)
 }
 
 static inline NMPlatformIP4Route *
-nmtst_platform_ip4_route_full(const char *     network,
+nmtst_platform_ip4_route_full(const char      *network,
                               guint            plen,
-                              const char *     gateway,
+                              const char      *gateway,
                               int              ifindex,
                               NMIPConfigSource source,
                               guint            metric,
                               guint            mss,
                               guint8           scope,
-                              const char *     pref_src)
+                              const char      *pref_src)
 {
     NMPlatformIP4Route *route = nmtst_platform_ip4_route(network, plen, gateway);
 
@@ -157,9 +157,9 @@ nmtst_platform_ip6_route(const char *network, guint plen, const char *gateway, c
 }
 
 static inline NMPlatformIP6Route *
-nmtst_platform_ip6_route_full(const char *     network,
+nmtst_platform_ip6_route_full(const char      *network,
                               guint            plen,
-                              const char *     gateway,
+                              const char      *gateway,
                               int              ifindex,
                               NMIPConfigSource source,
                               guint            metric,
@@ -188,7 +188,7 @@ nmtst_platform_ip4_routes_equal(const NMPlatformIP4Route *a,
                                 gsize                     len,
                                 gboolean                  ignore_order)
 {
-    gsize         i;
+    gsize                             i;
     gs_free const NMPlatformIP4Route *c_a = NULL, *c_b = NULL;
 
     g_assert(a);
@@ -225,12 +225,12 @@ nmtst_platform_ip4_routes_equal(const NMPlatformIP4Route *a,
 #ifdef __NMP_OBJECT_H__
 
 static inline void
-nmtst_platform_ip4_routes_equal_aptr(const NMPObject *const *  a,
+nmtst_platform_ip4_routes_equal_aptr(const NMPObject *const   *a,
                                      const NMPlatformIP4Route *b,
                                      gsize                     len,
                                      gboolean                  ignore_order)
 {
-    gsize   i;
+    gsize                       i;
     gs_free NMPlatformIP4Route *c_a = NULL;
 
     g_assert(len > 0);
@@ -257,7 +257,7 @@ nmtst_platform_ip6_routes_equal(const NMPlatformIP6Route *a,
                                 gsize                     len,
                                 gboolean                  ignore_order)
 {
-    gsize         i;
+    gsize                             i;
     gs_free const NMPlatformIP6Route *c_a = NULL, *c_b = NULL;
 
     g_assert(a);
@@ -294,12 +294,12 @@ nmtst_platform_ip6_routes_equal(const NMPlatformIP6Route *a,
 #ifdef __NMP_OBJECT_H__
 
 static inline void
-nmtst_platform_ip6_routes_equal_aptr(const NMPObject *const *  a,
+nmtst_platform_ip6_routes_equal_aptr(const NMPObject *const   *a,
                                      const NMPlatformIP6Route *b,
                                      gsize                     len,
                                      gboolean                  ignore_order)
 {
-    gsize   i;
+    gsize                       i;
     gs_free NMPlatformIP6Route *c_a = NULL;
 
     g_assert(len > 0);

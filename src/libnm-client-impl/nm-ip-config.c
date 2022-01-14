@@ -31,11 +31,11 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMIPConfig,
 typedef struct _NMIPConfigPrivate {
     GPtrArray *addresses;
     GPtrArray *routes;
-    char **    nameservers;
-    char **    domains;
-    char **    searches;
-    char **    wins_servers;
-    char *     gateway;
+    char     **nameservers;
+    char     **domains;
+    char     **searches;
+    char     **wins_servers;
+    char      *gateway;
 
     bool addresses_new_style : 1;
     bool routes_new_style : 1;
@@ -51,14 +51,14 @@ G_DEFINE_ABSTRACT_TYPE(NMIPConfig, nm_ip_config, NM_TYPE_OBJECT)
 /*****************************************************************************/
 
 static NMLDBusNotifyUpdatePropFlags
-_notify_update_prop_addresses(NMClient *              client,
-                              NMLDBusObject *         dbobj,
+_notify_update_prop_addresses(NMClient               *client,
+                              NMLDBusObject          *dbobj,
                               const NMLDBusMetaIface *meta_iface,
                               guint                   dbus_property_idx,
-                              GVariant *              value)
+                              GVariant               *value)
 {
-    NMIPConfig *       self                    = NM_IP_CONFIG(dbobj->nmobj);
-    NMIPConfigPrivate *priv                    = NM_IP_CONFIG_GET_PRIVATE(self);
+    NMIPConfig                  *self          = NM_IP_CONFIG(dbobj->nmobj);
+    NMIPConfigPrivate           *priv          = NM_IP_CONFIG_GET_PRIVATE(self);
     gs_unref_ptrarray GPtrArray *addresses_old = NULL;
     gs_unref_ptrarray GPtrArray *addresses_new = NULL;
     int      addr_family = meta_iface == &_nml_dbus_meta_iface_nm_ip4config ? AF_INET : AF_INET6;
@@ -91,14 +91,14 @@ _notify_update_prop_addresses(NMClient *              client,
 }
 
 static NMLDBusNotifyUpdatePropFlags
-_notify_update_prop_routes(NMClient *              client,
-                           NMLDBusObject *         dbobj,
+_notify_update_prop_routes(NMClient               *client,
+                           NMLDBusObject          *dbobj,
                            const NMLDBusMetaIface *meta_iface,
                            guint                   dbus_property_idx,
-                           GVariant *              value)
+                           GVariant               *value)
 {
-    NMIPConfig *       self                 = NM_IP_CONFIG(dbobj->nmobj);
-    NMIPConfigPrivate *priv                 = NM_IP_CONFIG_GET_PRIVATE(self);
+    NMIPConfig                  *self       = NM_IP_CONFIG(dbobj->nmobj);
+    NMIPConfigPrivate           *priv       = NM_IP_CONFIG_GET_PRIVATE(self);
     gs_unref_ptrarray GPtrArray *routes_old = NULL;
     gs_unref_ptrarray GPtrArray *routes_new = NULL;
     int      addr_family = meta_iface == &_nml_dbus_meta_iface_nm_ip4config ? AF_INET : AF_INET6;
@@ -131,13 +131,13 @@ _notify_update_prop_routes(NMClient *              client,
 }
 
 static NMLDBusNotifyUpdatePropFlags
-_notify_update_prop_nameservers(NMClient *              client,
-                                NMLDBusObject *         dbobj,
+_notify_update_prop_nameservers(NMClient               *client,
+                                NMLDBusObject          *dbobj,
                                 const NMLDBusMetaIface *meta_iface,
                                 guint                   dbus_property_idx,
-                                GVariant *              value)
+                                GVariant               *value)
 {
-    NMIPConfig *       self            = NM_IP_CONFIG(dbobj->nmobj);
+    NMIPConfig        *self            = NM_IP_CONFIG(dbobj->nmobj);
     NMIPConfigPrivate *priv            = NM_IP_CONFIG_GET_PRIVATE(self);
     gs_strfreev char **nameservers_new = NULL;
     gboolean           new_style       = TRUE;
@@ -160,14 +160,14 @@ _notify_update_prop_nameservers(NMClient *              client,
         else if (!new_style)
             nameservers_new = nm_utils_ip4_dns_from_variant(value);
         else {
-            GVariantIter      iter;
-            GVariantIter *    iter_v;
+            GVariantIter                 iter;
+            GVariantIter                *iter_v;
             gs_unref_ptrarray GPtrArray *arr = NULL;
 
             g_variant_iter_init(&iter, value);
             while (g_variant_iter_next(&iter, "a{sv}", &iter_v)) {
                 const char *key;
-                GVariant *  val;
+                GVariant   *val;
 
                 while (g_variant_iter_next(iter_v, "{&sv}", &key, &val)) {
                     if (nm_streq(key, "address")) {
@@ -203,13 +203,13 @@ next:
 }
 
 static NMLDBusNotifyUpdatePropFlags
-_notify_update_prop_wins_servers(NMClient *              client,
-                                 NMLDBusObject *         dbobj,
+_notify_update_prop_wins_servers(NMClient               *client,
+                                 NMLDBusObject          *dbobj,
                                  const NMLDBusMetaIface *meta_iface,
                                  guint                   dbus_property_idx,
-                                 GVariant *              value)
+                                 GVariant               *value)
 {
-    NMIPConfig *       self             = NM_IP_CONFIG(dbobj->nmobj);
+    NMIPConfig        *self             = NM_IP_CONFIG(dbobj->nmobj);
     NMIPConfigPrivate *priv             = NM_IP_CONFIG_GET_PRIVATE(self);
     gs_strfreev char **wins_servers_new = NULL;
     gboolean           new_style;

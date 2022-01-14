@@ -155,15 +155,15 @@ nm_json_gstr_append_obj_name(GString *gstr, const char *key, char start_containe
 
 typedef struct {
     NMJsonVt vt;
-    void *   dl_handle;
+    void    *dl_handle;
 } NMJsonVtInternal;
 
 static NMJsonVtInternal *
 _nm_json_vt_internal_load(void)
 {
     NMJsonVtInternal *v;
-    const char *      soname;
-    void *            handle;
+    const char       *soname;
+    void             *handle;
 
     v = g_new0(NMJsonVtInternal, 1);
 

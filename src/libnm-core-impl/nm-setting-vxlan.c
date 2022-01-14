@@ -407,7 +407,7 @@ _addrstr_set(char **dst, const char *src)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingVxlan *       setting = NM_SETTING_VXLAN(object);
+    NMSettingVxlan        *setting = NM_SETTING_VXLAN(object);
     NMSettingVxlanPrivate *priv    = NM_SETTING_VXLAN_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -468,7 +468,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingVxlan *       setting = NM_SETTING_VXLAN(object);
+    NMSettingVxlan        *setting = NM_SETTING_VXLAN(object);
     NMSettingVxlanPrivate *priv    = NM_SETTING_VXLAN_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -556,7 +556,7 @@ nm_setting_vxlan_new(void)
 static void
 finalize(GObject *object)
 {
-    NMSettingVxlan *       setting = NM_SETTING_VXLAN(object);
+    NMSettingVxlan        *setting = NM_SETTING_VXLAN(object);
     NMSettingVxlanPrivate *priv    = NM_SETTING_VXLAN_GET_PRIVATE(setting);
 
     g_free(priv->parent);
@@ -569,9 +569,9 @@ finalize(GObject *object)
 static void
 nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingVxlanPrivate));
 

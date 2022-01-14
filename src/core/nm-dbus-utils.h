@@ -13,7 +13,7 @@ struct _NMDBusMethodInfoExtended;
 
 struct _NMDBusPropertyInfoExtendedBase {
     GDBusPropertyInfo _parent;
-    const char *      property_name;
+    const char       *property_name;
 };
 
 struct _NMDBusPropertyInfoExtendedReadWritable {
@@ -37,7 +37,7 @@ typedef struct {
          * are accessible directly in the parent struct. */
         struct {
             GDBusPropertyInfo parent;
-            const char *      property_name;
+            const char       *property_name;
         };
     };
 } NMDBusPropertyInfoExtended;
@@ -81,13 +81,13 @@ G_STATIC_ASSERT(G_STRUCT_OFFSET(NMDBusPropertyInfoExtended, property_name)
 
 typedef struct _NMDBusMethodInfoExtended {
     GDBusMethodInfo parent;
-    void (*handle)(NMDBusObject *                             obj,
+    void (*handle)(NMDBusObject                              *obj,
                    const struct _NMDBusInterfaceInfoExtended *interface_info,
-                   const struct _NMDBusMethodInfoExtended *   method_info,
-                   GDBusConnection *                          connection,
-                   const char *                               sender,
-                   GDBusMethodInvocation *                    invocation,
-                   GVariant *                                 parameters);
+                   const struct _NMDBusMethodInfoExtended    *method_info,
+                   GDBusConnection                           *connection,
+                   const char                                *sender,
+                   GDBusMethodInvocation                     *invocation,
+                   GVariant                                  *parameters);
     bool allow_during_shutdown;
 } NMDBusMethodInfoExtended;
 
@@ -111,12 +111,12 @@ typedef struct _NMDBusInterfaceInfoExtended {
 
 GDBusPropertyInfo *
 nm_dbus_utils_interface_info_lookup_property(const GDBusInterfaceInfo *interface_info,
-                                             const char *              property_name,
-                                             guint *                   property_idx);
+                                             const char               *property_name,
+                                             guint                    *property_idx);
 
 GDBusMethodInfo *
 nm_dbus_utils_interface_info_lookup_method(const GDBusInterfaceInfo *interface_info,
-                                           const char *              method_name);
+                                           const char               *method_name);
 
 GVariant *
 nm_dbus_utils_get_property(GObject *obj, const char *signature, const char *property_name);
@@ -134,7 +134,7 @@ void nm_dbus_utils_g_value_set_object_path(GValue *value, gpointer object);
 
 void nm_dbus_utils_g_value_set_object_path_still_exported(GValue *value, gpointer object);
 
-void nm_dbus_utils_g_value_set_object_path_from_hash(GValue *    value,
+void nm_dbus_utils_g_value_set_object_path_from_hash(GValue     *value,
                                                      GHashTable *hash,
                                                      gboolean    expect_all_exported);
 
@@ -145,7 +145,7 @@ typedef struct {
         gpointer const obj;
         gpointer       _obj;
     };
-    GObject *         _notify_target;
+    GObject          *_notify_target;
     const GParamSpec *_notify_pspec;
     gulong            _notify_signal_id;
     union {

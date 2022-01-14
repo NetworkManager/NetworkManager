@@ -128,17 +128,17 @@ typedef struct _NMLldpNeighbor NMLldpNeighbor;
 
 GType nm_device_get_type(void);
 
-const char * nm_device_get_iface(NMDevice *device);
-const char * nm_device_get_ip_iface(NMDevice *device);
+const char  *nm_device_get_iface(NMDevice *device);
+const char  *nm_device_get_ip_iface(NMDevice *device);
 NMDeviceType nm_device_get_device_type(NMDevice *device);
-const char * nm_device_get_udi(NMDevice *device);
+const char  *nm_device_get_udi(NMDevice *device);
 NM_AVAILABLE_IN_1_26
-const char *         nm_device_get_path(NMDevice *device);
-const char *         nm_device_get_driver(NMDevice *device);
-const char *         nm_device_get_driver_version(NMDevice *device);
-const char *         nm_device_get_firmware_version(NMDevice *device);
-const char *         nm_device_get_type_description(NMDevice *device);
-const char *         nm_device_get_hw_address(NMDevice *device);
+const char          *nm_device_get_path(NMDevice *device);
+const char          *nm_device_get_driver(NMDevice *device);
+const char          *nm_device_get_driver_version(NMDevice *device);
+const char          *nm_device_get_firmware_version(NMDevice *device);
+const char          *nm_device_get_type_description(NMDevice *device);
+const char          *nm_device_get_hw_address(NMDevice *device);
 NMDeviceCapabilities nm_device_get_capabilities(NMDevice *device);
 gboolean             nm_device_get_managed(NMDevice *device);
 
@@ -159,17 +159,17 @@ void nm_device_set_autoconnect(NMDevice *device, gboolean autoconnect);
 gboolean nm_device_get_firmware_missing(NMDevice *device);
 NM_AVAILABLE_IN_1_2
 gboolean      nm_device_get_nm_plugin_missing(NMDevice *device);
-NMIPConfig *  nm_device_get_ip4_config(NMDevice *device);
+NMIPConfig   *nm_device_get_ip4_config(NMDevice *device);
 NMDhcpConfig *nm_device_get_dhcp4_config(NMDevice *device);
-NMIPConfig *  nm_device_get_ip6_config(NMDevice *device);
+NMIPConfig   *nm_device_get_ip6_config(NMDevice *device);
 NMDhcpConfig *nm_device_get_dhcp6_config(NMDevice *device);
 NM_AVAILABLE_IN_1_16
 NMConnectivityState nm_device_get_connectivity(NMDevice *device, int addr_family);
 NMDeviceState       nm_device_get_state(NMDevice *device);
 NMDeviceStateReason nm_device_get_state_reason(NMDevice *device);
 NMActiveConnection *nm_device_get_active_connection(NMDevice *device);
-const GPtrArray *   nm_device_get_available_connections(NMDevice *device);
-const char *        nm_device_get_physical_port_id(NMDevice *device);
+const GPtrArray    *nm_device_get_available_connections(NMDevice *device);
+const char         *nm_device_get_physical_port_id(NMDevice *device);
 guint32             nm_device_get_mtu(NMDevice *device);
 NM_AVAILABLE_IN_1_2
 gboolean nm_device_is_real(NMDevice *device);
@@ -188,18 +188,18 @@ NMDeviceInterfaceFlags nm_device_get_interface_flags(NMDevice *device);
 char **nm_device_disambiguate_names(NMDevice **devices, int num_devices);
 NM_AVAILABLE_IN_1_2
 _NM_DEPRECATED_SYNC_METHOD
-gboolean nm_device_reapply(NMDevice *    device,
+gboolean nm_device_reapply(NMDevice     *device,
                            NMConnection *connection,
                            guint64       version_id,
                            guint32       flags,
                            GCancellable *cancellable,
-                           GError **     error);
+                           GError      **error);
 NM_AVAILABLE_IN_1_2
-void nm_device_reapply_async(NMDevice *          device,
-                             NMConnection *      connection,
+void nm_device_reapply_async(NMDevice           *device,
+                             NMConnection       *connection,
                              guint64             version_id,
                              guint32             flags,
-                             GCancellable *      cancellable,
+                             GCancellable       *cancellable,
                              GAsyncReadyCallback callback,
                              gpointer            user_data);
 NM_AVAILABLE_IN_1_2
@@ -207,35 +207,35 @@ gboolean nm_device_reapply_finish(NMDevice *device, GAsyncResult *result, GError
 
 NM_AVAILABLE_IN_1_2
 _NM_DEPRECATED_SYNC_METHOD
-NMConnection *nm_device_get_applied_connection(NMDevice *    device,
+NMConnection *nm_device_get_applied_connection(NMDevice     *device,
                                                guint32       flags,
-                                               guint64 *     version_id,
+                                               guint64      *version_id,
                                                GCancellable *cancellable,
-                                               GError **     error);
+                                               GError      **error);
 NM_AVAILABLE_IN_1_2
-void nm_device_get_applied_connection_async(NMDevice *          device,
+void nm_device_get_applied_connection_async(NMDevice           *device,
                                             guint32             flags,
-                                            GCancellable *      cancellable,
+                                            GCancellable       *cancellable,
                                             GAsyncReadyCallback callback,
                                             gpointer            user_data);
 NM_AVAILABLE_IN_1_2
-NMConnection *nm_device_get_applied_connection_finish(NMDevice *    device,
+NMConnection *nm_device_get_applied_connection_finish(NMDevice     *device,
                                                       GAsyncResult *result,
-                                                      guint64 *     version_id,
-                                                      GError **     error);
+                                                      guint64      *version_id,
+                                                      GError      **error);
 
 _NM_DEPRECATED_SYNC_METHOD
 gboolean nm_device_disconnect(NMDevice *device, GCancellable *cancellable, GError **error);
-void     nm_device_disconnect_async(NMDevice *          device,
-                                    GCancellable *      cancellable,
+void     nm_device_disconnect_async(NMDevice           *device,
+                                    GCancellable       *cancellable,
                                     GAsyncReadyCallback callback,
                                     gpointer            user_data);
 gboolean nm_device_disconnect_finish(NMDevice *device, GAsyncResult *result, GError **error);
 
 _NM_DEPRECATED_SYNC_METHOD
 gboolean nm_device_delete(NMDevice *device, GCancellable *cancellable, GError **error);
-void     nm_device_delete_async(NMDevice *          device,
-                                GCancellable *      cancellable,
+void     nm_device_delete_async(NMDevice           *device,
+                                GCancellable       *cancellable,
                                 GAsyncReadyCallback callback,
                                 gpointer            user_data);
 gboolean nm_device_delete_finish(NMDevice *device, GAsyncResult *result, GError **error);
@@ -264,8 +264,8 @@ NM_AVAILABLE_IN_1_2
 NMLldpNeighbor *nm_lldp_neighbor_new(void);
 NM_AVAILABLE_IN_1_2
 gboolean nm_lldp_neighbor_get_attr_string_value(NMLldpNeighbor *neighbor,
-                                                const char *    name,
-                                                const char **   out_value);
+                                                const char     *name,
+                                                const char    **out_value);
 NM_AVAILABLE_IN_1_2
 gboolean
 nm_lldp_neighbor_get_attr_uint_value(NMLldpNeighbor *neighbor, const char *name, guint *out_value);

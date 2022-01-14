@@ -27,7 +27,7 @@ NMNetns *nm_netns_get(void);
 NMNetns *nm_netns_new(struct _NMPlatform *platform);
 
 struct _NMPlatform *nm_netns_get_platform(NMNetns *self);
-NMPNetns *          nm_netns_get_platform_netns(NMNetns *self);
+NMPNetns           *nm_netns_get_platform_netns(NMNetns *self);
 
 struct _NMPRulesManager *nm_netns_get_rules_manager(NMNetns *self);
 
@@ -35,16 +35,16 @@ struct _NMDedupMultiIndex *nm_netns_get_multi_idx(NMNetns *self);
 
 #define NM_NETNS_GET (nm_netns_get())
 
-NML3Cfg *nm_netns_get_l3cfg(NMNetns *self, int ifindex);
+NML3Cfg *nm_netns_l3cfg_get(NMNetns *self, int ifindex);
 
-NML3Cfg *nm_netns_access_l3cfg(NMNetns *netns, int ifindex);
+NML3Cfg *nm_netns_l3cfg_acquire(NMNetns *netns, int ifindex);
 
 /*****************************************************************************/
 
 typedef struct {
     in_addr_t addr;
     int       _ref_count;
-    NMNetns * _self;
+    NMNetns  *_self;
 } NMNetnsSharedIPHandle;
 
 NMNetnsSharedIPHandle *nm_netns_shared_ip_reserve(NMNetns *self);

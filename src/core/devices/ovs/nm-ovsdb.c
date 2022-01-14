@@ -30,34 +30,34 @@
 #endif
 
 typedef struct {
-    char *     port_uuid;
-    char *     name;
-    char *     connection_uuid;
+    char      *port_uuid;
+    char      *name;
+    char      *connection_uuid;
     GPtrArray *interfaces; /* interface uuids */
-    GArray *   external_ids;
+    GArray    *external_ids;
 } OpenvswitchPort;
 
 typedef struct {
-    char *     bridge_uuid;
-    char *     name;
-    char *     connection_uuid;
+    char      *bridge_uuid;
+    char      *name;
+    char      *connection_uuid;
     GPtrArray *ports; /* port uuids */
-    GArray *   external_ids;
+    GArray    *external_ids;
 } OpenvswitchBridge;
 
 typedef struct {
-    char *  interface_uuid;
-    char *  name;
-    char *  type;
-    char *  connection_uuid;
+    char   *interface_uuid;
+    char   *name;
+    char   *type;
+    char   *connection_uuid;
     GArray *external_ids;
 } OpenvswitchInterface;
 
 /*****************************************************************************/
 
 typedef void (*OvsdbMethodCallback)(NMOvsdb *self,
-                                    json_t * response,
-                                    GError * error,
+                                    json_t  *response,
+                                    GError  *error,
                                     gpointer user_data);
 
 typedef enum {
@@ -77,27 +77,27 @@ typedef union {
         NMConnection *bridge;
         NMConnection *port;
         NMConnection *interface;
-        NMDevice *    bridge_device;
-        NMDevice *    interface_device;
+        NMDevice     *bridge_device;
+        NMDevice     *interface_device;
     } add_interface;
     struct {
         char *ifname;
     } del_interface;
     struct {
-        char *  ifname;
+        char   *ifname;
         guint32 mtu;
     } set_interface_mtu;
     struct {
         NMDeviceType device_type;
-        char *       ifname;
-        char *       connection_uuid;
-        GHashTable * exid_old;
-        GHashTable * exid_new;
+        char        *ifname;
+        char        *connection_uuid;
+        GHashTable  *exid_old;
+        GHashTable  *exid_new;
     } set_external_ids;
 } OvsdbMethodPayload;
 
 typedef struct {
-    NMOvsdb *           self;
+    NMOvsdb            *self;
     CList               calls_lst;
     guint64             call_id;
     OvsdbCommand        command;
@@ -120,11 +120,11 @@ static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
     GSocketConnection *conn;
-    GCancellable *     conn_cancellable;
+    GCancellable      *conn_cancellable;
     char               buf[4096]; /* Input buffer */
     size_t             bufp;      /* Last decoded byte in the input buffer. */
-    GString *          input;     /* JSON stream waiting for decoding. */
-    GString *          output;    /* JSON stream to be sent. */
+    GString           *input;     /* JSON stream waiting for decoding. */
+    GString           *output;    /* JSON stream to be sent. */
     guint64            call_id_counter;
 
     CList calls_lst_head;
@@ -132,7 +132,7 @@ typedef struct {
     GHashTable *interfaces; /* interface uuid => OpenvswitchInterface */
     GHashTable *ports;      /* port uuid => OpenvswitchPort */
     GHashTable *bridges;    /* bridge uuid => OpenvswitchBridge */
-    char *      db_uuid;
+    char       *db_uuid;
     guint       num_failures;
     guint       num_pending_deletions;
     bool        ready : 1;
@@ -328,25 +328,25 @@ _free_interface(OpenvswitchInterface *ovs_interface)
 /*****************************************************************************/
 
 static void
-_signal_emit_device_added(NMOvsdb *    self,
-                          const char * name,
+_signal_emit_device_added(NMOvsdb     *self,
+                          const char  *name,
                           NMDeviceType device_type,
-                          const char * device_subtype)
+                          const char  *device_subtype)
 {
     g_signal_emit(self, signals[DEVICE_ADDED], 0, name, (guint) device_type, device_subtype);
 }
 
 static void
-_signal_emit_device_removed(NMOvsdb *    self,
-                            const char * name,
+_signal_emit_device_removed(NMOvsdb     *self,
+                            const char  *name,
                             NMDeviceType device_type,
-                            const char * device_subtype)
+                            const char  *device_subtype)
 {
     g_signal_emit(self, signals[DEVICE_REMOVED], 0, name, (guint) device_type, device_subtype);
 }
 
 static void
-_signal_emit_interface_failed(NMOvsdb *   self,
+_signal_emit_interface_failed(NMOvsdb    *self,
                               const char *name,
                               const char *connection_uuid,
                               const char *error)
@@ -363,14 +363,14 @@ _signal_emit_interface_failed(NMOvsdb *   self,
  * there's no command pending completion.
  */
 static void
-ovsdb_call_method(NMOvsdb *                 self,
+ovsdb_call_method(NMOvsdb                  *self,
                   OvsdbMethodCallback       callback,
                   gpointer                  user_data,
                   gboolean                  add_first,
                   OvsdbCommand              command,
                   const OvsdbMethodPayload *payload)
 {
-    NMOvsdbPrivate * priv = NM_OVSDB_GET_PRIVATE(self);
+    NMOvsdbPrivate  *priv = NM_OVSDB_GET_PRIVATE(self);
     OvsdbMethodCall *call;
 
     /* Ensure we're not unsynchronized before we queue the method call. */
@@ -653,11 +653,11 @@ _set_port_interfaces(json_t *params, const char *ifname, json_t *new_interfaces)
 static json_t *
 _j_create_external_ids_array_new(NMConnection *connection)
 {
-    json_t *                 array;
-    const char *const *      external_ids   = NULL;
+    json_t                  *array;
+    const char *const       *external_ids   = NULL;
     guint                    n_external_ids = 0;
     guint                    i;
-    const char *             uuid;
+    const char              *uuid;
     NMSettingOvsExternalIDs *s_exid;
 
     nm_assert(NM_IS_CONNECTION(connection));
@@ -688,10 +688,10 @@ _j_create_external_ids_array_update(const char *connection_uuid,
                                     GHashTable *exid_new)
 {
     GHashTableIter iter;
-    json_t *       mutations;
-    json_t *       array;
-    const char *   key;
-    const char *   val;
+    json_t        *mutations;
+    json_t        *array;
+    const char    *key;
+    const char    *val;
 
     nm_assert(connection_uuid);
 
@@ -741,21 +741,24 @@ _j_create_external_ids_array_update(const char *connection_uuid,
 /**
  * _insert_interface:
  *
- * Returns an commands that adds new interface from a given connection.
+ * Returns a command that adds new interface from a given connection.
  */
 static void
-_insert_interface(json_t *      params,
+_insert_interface(json_t       *params,
                   NMConnection *interface,
-                  NMDevice *    interface_device,
-                  const char *  cloned_mac)
+                  NMDevice     *interface_device,
+                  const char   *cloned_mac)
 {
-    const char *           type = NULL;
+    const char            *type = NULL;
     NMSettingOvsInterface *s_ovs_iface;
-    NMSettingOvsDpdk *     s_ovs_dpdk;
-    NMSettingOvsPatch *    s_ovs_patch;
-    const char *           dpdk_devargs;
-    json_t *               options = json_array();
-    json_t *               row;
+    NMSettingOvsDpdk      *s_ovs_dpdk;
+    const char            *devargs;
+    guint32                n_rxq;
+    char                   sbuf[64];
+    json_t                *dpdk_array;
+    NMSettingOvsPatch     *s_ovs_patch;
+    json_t                *options = json_array();
+    json_t                *row;
     guint32                mtu = 0;
 
     s_ovs_iface = nm_connection_get_setting_ovs_interface(interface);
@@ -778,11 +781,21 @@ _insert_interface(json_t *      params,
         s_ovs_patch = nm_connection_get_setting_ovs_patch(interface);
 
     if (s_ovs_dpdk) {
-        dpdk_devargs = nm_setting_ovs_dpdk_get_devargs(s_ovs_dpdk);
-        if (dpdk_devargs)
-            json_array_append_new(options, json_pack("[[s, s]]", "dpdk-devargs", dpdk_devargs));
-        else
-            json_array_append_new(options, json_array());
+        devargs = nm_setting_ovs_dpdk_get_devargs(s_ovs_dpdk);
+        n_rxq   = nm_setting_ovs_dpdk_get_n_rxq(s_ovs_dpdk);
+
+        dpdk_array = json_array();
+
+        if (devargs)
+            json_array_append_new(dpdk_array, json_pack("[s,s]", "dpdk-devargs", devargs));
+
+        if (n_rxq != 0) {
+            json_array_append_new(dpdk_array,
+                                  json_pack("[s,s]", "n_rxq", nm_sprintf_buf(sbuf, "%u", n_rxq)));
+        }
+
+        json_array_append_new(options, dpdk_array);
+
     } else if (s_ovs_patch) {
         json_array_append_new(
             options,
@@ -828,13 +841,13 @@ static void
 _insert_port(json_t *params, NMConnection *port, json_t *new_interfaces)
 {
     NMSettingOvsPort *s_ovs_port;
-    const char *      vlan_mode      = NULL;
+    const char       *vlan_mode      = NULL;
     guint             tag            = 0;
-    const char *      lacp           = NULL;
-    const char *      bond_mode      = NULL;
+    const char       *lacp           = NULL;
+    const char       *bond_mode      = NULL;
     guint             bond_updelay   = 0;
     guint             bond_downdelay = 0;
-    json_t *          row;
+    json_t           *row;
 
     s_ovs_port = nm_connection_get_setting_ovs_port(port);
 
@@ -885,19 +898,19 @@ _insert_port(json_t *params, NMConnection *port, json_t *new_interfaces)
  * Returns an commands that adds new bridge from a given connection.
  */
 static void
-_insert_bridge(json_t *      params,
+_insert_bridge(json_t       *params,
                NMConnection *bridge,
-               NMDevice *    bridge_device,
-               json_t *      new_ports,
-               const char *  cloned_mac)
+               NMDevice     *bridge_device,
+               json_t       *new_ports,
+               const char   *cloned_mac)
 {
     NMSettingOvsBridge *s_ovs_bridge;
-    const char *        fail_mode             = NULL;
+    const char         *fail_mode             = NULL;
     gboolean            mcast_snooping_enable = FALSE;
     gboolean            rstp_enable           = FALSE;
     gboolean            stp_enable            = FALSE;
-    const char *        datapath_type         = NULL;
-    json_t *            row;
+    const char         *datapath_type         = NULL;
+    json_t             *row;
 
     s_ovs_bridge = nm_connection_get_setting_ovs_bridge(bridge);
 
@@ -977,24 +990,24 @@ _inc_next_cfg(const char *db_uuid)
  * a parent @port and @bridge if needed.
  */
 static void
-_add_interface(NMOvsdb *     self,
-               json_t *      params,
+_add_interface(NMOvsdb      *self,
+               json_t       *params,
                NMConnection *bridge,
                NMConnection *port,
                NMConnection *interface,
-               NMDevice *    bridge_device,
-               NMDevice *    interface_device)
+               NMDevice     *bridge_device,
+               NMDevice     *interface_device)
 {
-    NMOvsdbPrivate *      priv = NM_OVSDB_GET_PRIVATE(self);
-    GHashTableIter        iter;
-    const char *          port_uuid;
-    const char *          interface_uuid;
-    const char *          bridge_name;
-    const char *          port_name;
-    const char *          interface_name;
-    OpenvswitchBridge *   ovs_bridge           = NULL;
-    OpenvswitchPort *     ovs_port             = NULL;
-    OpenvswitchInterface *ovs_interface        = NULL;
+    NMOvsdbPrivate             *priv = NM_OVSDB_GET_PRIVATE(self);
+    GHashTableIter              iter;
+    const char                 *port_uuid;
+    const char                 *interface_uuid;
+    const char                 *bridge_name;
+    const char                 *port_name;
+    const char                 *interface_name;
+    OpenvswitchBridge          *ovs_bridge     = NULL;
+    OpenvswitchPort            *ovs_port       = NULL;
+    OpenvswitchInterface       *ovs_interface  = NULL;
     nm_auto_decref_json json_t *bridges        = NULL;
     nm_auto_decref_json json_t *new_bridges    = NULL;
     nm_auto_decref_json json_t *ports          = NULL;
@@ -1003,9 +1016,9 @@ _add_interface(NMOvsdb *     self,
     nm_auto_decref_json json_t *new_interfaces = NULL;
     gboolean                    has_interface  = FALSE;
     gboolean                    interface_is_local;
-    gs_free char *              bridge_cloned_mac    = NULL;
-    gs_free char *              interface_cloned_mac = NULL;
-    GError *                    error                = NULL;
+    gs_free char               *bridge_cloned_mac    = NULL;
+    gs_free char               *interface_cloned_mac = NULL;
+    GError                     *error                = NULL;
     int                         pi;
     int                         ii;
 
@@ -1162,13 +1175,13 @@ _add_interface(NMOvsdb *     self,
 static void
 _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
 {
-    NMOvsdbPrivate *      priv = NM_OVSDB_GET_PRIVATE(self);
-    GHashTableIter        iter;
-    char *                port_uuid;
-    char *                interface_uuid;
-    OpenvswitchBridge *   ovs_bridge;
-    OpenvswitchPort *     ovs_port;
-    OpenvswitchInterface *ovs_interface;
+    NMOvsdbPrivate             *priv = NM_OVSDB_GET_PRIVATE(self);
+    GHashTableIter              iter;
+    char                       *port_uuid;
+    char                       *interface_uuid;
+    OpenvswitchBridge          *ovs_bridge;
+    OpenvswitchPort            *ovs_port;
+    OpenvswitchInterface       *ovs_interface;
     nm_auto_decref_json json_t *bridges     = NULL;
     nm_auto_decref_json json_t *new_bridges = NULL;
     gboolean                    bridges_changed;
@@ -1272,9 +1285,9 @@ _delete_interface(NMOvsdb *self, json_t *params, const char *ifname)
 static void
 ovsdb_next_command(NMOvsdb *self)
 {
-    NMOvsdbPrivate *    priv = NM_OVSDB_GET_PRIVATE(self);
-    OvsdbMethodCall *   call;
-    char *              cmd;
+    NMOvsdbPrivate             *priv = NM_OVSDB_GET_PRIVATE(self);
+    OvsdbMethodCall            *call;
+    char                       *cmd;
     nm_auto_decref_json json_t *msg = NULL;
 
     if (!priv->conn)
@@ -1420,9 +1433,9 @@ static void
 _uuids_to_array_inplace(GPtrArray *array, const json_t *items)
 {
     const char *key;
-    json_t *    value;
+    json_t     *value;
     size_t      index = 0;
-    json_t *    set_value;
+    json_t     *set_value;
     size_t      set_index;
 
     while (index < json_array_size(items)) {
@@ -1475,8 +1488,8 @@ _external_ids_extract(json_t *external_ids, GArray **out_array, const char **out
     array = json_array_get(external_ids, 1);
 
     json_array_foreach (array, index, value) {
-        const char *       key = json_string_value(json_array_get(value, 0));
-        const char *       val = json_string_value(json_array_get(value, 1));
+        const char        *key = json_string_value(json_array_get(value, 0));
+        const char        *val = json_string_value(json_array_get(value, 1));
         NMUtilsNamedValue *v;
 
         if (!key || !val)
@@ -1559,20 +1572,20 @@ static void
 ovsdb_got_update(NMOvsdb *self, json_t *msg)
 {
     NMOvsdbPrivate *priv      = NM_OVSDB_GET_PRIVATE(self);
-    json_t *        ovs       = NULL;
-    json_t *        bridge    = NULL;
-    json_t *        port      = NULL;
-    json_t *        interface = NULL;
-    json_t *        items;
-    json_t *        external_ids;
+    json_t         *ovs       = NULL;
+    json_t         *bridge    = NULL;
+    json_t         *port      = NULL;
+    json_t         *interface = NULL;
+    json_t         *items;
+    json_t         *external_ids;
     json_error_t    json_error = {
         0,
     };
-    void *      iter;
+    void       *iter;
     const char *name;
     const char *key;
     const char *type;
-    json_t *    value;
+    json_t     *value;
 
     if (json_unpack_ex(msg,
                        &json_error,
@@ -1602,10 +1615,10 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
     }
 
     json_object_foreach (interface, key, value) {
-        OpenvswitchInterface *ovs_interface;
+        OpenvswitchInterface  *ovs_interface;
         gs_unref_array GArray *external_ids_arr = NULL;
-        const char *           connection_uuid  = NULL;
-        json_t *               error            = NULL;
+        const char            *connection_uuid  = NULL;
+        json_t                *error            = NULL;
         int                    r;
 
         r = json_unpack(value,
@@ -1726,10 +1739,10 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
     json_object_foreach (port, key, value) {
         gs_unref_ptrarray GPtrArray *interfaces = NULL;
-        OpenvswitchPort *            ovs_port;
-        gs_unref_array GArray *external_ids_arr = NULL;
-        const char *           connection_uuid  = NULL;
-        int                    r;
+        OpenvswitchPort             *ovs_port;
+        gs_unref_array GArray       *external_ids_arr = NULL;
+        const char                  *connection_uuid  = NULL;
+        int                          r;
 
         r = json_unpack(value,
                         "{s:{s:s, s:o, s:o}}",
@@ -1827,10 +1840,10 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
     json_object_foreach (bridge, key, value) {
         gs_unref_ptrarray GPtrArray *ports = NULL;
-        OpenvswitchBridge *          ovs_bridge;
-        gs_unref_array GArray *external_ids_arr = NULL;
-        const char *           connection_uuid  = NULL;
-        int                    r;
+        OpenvswitchBridge           *ovs_bridge;
+        gs_unref_array GArray       *external_ids_arr = NULL;
+        const char                  *connection_uuid  = NULL;
+        int                          r;
 
         r = json_unpack(value,
                         "{s:{s:s, s:o, s:o}}",
@@ -1940,9 +1953,9 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 static void
 ovsdb_got_echo(NMOvsdb *self, json_int_t id, json_t *data)
 {
-    NMOvsdbPrivate *    priv        = NM_OVSDB_GET_PRIVATE(self);
-    nm_auto_decref_json json_t *msg = NULL;
-    char *                      reply;
+    NMOvsdbPrivate             *priv = NM_OVSDB_GET_PRIVATE(self);
+    nm_auto_decref_json json_t *msg  = NULL;
+    char                       *reply;
     gboolean                    output_was_empty;
 
     output_was_empty = priv->output->len == 0;
@@ -1969,12 +1982,12 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
     json_error_t    json_error = {
         0,
     };
-    json_t *    json_id = NULL;
+    json_t     *json_id = NULL;
     json_int_t  id      = (json_int_t) -1;
     const char *method  = NULL;
-    json_t *    params  = NULL;
-    json_t *    result  = NULL;
-    json_t *    error   = NULL;
+    json_t     *params  = NULL;
+    json_t     *result  = NULL;
+    json_t     *error   = NULL;
 
     if (json_unpack_ex(msg,
                        &json_error,
@@ -2020,9 +2033,9 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
     }
 
     if (id >= 0) {
-        OvsdbMethodCall *call;
+        OvsdbMethodCall      *call;
         gs_free_error GError *local      = NULL;
-        gs_free char *        msg_as_str = NULL;
+        gs_free char         *msg_as_str = NULL;
 
         /* This is a response to a method call. */
         if (c_list_is_empty(&priv->calls_lst_head)) {
@@ -2078,7 +2091,7 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
 static size_t
 _json_callback(void *buffer, size_t buflen, void *user_data)
 {
-    NMOvsdb *       self = NM_OVSDB(user_data);
+    NMOvsdb        *self = NM_OVSDB(user_data);
     NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
 
     if (priv->bufp == priv->input->len) {
@@ -2102,12 +2115,12 @@ _json_callback(void *buffer, size_t buflen, void *user_data)
 static void
 ovsdb_read_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMOvsdb *       self   = NM_OVSDB(user_data);
+    NMOvsdb        *self   = NM_OVSDB(user_data);
     NMOvsdbPrivate *priv   = NM_OVSDB_GET_PRIVATE(self);
-    GInputStream *  stream = G_INPUT_STREAM(source_object);
-    GError *        error  = NULL;
+    GInputStream   *stream = G_INPUT_STREAM(source_object);
+    GError         *error  = NULL;
     gssize          size;
-    json_t *        msg;
+    json_t         *msg;
     json_error_t    json_error = {
         0,
     };
@@ -2160,10 +2173,10 @@ ovsdb_read(NMOvsdb *self)
 static void
 ovsdb_write_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    GOutputStream * stream = G_OUTPUT_STREAM(source_object);
-    NMOvsdb *       self   = NM_OVSDB(user_data);
+    GOutputStream  *stream = G_OUTPUT_STREAM(source_object);
+    NMOvsdb        *self   = NM_OVSDB(user_data);
     NMOvsdbPrivate *priv   = NM_OVSDB_GET_PRIVATE(self);
-    GError *        error  = NULL;
+    GError         *error  = NULL;
     gssize          size;
 
     size = g_output_stream_write_finish(stream, res, &error);
@@ -2188,7 +2201,7 @@ static void
 ovsdb_write(NMOvsdb *self)
 {
     NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
-    GOutputStream * stream;
+    GOutputStream  *stream;
 
     if (!priv->output->len)
         return;
@@ -2221,7 +2234,7 @@ ovsdb_write(NMOvsdb *self)
 static void
 ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
 {
-    NMOvsdbPrivate * priv = NM_OVSDB_GET_PRIVATE(self);
+    NMOvsdbPrivate  *priv = NM_OVSDB_GET_PRIVATE(self);
     OvsdbMethodCall *call;
 
     nm_assert(!retry || !is_disposing);
@@ -2278,8 +2291,8 @@ _check_ready(NMOvsdb *self)
 static void
 _del_initial_iface_cb(GError *error, gpointer user_data)
 {
-    NMOvsdb *       self;
-    gs_free char *  ifname = NULL;
+    NMOvsdb        *self;
+    gs_free char   *ifname = NULL;
     NMOvsdbPrivate *priv;
 
     nm_utils_user_data_unpack(user_data, &self, &ifname);
@@ -2305,9 +2318,9 @@ _del_initial_iface_cb(GError *error, gpointer user_data)
 static void
 ovsdb_cleanup_initial_interfaces(NMOvsdb *self)
 {
-    NMOvsdbPrivate *            priv = NM_OVSDB_GET_PRIVATE(self);
+    NMOvsdbPrivate             *priv = NM_OVSDB_GET_PRIVATE(self);
     const OpenvswitchInterface *interface;
-    NMUtilsUserData *           data;
+    NMUtilsUserData            *data;
     GHashTableIter              iter;
 
     if (priv->ready || priv->num_pending_deletions != 0)
@@ -2352,9 +2365,9 @@ _monitor_bridges_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_
 static void
 _ovsdb_connect_complete_with_fd(NMOvsdb *self, int fd_take)
 {
-    NMOvsdbPrivate *priv            = NM_OVSDB_GET_PRIVATE(self);
+    NMOvsdbPrivate          *priv   = NM_OVSDB_GET_PRIVATE(self);
     gs_unref_object GSocket *socket = NULL;
-    gs_free_error GError *error     = NULL;
+    gs_free_error GError    *error  = NULL;
 
     socket = g_socket_new_from_fd(nm_steal_fd(&fd_take), &error);
     if (!socket) {
@@ -2374,7 +2387,7 @@ static void
 _ovsdb_connect_priv_helper_cb(int fd_take, GError *error, gpointer user_data)
 {
     nm_auto_close int fd = fd_take;
-    NMOvsdb *         self;
+    NMOvsdb          *self;
 
     if (nm_utils_error_is_cancelled(error))
         return;
@@ -2394,9 +2407,9 @@ _ovsdb_connect_priv_helper_cb(int fd_take, GError *error, gpointer user_data)
 static void
 _ovsdb_connect_idle(gpointer user_data, GCancellable *cancellable)
 {
-    NMOvsdb *         self;
-    NMOvsdbPrivate *  priv;
-    nm_auto_close int fd        = -1;
+    NMOvsdb              *self;
+    NMOvsdbPrivate       *priv;
+    nm_auto_close int     fd    = -1;
     gs_free_error GError *error = NULL;
 
     if (g_cancellable_is_cancelled(cancellable))
@@ -2468,11 +2481,11 @@ typedef struct {
 static void
 _transact_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
 {
-    OvsdbCall * call = user_data;
+    OvsdbCall  *call = user_data;
     const char *err;
     const char *err_details;
     size_t      index;
-    json_t *    value;
+    json_t     *value;
 
     if (error)
         goto out;
@@ -2516,12 +2529,12 @@ nm_ovsdb_is_ready(NMOvsdb *self)
 }
 
 void
-nm_ovsdb_add_interface(NMOvsdb *       self,
-                       NMConnection *  bridge,
-                       NMConnection *  port,
-                       NMConnection *  interface,
-                       NMDevice *      bridge_device,
-                       NMDevice *      interface_device,
+nm_ovsdb_add_interface(NMOvsdb        *self,
+                       NMConnection   *bridge,
+                       NMConnection   *port,
+                       NMConnection   *interface,
+                       NMDevice       *bridge_device,
+                       NMDevice       *interface_device,
                        NMOvsdbCallback callback,
                        gpointer        user_data)
 {
@@ -2538,8 +2551,8 @@ nm_ovsdb_add_interface(NMOvsdb *       self,
 }
 
 void
-nm_ovsdb_del_interface(NMOvsdb *       self,
-                       const char *    ifname,
+nm_ovsdb_del_interface(NMOvsdb        *self,
+                       const char     *ifname,
                        NMOvsdbCallback callback,
                        gpointer        user_data)
 {
@@ -2552,8 +2565,8 @@ nm_ovsdb_del_interface(NMOvsdb *       self,
 }
 
 void
-nm_ovsdb_set_interface_mtu(NMOvsdb *       self,
-                           const char *    ifname,
+nm_ovsdb_set_interface_mtu(NMOvsdb        *self,
+                           const char     *ifname,
                            guint32         mtu,
                            NMOvsdbCallback callback,
                            gpointer        user_data)
@@ -2567,10 +2580,10 @@ nm_ovsdb_set_interface_mtu(NMOvsdb *       self,
 }
 
 void
-nm_ovsdb_set_external_ids(NMOvsdb *                self,
+nm_ovsdb_set_external_ids(NMOvsdb                 *self,
                           NMDeviceType             device_type,
-                          const char *             ifname,
-                          const char *             connection_uuid,
+                          const char              *ifname,
+                          const char              *connection_uuid,
                           NMSettingOvsExternalIDs *s_exid_old,
                           NMSettingOvsExternalIDs *s_exid_new)
 {
@@ -2618,7 +2631,7 @@ nm_ovsdb_init(NMOvsdb *self)
 static void
 dispose(GObject *object)
 {
-    NMOvsdb *       self = NM_OVSDB(object);
+    NMOvsdb        *self = NM_OVSDB(object);
     NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
 
     ovsdb_disconnect(self, FALSE, TRUE);

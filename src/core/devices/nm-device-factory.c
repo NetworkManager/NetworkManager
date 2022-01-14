@@ -29,8 +29,8 @@ G_DEFINE_ABSTRACT_TYPE(NMDeviceFactory, nm_device_factory, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 static void
-nm_device_factory_get_supported_types(NMDeviceFactory *   factory,
-                                      const NMLinkType ** out_link_types,
+nm_device_factory_get_supported_types(NMDeviceFactory    *factory,
+                                      const NMLinkType  **out_link_types,
                                       const char *const **out_setting_types)
 {
     g_return_if_fail(NM_IS_DEVICE_FACTORY(factory));
@@ -50,15 +50,15 @@ nm_device_factory_start(NMDeviceFactory *factory)
 }
 
 NMDevice *
-nm_device_factory_create_device(NMDeviceFactory *     factory,
-                                const char *          iface,
+nm_device_factory_create_device(NMDeviceFactory      *factory,
+                                const char           *iface,
                                 const NMPlatformLink *plink,
-                                NMConnection *        connection,
-                                gboolean *            out_ignore,
-                                GError **             error)
+                                NMConnection         *connection,
+                                gboolean             *out_ignore,
+                                GError              **error)
 {
     NMDeviceFactoryClass *klass;
-    NMDevice *            device;
+    NMDevice             *device;
     gboolean              ignore = FALSE;
 
     g_return_val_if_fail(factory, NULL);
@@ -121,12 +121,12 @@ nm_device_factory_get_connection_parent(NMDeviceFactory *factory, NMConnection *
 
 char *
 nm_device_factory_get_connection_iface(NMDeviceFactory *factory,
-                                       NMConnection *   connection,
-                                       const char *     parent_iface,
-                                       GError **        error)
+                                       NMConnection    *connection,
+                                       const char      *parent_iface,
+                                       GError         **error)
 {
     NMDeviceFactoryClass *klass;
-    char *                ifname;
+    char                 *ifname;
 
     g_return_val_if_fail(factory != NULL, NULL);
     g_return_val_if_fail(connection != NULL, NULL);
@@ -196,9 +196,9 @@ NMDeviceFactory *
 nm_device_factory_manager_find_factory_for_connection(NMConnection *connection)
 {
     NMDeviceFactoryClass *klass;
-    NMDeviceFactory *     factory;
-    const char *          type;
-    GSList *              list;
+    NMDeviceFactory      *factory;
+    const char           *type;
+    GSList               *list;
 
     g_return_val_if_fail(factories_by_setting, NULL);
 
@@ -221,7 +221,7 @@ nm_device_factory_manager_for_each_factory(NMDeviceFactoryManagerFactoryFunc cal
 {
     GHashTableIter   iter;
     NMDeviceFactory *factory;
-    GSList *         list_iter, *list = NULL;
+    GSList          *list_iter, *list = NULL;
 
     if (factories_by_link) {
         g_hash_table_iter_init(&iter, factories_by_link);
@@ -248,14 +248,14 @@ nm_device_factory_manager_for_each_factory(NMDeviceFactoryManagerFactoryFunc cal
 }
 
 static gboolean
-_add_factory(NMDeviceFactory *                 factory,
-             const char *                      path,
+_add_factory(NMDeviceFactory                  *factory,
+             const char                       *path,
              NMDeviceFactoryManagerFactoryFunc callback,
              gpointer                          user_data)
 {
-    const NMLinkType * link_types    = NULL;
+    const NMLinkType  *link_types    = NULL;
     const char *const *setting_types = NULL;
-    GSList *           list, *list2;
+    GSList            *list, *list2;
     int                i;
 
     g_return_val_if_fail(factories_by_link, FALSE);
@@ -312,22 +312,22 @@ factories_list_unref(GSList *list)
 }
 
 static void
-load_factories_from_dir(const char *                      dirname,
+load_factories_from_dir(const char                       *dirname,
                         NMDeviceFactoryManagerFactoryFunc callback,
                         gpointer                          user_data)
 {
     NMDeviceFactory *factory;
-    GError *         error = NULL;
-    char **          path, **paths;
+    GError          *error = NULL;
+    char           **path, **paths;
 
     paths = nm_utils_read_plugin_paths(dirname, PLUGIN_PREFIX);
     if (!paths)
         return;
 
     for (path = paths; *path; path++) {
-        GModule *                 plugin;
+        GModule                  *plugin;
         NMDeviceFactoryCreateFunc create_func;
-        const char *              item;
+        const char               *item;
 
         item = strrchr(*path, '/');
         g_assert(item);

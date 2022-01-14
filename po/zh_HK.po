@@ -9494,7 +9494,7 @@ msgstr "VPN 連線連接到‘%s’"
 
 #: ../src/nmcli/connections.c:1497
 #, fuzzy
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "沒有使用中的連線"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

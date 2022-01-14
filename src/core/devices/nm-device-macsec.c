@@ -49,9 +49,9 @@ typedef struct {
     gulong              parent_mtu_id;
 
     struct {
-        NMSupplicantManager *        mgr;
+        NMSupplicantManager         *mgr;
         NMSupplMgrCreateIfaceHandle *create_handle;
-        NMSupplicantInterface *      iface;
+        NMSupplicantInterface       *iface;
 
         gulong iface_state_id;
 
@@ -92,7 +92,7 @@ static NM_UTILS_LOOKUP_STR_DEFINE(validation_mode_to_string,
                                   NM_UTILS_LOOKUP_STR_ITEM(2, "strict"), );
 
 static void
-parent_state_changed(NMDevice *          parent,
+parent_state_changed(NMDevice           *parent,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state,
                      NMDeviceStateReason reason,
@@ -126,7 +126,7 @@ parent_changed_notify(NMDevice *device,
                       int       new_ifindex,
                       NMDevice *new_parent)
 {
-    NMDeviceMacsec *       self = NM_DEVICE_MACSEC(device);
+    NMDeviceMacsec        *self = NM_DEVICE_MACSEC(device);
     NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE(self);
 
     NM_DEVICE_CLASS(nm_device_macsec_parent_class)
@@ -166,9 +166,9 @@ parent_changed_notify(NMDevice *device,
 static void
 update_properties(NMDevice *device)
 {
-    NMDeviceMacsec *           self;
-    NMDeviceMacsecPrivate *    priv;
-    const NMPlatformLink *     plink = NULL;
+    NMDeviceMacsec            *self;
+    NMDeviceMacsecPrivate     *priv;
+    const NMPlatformLink      *plink = NULL;
     const NMPlatformLnkMacsec *props = NULL;
     int                        ifindex;
 
@@ -220,10 +220,10 @@ static NMSupplicantConfig *
 build_supplicant_config(NMDeviceMacsec *self, GError **error)
 {
     gs_unref_object NMSupplicantConfig *config = NULL;
-    NMSettingMacsec *                   s_macsec;
-    NMSetting8021x *                    s_8021x;
-    NMConnection *                      connection;
-    const char *                        con_uuid;
+    NMSettingMacsec                    *s_macsec;
+    NMSetting8021x                     *s_8021x;
+    NMConnection                       *connection;
+    const char                         *con_uuid;
     guint32                             mtu;
 
     connection = nm_device_get_applied_connection(NM_DEVICE(self));
@@ -275,14 +275,14 @@ supplicant_interface_release(NMDeviceMacsec *self)
 }
 
 static void
-macsec_secrets_cb(NMActRequest *                req,
+macsec_secrets_cb(NMActRequest                 *req,
                   NMActRequestGetSecretsCallId *call_id,
-                  NMSettingsConnection *        connection,
-                  GError *                      error,
+                  NMSettingsConnection         *connection,
+                  GError                       *error,
                   gpointer                      user_data)
 {
-    NMDeviceMacsec *       self   = NM_DEVICE_MACSEC(user_data);
-    NMDevice *             device = NM_DEVICE(self);
+    NMDeviceMacsec        *self   = NM_DEVICE_MACSEC(user_data);
+    NMDevice              *device = NM_DEVICE(self);
     NMDeviceMacsecPrivate *priv;
 
     g_return_if_fail(NM_IS_DEVICE_MACSEC(self));
@@ -321,12 +321,12 @@ macsec_secrets_cancel(NMDeviceMacsec *self)
 }
 
 static void
-macsec_secrets_get_secrets(NMDeviceMacsec *             self,
-                           const char *                 setting_name,
+macsec_secrets_get_secrets(NMDeviceMacsec              *self,
+                           const char                  *setting_name,
                            NMSecretAgentGetSecretsFlags flags)
 {
     NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE(self);
-    NMActRequest *         req;
+    NMActRequest          *req;
 
     macsec_secrets_cancel(self);
 
@@ -341,12 +341,12 @@ macsec_secrets_get_secrets(NMDeviceMacsec *             self,
 static gboolean
 supplicant_lnk_timeout_cb(gpointer user_data)
 {
-    NMDeviceMacsec *       self = NM_DEVICE_MACSEC(user_data);
+    NMDeviceMacsec        *self = NM_DEVICE_MACSEC(user_data);
     NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE(self);
-    NMDevice *             dev  = NM_DEVICE(self);
-    NMActRequest *         req;
-    NMConnection *         applied_connection;
-    const char *           setting_name;
+    NMDevice              *dev  = NM_DEVICE(self);
+    NMActRequest          *req;
+    NMConnection          *applied_connection;
+    const char            *setting_name;
 
     priv->supplicant.lnk_timeout_id = 0;
 
@@ -409,7 +409,7 @@ supplicant_iface_state_is_completed(NMDeviceMacsec *self, NMSupplicantInterfaceS
          */
         if (nm_device_get_state(NM_DEVICE(self)) == NM_DEVICE_STATE_CONFIG) {
             _LOGI(LOGD_DEVICE, "Activation: Stage 2 of 5 (Device Configure) successful.");
-            nm_device_activate_schedule_stage3_ip_config_start(NM_DEVICE(self));
+            nm_device_activate_schedule_stage3_ip_config(NM_DEVICE(self), FALSE);
         }
         return;
     }
@@ -422,7 +422,7 @@ supplicant_iface_state_is_completed(NMDeviceMacsec *self, NMSupplicantInterfaceS
 static void
 supplicant_iface_assoc_cb(NMSupplicantInterface *iface, GError *error, gpointer user_data)
 {
-    NMDeviceMacsec *       self;
+    NMDeviceMacsec        *self;
     NMDeviceMacsecPrivate *priv;
 
     if (nm_utils_error_is_cancelled_or_disposing(error))
@@ -450,9 +450,9 @@ supplicant_iface_assoc_cb(NMSupplicantInterface *iface, GError *error, gpointer 
 static gboolean
 supplicant_iface_start(NMDeviceMacsec *self)
 {
-    NMDeviceMacsecPrivate *priv                = NM_DEVICE_MACSEC_GET_PRIVATE(self);
+    NMDeviceMacsecPrivate              *priv   = NM_DEVICE_MACSEC_GET_PRIVATE(self);
     gs_unref_object NMSupplicantConfig *config = NULL;
-    gs_free_error GError *error                = NULL;
+    gs_free_error GError               *error  = NULL;
 
     config = build_supplicant_config(self, &error);
     if (!config) {
@@ -476,8 +476,8 @@ supplicant_iface_state_cb(NMSupplicantInterface *iface,
                           int                    disconnect_reason,
                           gpointer               user_data)
 {
-    NMDeviceMacsec *           self      = NM_DEVICE_MACSEC(user_data);
-    NMDeviceMacsecPrivate *    priv      = NM_DEVICE_MACSEC_GET_PRIVATE(self);
+    NMDeviceMacsec            *self      = NM_DEVICE_MACSEC(user_data);
+    NMDeviceMacsecPrivate     *priv      = NM_DEVICE_MACSEC_GET_PRIVATE(self);
     NMSupplicantInterfaceState new_state = new_state_i;
     NMSupplicantInterfaceState old_state = old_state_i;
 
@@ -506,7 +506,7 @@ supplicant_iface_state_cb(NMSupplicantInterface *iface,
 static gboolean
 handle_auth_or_fail(NMDeviceMacsec *self, NMActRequest *req, gboolean new_secrets)
 {
-    const char *  setting_name;
+    const char   *setting_name;
     NMConnection *applied_connection;
 
     if (!nm_device_auth_retries_try_next(NM_DEVICE(self)))
@@ -536,11 +536,11 @@ handle_auth_or_fail(NMDeviceMacsec *self, NMActRequest *req, gboolean new_secret
 static gboolean
 supplicant_connection_timeout_cb(gpointer user_data)
 {
-    NMDeviceMacsec *       self   = NM_DEVICE_MACSEC(user_data);
+    NMDeviceMacsec        *self   = NM_DEVICE_MACSEC(user_data);
     NMDeviceMacsecPrivate *priv   = NM_DEVICE_MACSEC_GET_PRIVATE(self);
-    NMDevice *             device = NM_DEVICE(self);
-    NMActRequest *         req;
-    NMSettingsConnection * connection;
+    NMDevice              *device = NM_DEVICE(self);
+    NMActRequest          *req;
+    NMSettingsConnection  *connection;
     guint64                timestamp   = 0;
     gboolean               new_secrets = TRUE;
 
@@ -585,13 +585,13 @@ supplicant_connection_timeout_cb(gpointer user_data)
 }
 
 static void
-supplicant_interface_create_cb(NMSupplicantManager *        supplicant_manager,
+supplicant_interface_create_cb(NMSupplicantManager         *supplicant_manager,
                                NMSupplMgrCreateIfaceHandle *handle,
-                               NMSupplicantInterface *      iface,
-                               GError *                     error,
+                               NMSupplicantInterface       *iface,
+                               GError                      *error,
                                gpointer                     user_data)
 {
-    NMDeviceMacsec *       self;
+    NMDeviceMacsec        *self;
     NMDeviceMacsecPrivate *priv;
     guint                  timeout;
 
@@ -633,11 +633,11 @@ supplicant_interface_create_cb(NMSupplicantManager *        supplicant_manager,
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceMacsec *       self = NM_DEVICE_MACSEC(device);
+    NMDeviceMacsec        *self = NM_DEVICE_MACSEC(device);
     NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE(self);
-    NMConnection *         connection;
-    NMDevice *             parent;
-    const char *           setting_name;
+    NMConnection          *connection;
+    NMDevice              *parent;
+    const char            *setting_name;
     int                    ifindex;
 
     connection = nm_device_get_applied_connection(NM_DEVICE(self));
@@ -712,17 +712,17 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
-    const char *        iface = nm_device_get_iface(device);
-    NMSettingMacsec *   s_macsec;
+    const char         *iface = nm_device_get_iface(device);
+    NMSettingMacsec    *s_macsec;
     NMPlatformLnkMacsec lnk = {};
     int                 parent_ifindex;
-    const char *        hw_addr;
+    const char         *hw_addr;
     union {
         struct {
             guint8  mac[6];
@@ -789,7 +789,7 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
 }
 
 static void
-device_state_changed(NMDevice *          device,
+device_state_changed(NMDevice           *device,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state,
                      NMDeviceStateReason reason)
@@ -803,7 +803,7 @@ device_state_changed(NMDevice *          device,
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMDeviceMacsec *       self = NM_DEVICE_MACSEC(object);
+    NMDeviceMacsec        *self = NM_DEVICE_MACSEC(object);
     NMDeviceMacsecPrivate *priv = NM_DEVICE_MACSEC_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -905,9 +905,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_macsec = {
 static void
 nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;
     object_class->dispose      = dispose;
@@ -1015,11 +1015,11 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MACSEC_DEVICE_FACTORY, NMMacsecDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     return g_object_new(NM_TYPE_DEVICE_MACSEC,
                         NM_DEVICE_IFACE,
@@ -1037,8 +1037,8 @@ static const char *
 get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
 {
     NMSettingMacsec *s_macsec;
-    NMSettingWired * s_wired;
-    const char *     parent = NULL;
+    NMSettingWired  *s_wired;
+    const char      *parent = NULL;
 
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_MACSEC_SETTING_NAME), NULL);
 
@@ -1061,7 +1061,7 @@ static char *
 get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
 {
     NMSettingMacsec *s_macsec;
-    const char *     ifname;
+    const char      *ifname;
 
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_MACSEC_SETTING_NAME), NULL);
 

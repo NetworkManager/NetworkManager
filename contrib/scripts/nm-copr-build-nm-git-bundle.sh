@@ -9,6 +9,17 @@
 #
 # This script is also used by [1] to generate the SRPM.
 # [1] https://copr.fedorainfracloud.org/coprs/networkmanager/NetworkManager-main/package/nm-git-bundle/
+#
+# The purpose is the following. We build (many) NetworkManager packages in copr. The
+# build process runs a script (contrib/scripts/nm-copr-build.sh) that fetches the git
+# repository (and we cannot just do a shallow copy -- only for the stupid reason
+# that the automatic version number counts all the commits in the HEAD's history).
+# NetworkManager's git repository is relatively large so fetching it over and over
+# is wasteful. The idea is to have a recent git-bundle of the repository, which is
+# hosted close-by in the copr infrastructure. So the build script first tries to
+# download the bundle to get the bulk of the git history, before doing additional
+# fetches from the upstream repository.
+# From time to time, a new bundle has to be generated in copr.
 
 set -ex
 

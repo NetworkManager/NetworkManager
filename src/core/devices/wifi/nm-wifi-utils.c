@@ -41,9 +41,9 @@ verify_no_wep(NMSettingWirelessSecurity *s_wsec, const char *tag, GError **error
 
 static gboolean
 verify_leap(NMSettingWirelessSecurity *s_wsec,
-            NMSetting8021x *           s_8021x,
+            NMSetting8021x            *s_8021x,
             gboolean                   adhoc,
-            GError **                  error)
+            GError                   **error)
 {
     const char *key_mgmt, *auth_alg, *leap_username;
 
@@ -224,9 +224,9 @@ verify_no_wpa(NMSettingWirelessSecurity *s_wsec, const char *tag, GError **error
 
 static gboolean
 verify_dynamic_wep(NMSettingWirelessSecurity *s_wsec,
-                   NMSetting8021x *           s_8021x,
+                   NMSetting8021x            *s_8021x,
                    gboolean                   adhoc,
-                   GError **                  error)
+                   GError                   **error)
 {
     const char *key_mgmt, *auth_alg, *leap_username;
 
@@ -303,11 +303,11 @@ verify_dynamic_wep(NMSettingWirelessSecurity *s_wsec,
 
 static gboolean
 verify_wpa_psk(NMSettingWirelessSecurity *s_wsec,
-               NMSetting8021x *           s_8021x,
+               NMSetting8021x            *s_8021x,
                gboolean                   adhoc,
                guint32                    wpa_flags,
                guint32                    rsn_flags,
-               GError **                  error)
+               GError                   **error)
 {
     const char *key_mgmt, *auth_alg;
 
@@ -400,10 +400,10 @@ verify_wpa_psk(NMSettingWirelessSecurity *s_wsec,
 
 static gboolean
 verify_wpa_eap(NMSettingWirelessSecurity *s_wsec,
-               NMSetting8021x *           s_8021x,
+               NMSetting8021x            *s_8021x,
                guint32                    wpa_flags,
                guint32                    rsn_flags,
-               GError **                  error)
+               GError                   **error)
 {
     const char *key_mgmt, *auth_alg;
     gboolean    is_wpa_eap = FALSE;
@@ -465,9 +465,9 @@ verify_wpa_eap(NMSettingWirelessSecurity *s_wsec,
 
 static gboolean
 verify_adhoc(NMSettingWirelessSecurity *s_wsec,
-             NMSetting8021x *           s_8021x,
+             NMSetting8021x            *s_8021x,
              gboolean                   adhoc,
-             GError **                  error)
+             GError                   **error)
 {
     const char *key_mgmt = NULL, *leap_username = NULL, *auth_alg = NULL;
 
@@ -529,8 +529,8 @@ verify_adhoc(NMSettingWirelessSecurity *s_wsec,
 }
 
 gboolean
-nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
-                                  const char *  bssid,
+nm_wifi_utils_complete_connection(GBytes       *ap_ssid,
+                                  const char   *bssid,
                                   _NM80211Mode  ap_mode,
                                   guint32       ap_freq,
                                   guint32       ap_flags,
@@ -538,13 +538,13 @@ nm_wifi_utils_complete_connection(GBytes *      ap_ssid,
                                   guint32       ap_rsn_flags,
                                   NMConnection *connection,
                                   gboolean      lock_bssid,
-                                  GError **     error)
+                                  GError      **error)
 {
-    NMSettingWireless *        s_wifi;
+    NMSettingWireless         *s_wifi;
     NMSettingWirelessSecurity *s_wsec;
-    NMSetting8021x *           s_8021x;
-    GBytes *                   ssid;
-    const char *               mode, *key_mgmt, *auth_alg, *leap_username;
+    NMSetting8021x            *s_8021x;
+    GBytes                    *ssid;
+    const char                *mode, *key_mgmt, *auth_alg, *leap_username;
     gboolean                   adhoc = FALSE;
     gboolean                   mesh  = FALSE;
 
@@ -892,20 +892,20 @@ nm_wifi_utils_is_manf_default_ssid(GBytes *ssid)
 
 /* To be used for connections where the SSID has been validated before */
 gboolean
-nm_wifi_connection_get_iwd_ssid_and_security(NMConnection *        connection,
-                                             char **               ssid,
+nm_wifi_connection_get_iwd_ssid_and_security(NMConnection         *connection,
+                                             char                **ssid,
                                              NMIwdNetworkSecurity *security)
 {
-    NMSettingWireless *        s_wireless;
+    NMSettingWireless         *s_wireless;
     NMSettingWirelessSecurity *s_wireless_sec;
-    const char *               key_mgmt = NULL;
+    const char                *key_mgmt = NULL;
 
     s_wireless = nm_connection_get_setting_wireless(connection);
     if (!s_wireless)
         return FALSE;
 
     if (ssid) {
-        GBytes *    bytes = nm_setting_wireless_get_ssid(s_wireless);
+        GBytes     *bytes = nm_setting_wireless_get_ssid(s_wireless);
         gsize       ssid_len;
         const char *ssid_str = (const char *) g_bytes_get_data(bytes, &ssid_len);
 
@@ -947,7 +947,7 @@ nm_wifi_connection_get_iwd_ssid_and_security(NMConnection *        connection,
  * @ssid_len can be -1 instead of actual SSID length.
  */
 char *
-nm_wifi_utils_get_iwd_config_filename(const char *         ssid,
+nm_wifi_utils_get_iwd_config_filename(const char          *ssid,
                                       gssize               ssid_len,
                                       NMIwdNetworkSecurity security)
 {
@@ -995,10 +995,10 @@ static gboolean
 psk_setting_to_iwd_config(GKeyFile *file, NMSettingWirelessSecurity *s_wsec, GError **error)
 {
     NMSettingSecretFlags psk_flags = nm_setting_wireless_security_get_psk_flags(s_wsec);
-    const char *         psk       = nm_setting_wireless_security_get_psk(s_wsec);
+    const char          *psk       = nm_setting_wireless_security_get_psk(s_wsec);
     gsize                psk_len;
     guint8               buffer[32];
-    const char *         key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
+    const char          *key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
 
     if (!psk || NM_FLAGS_ANY(psk_flags, SECRETS_DONT_STORE_FLAGS)) {
         if (NM_FLAGS_ANY(psk_flags, SECRETS_DONT_STORE_FLAGS)) {
@@ -1029,11 +1029,11 @@ psk_setting_to_iwd_config(GKeyFile *file, NMSettingWirelessSecurity *s_wsec, GEr
 }
 
 static gboolean
-eap_certs_to_iwd_config(GKeyFile *      file,
+eap_certs_to_iwd_config(GKeyFile       *file,
                         NMSetting8021x *s_8021x,
                         bool            phase2,
-                        char *          iwd_prefix,
-                        GError **       error)
+                        char           *iwd_prefix,
+                        GError        **error)
 {
     NMSetting8021xCKScheme ca_cert_scheme =
         phase2 ? nm_setting_802_1x_get_phase2_ca_cert_scheme(s_8021x)
@@ -1043,13 +1043,13 @@ eap_certs_to_iwd_config(GKeyFile *      file,
                : nm_setting_802_1x_get_client_cert_scheme(s_8021x);
     NMSetting8021xCKScheme key_scheme;
     NMSettingSecretFlags   key_password_flags;
-    const char *           ca_path = phase2 ? nm_setting_802_1x_get_phase2_ca_path(s_8021x)
+    const char            *ca_path = phase2 ? nm_setting_802_1x_get_phase2_ca_path(s_8021x)
                                             : nm_setting_802_1x_get_ca_path(s_8021x);
-    const char *           cert_path;
-    const char *           key_path = NULL;
-    const char *           key_password;
-    const char *           domain_suffix_match;
-    const char *           domain_match;
+    const char            *cert_path;
+    const char            *key_path = NULL;
+    const char            *key_password;
+    const char            *domain_suffix_match;
+    const char            *domain_match;
     char                   setting_buf[128];
 
     /* TODO: should check that all certificates and the key are RSA */
@@ -1220,7 +1220,7 @@ private_key_done:
                                  : nm_setting_802_1x_get_domain_match(s_8021x);
 
     if (domain_suffix_match || domain_match) {
-        GString *   s = g_string_sized_new(128);
+        GString    *s = g_string_sized_new(128);
         const char *ptr;
         const char *end;
 
@@ -1287,13 +1287,13 @@ eap_optional_identity_to_iwd_config(GKeyFile *file, const char *iwd_prefix, cons
 }
 
 static gboolean
-eap_optional_password_to_iwd_config(GKeyFile *      file,
-                                    const char *    iwd_prefix,
+eap_optional_password_to_iwd_config(GKeyFile       *file,
+                                    const char     *iwd_prefix,
                                     NMSetting8021x *s_8021x,
-                                    GError **       error)
+                                    GError        **error)
 {
     char                 setting_buf[128];
-    const char *         password = nm_setting_802_1x_get_password(s_8021x);
+    const char          *password = nm_setting_802_1x_get_password(s_8021x);
     NMSettingSecretFlags flags    = nm_setting_802_1x_get_password_flags(s_8021x);
 
     if (!password && nm_setting_802_1x_get_password_raw(s_8021x)) {
@@ -1347,12 +1347,12 @@ eap_phase1_identity_to_iwd_config(GKeyFile *file, const char *iwd_prefix, NMSett
 }
 
 static gboolean
-eap_method_config_to_iwd_config(GKeyFile *      file,
+eap_method_config_to_iwd_config(GKeyFile       *file,
                                 NMSetting8021x *s_8021x,
                                 gboolean        phase2,
-                                const char *    method,
-                                const char *    iwd_prefix,
-                                GError **       error)
+                                const char     *method,
+                                const char     *iwd_prefix,
+                                GError        **error)
 {
     char prefix_buf[128];
 
@@ -1677,18 +1677,18 @@ ip6_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
 
 GKeyFile *
 nm_wifi_utils_connection_to_iwd_config(NMConnection *connection,
-                                       char **       out_filename,
-                                       GError **     error)
+                                       char        **out_filename,
+                                       GError      **error)
 {
-    NMSettingConnection * s_conn = nm_connection_get_setting_connection(connection);
-    NMSettingWireless *   s_wifi = nm_connection_get_setting_wireless(connection);
-    GBytes *              ssid;
-    const guint8 *        ssid_data;
-    gsize                 ssid_len;
-    NMIwdNetworkSecurity  security;
-    const char *          cloned_mac_addr;
-    gs_free char *        comment        = NULL;
-    nm_auto_unref_keyfile GKeyFile *file = NULL;
+    NMSettingConnection            *s_conn = nm_connection_get_setting_connection(connection);
+    NMSettingWireless              *s_wifi = nm_connection_get_setting_wireless(connection);
+    GBytes                         *ssid;
+    const guint8                   *ssid_data;
+    gsize                           ssid_len;
+    NMIwdNetworkSecurity            security;
+    const char                     *cloned_mac_addr;
+    gs_free char                   *comment = NULL;
+    nm_auto_unref_keyfile GKeyFile *file    = NULL;
 
     if (!s_conn || !s_wifi
         || !nm_streq(nm_setting_connection_get_connection_type(s_conn),

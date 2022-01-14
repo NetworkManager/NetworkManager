@@ -29,13 +29,13 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_l3_ipv6ll_state_to_string,
 /*****************************************************************************/
 
 struct _NML3IPv6LL {
-    NML3Cfg *                l3cfg;
+    NML3Cfg                 *l3cfg;
     NML3CfgCommitTypeHandle *l3cfg_commit_handle;
     NML3IPv6LLNotifyFcn      notify_fcn;
     gpointer                 user_data;
-    GSource *                starting_on_idle_source;
-    GSource *                wait_for_addr_source;
-    GSource *                emit_changed_idle_source;
+    GSource                 *starting_on_idle_source;
+    GSource                 *wait_for_addr_source;
+    GSource                 *emit_changed_idle_source;
     gulong                   l3cfg_signal_notify_id;
     NML3IPv6LLState          state;
 
@@ -50,6 +50,8 @@ struct _NML3IPv6LL {
      * the LL address is suitable, this is a NML3ConfigData instance
      * with the configuration. */
     const NML3ConfigData *l3cd;
+
+    guint32 route_table;
 
     /* "assume" means that we first look whether there is any suitable
      * IPv6 address on the device, and in that case, try to use that
@@ -202,7 +204,7 @@ nm_l3_ipv6ll_get_l3cd(NML3IPv6LL *self)
 static gboolean
 _emit_changed_on_idle_cb(gpointer user_data)
 {
-    NML3IPv6LL *           self = user_data;
+    NML3IPv6LL            *self = user_data;
     const struct in6_addr *lladdr;
     NML3IPv6LLState        state;
     char                   sbuf[INET6_ADDRSTRLEN];
@@ -284,7 +286,7 @@ _pladdr_find_ll(NML3IPv6LL *self, gboolean *out_cur_addr_failed)
     NMDedupMultiIter            iter;
     NMPLookup                   lookup;
     const NMPlatformIP6Address *pladdr1 = NULL;
-    const NMPObject *           obj;
+    const NMPObject            *obj;
     const NMPlatformIP6Address *pladdr_ready      = NULL;
     const NMPlatformIP6Address *pladdr_tentative  = NULL;
     gboolean                    cur_addr_check    = TRUE;
@@ -410,7 +412,7 @@ _lladdr_handle_changed(NML3IPv6LL *self)
                                 l3cd,
                                 NM_L3CFG_CONFIG_PRIORITY_IPV6LL,
                                 0,
-                                0,
+                                self->route_table,
                                 NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4,
                                 NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
                                 0,
@@ -618,12 +620,13 @@ _starting_on_idle_cb(gpointer user_data)
 /*****************************************************************************/
 
 NML3IPv6LL *
-_nm_l3_ipv6ll_new(NML3Cfg *                 l3cfg,
+_nm_l3_ipv6ll_new(NML3Cfg                  *l3cfg,
                   gboolean                  assume,
                   NMUtilsStableType         stable_type,
-                  const char *              ifname,
-                  const char *              network_id,
+                  const char               *ifname,
+                  const char               *network_id,
                   const NMUtilsIPv6IfaceId *token_iid,
+                  guint32                   route_table,
                   NML3IPv6LLNotifyFcn       notify_fcn,
                   gpointer                  user_data)
 {
@@ -647,6 +650,7 @@ _nm_l3_ipv6ll_new(NML3Cfg *                 l3cfg,
         .cur_lladdr_obj          = NULL,
         .cur_lladdr              = IN6ADDR_ANY_INIT,
         .assume                  = assume,
+        .route_table             = route_table,
         .addrgen =
             {
                 .stable_type = stable_type,

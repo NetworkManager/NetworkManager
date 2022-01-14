@@ -25,12 +25,12 @@
 static void
 test_read_dt_ofw(void)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSettingWired *     s_wired;
-    NMSettingIPConfig *  s_ip4;
-    NMSettingIPConfig *  s_ip6;
-    const char *         mac_address;
+    NMSettingWired      *s_wired;
+    NMSettingIPConfig   *s_ip4;
+    NMSettingIPConfig   *s_ip6;
+    const char          *mac_address;
 
     connection = nmi_dt_reader_parse(TEST_INITRD_DIR "/sysfs-dt");
     g_assert(connection);
@@ -69,12 +69,12 @@ test_read_dt_ofw(void)
 static void
 test_read_dt_slof(void)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSettingWired *     s_wired;
-    NMSettingIPConfig *  s_ip4;
-    NMSettingIPConfig *  s_ip6;
-    NMIPAddress *        ip4_addr;
+    NMSettingWired      *s_wired;
+    NMSettingIPConfig   *s_ip4;
+    NMSettingIPConfig   *s_ip6;
+    NMIPAddress         *ip4_addr;
 
     connection = nmi_dt_reader_parse(TEST_INITRD_DIR "/sysfs-dt-tftp");
     g_assert(connection);

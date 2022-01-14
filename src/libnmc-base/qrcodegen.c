@@ -133,7 +133,7 @@ static const int PENALTY_N4 = 10;
 
 // Public function - see documentation comment in header file.
 bool
-qrcodegen_encodeText(const char *        text,
+qrcodegen_encodeText(const char         *text,
                      uint8_t             tempBuffer[],
                      uint8_t             qrcode[],
                      enum qrcodegen_Ecc  ecl,

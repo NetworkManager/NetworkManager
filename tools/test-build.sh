@@ -35,7 +35,6 @@ if [ "${#TARGETS}" -lt 1 ]; then
         src/core/NetworkManager
         src/core/dhcp/nm-dhcp-helper
         src/core/ndisc/tests/test-ndisc-linux
-        src/core/nm-iface-helper
         src/core/platform/tests/monitor
         src/nm-online/nm-online
         src/nmcli/nmcli

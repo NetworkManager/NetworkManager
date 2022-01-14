@@ -45,6 +45,14 @@ ap_wpa_rsn_flags_to_string(guint32 flags)
         flags_str[i++] = g_strdup("psk");
     if (flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
         flags_str[i++] = g_strdup("802.1X");
+    if (flags & NM_802_11_AP_SEC_KEY_MGMT_SAE)
+        flags_str[i++] = g_strdup("sae");
+    if (flags & NM_802_11_AP_SEC_KEY_MGMT_OWE)
+        flags_str[i++] = g_strdup("owe");
+    if (flags & NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)
+        flags_str[i++] = g_strdup("owe_transition_mode");
+    if (flags & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)
+        flags_str[i++] = g_strdup("wpa-eap-suite-b-192");
 
     if (i == 0)
         flags_str[i++] = g_strdup("none");
@@ -65,11 +73,11 @@ show_access_point_info(NMAccessPoint *ap)
 {
     guint32     flags, wpa_flags, rsn_flags, freq, bitrate;
     guint8      strength;
-    GBytes *    ssid;
+    GBytes     *ssid;
     const char *hwaddr;
     NM80211Mode mode;
-    char *      freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
-    GString *   security_str;
+    char       *freq_str, *ssid_str, *bitrate_str, *strength_str, *wpa_flags_str, *rsn_flags_str;
+    GString    *security_str;
 
     /* Get AP properties */
     flags     = nm_access_point_get_flags(ap);
@@ -103,11 +111,21 @@ show_access_point_info(NMAccessPoint *ap)
         g_string_append(security_str, "WEP ");
     if (wpa_flags != NM_802_11_AP_SEC_NONE)
         g_string_append(security_str, "WPA ");
-    if (rsn_flags != NM_802_11_AP_SEC_NONE)
+    if ((rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+        || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
         g_string_append(security_str, "WPA2 ");
+    }
+    if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
+        g_string_append(security_str, "WPA3 ");
+    }
+    if ((rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE)
+        || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
+        g_string_append(security_str, "OWE ");
+    }
     if ((wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
-        || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
-        g_string_append(security_str, "Enterprise ");
+        || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+        g_string_append(security_str, "802.1X ");
+    }
 
     if (security_str->len > 0)
         g_string_truncate(security_str, security_str->len - 1); /* Chop off last space */
@@ -138,13 +156,13 @@ show_access_point_info(NMAccessPoint *ap)
 static void
 show_wifi_device_info(NMDevice *device)
 {
-    NMAccessPoint *  active_ap = NULL;
+    NMAccessPoint   *active_ap = NULL;
     const GPtrArray *aps;
-    const char *     iface;
-    const char *     driver;
+    const char      *iface;
+    const char      *driver;
     guint32          speed;
-    GBytes *         active_ssid;
-    char *           active_ssid_str = NULL;
+    GBytes          *active_ssid;
+    char            *active_ssid_str = NULL;
     int              i;
 
     /* Get active AP */
@@ -185,10 +203,10 @@ show_wifi_device_info(NMDevice *device)
 int
 main(int argc, char *argv[])
 {
-    NMClient *       client;
+    NMClient        *client;
     const GPtrArray *devices;
     int              i;
-    GError *         error = NULL;
+    GError          *error = NULL;
 
     /* Get NMClient object */
     client = nm_client_new(NULL, &error);

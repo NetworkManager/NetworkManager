@@ -25,7 +25,7 @@ typedef struct {
 
     /* Authoritative rfkill state (RFKILL_* enum) */
     RfKillState rfkill_states[RFKILL_TYPE_MAX];
-    GSList *    killswitches;
+    GSList     *killswitches;
 } NMRfkillManagerPrivate;
 
 struct _NMRfkillManager {
@@ -45,10 +45,10 @@ G_DEFINE_TYPE(NMRfkillManager, nm_rfkill_manager, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 typedef struct {
-    char *     name;
+    char      *name;
     guint64    seqnum;
-    char *     path;
-    char *     driver;
+    char      *path;
+    char      *driver;
     RfKillType rtype;
     int        state;
     gboolean   platform;
@@ -90,9 +90,9 @@ rfkill_state_to_desc(RfKillState rstate)
 static Killswitch *
 killswitch_new(struct udev_device *device, RfKillType rtype)
 {
-    Killswitch *        ks;
+    Killswitch         *ks;
     struct udev_device *parent = NULL, *grandparent = NULL;
-    const char *        driver, *subsys, *parent_subsys = NULL;
+    const char         *driver, *subsys, *parent_subsys = NULL;
 
     ks         = g_malloc0(sizeof(Killswitch));
     ks->name   = g_strdup(udev_device_get_sysname(device));
@@ -161,7 +161,7 @@ static void
 recheck_killswitches(NMRfkillManager *self)
 {
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
-    GSList *                iter;
+    GSList                 *iter;
     RfKillState             poll_states[RFKILL_TYPE_MAX];
     RfKillState             platform_states[RFKILL_TYPE_MAX];
     gboolean                platform_checked[RFKILL_TYPE_MAX];
@@ -176,7 +176,7 @@ recheck_killswitches(NMRfkillManager *self)
 
     /* Poll the states of all killswitches */
     for (iter = priv->killswitches; iter; iter = g_slist_next(iter)) {
-        Killswitch *        ks = iter->data;
+        Killswitch         *ks = iter->data;
         struct udev_device *device;
         RfKillState         dev_state;
         int                 sysfs_state;
@@ -239,7 +239,7 @@ static Killswitch *
 killswitch_find_by_name(NMRfkillManager *self, const char *name)
 {
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
-    GSList *                iter;
+    GSList                 *iter;
 
     g_return_val_if_fail(name != NULL, NULL);
 
@@ -269,9 +269,9 @@ static void
 add_one_killswitch(NMRfkillManager *self, struct udev_device *device)
 {
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
-    const char *            str_type;
+    const char             *str_type;
     RfKillType              rtype;
-    Killswitch *            ks;
+    Killswitch             *ks;
 
     str_type = udev_device_get_property_value(device, "RFKILL_TYPE");
     rtype    = rfkill_type_to_enum(str_type);
@@ -307,8 +307,8 @@ static void
 rfkill_remove(NMRfkillManager *self, struct udev_device *device)
 {
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
-    GSList *                iter;
-    const char *            name;
+    GSList                 *iter;
+    const char             *name;
 
     g_return_if_fail(device != NULL);
     name = udev_device_get_sysname(device);
@@ -330,8 +330,8 @@ static void
 handle_uevent(NMUdevClient *client, struct udev_device *device, gpointer user_data)
 {
     NMRfkillManager *self = NM_RFKILL_MANAGER(user_data);
-    const char *     subsys;
-    const char *     action;
+    const char      *subsys;
+    const char      *action;
 
     action = udev_device_get_action(device);
 
@@ -360,7 +360,7 @@ static void
 nm_rfkill_manager_init(NMRfkillManager *self)
 {
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
-    struct udev_enumerate * enumerate;
+    struct udev_enumerate  *enumerate;
     struct udev_list_entry *iter;
     guint                   i;
 
@@ -397,7 +397,7 @@ nm_rfkill_manager_new(void)
 static void
 dispose(GObject *object)
 {
-    NMRfkillManager *       self = NM_RFKILL_MANAGER(object);
+    NMRfkillManager        *self = NM_RFKILL_MANAGER(object);
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
 
     if (priv->killswitches) {

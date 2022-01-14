@@ -9824,7 +9824,7 @@ msgid "Error: 'connection show': %s"
 msgstr "ભૂલ: 'જોડાણ બતાવો': %s"
 
 #: ../src/nmcli/connections.c:1497
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "જોડાણ વિગતો સક્રિય કરો"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

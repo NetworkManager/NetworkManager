@@ -27,7 +27,7 @@
 
 typedef struct {
     NMUdevClient *udev_client;
-    GSList *      devices;
+    GSList       *devices;
 } NMAtmManagerPrivate;
 
 typedef struct {
@@ -51,7 +51,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES(
     NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(NM_SETTING_ADSL_SETTING_NAME));
 
 G_MODULE_EXPORT NMDeviceFactory *
-                nm_device_factory_create(GError **error)
+nm_device_factory_create(GError **error)
 {
     return g_object_new(NM_TYPE_ATM_MANAGER, NULL);
 }
@@ -62,7 +62,7 @@ static gboolean
 dev_get_attrs(struct udev_device *udev_device, const char **out_path, char **out_driver)
 {
     struct udev_device *parent = NULL;
-    const char *        driver, *path;
+    const char         *driver, *path;
 
     g_return_val_if_fail(udev_device != NULL, FALSE);
     g_return_val_if_fail(out_path != NULL, FALSE);
@@ -91,7 +91,7 @@ dev_get_attrs(struct udev_device *udev_device, const char **out_path, char **out
 static void
 device_destroyed(gpointer user_data, GObject *dead)
 {
-    NMAtmManager *       self = NM_ATM_MANAGER(user_data);
+    NMAtmManager        *self = NM_ATM_MANAGER(user_data);
     NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE(self);
 
     priv->devices = g_slist_remove(priv->devices, dead);
@@ -101,11 +101,11 @@ static void
 adsl_add(NMAtmManager *self, struct udev_device *udev_device)
 {
     NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE(self);
-    const char *         ifname, *sysfs_path = NULL;
-    char *               driver         = NULL;
-    gs_free char *       atm_index_path = NULL;
+    const char          *ifname, *sysfs_path = NULL;
+    char                *driver         = NULL;
+    gs_free char        *atm_index_path = NULL;
     int                  atm_index;
-    NMDevice *           device;
+    NMDevice            *device;
 
     g_return_if_fail(udev_device != NULL);
 
@@ -153,8 +153,8 @@ static void
 adsl_remove(NMAtmManager *self, struct udev_device *udev_device)
 {
     NMAtmManagerPrivate *priv  = NM_ATM_MANAGER_GET_PRIVATE(self);
-    const char *         iface = udev_device_get_sysname(udev_device);
-    GSList *             iter;
+    const char          *iface = udev_device_get_sysname(udev_device);
+    GSList              *iter;
 
     nm_log_dbg(LOGD_PLATFORM, "(%s): removing ATM device", iface);
 
@@ -177,9 +177,9 @@ adsl_remove(NMAtmManager *self, struct udev_device *udev_device)
 static void
 start(NMDeviceFactory *factory)
 {
-    NMAtmManager *          self = NM_ATM_MANAGER(factory);
-    NMAtmManagerPrivate *   priv = NM_ATM_MANAGER_GET_PRIVATE(self);
-    struct udev_enumerate * enumerate;
+    NMAtmManager           *self = NM_ATM_MANAGER(factory);
+    NMAtmManagerPrivate    *priv = NM_ATM_MANAGER_GET_PRIVATE(self);
+    struct udev_enumerate  *enumerate;
     struct udev_list_entry *devices;
 
     enumerate = nm_udev_client_enumerate_new(priv->udev_client);
@@ -203,10 +203,10 @@ static void
 handle_uevent(NMUdevClient *client, struct udev_device *device, gpointer user_data)
 {
     NMAtmManager *self = NM_ATM_MANAGER(user_data);
-    const char *  subsys;
-    const char *  ifindex;
+    const char   *subsys;
+    const char   *ifindex;
     guint64       seqnum;
-    const char *  action;
+    const char   *action;
 
     action = udev_device_get_action(device);
 
@@ -245,9 +245,9 @@ nm_atm_manager_init(NMAtmManager *self)
 static void
 dispose(GObject *object)
 {
-    NMAtmManager *       self = NM_ATM_MANAGER(object);
+    NMAtmManager        *self = NM_ATM_MANAGER(object);
     NMAtmManagerPrivate *priv = NM_ATM_MANAGER_GET_PRIVATE(self);
-    GSList *             iter;
+    GSList              *iter;
 
     for (iter = priv->devices; iter; iter = iter->next)
         g_object_weak_unref(G_OBJECT(iter->data), device_destroyed, self);
@@ -261,7 +261,7 @@ dispose(GObject *object)
 static void
 nm_atm_manager_class_init(NMAtmManagerClass *klass)
 {
-    GObjectClass *        object_class  = G_OBJECT_CLASS(klass);
+    GObjectClass         *object_class  = G_OBJECT_CLASS(klass);
     NMDeviceFactoryClass *factory_class = NM_DEVICE_FACTORY_CLASS(klass);
 
     object_class->dispose = dispose;

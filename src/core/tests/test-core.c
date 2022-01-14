@@ -389,11 +389,11 @@ test_nm_utils_sysctl_ip_conf_path(void)
 static NMConnection *
 _match_connection_new(void)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSettingWired *     s_wired;
-    NMSettingIPConfig *  s_ip4, *s_ip6;
-    char *               uuid;
+    NMSettingWired      *s_wired;
+    NMSettingIPConfig   *s_ip4, *s_ip6;
+    char                *uuid;
 
     connection = nm_simple_connection_new();
 
@@ -433,7 +433,7 @@ _match_connection_new(void)
 }
 
 static NMConnection *
-_match_connection(GSList *      connections,
+_match_connection(GSList       *connections,
                   NMConnection *original,
                   gboolean      device_has_carrier,
                   gint64        default_v4_metric,
@@ -466,8 +466,8 @@ _match_connection(GSList *      connections,
 static void
 test_connection_match_basic(void)
 {
-    NMConnection *     orig, *copy, *matched;
-    GSList *           connections = NULL;
+    NMConnection      *orig, *copy, *matched;
+    GSList            *connections = NULL;
     NMSettingIPConfig *s_ip4;
 
     orig        = _match_connection_new();
@@ -495,8 +495,8 @@ test_connection_match_basic(void)
 static void
 test_connection_match_ip6_method(void)
 {
-    NMConnection *     orig, *copy, *matched;
-    GSList *           connections = NULL;
+    NMConnection      *orig, *copy, *matched;
+    GSList            *connections = NULL;
     NMSettingIPConfig *s_ip6;
 
     orig        = _match_connection_new();
@@ -534,8 +534,8 @@ test_connection_match_ip6_method(void)
 static void
 test_connection_match_ip6_method_ignore(void)
 {
-    NMConnection *     orig, *copy, *matched;
-    GSList *           connections = NULL;
+    NMConnection      *orig, *copy, *matched;
+    GSList            *connections = NULL;
     NMSettingIPConfig *s_ip6;
 
     orig        = _match_connection_new();
@@ -570,8 +570,8 @@ test_connection_match_ip6_method_ignore(void)
 static void
 test_connection_match_ip6_method_ignore_auto(void)
 {
-    NMConnection *     orig, *copy, *matched;
-    GSList *           connections = NULL;
+    NMConnection      *orig, *copy, *matched;
+    GSList            *connections = NULL;
     NMSettingIPConfig *s_ip6;
 
     orig        = _match_connection_new();
@@ -606,8 +606,8 @@ test_connection_match_ip6_method_ignore_auto(void)
 static void
 test_connection_match_ip4_method(void)
 {
-    NMConnection *     orig, *copy, *matched;
-    GSList *           connections = NULL;
+    NMConnection      *orig, *copy, *matched;
+    GSList            *connections = NULL;
     NMSettingIPConfig *s_ip4;
 
     orig        = _match_connection_new();
@@ -649,8 +649,8 @@ test_connection_match_ip4_method(void)
 static void
 test_connection_match_interface_name(void)
 {
-    NMConnection *       orig, *copy, *matched;
-    GSList *             connections = NULL;
+    NMConnection        *orig, *copy, *matched;
+    GSList              *connections = NULL;
     NMSettingConnection *s_con;
 
     orig        = _match_connection_new();
@@ -679,11 +679,11 @@ test_connection_match_interface_name(void)
 static void
 test_connection_match_wired(void)
 {
-    NMConnection *  orig, *copy, *matched;
-    GSList *        connections = NULL;
+    NMConnection   *orig, *copy, *matched;
+    GSList         *connections = NULL;
     NMSettingWired *s_wired;
-    char *          subchan_arr[] = {"0.0.8000", "0.0.8001", "0.0.8002", NULL};
-    const char *    mac           = "52:54:00:ab:db:23";
+    char           *subchan_arr[] = {"0.0.8000", "0.0.8001", "0.0.8002", NULL};
+    const char     *mac           = "52:54:00:ab:db:23";
 
     orig        = _match_connection_new();
     copy        = nm_simple_connection_new_clone(orig);
@@ -722,10 +722,10 @@ test_connection_match_wired(void)
 static void
 test_connection_match_wired2(void)
 {
-    NMConnection *  orig, *copy, *matched;
-    GSList *        connections = NULL;
+    NMConnection   *orig, *copy, *matched;
+    GSList         *connections = NULL;
     NMSettingWired *s_wired;
-    const char *    mac = "52:54:00:ab:db:23";
+    const char     *mac = "52:54:00:ab:db:23";
 
     orig    = _match_connection_new();
     s_wired = nm_connection_get_setting_wired(orig);
@@ -756,8 +756,8 @@ test_connection_match_wired2(void)
 static void
 test_connection_match_cloned_mac(void)
 {
-    NMConnection *  orig, *exact, *fuzzy, *matched;
-    GSList *        connections = NULL;
+    NMConnection   *orig, *exact, *fuzzy, *matched;
+    GSList         *connections = NULL;
     NMSettingWired *s_wired;
 
     orig = _match_connection_new();
@@ -794,11 +794,11 @@ test_connection_match_cloned_mac(void)
 static void
 test_connection_no_match_ip4_addr(void)
 {
-    NMConnection *     orig, *copy, *matched;
-    GSList *           connections = NULL;
+    NMConnection      *orig, *copy, *matched;
+    GSList            *connections = NULL;
     NMSettingIPConfig *s_ip4, *s_ip6;
-    NMIPAddress *      nm_addr;
-    GError *           error = NULL;
+    NMIPAddress       *nm_addr;
+    GError            *error = NULL;
 
     orig        = _match_connection_new();
     copy        = nm_simple_connection_new_clone(orig);
@@ -858,11 +858,11 @@ test_connection_no_match_ip4_addr(void)
 static void
 test_connection_no_match_vlan(void)
 {
-    NMConnection *       orig, *copy, *matched;
-    GSList *             connections = NULL;
+    NMConnection        *orig, *copy, *matched;
+    GSList              *connections = NULL;
     NMSettingConnection *s_con;
-    NMSettingVlan *      s_vlan_orig, *s_vlan_copy;
-    char *               uuid;
+    NMSettingVlan       *s_vlan_orig, *s_vlan_copy;
+    char                *uuid;
 
     orig  = nm_simple_connection_new();
     s_con = (NMSettingConnection *) nm_setting_connection_new();
@@ -915,9 +915,9 @@ static void
 test_connection_match_ip4_routes1(void)
 {
     gs_unref_object NMConnection *orig = NULL, *copy = NULL;
-    NMConnection *                matched;
-    nm_auto_free_slist GSList *connections = NULL;
-    NMSettingIPConfig *        s_ip4;
+    NMConnection                 *matched;
+    nm_auto_free_slist GSList    *connections = NULL;
+    NMSettingIPConfig            *s_ip4;
 
     orig = _match_connection_new();
 
@@ -952,9 +952,9 @@ static void
 test_connection_match_ip4_routes2(void)
 {
     gs_unref_object NMConnection *orig = NULL, *copy = NULL;
-    NMConnection *                matched;
-    nm_auto_free_slist GSList *connections = NULL;
-    NMSettingIPConfig *        s_ip4;
+    NMConnection                 *matched;
+    nm_auto_free_slist GSList    *connections = NULL;
+    NMSettingIPConfig            *s_ip4;
 
     orig = _match_connection_new();
 
@@ -992,9 +992,9 @@ static void
 test_connection_match_ip6_routes(void)
 {
     gs_unref_object NMConnection *orig = NULL, *copy = NULL;
-    NMConnection *                matched;
-    nm_auto_free_slist GSList *connections = NULL;
-    NMSettingIPConfig *        s_ip6;
+    NMConnection                 *matched;
+    nm_auto_free_slist GSList    *connections = NULL;
+    NMSettingIPConfig            *s_ip6;
 
     orig = _match_connection_new();
 
@@ -1122,7 +1122,7 @@ test_wildcard_match(void)
 static NMConnection *
 _create_connection_autoconnect(const char *id, gboolean autoconnect, int autoconnect_priority)
 {
-    NMConnection *       c;
+    NMConnection        *c;
     NMSettingConnection *s_con;
 
     c = nmtst_create_minimal_connection(id, NULL, NM_SETTING_WIRED_SETTING_NAME, &s_con);
@@ -1146,8 +1146,8 @@ _cmp_autoconnect_priority_p_with_data(gconstpointer pa, gconstpointer pb, gpoint
 static void
 _test_connection_sort_autoconnect_priority_one(NMConnection **list, gboolean shuffle)
 {
-    int               i, j;
-    int               count                  = 0;
+    int                          i, j;
+    int                          count       = 0;
     gs_unref_ptrarray GPtrArray *connections = g_ptr_array_new();
 
     while (list[count])
@@ -1253,7 +1253,7 @@ _test_match_spec_device(const GSList *specs, const char *match_str)
                                     NULL);
     if (match_str && g_str_has_prefix(match_str, MATCH_DRIVER)) {
         gs_free char *s = g_strdup(&match_str[NM_STRLEN(MATCH_DRIVER)]);
-        char *        t;
+        char         *t;
 
         t = strchr(s, '|');
         if (t) {
@@ -1266,15 +1266,15 @@ _test_match_spec_device(const GSList *specs, const char *match_str)
 }
 
 static void
-_do_test_match_spec_device(const char *       spec_str,
+_do_test_match_spec_device(const char        *spec_str,
                            const char *const *matches,
                            const char *const *no_matches,
                            const char *const *neg_matches)
 {
-    GSList *           specs, *specs_randperm = NULL, *specs_resplit, *specs_i, *specs_j;
+    GSList            *specs, *specs_randperm = NULL, *specs_resplit, *specs_i, *specs_j;
     guint              i;
-    gs_free char *     specs_joined = NULL;
-    const char *       s;
+    gs_free char      *specs_joined = NULL;
+    const char        *s;
     static const char *no_matches_default[] = {"e",
                                                "em",
                                                "em*",
@@ -1463,16 +1463,16 @@ test_match_spec_device(void)
 /*****************************************************************************/
 
 static void
-_do_test_match_spec_config(const char *         file,
+_do_test_match_spec_config(const char          *file,
                            int                  line,
-                           const char *         spec_str,
+                           const char          *spec_str,
                            guint                version,
                            guint                v_maj,
                            guint                v_min,
                            guint                v_mic,
                            NMMatchSpecMatchType expected)
 {
-    GSList *             specs;
+    GSList              *specs;
     NMMatchSpecMatchType match_result;
     guint                c_maj, c_min, c_mic;
 
@@ -1500,8 +1500,8 @@ _do_test_match_spec_config(const char *         file,
 
     if (g_slist_length(specs) == 1 && !g_str_has_prefix(specs->data, "except:")) {
         /* there is only one spec in the list... test that we match except: */
-        char *               sss    = g_strdup_printf("except:%s", (char *) specs->data);
-        GSList *             specs2 = g_slist_append(NULL, sss);
+        char                *sss    = g_strdup_printf("except:%s", (char *) specs->data);
+        GSList              *specs2 = g_slist_append(NULL, sss);
         NMMatchSpecMatchType match_result2;
 
         match_result2 = nm_match_spec_config(specs2, version, NULL);
@@ -1731,9 +1731,9 @@ test_nm_utils_strbuf_append(void)
 #define _strbuf_append(buf, len, format, ...)                     \
     G_STMT_START                                                  \
     {                                                             \
-        char **       _buf = (buf);                               \
-        gsize *       _len = (len);                               \
-        const char *  _str_iter;                                  \
+        char        **_buf = (buf);                               \
+        gsize        *_len = (len);                               \
+        const char   *_str_iter;                                  \
         gs_free char *_str = NULL;                                \
                                                                   \
         switch (nmtst_get_rand_uint32() % 4) {                    \
@@ -1762,8 +1762,8 @@ test_nm_utils_strbuf_append(void)
 #define _strbuf_append_str(buf, len, str)                                    \
     G_STMT_START                                                             \
     {                                                                        \
-        char **     _buf = (buf);                                            \
-        gsize *     _len = (len);                                            \
+        char      **_buf = (buf);                                            \
+        gsize      *_len = (len);                                            \
         const char *_str = (str);                                            \
                                                                              \
         switch (nmtst_get_rand_uint32() % 4) {                               \
@@ -1813,7 +1813,7 @@ test_nm_utils_strbuf_append(void)
     for (buf_len = 0; buf_len < 10; buf_len++) {
         for (rep = 0; rep < 50; rep++) {
             const int s_len = nmtst_get_rand_uint32() % (sizeof(str) - 5);
-            char *    t_buf;
+            char     *t_buf;
             gsize     t_len;
             int       test_mode;
 
@@ -2044,7 +2044,7 @@ static void
 test_reverse_dns_ip6(void)
 {
     struct in6_addr addr;
-    GPtrArray *     domains = g_ptr_array_new_full(8, g_free);
+    GPtrArray      *domains = g_ptr_array_new_full(8, g_free);
 
     inet_pton(AF_INET6, "1234::56", &addr);
     nm_utils_get_reverse_dns_domains_ip_6(&addr, 16, domains);
@@ -2097,11 +2097,11 @@ test_reverse_dns_ip6(void)
 /*****************************************************************************/
 
 static void
-do_test_stable_id_parse(const char *      stable_id,
+do_test_stable_id_parse(const char       *stable_id,
                         NMUtilsStableType expected_stable_type,
-                        const char *      expected_generated)
+                        const char       *expected_generated)
 {
-    gs_free char *    generated = NULL;
+    gs_free char     *generated = NULL;
     NMUtilsStableType stable_type;
 
     if (expected_stable_type == NM_UTILS_STABLE_TYPE_GENERATED)
@@ -2263,7 +2263,7 @@ test_utils_file_is_in_path(void)
         const char *const *const _searches    = (searches);                         \
         const char *const *const _nameservers = (nameservers);                      \
         const char *const *const _options     = (options);                          \
-        gs_free char *           _content     = NULL;                               \
+        gs_free char            *_content     = NULL;                               \
                                                                                     \
         _content = nmtst_dns_create_resolv_conf(_searches, _nameservers, _options); \
         g_assert_cmpstr(_content, ==, expected);                                    \
@@ -2443,9 +2443,9 @@ test_nm_utils_dhcp_client_id_systemd_node_specific(gconstpointer test_data)
     g_assert_cmpint(u64, ==, d->duid_id);
 
     for (i = 0; i < 2; i++) {
-        const gboolean legacy_unstable_byteorder = (i != 0);
-        gs_unref_bytes GBytes *client_id         = NULL;
-        const guint8 *         cid;
+        const gboolean         legacy_unstable_byteorder = (i != 0);
+        gs_unref_bytes GBytes *client_id                 = NULL;
+        const guint8          *cid;
         guint32                iaid = d->iaid_ifname;
         guint32                tmp;
 
@@ -2489,7 +2489,7 @@ _kernel_cmdline_match(gboolean           expected_match,
                       const char *const *patterns)
 {
     gs_free_error GError *error   = NULL;
-    GError **             p_error = nmtst_get_rand_bool() ? &error : NULL;
+    GError              **p_error = nmtst_get_rand_bool() ? &error : NULL;
     gboolean              match;
 
     nm_assert(proc_cmdline);

@@ -103,7 +103,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingVeth *       setting = NM_SETTING_VETH(object);
+    NMSettingVeth        *setting = NM_SETTING_VETH(object);
     NMSettingVethPrivate *priv    = NM_SETTING_VETH_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -116,7 +116,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
-    NMSettingVeth *       setting = NM_SETTING_VETH(object);
+    NMSettingVeth        *setting = NM_SETTING_VETH(object);
     NMSettingVethPrivate *priv    = NM_SETTING_VETH_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -151,7 +151,7 @@ nm_setting_veth_new(void)
 static void
 finalize(GObject *object)
 {
-    NMSettingVeth *       setting = NM_SETTING_VETH(object);
+    NMSettingVeth        *setting = NM_SETTING_VETH(object);
     NMSettingVethPrivate *priv    = NM_SETTING_VETH_GET_PRIVATE(setting);
 
     g_free(priv->peer);
@@ -162,7 +162,7 @@ finalize(GObject *object)
 static void
 nm_setting_veth_class_init(NMSettingVethClass *klass)
 {
-    GObjectClass *  object_class  = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
 
     g_type_class_add_private(klass, sizeof(NMSettingVethPrivate));

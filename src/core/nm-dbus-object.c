@@ -87,7 +87,7 @@ _create_export_path(NMDBusObjectClass *klass)
 const char *
 nm_dbus_object_export(gpointer /* (NMDBusObject *) */ self)
 {
-    NMDBusObject * self1      = self;
+    NMDBusObject  *self1      = self;
     static guint64 id_counter = 0;
 
     g_return_val_if_fail(NM_IS_DBUS_OBJECT(self1), NULL);
@@ -207,10 +207,10 @@ _nm_dbus_object_clear_and_unexport(NMDBusObject **location)
 /*****************************************************************************/
 
 void
-nm_dbus_object_emit_signal_variant(NMDBusObject *                     self,
+nm_dbus_object_emit_signal_variant(NMDBusObject                      *self,
                                    const NMDBusInterfaceInfoExtended *interface_info,
-                                   const GDBusSignalInfo *            signal_info,
-                                   GVariant *                         args)
+                                   const GDBusSignalInfo             *signal_info,
+                                   GVariant                          *args)
 {
     if (!self->internal.path) {
         nm_g_variant_unref_floating(args);
@@ -220,10 +220,10 @@ nm_dbus_object_emit_signal_variant(NMDBusObject *                     self,
 }
 
 void
-nm_dbus_object_emit_signal(NMDBusObject *                     self,
+nm_dbus_object_emit_signal(NMDBusObject                      *self,
                            const NMDBusInterfaceInfoExtended *interface_info,
-                           const GDBusSignalInfo *            signal_info,
-                           const char *                       format,
+                           const GDBusSignalInfo             *signal_info,
+                           const char                        *format,
                            ...)
 {
     va_list ap;

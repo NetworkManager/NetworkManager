@@ -44,8 +44,8 @@ typedef struct {
     char *interface_name;
     char *mac_address;
 
-    char *         label;
-    NmtNewtEntry * entry;
+    char          *label;
+    NmtNewtEntry  *entry;
     NmtNewtWidget *button;
 
     gboolean updating;
@@ -91,13 +91,13 @@ nmt_device_entry_new(const char *label, int width, GType hardware_type)
 
 static gboolean
 device_entry_parse(NmtDeviceEntry *deventry,
-                   const char *    text,
-                   char **         interface_name,
-                   char **         mac_address)
+                   const char     *text,
+                   char          **interface_name,
+                   char          **mac_address)
 {
     NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
     guint8                 buf[NM_UTILS_HWADDR_LEN_MAX];
-    char **                words;
+    char                 **words;
     int                    len;
 
     *interface_name = *mac_address = NULL;
@@ -151,7 +151,7 @@ static gboolean
 device_entry_validate(NmtNewtEntry *entry, const char *text, gpointer user_data)
 {
     NmtDeviceEntry *deventry = user_data;
-    char *          ifname, *mac;
+    char           *ifname, *mac;
 
     if (!device_entry_parse(deventry, text, &ifname, &mac))
         return FALSE;
@@ -165,8 +165,8 @@ static NMDevice *
 find_device_by_interface_name(NmtDeviceEntry *deventry, const char *interface_name)
 {
     NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
-    const GPtrArray *      devices;
-    NMDevice *             device = NULL;
+    const GPtrArray       *devices;
+    NMDevice              *device = NULL;
     int                    i;
 
     devices = nm_client_get_devices(nm_client);
@@ -192,14 +192,14 @@ static NMDevice *
 find_device_by_mac_address(NmtDeviceEntry *deventry, const char *mac_address)
 {
     NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
-    const GPtrArray *      devices;
-    NMDevice *             device = NULL;
+    const GPtrArray       *devices;
+    NMDevice              *device = NULL;
     int                    i;
 
     devices = nm_client_get_devices(nm_client);
     for (i = 0; i < devices->len && !device; i++) {
         NMDevice *candidate = devices->pdata[i];
-        char *    hwaddr;
+        char     *hwaddr;
 
         if (priv->hardware_type != G_TYPE_NONE
             && !G_TYPE_CHECK_INSTANCE_TYPE(candidate, priv->hardware_type))
@@ -222,9 +222,9 @@ static void
 update_entry(NmtDeviceEntry *deventry)
 {
     NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
-    const char *           ifname;
-    char *                 mac, *text;
-    NMDevice *             ifname_device, *mac_device;
+    const char            *ifname;
+    char                  *mac, *text;
+    NMDevice              *ifname_device, *mac_device;
 
     if (priv->interface_name) {
         ifname        = priv->interface_name;
@@ -314,8 +314,8 @@ static void
 entry_text_changed(GObject *object, GParamSpec *pspec, gpointer deventry)
 {
     NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
-    const char *           text;
-    char *                 ifname, *mac;
+    const char            *text;
+    char                  *ifname, *mac;
 
     if (priv->updating)
         return;
@@ -335,7 +335,7 @@ static void
 nmt_device_entry_init(NmtDeviceEntry *deventry)
 {
     NmtDeviceEntryPrivate *priv = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
-    NmtNewtWidget *        entry;
+    NmtNewtWidget         *entry;
 
     priv->hardware_type = G_TYPE_NONE;
 
@@ -401,7 +401,7 @@ nmt_device_entry_finalize(GObject *object)
  * accepted by the filter will be allowed.
  */
 void
-nmt_device_entry_set_device_filter(NmtDeviceEntry *           deventry,
+nmt_device_entry_set_device_filter(NmtDeviceEntry            *deventry,
                                    NmtDeviceEntryDeviceFilter filter,
                                    gpointer                   user_data)
 {
@@ -412,15 +412,15 @@ nmt_device_entry_set_device_filter(NmtDeviceEntry *           deventry,
 }
 
 static void
-nmt_device_entry_set_property(GObject *     object,
+nmt_device_entry_set_property(GObject      *object,
                               guint         prop_id,
                               const GValue *value,
-                              GParamSpec *  pspec)
+                              GParamSpec   *pspec)
 {
-    NmtDeviceEntry *       deventry = NMT_DEVICE_ENTRY(object);
+    NmtDeviceEntry        *deventry = NMT_DEVICE_ENTRY(object);
     NmtDeviceEntryPrivate *priv     = NMT_DEVICE_ENTRY_GET_PRIVATE(deventry);
-    const char *           interface_name;
-    const char *           mac_address;
+    const char            *interface_name;
+    const char            *mac_address;
 
     switch (prop_id) {
     case PROP_LABEL:

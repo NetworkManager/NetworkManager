@@ -35,7 +35,7 @@ test_nm_static_assert(void)
 {
     int                                v1[NM_STATIC_ASSERT_EXPR_1(1)];
     typeof(NM_STATIC_ASSERT_EXPR_1(1)) v_int;
-    int *                              p_int;
+    int                               *p_int;
 
     G_STATIC_ASSERT(sizeof(v1) == sizeof(int));
     G_STATIC_ASSERT(NM_STATIC_ASSERT_EXPR_1(1) == 1);
@@ -218,7 +218,7 @@ test_nm_strndup_a(void)
 
         {
             gs_free char *dup_free = NULL;
-            const char *  dup;
+            const char   *dup;
 
             l   = strlen(input) + 1;
             dup = nm_strndup_a(10, input, l - 1, &dup_free);
@@ -231,7 +231,7 @@ test_nm_strndup_a(void)
 
         {
             gs_free char *dup_free = NULL;
-            const char *  dup;
+            const char   *dup;
 
             l   = nmtst_get_rand_uint32() % 23;
             dup = nm_strndup_a(10, input, l, &dup_free);
@@ -321,10 +321,10 @@ test_unaligned(void)
 /*****************************************************************************/
 
 static void
-_strv_cmp_fuzz_input(const char *const * in,
+_strv_cmp_fuzz_input(const char *const  *in,
                      gssize              l,
-                     const char ***      out_strv_free_shallow,
-                     char ***            out_strv_free_deep,
+                     const char       ***out_strv_free_shallow,
+                     char             ***out_strv_free_deep,
                      const char *const **out_s1,
                      const char *const **out_s2)
 {
@@ -402,12 +402,12 @@ test_strv_cmp(void)
     {                                                                                               \
         gssize               _l1 = (l1);                                                            \
         gssize               _l2 = (l2);                                                            \
-        const char *const *  _a1;                                                                   \
-        const char *const *  _a2;                                                                   \
-        const char *const *  _a1x;                                                                  \
-        const char *const *  _a2x;                                                                  \
-        char **              _a1_free_deep    = NULL;                                               \
-        char **              _a2_free_deep    = NULL;                                               \
+        const char *const   *_a1;                                                                   \
+        const char *const   *_a2;                                                                   \
+        const char *const   *_a1x;                                                                  \
+        const char *const   *_a2x;                                                                  \
+        char               **_a1_free_deep    = NULL;                                               \
+        char               **_a2_free_deep    = NULL;                                               \
         gs_free const char **_a1_free_shallow = NULL;                                               \
         gs_free const char **_a2_free_shallow = NULL;                                               \
         int                  _c1, _c2;                                                              \
@@ -468,8 +468,8 @@ _do_strstrip_avoid_copy(const char *str)
     gs_free char *str2 = g_strdup(str);
     gs_free char *str3 = NULL;
     gs_free char *str4 = NULL;
-    const char *  s3;
-    const char *  s4;
+    const char   *s3;
+    const char   *s4;
 
     if (str1)
         g_strstrip(str1);
@@ -528,11 +528,11 @@ test_nm_utils_bin2hexstr(void)
         gboolean upper_case = nmtst_get_rand_bool();
         gboolean hexdigit_pairs_mangled;
         gsize    expected_strlen;
-        char *   str_hex;
+        char    *str_hex;
         gsize    required_len;
         gboolean outlen_set;
         gsize    outlen;
-        guint8 * bin2;
+        guint8  *bin2;
         guint    i, j;
 
         nmtst_rand_buf(NULL, buf, len);
@@ -647,7 +647,7 @@ static void
 test_nm_ref_string(void)
 {
     nm_auto_ref_string NMRefString *s1 = NULL;
-    NMRefString *                   s2;
+    NMRefString                    *s2;
 
     g_assert(NULL == NM_REF_STRING_UPCAST(NULL));
 
@@ -909,8 +909,8 @@ test_nm_str_buf(void)
     guint i_run;
 
     for (i_run = 0; TRUE; i_run++) {
-        nm_auto_str_buf NMStrBuf strbuf    = {};
-        nm_auto_free_gstring GString *gstr = NULL;
+        nm_auto_str_buf NMStrBuf      strbuf = {};
+        nm_auto_free_gstring GString *gstr   = NULL;
         int                           i, j, k;
         int                           c;
 
@@ -1102,7 +1102,7 @@ test_strv_dup_packed(void)
     for (i_run = 0; i_run < 500; i_run++) {
         const int            strv_len = nmtst_get_rand_word_length(NULL);
         gs_free const char **strv_cpy = NULL;
-        const char *const *  strv_src;
+        const char *const   *strv_src;
         int                  i, j;
 
         g_ptr_array_set_size(src, 0);

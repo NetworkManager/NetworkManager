@@ -9796,7 +9796,7 @@ msgid "Error: 'connection show': %s"
 msgstr "దోషం: 'అనుసంధానం చూపు': %s"
 
 #: ../src/nmcli/connections.c:1497
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "క్రియాశీల అనుసంధానము వివరాలు"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

@@ -19,10 +19,9 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-utils.h"
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
 #include "nm-dbus-manager.h"
 #include "NetworkManagerUtils.h"
+#include "nm-l3-config-data.h"
 
 #define PIDFILE NMRUNDIR "/dnsmasq.pid"
 #define CONFDIR NMCONFDIR "/dnsmasq.d"
@@ -47,8 +46,8 @@ G_STATIC_ASSERT(WAIT_MSEC_AFTER_SIGKILL + 100 <= NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG
 
 typedef void (*GlPidSpawnAsyncNotify)(GCancellable *cancellable,
                                       GPid          pid,
-                                      const int *   p_exit_code,
-                                      GError *      error,
+                                      const int    *p_exit_code,
+                                      GError       *error,
                                       gpointer      notify_user_data);
 
 typedef struct {
@@ -60,10 +59,10 @@ typedef struct {
 } GlPidKillExternalData;
 
 typedef struct {
-    const char *          dm_binary;
+    const char           *dm_binary;
     GlPidSpawnAsyncNotify notify;
     gpointer              notify_user_data;
-    GCancellable *        cancellable;
+    GCancellable         *cancellable;
 } GlPidSpawnAsyncData;
 
 static struct {
@@ -167,9 +166,9 @@ process_gone:
 static gboolean
 _gl_pid_kill_external(void)
 {
-    gs_free char *contents         = NULL;
-    gs_free char *cmdline_contents = NULL;
-    gs_free_error GError *error    = NULL;
+    gs_free char         *contents         = NULL;
+    gs_free char         *cmdline_contents = NULL;
+    gs_free_error GError *error            = NULL;
     gint64                pid64;
     GPid                  pid          = 0;
     guint64               p_start_time = 0;
@@ -482,7 +481,7 @@ static void
 _gl_pid_spawn_next_step(void)
 {
     gs_free_error GError *error = NULL;
-    const char *          argv[15];
+    const char           *argv[15];
     GPid                  pid = 0;
     guint                 argv_idx;
 
@@ -611,8 +610,8 @@ _gl_pid_spawn_next_step(void)
  *   asynchronously.
  */
 static void
-_gl_pid_spawn(const char *          dm_binary,
-              GCancellable *        cancellable,
+_gl_pid_spawn(const char           *dm_binary,
+              GCancellable         *cancellable,
               GlPidSpawnAsyncNotify notify,
               gpointer              notify_user_data)
 {
@@ -719,10 +718,10 @@ static gboolean start_dnsmasq(NMDnsDnsmasq *self, gboolean force_start, GError *
 /*****************************************************************************/
 
 static void
-add_dnsmasq_nameserver(NMDnsDnsmasq *   self,
+add_dnsmasq_nameserver(NMDnsDnsmasq    *self,
                        GVariantBuilder *servers,
-                       const char *     ip,
-                       const char *     domain)
+                       const char      *ip,
+                       const char      *domain)
 {
     g_return_if_fail(ip);
 
@@ -779,8 +778,8 @@ ip_addr_to_string(int addr_family, gconstpointer addr, const char *iface, char *
 }
 
 static void
-add_global_config(NMDnsDnsmasq *           self,
-                  GVariantBuilder *        dnsmasq_servers,
+add_global_config(NMDnsDnsmasq            *self,
+                  GVariantBuilder         *dnsmasq_servers,
                   const NMGlobalDnsConfig *config)
 {
     guint i, j;
@@ -790,7 +789,7 @@ add_global_config(NMDnsDnsmasq *           self,
     for (i = 0; i < nm_global_dns_config_get_num_domains(config); i++) {
         NMGlobalDnsDomain *domain  = nm_global_dns_config_get_domain(config, i);
         const char *const *servers = nm_global_dns_domain_get_servers(domain);
-        const char *       name    = nm_global_dns_domain_get_name(domain);
+        const char        *name    = nm_global_dns_domain_get_name(domain);
 
         g_return_if_fail(name);
 
@@ -806,20 +805,22 @@ add_global_config(NMDnsDnsmasq *           self,
 static void
 add_ip_config(NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsConfigIPData *ip_data)
 {
-    NMIPConfig *  ip_config = ip_data->ip_config;
-    gconstpointer addr;
-    const char *  iface, *domain;
+    const char   *iface;
+    const char   *domain;
     char          ip_addr_to_string_buf[IP_ADDR_TO_STRING_BUFLEN];
-    int           addr_family;
-    guint         i, j, num;
+    gconstpointer nameservers;
+    guint         num;
+    guint         i;
+    guint         j;
 
-    iface       = nm_platform_link_get_name(NM_PLATFORM_GET, ip_data->data->ifindex);
-    addr_family = nm_ip_config_get_addr_family(ip_config);
+    iface = nm_platform_link_get_name(NM_PLATFORM_GET, ip_data->data->ifindex);
 
-    num = nm_ip_config_get_num_nameservers(ip_config);
+    nameservers = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &num);
     for (i = 0; i < num; i++) {
-        addr = nm_ip_config_get_nameserver(ip_config, i);
-        ip_addr_to_string(addr_family, addr, iface, ip_addr_to_string_buf);
+        gconstpointer addr;
+
+        addr = nm_ip_addr_from_packed_array(ip_data->addr_family, nameservers, i);
+        ip_addr_to_string(ip_data->addr_family, addr, iface, ip_addr_to_string_buf);
 
         if (!ip_data->domains.has_default_route_explicit && ip_data->domains.has_default_route)
             add_dnsmasq_nameserver(self, servers, ip_addr_to_string_buf, NULL);
@@ -844,10 +845,10 @@ add_ip_config(NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsConfigIPD
 }
 
 static GVariant *
-create_update_args(NMDnsDnsmasq *           self,
+create_update_args(NMDnsDnsmasq            *self,
                    const NMGlobalDnsConfig *global_config,
-                   const CList *            ip_config_lst_head,
-                   const char *             hostname)
+                   const CList             *ip_data_lst_head,
+                   const char              *hostname)
 {
     GVariantBuilder          servers;
     const NMDnsConfigIPData *ip_data;
@@ -857,7 +858,7 @@ create_update_args(NMDnsDnsmasq *           self,
     if (global_config)
         add_global_config(self, &servers, global_config);
     else {
-        c_list_for_each_entry (ip_data, ip_config_lst_head, ip_config_lst)
+        c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst)
             add_ip_config(self, &servers, ip_data);
     }
 
@@ -869,8 +870,8 @@ create_update_args(NMDnsDnsmasq *           self,
 static void
 dnsmasq_update_done(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMDnsDnsmasq *self;
-    gs_free_error GError *error         = NULL;
+    NMDnsDnsmasq              *self;
+    gs_free_error GError      *error    = NULL;
     gs_unref_variant GVariant *response = NULL;
 
     response = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source_object), res, &error);
@@ -966,15 +967,15 @@ name_owner_changed(NMDnsDnsmasq *self, const char *name_owner)
 
 static void
 name_owner_changed_cb(GDBusConnection *connection,
-                      const char *     sender_name,
-                      const char *     object_path,
-                      const char *     interface_name,
-                      const char *     signal_name,
-                      GVariant *       parameters,
+                      const char      *sender_name,
+                      const char      *object_path,
+                      const char      *interface_name,
+                      const char      *signal_name,
+                      GVariant        *parameters,
                       gpointer         user_data)
 {
     NMDnsDnsmasq *self = user_data;
-    const char *  new_owner;
+    const char   *new_owner;
 
     if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sss)")))
         return;
@@ -1006,11 +1007,11 @@ spawn_timeout_cb(gpointer user_data)
 static void
 spawn_notify(GCancellable *cancellable,
              GPid          pid,
-             const int *   p_exit_code,
-             GError *      error,
+             const int    *p_exit_code,
+             GError       *error,
              gpointer      notify_user_data)
 {
-    NMDnsDnsmasq *       self;
+    NMDnsDnsmasq        *self;
     NMDnsDnsmasqPrivate *priv;
 
     if (nm_utils_error_is_cancelled(error))
@@ -1043,7 +1044,7 @@ spawn_notify(GCancellable *cancellable,
 static gboolean
 _burst_retry_timeout_cb(gpointer user_data)
 {
-    NMDnsDnsmasq *       self = user_data;
+    NMDnsDnsmasq        *self = user_data;
     NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
 
     priv->burst_retry_timeout_id = 0;
@@ -1057,7 +1058,7 @@ static gboolean
 start_dnsmasq(NMDnsDnsmasq *self, gboolean force_start, GError **error)
 {
     NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
-    const char *         dm_binary;
+    const char          *dm_binary;
     gint64               now;
 
     if (G_LIKELY(priv->main_cancellable)) {
@@ -1120,13 +1121,13 @@ start_dnsmasq(NMDnsDnsmasq *self, gboolean force_start, GError **error)
 }
 
 static gboolean
-update(NMDnsPlugin *            plugin,
+update(NMDnsPlugin             *plugin,
        const NMGlobalDnsConfig *global_config,
-       const CList *            ip_config_lst_head,
-       const char *             hostname,
-       GError **                error)
+       const CList             *ip_data_lst_head,
+       const char              *hostname,
+       GError                 **error)
 {
-    NMDnsDnsmasq *       self = NM_DNS_DNSMASQ(plugin);
+    NMDnsDnsmasq        *self = NM_DNS_DNSMASQ(plugin);
     NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
 
     if (!start_dnsmasq(self, TRUE, error))
@@ -1134,7 +1135,7 @@ update(NMDnsPlugin *            plugin,
 
     nm_clear_pointer(&priv->set_server_ex_args, g_variant_unref);
     priv->set_server_ex_args =
-        g_variant_ref_sink(create_update_args(self, global_config, ip_config_lst_head, hostname));
+        g_variant_ref_sink(create_update_args(self, global_config, ip_data_lst_head, hostname));
 
     send_dnsmasq_update(self);
     return TRUE;
@@ -1145,7 +1146,7 @@ update(NMDnsPlugin *            plugin,
 static void
 stop(NMDnsPlugin *plugin)
 {
-    NMDnsDnsmasq *       self = NM_DNS_DNSMASQ(plugin);
+    NMDnsDnsmasq        *self = NM_DNS_DNSMASQ(plugin);
     NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
 
     priv->is_stopped     = TRUE;
@@ -1172,7 +1173,7 @@ nm_dns_dnsmasq_new(void)
 static void
 dispose(GObject *object)
 {
-    NMDnsDnsmasq *       self = NM_DNS_DNSMASQ(object);
+    NMDnsDnsmasq        *self = NM_DNS_DNSMASQ(object);
     NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
 
     priv->is_stopped = TRUE;
@@ -1192,7 +1193,7 @@ static void
 nm_dns_dnsmasq_class_init(NMDnsDnsmasqClass *dns_class)
 {
     NMDnsPluginClass *plugin_class = NM_DNS_PLUGIN_CLASS(dns_class);
-    GObjectClass *    object_class = G_OBJECT_CLASS(dns_class);
+    GObjectClass     *object_class = G_OBJECT_CLASS(dns_class);
 
     object_class->dispose = dispose;
 

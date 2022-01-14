@@ -29,7 +29,7 @@ G_DEFINE_TYPE(NmtNewtButtonBox, nmt_newt_button_box, NMT_TYPE_NEWT_CONTAINER)
 
 typedef struct {
     NmtNewtButtonBoxOrientation orientation;
-    GPtrArray *                 start_buttons, *end_buttons;
+    GPtrArray                  *start_buttons, *end_buttons;
 } NmtNewtButtonBoxPrivate;
 
 enum {
@@ -193,7 +193,7 @@ static newtComponent *
 nmt_newt_button_box_get_components(NmtNewtWidget *widget)
 {
     NmtNewtButtonBoxPrivate *priv = NMT_NEWT_BUTTON_BOX_GET_PRIVATE(widget);
-    GPtrArray *              cos;
+    GPtrArray               *cos;
 
     cos = g_ptr_array_new();
     add_buttons(priv->start_buttons, cos);
@@ -231,7 +231,7 @@ size_request_buttons(NmtNewtButtonBox *bbox, GPtrArray *buttons, int *width, int
 static void
 nmt_newt_button_box_size_request(NmtNewtWidget *widget, int *width, int *height)
 {
-    NmtNewtButtonBox *       bbox = NMT_NEWT_BUTTON_BOX(widget);
+    NmtNewtButtonBox        *bbox = NMT_NEWT_BUTTON_BOX(widget);
     NmtNewtButtonBoxPrivate *priv = NMT_NEWT_BUTTON_BOX_GET_PRIVATE(widget);
 
     *width = *height = 0;
@@ -248,7 +248,7 @@ static void
 nmt_newt_button_box_size_allocate(NmtNewtWidget *widget, int x, int y, int width, int height)
 {
     NmtNewtButtonBoxPrivate *priv = NMT_NEWT_BUTTON_BOX_GET_PRIVATE(widget);
-    NmtNewtWidget *          child;
+    NmtNewtWidget           *child;
     int                      child_x, child_y, child_width, child_height;
     int                      i;
 
@@ -295,10 +295,10 @@ nmt_newt_button_box_size_allocate(NmtNewtWidget *widget, int x, int y, int width
 }
 
 static void
-nmt_newt_button_box_set_property(GObject *     object,
+nmt_newt_button_box_set_property(GObject      *object,
                                  guint         prop_id,
                                  const GValue *value,
-                                 GParamSpec *  pspec)
+                                 GParamSpec   *pspec)
 {
     NmtNewtButtonBoxPrivate *priv = NMT_NEWT_BUTTON_BOX_GET_PRIVATE(object);
 
@@ -330,8 +330,8 @@ nmt_newt_button_box_get_property(GObject *object, guint prop_id, GValue *value, 
 static void
 nmt_newt_button_box_class_init(NmtNewtButtonBoxClass *bbox_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(bbox_class);
-    NmtNewtWidgetClass *   widget_class    = NMT_NEWT_WIDGET_CLASS(bbox_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(bbox_class);
+    NmtNewtWidgetClass    *widget_class    = NMT_NEWT_WIDGET_CLASS(bbox_class);
     NmtNewtContainerClass *container_class = NMT_NEWT_CONTAINER_CLASS(bbox_class);
 
     g_type_class_add_private(bbox_class, sizeof(NmtNewtButtonBoxPrivate));

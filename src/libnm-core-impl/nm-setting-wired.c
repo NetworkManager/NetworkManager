@@ -53,17 +53,17 @@ typedef struct {
         guint              len;
         guint              n_alloc;
     } s390_options;
-    GArray *                mac_address_blacklist;
-    char **                 s390_subchannels;
-    char *                  port;
-    char *                  duplex;
-    char *                  device_mac_address;
-    char *                  cloned_mac_address;
-    char *                  generate_mac_address_mask;
-    char *                  s390_nettype;
-    char *                  wol_password;
+    GArray                 *mac_address_blacklist;
+    char                  **s390_subchannels;
+    char                   *port;
+    char                   *duplex;
+    char                   *device_mac_address;
+    char                   *cloned_mac_address;
+    char                   *generate_mac_address_mask;
+    char                   *s390_nettype;
+    char                   *wol_password;
+    int                     accept_all_mac_addresses;
     NMSettingWiredWakeOnLan wol;
-    NMTernary               accept_all_mac_addresses;
     guint32                 speed;
     guint32                 mtu;
     bool                    auto_negotiate;
@@ -344,7 +344,7 @@ gboolean
 nm_setting_wired_add_mac_blacklist_item(NMSettingWired *setting, const char *mac)
 {
     NMSettingWiredPrivate *priv;
-    const char *           candidate;
+    const char            *candidate;
     int                    i;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
@@ -401,7 +401,7 @@ gboolean
 nm_setting_wired_remove_mac_blacklist_item_by_value(NMSettingWired *setting, const char *mac)
 {
     NMSettingWiredPrivate *priv;
-    const char *           candidate;
+    const char            *candidate;
     int                    i;
 
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), FALSE);
@@ -526,8 +526,8 @@ nm_setting_wired_get_num_s390_options(NMSettingWired *setting)
 gboolean
 nm_setting_wired_get_s390_option(NMSettingWired *setting,
                                  guint32         idx,
-                                 const char **   out_key,
-                                 const char **   out_value)
+                                 const char    **out_key,
+                                 const char    **out_value)
 {
     NMSettingWiredPrivate *priv;
 
@@ -773,7 +773,7 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingWiredPrivate *priv  = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    GError *               local = NULL;
+    GError                *local = NULL;
     guint                  i;
 
     if (!NM_IN_STRSET(priv->port, NULL, "tp", "aui", "bnc", "mii")) {
@@ -996,9 +996,9 @@ clear_blacklist_item(char **item_p)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingWired *       setting = NM_SETTING_WIRED(object);
+    NMSettingWired        *setting = NM_SETTING_WIRED(object);
     NMSettingWiredPrivate *priv    = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    GHashTable *           hash;
+    GHashTable            *hash;
     guint                  i;
 
     switch (prop_id) {
@@ -1050,11 +1050,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_WAKE_ON_LAN_PASSWORD:
         g_value_set_string(value, priv->wol_password);
         break;
-    case PROP_ACCEPT_ALL_MAC_ADDRESSES:
-        g_value_set_enum(value, priv->accept_all_mac_addresses);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1063,8 +1060,8 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE(object);
-    const char *const *    blacklist;
-    const char *           mac;
+    const char *const     *blacklist;
+    const char            *mac;
 
     switch (prop_id) {
     case PROP_PORT:
@@ -1132,8 +1129,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         if (priv->s390_options.n_alloc > 0u) {
             gboolean       invalid_content = FALSE;
             GHashTableIter iter;
-            const char *   key;
-            const char *   val;
+            const char    *key;
+            const char    *val;
             guint          j;
             guint          i;
 
@@ -1188,11 +1185,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         g_free(priv->wol_password);
         priv->wol_password = g_value_dup_string(value);
         break;
-    case PROP_ACCEPT_ALL_MAC_ADDRESSES:
-        priv->accept_all_mac_addresses = g_value_get_enum(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1208,8 +1202,7 @@ nm_setting_wired_init(NMSettingWired *setting)
     priv->mac_address_blacklist = g_array_new(TRUE, FALSE, sizeof(char *));
     g_array_set_clear_func(priv->mac_address_blacklist, (GDestroyNotify) clear_blacklist_item);
 
-    priv->wol                      = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
-    priv->accept_all_mac_addresses = NM_TERNARY_DEFAULT;
+    priv->wol = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
 }
 
 /**
@@ -1244,9 +1237,9 @@ finalize(GObject *object)
 static void
 nm_setting_wired_class_init(NMSettingWiredClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingWiredPrivate));
 
@@ -1724,13 +1717,13 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * description: Enforce the interface to accept all the packets.
      * ---end---
      */
-    obj_properties[PROP_ACCEPT_ALL_MAC_ADDRESSES] =
-        g_param_spec_enum(NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
-                          "",
-                          "",
-                          NM_TYPE_TERNARY,
-                          NM_TERNARY_DEFAULT,
-                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIRED_ACCEPT_ALL_MAC_ADDRESSES,
+                                                    PROP_ACCEPT_ALL_MAC_ADDRESSES,
+                                                    NM_SETTING_PARAM_NONE,
+                                                    NMSettingWiredPrivate,
+                                                    accept_all_mac_addresses);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

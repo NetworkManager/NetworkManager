@@ -35,7 +35,7 @@ GType nmt_editor_section_get_type(void);
 NmtEditorSection *
 nmt_editor_section_new(const char *title, NmtNewtWidget *header_widget, gboolean show_by_default);
 
-const char *   nmt_editor_section_get_title(NmtEditorSection *section);
+const char    *nmt_editor_section_get_title(NmtEditorSection *section);
 NmtNewtWidget *nmt_editor_section_get_header_widget(NmtEditorSection *section);
 NmtEditorGrid *nmt_editor_section_get_body(NmtEditorSection *section);
 

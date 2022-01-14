@@ -10986,7 +10986,7 @@ msgid "Error: 'connection show': %s"
 msgstr "Fel: ”connection show”: %s"
 
 #: ../src/nmcli/connections.c:1497
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "Aktivera anslutningsdetaljer"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

@@ -30,7 +30,7 @@ typedef struct {
 
 GType nmt_slave_list_get_type(void);
 
-NmtNewtWidget *nmt_slave_list_new(NMConnection *             master,
+NmtNewtWidget *nmt_slave_list_new(NMConnection              *master,
                                   NmtAddConnectionTypeFilter type_filter,
                                   gpointer                   type_filter_data);
 

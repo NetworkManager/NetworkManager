@@ -45,7 +45,7 @@ typedef struct {
     GPtrArray *remove_buttons;
 
     NmtNewtWidget *add_button;
-    GBinding *     add_sensitivity;
+    GBinding      *add_sensitivity;
 } NmtWidgetListPrivate;
 
 enum {
@@ -106,7 +106,7 @@ NmtNewtWidget *
 nmt_widget_list_new(NmtWidgetListCallback create_callback,
                     gpointer              user_data,
                     GDestroyNotify        destroy_notify,
-                    NmtNewtWidget *       empty_widget)
+                    NmtNewtWidget        *empty_widget)
 {
     return g_object_new(NMT_TYPE_WIDGET_LIST,
                         "create-callback",
@@ -166,9 +166,9 @@ static void
 ensure_widgets(NmtWidgetList *list)
 {
     NmtWidgetListPrivate *priv = NMT_WIDGET_LIST_GET_PRIVATE(list);
-    NmtNewtWidget *       widget, *button, *focus;
+    NmtNewtWidget        *widget, *button, *focus;
     gboolean              was_empty;
-    NmtNewtForm *         form;
+    NmtNewtForm          *form;
     int                   i;
 
     was_empty = priv->widgets->len == 0;

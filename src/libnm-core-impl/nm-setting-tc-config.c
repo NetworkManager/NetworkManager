@@ -24,7 +24,7 @@ G_DEFINE_BOXED_TYPE(NMTCQdisc, nm_tc_qdisc, nm_tc_qdisc_dup, nm_tc_qdisc_unref)
 struct NMTCQdisc {
     guint refcount;
 
-    char *      kind;
+    char       *kind;
     guint32     handle;
     guint32     parent;
     GHashTable *attributes;
@@ -138,8 +138,8 @@ gboolean
 nm_tc_qdisc_equal(NMTCQdisc *qdisc, NMTCQdisc *other)
 {
     GHashTableIter iter;
-    const char *   key;
-    GVariant *     value, *value2;
+    const char    *key;
+    GVariant      *value, *value2;
     guint          n;
 
     g_return_val_if_fail(qdisc != NULL, FALSE);
@@ -172,9 +172,9 @@ nm_tc_qdisc_equal(NMTCQdisc *qdisc, NMTCQdisc *other)
 static guint
 _nm_tc_qdisc_hash(NMTCQdisc *qdisc)
 {
-    NMUtilsNamedValue attrs_static[30];
+    NMUtilsNamedValue          attrs_static[30];
     gs_free NMUtilsNamedValue *attrs_free = NULL;
-    const NMUtilsNamedValue *  attrs;
+    const NMUtilsNamedValue   *attrs;
     NMHashState                h;
     guint                      length;
     guint                      i;
@@ -186,8 +186,8 @@ _nm_tc_qdisc_hash(NMTCQdisc *qdisc)
     nm_hash_update_vals(&h, qdisc->handle, qdisc->parent, length);
     nm_hash_update_str0(&h, qdisc->kind);
     for (i = 0; i < length; i++) {
-        const char *        key     = attrs[i].name;
-        GVariant *          variant = attrs[i].value_ptr;
+        const char         *key     = attrs[i].name;
+        GVariant           *variant = attrs[i].value_ptr;
         const GVariantType *vtype;
 
         vtype = g_variant_get_type(variant);
@@ -224,8 +224,8 @@ nm_tc_qdisc_dup(NMTCQdisc *qdisc)
 
     if (qdisc->attributes) {
         GHashTableIter iter;
-        const char *   key;
-        GVariant *     value;
+        const char    *key;
+        GVariant      *value;
 
         g_hash_table_iter_init(&iter, qdisc->attributes);
         while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value))
@@ -495,8 +495,8 @@ gboolean
 nm_tc_action_equal(NMTCAction *action, NMTCAction *other)
 {
     GHashTableIter iter;
-    const char *   key;
-    GVariant *     value, *value2;
+    const char    *key;
+    GVariant      *value, *value2;
     guint          n;
 
     g_return_val_if_fail(!action || action->refcount > 0, FALSE);
@@ -549,8 +549,8 @@ nm_tc_action_dup(NMTCAction *action)
 
     if (action->attributes) {
         GHashTableIter iter;
-        const char *   key;
-        GVariant *     value;
+        const char    *key;
+        GVariant      *value;
 
         g_hash_table_iter_init(&iter, action->attributes);
         while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value))
@@ -667,7 +667,7 @@ G_DEFINE_BOXED_TYPE(NMTCTfilter, nm_tc_tfilter, nm_tc_tfilter_dup, nm_tc_tfilter
 struct NMTCTfilter {
     guint refcount;
 
-    char *      kind;
+    char       *kind;
     guint32     handle;
     guint32     parent;
     NMTCAction *action;
@@ -806,7 +806,7 @@ _nm_tc_tfilter_hash(NMTCTfilter *tfilter)
     if (tfilter->action) {
         gs_free NMUtilsNamedValue *attrs_free = NULL;
         NMUtilsNamedValue          attrs_static[30];
-        const NMUtilsNamedValue *  attrs;
+        const NMUtilsNamedValue   *attrs;
         guint                      length;
         guint                      i;
 
@@ -1370,10 +1370,10 @@ _qdiscs_to_variant(GPtrArray *qdiscs)
 
     if (qdiscs) {
         for (i = 0; i < qdiscs->len; i++) {
-            NMUtilsNamedValue attrs_static[30];
+            NMUtilsNamedValue          attrs_static[30];
             gs_free NMUtilsNamedValue *attrs_free = NULL;
-            const NMUtilsNamedValue *  attrs;
-            NMTCQdisc *                qdisc = qdiscs->pdata[i];
+            const NMUtilsNamedValue   *attrs;
+            NMTCQdisc                 *qdisc = qdiscs->pdata[i];
             guint                      length;
             GVariantBuilder            qdisc_builder;
             guint                      y;
@@ -1423,10 +1423,10 @@ _qdiscs_to_variant(GPtrArray *qdiscs)
 static GPtrArray *
 _qdiscs_from_variant(GVariant *value)
 {
-    GPtrArray *  qdiscs;
-    GVariant *   qdisc_var;
+    GPtrArray   *qdiscs;
+    GVariant    *qdisc_var;
     GVariantIter iter;
-    GError *     error = NULL;
+    GError      *error = NULL;
 
     g_return_val_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")), NULL);
 
@@ -1434,12 +1434,12 @@ _qdiscs_from_variant(GVariant *value)
     qdiscs = g_ptr_array_new_with_free_func((GDestroyNotify) nm_tc_qdisc_unref);
 
     while (g_variant_iter_next(&iter, "@a{sv}", &qdisc_var)) {
-        const char * kind;
+        const char  *kind;
         guint32      parent;
-        NMTCQdisc *  qdisc;
+        NMTCQdisc   *qdisc;
         GVariantIter qdisc_iter;
-        const char * key;
-        GVariant *   attr_value;
+        const char  *key;
+        GVariant    *attr_value;
 
         if (!g_variant_lookup(qdisc_var, "kind", "&s", &kind)
             || !g_variant_lookup(qdisc_var, "parent", "u", &parent)) {
@@ -1537,8 +1537,8 @@ _tfilters_to_variant(GPtrArray *tfilters)
 
     if (tfilters) {
         for (i = 0; i < tfilters->len; i++) {
-            NMTCTfilter *   tfilter = tfilters->pdata[i];
-            NMTCAction *    action  = nm_tc_tfilter_get_action(tfilter);
+            NMTCTfilter    *tfilter = tfilters->pdata[i];
+            NMTCAction     *action  = nm_tc_tfilter_get_action(tfilter);
             GVariantBuilder tfilter_builder;
 
             g_variant_builder_init(&tfilter_builder, G_VARIANT_TYPE("a{sv}"));
@@ -1583,10 +1583,10 @@ _tfilters_to_variant(GPtrArray *tfilters)
 static GPtrArray *
 _tfilters_from_variant(GVariant *value)
 {
-    GPtrArray *  tfilters;
-    GVariant *   tfilter_var;
+    GPtrArray   *tfilters;
+    GVariant    *tfilter_var;
     GVariantIter iter;
-    GError *     error = NULL;
+    GError      *error = NULL;
 
     g_return_val_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")), NULL);
 
@@ -1595,15 +1595,15 @@ _tfilters_from_variant(GVariant *value)
 
     while (g_variant_iter_next(&iter, "@a{sv}", &tfilter_var)) {
         NMTCTfilter *tfilter = NULL;
-        const char * kind;
+        const char  *kind;
         guint32      handle;
         guint32      parent;
-        NMTCAction * action;
-        const char * action_kind = NULL;
-        char *       action_key;
+        NMTCAction  *action;
+        const char  *action_kind = NULL;
+        char        *action_key;
         GVariantIter action_iter;
-        GVariant *   action_var = NULL;
-        GVariant *   action_val;
+        GVariant    *action_var = NULL;
+        GVariant    *action_val;
 
         if (!g_variant_lookup(tfilter_var, "kind", "&s", &kind)
             || !g_variant_lookup(tfilter_var, "parent", "u", &parent)) {
@@ -1767,9 +1767,9 @@ finalize(GObject *object)
 static void
 nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;

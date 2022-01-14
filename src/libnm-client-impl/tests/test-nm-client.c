@@ -28,9 +28,9 @@ loop_quit(gpointer user_data)
 static void
 devices_notify_cb(NMClient *c, GParamSpec *pspec, gpointer user_data)
 {
-    gboolean *       notified = user_data;
+    gboolean        *notified = user_data;
     const GPtrArray *devices;
-    NMDevice *       device;
+    NMDevice        *device;
 
     devices = nm_client_get_devices(c);
     g_assert(devices);
@@ -46,12 +46,12 @@ devices_notify_cb(NMClient *c, GParamSpec *pspec, gpointer user_data)
 static void
 test_device_added(void)
 {
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
-    gs_unref_object NMClient *client                     = NULL;
-    const GPtrArray *         devices;
-    NMDevice *                device;
-    gboolean                  notified = FALSE;
-    GError *                  error    = NULL;
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
+    gs_unref_object NMClient                      *client = NULL;
+    const GPtrArray                               *devices;
+    NMDevice                                      *device;
+    gboolean                                       notified = FALSE;
+    GError                                        *error    = NULL;
 
     sinfo = nmtstc_service_init();
     if (!nmtstc_service_available(sinfo))
@@ -113,9 +113,9 @@ device_sai_added_cb(NMClient *c, NMDevice *device, gpointer user_data)
 static void
 devices_sai_notify_cb(NMClient *c, GParamSpec *pspec, gpointer user_data)
 {
-    guint *          result = user_data;
+    guint           *result = user_data;
     const GPtrArray *devices;
-    NMDevice *       device;
+    NMDevice        *device;
 
     g_assert_cmpstr(pspec->name, ==, "devices");
 
@@ -134,11 +134,11 @@ devices_sai_notify_cb(NMClient *c, GParamSpec *pspec, gpointer user_data)
 static void
 test_device_added_signal_after_init(void)
 {
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
-    gs_unref_object NMClient *client                     = NULL;
-    const GPtrArray *         devices;
-    NMDevice *                device;
-    guint                     result = 0;
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
+    gs_unref_object NMClient                      *client = NULL;
+    const GPtrArray                               *devices;
+    NMDevice                                      *device;
+    guint                                          result = 0;
 
     sinfo = nmtstc_service_init();
     if (!nmtstc_service_available(sinfo))
@@ -187,7 +187,7 @@ static const char *expected_bssid = "66:55:44:33:22:11";
 typedef struct {
     GMainLoop *loop;
     gboolean   found;
-    char *     ap_path;
+    char      *ap_path;
     gboolean   signaled;
     gboolean   notified;
     guint      quit_id;
@@ -229,7 +229,7 @@ static void
 wifi_ap_add_notify_cb(NMDeviceWifi *w, GParamSpec *pspec, WifiApInfo *info)
 {
     const GPtrArray *aps;
-    NMAccessPoint *  ap;
+    NMAccessPoint   *ap;
 
     aps = nm_device_wifi_get_access_points(w);
     g_assert(aps);
@@ -269,13 +269,13 @@ wifi_ap_remove_notify_cb(NMDeviceWifi *w, GParamSpec *pspec, WifiApInfo *info)
 static void
 test_wifi_ap_added_removed(void)
 {
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
-    gs_unref_object NMClient *client                     = NULL;
-    NMDeviceWifi *            wifi;
-    WifiApInfo                info = {gl.loop, FALSE, FALSE, 0, 0};
-    GVariant *                ret;
-    GError *                  error         = NULL;
-    gs_free char *            expected_path = NULL;
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
+    gs_unref_object NMClient                      *client = NULL;
+    NMDeviceWifi                                  *wifi;
+    WifiApInfo                                     info = {gl.loop, FALSE, FALSE, 0, 0};
+    GVariant                                      *ret;
+    GError                                        *error         = NULL;
+    gs_free char                                  *expected_path = NULL;
 
     sinfo = nmtstc_service_init();
     if (!nmtstc_service_available(sinfo))
@@ -391,9 +391,9 @@ static void
 da_devices_notify_cb(NMClient *c, GParamSpec *pspec, DaInfo *info)
 {
     const GPtrArray *devices;
-    NMDevice *       device;
+    NMDevice        *device;
     guint            i;
-    const char *     iface;
+    const char      *iface;
 
     devices = nm_client_get_devices(c);
     g_assert(devices);
@@ -413,13 +413,13 @@ da_devices_notify_cb(NMClient *c, GParamSpec *pspec, DaInfo *info)
 static void
 test_devices_array(void)
 {
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
-    gs_unref_object NMClient *client                     = NULL;
-    DaInfo                    info                       = {gl.loop};
-    NMDevice *                wlan0, *eth0, *eth1, *device;
-    const GPtrArray *         devices;
-    GError *                  error = NULL;
-    GVariant *                ret;
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
+    gs_unref_object NMClient                      *client = NULL;
+    DaInfo                                         info   = {gl.loop};
+    NMDevice                                      *wlan0, *eth0, *eth1, *device;
+    const GPtrArray                               *devices;
+    GError                                        *error = NULL;
+    GVariant                                      *ret;
 
     sinfo = nmtstc_service_init();
     if (!nmtstc_service_available(sinfo))
@@ -502,12 +502,12 @@ nm_running_changed(GObject *client, GParamSpec *pspec, gpointer user_data)
 static void
 test_client_nm_running(void)
 {
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
-    gs_unref_object NMClient *client1                    = NULL;
-    gs_unref_object NMClient *client2                    = NULL;
-    guint                     quit_id;
-    int                       running_changed = 0;
-    GError *                  error           = NULL;
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo   = NULL;
+    gs_unref_object NMClient                      *client1 = NULL;
+    gs_unref_object NMClient                      *client2 = NULL;
+    guint                                          quit_id;
+    int                                            running_changed = 0;
+    GError                                        *error           = NULL;
 
     client1 = nmtstc_client_new(TRUE);
 
@@ -560,7 +560,7 @@ test_client_nm_running(void)
 }
 
 typedef struct {
-    GMainLoop *         loop;
+    GMainLoop          *loop;
     NMActiveConnection *ac;
 
     int remaining;
@@ -572,8 +572,8 @@ typedef struct {
 static void
 assert_ac_and_device(NMClient *client)
 {
-    const GPtrArray *   devices, *acs, *ac_devices;
-    NMDevice *          device, *ac_device;
+    const GPtrArray    *devices, *acs, *ac_devices;
+    NMDevice           *device, *ac_device;
     NMActiveConnection *ac, *device_ac;
 
     acs = nm_client_get_active_connections(client);
@@ -614,9 +614,9 @@ assert_ac_and_device(NMClient *client)
 static void
 add_and_activate_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 {
-    NMClient *  client = NM_CLIENT(object);
+    NMClient   *client = NM_CLIENT(object);
     TestACInfo *info   = user_data;
-    GError *    error  = NULL;
+    GError     *error  = NULL;
 
     info->ac = nm_client_add_and_activate_connection_finish(client, result, &error);
     g_assert_no_error(error);
@@ -632,7 +632,7 @@ add_and_activate_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 client_acs_changed_cb(GObject *client, GParamSpec *pspec, gpointer user_data)
 {
-    TestACInfo *     info = user_data;
+    TestACInfo      *info = user_data;
     const GPtrArray *acs;
 
     acs = nm_client_get_active_connections(NM_CLIENT(client));
@@ -659,11 +659,11 @@ device_ac_changed_cb(GObject *device, GParamSpec *pspec, gpointer user_data)
 static void
 test_active_connections(void)
 {
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
-    gs_unref_object NMClient *client                     = NULL;
-    NMDevice *                device;
-    NMConnection *            conn;
-    TestACInfo                info = {gl.loop, NULL, 0};
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
+    gs_unref_object NMClient                      *client = NULL;
+    NMDevice                                      *device;
+    NMConnection                                  *conn;
+    TestACInfo                                     info = {gl.loop, NULL, 0};
 
     sinfo = nmtstc_service_init();
     if (!nmtstc_service_available(sinfo))
@@ -719,9 +719,9 @@ test_active_connections(void)
 static void
 client_devices_changed_cb(GObject *client, GParamSpec *pspec, gpointer user_data)
 {
-    TestACInfo *     info = user_data;
+    TestACInfo      *info = user_data;
     const GPtrArray *devices;
-    NMDevice *       device;
+    NMDevice        *device;
 
     devices = nm_client_get_devices(NM_CLIENT(client));
     g_assert(devices != NULL);
@@ -755,7 +755,7 @@ client_devices_changed_cb(GObject *client, GParamSpec *pspec, gpointer user_data
 }
 
 typedef struct {
-    GMainLoop *         loop;
+    GMainLoop          *loop;
     NMRemoteConnection *remote;
 } TestConnectionInfo;
 
@@ -763,7 +763,7 @@ static void
 add_connection_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 {
     TestConnectionInfo *info  = user_data;
-    GError *            error = NULL;
+    GError             *error = NULL;
 
     info->remote = nm_client_add_connection_finish(NM_CLIENT(object), result, &error);
     g_assert_no_error(error);
@@ -773,9 +773,9 @@ add_connection_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 activate_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 {
-    NMClient *  client = NM_CLIENT(object);
+    NMClient   *client = NM_CLIENT(object);
     TestACInfo *info   = user_data;
-    GError *    error  = NULL;
+    GError     *error  = NULL;
 
     info->ac = nm_client_activate_connection_finish(client, result, &error);
     g_assert_no_error(error);
@@ -791,13 +791,13 @@ activate_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 test_activate_virtual(void)
 {
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
-    gs_unref_object NMClient *client                     = NULL;
-    NMConnection *            conn;
-    NMSettingConnection *     s_con;
-    NMSettingVlan *           s_vlan;
-    TestACInfo                info      = {gl.loop, NULL, 0};
-    TestConnectionInfo        conn_info = {gl.loop, NULL};
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
+    gs_unref_object NMClient                      *client = NULL;
+    NMConnection                                  *conn;
+    NMSettingConnection                           *s_con;
+    NMSettingVlan                                 *s_vlan;
+    TestACInfo                                     info      = {gl.loop, NULL, 0};
+    TestConnectionInfo                             conn_info = {gl.loop, NULL};
 
     sinfo = nmtstc_service_init();
     if (!nmtstc_service_available(sinfo))
@@ -852,18 +852,18 @@ test_activate_virtual(void)
 static void
 test_device_connection_compatibility(void)
 {
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
-    gs_unref_object NMClient *client                     = NULL;
-    gs_unref_object NMConnection *conn                   = NULL;
-    NMDevice *                    device1;
-    NMDevice *                    device2;
-    NMSettingWired *              s_wired;
-    GError *                      error           = NULL;
-    const char *                  subchannels[]   = {"0.0.8000", "0.0.8001", "0.0.8002", NULL};
-    const char *                  subchannels_2[] = {"0.0.8000", "0.0.8001", NULL};
-    const char *                  subchannels_x[] = {"0.0.8000", "0.0.8001", "0.0.800X", NULL};
-    const char *                  hw_addr1        = "52:54:00:ab:db:23";
-    const char *                  hw_addr2        = "52:54:00:ab:db:24";
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
+    gs_unref_object NMClient                      *client = NULL;
+    gs_unref_object NMConnection                  *conn   = NULL;
+    NMDevice                                      *device1;
+    NMDevice                                      *device2;
+    NMSettingWired                                *s_wired;
+    GError                                        *error = NULL;
+    const char *subchannels[]   = {"0.0.8000", "0.0.8001", "0.0.8002", NULL};
+    const char *subchannels_2[] = {"0.0.8000", "0.0.8001", NULL};
+    const char *subchannels_x[] = {"0.0.8000", "0.0.8001", "0.0.800X", NULL};
+    const char *hw_addr1        = "52:54:00:ab:db:23";
+    const char *hw_addr2        = "52:54:00:ab:db:24";
 
     sinfo = nmtstc_service_init();
     if (!nmtstc_service_available(sinfo))
@@ -927,7 +927,7 @@ static gboolean
 _test_connection_invalid_find_connections(gpointer element, gpointer needle, gpointer user_data)
 {
     NMRemoteConnection *con  = NM_REMOTE_CONNECTION(element);
-    const char *        path = needle;
+    const char         *path = needle;
 
     g_assert(NM_IS_REMOTE_CONNECTION(con));
     g_assert(path && *path);
@@ -950,17 +950,17 @@ test_connection_invalid(void)
 {
     NMTSTC_SERVICE_INFO_SETUP(my_sinfo);
     gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    gs_unref_object NMClient *client = NULL;
-    const GPtrArray *         connections;
-    gs_free char *            path0 = NULL;
-    gs_free char *            path1 = NULL;
-    gs_free char *            path2 = NULL;
-    gs_free char *            path3 = NULL;
-    gs_free char *            uuid2 = NULL;
-    gsize                     n_found;
-    gssize                    idx[4];
-    gs_unref_variant GVariant *variant = NULL;
+    NMSettingConnection          *s_con;
+    gs_unref_object NMClient     *client = NULL;
+    const GPtrArray              *connections;
+    gs_free char                 *path0 = NULL;
+    gs_free char                 *path1 = NULL;
+    gs_free char                 *path2 = NULL;
+    gs_free char                 *path3 = NULL;
+    gs_free char                 *uuid2 = NULL;
+    gsize                         n_found;
+    gssize                        idx[4];
+    gs_unref_variant GVariant    *variant = NULL;
 
     g_assert(g_main_loop_get_context(gl.loop)
              == (g_main_context_get_thread_default() ?: g_main_context_default()));

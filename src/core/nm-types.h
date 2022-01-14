@@ -25,10 +25,7 @@ typedef struct _NML3Cfg                 NML3Cfg;
 typedef struct _NML3ConfigData          NML3ConfigData;
 typedef struct _NMDevice                NMDevice;
 typedef struct _NMDhcpConfig            NMDhcpConfig;
-typedef struct _NMProxyConfig           NMProxyConfig;
 typedef struct _NMIPConfig              NMIPConfig;
-typedef struct _NMIP4Config             NMIP4Config;
-typedef struct _NMIP6Config             NMIP6Config;
 typedef struct _NMManager               NMManager;
 typedef struct _NMNetns                 NMNetns;
 typedef struct _NMPolicy                NMPolicy;
@@ -40,10 +37,10 @@ typedef struct _NMSleepMonitor          NMSleepMonitor;
 typedef struct _NMLldpListener          NMLldpListener;
 typedef struct _NMConfigDeviceStateData NMConfigDeviceStateData;
 
-typedef void (*NMManagerDeviceAuthRequestFunc)(NMDevice *             device,
+typedef void (*NMManagerDeviceAuthRequestFunc)(NMDevice              *device,
                                                GDBusMethodInvocation *context,
-                                               NMAuthSubject *        subject,
-                                               GError *               error,
+                                               NMAuthSubject         *subject,
+                                               GError                *error,
                                                gpointer               user_data);
 
 struct _NMDedupMultiIndex;

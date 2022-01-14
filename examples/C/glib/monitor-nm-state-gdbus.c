@@ -45,9 +45,9 @@ nm_state_to_string(NMState state)
 
 static void
 on_signal(GDBusProxy *proxy,
-          char *      sender_name,
-          char *      signal_name,
-          GVariant *  parameters,
+          char       *sender_name,
+          char       *signal_name,
+          GVariant   *parameters,
           gpointer    user_data)
 {
     guint32 new_state;
@@ -72,10 +72,10 @@ on_signal(GDBusProxy *proxy,
 int
 main(int argc, char *argv[])
 {
-    GMainLoop *     loop;
-    GError *        error = NULL;
+    GMainLoop      *loop;
+    GError         *error = NULL;
     GDBusProxyFlags flags;
-    GDBusProxy *    proxy;
+    GDBusProxy     *proxy;
 
     /* Monitor 'StateChanged' signal on 'org.freedesktop.NetworkManager' interface */
     g_print("Monitor NetworkManager's state\n");

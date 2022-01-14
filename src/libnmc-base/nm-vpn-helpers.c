@@ -25,8 +25,8 @@
 NMVpnEditorPlugin *
 nm_vpn_get_editor_plugin(const char *service_type, GError **error)
 {
-    NMVpnEditorPlugin *plugin = NULL;
-    NMVpnPluginInfo *  plugin_info;
+    NMVpnEditorPlugin    *plugin = NULL;
+    NMVpnPluginInfo      *plugin_info;
     gs_free_error GError *local = NULL;
 
     g_return_val_if_fail(service_type, NULL);
@@ -95,8 +95,8 @@ nm_vpn_get_plugin_infos(void)
 gboolean
 nm_vpn_supports_ipv6(NMConnection *connection)
 {
-    NMSettingVpn *     s_vpn;
-    const char *       service_type;
+    NMSettingVpn      *s_vpn;
+    const char        *service_type;
     NMVpnEditorPlugin *plugin;
     guint32            capabilities;
 
@@ -188,16 +188,16 @@ _extract_variable_value(char *line, const char *tag, char **value)
 
 gboolean
 nm_vpn_openconnect_authenticate_helper(const char *host,
-                                       char **     cookie,
-                                       char **     gateway,
-                                       char **     gwcert,
-                                       int *       status,
-                                       GError **   error)
+                                       char      **cookie,
+                                       char      **gateway,
+                                       char      **gwcert,
+                                       int        *status,
+                                       GError    **error)
 {
-    gs_free char *       output   = NULL;
+    gs_free char        *output   = NULL;
     gs_free const char **output_v = NULL;
-    const char *const *  iter;
-    const char *         path;
+    const char *const   *iter;
+    const char          *path;
     const char *const    DEFAULT_PATHS[] = {
         "/sbin/",
         "/usr/sbin/",
@@ -249,14 +249,14 @@ nm_vpn_openconnect_authenticate_helper(const char *host,
 }
 
 static gboolean
-_wg_complete_peer(GPtrArray **     p_peers,
+_wg_complete_peer(GPtrArray      **p_peers,
                   NMWireGuardPeer *peer_take,
                   gsize            peer_start_line_nr,
-                  const char *     filename,
-                  GError **        error)
+                  const char      *filename,
+                  GError         **error)
 {
-    nm_auto_unref_wgpeer NMWireGuardPeer *peer = peer_take;
-    gs_free_error GError *local                = NULL;
+    nm_auto_unref_wgpeer NMWireGuardPeer *peer  = peer_take;
+    gs_free_error GError                 *local = NULL;
 
     if (!peer)
         return TRUE;
@@ -330,37 +330,37 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
 {
     nm_auto_clear_secret_ptr NMSecretPtr file_content = NM_SECRET_PTR_INIT();
     char                                 ifname[IFNAMSIZ];
-    gs_free char *                       uuid         = NULL;
+    gs_free char                        *uuid         = NULL;
     gboolean                             ifname_valid = FALSE;
-    const char *                         cstr;
-    char *                               line_remainder;
-    gs_unref_object NMConnection *connection = NULL;
-    NMSettingConnection *         s_con;
-    NMSettingIPConfig *           s_ip4;
-    NMSettingIPConfig *           s_ip6;
-    NMSettingWireGuard *          s_wg;
-    gs_free_error GError *local = NULL;
+    const char                          *cstr;
+    char                                *line_remainder;
+    gs_unref_object NMConnection        *connection = NULL;
+    NMSettingConnection                 *s_con;
+    NMSettingIPConfig                   *s_ip4;
+    NMSettingIPConfig                   *s_ip6;
+    NMSettingWireGuard                  *s_wg;
+    gs_free_error GError                *local = NULL;
     enum {
         LINE_CONTEXT_INIT,
         LINE_CONTEXT_INTERFACE,
         LINE_CONTEXT_PEER,
     } line_context;
-    gsize                line_nr;
-    gsize                current_peer_start_line_nr    = 0;
-    nm_auto_unref_wgpeer NMWireGuardPeer *current_peer = NULL;
-    gs_unref_ptrarray GPtrArray *data_dns_search       = NULL;
-    gs_unref_ptrarray GPtrArray *data_dns_v4           = NULL;
-    gs_unref_ptrarray GPtrArray *data_dns_v6           = NULL;
-    gs_unref_ptrarray GPtrArray *data_addr_v4          = NULL;
-    gs_unref_ptrarray GPtrArray *data_addr_v6          = NULL;
-    gs_unref_ptrarray GPtrArray *data_peers            = NULL;
-    const char *                 data_private_key      = NULL;
-    gint64                       data_table;
-    guint                        data_listen_port = 0;
-    guint                        data_fwmark      = 0;
-    guint                        data_mtu         = 0;
-    int                          is_v4;
-    guint                        i;
+    gsize                                 line_nr;
+    gsize                                 current_peer_start_line_nr = 0;
+    nm_auto_unref_wgpeer NMWireGuardPeer *current_peer               = NULL;
+    gs_unref_ptrarray GPtrArray          *data_dns_search            = NULL;
+    gs_unref_ptrarray GPtrArray          *data_dns_v4                = NULL;
+    gs_unref_ptrarray GPtrArray          *data_dns_v6                = NULL;
+    gs_unref_ptrarray GPtrArray          *data_addr_v4               = NULL;
+    gs_unref_ptrarray GPtrArray          *data_addr_v6               = NULL;
+    gs_unref_ptrarray GPtrArray          *data_peers                 = NULL;
+    const char                           *data_private_key           = NULL;
+    gint64                                data_table;
+    guint                                 data_listen_port = 0;
+    guint                                 data_fwmark      = 0;
+    guint                                 data_mtu         = 0;
+    int                                   is_v4;
+    guint                                 i;
 
     g_return_val_if_fail(filename, NULL);
     g_return_val_if_fail(!error || !*error, NULL);
@@ -420,8 +420,8 @@ nm_vpn_wireguard_import(const char *filename, GError **error)
     line_nr        = 0;
     while (line_remainder[0] != '\0') {
         const char *matched_key = NULL;
-        char *      value       = NULL;
-        char *      line;
+        char       *value       = NULL;
+        char       *line;
         char        ch;
         gint64      i64;
 
@@ -742,9 +742,9 @@ fail_invalid_secret:
         const char *method_manual =
             is_v4 ? NM_SETTING_IP4_CONFIG_METHOD_MANUAL : NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
         NMSettingIPConfig *s_ip             = is_v4 ? s_ip4 : s_ip6;
-        GPtrArray *        data_dns         = is_v4 ? data_dns_v4 : data_dns_v6;
-        GPtrArray *        data_addr        = is_v4 ? data_addr_v4 : data_addr_v6;
-        GPtrArray *        data_dns_search2 = data_dns_search;
+        GPtrArray         *data_dns         = is_v4 ? data_dns_v4 : data_dns_v6;
+        GPtrArray         *data_addr        = is_v4 ? data_addr_v4 : data_addr_v6;
+        GPtrArray         *data_dns_search2 = data_dns_search;
 
         if (!data_addr) {
             /* When specifying "DNS", we also require an "Address" for the same address

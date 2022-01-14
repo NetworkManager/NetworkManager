@@ -75,14 +75,14 @@ typedef struct {
      * device states >= DISCONNECTED.
      */
     void (*device_state_changed)(NMActiveConnection *connection,
-                                 NMDevice *          device,
+                                 NMDevice           *device,
                                  NMDeviceState       new_state,
                                  NMDeviceState       old_state);
     void (*master_failed)(NMActiveConnection *connection);
 
     void (*device_changed)(NMActiveConnection *connection,
-                           NMDevice *          new_device,
-                           NMDevice *          old_device);
+                           NMDevice           *new_device,
+                           NMDevice           *old_device);
 
     void (*device_metered_changed)(NMActiveConnection *connection, NMMetered new_value);
 
@@ -96,24 +96,24 @@ GType nm_active_connection_get_type(void);
 
 typedef void (*NMActiveConnectionAuthResultFunc)(NMActiveConnection *self,
                                                  gboolean            success,
-                                                 const char *        error_desc,
+                                                 const char         *error_desc,
                                                  gpointer            user_data);
 
-void nm_active_connection_authorize(NMActiveConnection *             self,
-                                    NMConnection *                   initial_connection,
+void nm_active_connection_authorize(NMActiveConnection              *self,
+                                    NMConnection                    *initial_connection,
                                     NMActiveConnectionAuthResultFunc result_func,
                                     gpointer                         user_data);
 
 NMSettingsConnection *nm_active_connection_get_settings_connection(NMActiveConnection *self);
-NMConnection *        nm_active_connection_get_applied_connection(NMActiveConnection *self);
+NMConnection         *nm_active_connection_get_applied_connection(NMActiveConnection *self);
 
 NMSettingsConnection *_nm_active_connection_get_settings_connection(NMActiveConnection *self);
 
-void nm_active_connection_set_settings_connection(NMActiveConnection *  self,
+void nm_active_connection_set_settings_connection(NMActiveConnection   *self,
                                                   NMSettingsConnection *connection);
 
 gboolean
-nm_active_connection_has_unmodified_applied_connection(NMActiveConnection *  self,
+nm_active_connection_has_unmodified_applied_connection(NMActiveConnection   *self,
                                                        NMSettingCompareFlags compare_flags);
 
 const char *nm_active_connection_get_settings_connection_id(NMActiveConnection *self);
@@ -121,7 +121,7 @@ const char *nm_active_connection_get_settings_connection_id(NMActiveConnection *
 const char *nm_active_connection_get_specific_object(NMActiveConnection *self);
 
 void nm_active_connection_set_specific_object(NMActiveConnection *self,
-                                              const char *        specific_object);
+                                              const char         *specific_object);
 
 void
 nm_active_connection_set_default(NMActiveConnection *self, int addr_family, gboolean is_default);
@@ -130,17 +130,20 @@ gboolean nm_active_connection_get_default(NMActiveConnection *self, int addr_fam
 
 NMActiveConnectionState nm_active_connection_get_state(NMActiveConnection *self);
 
-void nm_active_connection_set_state(NMActiveConnection *          self,
+void nm_active_connection_set_state(NMActiveConnection           *self,
                                     NMActiveConnectionState       state,
                                     NMActiveConnectionStateReason reason);
 
-void nm_active_connection_set_state_fail(NMActiveConnection *          active,
+void nm_active_connection_set_state_fail(NMActiveConnection           *active,
                                          NMActiveConnectionStateReason reason,
-                                         const char *                  error_desc);
+                                         const char                   *error_desc);
+
+#define NM_ACTIVATION_STATE_FLAG_IP_READY_X(IS_IPv4) \
+    ((IS_IPv4) ? NM_ACTIVATION_STATE_FLAG_IP4_READY : NM_ACTIVATION_STATE_FLAG_IP6_READY)
 
 NMActivationStateFlags nm_active_connection_get_state_flags(NMActiveConnection *self);
 
-void nm_active_connection_set_state_flags_full(NMActiveConnection *   self,
+void nm_active_connection_set_state_flags_full(NMActiveConnection    *self,
                                                NMActivationStateFlags state_flags,
                                                NMActivationStateFlags mask);
 
@@ -151,7 +154,7 @@ nm_active_connection_set_state_flags(NMActiveConnection *self, NMActivationState
 }
 
 static inline void
-nm_active_connection_set_state_flags_clear(NMActiveConnection *   self,
+nm_active_connection_set_state_flags_clear(NMActiveConnection    *self,
                                            NMActivationStateFlags state_flags)
 {
     nm_active_connection_set_state_flags_full(self, NM_ACTIVATION_STATE_FLAG_NONE, state_flags);

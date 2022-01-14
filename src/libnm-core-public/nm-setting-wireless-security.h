@@ -163,36 +163,36 @@ const char *nm_setting_wireless_security_get_key_mgmt(NMSettingWirelessSecurity 
 guint32     nm_setting_wireless_security_get_num_protos(NMSettingWirelessSecurity *setting);
 const char *nm_setting_wireless_security_get_proto(NMSettingWirelessSecurity *setting, guint32 i);
 gboolean    nm_setting_wireless_security_add_proto(NMSettingWirelessSecurity *setting,
-                                                   const char *               proto);
+                                                   const char                *proto);
 void     nm_setting_wireless_security_remove_proto(NMSettingWirelessSecurity *setting, guint32 i);
 gboolean nm_setting_wireless_security_remove_proto_by_value(NMSettingWirelessSecurity *setting,
-                                                            const char *               proto);
+                                                            const char                *proto);
 void     nm_setting_wireless_security_clear_protos(NMSettingWirelessSecurity *setting);
 
 guint32     nm_setting_wireless_security_get_num_pairwise(NMSettingWirelessSecurity *setting);
 const char *nm_setting_wireless_security_get_pairwise(NMSettingWirelessSecurity *setting,
                                                       guint32                    i);
 gboolean    nm_setting_wireless_security_add_pairwise(NMSettingWirelessSecurity *setting,
-                                                      const char *               pairwise);
+                                                      const char                *pairwise);
 void nm_setting_wireless_security_remove_pairwise(NMSettingWirelessSecurity *setting, guint32 i);
 gboolean nm_setting_wireless_security_remove_pairwise_by_value(NMSettingWirelessSecurity *setting,
-                                                               const char *               pairwise);
+                                                               const char                *pairwise);
 void     nm_setting_wireless_security_clear_pairwise(NMSettingWirelessSecurity *setting);
 
 guint32     nm_setting_wireless_security_get_num_groups(NMSettingWirelessSecurity *setting);
 const char *nm_setting_wireless_security_get_group(NMSettingWirelessSecurity *setting, guint32 i);
 gboolean    nm_setting_wireless_security_add_group(NMSettingWirelessSecurity *setting,
-                                                   const char *               group);
+                                                   const char                *group);
 void     nm_setting_wireless_security_remove_group(NMSettingWirelessSecurity *setting, guint32 i);
 gboolean nm_setting_wireless_security_remove_group_by_value(NMSettingWirelessSecurity *setting,
-                                                            const char *               group);
+                                                            const char                *group);
 void     nm_setting_wireless_security_clear_groups(NMSettingWirelessSecurity *setting);
 
 NM_AVAILABLE_IN_1_10
 NMSettingWirelessSecurityPmf
 nm_setting_wireless_security_get_pmf(NMSettingWirelessSecurity *setting);
 
-const char *         nm_setting_wireless_security_get_psk(NMSettingWirelessSecurity *setting);
+const char          *nm_setting_wireless_security_get_psk(NMSettingWirelessSecurity *setting);
 NMSettingSecretFlags nm_setting_wireless_security_get_psk_flags(NMSettingWirelessSecurity *setting);
 
 const char *nm_setting_wireless_security_get_leap_username(NMSettingWirelessSecurity *setting);
@@ -204,7 +204,7 @@ const char *nm_setting_wireless_security_get_wep_key(NMSettingWirelessSecurity *
                                                      guint32                    idx);
 void        nm_setting_wireless_security_set_wep_key(NMSettingWirelessSecurity *setting,
                                                      guint32                    idx,
-                                                     const char *               key);
+                                                     const char                *key);
 guint32     nm_setting_wireless_security_get_wep_tx_keyidx(NMSettingWirelessSecurity *setting);
 const char *nm_setting_wireless_security_get_auth_alg(NMSettingWirelessSecurity *setting);
 

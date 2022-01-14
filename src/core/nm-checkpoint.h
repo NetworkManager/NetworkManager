@@ -34,8 +34,8 @@ typedef struct _NMCheckpointClass NMCheckpointClass;
 
 GType nm_checkpoint_get_type(void);
 
-NMCheckpoint *nm_checkpoint_new(NMManager *             manager,
-                                GPtrArray *             devices,
+NMCheckpoint *nm_checkpoint_new(NMManager              *manager,
+                                GPtrArray              *devices,
                                 guint32                 rollback_timeout,
                                 NMCheckpointCreateFlags flags);
 
@@ -43,7 +43,7 @@ typedef void (*NMCheckpointTimeoutCallback)(NMCheckpoint *self, gpointer user_da
 
 void nm_checkpoint_log_destroy(NMCheckpoint *self);
 
-void nm_checkpoint_set_timeout_callback(NMCheckpoint *              self,
+void nm_checkpoint_set_timeout_callback(NMCheckpoint               *self,
                                         NMCheckpointTimeoutCallback callback,
                                         gpointer                    user_data);
 

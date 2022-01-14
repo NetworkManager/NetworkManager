@@ -25,10 +25,10 @@
 static NMConnection *
 read_connection(const char *sysfs_dir, const char *expected_mac, GError **error)
 {
-    NMConnection *     connection       = NULL;
-    gs_unref_hashtable GHashTable *ibft = NULL;
-    gs_free char *                 mac  = NULL;
-    GHashTable *                   nic  = NULL;
+    NMConnection                  *connection = NULL;
+    gs_unref_hashtable GHashTable *ibft       = NULL;
+    gs_free char                  *mac        = NULL;
+    GHashTable                    *nic        = NULL;
 
     ibft = nmi_ibft_read(sysfs_dir);
 
@@ -48,14 +48,14 @@ read_connection(const char *sysfs_dir, const char *expected_mac, GError **error)
 static void
 test_read_ibft_dhcp(void)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSettingWired *     s_wired;
-    NMSettingIPConfig *  s_ip4;
-    NMSettingIPConfig *  s_ip6;
-    GError *             error = NULL;
-    const char *         mac_address;
-    const char *         expected_mac_address = "00:33:21:98:b9:f1";
+    NMSettingWired      *s_wired;
+    NMSettingIPConfig   *s_ip4;
+    NMSettingIPConfig   *s_ip6;
+    GError              *error = NULL;
+    const char          *mac_address;
+    const char          *expected_mac_address = "00:33:21:98:b9:f1";
 
     connection = read_connection(TEST_INITRD_DIR "/sysfs-dhcp", expected_mac_address, &error);
     g_assert_no_error(error);
@@ -96,15 +96,15 @@ test_read_ibft_dhcp(void)
 static void
 test_read_ibft_static(void)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSettingWired *     s_wired;
-    NMSettingIPConfig *  s_ip4;
-    NMSettingIPConfig *  s_ip6;
-    GError *             error = NULL;
-    const char *         mac_address;
-    const char *         expected_mac_address = "00:33:21:98:b9:f0";
-    NMIPAddress *        ip4_addr;
+    NMSettingWired      *s_wired;
+    NMSettingIPConfig   *s_ip4;
+    NMSettingIPConfig   *s_ip6;
+    GError              *error = NULL;
+    const char          *mac_address;
+    const char          *expected_mac_address = "00:33:21:98:b9:f0";
+    NMIPAddress         *ip4_addr;
 
     connection = read_connection(TEST_INITRD_DIR "/sysfs-static", expected_mac_address, &error);
     g_assert_no_error(error);
@@ -159,9 +159,9 @@ test_read_ibft_static(void)
 static void
 test_read_ibft_bad_address(gconstpointer user_data)
 {
-    const char *  sysfs_dir = user_data;
+    const char   *sysfs_dir = user_data;
     NMConnection *connection;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     g_assert(g_file_test(sysfs_dir, G_FILE_TEST_EXISTS));
 
@@ -174,15 +174,15 @@ test_read_ibft_bad_address(gconstpointer user_data)
 static void
 test_read_ibft_vlan(void)
 {
-    NMConnection *       connection;
+    NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSettingWired *     s_wired;
-    NMSettingVlan *      s_vlan;
-    NMSettingIPConfig *  s_ip4;
-    const char *         mac_address;
-    const char *         expected_mac_address = "00:33:21:98:b9:f0";
-    NMIPAddress *        ip4_addr;
-    GError *             error = NULL;
+    NMSettingWired      *s_wired;
+    NMSettingVlan       *s_vlan;
+    NMSettingIPConfig   *s_ip4;
+    const char          *mac_address;
+    const char          *expected_mac_address = "00:33:21:98:b9:f0";
+    NMIPAddress         *ip4_addr;
+    GError              *error = NULL;
 
     connection = read_connection(TEST_INITRD_DIR "/sysfs-vlan", expected_mac_address, &error);
     g_assert_no_error(error);
@@ -231,10 +231,10 @@ test_read_ibft_vlan(void)
 static void
 test_read_ibft(void)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     NMSettingIPConfig *s_ip4;
     NMSettingIPConfig *s_ip6;
-    GError *           error = NULL;
+    GError            *error = NULL;
 
     /* This test doesn't actually test too much (apart from the presence of
      * IPv6 that is not covered by other tests), but the test fixture is a good

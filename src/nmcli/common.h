@@ -9,33 +9,33 @@
 #include "nmcli.h"
 #include "libnmc-base/nm-secret-agent-simple.h"
 
-gboolean print_ip_config(NMIPConfig *     cfg,
+gboolean print_ip_config(NMIPConfig      *cfg,
                          int              addr_family,
                          const NmcConfig *nmc_config,
-                         const char *     one_field);
+                         const char      *one_field);
 
-gboolean print_dhcp_config(NMDhcpConfig *   dhcp,
+gboolean print_dhcp_config(NMDhcpConfig    *dhcp,
                            int              addr_family,
                            const NmcConfig *nmc_config,
-                           const char *     one_field);
+                           const char      *one_field);
 
 NMConnection *nmc_find_connection(const GPtrArray *connections,
-                                  const char *     filter_type,
-                                  const char *     filter_val,
-                                  GPtrArray **     out_result,
+                                  const char      *filter_type,
+                                  const char      *filter_val,
+                                  GPtrArray      **out_result,
                                   gboolean         complete);
 
 NMActiveConnection *nmc_find_active_connection(const GPtrArray *active_cons,
-                                               const char *     filter_type,
-                                               const char *     filter_val,
-                                               GPtrArray **     out_result,
+                                               const char      *filter_type,
+                                               const char      *filter_val,
+                                               GPtrArray      **out_result,
                                                gboolean         complete);
 
 void nmc_secrets_requested(NMSecretAgentSimple *agent,
-                           const char *         request_id,
-                           const char *         title,
-                           const char *         msg,
-                           GPtrArray *          secrets,
+                           const char          *request_id,
+                           const char          *title,
+                           const char          *msg,
+                           GPtrArray           *secrets,
                            gpointer             user_data);
 
 char *nmc_unique_connection_name(const GPtrArray *connections, const char *try_name);
@@ -45,8 +45,8 @@ char *nmc_readline(const NmcConfig *nmc_config, const char *prompt_fmt, ...) G_G
 char *nmc_readline_echo(const NmcConfig *nmc_config, gboolean echo_on, const char *prompt_fmt, ...)
     G_GNUC_PRINTF(3, 4);
 NmcCompEntryFunc nmc_rl_compentry_func_wrap(const char *const *values);
-char *           nmc_rl_gen_func_basic(const char *text, int state, const char *const *words);
-char *           nmc_rl_gen_func_ifnames(const char *text, int state);
+char            *nmc_rl_gen_func_basic(const char *text, int state, const char *const *words);
+char            *nmc_rl_gen_func_ifnames(const char *text, int state);
 gboolean         nmc_get_in_readline(void);
 void             nmc_set_in_readline(gboolean in_readline);
 

@@ -254,22 +254,25 @@ no-auto-default=*
         <term><varname>configure-and-quit</varname></term>
         <listitem>
           <para>
-            When set to '<literal>true</literal>', NetworkManager quits after
-            performing initial network configuration but spawns small helpers
-            to preserve DHCP leases and IPv6 addresses.  This is useful in
-            environments where network setup is more or less static or it is
-            desirable to save process time but still handle some dynamic
-            configurations.  When this option is <literal>true</literal>,
-            network configuration for Wi-Fi, WWAN, Bluetooth, ADSL, and PPPoE
-            interfaces cannot be preserved due to their use of external
-            services, and these devices will be deconfigured when NetworkManager
-            quits even though other interface's configuration may be preserved.
-            Also, to preserve DHCP addresses the '<literal>dhcp</literal>' option
-            must be set to '<literal>internal</literal>'. The default value of
-            the '<literal>configure-and-quit</literal>' option is
-            '<literal>false</literal>', meaning that NetworkManager will continue
-            running after initial network configuration and continue responding
-            to system and hardware events, D-Bus requests, and user commands.
+            This option is no longer useful to configure in NetworkManager.conf file.
+            It can however also be configured on the command line with the same
+            values, where it has some use.
+          </para>
+          <para>
+            When set to '<literal>initrd</literal>', NetworkManager does not connect
+            to D-Bus and quits after configuring the network. This is an implementation
+            detail how the NetworkManager module of dracut can run NetworkManager.
+            An alternative to this is having NetworkManager as a systemd service
+            with D-Bus in initrd.
+          </para>
+          <para>
+            The value '<literal>true</literal>' is unsupported since version 1.36.
+            Previously this was a mode where NetworkManager would quit after configuring
+            the network and run helper processes for DHCP and SLAAC.
+          </para>
+          <para>
+            Otherwise, NetworkManager runs a system service with D-Bus and does not
+            quit during normal operation.
           </para>
         </listitem>
       </varlistentry>
@@ -1234,6 +1237,7 @@ managed=1
             <para>
               Specify the Wi-Fi backend used for the device. Currently, supported
               are <literal>wpa_supplicant</literal> and <literal>iwd</literal> (experimental).
+              If unspecified, the default is "<literal>&NM_CONFIG_DEFAULT_WIFI_BACKEND_TEXT;</literal>".
             </para>
           </listitem>
         </varlistentry>

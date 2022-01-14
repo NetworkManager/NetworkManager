@@ -35,8 +35,8 @@ static guint signals[LAST_SIGNAL] = {0};
 typedef struct {
     CList            calls_lst_head;
     GDBusConnection *dbus_connection;
-    GCancellable *   main_cancellable;
-    char *           name_owner;
+    GCancellable    *main_cancellable;
+    char            *name_owner;
     guint64          call_numid_counter;
     guint            changed_id;
     guint            name_owner_changed_id;
@@ -138,8 +138,8 @@ typedef enum {
 
 struct _NMAuthManagerCallId {
     CList                                   calls_lst;
-    NMAuthManager *                         self;
-    GCancellable *                          dbus_cancellable;
+    NMAuthManager                          *self;
+    GCancellable                           *dbus_cancellable;
     NMAuthManagerCheckAuthorizationCallback callback;
     gpointer                                user_data;
     guint64                                 call_numid;
@@ -173,7 +173,7 @@ static void
 _call_id_invoke_callback(NMAuthManagerCallId *call_id,
                          gboolean             is_authorized,
                          gboolean             is_challenge,
-                         GError *             error)
+                         GError              *error)
 {
     c_list_unlink(&call_id->calls_lst);
 
@@ -185,9 +185,9 @@ _call_id_invoke_callback(NMAuthManagerCallId *call_id,
 static void
 cancel_check_authorization_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 {
-    NMAuthManagerCallId *call_id     = user_data;
-    gs_unref_variant GVariant *value = NULL;
-    gs_free_error GError *error      = NULL;
+    NMAuthManagerCallId       *call_id = user_data;
+    gs_unref_variant GVariant *value   = NULL;
+    gs_free_error GError      *error   = NULL;
 
     value = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), res, &error);
     if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -203,13 +203,13 @@ cancel_check_authorization_cb(GObject *source, GAsyncResult *res, gpointer user_
 static void
 _call_check_authorize_cb(GObject *proxy, GAsyncResult *res, gpointer user_data)
 {
-    NMAuthManagerCallId * call_id = user_data;
-    NMAuthManager *       self;
-    NMAuthManagerPrivate *priv;
-    gs_unref_variant GVariant *value    = NULL;
-    gs_free_error GError *error         = NULL;
-    gboolean              is_authorized = FALSE;
-    gboolean              is_challenge  = FALSE;
+    NMAuthManagerCallId       *call_id = user_data;
+    NMAuthManager             *self;
+    NMAuthManagerPrivate      *priv;
+    gs_unref_variant GVariant *value         = NULL;
+    gs_free_error GError      *error         = NULL;
+    gboolean                   is_authorized = FALSE;
+    gboolean                   is_challenge  = FALSE;
 
     /* we need to clear the cancelable, to signal for _call_id_free() that we
      * are not in a pending call.
@@ -299,17 +299,17 @@ _call_on_idle(gpointer user_data)
  * which @self must be live long enough).
  */
 NMAuthManagerCallId *
-nm_auth_manager_check_authorization(NMAuthManager *                         self,
-                                    NMAuthSubject *                         subject,
-                                    const char *                            action_id,
+nm_auth_manager_check_authorization(NMAuthManager                          *self,
+                                    NMAuthSubject                          *subject,
+                                    const char                             *action_id,
                                     gboolean                                allow_user_interaction,
                                     NMAuthManagerCheckAuthorizationCallback callback,
                                     gpointer                                user_data)
 {
-    NMAuthManagerPrivate *        priv;
+    NMAuthManagerPrivate         *priv;
     PolkitCheckAuthorizationFlags flags;
     char                          subject_buf[64];
-    NMAuthManagerCallId *         call_id;
+    NMAuthManagerCallId          *call_id;
 
     g_return_val_if_fail(NM_IS_AUTH_MANAGER(self), NULL);
     g_return_val_if_fail(NM_IN_SET(nm_auth_subject_get_subject_type(subject),
@@ -358,10 +358,10 @@ nm_auth_manager_check_authorization(NMAuthManager *                         self
         call_id->idle_is_authorized = (priv->auth_polkit_mode == NM_AUTH_POLKIT_MODE_ALLOW_ALL);
         call_id->idle_id            = g_idle_add(_call_on_idle, call_id);
     } else {
-        GVariant *      parameters;
+        GVariant       *parameters;
         GVariantBuilder builder;
-        GVariant *      subject_value;
-        GVariant *      details_value;
+        GVariant       *subject_value;
+        GVariant       *details_value;
 
         subject_value = nm_auth_subject_unix_to_polkit_gvariant(subject);
         nm_assert(g_variant_is_floating(subject_value));
@@ -406,7 +406,7 @@ nm_auth_manager_check_authorization(NMAuthManager *                         self
 void
 nm_auth_manager_check_authorization_cancel(NMAuthManagerCallId *call_id)
 {
-    NMAuthManager *self;
+    NMAuthManager        *self;
     gs_free_error GError *error = NULL;
 
     g_return_if_fail(call_id);
@@ -428,14 +428,14 @@ nm_auth_manager_check_authorization_cancel(NMAuthManagerCallId *call_id)
 
 static void
 changed_signal_cb(GDBusConnection *connection,
-                  const char *     sender_name,
-                  const char *     object_path,
-                  const char *     interface_name,
-                  const char *     signal_name,
-                  GVariant *       parameters,
+                  const char      *sender_name,
+                  const char      *object_path,
+                  const char      *interface_name,
+                  const char      *signal_name,
+                  GVariant        *parameters,
                   gpointer         user_data)
 {
-    NMAuthManager *       self = user_data;
+    NMAuthManager        *self = user_data;
     NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE(self);
     gboolean              valid_sender;
 
@@ -454,7 +454,7 @@ _name_owner_changed(NMAuthManager *self, const char *name_owner, gboolean is_ini
 {
     NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE(self);
     gboolean              is_changed;
-    gs_free char *        old_name_owner = NULL;
+    gs_free char         *old_name_owner = NULL;
 
     if (is_initial)
         priv->got_name_owner = TRUE;
@@ -496,15 +496,15 @@ _name_owner_changed(NMAuthManager *self, const char *name_owner, gboolean is_ini
 
 static void
 _name_owner_changed_cb(GDBusConnection *connection,
-                       const char *     sender_name,
-                       const char *     object_path,
-                       const char *     interface_name,
-                       const char *     signal_name,
-                       GVariant *       parameters,
+                       const char      *sender_name,
+                       const char      *object_path,
+                       const char      *interface_name,
+                       const char      *signal_name,
+                       GVariant        *parameters,
                        gpointer         user_data)
 {
     NMAuthManager *self = user_data;
-    const char *   new_owner;
+    const char    *new_owner;
 
     if (!g_variant_is_of_type(parameters, G_VARIANT_TYPE("(sss)")))
         return;
@@ -607,10 +607,10 @@ nm_auth_manager_init(NMAuthManager *self)
 static void
 constructed(GObject *object)
 {
-    NMAuthManager *       self = NM_AUTH_MANAGER(object);
+    NMAuthManager        *self = NM_AUTH_MANAGER(object);
     NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE(self);
     NMLogLevel            logl = LOGL_DEBUG;
-    const char *          create_message;
+    const char           *create_message;
 
     G_OBJECT_CLASS(nm_auth_manager_parent_class)->constructed(object);
 
@@ -697,7 +697,7 @@ nm_auth_manager_setup(NMAuthPolkitMode auth_polkit_mode)
 static void
 dispose(GObject *object)
 {
-    NMAuthManager *       self = NM_AUTH_MANAGER(object);
+    NMAuthManager        *self = NM_AUTH_MANAGER(object);
     NMAuthManagerPrivate *priv = NM_AUTH_MANAGER_GET_PRIVATE(self);
 
     _LOGD("dispose");

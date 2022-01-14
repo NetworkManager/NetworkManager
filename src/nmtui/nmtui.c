@@ -27,14 +27,14 @@
 #include "nmtui-connect.h"
 #include "nmtui-hostname.h"
 
-NMClient *        nm_client;
+NMClient         *nm_client;
 static GMainLoop *loop;
 
 typedef NmtNewtForm *(*NmtuiSubprogram)(gboolean is_top, int argc, char **argv);
 
 static const struct {
-    const char *    name, *shortcut, *arg;
-    const char *    display_name;
+    const char     *name, *shortcut, *arg;
+    const char     *display_name;
     NmtuiSubprogram func;
 } subprograms[] = {
     {"edit", "nmtui-edit", N_("connection"), N_("Edit a connection"), nmtui_edit},
@@ -57,7 +57,7 @@ quit_func(int argc, char **argv)
 static void
 main_list_activated(NmtNewtWidget *widget, NmtNewtListbox *listbox)
 {
-    NmtNewtForm *   form;
+    NmtNewtForm    *form;
     NmtuiSubprogram sub;
 
     sub = nmt_newt_listbox_get_active_key(listbox);
@@ -73,10 +73,10 @@ main_list_activated(NmtNewtWidget *widget, NmtNewtListbox *listbox)
 static NmtNewtForm *
 nmtui_main(gboolean is_top, int argc, char **argv)
 {
-    NmtNewtForm *     form;
-    NmtNewtWidget *   widget, *ok;
-    NmtNewtGrid *     grid;
-    NmtNewtListbox *  listbox;
+    NmtNewtForm      *form;
+    NmtNewtWidget    *widget, *ok;
+    NmtNewtGrid      *grid;
+    NmtNewtListbox   *listbox;
     NmtNewtButtonBox *bbox;
     int               i;
 
@@ -162,7 +162,7 @@ usage(void)
 typedef struct {
     NmtuiSubprogram subprogram;
     int             argc;
-    char **         argv;
+    char          **argv;
 } NmtuiStartupData;
 
 static void
@@ -175,7 +175,7 @@ static gboolean
 idle_run_subprogram(gpointer user_data)
 {
     NmtuiStartupData *data = user_data;
-    NmtNewtForm *     form;
+    NmtNewtForm      *form;
 
     form = data->subprogram(TRUE, data->argc, data->argv);
     if (form) {
@@ -210,10 +210,10 @@ GOptionEntry entries[] = {{"sleep",
 int
 main(int argc, char **argv)
 {
-    GOptionContext * opts;
-    GError *         error = NULL;
+    GOptionContext  *opts;
+    GError          *error = NULL;
     NmtuiStartupData startup_data;
-    const char *     prgname;
+    const char      *prgname;
     int              i;
 
     setlocale(LC_ALL, "");

@@ -72,15 +72,15 @@ test_stable_privacy(void)
 
 static void
 _do_test_hw_addr(NMUtilsStableType  stable_type,
-                 const char *       stable_id,
-                 const guint8 *     secret_key,
+                 const char        *stable_id,
+                 const guint8      *secret_key,
                  gsize              key_len,
-                 const char *       ifname,
-                 const char *       current_mac_address,
-                 const char *       generate_mac_address_mask,
+                 const char        *ifname,
+                 const char        *current_mac_address,
+                 const char        *generate_mac_address_mask,
                  const char *const *expected)
 {
-    gs_free char *     generated = NULL;
+    gs_free char      *generated = NULL;
     const char *const *e;
     gboolean           found = FALSE;
 

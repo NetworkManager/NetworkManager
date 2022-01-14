@@ -11,7 +11,7 @@
 typedef struct {
     uint8_t code;
     uint8_t data_len;
-    void *  data;
+    void   *data;
 } nm_sd_dhcp_option;
 
 int nm_sd_dhcp_lease_get_private_options(sd_dhcp_lease *lease, nm_sd_dhcp_option **out_options);

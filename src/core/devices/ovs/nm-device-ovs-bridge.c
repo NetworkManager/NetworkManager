@@ -42,11 +42,11 @@ get_type_description(NMDevice *device)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
     /* The actual backing resources will be created on enslavement by the port
      * when it can identify the port and the bridge. */
@@ -66,13 +66,16 @@ get_generic_capabilities(NMDevice *device)
     return NM_DEVICE_CAP_IS_SOFTWARE;
 }
 
-static NMActStageReturn
-act_stage3_ip_config_start(NMDevice *           device,
-                           int                  addr_family,
-                           gpointer *           out_config,
-                           NMDeviceStateReason *out_failure_reason)
+static gboolean
+ready_for_ip_config(NMDevice *device)
 {
-    return NM_ACT_STAGE_RETURN_IP_FAIL;
+    return FALSE;
+}
+
+static void
+act_stage3_ip_config(NMDevice *device, int addr_family)
+{
+    nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
 }
 
 static gboolean
@@ -141,7 +144,7 @@ static void
 nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
 {
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_device_ovs_bridge);
 
@@ -154,7 +157,8 @@ nm_device_ovs_bridge_class_init(NMDeviceOvsBridgeClass *klass)
     device_class->create_and_realize                  = create_and_realize;
     device_class->unrealize                           = unrealize;
     device_class->get_generic_capabilities            = get_generic_capabilities;
-    device_class->act_stage3_ip_config_start          = act_stage3_ip_config_start;
+    device_class->act_stage3_ip_config                = act_stage3_ip_config;
+    device_class->ready_for_ip_config                 = ready_for_ip_config;
     device_class->enslave_slave                       = enslave_slave;
     device_class->release_slave                       = release_slave;
     device_class->can_reapply_change_ovs_external_ids = TRUE;

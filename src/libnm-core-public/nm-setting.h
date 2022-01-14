@@ -138,8 +138,8 @@ typedef enum {
  *
  * Returns: %TRUE to clear the secret, %FALSE to not clear the secret
  */
-typedef gboolean (*NMSettingClearSecretsWithFlagsFn)(NMSetting *          setting,
-                                                     const char *         secret,
+typedef gboolean (*NMSettingClearSecretsWithFlagsFn)(NMSetting           *setting,
+                                                     const char          *secret,
                                                      NMSettingSecretFlags flags,
                                                      gpointer             user_data);
 
@@ -156,8 +156,8 @@ struct _NMSettInfoProperty;
  * @flags: The property's flags, like %NM_SETTING_PARAM_SECRET
  * @user_data: User data passed to nm_setting_enumerate_values()
  */
-typedef void (*NMSettingValueIterFn)(NMSetting *   setting,
-                                     const char *  key,
+typedef void (*NMSettingValueIterFn)(NMSetting    *setting,
+                                     const char   *key,
                                      const GValue *value,
                                      GParamFlags   flags,
                                      gpointer      user_data);
@@ -202,11 +202,11 @@ typedef enum {
     NM_SETTING_DIFF_RESULT_IN_B_DEFAULT = 0x00000008,
 } NMSettingDiffResult;
 
-gboolean nm_setting_diff(NMSetting *           a,
-                         NMSetting *           b,
+gboolean nm_setting_diff(NMSetting            *a,
+                         NMSetting            *b,
                          NMSettingCompareFlags flags,
                          gboolean              invert_results,
-                         GHashTable **         results);
+                         GHashTable          **results);
 
 void nm_setting_enumerate_values(NMSetting *setting, NMSettingValueIterFn func, gpointer user_data);
 
@@ -214,15 +214,15 @@ char *nm_setting_to_string(NMSetting *setting);
 
 /*****************************************************************************/
 
-gboolean nm_setting_get_secret_flags(NMSetting *           setting,
-                                     const char *          secret_name,
+gboolean nm_setting_get_secret_flags(NMSetting            *setting,
+                                     const char           *secret_name,
                                      NMSettingSecretFlags *out_flags,
-                                     GError **             error);
+                                     GError              **error);
 
-gboolean nm_setting_set_secret_flags(NMSetting *          setting,
-                                     const char *         secret_name,
+gboolean nm_setting_set_secret_flags(NMSetting           *setting,
+                                     const char          *secret_name,
                                      NMSettingSecretFlags flags,
-                                     GError **            error);
+                                     GError             **error);
 
 /*****************************************************************************/
 
@@ -253,7 +253,7 @@ void nm_setting_option_clear_by_name(NMSetting *setting, NMUtilsPredicateStr pre
 
 /*****************************************************************************/
 
-const GVariantType *nm_setting_get_dbus_property_type(NMSetting * setting,
+const GVariantType *nm_setting_get_dbus_property_type(NMSetting  *setting,
                                                       const char *property_name);
 
 /*****************************************************************************/

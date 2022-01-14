@@ -133,36 +133,36 @@ gboolean        nm_audit_manager_audit_enabled(NMAuditManager *self);
     }                                                                        \
     G_STMT_END
 
-void _nm_audit_manager_log_connection_op(NMAuditManager *      self,
-                                         const char *          file,
+void _nm_audit_manager_log_connection_op(NMAuditManager       *self,
+                                         const char           *file,
                                          guint                 line,
-                                         const char *          func,
-                                         const char *          op,
+                                         const char           *func,
+                                         const char           *op,
                                          NMSettingsConnection *connection,
                                          gboolean              result,
-                                         const char *          args,
+                                         const char           *args,
                                          gpointer              subject_context,
-                                         const char *          reason);
+                                         const char           *reason);
 
 void _nm_audit_manager_log_generic_op(NMAuditManager *self,
-                                      const char *    file,
+                                      const char     *file,
                                       guint           line,
-                                      const char *    func,
-                                      const char *    op,
-                                      const char *    arg,
+                                      const char     *func,
+                                      const char     *op,
+                                      const char     *arg,
                                       gboolean        result,
                                       gpointer        subject_context,
-                                      const char *    reason);
+                                      const char     *reason);
 
 void _nm_audit_manager_log_device_op(NMAuditManager *self,
-                                     const char *    file,
+                                     const char     *file,
                                      guint           line,
-                                     const char *    func,
-                                     const char *    op,
-                                     NMDevice *      device,
+                                     const char     *func,
+                                     const char     *op,
+                                     NMDevice       *device,
                                      gboolean        result,
-                                     const char *    args,
+                                     const char     *args,
                                      gpointer        subject_context,
-                                     const char *    reason);
+                                     const char     *reason);
 
 #endif /* __NM_AUDIT_MANAGER_H__ */

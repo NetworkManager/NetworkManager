@@ -109,7 +109,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_lowpan = NML_DBUS_META_IFA
 static void
 nm_device_6lowpan_class_init(NMDevice6LowpanClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
 
     object_class->get_property = get_property;

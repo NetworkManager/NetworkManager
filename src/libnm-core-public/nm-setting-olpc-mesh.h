@@ -37,8 +37,8 @@ typedef struct _NMSettingOlpcMeshClass NMSettingOlpcMeshClass;
 
 GType nm_setting_olpc_mesh_get_type(void);
 
-NMSetting * nm_setting_olpc_mesh_new(void);
-GBytes *    nm_setting_olpc_mesh_get_ssid(NMSettingOlpcMesh *setting);
+NMSetting  *nm_setting_olpc_mesh_new(void);
+GBytes     *nm_setting_olpc_mesh_get_ssid(NMSettingOlpcMesh *setting);
 guint32     nm_setting_olpc_mesh_get_channel(NMSettingOlpcMesh *setting);
 const char *nm_setting_olpc_mesh_get_dhcp_anycast_address(NMSettingOlpcMesh *setting);
 

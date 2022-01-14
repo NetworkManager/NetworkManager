@@ -135,8 +135,8 @@ nm_setting_pppoe_get_password_flags(NMSettingPppoe *setting)
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingPppoePrivate *priv       = NM_SETTING_PPPOE_GET_PRIVATE(setting);
-    gs_free_error GError *local_error = NULL;
+    NMSettingPppoePrivate *priv        = NM_SETTING_PPPOE_GET_PRIVATE(setting);
+    gs_free_error GError  *local_error = NULL;
 
     if (nm_str_is_empty(priv->username)) {
         if (!priv->username) {
@@ -181,7 +181,7 @@ static GPtrArray *
 need_secrets(NMSetting *setting)
 {
     NMSettingPppoePrivate *priv    = NM_SETTING_PPPOE_GET_PRIVATE(setting);
-    GPtrArray *            secrets = NULL;
+    GPtrArray             *secrets = NULL;
 
     if (priv->password)
         return NULL;
@@ -216,9 +216,9 @@ nm_setting_pppoe_new(void)
 static void
 nm_setting_pppoe_class_init(NMSettingPppoeClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingPppoePrivate));
 

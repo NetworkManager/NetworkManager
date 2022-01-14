@@ -61,7 +61,7 @@ NM_DEVICE_FACTORY_DECLARE_TYPES(
                                                 NM_SETTING_OVS_PORT_SETTING_NAME))
 
 G_MODULE_EXPORT NMDeviceFactory *
-                nm_device_factory_create(GError **error)
+nm_device_factory_create(GError **error)
 {
     nm_manager_set_capability(NM_MANAGER_GET, NM_CAPABILITY_OVS);
     return g_object_new(NM_TYPE_OVS_FACTORY, NULL);
@@ -106,14 +106,14 @@ new_device_from_type(const char *name, NMDeviceType device_type)
 }
 
 static void
-ovsdb_device_added(NMOvsdb *        ovsdb,
-                   const char *     name,
+ovsdb_device_added(NMOvsdb         *ovsdb,
+                   const char      *name,
                    guint            device_type_i,
-                   const char *     subtype,
+                   const char      *subtype,
                    NMDeviceFactory *self)
 {
     const NMDeviceType device_type = device_type_i;
-    NMDevice *         device;
+    NMDevice          *device;
 
     if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE
         && !NM_IN_STRSET(subtype, "internal", "patch")) {
@@ -133,14 +133,14 @@ ovsdb_device_added(NMOvsdb *        ovsdb,
 }
 
 static void
-ovsdb_device_removed(NMOvsdb *        ovsdb,
-                     const char *     name,
+ovsdb_device_removed(NMOvsdb         *ovsdb,
+                     const char      *name,
                      guint            device_type_i,
-                     const char *     subtype,
+                     const char      *subtype,
                      NMDeviceFactory *self)
 {
     const NMDeviceType device_type = device_type_i;
-    NMDevice *         device      = NULL;
+    NMDevice          *device      = NULL;
     NMDeviceState      device_state;
     gboolean           is_system_interface = FALSE;
 
@@ -149,8 +149,8 @@ ovsdb_device_removed(NMOvsdb *        ovsdb,
         return;
 
     if (device_type == NM_DEVICE_TYPE_OVS_INTERFACE && nm_streq0(subtype, "system")) {
-        NMDevice *             d;
-        const CList *          list;
+        NMDevice              *d;
+        const CList           *list;
         NMSettingOvsInterface *s_ovs_int;
 
         /* The device associated to an OVS system interface can be of
@@ -164,15 +164,6 @@ ovsdb_device_removed(NMOvsdb *        ovsdb,
             if (!s_ovs_int)
                 continue;
             if (!nm_streq0(nm_setting_ovs_interface_get_interface_type(s_ovs_int), "system"))
-                continue;
-            /* Failing the system interface device is almost always the right
-             * thing to do when the ovsdb entry is removed. However, to avoid
-             * that a late device-removed signal tears down a different,
-             * newly-activated connection, let's also check that we have a master.
-             * Or in alternative, that the device is assumed/external: in such
-             * case it's always fine to fail the device.
-             */
-            if (!nm_device_get_master(d) && !nm_device_sys_iface_state_is_external_or_assume(d))
                 continue;
 
             device = d;
@@ -201,16 +192,16 @@ ovsdb_device_removed(NMOvsdb *        ovsdb,
 }
 
 static void
-ovsdb_interface_failed(NMOvsdb *        ovsdb,
-                       const char *     name,
-                       const char *     connection_uuid,
-                       const char *     error,
+ovsdb_interface_failed(NMOvsdb         *ovsdb,
+                       const char      *name,
+                       const char      *connection_uuid,
+                       const char      *error,
                        NMDeviceFactory *self)
 {
-    NMDevice *             device     = NULL;
-    NMSettingsConnection * connection = NULL;
-    NMConnection *         c;
-    const char *           type;
+    NMDevice              *device     = NULL;
+    NMSettingsConnection  *connection = NULL;
+    NMConnection          *c;
+    const char            *type;
     NMSettingOvsInterface *s_ovs_int;
     gboolean               is_patch = FALSE;
     gboolean               ignore;
@@ -280,14 +271,14 @@ start(NMDeviceFactory *self)
 }
 
 static NMDevice *
-create_device(NMDeviceFactory *     self,
-              const char *          iface,
+create_device(NMDeviceFactory      *self,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     NMDeviceType device_type     = NM_DEVICE_TYPE_UNKNOWN;
-    const char * connection_type = NULL;
+    const char  *connection_type = NULL;
 
     if (g_strcmp0(iface, "ovs-system") == 0) {
         *out_ignore = TRUE;

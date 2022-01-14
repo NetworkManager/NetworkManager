@@ -76,8 +76,8 @@ nm_uuid_is_normalized(const char *str)
 gboolean nm_uuid_is_valid_nmlegacy(const char *str);
 
 gboolean nm_uuid_is_valid_nm(const char *str,
-                             gboolean *  out_normalized,
-                             char *      out_normalized_str /* [static 37] */);
+                             gboolean   *out_normalized,
+                             char       *out_normalized_str /* [static 37] */);
 
 /*****************************************************************************/
 
@@ -109,13 +109,13 @@ typedef enum {
     NM_UUID_TYPE_VERSION5 = 5,
 } NMUuidType;
 
-NMUuid *nm_uuid_generate_from_string(NMUuid *      uuid,
-                                     const char *  s,
+NMUuid *nm_uuid_generate_from_string(NMUuid       *uuid,
+                                     const char   *s,
                                      gssize        slen,
                                      NMUuidType    uuid_type,
                                      const NMUuid *type_args);
 
-char *nm_uuid_generate_from_string_str(const char *  s,
+char *nm_uuid_generate_from_string_str(const char   *s,
                                        gssize        slen,
                                        NMUuidType    uuid_type,
                                        const NMUuid *type_args);

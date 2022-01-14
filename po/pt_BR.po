@@ -11333,7 +11333,7 @@ msgid "Error: 'connection show': %s"
 msgstr "Erro: “connection show”: %s"
 
 #: ../src/nmcli/connections.c:1497
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "Ativar detalhes da conexão"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

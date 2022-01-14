@@ -39,7 +39,7 @@ typedef struct {
     /* DBUS-y stuff */
     GDBusConnection *connection;
     NMDBusVpnPlugin *dbus_vpn_service_plugin;
-    char *           dbus_service_name;
+    char            *dbus_service_name;
     gboolean         dbus_watch_peer;
 
     /* Temporary stuff */
@@ -240,7 +240,7 @@ nm_vpn_service_plugin_shutdown(NMVpnServicePlugin *plugin)
 {
     NMVpnServicePluginPrivate *priv;
     NMVpnServiceState          state;
-    GError *                   error = NULL;
+    GError                    *error = NULL;
 
     g_return_if_fail(NM_IS_VPN_SERVICE_PLUGIN(plugin));
 
@@ -271,7 +271,7 @@ static gboolean
 connect_timer_expired(gpointer data)
 {
     NMVpnServicePlugin *plugin = NM_VPN_SERVICE_PLUGIN(data);
-    GError *            err    = NULL;
+    GError             *err    = NULL;
 
     NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(plugin)->connect_timer = 0;
     g_message("Connect timer expired, disconnecting.");
@@ -368,11 +368,11 @@ void
 nm_vpn_service_plugin_set_ip4_config(NMVpnServicePlugin *plugin, GVariant *ip4_config)
 {
     NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(plugin);
-    GVariant *                 combined_config;
+    GVariant                  *combined_config;
     GVariantBuilder            builder;
     GVariantIter               iter;
-    const char *               key;
-    GVariant *                 value;
+    const char                *key;
+    GVariant                  *value;
 
     g_return_if_fail(NM_IS_VPN_SERVICE_PLUGIN(plugin));
     g_return_if_fail(ip4_config != NULL);
@@ -454,11 +454,11 @@ connect_timer_start(NMVpnServicePlugin *plugin)
 
 static void
 peer_vanished(GDBusConnection *connection,
-              const char *     sender_name,
-              const char *     object_path,
-              const char *     interface_name,
-              const char *     signal_name,
-              GVariant *       parameters,
+              const char      *sender_name,
+              const char      *object_path,
+              const char      *interface_name,
+              const char      *signal_name,
+              GVariant        *parameters,
               gpointer         user_data)
 {
     nm_vpn_service_plugin_disconnect(NM_VPN_SERVICE_PLUGIN(user_data), NULL);
@@ -478,16 +478,16 @@ watch_peer(NMVpnServicePlugin *plugin, GDBusMethodInvocation *context)
 }
 
 static void
-_connect_generic(NMVpnServicePlugin *   plugin,
+_connect_generic(NMVpnServicePlugin    *plugin,
                  GDBusMethodInvocation *context,
-                 GVariant *             properties,
-                 GVariant *             details)
+                 GVariant              *properties,
+                 GVariant              *details)
 {
     NMVpnServicePluginPrivate *priv      = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(plugin);
-    NMVpnServicePluginClass *  vpn_class = NM_VPN_SERVICE_PLUGIN_GET_CLASS(plugin);
-    NMConnection *             connection;
+    NMVpnServicePluginClass   *vpn_class = NM_VPN_SERVICE_PLUGIN_GET_CLASS(plugin);
+    NMConnection              *connection;
     gboolean                   success           = FALSE;
-    GError *                   error             = NULL;
+    GError                    *error             = NULL;
     guint                      fail_stop_timeout = 0;
 
     if (priv->state != NM_VPN_SERVICE_STATE_STOPPED && priv->state != NM_VPN_SERVICE_STATE_INIT) {
@@ -557,19 +557,19 @@ _connect_generic(NMVpnServicePlugin *   plugin,
 }
 
 static void
-impl_vpn_service_plugin_connect(NMVpnServicePlugin *   plugin,
+impl_vpn_service_plugin_connect(NMVpnServicePlugin    *plugin,
                                 GDBusMethodInvocation *context,
-                                GVariant *             connection,
+                                GVariant              *connection,
                                 gpointer               user_data)
 {
     _connect_generic(plugin, context, connection, NULL);
 }
 
 static void
-impl_vpn_service_plugin_connect_interactive(NMVpnServicePlugin *   plugin,
+impl_vpn_service_plugin_connect_interactive(NMVpnServicePlugin    *plugin,
                                             GDBusMethodInvocation *context,
-                                            GVariant *             connection,
-                                            GVariant *             details,
+                                            GVariant              *connection,
+                                            GVariant              *details,
                                             gpointer               user_data)
 {
     _connect_generic(plugin, context, connection, details);
@@ -578,15 +578,15 @@ impl_vpn_service_plugin_connect_interactive(NMVpnServicePlugin *   plugin,
 /*****************************************************************************/
 
 static void
-impl_vpn_service_plugin_need_secrets(NMVpnServicePlugin *   plugin,
+impl_vpn_service_plugin_need_secrets(NMVpnServicePlugin    *plugin,
                                      GDBusMethodInvocation *context,
-                                     GVariant *             properties,
+                                     GVariant              *properties,
                                      gpointer               user_data)
 {
     NMConnection *connection;
-    const char *  setting_name;
+    const char   *setting_name;
     gboolean      needed;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     connection =
         _nm_simple_connection_new_from_dbus(properties, NM_SETTING_PARSE_FLAGS_BEST_EFFORT, &error);
@@ -629,14 +629,14 @@ impl_vpn_service_plugin_need_secrets(NMVpnServicePlugin *   plugin,
 }
 
 static void
-impl_vpn_service_plugin_new_secrets(NMVpnServicePlugin *   plugin,
+impl_vpn_service_plugin_new_secrets(NMVpnServicePlugin    *plugin,
                                     GDBusMethodInvocation *context,
-                                    GVariant *             properties,
+                                    GVariant              *properties,
                                     gpointer               user_data)
 {
     NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(plugin);
-    NMConnection *             connection;
-    GError *                   error = NULL;
+    NMConnection              *connection;
+    GError                    *error = NULL;
     gboolean                   success;
 
     if (priv->state != NM_VPN_SERVICE_STATE_STARTING) {
@@ -704,8 +704,8 @@ impl_vpn_service_plugin_new_secrets(NMVpnServicePlugin *   plugin,
  */
 void
 nm_vpn_service_plugin_secrets_required(NMVpnServicePlugin *plugin,
-                                       const char *        message,
-                                       const char **       hints)
+                                       const char         *message,
+                                       const char        **hints)
 {
     NMVpnServicePluginPrivate *priv = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(plugin);
 
@@ -803,12 +803,12 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
     gs_unref_hashtable GHashTable *data    = NULL;
     gs_unref_hashtable GHashTable *secrets = NULL;
     gboolean                       success = FALSE;
-    GHashTable *                   hash    = NULL;
-    nm_auto_free_gstring GString *key      = NULL;
-    nm_auto_free_gstring GString *val      = NULL;
-    nm_auto_free_gstring GString *line     = NULL;
-    GString *                     str      = NULL;
-    ReadFdBuf                     read_buf;
+    GHashTable                    *hash    = NULL;
+    nm_auto_free_gstring GString  *key     = NULL;
+    nm_auto_free_gstring GString  *val     = NULL;
+    nm_auto_free_gstring GString  *line    = NULL;
+    GString                       *str     = NULL;
+    ReadFdBuf                      read_buf;
 
     if (out_data)
         g_return_val_if_fail(*out_data == NULL, FALSE);
@@ -920,12 +920,12 @@ next:
  * Since: 1.2
  **/
 gboolean
-nm_vpn_service_plugin_get_secret_flags(GHashTable *          data,
-                                       const char *          secret_name,
+nm_vpn_service_plugin_get_secret_flags(GHashTable           *data,
+                                       const char           *secret_name,
                                        NMSettingSecretFlags *out_flags)
 {
-    gs_free char *       flag_name_free = NULL;
-    const char *         s;
+    gs_free char        *flag_name_free = NULL;
+    const char          *s;
     gint64               t1;
     NMSettingSecretFlags t0;
 
@@ -950,7 +950,7 @@ nm_vpn_service_plugin_get_secret_flags(GHashTable *          data,
 /*****************************************************************************/
 
 static void
-impl_vpn_service_plugin_disconnect(NMVpnServicePlugin *   plugin,
+impl_vpn_service_plugin_disconnect(NMVpnServicePlugin    *plugin,
                                    GDBusMethodInvocation *context,
                                    gpointer               user_data)
 {
@@ -963,9 +963,9 @@ impl_vpn_service_plugin_disconnect(NMVpnServicePlugin *   plugin,
 }
 
 static void
-impl_vpn_service_plugin_set_config(NMVpnServicePlugin *   plugin,
+impl_vpn_service_plugin_set_config(NMVpnServicePlugin    *plugin,
                                    GDBusMethodInvocation *context,
-                                   GVariant *             config,
+                                   GVariant              *config,
                                    gpointer               user_data)
 {
     nm_vpn_service_plugin_set_config(plugin, config);
@@ -973,9 +973,9 @@ impl_vpn_service_plugin_set_config(NMVpnServicePlugin *   plugin,
 }
 
 static void
-impl_vpn_service_plugin_set_ip4_config(NMVpnServicePlugin *   plugin,
+impl_vpn_service_plugin_set_ip4_config(NMVpnServicePlugin    *plugin,
                                        GDBusMethodInvocation *context,
-                                       GVariant *             config,
+                                       GVariant              *config,
                                        gpointer               user_data)
 {
     nm_vpn_service_plugin_set_ip4_config(plugin, config);
@@ -983,9 +983,9 @@ impl_vpn_service_plugin_set_ip4_config(NMVpnServicePlugin *   plugin,
 }
 
 static void
-impl_vpn_service_plugin_set_ip6_config(NMVpnServicePlugin *   plugin,
+impl_vpn_service_plugin_set_ip6_config(NMVpnServicePlugin    *plugin,
                                        GDBusMethodInvocation *context,
-                                       GVariant *             config,
+                                       GVariant              *config,
                                        gpointer               user_data)
 {
     nm_vpn_service_plugin_set_ip6_config(plugin, config);
@@ -993,9 +993,9 @@ impl_vpn_service_plugin_set_ip6_config(NMVpnServicePlugin *   plugin,
 }
 
 static void
-impl_vpn_service_plugin_set_failure(NMVpnServicePlugin *   plugin,
+impl_vpn_service_plugin_set_failure(NMVpnServicePlugin    *plugin,
                                     GDBusMethodInvocation *context,
-                                    char *                 reason,
+                                    char                  *reason,
                                     gpointer               user_data)
 {
     nm_vpn_service_plugin_failure(plugin, NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG);
@@ -1050,11 +1050,11 @@ nm_vpn_service_plugin_init(NMVpnServicePlugin *plugin)
 static gboolean
 init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
 {
-    NMVpnServicePlugin *       plugin           = NM_VPN_SERVICE_PLUGIN(initable);
-    NMVpnServicePluginPrivate *priv             = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(plugin);
+    NMVpnServicePlugin              *plugin     = NM_VPN_SERVICE_PLUGIN(initable);
+    NMVpnServicePluginPrivate       *priv       = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(plugin);
     gs_unref_object GDBusConnection *connection = NULL;
-    gs_unref_object GDBusProxy *proxy           = NULL;
-    GVariant *                  ret;
+    gs_unref_object GDBusProxy      *proxy      = NULL;
+    GVariant                        *ret;
 
     if (!priv->dbus_service_name) {
         g_set_error_literal(error,
@@ -1186,7 +1186,7 @@ dispose(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMVpnServicePlugin *       plugin = NM_VPN_SERVICE_PLUGIN(object);
+    NMVpnServicePlugin        *plugin = NM_VPN_SERVICE_PLUGIN(object);
     NMVpnServicePluginPrivate *priv   = NM_VPN_SERVICE_PLUGIN_GET_PRIVATE(plugin);
 
     nm_vpn_service_plugin_set_connection(plugin, NULL);

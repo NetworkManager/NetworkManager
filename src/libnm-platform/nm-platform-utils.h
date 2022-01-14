@@ -18,7 +18,7 @@ int         nmp_utils_ethtool_get_peer_ifindex(int ifindex);
 gboolean    nmp_utils_ethtool_get_wake_on_lan(int ifindex);
 gboolean    nmp_utils_ethtool_set_wake_on_lan(int                      ifindex,
                                               _NMSettingWiredWakeOnLan wol,
-                                              const char *             wol_password);
+                                              const char              *wol_password);
 
 const char *nm_platform_link_duplex_type_to_string(NMPlatformLinkDuplexType duplex);
 
@@ -26,8 +26,8 @@ extern const guint8  _nmp_link_mode_all_advertised_modes_bits[79];
 extern const guint32 _nmp_link_mode_all_advertised_modes[3];
 
 gboolean nmp_utils_ethtool_get_link_settings(int                       ifindex,
-                                             gboolean *                out_autoneg,
-                                             guint32 *                 out_speed,
+                                             gboolean                 *out_autoneg,
+                                             guint32                  *out_speed,
                                              NMPlatformLinkDuplexType *out_duplex);
 gboolean nmp_utils_ethtool_set_link_settings(int                      ifindex,
                                              gboolean                 autoneg,
@@ -77,7 +77,7 @@ int         nmp_utils_if_nametoindex(const char *ifname);
 
 int nmp_utils_sysctl_open_netdir(int ifindex, const char *ifname_guess, char *out_ifname);
 
-char *      nmp_utils_new_vlan_name(const char *parent_iface, guint32 vlan_id);
+char       *nmp_utils_new_vlan_name(const char *parent_iface, guint32 vlan_id);
 const char *nmp_utils_new_infiniband_name(char *name, const char *parent_name, int p_key);
 
 guint32

@@ -28,11 +28,11 @@ static gboolean
 dt_get_property(const char *base,
                 const char *dev,
                 const char *prop,
-                char **     contents,
-                size_t *    length)
+                char      **contents,
+                size_t     *length)
 {
-    gs_free char *filename      = g_build_filename(base, dev, prop, NULL);
-    gs_free_error GError *error = NULL;
+    gs_free char         *filename = g_build_filename(base, dev, prop, NULL);
+    gs_free_error GError *error    = NULL;
 
     if (!g_file_test(filename, G_FILE_TEST_EXISTS))
         return FALSE;
@@ -106,31 +106,31 @@ str_addr(const char *str, int *family)
 NMConnection *
 nmi_dt_reader_parse(const char *sysfs_dir)
 {
-    gs_unref_object NMConnection *connection           = NULL;
-    gs_free char *                base                 = NULL;
-    gs_free char *                bootpath             = NULL;
-    gs_strfreev char **           tokens               = NULL;
-    char *                        path                 = NULL;
-    gboolean                      bootp                = FALSE;
-    const char *                  s_ipaddr             = NULL;
-    const char *                  s_netmask            = NULL;
-    const char *                  s_gateway            = NULL;
+    gs_unref_object NMConnection         *connection   = NULL;
+    gs_free char                         *base         = NULL;
+    gs_free char                         *bootpath     = NULL;
+    gs_strfreev char                    **tokens       = NULL;
+    char                                 *path         = NULL;
+    gboolean                              bootp        = FALSE;
+    const char                           *s_ipaddr     = NULL;
+    const char                           *s_netmask    = NULL;
+    const char                           *s_gateway    = NULL;
     nm_auto_unref_ip_address NMIPAddress *ipaddr       = NULL;
     nm_auto_unref_ip_address NMIPAddress *gateway      = NULL;
-    const char *                          duplex       = NULL;
-    gs_free char *                        hwaddr       = NULL;
-    gs_free char *                        local_hwaddr = NULL;
-    gs_free char *                        hostname     = NULL;
+    const char                           *duplex       = NULL;
+    gs_free char                         *hwaddr       = NULL;
+    gs_free char                         *local_hwaddr = NULL;
+    gs_free char                         *hostname     = NULL;
     guint32                               speed        = 0;
     int                                   prefix       = -1;
-    NMSettingIPConfig *                   s_ip         = NULL;
-    NMSetting *                           s_ip4        = NULL;
-    NMSetting *                           s_ip6        = NULL;
-    NMSetting *                           s_wired      = NULL;
+    NMSettingIPConfig                    *s_ip         = NULL;
+    NMSetting                            *s_ip4        = NULL;
+    NMSetting                            *s_ip6        = NULL;
+    NMSetting                            *s_wired      = NULL;
     int                                   family       = AF_UNSPEC;
     int                                   i            = 0;
-    char *                                c;
-    gs_free_error GError *error = NULL;
+    char                                 *c;
+    gs_free_error GError                 *error = NULL;
 
     base = g_build_filename(sysfs_dir, "firmware", "devicetree", "base", NULL);
 

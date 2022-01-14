@@ -10,15 +10,15 @@
 static void
 test_cleanup_internal(void)
 {
-    SignalData *    link_added = add_signal_ifname(NM_PLATFORM_SIGNAL_LINK_CHANGED,
+    SignalData     *link_added = add_signal_ifname(NM_PLATFORM_SIGNAL_LINK_CHANGED,
                                                NM_PLATFORM_SIGNAL_ADDED,
                                                link_callback,
                                                DEVICE_NAME);
     int             ifindex;
-    GArray *        addresses4;
-    GArray *        addresses6;
-    GPtrArray *     routes4;
-    GPtrArray *     routes6;
+    GArray         *addresses4;
+    GArray         *addresses6;
+    GPtrArray      *routes4;
+    GPtrArray      *routes6;
     in_addr_t       addr4;
     in_addr_t       network4;
     int             plen4 = 24;
@@ -55,7 +55,7 @@ test_cleanup_internal(void)
 
     /* wait for kernel to add the IPv6 link local address... it takes a bit. */
     NMTST_WAIT_ASSERT(300, {
-        gs_unref_array GArray *     addrs = NULL;
+        gs_unref_array GArray      *addrs = NULL;
         const NMPlatformIP6Address *a;
 
         if (nmtst_wait_iteration > 0) {

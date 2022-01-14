@@ -646,8 +646,8 @@ nm_meta_setting_infos_by_gtype(GType gtype)
 {
 #if _NM_META_SETTING_BASE_IMPL_LIBNM
     nm_auto_unref_gtypeclass GTypeClass *gtypeclass_unref = NULL;
-    GTypeClass *                         gtypeclass;
-    NMSettingClass *                     klass;
+    GTypeClass                          *gtypeclass;
+    NMSettingClass                      *klass;
 
     if (!g_type_is_a(gtype, NM_TYPE_SETTING))
         goto out_none;

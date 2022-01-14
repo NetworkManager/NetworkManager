@@ -47,20 +47,20 @@ NM_AVAILABLE_IN_1_16
 const char *nm_wireguard_peer_get_public_key(const NMWireGuardPeer *self);
 NM_AVAILABLE_IN_1_16
 gboolean nm_wireguard_peer_set_public_key(NMWireGuardPeer *self,
-                                          const char *     public_key,
+                                          const char      *public_key,
                                           gboolean         accept_invalid);
 
 NM_AVAILABLE_IN_1_16
 const char *nm_wireguard_peer_get_preshared_key(const NMWireGuardPeer *self);
 NM_AVAILABLE_IN_1_16
 gboolean nm_wireguard_peer_set_preshared_key(NMWireGuardPeer *self,
-                                             const char *     preshared_key,
+                                             const char      *preshared_key,
                                              gboolean         accept_invalid);
 
 NM_AVAILABLE_IN_1_16
 NMSettingSecretFlags nm_wireguard_peer_get_preshared_key_flags(const NMWireGuardPeer *self);
 NM_AVAILABLE_IN_1_16
-void nm_wireguard_peer_set_preshared_key_flags(NMWireGuardPeer *    self,
+void nm_wireguard_peer_set_preshared_key_flags(NMWireGuardPeer     *self,
                                                NMSettingSecretFlags preshared_key_flags);
 
 NM_AVAILABLE_IN_1_16
@@ -84,7 +84,7 @@ NM_AVAILABLE_IN_1_16
 void nm_wireguard_peer_clear_allowed_ips(NMWireGuardPeer *self);
 NM_AVAILABLE_IN_1_16
 gboolean nm_wireguard_peer_append_allowed_ip(NMWireGuardPeer *self,
-                                             const char *     allowed_ip,
+                                             const char      *allowed_ip,
                                              gboolean         accept_invalid);
 NM_AVAILABLE_IN_1_16
 gboolean nm_wireguard_peer_remove_allowed_ip(NMWireGuardPeer *self, guint idx);
@@ -93,7 +93,7 @@ NM_AVAILABLE_IN_1_16
 gboolean nm_wireguard_peer_is_valid(const NMWireGuardPeer *self,
                                     gboolean               check_non_secrets,
                                     gboolean               check_secrets,
-                                    GError **              error);
+                                    GError               **error);
 
 NM_AVAILABLE_IN_1_16
 int nm_wireguard_peer_cmp(const NMWireGuardPeer *a,
@@ -168,8 +168,8 @@ NMWireGuardPeer *nm_setting_wireguard_get_peer(NMSettingWireGuard *self, guint i
 
 NM_AVAILABLE_IN_1_16
 NMWireGuardPeer *nm_setting_wireguard_get_peer_by_public_key(NMSettingWireGuard *self,
-                                                             const char *        public_key,
-                                                             guint *             out_idx);
+                                                             const char         *public_key,
+                                                             guint              *out_idx);
 
 NM_AVAILABLE_IN_1_16
 void nm_setting_wireguard_set_peer(NMSettingWireGuard *self, NMWireGuardPeer *peer, guint idx);

@@ -18,7 +18,7 @@ static gboolean
 test_dcb_func(char **argv, guint which, gpointer user_data, GError **error)
 {
     DcbExpected *e = user_data;
-    char *       f;
+    char        *f;
 
     g_assert(argv[0] == NULL);
     argv[0] = (which == DCBTOOL) ? "dcbtool" : "fcoeadm";
@@ -49,7 +49,7 @@ test_dcb_fcoe(void)
          NULL},
     };
     NMSettingDcb *s_dcb;
-    GError *      error = NULL;
+    GError       *error = NULL;
     gboolean      success;
 
     s_dcb = (NMSettingDcb *) nm_setting_dcb_new();
@@ -82,7 +82,7 @@ test_dcb_iscsi(void)
          NULL},
     };
     NMSettingDcb *s_dcb;
-    GError *      error = NULL;
+    GError       *error = NULL;
     gboolean      success;
 
     s_dcb = (NMSettingDcb *) nm_setting_dcb_new();
@@ -115,7 +115,7 @@ test_dcb_fip(void)
          NULL},
     };
     NMSettingDcb *s_dcb;
-    GError *      error = NULL;
+    GError       *error = NULL;
     gboolean      success;
 
     s_dcb = (NMSettingDcb *) nm_setting_dcb_new();
@@ -147,7 +147,7 @@ test_dcb_fip_default_prio(void)
          NULL},
     };
     NMSettingDcb *s_dcb;
-    GError *      error = NULL;
+    GError       *error = NULL;
     gboolean      success;
 
     s_dcb = (NMSettingDcb *) nm_setting_dcb_new();
@@ -180,7 +180,7 @@ test_dcb_pfc(void)
          NULL},
     };
     NMSettingDcb *s_dcb;
-    GError *      error = NULL;
+    GError       *error = NULL;
     gboolean      success;
 
     s_dcb = (NMSettingDcb *) nm_setting_dcb_new();
@@ -221,7 +221,7 @@ test_dcb_priority_groups(void)
          NULL},
     };
     NMSettingDcb *s_dcb;
-    GError *      error = NULL;
+    GError       *error = NULL;
     gboolean      success;
     guint         i;
 
@@ -267,7 +267,7 @@ test_dcb_cleanup(void)
          "dcbtool sc eth0 dcb off",
          NULL},
     };
-    GError * error = NULL;
+    GError  *error = NULL;
     gboolean success;
 
     success = _fcoe_cleanup("eth0", test_dcb_func, &expected, &error);
@@ -292,7 +292,7 @@ test_fcoe_create(void)
         0,
         {"fcoeadm -m vn2vn -c eth0", NULL},
     };
-    GError *      error = NULL;
+    GError       *error = NULL;
     gboolean      success;
     NMSettingDcb *s_dcb;
 
@@ -323,7 +323,7 @@ test_fcoe_cleanup(void)
         0,
         {"fcoeadm -d eth0", NULL},
     };
-    GError * error = NULL;
+    GError  *error = NULL;
     gboolean success;
 
     success = _fcoe_cleanup("eth0", test_dcb_func, &expected, &error);

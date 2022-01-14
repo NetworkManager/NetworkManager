@@ -39,20 +39,20 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_AUTO_CONFIG,
                                   PROP_MTU, );
 
 typedef struct {
-    char *               number; /* For dialing, duh */
-    char *               username;
-    char *               password;
-    char *               device_id;
-    char *               sim_id;
-    char *               sim_operator_id;
-    char *               apn;        /* NULL for dynamic */
-    char *               network_id; /* for manual registration or NULL for automatic */
-    char *               pin;
-    NMSettingSecretFlags password_flags;
-    NMSettingSecretFlags pin_flags;
-    guint32              mtu;
-    bool                 auto_config;
-    bool                 home_only;
+    char   *number; /* For dialing, duh */
+    char   *username;
+    char   *password;
+    char   *device_id;
+    char   *sim_id;
+    char   *sim_operator_id;
+    char   *apn;        /* NULL for dynamic */
+    char   *network_id; /* for manual registration or NULL for automatic */
+    char   *pin;
+    guint   password_flags;
+    guint   pin_flags;
+    guint32 mtu;
+    bool    auto_config;
+    bool    home_only;
 } NMSettingGsmPrivate;
 
 /**
@@ -463,7 +463,7 @@ static GPtrArray *
 need_secrets(NMSetting *setting)
 {
     NMSettingGsmPrivate *priv    = NM_SETTING_GSM_GET_PRIVATE(setting);
-    GPtrArray *          secrets = NULL;
+    GPtrArray           *secrets = NULL;
 
     if (priv->password && *priv->password)
         return NULL;
@@ -498,9 +498,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_PASSWORD:
         g_value_set_string(value, nm_setting_gsm_get_password(setting));
         break;
-    case PROP_PASSWORD_FLAGS:
-        g_value_set_flags(value, nm_setting_gsm_get_password_flags(setting));
-        break;
     case PROP_APN:
         g_value_set_string(value, nm_setting_gsm_get_apn(setting));
         break;
@@ -509,9 +506,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case PROP_PIN:
         g_value_set_string(value, nm_setting_gsm_get_pin(setting));
-        break;
-    case PROP_PIN_FLAGS:
-        g_value_set_flags(value, nm_setting_gsm_get_pin_flags(setting));
         break;
     case PROP_HOME_ONLY:
         g_value_set_boolean(value, nm_setting_gsm_get_home_only(setting));
@@ -529,7 +523,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_uint(value, nm_setting_gsm_get_mtu(setting));
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -538,7 +532,7 @@ static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE(object);
-    char *               tmp;
+    char                *tmp;
 
     switch (prop_id) {
     case PROP_AUTO_CONFIG:
@@ -555,9 +549,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_PASSWORD:
         g_free(priv->password);
         priv->password = g_value_dup_string(value);
-        break;
-    case PROP_PASSWORD_FLAGS:
-        priv->password_flags = g_value_get_flags(value);
         break;
     case PROP_APN:
         g_free(priv->apn);
@@ -576,9 +567,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_PIN:
         g_free(priv->pin);
         priv->pin = g_value_dup_string(value);
-        break;
-    case PROP_PIN_FLAGS:
-        priv->pin_flags = g_value_get_flags(value);
         break;
     case PROP_HOME_ONLY:
         priv->home_only = g_value_get_boolean(value);
@@ -599,7 +587,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         priv->mtu = g_value_get_uint(value);
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -644,9 +632,9 @@ finalize(GObject *object)
 static void
 nm_setting_gsm_class_init(NMSettingGsmClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingGsmPrivate));
 
@@ -722,14 +710,12 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
      *
      * Flags indicating how to handle the #NMSettingGsm:password property.
      **/
-    obj_properties[PROP_PASSWORD_FLAGS] =
-        g_param_spec_flags(NM_SETTING_GSM_PASSWORD_FLAGS,
-                           "",
-                           "",
-                           NM_TYPE_SETTING_SECRET_FLAGS,
-                           NM_SETTING_SECRET_FLAG_NONE,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
-
+    _nm_setting_property_define_direct_secret_flags(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_GSM_PASSWORD_FLAGS,
+                                                    PROP_PASSWORD_FLAGS,
+                                                    NMSettingGsmPrivate,
+                                                    password_flags);
     /**
      * NMSettingGsm:apn:
      *
@@ -782,12 +768,12 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
      *
      * Flags indicating how to handle the #NMSettingGsm:pin property.
      **/
-    obj_properties[PROP_PIN_FLAGS] = g_param_spec_flags(NM_SETTING_GSM_PIN_FLAGS,
-                                                        "",
-                                                        "",
-                                                        NM_TYPE_SETTING_SECRET_FLAGS,
-                                                        NM_SETTING_SECRET_FLAG_NONE,
-                                                        G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_secret_flags(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_GSM_PIN_FLAGS,
+                                                    PROP_PIN_FLAGS,
+                                                    NMSettingGsmPrivate,
+                                                    pin_flags);
 
     /**
      * NMSettingGsm:home-only:

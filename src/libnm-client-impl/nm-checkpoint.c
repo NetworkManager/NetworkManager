@@ -105,7 +105,7 @@ nm_checkpoint_init(NMCheckpoint *checkpoint)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMCheckpoint *       checkpoint = NM_CHECKPOINT(object);
+    NMCheckpoint        *checkpoint = NM_CHECKPOINT(object);
     NMCheckpointPrivate *priv       = NM_CHECKPOINT_GET_PRIVATE(checkpoint);
 
     switch (prop_id) {
@@ -145,7 +145,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_checkpoint = NML_DBUS_META_IFACE_
 static void
 nm_checkpoint_class_init(NMCheckpointClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
 
     object_class->get_property = get_property;

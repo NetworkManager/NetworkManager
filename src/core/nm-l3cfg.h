@@ -6,8 +6,8 @@
 #include "libnm-platform/nmp-object.h"
 #include "nm-l3-config-data.h"
 
-#define NM_L3CFG_CONFIG_PRIORITY_IPV4LL 0
-#define NM_L3CFG_CONFIG_PRIORITY_IPV6LL 0
+#define NM_L3CFG_CONFIG_PRIORITY_IPV4LL 1
+#define NM_L3CFG_CONFIG_PRIORITY_IPV6LL 1
 #define NM_ACD_TIMEOUT_RFC5227_MSEC     9000u
 
 #define NM_TYPE_L3CFG            (nm_l3cfg_get_type())
@@ -53,11 +53,15 @@ typedef enum _nm_packed {
  *   "don't change" behavior. At least once. If the address/route
  *   is still not (no longer) configured on the subsequent
  *   commit, it's not getting added again.
+ * @NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE: if set, objects in the
+ *   NML3ConfigData are committed to platform even if they were
+ *   removed externally.
  */
 typedef enum _nm_packed {
     NM_L3CFG_CONFIG_FLAGS_NONE               = 0,
     NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD       = (1LL << 0),
     NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE = (1LL << 1),
+    NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE         = (1LL << 2),
 } NML3CfgConfigFlags;
 
 typedef enum _nm_packed {
@@ -71,7 +75,7 @@ typedef enum _nm_packed {
 } NML3AcdAddrState;
 
 typedef struct {
-    const NMPObject *     obj;
+    const NMPObject      *obj;
     const NML3ConfigData *l3cd;
     gconstpointer         tag;
 
@@ -88,15 +92,15 @@ typedef struct {
     in_addr_t                   addr;
     guint                       n_track_infos;
     NML3AcdAddrState            state;
-    NML3Cfg *                   l3cfg;
+    NML3Cfg                    *l3cfg;
     const NML3AcdAddrTrackInfo *track_infos;
 } NML3AcdAddrInfo;
 
 static inline const NML3AcdAddrTrackInfo *
 nm_l3_acd_addr_info_find_track_info(const NML3AcdAddrInfo *addr_info,
                                     gconstpointer          tag,
-                                    const NML3ConfigData * l3cd,
-                                    const NMPObject *      obj)
+                                    const NML3ConfigData  *l3cd,
+                                    const NMPObject       *obj)
 {
     guint                       i;
     const NML3AcdAddrTrackInfo *ti;
@@ -175,7 +179,7 @@ typedef struct {
         } acd_event;
 
         struct {
-            const NMPObject *          obj;
+            const NMPObject           *obj;
             NMPlatformSignalChangeType change_type;
         } platform_change;
 
@@ -195,10 +199,10 @@ struct _NML3Cfg {
     GObject parent;
     struct {
         struct _NML3CfgPrivate *p;
-        NMNetns *               netns;
-        NMPlatform *            platform;
-        const NMPObject *       plobj;
-        const NMPObject *       plobj_next;
+        NMNetns                *netns;
+        NMPlatform             *platform;
+        const NMPObject        *plobj;
+        const NMPObject        *plobj_next;
         int                     ifindex;
     } priv;
 };
@@ -215,9 +219,9 @@ gboolean nm_l3cfg_is_ready(NML3Cfg *self);
 
 void _nm_l3cfg_notify_platform_change_on_idle(NML3Cfg *self, guint32 obj_type_flags);
 
-void _nm_l3cfg_notify_platform_change(NML3Cfg *                  self,
+void _nm_l3cfg_notify_platform_change(NML3Cfg                   *self,
                                       NMPlatformSignalChangeType change_type,
-                                      const NMPObject *          obj);
+                                      const NMPObject           *obj);
 
 /*****************************************************************************/
 
@@ -301,7 +305,7 @@ void _nm_l3cfg_emit_signal_notify(NML3Cfg *self, const NML3ConfigNotifyData *not
 
 void nm_l3cfg_mark_config_dirty(NML3Cfg *self, gconstpointer tag, gboolean dirty);
 
-gboolean nm_l3cfg_add_config(NML3Cfg *             self,
+gboolean nm_l3cfg_add_config(NML3Cfg              *self,
                              gconstpointer         tag,
                              gboolean              replace_same_tag,
                              const NML3ConfigData *l3cd,
@@ -397,11 +401,11 @@ typedef enum {
     NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY = (1ull << 1),
 } NML3CfgCheckReadyFlags;
 
-gboolean nm_l3cfg_check_ready(NML3Cfg *              self,
-                              const NML3ConfigData * l3cd,
+gboolean nm_l3cfg_check_ready(NML3Cfg               *self,
+                              const NML3ConfigData  *l3cd,
                               int                    addr_family,
                               NML3CfgCheckReadyFlags flags,
-                              gboolean *             acd_used);
+                              gboolean              *acd_used);
 
 /*****************************************************************************/
 
@@ -409,10 +413,10 @@ NML3CfgCommitType nm_l3cfg_commit_type_get(NML3Cfg *self);
 
 typedef struct _NML3CfgCommitTypeHandle NML3CfgCommitTypeHandle;
 
-NML3CfgCommitTypeHandle *nm_l3cfg_commit_type_register(NML3Cfg *                self,
+NML3CfgCommitTypeHandle *nm_l3cfg_commit_type_register(NML3Cfg                 *self,
                                                        NML3CfgCommitType        commit_type,
                                                        NML3CfgCommitTypeHandle *existing_handle,
-                                                       const char *             source);
+                                                       const char              *source);
 
 void nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle);
 
@@ -425,6 +429,8 @@ nm_l3cfg_commit_type_clear(NML3Cfg *self, NML3CfgCommitTypeHandle **handle)
     nm_l3cfg_commit_type_unregister(self, g_steal_pointer(handle));
     return TRUE;
 }
+
+void nm_l3cfg_commit_type_reset_update(NML3Cfg *self);
 
 /*****************************************************************************/
 
@@ -444,6 +450,12 @@ struct _NML3IPv4LL *nm_l3cfg_get_ipv4ll(NML3Cfg *self);
 struct _NML3IPv4LL *nm_l3cfg_access_ipv4ll(NML3Cfg *self);
 
 void _nm_l3cfg_unregister_ipv4ll(NML3Cfg *self);
+
+/*****************************************************************************/
+
+struct _NMIPConfig;
+struct _NMIPConfig *nm_l3cfg_ipconfig_get(NML3Cfg *self, int addr_family);
+struct _NMIPConfig *nm_l3cfg_ipconfig_acquire(NML3Cfg *self, int addr_family);
 
 /*****************************************************************************/
 

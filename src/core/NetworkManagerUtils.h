@@ -19,14 +19,18 @@ const char *nm_utils_get_ip_config_method(NMConnection *connection, int addr_fam
 
 const char *nm_utils_get_shared_wifi_permission(NMConnection *connection);
 
-void _nm_utils_complete_generic_with_params(NMPlatform *         platform,
-                                            NMConnection *       connection,
-                                            const char *         ctype,
+void nm_utils_ppp_ip_methods_enabled(NMConnection *connection,
+                                     gboolean     *out_ip4_enabled,
+                                     gboolean     *out_ip6_enabled);
+
+void _nm_utils_complete_generic_with_params(NMPlatform          *platform,
+                                            NMConnection        *connection,
+                                            const char          *ctype,
                                             NMConnection *const *existing_connections,
-                                            const char *         preferred_id,
-                                            const char *         fallback_id_prefix,
-                                            const char *         ifname_prefix,
-                                            const char *         ifname,
+                                            const char          *preferred_id,
+                                            const char          *fallback_id_prefix,
+                                            const char          *ifname_prefix,
+                                            const char          *ifname,
                                             ...) G_GNUC_NULL_TERMINATED;
 
 #define nm_utils_complete_generic_with_params(platform,             \
@@ -50,14 +54,14 @@ void _nm_utils_complete_generic_with_params(NMPlatform *         platform,
                                            NULL)
 
 static inline void
-nm_utils_complete_generic(NMPlatform *         platform,
-                          NMConnection *       connection,
-                          const char *         ctype,
+nm_utils_complete_generic(NMPlatform          *platform,
+                          NMConnection        *connection,
+                          const char          *ctype,
                           NMConnection *const *existing_connections,
-                          const char *         preferred_id,
-                          const char *         fallback_id_prefix,
-                          const char *         ifname_prefix,
-                          const char *         ifname,
+                          const char          *preferred_id,
+                          const char          *fallback_id_prefix,
+                          const char          *ifname_prefix,
+                          const char          *ifname,
                           gboolean             default_enable_ipv6)
 {
     nm_utils_complete_generic_with_params(platform,
@@ -76,8 +80,8 @@ nm_utils_complete_generic(NMPlatform *         platform,
 
 typedef gboolean(NMUtilsMatchFilterFunc)(NMConnection *connection, gpointer user_data);
 
-NMConnection *nm_utils_match_connection(NMConnection *const *  connections,
-                                        NMConnection *         original,
+NMConnection *nm_utils_match_connection(NMConnection *const   *connections,
+                                        NMConnection          *original,
                                         gboolean               indicated,
                                         gboolean               device_has_carrier,
                                         gint64                 default_v4_metric,
@@ -86,9 +90,9 @@ NMConnection *nm_utils_match_connection(NMConnection *const *  connections,
                                         gpointer               match_filter_data);
 
 int nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
-                                   const char *          match_device_type,
-                                   const char *          match_dhcp_plugin,
-                                   const GSList *        specs,
+                                   const char           *match_device_type,
+                                   const char           *match_dhcp_plugin,
+                                   const GSList         *specs,
                                    int                   no_match_value);
 
 /*****************************************************************************/
@@ -136,12 +140,12 @@ typedef struct _NMShutdownWaitObjHandle NMShutdownWaitObjHandle;
 
 NMShutdownWaitObjHandle *nm_shutdown_wait_obj_register_full(gpointer           watched_obj,
                                                             NMShutdownWaitType wait_type,
-                                                            char *             msg_reason,
+                                                            char              *msg_reason,
                                                             gboolean           free_msg_reason);
 
 static inline NMShutdownWaitObjHandle *
 nm_shutdown_wait_obj_register_object_full(gpointer watched_obj,
-                                          char *   msg_reason,
+                                          char    *msg_reason,
                                           gboolean free_msg_reason)
 {
     return nm_shutdown_wait_obj_register_full(watched_obj,
@@ -167,7 +171,7 @@ nm_shutdown_wait_obj_register_handle_full(char *msg_reason, gboolean free_msg_re
 
 static inline NMShutdownWaitObjHandle *
 nm_shutdown_wait_obj_register_cancellable_full(GCancellable *watched_obj,
-                                               char *        msg_reason,
+                                               char         *msg_reason,
                                                gboolean      free_msg_reason)
 {
     return nm_shutdown_wait_obj_register_full(watched_obj,
@@ -193,21 +197,20 @@ GPtrArray *
 nm_utils_tfilters_from_tc_setting(NMPlatform *platform, NMSettingTCConfig *s_tc, int ip_ifindex);
 
 void nm_utils_ip_route_attribute_to_platform(int                addr_family,
-                                             NMIPRoute *        s_route,
+                                             NMIPRoute         *s_route,
                                              NMPlatformIPRoute *r,
-                                             guint32            route_table);
+                                             gint64             route_table);
 
 void nm_utils_ip_addresses_to_dbus(int                          addr_family,
                                    const NMDedupMultiHeadEntry *head_entry,
-                                   const NMPObject *            best_default_route,
-                                   NMSettingIP6ConfigPrivacy    ipv6_privacy,
-                                   GVariant **                  out_address_data,
-                                   GVariant **                  out_addresses);
+                                   const NMPObject             *best_default_route,
+                                   GVariant                   **out_address_data,
+                                   GVariant                   **out_addresses);
 
 void nm_utils_ip_routes_to_dbus(int                          addr_family,
                                 const NMDedupMultiHeadEntry *head_entry,
-                                GVariant **                  out_route_data,
-                                GVariant **                  out_routes);
+                                GVariant                   **out_route_data,
+                                GVariant                   **out_routes);
 
 /*****************************************************************************/
 
@@ -268,6 +271,13 @@ nm_dhcp_lease_lookup_option(NMDhcpLease *lease, const char *option)
 
 NM_AUTO_DEFINE_FCN(NMDhcpLease *, _nm_auto_unref_dhcplease, nm_dhcp_lease_unref);
 #define nm_auto_unref_dhcplease nm_auto(_nm_auto_unref_dhcplease)
+
+/*****************************************************************************/
+
+NMSetting *nm_utils_platform_capture_ip_setting(NMPlatform *platform,
+                                                int         addr_family,
+                                                int         ifindex,
+                                                gboolean    maybe_ipv6_disabled);
 
 /*****************************************************************************/
 

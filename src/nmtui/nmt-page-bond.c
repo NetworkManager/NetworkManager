@@ -41,13 +41,13 @@ typedef struct {
     /* Note: when adding new options to the UI also ensure they are
      * initialized in bond_connection_setup_func()
      */
-    NmtNewtPopup *  mode;
-    NmtNewtEntry *  primary;
-    NmtNewtPopup *  monitoring;
-    NmtNewtEntry *  miimon;
-    NmtNewtEntry *  updelay;
-    NmtNewtEntry *  downdelay;
-    NmtNewtEntry *  arp_interval;
+    NmtNewtPopup   *mode;
+    NmtNewtEntry   *primary;
+    NmtNewtPopup   *monitoring;
+    NmtNewtEntry   *miimon;
+    NmtNewtEntry   *updelay;
+    NmtNewtEntry   *downdelay;
+    NmtNewtEntry   *arp_interval;
     NmtAddressList *arp_ip_target;
 
     NmtPageBondMonitoringMode monitoring_mode;
@@ -96,11 +96,11 @@ static NmtNewtPopupEntry bond_monitoring[] = {{N_("MII (recommended)"), "mii"},
 static void
 bond_options_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-    NMSettingBond *      s_bond = NM_SETTING_BOND(object);
-    NmtPageBond *        bond   = NMT_PAGE_BOND(user_data);
-    NmtPageBondPrivate * priv   = NMT_PAGE_BOND_GET_PRIVATE(bond);
+    NMSettingBond       *s_bond = NM_SETTING_BOND(object);
+    NmtPageBond         *bond   = NMT_PAGE_BOND(user_data);
+    NmtPageBondPrivate  *priv   = NMT_PAGE_BOND_GET_PRIVATE(bond);
     gs_free const char **ips    = NULL;
-    const char *         val;
+    const char          *val;
     gboolean             visible_mii;
     NMBondMode           mode;
 
@@ -161,9 +161,9 @@ bond_options_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 static void
 slaves_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-    NmtPageBond *       bond = NMT_PAGE_BOND(user_data);
+    NmtPageBond        *bond = NMT_PAGE_BOND(user_data);
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);
-    GPtrArray *         slaves;
+    GPtrArray          *slaves;
 
     g_object_get(object, "connections", &slaves, NULL);
     if (slaves->len == 0) {
@@ -207,9 +207,9 @@ _bond_add_option(NMSettingBond *s_bond, const char *option, const char *value)
 #define WIDGET_CHANGED_FUNC(widget, func, option, dflt)                                         \
     static void widget##_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_data) \
     {                                                                                           \
-        NmtPageBond *       bond = NMT_PAGE_BOND(user_data);                                    \
+        NmtPageBond        *bond = NMT_PAGE_BOND(user_data);                                    \
         NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);                             \
-        const char *        v;                                                                  \
+        const char         *v;                                                                  \
                                                                                                 \
         if (priv->updating)                                                                     \
             return;                                                                             \
@@ -229,9 +229,9 @@ WIDGET_CHANGED_FUNC(arp_interval, nmt_newt_entry_get_text, NM_SETTING_BOND_OPTIO
 static void
 mode_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-    NmtPageBond *       bond = NMT_PAGE_BOND(user_data);
+    NmtPageBond        *bond = NMT_PAGE_BOND(user_data);
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);
-    const char *        mode;
+    const char         *mode;
 
     if (priv->updating)
         return;
@@ -261,7 +261,7 @@ mode_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 static void
 monitoring_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-    NmtPageBond *       bond = NMT_PAGE_BOND(user_data);
+    NmtPageBond        *bond = NMT_PAGE_BOND(user_data);
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);
     gboolean            visible_mii;
 
@@ -290,9 +290,9 @@ monitoring_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_data
 static void
 arp_ip_target_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
-    NmtPageBond *       bond = NMT_PAGE_BOND(user_data);
+    NmtPageBond        *bond = NMT_PAGE_BOND(user_data);
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);
-    char **             ips, *target;
+    char              **ips, *target;
 
     if (priv->updating)
         return;
@@ -311,7 +311,7 @@ arp_ip_target_widget_changed(GObject *object, GParamSpec *pspec, gpointer user_d
 static gboolean
 bond_connection_type_filter(GType connection_type, gpointer user_data)
 {
-    NmtPageBond *       bond = user_data;
+    NmtPageBond        *bond = user_data;
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);
 
     if (priv->slave_type != NM_TYPE_SETTING_WIRED && connection_type == NM_TYPE_SETTING_INFINIBAND)
@@ -325,14 +325,14 @@ bond_connection_type_filter(GType connection_type, gpointer user_data)
 static void
 nmt_page_bond_constructed(GObject *object)
 {
-    NmtPageBond *       bond = NMT_PAGE_BOND(object);
+    NmtPageBond        *bond = NMT_PAGE_BOND(object);
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);
-    NmtEditorSection *  section;
-    NmtEditorGrid *     grid;
-    NMSettingWired *    s_wired;
-    NMSettingBond *     s_bond;
-    NmtNewtWidget *     widget, *label;
-    NMConnection *      conn;
+    NmtEditorSection   *section;
+    NmtEditorGrid      *grid;
+    NMSettingWired     *s_wired;
+    NMSettingBond      *s_bond;
+    NmtNewtWidget      *widget, *label;
+    NMConnection       *conn;
 
     conn         = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(bond));
     s_bond       = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_BOND);
@@ -426,7 +426,7 @@ nmt_page_bond_saved(NmtEditorPage *editor_page)
 static void
 nmt_page_bond_class_init(NmtPageBondClass *bond_class)
 {
-    GObjectClass *      object_class      = G_OBJECT_CLASS(bond_class);
+    GObjectClass       *object_class      = G_OBJECT_CLASS(bond_class);
     NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_CLASS(bond_class);
 
     g_type_class_add_private(bond_class, sizeof(NmtPageBondPrivate));

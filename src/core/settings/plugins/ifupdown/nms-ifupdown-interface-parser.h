@@ -32,8 +32,8 @@ void ifparser_destroy(if_parser *parser);
 NM_AUTO_DEFINE_FCN0(if_parser *, _nm_auto_ifparser, ifparser_destroy);
 #define nm_auto_ifparser nm_auto(_nm_auto_ifparser)
 
-if_block *  ifparser_getif(if_parser *parser, const char *iface);
-if_block *  ifparser_getfirst(if_parser *parser);
+if_block   *ifparser_getif(if_parser *parser, const char *iface);
+if_block   *ifparser_getfirst(if_parser *parser);
 const char *ifparser_getkey(if_block *iface, const char *key);
 gboolean    ifparser_haskey(if_block *iface, const char *key);
 

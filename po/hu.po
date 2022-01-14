@@ -9599,7 +9599,7 @@ msgstr "Hiba: „device show”: %s"
 
 #: ../src/nmcli/connections.c:1497
 #, fuzzy
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "Aktív kapcsolat részletei"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

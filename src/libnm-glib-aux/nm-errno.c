@@ -156,7 +156,7 @@ const char *
 nm_strerror_native(int errsv)
 {
     static _nm_thread_local char *buf_static = NULL;
-    char *                        buf;
+    char                         *buf;
 
     buf = buf_static;
     if (G_UNLIKELY(!buf)) {

@@ -12,22 +12,22 @@
 /*****************************************************************************/
 
 NMVpnEditor *
-nm_vpn_plugin_utils_load_editor(const char *                  module_name,
-                                const char *                  factory_name,
+nm_vpn_plugin_utils_load_editor(const char                   *module_name,
+                                const char                   *factory_name,
                                 NMVpnPluginUtilsEditorFactory editor_factory,
-                                NMVpnEditorPlugin *           editor_plugin,
-                                NMConnection *                connection,
+                                NMVpnEditorPlugin            *editor_plugin,
+                                NMConnection                 *connection,
                                 gpointer                      user_data,
-                                GError **                     error)
+                                GError                      **error)
 
 {
     static struct {
         gpointer factory;
-        void *   dl_module;
-        char *   module_name;
-        char *   factory_name;
+        void    *dl_module;
+        char    *module_name;
+        char    *factory_name;
     } cached = {0};
-    NMVpnEditor * editor;
+    NMVpnEditor  *editor;
     gs_free char *module_path = NULL;
     gs_free char *dirname     = NULL;
     Dl_info       plugin_info;
@@ -79,7 +79,7 @@ nm_vpn_plugin_utils_load_editor(const char *                  module_name,
                              NULL);
     } else {
         gpointer factory;
-        void *   dl_module;
+        void    *dl_module;
 
         dl_module = dlopen(module_path, RTLD_LAZY | RTLD_LOCAL);
         if (!dl_module) {

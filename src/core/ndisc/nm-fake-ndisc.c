@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 
 #include "nm-ndisc-private.h"
+#include "nm-l3cfg.h"
 
 #define _NMLOG_PREFIX_NAME "ndisc-fake"
 
@@ -20,10 +21,10 @@ typedef struct {
     guint when;
 
     NMNDiscDHCPLevel dhcp_level;
-    GArray *         gateways;
-    GArray *         prefixes;
-    GArray *         dns_servers;
-    GArray *         dns_domains;
+    GArray          *gateways;
+    GArray          *prefixes;
+    GArray          *dns_servers;
+    GArray          *dns_domains;
     int              hop_limit;
     guint32          mtu;
 } FakeRa;
@@ -97,7 +98,7 @@ find_ra(GSList *ras, guint id)
 }
 
 guint
-nm_fake_ndisc_add_ra(NMFakeNDisc *    self,
+nm_fake_ndisc_add_ra(NMFakeNDisc     *self,
                      guint            seconds_after_previous,
                      NMNDiscDHCPLevel dhcp_level,
                      int              hop_limit,
@@ -105,7 +106,7 @@ nm_fake_ndisc_add_ra(NMFakeNDisc *    self,
 {
     NMFakeNDiscPrivate *priv    = NM_FAKE_NDISC_GET_PRIVATE(self);
     static guint        counter = 1;
-    FakeRa *            ra;
+    FakeRa             *ra;
 
     ra              = g_malloc0(sizeof(*ra));
     ra->id          = counter++;
@@ -124,15 +125,15 @@ nm_fake_ndisc_add_ra(NMFakeNDisc *    self,
 }
 
 void
-nm_fake_ndisc_add_gateway(NMFakeNDisc *      self,
+nm_fake_ndisc_add_gateway(NMFakeNDisc       *self,
                           guint              ra_id,
-                          const char *       addr,
+                          const char        *addr,
                           gint64             expiry_msec,
                           NMIcmpv6RouterPref preference)
 {
     NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE(self);
-    FakeRa *            ra   = find_ra(priv->ras, ra_id);
-    NMNDiscGateway *    gw;
+    FakeRa             *ra   = find_ra(priv->ras, ra_id);
+    NMNDiscGateway     *gw;
 
     g_assert(ra);
 
@@ -144,18 +145,18 @@ nm_fake_ndisc_add_gateway(NMFakeNDisc *      self,
 }
 
 void
-nm_fake_ndisc_add_prefix(NMFakeNDisc *      self,
+nm_fake_ndisc_add_prefix(NMFakeNDisc       *self,
                          guint              ra_id,
-                         const char *       network,
+                         const char        *network,
                          guint              plen,
-                         const char *       gateway,
+                         const char        *gateway,
                          gint64             expiry_msec,
                          gint64             expiry_preferred_msec,
                          NMIcmpv6RouterPref preference)
 {
     NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE(self);
-    FakeRa *            ra   = find_ra(priv->ras, ra_id);
-    FakePrefix *        prefix;
+    FakeRa             *ra   = find_ra(priv->ras, ra_id);
+    FakePrefix         *prefix;
 
     g_assert(ra);
 
@@ -175,12 +176,12 @@ nm_fake_ndisc_add_prefix(NMFakeNDisc *      self,
 void
 nm_fake_ndisc_add_dns_server(NMFakeNDisc *self,
                              guint        ra_id,
-                             const char * address,
+                             const char  *address,
                              gint64       expiry_msec)
 {
     NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE(self);
-    FakeRa *            ra   = find_ra(priv->ras, ra_id);
-    NMNDiscDNSServer *  dns;
+    FakeRa             *ra   = find_ra(priv->ras, ra_id);
+    NMNDiscDNSServer   *dns;
 
     g_assert(ra);
 
@@ -195,8 +196,8 @@ void
 nm_fake_ndisc_add_dns_domain(NMFakeNDisc *self, guint ra_id, const char *domain, gint64 expiry_msec)
 {
     NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE(self);
-    FakeRa *            ra   = find_ra(priv->ras, ra_id);
-    NMNDiscDNSDomain *  dns;
+    FakeRa             *ra   = find_ra(priv->ras, ra_id);
+    NMNDiscDNSDomain   *dns;
 
     g_assert(ra);
 
@@ -225,11 +226,11 @@ send_rs(NMNDisc *ndisc, GError **error)
 static gboolean
 receive_ra(gpointer user_data)
 {
-    NMFakeNDisc *        self     = user_data;
-    NMFakeNDiscPrivate * priv     = NM_FAKE_NDISC_GET_PRIVATE(self);
-    NMNDisc *            ndisc    = NM_NDISC(self);
+    NMFakeNDisc         *self     = user_data;
+    NMFakeNDiscPrivate  *priv     = NM_FAKE_NDISC_GET_PRIVATE(self);
+    NMNDisc             *ndisc    = NM_NDISC(self);
     NMNDiscDataInternal *rdata    = ndisc->rdata;
-    FakeRa *             ra       = priv->ras->data;
+    FakeRa              *ra       = priv->ras->data;
     NMNDiscConfigMap     changed  = 0;
     const gint64         now_msec = nm_utils_get_monotonic_timestamp_msec();
     guint                i;
@@ -253,7 +254,7 @@ receive_ra(gpointer user_data)
     }
 
     for (i = 0; i < ra->prefixes->len; i++) {
-        FakePrefix *       item  = &g_array_index(ra->prefixes, FakePrefix, i);
+        FakePrefix        *item  = &g_array_index(ra->prefixes, FakePrefix, i);
         const NMNDiscRoute route = {
             .network     = item->network,
             .plen        = item->plen,
@@ -322,7 +323,7 @@ static void
 start(NMNDisc *ndisc)
 {
     NMFakeNDiscPrivate *priv = NM_FAKE_NDISC_GET_PRIVATE(ndisc);
-    FakeRa *            ra;
+    FakeRa             *ra;
 
     /* Queue up the first fake RA */
     g_assert(priv->ras);
@@ -354,28 +355,23 @@ nm_fake_ndisc_init(NMFakeNDisc *fake_ndisc)
 {}
 
 NMNDisc *
-nm_fake_ndisc_new(int ifindex, const char *ifname)
+nm_fake_ndisc_new(NML3Cfg *l3cfg)
 {
-    return g_object_new(NM_TYPE_FAKE_NDISC,
-                        NM_NDISC_IFINDEX,
-                        ifindex,
-                        NM_NDISC_IFNAME,
-                        ifname,
-                        NM_NDISC_NODE_TYPE,
-                        (int) NM_NDISC_NODE_TYPE_HOST,
-                        NM_NDISC_STABLE_TYPE,
-                        (int) NM_UTILS_STABLE_TYPE_UUID,
-                        NM_NDISC_NETWORK_ID,
-                        "fake",
-                        NM_NDISC_MAX_ADDRESSES,
-                        NM_NDISC_MAX_ADDRESSES_DEFAULT,
-                        NM_NDISC_ROUTER_SOLICITATIONS,
-                        NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT,
-                        NM_NDISC_ROUTER_SOLICITATION_INTERVAL,
-                        NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL,
-                        NM_NDISC_RA_TIMEOUT,
-                        30u,
-                        NULL);
+    const NMNDiscConfig config = {
+        .l3cfg                        = g_object_ref(NM_L3CFG(l3cfg)),
+        .ifname                       = nm_l3cfg_get_ifname(l3cfg, TRUE),
+        .node_type                    = NM_NDISC_NODE_TYPE_HOST,
+        .stable_type                  = NM_UTILS_STABLE_TYPE_UUID,
+        .network_id                   = "fake",
+        .max_addresses                = NM_NDISC_MAX_ADDRESSES_DEFAULT,
+        .router_solicitations         = NM_NDISC_ROUTER_SOLICITATIONS_DEFAULT,
+        .router_solicitation_interval = NM_NDISC_RFC4861_RTR_SOLICITATION_INTERVAL,
+        .ra_timeout                   = 30u,
+        .addr_gen_mode                = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+        .ip6_privacy                  = NM_SETTING_IP6_CONFIG_PRIVACY_PREFER_TEMP_ADDR,
+    };
+
+    return g_object_new(NM_TYPE_FAKE_NDISC, NM_NDISC_CONFIG, &config, NULL);
 }
 
 static void

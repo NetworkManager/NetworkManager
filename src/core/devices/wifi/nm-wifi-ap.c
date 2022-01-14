@@ -41,8 +41,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMWifiAP,
 
 struct _NMWifiAPPrivate {
     /* Scanned or cached values */
-    GBytes *     ssid;
-    char *       address;
+    GBytes      *ssid;
+    char        *address;
     _NM80211Mode mode;
     guint8       strength;
     guint32      freq;        /* Frequency in MHz; ie 2412 (== 2.412 GHz) */
@@ -430,7 +430,7 @@ has_proto(NMSettingWirelessSecurity *sec, const char *proto)
 static void
 add_pair_ciphers(NMWifiAP *ap, NMSettingWirelessSecurity *sec)
 {
-    NMWifiAPPrivate *      priv  = NM_WIFI_AP_GET_PRIVATE(ap);
+    NMWifiAPPrivate       *priv  = NM_WIFI_AP_GET_PRIVATE(ap);
     guint32                num   = nm_setting_wireless_security_get_num_pairwise(sec);
     NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
     guint32                i;
@@ -458,7 +458,7 @@ add_pair_ciphers(NMWifiAP *ap, NMSettingWirelessSecurity *sec)
 static void
 add_group_ciphers(NMWifiAP *ap, NMSettingWirelessSecurity *sec)
 {
-    NMWifiAPPrivate *      priv  = NM_WIFI_AP_GET_PRIVATE(ap);
+    NMWifiAPPrivate       *priv  = NM_WIFI_AP_GET_PRIVATE(ap);
     guint32                num   = nm_setting_wireless_security_get_num_groups(sec);
     NM80211ApSecurityFlags flags = NM_802_11_AP_SEC_NONE;
     guint32                i;
@@ -491,10 +491,10 @@ const char *
 nm_wifi_ap_to_string(const NMWifiAP *self, char *str_buf, gulong buf_len, gint64 now_msec)
 {
     const NMWifiAPPrivate *priv;
-    const char *           supplicant_id = "-";
-    const char *           export_path;
+    const char            *supplicant_id = "-";
+    const char            *export_path;
     guint32                chan;
-    gs_free char *         ssid_to_free = NULL;
+    gs_free char          *ssid_to_free = NULL;
     char                   str_buf_ts[100];
 
     g_return_val_if_fail(NM_IS_WIFI_AP(self), NULL);
@@ -558,13 +558,13 @@ freq_to_band(guint32 freq)
 gboolean
 nm_wifi_ap_check_compatible(NMWifiAP *self, NMConnection *connection)
 {
-    NMWifiAPPrivate *          priv;
-    NMSettingWireless *        s_wireless;
+    NMWifiAPPrivate           *priv;
+    NMSettingWireless         *s_wireless;
     NMSettingWirelessSecurity *s_wireless_sec;
-    GBytes *                   ssid;
-    const char *               mode;
-    const char *               band;
-    const char *               bssid;
+    GBytes                    *ssid;
+    const char                *mode;
+    const char                *band;
+    const char                *bssid;
     guint32                    channel;
 
     g_return_val_if_fail(NM_IS_WIFI_AP(self), FALSE);
@@ -629,10 +629,10 @@ nm_wifi_ap_check_compatible(NMWifiAP *self, NMConnection *connection)
 }
 
 gboolean
-nm_wifi_ap_complete_connection(NMWifiAP *    self,
+nm_wifi_ap_complete_connection(NMWifiAP     *self,
                                NMConnection *connection,
                                gboolean      lock_bssid,
-                               GError **     error)
+                               GError      **error)
 {
     NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE(self);
 
@@ -655,7 +655,7 @@ nm_wifi_ap_complete_connection(NMWifiAP *    self,
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMWifiAP *       self = NM_WIFI_AP(object);
+    NMWifiAP        *self = NM_WIFI_AP(object);
     NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE(self);
 
     switch (prop_id) {
@@ -734,11 +734,11 @@ nm_wifi_ap_new_from_properties(const NMSupplicantBssInfo *bss_info)
 NMWifiAP *
 nm_wifi_ap_new_fake_from_connection(NMConnection *connection)
 {
-    NMWifiAP *                 ap;
-    NMWifiAPPrivate *          priv;
-    NMSettingWireless *        s_wireless;
+    NMWifiAP                  *ap;
+    NMWifiAPPrivate           *priv;
+    NMSettingWireless         *s_wireless;
     NMSettingWirelessSecurity *s_wireless_sec;
-    const char *               mode, *band, *key_mgmt;
+    const char                *mode, *band, *key_mgmt;
     guint32                    channel;
     NM80211ApSecurityFlags     flags;
     gboolean                   psk = FALSE, eap = FALSE, adhoc = FALSE;
@@ -845,7 +845,7 @@ error:
 static void
 finalize(GObject *object)
 {
-    NMWifiAP *       self = NM_WIFI_AP(object);
+    NMWifiAP        *self = NM_WIFI_AP(object);
     NMWifiAPPrivate *priv = NM_WIFI_AP_GET_PRIVATE(self);
 
     nm_assert(!self->wifi_device);
@@ -890,7 +890,7 @@ nm_wifi_ap_class_init(NMWifiAPClass *ap_class)
      | NM_802_11_AP_SEC_KEY_MGMT_SAE | NM_802_11_AP_SEC_KEY_MGMT_OWE                             \
      | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM | NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)
 
-    GObjectClass *     object_class      = G_OBJECT_CLASS(ap_class);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(ap_class);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(ap_class);
 
     g_type_class_add_private(object_class, sizeof(NMWifiAPPrivate));
@@ -987,10 +987,10 @@ nm_wifi_ap_class_init(NMWifiAPClass *ap_class)
 const char **
 nm_wifi_aps_get_paths(const CList *aps_lst_head, gboolean include_without_ssid)
 {
-    NMWifiAP *   ap;
+    NMWifiAP    *ap;
     gsize        i, n;
     const char **list;
-    const char * path;
+    const char  *path;
 
     n    = c_list_length(aps_lst_head);
     list = g_new(const char *, n + 1);

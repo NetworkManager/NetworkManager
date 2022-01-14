@@ -11374,7 +11374,7 @@ msgstr "Error: «connection show»: %s"
 
 # auto translated by TM merge from project: NetworkManager, version: 0.9.8.2, DocId: NetworkManager
 #: ../src/nmcli/connections.c:1497
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "Activar detalles de conexión"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

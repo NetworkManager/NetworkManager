@@ -145,31 +145,31 @@ void nm_connection_clear_settings(NMConnection *connection);
 
 gboolean nm_connection_compare(NMConnection *a, NMConnection *b, NMSettingCompareFlags flags);
 
-gboolean nm_connection_diff(NMConnection *        a,
-                            NMConnection *        b,
+gboolean nm_connection_diff(NMConnection         *a,
+                            NMConnection         *b,
                             NMSettingCompareFlags flags,
-                            GHashTable **         out_settings);
+                            GHashTable          **out_settings);
 
 gboolean nm_connection_verify(NMConnection *connection, GError **error);
 NM_AVAILABLE_IN_1_2
 gboolean nm_connection_verify_secrets(NMConnection *connection, GError **error);
 gboolean nm_connection_normalize(NMConnection *connection,
-                                 GHashTable *  parameters,
-                                 gboolean *    modified,
-                                 GError **     error);
+                                 GHashTable   *parameters,
+                                 gboolean     *modified,
+                                 GError      **error);
 
 const char *nm_connection_need_secrets(NMConnection *connection, GPtrArray **hints);
 
 void nm_connection_clear_secrets(NMConnection *connection);
 
-void nm_connection_clear_secrets_with_flags(NMConnection *                   connection,
+void nm_connection_clear_secrets_with_flags(NMConnection                    *connection,
                                             NMSettingClearSecretsWithFlagsFn func,
                                             gpointer                         user_data);
 
 gboolean nm_connection_update_secrets(NMConnection *connection,
-                                      const char *  setting_name,
-                                      GVariant *    secrets,
-                                      GError **     error);
+                                      const char   *setting_name,
+                                      GVariant     *secrets,
+                                      GError      **error);
 
 void nm_connection_set_path(NMConnection *connection, const char *path);
 
@@ -179,7 +179,7 @@ const char *nm_connection_get_interface_name(NMConnection *connection);
 
 gboolean nm_connection_is_type(NMConnection *connection, const char *type);
 
-void nm_connection_for_each_setting_value(NMConnection *       connection,
+void nm_connection_for_each_setting_value(NMConnection        *connection,
                                           NMSettingValueIterFn func,
                                           gpointer             user_data);
 
@@ -194,22 +194,22 @@ const char *nm_connection_get_id(NMConnection *connection);
 const char *nm_connection_get_connection_type(NMConnection *connection);
 
 gboolean nm_connection_is_virtual(NMConnection *connection);
-char *   nm_connection_get_virtual_device_description(NMConnection *connection);
+char    *nm_connection_get_virtual_device_description(NMConnection *connection);
 
-NMSetting8021x *     nm_connection_get_setting_802_1x(NMConnection *connection);
-NMSettingBluetooth * nm_connection_get_setting_bluetooth(NMConnection *connection);
-NMSettingBond *      nm_connection_get_setting_bond(NMConnection *connection);
-NMSettingTeam *      nm_connection_get_setting_team(NMConnection *connection);
-NMSettingTeamPort *  nm_connection_get_setting_team_port(NMConnection *connection);
-NMSettingBridge *    nm_connection_get_setting_bridge(NMConnection *connection);
+NMSetting8021x      *nm_connection_get_setting_802_1x(NMConnection *connection);
+NMSettingBluetooth  *nm_connection_get_setting_bluetooth(NMConnection *connection);
+NMSettingBond       *nm_connection_get_setting_bond(NMConnection *connection);
+NMSettingTeam       *nm_connection_get_setting_team(NMConnection *connection);
+NMSettingTeamPort   *nm_connection_get_setting_team_port(NMConnection *connection);
+NMSettingBridge     *nm_connection_get_setting_bridge(NMConnection *connection);
 NMSettingBridgePort *nm_connection_get_setting_bridge_port(NMConnection *connection);
-NMSettingCdma *      nm_connection_get_setting_cdma(NMConnection *connection);
+NMSettingCdma       *nm_connection_get_setting_cdma(NMConnection *connection);
 NMSettingConnection *nm_connection_get_setting_connection(NMConnection *connection);
-NMSettingDcb *       nm_connection_get_setting_dcb(NMConnection *connection);
+NMSettingDcb        *nm_connection_get_setting_dcb(NMConnection *connection);
 NM_AVAILABLE_IN_1_8
-NMSettingDummy *     nm_connection_get_setting_dummy(NMConnection *connection);
-NMSettingGeneric *   nm_connection_get_setting_generic(NMConnection *connection);
-NMSettingGsm *       nm_connection_get_setting_gsm(NMConnection *connection);
+NMSettingDummy      *nm_connection_get_setting_dummy(NMConnection *connection);
+NMSettingGeneric    *nm_connection_get_setting_generic(NMConnection *connection);
+NMSettingGsm        *nm_connection_get_setting_gsm(NMConnection *connection);
 NMSettingInfiniband *nm_connection_get_setting_infiniband(NMConnection *connection);
 NM_AVAILABLE_IN_1_2
 NMSettingIPTunnel *nm_connection_get_setting_ip_tunnel(NMConnection *connection);
@@ -218,31 +218,31 @@ NMSettingIPConfig *nm_connection_get_setting_ip6_config(NMConnection *connection
 NM_AVAILABLE_IN_1_6
 NMSettingMacsec *nm_connection_get_setting_macsec(NMConnection *connection);
 NM_AVAILABLE_IN_1_2
-NMSettingMacvlan * nm_connection_get_setting_macvlan(NMConnection *connection);
+NMSettingMacvlan  *nm_connection_get_setting_macvlan(NMConnection *connection);
 NMSettingOlpcMesh *nm_connection_get_setting_olpc_mesh(NMConnection *connection);
 NM_AVAILABLE_IN_1_10
 NMSettingOvsBridge *nm_connection_get_setting_ovs_bridge(NMConnection *connection);
 NM_AVAILABLE_IN_1_10
 NMSettingOvsInterface *nm_connection_get_setting_ovs_interface(NMConnection *connection);
-NMSettingOvsPatch *    nm_connection_get_setting_ovs_patch(NMConnection *connection);
+NMSettingOvsPatch     *nm_connection_get_setting_ovs_patch(NMConnection *connection);
 NM_AVAILABLE_IN_1_10
 NMSettingOvsPort *nm_connection_get_setting_ovs_port(NMConnection *connection);
-NMSettingPpp *    nm_connection_get_setting_ppp(NMConnection *connection);
-NMSettingPppoe *  nm_connection_get_setting_pppoe(NMConnection *connection);
+NMSettingPpp     *nm_connection_get_setting_ppp(NMConnection *connection);
+NMSettingPppoe   *nm_connection_get_setting_pppoe(NMConnection *connection);
 NM_AVAILABLE_IN_1_6
-NMSettingProxy * nm_connection_get_setting_proxy(NMConnection *connection);
+NMSettingProxy  *nm_connection_get_setting_proxy(NMConnection *connection);
 NMSettingSerial *nm_connection_get_setting_serial(NMConnection *connection);
 NM_AVAILABLE_IN_1_12
 NMSettingTCConfig *nm_connection_get_setting_tc_config(NMConnection *connection);
 NM_AVAILABLE_IN_1_2
-NMSettingTun *             nm_connection_get_setting_tun(NMConnection *connection);
-NMSettingVpn *             nm_connection_get_setting_vpn(NMConnection *connection);
-NMSettingWimax *           nm_connection_get_setting_wimax(NMConnection *connection);
-NMSettingAdsl *            nm_connection_get_setting_adsl(NMConnection *connection);
-NMSettingWired *           nm_connection_get_setting_wired(NMConnection *connection);
-NMSettingWireless *        nm_connection_get_setting_wireless(NMConnection *connection);
+NMSettingTun              *nm_connection_get_setting_tun(NMConnection *connection);
+NMSettingVpn              *nm_connection_get_setting_vpn(NMConnection *connection);
+NMSettingWimax            *nm_connection_get_setting_wimax(NMConnection *connection);
+NMSettingAdsl             *nm_connection_get_setting_adsl(NMConnection *connection);
+NMSettingWired            *nm_connection_get_setting_wired(NMConnection *connection);
+NMSettingWireless         *nm_connection_get_setting_wireless(NMConnection *connection);
 NMSettingWirelessSecurity *nm_connection_get_setting_wireless_security(NMConnection *connection);
-NMSettingVlan *            nm_connection_get_setting_vlan(NMConnection *connection);
+NMSettingVlan             *nm_connection_get_setting_vlan(NMConnection *connection);
 NM_AVAILABLE_IN_1_2
 NMSettingVxlan *nm_connection_get_setting_vxlan(NMConnection *connection);
 

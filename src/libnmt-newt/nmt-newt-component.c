@@ -89,7 +89,7 @@ static newtComponent *
 nmt_newt_component_get_components(NmtNewtWidget *widget)
 {
     NmtNewtComponentPrivate *priv = NMT_NEWT_COMPONENT_GET_PRIVATE(widget);
-    newtComponent *          cos;
+    newtComponent           *cos;
 
     priv->own_component = FALSE;
     cos                 = g_new0(newtComponent, 2);
@@ -209,10 +209,10 @@ nmt_newt_component_set_sensitive(NmtNewtComponent *component, gboolean sensitive
 }
 
 static void
-nmt_newt_component_set_property(GObject *     object,
+nmt_newt_component_set_property(GObject      *object,
                                 guint         prop_id,
                                 const GValue *value,
-                                GParamSpec *  pspec)
+                                GParamSpec   *pspec)
 {
     NmtNewtComponent *component = NMT_NEWT_COMPONENT(object);
 
@@ -247,7 +247,7 @@ nmt_newt_component_get_property(GObject *object, guint prop_id, GValue *value, G
 static void
 nmt_newt_component_class_init(NmtNewtComponentClass *component_class)
 {
-    GObjectClass *      object_class = G_OBJECT_CLASS(component_class);
+    GObjectClass       *object_class = G_OBJECT_CLASS(component_class);
     NmtNewtWidgetClass *widget_class = NMT_NEWT_WIDGET_CLASS(component_class);
 
     g_type_class_add_private(component_class, sizeof(NmtNewtComponentPrivate));

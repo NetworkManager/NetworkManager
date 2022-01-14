@@ -108,10 +108,11 @@ static NM_UTILS_LOOKUP_DEFINE(
 
 static const NmcMetaGenericInfo *const metagen_general_status[];
 
-static gconstpointer _metagen_general_status_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+static gconstpointer
+_metagen_general_status_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
-    NmCli *             nmc = target;
-    const char *        value;
+    NmCli              *nmc = target;
+    const char         *value;
     gboolean            v_bool;
     NMState             state;
     NMConnectivityState connectivity;
@@ -209,12 +210,13 @@ static const NmcMetaGenericInfo
 
 /*****************************************************************************/
 
-static gconstpointer _metagen_general_permissions_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+static gconstpointer
+_metagen_general_permissions_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
     NMClientPermission       perm = GPOINTER_TO_UINT(target);
-    NmCli *                  nmc  = environment_user_data;
+    NmCli                   *nmc  = environment_user_data;
     NMClientPermissionResult perm_result;
-    const char *             s;
+    const char              *s;
 
     switch (info->info_type) {
     case NMC_GENERIC_INFO_TYPE_GENERAL_PERMISSIONS_PERMISSION:
@@ -252,9 +254,10 @@ typedef struct {
     char **domains;
 } GetGeneralLoggingData;
 
-static gconstpointer _metagen_general_logging_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+static gconstpointer
+_metagen_general_logging_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
-    NmCli *                nmc = environment_user_data;
+    NmCli                 *nmc = environment_user_data;
     GetGeneralLoggingData *d   = target;
 
     nm_assert(info->info_type < _NMC_GENERIC_INFO_TYPE_GENERAL_LOGGING_NUM);
@@ -466,9 +469,9 @@ static gboolean
 show_nm_status(NmCli *nmc, const char *pretty_header_name, const char *print_flds)
 {
     gs_free_error GError *error = NULL;
-    const char *          fields_str;
-    const char *          fields_all    = print_flds ?: NMC_FIELDS_NM_STATUS_ALL;
-    const char *          fields_common = print_flds ?: NMC_FIELDS_NM_STATUS_COMMON;
+    const char           *fields_str;
+    const char           *fields_all    = print_flds ?: NMC_FIELDS_NM_STATUS_ALL;
+    const char           *fields_common = print_flds ?: NMC_FIELDS_NM_STATUS_COMMON;
 
     if (!nmc->required_fields || g_ascii_strcasecmp(nmc->required_fields, "common") == 0)
         fields_str = fields_common;
@@ -519,9 +522,9 @@ timeout_cb(gpointer user_data)
 static void
 print_permissions(void *user_data)
 {
-    NmCli *       nmc                = user_data;
+    NmCli                *nmc        = user_data;
     gs_free_error GError *error      = NULL;
-    const char *          fields_str = NULL;
+    const char           *fields_str = NULL;
     gpointer              permissions[G_N_ELEMENTS(nm_auth_permission_sorted) + 1];
     gboolean              is_running;
     int                   i;
@@ -603,9 +606,9 @@ show_nm_permissions(NmCli *nmc)
 static void
 reload_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NmCli *       nmc              = user_data;
-    gs_free_error GError *error    = NULL;
-    gs_unref_variant GVariant *ret = NULL;
+    NmCli                     *nmc   = user_data;
+    gs_free_error GError      *error = NULL;
+    gs_unref_variant GVariant *ret   = NULL;
 
     ret = nm_dbus_call_finish(result, &error);
     if (error) {
@@ -622,8 +625,8 @@ static void
 do_general_reload(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
     gs_free const char **values    = NULL;
-    gs_free char *       err_token = NULL;
-    gs_free char *       joined    = NULL;
+    gs_free char        *err_token = NULL;
+    gs_free char        *joined    = NULL;
     int                  flags     = 0;
 
     next_arg(nmc, &argc, &argv, NULL);
@@ -694,13 +697,13 @@ do_general_permissions(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 static void
 show_general_logging(NmCli *nmc)
 {
-    gs_free char *level_cache        = NULL;
-    gs_free char *domains_cache      = NULL;
-    gs_free_error GError *error      = NULL;
-    const char *          fields_str = NULL;
-    GetGeneralLoggingData d          = {
-        .level   = &level_cache,
-        .domains = &domains_cache,
+    gs_free char         *level_cache   = NULL;
+    gs_free char         *domains_cache = NULL;
+    gs_free_error GError *error         = NULL;
+    const char           *fields_str    = NULL;
+    GetGeneralLoggingData d             = {
+                    .level   = &level_cache,
+                    .domains = &domains_cache,
     };
 
     if (!nmc->required_fields || g_ascii_strcasecmp(nmc->required_fields, "common") == 0) {
@@ -742,9 +745,9 @@ nmc_complete_strings_nocase(const char *prefix, ...)
 static void
 _set_logging_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 {
-    NmCli *          nmc           = user_data;
-    gs_unref_variant GVariant *res = NULL;
-    gs_free_error GError *error    = NULL;
+    NmCli                     *nmc   = user_data;
+    gs_unref_variant GVariant *res   = NULL;
+    gs_free_error GError      *error = NULL;
 
     res = nm_client_dbus_call_finish(NM_CLIENT(object), result, &error);
     if (!res) {
@@ -878,7 +881,7 @@ do_general_logging(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 static void
 save_hostname_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 {
-    NmCli *       nmc           = user_data;
+    NmCli                *nmc   = user_data;
     gs_free_error GError *error = NULL;
 
     nm_client_save_hostname_finish(NM_CLIENT(object), result, &error);
@@ -984,9 +987,9 @@ nmc_switch_parse_on_off(NmCli *nmc, const char *arg1, const char *arg2, gboolean
 static void
 _do_networking_on_off_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 {
-    NmCli *          nmc           = user_data;
-    gs_unref_variant GVariant *ret = NULL;
-    gs_free_error GError *error    = NULL;
+    NmCli                     *nmc   = user_data;
+    gs_unref_variant GVariant *ret   = NULL;
+    gs_free_error GError      *error = NULL;
 
     ret = nm_client_dbus_call_finish(NM_CLIENT(object), result, &error);
     if (!ret) {
@@ -1119,7 +1122,7 @@ do_radio_all(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *arg
 static void
 _do_radio_wifi_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 {
-    NmCli *       nmc           = user_data;
+    NmCli                *nmc   = user_data;
     gs_free_error GError *error = NULL;
 
     if (!nm_client_dbus_set_property_finish(NM_CLIENT(object), result, &error)) {
@@ -1214,7 +1217,7 @@ static void
 networkmanager_running(NMClient *client, GParamSpec *param, NmCli *nmc)
 {
     gboolean running;
-    char *   str;
+    char    *str;
 
     running = nm_client_get_nm_running(client);
     str     = nmc_colorize(&nmc->nmc_config,
@@ -1237,7 +1240,7 @@ static void
 client_primary_connection(NMClient *client, GParamSpec *param, NmCli *nmc)
 {
     NMActiveConnection *primary;
-    const char *        id;
+    const char         *id;
 
     primary = nm_client_get_primary_connection(client);
     if (primary) {
@@ -1255,7 +1258,7 @@ static void
 client_connectivity(NMClient *client, GParamSpec *param, NmCli *nmc)
 {
     NMConnectivityState connectivity;
-    char *              str;
+    char               *str;
 
     g_object_get(client, NM_CLIENT_CONNECTIVITY, &connectivity, NULL);
     str = nmc_colorize(&nmc->nmc_config,
@@ -1270,7 +1273,7 @@ static void
 client_state(NMClient *client, GParamSpec *param, NmCli *nmc)
 {
     NMState state;
-    char *  str;
+    char   *str;
 
     g_object_get(client, NM_CLIENT_STATE, &state, NULL);
     str = nmc_colorize(&nmc->nmc_config,
@@ -1284,8 +1287,8 @@ client_state(NMClient *client, GParamSpec *param, NmCli *nmc)
 static void
 device_overview(NmCli *nmc, NMDevice *device)
 {
-    GString *        outbuf = g_string_sized_new(80);
-    char *           tmp;
+    GString         *outbuf = g_string_sized_new(80);
+    char            *tmp;
     const GPtrArray *activatable;
 
     activatable = nm_device_get_available_connections(device);
@@ -1392,8 +1395,8 @@ device_overview(NmCli *nmc, NMDevice *device)
 static void
 ac_overview(NmCli *nmc, NMActiveConnection *ac)
 {
-    GString *                outbuf = g_string_sized_new(80);
-    NMIPConfig *             ip;
+    GString                 *outbuf = g_string_sized_new(80);
+    NMIPConfig              *ip;
     nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
 
     if (nm_active_connection_get_master(ac)) {
@@ -1463,12 +1466,12 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
 void
 nmc_command_func_overview(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    NMDevice **         devices;
-    const GPtrArray *   p;
+    NMDevice          **devices;
+    const GPtrArray    *p;
     NMActiveConnection *ac;
     NMMetaColor         color;
-    NMDnsEntry *        dns;
-    char *              tmp;
+    NMDnsEntry         *dns;
+    char               *tmp;
     int                 i;
 
     next_arg(nmc, &argc, &argv, NULL);

@@ -150,7 +150,7 @@ typedef struct _NMSettingConnectionClass NMSettingConnectionClass;
 
 GType nm_setting_connection_get_type(void);
 
-NMSetting * nm_setting_connection_new(void);
+NMSetting  *nm_setting_connection_new(void);
 const char *nm_setting_connection_get_id(NMSettingConnection *setting);
 const char *nm_setting_connection_get_uuid(NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_4
@@ -169,21 +169,21 @@ gboolean                 nm_setting_connection_get_read_only(NMSettingConnection
 guint32     nm_setting_connection_get_num_permissions(NMSettingConnection *setting);
 gboolean    nm_setting_connection_get_permission(NMSettingConnection *setting,
                                                  guint32              idx,
-                                                 const char **        out_ptype,
-                                                 const char **        out_pitem,
-                                                 const char **        out_detail);
+                                                 const char         **out_ptype,
+                                                 const char         **out_pitem,
+                                                 const char         **out_detail);
 const char *nm_setting_connection_get_zone(NMSettingConnection *setting);
 gboolean    nm_setting_connection_permissions_user_allowed(NMSettingConnection *setting,
-                                                           const char *         uname);
+                                                           const char          *uname);
 gboolean    nm_setting_connection_add_permission(NMSettingConnection *setting,
-                                                 const char *         ptype,
-                                                 const char *         pitem,
-                                                 const char *         detail);
+                                                 const char          *ptype,
+                                                 const char          *pitem,
+                                                 const char          *detail);
 void        nm_setting_connection_remove_permission(NMSettingConnection *setting, guint32 idx);
 gboolean    nm_setting_connection_remove_permission_by_value(NMSettingConnection *setting,
-                                                             const char *         ptype,
-                                                             const char *         pitem,
-                                                             const char *         detail);
+                                                             const char          *ptype,
+                                                             const char          *pitem,
+                                                             const char          *detail);
 
 const char *nm_setting_connection_get_master(NMSettingConnection *setting);
 gboolean    nm_setting_connection_is_slave_type(NMSettingConnection *setting, const char *type);
@@ -197,7 +197,7 @@ const char *nm_setting_connection_get_secondary(NMSettingConnection *setting, gu
 gboolean    nm_setting_connection_add_secondary(NMSettingConnection *setting, const char *sec_uuid);
 void        nm_setting_connection_remove_secondary(NMSettingConnection *setting, guint32 idx);
 gboolean    nm_setting_connection_remove_secondary_by_value(NMSettingConnection *setting,
-                                                            const char *         sec_uuid);
+                                                            const char          *sec_uuid);
 
 guint32 nm_setting_connection_get_gateway_ping_timeout(NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_2

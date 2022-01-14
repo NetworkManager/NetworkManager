@@ -160,7 +160,7 @@ typedef struct _NMSupplicantBssInfo {
 
     NMSupplicantInterface *_self;
     CList                  _bss_lst;
-    GCancellable *         _init_cancellable;
+    GCancellable          *_init_cancellable;
 
     GBytes *ssid;
 
@@ -194,7 +194,7 @@ typedef struct _NMSupplicantPeerInfo {
 
     CList                  _peer_lst;
     NMSupplicantInterface *_self;
-    GCancellable *         _init_cancellable;
+    GCancellable          *_init_cancellable;
 
     char *device_name;
     char *manufacturer;

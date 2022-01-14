@@ -39,10 +39,10 @@ GType nm_setting_pppoe_get_type(void);
 
 NMSetting *nm_setting_pppoe_new(void);
 NM_AVAILABLE_IN_1_10
-const char *         nm_setting_pppoe_get_parent(NMSettingPppoe *setting);
-const char *         nm_setting_pppoe_get_service(NMSettingPppoe *setting);
-const char *         nm_setting_pppoe_get_username(NMSettingPppoe *setting);
-const char *         nm_setting_pppoe_get_password(NMSettingPppoe *setting);
+const char          *nm_setting_pppoe_get_parent(NMSettingPppoe *setting);
+const char          *nm_setting_pppoe_get_service(NMSettingPppoe *setting);
+const char          *nm_setting_pppoe_get_username(NMSettingPppoe *setting);
+const char          *nm_setting_pppoe_get_password(NMSettingPppoe *setting);
 NMSettingSecretFlags nm_setting_pppoe_get_password_flags(NMSettingPppoe *setting);
 
 G_END_DECLS

@@ -75,9 +75,9 @@ nmt_route_entry_init(NmtRouteEntry *entry)
 {}
 
 static gboolean
-entry_validity_transform_to_warning_label(GBinding *    binding,
+entry_validity_transform_to_warning_label(GBinding     *binding,
                                           const GValue *source_value,
-                                          GValue *      target_value,
+                                          GValue       *target_value,
                                           gpointer      user_data)
 {
     if (g_value_get_boolean(source_value))
@@ -109,8 +109,8 @@ static void
 nmt_route_entry_constructed(GObject *object)
 {
     NmtRouteEntryPrivate *priv = NMT_ROUTE_ENTRY_GET_PRIVATE(object);
-    NmtNewtGrid *         grid = NMT_NEWT_GRID(object);
-    NmtNewtWidget *       warning_label;
+    NmtNewtGrid          *grid = NMT_NEWT_GRID(object);
+    NmtNewtWidget        *warning_label;
 
     priv->dest     = nmt_ip_entry_new(priv->ip_entry_width, priv->family, TRUE, FALSE);
     priv->next_hop = nmt_ip_entry_new(priv->ip_entry_width, priv->family, FALSE, TRUE);
@@ -213,7 +213,7 @@ nmt_route_entry_get_property(GObject *object, guint prop_id, GValue *value, GPar
 static void
 nmt_route_entry_class_init(NmtRouteEntryClass *entry_class)
 {
-    GObjectClass *      object_class = G_OBJECT_CLASS(entry_class);
+    GObjectClass       *object_class = G_OBJECT_CLASS(entry_class);
     NmtNewtWidgetClass *widget_class = NMT_NEWT_WIDGET_CLASS(entry_class);
 
     g_type_class_add_private(entry_class, sizeof(NmtRouteEntryPrivate));

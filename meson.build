@@ -6,7 +6,7 @@ project(
 #  - add corresponding NM_VERSION_x_y_z macros in
 #    "src/libnm-core-public/nm-version-macros.h.in"
 #  - update number in configure.ac
-  version: '1.34.0',
+  version: '1.35.5',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
@@ -388,6 +388,14 @@ if config_logging_backend_default == 'default'
   config_logging_backend_default = (enable_systemd_journal ? 'journal' : 'syslog')
 endif
 config_h.set_quoted('NM_CONFIG_DEFAULT_LOGGING_BACKEND', config_logging_backend_default)
+
+config_wifi_backend_default = get_option('config_wifi_backend_default')
+if config_wifi_backend_default == 'default'
+  config_wifi_backend_default = 'wpa_supplicant'
+elif config_wifi_backend_default == 'iwd'
+  assert(enable_iwd, 'Setting the default Wi-Fi backend to iwd requires iwd support.')
+endif
+config_h.set_quoted('NM_CONFIG_DEFAULT_WIFI_BACKEND', config_wifi_backend_default)
 
 session_tracking = get_option('session_tracking')
 session_trackers = []
@@ -890,6 +898,7 @@ data_conf.set('NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT',  config_logging_backend_
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT', config_auth_polkit_default)
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP',             config_dhcp_default)
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER',       config_dns_rc_manager_default)
+data_conf.set('NM_CONFIG_DEFAULT_WIFI_BACKEND_TEXT',     config_wifi_backend_default)
 data_conf.set('NM_MAJOR_VERSION',                        nm_major_version)
 data_conf.set('NM_MICRO_VERSION',                        nm_micro_version)
 data_conf.set('NM_MINOR_VERSION',                        nm_minor_version)

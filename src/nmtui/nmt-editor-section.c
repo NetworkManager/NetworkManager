@@ -22,7 +22,7 @@ G_DEFINE_TYPE(NmtEditorSection, nmt_editor_section, NMT_TYPE_NEWT_SECTION)
 
 typedef struct {
     NmtEditorGrid *header, *body;
-    char *         title;
+    char          *title;
     NmtNewtWidget *header_widget;
     NmtNewtWidget *toggle;
 
@@ -156,12 +156,12 @@ nmt_editor_section_get_title(NmtEditorSection *section)
 }
 
 static void
-nmt_editor_section_set_property(GObject *     object,
+nmt_editor_section_set_property(GObject      *object,
                                 guint         prop_id,
                                 const GValue *value,
-                                GParamSpec *  pspec)
+                                GParamSpec   *pspec)
 {
-    NmtEditorSection *       section = NMT_EDITOR_SECTION(object);
+    NmtEditorSection        *section = NMT_EDITOR_SECTION(object);
     NmtEditorSectionPrivate *priv    = NMT_EDITOR_SECTION_GET_PRIVATE(section);
 
     switch (prop_id) {

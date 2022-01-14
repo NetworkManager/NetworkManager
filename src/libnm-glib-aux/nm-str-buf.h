@@ -348,7 +348,7 @@ nm_utils_escaped_tokens_escape_strbuf(const char *str, const char *delimiters, N
 static inline void
 nm_utils_escaped_tokens_escape_strbuf_assert(const char *str,
                                              const char *delimiters,
-                                             NMStrBuf *  strbuf)
+                                             NMStrBuf   *strbuf)
 {
     nm_str_buf_append(strbuf, nm_utils_escaped_tokens_escape_unnecessary(str, delimiters));
 }

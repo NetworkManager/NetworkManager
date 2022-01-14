@@ -27,13 +27,13 @@ GType nm_dbus_manager_get_type(void);
 
 NMDBusManager *nm_dbus_manager_get(void);
 
-typedef void (*NMDBusManagerSetPropertyHandler)(NMDBusObject *                     obj,
+typedef void (*NMDBusManagerSetPropertyHandler)(NMDBusObject                      *obj,
                                                 const NMDBusInterfaceInfoExtended *interface_info,
-                                                const NMDBusPropertyInfoExtended * property_info,
-                                                GDBusConnection *                  connection,
-                                                const char *                       sender,
-                                                GDBusMethodInvocation *            invocation,
-                                                GVariant *                         value,
+                                                const NMDBusPropertyInfoExtended  *property_info,
+                                                GDBusConnection                   *connection,
+                                                const char                        *sender,
+                                                GDBusMethodInvocation             *invocation,
+                                                GVariant                          *value,
                                                 gpointer                           user_data);
 
 gboolean nm_dbus_manager_acquire_bus(NMDBusManager *self, gboolean request_name);
@@ -42,7 +42,7 @@ GDBusConnection *nm_dbus_manager_get_dbus_connection(NMDBusManager *self);
 
 #define NM_MAIN_DBUS_CONNECTION_GET (nm_dbus_manager_get_dbus_connection(nm_dbus_manager_get()))
 
-void nm_dbus_manager_start(NMDBusManager *                 self,
+void nm_dbus_manager_start(NMDBusManager                  *self,
                            NMDBusManagerSetPropertyHandler set_property_handler,
                            gpointer                        set_property_handler_data);
 
@@ -56,18 +56,18 @@ void _nm_dbus_manager_obj_export(NMDBusObject *obj);
 void _nm_dbus_manager_obj_unexport(NMDBusObject *obj);
 void
 _nm_dbus_manager_obj_notify(NMDBusObject *obj, guint n_pspecs, const GParamSpec *const *pspecs);
-void _nm_dbus_manager_obj_emit_signal(NMDBusObject *                     obj,
+void _nm_dbus_manager_obj_emit_signal(NMDBusObject                      *obj,
                                       const NMDBusInterfaceInfoExtended *interface_info,
-                                      const GDBusSignalInfo *            signal_info,
-                                      GVariant *                         args);
+                                      const GDBusSignalInfo             *signal_info,
+                                      GVariant                          *args);
 
-gboolean nm_dbus_manager_get_caller_info(NMDBusManager *        self,
+gboolean nm_dbus_manager_get_caller_info(NMDBusManager         *self,
                                          GDBusMethodInvocation *context,
-                                         const char **          out_sender,
-                                         gulong *               out_uid,
-                                         gulong *               out_pid);
+                                         const char           **out_sender,
+                                         gulong                *out_uid,
+                                         gulong                *out_pid);
 
-gboolean nm_dbus_manager_ensure_uid(NMDBusManager *        self,
+gboolean nm_dbus_manager_ensure_uid(NMDBusManager         *self,
                                     GDBusMethodInvocation *context,
                                     gulong                 uid,
                                     GQuark                 error_domain,
@@ -75,12 +75,12 @@ gboolean nm_dbus_manager_ensure_uid(NMDBusManager *        self,
 
 gboolean nm_dbus_manager_get_unix_user(NMDBusManager *self, const char *sender, gulong *out_uid);
 
-gboolean nm_dbus_manager_get_caller_info_from_message(NMDBusManager *  self,
+gboolean nm_dbus_manager_get_caller_info_from_message(NMDBusManager   *self,
                                                       GDBusConnection *connection,
-                                                      GDBusMessage *   message,
-                                                      const char **    out_sender,
-                                                      gulong *         out_uid,
-                                                      gulong *         out_pid);
+                                                      GDBusMessage    *message,
+                                                      const char     **out_sender,
+                                                      gulong          *out_uid,
+                                                      gulong          *out_pid);
 
 void
 nm_dbus_manager_private_server_register(NMDBusManager *self, const char *path, const char *tag);
@@ -88,6 +88,6 @@ nm_dbus_manager_private_server_register(NMDBusManager *self, const char *path, c
 NMAuthSubject *nm_dbus_manager_new_auth_subject_from_context(GDBusMethodInvocation *context);
 
 NMAuthSubject *nm_dbus_manager_new_auth_subject_from_message(GDBusConnection *connection,
-                                                             GDBusMessage *   message);
+                                                             GDBusMessage    *message);
 
 #endif /* __NM_DBUS_MANAGER_H__ */

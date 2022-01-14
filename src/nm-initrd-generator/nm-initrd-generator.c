@@ -28,14 +28,14 @@
 static void
 output_conn(gpointer key, gpointer value, gpointer user_data)
 {
-    const char *          basename        = key;
-    NMConnection *        connection      = value;
-    char *                connections_dir = user_data;
-    nm_auto_unref_keyfile GKeyFile *file  = NULL;
-    gs_free char *                  data  = NULL;
-    gs_free_error GError *error           = NULL;
-    gsize                 len;
-    NMSetting *           setting;
+    const char                     *basename        = key;
+    NMConnection                   *connection      = value;
+    char                           *connections_dir = user_data;
+    nm_auto_unref_keyfile GKeyFile *file            = NULL;
+    gs_free char                   *data            = NULL;
+    gs_free_error GError           *error           = NULL;
+    gsize                           len;
+    NMSetting                      *setting;
 
     setting = nm_setting_user_new();
     nm_connection_add_setting(connection, setting);
@@ -79,14 +79,15 @@ err_out:
 int
 main(int argc, char *argv[])
 {
-    GHashTable *       connections;
-    gs_free char *     connections_dir  = NULL;
-    gs_free char *     initrd_dir       = NULL;
-    gs_free char *     sysfs_dir        = NULL;
-    gs_free char *     run_config_dir   = NULL;
-    gboolean           dump_to_stdout   = FALSE;
-    gs_strfreev char **remaining        = NULL;
-    GOptionEntry       option_entries[] = {
+    GHashTable        *connections;
+    gs_free char      *connections_dir     = NULL;
+    gs_free char      *etc_connections_dir = NULL;
+    gs_free char      *initrd_dir          = NULL;
+    gs_free char      *sysfs_dir           = NULL;
+    gs_free char      *run_config_dir      = NULL;
+    gboolean           dump_to_stdout      = FALSE;
+    gs_strfreev char **remaining           = NULL;
+    GOptionEntry       option_entries[]    = {
         {"connections-dir",
          'c',
          0,
@@ -94,6 +95,13 @@ main(int argc, char *argv[])
          &connections_dir,
          "Output connection directory",
          NM_KEYFILE_PATH_NAME_RUN},
+        {"persistent-connections-dir",
+         'p',
+         0,
+         G_OPTION_ARG_FILENAME,
+         &etc_connections_dir,
+         "Persistent connection directory",
+         NM_KEYFILE_PATH_NAME_ETC_DEFAULT},
         {"initrd-data-dir",
          'i',
          0,
@@ -125,10 +133,10 @@ main(int argc, char *argv[])
         {G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_STRING_ARRAY, &remaining, NULL, NULL},
         {NULL}};
     nm_auto_free_option_context GOptionContext *option_context = NULL;
-    gs_free_error GError *error                                = NULL;
-    gs_free char *        hostname                             = NULL;
-    int                   errsv;
-    gint64                carrier_timeout_sec = 0;
+    gs_free_error GError                       *error          = NULL;
+    gs_free char                               *hostname       = NULL;
+    int                                         errsv;
+    gint64                                      carrier_timeout_sec = 0;
 
     option_context = g_option_context_new(
         "-- [ip=...] [rd.route=...] [bridge=...] [bond=...] [team=...] [vlan=...] "
@@ -153,6 +161,8 @@ main(int argc, char *argv[])
         return 0;
     }
 
+    if (!etc_connections_dir)
+        etc_connections_dir = g_strdup(NM_KEYFILE_PATH_NAME_ETC_DEFAULT);
     if (!connections_dir)
         connections_dir = g_strdup(NM_KEYFILE_PATH_NAME_RUN);
     if (!sysfs_dir)
@@ -162,7 +172,8 @@ main(int argc, char *argv[])
     if (!run_config_dir)
         run_config_dir = g_strdup(DEFAULT_RUN_CONFIG_DIR);
 
-    connections = nmi_cmdline_reader_parse(sysfs_dir,
+    connections = nmi_cmdline_reader_parse(etc_connections_dir,
+                                           sysfs_dir,
                                            (const char *const *) remaining,
                                            &hostname,
                                            &carrier_timeout_sec);
@@ -207,7 +218,7 @@ main(int argc, char *argv[])
         }
         if (carrier_timeout_sec != 0) {
             nm_auto_unref_keyfile GKeyFile *keyfile  = NULL;
-            gs_free char *                  filename = NULL;
+            gs_free char                   *filename = NULL;
 
             keyfile = g_key_file_new();
             g_key_file_set_list_separator(keyfile, NM_CONFIG_KEYFILE_LIST_SEPARATOR);

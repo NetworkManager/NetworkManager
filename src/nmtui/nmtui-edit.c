@@ -45,13 +45,13 @@ list_remove_connection(NmtEditConnectionList *list, NMRemoteConnection *connecti
 
 static gboolean
 edit_connection_list_filter(NmtEditConnectionList *list,
-                            NMConnection *         connection,
+                            NMConnection          *connection,
                             gpointer               user_data)
 {
     NMSettingConnection *s_con;
-    const char *         master, *slave_type;
-    const char *         uuid, *ifname;
-    const GPtrArray *    conns;
+    const char          *master, *slave_type;
+    const char          *uuid, *ifname;
+    const GPtrArray     *conns;
     int                  i;
     gboolean             found_master = FALSE;
 
@@ -86,7 +86,7 @@ static NmtNewtForm *
 nmt_edit_main_connection_list(gboolean is_top)
 {
     int            screen_width, screen_height;
-    NmtNewtForm *  form;
+    NmtNewtForm   *form;
     NmtNewtWidget *quit, *list;
 
     newtGetScreenSize(&screen_width, &screen_height);
@@ -137,9 +137,9 @@ typedef struct {
     NmtNewtTextbox *textbox;
     NmtNewtListbox *listbox;
 
-    char *                     primary_text;
-    char *                     secondary_text;
-    NMConnection *             master;
+    char                      *primary_text;
+    char                      *secondary_text;
+    NMConnection              *master;
     NmtAddConnectionTypeFilter type_filter;
     gpointer                   type_filter_data;
 
@@ -181,8 +181,8 @@ static void
 nmt_add_connection_init(NmtAddConnection *form)
 {
     NmtAddConnectionPrivate *priv = NMT_ADD_CONNECTION_GET_PRIVATE(form);
-    NmtNewtWidget *          textbox, *listbox, *button;
-    NmtNewtGrid *            grid, *buttons;
+    NmtNewtWidget           *textbox, *listbox, *button;
+    NmtNewtGrid             *grid, *buttons;
 
     grid = NMT_NEWT_GRID(nmt_newt_grid_new());
 
@@ -222,9 +222,9 @@ nmt_add_connection_init(NmtAddConnection *form)
 static void
 nmt_add_connection_constructed(GObject *object)
 {
-    NmtAddConnectionPrivate *    priv = NMT_ADD_CONNECTION_GET_PRIVATE(object);
+    NmtAddConnectionPrivate     *priv = NMT_ADD_CONNECTION_GET_PRIVATE(object);
     NMEditorConnectionTypeData **types;
-    char *                       text;
+    char                        *text;
     int                          i, num_types;
 
     if (priv->secondary_text) {
@@ -275,10 +275,10 @@ nmt_add_connection_finalize(GObject *object)
 }
 
 static void
-nmt_add_connection_set_property(GObject *     object,
+nmt_add_connection_set_property(GObject      *object,
                                 guint         prop_id,
                                 const GValue *value,
-                                GParamSpec *  pspec)
+                                GParamSpec   *pspec)
 {
     NmtAddConnectionPrivate *priv = NMT_ADD_CONNECTION_GET_PRIVATE(object);
 
@@ -334,7 +334,7 @@ nmt_add_connection_get_property(GObject *object, guint prop_id, GValue *value, G
 static void
 nmt_add_connection_class_init(NmtAddConnectionClass *add_class)
 {
-    GObjectClass *    object_class = G_OBJECT_CLASS(add_class);
+    GObjectClass     *object_class = G_OBJECT_CLASS(add_class);
     NmtNewtFormClass *form_class   = NMT_NEWT_FORM_CLASS(add_class);
 
     g_type_class_add_private(add_class, sizeof(NmtAddConnectionPrivate));
@@ -404,9 +404,9 @@ nmt_add_connection(void)
 }
 
 void
-nmt_add_connection_full(const char *               primary_text,
-                        const char *               secondary_text,
-                        NMConnection *             master,
+nmt_add_connection_full(const char                *primary_text,
+                        const char                *secondary_text,
+                        NMConnection              *master,
                         NmtAddConnectionTypeFilter type_filter,
                         gpointer                   type_filter_data)
 {
@@ -453,7 +453,7 @@ static void
 connection_deleted_callback(GObject *connection, GAsyncResult *result, gpointer user_data)
 {
     ConnectionDeleteData *data  = user_data;
-    GError *              error = NULL;
+    GError               *error = NULL;
 
     if (!nm_remote_connection_delete_finish(data->connection, result, &error)) {
         nmt_newt_message_dialog(_("Unable to delete connection: %s"), error->message);
@@ -481,7 +481,7 @@ static void
 remove_one_connection(NMRemoteConnection *connection)
 {
     ConnectionDeleteData data;
-    GError *             error = NULL;
+    GError              *error = NULL;
 
     data.got_callback = data.got_signal = FALSE;
     nmt_sync_op_init(&data.op);
@@ -506,12 +506,12 @@ remove_one_connection(NMRemoteConnection *connection)
 void
 nmt_remove_connection(NMRemoteConnection *connection)
 {
-    const GPtrArray *    all_conns;
-    GSList *             slaves, *iter;
+    const GPtrArray     *all_conns;
+    GSList              *slaves, *iter;
     int                  i;
-    NMRemoteConnection * slave;
+    NMRemoteConnection  *slave;
     NMSettingConnection *s_con;
-    const char *         uuid, *iface, *master;
+    const char          *uuid, *iface, *master;
     int                  choice;
 
     choice = nmt_newt_choice_dialog(_("Cancel"),

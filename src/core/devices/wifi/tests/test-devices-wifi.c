@@ -47,18 +47,18 @@
     }
 
 static gboolean
-complete_connection(const char *  ssid,
-                    const char *  bssid,
+complete_connection(const char   *ssid,
+                    const char   *bssid,
                     _NM80211Mode  mode,
                     guint32       flags,
                     guint32       wpa_flags,
                     guint32       rsn_flags,
                     gboolean      lock_bssid,
                     NMConnection *src,
-                    GError **     error)
+                    GError      **error)
 {
     gs_unref_bytes GBytes *ssid_b = NULL;
-    NMSettingWireless *    s_wifi;
+    NMSettingWireless     *s_wifi;
 
     /* Add a wifi setting if one doesn't exist */
     s_wifi = nm_connection_get_setting_wireless(src);
@@ -91,8 +91,8 @@ static void
 set_items(NMSetting *setting, const KeyData *items)
 {
     const KeyData *item;
-    GParamSpec *   pspec;
-    GBytes *       tmp;
+    GParamSpec    *pspec;
+    GBytes        *tmp;
 
     for (item = items; item && item->key; item++) {
         g_assert(item->key);
@@ -199,9 +199,9 @@ fill_8021x(NMConnection *connection, const KeyData items[])
 static NMConnection *
 create_basic(const char *ssid, const char *bssid, _NM80211Mode mode)
 {
-    NMConnection *     connection;
+    NMConnection      *connection;
     NMSettingWireless *s_wifi = NULL;
-    GBytes *           tmp;
+    GBytes            *tmp;
 
     connection = nm_simple_connection_new();
 
@@ -233,10 +233,10 @@ static void
 test_lock_bssid(void)
 {
     NMConnection *src, *expected;
-    const char *  bssid = "01:02:03:04:05:06";
-    const char *  ssid  = "blahblah";
+    const char   *bssid = "01:02:03:04:05:06";
+    const char   *ssid  = "blahblah";
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     src      = nm_simple_connection_new();
     success  = complete_connection(ssid,
@@ -261,10 +261,10 @@ static void
 test_open_ap_empty_connection(void)
 {
     NMConnection *src, *expected;
-    const char *  bssid = "01:02:03:04:05:06";
-    const char *  ssid  = "blahblah";
+    const char   *bssid = "01:02:03:04:05:06";
+    const char   *ssid  = "blahblah";
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that an empty source connection is correctly filled with the
      * SSID and Infra modes of the given AP details.
@@ -293,11 +293,11 @@ static void
 test_open_ap_leap_connection_1(gconstpointer add_wifi)
 {
     NMConnection *src;
-    const char *  bssid      = "01:02:03:04:05:06";
+    const char   *bssid      = "01:02:03:04:05:06";
     const KeyData src_wsec[] = {{NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, "Bill Smith", 0},
                                 {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that a basic connection filled with a LEAP username is
      * rejected when completion is attempted with an open AP.  LEAP requires
@@ -330,10 +330,10 @@ static void
 test_open_ap_leap_connection_2(void)
 {
     NMConnection *src;
-    const char *  bssid      = "01:02:03:04:05:06";
+    const char   *bssid      = "01:02:03:04:05:06";
     const KeyData src_wsec[] = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0}, {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that a basic connection specifying IEEE8021x security (ie, Dynamic
      * WEP or LEAP) is rejected when completion is attempted with an open AP.
@@ -364,14 +364,14 @@ static void
 test_open_ap_wep_connection(gconstpointer add_wifi)
 {
     NMConnection *src;
-    const char *  bssid      = "01:02:03:04:05:06";
+    const char   *bssid      = "01:02:03:04:05:06";
     const KeyData src_wsec[] = {
         {NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, "11111111111111111111111111", 0},
         {NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, NULL, 0},
         {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
         {NULL}};
     gboolean success;
-    GError * error = NULL;
+    GError  *error = NULL;
 
     /* Test that a static WEP connection is rejected when completion is
      * attempted with an open AP.
@@ -399,8 +399,8 @@ test_open_ap_wep_connection(gconstpointer add_wifi)
 /*****************************************************************************/
 
 static void
-test_ap_wpa_psk_connection_base(const char *  key_mgmt,
-                                const char *  auth_alg,
+test_ap_wpa_psk_connection_base(const char   *key_mgmt,
+                                const char   *auth_alg,
                                 guint32       flags,
                                 guint32       wpa_flags,
                                 guint32       rsn_flags,
@@ -409,8 +409,8 @@ test_ap_wpa_psk_connection_base(const char *  key_mgmt,
                                 NMConnection *expected)
 {
     NMConnection *src;
-    const char *  ssid        = "blahblah";
-    const char *  bssid       = "01:02:03:04:05:06";
+    const char   *ssid        = "blahblah";
+    const char   *bssid       = "01:02:03:04:05:06";
     const KeyData exp_wifi[]  = {{NM_SETTING_WIRELESS_SSID, ssid, 0},
                                 {NM_SETTING_WIRELESS_MODE, "infrastructure", 0},
                                 {NULL}};
@@ -419,7 +419,7 @@ test_ap_wpa_psk_connection_base(const char *  key_mgmt,
                                  {NM_SETTING_WIRELESS_SECURITY_PSK, "asdfasdfasdfasdfasdfafs", 0},
                                  {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     src = nm_simple_connection_new();
     if (add_wifi)
@@ -538,13 +538,13 @@ test_ap_wpa_eap_connection_base(const char *key_mgmt,
                                 guint       error_code)
 {
     NMConnection *src;
-    const char *  bssid       = "01:02:03:04:05:06";
+    const char   *bssid       = "01:02:03:04:05:06";
     const KeyData src_empty[] = {{NULL}};
     const KeyData src_wsec[]  = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, 0},
                                 {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, 0},
                                 {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     src = nm_simple_connection_new();
     if (add_wifi)
@@ -738,11 +738,11 @@ static void
 test_priv_ap_empty_connection(void)
 {
     NMConnection *src, *expected;
-    const char *  bssid      = "01:02:03:04:05:06";
-    const char *  ssid       = "blahblah";
+    const char   *bssid      = "01:02:03:04:05:06";
+    const char   *ssid       = "blahblah";
     const KeyData exp_wsec[] = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", 0}, {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that an empty connection is completed to a valid Static WEP
      * connection when completed with an AP with the Privacy bit set.
@@ -774,9 +774,9 @@ static void
 test_priv_ap_leap_connection_1(gconstpointer add_wifi)
 {
     NMConnection *src, *expected;
-    const char *  ssid          = "blahblah";
-    const char *  bssid         = "01:02:03:04:05:06";
-    const char *  leap_username = "Bill Smith";
+    const char   *ssid          = "blahblah";
+    const char   *bssid         = "01:02:03:04:05:06";
+    const char   *leap_username = "Bill Smith";
     const KeyData src_wsec[]    = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
                                 {NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0},
                                 {NULL}};
@@ -785,7 +785,7 @@ test_priv_ap_leap_connection_1(gconstpointer add_wifi)
                                 {NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0},
                                 {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that an minimal LEAP connection specifying only key management and
      * the LEAP username is completed to a full LEAP connection when completed
@@ -823,12 +823,12 @@ static void
 test_priv_ap_leap_connection_2(void)
 {
     NMConnection *src;
-    const char *  bssid      = "01:02:03:04:05:06";
+    const char   *bssid      = "01:02:03:04:05:06";
     const KeyData src_wsec[] = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
                                 {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", 0},
                                 {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that an minimal LEAP connection specifying only key management and
      * the LEAP auth alg is completed to a full LEAP connection when completed
@@ -859,8 +859,8 @@ static void
 test_priv_ap_dynamic_wep_1(void)
 {
     NMConnection *src, *expected;
-    const char *  ssid         = "blahblah";
-    const char *  bssid        = "01:02:03:04:05:06";
+    const char   *ssid         = "blahblah";
+    const char   *bssid        = "01:02:03:04:05:06";
     const KeyData src_wsec[]   = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
                                 {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
                                 {NULL}};
@@ -872,7 +872,7 @@ test_priv_ap_dynamic_wep_1(void)
                                 {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
                                 {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that an minimal Dynamic WEP connection specifying key management,
      * the auth algorithm, and valid 802.1x setting is completed to a valid
@@ -909,8 +909,8 @@ static void
 test_priv_ap_dynamic_wep_2(void)
 {
     NMConnection *src, *expected;
-    const char *  ssid         = "blahblah";
-    const char *  bssid        = "01:02:03:04:05:06";
+    const char   *ssid         = "blahblah";
+    const char   *bssid        = "01:02:03:04:05:06";
     const KeyData src_wsec[]   = {{NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0}, {NULL}};
     const KeyData both_8021x[] = {{NM_SETTING_802_1X_EAP, "peap", 0},
                                   {NM_SETTING_802_1X_IDENTITY, "Bill Smith", 0},
@@ -920,7 +920,7 @@ test_priv_ap_dynamic_wep_2(void)
                                 {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
                                 {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that an minimal Dynamic WEP connection specifying only the auth
      * algorithm and a valid 802.1x setting is completed to a valid Dynamic
@@ -957,14 +957,14 @@ static void
 test_priv_ap_dynamic_wep_3(void)
 {
     NMConnection *src;
-    const char *  bssid       = "01:02:03:04:05:06";
+    const char   *bssid       = "01:02:03:04:05:06";
     const KeyData src_wsec[]  = {{NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared", 0}, {NULL}};
     const KeyData src_8021x[] = {{NM_SETTING_802_1X_EAP, "peap", 0},
                                  {NM_SETTING_802_1X_IDENTITY, "Bill Smith", 0},
                                  {NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2", 0},
                                  {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Ensure that a basic connection specifying 'shared' auth and an 802.1x
      * setting is rejected, as 802.1x is incompatible with 'shared' auth.
@@ -1086,13 +1086,13 @@ test_wpa_ap_empty_connection(gconstpointer data)
 {
     guint         idx = GPOINTER_TO_UINT(data);
     NMConnection *src, *expected;
-    const char *  bssid      = "01:02:03:04:05:06";
-    const char *  ssid       = "blahblah";
+    const char   *bssid      = "01:02:03:04:05:06";
+    const char   *ssid       = "blahblah";
     const KeyData exp_wsec[] = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", 0},
                                 {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
                                 {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that a basic WPA-PSK connection specifying just key management and
      * the auth algorithm is completed successfully when given an AP with WPA
@@ -1126,14 +1126,14 @@ test_wpa_ap_leap_connection_1(gconstpointer data)
 {
     guint         idx = GPOINTER_TO_UINT(data);
     NMConnection *src;
-    const char *  ssid          = "blahblah";
-    const char *  bssid         = "01:02:03:04:05:06";
-    const char *  leap_username = "Bill Smith";
+    const char   *ssid          = "blahblah";
+    const char   *bssid         = "01:02:03:04:05:06";
+    const char   *leap_username = "Bill Smith";
     const KeyData src_wsec[]    = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
                                 {NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0},
                                 {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that completion of a LEAP connection with a WPA-enabled AP is
      * rejected since WPA APs (usually) do not support LEAP.
@@ -1164,12 +1164,12 @@ test_wpa_ap_leap_connection_2(gconstpointer data)
 {
     guint         idx = GPOINTER_TO_UINT(data);
     NMConnection *src;
-    const char *  bssid      = "01:02:03:04:05:06";
+    const char   *bssid      = "01:02:03:04:05:06";
     const KeyData src_wsec[] = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
                                 {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", 0},
                                 {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that completion of a LEAP connection with a WPA-enabled AP is
      * rejected since WPA APs (usually) do not support LEAP.
@@ -1200,10 +1200,10 @@ test_wpa_ap_dynamic_wep_connection(gconstpointer data)
 {
     guint         idx = GPOINTER_TO_UINT(data);
     NMConnection *src;
-    const char *  bssid      = "01:02:03:04:05:06";
+    const char   *bssid      = "01:02:03:04:05:06";
     const KeyData src_wsec[] = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0}, {NULL}};
     gboolean      success;
-    GError *      error = NULL;
+    GError       *error = NULL;
 
     /* Test that completion of a Dynamic WEP connection with a WPA-enabled AP is
      * rejected since WPA APs (usually) do not support Dynamic WEP.
@@ -1409,12 +1409,12 @@ test_strength_all(void)
 static void
 do_test_ssids_options_to_ptrarray(const char *const *ssids)
 {
-    GVariantBuilder  builder;
-    gs_unref_variant GVariant *variant     = NULL;
+    GVariantBuilder              builder;
+    gs_unref_variant GVariant   *variant   = NULL;
     gs_unref_ptrarray GPtrArray *ssids_arr = NULL;
-    gs_free_error GError *error            = NULL;
-    gsize                 len;
-    gsize                 i;
+    gs_free_error GError        *error     = NULL;
+    gsize                        len;
+    gsize                        i;
 
     g_assert(ssids);
 
@@ -1443,7 +1443,7 @@ do_test_ssids_options_to_ptrarray(const char *const *ssids)
     g_assert_cmpint(len, ==, ssids_arr->len);
     for (i = 0; i < len; i++) {
         const char *ssid  = ssids[i];
-        GBytes *    bytes = ssids_arr->pdata[i];
+        GBytes     *bytes = ssids_arr->pdata[i];
 
         g_assert(nm_g_bytes_equal_mem(bytes, ssid, strlen(ssid)));
     }

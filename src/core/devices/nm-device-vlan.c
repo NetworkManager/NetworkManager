@@ -15,7 +15,6 @@
 #include "nm-device-private.h"
 #include "settings/nm-settings.h"
 #include "nm-act-request.h"
-#include "nm-ip4-config.h"
 #include "libnm-platform/nm-platform.h"
 #include "nm-device-factory.h"
 #include "nm-manager.h"
@@ -55,7 +54,7 @@ G_DEFINE_TYPE(NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 static void
-parent_state_changed(NMDevice *          parent,
+parent_state_changed(NMDevice           *parent,
                      NMDeviceState       new_state,
                      NMDeviceState       old_state,
                      NMDeviceStateReason reason,
@@ -85,11 +84,11 @@ parent_mtu_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_data
 static void
 parent_hwaddr_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_data)
 {
-    NMDevice *         device = NM_DEVICE(user_data);
-    NMDeviceVlan *     self   = NM_DEVICE_VLAN(device);
-    NMConnection *     connection;
-    const char *       new_mac, *old_mac;
-    NMSettingIPConfig *s_ip6;
+    NMDevice     *device = NM_DEVICE(user_data);
+    NMDeviceVlan *self   = NM_DEVICE_VLAN(device);
+    NMConnection *connection;
+    const char   *old_mac;
+    const char   *new_mac;
 
     /* Never touch assumed devices */
     if (nm_device_sys_iface_state_is_external_or_assume(device))
@@ -113,13 +112,10 @@ parent_hwaddr_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_d
           NM_PRINT_FMT_QUOTE_STRING(new_mac));
     if (new_mac) {
         nm_device_hw_addr_set(device, new_mac, "vlan-parent", TRUE);
-        nm_device_arp_announce(device);
         /* When changing the hw address the interface is taken down,
          * removing the IPv6 configuration; reapply it.
          */
-        s_ip6 = nm_connection_get_setting_ip6_config(connection);
-        if (s_ip6)
-            nm_device_reactivate_ip_config(device, AF_INET6, s_ip6, s_ip6);
+        nm_device_l3cfg_commit(device, NM_L3_CFG_COMMIT_TYPE_UPDATE, FALSE);
     }
 }
 
@@ -130,7 +126,7 @@ parent_changed_notify(NMDevice *device,
                       int       new_ifindex,
                       NMDevice *new_parent)
 {
-    NMDeviceVlan *       self = NM_DEVICE_VLAN(device);
+    NMDeviceVlan        *self = NM_DEVICE_VLAN(device);
     NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE(self);
 
     NM_DEVICE_CLASS(nm_device_vlan_parent_class)
@@ -179,8 +175,8 @@ parent_changed_notify(NMDevice *device,
 static void
 update_properties(NMDevice *device)
 {
-    NMDeviceVlanPrivate *    priv;
-    const NMPlatformLink *   plink = NULL;
+    NMDeviceVlanPrivate     *priv;
+    const NMPlatformLink    *plink = NULL;
     const NMPlatformLnkVlan *plnk  = NULL;
     int                      ifindex;
     int                      parent_ifindex = 0;
@@ -219,15 +215,15 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
 }
 
 static gboolean
-create_and_realize(NMDevice *             device,
-                   NMConnection *         connection,
-                   NMDevice *             parent,
+create_and_realize(NMDevice              *device,
+                   NMConnection          *connection,
+                   NMDevice              *parent,
                    const NMPlatformLink **out_plink,
-                   GError **              error)
+                   GError               **error)
 {
     NMDeviceVlanPrivate *priv  = NM_DEVICE_VLAN_GET_PRIVATE(device);
-    const char *         iface = nm_device_get_iface(device);
-    NMSettingVlan *      s_vlan;
+    const char          *iface = nm_device_get_iface(device);
+    NMSettingVlan       *s_vlan;
     int                  parent_ifindex;
     guint                vlan_id;
     int                  r;
@@ -295,7 +291,7 @@ create_and_realize(NMDevice *             device,
 static void
 unrealize_notify(NMDevice *device)
 {
-    NMDeviceVlan *       self = NM_DEVICE_VLAN(device);
+    NMDeviceVlan        *self = NM_DEVICE_VLAN(device);
     NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE(self);
 
     NM_DEVICE_CLASS(nm_device_vlan_parent_class)->unrealize_notify(device);
@@ -331,8 +327,8 @@ static gboolean
 check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
     NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE(device);
-    NMSettingVlan *      s_vlan;
-    const char *         parent;
+    NMSettingVlan       *s_vlan;
+    const char          *parent;
 
     if (!NM_DEVICE_CLASS(nm_device_vlan_parent_class)
              ->check_connection_compatible(device, connection, error))
@@ -372,11 +368,11 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
 }
 
 static gboolean
-check_connection_available(NMDevice *                     device,
-                           NMConnection *                 connection,
+check_connection_available(NMDevice                      *device,
+                           NMConnection                  *connection,
                            NMDeviceCheckConAvailableFlags flags,
-                           const char *                   specific_object,
-                           GError **                      error)
+                           const char                    *specific_object,
+                           GError                       **error)
 {
     if (!nm_device_is_real(device))
         return TRUE;
@@ -386,11 +382,11 @@ check_connection_available(NMDevice *                     device,
 }
 
 static gboolean
-complete_connection(NMDevice *           device,
-                    NMConnection *       connection,
-                    const char *         specific_object,
+complete_connection(NMDevice            *device,
+                    NMConnection        *connection,
+                    const char          *specific_object,
                     NMConnection *const *existing_connections,
-                    GError **            error)
+                    GError             **error)
 {
     NMSettingVlan *s_vlan;
 
@@ -432,11 +428,11 @@ complete_connection(NMDevice *           device,
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMDeviceVlanPrivate * priv    = NM_DEVICE_VLAN_GET_PRIVATE(device);
-    NMSettingVlan *       s_vlan  = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VLAN);
+    NMDeviceVlanPrivate  *priv    = NM_DEVICE_VLAN_GET_PRIVATE(device);
+    NMSettingVlan        *s_vlan  = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VLAN);
     int                   ifindex = nm_device_get_ifindex(device);
     const NMPlatformLink *plink;
-    const NMPObject *     polnk;
+    const NMPObject      *polnk;
     guint                 vlan_id;
     _NMVlanFlags          vlan_flags;
 
@@ -482,7 +478,7 @@ update_connection(NMDevice *device, NMConnection *connection)
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDevice *     parent_device;
+    NMDevice      *parent_device;
     NMSettingVlan *s_vlan;
 
     /* Change MAC address to parent's one if needed */
@@ -553,9 +549,9 @@ static const NMDBusInterfaceInfoExtended interface_info_device_vlan = {
 static void
 nm_device_vlan_class_init(NMDeviceVlanClass *klass)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(klass);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(klass);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(klass);
-    NMDeviceClass *    device_class      = NM_DEVICE_CLASS(klass);
+    NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->get_property = get_property;
 
@@ -599,11 +595,11 @@ nm_device_vlan_class_init(NMDeviceVlanClass *klass)
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VLAN_DEVICE_FACTORY, NMVlanDeviceFactory))
 
 static NMDevice *
-create_device(NMDeviceFactory *     factory,
-              const char *          iface,
+create_device(NMDeviceFactory      *factory,
+              const char           *iface,
               const NMPlatformLink *plink,
-              NMConnection *        connection,
-              gboolean *            out_ignore)
+              NMConnection         *connection,
+              gboolean             *out_ignore)
 {
     return g_object_new(NM_TYPE_DEVICE_VLAN,
                         NM_DEVICE_IFACE,
@@ -622,9 +618,9 @@ create_device(NMDeviceFactory *     factory,
 static const char *
 get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
 {
-    NMSettingVlan * s_vlan;
+    NMSettingVlan  *s_vlan;
     NMSettingWired *s_wired;
-    const char *    parent = NULL;
+    const char     *parent = NULL;
 
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_VLAN_SETTING_NAME), NULL);
 
@@ -646,7 +642,7 @@ get_connection_parent(NMDeviceFactory *factory, NMConnection *connection)
 static char *
 get_connection_iface(NMDeviceFactory *factory, NMConnection *connection, const char *parent_iface)
 {
-    const char *   ifname;
+    const char    *ifname;
     NMSettingVlan *s_vlan;
 
     g_return_val_if_fail(nm_connection_is_type(connection, NM_SETTING_VLAN_SETTING_NAME), NULL);

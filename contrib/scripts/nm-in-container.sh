@@ -231,7 +231,6 @@ RUN dnf install -y \\
     glib2-doc \\
     gnutls-devel \\
     gobject-introspection-devel \\
-    grc \\
     gtk-doc \\
     intltool \\
     iproute \\
@@ -271,8 +270,8 @@ RUN dnf install -y \\
     systemd \\
     systemd-devel \\
     teamd-devel \\
+    vala \\
     vala-devel \\
-    vala-tools \\
     valgrind \\
     vim \\
     which

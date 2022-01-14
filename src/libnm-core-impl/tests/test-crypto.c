@@ -80,10 +80,10 @@ out:
 static void
 test_cert(gconstpointer test_data)
 {
-    gs_free char * path           = NULL;
+    gs_free char          *path   = NULL;
     gs_unref_bytes GBytes *cert   = NULL;
     NMCryptoFileFormat     format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-    GError *               error  = NULL;
+    GError                *error  = NULL;
     gboolean               success;
 
     path = g_build_filename(TEST_CERT_DIR, (const char *) test_data, NULL);
@@ -101,10 +101,10 @@ test_load_private_key(const char *path,
                       const char *decrypted_path,
                       int         expected_error)
 {
-    NMCryptoKeyType key_type     = NM_CRYPTO_KEY_TYPE_UNKNOWN;
-    gboolean        is_encrypted = FALSE;
-    gs_unref_bytes GBytes *array = NULL;
-    GError *               error = NULL;
+    NMCryptoKeyType        key_type     = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+    gboolean               is_encrypted = FALSE;
+    gs_unref_bytes GBytes *array        = NULL;
+    GError                *error        = NULL;
 
     g_assert(nm_utils_file_is_private_key(path, &is_encrypted));
     g_assert(is_encrypted);
@@ -144,7 +144,7 @@ test_load_pkcs12(const char *path, const char *password, int expected_error)
 {
     NMCryptoFileFormat format       = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
     gboolean           is_encrypted = FALSE;
-    GError *           error        = NULL;
+    GError            *error        = NULL;
 
     g_assert(nm_utils_file_is_private_key(path, NULL));
 
@@ -165,7 +165,7 @@ test_load_pkcs12_no_password(const char *path)
 {
     NMCryptoFileFormat format       = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
     gboolean           is_encrypted = FALSE;
-    GError *           error        = NULL;
+    GError            *error        = NULL;
 
     g_assert(nm_utils_file_is_private_key(path, NULL));
 
@@ -180,7 +180,7 @@ static void
 test_is_pkcs12(const char *path, gboolean expect_fail)
 {
     gboolean is_pkcs12;
-    GError * error = NULL;
+    GError  *error = NULL;
 
     is_pkcs12 = nm_crypto_is_pkcs12_file(path, &error);
 
@@ -199,7 +199,7 @@ test_load_pkcs8(const char *path, const char *password, int expected_error)
 {
     NMCryptoFileFormat format       = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
     gboolean           is_encrypted = FALSE;
-    GError *           error        = NULL;
+    GError            *error        = NULL;
 
     g_assert(nm_utils_file_is_private_key(path, NULL));
 
@@ -218,11 +218,11 @@ test_load_pkcs8(const char *path, const char *password, int expected_error)
 static void
 test_encrypt_private_key(const char *path, const char *password)
 {
-    NMCryptoKeyType key_type            = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+    NMCryptoKeyType        key_type     = NM_CRYPTO_KEY_TYPE_UNKNOWN;
     gs_unref_bytes GBytes *array        = NULL;
     gs_unref_bytes GBytes *encrypted    = NULL;
     gs_unref_bytes GBytes *re_decrypted = NULL;
-    GError *               error        = NULL;
+    GError                *error        = NULL;
 
     array = nmtst_crypto_decrypt_openssl_private_key(path, password, &key_type, &error);
     nmtst_assert_success(array, error);
@@ -281,7 +281,7 @@ test_key_decrypted(gconstpointer test_data)
 {
     const char *file         = (const char *) test_data;
     gboolean    is_encrypted = FALSE;
-    char *      path;
+    char       *path;
 
     path = g_build_filename(TEST_CERT_DIR, file, NULL);
 
@@ -404,7 +404,7 @@ NMTST_DEFINE();
 int
 main(int argc, char **argv)
 {
-    GError * error = NULL;
+    GError  *error = NULL;
     gboolean success;
     int      ret;
 

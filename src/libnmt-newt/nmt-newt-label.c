@@ -24,7 +24,7 @@ G_DEFINE_TYPE(NmtNewtLabel, nmt_newt_label, NMT_TYPE_NEWT_COMPONENT)
     (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_NEWT_LABEL, NmtNewtLabelPrivate))
 
 typedef struct {
-    char *            text;
+    char             *text;
     NmtNewtLabelStyle style;
     gboolean          highlight;
 } NmtNewtLabelPrivate;
@@ -193,7 +193,7 @@ nmt_newt_label_build_component(NmtNewtComponent *component, gboolean sensitive)
 {
     NmtNewtLabelPrivate *priv = NMT_NEWT_LABEL_GET_PRIVATE(component);
     newtComponent        co;
-    char *               text_lc;
+    char                *text_lc;
 
     text_lc = nmt_newt_locale_from_utf8(priv->text);
     co      = newtLabel(-1, -1, text_lc);
@@ -252,7 +252,7 @@ nmt_newt_label_get_property(GObject *object, guint prop_id, GValue *value, GPara
 static void
 nmt_newt_label_class_init(NmtNewtLabelClass *label_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(label_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(label_class);
     NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS(label_class);
 
     g_type_class_add_private(label_class, sizeof(NmtNewtLabelPrivate));

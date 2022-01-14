@@ -9840,7 +9840,7 @@ msgid "Error: 'connection show': %s"
 msgstr "त्रुटि: 'कनेक्शन शो': %s"
 
 #: ../src/nmcli/connections.c:1497
-msgid "Activate connection details"
+msgid "Active connection details"
 msgstr "सक्रिय कनेक्शन विवरण"
 
 #: ../src/nmcli/connections.c:1626 ../src/nmcli/devices.c:1610

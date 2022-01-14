@@ -76,7 +76,7 @@ void
 nmt_newt_textbox_set_text(NmtNewtTextbox *textbox, const char *text)
 {
     NmtNewtTextboxPrivate *priv = NMT_NEWT_TEXTBOX_GET_PRIVATE(textbox);
-    char **                lines;
+    char                 **lines;
     int                    i, width;
 
     if (!text)
@@ -151,8 +151,8 @@ nmt_newt_textbox_build_component(NmtNewtComponent *component, gboolean sensitive
 {
     NmtNewtTextboxPrivate *priv = NMT_NEWT_TEXTBOX_GET_PRIVATE(component);
     newtComponent          co;
-    const char *           text;
-    char *                 text_lc;
+    const char            *text;
+    char                  *text_lc;
 
     text = priv->text;
     if (!*text)
@@ -176,12 +176,12 @@ nmt_newt_textbox_build_component(NmtNewtComponent *component, gboolean sensitive
 }
 
 static void
-nmt_newt_textbox_set_property(GObject *     object,
+nmt_newt_textbox_set_property(GObject      *object,
                               guint         prop_id,
                               const GValue *value,
-                              GParamSpec *  pspec)
+                              GParamSpec   *pspec)
 {
-    NmtNewtTextbox *       textbox = NMT_NEWT_TEXTBOX(object);
+    NmtNewtTextbox        *textbox = NMT_NEWT_TEXTBOX(object);
     NmtNewtTextboxPrivate *priv    = NMT_NEWT_TEXTBOX_GET_PRIVATE(textbox);
 
     switch (prop_id) {
@@ -224,7 +224,7 @@ nmt_newt_textbox_get_property(GObject *object, guint prop_id, GValue *value, GPa
 static void
 nmt_newt_textbox_class_init(NmtNewtTextboxClass *textbox_class)
 {
-    GObjectClass *         object_class    = G_OBJECT_CLASS(textbox_class);
+    GObjectClass          *object_class    = G_OBJECT_CLASS(textbox_class);
     NmtNewtComponentClass *component_class = NMT_NEWT_COMPONENT_CLASS(textbox_class);
 
     g_type_class_add_private(textbox_class, sizeof(NmtNewtTextboxPrivate));

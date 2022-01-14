@@ -31,7 +31,7 @@ struct _NMSettingSriov {
     NMSetting  parent;
     GPtrArray *vfs;
     guint      total_vfs;
-    NMTernary  autoprobe_drivers;
+    int        autoprobe_drivers;
 };
 
 struct _NMSettingSriovClass {
@@ -49,7 +49,7 @@ struct _NMSriovVF {
     guint       index;
     GHashTable *attributes;
     GHashTable *vlans;
-    guint *     vlan_ids;
+    guint      *vlan_ids;
 };
 
 typedef struct {
@@ -163,9 +163,9 @@ gboolean
 nm_sriov_vf_equal(const NMSriovVF *vf, const NMSriovVF *other)
 {
     GHashTableIter iter;
-    const char *   key;
-    GVariant *     value, *value2;
-    VFVlan *       vlan, *vlan2;
+    const char    *key;
+    GVariant      *value, *value2;
+    VFVlan        *vlan, *vlan2;
     guint          n_vlans;
 
     g_return_val_if_fail(vf, FALSE);
@@ -239,11 +239,11 @@ vf_add_vlan(NMSriovVF *vf, guint vlan_id, guint qos, NMSriovVFVlanProtocol proto
 NMSriovVF *
 nm_sriov_vf_dup(const NMSriovVF *vf)
 {
-    NMSriovVF *    copy;
+    NMSriovVF     *copy;
     GHashTableIter iter;
-    const char *   name;
-    GVariant *     variant;
-    VFVlan *       vlan;
+    const char    *name;
+    GVariant      *variant;
+    VFVlan        *vlan;
 
     g_return_val_if_fail(vf, NULL);
     g_return_val_if_fail(vf->refcount > 0, NULL);
@@ -378,7 +378,7 @@ gboolean
 nm_sriov_vf_attribute_validate(const char *name, GVariant *value, gboolean *known, GError **error)
 {
     const NMVariantAttributeSpec *const *iter;
-    const NMVariantAttributeSpec *       spec = NULL;
+    const NMVariantAttributeSpec        *spec = NULL;
 
     g_return_val_if_fail(name, FALSE);
     g_return_val_if_fail(value, FALSE);
@@ -438,9 +438,9 @@ gboolean
 _nm_sriov_vf_attribute_validate_all(const NMSriovVF *vf, GError **error)
 {
     GHashTableIter iter;
-    const char *   name;
-    GVariant *     variant;
-    GVariant *     min, *max;
+    const char    *name;
+    GVariant      *variant;
+    GVariant      *min, *max;
 
     g_return_val_if_fail(vf, FALSE);
     g_return_val_if_fail(vf->refcount > 0, FALSE);
@@ -546,7 +546,7 @@ const guint *
 nm_sriov_vf_get_vlan_ids(const NMSriovVF *vf, guint *length)
 {
     GHashTableIter iter;
-    VFVlan *       vlan;
+    VFVlan        *vlan;
     guint          num, i;
 
     g_return_val_if_fail(vf, NULL);
@@ -888,10 +888,10 @@ vfs_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     if (vfs) {
         for (i = 0; i < vfs->len; i++) {
             gs_free const char **attr_names = NULL;
-            NMSriovVF *          vf         = vfs->pdata[i];
+            NMSriovVF           *vf         = vfs->pdata[i];
             GVariantBuilder      vf_builder;
-            const guint *        vlan_ids;
-            const char **        name;
+            const guint         *vlan_ids;
+            const char         **name;
             guint                num_vlans = 0;
 
             g_variant_builder_init(&vf_builder, G_VARIANT_TYPE_VARDICT);
@@ -954,20 +954,20 @@ vfs_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 vfs_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *  vfs;
+    GPtrArray   *vfs;
     GVariantIter vf_iter;
-    GVariant *   vf_var;
+    GVariant    *vf_var;
 
     g_return_val_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")), FALSE);
 
     vfs = g_ptr_array_new_with_free_func((GDestroyNotify) nm_sriov_vf_unref);
     g_variant_iter_init(&vf_iter, value);
     while (g_variant_iter_next(&vf_iter, "@a{sv}", &vf_var)) {
-        NMSriovVF *  vf;
+        NMSriovVF   *vf;
         guint32      index;
         GVariantIter attr_iter;
-        const char * attr_name;
-        GVariant *   attr_var, *vlans_var;
+        const char  *attr_name;
+        GVariant    *attr_var, *vlans_var;
 
         if (!g_variant_lookup(vf_var, "index", "u", &index))
             goto next;
@@ -983,7 +983,7 @@ vfs_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
         if (g_variant_lookup(vf_var, "vlans", "@aa{sv}", &vlans_var)) {
             GVariantIter vlan_iter;
-            GVariant *   vlan_var;
+            GVariant    *vlan_var;
 
             g_variant_iter_init(&vlan_iter, vlans_var);
             while (g_variant_iter_next(&vlan_iter, "@a{sv}", &vlan_var)) {
@@ -1035,7 +1035,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
         h = g_hash_table_new(nm_direct_hash, NULL);
         for (i = 0; i < self->vfs->len; i++) {
-            NMSriovVF *   vf            = self->vfs->pdata[i];
+            NMSriovVF            *vf    = self->vfs->pdata[i];
             gs_free_error GError *local = NULL;
 
             if (vf->index >= self->total_vfs) {
@@ -1147,11 +1147,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                                                 (NMUtilsCopyFunc) nm_sriov_vf_dup,
                                                 (GDestroyNotify) nm_sriov_vf_unref));
         break;
-    case PROP_AUTOPROBE_DRIVERS:
-        g_value_set_enum(value, self->autoprobe_drivers);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1171,11 +1168,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                          (NMUtilsCopyFunc) nm_sriov_vf_dup,
                                          (GDestroyNotify) nm_sriov_vf_unref);
         break;
-    case PROP_AUTOPROBE_DRIVERS:
-        self->autoprobe_drivers = g_value_get_enum(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1186,8 +1180,6 @@ static void
 nm_setting_sriov_init(NMSettingSriov *setting)
 {
     setting->vfs = g_ptr_array_new_with_free_func((GDestroyNotify) nm_sriov_vf_unref);
-
-    setting->autoprobe_drivers = NM_TERNARY_DEFAULT;
 }
 
 /**
@@ -1218,9 +1210,9 @@ finalize(GObject *object)
 static void
 nm_setting_sriov_class_init(NMSettingSriovClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
@@ -1335,13 +1327,13 @@ nm_setting_sriov_class_init(NMSettingSriovClass *klass)
      * example: SRIOV_AUTOPROBE_DRIVERS=0,1
      * ---end---
      */
-    obj_properties[PROP_AUTOPROBE_DRIVERS] = g_param_spec_enum(
-        NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
-        "",
-        "",
-        NM_TYPE_TERNARY,
-        NM_TERNARY_DEFAULT,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_ternary_enum(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_SRIOV_AUTOPROBE_DRIVERS,
+                                                    PROP_AUTOPROBE_DRIVERS,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE,
+                                                    NMSettingSriov,
+                                                    autoprobe_drivers);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

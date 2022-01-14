@@ -45,7 +45,7 @@ gboolean nm_ndisc_add_dns_domain(NMNDisc *ndisc, const NMNDiscDNSDomain *new_ite
         if (nm_logging_enabled(__level, __domain)) {                                  \
             NMNDisc *const __self = (self);                                           \
             char           __prefix[64];                                              \
-            const char *   __ifname = __self ? nm_ndisc_get_ifname(__self) : NULL;    \
+            const char    *__ifname = __self ? nm_ndisc_get_ifname(__self) : NULL;    \
                                                                                       \
             _nm_log(__level,                                                          \
                     __domain,                                                         \

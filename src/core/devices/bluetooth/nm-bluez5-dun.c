@@ -23,7 +23,7 @@
 /*****************************************************************************/
 
 typedef struct {
-    GCancellable *       cancellable;
+    GCancellable        *cancellable;
     NMBluez5DunConnectCb callback;
     gpointer             callback_user_data;
 
@@ -265,10 +265,10 @@ _connect_create_rfcomm(NMBluez5DunContext *context)
 static gboolean
 _connect_socket_connect_cb(int fd, GIOCondition condition, gpointer user_data)
 {
-    NMBluez5DunContext *context = user_data;
-    gs_free_error GError *error = NULL;
-    int                   errsv = 0;
-    socklen_t             slen  = sizeof(errsv);
+    NMBluez5DunContext   *context = user_data;
+    gs_free_error GError *error   = NULL;
+    int                   errsv   = 0;
+    socklen_t             slen    = sizeof(errsv);
     int                   r;
 
     nm_clear_g_source_inst(&context->cdat->source);
@@ -415,7 +415,7 @@ _connect_sdp_search_cb(uint8_t type, uint16_t status, uint8_t *rsp, size_t size,
     do {
         sdp_record_t *rec;
         int           recsize = 0;
-        sdp_list_t *  protos;
+        sdp_list_t   *protos;
 
         rec = sdp_extract_pdu(rsp, bytesleft, &recsize);
         if (!rec)
@@ -454,8 +454,8 @@ _connect_sdp_search_cb(uint8_t type, uint16_t status, uint8_t *rsp, size_t size,
 static gboolean
 _connect_sdp_search_io_cb(int fd, GIOCondition condition, gpointer user_data)
 {
-    NMBluez5DunContext *context = user_data;
-    gs_free_error GError *error = NULL;
+    NMBluez5DunContext   *context = user_data;
+    gs_free_error GError *error   = NULL;
     int                   errsv;
 
     if (condition & (G_IO_ERR | G_IO_HUP | G_IO_NVAL)) {
@@ -505,8 +505,8 @@ _connect_sdp_search_io_cb(int fd, GIOCondition condition, gpointer user_data)
 static gboolean
 _connect_sdp_session_start_on_idle_cb(gpointer user_data)
 {
-    NMBluez5DunContext *context = user_data;
-    gs_free_error GError *error = NULL;
+    NMBluez5DunContext   *context = user_data;
+    gs_free_error GError *error   = NULL;
 
     nm_clear_g_source_inst(&context->cdat->source);
 
@@ -521,15 +521,15 @@ _connect_sdp_session_start_on_idle_cb(gpointer user_data)
 static gboolean
 _connect_sdp_io_cb(int fd, GIOCondition condition, gpointer user_data)
 {
-    NMBluez5DunContext *context = user_data;
-    sdp_list_t *        search;
-    sdp_list_t *        attrs;
-    uuid_t              svclass;
-    uint16_t            attr;
-    int                 errsv;
-    int                 fd_err = 0;
-    int                 r;
-    socklen_t           len     = sizeof(fd_err);
+    NMBluez5DunContext   *context = user_data;
+    sdp_list_t           *search;
+    sdp_list_t           *attrs;
+    uuid_t                svclass;
+    uint16_t              attr;
+    int                   errsv;
+    int                   fd_err = 0;
+    int                   r;
+    socklen_t             len   = sizeof(fd_err);
     gs_free_error GError *error = NULL;
 
     nm_clear_g_source_inst(&context->cdat->source);
@@ -657,17 +657,17 @@ _connect_sdp_session_start(NMBluez5DunContext *context, GError **error)
 /*****************************************************************************/
 
 gboolean
-nm_bluez5_dun_connect(const char *                 adapter,
-                      const char *                 remote,
-                      GCancellable *               cancellable,
+nm_bluez5_dun_connect(const char                  *adapter,
+                      const char                  *remote,
+                      GCancellable                *cancellable,
                       NMBluez5DunConnectCb         callback,
                       gpointer                     callback_user_data,
                       NMBluez5DunNotifyTtyHangupCb notify_tty_hangup_cb,
                       gpointer                     notify_tty_hangup_user_data,
-                      GError **                    error)
+                      GError                     **error)
 {
     nm_auto_free_context NMBluez5DunContext *context = NULL;
-    ConnectData *                            cdat;
+    ConnectData                             *cdat;
     gsize                                    src_l;
     gsize                                    dst_l;
 

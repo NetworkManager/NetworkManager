@@ -8,7 +8,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 
 typedef struct {
-    char *              signal_name;
+    char               *signal_name;
     const GVariantType *signature;
 } NMDBusSignalData;
 
@@ -22,17 +22,17 @@ dbus_signal_data_free(gpointer data, GClosure *closure)
 }
 
 static void
-dbus_signal_meta_marshal(GClosure *    closure,
-                         GValue *      return_value,
+dbus_signal_meta_marshal(GClosure     *closure,
+                         GValue       *return_value,
                          guint         n_param_values,
                          const GValue *param_values,
                          gpointer      invocation_hint,
                          gpointer      marshal_data)
 {
     NMDBusSignalData *sd = marshal_data;
-    const char *      signal_name;
-    GVariant *        parameters, *param;
-    GValue *          closure_params;
+    const char       *signal_name;
+    GVariant         *parameters, *param;
+    GValue           *closure_params;
     gsize             n_params, i;
 
     g_return_if_fail(n_param_values == 4);
@@ -110,8 +110,8 @@ dbus_signal_meta_marshal(GClosure *    closure,
  *   g_signal_handlers_disconnect_by_data() will work correctly.
  */
 gulong
-_nm_dbus_signal_connect_data(GDBusProxy *        proxy,
-                             const char *        signal_name,
+_nm_dbus_signal_connect_data(GDBusProxy         *proxy,
+                             const char         *signal_name,
                              const GVariantType *signature,
                              GCallback           c_handler,
                              gpointer            data,
@@ -119,7 +119,7 @@ _nm_dbus_signal_connect_data(GDBusProxy *        proxy,
                              GConnectFlags       connect_flags)
 {
     NMDBusSignalData *sd;
-    GClosure *        closure;
+    GClosure         *closure;
     gboolean          swapped = !!(connect_flags & G_CONNECT_SWAPPED);
     gboolean          after   = !!(connect_flags & G_CONNECT_AFTER);
 
@@ -201,10 +201,10 @@ _nm_dbus_typecheck_response(GVariant *response, const GVariantType *reply_type, 
  * return values. Free with g_variant_unref().
  */
 GVariant *
-_nm_dbus_proxy_call_finish(GDBusProxy *        proxy,
-                           GAsyncResult *      res,
+_nm_dbus_proxy_call_finish(GDBusProxy         *proxy,
+                           GAsyncResult       *res,
                            const GVariantType *reply_type,
-                           GError **           error)
+                           GError            **error)
 {
     GVariant *variant;
 
@@ -215,10 +215,10 @@ _nm_dbus_proxy_call_finish(GDBusProxy *        proxy,
 }
 
 GVariant *
-_nm_dbus_connection_call_finish(GDBusConnection *   dbus_connection,
-                                GAsyncResult *      result,
+_nm_dbus_connection_call_finish(GDBusConnection    *dbus_connection,
+                                GAsyncResult       *result,
                                 const GVariantType *reply_type,
-                                GError **           error)
+                                GError            **error)
 {
     GVariant *variant;
 

@@ -21,7 +21,7 @@
 #define NM_HOSTNAME_MANAGER_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_HOSTNAME_MANAGER, NMHostnameManagerClass))
 
-#define NM_HOSTNAME_MANAGER_HOSTNAME "hostname"
+#define NM_HOSTNAME_MANAGER_STATIC_HOSTNAME "static-hostname"
 
 typedef struct _NMHostnameManager      NMHostnameManager;
 typedef struct _NMHostnameManagerClass NMHostnameManagerClass;
@@ -34,12 +34,12 @@ GType nm_hostname_manager_get_type(void);
 
 NMHostnameManager *nm_hostname_manager_get(void);
 
-const char *nm_hostname_manager_get_hostname(NMHostnameManager *self);
+const char *nm_hostname_manager_get_static_hostname(NMHostnameManager *self);
 
 gboolean nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname);
 
-void nm_hostname_manager_set_transient_hostname(NMHostnameManager *            self,
-                                                const char *                   hostname,
+void nm_hostname_manager_set_transient_hostname(NMHostnameManager             *self,
+                                                const char                    *hostname,
                                                 NMHostnameManagerSetHostnameCb cb,
                                                 gpointer                       user_data);
 

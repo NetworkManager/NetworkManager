@@ -76,7 +76,7 @@ static gboolean
 ip_entry_filter(NmtNewtEntry *entry, const char *text, int ch, int position, gpointer user_data)
 {
     NmtIPEntryPrivate *priv = NMT_IP_ENTRY_GET_PRIVATE(entry);
-    const char *       slash;
+    const char        *slash;
     gboolean           inaddr;
 
     if (g_ascii_isdigit(ch))

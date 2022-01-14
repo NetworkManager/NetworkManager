@@ -85,7 +85,7 @@ NMSetting *nm_setting_dcb_new(void);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_fcoe_flags(NMSettingDcb *setting);
 int               nm_setting_dcb_get_app_fcoe_priority(NMSettingDcb *setting);
-const char *      nm_setting_dcb_get_app_fcoe_mode(NMSettingDcb *setting);
+const char       *nm_setting_dcb_get_app_fcoe_mode(NMSettingDcb *setting);
 
 NMSettingDcbFlags nm_setting_dcb_get_app_iscsi_flags(NMSettingDcb *setting);
 int               nm_setting_dcb_get_app_iscsi_priority(NMSettingDcb *setting);

@@ -25,11 +25,11 @@ enum {
 };
 
 typedef struct {
-    char *    filename;
-    char *    name;
-    char *    service;
-    char *    auth_dialog;
-    char **   aliases;
+    char     *filename;
+    char     *name;
+    char     *service;
+    char     *auth_dialog;
+    char    **aliases;
     GKeyFile *keyfile;
 
     /* It is convenient for nm_vpn_plugin_info_lookup_property() to return a const char *,
@@ -96,14 +96,14 @@ nm_vpn_plugin_info_validate_filename(const char *filename)
 }
 
 static gboolean
-nm_vpn_plugin_info_check_file_full(const char *              filename,
+nm_vpn_plugin_info_check_file_full(const char               *filename,
                                    gboolean                  check_absolute,
                                    gboolean                  do_validate_filename,
                                    gint64                    check_owner,
                                    NMUtilsCheckFilePredicate check_file,
                                    gpointer                  user_data,
-                                   struct stat *             out_st,
-                                   GError **                 error)
+                                   struct stat              *out_st,
+                                   GError                  **error)
 {
     if (!filename || !*filename) {
         g_set_error(error, NM_VPN_PLUGIN_ERROR, NM_VPN_PLUGIN_ERROR_FAILED, _("missing filename"));
@@ -153,13 +153,13 @@ nm_vpn_plugin_info_check_file_full(const char *              filename,
  * Since: 1.2
  */
 gboolean
-_nm_vpn_plugin_info_check_file(const char *              filename,
+_nm_vpn_plugin_info_check_file(const char               *filename,
                                gboolean                  check_absolute,
                                gboolean                  do_validate_filename,
                                gint64                    check_owner,
                                NMUtilsCheckFilePredicate check_file,
                                gpointer                  user_data,
-                               GError **                 error)
+                               GError                  **error)
 {
     return nm_vpn_plugin_info_check_file_full(filename,
                                               check_absolute,
@@ -244,16 +244,16 @@ _nm_vpn_plugin_info_get_default_dir_user()
  * Returns: (transfer full) (element-type NMVpnPluginInfo): list of loaded plugin infos.
  */
 GSList *
-_nm_vpn_plugin_info_list_load_dir(const char *              dirname,
+_nm_vpn_plugin_info_list_load_dir(const char               *dirname,
                                   gboolean                  do_validate_filename,
                                   gint64                    check_owner,
                                   NMUtilsCheckFilePredicate check_file,
                                   gpointer                  user_data)
 {
-    GDir *      dir;
+    GDir       *dir;
     const char *fn;
-    GArray *    array;
-    GSList *    res = NULL;
+    GArray     *array;
+    GSList     *res = NULL;
     guint       i;
 
     g_return_val_if_fail(dirname, NULL);
@@ -316,8 +316,8 @@ nm_vpn_plugin_info_list_load()
 {
     int               i;
     gint64            uid;
-    GSList *          list = NULL;
-    GSList *          infos, *info;
+    GSList           *list = NULL;
+    GSList           *infos, *info;
     const char *const dir[] = {
         /* We load plugins from NM_VPN_PLUGIN_DIR *and* DEFAULT_DIR*, with
          * preference to the former.
@@ -370,7 +370,7 @@ NMVpnPluginInfo *
 nm_vpn_plugin_info_new_search_file(const char *name, const char *service)
 {
     NMVpnPluginInfo *info;
-    GSList *         infos;
+    GSList          *infos;
 
     if (!name && !service)
         g_return_val_if_reached(NULL);
@@ -402,7 +402,7 @@ _check_no_conflict(NMVpnPluginInfo *i1, NMVpnPluginInfo *i2, GError **error)
 
     for (i = 0; i < G_N_ELEMENTS(check_list); i++) {
         gs_free NMUtilsStrStrDictKey *k = NULL;
-        const char *                  s1, *s2;
+        const char                   *s1, *s2;
 
         k  = _nm_utils_strstrdictkey_create(check_list[i].group, check_list[i].key);
         s1 = g_hash_table_lookup(priv1->keys, k);
@@ -440,7 +440,7 @@ _check_no_conflict(NMVpnPluginInfo *i1, NMVpnPluginInfo *i2, GError **error)
 gboolean
 nm_vpn_plugin_info_list_add(GSList **list, NMVpnPluginInfo *plugin_info, GError **error)
 {
-    GSList *    iter;
+    GSList     *iter;
     const char *name;
 
     g_return_val_if_fail(list, FALSE);
@@ -619,7 +619,7 @@ char *
 nm_vpn_plugin_info_list_find_service_type(GSList *list, const char *name)
 {
     NMVpnPluginInfo *info;
-    char *           n;
+    char            *n;
 
     if (!name)
         g_return_val_if_reached(NULL);
@@ -685,12 +685,12 @@ _service_type_get_default_abbreviation(const char *service_type)
  * Since: 1.4
  */
 char **
-nm_vpn_plugin_info_list_get_service_types(GSList * list,
+nm_vpn_plugin_info_list_get_service_types(GSList  *list,
                                           gboolean only_existing,
                                           gboolean with_abbreviations)
 {
-    GSList *    iter;
-    GPtrArray * l;
+    GSList     *iter;
+    GPtrArray  *l;
     guint       i, j;
     const char *n;
 
@@ -953,7 +953,7 @@ nm_vpn_plugin_info_get_aliases(NMVpnPluginInfo *self)
 const char *
 nm_vpn_plugin_info_lookup_property(NMVpnPluginInfo *self, const char *group, const char *key)
 {
-    NMVpnPluginInfoPrivate *priv;
+    NMVpnPluginInfoPrivate       *priv;
     gs_free NMUtilsStrStrDictKey *k = NULL;
 
     g_return_val_if_fail(NM_IS_VPN_PLUGIN_INFO(self), NULL);
@@ -997,7 +997,7 @@ void
 nm_vpn_plugin_info_set_editor_plugin(NMVpnPluginInfo *self, NMVpnEditorPlugin *plugin)
 {
     NMVpnPluginInfoPrivate *priv;
-    NMVpnEditorPlugin *     old;
+    NMVpnEditorPlugin      *old;
 
     g_return_if_fail(NM_IS_VPN_PLUGIN_INFO(self));
     g_return_if_fail(!plugin || G_IS_OBJECT(plugin));
@@ -1033,7 +1033,7 @@ NMVpnEditorPlugin *
 nm_vpn_plugin_info_load_editor_plugin(NMVpnPluginInfo *self, GError **error)
 {
     NMVpnPluginInfoPrivate *priv;
-    const char *            plugin_filename;
+    const char             *plugin_filename;
 
     g_return_val_if_fail(NM_IS_VPN_PLUGIN_INFO(self), NULL);
 
@@ -1121,9 +1121,9 @@ nm_vpn_plugin_info_init(NMVpnPluginInfo *plugin)
 static gboolean
 init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
 {
-    NMVpnPluginInfo *       self   = NM_VPN_PLUGIN_INFO(initable);
+    NMVpnPluginInfo        *self   = NM_VPN_PLUGIN_INFO(initable);
     NMVpnPluginInfoPrivate *priv   = NM_VPN_PLUGIN_INFO_GET_PRIVATE(self);
-    gs_strfreev char **     groups = NULL;
+    gs_strfreev char      **groups = NULL;
     guint                   i, j;
 
     if (!priv->keyfile) {
@@ -1258,7 +1258,7 @@ nm_vpn_plugin_info_new_with_data(const char *filename, GKeyFile *keyfile, GError
 static void
 dispose(GObject *object)
 {
-    NMVpnPluginInfo *       self = NM_VPN_PLUGIN_INFO(object);
+    NMVpnPluginInfo        *self = NM_VPN_PLUGIN_INFO(object);
     NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE(self);
 
     g_clear_object(&priv->editor_plugin);
@@ -1269,7 +1269,7 @@ dispose(GObject *object)
 static void
 finalize(GObject *object)
 {
-    NMVpnPluginInfo *       self = NM_VPN_PLUGIN_INFO(object);
+    NMVpnPluginInfo        *self = NM_VPN_PLUGIN_INFO(object);
     NMVpnPluginInfoPrivate *priv = NM_VPN_PLUGIN_INFO_GET_PRIVATE(self);
 
     g_free(priv->name);

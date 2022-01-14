@@ -73,23 +73,20 @@ const char *nm_device_sys_iface_state_to_string(NMDeviceSysIfaceState sys_iface_
 
 /*****************************************************************************/
 
-typedef enum {
+typedef enum _nm_packed {
     NM_DEVICE_IP_STATE_NONE,
-    NM_DEVICE_IP_STATE_WAIT,
-    NM_DEVICE_IP_STATE_CONF,
-    NM_DEVICE_IP_STATE_DONE,
-    NM_DEVICE_IP_STATE_FAIL,
+    NM_DEVICE_IP_STATE_PENDING,
+    NM_DEVICE_IP_STATE_READY,
+    NM_DEVICE_IP_STATE_FAILED,
 } NMDeviceIPState;
 
 const char *nm_device_ip_state_to_string(NMDeviceIPState ip_state);
 
 /*****************************************************************************/
 
-/*****************************************************************************/
-
 void nm_device_resolve_address(int                 addr_family,
                                gconstpointer       address,
-                               GCancellable *      cancellable,
+                               GCancellable       *cancellable,
                                GAsyncReadyCallback callback,
                                gpointer            cb_data);
 

@@ -15,10 +15,10 @@ _nm_priv_helper_call_get_fd_cb(GObject *source, GAsyncResult *res, gpointer user
 {
     NMPrivHelperCallGetFDCallback callback;
     gpointer                      callback_data;
-    gs_unref_variant GVariant *ret       = NULL;
-    gs_free_error GError *error          = NULL;
-    gs_unref_object GUnixFDList *fd_list = NULL;
-    gs_free int *                fd_arr  = NULL;
+    gs_unref_variant GVariant    *ret     = NULL;
+    gs_free_error GError         *error   = NULL;
+    gs_unref_object GUnixFDList  *fd_list = NULL;
+    gs_free int                  *fd_arr  = NULL;
 
     nm_utils_user_data_unpack(user_data, &callback, &callback_data);
 
@@ -52,7 +52,7 @@ _nm_priv_helper_call_get_fd_fail_on_idle(gpointer user_data)
     gs_unref_object GCancellable *cancellable = NULL;
     NMPrivHelperCallGetFDCallback callback;
     gpointer                      callback_data;
-    gs_free_error GError *error = NULL;
+    gs_free_error GError         *error = NULL;
 
     nm_utils_user_data_unpack(user_data, &cancellable, &callback, &callback_data);
 
@@ -67,7 +67,7 @@ _nm_priv_helper_call_get_fd_fail_on_idle(gpointer user_data)
 
 void
 nm_priv_helper_call_get_fd(NMPrivHelperGetFDType         fd_type,
-                           GCancellable *                cancellable,
+                           GCancellable                 *cancellable,
                            NMPrivHelperCallGetFDCallback callback,
                            gpointer                      user_data)
 {

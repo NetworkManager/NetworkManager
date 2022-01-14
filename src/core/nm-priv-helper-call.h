@@ -8,7 +8,7 @@
 typedef void (*NMPrivHelperCallGetFDCallback)(int fd_take, GError *error, gpointer user_data);
 
 void nm_priv_helper_call_get_fd(NMPrivHelperGetFDType         fd_type,
-                                GCancellable *                cancellable,
+                                GCancellable                 *cancellable,
                                 NMPrivHelperCallGetFDCallback callback,
                                 gpointer                      user_data);
 

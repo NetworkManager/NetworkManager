@@ -29,20 +29,20 @@ GType test_secret_agent_get_type(void);
 G_DEFINE_TYPE(TestSecretAgent, test_secret_agent, NM_TYPE_SECRET_AGENT_OLD)
 
 static void
-test_secret_agent_get_secrets(NMSecretAgentOld *             agent,
-                              NMConnection *                 connection,
-                              const char *                   connection_path,
-                              const char *                   setting_name,
-                              const char **                  hints,
+test_secret_agent_get_secrets(NMSecretAgentOld              *agent,
+                              NMConnection                  *connection,
+                              const char                    *connection_path,
+                              const char                    *setting_name,
+                              const char                   **hints,
                               NMSecretAgentGetSecretsFlags   flags,
                               NMSecretAgentOldGetSecretsFunc callback,
                               gpointer                       callback_data)
 {
     NMSettingWirelessSecurity *s_wsec;
-    GVariant *                 secrets = NULL;
+    GVariant                  *secrets = NULL;
     GVariantBuilder            secrets_builder, setting_builder;
-    char *                     secret = NULL;
-    GError *                   error  = NULL;
+    char                      *secret = NULL;
+    GError                    *error  = NULL;
 
     g_assert_cmpstr(setting_name, ==, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 
@@ -91,16 +91,16 @@ done:
 
 static void
 test_secret_agent_cancel_get_secrets(NMSecretAgentOld *agent,
-                                     const char *      connection_path,
-                                     const char *      setting_name)
+                                     const char       *connection_path,
+                                     const char       *setting_name)
 {
     g_assert_not_reached();
 }
 
 static void
-test_secret_agent_save_secrets(NMSecretAgentOld *              agent,
-                               NMConnection *                  connection,
-                               const char *                    connection_path,
+test_secret_agent_save_secrets(NMSecretAgentOld               *agent,
+                               NMConnection                   *connection,
+                               const char                     *connection_path,
                                NMSecretAgentOldSaveSecretsFunc callback,
                                gpointer                        callback_data)
 {
@@ -108,9 +108,9 @@ test_secret_agent_save_secrets(NMSecretAgentOld *              agent,
 }
 
 static void
-test_secret_agent_delete_secrets(NMSecretAgentOld *                agent,
-                                 NMConnection *                    connection,
-                                 const char *                      connection_path,
+test_secret_agent_delete_secrets(NMSecretAgentOld                 *agent,
+                                 NMConnection                     *connection,
+                                 const char                       *connection_path,
                                  NMSecretAgentOldDeleteSecretsFunc callback,
                                  gpointer                          callback_data)
 {
@@ -136,7 +136,7 @@ test_secret_agent_new(gboolean auto_register)
 static void
 test_secret_agent_class_init(TestSecretAgentClass *klass)
 {
-    GObjectClass *         object_class = G_OBJECT_CLASS(klass);
+    GObjectClass          *object_class = G_OBJECT_CLASS(klass);
     NMSecretAgentOldClass *agent_class  = NM_SECRET_AGENT_OLD_CLASS(klass);
 
     agent_class->get_secrets        = test_secret_agent_get_secrets;
@@ -163,14 +163,14 @@ test_secret_agent_class_init(TestSecretAgentClass *klass)
 
 typedef struct {
     NMTstcServiceInfo *sinfo;
-    NMClient *         client;
+    NMClient          *client;
 
     NMSecretAgentOld *agent;
-    NMDevice *        device;
-    NMConnection *    connection;
+    NMDevice         *device;
+    NMConnection     *connection;
 
     GMainLoop *loop;
-    GSource *  timeout_source;
+    GSource   *timeout_source;
 
     char *ifname;
     char *con_id;
@@ -182,8 +182,8 @@ static void
 connection_added_cb(GObject *s, GAsyncResult *result, gpointer user_data)
 {
     TestSecretAgentData *sadata = user_data;
-    NMRemoteConnection * connection;
-    GError *             error = NULL;
+    NMRemoteConnection  *connection;
+    GError              *error = NULL;
 
     connection = nm_client_add_connection_finish(sadata->client, result, &error);
 
@@ -198,7 +198,7 @@ static void
 register_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 {
     TestSecretAgentData *sadata = user_data;
-    GError *             error  = NULL;
+    GError              *error  = NULL;
 
     nm_secret_agent_old_register_finish(sadata->agent, result, &error);
     g_assert_no_error(error);
@@ -212,14 +212,14 @@ register_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 test_setup(TestSecretAgentData *sadata, gconstpointer test_data)
 {
-    static int           static_counter = 0;
-    const int            counter        = static_counter++;
-    const char *         create_agent   = test_data;
-    NMConnection *       connection;
-    NMSettingConnection *s_con;
-    NMSettingWireless *  s_wireless;
-    GBytes *             ssid;
-    NMSetting *          s_wsec;
+    static int            static_counter = 0;
+    const int             counter        = static_counter++;
+    const char           *create_agent   = test_data;
+    NMConnection         *connection;
+    NMSettingConnection  *s_con;
+    NMSettingWireless    *s_wireless;
+    GBytes               *ssid;
+    NMSetting            *s_wsec;
     gs_free_error GError *error = NULL;
 
     sadata->sinfo = nmtstc_service_init();
@@ -296,8 +296,8 @@ test_setup(TestSecretAgentData *sadata, gconstpointer test_data)
 static void
 test_cleanup(TestSecretAgentData *sadata, gconstpointer test_data)
 {
-    GVariant *                  ret;
-    GError *                    error        = NULL;
+    GVariant                   *ret;
+    GError                     *error        = NULL;
     NMTstContextBusyWatcherData watcher_data = {};
 
     g_assert(nm_g_main_context_is_thread_default(NULL));
@@ -358,8 +358,8 @@ test_cleanup(TestSecretAgentData *sadata, gconstpointer test_data)
 static void
 connection_activated_none_cb(GObject *c, GAsyncResult *result, gpointer user_data)
 {
-    TestSecretAgentData *sadata = user_data;
-    gs_free_error GError *error = NULL;
+    TestSecretAgentData  *sadata = user_data;
+    gs_free_error GError *error  = NULL;
 
     nm_client_activate_connection_finish(sadata->client, result, &error);
     g_assert_error(error, NM_AGENT_MANAGER_ERROR, NM_AGENT_MANAGER_ERROR_NO_SECRETS);
@@ -387,10 +387,10 @@ test_secret_agent_none(TestSecretAgentData *sadata, gconstpointer test_data)
 
 static char *
 secrets_requested_no_secrets_cb(TestSecretAgent *agent,
-                                NMConnection *   connection,
-                                const char *     connection_path,
-                                const char *     setting_name,
-                                const char *     secret_name,
+                                NMConnection    *connection,
+                                const char      *connection_path,
+                                const char      *setting_name,
+                                const char      *secret_name,
                                 gpointer         user_data)
 {
     TestSecretAgentData *sadata = user_data;
@@ -404,9 +404,9 @@ secrets_requested_no_secrets_cb(TestSecretAgent *agent,
 static void
 connection_activated_no_secrets_cb(GObject *c, GAsyncResult *result, gpointer user_data)
 {
-    TestSecretAgentData *sadata            = user_data;
-    gs_unref_object NMActiveConnection *ac = NULL;
-    gs_free_error GError *error            = NULL;
+    TestSecretAgentData                *sadata = user_data;
+    gs_unref_object NMActiveConnection *ac     = NULL;
+    gs_free_error GError               *error  = NULL;
 
     ac = nm_client_activate_connection_finish(sadata->client, result, &error);
     g_assert_error(error, NM_AGENT_MANAGER_ERROR, NM_AGENT_MANAGER_ERROR_NO_SECRETS);
@@ -441,9 +441,9 @@ test_secret_agent_no_secrets(TestSecretAgentData *sadata, gconstpointer test_dat
 static void
 connection_activated_cancel_cb(GObject *c, GAsyncResult *result, gpointer user_data)
 {
-    TestSecretAgentData *sadata            = user_data;
-    gs_unref_object NMActiveConnection *ac = NULL;
-    gs_free_error GError *error            = NULL;
+    TestSecretAgentData                *sadata = user_data;
+    gs_unref_object NMActiveConnection *ac     = NULL;
+    gs_free_error GError               *error  = NULL;
 
     ac = nm_client_activate_connection_finish(sadata->client, result, &error);
     g_assert_error(error, NM_AGENT_MANAGER_ERROR, NM_AGENT_MANAGER_ERROR_USER_CANCELED);
@@ -452,10 +452,10 @@ connection_activated_cancel_cb(GObject *c, GAsyncResult *result, gpointer user_d
 
 static char *
 secrets_requested_cancel_cb(TestSecretAgent *agent,
-                            NMConnection *   connection,
-                            const char *     connection_path,
-                            const char *     setting_name,
-                            const char *     secret_name,
+                            NMConnection    *connection,
+                            const char      *connection_path,
+                            const char      *setting_name,
+                            const char      *secret_name,
                             gpointer         user_data)
 {
     TestSecretAgentData *sadata = user_data;
@@ -495,8 +495,8 @@ static void
 connection_activated_good_cb(GObject *c, GAsyncResult *result, gpointer user_data)
 {
     TestSecretAgentData *sadata = user_data;
-    NMActiveConnection * ac;
-    GError *             error = NULL;
+    NMActiveConnection  *ac;
+    GError              *error = NULL;
 
     ac = nm_client_activate_connection_finish(sadata->client, result, &error);
     g_assert_no_error(error);
@@ -508,10 +508,10 @@ connection_activated_good_cb(GObject *c, GAsyncResult *result, gpointer user_dat
 
 static char *
 secrets_requested_good_cb(TestSecretAgent *agent,
-                          NMConnection *   connection,
-                          const char *     connection_path,
-                          const char *     setting_name,
-                          const char *     secret_name,
+                          NMConnection    *connection,
+                          const char      *connection_path,
+                          const char      *setting_name,
+                          const char      *secret_name,
                           gpointer         user_data)
 {
     TestSecretAgentData *sadata = user_data;
@@ -550,8 +550,8 @@ test_secret_agent_good(TestSecretAgentData *sadata, gconstpointer test_data)
 static void
 async_init_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 {
-    GMainLoop *   loop             = user_data;
-    gs_free_error GError *error    = NULL;
+    GMainLoop               *loop  = user_data;
+    gs_free_error GError    *error = NULL;
     gs_unref_object GObject *agent = NULL;
 
     agent = g_async_initable_new_finish(G_ASYNC_INITABLE(object), result, &error);
@@ -564,9 +564,9 @@ async_init_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 test_secret_agent_nm_not_running(void)
 {
-    gs_unref_object NMSecretAgentOld *agent  = NULL;
+    gs_unref_object NMSecretAgentOld  *agent = NULL;
     nm_auto_unref_gmainloop GMainLoop *loop  = NULL;
-    GError *                           error = NULL;
+    GError                            *error = NULL;
 
     agent = g_initable_new(test_secret_agent_get_type(),
                            NULL,
@@ -626,12 +626,12 @@ registered_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 static void
 test_secret_agent_auto_register(void)
 {
-    NMTstcServiceInfo *sinfo;
+    NMTstcServiceInfo                *sinfo;
     gs_unref_object NMSecretAgentOld *agent              = NULL;
-    GError *                          error              = NULL;
+    GError                           *error              = NULL;
     AutoRegisterData                  auto_register_data = {
-        .step         = 0,
-        .invoke_count = 0,
+                         .step         = 0,
+                         .invoke_count = 0,
     };
     gulong                      signal_id;
     NMTstContextBusyWatcherData watcher_data = {};

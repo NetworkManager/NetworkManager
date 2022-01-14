@@ -30,10 +30,10 @@ typedef void (*NMDBusConnectionCallDefaultCb)(GVariant *result, GError *error, g
 /*****************************************************************************/
 
 static inline void
-nm_dbus_connection_call_start_service_by_name(GDBusConnection *   dbus_connection,
-                                              const char *        name,
+nm_dbus_connection_call_start_service_by_name(GDBusConnection    *dbus_connection,
+                                              const char         *name,
                                               int                 timeout_msec,
-                                              GCancellable *      cancellable,
+                                              GCancellable       *cancellable,
                                               GAsyncReadyCallback callback,
                                               gpointer            user_data)
 {
@@ -54,8 +54,8 @@ nm_dbus_connection_call_start_service_by_name(GDBusConnection *   dbus_connectio
 /*****************************************************************************/
 
 static inline guint
-nm_dbus_connection_signal_subscribe_name_owner_changed(GDBusConnection *   dbus_connection,
-                                                       const char *        service_name,
+nm_dbus_connection_signal_subscribe_name_owner_changed(GDBusConnection    *dbus_connection,
+                                                       const char         *service_name,
                                                        GDBusSignalCallback callback,
                                                        gpointer            user_data,
                                                        GDestroyNotify      user_data_free_func)
@@ -74,22 +74,22 @@ nm_dbus_connection_signal_subscribe_name_owner_changed(GDBusConnection *   dbus_
 }
 
 typedef void (*NMDBusConnectionCallGetNameOwnerCb)(const char *name_owner,
-                                                   GError *    error,
+                                                   GError     *error,
                                                    gpointer    user_data);
 
-void nm_dbus_connection_call_get_name_owner(GDBusConnection *                  dbus_connection,
-                                            const char *                       service_name,
+void nm_dbus_connection_call_get_name_owner(GDBusConnection                   *dbus_connection,
+                                            const char                        *service_name,
                                             int                                timeout_msec,
-                                            GCancellable *                     cancellable,
+                                            GCancellable                      *cancellable,
                                             NMDBusConnectionCallGetNameOwnerCb callback,
                                             gpointer                           user_data);
 
 static inline void
-nm_dbus_connection_call_request_name(GDBusConnection *   dbus_connection,
-                                     const char *        name,
+nm_dbus_connection_call_request_name(GDBusConnection    *dbus_connection,
+                                     const char         *name,
                                      guint32             flags,
                                      int                 timeout_msec,
-                                     GCancellable *      cancellable,
+                                     GCancellable       *cancellable,
                                      GAsyncReadyCallback callback,
                                      gpointer            user_data)
 {
@@ -108,10 +108,10 @@ nm_dbus_connection_call_request_name(GDBusConnection *   dbus_connection,
 }
 
 static inline guint
-nm_dbus_connection_signal_subscribe_properties_changed(GDBusConnection *   dbus_connection,
-                                                       const char *        bus_name,
-                                                       const char *        object_path,
-                                                       const char *        interface_name,
+nm_dbus_connection_signal_subscribe_properties_changed(GDBusConnection    *dbus_connection,
+                                                       const char         *bus_name,
+                                                       const char         *object_path,
+                                                       const char         *interface_name,
                                                        GDBusSignalCallback callback,
                                                        gpointer            user_data,
                                                        GDestroyNotify      user_data_free_func)
@@ -138,33 +138,33 @@ nm_dbus_connection_signal_subscribe_properties_changed(GDBusConnection *   dbus_
                                               user_data_free_func);
 }
 
-void nm_dbus_connection_call_get_all(GDBusConnection *             dbus_connection,
-                                     const char *                  bus_name,
-                                     const char *                  object_path,
-                                     const char *                  interface_name,
+void nm_dbus_connection_call_get_all(GDBusConnection              *dbus_connection,
+                                     const char                   *bus_name,
+                                     const char                   *object_path,
+                                     const char                   *interface_name,
                                      int                           timeout_msec,
-                                     GCancellable *                cancellable,
+                                     GCancellable                 *cancellable,
                                      NMDBusConnectionCallDefaultCb callback,
                                      gpointer                      user_data);
 
-void nm_dbus_connection_call_set(GDBusConnection *             dbus_connection,
-                                 const char *                  bus_name,
-                                 const char *                  object_path,
-                                 const char *                  interface_name,
-                                 const char *                  property_name,
-                                 GVariant *                    value,
+void nm_dbus_connection_call_set(GDBusConnection              *dbus_connection,
+                                 const char                   *bus_name,
+                                 const char                   *object_path,
+                                 const char                   *interface_name,
+                                 const char                   *property_name,
+                                 GVariant                     *value,
                                  int                           timeout_msec,
-                                 GCancellable *                cancellable,
+                                 GCancellable                 *cancellable,
                                  NMDBusConnectionCallDefaultCb callback,
                                  gpointer                      user_data);
 
 /*****************************************************************************/
 
 static inline guint
-nm_dbus_connection_signal_subscribe_object_manager(GDBusConnection *   dbus_connection,
-                                                   const char *        service_name,
-                                                   const char *        object_path,
-                                                   const char *        signal_name,
+nm_dbus_connection_signal_subscribe_object_manager(GDBusConnection    *dbus_connection,
+                                                   const char         *service_name,
+                                                   const char         *object_path,
+                                                   const char         *signal_name,
                                                    GDBusSignalCallback callback,
                                                    gpointer            user_data,
                                                    GDestroyNotify      user_data_free_func)
@@ -181,12 +181,12 @@ nm_dbus_connection_signal_subscribe_object_manager(GDBusConnection *   dbus_conn
                                               user_data_free_func);
 }
 
-void nm_dbus_connection_call_get_managed_objects(GDBusConnection *             dbus_connection,
-                                                 const char *                  bus_name,
-                                                 const char *                  object_path,
+void nm_dbus_connection_call_get_managed_objects(GDBusConnection              *dbus_connection,
+                                                 const char                   *bus_name,
+                                                 const char                   *object_path,
                                                  GDBusCallFlags                flags,
                                                  int                           timeout_msec,
-                                                 GCancellable *                cancellable,
+                                                 GCancellable                 *cancellable,
                                                  NMDBusConnectionCallDefaultCb callback,
                                                  gpointer                      user_data);
 
@@ -195,28 +195,28 @@ void nm_dbus_connection_call_get_managed_objects(GDBusConnection *             d
 void
 nm_dbus_connection_call_finish_void_cb(GObject *source, GAsyncResult *result, gpointer user_data);
 
-void nm_dbus_connection_call_finish_void_strip_dbus_error_cb(GObject *     source,
+void nm_dbus_connection_call_finish_void_strip_dbus_error_cb(GObject      *source,
                                                              GAsyncResult *result,
                                                              gpointer      user_data);
 
-void nm_dbus_connection_call_finish_variant_cb(GObject *     source,
+void nm_dbus_connection_call_finish_variant_cb(GObject      *source,
                                                GAsyncResult *result,
                                                gpointer      user_data);
 
-void nm_dbus_connection_call_finish_variant_strip_dbus_error_cb(GObject *     source,
+void nm_dbus_connection_call_finish_variant_strip_dbus_error_cb(GObject      *source,
                                                                 GAsyncResult *result,
                                                                 gpointer      user_data);
 
 /*****************************************************************************/
 
 void nm_dbus_call(GBusType            bus_type,
-                  const char *        bus_name,
-                  const char *        object_path,
-                  const char *        interface_name,
-                  const char *        method_name,
-                  GVariant *          parameters,
+                  const char         *bus_name,
+                  const char         *object_path,
+                  const char         *interface_name,
+                  const char         *method_name,
+                  GVariant           *parameters,
                   const GVariantType *reply_type,
-                  GCancellable *      cancellable,
+                  GCancellable       *cancellable,
                   int                 timeout_msec,
                   GAsyncReadyCallback callback,
                   gpointer            user_data);
@@ -244,7 +244,7 @@ GDBusConnection *nm_g_bus_get_blocking(GCancellable *cancellable, GError **error
 
 typedef struct {
     GVariant *result;
-    GError *  error;
+    GError   *error;
 } NMDBusConnectionCallBlockingData;
 
 void

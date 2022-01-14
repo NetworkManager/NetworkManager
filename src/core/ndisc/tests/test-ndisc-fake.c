@@ -11,23 +11,28 @@
 #include "ndisc/nm-fake-ndisc.h"
 
 #include "platform/nm-fake-platform.h"
+#include "nm-netns.h"
 
-#include "nm-test-utils-core.h"
+#include "platform/tests/test-common.h"
 
 /*****************************************************************************/
 
 static NMFakeNDisc *
 ndisc_new(void)
 {
-    NMNDisc *          ndisc;
-    const int          ifindex = 1;
-    const char *       ifname  = nm_platform_link_get_name(NM_PLATFORM_GET, ifindex);
-    NMUtilsIPv6IfaceId iid     = {};
+    gs_unref_object NML3Cfg *l3cfg = NULL;
+    NMNDisc                 *ndisc;
+    const int                ifindex = 1;
+    NMUtilsIPv6IfaceId       iid;
 
-    ndisc        = nm_fake_ndisc_new(ifindex, ifname);
-    iid.id_u8[7] = 1;
-    nm_ndisc_set_iid(ndisc, iid);
+    l3cfg = nm_netns_l3cfg_acquire(NM_NETNS_GET, ifindex);
+
+    ndisc = nm_fake_ndisc_new(l3cfg);
     g_assert(ndisc);
+
+    memset(&iid, 0, sizeof(iid));
+    iid.id_u8[7] = 1;
+    nm_ndisc_set_iid(ndisc, iid, FALSE);
 
     return NM_FAKE_NDISC(ndisc);
 }
@@ -37,7 +42,7 @@ ndisc_new(void)
 static void
 match_gateway(const NMNDiscData *rdata,
               guint              idx,
-              const char *       addr,
+              const char        *addr,
               gint64             expiry_msec,
               NMIcmpv6RouterPref pref)
 {
@@ -57,7 +62,7 @@ match_gateway(const NMNDiscData *rdata,
 #define match_address(rdata, idx, addr, _expiry_msec, _expiry_preferred_msec)     \
     G_STMT_START                                                                  \
     {                                                                             \
-        const NMNDiscData *   _rdata = (rdata);                                   \
+        const NMNDiscData    *_rdata = (rdata);                                   \
         guint                 _idx   = (idx);                                     \
         const NMNDiscAddress *_a;                                                 \
                                                                                   \
@@ -76,7 +81,7 @@ match_gateway(const NMNDiscData *rdata,
 #define match_route(rdata, idx, nw, pl, gw, _expiry_msec, pref) \
     G_STMT_START                                                \
     {                                                           \
-        const NMNDiscData * _rdata = (rdata);                   \
+        const NMNDiscData  *_rdata = (rdata);                   \
         guint               _idx   = (idx);                     \
         const NMNDiscRoute *_r;                                 \
         int                 _plen = (pl);                       \
@@ -140,9 +145,15 @@ typedef struct {
 /*****************************************************************************/
 
 static void
-test_simple_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int, TestData *data)
+test_simple_changed(NMNDisc              *ndisc,
+                    const NMNDiscData    *rdata,
+                    guint                 changed_i,
+                    const NML3ConfigData *l3cd,
+                    TestData             *data)
 {
-    NMNDiscConfigMap changed = changed_int;
+    NMNDiscConfigMap changed = changed_i;
+
+    _LOGT("test_simple: callback (counter=%u)", data->counter);
 
     switch (data->counter++) {
     case 0:
@@ -180,12 +191,12 @@ test_simple_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int,
 static void
 test_simple(void)
 {
-    nm_auto_unref_gmainloop GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-    gs_unref_object NMFakeNDisc *ndisc      = ndisc_new();
-    const gint64                 now_msec   = nm_utils_get_monotonic_timestamp_msec();
-    TestData                     data       = {
-        .loop             = loop,
-        .timestamp_msec_1 = now_msec,
+    nm_auto_unref_gmainloop GMainLoop *loop     = g_main_loop_new(NULL, FALSE);
+    gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
+    const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
+    TestData                           data     = {
+                                      .loop             = loop,
+                                      .timestamp_msec_1 = now_msec,
     };
     guint id;
 
@@ -206,9 +217,11 @@ test_simple(void)
 
     g_signal_connect(ndisc, NM_NDISC_CONFIG_RECEIVED, G_CALLBACK(test_simple_changed), &data);
 
+    _LOGT("test_simple: start");
     nm_ndisc_start(NM_NDISC(ndisc));
     nmtst_main_loop_run_assert(data.loop, 15000);
     g_assert_cmpint(data.counter, ==, 2);
+    _LOGT("test_simple: done");
 }
 
 /*****************************************************************************/
@@ -221,9 +234,13 @@ test_everything_rs_sent(NMNDisc *ndisc, TestData *data)
 }
 
 static void
-test_everything_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_int, TestData *data)
+test_everything_changed(NMNDisc              *ndisc,
+                        const NMNDiscData    *rdata,
+                        guint                 changed_i,
+                        const NML3ConfigData *l3cd,
+                        TestData             *data)
 {
-    NMNDiscConfigMap changed = changed_int;
+    NMNDiscConfigMap changed = changed_i;
 
     if (data->counter == 0) {
         g_assert_cmpint(data->rs_counter, ==, 1);
@@ -288,12 +305,12 @@ test_everything_changed(NMNDisc *ndisc, const NMNDiscData *rdata, guint changed_
 static void
 test_everything(void)
 {
-    nm_auto_unref_gmainloop GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-    gs_unref_object NMFakeNDisc *ndisc      = ndisc_new();
-    const gint64                 now_msec   = nm_utils_get_monotonic_timestamp_msec();
-    TestData                     data       = {
-        .loop             = loop,
-        .timestamp_msec_1 = now_msec,
+    nm_auto_unref_gmainloop GMainLoop *loop     = g_main_loop_new(NULL, FALSE);
+    gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
+    const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
+    TestData                           data     = {
+                                      .loop             = loop,
+                                      .timestamp_msec_1 = now_msec,
     };
     guint id;
 
@@ -342,12 +359,13 @@ test_everything(void)
 }
 
 static void
-test_preference_order_cb(NMNDisc *          ndisc,
-                         const NMNDiscData *rdata,
-                         guint              changed_int,
-                         TestData *         data)
+test_preference_order_cb(NMNDisc              *ndisc,
+                         const NMNDiscData    *rdata,
+                         guint                 changed_i,
+                         const NML3ConfigData *l3cd,
+                         TestData             *data)
 {
-    NMNDiscConfigMap changed = changed_int;
+    NMNDiscConfigMap changed = changed_i;
 
     if (data->counter == 1) {
         g_assert_cmpint(changed,
@@ -391,12 +409,12 @@ test_preference_order_cb(NMNDisc *          ndisc,
 static void
 test_preference_order(void)
 {
-    nm_auto_unref_gmainloop GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-    gs_unref_object NMFakeNDisc *ndisc      = ndisc_new();
-    const gint64                 now_msec   = nm_utils_get_monotonic_timestamp_msec();
-    TestData                     data       = {
-        .loop             = loop,
-        .timestamp_msec_1 = now_msec,
+    nm_auto_unref_gmainloop GMainLoop *loop     = g_main_loop_new(NULL, FALSE);
+    gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
+    const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
+    TestData                           data     = {
+                                      .loop             = loop,
+                                      .timestamp_msec_1 = now_msec,
     };
     guint id;
 
@@ -434,12 +452,13 @@ test_preference_order(void)
 }
 
 static void
-test_preference_changed_cb(NMNDisc *          ndisc,
-                           const NMNDiscData *rdata,
-                           guint              changed_int,
-                           TestData *         data)
+test_preference_changed_cb(NMNDisc              *ndisc,
+                           const NMNDiscData    *rdata,
+                           guint                 changed_i,
+                           const NML3ConfigData *l3cd,
+                           TestData             *data)
 {
-    NMNDiscConfigMap changed = changed_int;
+    NMNDiscConfigMap changed = changed_i;
 
     if (data->counter == 1) {
         g_assert_cmpint(changed,
@@ -513,12 +532,12 @@ test_preference_changed_cb(NMNDisc *          ndisc,
 static void
 test_preference_changed(void)
 {
-    nm_auto_unref_gmainloop GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-    gs_unref_object NMFakeNDisc *ndisc      = ndisc_new();
-    const gint64                 now_msec   = nm_utils_get_monotonic_timestamp_msec();
-    TestData                     data       = {
-        .loop             = loop,
-        .timestamp_msec_1 = now_msec,
+    nm_auto_unref_gmainloop GMainLoop *loop     = g_main_loop_new(NULL, FALSE);
+    gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
+    const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
+    TestData                           data     = {
+                                      .loop             = loop,
+                                      .timestamp_msec_1 = now_msec,
     };
     guint id;
 
@@ -576,10 +595,11 @@ test_preference_changed(void)
 /*****************************************************************************/
 
 static void
-_test_dns_solicit_loop_changed(NMNDisc *          ndisc,
-                               const NMNDiscData *rdata,
-                               guint              changed_int,
-                               TestData *         data)
+_test_dns_solicit_loop_changed(NMNDisc              *ndisc,
+                               const NMNDiscData    *rdata,
+                               guint                 changed_i,
+                               const NML3ConfigData *l3cd,
+                               TestData             *data)
 {
     data->counter++;
 }
@@ -593,12 +613,12 @@ _test_dns_solicit_loop_rs_sent(NMFakeNDisc *ndisc, TestData *data)
 static void
 test_dns_solicit_loop(void)
 {
-    nm_auto_unref_gmainloop GMainLoop *loop = g_main_loop_new(NULL, FALSE);
-    gs_unref_object NMFakeNDisc *ndisc      = ndisc_new();
-    const gint64                 now_msec   = nm_utils_get_monotonic_timestamp_msec();
-    TestData                     data       = {
-        .loop             = loop,
-        .timestamp_msec_1 = now_msec,
+    nm_auto_unref_gmainloop GMainLoop *loop     = g_main_loop_new(NULL, FALSE);
+    gs_unref_object NMFakeNDisc       *ndisc    = ndisc_new();
+    const gint64                       now_msec = nm_utils_get_monotonic_timestamp_msec();
+    TestData                           data     = {
+                                      .loop             = loop,
+                                      .timestamp_msec_1 = now_msec,
     };
     guint id;
 

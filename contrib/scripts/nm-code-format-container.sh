@@ -10,7 +10,9 @@ die() {
 DIR="$(realpath "$(dirname "$0")/../../")"
 cd "$DIR"
 
-PODNAME=nm-code-format
+FEDORA_VERSION=35
+
+PODNAME="nm-code-format-f$FEDORA_VERSION"
 
 RENEW=0
 for a; do
@@ -37,7 +39,7 @@ if ! podman container exists "$PODNAME" ; then
         --name="$PODNAME" \
         -v "$DIR:/tmp/NetworkManager:Z" \
         -w /tmp/NetworkManager \
-        fedora:34 \
+        "fedora:$FEDORA_VERSION" \
         /bin/bash -c 'dnf upgrade -y && dnf install -y git /usr/bin/clang-format && ./contrib/scripts/nm-code-format.sh -i'
     exit 0
 fi

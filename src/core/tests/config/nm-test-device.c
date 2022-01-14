@@ -69,7 +69,7 @@ nm_test_device_new(const char *hwaddr)
 static void
 nm_test_device_class_init(NMTestDeviceClass *klass)
 {
-    GObjectClass * object_class = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class = G_OBJECT_CLASS(klass);
     NMDeviceClass *device_class = NM_DEVICE_CLASS(klass);
 
     object_class->constructed = constructed;

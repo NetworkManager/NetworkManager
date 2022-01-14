@@ -32,7 +32,7 @@ enum {
 static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
-    NMAuthManager *   auth_mgr;
+    NMAuthManager    *auth_mgr;
     NMSessionMonitor *session_monitor;
 
     CList agent_lst_head;
@@ -186,7 +186,7 @@ struct _NMAgentManagerCallId {
     NMAuthSubject *subject;
 
     /* Current agent being asked for secrets */
-    NMSecretAgent *      current;
+    NMSecretAgent       *current;
     NMSecretAgentCallId *current_call_id;
 
     /* Stores the sorted list of NMSecretAgents which will be asked for secrets */
@@ -196,7 +196,7 @@ struct _NMAgentManagerCallId {
 
     union {
         struct {
-            char *        path;
+            char         *path;
             NMConnection *connection;
 
             NMAuthChain *chain;
@@ -209,8 +209,8 @@ struct _NMAgentManagerCallId {
             union {
                 struct {
                     NMSecretAgentGetSecretsFlags flags;
-                    char *                       setting_name;
-                    char **                      hints;
+                    char                        *setting_name;
+                    char                       **hints;
 
                     GVariant *existing_secrets;
 
@@ -238,7 +238,7 @@ _agent_find_by_owner(NMAgentManagerPrivate *priv, const char *owner)
 
 static NMSecretAgent *
 _agent_find_by_identifier_and_uid(NMAgentManagerPrivate *priv,
-                                  const char *           identifier,
+                                  const char            *identifier,
                                   gulong                 sender_uid)
 {
     NMSecretAgent *agent;
@@ -257,7 +257,7 @@ static void
 _agent_remove(NMAgentManager *self, NMSecretAgent *agent)
 {
     NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE(self);
-    CList *                iter, *safe;
+    CList                 *iter, *safe;
 
     nm_assert(NM_IS_SECRET_AGENT(agent));
     nm_assert(c_list_contains(&priv->agent_lst_head, &agent->agent_lst));
@@ -349,14 +349,14 @@ validate_identifier(const char *identifier, GError **error)
 }
 
 static void
-_agent_permissions_check_done(NMAuthChain *          chain,
+_agent_permissions_check_done(NMAuthChain           *chain,
                               GDBusMethodInvocation *context,
                               gpointer               user_data)
 {
-    NMAgentManager *       self = NM_AGENT_MANAGER(user_data);
+    NMAgentManager        *self = NM_AGENT_MANAGER(user_data);
     NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE(self);
-    NMSecretAgent *        agent;
-    Request *              request;
+    NMSecretAgent         *agent;
+    Request               *request;
 
     nm_assert(!context || G_IS_DBUS_METHOD_INVOCATION(context));
 
@@ -438,16 +438,16 @@ agent_disconnected_cb(NMSecretAgent *agent, gpointer user_data)
 }
 
 static void
-agent_manager_register_with_capabilities(NMAgentManager *       self,
+agent_manager_register_with_capabilities(NMAgentManager        *self,
                                          GDBusMethodInvocation *context,
-                                         const char *           identifier,
+                                         const char            *identifier,
                                          guint32                capabilities)
 {
-    NMAgentManagerPrivate *priv               = NM_AGENT_MANAGER_GET_PRIVATE(self);
+    NMAgentManagerPrivate         *priv       = NM_AGENT_MANAGER_GET_PRIVATE(self);
     gs_unref_object NMAuthSubject *subject    = NULL;
     gulong                         sender_uid = G_MAXULONG;
-    GError *                       error      = NULL;
-    NMSecretAgent *                agent;
+    GError                        *error      = NULL;
+    NMSecretAgent                 *agent;
 
     subject = nm_dbus_manager_new_auth_subject_from_context(context);
     if (!subject) {
@@ -484,13 +484,13 @@ agent_manager_register_with_capabilities(NMAgentManager *       self,
 }
 
 static void
-impl_agent_manager_register(NMDBusObject *                     obj,
+impl_agent_manager_register(NMDBusObject                      *obj,
                             const NMDBusInterfaceInfoExtended *interface_info,
-                            const NMDBusMethodInfoExtended *   method_info,
-                            GDBusConnection *                  connection,
-                            const char *                       sender,
-                            GDBusMethodInvocation *            invocation,
-                            GVariant *                         parameters)
+                            const NMDBusMethodInfoExtended    *method_info,
+                            GDBusConnection                   *connection,
+                            const char                        *sender,
+                            GDBusMethodInvocation             *invocation,
+                            GVariant                          *parameters)
 {
     const char *identifier;
 
@@ -499,13 +499,13 @@ impl_agent_manager_register(NMDBusObject *                     obj,
 }
 
 static void
-impl_agent_manager_register_with_capabilities(NMDBusObject *                     obj,
+impl_agent_manager_register_with_capabilities(NMDBusObject                      *obj,
                                               const NMDBusInterfaceInfoExtended *interface_info,
-                                              const NMDBusMethodInfoExtended *   method_info,
-                                              GDBusConnection *                  connection,
-                                              const char *                       sender,
-                                              GDBusMethodInvocation *            invocation,
-                                              GVariant *                         parameters)
+                                              const NMDBusMethodInfoExtended    *method_info,
+                                              GDBusConnection                   *connection,
+                                              const char                        *sender,
+                                              GDBusMethodInvocation             *invocation,
+                                              GVariant                          *parameters)
 {
     const char *identifier;
     guint32     capabilities;
@@ -518,17 +518,17 @@ impl_agent_manager_register_with_capabilities(NMDBusObject *                    
 }
 
 static void
-impl_agent_manager_unregister(NMDBusObject *                     obj,
+impl_agent_manager_unregister(NMDBusObject                      *obj,
                               const NMDBusInterfaceInfoExtended *interface_info,
-                              const NMDBusMethodInfoExtended *   method_info,
-                              GDBusConnection *                  connection,
-                              const char *                       sender,
-                              GDBusMethodInvocation *            invocation,
-                              GVariant *                         parameters)
+                              const NMDBusMethodInfoExtended    *method_info,
+                              GDBusConnection                   *connection,
+                              const char                        *sender,
+                              GDBusMethodInvocation             *invocation,
+                              GVariant                          *parameters)
 {
-    NMAgentManager *       self = NM_AGENT_MANAGER(obj);
+    NMAgentManager        *self = NM_AGENT_MANAGER(obj);
     NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE(self);
-    NMSecretAgent *        agent;
+    NMSecretAgent         *agent;
 
     agent = _agent_find_by_owner(priv, sender);
     if (!agent) {
@@ -549,8 +549,8 @@ impl_agent_manager_unregister(NMDBusObject *                     obj,
 static Request *
 request_new(NMAgentManager *self,
             RequestType     request_type,
-            const char *    detail,
-            NMAuthSubject * subject)
+            const char     *detail,
+            NMAuthSubject  *subject)
 {
     Request *req;
 
@@ -607,11 +607,11 @@ request_free(Request *req)
 }
 
 static void
-req_complete_release(Request *   req,
-                     GVariant *  secrets,
+req_complete_release(Request    *req,
+                     GVariant   *secrets,
                      const char *agent_dbus_owner,
                      const char *agent_username,
-                     GError *    error)
+                     GError     *error)
 {
     NMAgentManager *self = req->self;
 
@@ -653,11 +653,11 @@ req_complete_cancel(Request *req, gboolean is_disposing)
 }
 
 static void
-req_complete(Request *   req,
-             GVariant *  secrets,
+req_complete(Request    *req,
+             GVariant   *secrets,
              const char *agent_dbus_owner,
              const char *agent_username,
-             GError *    error)
+             GError     *error)
 {
     NMAgentManager *self = req->self;
 
@@ -678,9 +678,9 @@ req_complete_error(Request *req, GError *error)
 static int
 agent_compare_func(gconstpointer aa, gconstpointer bb, gpointer user_data)
 {
-    NMSecretAgent *   a   = (NMSecretAgent *) aa;
-    NMSecretAgent *   b   = (NMSecretAgent *) bb;
-    Request *         req = user_data;
+    NMSecretAgent    *a   = (NMSecretAgent *) aa;
+    NMSecretAgent    *b   = (NMSecretAgent *) bb;
+    Request          *req = user_data;
     NMSessionMonitor *sm;
     gboolean          a_active, b_active;
     gulong            a_pid, b_pid, requester;
@@ -774,7 +774,7 @@ static void
 request_add_agents(NMAgentManager *self, Request *req)
 {
     NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE(self);
-    NMSecretAgent *        agent;
+    NMSecretAgent         *agent;
 
     c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst) {
         if (agent->fully_registered)
@@ -786,7 +786,7 @@ static void
 request_next_agent(Request *req)
 {
     NMAgentManager *self;
-    GError *        error = NULL;
+    GError         *error = NULL;
 
     self = req->self;
 
@@ -887,17 +887,17 @@ out:
 /*****************************************************************************/
 
 static void
-_con_get_request_done(NMSecretAgent *      agent,
+_con_get_request_done(NMSecretAgent       *agent,
                       NMSecretAgentCallId *call_id,
-                      GVariant *           secrets,
-                      GError *             error,
+                      GVariant            *secrets,
+                      GError              *error,
                       gpointer             user_data)
 {
     NMAgentManager *self;
-    Request *       req = user_data;
-    GVariant *      setting_secrets;
-    const char *    agent_dbus_owner;
-    gs_free char *  agent_name = NULL;
+    Request        *req = user_data;
+    GVariant       *setting_secrets;
+    const char     *agent_dbus_owner;
+    gs_free char   *agent_name = NULL;
 
     g_return_if_fail(call_id == req->current_call_id);
     g_return_if_fail(agent == req->current);
@@ -962,15 +962,15 @@ static void
 set_secrets_not_required(NMConnection *connection, GVariant *dict)
 {
     GVariantIter iter, setting_iter;
-    const char * setting_name = NULL;
-    GVariant *   setting_dict = NULL;
+    const char  *setting_name = NULL;
+    GVariant    *setting_dict = NULL;
 
     /* Iterate through the settings dicts */
     g_variant_iter_init(&iter, dict);
     while (g_variant_iter_next(&iter, "{&s@a{sv}}", &setting_name, &setting_dict)) {
         const char *key_name = NULL;
-        NMSetting * setting;
-        GVariant *  val;
+        NMSetting  *setting;
+        GVariant   *val;
 
         setting = nm_connection_get_setting_by_name(connection, setting_name);
         if (setting) {
@@ -985,7 +985,7 @@ set_secrets_not_required(NMConnection *connection, GVariant *dict)
                     && strcmp(key_name, NM_SETTING_VPN_SECRETS) == 0
                     && g_variant_is_of_type(val, G_VARIANT_TYPE("a{ss}"))) {
                     GVariantIter vpn_secret_iter;
-                    const char * secret_name, *secret;
+                    const char  *secret_name, *secret;
 
                     g_variant_iter_init(&vpn_secret_iter, val);
                     while (g_variant_iter_next(&vpn_secret_iter, "{&s&s}", &secret_name, &secret))
@@ -1046,13 +1046,13 @@ _con_get_request_start_proceed(Request *req, gboolean include_system_secrets)
 }
 
 static void
-_con_get_request_start_validated(NMAuthChain *          chain,
+_con_get_request_start_validated(NMAuthChain           *chain,
                                  GDBusMethodInvocation *context,
                                  gpointer               user_data)
 {
     NMAgentManager *self;
-    Request *       req = user_data;
-    const char *    perm;
+    Request        *req = user_data;
+    const char     *perm;
 
     g_return_if_fail(req->request_type == REQUEST_TYPE_CON_GET);
 
@@ -1080,9 +1080,9 @@ _con_get_request_start_validated(NMAuthChain *          chain,
 static void
 _con_get_request_start(Request *req)
 {
-    NMAgentManager *     self;
+    NMAgentManager      *self;
     NMSettingConnection *s_con;
-    const char *         agent_dbus_owner, *perm;
+    const char          *agent_dbus_owner, *perm;
 
     self = req->self;
 
@@ -1138,10 +1138,10 @@ _con_get_request_start(Request *req)
 static gboolean
 _con_get_try_complete_early(Request *req)
 {
-    NMAgentManager * self;
-    gs_unref_variant GVariant *setting_secrets = NULL;
-    gs_unref_object NMConnection *tmp          = NULL;
-    GError *                      error        = NULL;
+    NMAgentManager               *self;
+    gs_unref_variant GVariant    *setting_secrets = NULL;
+    gs_unref_object NMConnection *tmp             = NULL;
+    GError                       *error           = NULL;
 
     self = req->self;
 
@@ -1223,14 +1223,14 @@ _con_get_try_complete_early(Request *req)
  * Returns: a call-id to cancel the call.
  */
 NMAgentManagerCallId
-nm_agent_manager_get_secrets(NMAgentManager *             self,
-                             const char *                 path,
-                             NMConnection *               connection,
-                             NMAuthSubject *              subject,
-                             GVariant *                   existing_secrets,
-                             const char *                 setting_name,
+nm_agent_manager_get_secrets(NMAgentManager              *self,
+                             const char                  *path,
+                             NMConnection                *connection,
+                             NMAuthSubject               *subject,
+                             GVariant                    *existing_secrets,
+                             const char                  *setting_name,
                              NMSecretAgentGetSecretsFlags flags,
-                             const char *const *          hints,
+                             const char *const           *hints,
                              NMAgentSecretsResultFunc     callback,
                              gpointer                     callback_data)
 {
@@ -1288,15 +1288,15 @@ nm_agent_manager_cancel_secrets(NMAgentManager *self, NMAgentManagerCallId reque
 /*****************************************************************************/
 
 static void
-_con_save_request_done(NMSecretAgent *      agent,
+_con_save_request_done(NMSecretAgent       *agent,
                        NMSecretAgentCallId *call_id,
-                       GVariant *           secrets,
-                       GError *             error,
+                       GVariant            *secrets,
+                       GError              *error,
                        gpointer             user_data)
 {
     NMAgentManager *self;
-    Request *       req = user_data;
-    const char *    agent_dbus_owner;
+    Request        *req = user_data;
+    const char     *agent_dbus_owner;
 
     g_return_if_fail(call_id == req->current_call_id);
     g_return_if_fail(agent == req->current);
@@ -1344,9 +1344,9 @@ _con_save_request_start(Request *req)
 
 void
 nm_agent_manager_save_secrets(NMAgentManager *self,
-                              const char *    path,
-                              NMConnection *  connection,
-                              NMAuthSubject * subject)
+                              const char     *path,
+                              NMConnection   *connection,
+                              NMAuthSubject  *subject)
 {
     Request *req;
 
@@ -1370,14 +1370,14 @@ nm_agent_manager_save_secrets(NMAgentManager *self,
 /*****************************************************************************/
 
 static void
-_con_del_request_done(NMSecretAgent *      agent,
+_con_del_request_done(NMSecretAgent       *agent,
                       NMSecretAgentCallId *call_id,
-                      GVariant *           secrets,
-                      GError *             error,
+                      GVariant            *secrets,
+                      GError              *error,
                       gpointer             user_data)
 {
     NMAgentManager *self;
-    Request *       req = user_data;
+    Request        *req = user_data;
 
     g_return_if_fail(call_id == req->current_call_id);
     g_return_if_fail(agent == req->current);
@@ -1425,7 +1425,7 @@ void
 nm_agent_manager_delete_secrets(NMAgentManager *self, const char *path, NMConnection *connection)
 {
     NMAuthSubject *subject;
-    Request *      req;
+    Request       *req;
 
     g_return_if_fail(self != NULL);
     g_return_if_fail(path && *path);
@@ -1450,11 +1450,11 @@ nm_agent_manager_delete_secrets(NMAgentManager *self, const char *path, NMConnec
 
 gboolean
 nm_agent_manager_has_agent_with_permission(NMAgentManager *self,
-                                           const char *    username,
-                                           const char *    permission)
+                                           const char     *username,
+                                           const char     *permission)
 {
     NMAgentManagerPrivate *priv;
-    NMSecretAgent *        agent;
+    NMSecretAgent         *agent;
 
     g_return_val_if_fail(NM_IS_AGENT_MANAGER(self), FALSE);
     g_return_val_if_fail(username, FALSE);
@@ -1477,12 +1477,12 @@ nm_agent_manager_has_agent_with_permission(NMAgentManager *self,
 /*****************************************************************************/
 
 gboolean
-nm_agent_manager_all_agents_have_capability(NMAgentManager *          manager,
-                                            NMAuthSubject *           subject,
+nm_agent_manager_all_agents_have_capability(NMAgentManager           *manager,
+                                            NMAuthSubject            *subject,
                                             NMSecretAgentCapabilities capability)
 {
     NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE(manager);
-    NMSecretAgent *        agent;
+    NMSecretAgent         *agent;
     gboolean               subject_is_unix_process =
         (nm_auth_subject_get_subject_type(subject) == NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS);
     gulong subject_uid =
@@ -1506,7 +1506,7 @@ static void
 authority_changed_cb(NMAuthManager *auth_manager, NMAgentManager *self)
 {
     NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE(self);
-    NMSecretAgent *        agent;
+    NMSecretAgent         *agent;
 
     c_list_for_each_entry (agent, &priv->agent_lst_head, agent_lst)
         _agent_create_auth_chain(self, agent, NULL);
@@ -1545,10 +1545,10 @@ constructed(GObject *object)
 static void
 dispose(GObject *object)
 {
-    NMAgentManager *       self = NM_AGENT_MANAGER(object);
+    NMAgentManager        *self = NM_AGENT_MANAGER(object);
     NMAgentManagerPrivate *priv = NM_AGENT_MANAGER_GET_PRIVATE(self);
-    Request *              request;
-    NMSecretAgent *        agent;
+    Request               *request;
+    NMSecretAgent         *agent;
 
     while ((request = c_list_first_entry(&priv->request_lst_head, Request, request_lst))) {
         c_list_unlink(&request->request_lst);
@@ -1596,7 +1596,7 @@ static const NMDBusInterfaceInfoExtended interface_info_agent_manager = {
 static void
 nm_agent_manager_class_init(NMAgentManagerClass *agent_manager_class)
 {
-    GObjectClass *     object_class      = G_OBJECT_CLASS(agent_manager_class);
+    GObjectClass      *object_class      = G_OBJECT_CLASS(agent_manager_class);
     NMDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS(agent_manager_class);
 
     dbus_object_class->export_path     = NM_DBUS_EXPORT_PATH_STATIC(NM_DBUS_PATH_AGENT_MANAGER);

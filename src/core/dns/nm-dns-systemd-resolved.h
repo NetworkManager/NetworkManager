@@ -41,19 +41,19 @@ typedef struct {
 } NMDnsSystemdResolvedAddressResult;
 
 typedef void (*NMDnsSystemdResolvedResolveAddressCallback)(
-    NMDnsSystemdResolved *                   self,
-    NMDnsSystemdResolvedResolveHandle *      handle,
+    NMDnsSystemdResolved                    *self,
+    NMDnsSystemdResolvedResolveHandle       *handle,
     const NMDnsSystemdResolvedAddressResult *names,
     guint                                    names_len,
     guint64                                  flags,
-    GError *                                 error,
+    GError                                  *error,
     gpointer                                 user_data);
 
 NMDnsSystemdResolvedResolveHandle *
-nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved *                     self,
+nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved                      *self,
                                         int                                        ifindex,
                                         int                                        addr_family,
-                                        const NMIPAddr *                           addr,
+                                        const NMIPAddr                            *addr,
                                         guint64                                    flags,
                                         guint                                      timeout_msec,
                                         NMDnsSystemdResolvedResolveAddressCallback callback,

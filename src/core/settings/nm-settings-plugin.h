@@ -13,14 +13,14 @@
 
 typedef struct _NMSettingsPlugin NMSettingsPlugin;
 
-typedef void (*NMSettingsPluginConnectionLoadCallback)(NMSettingsPlugin * self,
+typedef void (*NMSettingsPluginConnectionLoadCallback)(NMSettingsPlugin  *self,
                                                        NMSettingsStorage *storage,
-                                                       NMConnection *     connection,
+                                                       NMConnection      *connection,
                                                        gpointer           user_data);
 
 typedef struct {
     const char *filename;
-    GError *    error;
+    GError     *error;
     bool        handled : 1;
 } NMSettingsPluginConnectionLoadEntry;
 
@@ -70,8 +70,8 @@ typedef struct {
 
     /* Requests that the plugin load/reload a set of filenames.
      */
-    void (*load_connections)(NMSettingsPlugin *                     self,
-                             NMSettingsPluginConnectionLoadEntry *  entries,
+    void (*load_connections)(NMSettingsPlugin                      *self,
+                             NMSettingsPluginConnectionLoadEntry   *entries,
                              gsize                                  n_entries,
                              NMSettingsPluginConnectionLoadCallback callback,
                              gpointer                               user_data);
@@ -79,28 +79,28 @@ typedef struct {
     /* Requests that the plugin reload all connection files from disk,
      * and emit signals reflecting new, changed, and removed connections.
      */
-    void (*reload_connections)(NMSettingsPlugin *                     self,
+    void (*reload_connections)(NMSettingsPlugin                      *self,
                                NMSettingsPluginConnectionLoadCallback callback,
                                gpointer                               user_data);
 
     void (*load_connections_done)(NMSettingsPlugin *self);
 
-    gboolean (*add_connection)(NMSettingsPlugin *  self,
-                               NMConnection *      connection,
+    gboolean (*add_connection)(NMSettingsPlugin   *self,
+                               NMConnection       *connection,
                                NMSettingsStorage **out_storage,
-                               NMConnection **     out_connection,
-                               GError **           error);
+                               NMConnection      **out_connection,
+                               GError            **error);
 
-    gboolean (*update_connection)(NMSettingsPlugin *  self,
-                                  NMSettingsStorage * storage,
-                                  NMConnection *      connection,
+    gboolean (*update_connection)(NMSettingsPlugin   *self,
+                                  NMSettingsStorage  *storage,
+                                  NMConnection       *connection,
                                   NMSettingsStorage **out_storage,
-                                  NMConnection **     out_connection,
-                                  GError **           error);
+                                  NMConnection      **out_connection,
+                                  GError            **error);
 
-    gboolean (*delete_connection)(NMSettingsPlugin * self,
+    gboolean (*delete_connection)(NMSettingsPlugin  *self,
                                   NMSettingsStorage *storage,
-                                  GError **          error);
+                                  GError           **error);
 
     const char *plugin_name;
 
@@ -137,37 +137,37 @@ nm_settings_plugin_get_plugin_name(NMSettingsPlugin *self)
 GSList *nm_settings_plugin_get_unmanaged_specs(NMSettingsPlugin *self);
 GSList *nm_settings_plugin_get_unrecognized_specs(NMSettingsPlugin *self);
 
-void nm_settings_plugin_reload_connections(NMSettingsPlugin *                     self,
+void nm_settings_plugin_reload_connections(NMSettingsPlugin                      *self,
                                            NMSettingsPluginConnectionLoadCallback callback,
                                            gpointer                               user_data);
 
 NMSettingsPluginConnectionLoadEntry *
 nm_settings_plugin_create_connection_load_entries(const char *const *filenames, gsize *out_len);
 
-void nm_settings_plugin_load_connections(NMSettingsPlugin *                     self,
-                                         NMSettingsPluginConnectionLoadEntry *  entries,
+void nm_settings_plugin_load_connections(NMSettingsPlugin                      *self,
+                                         NMSettingsPluginConnectionLoadEntry   *entries,
                                          gsize                                  n_entries,
                                          NMSettingsPluginConnectionLoadCallback callback,
                                          gpointer                               user_data);
 
 void nm_settings_plugin_load_connections_done(NMSettingsPlugin *self);
 
-gboolean nm_settings_plugin_add_connection(NMSettingsPlugin *  self,
-                                           NMConnection *      connection,
+gboolean nm_settings_plugin_add_connection(NMSettingsPlugin   *self,
+                                           NMConnection       *connection,
                                            NMSettingsStorage **out_storage,
-                                           NMConnection **     out_connection,
-                                           GError **           error);
+                                           NMConnection      **out_connection,
+                                           GError            **error);
 
-gboolean nm_settings_plugin_update_connection(NMSettingsPlugin *  self,
-                                              NMSettingsStorage * storage,
-                                              NMConnection *      connection,
+gboolean nm_settings_plugin_update_connection(NMSettingsPlugin   *self,
+                                              NMSettingsStorage  *storage,
+                                              NMConnection       *connection,
                                               NMSettingsStorage **out_storage,
-                                              NMConnection **     out_connection,
-                                              GError **           error);
+                                              NMConnection      **out_connection,
+                                              GError            **error);
 
-gboolean nm_settings_plugin_delete_connection(NMSettingsPlugin * self,
+gboolean nm_settings_plugin_delete_connection(NMSettingsPlugin  *self,
                                               NMSettingsStorage *storage,
-                                              GError **          error);
+                                              GError           **error);
 
 /*****************************************************************************/
 
@@ -187,7 +187,7 @@ void _nm_settings_plugin_emit_signal_unrecognized_specs_changed(NMSettingsPlugin
 
 int nm_settings_plugin_cmp_by_priority(const NMSettingsPlugin *a,
                                        const NMSettingsPlugin *b,
-                                       const GSList *          plugin_list);
+                                       const GSList           *plugin_list);
 
 /*****************************************************************************/
 

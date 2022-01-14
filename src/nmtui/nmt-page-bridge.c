@@ -45,13 +45,13 @@ bridge_connection_type_filter(GType connection_type, gpointer user_data)
 static void
 nmt_page_bridge_constructed(GObject *object)
 {
-    NmtPageBridge *       bridge = NMT_PAGE_BRIDGE(object);
+    NmtPageBridge        *bridge = NMT_PAGE_BRIDGE(object);
     NmtPageBridgePrivate *priv   = NMT_PAGE_BRIDGE_GET_PRIVATE(bridge);
-    NmtEditorSection *    section;
-    NmtEditorGrid *       grid;
-    NMSettingBridge *     s_bridge;
-    NmtNewtWidget *       widget, *label, *stp;
-    NMConnection *        conn;
+    NmtEditorSection     *section;
+    NmtEditorGrid        *grid;
+    NMSettingBridge      *s_bridge;
+    NmtNewtWidget        *widget, *label, *stp;
+    NMConnection         *conn;
 
     conn     = nmt_editor_page_get_connection(NMT_EDITOR_PAGE(bridge));
     s_bridge = _nm_connection_ensure_setting(conn, NM_TYPE_SETTING_BRIDGE);
@@ -171,7 +171,7 @@ nmt_page_bridge_saved(NmtEditorPage *editor_page)
 static void
 nmt_page_bridge_class_init(NmtPageBridgeClass *bridge_class)
 {
-    GObjectClass *      object_class      = G_OBJECT_CLASS(bridge_class);
+    GObjectClass       *object_class      = G_OBJECT_CLASS(bridge_class);
     NmtEditorPageClass *editor_page_class = NMT_EDITOR_PAGE_CLASS(bridge_class);
 
     object_class->constructed = nmt_page_bridge_constructed;

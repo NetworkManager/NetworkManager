@@ -9,6 +9,7 @@
 
 #include <unistd.h>
 #include <fcntl.h>
+#include <linux/filter.h>
 
 /*****************************************************************************/
 
@@ -32,7 +33,7 @@ struct nl_msg {
     struct sockaddr_nl nm_src;
     struct sockaddr_nl nm_dst;
     struct ucred       nm_creds;
-    struct nlmsghdr *  nm_nlh;
+    struct nlmsghdr   *nm_nlh;
     size_t             nm_size;
     bool               nm_creds_has : 1;
 };
@@ -245,7 +246,7 @@ nlmsg_hdr(struct nl_msg *n)
 void *
 nlmsg_reserve(struct nl_msg *n, size_t len, int pad)
 {
-    char * buf       = (char *) n->nm_nlh;
+    char  *buf       = (char *) n->nm_nlh;
     size_t nlmsg_len = n->nm_nlh->nlmsg_len;
     size_t tlen;
 
@@ -386,9 +387,9 @@ nlmsg_append(struct nl_msg *n, const void *data, size_t len, int pad)
 /*****************************************************************************/
 
 int
-nlmsg_parse(struct nlmsghdr *        nlh,
+nlmsg_parse(struct nlmsghdr         *nlh,
             int                      hdrlen,
-            struct nlattr *          tb[],
+            struct nlattr           *tb[],
             int                      maxtype,
             const struct nla_policy *policy)
 {
@@ -639,9 +640,9 @@ validate_nla(const struct nlattr *nla, int maxtype, const struct nla_policy *pol
 }
 
 int
-nla_parse(struct nlattr *          tb[],
+nla_parse(struct nlattr           *tb[],
           int                      maxtype,
-          struct nlattr *          head,
+          struct nlattr           *head,
           int                      len,
           const struct nla_policy *policy)
 {
@@ -718,7 +719,7 @@ genlmsg_put(struct nl_msg *msg,
             uint8_t        cmd,
             uint8_t        version)
 {
-    struct nlmsghdr * nlh;
+    struct nlmsghdr  *nlh;
     struct genlmsghdr hdr = {
         .cmd     = cmd,
         .version = version,
@@ -794,9 +795,9 @@ genlmsg_valid_hdr(struct nlmsghdr *nlh, int hdrlen)
 }
 
 int
-genlmsg_parse(struct nlmsghdr *        nlh,
+genlmsg_parse(struct nlmsghdr         *nlh,
               int                      hdrlen,
-              struct nlattr *          tb[],
+              struct nlattr           *tb[],
               int                      maxtype,
               const struct nla_policy *policy)
 {
@@ -825,9 +826,9 @@ _genl_parse_getfamily(struct nl_msg *msg, void *arg)
         [CTRL_ATTR_OPS]          = {.type = NLA_NESTED},
         [CTRL_ATTR_MCAST_GROUPS] = {.type = NLA_NESTED},
     };
-    struct nlattr *  tb[G_N_ELEMENTS(ctrl_policy)];
+    struct nlattr   *tb[G_N_ELEMENTS(ctrl_policy)];
     struct nlmsghdr *nlh           = nlmsg_hdr(msg);
-    gint32 *         response_data = arg;
+    gint32          *response_data = arg;
 
     if (genlmsg_parse_arr(nlh, 0, tb, ctrl_policy) < 0)
         return NL_SKIP;
@@ -845,8 +846,8 @@ genl_ctrl_resolve(struct nl_sock *sk, const char *name)
     int                          nmerr;
     gint32                       response_data = -1;
     const struct nl_cb           cb            = {
-        .valid_cb  = _genl_parse_getfamily,
-        .valid_arg = &response_data,
+                             .valid_cb  = _genl_parse_getfamily,
+                             .valid_arg = &response_data,
     };
 
     msg = nlmsg_alloc();
@@ -1045,6 +1046,55 @@ nl_socket_set_ext_ack(struct nl_sock *sk, gboolean enable)
     return 0;
 }
 
+int
+nl_socket_set_rtprot_filter(struct nl_sock *sk)
+{
+    struct sock_filter filter[] = {
+        /*
+         * if (h->nlmsg_type != RTM_NEWROUTE && h->nlmsg_type != RTM_DELROUTE)
+         *     return KEEP;
+         */
+        BPF_STMT(BPF_LD | BPF_ABS | BPF_H, offsetof(struct nlmsghdr, nlmsg_type)),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, htons(RTM_NEWROUTE), 2, 0),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, htons(RTM_DELROUTE), 1, 0),
+        BPF_STMT(BPF_RET | BPF_K, 0xFFFF),
+
+        /*
+         * if (rtm->rtm_protocol <= RTPROT_STATIC)
+         *     return KEEP;
+         */
+        BPF_STMT(BPF_LD | BPF_ABS | BPF_B,
+                 sizeof(struct nlmsghdr) + offsetof(struct rtmsg, rtm_protocol)),
+        BPF_JUMP(BPF_JMP | BPF_JGT | BPF_K, RTPROT_STATIC, 1, 0),
+        BPF_STMT(BPF_RET | BPF_K, 0xFFFF),
+
+        /*
+         * if (rtm->rtm_protocol == RTPROT_DHCP || rtm->rtm_protocol == RTPROT_RA)
+         *     return KEEP;
+         */
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, RTPROT_DHCP, 1, 0),
+        BPF_JUMP(BPF_JMP | BPF_JEQ | BPF_K, RTPROT_RA, 0, 1),
+        BPF_STMT(BPF_RET | BPF_K, 0xFFFF),
+
+        /* return DROP; */
+        BPF_STMT(BPF_RET | BPF_K, 0),
+    };
+    struct sock_fprog prog = {
+        .len    = sizeof(filter) / sizeof(filter[0]),
+        .filter = filter,
+    };
+    int err;
+
+    if (sk->s_fd == -1)
+        return -NME_NL_BAD_SOCK;
+
+    err = setsockopt(sk->s_fd, SOL_SOCKET, SO_ATTACH_FILTER, &prog, sizeof(prog));
+    if (err < 0)
+        return -nm_errno_from_native(errno);
+
+    return 0;
+}
+
 void
 nl_socket_disable_msg_peek(struct nl_sock *sk)
 {
@@ -1170,7 +1220,7 @@ nl_recvmsgs(struct nl_sock *sk, const struct nl_cb *cb)
 {
     int                    n, nmerr = 0, multipart = 0, interrupted = 0, nrecv = 0;
     gs_free unsigned char *buf = NULL;
-    struct nlmsghdr *      hdr;
+    struct nlmsghdr       *hdr;
     struct sockaddr_nl     nla = {0};
     struct ucred           creds;
     gboolean               creds_has;
@@ -1327,12 +1377,12 @@ int
 nl_send_iovec(struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, unsigned iovlen)
 {
     struct sockaddr_nl *dst;
-    struct ucred *      creds;
+    struct ucred       *creds;
     struct msghdr       hdr = {
-        .msg_name    = (void *) &sk->s_peer,
-        .msg_namelen = sizeof(struct sockaddr_nl),
-        .msg_iov     = iov,
-        .msg_iovlen  = iovlen,
+              .msg_name    = (void *) &sk->s_peer,
+              .msg_namelen = sizeof(struct sockaddr_nl),
+              .msg_iov     = iov,
+              .msg_iovlen  = iovlen,
     };
     char buf[CMSG_SPACE(sizeof(struct ucred))];
 
@@ -1402,11 +1452,11 @@ nl_send_auto(struct nl_sock *sk, struct nl_msg *msg)
 }
 
 int
-nl_recv(struct nl_sock *    sk,
+nl_recv(struct nl_sock     *sk,
         struct sockaddr_nl *nla,
-        unsigned char **    buf,
-        struct ucred *      out_creds,
-        gboolean *          out_creds_has)
+        unsigned char     **buf,
+        struct ucred       *out_creds,
+        gboolean           *out_creds_has)
 {
     /* We really expect msg_contol_buf to be large enough and MSG_CTRUNC not
      * happening. We nm_assert() against that. However, in release builds

@@ -36,12 +36,12 @@
 static GHashTable *
 load_one_nic(const char *sysfs_dir, const char *dir_name)
 {
-    gs_free char *nic_path = g_build_filename(sysfs_dir, dir_name, NULL);
-    GDir *        nic_dir;
-    const char *  entry_name;
-    char *        content;
+    gs_free char         *nic_path = g_build_filename(sysfs_dir, dir_name, NULL);
+    GDir                 *nic_dir;
+    const char           *entry_name;
+    char                 *content;
     gs_free_error GError *error = NULL;
-    GHashTable *          nic;
+    GHashTable           *nic;
 
     g_return_val_if_fail(sysfs_dir != NULL, FALSE);
 
@@ -77,11 +77,11 @@ load_one_nic(const char *sysfs_dir, const char *dir_name)
 GHashTable *
 nmi_ibft_read(const char *sysfs_dir)
 {
-    gs_free char *ibft_path = NULL;
-    GDir *        ibft_dir;
-    const char *  dir_name;
-    GHashTable *  ibft, *nic;
-    char *        mac;
+    gs_free char         *ibft_path = NULL;
+    GDir                 *ibft_dir;
+    const char           *dir_name;
+    GHashTable           *ibft, *nic;
+    char                 *mac;
     gs_free_error GError *error = NULL;
 
     g_return_val_if_fail(sysfs_dir != NULL, FALSE);
@@ -133,14 +133,14 @@ ip_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **er
     NMSettingIPConfig *s_ip  = NULL;
     NMSettingIPConfig *s_ip4 = NULL;
     NMSettingIPConfig *s_ip6 = NULL;
-    NMIPAddress *      addr;
-    const char *       s_ipaddr  = NULL;
-    const char *       s_prefix  = NULL;
-    const char *       s_gateway = NULL;
-    const char *       s_dns1    = NULL;
-    const char *       s_dns2    = NULL;
-    const char *       s_origin  = NULL;
-    const char *       method    = NULL;
+    NMIPAddress       *addr;
+    const char        *s_ipaddr  = NULL;
+    const char        *s_prefix  = NULL;
+    const char        *s_gateway = NULL;
+    const char        *s_dns1    = NULL;
+    const char        *s_dns2    = NULL;
+    const char        *s_origin  = NULL;
+    const char        *method    = NULL;
     int                family;
     gint64             prefix;
 
@@ -276,14 +276,14 @@ ip_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **er
 }
 
 static gboolean
-connection_setting_add(GHashTable *  nic,
+connection_setting_add(GHashTable   *nic,
                        NMConnection *connection,
-                       const char *  type,
-                       const char *  prefix,
-                       GError **     error)
+                       const char   *type,
+                       const char   *prefix,
+                       GError      **error)
 {
-    NMSetting * s_con;
-    char *      id, *uuid;
+    NMSetting  *s_con;
+    char       *id, *uuid;
     const char *s_index, *s_hwaddr, *s_ipaddr, *s_vlanid;
 
     s_index  = (const char *) g_hash_table_lookup(nic, "index");
@@ -359,7 +359,7 @@ is_ibft_vlan_device(GHashTable *nic)
 static gboolean
 vlan_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **error)
 {
-    NMSetting * s_vlan      = NULL;
+    NMSetting  *s_vlan      = NULL;
     const char *vlan_id_str = NULL;
     gint64      vlan_id     = -1;
 
@@ -397,7 +397,7 @@ vlan_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **
 static gboolean
 wired_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **error)
 {
-    NMSetting * s_wired = NULL;
+    NMSetting  *s_wired = NULL;
     const char *hwaddr  = NULL;
 
     g_assert(nic);

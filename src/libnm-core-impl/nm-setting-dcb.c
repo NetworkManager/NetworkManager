@@ -48,7 +48,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingDcb,
                              PROP_PRIORITY_TRAFFIC_CLASS, );
 
 typedef struct {
-    char * app_fcoe_mode;
+    char  *app_fcoe_mode;
     guint  pfc[8];
     guint  priority_group_id[8];
     guint  priority_group_bandwidth[8];
@@ -514,14 +514,14 @@ check_dcb_flags(NMSettingDcbFlags flags, const char *prop_name, GError **error)
 }
 
 static gboolean
-check_uint_array(const guint *     array,
+check_uint_array(const guint      *array,
                  guint             len,
                  NMSettingDcbFlags flags,
                  guint             max,
                  guint             extra,
                  gboolean          sum_pct,
-                 const char *      prop_name,
-                 GError **         error)
+                 const char       *prop_name,
+                 GError          **error)
 {
     guint i, sum = 0;
 
@@ -714,7 +714,7 @@ G_STATIC_ASSERT(sizeof(guint) == sizeof(gboolean));
 static void
 set_array_from_gvalue(const GValue *v, uint *a, size_t len)
 {
-    GArray *    src       = g_value_get_boxed(v);
+    GArray     *src       = g_value_get_boxed(v);
     const guint total_len = len * sizeof(a[0]);
 
     memset(a, 0, total_len);
@@ -761,7 +761,7 @@ static const NMSettInfoPropertType nm_sett_info_propert_type_dcb_au =
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingDcb *       setting = NM_SETTING_DCB(object);
+    NMSettingDcb        *setting = NM_SETTING_DCB(object);
     NMSettingDcbPrivate *priv    = NM_SETTING_DCB_GET_PRIVATE(setting);
 
     switch (prop_id) {
@@ -841,9 +841,9 @@ nm_setting_dcb_new(void)
 static void
 nm_setting_dcb_class_init(NMSettingDcbClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingDcbPrivate));
 

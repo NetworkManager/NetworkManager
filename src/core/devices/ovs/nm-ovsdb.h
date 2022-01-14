@@ -27,32 +27,32 @@ NMOvsdb *nm_ovsdb_get(void);
 
 GType nm_ovsdb_get_type(void);
 
-void nm_ovsdb_add_interface(NMOvsdb *       self,
-                            NMConnection *  bridge,
-                            NMConnection *  port,
-                            NMConnection *  interface,
-                            NMDevice *      bridge_device,
-                            NMDevice *      interface_device,
+void nm_ovsdb_add_interface(NMOvsdb        *self,
+                            NMConnection   *bridge,
+                            NMConnection   *port,
+                            NMConnection   *interface,
+                            NMDevice       *bridge_device,
+                            NMDevice       *interface_device,
                             NMOvsdbCallback callback,
                             gpointer        user_data);
 
-void nm_ovsdb_del_interface(NMOvsdb *       self,
-                            const char *    ifname,
+void nm_ovsdb_del_interface(NMOvsdb        *self,
+                            const char     *ifname,
                             NMOvsdbCallback callback,
                             gpointer        user_data);
 
-void nm_ovsdb_set_interface_mtu(NMOvsdb *       self,
-                                const char *    ifname,
+void nm_ovsdb_set_interface_mtu(NMOvsdb        *self,
+                                const char     *ifname,
                                 guint32         mtu,
                                 NMOvsdbCallback callback,
                                 gpointer        user_data);
 
 struct _NMSettingOvsExternalIDs;
 
-void nm_ovsdb_set_external_ids(NMOvsdb *                        self,
+void nm_ovsdb_set_external_ids(NMOvsdb                         *self,
                                NMDeviceType                     device_type,
-                               const char *                     ifname,
-                               const char *                     connection_uuid,
+                               const char                      *ifname,
+                               const char                      *connection_uuid,
                                struct _NMSettingOvsExternalIDs *s_exid_old,
                                struct _NMSettingOvsExternalIDs *s_exid_new);
 

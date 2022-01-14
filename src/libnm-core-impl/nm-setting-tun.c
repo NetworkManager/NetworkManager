@@ -32,8 +32,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_MODE,
                                   PROP_MULTI_QUEUE, );
 
 typedef struct {
-    char *  owner;
-    char *  group;
+    char   *owner;
+    char   *group;
     guint32 mode;
     bool    pi;
     bool    vnet_hdr;
@@ -219,9 +219,9 @@ nm_setting_tun_new(void)
 static void
 nm_setting_tun_class_init(NMSettingTunClass *klass)
 {
-    GObjectClass *  object_class        = G_OBJECT_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray *        properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     g_type_class_add_private(klass, sizeof(NMSettingTunPrivate));
 

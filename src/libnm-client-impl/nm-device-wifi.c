@@ -33,7 +33,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PERM_HW_ADDRESS,
 typedef struct {
     NMLDBusPropertyAO access_points;
     NMLDBusPropertyO  active_access_point;
-    char *            perm_hw_address;
+    char             *perm_hw_address;
     gint64            last_scan;
     guint32           mode;
     guint32           bitrate;
@@ -212,7 +212,7 @@ nm_device_wifi_get_access_point_by_path(NMDeviceWifi *device, const char *path)
 {
     const GPtrArray *aps;
     int              i;
-    NMAccessPoint *  ap = NULL;
+    NMAccessPoint   *ap = NULL;
 
     g_return_val_if_fail(NM_IS_DEVICE_WIFI(device), NULL);
     g_return_val_if_fail(path != NULL, NULL);
@@ -299,9 +299,9 @@ nm_device_wifi_request_scan(NMDeviceWifi *device, GCancellable *cancellable, GEr
  **/
 gboolean
 nm_device_wifi_request_scan_options(NMDeviceWifi *device,
-                                    GVariant *    options,
+                                    GVariant     *options,
                                     GCancellable *cancellable,
-                                    GError **     error)
+                                    GError      **error)
 {
     g_return_val_if_fail(NM_IS_DEVICE_WIFI(device), FALSE);
     g_return_val_if_fail(!options || g_variant_is_of_type(options, G_VARIANT_TYPE_VARDICT), FALSE);
@@ -342,8 +342,8 @@ NM_BACKPORT_SYMBOL(
  * that for the scan to complete.
  **/
 void
-nm_device_wifi_request_scan_async(NMDeviceWifi *      device,
-                                  GCancellable *      cancellable,
+nm_device_wifi_request_scan_async(NMDeviceWifi       *device,
+                                  GCancellable       *cancellable,
                                   GAsyncReadyCallback callback,
                                   gpointer            user_data)
 {
@@ -371,9 +371,9 @@ nm_device_wifi_request_scan_async(NMDeviceWifi *      device,
  * Since: 1.2
  **/
 void
-nm_device_wifi_request_scan_options_async(NMDeviceWifi *      device,
-                                          GVariant *          options,
-                                          GCancellable *      cancellable,
+nm_device_wifi_request_scan_options_async(NMDeviceWifi       *device,
+                                          GVariant           *options,
+                                          GCancellable       *cancellable,
                                           GAsyncReadyCallback callback,
                                           gpointer            user_data)
 {
@@ -404,8 +404,8 @@ NM_BACKPORT_SYMBOL(libnm_1_0_6,
                    void,
                    nm_device_wifi_request_scan_options_async,
                    (NMDeviceWifi * device,
-                    GVariant *          options,
-                    GCancellable *      cancellable,
+                    GVariant           *options,
+                    GCancellable       *cancellable,
                     GAsyncReadyCallback callback,
                     gpointer            user_data),
                    (device, options, cancellable, callback, user_data));
@@ -453,11 +453,11 @@ has_proto(NMSettingWirelessSecurity *s_wsec, const char *proto)
 static gboolean
 connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
-    NMSettingWireless *        s_wifi;
+    NMSettingWireless         *s_wifi;
     NMSettingWirelessSecurity *s_wsec;
-    const char *               hwaddr, *setting_hwaddr;
+    const char                *hwaddr, *setting_hwaddr;
     NMDeviceWifiCapabilities   wifi_caps;
-    const char *               key_mgmt;
+    const char                *key_mgmt;
 
     if (!NM_DEVICE_CLASS(nm_device_wifi_parent_class)
              ->connection_compatible(device, connection, error))
@@ -537,8 +537,8 @@ get_setting_type(NMDevice *device)
 
 static void
 _property_ao_notify_changed_access_points_cb(NMLDBusPropertyAO *pr_ao,
-                                             NMClient *         client,
-                                             NMObject *         nmobj,
+                                             NMClient          *client,
+                                             NMObject          *nmobj,
                                              gboolean           is_added /* or else removed */)
 {
     _nm_client_notify_event_queue_emit_obj_signal(client,
@@ -640,7 +640,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device_wireless = NML_DBUS_META_I
 static void
 nm_device_wifi_class_init(NMDeviceWifiClass *klass)
 {
-    GObjectClass * object_class    = G_OBJECT_CLASS(klass);
+    GObjectClass  *object_class    = G_OBJECT_CLASS(klass);
     NMObjectClass *nm_object_class = NM_OBJECT_CLASS(klass);
     NMDeviceClass *device_class    = NM_DEVICE_CLASS(klass);
 

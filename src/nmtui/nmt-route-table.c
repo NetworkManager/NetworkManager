@@ -32,7 +32,7 @@ typedef struct {
     int ip_entry_width;
     int metric_entry_width;
 
-    GPtrArray *    routes;
+    GPtrArray     *routes;
     NmtNewtWidget *list;
 } NmtRouteTablePrivate;
 
@@ -59,15 +59,15 @@ nmt_route_table_new(int family)
 }
 
 static gboolean
-route_list_transform_to_route(GBinding *    binding,
+route_list_transform_to_route(GBinding     *binding,
                               const GValue *source_value,
-                              GValue *      target_value,
+                              GValue       *target_value,
                               gpointer      user_data)
 {
-    NmtRouteTable *       table = NMT_ROUTE_TABLE(g_binding_get_source(binding));
+    NmtRouteTable        *table = NMT_ROUTE_TABLE(g_binding_get_source(binding));
     NmtRouteTablePrivate *priv  = NMT_ROUTE_TABLE_GET_PRIVATE(table);
     int                   n     = GPOINTER_TO_INT(user_data);
-    NMIPRoute *           route;
+    NMIPRoute            *route;
 
     if (n >= priv->routes->len)
         return FALSE;
@@ -78,16 +78,16 @@ route_list_transform_to_route(GBinding *    binding,
 }
 
 static gboolean
-route_list_transform_from_route(GBinding *    binding,
+route_list_transform_from_route(GBinding     *binding,
                                 const GValue *source_value,
-                                GValue *      target_value,
+                                GValue       *target_value,
                                 gpointer      user_data)
 {
-    NmtRouteTable *       table = NMT_ROUTE_TABLE(g_binding_get_source(binding));
+    NmtRouteTable        *table = NMT_ROUTE_TABLE(g_binding_get_source(binding));
     NmtRouteTablePrivate *priv  = NMT_ROUTE_TABLE_GET_PRIVATE(table);
     int                   n     = GPOINTER_TO_INT(user_data);
-    GPtrArray *           routes;
-    NMIPRoute *           route;
+    GPtrArray            *routes;
+    NMIPRoute            *route;
 
     if (n >= priv->routes->len)
         return FALSE;
@@ -108,7 +108,7 @@ static NmtNewtWidget *
 create_route_entry(NmtWidgetList *list, int num, gpointer table)
 {
     NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE(table);
-    NmtNewtWidget *       entry;
+    NmtNewtWidget        *entry;
 
     entry = nmt_route_entry_new(priv->family, priv->ip_entry_width, priv->metric_entry_width);
 
@@ -128,7 +128,7 @@ static void
 add_route(NmtWidgetList *list, gpointer table)
 {
     NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE(table);
-    NMIPRoute *           route;
+    NMIPRoute            *route;
 
     if (priv->family == AF_INET)
         route = nm_ip_route_new(AF_INET, "0.0.0.0", 32, NULL, -1, NULL);
@@ -157,10 +157,10 @@ static void
 nmt_route_table_init(NmtRouteTable *table)
 {
     NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE(table);
-    NmtNewtWidget *       header, *empty;
-    NmtNewtWidget *       dest_prefix_label, *next_hop_label, *metric_label;
+    NmtNewtWidget        *header, *empty;
+    NmtNewtWidget        *dest_prefix_label, *next_hop_label, *metric_label;
     int                   dest_prefix_width, next_hop_width, metric_width;
-    char *                text;
+    char                 *text;
 
     priv->routes = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
 
@@ -219,7 +219,7 @@ static void
 nmt_route_table_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NmtRouteTablePrivate *priv = NMT_ROUTE_TABLE_GET_PRIVATE(object);
-    GPtrArray *           array;
+    GPtrArray            *array;
     int                   i;
 
     switch (prop_id) {

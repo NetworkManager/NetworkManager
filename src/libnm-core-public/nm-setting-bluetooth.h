@@ -59,7 +59,7 @@ typedef struct _NMSettingBluetoothClass NMSettingBluetoothClass;
 
 GType nm_setting_bluetooth_get_type(void);
 
-NMSetting * nm_setting_bluetooth_new(void);
+NMSetting  *nm_setting_bluetooth_new(void);
 const char *nm_setting_bluetooth_get_bdaddr(NMSettingBluetooth *setting);
 const char *nm_setting_bluetooth_get_connection_type(NMSettingBluetooth *setting);
 

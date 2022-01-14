@@ -87,10 +87,10 @@ struct _NMTeamSettingData {
     union {
         struct {
             const GPtrArray *runner_tx_hash;
-            const char *     runner;
-            const char *     runner_hwaddr_policy;
-            const char *     runner_tx_balancer;
-            const char *     runner_agg_select_policy;
+            const char      *runner;
+            const char      *runner_hwaddr_policy;
+            const char      *runner_tx_balancer;
+            const char      *runner_agg_select_policy;
             gint32           notify_peers_count;
             gint32           notify_peers_interval;
             gint32           mcast_rejoin_count;
@@ -169,11 +169,11 @@ nm_team_setting_value_get_string(const NMTeamSetting *self, NMTeamAttribute team
 
 /*****************************************************************************/
 
-guint32 nm_team_setting_value_reset(NMTeamSetting * self,
+guint32 nm_team_setting_value_reset(NMTeamSetting  *self,
                                     NMTeamAttribute team_attr,
                                     gboolean        to_default /* or else unset */);
 
-guint32 _nm_team_setting_value_set(NMTeamSetting * self,
+guint32 _nm_team_setting_value_set(NMTeamSetting  *self,
                                    NMTeamAttribute team_attr,
                                    NMValueType     value_type,
                                    gconstpointer   val);
@@ -200,16 +200,16 @@ nm_team_setting_value_set_string(NMTeamSetting *self, NMTeamAttribute team_attr,
 
 /*****************************************************************************/
 
-guint32 nm_team_setting_value_link_watchers_add(NMTeamSetting *                 self,
+guint32 nm_team_setting_value_link_watchers_add(NMTeamSetting                  *self,
                                                 const struct NMTeamLinkWatcher *link_watcher);
 
 guint32 nm_team_setting_value_link_watchers_remove(NMTeamSetting *self, guint idx);
 
 guint32
-nm_team_setting_value_link_watchers_remove_by_value(NMTeamSetting *                 self,
+nm_team_setting_value_link_watchers_remove_by_value(NMTeamSetting                  *self,
                                                     const struct NMTeamLinkWatcher *link_watcher);
 
-guint32 nm_team_setting_value_link_watchers_set_list(NMTeamSetting *                        self,
+guint32 nm_team_setting_value_link_watchers_set_list(NMTeamSetting                         *self,
                                                      const struct NMTeamLinkWatcher *const *arr,
                                                      guint                                  len);
 
@@ -219,7 +219,7 @@ guint32 nm_team_setting_value_master_runner_tx_hash_add(NMTeamSetting *self, con
 
 guint32 nm_team_setting_value_master_runner_tx_hash_remove(NMTeamSetting *self, guint idx);
 
-guint32 nm_team_setting_value_master_runner_tx_hash_set_list(NMTeamSetting *    self,
+guint32 nm_team_setting_value_master_runner_tx_hash_set_list(NMTeamSetting     *self,
                                                              const char *const *arr,
                                                              guint              len);
 
@@ -235,12 +235,12 @@ int nm_team_setting_cmp(const NMTeamSetting *self_a,
 
 guint32 nm_team_setting_reset(NMTeamSetting *self, const NMTeamSetting *src);
 
-gboolean nm_team_setting_reset_from_dbus(NMTeamSetting *                 self,
-                                         GVariant *                      setting_dict,
-                                         GHashTable *                    keys,
-                                         guint32 *                       out_changed,
+gboolean nm_team_setting_reset_from_dbus(NMTeamSetting                  *self,
+                                         GVariant                       *setting_dict,
+                                         GHashTable                     *keys,
+                                         guint32                        *out_changed,
                                          guint /* NMSettingParseFlags */ parse_flags,
-                                         GError **                       error);
+                                         GError                        **error);
 
 /*****************************************************************************/
 
@@ -250,7 +250,7 @@ GVariant *_nm_utils_team_link_watchers_to_variant(const GPtrArray *link_watchers
 
 /*****************************************************************************/
 
-gboolean nm_team_setting_maybe_changed(struct _NMSetting *      source,
+gboolean nm_team_setting_maybe_changed(struct _NMSetting       *source,
                                        const GParamSpec *const *obj_properties,
                                        guint32                  changed);
 

@@ -18,7 +18,7 @@
 /*****************************************************************************/
 
 struct _NMCheckpointManager {
-    NMManager * _manager;
+    NMManager  *_manager;
     GParamSpec *property_spec;
     CList       checkpoints_lst_head;
 };
@@ -70,7 +70,7 @@ destroy_checkpoint(NMCheckpointManager *self, NMCheckpoint *checkpoint, gboolean
 static GVariant *
 rollback_checkpoint(NMCheckpointManager *self, NMCheckpoint *checkpoint)
 {
-    GVariant *   result;
+    GVariant    *result;
     const CList *iter;
 
     nm_assert(c_list_contains(&self->checkpoints_lst_head, &checkpoint->checkpoints_lst));
@@ -95,23 +95,23 @@ rollback_checkpoint(NMCheckpointManager *self, NMCheckpoint *checkpoint)
 static void
 rollback_timeout_cb(NMCheckpoint *checkpoint, gpointer user_data)
 {
-    NMCheckpointManager *self         = user_data;
+    NMCheckpointManager       *self   = user_data;
     gs_unref_variant GVariant *result = NULL;
 
     result = rollback_checkpoint(self, checkpoint);
 }
 
 NMCheckpoint *
-nm_checkpoint_manager_create(NMCheckpointManager *   self,
-                             const char *const *     device_paths,
+nm_checkpoint_manager_create(NMCheckpointManager    *self,
+                             const char *const      *device_paths,
                              guint32                 rollback_timeout,
                              NMCheckpointCreateFlags flags,
-                             GError **               error)
+                             GError                **error)
 {
-    NMManager *       manager;
-    NMCheckpoint *    checkpoint;
+    NMManager                   *manager;
+    NMCheckpoint                *checkpoint;
     gs_unref_ptrarray GPtrArray *devices = NULL;
-    NMDevice *                   device;
+    NMDevice                    *device;
 
     g_return_val_if_fail(self, FALSE);
     g_return_val_if_fail(!error || !*error, FALSE);
@@ -233,9 +233,9 @@ nm_checkpoint_manager_destroy(NMCheckpointManager *self, const char *path, GErro
 
 gboolean
 nm_checkpoint_manager_rollback(NMCheckpointManager *self,
-                               const char *         path,
-                               GVariant **          results,
-                               GError **            error)
+                               const char          *path,
+                               GVariant           **results,
+                               GError             **error)
 {
     NMCheckpoint *checkpoint;
 
@@ -279,7 +279,7 @@ const char **
 nm_checkpoint_manager_get_checkpoint_paths(NMCheckpointManager *self, guint *out_length)
 {
     NMCheckpoint *checkpoint;
-    const char ** strv;
+    const char  **strv;
     guint         num, i = 0;
 
     num = c_list_length(&self->checkpoints_lst_head);
@@ -297,9 +297,9 @@ nm_checkpoint_manager_get_checkpoint_paths(NMCheckpointManager *self, guint *out
 
 gboolean
 nm_checkpoint_manager_adjust_rollback_timeout(NMCheckpointManager *self,
-                                              const char *         path,
+                                              const char          *path,
                                               guint32              add_timeout,
-                                              GError **            error)
+                                              GError             **error)
 {
     NMCheckpoint *checkpoint;
 
