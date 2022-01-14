@@ -645,11 +645,16 @@ _property_direct_set_string(const NMSettInfoSetting  *sett_info,
     char **dst;
     char  *s;
 
+    nm_assert(property_info->property_type->direct_type == NM_VALUE_TYPE_STRING);
     nm_assert(((!!property_info->direct_set_string_ascii_strdown)
                + (!!property_info->direct_set_string_strip)
                + (property_info->direct_set_string_mac_address_len > 0)
                + (property_info->direct_set_string_ip_address_addr_family != 0))
-              <= 1);
+              <= (property_info->direct_hook.set_string_fcn ? 0 : 1));
+
+    if (property_info->direct_hook.set_string_fcn) {
+        return property_info->direct_hook.set_string_fcn(sett_info, property_info, setting, src);
+    }
 
     dst = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
 
