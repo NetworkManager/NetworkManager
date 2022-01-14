@@ -1771,7 +1771,7 @@ verify_secrets(NMSetting *setting, NMConnection *connection, GError **error)
     NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
     guint                      i;
 
-    if (priv->private_key && !priv->private_key_valid) {
+    if (!priv->private_key_valid) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1806,7 +1806,7 @@ need_secrets(NMSetting *setting)
     GPtrArray                 *secrets = NULL;
     guint                      i;
 
-    if (!priv->private_key || !priv->private_key_valid) {
+    if (!priv->private_key_valid) {
         secrets = g_ptr_array_new_full(1, g_free);
         g_ptr_array_add(secrets, g_strdup(NM_SETTING_WIREGUARD_PRIVATE_KEY));
     }
@@ -2258,53 +2258,35 @@ for_each_secret(NMSetting                     *setting,
 
 /*****************************************************************************/
 
-static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
+static gboolean
+_set_string_fcn_public_key(const NMSettInfoSetting  *sett_info,
+                           const NMSettInfoProperty *property_info,
+                           NMSetting                *setting,
+                           const char               *str)
 {
-    NMSettingWireGuard        *setting = NM_SETTING_WIREGUARD(object);
-    NMSettingWireGuardPrivate *priv    = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+    gboolean                   valid;
+    char *new = NULL;
+    char *old;
 
-    switch (prop_id) {
-    case PROP_PEER_ROUTES:
-        g_value_set_boolean(value, priv->peer_routes);
-        break;
-    case PROP_PRIVATE_KEY:
-        g_value_set_string(value, priv->private_key);
-        break;
-    default:
-        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
-        break;
+    if (str)
+        valid = nm_utils_base64secret_normalize(str, NM_WIREGUARD_PUBLIC_KEY_LEN, &new);
+    else
+        valid = FALSE;
+
+    if (nm_streq0(new ?: str, priv->private_key)) {
+        nm_assert(priv->private_key_valid == valid);
+        nm_free_secret(new);
+        return FALSE;
     }
-}
 
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(object);
-    const char                *str;
+    priv->private_key_valid = valid;
 
-    switch (prop_id) {
-    case PROP_PEER_ROUTES:
-        priv->peer_routes = g_value_get_boolean(value);
-        break;
-    case PROP_PRIVATE_KEY:
-        nm_clear_pointer(&priv->private_key, nm_free_secret);
-        str = g_value_get_string(value);
-        if (str) {
-            if (nm_utils_base64secret_normalize(str,
-                                                NM_WIREGUARD_PUBLIC_KEY_LEN,
-                                                &priv->private_key))
-                priv->private_key_valid = TRUE;
-            else {
-                priv->private_key       = g_strdup(str);
-                priv->private_key_valid = FALSE;
-            }
-        }
-        break;
-    default:
-        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
-        break;
-    }
+    old               = priv->private_key;
+    priv->private_key = new ?: g_strdup(str);
+    nm_free_secret(old);
+
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -2338,8 +2320,6 @@ finalize(GObject *object)
 {
     NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(object);
 
-    nm_free_secret(priv->private_key);
-
     _peers_clear(priv);
     g_ptr_array_unref(priv->peers_arr);
     g_hash_table_unref(priv->peers_hash);
@@ -2354,8 +2334,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
     object_class->finalize     = finalize;
 
     setting_class->verify                    = verify;
@@ -2377,12 +2357,15 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_PRIVATE_KEY] =
-        g_param_spec_string(NM_SETTING_WIREGUARD_PRIVATE_KEY,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIREGUARD_PRIVATE_KEY,
+                                              PROP_PRIVATE_KEY,
+                                              NM_SETTING_PARAM_SECRET,
+                                              NMSettingWireGuardPrivate,
+                                              private_key,
+                                              .direct_hook.set_string_fcn =
+                                                  _set_string_fcn_public_key);
 
     /**
      * NMSettingWireGuard:private-key-flags:
