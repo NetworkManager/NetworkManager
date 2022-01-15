@@ -165,8 +165,6 @@ nm_setting_veth_class_init(NMSettingVethClass *klass)
     GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
 
-    g_type_class_add_private(klass, sizeof(NMSettingVethPrivate));
-
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
