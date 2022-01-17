@@ -789,6 +789,32 @@ activate_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 }
 
 static void
+_dev_eth0_1_state_changed_cb(NMDevice           *device,
+                             NMDeviceState       new_state,
+                             NMDeviceState       old_state,
+                             NMDeviceStateReason reason,
+                             int                *p_count_call)
+{
+    const GPtrArray *arr;
+
+    g_assert(p_count_call);
+    g_assert_cmpint(*p_count_call, ==, 0);
+
+    (*p_count_call)++;
+
+    g_assert(NM_IS_DEVICE_VLAN(device));
+
+    g_assert_cmpint(old_state, ==, NM_DEVICE_STATE_PREPARE);
+    g_assert_cmpint(new_state, ==, NM_DEVICE_STATE_UNKNOWN);
+
+    arr = nm_device_get_available_connections(device);
+    g_assert(arr);
+    g_assert_cmpint(arr->len, ==, 0);
+
+    // g_assert(!nm_device_get_active_connection(device));
+}
+
+static void
 test_activate_virtual(void)
 {
     nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
@@ -798,6 +824,9 @@ test_activate_virtual(void)
     NMSettingVlan                                 *s_vlan;
     TestACInfo                                     info      = {gl.loop, NULL, 0};
     TestConnectionInfo                             conn_info = {gl.loop, NULL};
+
+    if (nmtst_test_skip_slow())
+        return;
 
     sinfo = nmtstc_service_init();
     if (!nmtstc_service_available(sinfo))
@@ -846,6 +875,57 @@ test_activate_virtual(void)
     if (info.device) {
         g_object_remove_weak_pointer(G_OBJECT(info.device), (gpointer *) &info.device);
         nm_clear_g_signal_handler(info.device, &info.ac_signal_id);
+    }
+
+    if (nmtst_get_rand_bool()) {
+        /* OK, enough for this run. Let's see whether we can tear down
+         * successfully at this point. */
+        return;
+    }
+
+    {
+        NMDevice           *dev_eth0_1;
+        NMActiveConnection *ac;
+        const GPtrArray    *arr;
+        gulong              sig_id;
+        int                 call_count = 0;
+        gboolean            take_ref   = nmtst_get_rand_bool();
+
+        /* ensure we got all the necessary events in place. */
+        nmtst_main_loop_run(gl.loop, 50);
+
+        dev_eth0_1 = nm_client_get_device_by_iface(client, "eth0.1");
+        g_assert(NM_IS_DEVICE_VLAN(dev_eth0_1));
+        if (take_ref)
+            g_object_ref(dev_eth0_1);
+
+        arr = nm_device_get_available_connections(dev_eth0_1);
+        g_assert(arr);
+        g_assert_cmpint(arr->len, ==, 1);
+
+        ac = nm_device_get_active_connection(dev_eth0_1);
+        g_assert(NM_IS_ACTIVE_CONNECTION(ac));
+
+        sig_id = g_signal_connect(dev_eth0_1,
+                                  "state-changed",
+                                  G_CALLBACK(_dev_eth0_1_state_changed_cb),
+                                  &call_count);
+
+        g_clear_object(&client);
+
+        g_assert_cmpint(call_count, ==, 1);
+
+        if (take_ref) {
+            arr = nm_device_get_available_connections(dev_eth0_1);
+            g_assert(arr);
+            g_assert_cmpint(arr->len, ==, 0);
+
+            // g_assert(!nm_device_get_active_connection(dev_eth0_1));
+
+            nm_clear_g_signal_handler(dev_eth0_1, &sig_id);
+
+            g_object_unref(dev_eth0_1);
+        }
     }
 }
 
