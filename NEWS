@@ -3,13 +3,13 @@ NetworkManager-1.34
 Overview of changes since NetworkManager-1.32
 =============================================
 
-* initrd: wait for both IPv4 and IPv6 with "ip=dhcp,dhcp6"
-* core: better handle sd-resolved errors when resolving hostnames
+* initrd: wait for both IPv4 and IPv6 with "ip=dhcp,dhcp6".
+* core: better handle sd-resolved errors when resolving hostnames.
 * nmcli: fix import WireGuard profile with DNS domain and address
-  family disabled 
-* ndisc: send router solicitations before expiry
-* policy: send earlier the ip configs to the DNS manager
-* core: support linking with LLD 13
+  family disabled.
+* ndisc: send router solicitations before expiry.
+* policy: send earlier the ip configs to the DNS manager.
+* core: support linking with LLD 13.
 * wireguard: importing wg-quick configuration files with nmcli
   no longer sets a negative, exclusive "dns-priority". This plays
   better with common split DNS setups that use systemd-resolved.
