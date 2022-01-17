@@ -4679,6 +4679,27 @@ ip_route_get_lock_flag(const NMPlatformIPRoute *route)
            | (((guint32) route->lock_mtu) << RTAX_MTU);
 }
 
+static gboolean
+ip_route_ignored_protocol(const NMPlatformIPRoute *route)
+{
+    guint8 prot;
+
+    nm_assert(route);
+    nm_assert(route->rt_source >= NM_IP_CONFIG_SOURCE_RTPROT_UNSPEC
+              && route->rt_source <= _NM_IP_CONFIG_SOURCE_RTPROT_LAST);
+
+    prot = route->rt_source - 1;
+
+    nm_assert(nmp_utils_ip_config_source_from_rtprot(prot) == route->rt_source);
+
+    /* We ignore all routes outside a certain subest of rtm_protocol. NetworkManager
+     * itself wouldn't configure those, so they are always configured by somebody
+     * external. We thus ignore them to avoid the overhead that processing them brings.
+     * For example, the BGP daemon "bird"  might configure a huge number of RTPROT_BIRD routes. */
+
+    return prot > RTPROT_STATIC && !NM_IN_SET(prot, RTPROT_DHCP, RTPROT_RA);
+}
+
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
 static struct nl_msg *
 _nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
@@ -7005,6 +7026,17 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
                         }
                     }
                 }
+            }
+
+            if (ip_route_ignored_protocol(NMP_OBJECT_CAST_IP_ROUTE(obj))) {
+                /* We ignore certain rtm_protocol, because NetworkManager would only ever
+                 * configure certain protocols. Other routes were not added by NetworkManager
+                 * and we don't need to track them in the platform cache.
+                 *
+                 * This is to help with the performance overhead of a huge number of
+                 * routes, for example with the bird BGP software, that adds routes
+                 * with RTPROT_BIRD protocol. */
+                return;
             }
 
             cache_op = nmp_cache_update_netlink_route(cache,
