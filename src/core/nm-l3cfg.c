@@ -2610,31 +2610,29 @@ handle_init:
             return;
         case NM_L3_ACD_ADDR_STATE_PROBING:
         case NM_L3_ACD_ADDR_STATE_DEFENDING:
-
+        case NM_L3_ACD_ADDR_STATE_READY:
             if (!acd_data->nacd_probe) {
                 /* we failed starting to probe before and have a timer running to
                  * restart. We don't do anything now, but let the timer handle it.
                  * This also implements some rate limiting for us. */
                 _LOGT_acd(acd_data,
-                          "n-acd instance reset. Ignore event while restarting %s",
-                          (acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING) ? "probing"
-                                                                                 : "defending");
+                          "n-acd instance reset. Ignore event while in state %s",
+                          _l3_acd_addr_state_to_string(acd_data->info.state));
                 return;
             }
 
             _LOGT_acd(acd_data,
-                      "n-acd instance reset. Trigger a restart of the %s",
-                      (acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING) ? "probing"
-                                                                             : "defending");
+                      "n-acd instance reset. Trigger a restart while in state %s",
+                      _l3_acd_addr_state_to_string(acd_data->info.state));
             acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
             _l3_acd_data_timeout_schedule(acd_data, 0);
             return;
         case NM_L3_ACD_ADDR_STATE_USED:
         case NM_L3_ACD_ADDR_STATE_CONFLICT:
         case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+            /* as we have no probe, we are already handling this (e.g. by having
+             * a retry timer). Nothing to do. */
             nm_assert(!acd_data->nacd_probe);
-            return;
-        case NM_L3_ACD_ADDR_STATE_READY:
             return;
         }
         nm_assert_not_reached();
