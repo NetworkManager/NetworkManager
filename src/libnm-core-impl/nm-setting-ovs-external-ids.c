@@ -543,5 +543,5 @@ nm_setting_ovs_external_ids_class_init(NMSettingOvsExternalIDsClass *klass)
                              NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
                              NULL,
                              properties_override,
-                             G_STRUCT_OFFSET(NMSettingOvsExternalIDs, _priv));
+                             0);
 }

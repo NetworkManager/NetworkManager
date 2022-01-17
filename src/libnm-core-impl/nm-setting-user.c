@@ -576,5 +576,5 @@ nm_setting_user_class_init(NMSettingUserClass *klass)
                              NM_META_SETTING_TYPE_USER,
                              NULL,
                              properties_override,
-                             G_STRUCT_OFFSET(NMSettingUser, _priv));
+                             0);
 }
