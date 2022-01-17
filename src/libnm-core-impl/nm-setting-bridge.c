@@ -1443,8 +1443,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                    NM_SETTING_BRIDGE_MAC_ADDRESS,
                                                    PROP_MAC_ADDRESS,
                                                    NM_SETTING_PARAM_INFERRABLE,
-                                                   NMSettingBridgePrivate,
-                                                   mac_address,
+                                                   NMSettingBridge,
+                                                   _priv.mac_address,
                                                    .direct_set_string_mac_address_len = ETH_ALEN);
 
     /**
@@ -1465,8 +1465,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                PROP_STP,
                                                NM_BRIDGE_STP_DEF,
                                                NM_SETTING_PARAM_INFERRABLE,
-                                               NMSettingBridgePrivate,
-                                               stp);
+                                               NMSettingBridge,
+                                               _priv.stp);
 
     /**
      * NMSettingBridge:priority:
@@ -1491,8 +1491,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_PRIORITY_MAX,
                                               NM_BRIDGE_PRIORITY_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              priority);
+                                              NMSettingBridge,
+                                              _priv.priority);
 
     /**
      * NMSettingBridge:forward-delay:
@@ -1515,8 +1515,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_FORWARD_DELAY_MAX,
                                               NM_BRIDGE_FORWARD_DELAY_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              forward_delay);
+                                              NMSettingBridge,
+                                              _priv.forward_delay);
 
     /**
      * NMSettingBridge:hello-time:
@@ -1539,8 +1539,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_HELLO_TIME_MAX,
                                               NM_BRIDGE_HELLO_TIME_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              hello_time);
+                                              NMSettingBridge,
+                                              _priv.hello_time);
 
     /**
      * NMSettingBridge:max-age:
@@ -1563,8 +1563,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MAX_AGE_MAX,
                                               NM_BRIDGE_MAX_AGE_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              max_age);
+                                              NMSettingBridge,
+                                              _priv.max_age);
 
     /**
      * NMSettingBridge:ageing-time:
@@ -1587,8 +1587,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_AGEING_TIME_MAX,
                                               NM_BRIDGE_AGEING_TIME_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              ageing_time);
+                                              NMSettingBridge,
+                                              _priv.ageing_time);
 
     /**
      * NMSettingBridge:group-forward-mask:
@@ -1610,8 +1610,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               0xFFFF,
                                               0,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              group_forward_mask);
+                                              NMSettingBridge,
+                                              _priv.group_forward_mask);
 
     /**
      * NMSettingBridge:multicast-snooping:
@@ -1637,8 +1637,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                PROP_MULTICAST_SNOOPING,
                                                NM_BRIDGE_MULTICAST_SNOOPING_DEF,
                                                NM_SETTING_PARAM_INFERRABLE,
-                                               NMSettingBridgePrivate,
-                                               multicast_snooping);
+                                               NMSettingBridge,
+                                               _priv.multicast_snooping);
 
     /**
      * NMSettingBridge:vlan-filtering:
@@ -1661,8 +1661,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                PROP_VLAN_FILTERING,
                                                FALSE,
                                                NM_SETTING_PARAM_INFERRABLE,
-                                               NMSettingBridgePrivate,
-                                               vlan_filtering);
+                                               NMSettingBridge,
+                                               _priv.vlan_filtering);
 
     /**
      * NMSettingBridge:vlan-default-pvid:
@@ -1688,8 +1688,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_VLAN_VID_MAX,
                                               NM_BRIDGE_VLAN_DEFAULT_PVID_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              vlan_default_pvid);
+                                              NMSettingBridge,
+                                              _priv.vlan_default_pvid);
 
     /**
      * NMSettingBridge:vlans: (type GPtrArray(NMBridgeVlan))
@@ -1764,8 +1764,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                    NM_SETTING_BRIDGE_GROUP_ADDRESS,
                                                    PROP_GROUP_ADDRESS,
                                                    NM_SETTING_PARAM_INFERRABLE,
-                                                   NMSettingBridgePrivate,
-                                                   group_address,
+                                                   NMSettingBridge,
+                                                   _priv.group_address,
                                                    .direct_set_string_mac_address_len = ETH_ALEN);
 
     /**
@@ -1792,8 +1792,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_SETTING_BRIDGE_VLAN_PROTOCOL,
                                               PROP_VLAN_PROTOCOL,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              vlan_protocol);
+                                              NMSettingBridge,
+                                              _priv.vlan_protocol);
 
     /**
      * NMSettingBridge:vlan-stats-enabled:
@@ -1815,8 +1815,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                PROP_VLAN_STATS_ENABLED,
                                                NM_BRIDGE_VLAN_STATS_ENABLED_DEF,
                                                NM_SETTING_PARAM_INFERRABLE,
-                                               NMSettingBridgePrivate,
-                                               vlan_stats_enabled);
+                                               NMSettingBridge,
+                                               _priv.vlan_stats_enabled);
 
     /**
      * NMSettingBridge:multicast-router:
@@ -1843,8 +1843,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_SETTING_BRIDGE_MULTICAST_ROUTER,
                                               PROP_MULTICAST_ROUTER,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_router);
+                                              NMSettingBridge,
+                                              _priv.multicast_router);
 
     /**
      * NMSettingBridge:multicast-query-use-ifaddr:
@@ -1868,8 +1868,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                PROP_MULTICAST_QUERY_USE_IFADDR,
                                                NM_BRIDGE_MULTICAST_QUERY_USE_IFADDR_DEF,
                                                NM_SETTING_PARAM_INFERRABLE,
-                                               NMSettingBridgePrivate,
-                                               multicast_query_use_ifaddr);
+                                               NMSettingBridge,
+                                               _priv.multicast_query_use_ifaddr);
 
     /**
      * NMSettingBridge:multicast-querier:
@@ -1892,8 +1892,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                PROP_MULTICAST_QUERIER,
                                                NM_BRIDGE_MULTICAST_QUERIER_DEF,
                                                NM_SETTING_PARAM_INFERRABLE,
-                                               NMSettingBridgePrivate,
-                                               multicast_querier);
+                                               NMSettingBridge,
+                                               _priv.multicast_querier);
 
     /**
      * NMSettingBridge:multicast-hash-max:
@@ -1917,8 +1917,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MULTICAST_HASH_MAX_MAX,
                                               NM_BRIDGE_MULTICAST_HASH_MAX_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_hash_max);
+                                              NMSettingBridge,
+                                              _priv.multicast_hash_max);
 
     /**
      * NMSettingBridge:multicast-last-member-count:
@@ -1944,8 +1944,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_MAX,
                                               NM_BRIDGE_MULTICAST_LAST_MEMBER_COUNT_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_last_member_count);
+                                              NMSettingBridge,
+                                              _priv.multicast_last_member_count);
 
     /**
      * NMSettingBridge:multicast-last-member-interval:
@@ -1970,8 +1970,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_MAX,
                                               NM_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_last_member_interval);
+                                              NMSettingBridge,
+                                              _priv.multicast_last_member_interval);
 
     /**
      * NMSettingBridge:multicast-membership-interval:
@@ -1997,8 +1997,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_MAX,
                                               NM_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_membership_interval);
+                                              NMSettingBridge,
+                                              _priv.multicast_membership_interval);
 
     /**
      * NMSettingBridge:multicast-querier-interval:
@@ -2023,8 +2023,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_MAX,
                                               NM_BRIDGE_MULTICAST_QUERIER_INTERVAL_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_querier_interval);
+                                              NMSettingBridge,
+                                              _priv.multicast_querier_interval);
 
     /**
      * NMSettingBridge:multicast-query-interval:
@@ -2049,8 +2049,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MULTICAST_QUERY_INTERVAL_MAX,
                                               NM_BRIDGE_MULTICAST_QUERY_INTERVAL_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_query_interval);
+                                              NMSettingBridge,
+                                              _priv.multicast_query_interval);
 
     /**
      * NMSettingBridge:multicast-query-response-interval:
@@ -2075,8 +2075,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_MAX,
                                               NM_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_query_response_interval);
+                                              NMSettingBridge,
+                                              _priv.multicast_query_response_interval);
 
     /**
      * NMSettingBridge:multicast-startup-query-count:
@@ -2100,8 +2100,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_MAX,
                                               NM_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_startup_query_count);
+                                              NMSettingBridge,
+                                              _priv.multicast_startup_query_count);
 
     /**
      * NMSettingBridge:multicast-startup-query-interval:
@@ -2126,8 +2126,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                               NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_MAX,
                                               NM_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL_DEF,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingBridgePrivate,
-                                              multicast_startup_query_interval);
+                                              NMSettingBridge,
+                                              _priv.multicast_startup_query_interval);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
@@ -2135,5 +2135,5 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                              NM_META_SETTING_TYPE_BRIDGE,
                              NULL,
                              properties_override,
-                             G_STRUCT_OFFSET(NMSettingBridge, _priv));
+                             0);
 }

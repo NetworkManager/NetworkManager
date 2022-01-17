@@ -2362,8 +2362,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                               NM_SETTING_WIREGUARD_PRIVATE_KEY,
                                               PROP_PRIVATE_KEY,
                                               NM_SETTING_PARAM_SECRET,
-                                              NMSettingWireGuardPrivate,
-                                              private_key,
+                                              NMSettingWireGuard,
+                                              _priv.private_key,
                                               .direct_hook.set_string_fcn =
                                                   _set_string_fcn_public_key);
 
@@ -2379,8 +2379,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                                     obj_properties,
                                                     NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
                                                     PROP_PRIVATE_KEY_FLAGS,
-                                                    NMSettingWireGuardPrivate,
-                                                    private_key_flags);
+                                                    NMSettingWireGuard,
+                                                    _priv.private_key_flags);
 
     /**
      * NMSettingWireGuard:fwmark:
@@ -2401,8 +2401,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                               G_MAXUINT32,
                                               0,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingWireGuardPrivate,
-                                              fwmark);
+                                              NMSettingWireGuard,
+                                              _priv.fwmark);
 
     /**
      * NMSettingWireGuard:listen-port:
@@ -2420,8 +2420,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                               65535,
                                               0,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingWireGuardPrivate,
-                                              listen_port);
+                                              NMSettingWireGuard,
+                                              _priv.listen_port);
 
     /**
      * NMSettingWireGuard:peer-routes:
@@ -2446,8 +2446,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                                PROP_PEER_ROUTES,
                                                TRUE,
                                                NM_SETTING_PARAM_INFERRABLE,
-                                               NMSettingWireGuardPrivate,
-                                               peer_routes);
+                                               NMSettingWireGuard,
+                                               _priv.peer_routes);
 
     /**
      * NMSettingWireGuard:mtu:
@@ -2469,8 +2469,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                               G_MAXUINT32,
                                               0,
                                               NM_SETTING_PARAM_INFERRABLE,
-                                              NMSettingWireGuardPrivate,
-                                              mtu);
+                                              NMSettingWireGuard,
+                                              _priv.mtu);
 
     /**
      * NMSettingWireGuard:ip4-auto-default-route:
@@ -2497,8 +2497,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                                     NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
                                                     PROP_IP4_AUTO_DEFAULT_ROUTE,
                                                     NM_SETTING_PARAM_FUZZY_IGNORE,
-                                                    NMSettingWireGuardPrivate,
-                                                    ip4_auto_default_route);
+                                                    NMSettingWireGuard,
+                                                    _priv.ip4_auto_default_route);
 
     /**
      * NMSettingWireGuard:ip6-auto-default-route:
@@ -2512,8 +2512,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                                     NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
                                                     PROP_IP6_AUTO_DEFAULT_ROUTE,
                                                     NM_SETTING_PARAM_FUZZY_IGNORE,
-                                                    NMSettingWireGuardPrivate,
-                                                    ip6_auto_default_route);
+                                                    NMSettingWireGuard,
+                                                    _priv.ip6_auto_default_route);
 
     /* ---dbus---
      * property: peers
@@ -2535,5 +2535,5 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                              NM_META_SETTING_TYPE_WIREGUARD,
                              NULL,
                              properties_override,
-                             G_STRUCT_OFFSET(NMSettingWireGuard, _priv));
+                             0);
 }
