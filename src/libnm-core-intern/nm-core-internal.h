@@ -889,6 +889,20 @@ _nm_setting_get_private(NMSetting *self, const NMSettInfoSetting *sett_info, gui
     return ((((char *) ((gpointer) self)) + sett_info->private_offset) + offset);
 }
 
+static inline gpointer
+_nm_setting_get_private_field(NMSetting                *self,
+                              const NMSettInfoSetting  *sett_info,
+                              const NMSettInfoProperty *prop_info)
+{
+    nm_assert(sett_info);
+    nm_assert(prop_info);
+    nm_assert(prop_info->property_type);
+    nm_assert(prop_info->property_type->direct_type > NM_VALUE_TYPE_UNSPEC);
+    nm_assert(sett_info->private_offset != 0 || prop_info->direct_offset != 0);
+
+    return _nm_setting_get_private(self, sett_info, prop_info->direct_offset);
+}
+
 static inline const NMSettInfoProperty *
 _nm_sett_info_property_info_get_sorted(const NMSettInfoSetting *sett_info, guint16 idx)
 {
