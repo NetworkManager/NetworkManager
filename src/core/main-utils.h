@@ -6,8 +6,6 @@
 #ifndef __MAIN_UTILS_H__
 #define __MAIN_UTILS_H__
 
-void nm_main_utils_ensure_root(void);
-
 uid_t nm_main_utils_get_nm_uid(void);
 
 gid_t nm_main_utils_get_nm_gid(void);

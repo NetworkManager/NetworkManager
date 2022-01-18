@@ -209,15 +209,6 @@ nm_main_utils_ensure_not_running_pidfile(const char *pidfile)
     }
 }
 
-void
-nm_main_utils_ensure_root()
-{
-    if (getuid() != 0) {
-        fprintf(stderr, _("You must be root to run %s!\n"), g_get_prgname() ?: "");
-        exit(1);
-    }
-}
-
 uid_t nm_uid;
 /**
  * nm_main_utils_get_nm_uid:
