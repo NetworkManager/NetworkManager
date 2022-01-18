@@ -20,6 +20,7 @@
 #include "nm-dbus-object.h"
 #include "NetworkManagerUtils.h"
 #include "libnm-core-aux-intern/nm-auth-subject.h"
+#include "src/core/main-utils.h"
 
 /* The base path for our GDBusObjectManagerServers.  They do not contain
  * "NetworkManager" because GDBusObjectManagerServer requires that all
@@ -306,7 +307,7 @@ private_server_authorize(GDBusAuthObserver *observer,
                          GCredentials      *credentials,
                          gpointer           user_data)
 {
-    return g_credentials_get_unix_user(credentials, NULL) == 0;
+    return g_credentials_get_unix_user(credentials, NULL) == nm_main_utils_get_nm_uid();
 }
 
 static gboolean
@@ -735,7 +736,7 @@ nm_dbus_manager_get_unix_user(NMDBusManager *self, const char *sender, gulong *o
 
         connection = private_server_get_connection_by_owner(s, sender);
         if (connection) {
-            *out_uid = 0;
+            *out_uid = nm_main_utils_get_nm_uid();
             return TRUE;
         }
     }
