@@ -71,6 +71,7 @@ typedef struct {
              * or NULL (if a previous lease timed out). It can also be the
              * previous lease, that was injected. */
             const NML3ConfigData *l3cd;
+            bool                  accepted;
         } lease_update;
         struct {
             const NMPlatformIP6Address *prefix;

@@ -43,17 +43,27 @@ typedef struct _NMDhcpClientPrivate {
     const NML3ConfigData *l3cd;
     GSource              *no_lease_timeout_source;
     GSource              *ipv6_lladdr_timeout_source;
+    GBytes               *effective_client_id;
     pid_t                 pid;
     guint                 watch_id;
     NMDhcpState           state;
     bool                  iaid_explicit : 1;
     bool                  is_stopped : 1;
-    GBytes               *effective_client_id;
+    struct {
+        gulong id;
+        bool   wait_dhcp_commit : 1;
+        bool   wait_ll_address : 1;
+    } l3cfg_notify;
 } NMDhcpClientPrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
 
 #define NM_DHCP_CLIENT_GET_PRIVATE(self) _NM_GET_PRIVATE_PTR(self, NMDhcpClient, NM_IS_DHCP_CLIENT)
+
+/*****************************************************************************/
+
+static void
+l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcpClient *self);
 
 /*****************************************************************************/
 
@@ -69,6 +79,27 @@ _emit_notify(NMDhcpClient *self, const NMDhcpClientNotifyData *notify_data)
 }
 
 /*****************************************************************************/
+
+static void
+connect_l3cfg_notify(NMDhcpClient *self)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    gboolean             do_connect;
+
+    do_connect = priv->l3cfg_notify.wait_dhcp_commit | priv->l3cfg_notify.wait_ll_address;
+
+    if (!do_connect) {
+        nm_clear_g_signal_handler(priv->config.l3cfg, &priv->l3cfg_notify.id);
+        return;
+    }
+
+    if (priv->l3cfg_notify.id == 0) {
+        priv->l3cfg_notify.id = g_signal_connect(priv->config.l3cfg,
+                                                 NM_L3CFG_SIGNAL_NOTIFY,
+                                                 G_CALLBACK(l3_cfg_notify_cb),
+                                                 self);
+    }
+}
 
 pid_t
 nm_dhcp_client_get_pid(NMDhcpClient *self)
@@ -357,6 +388,9 @@ nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3Co
                 },
         };
 
+        priv->l3cfg_notify.wait_dhcp_commit = (new_state == NM_DHCP_STATE_BOUND);
+        connect_l3cfg_notify(self);
+
         _emit_notify(self, &notify_data);
     }
 }
@@ -523,14 +557,20 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 
     nm_assert(l3cfg == priv->config.l3cfg);
 
-    if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE) {
+    switch (notify_data->notify_type) {
+    case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
+    {
         const NMPlatformIP6Address *addr;
         gs_free_error GError       *error = NULL;
+
+        if (!priv->l3cfg_notify.wait_ll_address)
+            return;
 
         addr = ipv6_lladdr_find(self);
         if (addr) {
             _LOGD("got IPv6LL address, starting transaction");
-            g_signal_handlers_disconnect_by_func(l3cfg, l3_cfg_notify_cb, self);
+            priv->l3cfg_notify.wait_ll_address = FALSE;
+            connect_l3cfg_notify(self);
             nm_clear_g_source_inst(&priv->ipv6_lladdr_timeout_source);
 
             schedule_no_lease_timeout(self);
@@ -543,6 +583,74 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
                              }));
             }
         }
+
+        break;
+    }
+    case NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT:
+    {
+        const NML3ConfigData      *committed_l3cd;
+        NMDedupMultiIter           ipconf_iter;
+        const NMPlatformIPAddress *lease_address;
+        gs_free_error GError      *error = NULL;
+
+        /* A new configuration was committed to the interface. If we previously
+         * got a lease, check whether we are waiting for the address to be
+         * configured. If the address was added, we can proceed accepting the
+         * lease and notifying NMDevice. */
+
+        if (!priv->l3cfg_notify.wait_dhcp_commit)
+            return;
+
+        nm_l3_config_data_iter_ip_address_for_each (&ipconf_iter,
+                                                    priv->l3cd,
+                                                    priv->config.addr_family,
+                                                    &lease_address)
+            break;
+        nm_assert(lease_address);
+        committed_l3cd = nm_l3cfg_get_combined_l3cd(l3cfg, TRUE);
+
+        if (priv->config.addr_family == AF_INET) {
+            const NMPlatformIP4Address *address4 = (const NMPlatformIP4Address *) lease_address;
+
+            if (!nm_l3_config_data_lookup_address_4(committed_l3cd,
+                                                    address4->address,
+                                                    address4->plen,
+                                                    address4->peer_address))
+                return;
+        } else {
+            const NMPlatformIP6Address *address6 = (const NMPlatformIP6Address *) lease_address;
+
+            if (!nm_l3_config_data_lookup_address_6(committed_l3cd, &address6->address))
+                return;
+        }
+
+        priv->l3cfg_notify.wait_dhcp_commit = FALSE;
+        connect_l3cfg_notify(self);
+
+        _LOGD("accept address");
+
+        if (!nm_dhcp_client_accept(self, &error)) {
+            gs_free char *reason = g_strdup_printf("error accepting lease: %s", error->message);
+
+            _emit_notify(self,
+                         &((NMDhcpClientNotifyData){
+                             .notify_type         = NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
+                             .it_looks_bad.reason = reason,
+                         }));
+            return;
+        }
+
+        _emit_notify(
+            self,
+            &((NMDhcpClientNotifyData){.notify_type  = NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
+                                       .lease_update = {
+                                           .l3cd     = priv->l3cd,
+                                           .accepted = TRUE,
+                                       }}));
+        break;
+    };
+    default:
+        /* ignore */;
     }
 }
 
@@ -569,10 +677,8 @@ nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error)
     addr = ipv6_lladdr_find(self);
     if (!addr) {
         _LOGD("waiting for IPv6LL address");
-        g_signal_connect(priv->config.l3cfg,
-                         NM_L3CFG_SIGNAL_NOTIFY,
-                         G_CALLBACK(l3_cfg_notify_cb),
-                         self);
+        priv->l3cfg_notify.wait_ll_address = TRUE;
+        connect_l3cfg_notify(self);
         priv->ipv6_lladdr_timeout_source =
             nm_g_timeout_add_seconds_source(10, ipv6_lladdr_timeout, self);
         return TRUE;
@@ -657,7 +763,9 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 
     priv->is_stopped = TRUE;
 
-    g_signal_handlers_disconnect_by_func(priv->config.l3cfg, l3_cfg_notify_cb, self);
+    priv->l3cfg_notify.wait_dhcp_commit = FALSE;
+    priv->l3cfg_notify.wait_ll_address  = FALSE;
+    connect_l3cfg_notify(self);
 
     /* Kill the DHCP client */
     old_pid = priv->pid;
