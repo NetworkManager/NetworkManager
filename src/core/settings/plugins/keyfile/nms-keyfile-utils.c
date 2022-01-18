@@ -337,7 +337,7 @@ nms_keyfile_utils_check_file_permissions_stat(NMSKeyfileFiletype filetype,
         g_return_val_if_reached(FALSE);
 
     if (!NM_FLAGS_HAS(nm_utils_get_testing(), NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK)) {
-        if (st->st_uid != 0) {
+        if (!NM_IN_SET(st->st_uid, 0, nm_utils_get_nm_uid())) {
             g_set_error(error,
                         NM_SETTINGS_ERROR,
                         NM_SETTINGS_ERROR_INVALID_CONNECTION,

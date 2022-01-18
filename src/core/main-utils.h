@@ -6,8 +6,6 @@
 #ifndef __MAIN_UTILS_H__
 #define __MAIN_UTILS_H__
 
-void nm_main_utils_ensure_root(void);
-
 void nm_main_utils_setup_signals(GMainLoop *main_loop);
 
 void nm_main_utils_ensure_statedir(void);

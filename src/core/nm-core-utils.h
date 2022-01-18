@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <arpa/inet.h>
+#include <sys/types.h>
 
 #include "nm-connection.h"
 
@@ -469,5 +470,11 @@ void nm_utils_spawn_helper(const char *const  *args,
                            gpointer            cb_data);
 
 char *nm_utils_spawn_helper_finish(GAsyncResult *result, GError **error);
+
+/*****************************************************************************/
+
+uid_t nm_utils_get_nm_uid(void);
+
+gid_t nm_utils_get_nm_gid(void);
 
 #endif /* __NM_CORE_UTILS_H__ */
