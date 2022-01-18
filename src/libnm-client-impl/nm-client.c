@@ -1799,6 +1799,7 @@ nml_dbus_property_o_notify(NMClient               *self,
 
     if (pr_o->obj_watcher
         && (!dbus_path || !nm_streq(dbus_path, pr_o->obj_watcher->dbobj->dbus_path->str))) {
+        pr_o->nmobj = NULL;
         _dbobjs_obj_watcher_unregister(self, g_steal_pointer(&pr_o->obj_watcher));
         changed = TRUE;
     }
