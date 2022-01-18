@@ -5157,14 +5157,22 @@ nm_utils_spawn_helper_finish(GAsyncResult *result, GError **error)
 uid_t
 nm_utils_get_nm_uid(void)
 {
-    static uint8_t nm_uid_flag = 0;
-    static uid_t   nm_uid;
+    static int u_static = -1;
+    int        u;
 
-    if (!nm_uid_flag) {
-        nm_uid      = geteuid();
-        nm_uid_flag = 1;
+again:
+    if ((u = g_atomic_int_get(&u_static)) == -1) {
+        uid_t u2;
+
+        u2 = geteuid();
+        u  = u2;
+        nm_assert(u == u2);
+        nm_assert(u >= 0);
+        if (!g_atomic_int_compare_and_exchange(&u_static, -1, u))
+            goto again;
     }
-    return nm_uid;
+
+    return u;
 }
 
 /**
@@ -5176,12 +5184,20 @@ nm_utils_get_nm_uid(void)
 gid_t
 nm_utils_get_nm_gid(void)
 {
-    static uint8_t nm_gid_flag = 0;
-    static gid_t   nm_gid;
+    static int g_static = -1;
+    int        g;
 
-    if (!nm_gid_flag) {
-        nm_gid      = getegid();
-        nm_gid_flag = 1;
+again:
+    if ((g = g_atomic_int_get(&g_static)) == -1) {
+        gid_t g2;
+
+        g2 = geteuid();
+        g  = g2;
+        nm_assert(g == g2);
+        nm_assert(g >= 0);
+        if (!g_atomic_int_compare_and_exchange(&g_static, -1, g))
+            goto again;
     }
-    return nm_gid;
+
+    return g;
 }
