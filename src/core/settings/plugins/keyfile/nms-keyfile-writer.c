@@ -10,7 +10,6 @@
 
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include "libnm-core-intern/nm-keyfile-internal.h"
@@ -19,7 +18,6 @@
 #include "nms-keyfile-reader.h"
 
 #include "libnm-glib-aux/nm-io-utils.h"
-#include "src/core/main-utils.h"
 
 /*****************************************************************************/
 
@@ -446,8 +444,8 @@ nms_keyfile_writer_connection(NMConnection                   *connection,
                                       keyfile_dir,
                                       profile_dir,
                                       TRUE,
-                                      nm_main_utils_get_nm_uid(),
-                                      nm_main_utils_get_nm_gid(),
+                                      nm_utils_get_nm_uid(),
+                                      nm_utils_get_nm_gid(),
                                       existing_path,
                                       existing_path_read_only,
                                       force_rename,

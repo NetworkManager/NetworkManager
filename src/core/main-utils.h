@@ -6,10 +6,6 @@
 #ifndef __MAIN_UTILS_H__
 #define __MAIN_UTILS_H__
 
-uid_t nm_main_utils_get_nm_uid(void);
-
-gid_t nm_main_utils_get_nm_gid(void);
-
 void nm_main_utils_setup_signals(GMainLoop *main_loop);
 
 void nm_main_utils_ensure_statedir(void);

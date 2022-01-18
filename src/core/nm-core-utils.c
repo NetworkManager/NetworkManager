@@ -5145,3 +5145,43 @@ nm_utils_spawn_helper_finish(GAsyncResult *result, GError **error)
 
     return g_task_propagate_pointer(task, error);
 }
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_get_nm_uid:
+ *
+ * Checks what EUID NetworkManager is running as.
+ * Saves the EUID so it can be reused without making many syscalls.
+ */
+uid_t
+nm_utils_get_nm_uid(void)
+{
+    static uint8_t nm_uid_flag = 0;
+    static uid_t   nm_uid;
+
+    if (!nm_uid_flag) {
+        nm_uid      = geteuid();
+        nm_uid_flag = 1;
+    }
+    return nm_uid;
+}
+
+/**
+ * nm_utils_get_nm_gid:
+ *
+ * Checks what EGID NetworkManager is running as.
+ * Saves the EGID so it can be reused without making many syscalls.
+ */
+gid_t
+nm_utils_get_nm_gid(void)
+{
+    static uint8_t nm_gid_flag = 0;
+    static gid_t   nm_gid;
+
+    if (!nm_gid_flag) {
+        nm_gid      = getegid();
+        nm_gid_flag = 1;
+    }
+    return nm_gid;
+}

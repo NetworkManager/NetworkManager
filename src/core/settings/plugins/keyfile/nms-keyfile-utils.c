@@ -9,7 +9,6 @@
 
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-io-utils.h"
@@ -19,7 +18,6 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-config.h"
-#include "src/core/main-utils.h"
 
 /*****************************************************************************/
 
@@ -339,7 +337,7 @@ nms_keyfile_utils_check_file_permissions_stat(NMSKeyfileFiletype filetype,
         g_return_val_if_reached(FALSE);
 
     if (!NM_FLAGS_HAS(nm_utils_get_testing(), NM_UTILS_TEST_NO_KEYFILE_OWNER_CHECK)) {
-        if (st->st_uid != nm_main_utils_get_nm_uid()) {
+        if (st->st_uid != nm_utils_get_nm_uid()) {
             g_set_error(error,
                         NM_SETTINGS_ERROR,
                         NM_SETTINGS_ERROR_INVALID_CONNECTION,
