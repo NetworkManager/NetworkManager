@@ -252,7 +252,7 @@ ip4_process_classless_routes(const char     *iface,
     if (!str)
         str = g_hash_table_lookup(options, "ms_classless_static_routes");
 
-    if (!str || !strlen(str))
+    if (nm_str_is_empty(str))
         return FALSE;
 
     p = str;

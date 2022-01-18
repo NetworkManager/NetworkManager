@@ -4430,6 +4430,8 @@ test_setting_metadata(void)
             GArray                   *property_types_data;
             guint                     prop_idx_val;
             gboolean                  can_set_including_default = FALSE;
+            gboolean                  can_have_direct_hook      = FALSE;
+            int                       n_special_options;
 
             g_assert(sip->name);
 
@@ -4488,6 +4490,22 @@ test_setting_metadata(void)
                 g_assert_cmpint(pspec->default_value, <=, pspec->maximum);
 
                 g_assert_cmpint(pspec->maximum, <=, (guint64) G_MAXUINT32);
+
+                can_set_including_default = TRUE;
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_INT64) {
+                const GParamSpecInt64 *pspec;
+
+                g_assert(sip->property_type == &nm_sett_info_propert_type_direct_int64);
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "x"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_INT64);
+
+                pspec = NM_G_PARAM_SPEC_CAST_INT64(sip->param_spec);
+                g_assert_cmpint(pspec->minimum, <=, pspec->maximum);
+                g_assert_cmpint(pspec->default_value, >=, pspec->minimum);
+                g_assert_cmpint(pspec->default_value, <=, pspec->maximum);
 
                 can_set_including_default = TRUE;
             } else if (sip->property_type->direct_type == NM_VALUE_TYPE_UINT64) {
@@ -4555,6 +4573,7 @@ test_setting_metadata(void)
                     g_assert(g_variant_type_equal(sip->property_type->dbus_type, "s"));
                     g_assert(sip->property_type->to_dbus_fcn
                              == _nm_setting_property_to_dbus_fcn_direct);
+                    can_have_direct_hook = TRUE;
                 }
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_STRING);
@@ -4569,6 +4588,13 @@ test_setting_metadata(void)
 
             if (sip->direct_set_string_ascii_strdown)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+            if (sip->direct_set_string_strip)
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+            if (sip->direct_string_is_refstr) {
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+                g_assert(sip->param_spec);
+                g_assert(!NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_SECRET));
+            }
 
             if (sip->direct_set_string_mac_address_len != 0) {
                 g_assert(NM_IN_SET(sip->property_type,
@@ -4577,10 +4603,38 @@ test_setting_metadata(void)
                 g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
             }
 
-            g_assert(((sip->direct_set_string_mac_address_len != 0)
-                      + (!!sip->direct_set_string_ascii_strdown)
-                      + (sip->direct_set_string_ip_address_addr_family != 0))
-                     <= 1);
+            if (!can_have_direct_hook)
+                g_assert(!sip->direct_hook.set_string_fcn);
+
+            n_special_options = (sip->direct_set_string_mac_address_len != 0)
+                                + (!!sip->direct_set_string_strip)
+                                + (!!sip->direct_set_string_ascii_strdown)
+                                + (sip->direct_set_string_ip_address_addr_family != 0)
+                                + (!!sip->direct_string_is_refstr);
+
+            G_STATIC_ASSERT_EXPR(AF_UNSPEC + 1 != 0);
+            g_assert(NM_IN_SET((int) sip->direct_set_string_ip_address_addr_family,
+                               0,
+                               AF_UNSPEC + 1,
+                               AF_INET + 1,
+                               AF_INET6 + 1));
+
+            if (sip->direct_set_string_ip_address_addr_family == 0)
+                g_assert(!sip->direct_set_string_ip_address_addr_family_map_zero_to_null);
+
+            /* currently, we have no cases where special options are mixed. There is no problem to support
+             * that, but as it's not needed, don't do it for now. */
+            g_assert_cmpint(n_special_options, <=, 1);
+
+            if (n_special_options > 0) {
+                /* currently, special options are only relevant for string properties. */
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRING);
+            }
+
+            if (sip->param_spec && NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
+                /* Currently, special options are not supported for secrets. */
+                g_assert_cmpint(n_special_options, ==, 0);
+            }
 
             if (!sip->property_type->to_dbus_fcn) {
                 /* it's allowed to have no to_dbus_fcn(), to ignore a property. But such
@@ -4703,9 +4757,10 @@ check_done:;
                                     NULL);
                     g_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(sip->param_spec));
 
-                    if (nm_streq(sip->name, NM_SETTING_NAME))
+                    if (nm_streq(sip->name, NM_SETTING_NAME)) {
                         g_assert_cmpstr(g_value_get_string(&val), ==, msi->setting_name);
-                    else
+                        g_assert(sip->property_type == &nm_sett_info_propert_type_setting_name);
+                    } else
                         g_assert_cmpstr(g_value_get_string(&val), ==, NULL);
                 }
 
@@ -4849,23 +4904,6 @@ check_done:;
                               sizeof(pt->typdata_to_dbus))
                            != 0)
                     continue;
-
-                if ((pt == &nm_sett_info_propert_type_plain_i
-                     && pt_2 == &nm_sett_info_propert_type_deprecated_ignore_i)
-                    || (pt_2 == &nm_sett_info_propert_type_plain_i
-                        && pt == &nm_sett_info_propert_type_deprecated_ignore_i)
-                    || (pt == &nm_sett_info_propert_type_plain_u
-                        && pt_2 == &nm_sett_info_propert_type_deprecated_ignore_u)
-                    || (pt_2 == &nm_sett_info_propert_type_plain_u
-                        && pt == &nm_sett_info_propert_type_deprecated_ignore_u)) {
-                    /* These are known to be duplicated. This is the case for
-                     *   "gsm.network-type"  and plain properties like "802-11-wireless-security.fils" ("i" D-Bus type)
-                     *   "gsm.allowed-bands" and plain properties like "802-11-olpc-mesh.channel" ("u" D-Bus type)
-                     * While the content/behaviour of the property types are identical, their purpose
-                     * is different. So allow them.
-                     */
-                    continue;
-                }
 
                 /* the property-types with same content should all be shared. Here we have two that
                  * are the same content, but different instances. Bug. */

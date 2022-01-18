@@ -13,12 +13,13 @@
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
 
-#include "libnm-std-aux/c-list-util.h"
-#include "libnm-glib-aux/nm-uuid.h"
-#include "libnm-glib-aux/nm-enum-utils.h"
-#include "libnm-glib-aux/nm-str-buf.h"
-#include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-base/nm-base.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-glib-aux/nm-json-aux.h"
+#include "libnm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-glib-aux/nm-uuid.h"
+#include "libnm-std-aux/c-list-util.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-utils.h"
@@ -10666,6 +10667,146 @@ test_vpn_connection_state_reason(void)
 
 /*****************************************************************************/
 
+static void
+test_system_encodings(void)
+{
+    const int N_RUN = 10000;
+    int       i_run;
+
+    g_assert(nmtst_system_encodings_for_lang("") == NULL);
+    g_assert(nmtst_system_encodings_for_lang("zh") == NULL);
+    g_assert(nmtst_system_encodings_for_lang("zh_cx") == NULL);
+
+#define LL(lang, ...)                                                                \
+    G_STMT_START                                                                     \
+    {                                                                                \
+        const char *const _lang = "" lang "";                                        \
+                                                                                     \
+        nmtst_assert_strv(nmtst_system_encodings_for_lang(_lang), __VA_ARGS__);      \
+                                                                                     \
+        if (strlen(_lang) == 2) {                                                    \
+            gs_free char *_lang2 = g_strdup_printf("%s%s", _lang, "x");              \
+                                                                                     \
+            nmtst_assert_strv(nmtst_system_encodings_for_lang(_lang2), __VA_ARGS__); \
+        }                                                                            \
+    }                                                                                \
+    G_STMT_END
+
+    LL("zh_cn", "euc-cn", "gb2312", "gb18030");
+    LL("zh_hk", "big5", "euc-tw", "big5-hkcs");
+    LL("zh_mo", "big5", "euc-tw");
+    LL("zh_sg", "euc-cn", "gb2312", "gb18030");
+    LL("zh_tw", "big5", "euc-tw");
+
+    LL("ar", "iso-8859-6", "windows-1256");
+    LL("be", "koi8-r", "windows-1251", "iso-8859-5");
+    LL("bg", "windows-1251", "koi8-r", "iso-8859-5");
+    LL("cs", "iso-8859-2", "windows-1250");
+    LL("el", "iso-8859-7", "windows-1253");
+    LL("et", "iso-8859-4", "windows-1257");
+    LL("he", "iso-8859-8", "windows-1255");
+    LL("hr", "iso-8859-2", "windows-1250");
+    LL("hu", "iso-8859-2", "windows-1250");
+    LL("iw", "iso-8859-8", "windows-1255");
+    LL("ja", "euc-jp", "shift_jis", "iso-2022-jp");
+    LL("ko", "euc-kr", "iso-2022-kr", "johab");
+    LL("lt", "iso-8859-4", "windows-1257");
+    LL("lv", "iso-8859-4", "windows-1257");
+    LL("mk", "koi8-r", "windows-1251", "iso-8859-5");
+    LL("pl", "iso-8859-2", "windows-1250");
+    LL("ro", "iso-8859-2", "windows-1250");
+    LL("ru", "koi8-r", "windows-1251", "iso-8859-5");
+    LL("sh", "iso-8859-2", "windows-1250");
+    LL("sk", "iso-8859-2", "windows-1250");
+    LL("sl", "iso-8859-2", "windows-1250");
+    LL("sr", "koi8-r", "windows-1251", "iso-8859-5");
+    LL("th", "iso-8859-11", "windows-874");
+    LL("tr", "iso-8859-9", "windows-1254");
+    LL("uk", "koi8-u", "koi8-r", "windows-1251");
+
+    g_assert(nmtst_system_encodings_get_default());
+    g_assert(nmtst_system_encodings_get());
+
+    for (i_run = 0; i_run < N_RUN; i_run++) {
+        char               buf[7];
+        int                n_buf;
+        int                i_buf;
+        const char *const *e;
+
+        if (i_run < N_RUN / 3)
+            n_buf = 2;
+        else if (i_run < 2 * N_RUN / 3)
+            n_buf = 5;
+        else
+            n_buf = nmtst_get_rand_uint32() % G_N_ELEMENTS(buf);
+
+        for (i_buf = 0; i_buf < n_buf; i_buf++) {
+            do {
+                buf[i_buf] = (char) nmtst_get_rand_uint32();
+            } while (buf[i_buf] == '\0');
+        }
+        g_assert(i_buf < G_N_ELEMENTS(buf));
+        buf[i_buf] = '\0';
+
+        g_assert_cmpint(n_buf, <, G_N_ELEMENTS(buf));
+        g_assert_cmpint(strlen(buf), ==, n_buf);
+
+        e = nmtst_system_encodings_for_lang(buf);
+        if (e)
+            g_assert_cmpint(n_buf, >=, 2);
+    }
+}
+
+/*****************************************************************************/
+
+static void
+test_direct_string_is_refstr(void)
+{
+    gs_unref_object NMSetting *s1       = NULL;
+    gs_unref_object NMSetting *s2       = NULL;
+    const char                *TEST_STR = "adfdsff";
+    NMRefString               *rstr0;
+    NMRefString               *rstr = NULL;
+
+    g_assert(!nmtst_ref_string_find(TEST_STR));
+
+    s1 = nm_setting_connection_new();
+    g_object_set(s1,
+                 NM_SETTING_CONNECTION_ID,
+                 "uuidtest",
+                 NM_SETTING_CONNECTION_UUID,
+                 nm_uuid_generate_random_str_a(),
+                 NM_SETTING_CONNECTION_TYPE,
+                 TEST_STR,
+                 NULL);
+
+    rstr0 = nmtst_ref_string_find(TEST_STR);
+    g_assert(rstr0);
+
+    if (nmtst_get_rand_bool()) {
+        rstr = nm_ref_string_new(TEST_STR);
+        g_assert(rstr);
+        g_assert(rstr == rstr0);
+        g_assert(rstr->str
+                 == nm_setting_connection_get_connection_type((NMSettingConnection *) s1));
+    }
+
+    s2 = nm_setting_duplicate(s1);
+    g_assert(rstr0->str == nm_setting_connection_get_connection_type((NMSettingConnection *) s2));
+
+    g_clear_object(&s1);
+    if (nmtst_get_rand_bool())
+        g_clear_object(&s2);
+    else {
+        g_object_set(s2, NM_SETTING_CONNECTION_TYPE, nmtst_get_rand_bool() ? "hallo" : NULL, NULL);
+    }
+    nm_ref_string_unref(rstr);
+
+    g_assert(!nmtst_ref_string_find(TEST_STR));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -11007,6 +11148,9 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_strsplit_quoted", test_strsplit_quoted);
     g_test_add_func("/core/general/test_vpn_connection_state_reason",
                     test_vpn_connection_state_reason);
+
+    g_test_add_func("/core/general/test_system_encodings", test_system_encodings);
+    g_test_add_func("/core/general/test_direct_string_is_refstr", test_direct_string_is_refstr);
 
     return g_test_run();
 }

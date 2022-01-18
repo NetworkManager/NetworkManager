@@ -46,6 +46,19 @@ nm_ref_string_new(const char *cstr)
 
 /*****************************************************************************/
 
+NMRefString *nmtst_ref_string_find_len(const char *cstr, gsize len);
+
+static inline NMRefString *
+nmtst_ref_string_find(const char *cstr)
+{
+    /* WARNING: only use for testing. See nmtst_ref_string_find_len() why. */
+    if (!cstr)
+        return FALSE;
+    return nmtst_ref_string_find_len(cstr, strlen(cstr));
+}
+
+/*****************************************************************************/
+
 static inline NMRefString *
 nm_ref_string_ref(NMRefString *rstr)
 {
@@ -164,24 +177,63 @@ nm_ref_string_unref_upcast(const char *str)
     nm_ref_string_unref(NM_REF_STRING_UPCAST(str));
 }
 
+/**
+ * nm_ref_string_reset_str_upcast:
+ * @ptr: the destination pointer that gets updated.
+ * @str: the new string to be set.
+ *
+ * @ptr is a location (destination pointer) of an "upcast" NMRefString.
+ * That is, it holds either %NULL or some ((NMRefString *) rstr)->str.
+ * In other words, @ptr holds an NMRefString which you could get via
+ * NM_REF_STRING_UPCAST(*ptr).
+ * This function resets @ptr to point to a NMRefString equal to @str.
+ *
+ * Returns: %TRUE if the pointer changed and %FALSE if the value was
+ *   already set to a string equal to @str.
+ */
+static inline gboolean
+nm_ref_string_reset_str_upcast(const char **ptr, const char *str)
+{
+    NMRefString *rstr;
+    gsize        l;
+
+    nm_assert(ptr);
+
+    if (!str)
+        return nm_clear_pointer(ptr, nm_ref_string_unref_upcast);
+
+    rstr = NM_REF_STRING_UPCAST(*ptr);
+
+    l = strlen(str);
+
+    if (rstr && rstr->len == l && (rstr->str == str || memcmp(rstr->str, str, l) == 0))
+        return FALSE;
+
+    *ptr = nm_ref_string_new_len(str, l)->str;
+    nm_ref_string_unref(rstr);
+    return TRUE;
+}
+
 static inline gboolean
 nm_ref_string_reset_str(NMRefString **ptr, const char *str)
 {
-    nm_auto_ref_string NMRefString *rstr = NULL;
-    gsize                           l;
+    NMRefString *rstr;
+    gsize        l;
 
     nm_assert(ptr);
 
     if (!str)
         return nm_clear_pointer(ptr, nm_ref_string_unref);
 
+    rstr = *ptr;
+
     l = strlen(str);
 
-    if ((*ptr) && (*ptr)->len == l && ((*ptr)->str == str || memcmp((*ptr)->str, str, l) == 0))
+    if (rstr && rstr->len == l && (rstr->str == str || memcmp(rstr->str, str, l) == 0))
         return FALSE;
 
-    rstr = *ptr;
     *ptr = nm_ref_string_new_len(str, l);
+    nm_ref_string_unref(rstr);
     return TRUE;
 }
 

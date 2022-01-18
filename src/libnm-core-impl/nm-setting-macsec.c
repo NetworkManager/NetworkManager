@@ -38,15 +38,15 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT,
                                   PROP_SEND_SCI, );
 
 typedef struct {
-    char                     *parent;
-    char                     *mka_cak;
-    char                     *mka_ckn;
-    int                       port;
-    guint                     mka_cak_flags;
-    NMSettingMacsecMode       mode;
-    NMSettingMacsecValidation validation;
-    bool                      encrypt;
-    bool                      send_sci;
+    char  *parent;
+    char  *mka_cak;
+    char  *mka_ckn;
+    guint  mka_cak_flags;
+    gint32 mode;
+    gint32 validation;
+    gint32 port;
+    bool   encrypt;
+    bool   send_sci;
 } NMSettingMacsecPrivate;
 
 /**
@@ -84,6 +84,7 @@ const char *
 nm_setting_macsec_get_parent(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), NULL);
+
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->parent;
 }
 
@@ -99,6 +100,7 @@ NMSettingMacsecMode
 nm_setting_macsec_get_mode(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), NM_SETTING_MACSEC_MODE_PSK);
+
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->mode;
 }
 
@@ -129,6 +131,7 @@ const char *
 nm_setting_macsec_get_mka_cak(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), NULL);
+
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->mka_cak;
 }
 
@@ -160,6 +163,7 @@ const char *
 nm_setting_macsec_get_mka_ckn(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), NULL);
+
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->mka_ckn;
 }
 
@@ -175,6 +179,7 @@ int
 nm_setting_macsec_get_port(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), 1);
+
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->port;
 }
 
@@ -190,6 +195,7 @@ NMSettingMacsecValidation
 nm_setting_macsec_get_validation(NMSettingMacsec *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MACSEC(setting), NM_SETTING_MACSEC_VALIDATION_DISABLE);
+
     return NM_SETTING_MACSEC_GET_PRIVATE(setting)->validation;
 }
 
@@ -374,15 +380,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (priv->port <= 0 || priv->port > 65534) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                    _("invalid port %d"),
-                    priv->port);
-        g_prefix_error(error, "%s.%s: ", NM_SETTING_MACSEC_SETTING_NAME, NM_SETTING_MACSEC_PORT);
-        return FALSE;
-    }
+    nm_assert(priv->port >= 1 && priv->port <= 65534);
 
     if (priv->mode != NM_SETTING_MACSEC_MODE_PSK && (priv->mka_cak || priv->mka_ckn)) {
         g_set_error_literal(error,
@@ -402,93 +400,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingMacsec        *setting = NM_SETTING_MACSEC(object);
-    NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_value_set_string(value, priv->parent);
-        break;
-    case PROP_MODE:
-        g_value_set_int(value, priv->mode);
-        break;
-    case PROP_ENCRYPT:
-        g_value_set_boolean(value, priv->encrypt);
-        break;
-    case PROP_MKA_CAK:
-        g_value_set_string(value, priv->mka_cak);
-        break;
-    case PROP_MKA_CKN:
-        g_value_set_string(value, priv->mka_ckn);
-        break;
-    case PROP_PORT:
-        g_value_set_int(value, priv->port);
-        break;
-    case PROP_VALIDATION:
-        g_value_set_int(value, priv->validation);
-        break;
-    case PROP_SEND_SCI:
-        g_value_set_boolean(value, priv->send_sci);
-        break;
-    default:
-        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingMacsec        *setting = NM_SETTING_MACSEC(object);
-    NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
-
-    switch (prop_id) {
-    case PROP_PARENT:
-        g_free(priv->parent);
-        priv->parent = g_value_dup_string(value);
-        break;
-    case PROP_MODE:
-        priv->mode = g_value_get_int(value);
-        break;
-    case PROP_ENCRYPT:
-        priv->encrypt = g_value_get_boolean(value);
-        break;
-    case PROP_MKA_CAK:
-        nm_free_secret(priv->mka_cak);
-        priv->mka_cak = g_value_dup_string(value);
-        break;
-    case PROP_MKA_CKN:
-        g_free(priv->mka_ckn);
-        priv->mka_ckn = g_value_dup_string(value);
-        break;
-    case PROP_PORT:
-        priv->port = g_value_get_int(value);
-        break;
-    case PROP_VALIDATION:
-        priv->validation = g_value_get_int(value);
-        break;
-    case PROP_SEND_SCI:
-        priv->send_sci = g_value_get_boolean(value);
-        break;
-    default:
-        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_macsec_init(NMSettingMacsec *self)
-{
-    NMSettingMacsecPrivate *priv = NM_SETTING_MACSEC_GET_PRIVATE(self);
-
-    nm_assert(priv->mode == NM_SETTING_MACSEC_MODE_PSK);
-    priv->port       = 1;
-    priv->validation = NM_SETTING_MACSEC_VALIDATION_STRICT;
-}
+{}
 
 /**
  * nm_setting_macsec_new:
@@ -506,19 +419,6 @@ nm_setting_macsec_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingMacsec        *setting = NM_SETTING_MACSEC(object);
-    NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
-
-    g_free(priv->parent);
-    nm_free_secret(priv->mka_cak);
-    g_free(priv->mka_ckn);
-
-    G_OBJECT_CLASS(nm_setting_macsec_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
@@ -527,9 +427,8 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingMacsecPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify       = verify;
     setting_class->need_secrets = need_secrets;
@@ -544,12 +443,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_PARENT] = g_param_spec_string(
-        NM_SETTING_MACSEC_PARENT,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_MACSEC_PARENT,
+                                              PROP_PARENT,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingMacsecPrivate,
+                                              parent);
 
     /**
      * NMSettingMacsec:mode:
@@ -559,14 +459,16 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_MODE] =
-        g_param_spec_int(NM_SETTING_MACSEC_MODE,
-                         "",
-                         "",
-                         G_MININT,
-                         G_MAXINT,
-                         NM_SETTING_MACSEC_MODE_PSK,
-                         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_MACSEC_MODE,
+                                             PROP_MODE,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_SETTING_MACSEC_MODE_PSK,
+                                             NM_SETTING_PARAM_INFERRABLE,
+                                             NMSettingMacsecPrivate,
+                                             mode);
 
     /**
      * NMSettingMacsec:encrypt:
@@ -592,12 +494,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_MKA_CAK] =
-        g_param_spec_string(NM_SETTING_MACSEC_MKA_CAK,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_MACSEC_MKA_CAK,
+                                              PROP_MKA_CAK,
+                                              NM_SETTING_PARAM_SECRET,
+                                              NMSettingMacsecPrivate,
+                                              mka_cak);
 
     /**
      * NMSettingMacsec:mka-cak-flags:
@@ -622,11 +525,13 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_MKA_CKN] = g_param_spec_string(NM_SETTING_MACSEC_MKA_CKN,
-                                                       "",
-                                                       "",
-                                                       NULL,
-                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_MACSEC_MKA_CKN,
+                                              PROP_MKA_CKN,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingMacsecPrivate,
+                                              mka_ckn);
 
     /**
      * NMSettingMacsec:port:
@@ -635,14 +540,16 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_PORT] =
-        g_param_spec_int(NM_SETTING_MACSEC_PORT,
-                         "",
-                         "",
-                         1,
-                         65534,
-                         1,
-                         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_MACSEC_PORT,
+                                             PROP_PORT,
+                                             1,
+                                             65534,
+                                             1,
+                                             NM_SETTING_PARAM_INFERRABLE,
+                                             NMSettingMacsecPrivate,
+                                             port);
 
     /**
      * NMSettingMacsec:validation:
@@ -651,14 +558,16 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      *
      * Since: 1.6
      **/
-    obj_properties[PROP_VALIDATION] =
-        g_param_spec_int(NM_SETTING_MACSEC_VALIDATION,
-                         "",
-                         "",
-                         G_MININT,
-                         G_MAXINT,
-                         NM_SETTING_MACSEC_VALIDATION_STRICT,
-                         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_MACSEC_VALIDATION,
+                                             PROP_VALIDATION,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_SETTING_MACSEC_VALIDATION_STRICT,
+                                             NM_SETTING_PARAM_INFERRABLE,
+                                             NMSettingMacsecPrivate,
+                                             validation);
 
     /**
      * NMSettingMacsec:send-sci:

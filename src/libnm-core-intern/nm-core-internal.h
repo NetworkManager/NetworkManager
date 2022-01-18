@@ -746,7 +746,36 @@ struct _NMSettInfoProperty {
 
     GParamSpec *param_spec;
 
+    /* We want that our properties follow a small number of "default" types
+     * and behaviors. For example, we have int32 and string properties, but
+     * most properties of a certain type should behave in a similar way.
+     *
+     * That common behavior is realized via the property_type, which defines
+     * general behaviors for the property.
+     *
+     * Note that we still will need some property-specific additional tweaks.
+     * Of course, the name and param_spec are per-property. But below there are
+     * also flags and hooks, that can augment the behavior in the property_type.
+     * For example, the property_type in general might be of type string, but
+     * then we might want for some properties that the setter will strip
+     * whitespace. That is for example express with the flag direct_set_string_strip,
+     * which now is per-property-info, and no longer per-property-type.
+     *
+     * The distinction between those two is fixed. At the most extreme, we could
+     * move all fields from property_type to NMSettInfoProperty or we could move
+     * behavioral tweaks into the classes themselves. It's chosen this way so
+     * that we still have sensible common behaviors (string type), but minor
+     * tweaks are per property-info (and don't require a separate property-type). */
     const NMSettInfoPropertType *property_type;
+
+    union {
+        /* Optional hook for direct string properties, this gets called when setting the string.
+         * Return whether the value changed. */
+        gboolean (*set_string_fcn)(const NMSettInfoSetting  *sett_info,
+                                   const NMSettInfoProperty *property_info,
+                                   NMSetting                *setting,
+                                   const char               *src);
+    } direct_hook;
 
     /* This only has meaning for direct properties (property_type->direct_type != NM_VALUE_TYPE_UNSPEC).
      * In that case, this is the offset where _nm_setting_get_private() can find
@@ -757,15 +786,29 @@ struct _NMSettInfoProperty {
      * normalize the string via g_ascii_strdown(). */
     bool direct_set_string_ascii_strdown : 1;
 
+    /* If TRUE, this is a NM_VALUE_TYPE_STRING direct property, and the setter will
+     * normalize the string via g_strstrip(). */
+    bool direct_set_string_strip : 1;
+
     /* If non-zero, this is a NM_VALUE_TYPE_STRING direct property. Actually, it is
      * a _nm_setting_property_define_direct_mac_address(), and the setter will
      * call _nm_utils_hwaddr_canonical_or_invalid() on the string, with the specified
      * MAC address length. */
     guint8 direct_set_string_mac_address_len : 5;
 
-    /* If non-zero, this is the addr-family (AF_INET/AF_INET6) for normalizing an IP
-     * address. */
+    /* If non-zero, this is the addr-family (AF_UNSPEC/AF_INET/AF_INET6) for normalizing an IP
+     * address with _nm_utils_ipaddr_canonical_or_invalid().
+     * Note that AF_UNSPEC is zero, so to differentiate between zero and AF_UNSPEC
+     * this value is actually the address family + 1. So either zero or AF_UNSPEC+1, AF_INET+1,
+     * or AF_INET6+1. */
     guint8 direct_set_string_ip_address_addr_family : 5;
+
+    /* Only makes sense together with direct_set_string_ip_address_addr_family. This flag
+     * is passed to _nm_utils_ipaddr_canonical_or_invalid(). */
+    bool direct_set_string_ip_address_addr_family_map_zero_to_null : 1;
+
+    /* Whether the string property is implemented as a (downcast) NMRefString. */
+    bool direct_string_is_refstr : 1;
 
     /* Usually, properties that are set to the default value for the GParamSpec
      * are not serialized to GVariant (and NULL is returned by to_dbus_data().
@@ -844,6 +887,20 @@ _nm_setting_get_private(NMSetting *self, const NMSettInfoSetting *sett_info, gui
     nm_assert(NM_SETTING_GET_CLASS(self) == sett_info->setting_class);
 
     return ((((char *) ((gpointer) self)) + sett_info->private_offset) + offset);
+}
+
+static inline gpointer
+_nm_setting_get_private_field(NMSetting                *self,
+                              const NMSettInfoSetting  *sett_info,
+                              const NMSettInfoProperty *prop_info)
+{
+    nm_assert(sett_info);
+    nm_assert(prop_info);
+    nm_assert(prop_info->property_type);
+    nm_assert(prop_info->property_type->direct_type > NM_VALUE_TYPE_UNSPEC);
+    nm_assert(sett_info->private_offset != 0 || prop_info->direct_offset != 0);
+
+    return _nm_setting_get_private(self, sett_info, prop_info->direct_offset);
 }
 
 static inline const NMSettInfoProperty *

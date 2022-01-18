@@ -328,169 +328,181 @@ good:
 
 /*****************************************************************************/
 
-struct IsoLangToEncodings {
-    const char        *lang;
-    const char *const *encodings;
-};
+typedef const char *const StrvArray4Type[4];
 
-#define LANG_ENCODINGS(l, ...)                             \
-    {                                                      \
-        .lang = l, .encodings = NM_MAKE_STRV(__VA_ARGS__), \
+#define LL(l, ...)                               \
+    {                                            \
+        .name = l, .value = {__VA_ARGS__, NULL}, \
     }
 
 /* 5-letter language codes */
-static const struct IsoLangToEncodings isoLangEntries5[] = {
-    /* Simplified Chinese */
-    LANG_ENCODINGS("zh_cn", "euc-cn", "gb2312", "gb18030"), /* PRC */
-    LANG_ENCODINGS("zh_sg", "euc-cn", "gb2312", "gb18030"), /* Singapore */
-
-    /* Traditional Chinese */
-    LANG_ENCODINGS("zh_tw", "big5", "euc-tw"),              /* Taiwan */
-    LANG_ENCODINGS("zh_hk", "big5", "euc-tw", "big5-hkcs"), /* Hong Kong */
-    LANG_ENCODINGS("zh_mo", "big5", "euc-tw"),              /* Macau */
-
-    LANG_ENCODINGS(NULL, NULL)};
+static _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _iso_lang_entries_5_lookup,
+    StrvArray4Type,
+    const char *const *,
+    { nm_assert(name); },
+    { return NULL; },
+    ,
+    LL("zh_cn", "euc-cn", "gb2312", "gb18030"), /* Simplified Chinese, PRC */
+    LL("zh_hk", "big5", "euc-tw", "big5-hkcs"), /* Traditional Chinese, Hong Kong */
+    LL("zh_mo", "big5", "euc-tw"),              /* Traditional Chinese, Macau */
+    LL("zh_sg", "euc-cn", "gb2312", "gb18030"), /* Simplified Chinese, Singapore */
+    LL("zh_tw", "big5", "euc-tw"),              /* Traditional Chinese, Taiwan */
+);
 
 /* 2-letter language codes; we don't care about the other 3 in this table */
-static const struct IsoLangToEncodings isoLangEntries2[] = {
-    /* Japanese */
-    LANG_ENCODINGS("ja", "euc-jp", "shift_jis", "iso-2022-jp"),
+static _NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _iso_lang_entries_2_lookup,
+    StrvArray4Type,
+    const char *const *,
+    { nm_assert(name); },
+    { return NULL; },
+    ,
+    LL("ar", "iso-8859-6", "windows-1256"),           /* Arabic */
+    LL("be", "koi8-r", "windows-1251", "iso-8859-5"), /* Cyrillic, Belorussian */
+    LL("bg", "windows-1251", "koi8-r", "iso-8859-5"), /* Cyrillic, Bulgarian */
+    LL("cs", "iso-8859-2", "windows-1250"),           /* Central European, Czech */
+    LL("el", "iso-8859-7", "windows-1253"),           /* Greek */
+    LL("et", "iso-8859-4", "windows-1257"),           /* Baltic, Estonian */
+    LL("he", "iso-8859-8", "windows-1255"),           /* Hebrew */
+    LL("hr", "iso-8859-2", "windows-1250"),           /* Central European, Croatian */
+    LL("hu", "iso-8859-2", "windows-1250"),           /* Central European, Hungarian */
+    LL("iw", "iso-8859-8", "windows-1255"),           /* Hebrew */
+    LL("ja", "euc-jp", "shift_jis", "iso-2022-jp"),   /* Japanese */
+    LL("ko", "euc-kr", "iso-2022-kr", "johab"),       /* Korean */
+    LL("lt", "iso-8859-4", "windows-1257"),           /* Baltic, Lithuanian */
+    LL("lv", "iso-8859-4", "windows-1257"),           /* Baltic, Latvian */
+    LL("mk", "koi8-r", "windows-1251", "iso-8859-5"), /* Cyrillic, Macedonian */
+    LL("pl", "iso-8859-2", "windows-1250"),           /* Central European, Polish */
+    LL("ro", "iso-8859-2", "windows-1250"),           /* Central European, Romanian */
+    LL("ru", "koi8-r", "windows-1251", "iso-8859-5"), /* Cyrillic, Russian */
+    LL("sh", "iso-8859-2", "windows-1250"),           /* Central European, Serbo-Croatian */
+    LL("sk", "iso-8859-2", "windows-1250"),           /* Central European, Slovakian */
+    LL("sl", "iso-8859-2", "windows-1250"),           /* Central European, Slovenian */
+    LL("sr", "koi8-r", "windows-1251", "iso-8859-5"), /* Cyrillic, Serbian */
+    LL("th", "iso-8859-11", "windows-874"),           /* Thai */
+    LL("tr", "iso-8859-9", "windows-1254"),           /* Turkish */
+    LL("uk", "koi8-u", "koi8-r", "windows-1251"),     /* Cyrillic, Ukrainian */
+);
 
-    /* Korean */
-    LANG_ENCODINGS("ko", "euc-kr", "iso-2022-kr", "johab"),
-
-    /* Thai */
-    LANG_ENCODINGS("th", "iso-8859-11", "windows-874"),
-
-    /* Central European */
-    LANG_ENCODINGS("hu", "iso-8859-2", "windows-1250"), /* Hungarian */
-    LANG_ENCODINGS("cs", "iso-8859-2", "windows-1250"), /* Czech */
-    LANG_ENCODINGS("hr", "iso-8859-2", "windows-1250"), /* Croatian */
-    LANG_ENCODINGS("pl", "iso-8859-2", "windows-1250"), /* Polish */
-    LANG_ENCODINGS("ro", "iso-8859-2", "windows-1250"), /* Romanian */
-    LANG_ENCODINGS("sk", "iso-8859-2", "windows-1250"), /* Slovakian */
-    LANG_ENCODINGS("sl", "iso-8859-2", "windows-1250"), /* Slovenian */
-    LANG_ENCODINGS("sh", "iso-8859-2", "windows-1250"), /* Serbo-Croatian */
-
-    /* Cyrillic */
-    LANG_ENCODINGS("ru", "koi8-r", "windows-1251", "iso-8859-5"), /* Russian */
-    LANG_ENCODINGS("be", "koi8-r", "windows-1251", "iso-8859-5"), /* Belorussian */
-    LANG_ENCODINGS("bg", "windows-1251", "koi8-r", "iso-8859-5"), /* Bulgarian */
-    LANG_ENCODINGS("mk", "koi8-r", "windows-1251", "iso-8859-5"), /* Macedonian */
-    LANG_ENCODINGS("sr", "koi8-r", "windows-1251", "iso-8859-5"), /* Serbian */
-    LANG_ENCODINGS("uk", "koi8-u", "koi8-r", "windows-1251"),     /* Ukrainian */
-
-    /* Arabic */
-    LANG_ENCODINGS("ar", "iso-8859-6", "windows-1256"),
-
-    /* Baltic */
-    LANG_ENCODINGS("et", "iso-8859-4", "windows-1257"), /* Estonian */
-    LANG_ENCODINGS("lt", "iso-8859-4", "windows-1257"), /* Lithuanian */
-    LANG_ENCODINGS("lv", "iso-8859-4", "windows-1257"), /* Latvian */
-
-    /* Greek */
-    LANG_ENCODINGS("el", "iso-8859-7", "windows-1253"),
-
-    /* Hebrew */
-    LANG_ENCODINGS("he", "iso-8859-8", "windows-1255"),
-    LANG_ENCODINGS("iw", "iso-8859-8", "windows-1255"),
-
-    /* Turkish */
-    LANG_ENCODINGS("tr", "iso-8859-9", "windows-1254"),
-
-    /* Table end */
-    LANG_ENCODINGS(NULL, NULL)};
-
-static GHashTable *langToEncodings5 = NULL;
-static GHashTable *langToEncodings2 = NULL;
-
-static void
-init_lang_to_encodings_hash(void)
+static const char *const *
+_system_encodings_for_lang(const char *lang)
 {
-    struct IsoLangToEncodings *enc;
+    char               tmp_lang[3];
+    const char *const *e;
 
-    if (G_UNLIKELY(langToEncodings5 == NULL)) {
-        /* Five-letter codes */
-        enc              = (struct IsoLangToEncodings *) &isoLangEntries5[0];
-        langToEncodings5 = g_hash_table_new(nm_str_hash, g_str_equal);
-        while (enc->lang) {
-            g_hash_table_insert(langToEncodings5, (gpointer) enc->lang, (gpointer) enc->encodings);
-            enc++;
-        }
+    nm_assert(lang);
+
+    if (lang[0] == '\0' || lang[1] == '\0') {
+        /* need at least two characters. */
+        nm_assert(!_iso_lang_entries_5_lookup(lang));
+        nm_assert(!_iso_lang_entries_2_lookup(lang));
+        return NULL;
     }
 
-    if (G_UNLIKELY(langToEncodings2 == NULL)) {
-        /* Two-letter codes */
-        enc              = (struct IsoLangToEncodings *) &isoLangEntries2[0];
-        langToEncodings2 = g_hash_table_new(nm_str_hash, g_str_equal);
-        while (enc->lang) {
-            g_hash_table_insert(langToEncodings2, (gpointer) enc->lang, (gpointer) enc->encodings);
-            enc++;
-        }
+    if (lang[2] != '\0') {
+        nm_assert(!_iso_lang_entries_2_lookup(lang));
+
+        if (lang[3] != '\0' && lang[4] != '\0' && lang[5] == '\0') {
+            /* lang is 5 characters long. Try it. */
+            if ((e = _iso_lang_entries_5_lookup(lang)))
+                return e;
+        } else
+            nm_assert(!_iso_lang_entries_5_lookup(lang));
+
+        /* extract the first 2 characters and ignore the rest. */
+        tmp_lang[0] = lang[0];
+        tmp_lang[1] = lang[1];
+        tmp_lang[2] = '\0';
+        lang        = tmp_lang;
     }
+
+    if ((e = _iso_lang_entries_2_lookup(lang)))
+        return e;
+
+    return NULL;
 }
 
-static gboolean
-get_encodings_for_lang(const char *lang, const char *const **encodings)
+const char *const *
+nmtst_system_encodings_for_lang(const char *lang)
 {
-    gs_free char *tmp_lang = NULL;
-
-    g_return_val_if_fail(lang, FALSE);
-    g_return_val_if_fail(encodings, FALSE);
-
-    init_lang_to_encodings_hash();
-
-    if ((*encodings = g_hash_table_lookup(langToEncodings5, lang)))
-        return TRUE;
-
-    /* Truncate tmp_lang to length of 2 */
-    if (strlen(lang) > 2) {
-        tmp_lang    = g_strdup(lang);
-        tmp_lang[2] = '\0';
-        if ((*encodings = g_hash_table_lookup(langToEncodings2, tmp_lang)))
-            return TRUE;
-    }
-
-    return FALSE;
+    return _system_encodings_for_lang(lang);
 }
 
 static const char *const *
-get_system_encodings(void)
+_system_encodings_get_default(void)
 {
-    static const char *const *cached_encodings;
-    static char              *default_encodings[4];
-    const char *const        *encodings = NULL;
-    char                     *lang;
+    static gsize       init_once = 0;
+    static const char *default_encodings[4];
 
-    if (cached_encodings)
-        return cached_encodings;
+    if (g_once_init_enter(&init_once)) {
+        const char *e_default = NULL;
+        int         i;
 
-    /* Use environment variables as encoding hint */
-    lang = getenv("LC_ALL");
-    if (!lang)
-        lang = getenv("LC_CTYPE");
-    if (!lang)
-        lang = getenv("LANG");
-    if (lang) {
-        char *dot;
+        g_get_charset(&e_default);
 
-        lang = g_ascii_strdown(lang, -1);
-        if ((dot = strchr(lang, '.')))
-            *dot = '\0';
+        i = 0;
+        if (e_default)
+            default_encodings[i++] = e_default;
+        if (!nm_streq0(e_default, "iso-8859-1"))
+            default_encodings[i++] = "iso-8859-1";
+        if (!nm_streq0(e_default, "windows-1251"))
+            default_encodings[i++] = "windows-1251";
+        default_encodings[i++] = NULL;
+        nm_assert(i <= G_N_ELEMENTS(default_encodings));
 
-        get_encodings_for_lang(lang, &encodings);
-        g_free(lang);
-    }
-    if (!encodings) {
-        g_get_charset((const char **) &default_encodings[0]);
-        default_encodings[1] = "iso-8859-1";
-        default_encodings[2] = "windows-1251";
-        default_encodings[3] = NULL;
-        encodings            = (const char *const *) default_encodings;
+        g_once_init_leave(&init_once, 1);
     }
 
-    cached_encodings = encodings;
-    return cached_encodings;
+    return default_encodings;
+}
+
+const char *const *
+nmtst_system_encodings_get_default(void)
+{
+    return _system_encodings_get_default();
+}
+
+static const char *const *
+_system_encodings_get(void)
+{
+    static const char *const *cached = NULL;
+    const char *const        *e;
+
+again:
+    if (!(e = g_atomic_pointer_get(&cached))) {
+        const char *lang;
+
+        /* Use environment variables as encoding hint */
+        lang = getenv("LC_ALL") ?: getenv("LC_CTYPE") ?: getenv("LANG");
+
+        if (lang) {
+            gs_free char *lang_down = NULL;
+            char         *dot;
+
+            lang_down = g_ascii_strdown(lang, -1);
+            if ((dot = strchr(lang_down, '.')))
+                *dot = '\0';
+            e = _system_encodings_for_lang(lang_down);
+        }
+
+        if (!e)
+            e = _system_encodings_get_default();
+
+        /* in any case, @e is now a static buffer, that we may cache. */
+        nm_assert(e);
+
+        if (!g_atomic_pointer_compare_and_exchange(&cached, NULL, e))
+            goto again;
+    }
+
+    return e;
+}
+
+const char *const *
+nmtst_system_encodings_get(void)
+{
+    return _system_encodings_get();
 }
 
 /*****************************************************************************/
@@ -567,7 +579,7 @@ nm_utils_ssid_to_utf8(const guint8 *ssid, gsize len)
     if (g_utf8_validate((const char *) ssid, len, NULL))
         return g_strndup((const char *) ssid, len);
 
-    encodings = get_system_encodings();
+    encodings = _system_encodings_get();
 
     for (e = encodings; *e; e++) {
         converted = g_convert((const char *) ssid, len, "UTF-8", *e, NULL, NULL, NULL);
@@ -3899,19 +3911,19 @@ _nm_utils_hwaddr_canonical_or_invalid(const char *mac, gssize length)
 }
 
 char *
-_nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip)
+_nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip, gboolean map_zero_to_null)
 {
     NMIPAddr addr_bin;
 
-    nm_assert_addr_family(addr_family);
+    nm_assert_addr_family_or_unspec(addr_family);
 
     if (!ip)
         return NULL;
 
-    if (!nm_utils_parse_inaddr_bin(addr_family, ip, NULL, &addr_bin))
+    if (!nm_utils_parse_inaddr_bin(addr_family, ip, &addr_family, &addr_bin))
         return g_strdup(ip);
 
-    if (nm_ip_addr_is_null(addr_family, &addr_bin))
+    if (map_zero_to_null && nm_ip_addr_is_null(addr_family, &addr_bin))
         return NULL;
 
     return nm_utils_inet_ntop_dup(addr_family, &addr_bin);

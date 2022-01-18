@@ -77,6 +77,7 @@ const char *
 nm_setting_vlan_get_parent(NMSettingVlan *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_VLAN(setting), NULL);
+
     return NM_SETTING_VLAN_GET_PRIVATE(setting)->parent;
 }
 
@@ -736,9 +737,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingVlanPrivate *priv    = NM_SETTING_VLAN_GET_PRIVATE(setting);
 
     switch (prop_id) {
-    case PROP_PARENT:
-        g_value_set_string(value, priv->parent);
-        break;
     case PROP_FLAGS:
         g_value_set_flags(value, priv->flags);
         break;
@@ -761,10 +759,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMSettingVlanPrivate *priv    = NM_SETTING_VLAN_GET_PRIVATE(setting);
 
     switch (prop_id) {
-    case PROP_PARENT:
-        g_free(priv->parent);
-        priv->parent = g_value_dup_string(value);
-        break;
     case PROP_FLAGS:
         priv->flags = g_value_get_flags(value);
         break;
@@ -813,7 +807,6 @@ finalize(GObject *object)
     NMSettingVlan        *setting = NM_SETTING_VLAN(object);
     NMSettingVlanPrivate *priv    = NM_SETTING_VLAN_GET_PRIVATE(setting);
 
-    g_free(priv->parent);
     g_slist_free_full(priv->ingress_priority_map, g_free);
     g_slist_free_full(priv->egress_priority_map, g_free);
 
@@ -849,12 +842,13 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      * description: Parent interface of the VLAN.
      * ---end---
      */
-    obj_properties[PROP_PARENT] = g_param_spec_string(
-        NM_SETTING_VLAN_PARENT,
-        "",
-        "",
-        NULL,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VLAN_PARENT,
+                                              PROP_PARENT,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingVlanPrivate,
+                                              parent);
 
     /**
      * NMSettingVlan:id:

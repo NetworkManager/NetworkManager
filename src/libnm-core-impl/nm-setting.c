@@ -8,11 +8,13 @@
 
 #include "nm-setting.h"
 
-#include "nm-setting-private.h"
-#include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
-#include "nm-utils-private.h"
+#include "libnm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-property-compare.h"
+#include "nm-setting-private.h"
+#include "nm-utils-private.h"
+#include "nm-utils.h"
 
 /**
  * SECTION:nm-setting
@@ -375,35 +377,21 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         nm_assert(p->param_spec);
 
         vtype = p->param_spec->value_type;
-        if (vtype == G_TYPE_INT)
-            p->property_type = &nm_sett_info_propert_type_plain_i;
-        else if (vtype == G_TYPE_UINT)
-            p->property_type = &nm_sett_info_propert_type_plain_u;
-        else if (vtype == G_TYPE_INT64)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_INT64,
-                .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full = TRUE);
-        else if (vtype == G_TYPE_STRING) {
-            nm_assert(nm_streq(p->name, NM_SETTING_NAME)
-                      == (!NM_FLAGS_HAS(p->param_spec->flags, G_PARAM_WRITABLE)));
-            if (!NM_FLAGS_HAS(p->param_spec->flags, G_PARAM_WRITABLE))
-                p->property_type = &nm_sett_info_propert_type_setting_name;
-            else {
-                p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                    G_VARIANT_TYPE_STRING,
-                    .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                    .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                    .from_dbus_is_full = TRUE);
-            }
-        } else if (vtype == G_TYPE_DOUBLE)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_DOUBLE,
-                .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full = TRUE);
-        else if (vtype == G_TYPE_STRV)
+
+        if (vtype == G_TYPE_STRING) {
+            /* The "name" property is a bit special because it's defined in the
+             * parent class NMSetting. We set the property_type here, because
+             * it's more convenient (albeit a bit ugly).
+             *
+             * FIXME: let _nm_sett_info_property_override_create_array() always add
+             *   the handling of the name property.*/
+            nm_assert(nm_streq(p->name, NM_SETTING_NAME));
+            nm_assert(!NM_FLAGS_HAS(p->param_spec->flags, G_PARAM_WRITABLE));
+            p->property_type = &nm_sett_info_propert_type_setting_name;
+            goto has_property_type;
+        }
+
+        if (vtype == G_TYPE_STRV)
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
                 G_VARIANT_TYPE_STRING_ARRAY,
                 .compare_fcn       = _nm_setting_property_compare_fcn_default,
@@ -642,23 +630,64 @@ _nm_setting_use_legacy_property(NMSetting  *setting,
 /*****************************************************************************/
 
 static gboolean
-_property_direct_set_string(const NMSettInfoProperty *property_info, char **dst, const char *src)
+_property_direct_set_string(const NMSettInfoSetting  *sett_info,
+                            const NMSettInfoProperty *property_info,
+                            NMSetting                *setting,
+                            const char               *src)
 {
-    if (property_info->direct_set_string_ascii_strdown)
-        return nm_strdup_reset_take(dst, src ? g_ascii_strdown(src, -1) : NULL);
+    char **dst;
+    char  *s;
+
+    nm_assert(property_info->property_type->direct_type == NM_VALUE_TYPE_STRING);
+    nm_assert(((!!property_info->direct_set_string_ascii_strdown)
+               + (!!property_info->direct_set_string_strip)
+               + (!!property_info->direct_string_is_refstr)
+               + (property_info->direct_set_string_mac_address_len > 0)
+               + (property_info->direct_set_string_ip_address_addr_family != 0))
+              <= (property_info->direct_hook.set_string_fcn ? 0 : 1));
+
+    if (property_info->direct_hook.set_string_fcn) {
+        return property_info->direct_hook.set_string_fcn(sett_info, property_info, setting, src);
+    }
+
+    dst = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+    if (property_info->direct_string_is_refstr) {
+        nm_assert(property_info->param_spec);
+        nm_assert(!NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET));
+        return nm_ref_string_reset_str_upcast((const char **) dst, src);
+    }
+
+    if (property_info->direct_set_string_ascii_strdown) {
+        s = src ? g_ascii_strdown(src, -1) : NULL;
+        goto out_take;
+    }
+    if (property_info->direct_set_string_strip) {
+        s = nm_strstrip_dup(src);
+        goto out_take;
+    }
     if (property_info->direct_set_string_mac_address_len > 0) {
-        return nm_strdup_reset_take(dst,
-                                    _nm_utils_hwaddr_canonical_or_invalid(
-                                        src,
-                                        property_info->direct_set_string_mac_address_len));
+        s = _nm_utils_hwaddr_canonical_or_invalid(src,
+                                                  property_info->direct_set_string_mac_address_len);
+        goto out_take;
     }
     if (property_info->direct_set_string_ip_address_addr_family != 0) {
-        return nm_strdup_reset_take(dst,
-                                    _nm_utils_ipaddr_canonical_or_invalid(
-                                        property_info->direct_set_string_ip_address_addr_family,
-                                        src));
-    }
+        s = _nm_utils_ipaddr_canonical_or_invalid(
+            property_info->direct_set_string_ip_address_addr_family - 1,
+            src,
+            property_info->direct_set_string_ip_address_addr_family_map_zero_to_null);
+        goto out_take;
+    } else
+        nm_assert(!property_info->direct_set_string_ip_address_addr_family_map_zero_to_null);
+
+    if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
+        return nm_strdup_reset_secret(dst, src);
+
     return nm_strdup_reset(dst, src);
+
+out_take:
+    nm_assert(!NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET));
+    return nm_strdup_reset_take(dst, s);
 }
 
 void
@@ -683,56 +712,56 @@ _nm_setting_property_get_property_direct(GObject    *object,
     switch (property_info->property_type->direct_type) {
     case NM_VALUE_TYPE_BOOL:
     {
-        const bool *p_val =
-            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        const bool *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
         g_value_set_boolean(value, *p_val);
         return;
     }
     case NM_VALUE_TYPE_INT32:
     {
-        const gint32 *p_val =
-            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        const gint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
         g_value_set_int(value, *p_val);
         return;
     }
     case NM_VALUE_TYPE_UINT32:
     {
-        const guint32 *p_val =
-            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        const guint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
         g_value_set_uint(value, *p_val);
         return;
     }
+    case NM_VALUE_TYPE_INT64:
+    {
+        const gint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_int64(value, *p_val);
+        return;
+    }
     case NM_VALUE_TYPE_UINT64:
     {
-        const guint64 *p_val =
-            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        const guint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
         g_value_set_uint64(value, *p_val);
         return;
     }
     case NM_VALUE_TYPE_ENUM:
     {
-        const int *p_val =
-            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        const int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
         g_value_set_enum(value, *p_val);
         return;
     }
     case NM_VALUE_TYPE_FLAGS:
     {
-        const guint *p_val =
-            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        const guint *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
         g_value_set_flags(value, *p_val);
         return;
     }
     case NM_VALUE_TYPE_STRING:
     {
-        const char *const *p_val =
-            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        const char *const *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
         g_value_set_string(value, *p_val);
         return;
@@ -740,7 +769,7 @@ _nm_setting_property_get_property_direct(GObject    *object,
     case NM_VALUE_TYPE_BYTES:
     {
         const GBytes *const *p_val =
-            _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+            _nm_setting_get_private_field(setting, sett_info, property_info);
 
         g_value_set_boxed(value, *p_val);
         return;
@@ -777,7 +806,7 @@ _nm_setting_property_set_property_direct(GObject      *object,
     switch (property_info->property_type->direct_type) {
     case NM_VALUE_TYPE_BOOL:
     {
-        bool    *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        bool    *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         gboolean v;
 
         v = g_value_get_boolean(value);
@@ -788,7 +817,7 @@ _nm_setting_property_set_property_direct(GObject      *object,
     }
     case NM_VALUE_TYPE_INT32:
     {
-        gint32 *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        gint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         int     v;
 
         v = g_value_get_int(value);
@@ -803,7 +832,7 @@ _nm_setting_property_set_property_direct(GObject      *object,
     }
     case NM_VALUE_TYPE_UINT32:
     {
-        guint32 *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        guint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         guint    v;
 
         v = g_value_get_uint(value);
@@ -816,9 +845,20 @@ _nm_setting_property_set_property_direct(GObject      *object,
         nm_assert(*p_val == v);
         goto out_notify;
     }
+    case NM_VALUE_TYPE_INT64:
+    {
+        gint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        gint64  v;
+
+        v = g_value_get_int64(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+        goto out_notify;
+    }
     case NM_VALUE_TYPE_UINT64:
     {
-        guint64 *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        guint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         guint64  v;
 
         v = g_value_get_uint64(value);
@@ -829,7 +869,7 @@ _nm_setting_property_set_property_direct(GObject      *object,
     }
     case NM_VALUE_TYPE_ENUM:
     {
-        int *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         int  v;
 
         v = g_value_get_enum(value);
@@ -840,7 +880,7 @@ _nm_setting_property_set_property_direct(GObject      *object,
     }
     case NM_VALUE_TYPE_FLAGS:
     {
-        guint *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        guint *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         guint  v;
 
         v = g_value_get_flags(value);
@@ -850,15 +890,15 @@ _nm_setting_property_set_property_direct(GObject      *object,
         goto out_notify;
     }
     case NM_VALUE_TYPE_STRING:
-        if (!_property_direct_set_string(
-                property_info,
-                _nm_setting_get_private(setting, sett_info, property_info->direct_offset),
-                g_value_get_string(value)))
+        if (!_property_direct_set_string(sett_info,
+                                         property_info,
+                                         setting,
+                                         g_value_get_string(value)))
             return;
         goto out_notify;
     case NM_VALUE_TYPE_BYTES:
     {
-        GBytes **p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        GBytes **p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         GBytes  *v;
         _nm_unused gs_unref_bytes GBytes *old = NULL;
 
@@ -909,7 +949,7 @@ _init_direct(NMSetting *setting)
             break;
         case NM_VALUE_TYPE_BOOL:
         {
-            bool *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+            bool    *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
             gboolean def_val;
 
             def_val = NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec);
@@ -919,9 +959,8 @@ _init_direct(NMSetting *setting)
         }
         case NM_VALUE_TYPE_INT32:
         {
-            gint32 *p_val =
-                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
-            int def_val;
+            gint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+            int     def_val;
 
             def_val = NM_G_PARAM_SPEC_GET_DEFAULT_INT(property_info->param_spec);
             nm_assert(*p_val == 0);
@@ -930,20 +969,28 @@ _init_direct(NMSetting *setting)
         }
         case NM_VALUE_TYPE_UINT32:
         {
-            guint32 *p_val =
-                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
-            guint def_val;
+            guint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+            guint    def_val;
 
             def_val = NM_G_PARAM_SPEC_GET_DEFAULT_UINT(property_info->param_spec);
             nm_assert(*p_val == 0);
             *p_val = def_val;
             break;
         }
+        case NM_VALUE_TYPE_INT64:
+        {
+            gint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+            gint64  def_val;
+
+            def_val = NM_G_PARAM_SPEC_GET_DEFAULT_INT64(property_info->param_spec);
+            nm_assert(*p_val == 0);
+            *p_val = def_val;
+            break;
+        }
         case NM_VALUE_TYPE_UINT64:
         {
-            guint64 *p_val =
-                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
-            guint64 def_val;
+            guint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+            guint64  def_val;
 
             def_val = NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(property_info->param_spec);
             nm_assert(*p_val == 0);
@@ -952,7 +999,7 @@ _init_direct(NMSetting *setting)
         }
         case NM_VALUE_TYPE_ENUM:
         {
-            int *p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+            int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
             int  def_val;
 
             def_val = NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(property_info->param_spec);
@@ -962,9 +1009,8 @@ _init_direct(NMSetting *setting)
         }
         case NM_VALUE_TYPE_FLAGS:
         {
-            guint *p_val =
-                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
-            guint def_val;
+            guint *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+            guint  def_val;
 
             def_val = NM_G_PARAM_SPEC_GET_DEFAULT_FLAGS(property_info->param_spec);
             nm_assert(*p_val == 0);
@@ -973,14 +1019,12 @@ _init_direct(NMSetting *setting)
         }
         case NM_VALUE_TYPE_STRING:
             nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
-            nm_assert(!(
-                *((const char *const *)
-                      _nm_setting_get_private(setting, sett_info, property_info->direct_offset))));
+            nm_assert(!(*((const char *const *)
+                              _nm_setting_get_private_field(setting, sett_info, property_info))));
             break;
         case NM_VALUE_TYPE_BYTES:
-            nm_assert(!(
-                *((const GBytes *const *)
-                      _nm_setting_get_private(setting, sett_info, property_info->direct_offset))));
+            nm_assert(!(*((const GBytes *const *)
+                              _nm_setting_get_private_field(setting, sett_info, property_info))));
             break;
         default:
             nm_assert_not_reached();
@@ -1013,22 +1057,26 @@ _finalize_direct(NMSetting *setting)
         case NM_VALUE_TYPE_BOOL:
         case NM_VALUE_TYPE_INT32:
         case NM_VALUE_TYPE_UINT32:
+        case NM_VALUE_TYPE_INT64:
         case NM_VALUE_TYPE_UINT64:
         case NM_VALUE_TYPE_ENUM:
         case NM_VALUE_TYPE_FLAGS:
             break;
         case NM_VALUE_TYPE_STRING:
         {
-            char **p_val =
-                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+            char **p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
-            nm_clear_g_free(p_val);
+            if (property_info->direct_string_is_refstr)
+                nm_clear_pointer(p_val, nm_ref_string_unref_upcast);
+            else if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
+                nm_clear_pointer(p_val, nm_free_secret);
+            else
+                nm_clear_g_free(p_val);
             break;
         }
         case NM_VALUE_TYPE_BYTES:
         {
-            GBytes **p_val =
-                _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+            GBytes **p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
             nm_clear_pointer(p_val, g_bytes_unref);
             break;
@@ -1050,7 +1098,7 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
     {
         gboolean val;
 
-        val = *((bool *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
+        val = *((bool *) _nm_setting_get_private_field(setting, sett_info, property_info));
         if (!property_info->to_dbus_including_default
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_BOOLEAN(property_info->param_spec))
             return NULL;
@@ -1060,8 +1108,7 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
     {
         gint32 val;
 
-        val =
-            *((gint32 *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
+        val = *((gint32 *) _nm_setting_get_private_field(setting, sett_info, property_info));
         if (!property_info->to_dbus_including_default
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_INT(property_info->param_spec))
             return NULL;
@@ -1071,19 +1118,27 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
     {
         guint32 val;
 
-        val = *(
-            (guint32 *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
+        val = *((guint32 *) _nm_setting_get_private_field(setting, sett_info, property_info));
         if (!property_info->to_dbus_including_default
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_UINT(property_info->param_spec))
             return NULL;
         return g_variant_new_uint32(val);
     }
+    case NM_VALUE_TYPE_INT64:
+    {
+        gint64 val;
+
+        val = *((gint64 *) _nm_setting_get_private_field(setting, sett_info, property_info));
+        if (!property_info->to_dbus_including_default
+            && val == NM_G_PARAM_SPEC_GET_DEFAULT_INT64(property_info->param_spec))
+            return NULL;
+        return g_variant_new_int64(val);
+    }
     case NM_VALUE_TYPE_UINT64:
     {
         guint64 val;
 
-        val = *(
-            (guint64 *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
+        val = *((guint64 *) _nm_setting_get_private_field(setting, sett_info, property_info));
         if (!property_info->to_dbus_including_default
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(property_info->param_spec))
             return NULL;
@@ -1093,7 +1148,7 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
     {
         int val;
 
-        val = *((int *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
+        val = *((int *) _nm_setting_get_private_field(setting, sett_info, property_info));
         if (!property_info->to_dbus_including_default
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_ENUM(property_info->param_spec))
             return NULL;
@@ -1103,8 +1158,7 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
     {
         guint val;
 
-        val =
-            *((guint *) _nm_setting_get_private(setting, sett_info, property_info->direct_offset));
+        val = *((guint *) _nm_setting_get_private_field(setting, sett_info, property_info));
         if (!property_info->to_dbus_including_default
             && val == NM_G_PARAM_SPEC_GET_DEFAULT_FLAGS(property_info->param_spec))
             return NULL;
@@ -1122,9 +1176,8 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
         nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
         nm_assert(!property_info->to_dbus_including_default);
 
-        val = *((const char *const *) _nm_setting_get_private(setting,
-                                                              sett_info,
-                                                              property_info->direct_offset));
+        val = *(
+            (const char *const *) _nm_setting_get_private_field(setting, sett_info, property_info));
         if (!val)
             return NULL;
         if (!val[0])
@@ -1139,9 +1192,9 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
          * (but it could have). */
         nm_assert(!property_info->to_dbus_including_default);
 
-        val = *((const GBytes *const *) _nm_setting_get_private(setting,
-                                                                sett_info,
-                                                                property_info->direct_offset));
+        val = *((const GBytes *const *) _nm_setting_get_private_field(setting,
+                                                                      sett_info,
+                                                                      property_info));
         if (!val)
             return NULL;
         return nm_g_bytes_to_variant_ay(val);
@@ -1161,9 +1214,7 @@ _nm_setting_property_to_dbus_fcn_direct_mac_address(_NM_SETT_INFO_PROP_TO_DBUS_F
     nm_assert(!NM_G_PARAM_SPEC_GET_DEFAULT_STRING(property_info->param_spec));
     nm_assert(!property_info->to_dbus_including_default);
 
-    val = *((const char *const *) _nm_setting_get_private(setting,
-                                                          sett_info,
-                                                          property_info->direct_offset));
+    val = *((const char *const *) _nm_setting_get_private_field(setting, sett_info, property_info));
     return nm_utils_hwaddr_to_dbus(val);
 }
 
@@ -1231,9 +1282,8 @@ _nm_setting_property_from_dbus_fcn_direct_mac_address(_NM_SETT_INFO_PROP_FROM_DB
 
     array = g_variant_get_fixed_array(value, &length, 1);
 
-    if (nm_strdup_reset_take(
-            _nm_setting_get_private(setting, sett_info, property_info->direct_offset),
-            length > 0 ? nm_utils_hwaddr_ntoa(array, length) : NULL)) {
+    if (nm_strdup_reset_take(_nm_setting_get_private_field(setting, sett_info, property_info),
+                             length > 0 ? nm_utils_hwaddr_ntoa(array, length) : NULL)) {
         g_object_notify_by_pspec(G_OBJECT(setting), property_info->param_spec);
     } else
         *out_is_modified = FALSE;
@@ -1289,7 +1339,7 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
             v = !!v;
         }
 
-        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         if (*p_val == v)
             goto out_unchanged;
         *p_val = v;
@@ -1313,7 +1363,7 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
                 goto out_error_wrong_dbus_type;
         }
 
-        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         if (*p_val == v)
             goto out_unchanged;
 
@@ -1341,11 +1391,38 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
                 goto out_error_wrong_dbus_type;
         }
 
-        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         if (*p_val == v)
             goto out_unchanged;
 
         param_spec = NM_G_PARAM_SPEC_CAST_UINT(property_info->param_spec);
+        if (v < param_spec->minimum || v > param_spec->maximum)
+            goto out_error_param_spec_validation;
+        *p_val = v;
+        goto out_notify;
+    }
+    case NM_VALUE_TYPE_INT64:
+    {
+        const GParamSpecInt64 *param_spec;
+        gint64                *p_val;
+        gint64                 v;
+
+        if (g_variant_is_of_type(value, G_VARIANT_TYPE_INT64))
+            v = g_variant_get_int64(value);
+        else {
+            if (!_variant_get_value_transform(property_info,
+                                              value,
+                                              G_TYPE_INT64,
+                                              g_value_get_int64,
+                                              &v))
+                goto out_error_wrong_dbus_type;
+        }
+
+        p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        if (*p_val == v)
+            goto out_unchanged;
+
+        param_spec = NM_G_PARAM_SPEC_CAST_INT64(property_info->param_spec);
         if (v < param_spec->minimum || v > param_spec->maximum)
             goto out_error_param_spec_validation;
         *p_val = v;
@@ -1368,7 +1445,7 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
                 goto out_error_wrong_dbus_type;
         }
 
-        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         if (*p_val == v)
             goto out_unchanged;
 
@@ -1398,7 +1475,7 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
                 goto out_error_wrong_dbus_type;
         }
 
-        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         if (*p_val == v)
             goto out_unchanged;
 
@@ -1427,7 +1504,7 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
                 goto out_error_wrong_dbus_type;
         }
 
-        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         if (*p_val == v)
             goto out_unchanged;
 
@@ -1439,8 +1516,8 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
     case NM_VALUE_TYPE_STRING:
     {
         gs_free char *v_free = NULL;
-        char        **p_val;
         const char   *v;
+        gboolean      changed;
 
         if (g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)) {
             v = g_variant_get_string(value, NULL);
@@ -1454,10 +1531,13 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
             v = v_free;
         }
 
-        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
-        if (!_property_direct_set_string(property_info, p_val, v))
-            goto out_unchanged;
+        changed = _property_direct_set_string(sett_info, property_info, setting, v);
 
+        if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET))
+            nm_clear_pointer(&v_free, nm_free_secret);
+
+        if (!changed)
+            goto out_unchanged;
         goto out_notify;
     }
     case NM_VALUE_TYPE_BYTES:
@@ -1470,7 +1550,7 @@ _nm_setting_property_from_dbus_fcn_direct(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
 
         v = nm_g_bytes_new_from_variant_ay(value);
 
-        p_val = _nm_setting_get_private(setting, sett_info, property_info->direct_offset);
+        p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
         if (nm_g_bytes_equal0(*p_val, v))
             goto out_unchanged;
 
@@ -2363,8 +2443,8 @@ _nm_setting_property_compare_fcn_direct(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_
     if (!set_b)
         return TRUE;
 
-    p_a = _nm_setting_get_private(set_a, sett_info, property_info->direct_offset);
-    p_b = _nm_setting_get_private(set_b, sett_info, property_info->direct_offset);
+    p_a = _nm_setting_get_private_field(set_a, sett_info, property_info);
+    p_b = _nm_setting_get_private_field(set_b, sett_info, property_info);
 
     switch (property_info->property_type->direct_type) {
     case NM_VALUE_TYPE_BOOL:
@@ -2373,6 +2453,8 @@ _nm_setting_property_compare_fcn_direct(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_
         return *((const gint32 *) p_a) == *((const gint32 *) p_b);
     case NM_VALUE_TYPE_UINT32:
         return *((const guint32 *) p_a) == *((const guint32 *) p_b);
+    case NM_VALUE_TYPE_INT64:
+        return *((const gint64 *) p_a) == *((const gint64 *) p_b);
     case NM_VALUE_TYPE_UINT64:
         return *((const guint64 *) p_a) == *((const guint64 *) p_b);
     case NM_VALUE_TYPE_ENUM:
@@ -3387,18 +3469,6 @@ const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u =
         /* No functions set. This property type is to silently ignore the value on D-Bus. */
         .compare_fcn = _nm_setting_property_compare_fcn_ignore);
 
-const NMSettInfoPropertType nm_sett_info_propert_type_plain_i =
-    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_INT32,
-                                         .compare_fcn   = _nm_setting_property_compare_fcn_default,
-                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
-                                         .from_dbus_is_full = TRUE);
-
-const NMSettInfoPropertType nm_sett_info_propert_type_plain_u =
-    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_UINT32,
-                                         .compare_fcn   = _nm_setting_property_compare_fcn_default,
-                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
-                                         .from_dbus_is_full = TRUE);
-
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,
                                         .direct_type   = NM_VALUE_TYPE_BOOL,
@@ -3420,6 +3490,15 @@ const NMSettInfoPropertType nm_sett_info_propert_type_direct_int32 =
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_uint32 =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_UINT32,
                                         .direct_type   = NM_VALUE_TYPE_UINT32,
+                                        .compare_fcn   = _nm_setting_property_compare_fcn_direct,
+                                        .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
+                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,
+                                        .from_dbus_is_full                = TRUE,
+                                        .from_dbus_direct_allow_transform = TRUE);
+
+const NMSettInfoPropertType nm_sett_info_propert_type_direct_int64 =
+    NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_INT64,
+                                        .direct_type   = NM_VALUE_TYPE_INT64,
                                         .compare_fcn   = _nm_setting_property_compare_fcn_direct,
                                         .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct,

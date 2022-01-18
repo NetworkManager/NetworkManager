@@ -65,7 +65,6 @@ typedef struct {
      */
     GHashTable *secrets;
 
-    /* Timeout for the VPN service to establish the connection */
     guint32 timeout;
 
     /* Whether the VPN stays up across link changes, until the user
@@ -970,26 +969,14 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingVpnPrivate *priv    = NM_SETTING_VPN_GET_PRIVATE(setting);
 
     switch (prop_id) {
-    case PROP_SERVICE_TYPE:
-        g_value_set_string(value, nm_setting_vpn_get_service_type(setting));
-        break;
-    case PROP_USER_NAME:
-        g_value_set_string(value, nm_setting_vpn_get_user_name(setting));
-        break;
-    case PROP_PERSISTENT:
-        g_value_set_boolean(value, priv->persistent);
-        break;
     case PROP_DATA:
         g_value_take_boxed(value, _nm_utils_copy_strdict(priv->data));
         break;
     case PROP_SECRETS:
         g_value_take_boxed(value, _nm_utils_copy_strdict(priv->secrets));
         break;
-    case PROP_TIMEOUT:
-        g_value_set_uint(value, nm_setting_vpn_get_timeout(setting));
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1000,17 +987,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE(object);
 
     switch (prop_id) {
-    case PROP_SERVICE_TYPE:
-        g_free(priv->service_type);
-        priv->service_type = g_value_dup_string(value);
-        break;
-    case PROP_USER_NAME:
-        g_free(priv->user_name);
-        priv->user_name = g_value_dup_string(value);
-        break;
-    case PROP_PERSISTENT:
-        priv->persistent = g_value_get_boolean(value);
-        break;
     case PROP_DATA:
     case PROP_SECRETS:
     {
@@ -1046,11 +1022,8 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             }
         }
     } break;
-    case PROP_TIMEOUT:
-        priv->timeout = g_value_get_uint(value);
-        break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -1079,12 +1052,8 @@ finalize(GObject *object)
 {
     NMSettingVpnPrivate *priv = NM_SETTING_VPN_GET_PRIVATE(object);
 
-    g_free(priv->service_type);
-    g_free(priv->user_name);
-    if (priv->data)
-        g_hash_table_unref(priv->data);
-    if (priv->secrets)
-        g_hash_table_unref(priv->secrets);
+    nm_g_hash_table_unref(priv->data);
+    nm_g_hash_table_unref(priv->secrets);
 
     G_OBJECT_CLASS(nm_setting_vpn_parent_class)->finalize(object);
 }
@@ -1118,12 +1087,13 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
      * its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc
      * plugin.
      **/
-    obj_properties[PROP_SERVICE_TYPE] =
-        g_param_spec_string(NM_SETTING_VPN_SERVICE_TYPE,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VPN_SERVICE_TYPE,
+                                              PROP_SERVICE_TYPE,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingVpnPrivate,
+                                              service_type);
 
     /**
      * NMSettingVpn:user-name:
@@ -1135,12 +1105,13 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
      * will automatically supply the username of the user which requested the
      * VPN connection.
      **/
-    obj_properties[PROP_USER_NAME] =
-        g_param_spec_string(NM_SETTING_VPN_USER_NAME,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VPN_USER_NAME,
+                                              PROP_USER_NAME,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingVpnPrivate,
+                                              user_name);
 
     /**
      * NMSettingVpn:persistent:
@@ -1221,13 +1192,16 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
      *
      * Since: 1.2
      **/
-    obj_properties[PROP_TIMEOUT] = g_param_spec_uint(NM_SETTING_VPN_TIMEOUT,
-                                                     "",
-                                                     "",
-                                                     0,
-                                                     G_MAXUINT32,
-                                                     0,
-                                                     G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_VPN_TIMEOUT,
+                                              PROP_TIMEOUT,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingVpnPrivate,
+                                              timeout);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

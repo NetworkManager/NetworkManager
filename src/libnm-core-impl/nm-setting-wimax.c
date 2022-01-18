@@ -101,23 +101,12 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE(setting);
 
-    if (!priv->network_name) {
+    if (nm_str_is_empty(priv->network_name)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                            _("property is missing"));
-        g_prefix_error(error,
-                       "%s.%s: ",
-                       NM_SETTING_WIMAX_SETTING_NAME,
-                       NM_SETTING_WIMAX_NETWORK_NAME);
-        return FALSE;
-    }
-
-    if (!strlen(priv->network_name)) {
-        g_set_error_literal(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("property is empty"));
+                            !priv->network_name ? _("property is missing")
+                                                : _("property is empty"));
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_WIMAX_SETTING_NAME,
@@ -143,47 +132,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingWimax *setting = NM_SETTING_WIMAX(object);
-
-    switch (prop_id) {
-    case PROP_NETWORK_NAME:
-        g_value_set_string(value, nm_setting_wimax_get_network_name(setting));
-        break;
-    case PROP_MAC_ADDRESS:
-        g_value_set_string(value, nm_setting_wimax_get_mac_address(setting));
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE(object);
-
-    switch (prop_id) {
-    case PROP_NETWORK_NAME:
-        g_free(priv->network_name);
-        priv->network_name = g_value_dup_string(value);
-        break;
-    case PROP_MAC_ADDRESS:
-        g_free(priv->mac_address);
-        priv->mac_address =
-            _nm_utils_hwaddr_canonical_or_invalid(g_value_get_string(value), ETH_ALEN);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
-/*****************************************************************************/
-
-static void
 nm_setting_wimax_init(NMSettingWimax *setting)
 {}
 
@@ -203,16 +151,6 @@ nm_setting_wimax_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingWimaxPrivate *priv = NM_SETTING_WIMAX_GET_PRIVATE(object);
-
-    g_free(priv->network_name);
-
-    G_OBJECT_CLASS(nm_setting_wimax_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
@@ -221,9 +159,8 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
 
     g_type_class_add_private(klass, sizeof(NMSettingWimaxPrivate));
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
-    object_class->finalize     = finalize;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
@@ -235,12 +172,13 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
      *
      * Deprecated: 1.2: WiMAX is no longer supported.
      **/
-    obj_properties[PROP_NETWORK_NAME] =
-        g_param_spec_string(NM_SETTING_WIMAX_NETWORK_NAME,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIMAX_NETWORK_NAME,
+                                              PROP_NETWORK_NAME,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingWimaxPrivate,
+                                              network_name);
 
     /**
      * NMSettingWimax:mac-address:

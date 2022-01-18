@@ -5555,9 +5555,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (!_nm_utils_validate_dhcp_hostname_flags(priv->dhcp_hostname_flags,
-                                                NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
-                                                error)) {
+    if (priv->dhcp_hostname_flags != (NMDhcpHostnameFlags) priv->dhcp_hostname_flags
+        || !_nm_utils_validate_dhcp_hostname_flags(priv->dhcp_hostname_flags,
+                                                   NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
+                                                   error)) {
         g_prefix_error(error,
                        "%s.%s: ",
                        nm_setting_get_name(setting),
@@ -5788,7 +5789,8 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
             .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct,
             .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct_ip_config_gateway),
         .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(char *, NMSettingIPConfigPrivate, gateway),
-        .direct_set_string_ip_address_addr_family = addr_family);
+        .direct_set_string_ip_address_addr_family                  = addr_family + 1,
+        .direct_set_string_ip_address_addr_family_map_zero_to_null = TRUE);
 
     _nm_properties_override_gobj(
         properties_override,
@@ -5826,6 +5828,20 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
 
     _nm_properties_override_gobj(
         properties_override,
+        obj_properties[PROP_ROUTE_TABLE],
+        &nm_sett_info_propert_type_direct_uint32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(guint32, NMSettingIPConfigPrivate, route_table));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_ROUTE_METRIC],
+        &nm_sett_info_propert_type_direct_int64,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint64, NMSettingIPConfigPrivate, route_metric));
+
+    _nm_properties_override_gobj(
+        properties_override,
         obj_properties[PROP_IGNORE_AUTO_DNS],
         &nm_sett_info_propert_type_direct_boolean,
         .direct_offset =
@@ -5833,10 +5849,45 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
 
     _nm_properties_override_gobj(
         properties_override,
+        obj_properties[PROP_DNS_PRIORITY],
+        &nm_sett_info_propert_type_direct_int32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, dns_priority));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_TIMEOUT],
+        &nm_sett_info_propert_type_direct_int32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, dhcp_timeout));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_REQUIRED_TIMEOUT],
+        &nm_sett_info_propert_type_direct_int32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, required_timeout));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DAD_TIMEOUT],
+        &nm_sett_info_propert_type_direct_int32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(gint32, NMSettingIPConfigPrivate, dad_timeout));
+
+    _nm_properties_override_gobj(
+        properties_override,
         obj_properties[PROP_DHCP_SEND_HOSTNAME],
         &nm_sett_info_propert_type_direct_boolean,
         .direct_offset =
             NM_STRUCT_OFFSET_ENSURE_TYPE(bool, NMSettingIPConfigPrivate, dhcp_send_hostname));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DHCP_HOSTNAME_FLAGS],
+        &nm_sett_info_propert_type_direct_uint32,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(guint32, NMSettingIPConfigPrivate, dhcp_hostname_flags));
 
     _nm_properties_override_gobj(
         properties_override,
@@ -5863,9 +5914,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingIPConfigPrivate *priv    = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
     switch (prop_id) {
-    case PROP_METHOD:
-        g_value_set_string(value, nm_setting_ip_config_get_method(setting));
-        break;
     case PROP_DNS:
         g_value_take_boxed(value, _nm_utils_ptrarray_to_strv(priv->dns));
         break;
@@ -5877,17 +5925,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                            priv->dns_options ? _nm_utils_ptrarray_to_strv(priv->dns_options)
                                              : NULL);
         break;
-    case PROP_DNS_PRIORITY:
-        g_value_set_int(value, priv->dns_priority);
-        break;
     case PROP_ADDRESSES:
         g_value_take_boxed(value,
                            _nm_utils_copy_array(priv->addresses,
                                                 (NMUtilsCopyFunc) nm_ip_address_dup,
                                                 (GDestroyNotify) nm_ip_address_unref));
-        break;
-    case PROP_GATEWAY:
-        g_value_set_string(value, nm_setting_ip_config_get_gateway(setting));
         break;
     case PROP_ROUTES:
         g_value_take_boxed(value,
@@ -5895,50 +5937,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
                                                 (GDestroyNotify) nm_ip_route_unref));
         break;
-    case PROP_ROUTE_METRIC:
-        g_value_set_int64(value, priv->route_metric);
-        break;
-    case PROP_ROUTE_TABLE:
-        g_value_set_uint(value, priv->route_table);
-        break;
-    case PROP_IGNORE_AUTO_ROUTES:
-        g_value_set_boolean(value, nm_setting_ip_config_get_ignore_auto_routes(setting));
-        break;
-    case PROP_IGNORE_AUTO_DNS:
-        g_value_set_boolean(value, nm_setting_ip_config_get_ignore_auto_dns(setting));
-        break;
-    case PROP_DHCP_HOSTNAME:
-        g_value_set_string(value, nm_setting_ip_config_get_dhcp_hostname(setting));
-        break;
-    case PROP_DHCP_SEND_HOSTNAME:
-        g_value_set_boolean(value, nm_setting_ip_config_get_dhcp_send_hostname(setting));
-        break;
-    case PROP_NEVER_DEFAULT:
-        g_value_set_boolean(value, priv->never_default);
-        break;
-    case PROP_MAY_FAIL:
-        g_value_set_boolean(value, priv->may_fail);
-        break;
-    case PROP_DAD_TIMEOUT:
-        g_value_set_int(value, nm_setting_ip_config_get_dad_timeout(setting));
-        break;
-    case PROP_DHCP_TIMEOUT:
-        g_value_set_int(value, nm_setting_ip_config_get_dhcp_timeout(setting));
-        break;
-    case PROP_REQUIRED_TIMEOUT:
-        g_value_set_int(value, nm_setting_ip_config_get_required_timeout(setting));
-        break;
-    case PROP_DHCP_IAID:
-        g_value_set_string(value, nm_setting_ip_config_get_dhcp_iaid(setting));
-        break;
-    case PROP_DHCP_HOSTNAME_FLAGS:
-        g_value_set_uint(value, nm_setting_ip_config_get_dhcp_hostname_flags(setting));
-        break;
     case PROP_DHCP_REJECT_SERVERS:
         g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(priv->dhcp_reject_servers, NULL));
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -5952,10 +5955,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     guint                     i;
 
     switch (prop_id) {
-    case PROP_METHOD:
-        g_free(priv->method);
-        priv->method = g_value_dup_string(value);
-        break;
     case PROP_DNS:
         g_ptr_array_unref(priv->dns);
         priv->dns = nm_strv_to_ptrarray(g_value_get_boxed(value));
@@ -5983,20 +5982,11 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             }
         }
         break;
-    case PROP_DNS_PRIORITY:
-        priv->dns_priority = g_value_get_int(value);
-        break;
     case PROP_ADDRESSES:
         g_ptr_array_unref(priv->addresses);
         priv->addresses = _nm_utils_copy_array(g_value_get_boxed(value),
                                                (NMUtilsCopyFunc) nm_ip_address_dup,
                                                (GDestroyNotify) nm_ip_address_unref);
-        break;
-    case PROP_GATEWAY:
-        g_free(priv->gateway);
-        priv->gateway =
-            _nm_utils_ipaddr_canonical_or_invalid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
-                                                  g_value_get_string(value));
         break;
     case PROP_ROUTES:
         g_ptr_array_unref(priv->routes);
@@ -6004,52 +5994,11 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                             (NMUtilsCopyFunc) nm_ip_route_dup,
                                             (GDestroyNotify) nm_ip_route_unref);
         break;
-    case PROP_ROUTE_METRIC:
-        priv->route_metric = g_value_get_int64(value);
-        break;
-    case PROP_ROUTE_TABLE:
-        priv->route_table = g_value_get_uint(value);
-        break;
-    case PROP_IGNORE_AUTO_ROUTES:
-        priv->ignore_auto_routes = g_value_get_boolean(value);
-        break;
-    case PROP_IGNORE_AUTO_DNS:
-        priv->ignore_auto_dns = g_value_get_boolean(value);
-        break;
-    case PROP_DHCP_HOSTNAME:
-        g_free(priv->dhcp_hostname);
-        priv->dhcp_hostname = g_value_dup_string(value);
-        break;
-    case PROP_DHCP_SEND_HOSTNAME:
-        priv->dhcp_send_hostname = g_value_get_boolean(value);
-        break;
-    case PROP_NEVER_DEFAULT:
-        priv->never_default = g_value_get_boolean(value);
-        break;
-    case PROP_MAY_FAIL:
-        priv->may_fail = g_value_get_boolean(value);
-        break;
-    case PROP_DAD_TIMEOUT:
-        priv->dad_timeout = g_value_get_int(value);
-        break;
-    case PROP_DHCP_TIMEOUT:
-        priv->dhcp_timeout = g_value_get_int(value);
-        break;
-    case PROP_REQUIRED_TIMEOUT:
-        priv->required_timeout = g_value_get_int(value);
-        break;
-    case PROP_DHCP_IAID:
-        g_free(priv->dhcp_iaid);
-        priv->dhcp_iaid = g_value_dup_string(value);
-        break;
-    case PROP_DHCP_HOSTNAME_FLAGS:
-        priv->dhcp_hostname_flags = g_value_get_uint(value);
-        break;
     case PROP_DHCP_REJECT_SERVERS:
         nm_strvarray_set_strv(&priv->dhcp_reject_servers, g_value_get_boxed(value));
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -6061,13 +6010,10 @@ _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv
 {
     nm_assert(NM_IS_SETTING_IP_CONFIG(self));
 
-    priv->dns              = g_ptr_array_new_with_free_func(g_free);
-    priv->dns_search       = g_ptr_array_new_with_free_func(g_free);
-    priv->addresses        = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
-    priv->routes           = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
-    priv->route_metric     = -1;
-    priv->dad_timeout      = -1;
-    priv->required_timeout = -1;
+    priv->dns        = g_ptr_array_new_with_free_func(g_free);
+    priv->dns_search = g_ptr_array_new_with_free_func(g_free);
+    priv->addresses  = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    priv->routes     = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
 }
 
 static void
@@ -6084,13 +6030,11 @@ finalize(GObject *object)
 
     g_ptr_array_unref(priv->dns);
     g_ptr_array_unref(priv->dns_search);
-    if (priv->dns_options)
-        g_ptr_array_unref(priv->dns_options);
+    nm_g_ptr_array_unref(priv->dns_options);
     g_ptr_array_unref(priv->addresses);
     g_ptr_array_unref(priv->routes);
-    if (priv->routing_rules)
-        g_ptr_array_unref(priv->routing_rules);
-    nm_clear_pointer(&priv->dhcp_reject_servers, g_array_unref);
+    nm_g_ptr_array_unref(priv->routing_rules);
+    nm_g_array_unref(priv->dhcp_reject_servers);
 
     G_OBJECT_CLASS(nm_setting_ip_config_parent_class)->finalize(object);
 }

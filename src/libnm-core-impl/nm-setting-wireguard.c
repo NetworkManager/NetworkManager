@@ -901,7 +901,7 @@ typedef struct {
     int         ip6_auto_default_route;
     guint32     fwmark;
     guint32     mtu;
-    guint16     listen_port;
+    guint32     listen_port;
     bool        peer_routes;
     bool        private_key_valid : 1;
 } NMSettingWireGuardPrivate;
@@ -1771,7 +1771,7 @@ verify_secrets(NMSetting *setting, NMConnection *connection, GError **error)
     NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
     guint                      i;
 
-    if (priv->private_key && !priv->private_key_valid) {
+    if (!priv->private_key_valid) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1806,7 +1806,7 @@ need_secrets(NMSetting *setting)
     GPtrArray                 *secrets = NULL;
     guint                      i;
 
-    if (!priv->private_key || !priv->private_key_valid) {
+    if (!priv->private_key_valid) {
         secrets = g_ptr_array_new_full(1, g_free);
         g_ptr_array_add(secrets, g_strdup(NM_SETTING_WIREGUARD_PRIVATE_KEY));
     }
@@ -2258,71 +2258,35 @@ for_each_secret(NMSetting                     *setting,
 
 /*****************************************************************************/
 
-static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
+static gboolean
+_set_string_fcn_public_key(const NMSettInfoSetting  *sett_info,
+                           const NMSettInfoProperty *property_info,
+                           NMSetting                *setting,
+                           const char               *str)
 {
-    NMSettingWireGuard        *setting = NM_SETTING_WIREGUARD(object);
-    NMSettingWireGuardPrivate *priv    = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
+    gboolean                   valid;
+    char *new = NULL;
+    char *old;
 
-    switch (prop_id) {
-    case PROP_FWMARK:
-        g_value_set_uint(value, priv->fwmark);
-        break;
-    case PROP_LISTEN_PORT:
-        g_value_set_uint(value, priv->listen_port);
-        break;
-    case PROP_MTU:
-        g_value_set_uint(value, priv->mtu);
-        break;
-    case PROP_PEER_ROUTES:
-        g_value_set_boolean(value, priv->peer_routes);
-        break;
-    case PROP_PRIVATE_KEY:
-        g_value_set_string(value, priv->private_key);
-        break;
-    default:
-        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
-        break;
+    if (str)
+        valid = nm_utils_base64secret_normalize(str, NM_WIREGUARD_PUBLIC_KEY_LEN, &new);
+    else
+        valid = FALSE;
+
+    if (nm_streq0(new ?: str, priv->private_key)) {
+        nm_assert(priv->private_key_valid == valid);
+        nm_free_secret(new);
+        return FALSE;
     }
-}
 
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(object);
-    const char                *str;
+    priv->private_key_valid = valid;
 
-    switch (prop_id) {
-    case PROP_FWMARK:
-        priv->fwmark = g_value_get_uint(value);
-        break;
-    case PROP_LISTEN_PORT:
-        priv->listen_port = g_value_get_uint(value);
-        break;
-    case PROP_MTU:
-        priv->mtu = g_value_get_uint(value);
-        break;
-    case PROP_PEER_ROUTES:
-        priv->peer_routes = g_value_get_boolean(value);
-        break;
-    case PROP_PRIVATE_KEY:
-        nm_clear_pointer(&priv->private_key, nm_free_secret);
-        str = g_value_get_string(value);
-        if (str) {
-            if (nm_utils_base64secret_normalize(str,
-                                                NM_WIREGUARD_PUBLIC_KEY_LEN,
-                                                &priv->private_key))
-                priv->private_key_valid = TRUE;
-            else {
-                priv->private_key       = g_strdup(str);
-                priv->private_key_valid = FALSE;
-            }
-        }
-        break;
-    default:
-        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
-        break;
-    }
+    old               = priv->private_key;
+    priv->private_key = new ?: g_strdup(str);
+    nm_free_secret(old);
+
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -2356,8 +2320,6 @@ finalize(GObject *object)
 {
     NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(object);
 
-    nm_free_secret(priv->private_key);
-
     _peers_clear(priv);
     g_ptr_array_unref(priv->peers_arr);
     g_hash_table_unref(priv->peers_hash);
@@ -2372,8 +2334,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
     object_class->finalize     = finalize;
 
     setting_class->verify                    = verify;
@@ -2395,12 +2357,15 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_PRIVATE_KEY] =
-        g_param_spec_string(NM_SETTING_WIREGUARD_PRIVATE_KEY,
-                            "",
-                            "",
-                            NULL,
-                            G_PARAM_READWRITE | NM_SETTING_PARAM_SECRET | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIREGUARD_PRIVATE_KEY,
+                                              PROP_PRIVATE_KEY,
+                                              NM_SETTING_PARAM_SECRET,
+                                              NMSettingWireGuard,
+                                              _priv.private_key,
+                                              .direct_hook.set_string_fcn =
+                                                  _set_string_fcn_public_key);
 
     /**
      * NMSettingWireGuard:private-key-flags:
@@ -2414,8 +2379,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                                     obj_properties,
                                                     NM_SETTING_WIREGUARD_PRIVATE_KEY_FLAGS,
                                                     PROP_PRIVATE_KEY_FLAGS,
-                                                    NMSettingWireGuardPrivate,
-                                                    private_key_flags);
+                                                    NMSettingWireGuard,
+                                                    _priv.private_key_flags);
 
     /**
      * NMSettingWireGuard:fwmark:
@@ -2428,14 +2393,16 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_FWMARK] =
-        g_param_spec_uint(NM_SETTING_WIREGUARD_FWMARK,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT32,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIREGUARD_FWMARK,
+                                              PROP_FWMARK,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingWireGuard,
+                                              _priv.fwmark);
 
     /**
      * NMSettingWireGuard:listen-port:
@@ -2445,14 +2412,16 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_LISTEN_PORT] =
-        g_param_spec_uint(NM_SETTING_WIREGUARD_LISTEN_PORT,
-                          "",
-                          "",
-                          0,
-                          65535,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIREGUARD_LISTEN_PORT,
+                                              PROP_LISTEN_PORT,
+                                              0,
+                                              65535,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingWireGuard,
+                                              _priv.listen_port);
 
     /**
      * NMSettingWireGuard:peer-routes:
@@ -2477,8 +2446,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                                PROP_PEER_ROUTES,
                                                TRUE,
                                                NM_SETTING_PARAM_INFERRABLE,
-                                               NMSettingWireGuardPrivate,
-                                               peer_routes);
+                                               NMSettingWireGuard,
+                                               _priv.peer_routes);
 
     /**
      * NMSettingWireGuard:mtu:
@@ -2492,14 +2461,16 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Since: 1.16
      **/
-    obj_properties[PROP_MTU] =
-        g_param_spec_uint(NM_SETTING_WIREGUARD_MTU,
-                          "",
-                          "",
-                          0,
-                          G_MAXUINT32,
-                          0,
-                          G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIREGUARD_MTU,
+                                              PROP_MTU,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingWireGuard,
+                                              _priv.mtu);
 
     /**
      * NMSettingWireGuard:ip4-auto-default-route:
@@ -2526,8 +2497,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                                     NM_SETTING_WIREGUARD_IP4_AUTO_DEFAULT_ROUTE,
                                                     PROP_IP4_AUTO_DEFAULT_ROUTE,
                                                     NM_SETTING_PARAM_FUZZY_IGNORE,
-                                                    NMSettingWireGuardPrivate,
-                                                    ip4_auto_default_route);
+                                                    NMSettingWireGuard,
+                                                    _priv.ip4_auto_default_route);
 
     /**
      * NMSettingWireGuard:ip6-auto-default-route:
@@ -2541,8 +2512,8 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                                                     NM_SETTING_WIREGUARD_IP6_AUTO_DEFAULT_ROUTE,
                                                     PROP_IP6_AUTO_DEFAULT_ROUTE,
                                                     NM_SETTING_PARAM_FUZZY_IGNORE,
-                                                    NMSettingWireGuardPrivate,
-                                                    ip6_auto_default_route);
+                                                    NMSettingWireGuard,
+                                                    _priv.ip6_auto_default_route);
 
     /* ---dbus---
      * property: peers
@@ -2564,5 +2535,5 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
                              NM_META_SETTING_TYPE_WIREGUARD,
                              NULL,
                              properties_override,
-                             G_STRUCT_OFFSET(NMSettingWireGuard, _priv));
+                             0);
 }
