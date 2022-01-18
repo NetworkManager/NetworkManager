@@ -201,10 +201,10 @@ nm_hash_update_str(NMHashState *state, const char *str)
 #endif
 
 guint nm_hash_ptr(gconstpointer ptr);
-guint nm_direct_hash(gconstpointer str);
+#define nm_direct_hash nm_hash_ptr
 
 guint nm_hash_str(const char *str);
-guint nm_str_hash(gconstpointer str);
+#define nm_str_hash ((guint(*)(gconstpointer str)) nm_hash_str)
 
 #define nm_hash_val(static_seed, val)     \
     ({                                    \

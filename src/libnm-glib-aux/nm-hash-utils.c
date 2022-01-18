@@ -139,12 +139,6 @@ nm_hash_str(const char *str)
 }
 
 guint
-nm_str_hash(gconstpointer str)
-{
-    return nm_hash_str(str);
-}
-
-guint
 nm_hash_ptr(gconstpointer ptr)
 {
     NMHashState h;
@@ -154,12 +148,6 @@ nm_hash_ptr(gconstpointer ptr)
     nm_hash_init(&h, 2907677551u);
     nm_hash_update(&h, &ptr, sizeof(ptr));
     return nm_hash_complete(&h);
-}
-
-guint
-nm_direct_hash(gconstpointer ptr)
-{
-    return nm_hash_ptr(ptr);
 }
 
 /*****************************************************************************/
