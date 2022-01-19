@@ -634,7 +634,7 @@ _route_valid(int addr_family, gconstpointer r)
 static gboolean
 _NM_IS_L3_CONFIG_DATA(const NML3ConfigData *self, gboolean allow_sealed)
 {
-    nm_assert(!self || (self->ifindex > 0 && self->multi_idx && self->ref_count > 0));
+    nm_assert(!self || (self->ifindex >= 0 && self->multi_idx && self->ref_count > 0));
     return self && self->ref_count > 0 && (allow_sealed || !self->is_sealed);
 }
 
@@ -2081,7 +2081,8 @@ static int
 _dedup_multi_index_cmp(const NML3ConfigData *a,
                        const NML3ConfigData *b,
                        NMPObjectType         obj_type,
-                       gboolean              ignore_ifindex)
+                       gboolean              cmp_ifindex,
+                       gboolean              cmp_full)
 {
     const NMDedupMultiHeadEntry *h_a = nm_l3_config_data_lookup_objs(a, obj_type);
     const NMDedupMultiHeadEntry *h_b = nm_l3_config_data_lookup_objs(b, obj_type);
@@ -2120,93 +2121,221 @@ _dedup_multi_index_cmp(const NML3ConfigData *a,
         have_b = nm_platform_dedup_multi_iter_next_obj(&iter_b, &obj_b, obj_type);
         nm_assert(have_b);
 
-        NM_CMP_RETURN(nmp_object_cmp_full(obj_a,
-                                          obj_b,
-                                          ignore_ifindex ? NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX
-                                                         : NMP_OBJECT_CMP_FLAGS_NONE));
+        if (cmp_full) {
+            NM_CMP_RETURN(nmp_object_cmp_full(obj_a,
+                                              obj_b,
+                                              cmp_ifindex ? NMP_OBJECT_CMP_FLAGS_NONE
+                                                          : NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX));
+        } else {
+            if (cmp_ifindex) {
+                NM_CMP_DIRECT(obj_a->obj_with_ifindex.ifindex, obj_b->obj_with_ifindex.ifindex);
+            }
+
+            switch (obj_type) {
+            case NMP_OBJECT_TYPE_IP4_ADDRESS:
+                NM_CMP_DIRECT(obj_a->ip4_address.plen, obj_b->ip4_address.plen);
+                NM_CMP_DIRECT(obj_b->ip4_address.address, obj_b->ip4_address.address);
+                NM_CMP_DIRECT(obj_b->ip4_address.peer_address, obj_b->ip4_address.peer_address);
+                break;
+            case NMP_OBJECT_TYPE_IP6_ADDRESS:
+                NM_CMP_DIRECT(obj_a->ip6_address.plen, obj_b->ip6_address.plen);
+                NM_CMP_DIRECT_IN6ADDR(&obj_a->ip6_address.address, &obj_b->ip6_address.address);
+                break;
+            case NMP_OBJECT_TYPE_IP4_ROUTE:
+            {
+                NMPlatformIP4Route ra = obj_a->ip4_route;
+                NMPlatformIP4Route rb = obj_b->ip4_route;
+
+                NM_CMP_DIRECT(ra.metric, rb.metric);
+                NM_CMP_DIRECT(ra.plen, rb.plen);
+                NM_CMP_RETURN_DIRECT(
+                    nm_utils_ip4_address_same_prefix_cmp(ra.network, rb.network, ra.plen));
+                break;
+            }
+            case NMP_OBJECT_TYPE_IP6_ROUTE:
+            {
+                NMPlatformIP6Route ra = obj_a->ip6_route;
+                NMPlatformIP6Route rb = obj_b->ip6_route;
+
+                NM_CMP_DIRECT(ra.metric, rb.metric);
+                NM_CMP_DIRECT(ra.plen, rb.plen);
+                NM_CMP_RETURN_DIRECT(
+                    nm_utils_ip6_address_same_prefix_cmp(&ra.network, &rb.network, ra.plen));
+                break;
+            }
+            default:
+                nm_assert_not_reached();
+            }
+        }
     }
+}
+
+static const NML3ConfigData *
+get_empty_l3cd(void)
+{
+    static NML3ConfigData *empty_l3cd;
+
+    if (!empty_l3cd) {
+        empty_l3cd =
+            nm_l3_config_data_new(nm_dedup_multi_index_new(), 1, NM_IP_CONFIG_SOURCE_UNKNOWN);
+        empty_l3cd->ifindex = 0;
+    }
+
+    return empty_l3cd;
 }
 
 int
 nm_l3_config_data_cmp_full(const NML3ConfigData *a,
                            const NML3ConfigData *b,
-                           NML3ConfigCmpFlags    cmp_flags)
+                           NML3ConfigCmpFlags    flags)
 {
-    int      IS_IPv4;
-    gboolean ignore_ifindex;
+    int IS_IPv4;
 
-    NM_CMP_SELF(a, b);
+    if (a == b)
+        return 0;
 
-    ignore_ifindex = NM_FLAGS_HAS(cmp_flags, NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX);
+    if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ADDRESSES))
+        flags |= NM_L3_CONFIG_CMP_FLAGS_ADDRESSES_ID;
+    if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES))
+        flags |= NM_L3_CONFIG_CMP_FLAGS_ROUTES_ID;
 
-    if (!ignore_ifindex)
+    if (!a)
+        a = get_empty_l3cd();
+    if (!b)
+        b = get_empty_l3cd();
+
+    if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX))
         NM_CMP_DIRECT(a->ifindex, b->ifindex);
 
-    NM_CMP_DIRECT(a->flags, b->flags);
-
-    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP4_ADDRESS, ignore_ifindex));
-    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP6_ADDRESS, ignore_ifindex));
-    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP4_ROUTE, ignore_ifindex));
-    NM_CMP_RETURN(_dedup_multi_index_cmp(a, b, NMP_OBJECT_TYPE_IP6_ROUTE, ignore_ifindex));
-
-    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
-        const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
-
-        NM_CMP_RETURN(nmp_object_cmp_full(a->best_default_route_x[IS_IPv4],
-                                          b->best_default_route_x[IS_IPv4],
-                                          ignore_ifindex ? NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX
-                                                         : NMP_OBJECT_CMP_FLAGS_NONE));
-
+    if (NM_FLAGS_ANY(flags,
+                     NM_L3_CONFIG_CMP_FLAGS_ADDRESSES | NM_L3_CONFIG_CMP_FLAGS_ADDRESSES_ID)) {
         NM_CMP_RETURN(
-            _garray_inaddr_cmp(a->nameservers_x[IS_IPv4], b->nameservers_x[IS_IPv4], addr_family));
-
-        NM_CMP_RETURN(nm_utils_hashtable_cmp(nm_dhcp_lease_get_options(a->dhcp_lease_x[IS_IPv4]),
-                                             nm_dhcp_lease_get_options(b->dhcp_lease_x[IS_IPv4]),
-                                             TRUE,
-                                             nm_strcmp_with_data,
-                                             nm_strcmp_with_data,
-                                             NULL));
-
-        NM_CMP_RETURN(nm_strv_ptrarray_cmp(a->domains_x[IS_IPv4], b->domains_x[IS_IPv4]));
-        NM_CMP_RETURN(nm_strv_ptrarray_cmp(a->searches_x[IS_IPv4], b->searches_x[IS_IPv4]));
-        NM_CMP_RETURN(nm_strv_ptrarray_cmp(a->dns_options_x[IS_IPv4], b->dns_options_x[IS_IPv4]));
-
-        if (NM_FLAGS_ANY(a->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY(IS_IPv4)))
-            NM_CMP_DIRECT(a->dns_priority_x[IS_IPv4], b->dns_priority_x[IS_IPv4]);
-
-        NM_CMP_DIRECT(a->route_table_sync_x[IS_IPv4], b->route_table_sync_x[IS_IPv4]);
-        NM_CMP_DIRECT(a->never_default_x[IS_IPv4], b->never_default_x[IS_IPv4]);
+            _dedup_multi_index_cmp(a,
+                                   b,
+                                   NMP_OBJECT_TYPE_IP4_ADDRESS,
+                                   NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX),
+                                   NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ADDRESSES)));
+        NM_CMP_RETURN(
+            _dedup_multi_index_cmp(a,
+                                   b,
+                                   NMP_OBJECT_TYPE_IP6_ADDRESS,
+                                   NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX),
+                                   NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ADDRESSES)));
     }
 
-    NM_CMP_RETURN(_garray_inaddr_cmp(a->wins, b->wins, AF_INET));
-    NM_CMP_RETURN(_garray_inaddr_cmp(a->nis_servers, b->nis_servers, AF_INET));
-    NM_CMP_DIRECT_REF_STRING(a->nis_domain, b->nis_domain);
-    NM_CMP_DIRECT(a->mdns, b->mdns);
-    NM_CMP_DIRECT(a->llmnr, b->llmnr);
-    NM_CMP_DIRECT(a->dns_over_tls, b->dns_over_tls);
-    NM_CMP_DIRECT(a->ip6_token.id, b->ip6_token.id);
-    NM_CMP_DIRECT(a->mtu, b->mtu);
-    NM_CMP_DIRECT(a->ip6_mtu, b->ip6_mtu);
-    NM_CMP_DIRECT_UNSAFE(a->metered, b->metered);
-    NM_CMP_DIRECT_UNSAFE(a->proxy_browser_only, b->proxy_browser_only);
-    NM_CMP_DIRECT_UNSAFE(a->proxy_method, b->proxy_method);
-    NM_CMP_DIRECT_REF_STRING(a->proxy_pac_url, b->proxy_pac_url);
-    NM_CMP_DIRECT_REF_STRING(a->proxy_pac_script, b->proxy_pac_script);
-    NM_CMP_DIRECT_UNSAFE(a->ip6_privacy, b->ip6_privacy);
+    if (NM_FLAGS_ANY(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES | NM_L3_CONFIG_CMP_FLAGS_ROUTES_ID)) {
+        NM_CMP_RETURN(_dedup_multi_index_cmp(a,
+                                             b,
+                                             NMP_OBJECT_TYPE_IP4_ROUTE,
+                                             NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX),
+                                             NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES)));
+        NM_CMP_RETURN(_dedup_multi_index_cmp(a,
+                                             b,
+                                             NMP_OBJECT_TYPE_IP6_ROUTE,
+                                             NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX),
+                                             NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES)));
+    }
 
-    NM_CMP_DIRECT_UNSAFE(a->ndisc_hop_limit_set, b->ndisc_hop_limit_set);
-    if (a->ndisc_hop_limit_set)
-        NM_CMP_DIRECT(a->ndisc_hop_limit_val, b->ndisc_hop_limit_val);
+    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        const int        addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+        const NMPObject *def_route_a = a->best_default_route_x[IS_IPv4];
+        const NMPObject *def_route_b = b->best_default_route_x[IS_IPv4];
 
-    NM_CMP_DIRECT_UNSAFE(a->ndisc_reachable_time_msec_set, b->ndisc_reachable_time_msec_set);
-    if (a->ndisc_reachable_time_msec_set)
-        NM_CMP_DIRECT(a->ndisc_reachable_time_msec_val, b->ndisc_reachable_time_msec_val);
+        NM_CMP_SELF(def_route_a, def_route_b);
 
-    NM_CMP_DIRECT_UNSAFE(a->ndisc_retrans_timer_msec_set, b->ndisc_retrans_timer_msec_set);
-    if (a->ndisc_retrans_timer_msec_set)
-        NM_CMP_DIRECT(a->ndisc_retrans_timer_msec_val, b->ndisc_retrans_timer_msec_val);
+        if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES)) {
+            NM_CMP_RETURN(nmp_object_cmp_full(def_route_a,
+                                              def_route_b,
+                                              NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX)
+                                                  ? NMP_OBJECT_CMP_FLAGS_NONE
+                                                  : NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX));
+        } else if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_ROUTES_ID)) {
+            if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_IFINDEX)) {
+                NM_CMP_DIRECT(def_route_a->obj_with_ifindex.ifindex,
+                              def_route_b->obj_with_ifindex.ifindex);
+            }
 
-    NM_CMP_FIELD(a, b, source);
+            if (IS_IPv4) {
+                NMPlatformIP4Route ra = def_route_a->ip4_route;
+                NMPlatformIP4Route rb = def_route_b->ip4_route;
+
+                NM_CMP_DIRECT(ra.metric, rb.metric);
+                NM_CMP_DIRECT(ra.plen, rb.plen);
+                NM_CMP_RETURN_DIRECT(
+                    nm_utils_ip4_address_same_prefix_cmp(ra.network, rb.network, ra.plen));
+            } else {
+                NMPlatformIP6Route ra = def_route_a->ip6_route;
+                NMPlatformIP6Route rb = def_route_b->ip6_route;
+
+                NM_CMP_DIRECT(ra.metric, rb.metric);
+                NM_CMP_DIRECT(ra.plen, rb.plen);
+                NM_CMP_RETURN_DIRECT(
+                    nm_utils_ip6_address_same_prefix_cmp(&ra.network, &rb.network, ra.plen));
+            }
+        }
+
+        if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_DNS)) {
+            NM_CMP_RETURN(_garray_inaddr_cmp(a->nameservers_x[IS_IPv4],
+                                             b->nameservers_x[IS_IPv4],
+                                             addr_family));
+            NM_CMP_RETURN(nm_strv_ptrarray_cmp(a->domains_x[IS_IPv4], b->domains_x[IS_IPv4]));
+            NM_CMP_RETURN(nm_strv_ptrarray_cmp(a->searches_x[IS_IPv4], b->searches_x[IS_IPv4]));
+            NM_CMP_RETURN(
+                nm_strv_ptrarray_cmp(a->dns_options_x[IS_IPv4], b->dns_options_x[IS_IPv4]));
+
+            if (NM_FLAGS_ANY(a->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY(IS_IPv4)))
+                NM_CMP_DIRECT(a->dns_priority_x[IS_IPv4], b->dns_priority_x[IS_IPv4]);
+        }
+
+        if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_OTHER)) {
+            NM_CMP_RETURN(
+                nm_utils_hashtable_cmp(nm_dhcp_lease_get_options(a->dhcp_lease_x[IS_IPv4]),
+                                       nm_dhcp_lease_get_options(b->dhcp_lease_x[IS_IPv4]),
+                                       TRUE,
+                                       nm_strcmp_with_data,
+                                       nm_strcmp_with_data,
+                                       NULL));
+
+            NM_CMP_DIRECT(a->route_table_sync_x[IS_IPv4], b->route_table_sync_x[IS_IPv4]);
+            NM_CMP_DIRECT(a->never_default_x[IS_IPv4], b->never_default_x[IS_IPv4]);
+        }
+    }
+
+    if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_DNS)) {
+        NM_CMP_RETURN(_garray_inaddr_cmp(a->wins, b->wins, AF_INET));
+        NM_CMP_RETURN(_garray_inaddr_cmp(a->nis_servers, b->nis_servers, AF_INET));
+        NM_CMP_DIRECT_REF_STRING(a->nis_domain, b->nis_domain);
+        NM_CMP_DIRECT(a->mdns, b->mdns);
+        NM_CMP_DIRECT(a->llmnr, b->llmnr);
+        NM_CMP_DIRECT(a->dns_over_tls, b->dns_over_tls);
+    }
+
+    if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_OTHER)) {
+        NM_CMP_DIRECT(a->flags, b->flags);
+        NM_CMP_DIRECT(a->ip6_token.id, b->ip6_token.id);
+        NM_CMP_DIRECT(a->mtu, b->mtu);
+        NM_CMP_DIRECT(a->ip6_mtu, b->ip6_mtu);
+        NM_CMP_DIRECT_UNSAFE(a->metered, b->metered);
+        NM_CMP_DIRECT_UNSAFE(a->proxy_browser_only, b->proxy_browser_only);
+        NM_CMP_DIRECT_UNSAFE(a->proxy_method, b->proxy_method);
+        NM_CMP_DIRECT_REF_STRING(a->proxy_pac_url, b->proxy_pac_url);
+        NM_CMP_DIRECT_REF_STRING(a->proxy_pac_script, b->proxy_pac_script);
+        NM_CMP_DIRECT_UNSAFE(a->ip6_privacy, b->ip6_privacy);
+
+        NM_CMP_DIRECT_UNSAFE(a->ndisc_hop_limit_set, b->ndisc_hop_limit_set);
+        if (a->ndisc_hop_limit_set)
+            NM_CMP_DIRECT(a->ndisc_hop_limit_val, b->ndisc_hop_limit_val);
+
+        NM_CMP_DIRECT_UNSAFE(a->ndisc_reachable_time_msec_set, b->ndisc_reachable_time_msec_set);
+        if (a->ndisc_reachable_time_msec_set)
+            NM_CMP_DIRECT(a->ndisc_reachable_time_msec_val, b->ndisc_reachable_time_msec_val);
+
+        NM_CMP_DIRECT_UNSAFE(a->ndisc_retrans_timer_msec_set, b->ndisc_retrans_timer_msec_set);
+        if (a->ndisc_retrans_timer_msec_set)
+            NM_CMP_DIRECT(a->ndisc_retrans_timer_msec_val, b->ndisc_retrans_timer_msec_val);
+
+        NM_CMP_FIELD(a, b, source);
+    }
 
     /* these fields are not considered by cmp():
      *
@@ -3180,9 +3309,10 @@ nm_l3_config_data_new_clone(const NML3ConfigData *src, int ifindex)
 
     nm_assert(nm_l3_config_data_cmp_full(src,
                                          self,
-                                         src->ifindex != ifindex
-                                             ? NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX
-                                             : NM_L3_CONFIG_CMP_FLAGS_NONE)
+                                         src->ifindex == ifindex
+                                             ? NM_L3_CONFIG_CMP_FLAGS_ALL
+                                             : NM_L3_CONFIG_CMP_FLAGS_ALL
+                                                   & ~(NM_L3_CONFIG_CMP_FLAGS_IFINDEX))
               == 0);
     nm_assert(nm_l3_config_data_get_ifindex(self) == ifindex);
 
