@@ -100,6 +100,10 @@ guidelines. Following there are a few noteworthy points.
 
 * Don't use `GDBusProxy` or `GDBusObjectManager`. Use plain `GDBusConnection`.
 
+* Names in our header files should always have an "nm" prefix (like "nm_",
+  "NM_", "_nm_", "_nmp_"). Names in source files usually should not have an
+  "nm" prefix.
+
 * Indent with spaces. (_no_ tabs).
 
 * C-style comments
