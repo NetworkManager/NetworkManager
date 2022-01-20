@@ -60,7 +60,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 
 	CFLAGS_MORE_WARNINGS="-Wall"
 
-	if test "x$enable_lto" = xyes; then
+	if test "x$enable_lto" = xyes && test "x$cc_is_clang" = xno; then
 		dnl With LTO and optimizations enabled, gcc 10.2.1-1.fc32 is really
 		dnl adamant to warn about correct uses of strncpy. Disable "-Wstringop-overflow".
 		_CFLAGS_MORE_WARNINGS_DISABLE_LTO="-Wno-stringop-overflow"
@@ -179,9 +179,18 @@ fi
 AC_DEFUN([NM_LTO],
 [AC_ARG_ENABLE(lto, AS_HELP_STRING([--enable-lto], [Enable Link Time Optimization for smaller size [default=no]]))
 if (test "${enable_lto}" = "yes"); then
-	CC_CHECK_FLAG_APPEND([lto_flags], [CFLAGS], [-flto -flto-partition=none])
+        dnl We can't use the $GCC variable here, because this gets set for any
+        dnl compiler that defines the macro _GNUC_ by default, which clang and
+        dnl many other non-gcc compilers do.
+
+        if (test "${cc_is_clang}" = "yes"); then
+		CC_CHECK_FLAG_APPEND([lto_flags], [CFLAGS], [-flto])
+	else
+		dnl Assume we are using gcc.
+		CC_CHECK_FLAG_APPEND([lto_flags], [CFLAGS], [-flto -flto-partition=none])
+	fi
 	if (test -n "${lto_flags}"); then
-		CFLAGS="-flto -flto-partition=none $CFLAGS"
+		CFLAGS="${lto_flags} $CFLAGS"
 	else
 		AC_MSG_ERROR([Link Time Optimization -flto is not supported.])
 	fi

@@ -40,10 +40,31 @@ AC_PROG_CXX
 AC_PROG_LN_S
 AC_PROG_MKDIR_P
 
+AC_MSG_CHECKING([CC is clang])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[#ifndef __clang__
+                                    #error "Not clang"
+                                    #endif]])],
+                  [cc_is_clang=yes],
+                  [cc_is_clang=no])
+AC_MSG_RESULT($cc_is_clang)
+
+# Newer versions of ar, ranlib, and nm will work with either clang or gcc LTO,
+# but still prefer the gcc-* and llvm-* variants to ensure LTO works with older
+# binutils
+if test x"$cc_is_clang" = x"yes"; then
+	LTO_AR="llvm-ar"
+	LTO_RANLIB="llvm-ranlib"
+	LTO_NM="llvm-nm"
+else
+	LTO_AR="gcc-ar"
+	LTO_RANLIB="gcc-ranlib"
+	LTO_NM="gcc-nm"
+fi
+
 # Prefer gcc-* variants; the ones libtool would choose don't work with LTO
-AC_CHECK_TOOLS(AR, [gcc-ar ar], false)
-AC_CHECK_TOOLS(RANLIB, [gcc-ranlib ranlib], :)
-AC_CHECK_TOOLS(NM, [$BINUTILS_NM gcc-nm nm])
+AC_CHECK_TOOLS(AR, [$LTO_AR ar], false)
+AC_CHECK_TOOLS(RANLIB, [$LTO_RANLIB ranlib], :)
+AC_CHECK_TOOLS(NM, [$BINUTILS_NM $LTO_NM nm])
 
 dnl Initialize libtool
 LT_PREREQ([2.2])

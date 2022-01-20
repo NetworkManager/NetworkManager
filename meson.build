@@ -168,7 +168,7 @@ if enable_ld_gc
 endif
 
 enable_lto = get_option('b_lto')
-if enable_lto
+if enable_lto and cc.get_id() == 'gcc'
   # meson already adds '-flto'
   lto_flag = '-flto-partition=none'
   assert(cc.has_argument(lto_flag), '-flto-partition=none not supported. Disable link-time optimization with -Db_lto=false.')
