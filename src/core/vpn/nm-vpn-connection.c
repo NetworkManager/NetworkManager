@@ -760,6 +760,7 @@ _l3cfg_l3cd_update(NMVpnConnection *self, L3CDType l3cd_type)
                              NM_DNS_PRIORITY_DEFAULT_VPN,
                              NM_L3_ACD_DEFEND_TYPE_ONCE,
                              0,
+                             TRUE,
                              NM_L3CFG_CONFIG_FLAGS_NONE,
                              _l3cfg_get_merge_flags(self, l3cd_type)))
         return;

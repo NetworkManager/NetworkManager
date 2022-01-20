@@ -103,6 +103,7 @@ typedef struct {
     NML3AcdDefendType acd_defend_type_desired : 3;
     NML3AcdDefendType acd_defend_type_current : 3;
     bool              acd_defend_type_is_active : 1;
+    bool              acd_do_announce : 1;
 
     bool track_infos_changed : 1;
 } AcdData;
@@ -203,6 +204,7 @@ typedef struct {
     int               priority_confdata;
     guint32           acd_timeout_msec_confdata;
     NML3AcdDefendType acd_defend_type_confdata : 3;
+    bool              acd_do_announce : 1;
     bool              dirty_confdata : 1;
     gboolean          force_commit_once : 1;
 } L3ConfigData;
@@ -589,6 +591,7 @@ static void
 _nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
                                           const NML3ConfigData *l3cd_old,
                                           const NML3ConfigData *l3cd_new,
+                                          NML3ConfigDiff        diff,
                                           gboolean              commited)
 {
     NML3ConfigNotifyData notify_data;
@@ -597,6 +600,7 @@ _nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
     notify_data.l3cd_changed = (typeof(notify_data.l3cd_changed)){
         .l3cd_old = l3cd_old,
         .l3cd_new = l3cd_new,
+        .diff     = diff,
         .commited = commited,
     };
     _nm_l3cfg_emit_signal_notify(self, &notify_data);
@@ -1327,10 +1331,12 @@ static guint
 _acd_data_collect_tracks_data(const AcdData     *acd_data,
                               NMTernary          dirty_selector,
                               guint32           *out_best_acd_timeout_msec,
-                              NML3AcdDefendType *out_best_acd_defend_type)
+                              NML3AcdDefendType *out_best_acd_defend_type,
+                              gboolean          *out_best_acd_do_announce)
 {
     NML3AcdDefendType best_acd_defend_type  = _NM_L3_ACD_DEFEND_TYPE_NONE;
     guint32           best_acd_timeout_msec = G_MAXUINT32;
+    gboolean          best_acd_do_announce  = FALSE;
     guint             n                     = 0;
     guint             i;
 
@@ -1346,6 +1352,8 @@ _acd_data_collect_tracks_data(const AcdData     *acd_data,
             best_acd_timeout_msec = acd_track->_priv.acd_timeout_msec_track;
         if (best_acd_defend_type < acd_track->_priv.acd_defend_type_track)
             best_acd_defend_type = acd_track->_priv.acd_defend_type_track;
+        if (acd_track->_priv.acd_do_announce_track)
+            best_acd_do_announce = TRUE;
     }
 
     nm_assert(n == 0 || best_acd_defend_type > _NM_L3_ACD_DEFEND_TYPE_NONE);
@@ -1353,6 +1361,7 @@ _acd_data_collect_tracks_data(const AcdData     *acd_data,
 
     NM_SET_OUT(out_best_acd_timeout_msec, n > 0 ? best_acd_timeout_msec : 0u);
     NM_SET_OUT(out_best_acd_defend_type, best_acd_defend_type);
+    NM_SET_OUT(out_best_acd_do_announce, best_acd_do_announce);
     return n;
 }
 
@@ -1782,7 +1791,8 @@ _l3_acd_data_add(NML3Cfg              *self,
                  const NMPObject      *obj,
                  gconstpointer         tag,
                  NML3AcdDefendType     acd_defend_type,
-                 guint32               acd_timeout_msec)
+                 guint32               acd_timeout_msec,
+                 gboolean              acd_do_announce)
 {
     in_addr_t             addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address;
     NML3AcdAddrTrackInfo *acd_track;
@@ -1847,6 +1857,7 @@ _l3_acd_data_add(NML3Cfg              *self,
             ._priv.acd_dirty_track        = FALSE,
             ._priv.acd_defend_type_track  = acd_defend_type,
             ._priv.acd_timeout_msec_track = acd_timeout_msec,
+            ._priv.acd_do_announce_track  = acd_do_announce,
         };
         track_mode = "new";
     } else {
@@ -1856,6 +1867,7 @@ _l3_acd_data_add(NML3Cfg              *self,
             || acd_track->_priv.acd_defend_type_track != acd_defend_type) {
             acd_track->_priv.acd_defend_type_track  = acd_defend_type;
             acd_track->_priv.acd_timeout_msec_track = acd_timeout_msec;
+            acd_track->_priv.acd_do_announce_track  = acd_do_announce;
             track_mode                              = "update";
         } else
             return;
@@ -1863,9 +1875,10 @@ _l3_acd_data_add(NML3Cfg              *self,
 
     acd_data->track_infos_changed = TRUE;
     _LOGT_acd(acd_data,
-              "track " ACD_TRACK_FMT " with timeout %u msec, defend=%s (%s)",
+              "track " ACD_TRACK_FMT " with timeout %u msec, announce=%d defend=%s (%s)",
               ACD_TRACK_PTR(acd_track),
               acd_timeout_msec,
+              acd_do_announce,
               _l3_acd_defend_type_to_string(acd_track->_priv.acd_defend_type_track,
                                             sbuf100,
                                             sizeof(sbuf100)),
@@ -1903,7 +1916,8 @@ _l3_acd_data_add_all(NML3Cfg                   *self,
                              obj,
                              info->tag_confdata,
                              info->acd_defend_type_confdata,
-                             info->acd_timeout_msec_confdata);
+                             info->acd_timeout_msec_confdata,
+                             info->acd_do_announce);
         }
     }
 
@@ -2110,6 +2124,7 @@ _l3_acd_data_state_change(NML3Cfg           *self,
 {
     guint32           acd_timeout_msec;
     NML3AcdDefendType acd_defend_type;
+    gboolean          acd_do_announce;
     gint64            now_msec;
     const char       *log_reason;
     char              sbuf256[256];
@@ -2199,7 +2214,8 @@ handle_init:
         if (_acd_data_collect_tracks_data(acd_data,
                                           NM_TERNARY_FALSE,
                                           &acd_timeout_msec,
-                                          &acd_defend_type)
+                                          &acd_defend_type,
+                                          &acd_do_announce)
             <= 0u) {
             /* the acd_data has no active trackers. It will soon be pruned. */
             return;
@@ -2225,6 +2241,7 @@ handle_init:
                   log_reason);
         acd_data->nacd_probe              = n_acd_probe_free(acd_data->nacd_probe);
         acd_data->acd_defend_type_desired = acd_defend_type;
+        acd_data->acd_do_announce         = acd_do_announce;
         _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_READY, FALSE);
         return;
 
@@ -2248,11 +2265,13 @@ handle_init:
         if (_acd_data_collect_tracks_data(acd_data,
                                           NM_TERNARY_TRUE,
                                           &acd_timeout_msec,
-                                          &acd_defend_type)
+                                          &acd_defend_type,
+                                          &acd_do_announce)
             <= 0)
             nm_assert_not_reached();
 
         acd_data->acd_defend_type_desired = acd_defend_type;
+        acd_data->acd_do_announce         = acd_do_announce;
 
         if (acd_timeout_msec <= 0) {
             log_reason = "acd disabled by configuration";
@@ -2366,11 +2385,13 @@ handle_init:
             if (_acd_data_collect_tracks_data(acd_data,
                                               NM_TERNARY_TRUE,
                                               &acd_timeout_msec,
-                                              &acd_defend_type)
+                                              &acd_defend_type,
+                                              &acd_do_announce)
                 <= 0)
                 nm_assert_not_reached();
 
             acd_data->acd_defend_type_desired = acd_defend_type;
+            acd_data->acd_do_announce         = acd_do_announce;
 
             if (acd_timeout_msec <= 0) {
                 log_reason = "acd disabled by configuration (restart after previous conflict)";
@@ -2734,6 +2755,11 @@ handle_probing_done:
     return;
 
 handle_start_defending:
+    if (!acd_data->acd_do_announce) {
+        _LOGT_acd(acd_data, "skip announcement");
+        return;
+    }
+
     if (!_l3_acd_ipv4_addresses_on_link_contains(self, acd_data->info.addr)) {
         if (acd_data->info.state != NM_L3_ACD_ADDR_STATE_READY) {
             _l3_acd_data_state_set_full(self,
@@ -3121,6 +3147,7 @@ nm_l3cfg_add_config(NML3Cfg              *self,
                     int                   default_dns_priority_6,
                     NML3AcdDefendType     acd_defend_type,
                     guint32               acd_timeout_msec,
+                    gboolean              acd_do_announce,
                     NML3CfgConfigFlags    config_flags,
                     NML3ConfigMergeFlags  merge_flags)
 {
@@ -3198,6 +3225,7 @@ nm_l3cfg_add_config(NML3Cfg              *self,
             .default_dns_priority_6    = default_dns_priority_6,
             .acd_defend_type_confdata  = acd_defend_type,
             .acd_timeout_msec_confdata = acd_timeout_msec,
+            .acd_do_announce           = acd_do_announce,
             .priority_confdata         = priority,
             .pseudo_timestamp_confdata = ++self->priv.p->pseudo_timestamp_counter,
             .force_commit_once = NM_FLAGS_HAS(config_flags, NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE),
@@ -3260,6 +3288,10 @@ nm_l3cfg_add_config(NML3Cfg              *self,
         if (l3_config_data->acd_timeout_msec_confdata != acd_timeout_msec) {
             l3_config_data->acd_timeout_msec_confdata = acd_timeout_msec;
             changed                                   = TRUE;
+        }
+        if (l3_config_data->acd_do_announce != acd_do_announce) {
+            l3_config_data->acd_do_announce = acd_do_announce;
+            changed                         = TRUE;
         }
     }
 
@@ -3444,6 +3476,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     guint                                    i;
     gboolean                                 merged_changed   = FALSE;
     gboolean                                 commited_changed = FALSE;
+    NML3ConfigDiff                           diff;
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(!out_old || !*out_old);
@@ -3544,7 +3577,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
         nm_l3_config_data_seal(l3cd);
     }
 
-    if (nm_l3_config_data_equal(l3cd, self->priv.p->combined_l3cd_merged))
+    if (nm_l3_config_data_equal_full(l3cd, self->priv.p->combined_l3cd_merged, &diff))
         goto out;
 
     l3cd_old                           = g_steal_pointer(&self->priv.p->combined_l3cd_merged);
@@ -3554,6 +3587,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     _nm_l3cfg_emit_signal_notify_l3cd_changed(self,
                                               l3cd_old,
                                               self->priv.p->combined_l3cd_merged,
+                                              diff,
                                               FALSE);
 
     if (!to_commit) {
@@ -3570,9 +3604,14 @@ out:
 
         _obj_states_update_all(self);
 
+        nm_l3_config_data_equal_full(l3cd_commited_old,
+                                     self->priv.p->combined_l3cd_commited,
+                                     &diff);
+
         _nm_l3cfg_emit_signal_notify_l3cd_changed(self,
                                                   l3cd_commited_old,
                                                   self->priv.p->combined_l3cd_commited,
+                                                  diff,
                                                   TRUE);
 
         NM_SET_OUT(out_old, g_steal_pointer(&l3cd_commited_old));

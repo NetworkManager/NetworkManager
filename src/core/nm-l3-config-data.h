@@ -198,24 +198,35 @@ NMDedupMultiIndex *nm_l3_config_data_get_multi_idx(const NML3ConfigData *self);
 /*****************************************************************************/
 
 typedef enum {
-    NM_L3_CONFIG_CMP_FLAGS_NONE,
-    NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX = (1LL << 0),
-} NML3ConfigCmpFlags;
+    NM_L3_CONFIG_DIFF_NONE    = 0,
+    NM_L3_CONFIG_DIFF_IFINDEX = (1U << 0),
 
-int nm_l3_config_data_cmp_full(const NML3ConfigData *a,
-                               const NML3ConfigData *b,
-                               NML3ConfigCmpFlags    cmp_flags);
+    /*
+     * Addresses or route differs. For addresses, it means that either the
+     * address, the prefix length or the peer address (for IPv4) is
+     * different. For routes, it means that either the network, the prefix
+     * length or the metric is different.
+     */
+    NM_L3_CONFIG_DIFF_ADDR_ROUTE = (1U << 1),
 
-static inline int
-nm_l3_config_data_cmp(const NML3ConfigData *a, const NML3ConfigData *b)
-{
-    return nm_l3_config_data_cmp_full(a, b, NM_L3_CONFIG_CMP_FLAGS_NONE);
-}
+    /*
+     * Addresses or routes have different (minor) attributes, like lifetimes,
+     * source, flags, etc.
+     */
+    NM_L3_CONFIG_DIFF_ADDR_ROUTE_ATTR = (1U << 2),
+
+    NM_L3_CONFIG_DIFF_DNS   = (1U << 3),
+    NM_L3_CONFIG_DIFF_OTHER = (1U << 4),
+} NML3ConfigDiff;
+
+int nm_l3_config_data_equal_full(const NML3ConfigData *a,
+                                 const NML3ConfigData *b,
+                                 NML3ConfigDiff       *out_diff);
 
 static inline gboolean
 nm_l3_config_data_equal(const NML3ConfigData *a, const NML3ConfigData *b)
 {
-    return nm_l3_config_data_cmp(a, b) == 0;
+    return nm_l3_config_data_equal_full(a, b, NULL);
 }
 
 /*****************************************************************************/

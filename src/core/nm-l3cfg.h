@@ -82,6 +82,7 @@ typedef struct {
     struct {
         guint32           acd_timeout_msec_track;
         NML3AcdDefendType acd_defend_type_track;
+        bool              acd_do_announce_track : 1;
         bool              acd_dirty_track : 1;
         bool              acd_failed_notified_track : 1;
     } _priv;
@@ -171,6 +172,7 @@ typedef struct {
         struct {
             const NML3ConfigData *l3cd_old;
             const NML3ConfigData *l3cd_new;
+            NML3ConfigDiff        diff;
             bool                  commited;
         } l3cd_changed;
 
@@ -320,6 +322,7 @@ gboolean nm_l3cfg_add_config(NML3Cfg              *self,
                              int                   default_dns_priority_6,
                              NML3AcdDefendType     acd_defend_type,
                              guint32               acd_timeout_msec,
+                             gboolean              acd_do_announce,
                              NML3CfgConfigFlags    config_flags,
                              NML3ConfigMergeFlags  merge_flags);
 

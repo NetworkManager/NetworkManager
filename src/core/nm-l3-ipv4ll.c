@@ -595,6 +595,7 @@ _l3cd_config_add(NML3IPv4LL *self)
                              NM_DNS_PRIORITY_DEFAULT_NORMAL,
                              NM_L3_ACD_DEFEND_TYPE_ONCE,
                              self->reg_timeout_msec,
+                             TRUE,
                              NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD,
                              NM_L3_CONFIG_MERGE_FLAGS_NONE))
         nm_assert_not_reached();

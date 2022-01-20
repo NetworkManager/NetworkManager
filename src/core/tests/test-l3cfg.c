@@ -448,6 +448,7 @@ test_l3cfg(gconstpointer test_data)
                             NM_DNS_PRIORITY_DEFAULT_NORMAL,
                             tdata->acd_defend_type_a,
                             tdata->acd_timeout_msec_a,
+                            TRUE,
                             NM_L3CFG_CONFIG_FLAGS_NONE,
                             NM_L3_CONFIG_MERGE_FLAGS_NONE);
     }
@@ -613,6 +614,7 @@ _test_l3_ipv4ll_signal_notify(NML3Cfg                    *l3cfg,
                                          NM_DNS_PRIORITY_DEFAULT_NORMAL,
                                          NM_L3_ACD_DEFEND_TYPE_ONCE,
                                          nmtst_get_rand_bool() ? tdata->acd_timeout_msec : 0u,
+                                         TRUE,
                                          NM_L3CFG_CONFIG_FLAGS_NONE,
                                          NM_L3_CONFIG_MERGE_FLAGS_NONE))
                     g_assert_not_reached();

@@ -3479,7 +3479,8 @@ _dev_l3_get_config_settings(NMDevice             *self,
                             L3ConfigDataType      type,
                             NML3ConfigMergeFlags *out_merge_flags,
                             NML3AcdDefendType    *out_acd_defend_type,
-                            guint32              *out_acd_timeout_msec)
+                            guint32              *out_acd_timeout_msec,
+                            gboolean             *out_acd_do_announce)
 {
     NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
     NML3ConfigMergeFlags flags;
@@ -3601,6 +3602,30 @@ after_acd_defend_type:
     *out_merge_flags = nm_assert_unreachable_val(NM_L3_CONFIG_MERGE_FLAGS_NONE);
 
 after_merge_flags:
+    switch (type) {
+    case L3_CONFIG_DATA_TYPE_DHCP_4:
+    case L3_CONFIG_DATA_TYPE_AC_6:
+    case L3_CONFIG_DATA_TYPE_DHCP_6:
+        *out_acd_do_announce = FALSE;
+        goto after_do_announce;
+    case L3_CONFIG_DATA_TYPE_DEVIP_UNSPEC:
+    case L3_CONFIG_DATA_TYPE_MANUALIP:
+    case L3_CONFIG_DATA_TYPE_LL_4:
+    case L3_CONFIG_DATA_TYPE_LL_6:
+    case L3_CONFIG_DATA_TYPE_PD_6:
+    case L3_CONFIG_DATA_TYPE_SHARED_4:
+    case L3_CONFIG_DATA_TYPE_DEVIP_4:
+    case L3_CONFIG_DATA_TYPE_DEVIP_6:
+        *out_acd_do_announce = TRUE;
+        goto after_do_announce;
+    case _L3_CONFIG_DATA_TYPE_NUM:
+    case _L3_CONFIG_DATA_TYPE_NONE:
+    case _L3_CONFIG_DATA_TYPE_ACD_ONLY:
+        break;
+    }
+    *out_acd_do_announce = nm_assert_unreachable_val(FALSE);
+
+after_do_announce:
     return;
 }
 
@@ -3613,8 +3638,15 @@ _dev_l3_register_l3cds_add_config(NMDevice          *self,
     NML3ConfigMergeFlags merge_flags;
     NML3AcdDefendType    acd_defend_type;
     guint32              acd_timeout_msec;
+    gboolean             acd_do_announce;
 
-    _dev_l3_get_config_settings(self, l3cd_type, &merge_flags, &acd_defend_type, &acd_timeout_msec);
+    _dev_l3_get_config_settings(self,
+                                l3cd_type,
+                                &merge_flags,
+                                &acd_defend_type,
+                                &acd_timeout_msec,
+                                &acd_do_announce);
+
     return nm_l3cfg_add_config(priv->l3cfg,
                                _dev_l3_config_data_tag_get(priv, l3cd_type),
                                FALSE,
@@ -3630,6 +3662,7 @@ _dev_l3_register_l3cds_add_config(NMDevice          *self,
                                _prop_get_ipvx_dns_priority(self, AF_INET6),
                                acd_defend_type,
                                acd_timeout_msec,
+                               acd_do_announce,
                                flags,
                                merge_flags);
 }
@@ -3867,7 +3900,8 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
                           signals[L3CD_CHANGED],
                           0,
                           notify_data->l3cd_changed.l3cd_old,
-                          notify_data->l3cd_changed.l3cd_new);
+                          notify_data->l3cd_changed.l3cd_new,
+                          notify_data->l3cd_changed.diff);
         }
         return;
     case NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT:
@@ -4031,7 +4065,12 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
                  */
                 l3cd_old = nm_l3cfg_get_combined_l3cd(priv->l3cfg, TRUE);
                 if (l3cd_old)
-                    g_signal_emit(self, signals[L3CD_CHANGED], 0, l3cd_old, NULL);
+                    g_signal_emit(self,
+                                  signals[L3CD_CHANGED],
+                                  0,
+                                  l3cd_old,
+                                  NULL,
+                                  NM_L3_CONFIG_DIFF_DNS);
             }
 
             g_signal_handlers_disconnect_by_func(priv->l3cfg,
@@ -17912,9 +17951,10 @@ nm_device_class_init(NMDeviceClass *klass)
                                          NULL,
                                          NULL,
                                          G_TYPE_NONE,
-                                         2,
+                                         3,
                                          G_TYPE_POINTER, /* (const NML3ConfigData *l3cd_old) */
-                                         G_TYPE_POINTER /* (const NML3ConfigData *l3cd_new) */);
+                                         G_TYPE_POINTER, /* (const NML3ConfigData *l3cd_new) */
+                                         G_TYPE_UINT);   /* NML3ConfigDiff */
 
     signals[IP6_PREFIX_DELEGATED] =
         g_signal_new(NM_DEVICE_IP6_PREFIX_DELEGATED,

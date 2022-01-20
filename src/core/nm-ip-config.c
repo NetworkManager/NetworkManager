@@ -50,7 +50,7 @@ G_DEFINE_ABSTRACT_TYPE(NMIPConfig, nm_ip_config, NM_TYPE_DBUS_OBJECT)
 /*****************************************************************************/
 
 static void _handle_platform_change(NMIPConfig *self, guint32 obj_type_flags, gboolean is_init);
-static void _handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd);
+static void _handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd, NML3ConfigDiff diff);
 
 /*****************************************************************************/
 
@@ -72,7 +72,9 @@ _l3cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMIPCo
     switch (notify_data->notify_type) {
     case NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED:
         if (notify_data->l3cd_changed.commited)
-            _handle_l3cd_changed(self, notify_data->l3cd_changed.l3cd_new);
+            _handle_l3cd_changed(self,
+                                 notify_data->l3cd_changed.l3cd_new,
+                                 notify_data->l3cd_changed.diff);
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
         _handle_platform_change(self, notify_data->platform_change_on_idle.obj_type_flags, FALSE);
@@ -728,7 +730,7 @@ nm_ip6_config_class_init(NMIP6ConfigClass *klass)
     G_STMT_END
 
 static void
-_handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd)
+_handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd, NML3ConfigDiff diff)
 {
     const int                                addr_family = nm_ip_config_get_addr_family(self);
     const int                                IS_IPv4     = NM_IS_IPv4(addr_family);
@@ -748,42 +750,48 @@ _handle_l3cd_changed(NMIPConfig *self, const NML3ConfigData *l3cd)
     l3cd_old   = g_steal_pointer(&priv->l3cd);
     priv->l3cd = nm_l3_config_data_ref(l3cd);
 
-    addrs_old = nm_l3_config_data_get_nameservers(l3cd_old, addr_family, &len_old);
-    addrs     = nm_l3_config_data_get_nameservers(priv->l3cd, addr_family, &len);
-    if (!nm_memeq_n(addrs_old, len_old, addrs, len, nm_utils_addr_family_to_size(addr_family))) {
+    if (NM_FLAGS_HAS(diff, NM_L3_CONFIG_DIFF_DNS)) {
+        addrs_old = nm_l3_config_data_get_nameservers(l3cd_old, addr_family, &len_old);
+        addrs     = nm_l3_config_data_get_nameservers(priv->l3cd, addr_family, &len);
+        if (!nm_memeq_n(addrs_old,
+                        len_old,
+                        addrs,
+                        len,
+                        nm_utils_addr_family_to_size(addr_family))) {
+            if (IS_IPv4) {
+                changed_params[n_changed_params++] = obj_properties_ip4[PROP_IP4_NAMESERVER_DATA];
+                changed_params[n_changed_params++] = obj_properties_ip4[PROP_IP4_NAMESERVERS];
+            } else
+                changed_params[n_changed_params++] = obj_properties_ip6[PROP_IP6_NAMESERVERS];
+        }
+
+        strv_old = nm_l3_config_data_get_domains(l3cd_old, addr_family, &len_old);
+        strv     = nm_l3_config_data_get_domains(priv->l3cd, addr_family, &len);
+        if (!nm_strv_equal_n(strv, len, strv_old, len_old))
+            changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_DOMAINS];
+
+        strv_old = nm_l3_config_data_get_searches(l3cd_old, addr_family, &len_old);
+        strv     = nm_l3_config_data_get_searches(priv->l3cd, addr_family, &len);
+        if (!nm_strv_equal_n(strv, len, strv_old, len_old))
+            changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_SEARCHES];
+
+        v_i_old = nm_l3_config_data_get_dns_priority_or_default(l3cd_old, addr_family);
+        v_i     = nm_l3_config_data_get_dns_priority_or_default(priv->l3cd, addr_family);
+        if (v_i != v_i_old)
+            changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_DNS_PRIORITY];
+
+        strv_old = nm_l3_config_data_get_dns_options(l3cd_old, addr_family, &len);
+        strv     = nm_l3_config_data_get_dns_options(priv->l3cd, addr_family, &len);
+        if (!nm_strv_equal_n(strv, len, strv_old, len_old))
+            changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_DNS_OPTIONS];
+
         if (IS_IPv4) {
-            changed_params[n_changed_params++] = obj_properties_ip4[PROP_IP4_NAMESERVER_DATA];
-            changed_params[n_changed_params++] = obj_properties_ip4[PROP_IP4_NAMESERVERS];
-        } else
-            changed_params[n_changed_params++] = obj_properties_ip6[PROP_IP6_NAMESERVERS];
-    }
-
-    strv_old = nm_l3_config_data_get_domains(l3cd_old, addr_family, &len_old);
-    strv     = nm_l3_config_data_get_domains(priv->l3cd, addr_family, &len);
-    if (!nm_strv_equal_n(strv, len, strv_old, len_old))
-        changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_DOMAINS];
-
-    strv_old = nm_l3_config_data_get_searches(l3cd_old, addr_family, &len_old);
-    strv     = nm_l3_config_data_get_searches(priv->l3cd, addr_family, &len);
-    if (!nm_strv_equal_n(strv, len, strv_old, len_old))
-        changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_SEARCHES];
-
-    v_i_old = nm_l3_config_data_get_dns_priority_or_default(l3cd_old, addr_family);
-    v_i     = nm_l3_config_data_get_dns_priority_or_default(priv->l3cd, addr_family);
-    if (v_i != v_i_old)
-        changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_DNS_PRIORITY];
-
-    strv_old = nm_l3_config_data_get_dns_options(l3cd_old, addr_family, &len);
-    strv     = nm_l3_config_data_get_dns_options(priv->l3cd, addr_family, &len);
-    if (!nm_strv_equal_n(strv, len, strv_old, len_old))
-        changed_params[n_changed_params++] = obj_properties_ip[PROP_IP_DNS_OPTIONS];
-
-    if (IS_IPv4) {
-        addrs_old = nm_l3_config_data_get_wins(l3cd_old, &len_old);
-        addrs     = nm_l3_config_data_get_wins(priv->l3cd, &len);
-        if (!nm_memeq_n(addrs_old, len_old, addrs, len, sizeof(in_addr_t))) {
-            changed_params[n_changed_params++] = obj_properties_ip4[PROP_IP4_WINS_SERVER_DATA];
-            changed_params[n_changed_params++] = obj_properties_ip4[PROP_IP4_WINS_SERVERS];
+            addrs_old = nm_l3_config_data_get_wins(l3cd_old, &len_old);
+            addrs     = nm_l3_config_data_get_wins(priv->l3cd, &len);
+            if (!nm_memeq_n(addrs_old, len_old, addrs, len, sizeof(in_addr_t))) {
+                changed_params[n_changed_params++] = obj_properties_ip4[PROP_IP4_WINS_SERVER_DATA];
+                changed_params[n_changed_params++] = obj_properties_ip4[PROP_IP4_WINS_SERVERS];
+            }
         }
     }
 
