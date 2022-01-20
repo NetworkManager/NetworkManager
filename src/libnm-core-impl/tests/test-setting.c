@@ -2952,7 +2952,7 @@ test_tc_config_tfilter_matchall_mirred(void)
     NMTCTfilter *      tfilter1;
     GError *           error      = NULL;
     gs_strfreev char **attr_names = NULL;
-    gs_free char *     str;
+    gs_free char *     str        = NULL;
     GVariant *         variant;
 
     tfilter1 =
