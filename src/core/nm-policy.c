@@ -2820,6 +2820,7 @@ constructed(GObject *object)
     G_OBJECT_CLASS(nm_policy_parent_class)->constructed(object);
 
     _LOGD(LOGD_DNS, "hostname-mode: %s", _hostname_mode_to_string(priv->hostname_mode));
+    update_system_hostname(self, "initial hostname");
 }
 
 NMPolicy *
