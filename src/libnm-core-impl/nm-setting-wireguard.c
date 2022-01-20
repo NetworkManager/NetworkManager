@@ -1771,7 +1771,7 @@ verify_secrets(NMSetting *setting, NMConnection *connection, GError **error)
     NMSettingWireGuardPrivate *priv = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
     guint                      i;
 
-    if (!priv->private_key_valid) {
+    if (priv->private_key && !priv->private_key_valid) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
