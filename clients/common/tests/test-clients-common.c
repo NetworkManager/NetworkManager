@@ -161,7 +161,7 @@ test_client_meta_check(void)
 static void
 test_client_import_wireguard_test0(void)
 {
-    gs_unref_object NMConnection *connection;
+    gs_unref_object NMConnection *connection = NULL;
     NMSettingWireGuard *          s_wg;
     NMSettingIPConfig *           s_ip4;
     NMSettingIPConfig *           s_ip6;
