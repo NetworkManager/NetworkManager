@@ -852,17 +852,17 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     /* Make sure mode is compatible with other settings */
-    if (NM_IN_SET(bond_mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB)) {
+    if (NM_IN_SET(bond_mode, NM_BOND_MODE_8023AD, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB)) {
         if (arp_interval > 0) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("'%s=%s' is incompatible with '%s > 0'"),
+                        _("'%s=%s' is incompatible with '%s > 0', bond will use mii monitoring"),
                         NM_SETTING_BOND_OPTION_MODE,
                         mode_str,
                         NM_SETTING_BOND_OPTION_ARP_INTERVAL);
             g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
-            return FALSE;
+            return TRUE;
         }
     }
 
