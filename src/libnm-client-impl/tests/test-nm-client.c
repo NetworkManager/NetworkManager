@@ -804,7 +804,8 @@ _dev_eth0_1_state_changed_cb(NMDevice           *device,
 
     g_assert(NM_IS_DEVICE_VLAN(device));
 
-    g_assert_cmpint(old_state, ==, NM_DEVICE_STATE_PREPARE);
+    g_assert_cmpint(old_state, >=, NM_DEVICE_STATE_PREPARE);
+    g_assert_cmpint(old_state, <=, NM_DEVICE_STATE_ACTIVATED);
     g_assert_cmpint(new_state, ==, NM_DEVICE_STATE_UNKNOWN);
 
     arr = nm_device_get_available_connections(device);
