@@ -1077,6 +1077,9 @@ class Device(ExportedObj):
         elif isinstance(self, WifiDevice):
             if con_inst.get_type() == NM.SETTING_WIRELESS_SETTING_NAME:
                 return True
+        elif isinstance(self, VlanDevice):
+            if con_inst.get_type() == NM.SETTING_VLAN_SETTING_NAME:
+                return True
         return False
 
     def available_connections_get(self):
@@ -1630,6 +1633,9 @@ class NetworkManager(ExportedObj):
 
         ac = ActiveConnection(device, con_inst, None)
         self.active_connection_add(ac)
+
+        gl.manager.devices_available_connections_update()
+
         return ExportedObj.to_path(ac)
 
     def active_connection_add(self, ac):

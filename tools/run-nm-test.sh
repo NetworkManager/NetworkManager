@@ -37,6 +37,7 @@ usage() {
     echo "  --no-libtool: when running with valgrind, the script tries automatically to"
     echo "        use libtool as necessary. This disables libtool usage" 
     echo "  --make-first|-m: before running the test, make it (only works with autotools build)"
+    echo "  --no-make-first|-M: disable --make-first option"
     echo "  --valgrind|-v: run under valgrind"
     echo "  --no-valgrind|-V: disable running under valgrind (overrides NMTST_USE_VALGRIND=1)"
     echo "  -d: set NMTST_DEBUG=d"
@@ -163,6 +164,10 @@ else
             ;;
         --make-first|-m)
             NMTST_MAKE_FIRST=1
+            shift
+            ;;
+        --no-make-first|-M)
+            NMTST_MAKE_FIRST=0
             shift
             ;;
         "--valgrind"|-v)

@@ -709,6 +709,17 @@ nmtst_test_quick(void)
     return __nmtst_internal.test_quick;
 }
 
+static inline gboolean
+nmtst_test_skip_slow(void)
+{
+    if (!nmtst_test_quick())
+        return FALSE;
+
+    g_print("Skipping test: don't run long running test %s (NMTST_DEBUG=slow)\n", g_get_prgname());
+    g_test_skip("Skip long running test");
+    return TRUE;
+}
+
 #if GLIB_CHECK_VERSION(2, 34, 0)
 #undef g_test_expect_message
 #define g_test_expect_message(...)                                                   \
