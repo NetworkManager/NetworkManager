@@ -382,9 +382,15 @@ nm_uuid_generate_from_string_str(const char *s,
                                  NMUuidType  uuid_type,
                                  gpointer    type_args)
 {
-    NMUuid uuid;
+    NMUuid        uuid;
+    const NMUuid *u;
 
-    nm_uuid_generate_from_string(&uuid, s, slen, uuid_type, type_args);
+    u = nm_uuid_generate_from_string(&uuid, s, slen, uuid_type, type_args);
+
+    if (G_UNLIKELY(!u))
+        return nm_assert_unreachable_val(NULL);
+    nm_assert(u == &uuid);
+
     return nm_uuid_unparse(&uuid, g_new(char, 37));
 }
 
