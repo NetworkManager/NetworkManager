@@ -2095,7 +2095,7 @@ _prop_get_x_generate_mac_address_mask(NMDevice *    self,
 static void
 _ethtool_features_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool_state)
 {
-    gs_free NMEthtoolFeatureStates *features;
+    gs_free NMEthtoolFeatureStates *features = NULL;
 
     features = g_steal_pointer(&ethtool_state->features);
 
