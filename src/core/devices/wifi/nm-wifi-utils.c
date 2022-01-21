@@ -1800,3 +1800,151 @@ nm_wifi_utils_connection_to_iwd_config(NMConnection *connection,
 
     return g_steal_pointer(&file);
 }
+
+/* Wi-Fi Display Technical Specification v2.1.0 Table 27 */
+enum wfd_subelem_type {
+    WFD_SUBELEM_WFD_DEVICE_INFORMATION   = 0,
+    WFD_SUBELEM_ASSOCIATED_BSSID         = 1,
+    WFD_SUBELEM_COUPLED_SINK_INFORMATION = 6,
+    WFD_SUBELEM_EXTENDED_CAPABILITY      = 7,
+    WFD_SUBELEM_LOCAL_IP_ADDRESS         = 8,
+    WFD_SUBELEM_SESION_INFORMATION       = 9,
+    WFD_SUBELEM_ALTERNATIVE_MAC_ADDRESS  = 10,
+    WFD_SUBELEM_R2_DEVICE_INFORMATION    = 11,
+};
+
+bool
+nm_wifi_utils_parse_wfd_ies(GBytes *ies, NMIwdWfdInfo *out_wfd)
+{
+    size_t         len;
+    const uint8_t *data         = g_bytes_get_data(ies, &len);
+    const uint8_t *dev_info     = NULL;
+    uint16_t       dev_info_len = 0;
+    uint16_t       dev_info_flags;
+    const uint8_t *ext_capability     = NULL;
+    uint16_t       ext_capability_len = 0;
+
+    /* The single WFD IEs array provided by the client is supposed to be sent to
+     * the peer in the different frame types that may include the WFD IE: Probe
+     * Request/Response, Beacon, (Re)Association Request/Response, GO
+     * Negotiation Request/Response/Confirm and Provision Discovery
+     * Request/Response.
+     *
+     * It's going to be a subset of the elements allowed in all those frames.
+     * Validate that it contains at least a valid WFD Device Information (with
+     * the Session Available bit true) and that the sequence of subelements is
+     * valid.
+     */
+    while (len) {
+        uint8_t  subelem_id;
+        uint16_t subelem_len;
+
+        /* Does the subelement header fit */
+        if (len < 3)
+            return FALSE;
+
+        subelem_id  = data[0];
+        subelem_len = (data[1] << 8) | data[2];
+        data += 3;
+        len -= 3;
+
+        if (subelem_len > len)
+            return FALSE;
+
+        if (subelem_id == WFD_SUBELEM_WFD_DEVICE_INFORMATION) {
+            /* Is there a duplicate WFD Device Information */
+            if (dev_info)
+                return FALSE;
+
+            dev_info     = data;
+            dev_info_len = subelem_len;
+        }
+
+        if (subelem_id == WFD_SUBELEM_EXTENDED_CAPABILITY) {
+            /* Is there a duplicate WFD Extended Capability */
+            if (ext_capability)
+                return FALSE;
+
+            ext_capability     = data;
+            ext_capability_len = subelem_len;
+        }
+
+        data += subelem_len;
+        len -= subelem_len;
+    }
+
+    if (!dev_info || dev_info_len != 6)
+        return FALSE;
+
+    dev_info_flags = (dev_info[0] << 8) | dev_info[1];
+
+    /* Secondary sink not supported */
+    if ((dev_info_flags & 3) == 2)
+        return FALSE;
+
+    /* Must be available for WFD Session */
+    if (((dev_info_flags >> 4) & 3) != 1)
+        return FALSE;
+
+    /* TDLS persistent group re-invocation not supported */
+    if ((dev_info_flags >> 13) & 1)
+        return FALSE;
+
+    /* All other flags indicate support but not a requirement for something
+     * so not preserving them in the IEs IWD eventually sends doesn't break
+     * basic functionality.
+     */
+
+    if (ext_capability && ext_capability_len != 2)
+        return FALSE;
+
+    if (!out_wfd)
+        return TRUE;
+
+    out_wfd->source = NM_IN_SET(dev_info_flags & 3, 0, 3);
+    out_wfd->sink   = NM_IN_SET(dev_info_flags & 3, 1, 3);
+    out_wfd->port   = (dev_info[2] << 8) | dev_info[3];
+    out_wfd->has_audio =
+        out_wfd->sink ? ((dev_info_flags >> 10) & 1) == 0 : (((dev_info_flags >> 11) & 1) == 1);
+    out_wfd->has_uibc = ext_capability && (ext_capability[1] & 1) == 1;
+    out_wfd->has_cp   = ((dev_info_flags >> 8) & 1) == 1;
+    return TRUE;
+}
+
+GBytes *
+nm_wifi_utils_build_wfd_ies(const NMIwdWfdInfo *wfd)
+{
+    uint8_t  data[64];
+    uint8_t *ptr = data;
+
+    *ptr++ = WFD_SUBELEM_WFD_DEVICE_INFORMATION;
+    *ptr++ = 0; /* WFD Subelement length */
+    *ptr++ = 6;
+    *ptr++ = 0;                                               /* WFD Device Information bitmap: */
+    *ptr++ = (wfd->source ? (wfd->sink ? 3 : 0) : 1) | 0x10 | /* WFD Session Available */
+             (wfd->has_cp ? 0x100 : 0) | (wfd->has_audio ? 0 : 0x400);
+    *ptr++ = wfd->port >> 8;
+    *ptr++ = wfd->port & 255;
+    *ptr++ = 0; /* WFD Device Maximum throughput */
+    *ptr++ = 10;
+
+    if (wfd->has_uibc) {
+        *ptr++ = WFD_SUBELEM_EXTENDED_CAPABILITY;
+        *ptr++ = 0; /* WFD Subelement length */
+        *ptr++ = 2;
+        *ptr++ = 0x00; /* WFD Extended Capability Bitmap: */
+        *ptr++ = 0x10; /* UIBC Support */
+    }
+
+    return g_bytes_new(data, ptr - data);
+}
+
+bool
+nm_wifi_utils_wfd_info_eq(const NMIwdWfdInfo *a, const NMIwdWfdInfo *b)
+{
+    if (!a || !b)
+        return a == b;
+
+    return a->source == b->source && a->sink == b->sink && a->port == b->port
+           && a->has_audio == b->has_audio && a->has_uibc == b->has_uibc && a->has_cp == b->has_cp;
+}

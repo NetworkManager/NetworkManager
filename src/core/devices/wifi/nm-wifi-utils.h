@@ -20,6 +20,15 @@ typedef enum {
     NM_IWD_NETWORK_SECURITY_8021X,
 } NMIwdNetworkSecurity;
 
+typedef struct {
+    bool     source;
+    bool     sink;
+    uint16_t port;
+    bool     has_audio;
+    bool     has_uibc;
+    bool     has_cp;
+} NMIwdWfdInfo;
+
 gboolean nm_wifi_utils_complete_connection(GBytes       *ssid,
                                            const char   *bssid,
                                            _NM80211Mode  mode,
@@ -42,5 +51,9 @@ char    *nm_wifi_utils_get_iwd_config_filename(const char          *ssid,
 
 GKeyFile *
 nm_wifi_utils_connection_to_iwd_config(NMConnection *conn, char **out_filename, GError **error);
+
+bool    nm_wifi_utils_parse_wfd_ies(GBytes *ies, NMIwdWfdInfo *out_wfd);
+GBytes *nm_wifi_utils_build_wfd_ies(const NMIwdWfdInfo *wfd);
+bool    nm_wifi_utils_wfd_info_eq(const NMIwdWfdInfo *a, const NMIwdWfdInfo *b);
 
 #endif /* __NM_WIFI_UTILS_H__ */
