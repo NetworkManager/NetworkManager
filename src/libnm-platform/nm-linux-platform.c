@@ -9037,7 +9037,7 @@ event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
 continue_reading:
     nm_clear_g_free(&buf);
 
-    n = nl_recv(sk, &nla, &buf, &creds, &creds_has);
+    n = nl_recv(sk, NULL, 0, &nla, &buf, &creds, &creds_has);
 
     if (n <= 0) {
         if (n == -NME_NL_MSG_TRUNC) {
