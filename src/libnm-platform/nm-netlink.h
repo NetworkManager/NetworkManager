@@ -518,6 +518,8 @@ int nl_socket_add_memberships(struct nl_sock *sk, int group, ...);
 int nl_connect(struct nl_sock *sk, int protocol);
 
 int nl_recv(struct nl_sock     *sk,
+            unsigned char      *buf0,
+            size_t              buf0_len,
             struct sockaddr_nl *nla,
             unsigned char     **buf,
             struct ucred       *out_creds,
