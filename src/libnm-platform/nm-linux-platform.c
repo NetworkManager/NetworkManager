@@ -9021,21 +9021,22 @@ event_handler(int fd, GIOCondition io_condition, gpointer user_data)
 static int
 event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
 {
-    NMLinuxPlatformPrivate     *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    struct nl_sock             *sk   = priv->nlh;
-    int                         n;
-    int                         err         = 0;
-    gboolean                    multipart   = 0;
-    gboolean                    interrupted = FALSE;
-    struct nlmsghdr            *hdr;
-    WaitForNlResponseResult     seq_result;
-    struct sockaddr_nl          nla = {0};
-    struct ucred                creds;
-    gboolean                    creds_has;
-    nm_auto_free unsigned char *buf = NULL;
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    struct nl_sock         *sk   = priv->nlh;
+    int                     n;
+    int                     err         = 0;
+    gboolean                multipart   = 0;
+    gboolean                interrupted = FALSE;
+    struct nlmsghdr        *hdr;
+    WaitForNlResponseResult seq_result;
+    struct sockaddr_nl      nla = {0};
+    struct ucred            creds;
+    gboolean                creds_has;
+    gs_free unsigned char  *buf = NULL;
 
 continue_reading:
-    nm_clear_pointer(&buf, free);
+    nm_clear_g_free(&buf);
+
     n = nl_recv(sk, &nla, &buf, &creds, &creds_has);
 
     if (n <= 0) {
