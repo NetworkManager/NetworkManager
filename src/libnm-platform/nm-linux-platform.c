@@ -451,6 +451,17 @@ typedef struct {
         int is_handling;
     } delayed_action;
 
+    /* This is the receive buffer for netlink messages. This buffer should be large
+     * enough for any rtnetlink message. When too small, nl_recv() would notice the
+     * truncation and lose the message. In that case, we reallocate a larger buffer.
+     *
+     * We keep the receive buffer around for the entire lifetime of the platform instance.
+     * Usually we only have one platform instance per netns, so we don't waste too much. */
+    struct {
+        unsigned char *buf;
+        gsize          len;
+    } netlink_recv_buf;
+
 } NMLinuxPlatformPrivate;
 
 struct _NMLinuxPlatform {
@@ -9032,29 +9043,33 @@ event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
     struct sockaddr_nl      nla = {0};
     struct ucred            creds;
     gboolean                creds_has;
-    gs_free unsigned char  *buf = NULL;
+    unsigned char          *buf;
 
 continue_reading:
-    nm_clear_g_free(&buf);
+    buf = NULL;
 
-    n = nl_recv(sk, NULL, 0, &nla, &buf, &creds, &creds_has);
+    n = nl_recv(sk,
+                priv->netlink_recv_buf.buf,
+                priv->netlink_recv_buf.len,
+                &nla,
+                &buf,
+                &creds,
+                &creds_has);
+
+    nm_assert((n <= 0 && !buf)
+              || (n > 0 && n <= priv->netlink_recv_buf.len && buf == priv->netlink_recv_buf.buf));
 
     if (n <= 0) {
         if (n == -NME_NL_MSG_TRUNC) {
-            int buf_size;
-
             /* the message receive buffer was too small. We lost one message, which
              * is unfortunate. Try to double the buffer size for the next time. */
-            buf_size = nl_socket_get_msg_buf_size(sk);
-            if (buf_size < 512 * 1024) {
-                buf_size *= 2;
-                _LOGT("netlink: recvmsg: increase message buffer size for recvmsg() to %d bytes",
-                      buf_size);
-                if (nl_socket_set_msg_buf_size(sk, buf_size) < 0)
-                    nm_assert_not_reached();
-                if (!handle_events)
-                    goto continue_reading;
-            }
+            priv->netlink_recv_buf.len *= 2;
+            priv->netlink_recv_buf.buf =
+                g_realloc(priv->netlink_recv_buf.buf, priv->netlink_recv_buf.len);
+            _LOGT("netlink: recvmsg: increase message buffer size for recvmsg() to %zu bytes",
+                  priv->netlink_recv_buf.len);
+            if (!handle_events)
+                goto continue_reading;
         }
 
         return n;
@@ -9487,6 +9502,9 @@ nm_linux_platform_init(NMLinuxPlatform *self)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(self);
 
+    priv->netlink_recv_buf.len = 32 * 1024;
+    priv->netlink_recv_buf.buf = g_malloc(priv->netlink_recv_buf.len);
+
     c_list_init(&priv->sysctl_clear_cache_lst);
     c_list_init(&priv->sysctl_list);
 
@@ -9555,10 +9573,10 @@ constructed(GObject *_object)
         _LOGD("could not enable extended acks on netlink socket");
 
     /* explicitly set the msg buffer size and disable MSG_PEEK.
-     * If we later encounter NME_NL_MSG_TRUNC, we will adjust the buffer size. */
+     * We use our own receive buffer priv->netlink_recv_buf.
+     * If we encounter NME_NL_MSG_TRUNC, we will increase the buffer
+     * and resync (as we would have lost the message without NL_MSG_PEEK). */
     nl_socket_disable_msg_peek(priv->nlh);
-    nle = nl_socket_set_msg_buf_size(priv->nlh, 32 * 1024);
-    g_assert(!nle);
 
     nle = nl_socket_add_memberships(priv->nlh,
                                     RTNLGRP_IPV4_IFADDR,
@@ -9726,6 +9744,8 @@ finalize(GObject *object)
     priv->udev_client = nm_udev_client_destroy(priv->udev_client);
 
     G_OBJECT_CLASS(nm_linux_platform_parent_class)->finalize(object);
+
+    g_free(priv->netlink_recv_buf.buf);
 }
 
 static void
