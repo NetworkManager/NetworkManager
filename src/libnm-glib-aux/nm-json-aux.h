@@ -391,6 +391,7 @@ nm_value_type_to_json(NMValueType value_type, GString *gstr, gconstpointer p_fie
         nm_json_gstr_append_string(gstr, *((const char *const *) p_field));
         return;
     case NM_VALUE_TYPE_BYTES:
+    case NM_VALUE_TYPE_STRV:
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
@@ -428,12 +429,12 @@ nm_value_type_from_json(const NMJsonVt  *vt,
         return (nm_jansson_json_as_string(vt, elem, out_val) > 0);
 
     case NM_VALUE_TYPE_BYTES:
+    case NM_VALUE_TYPE_STRV:
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
     }
-    nm_assert_not_reached();
-    return FALSE;
+    return nm_assert_unreachable_val(FALSE);
 }
 
 #endif /* NM_VALUE_TYPE_DEFINE_FUNCTIONS */

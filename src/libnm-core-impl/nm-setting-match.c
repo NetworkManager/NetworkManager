@@ -32,11 +32,11 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingMatch,
  * Since: 1.14
  */
 struct _NMSettingMatch {
-    NMSetting parent;
-    GArray   *interface_name;
-    GArray   *kernel_command_line;
-    GArray   *driver;
-    GArray   *path;
+    NMSetting   parent;
+    NMValueStrv interface_name;
+    GArray     *kernel_command_line;
+    GArray     *driver;
+    GArray     *path;
 };
 
 struct _NMSettingMatchClass {
@@ -60,7 +60,7 @@ nm_setting_match_get_num_interface_names(NMSettingMatch *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), 0);
 
-    return nm_g_array_len(setting->interface_name);
+    return nm_g_array_len(setting->interface_name.arr);
 }
 
 /**
@@ -77,10 +77,11 @@ nm_setting_match_get_interface_name(NMSettingMatch *setting, int idx)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    g_return_val_if_fail(setting->interface_name && idx >= 0 && idx < setting->interface_name->len,
+    g_return_val_if_fail(setting->interface_name.arr && idx >= 0
+                             && idx < setting->interface_name.arr->len,
                          NULL);
 
-    return nm_strvarray_get_idx(setting->interface_name, idx);
+    return nm_strvarray_get_idx(setting->interface_name.arr, idx);
 }
 
 /**
@@ -98,7 +99,7 @@ nm_setting_match_add_interface_name(NMSettingMatch *setting, const char *interfa
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
     g_return_if_fail(interface_name);
 
-    nm_strvarray_add(nm_strvarray_ensure(&setting->interface_name), interface_name);
+    nm_strvarray_add(nm_strvarray_ensure(&setting->interface_name.arr), interface_name);
     _notify(setting, PROP_INTERFACE_NAME);
 }
 
@@ -116,9 +117,10 @@ nm_setting_match_remove_interface_name(NMSettingMatch *setting, int idx)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    g_return_if_fail(setting->interface_name && idx >= 0 && idx < setting->interface_name->len);
+    g_return_if_fail(setting->interface_name.arr && idx >= 0
+                     && idx < setting->interface_name.arr->len);
 
-    g_array_remove_index(setting->interface_name, idx);
+    g_array_remove_index(setting->interface_name.arr, idx);
     _notify(setting, PROP_INTERFACE_NAME);
 }
 
@@ -139,7 +141,7 @@ nm_setting_match_remove_interface_name_by_value(NMSettingMatch *setting, const c
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
     g_return_val_if_fail(interface_name, FALSE);
 
-    if (nm_strvarray_remove_first(setting->interface_name, interface_name)) {
+    if (nm_strvarray_remove_first(setting->interface_name.arr, interface_name)) {
         _notify(setting, PROP_INTERFACE_NAME);
         return TRUE;
     }
@@ -160,8 +162,8 @@ nm_setting_match_clear_interface_names(NMSettingMatch *setting)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    if (nm_g_array_len(setting->interface_name) != 0) {
-        nm_clear_pointer(&setting->interface_name, g_array_unref);
+    if (nm_g_array_len(setting->interface_name.arr) != 0) {
+        nm_clear_pointer(&setting->interface_name.arr, g_array_unref);
         _notify(setting, PROP_INTERFACE_NAME);
     }
 }
@@ -185,7 +187,7 @@ nm_setting_match_get_interface_names(NMSettingMatch *setting, guint *length)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    return nm_strvarray_get_strv(&setting->interface_name, length);
+    return nm_strvarray_get_strv(&setting->interface_name.arr, length);
 }
 
 /*****************************************************************************/
@@ -615,9 +617,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     NMSettingMatch *self = NM_SETTING_MATCH(object);
 
     switch (prop_id) {
-    case PROP_INTERFACE_NAME:
-        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->interface_name, NULL));
-        break;
     case PROP_KERNEL_COMMAND_LINE:
         g_value_take_boxed(value,
                            nm_strvarray_get_strv_non_empty_dup(self->kernel_command_line, NULL));
@@ -629,7 +628,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->path, NULL));
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -640,9 +639,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMSettingMatch *self = NM_SETTING_MATCH(object);
 
     switch (prop_id) {
-    case PROP_INTERFACE_NAME:
-        nm_strvarray_set_strv(&self->interface_name, g_value_get_boxed(value));
-        break;
     case PROP_KERNEL_COMMAND_LINE:
         nm_strvarray_set_strv(&self->kernel_command_line, g_value_get_boxed(value));
         break;
@@ -653,7 +649,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         nm_strvarray_set_strv(&self->path, g_value_get_boxed(value));
         break;
     default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
     }
 }
@@ -698,9 +694,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     NMSettingMatch *self = NM_SETTING_MATCH(setting);
     guint           i;
 
-    if (self->interface_name) {
-        for (i = 0; i < self->interface_name->len; i++) {
-            if (nm_str_is_empty(nm_strvarray_get_idx(self->interface_name, i))) {
+    if (self->interface_name.arr) {
+        for (i = 0; i < self->interface_name.arr->len; i++) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->interface_name.arr, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -770,7 +766,7 @@ finalize(GObject *object)
 {
     NMSettingMatch *self = NM_SETTING_MATCH(object);
 
-    nm_clear_pointer(&self->interface_name, g_array_unref);
+    nm_clear_pointer(&self->interface_name.arr, g_array_unref);
     nm_clear_pointer(&self->kernel_command_line, g_array_unref);
     nm_clear_pointer(&self->driver, g_array_unref);
     nm_clear_pointer(&self->path, g_array_unref);
@@ -781,8 +777,9 @@ finalize(GObject *object)
 static void
 nm_setting_match_class_init(NMSettingMatchClass *klass)
 {
-    GObjectClass   *object_class  = G_OBJECT_CLASS(klass);
-    NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
+    GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
+    NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
+    GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
@@ -810,12 +807,13 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
      *
      * Since: 1.14
      **/
-    obj_properties[PROP_INTERFACE_NAME] = g_param_spec_boxed(
-        NM_SETTING_MATCH_INTERFACE_NAME,
-        "",
-        "",
-        G_TYPE_STRV,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_strv(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_MATCH_INTERFACE_NAME,
+                                            PROP_INTERFACE_NAME,
+                                            NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NMSettingMatch,
+                                            interface_name);
 
     /**
      * NMSettingMatch:kernel-command-line
@@ -901,5 +899,9 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
-    _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_MATCH, NULL, NULL, 0);
+    _nm_setting_class_commit(setting_class,
+                             NM_META_SETTING_TYPE_MATCH,
+                             NULL,
+                             properties_override,
+                             0);
 }
