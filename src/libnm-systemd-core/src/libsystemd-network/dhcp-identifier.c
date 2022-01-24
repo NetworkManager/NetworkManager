@@ -11,7 +11,7 @@
 
 #include "dhcp-identifier.h"
 #include "dhcp6-protocol.h"
-#include "network-util.h"
+#include "netif-util.h"
 #include "siphash24.h"
 #include "sparse-endian.h"
 #include "stat-util.h"
@@ -200,7 +200,7 @@ int dhcp_identifier_set_iaid(
                         /* device is under renaming */
                         return -EBUSY;
 
-                name = net_get_name_persistent(device);
+                name = net_get_persistent_name(device);
         }
 
         if (name)
@@ -214,7 +214,7 @@ int dhcp_identifier_set_iaid(
         if (legacy_unstable_byteorder)
                 /* for historical reasons (a bug), the bits were swapped and thus
                  * the result was endianness dependent. Preserve that behavior. */
-                id32 = __bswap_32(id32);
+                id32 = bswap_32(id32);
         else
                 /* the fixed behavior returns a stable byte order. Since LE is expected
                  * to be more common, swap the bytes on LE to give the same as legacy

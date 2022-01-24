@@ -2,6 +2,7 @@
 #pragma once
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -33,6 +34,9 @@ typedef enum CGroupController {
         CGROUP_CONTROLLER_BPF_FOREIGN,
         CGROUP_CONTROLLER_BPF_SOCKET_BIND,
         CGROUP_CONTROLLER_BPF_RESTRICT_NETWORK_INTERFACES,
+        /* The BPF hook implementing RestrictFileSystems= is not defined here.
+         * It's applied as late as possible in exec_child() so we don't block
+         * our own unit setup code. */
 
         _CGROUP_CONTROLLER_MAX,
         _CGROUP_CONTROLLER_INVALID = -EINVAL,
@@ -121,6 +125,20 @@ static inline bool CGROUP_CPU_SHARES_IS_OK(uint64_t x) {
         return
             x == CGROUP_CPU_SHARES_INVALID ||
             (x >= CGROUP_CPU_SHARES_MIN && x <= CGROUP_CPU_SHARES_MAX);
+}
+
+/* Special values for the special {blkio,io}.bfq.weight attribute */
+#define CGROUP_BFQ_WEIGHT_INVALID UINT64_MAX
+#define CGROUP_BFQ_WEIGHT_MIN UINT64_C(1)
+#define CGROUP_BFQ_WEIGHT_MAX UINT64_C(1000)
+#define CGROUP_BFQ_WEIGHT_DEFAULT UINT64_C(100)
+
+/* Convert the normal io.weight value to io.bfq.weight */
+static inline uint64_t BFQ_WEIGHT(uint64_t io_weight) {
+        return
+            io_weight <= CGROUP_WEIGHT_DEFAULT ?
+            CGROUP_BFQ_WEIGHT_DEFAULT - (CGROUP_WEIGHT_DEFAULT - io_weight) * (CGROUP_BFQ_WEIGHT_DEFAULT - CGROUP_BFQ_WEIGHT_MIN) / (CGROUP_WEIGHT_DEFAULT - CGROUP_WEIGHT_MIN) :
+            CGROUP_BFQ_WEIGHT_DEFAULT + (io_weight - CGROUP_WEIGHT_DEFAULT) * (CGROUP_BFQ_WEIGHT_MAX - CGROUP_BFQ_WEIGHT_DEFAULT) / (CGROUP_WEIGHT_MAX - CGROUP_WEIGHT_DEFAULT);
 }
 
 /* Special values for the blkio.weight attribute */
@@ -236,6 +254,7 @@ int cg_is_empty_recursive(const char *controller, const char *path);
 
 int cg_get_root_path(char **path);
 
+int cg_path_get_cgroupid(const char *path, uint64_t *ret);
 int cg_path_get_session(const char *path, char **session);
 int cg_path_get_owner_uid(const char *path, uid_t *uid);
 int cg_path_get_unit(const char *path, char **unit);
@@ -311,3 +330,12 @@ typedef enum ManagedOOMPreference {
 
 const char* managed_oom_preference_to_string(ManagedOOMPreference a) _const_;
 ManagedOOMPreference managed_oom_preference_from_string(const char *s) _pure_;
+
+/* The structure to pass to name_to_handle_at() on cgroupfs2 */
+typedef union {
+        struct file_handle file_handle;
+        uint8_t space[offsetof(struct file_handle, f_handle) + sizeof(uint64_t)];
+} cg_file_handle;
+
+#define CG_FILE_HANDLE_INIT { .file_handle.handle_bytes = sizeof(uint64_t) }
+#define CG_FILE_HANDLE_CGROUPID(fh) (*(uint64_t*) (fh).file_handle.f_handle)

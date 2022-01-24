@@ -10,6 +10,7 @@
 
 #include "alloc-util.h"
 #include "env-util.h"
+#include "errno-util.h"
 #include "escape.h"
 #include "extract-word.h"
 #include "macro.h"
@@ -397,7 +398,7 @@ int strv_env_replace_consume(char ***l, char *p) {
                 return -EINVAL;
         }
 
-        name = strndupa(p, t - p);
+        name = strndupa_safe(p, t - p);
 
         STRV_FOREACH(f, *l)
                 if (env_entry_has_name(*f, name)) {
@@ -484,7 +485,7 @@ char *strv_env_get_n(char **l, const char *name, size_t k, unsigned flags) {
         if (flags & REPLACE_ENV_USE_ENVIRONMENT) {
                 const char *t;
 
-                t = strndupa(name, k);
+                t = strndupa_safe(name, k);
                 return getenv(t);
         };
 
@@ -791,15 +792,12 @@ int getenv_bool_secure(const char *p) {
 
 #if 0 /* NM_IGNORED */
 int set_unset_env(const char *name, const char *value, bool overwrite) {
-        int r;
+        assert(name);
 
         if (value)
-                r = setenv(name, value, overwrite);
-        else
-                r = unsetenv(name);
-        if (r < 0)
-                return -errno;
-        return 0;
+                return RET_NERRNO(setenv(name, value, overwrite));
+
+        return RET_NERRNO(unsetenv(name));
 }
 
 int putenv_dup(const char *assignment, bool override) {
@@ -809,12 +807,10 @@ int putenv_dup(const char *assignment, bool override) {
         if (!e)
                 return -EINVAL;
 
-        n = strndupa(assignment, e - assignment);
+        n = strndupa_safe(assignment, e - assignment);
 
         /* This is like putenv(), but uses setenv() so that our memory doesn't become part of environ[]. */
-        if (setenv(n, e + 1, override) < 0)
-                return -errno;
-        return 0;
+        return RET_NERRNO(setenv(n, e + 1, override));
 }
 
 int setenv_systemd_exec_pid(bool update_only) {

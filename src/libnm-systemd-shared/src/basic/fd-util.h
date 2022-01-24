@@ -57,10 +57,10 @@ DEFINE_TRIVIAL_CLEANUP_FUNC_FULL(DIR*, closedir, NULL);
 int fd_nonblock(int fd, bool nonblock);
 int fd_cloexec(int fd, bool cloexec);
 
-int close_all_fds_full(int except[], size_t n_except, bool allow_alloc);
-static inline int close_all_fds(int except[], size_t n_except) {
-        return close_all_fds_full(except, n_except, true);
-}
+int get_max_fd(void);
+
+int close_all_fds(const int except[], size_t n_except);
+int close_all_fds_without_malloc(const int except[], size_t n_except);
 
 int same_fd(int a, int b);
 
@@ -91,9 +91,10 @@ static inline int make_null_stdio(void) {
 /* Like TAKE_PTR() but for file descriptors, resetting them to -1 */
 #define TAKE_FD(fd)                             \
         ({                                      \
-                int _fd_ = (fd);                \
-                (fd) = -1;                      \
-                _fd_;                           \
+                int *_fd_ = &(fd);              \
+                int _ret_ = *_fd_;              \
+                *_fd_ = -1;                     \
+                _ret_;                          \
         })
 
 /* Like free_and_replace(), but for file descriptors */
