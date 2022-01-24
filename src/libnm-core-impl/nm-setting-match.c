@@ -34,9 +34,9 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingMatch,
 struct _NMSettingMatch {
     NMSetting   parent;
     NMValueStrv interface_name;
-    GArray     *kernel_command_line;
-    GArray     *driver;
-    GArray     *path;
+    NMValueStrv kernel_command_line;
+    NMValueStrv driver;
+    NMValueStrv path;
 };
 
 struct _NMSettingMatchClass {
@@ -205,7 +205,7 @@ nm_setting_match_get_num_kernel_command_lines(NMSettingMatch *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), 0);
 
-    return nm_g_array_len(setting->kernel_command_line);
+    return nm_g_array_len(setting->kernel_command_line.arr);
 }
 
 /**
@@ -222,10 +222,11 @@ nm_setting_match_get_kernel_command_line(NMSettingMatch *setting, guint idx)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    g_return_val_if_fail(setting->kernel_command_line && idx < setting->kernel_command_line->len,
+    g_return_val_if_fail(setting->kernel_command_line.arr
+                             && idx < setting->kernel_command_line.arr->len,
                          NULL);
 
-    return nm_strvarray_get_idx(setting->kernel_command_line, idx);
+    return nm_strvarray_get_idx(setting->kernel_command_line.arr, idx);
 }
 
 /**
@@ -243,7 +244,7 @@ nm_setting_match_add_kernel_command_line(NMSettingMatch *setting, const char *ke
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
     g_return_if_fail(kernel_command_line);
 
-    nm_strvarray_add(nm_strvarray_ensure(&setting->kernel_command_line), kernel_command_line);
+    nm_strvarray_add(nm_strvarray_ensure(&setting->kernel_command_line.arr), kernel_command_line);
     _notify(setting, PROP_KERNEL_COMMAND_LINE);
 }
 
@@ -261,9 +262,10 @@ nm_setting_match_remove_kernel_command_line(NMSettingMatch *setting, guint idx)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    g_return_if_fail(setting->kernel_command_line && idx < setting->kernel_command_line->len);
+    g_return_if_fail(setting->kernel_command_line.arr
+                     && idx < setting->kernel_command_line.arr->len);
 
-    g_array_remove_index(setting->kernel_command_line, idx);
+    g_array_remove_index(setting->kernel_command_line.arr, idx);
     _notify(setting, PROP_KERNEL_COMMAND_LINE);
 }
 
@@ -285,7 +287,7 @@ nm_setting_match_remove_kernel_command_line_by_value(NMSettingMatch *setting,
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
     g_return_val_if_fail(kernel_command_line, FALSE);
 
-    if (nm_strvarray_remove_first(setting->kernel_command_line, kernel_command_line)) {
+    if (nm_strvarray_remove_first(setting->kernel_command_line.arr, kernel_command_line)) {
         _notify(setting, PROP_KERNEL_COMMAND_LINE);
         return TRUE;
     }
@@ -306,8 +308,8 @@ nm_setting_match_clear_kernel_command_lines(NMSettingMatch *setting)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    if (nm_g_array_len(setting->kernel_command_line) != 0) {
-        nm_clear_pointer(&setting->kernel_command_line, g_array_unref);
+    if (nm_g_array_len(setting->kernel_command_line.arr) != 0) {
+        nm_clear_pointer(&setting->kernel_command_line.arr, g_array_unref);
         _notify(setting, PROP_KERNEL_COMMAND_LINE);
     }
 }
@@ -328,7 +330,7 @@ nm_setting_match_get_kernel_command_lines(NMSettingMatch *setting, guint *length
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    return nm_strvarray_get_strv(&setting->kernel_command_line, length);
+    return nm_strvarray_get_strv(&setting->kernel_command_line.arr, length);
 }
 
 /*****************************************************************************/
@@ -346,7 +348,7 @@ nm_setting_match_get_num_drivers(NMSettingMatch *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), 0);
 
-    return nm_g_array_len(setting->driver);
+    return nm_g_array_len(setting->driver.arr);
 }
 
 /**
@@ -363,9 +365,9 @@ nm_setting_match_get_driver(NMSettingMatch *setting, guint idx)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    g_return_val_if_fail(setting->driver && idx < setting->driver->len, NULL);
+    g_return_val_if_fail(setting->driver.arr && idx < setting->driver.arr->len, NULL);
 
-    return nm_strvarray_get_idx(setting->driver, idx);
+    return nm_strvarray_get_idx(setting->driver.arr, idx);
 }
 
 /**
@@ -383,7 +385,7 @@ nm_setting_match_add_driver(NMSettingMatch *setting, const char *driver)
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
     g_return_if_fail(driver);
 
-    nm_strvarray_add(nm_strvarray_ensure(&setting->driver), driver);
+    nm_strvarray_add(nm_strvarray_ensure(&setting->driver.arr), driver);
     _notify(setting, PROP_DRIVER);
 }
 
@@ -401,9 +403,9 @@ nm_setting_match_remove_driver(NMSettingMatch *setting, guint idx)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    g_return_if_fail(setting->driver && idx < setting->driver->len);
+    g_return_if_fail(setting->driver.arr && idx < setting->driver.arr->len);
 
-    g_array_remove_index(setting->driver, idx);
+    g_array_remove_index(setting->driver.arr, idx);
     _notify(setting, PROP_DRIVER);
 }
 
@@ -424,7 +426,7 @@ nm_setting_match_remove_driver_by_value(NMSettingMatch *setting, const char *dri
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
     g_return_val_if_fail(driver, FALSE);
 
-    if (nm_strvarray_remove_first(setting->driver, driver)) {
+    if (nm_strvarray_remove_first(setting->driver.arr, driver)) {
         _notify(setting, PROP_DRIVER);
         return TRUE;
     }
@@ -445,8 +447,8 @@ nm_setting_match_clear_drivers(NMSettingMatch *setting)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    if (nm_g_array_len(setting->driver) != 0) {
-        nm_clear_pointer(&setting->driver, g_array_unref);
+    if (nm_g_array_len(setting->driver.arr) != 0) {
+        nm_clear_pointer(&setting->driver.arr, g_array_unref);
         _notify(setting, PROP_DRIVER);
     }
 }
@@ -467,7 +469,7 @@ nm_setting_match_get_drivers(NMSettingMatch *setting, guint *length)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    return nm_strvarray_get_strv(&setting->driver, length);
+    return nm_strvarray_get_strv(&setting->driver.arr, length);
 }
 
 /*****************************************************************************/
@@ -485,7 +487,7 @@ nm_setting_match_get_num_paths(NMSettingMatch *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), 0);
 
-    return nm_g_array_len(setting->path);
+    return nm_g_array_len(setting->path.arr);
 }
 
 /**
@@ -502,9 +504,9 @@ nm_setting_match_get_path(NMSettingMatch *setting, guint idx)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    g_return_val_if_fail(setting->path && idx < setting->path->len, NULL);
+    g_return_val_if_fail(setting->path.arr && idx < setting->path.arr->len, NULL);
 
-    return nm_strvarray_get_idx(setting->path, idx);
+    return nm_strvarray_get_idx(setting->path.arr, idx);
 }
 
 /**
@@ -522,7 +524,7 @@ nm_setting_match_add_path(NMSettingMatch *setting, const char *path)
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
     g_return_if_fail(path);
 
-    nm_strvarray_add(nm_strvarray_ensure(&setting->path), path);
+    nm_strvarray_add(nm_strvarray_ensure(&setting->path.arr), path);
     _notify(setting, PROP_PATH);
 }
 
@@ -540,9 +542,9 @@ nm_setting_match_remove_path(NMSettingMatch *setting, guint idx)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    g_return_if_fail(setting->path && idx < setting->path->len);
+    g_return_if_fail(setting->path.arr && idx < setting->path.arr->len);
 
-    g_array_remove_index(setting->path, idx);
+    g_array_remove_index(setting->path.arr, idx);
     _notify(setting, PROP_PATH);
 }
 
@@ -563,7 +565,7 @@ nm_setting_match_remove_path_by_value(NMSettingMatch *setting, const char *path)
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
     g_return_val_if_fail(path, FALSE);
 
-    if (nm_strvarray_remove_first(setting->path, path)) {
+    if (nm_strvarray_remove_first(setting->path.arr, path)) {
         _notify(setting, PROP_PATH);
         return TRUE;
     }
@@ -584,8 +586,8 @@ nm_setting_match_clear_paths(NMSettingMatch *setting)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    if (nm_g_array_len(setting->path) != 0) {
-        nm_clear_pointer(&setting->path, g_array_unref);
+    if (nm_g_array_len(setting->path.arr) != 0) {
+        nm_clear_pointer(&setting->path.arr, g_array_unref);
         _notify(setting, PROP_PATH);
     }
 }
@@ -606,52 +608,7 @@ nm_setting_match_get_paths(NMSettingMatch *setting, guint *length)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    return nm_strvarray_get_strv(&setting->path, length);
-}
-
-/*****************************************************************************/
-
-static void
-get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
-{
-    NMSettingMatch *self = NM_SETTING_MATCH(object);
-
-    switch (prop_id) {
-    case PROP_KERNEL_COMMAND_LINE:
-        g_value_take_boxed(value,
-                           nm_strvarray_get_strv_non_empty_dup(self->kernel_command_line, NULL));
-        break;
-    case PROP_DRIVER:
-        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->driver, NULL));
-        break;
-    case PROP_PATH:
-        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(self->path, NULL));
-        break;
-    default:
-        _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
-        break;
-    }
-}
-
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMSettingMatch *self = NM_SETTING_MATCH(object);
-
-    switch (prop_id) {
-    case PROP_KERNEL_COMMAND_LINE:
-        nm_strvarray_set_strv(&self->kernel_command_line, g_value_get_boxed(value));
-        break;
-    case PROP_DRIVER:
-        nm_strvarray_set_strv(&self->driver, g_value_get_boxed(value));
-        break;
-    case PROP_PATH:
-        nm_strvarray_set_strv(&self->path, g_value_get_boxed(value));
-        break;
-    default:
-        _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
-        break;
-    }
+    return nm_strvarray_get_strv(&setting->path.arr, length);
 }
 
 /*****************************************************************************/
@@ -710,9 +667,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    if (self->kernel_command_line) {
-        for (i = 0; i < self->kernel_command_line->len; i++) {
-            if (nm_str_is_empty(nm_strvarray_get_idx(self->kernel_command_line, i))) {
+    if (self->kernel_command_line.arr) {
+        for (i = 0; i < self->kernel_command_line.arr->len; i++) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->kernel_command_line.arr, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -726,9 +683,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    if (self->driver) {
-        for (i = 0; i < self->driver->len; i++) {
-            if (nm_str_is_empty(nm_strvarray_get_idx(self->driver, i))) {
+    if (self->driver.arr) {
+        for (i = 0; i < self->driver.arr->len; i++) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->driver.arr, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -742,9 +699,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    if (self->path) {
-        for (i = 0; i < self->path->len; i++) {
-            if (nm_str_is_empty(nm_strvarray_get_idx(self->path, i))) {
+    if (self->path.arr) {
+        for (i = 0; i < self->path.arr->len; i++) {
+            if (nm_str_is_empty(nm_strvarray_get_idx(self->path.arr, i))) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -767,9 +724,9 @@ finalize(GObject *object)
     NMSettingMatch *self = NM_SETTING_MATCH(object);
 
     nm_clear_pointer(&self->interface_name.arr, g_array_unref);
-    nm_clear_pointer(&self->kernel_command_line, g_array_unref);
-    nm_clear_pointer(&self->driver, g_array_unref);
-    nm_clear_pointer(&self->path, g_array_unref);
+    nm_clear_pointer(&self->kernel_command_line.arr, g_array_unref);
+    nm_clear_pointer(&self->driver.arr, g_array_unref);
+    nm_clear_pointer(&self->path.arr, g_array_unref);
 
     G_OBJECT_CLASS(nm_setting_match_parent_class)->finalize(object);
 }
@@ -781,8 +738,8 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    object_class->get_property = get_property;
-    object_class->set_property = set_property;
+    object_class->get_property = _nm_setting_property_get_property_direct;
+    object_class->set_property = _nm_setting_property_set_property_direct;
     object_class->finalize     = finalize;
 
     setting_class->verify = verify;
@@ -832,12 +789,13 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
      *
      * Since: 1.26
      **/
-    obj_properties[PROP_KERNEL_COMMAND_LINE] = g_param_spec_boxed(
-        NM_SETTING_MATCH_KERNEL_COMMAND_LINE,
-        "",
-        "",
-        G_TYPE_STRV,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_strv(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_MATCH_KERNEL_COMMAND_LINE,
+                                            PROP_KERNEL_COMMAND_LINE,
+                                            NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NMSettingMatch,
+                                            kernel_command_line);
 
     /**
      * NMSettingMatch:driver
@@ -850,12 +808,13 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
      *
      * Since: 1.26
      **/
-    obj_properties[PROP_DRIVER] = g_param_spec_boxed(
-        NM_SETTING_MATCH_DRIVER,
-        "",
-        "",
-        G_TYPE_STRV,
-        NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_strv(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_MATCH_DRIVER,
+                                            PROP_DRIVER,
+                                            NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NMSettingMatch,
+                                            driver);
 
     /**
      * NMSettingMatch:path
@@ -890,12 +849,13 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
      * example: MATCH_PATH="pci-0000:01:00.0 pci-0000:0c:00.0"
      * ---end---
      */
-    obj_properties[PROP_PATH] = g_param_spec_boxed(NM_SETTING_MATCH_PATH,
-                                                   "",
-                                                   "",
-                                                   G_TYPE_STRV,
-                                                   NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_READWRITE
-                                                       | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_direct_strv(properties_override,
+                                            obj_properties,
+                                            NM_SETTING_MATCH_PATH,
+                                            PROP_PATH,
+                                            NM_SETTING_PARAM_FUZZY_IGNORE,
+                                            NMSettingMatch,
+                                            path);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
