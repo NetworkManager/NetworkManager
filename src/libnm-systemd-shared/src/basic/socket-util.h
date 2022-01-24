@@ -15,6 +15,7 @@
 #include <sys/un.h>
 
 #include "errno-util.h"
+#include "in-addr-util.h"
 #include "macro.h"
 #include "missing_network.h"
 #include "missing_socket.h"
@@ -108,6 +109,7 @@ bool socket_ipv6_is_enabled(void);
 
 int sockaddr_port(const struct sockaddr *_sa, unsigned *port);
 const union in_addr_union *sockaddr_in_addr(const struct sockaddr *sa);
+int sockaddr_set_in_addr(union sockaddr_union *u, int family, const union in_addr_union *a, uint16_t port);
 
 int sockaddr_pretty(const struct sockaddr *_sa, socklen_t salen, bool translate_ipv6, bool include_port, char **ret);
 int getpeername_pretty(int fd, bool include_port, char **ret);
@@ -331,3 +333,6 @@ static inline int socket_set_recvfragsize(int fd, int af, bool b) {
 #endif /* NM_IGNORED */
 
 int socket_get_mtu(int fd, int af, size_t *ret);
+
+/* an initializer for struct ucred that initialized all fields to the invalid value appropriate for each */
+#define UCRED_INVALID { .pid = 0, .uid = UID_INVALID, .gid = GID_INVALID }

@@ -405,6 +405,41 @@ const union in_addr_union *sockaddr_in_addr(const struct sockaddr *_sa) {
         }
 }
 
+int sockaddr_set_in_addr(
+                union sockaddr_union *u,
+                int family,
+                const union in_addr_union *a,
+                uint16_t port) {
+
+        assert(u);
+        assert(a);
+
+        switch (family) {
+
+        case AF_INET:
+                u->in = (struct sockaddr_in) {
+                        .sin_family = AF_INET,
+                        .sin_addr = a->in,
+                        .sin_port = htobe16(port),
+                };
+
+                return 0;
+
+        case AF_INET6:
+                u->in6 = (struct sockaddr_in6) {
+                        .sin6_family = AF_INET6,
+                        .sin6_addr = a->in6,
+                        .sin6_port = htobe16(port),
+                };
+
+                return 0;
+
+        default:
+                return -EAFNOSUPPORT;
+
+        }
+}
+
 int sockaddr_pretty(
                 const struct sockaddr *_sa,
                 socklen_t salen,
@@ -556,7 +591,7 @@ int getpeername_pretty(int fd, bool include_port, char **ret) {
                 return -errno;
 
         if (sa.sa.sa_family == AF_UNIX) {
-                struct ucred ucred = {};
+                struct ucred ucred = UCRED_INVALID;
 
                 /* UNIX connection sockets are anonymous, so let's use
                  * PID/UID as pretty credentials instead */
@@ -1238,10 +1273,7 @@ int socket_bind_to_ifname(int fd, const char *ifname) {
 
         /* Call with NULL to drop binding */
 
-        if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, ifname, strlen_ptr(ifname)) < 0)
-                return -errno;
-
-        return 0;
+        return RET_NERRNO(setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, ifname, strlen_ptr(ifname)));
 }
 
 int socket_bind_to_ifindex(int fd, int ifindex) {
@@ -1250,13 +1282,9 @@ int socket_bind_to_ifindex(int fd, int ifindex) {
 
         assert(fd >= 0);
 
-        if (ifindex <= 0) {
+        if (ifindex <= 0)
                 /* Drop binding */
-                if (setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, NULL, 0) < 0)
-                        return -errno;
-
-                return 0;
-        }
+                return RET_NERRNO(setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, NULL, 0));
 
         r = setsockopt_int(fd, SOL_SOCKET, SO_BINDTOIFINDEX, ifindex);
         if (r != -ENOPROTOOPT)
@@ -1345,16 +1373,10 @@ int socket_set_unicast_if(int fd, int af, int ifi) {
         switch (af) {
 
         case AF_INET:
-                if (setsockopt(fd, IPPROTO_IP, IP_UNICAST_IF, &ifindex_be, sizeof(ifindex_be)) < 0)
-                        return -errno;
-
-                return 0;
+                return RET_NERRNO(setsockopt(fd, IPPROTO_IP, IP_UNICAST_IF, &ifindex_be, sizeof(ifindex_be)));
 
         case AF_INET6:
-                if (setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_IF, &ifindex_be, sizeof(ifindex_be)) < 0)
-                        return -errno;
-
-                return 0;
+                return RET_NERRNO(setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_IF, &ifindex_be, sizeof(ifindex_be)));
 
         default:
                 return -EAFNOSUPPORT;

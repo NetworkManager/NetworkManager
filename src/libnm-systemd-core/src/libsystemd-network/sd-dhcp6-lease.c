@@ -13,6 +13,27 @@
 #include "strv.h"
 #include "util.h"
 
+int sd_dhcp6_lease_get_timestamp(sd_dhcp6_lease *lease, clockid_t clock, uint64_t *ret) {
+        assert_return(lease, -EINVAL);
+        assert_return(TRIPLE_TIMESTAMP_HAS_CLOCK(clock), -EOPNOTSUPP);
+        assert_return(clock_supported(clock), -EOPNOTSUPP);
+        assert_return(ret, -EINVAL);
+
+        if (!triple_timestamp_is_set(&lease->timestamp))
+                return -ENODATA;
+
+        *ret = triple_timestamp_by_clock(&lease->timestamp, clock);
+        return 0;
+}
+
+int sd_dhcp6_lease_get_server_address(sd_dhcp6_lease *lease, struct in6_addr *ret) {
+        assert_return(lease, -EINVAL);
+        assert_return(ret, -EINVAL);
+
+        *ret = lease->server_address;
+        return 0;
+}
+
 int dhcp6_lease_ia_rebind_expire(const DHCP6IA *ia, uint32_t *expire) {
         DHCP6Address *addr;
         uint32_t valid = 0, t;
@@ -52,12 +73,43 @@ DHCP6IA *dhcp6_lease_free_ia(DHCP6IA *ia) {
         return NULL;
 }
 
-int dhcp6_lease_set_serverid(sd_dhcp6_lease *lease, const uint8_t *id,
-                             size_t len) {
+int dhcp6_lease_set_clientid(sd_dhcp6_lease *lease, const uint8_t *id, size_t len) {
+        uint8_t *clientid;
+
+        assert_return(lease, -EINVAL);
+        assert_return(id, -EINVAL);
+        assert_return(len > 0, -EINVAL);
+
+        clientid = memdup(id, len);
+        if (!clientid)
+                return -ENOMEM;
+
+        free_and_replace(lease->clientid, clientid);
+        lease->clientid_len = len;
+
+        return 0;
+}
+
+int dhcp6_lease_get_clientid(sd_dhcp6_lease *lease, uint8_t **ret_id, size_t *ret_len) {
+        assert_return(lease, -EINVAL);
+
+        if (!lease->clientid)
+                return -ENODATA;
+
+        if (ret_id)
+                *ret_id = lease->clientid;
+        if (ret_len)
+                *ret_len = lease->clientid_len;
+
+        return 0;
+}
+
+int dhcp6_lease_set_serverid(sd_dhcp6_lease *lease, const uint8_t *id, size_t len) {
         uint8_t *serverid;
 
         assert_return(lease, -EINVAL);
         assert_return(id, -EINVAL);
+        assert_return(len > 0, -EINVAL);
 
         serverid = memdup(id, len);
         if (!serverid)
@@ -69,16 +121,16 @@ int dhcp6_lease_set_serverid(sd_dhcp6_lease *lease, const uint8_t *id,
         return 0;
 }
 
-int dhcp6_lease_get_serverid(sd_dhcp6_lease *lease, uint8_t **id, size_t *len) {
+int dhcp6_lease_get_serverid(sd_dhcp6_lease *lease, uint8_t **ret_id, size_t *ret_len) {
         assert_return(lease, -EINVAL);
 
         if (!lease->serverid)
-                return -ENOMSG;
+                return -ENODATA;
 
-        if (id)
-                *id = lease->serverid;
-        if (len)
-                *len = lease->serverid_len;
+        if (ret_id)
+                *ret_id = lease->serverid;
+        if (ret_len)
+                *ret_len = lease->serverid_len;
 
         return 0;
 }
@@ -115,24 +167,6 @@ int dhcp6_lease_get_rapid_commit(sd_dhcp6_lease *lease, bool *rapid_commit) {
         assert_return(rapid_commit, -EINVAL);
 
         *rapid_commit = lease->rapid_commit;
-
-        return 0;
-}
-
-int dhcp6_lease_get_iaid(sd_dhcp6_lease *lease, be32_t *iaid) {
-        assert_return(lease, -EINVAL);
-        assert_return(iaid, -EINVAL);
-
-        *iaid = lease->ia.ia_na.id;
-
-        return 0;
-}
-
-int dhcp6_lease_get_pd_iaid(sd_dhcp6_lease *lease, be32_t *iaid) {
-        assert_return(lease, -EINVAL);
-        assert_return(iaid, -EINVAL);
-
-        *iaid = lease->pd.ia_pd.id;
 
         return 0;
 }
@@ -207,12 +241,13 @@ int dhcp6_lease_add_dns(sd_dhcp6_lease *lease, const uint8_t *optval, size_t opt
 
 int sd_dhcp6_lease_get_dns(sd_dhcp6_lease *lease, const struct in6_addr **ret) {
         assert_return(lease, -EINVAL);
-        assert_return(ret, -EINVAL);
 
         if (!lease->dns)
                 return -ENOENT;
 
-        *ret = lease->dns;
+        if (ret)
+                *ret = lease->dns;
+
         return lease->dns_count;
 }
 
@@ -305,16 +340,17 @@ int dhcp6_lease_add_sntp(sd_dhcp6_lease *lease, const uint8_t *optval, size_t op
 
 int sd_dhcp6_lease_get_ntp_addrs(sd_dhcp6_lease *lease, const struct in6_addr **ret) {
         assert_return(lease, -EINVAL);
-        assert_return(ret, -EINVAL);
 
         if (lease->ntp) {
-                *ret = lease->ntp;
+                if (ret)
+                        *ret = lease->ntp;
                 return lease->ntp_count;
         }
 
         if (lease->sntp && !lease->ntp_fqdn) {
                 /* Fallback to the deprecated SNTP option. */
-                *ret = lease->sntp;
+                if (ret)
+                        *ret = lease->sntp;
                 return lease->sntp_count;
         }
 
@@ -323,12 +359,12 @@ int sd_dhcp6_lease_get_ntp_addrs(sd_dhcp6_lease *lease, const struct in6_addr **
 
 int sd_dhcp6_lease_get_ntp_fqdn(sd_dhcp6_lease *lease, char ***ret) {
         assert_return(lease, -EINVAL);
-        assert_return(ret, -EINVAL);
 
         if (!lease->ntp_fqdn)
                 return -ENOENT;
 
-        *ret = lease->ntp_fqdn;
+        if (ret)
+                *ret = lease->ntp_fqdn;
         return strv_length(lease->ntp_fqdn);
 }
 
@@ -366,6 +402,7 @@ static sd_dhcp6_lease *dhcp6_lease_free(sd_dhcp6_lease *lease) {
         if (!lease)
                 return NULL;
 
+        free(lease->clientid);
         free(lease->serverid);
         dhcp6_lease_free_ia(&lease->ia);
         dhcp6_lease_free_ia(&lease->pd);

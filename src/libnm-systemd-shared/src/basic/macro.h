@@ -25,7 +25,7 @@
 #define _public_ __attribute__((__visibility__("default")))
 #define _hidden_ __attribute__((__visibility__("hidden")))
 #define _weakref_(x) __attribute__((__weakref__(#x)))
-#define _alignas_(x) __attribute__((__aligned__(__alignof(x))))
+#define _alignas_(x) __attribute__((__aligned__(__alignof__(x))))
 #define _alignptr_ __attribute__((__aligned__(sizeof(void*))))
 #define _warn_unused_result_ __attribute__((__warn_unused_result__))
 
@@ -153,24 +153,6 @@
 #define ALIGN_PTR(p) ((void*) ALIGN((unsigned long) (p)))
 #define ALIGN4_PTR(p) ((void*) ALIGN4((unsigned long) (p)))
 #define ALIGN8_PTR(p) ((void*) ALIGN8((unsigned long) (p)))
-
-static inline size_t ALIGN_TO(size_t l, size_t ali) {
-        /* Check that alignment is exponent of 2 */
-#if SIZE_MAX == UINT_MAX
-        assert(__builtin_popcount(ali) == 1);
-#elif SIZE_MAX == ULONG_MAX
-        assert(__builtin_popcountl(ali) == 1);
-#elif SIZE_MAX == ULLONG_MAX
-        assert(__builtin_popcountll(ali) == 1);
-#else
-#error "Unexpected size_t"
-#endif
-
-        if (l > SIZE_MAX - (ali - 1))
-                return SIZE_MAX; /* indicate overflow */
-
-        return ((l + ali - 1) & ~(ali - 1));
-}
 
 #define ALIGN_TO_PTR(p, ali) ((void*) ALIGN_TO((unsigned long) (p), (ali)))
 
@@ -354,13 +336,6 @@ static inline int __coverity_check_and_return__(int condition) {
                         ans++;                          \
                 ans;                                    \
         })
-
-#define UPDATE_FLAG(orig, flag, b)                      \
-        ((b) ? ((orig) | (flag)) : ((orig) & ~(flag)))
-#define SET_FLAG(v, flag, b) \
-        (v) = UPDATE_FLAG(v, flag, b)
-#define FLAGS_SET(v, flags) \
-        ((~(v) & (flags)) == 0)
 
 #define SWAP_TWO(x, y) do {                        \
                 typeof(x) _t = (x);                \
