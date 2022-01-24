@@ -1898,6 +1898,75 @@ test_rd_znet_malformed(void)
 }
 
 static void
+test_rd_znet_ifnames(void)
+{
+    gs_unref_hashtable GHashTable *connections = NULL;
+    const char *const *const       ARGV =
+        NM_MAKE_STRV("rd.znet_ifname=zeth1:0.0.0600,0.0.0601",
+                     "rd.znet=qeth,0.0.0800,0.0.0801,0.0.0802,layer2=0,portno=1,foo",
+                     "rd.znet=ctc,0.0.0600,0.0.0601",
+                     "rd.znet_ifname=zeth0:0.0.0800,0.0.0801,0.0.0802",
+                     "ip=zeth0:dhcp",
+                     "ip=zeth1:dhcp");
+    NMConnection        *connection;
+    NMSettingConnection *s_con;
+    NMSettingWired      *s_wired;
+    gs_free char        *hostname            = NULL;
+    gint64               carrier_timeout_sec = 0;
+    const char *const   *v_subchannels;
+
+    connections = _parse(ARGV, &hostname, &carrier_timeout_sec);
+    g_assert_cmpint(g_hash_table_size(connections), ==, 2);
+
+    connection = g_hash_table_lookup(connections, "zeth0");
+    g_assert(NM_IS_CONNECTION(connection));
+
+    s_con = nm_connection_get_setting_connection(connection);
+    g_assert(NM_IS_SETTING_CONNECTION(s_con));
+    g_assert_cmpstr(nm_setting_connection_get_connection_type(s_con),
+                    ==,
+                    NM_SETTING_WIRED_SETTING_NAME);
+    g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "zeth0");
+    g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "zeth0");
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    g_assert_cmpstr(nm_setting_wired_get_s390_nettype(s_wired), ==, "qeth");
+    g_assert(s_wired);
+
+    v_subchannels = nm_setting_wired_get_s390_subchannels(s_wired);
+    g_assert(v_subchannels);
+    g_assert_cmpstr(v_subchannels[0], ==, "0.0.0800");
+    g_assert_cmpstr(v_subchannels[1], ==, "0.0.0801");
+    g_assert_cmpstr(v_subchannels[2], ==, "0.0.0802");
+    g_assert_cmpstr(v_subchannels[3], ==, NULL);
+
+    nmtst_assert_connection_verifies_without_normalization(connection);
+
+    connection = g_hash_table_lookup(connections, "zeth1");
+    g_assert(NM_IS_CONNECTION(connection));
+
+    s_con = nm_connection_get_setting_connection(connection);
+    g_assert(NM_IS_SETTING_CONNECTION(s_con));
+    g_assert_cmpstr(nm_setting_connection_get_connection_type(s_con),
+                    ==,
+                    NM_SETTING_WIRED_SETTING_NAME);
+    g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "zeth1");
+    g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, "zeth1");
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    g_assert_cmpstr(nm_setting_wired_get_s390_nettype(s_wired), ==, "ctc");
+    g_assert(s_wired);
+
+    v_subchannels = nm_setting_wired_get_s390_subchannels(s_wired);
+    g_assert(v_subchannels);
+    g_assert_cmpstr(v_subchannels[0], ==, "0.0.0600");
+    g_assert_cmpstr(v_subchannels[1], ==, "0.0.0601");
+    g_assert_cmpstr(v_subchannels[2], ==, NULL);
+
+    nmtst_assert_connection_verifies_without_normalization(connection);
+}
+
+static void
 test_bootif_ip(void)
 {
     const char *const            *ARGV       = NM_MAKE_STRV("BOOTIF=00:53:AB:cd:02:03", "ip=dhcp");
@@ -2483,6 +2552,7 @@ main(int argc, char **argv)
     g_test_add_func("/initrd/cmdline/rd_znet/legacy", test_rd_znet_legacy);
     g_test_add_func("/initrd/cmdline/rd_znet/no_ip", test_rd_znet_no_ip);
     g_test_add_func("/initrd/cmdline/rd_znet/empty", test_rd_znet_malformed);
+    g_test_add_func("/initrd/cmdline/rd_znet/ifnames", test_rd_znet_ifnames);
     g_test_add_func("/initrd/cmdline/bootif/ip", test_bootif_ip);
     g_test_add_func("/initrd/cmdline/bootif/no_ip", test_bootif_no_ip);
     g_test_add_func("/initrd/cmdline/bootif/hwtype", test_bootif_hwtype);

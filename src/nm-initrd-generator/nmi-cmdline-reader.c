@@ -34,6 +34,7 @@ typedef struct {
     NMConnection *bootdev_connection; /* connection for bootdev=$ifname */
     NMConnection *default_connection; /* connection not bound to any ifname */
     char         *hostname;
+    GHashTable   *znet_ifnames;
 
     /* Parameters to be set for all connections */
     gboolean ignore_auto_dns;
@@ -55,6 +56,7 @@ reader_new(void)
             g_hash_table_new_full(nm_direct_hash, NULL, g_object_unref, NULL),
         .vlan_parents = g_ptr_array_new_with_free_func(g_free),
         .array        = g_ptr_array_new(),
+        .znet_ifnames = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free),
     };
 
     return reader;
@@ -70,6 +72,7 @@ reader_destroy(Reader *reader, gboolean free_hash)
     g_hash_table_unref(reader->explicit_ip_connections);
     hash = g_steal_pointer(&reader->hash);
     nm_clear_g_free(&reader->hostname);
+    g_hash_table_unref(reader->znet_ifnames);
     nm_clear_g_free(&reader->dhcp4_vci);
     nm_g_slice_free(reader);
     if (!free_hash)
@@ -1092,18 +1095,35 @@ reader_parse_ib_pkey(Reader *reader, char *argument)
 }
 
 static void
+reader_parse_znet_ifname(Reader *reader, char *argument)
+{
+    char *ifname;
+
+    ifname = get_word(&argument, ':');
+    if (!ifname) {
+        _LOGW(LOGD_CORE, "rd.znet_ifname= without argument");
+        return;
+    }
+
+    if (!g_hash_table_replace(reader->znet_ifnames, g_strdup(argument), g_strdup(ifname))) {
+        _LOGW(LOGD_CORE, "duplicate rd.znet_ifname for ifname=%s", ifname);
+    }
+}
+
+static void
 reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 {
     const char     *nettype;
     const char     *subchannels[4] = {0, 0, 0, 0};
     const char     *tmp;
-    gs_free char   *ifname = NULL;
+    gs_free char   *ifname          = NULL;
+    gs_free char   *str_subchannels = NULL;
     const char     *prefix;
     NMConnection   *connection;
     NMSettingWired *s_wired;
     static int      count_ctc = 0;
     static int      count_eth = 0;
-    int             index;
+    int             index     = -1;
 
     nettype        = get_word(&argument, ',');
     subchannels[0] = get_word(&argument, ',');
@@ -1131,7 +1151,13 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
         }
     }
 
-    if (net_ifnames == TRUE) {
+    str_subchannels = g_strjoinv(",", (char **) subchannels);
+    ifname          = g_hash_table_lookup(reader->znet_ifnames, str_subchannels);
+
+    if (ifname) {
+        ifname = g_strdup(ifname);
+        g_hash_table_remove(reader->znet_ifnames, str_subchannels);
+    } else if (net_ifnames == TRUE) {
         const char *bus_id;
         size_t      bus_id_len;
         size_t      bus_id_start;
@@ -1144,6 +1170,7 @@ reader_parse_rd_znet(Reader *reader, char *argument, gboolean net_ifnames)
 
         ifname = g_strdup_printf("%sc%s", prefix, bus_id);
     } else {
+        nm_assert(index > -1);
         ifname = g_strdup_printf("%s%d", prefix, index);
     }
 
@@ -1423,6 +1450,8 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
             if (!znets)
                 znets = g_ptr_array_new_with_free_func(g_free);
             g_ptr_array_add(znets, g_strdup(argument));
+        } else if (nm_streq(tag, "rd.znet_ifname")) {
+            reader_parse_znet_ifname(reader, argument);
         } else if (g_ascii_strcasecmp(tag, "BOOTIF") == 0) {
             nm_clear_g_free(&bootif_val);
             bootif_val = g_strdup(argument);
@@ -1531,6 +1560,10 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
     if (znets) {
         for (i = 0; i < znets->len; i++)
             reader_parse_rd_znet(reader, znets->pdata[i], net_ifnames);
+    }
+
+    if (g_hash_table_size(reader->znet_ifnames)) {
+        _LOGW(LOGD_CORE, "Mismatch between rd.znet_ifname and rd.znet");
     }
 
     g_hash_table_foreach(reader->hash, _normalize_conn, NULL);
