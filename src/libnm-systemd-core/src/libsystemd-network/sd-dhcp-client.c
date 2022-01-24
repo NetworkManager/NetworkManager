@@ -832,7 +832,8 @@ static int client_message_init(
                 return -ENOMEM;
 
         r = dhcp_message_init(&packet->dhcp, BOOTREQUEST, client->xid, type,
-                              client->arp_type, optlen, &optoffset);
+                              client->arp_type, client->mac_addr_len, client->mac_addr,
+                              optlen, &optoffset);
         if (r < 0)
                 return r;
 
@@ -848,7 +849,7 @@ static int client_message_init(
         secs = ((time_now - client->start_time) / USEC_PER_SEC) ? : 1;
         packet->dhcp.secs = htobe16(secs);
 
-        /* RFC2132 section 4.1
+        /* RFC2131 section 4.1
            A client that cannot receive unicast IP datagrams until its protocol
            software has been configured with an IP address SHOULD set the
            BROADCAST bit in the 'flags' field to 1 in any DHCPDISCOVER or
@@ -861,15 +862,6 @@ static int client_message_init(
            needs to be configurable */
         if (client->request_broadcast || client->arp_type != ARPHRD_ETHER)
                 packet->dhcp.flags = htobe16(0x8000);
-
-        /* RFC2132 section 4.1.1:
-           The client MUST include its hardware address in the ’chaddr’ field, if
-           necessary for delivery of DHCP reply messages.  Non-Ethernet
-           interfaces will leave 'chaddr' empty and use the client identifier
-           instead (eg, RFC 4390 section 2.1).
-         */
-        if (client->arp_type == ARPHRD_ETHER)
-                memcpy(&packet->dhcp.chaddr, &client->mac_addr, ETH_ALEN);
 
         /* If no client identifier exists, construct an RFC 4361-compliant one */
         if (client->client_id_len == 0) {
@@ -1930,13 +1922,13 @@ static int client_receive_message_udp(
         assert(client);
 
         buflen = next_datagram_size_fd(fd);
-        if (buflen == -ENETDOWN)
-                /* the link is down. Don't return an error or the I/O event
-                   source will be disconnected and we won't be able to receive
-                   packets again when the link comes back. */
+        if (buflen < 0) {
+                if (ERRNO_IS_TRANSIENT(buflen) || ERRNO_IS_DISCONNECT(buflen))
+                        return 0;
+
+                log_dhcp_client_errno(client, buflen, "Failed to determine datagram size to read, ignoring: %m");
                 return 0;
-        if (buflen < 0)
-                return buflen;
+        }
 
         message = malloc0(buflen);
         if (!message)
@@ -1944,12 +1936,11 @@ static int client_receive_message_udp(
 
         len = recv(fd, message, buflen, 0);
         if (len < 0) {
-                /* see comment above for why we shouldn't error out on ENETDOWN. */
-                if (IN_SET(errno, EAGAIN, EINTR, ENETDOWN))
+                if (ERRNO_IS_TRANSIENT(errno) || ERRNO_IS_DISCONNECT(errno))
                         return 0;
 
-                return log_dhcp_client_errno(client, errno,
-                                             "Could not receive message from UDP socket: %m");
+                log_dhcp_client_errno(client, errno, "Could not receive message from UDP socket, ignoring: %m");
+                return 0;
         }
         if ((size_t) len < sizeof(DHCPMessage)) {
                 log_dhcp_client(client, "Too small to be a DHCP message: ignoring");
@@ -1995,7 +1986,9 @@ static int client_receive_message_udp(
                 return 0;
         }
 
-        return client_handle_message(client, message, len);
+        log_dhcp_client(client, "Received message from UDP socket, processing.");
+        (void) client_handle_message(client, message, len);
+        return 0;
 }
 
 static int client_receive_message_raw(
@@ -2023,10 +2016,13 @@ static int client_receive_message_raw(
         assert(client);
 
         buflen = next_datagram_size_fd(fd);
-        if (buflen == -ENETDOWN)
+        if (buflen < 0) {
+                if (ERRNO_IS_TRANSIENT(buflen) || ERRNO_IS_DISCONNECT(buflen))
+                        return 0;
+
+                log_dhcp_client_errno(client, buflen, "Failed to determine datagram size to read, ignoring: %m");
                 return 0;
-        if (buflen < 0)
-                return buflen;
+        }
 
         packet = malloc0(buflen);
         if (!packet)
@@ -2035,12 +2031,13 @@ static int client_receive_message_raw(
         iov = IOVEC_MAKE(packet, buflen);
 
         len = recvmsg_safe(fd, &msg, 0);
-        if (IN_SET(len, -EAGAIN, -EINTR, -ENETDOWN))
-                return 0;
-        if (len < 0)
-                return log_dhcp_client_errno(client, len,
-                                             "Could not receive message from raw socket: %m");
+        if (len < 0) {
+                if (ERRNO_IS_TRANSIENT(len) || ERRNO_IS_DISCONNECT(len))
+                        return 0;
 
+                log_dhcp_client_errno(client, len, "Could not receive message from raw socket, ignoring: %m");
+                return 0;
+        }
         if ((size_t) len < sizeof(DHCPPacket))
                 return 0;
 
@@ -2056,7 +2053,9 @@ static int client_receive_message_raw(
 
         len -= DHCP_IP_UDP_SIZE;
 
-        return client_handle_message(client, &packet->dhcp, len);
+        log_dhcp_client(client, "Received message from RAW socket, processing.");
+        (void) client_handle_message(client, &packet->dhcp, len);
+        return 0;
 }
 
 int sd_dhcp_client_send_renew(sd_dhcp_client *client) {

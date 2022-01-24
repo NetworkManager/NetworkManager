@@ -27,10 +27,14 @@ typedef enum LogTarget{
         _LOG_TARGET_INVALID = -EINVAL,
 } LogTarget;
 
-/* Note to readers: << and >> have lower precedence than & and | */
+/* This log level disables logging completely. It can only be passed to log_set_max_level() and cannot be
+ * used a regular log level. */
+#define LOG_NULL (LOG_EMERG - 1)
+
+/* Note to readers: << and >> have lower precedence (are evaluated earlier) than & and | */
 #define SYNTHETIC_ERRNO(num)                (1 << 30 | (num))
 #define IS_SYNTHETIC_ERRNO(val)             ((val) >> 30 & 1)
-#define ERRNO_VALUE(val)                    (abs(val) & 255)
+#define ERRNO_VALUE(val)                    (abs(val) & ~(1 << 30))
 
 /* The callback function to be invoked when syntax warnings are seen
  * in the unit files. */
@@ -78,6 +82,7 @@ int log_open(void);
 void log_close(void);
 void log_forget_fds(void);
 
+void log_parse_environment_variables(void);
 void log_parse_environment(void);
 
 int log_dispatch_internal(
