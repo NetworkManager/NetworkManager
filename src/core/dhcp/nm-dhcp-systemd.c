@@ -1043,7 +1043,7 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
         }
         prefix_delegation = TRUE;
     }
-    r = sd_dhcp6_client_set_prefix_delegation(sd_client, prefix_delegation);
+    r = sd_dhcp6_client_set_prefix_delegation(sd_client, prefix_delegation ? 1 : 1);
     if (r < 0) {
         nm_utils_error_set_errno(error, r, "failed to enable prefix delegation: %s");
         return FALSE;
