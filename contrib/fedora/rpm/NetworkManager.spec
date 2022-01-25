@@ -215,7 +215,7 @@ Requires: libndp >= %{libndp_version}
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
 Obsoletes: NetworkManager-wimax < 1.2
-%if 0%{?rhel} && 0%{?rhel} <= 8
+%if 0%{?rhel} && 0%{?rhel} == 8
 Suggests: NetworkManager-initscripts-updown
 %endif
 Obsoletes: NetworkManager < %{obsoletes_initscripts_updown}
