@@ -1171,7 +1171,7 @@ nl_recvmsgs(struct nl_sock *sk, const struct nl_cb *cb)
     int                    n, nmerr = 0, multipart = 0, interrupted = 0, nrecv = 0;
     gs_free unsigned char *buf = NULL;
     struct nlmsghdr       *hdr;
-    struct sockaddr_nl     nla = {0};
+    struct sockaddr_nl     nla;
     struct ucred           creds;
     gboolean               creds_has;
 
