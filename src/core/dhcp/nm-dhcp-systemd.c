@@ -934,6 +934,7 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
     const guint8                                    *duid_arr;
     gsize                                            duid_len;
     GBytes                                          *duid;
+    gboolean                                         prefix_delegation;
 
     g_return_val_if_fail(!priv->client4, FALSE);
     g_return_val_if_fail(!priv->client6, FALSE);
@@ -1007,16 +1008,19 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
         }
     }
 
+    prefix_delegation = FALSE;
     if (client_config->v6.needed_prefixes > 0) {
-        if (client_config->v6.needed_prefixes > 1)
+        if (client_config->v6.needed_prefixes > 1) {
+            /* FIXME: systemd-networkd API only allows to request a
+             * single prefix */
             _LOGW("dhcp-client6: only one prefix request is supported");
-        /* FIXME: systemd-networkd API only allows to request a
-         * single prefix */
-        r = sd_dhcp6_client_set_prefix_delegation(sd_client, TRUE);
-        if (r < 0) {
-            nm_utils_error_set_errno(error, r, "failed to enable prefix delegation: %s");
-            return FALSE;
         }
+        prefix_delegation = TRUE;
+    }
+    r = sd_dhcp6_client_set_prefix_delegation(sd_client, prefix_delegation);
+    if (r < 0) {
+        nm_utils_error_set_errno(error, r, "failed to enable prefix delegation: %s");
+        return FALSE;
     }
 
     r = sd_dhcp6_client_set_local_address(sd_client, ll_addr);
