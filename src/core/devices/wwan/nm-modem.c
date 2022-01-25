@@ -650,6 +650,10 @@ _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, 
                      * We will emit it together with stage3. */
                     continue;
                 }
+                if (priv->ip_data_x[IS_IPv4].stage3_on_idle_source) {
+                    /* We scheduled already a handler. Let it handle the new configuration. */
+                    continue;
+                }
                 if (callback_data->data.ip_changed_x[IS_IPv4])
                     _ppp_maybe_emit_new_config(self, IS_IPv4 ? AF_INET : AF_INET6);
             }
