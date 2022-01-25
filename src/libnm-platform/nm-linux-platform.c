@@ -9040,7 +9040,7 @@ event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
     gboolean                interrupted = FALSE;
     struct nlmsghdr        *hdr;
     WaitForNlResponseResult seq_result;
-    struct sockaddr_nl      nla = {0};
+    struct sockaddr_nl      nla;
     struct ucred            creds;
     gboolean                creds_has;
     unsigned char          *buf;
