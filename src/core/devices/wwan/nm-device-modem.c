@@ -173,7 +173,7 @@ modem_new_config(NMModem                  *modem,
     g_return_if_fail(nm_device_devip_get_state(device, addr_family) == NM_DEVICE_IP_STATE_PENDING);
 
     if (error) {
-        _LOGW(LOGD_MB | LOGD_IP4, "retrieving IP configuration failed: %s", error->message);
+        _LOGW(LOGD_MB, "retrieving IP configuration failed: %s", error->message);
         nm_device_devip_set_failed(device, addr_family, failure_reason_i);
         return;
     }
