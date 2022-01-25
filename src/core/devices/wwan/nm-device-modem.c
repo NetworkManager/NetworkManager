@@ -170,10 +170,13 @@ modem_new_config(NMModem                  *modem,
     NMDeviceModemPrivate *priv    = NM_DEVICE_MODEM_GET_PRIVATE(self);
     NMDevice             *device  = NM_DEVICE(self);
 
-    g_return_if_fail(nm_device_devip_get_state(device, addr_family) == NM_DEVICE_IP_STATE_PENDING);
+    if (nm_device_devip_get_state(device, addr_family) != NM_DEVICE_IP_STATE_PENDING) {
+        _LOGD(LOGD_MB, "retrieving IP configuration while no longer in pending state");
+        return;
+    }
 
     if (error) {
-        _LOGW(LOGD_MB | LOGD_IP4, "retrieving IP configuration failed: %s", error->message);
+        _LOGW(LOGD_MB, "retrieving IP configuration failed: %s", error->message);
         nm_device_devip_set_failed(device, addr_family, failure_reason_i);
         return;
     }
