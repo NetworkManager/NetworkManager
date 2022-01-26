@@ -815,8 +815,6 @@ static void _dev_ipdhcpx_set_state(NMDevice *self, int addr_family, NMDeviceIPSt
 
 static void _dev_ipdhcpx_restart(NMDevice *self, int addr_family, gboolean release);
 
-static void _dev_ipdhcpx_handle_accept(NMDevice *self, int addr_family, const NML3ConfigData *l3cd);
-
 static gboolean
 _dev_ipac6_grace_period_start(NMDevice *self, guint32 timeout_sec, gboolean force_restart);
 
@@ -9916,63 +9914,6 @@ _dev_ipdhcpx_handle_fail(NMDevice *self, int addr_family, const char *reason)
 }
 
 static void
-_dev_ipdhcpx_handle_accept(NMDevice *self, int addr_family, const NML3ConfigData *l3cd)
-{
-    NMDevicePrivate      *priv    = NM_DEVICE_GET_PRIVATE(self);
-    const int             IS_IPv4 = NM_IS_IPv4(addr_family);
-    gs_free_error GError *error   = NULL;
-
-    nm_assert(NM_IS_L3_CONFIG_DATA(l3cd));
-
-    nm_dhcp_config_set_lease(priv->ipdhcp_data_x[IS_IPv4].config, l3cd);
-    _dev_l3_register_l3cds_set_one_full(self,
-                                        L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
-                                        l3cd,
-                                        NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
-                                        TRUE);
-
-    /* FIXME(l3cfg:dhcp): accept also should be handled by NMDhcpClient transparently.
-     * NMDhcpClient should do ACD (if enabled), and only after that passes, it exposes
-     * the lease to the user (NMDevice). NMDevice then may choose to configure the address.
-     * NMDhcpClient then checks in NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT whether the requested
-     * address is to be configured by NML3Cfg (here, the intent is what matters, not
-     * whether the address is actually visible in NMPlatform -- that is because while NML3Cfg
-     * configures the address (in platform), the user might delete it right away. Also,
-     * depending on the commit type, NML3Cfg may even choose not to configure it right now
-     * (which arguably will be odd). Anyway, what matters is whether the user configured
-     * the address in NML3Cfg (by checking the ObjStateData).
-     *
-     * If yes, then NMDhcpClient needs to accept automatically.
-     *
-     * Doing it here is wrong for two reasons:
-     *
-     * - NMDevice already has enough to do, it should not be concerned with telling
-     *   NMDhcpClient to accept the lease, it should only configure the address.
-     *
-     * - we should only accept the lease *after* configuring the address (see n_dhcp4_client_lease_accept().
-     *   Currently this only works by passing commit_sync=TRUE to _dev_l3_register_l3cds_set_one(), but
-     *   doing that is wrong (see FIXME why commit_sync needs to go away). */
-    if (priv->ipdhcp_data_x[IS_IPv4].state != NM_DEVICE_IP_STATE_READY
-        && !nm_dhcp_client_accept(priv->ipdhcp_data_x[IS_IPv4].client, &error)) {
-        _LOGW(LOGD_DHCPX(IS_IPv4), "error accepting lease: %s", error->message);
-        _dev_ipdhcpx_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
-        _dev_ip_state_check_async(self, addr_family);
-        return;
-    }
-
-    _dev_ipdhcpx_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
-
-    nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP_CHANGE_X(IS_IPv4),
-                              self,
-                              NULL,
-                              NULL,
-                              NULL,
-                              NULL);
-
-    _dev_ip_state_check_async(self, addr_family);
-}
-
-static void
 _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_data, NMDevice *self)
 {
     NMDevicePrivate *priv        = NM_DEVICE_GET_PRIVATE(self);
@@ -10015,8 +9956,32 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
             return;
         }
 
+        if (notify_data->lease_update.accepted) {
+            _LOGT_ipdhcp(addr_family, "lease accepted");
+            if (priv->ipdhcp_data_x[IS_IPv4].state != NM_DEVICE_IP_STATE_READY) {
+                _dev_ipdhcpx_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
+                nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP_CHANGE_X(IS_IPv4),
+                                          self,
+                                          NULL,
+                                          NULL,
+                                          NULL,
+                                          NULL);
+                _dev_ip_state_check_async(self, addr_family);
+            }
+            return;
+        }
+
+        /* Schedule a commit of the configuration. The DHCP client
+         * will accept the lease once the address is committed, and
+         * will send a LEASE_UPDATE notification with accepted=1. */
         _LOGT_ipdhcp(addr_family, "lease update");
-        _dev_ipdhcpx_handle_accept(self, addr_family, notify_data->lease_update.l3cd);
+        nm_dhcp_config_set_lease(priv->ipdhcp_data_x[IS_IPv4].config,
+                                 notify_data->lease_update.l3cd);
+        _dev_l3_register_l3cds_set_one_full(self,
+                                            L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
+                                            notify_data->lease_update.l3cd,
+                                            NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
+                                            FALSE);
         return;
     }
 
@@ -10213,8 +10178,14 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         priv->ipdhcp_data_x[IS_IPv4].config = nm_dhcp_config_new(addr_family, previous_lease);
         _notify(self, PROP_DHCPX_CONFIG(IS_IPv4));
     }
-    if (previous_lease)
-        _dev_ipdhcpx_handle_accept(self, addr_family, previous_lease);
+    if (previous_lease) {
+        nm_dhcp_config_set_lease(priv->ipdhcp_data_x[IS_IPv4].config, previous_lease);
+        _dev_l3_register_l3cds_set_one_full(self,
+                                            L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
+                                            previous_lease,
+                                            NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
+                                            FALSE);
+    }
 
     return;
 

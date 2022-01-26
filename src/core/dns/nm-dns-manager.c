@@ -1862,6 +1862,7 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
     gboolean             changed = FALSE;
     NMDnsConfigIPData   *ip_data = NULL;
     int                  dns_priority;
+    gboolean             any_removed = FALSE;
 
     g_return_val_if_fail(NM_IS_DNS_MANAGER(self), FALSE);
     g_return_val_if_fail(!l3cd || NM_IS_L3_CONFIG_DATA(l3cd), FALSE);
@@ -1919,7 +1920,16 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
             if (!replace_all && l3cd && ip_data_iter->l3cd != l3cd)
                 continue;
 
-            changed = TRUE;
+            if (!l3cd || ip_config_type == NM_DNS_IP_CONFIG_TYPE_REMOVED
+                || nm_l3_config_data_cmp_full(l3cd,
+                                              ip_data_iter->l3cd,
+                                              NM_L3_CONFIG_CMP_FLAGS_DNS
+                                                  | NM_L3_CONFIG_CMP_FLAGS_ROUTES_ID)
+                       != 0) {
+                changed = TRUE;
+            }
+
+            any_removed = TRUE;
             _dns_config_ip_data_free(ip_data_iter);
         }
     }
@@ -1941,8 +1951,6 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
         goto done;
     }
 
-    changed = TRUE;
-
     if (!data) {
         data  = g_slice_new(NMDnsConfigData);
         *data = (NMDnsConfigData){
@@ -1956,12 +1964,17 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
         priv->configs_lst_need_sort = TRUE;
     }
 
-    if (!ip_data)
+    if (!ip_data) {
         ip_data = _dns_config_ip_data_new(data, addr_family, source_tag, l3cd, ip_config_type);
-    else
+        if (!any_removed)
+            changed = TRUE;
+    } else {
         ip_data->ip_config_type = ip_config_type;
+        changed                 = TRUE;
+    }
 
-    priv->ip_data_lst_need_sort = TRUE;
+    if (changed)
+        priv->ip_data_lst_need_sort = TRUE;
 
     nm_assert(l3cd);
     nm_assert(ip_config_type != NM_DNS_IP_CONFIG_TYPE_REMOVED);
