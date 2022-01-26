@@ -198,18 +198,25 @@ NMDedupMultiIndex *nm_l3_config_data_get_multi_idx(const NML3ConfigData *self);
 /*****************************************************************************/
 
 typedef enum {
-    NM_L3_CONFIG_CMP_FLAGS_NONE,
-    NM_L3_CONFIG_CMP_FLAGS_IGNORE_IFINDEX = (1LL << 0),
+    NM_L3_CONFIG_CMP_FLAGS_NONE         = 0,
+    NM_L3_CONFIG_CMP_FLAGS_IFINDEX      = (1LL << 0),
+    NM_L3_CONFIG_CMP_FLAGS_ADDRESSES_ID = (1LL << 1),
+    NM_L3_CONFIG_CMP_FLAGS_ADDRESSES    = (1LL << 2),
+    NM_L3_CONFIG_CMP_FLAGS_ROUTES_ID    = (1LL << 3),
+    NM_L3_CONFIG_CMP_FLAGS_ROUTES       = (1LL << 4),
+    NM_L3_CONFIG_CMP_FLAGS_DNS          = (1LL << 5),
+    NM_L3_CONFIG_CMP_FLAGS_OTHER        = (1LL << 6),
+    NM_L3_CONFIG_CMP_FLAGS_ALL          = (1LL << 7) - 1,
 } NML3ConfigCmpFlags;
 
 int nm_l3_config_data_cmp_full(const NML3ConfigData *a,
                                const NML3ConfigData *b,
-                               NML3ConfigCmpFlags    cmp_flags);
+                               NML3ConfigCmpFlags    flags);
 
 static inline int
 nm_l3_config_data_cmp(const NML3ConfigData *a, const NML3ConfigData *b)
 {
-    return nm_l3_config_data_cmp_full(a, b, NM_L3_CONFIG_CMP_FLAGS_NONE);
+    return nm_l3_config_data_cmp_full(a, b, NM_L3_CONFIG_CMP_FLAGS_ALL);
 }
 
 static inline gboolean

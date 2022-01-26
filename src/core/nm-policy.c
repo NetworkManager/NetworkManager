@@ -1995,6 +1995,26 @@ device_state_changed(NMDevice           *device,
             /* Reset auto retries back to default since connection was successful */
             nm_settings_connection_autoconnect_retries_reset(sett_conn);
         }
+
+        /* Since there is no guarantee that device_l3cd_changed() is called
+         * again when the device becomes ACTIVATED, we need also to update
+         * routing and DNS here. */
+        nm_dns_manager_begin_updates(priv->dns_manager, __func__);
+        if (!nm_device_sys_iface_state_is_external(device)) {
+            nm_dns_manager_set_ip_config(priv->dns_manager,
+                                         AF_UNSPEC,
+                                         device,
+                                         nm_device_get_l3cd(device, TRUE),
+                                         NM_DNS_IP_CONFIG_TYPE_DEFAULT,
+                                         TRUE);
+        }
+        update_ip_dns(self, AF_INET, device);
+        update_ip_dns(self, AF_INET6, device);
+        update_ip4_routing(self, TRUE);
+        update_ip6_routing(self, TRUE);
+        update_system_hostname(self, "routing and dns");
+        nm_dns_manager_end_updates(priv->dns_manager, __func__);
+
         break;
     case NM_DEVICE_STATE_UNMANAGED:
     case NM_DEVICE_STATE_UNAVAILABLE:
@@ -2122,7 +2142,7 @@ device_l3cd_changed(NMDevice             *device,
      * now.
      */
     state = nm_device_get_state(device);
-    if (l3cd_new && state > NM_DEVICE_STATE_DISCONNECTED && state < NM_DEVICE_STATE_DEACTIVATING) {
+    if (l3cd_new && state > NM_DEVICE_STATE_IP_CONFIG && state < NM_DEVICE_STATE_DEACTIVATING) {
         nm_dns_manager_set_ip_config(priv->dns_manager,
                                      AF_UNSPEC,
                                      device,
@@ -2800,6 +2820,7 @@ constructed(GObject *object)
     G_OBJECT_CLASS(nm_policy_parent_class)->constructed(object);
 
     _LOGD(LOGD_DNS, "hostname-mode: %s", _hostname_mode_to_string(priv->hostname_mode));
+    update_system_hostname(self, "initial hostname");
 }
 
 NMPolicy *
