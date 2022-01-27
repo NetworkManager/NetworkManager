@@ -9956,8 +9956,25 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
             return;
         }
 
-        if (notify_data->lease_update.accepted) {
+        if (notify_data->lease_update.accepted)
             _LOGT_ipdhcp(addr_family, "lease accepted");
+        else
+            _LOGT_ipdhcp(addr_family, "lease update");
+
+        nm_dhcp_config_set_lease(priv->ipdhcp_data_x[IS_IPv4].config,
+                                 notify_data->lease_update.l3cd);
+
+        /* Schedule a commit of the configuration. If the DHCP client
+         * needs to accept the lease, it will send later a LEASE_UPDATE
+         * notification with accepted=1 once the address appears in platform.
+         * Otherwise, this notification already has accepted=1. */
+        _dev_l3_register_l3cds_set_one_full(self,
+                                            L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
+                                            notify_data->lease_update.l3cd,
+                                            NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
+                                            FALSE);
+
+        if (notify_data->lease_update.accepted) {
             if (priv->ipdhcp_data_x[IS_IPv4].state != NM_DEVICE_IP_STATE_READY) {
                 _dev_ipdhcpx_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
                 nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP_CHANGE_X(IS_IPv4),
@@ -9968,20 +9985,8 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
                                           NULL);
                 _dev_ip_state_check_async(self, addr_family);
             }
-            return;
         }
 
-        /* Schedule a commit of the configuration. The DHCP client
-         * will accept the lease once the address is committed, and
-         * will send a LEASE_UPDATE notification with accepted=1. */
-        _LOGT_ipdhcp(addr_family, "lease update");
-        nm_dhcp_config_set_lease(priv->ipdhcp_data_x[IS_IPv4].config,
-                                 notify_data->lease_update.l3cd);
-        _dev_l3_register_l3cds_set_one_full(self,
-                                            L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
-                                            notify_data->lease_update.l3cd,
-                                            NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
-                                            FALSE);
         return;
     }
 

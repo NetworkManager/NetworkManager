@@ -379,17 +379,23 @@ nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3Co
      * as a static address (bypassing ACD), then NML3Cfg is aware of that and signals
      * immediate success. */
 
+    if (nm_dhcp_client_can_accept(self) && new_state == NM_DHCP_STATE_BOUND && priv->l3cd
+        && nm_l3_config_data_get_num_addresses(priv->l3cd, priv->config.addr_family) > 0) {
+        priv->l3cfg_notify.wait_dhcp_commit = TRUE;
+    } else {
+        priv->l3cfg_notify.wait_dhcp_commit = FALSE;
+    }
+    connect_l3cfg_notify(self);
+
     {
         const NMDhcpClientNotifyData notify_data = {
             .notify_type = NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
             .lease_update =
                 {
-                    .l3cd = priv->l3cd,
+                    .l3cd     = priv->l3cd,
+                    .accepted = !priv->l3cfg_notify.wait_dhcp_commit,
                 },
         };
-
-        priv->l3cfg_notify.wait_dhcp_commit = (new_state == NM_DHCP_STATE_BOUND);
-        connect_l3cfg_notify(self);
 
         _emit_notify(self, &notify_data);
     }
