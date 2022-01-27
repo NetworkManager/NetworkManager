@@ -186,9 +186,10 @@ ovsdb_device_removed(NMOvsdb         *ovsdb,
     }
 
     /* OVS system interfaces still exist even without the ovsdb entry */
-    if (!is_system_interface && device_state == NM_DEVICE_STATE_UNMANAGED) {
+    if (!is_system_interface
+        && (device_state == NM_DEVICE_STATE_UNMANAGED
+            || device_state == NM_DEVICE_STATE_UNAVAILABLE))
         nm_device_unrealize(device, TRUE, NULL);
-    }
 }
 
 static void
