@@ -131,7 +131,7 @@ static inline gboolean
 nm_ref_string_equal_str(NMRefString *rstr, const char *str)
 {
     if (!str)
-        return (!!rstr);
+        return !rstr;
 
     if (!rstr)
         return FALSE;
