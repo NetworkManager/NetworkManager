@@ -1335,6 +1335,8 @@ nml_dbus_object_obj_changed_link(NMClient             *self,
     nm_assert(NML_IS_DBUS_OBJECT(dbobj));
     nm_assert(changed_type != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
 
+    /* Links @dbobj in the "obj_changed_lst", with the new "changed_type". */
+
     if (!NM_FLAGS_ALL((NMLDBusObjChangedType) dbobj->obj_changed_type, changed_type))
         NML_NMCLIENT_LOG_T(self,
                            "[%s]: changed-type 0x%02x linked",
@@ -1372,6 +1374,12 @@ nml_dbus_object_obj_changed_consume(NMClient             *self,
     NMClientPrivate      *priv;
     NMLDBusObjChangedType changed_type_res;
 
+    /* We have @dbobj which has some "obj_changed_type" set (consequently,
+     * it's linked in the "obj_changed_lst"). Here we consume the @changed_type,
+     * meaning, to clear those flags from "obj_change_type" (and return
+     * the flags that were cleared/present or NONE, if the current object
+     * doesn't have these changed-types. */
+
     nm_assert(NM_IS_CLIENT(self));
     nm_assert(NML_IS_DBUS_OBJECT(dbobj));
     nm_assert(changed_type != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
@@ -1383,6 +1391,8 @@ nml_dbus_object_obj_changed_consume(NMClient             *self,
     dbobj->obj_changed_type &= ~changed_type;
 
     if (dbobj->obj_changed_type == NML_DBUS_OBJ_CHANGED_TYPE_NONE) {
+        /* No other "obj_change_type" left. Unlink the object from the
+         * "changed_type_list". */
         c_list_unlink(&dbobj->obj_changed_lst);
         nm_assert(changed_type_res != NML_DBUS_OBJ_CHANGED_TYPE_NONE);
         NML_NMCLIENT_LOG_T(self,
@@ -1394,6 +1404,9 @@ nml_dbus_object_obj_changed_consume(NMClient             *self,
 
     priv = NM_CLIENT_GET_PRIVATE(self);
 
+    /* Actually, at this point, @dbobj is not linked in priv->obj_changed_lst_head,
+     * instead, it's linked on a temporary list. As we still have changes left after
+     * consuming "changed_type", we move it to priv->obj_changed_lst_head. */
     nm_assert(!c_list_contains(&priv->obj_changed_lst_head, &dbobj->obj_changed_lst));
     nm_c_list_move_tail(&priv->obj_changed_lst_head, &dbobj->obj_changed_lst);
     NML_NMCLIENT_LOG_T(self,
