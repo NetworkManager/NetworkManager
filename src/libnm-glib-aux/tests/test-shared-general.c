@@ -650,12 +650,19 @@ test_nm_ref_string(void)
     NMRefString                    *s2;
 
     g_assert(NULL == NM_REF_STRING_UPCAST(NULL));
+    g_assert(nm_ref_string_equal_str(NULL, NULL));
+    g_assert(!nm_ref_string_equal_str(NULL, ""));
+    g_assert(!nm_ref_string_equal_str(NULL, "a"));
 
     s1 = nm_ref_string_new("hallo");
     g_assert(s1);
     g_assert_cmpstr(s1->str, ==, "hallo");
     g_assert_cmpint(s1->len, ==, strlen("hallo"));
     g_assert(s1 == NM_REF_STRING_UPCAST(s1->str));
+    g_assert(nm_ref_string_equal_str(s1, "hallo"));
+    g_assert(!nm_ref_string_equal_str(s1, "hallox"));
+    g_assert(!nm_ref_string_equal_str(s1, "hall"));
+    g_assert(!nm_ref_string_equal_str(s1, NULL));
 
     s2 = nm_ref_string_new("hallo");
     g_assert(s2 == s1);
@@ -672,6 +679,7 @@ test_nm_ref_string(void)
     g_assert_cmpint(s2->len, ==, NM_STRLEN(STR_WITH_NUL));
     g_assert_cmpint(s2->len, >, strlen(s2->str));
     g_assert_cmpmem(s2->str, s2->len, STR_WITH_NUL, NM_STRLEN(STR_WITH_NUL));
+    g_assert(!nm_ref_string_equal_str(s2, "hallo"));
     g_assert(s2->str[s2->len] == '\0');
     nm_ref_string_unref(s2);
 }
