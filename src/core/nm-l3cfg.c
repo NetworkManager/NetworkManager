@@ -2351,22 +2351,7 @@ handle_init:
                 /* we are already probing. There is nothing to do for this timeout. */
                 return;
             }
-
-            nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
-
-            if (acd_data->probing_timestamp_msec + ACD_WAIT_PROBING_EXTRA_TIME_MSEC
-                    + ACD_WAIT_PROBING_EXTRA_TIME2_MSEC
-                >= (*p_now_msec)) {
-                /* hm. We failed to create a new probe too long. Something is really wrong
-                 * internally, but let's ignore the issue and assume the address is good. What
-                 * else would we do? Assume the address is USED? */
-                _LOGT_acd(acd_data,
-                          "probe-good (waiting for creating probe timed out. Assume good)");
-                goto handle_start_defending;
-            }
-
-            log_reason = "retry probing on timeout";
-            goto handle_start_probing;
+            /* fall-through */
 
         case NM_L3_ACD_ADDR_STATE_USED:
         case NM_L3_ACD_ADDR_STATE_CONFLICT:
@@ -2386,7 +2371,10 @@ handle_init:
             acd_data->acd_defend_type_desired = acd_defend_type;
 
             if (acd_timeout_msec <= 0) {
-                log_reason = "acd disabled by configuration (restart after previous conflict)";
+                if (acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING)
+                    log_reason = "acd disabled by configuration (timeout during probing)";
+                else
+                    log_reason = "acd disabled by configuration (restart after previous conflict)";
                 goto handle_probing_done;
             }
 
@@ -2396,6 +2384,23 @@ handle_init:
             }
 
             nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
+
+            if (acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING) {
+                if (acd_data->probing_timestamp_msec + ACD_WAIT_PROBING_EXTRA_TIME_MSEC
+                        + ACD_WAIT_PROBING_EXTRA_TIME2_MSEC
+                    >= (*p_now_msec)) {
+                    /* hm. We failed to create a new probe too long. Something is really wrong
+                     * internally, but let's ignore the issue and assume the address is good. What
+                     * else would we do? Assume the address is USED? */
+                    _LOGT_acd(acd_data,
+                              "probe-good (waiting for creating probe timed out. Assume good)");
+                    goto handle_start_defending;
+                }
+
+                log_reason = "retry probing on timeout";
+                goto handle_start_probing;
+            }
+
             acd_data->probing_timestamp_msec = (*p_now_msec);
             acd_data->probing_timeout_msec   = acd_timeout_msec;
             if (acd_data->info.state == NM_L3_ACD_ADDR_STATE_USED)
@@ -2616,39 +2621,23 @@ handle_init:
         return;
 
     case ACD_STATE_CHANGE_MODE_INSTANCE_RESET:
+        nm_assert(NM_IN_SET(acd_data->info.state,
+                            NM_L3_ACD_ADDR_STATE_PROBING,
+                            NM_L3_ACD_ADDR_STATE_DEFENDING,
+                            NM_L3_ACD_ADDR_STATE_READY,
+                            NM_L3_ACD_ADDR_STATE_USED,
+                            NM_L3_ACD_ADDR_STATE_CONFLICT,
+                            NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED));
 
-        switch (acd_data->info.state) {
-        case NM_L3_ACD_ADDR_STATE_INIT:
-            nm_assert_not_reached();
-            return;
-        case NM_L3_ACD_ADDR_STATE_PROBING:
-        case NM_L3_ACD_ADDR_STATE_DEFENDING:
-        case NM_L3_ACD_ADDR_STATE_READY:
-            if (!acd_data->nacd_probe) {
-                /* we failed starting to probe before and have a timer running to
-                 * restart. We don't do anything now, but let the timer handle it.
-                 * This also implements some rate limiting for us. */
-                _LOGT_acd(acd_data,
-                          "n-acd instance reset. Ignore event while in state %s",
-                          _l3_acd_addr_state_to_string(acd_data->info.state));
-                return;
-            }
-
-            _LOGT_acd(acd_data,
-                      "n-acd instance reset. Trigger a restart while in state %s",
-                      _l3_acd_addr_state_to_string(acd_data->info.state));
-            acd_data->nacd_probe = n_acd_probe_free(acd_data->nacd_probe);
-            _l3_acd_data_timeout_schedule(acd_data, 0);
-            return;
-        case NM_L3_ACD_ADDR_STATE_USED:
-        case NM_L3_ACD_ADDR_STATE_CONFLICT:
-        case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
-            /* as we have no probe, we are already handling this (e.g. by having
-             * a retry timer). Nothing to do. */
-            nm_assert(!acd_data->nacd_probe);
-            return;
-        }
-        nm_assert_not_reached();
+        /* an instance-reset is a dramatic event. We start over with probing. */
+        _LOGT_acd(acd_data,
+                  "n-acd instance reset. Reset to probing while in state %s",
+                  _l3_acd_addr_state_to_string(acd_data->info.state));
+        acd_data->nacd_probe                         = n_acd_probe_free(acd_data->nacd_probe);
+        acd_data->last_defendconflict_timestamp_msec = 0;
+        acd_data->probing_timestamp_msec = nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
+        _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_PROBING, FALSE);
+        _l3_acd_data_timeout_schedule(acd_data, 0);
         return;
     }
 
