@@ -428,6 +428,7 @@ typedef enum { /*< flags >*/
  * @NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS: modem supports at least one of GSM,
  * GPRS, EDGE, UMTS, HSDPA, HSUPA, or HSPA+ packet switched data capability
  * @NM_DEVICE_MODEM_CAPABILITY_LTE: modem has LTE data capability
+ * @NM_DEVICE_MODEM_CAPABILITY_5GNR: modem has 5GNR data capability
  *
  * #NMDeviceModemCapabilities values indicate the generic radio access
  * technology families a modem device supports.  For more information on the
@@ -440,6 +441,7 @@ typedef enum { /*< flags >*/
                NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO = 0x00000002,
                NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS  = 0x00000004,
                NM_DEVICE_MODEM_CAPABILITY_LTE       = 0x00000008,
+               NM_DEVICE_MODEM_CAPABILITY_5GNR      = 0x00000040,
 } NMDeviceModemCapabilities;
 
 /**

@@ -33,7 +33,7 @@ MODEM_CAPS_3GPP(MMModemCapability caps)
      */
     return NM_FLAGS_ANY(caps,
                         (MM_MODEM_CAPABILITY_GSM_UMTS | MM_MODEM_CAPABILITY_LTE
-                         | MM_MODEM_CAPABILITY_LTE_ADVANCED));
+                         | MM_MODEM_CAPABILITY_LTE_ADVANCED | MM_MODEM_CAPABILITY_5GNR));
     G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
