@@ -1334,6 +1334,15 @@ _acd_data_collect_tracks_data(const AcdData     *acd_data,
     guint             n                     = 0;
     guint             i;
 
+    /* We do a simple search over all track-infos for the best, which determines
+     * our ACD state. That is, we prefer ACD disabled, and otherwise the
+     * shortest configured timeout.
+     *
+     * This linear search is probably fast enough, because we expect that each
+     * address/acd_data has few trackers.
+     * The alternative would be caching the best result, but that is more complicated,
+     * so not done. */
+
     for (i = 0; i < acd_data->info.n_track_infos; i++) {
         const NML3AcdAddrTrackInfo *acd_track = &acd_data->info.track_infos[i];
 
