@@ -37,7 +37,7 @@ MODEM_CAPS_3GPP(MMModemCapability caps)
     G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
-#define MODEM_CAPS_3GPP2(caps) (caps & (MM_MODEM_CAPABILITY_CDMA_EVDO))
+#define MODEM_CAPS_3GPP2(caps) NM_FLAGS_ANY((caps), MM_MODEM_CAPABILITY_CDMA_EVDO)
 
 /* Maximum time to keep the DBus call waiting for a connection result.
  * This value is greater than the default timeout in ModemManager (180s since
