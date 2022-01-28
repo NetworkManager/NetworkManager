@@ -137,7 +137,8 @@ typedef struct {
 typedef enum {
     /* The various NML3ConfigData types that we track explicitly. Note that
      * their relative order matters: higher numbers in this enum means more
-     * important (and during merge overwrites other settings). */
+     * important (and during merge overwrites other settings). This is passed
+     * as priority to nm_l3cfg_add_config(). */
 
     L3_CONFIG_DATA_TYPE_LL_4,
     L3_CONFIG_DATA_TYPE_LL_6,
