@@ -1517,12 +1517,7 @@ _l3_acd_nacd_event(int fd, GIOCondition condition, gpointer user_data)
                       "in %u msec)",
                       timeout_msec);
                 self->priv.p->nacd_event_down_source =
-                    nm_g_timeout_source_new(timeout_msec,
-                                            G_PRIORITY_DEFAULT,
-                                            _l3_acd_nacd_event_down_timeout_cb,
-                                            self,
-                                            NULL);
-                g_source_attach(self->priv.p->nacd_event_down_source, NULL);
+                    nm_g_timeout_add_source(timeout_msec, _l3_acd_nacd_event_down_timeout_cb, self);
             }
             break;
         default:
@@ -1583,12 +1578,9 @@ _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_d
         break;
     case NM_TERNARY_TRUE:
         self->priv.p->nacd_instance_ensure_retry =
-            nm_g_timeout_source_new_seconds(ACD_ENSURE_RATELIMIT_MSEC / 1000u,
-                                            G_PRIORITY_DEFAULT,
+            nm_g_timeout_add_seconds_source(ACD_ENSURE_RATELIMIT_MSEC / 1000u,
                                             _l3_acd_nacd_instance_ensure_retry_cb,
-                                            self,
-                                            NULL);
-        g_source_attach(self->priv.p->nacd_instance_ensure_retry, NULL);
+                                            self);
         break;
     case NM_TERNARY_DEFAULT:
         break;
@@ -1939,12 +1931,9 @@ _l3_acd_data_timeout_schedule(AcdData *acd_data, gint64 timeout_msec)
 {
     nm_clear_g_source_inst(&acd_data->acd_data_timeout_source);
     acd_data->acd_data_timeout_source =
-        nm_g_timeout_source_new(NM_CLAMP((gint64) 0, timeout_msec, (gint64) G_MAXUINT),
-                                G_PRIORITY_DEFAULT,
+        nm_g_timeout_add_source(NM_CLAMP((gint64) 0, timeout_msec, (gint64) G_MAXUINT),
                                 _l3_acd_data_timeout_cb,
-                                acd_data,
-                                NULL);
-    g_source_attach(acd_data->acd_data_timeout_source, NULL);
+                                acd_data);
 }
 
 static void
