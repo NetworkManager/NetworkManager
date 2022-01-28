@@ -2071,17 +2071,19 @@ _nm_printf(5, 6) static void _l3_acd_data_state_set_full(NML3Cfg         *self,
     else
         changed = FALSE;
 
-    if (format) {
-        gs_free char *msg = NULL;
-        va_list       args;
+    if (_LOGT_ENABLED()) {
+        if (format) {
+            gs_free char *msg = NULL;
+            va_list       args;
 
-        va_start(args, format);
-        msg = g_strdup_vprintf(format, args);
-        va_end(args);
+            va_start(args, format);
+            msg = g_strdup_vprintf(format, args);
+            va_end(args);
 
-        _LOGT_acd(acd_data, "set state to %s (%s)", _l3_acd_addr_state_to_string(state), msg);
-    } else
-        _LOGT_acd(acd_data, "set state to %s", _l3_acd_addr_state_to_string(state));
+            _LOGT_acd(acd_data, "set state to %s (%s)", _l3_acd_addr_state_to_string(state), msg);
+        } else
+            _LOGT_acd(acd_data, "set state to %s", _l3_acd_addr_state_to_string(state));
+    }
 
     if (changed && allow_commit) {
         /* The availability of an address just changed (and we are instructed to
