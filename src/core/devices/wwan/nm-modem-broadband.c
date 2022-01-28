@@ -199,10 +199,11 @@ get_capabilities(NMModem                   *_self,
                  NMDeviceModemCapabilities *modem_caps,
                  NMDeviceModemCapabilities *current_caps)
 {
-    NMModemBroadband  *self          = NM_MODEM_BROADBAND(_self);
-    MMModemCapability  all_supported = MM_MODEM_CAPABILITY_NONE;
-    MMModemCapability *supported;
-    guint              n_supported;
+    NMModemBroadband          *self          = NM_MODEM_BROADBAND(_self);
+    MMModemCapability          all_supported = MM_MODEM_CAPABILITY_NONE;
+    gs_free MMModemCapability *supported     = NULL;
+    guint                      n_supported;
+    guint                      i;
 
     G_STATIC_ASSERT(MM_MODEM_CAPABILITY_POTS == (guint64) NM_DEVICE_MODEM_CAPABILITY_POTS);
     G_STATIC_ASSERT(MM_MODEM_CAPABILITY_CDMA_EVDO
@@ -214,12 +215,8 @@ get_capabilities(NMModem                   *_self,
     /* For now, we don't care about the capability combinations, just merge all
      * combinations in a single mask */
     if (mm_modem_get_supported_capabilities(self->_priv.modem_iface, &supported, &n_supported)) {
-        guint i;
-
         for (i = 0; i < n_supported; i++)
             all_supported |= supported[i];
-
-        g_free(supported);
     }
 
     *modem_caps = (NMDeviceModemCapabilities) all_supported;
