@@ -204,6 +204,13 @@ get_capabilities(NMModem                   *_self,
     MMModemCapability *supported;
     guint              n_supported;
 
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_POTS == (guint64) NM_DEVICE_MODEM_CAPABILITY_POTS);
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_CDMA_EVDO
+                    == (guint64) NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO);
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_GSM_UMTS == (guint64) NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS);
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_LTE == (guint64) NM_DEVICE_MODEM_CAPABILITY_LTE);
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_5GNR == (guint64) NM_DEVICE_MODEM_CAPABILITY_5GNR);
+
     /* For now, we don't care about the capability combinations, just merge all
      * combinations in a single mask */
     if (mm_modem_get_supported_capabilities(self->_priv.modem_iface, &supported, &n_supported)) {

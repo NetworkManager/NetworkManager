@@ -443,6 +443,8 @@ typedef enum { /*< flags >*/
                NM_DEVICE_MODEM_CAPABILITY_LTE       = 0x00000008,
                NM_DEVICE_MODEM_CAPABILITY_5GNR      = 0x00000040,
 } NMDeviceModemCapabilities;
+/* Note: the numeric values of NMDeviceModemCapabilities must be identical to the values
+ * in MMModemCapability. See the G_STATIC_ASSERT() in nm-modem-broadband.c's get_capabilities().  */
 
 /**
  * NMWimaxNspNetworkType:
