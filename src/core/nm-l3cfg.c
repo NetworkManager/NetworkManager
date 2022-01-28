@@ -1929,6 +1929,19 @@ _l3_acd_data_timeout_cb(gpointer user_data)
 static void
 _l3_acd_data_timeout_schedule(AcdData *acd_data, gint64 timeout_msec)
 {
+    /* in _l3_acd_data_state_set_full() we clear the timer. At the same time,
+     * in _l3_acd_data_state_change(ACD_STATE_CHANGE_MODE_TIMEOUT) we only
+     * expect timeouts in certain states.
+     *
+     * That means, scheduling a timeout is only correct if we are in a certain
+     * state, which allows to handle timeouts. This assert checks for that to
+     * ensure we don't call a timeout in an unexpected state. */
+    nm_assert(NM_IN_SET(acd_data->info.state,
+                        NM_L3_ACD_ADDR_STATE_PROBING,
+                        NM_L3_ACD_ADDR_STATE_USED,
+                        NM_L3_ACD_ADDR_STATE_DEFENDING,
+                        NM_L3_ACD_ADDR_STATE_CONFLICT));
+
     nm_clear_g_source_inst(&acd_data->acd_data_timeout_source);
     acd_data->acd_data_timeout_source =
         nm_g_timeout_add_source(NM_CLAMP((gint64) 0, timeout_msec, (gint64) G_MAXUINT),
