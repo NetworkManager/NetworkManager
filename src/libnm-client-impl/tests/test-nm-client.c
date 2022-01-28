@@ -812,7 +812,7 @@ _dev_eth0_1_state_changed_cb(NMDevice           *device,
     g_assert(arr);
     g_assert_cmpint(arr->len, ==, 0);
 
-    // g_assert(!nm_device_get_active_connection(device));
+    g_assert(!nm_device_get_active_connection(device));
 }
 
 static void
@@ -921,7 +921,7 @@ test_activate_virtual(void)
             g_assert(arr);
             g_assert_cmpint(arr->len, ==, 0);
 
-            // g_assert(!nm_device_get_active_connection(dev_eth0_1));
+            g_assert(!nm_device_get_active_connection(dev_eth0_1));
 
             nm_clear_g_signal_handler(dev_eth0_1, &sig_id);
 
