@@ -762,9 +762,9 @@ nm_device_modem_new(NMModem *modem)
                         NM_DEVICE_MODEM_MODEM,
                         modem,
                         NM_DEVICE_MODEM_CAPABILITIES,
-                        caps,
+                        (guint) ((guint32) caps),
                         NM_DEVICE_MODEM_CURRENT_CAPABILITIES,
-                        current_caps,
+                        (guint) ((guint32) current_caps),
                         NM_DEVICE_MODEM_DEVICE_ID,
                         nm_modem_get_device_id(modem),
                         NULL);
