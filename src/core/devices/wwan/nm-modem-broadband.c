@@ -20,24 +20,12 @@
 
 #define NM_MODEM_BROADBAND_MODEM "modem"
 
-static gboolean
-MODEM_CAPS_3GPP(MMModemCapability caps)
-{
-    G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-    /* MM_MODEM_CAPABILITY_LTE_ADVANCED is marked as deprecated since ModemManager 1.14.0.
-     *
-     * The flag probably was never used, it certainly isn't used since 1.14.0.
-     *
-     * Still, just to be sure, there is no harm in checking it here. Suppress the
-     * warning, it should have no bad effect.
-     */
-    return NM_FLAGS_ANY(caps,
-                        (MM_MODEM_CAPABILITY_GSM_UMTS | MM_MODEM_CAPABILITY_LTE
-                         | MM_MODEM_CAPABILITY_LTE_ADVANCED));
-    G_GNUC_END_IGNORE_DEPRECATIONS
-}
+#define MODEM_CAPS_3GPP(caps) \
+    NM_FLAGS_ANY(             \
+        caps,                 \
+        (MM_MODEM_CAPABILITY_GSM_UMTS | MM_MODEM_CAPABILITY_LTE | MM_MODEM_CAPABILITY_5GNR))
 
-#define MODEM_CAPS_3GPP2(caps) (caps & (MM_MODEM_CAPABILITY_CDMA_EVDO))
+#define MODEM_CAPS_3GPP2(caps) NM_FLAGS_ANY((caps), MM_MODEM_CAPABILITY_CDMA_EVDO)
 
 /* Maximum time to keep the DBus call waiting for a connection result.
  * This value is greater than the default timeout in ModemManager (180s since
@@ -199,20 +187,24 @@ get_capabilities(NMModem                   *_self,
                  NMDeviceModemCapabilities *modem_caps,
                  NMDeviceModemCapabilities *current_caps)
 {
-    NMModemBroadband  *self          = NM_MODEM_BROADBAND(_self);
-    MMModemCapability  all_supported = MM_MODEM_CAPABILITY_NONE;
-    MMModemCapability *supported;
-    guint              n_supported;
+    NMModemBroadband          *self          = NM_MODEM_BROADBAND(_self);
+    MMModemCapability          all_supported = MM_MODEM_CAPABILITY_NONE;
+    gs_free MMModemCapability *supported     = NULL;
+    guint                      n_supported;
+    guint                      i;
+
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_POTS == (guint64) NM_DEVICE_MODEM_CAPABILITY_POTS);
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_CDMA_EVDO
+                    == (guint64) NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO);
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_GSM_UMTS == (guint64) NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS);
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_LTE == (guint64) NM_DEVICE_MODEM_CAPABILITY_LTE);
+    G_STATIC_ASSERT(MM_MODEM_CAPABILITY_5GNR == (guint64) NM_DEVICE_MODEM_CAPABILITY_5GNR);
 
     /* For now, we don't care about the capability combinations, just merge all
      * combinations in a single mask */
     if (mm_modem_get_supported_capabilities(self->_priv.modem_iface, &supported, &n_supported)) {
-        guint i;
-
         for (i = 0; i < n_supported; i++)
             all_supported |= supported[i];
-
-        g_free(supported);
     }
 
     *modem_caps = (NMDeviceModemCapabilities) all_supported;

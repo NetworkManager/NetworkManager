@@ -153,10 +153,12 @@ get_type_description(NMDevice *device)
         return NULL;
 }
 
-#define MODEM_CAPS_3GPP(caps) \
-    (caps & (NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS | NM_DEVICE_MODEM_CAPABILITY_LTE))
+#define MODEM_CAPS_3GPP(caps)                                                          \
+    NM_FLAGS_ANY((caps),                                                               \
+                 (NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS | NM_DEVICE_MODEM_CAPABILITY_LTE \
+                  | NM_DEVICE_MODEM_CAPABILITY_5GNR))
 
-#define MODEM_CAPS_3GPP2(caps) (caps & (NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO))
+#define MODEM_CAPS_3GPP2(caps) NM_FLAGS_ANY((caps), NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)
 
 static gboolean
 connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
@@ -206,9 +208,9 @@ get_setting_type(NMDevice *device)
     NMDeviceModemCapabilities caps;
 
     caps = nm_device_modem_get_current_capabilities(NM_DEVICE_MODEM(device));
-    if (caps & (NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS | NM_DEVICE_MODEM_CAPABILITY_LTE))
+    if (MODEM_CAPS_3GPP(caps))
         return NM_TYPE_SETTING_GSM;
-    else if (caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)
+    else if (MODEM_CAPS_3GPP2(caps))
         return NM_TYPE_SETTING_CDMA;
     else
         return G_TYPE_INVALID;
