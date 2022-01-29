@@ -20,6 +20,10 @@
 
 #define NM_MODEM_BROADBAND_MODEM "modem"
 
+#if !MM_CHECK_VERSION(1, 14, 0)
+#define MM_MODEM_CAPABILITY_5GNR ((MMModemCapability) (1 << 6))
+#endif
+
 #define MODEM_CAPS_3GPP(caps) \
     NM_FLAGS_ANY(             \
         caps,                 \
