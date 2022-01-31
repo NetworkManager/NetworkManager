@@ -24,11 +24,21 @@ if crypto_gnutls_dep.found()
   )
 endif
 
+libnm_crypto_null = static_library(
+  'nm-crypto-null',
+  sources: 'nm-crypto-null.c',
+  dependencies: [
+    libnm_core_public_dep,
+  ],
+)
+
 if crypto == 'nss'
   libnm_crypto = libnm_crypto_nss
-else
-  assert(crypto == 'gnutls', 'Unexpected setting "crypto=' + crypto + '"')
+elif crypto == 'gnutls'
   libnm_crypto = libnm_crypto_gnutls
+else
+  assert(crypto == 'null', 'Unexpected setting "crypto=' + crypto + '"')
+  libnm_crypto = libnm_crypto_null
 endif
 
 libnm_core_settings_sources = files(
