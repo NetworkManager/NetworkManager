@@ -716,7 +716,7 @@ AM_CONDITIONAL(HAVE_CRYPTO_GNUTLS, test "${have_crypto_gnutls}" = 'yes')
 AM_CONDITIONAL(HAVE_CRYPTO_NSS, test "${have_crypto_nss}" = 'yes')
 
 AC_ARG_WITH(crypto,
-            AS_HELP_STRING([--with-crypto=nss|gnutls],
+            AS_HELP_STRING([--with-crypto=nss|gnutls|null],
                            [Cryptography library to use for certificate and key operations]),
             with_crypto=$withval,
             with_crypto=nss)
@@ -728,8 +728,10 @@ elif test "$with_crypto" = 'gnutls'; then
 	if test "${have_crypto_gnutls}" != "yes"; then
 		AC_MSG_ERROR([No usable gnutls found for --with-crypto=gnutls])
 	fi
+elif test "$with_crypto" = 'null'; then
+	:
 else
-	AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and crypto operations])
+	AC_MSG_ERROR([Please choose either 'nss', 'gnutls' or 'null' for certificate and crypto operations])
 fi
 AM_CONDITIONAL(WITH_NSS, test "$with_crypto" = 'nss')
 AM_CONDITIONAL(WITH_GNUTLS, test "$with_crypto" = 'gnutls')

@@ -1471,6 +1471,24 @@ src_libnm_core_impl_libnm_crypto_nss_la_LIBADD = \
 	$(NSS_LIBS)
 endif
 
+if !WITH_GNUTLS
+if !WITH_NSS
+libnm_crypto_lib = src/libnm-core-impl/libnm-crypto-null.la
+else
+check_ltlibraries += src/libnm-core-impl/libnm-crypto-null.la
+endif
+else
+check_ltlibraries += src/libnm-core-impl/libnm-crypto-null.la
+endif
+
+src_libnm_core_impl_libnm_crypto_null_la_SOURCES = src/libnm-core-impl/nm-crypto-null.c
+src_libnm_core_impl_libnm_crypto_null_la_CPPFLAGS = \
+	$(src_libnm_core_impl_libnm_core_impl_la_CPPFLAGS)
+src_libnm_core_impl_libnm_crypto_null_la_LDFLAGS = \
+	$(src_libnm_core_impl_libnm_core_impl_la_LDFLAGS)
+src_libnm_core_impl_libnm_crypto_null_la_LIBADD = \
+	$(GLIB_LIBS)
+
 noinst_LTLIBRARIES += $(libnm_crypto_lib)
 
 ###############################################################################
