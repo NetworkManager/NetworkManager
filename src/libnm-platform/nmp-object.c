@@ -386,7 +386,11 @@ _idx_obj_part(const DedupMultiIdxType *idx_type,
                 nm_hash_update_val(h, obj_a);
             return 0;
         }
-        nm_assert(NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj_a)->ifindex > 0);
+        nm_assert(NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj_a)->ifindex > 0
+                  || (NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj_a)->ifindex == 0
+                      && NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_a),
+                                   NMP_OBJECT_TYPE_IP4_ROUTE,
+                                   NMP_OBJECT_TYPE_IP6_ROUTE)));
         if (obj_b) {
             return NMP_OBJECT_GET_TYPE(obj_a) == NMP_OBJECT_GET_TYPE(obj_b)
                    && NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj_a)->ifindex
@@ -401,14 +405,14 @@ _idx_obj_part(const DedupMultiIdxType *idx_type,
     case NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID:
         obj_type = NMP_OBJECT_GET_TYPE(obj_a);
         if (!NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)
-            || NMP_OBJECT_CAST_IP_ROUTE(obj_a)->ifindex <= 0) {
+            || NMP_OBJECT_CAST_IP_ROUTE(obj_a)->ifindex < 0) {
             if (h)
                 nm_hash_update_val(h, obj_a);
             return 0;
         }
         if (obj_b) {
             return obj_type == NMP_OBJECT_GET_TYPE(obj_b)
-                   && NMP_OBJECT_CAST_IP_ROUTE(obj_b)->ifindex > 0
+                   && NMP_OBJECT_CAST_IP_ROUTE(obj_b)->ifindex >= 0
                    && (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
                            ? (nm_platform_ip4_route_cmp(&obj_a->ip4_route,
                                                         &obj_b->ip4_route,

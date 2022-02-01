@@ -1886,6 +1886,64 @@ again:
 
 /*****************************************************************************/
 
+static void
+test_blackhole(gconstpointer test_data)
+{
+    int                          TEST_IDX    = GPOINTER_TO_INT(test_data);
+    const int                    addr_family = (TEST_IDX == 1) ? AF_INET : AF_INET6;
+    const int                    IS_IPv4     = NM_IS_IPv4(addr_family);
+    const NMDedupMultiHeadEntry *head_entry;
+    NMDedupMultiIter             iter;
+    const NMPObject             *obj;
+    NMPObject                    obj_stack;
+    NMPlatformIPXRoute           rr = {};
+    int                          r  = -1;
+    int                          i;
+
+    if (IS_IPv4) {
+        rr.r4 = (const NMPlatformIP4Route){
+            .type_coerced = nmtst_rand_select(RTN_BLACKHOLE, RTN_UNREACHABLE, RTN_PROHIBIT),
+        };
+    } else {
+        rr.r6 = (const NMPlatformIP6Route){
+            .type_coerced = nmtst_rand_select(RTN_BLACKHOLE, RTN_UNREACHABLE, RTN_PROHIBIT),
+            .metric       = 1000,
+        };
+    }
+
+    nm_platform_ip_route_normalize(addr_family, &rr.rx);
+
+    if (IS_IPv4)
+        r = nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r4);
+    else
+        r = nm_platform_ip6_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r6);
+
+    g_assert_cmpint(r, ==, 0);
+
+    nmp_object_stackinit(&obj_stack, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), &rr);
+
+    obj = nm_platform_lookup_obj(NM_PLATFORM_GET, NMP_CACHE_ID_TYPE_OBJECT_TYPE, &obj_stack);
+
+    _LOGT(">>> adding %s",
+          nmp_object_to_string(&obj_stack, NMP_OBJECT_TO_STRING_ALL, g_alloca(1000), 1000));
+    _LOGT(">>> found  %s",
+          nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_ALL, g_alloca(1000), 1000));
+
+    g_assert(obj);
+
+    head_entry = nm_platform_lookup_object(NM_PLATFORM_GET, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), 0);
+    g_assert(head_entry);
+    g_assert_cmpint(head_entry->len, ==, 1);
+    i = 0;
+    nm_dedup_multi_iter_for_each (&iter, head_entry) {
+        i++;
+        g_assert(iter.current->obj == obj);
+    }
+    g_assert_cmpint(i, ==, 1);
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
 
 void
@@ -1922,5 +1980,9 @@ _nmtstp_setup_tests(void)
         add_test_func_data("/route/rule/2", test_rule, GINT_TO_POINTER(2));
         add_test_func_data("/route/rule/3", test_rule, GINT_TO_POINTER(3));
         add_test_func_data("/route/rule/4", test_rule, GINT_TO_POINTER(4));
+    }
+    if (nmtstp_is_root_test()) {
+        add_test_func_data("/route/blackhole/1", test_blackhole, GINT_TO_POINTER(1));
+        add_test_func_data("/route/blackhole/2", test_blackhole, GINT_TO_POINTER(2));
     }
 }

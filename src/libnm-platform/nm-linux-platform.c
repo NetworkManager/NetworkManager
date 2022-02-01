@@ -3423,7 +3423,12 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
     else
         return NULL;
 
-    if (!NM_IN_SET(rtm->rtm_type, RTN_UNICAST, RTN_LOCAL))
+    if (!NM_IN_SET(rtm->rtm_type,
+                   RTN_UNICAST,
+                   RTN_LOCAL,
+                   RTN_BLACKHOLE,
+                   RTN_UNREACHABLE,
+                   RTN_PROHIBIT))
         return NULL;
 
     if (nlmsg_parse_arr(nlh, sizeof(struct rtmsg), tb, policy) < 0)
@@ -3497,16 +3502,45 @@ rta_multipath_done:;
             /* If no nexthops have been provided via RTA_MULTIPATH
              * we add it as regular nexthop to maintain backwards
              * compatibility */
-            nh.ifindex = ifindex;
-            nh.gateway = gateway;
+            nh.ifindex    = ifindex;
+            nh.gateway    = gateway;
+            nh.is_present = TRUE;
         } else {
             /* Kernel supports new style nexthop configuration,
              * verify that it is a duplicate and ignore old-style nexthop. */
             if (nh.ifindex != ifindex || memcmp(&nh.gateway, &gateway, addr_len) != 0)
                 return NULL;
         }
-    } else if (!nh.is_present)
-        return NULL;
+    }
+
+    if (nm_platform_route_type_is_nodev(rtm->rtm_type)) {
+        /* These routes are special. They don't have an device/ifindex.
+         *
+         * Well, actually, for IPv6 kernel will always say that the device is
+         * 1 (lo). Of course it does!! */
+        if (nh.is_present) {
+            if (IS_IPv4) {
+                if (nh.ifindex != 0 || nh.gateway.addr4 != 0) {
+                    /* we only accept kernel to notify about the ifindex/gateway, if it
+                     * is zero. This is only to be a bit forgiving, but we really don't
+                     * know how to handle such routes that have an ifindex. */
+                    return NULL;
+                }
+            } else {
+                if (!NM_IN_SET(nh.ifindex, 0, 1) || !IN6_IS_ADDR_UNSPECIFIED(&nh.gateway.addr6)) {
+                    /* We allow an ifindex of 1 (will be normalized to zero). Otherwise,
+                     * we don't expect a device/next hop. */
+                    return NULL;
+                }
+                nh.ifindex = 0;
+            }
+        }
+    } else {
+        if (!nh.is_present) {
+            /* a "normal" route needs a device. This is not the route we are looking for. */
+            return NULL;
+        }
+    }
 
     /*****************************************************************/
 
