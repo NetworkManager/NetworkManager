@@ -65,7 +65,6 @@
 #define NM_DEVICE_SLAVES "slaves" /* partially internal */
 
 #define NM_DEVICE_TYPE_DESC          "type-desc"          /* Internal only */
-#define NM_DEVICE_RFKILL_TYPE        "rfkill-type"        /* Internal only */
 #define NM_DEVICE_IFINDEX            "ifindex"            /* Internal only */
 #define NM_DEVICE_MASTER             "master"             /* Internal only */
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
@@ -207,6 +206,8 @@ typedef struct _NMDeviceClass {
     bool act_stage1_prepare_set_hwaddr_ethernet : 1;
 
     bool can_reapply_change_ovs_external_ids : 1;
+
+    RfKillType rfkill_type : 4;
 
     void (*state_changed)(NMDevice           *device,
                           NMDeviceState       new_state,
@@ -409,7 +410,6 @@ typedef struct _NMDeviceClass {
     gboolean (*set_platform_mtu)(NMDevice *self, guint32 mtu);
 
     const char *(*get_dhcp_anycast_address)(NMDevice *self);
-
 } NMDeviceClass;
 
 GType nm_device_get_type(void);
