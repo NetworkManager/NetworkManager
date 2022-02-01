@@ -2445,7 +2445,7 @@ struct rfkill_event {
 static void
 _rfkill_update_system(NMManager *self, NMRfkillType rtype, gboolean enabled)
 {
-    int                 fd;
+    nm_auto_close int   fd = -1;
     struct rfkill_event event;
     ssize_t             len;
     int                 errsv;
@@ -2466,7 +2466,6 @@ _rfkill_update_system(NMManager *self, NMRfkillType rtype, gboolean enabled)
               "rfkill: (%s): failed to set killswitch device for "
               "non-blocking operation",
               _rfkill_type_desc[rtype].desc);
-        nm_close(fd);
         return;
     }
 
@@ -2503,8 +2502,6 @@ _rfkill_update_system(NMManager *self, NMRfkillType rtype, gboolean enabled)
               "rfkill: (%s): failed to change Wi-Fi killswitch state",
               _rfkill_type_desc[rtype].desc);
     }
-
-    nm_close(fd);
 }
 
 static void
