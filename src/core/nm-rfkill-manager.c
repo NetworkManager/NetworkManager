@@ -46,12 +46,12 @@ G_DEFINE_TYPE(NMRfkillManager, nm_rfkill_manager, G_TYPE_OBJECT)
 
 typedef struct {
     char        *name;
-    guint64      seqnum;
     char        *path;
     char        *driver;
+    guint64      seqnum;
     NMRfkillType rtype;
     int          state;
-    gboolean     platform;
+    bool         platform : 1;
 } Killswitch;
 
 NMRfkillState
@@ -95,14 +95,12 @@ static Killswitch *
 killswitch_new(struct udev_device *device, NMRfkillType rtype)
 {
     Killswitch         *ks;
-    struct udev_device *parent = NULL, *grandparent = NULL;
-    const char         *driver, *subsys, *parent_subsys = NULL;
-
-    ks         = g_malloc0(sizeof(Killswitch));
-    ks->name   = g_strdup(udev_device_get_sysname(device));
-    ks->seqnum = udev_device_get_seqnum(device);
-    ks->path   = g_strdup(udev_device_get_syspath(device));
-    ks->rtype  = rtype;
+    struct udev_device *parent      = NULL;
+    struct udev_device *grandparent = NULL;
+    const char         *driver;
+    const char         *subsys;
+    const char         *parent_subsys = NULL;
+    gboolean            platform;
 
     driver = udev_device_get_property_value(device, "DRIVER");
     subsys = udev_device_get_subsystem(device);
@@ -120,14 +118,23 @@ killswitch_new(struct udev_device *device, NMRfkillType rtype)
                 driver = udev_device_get_property_value(grandparent, "DRIVER");
         }
     }
-
     if (!driver)
         driver = "(unknown)";
-    ks->driver = g_strdup(driver);
 
-    if (g_strcmp0(subsys, "platform") == 0 || g_strcmp0(parent_subsys, "platform") == 0
-        || g_strcmp0(subsys, "acpi") == 0 || g_strcmp0(parent_subsys, "acpi") == 0)
-        ks->platform = TRUE;
+    platform = FALSE;
+    if (nm_streq0(subsys, "platform") || nm_streq0(parent_subsys, "platform")
+        || nm_streq0(subsys, "acpi") || nm_streq0(parent_subsys, "acpi"))
+        platform = TRUE;
+
+    ks  = g_slice_new(Killswitch);
+    *ks = (Killswitch){
+        .name     = g_strdup(udev_device_get_sysname(device)),
+        .seqnum   = udev_device_get_seqnum(device),
+        .path     = g_strdup(udev_device_get_syspath(device)),
+        .rtype    = rtype,
+        .driver   = g_strdup(driver),
+        .platform = platform,
+    };
 
     return ks;
 }
@@ -135,13 +142,10 @@ killswitch_new(struct udev_device *device, NMRfkillType rtype)
 static void
 killswitch_destroy(Killswitch *ks)
 {
-    g_return_if_fail(ks != NULL);
-
     g_free(ks->name);
     g_free(ks->path);
     g_free(ks->driver);
-    memset(ks, 0, sizeof(Killswitch));
-    g_free(ks);
+    nm_g_slice_free(ks);
 }
 
 static NMRfkillState
