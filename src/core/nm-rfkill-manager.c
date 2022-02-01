@@ -9,6 +9,7 @@
 
 #include <libudev.h>
 
+#include "c-list/src/c-list.h"
 #include "libnm-udev-aux/nm-udev-utils.h"
 
 /*****************************************************************************/
@@ -25,7 +26,8 @@ typedef struct {
 
     /* Authoritative rfkill state (RFKILL_* enum) */
     NMRfkillState rfkill_states[NM_RFKILL_TYPE_MAX];
-    GSList       *killswitches;
+
+    CList killswitch_lst_head;
 } NMRfkillManagerPrivate;
 
 struct _NMRfkillManager {
@@ -45,6 +47,7 @@ G_DEFINE_TYPE(NMRfkillManager, nm_rfkill_manager, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 typedef struct {
+    CList        killswitch_lst;
     char        *name;
     char        *path;
     char        *driver;
@@ -142,6 +145,7 @@ killswitch_new(struct udev_device *device, NMRfkillType rtype)
 static void
 killswitch_destroy(Killswitch *ks)
 {
+    c_list_unlink_stale(&ks->killswitch_lst);
     g_free(ks->name);
     g_free(ks->path);
     g_free(ks->driver);
@@ -169,7 +173,7 @@ static void
 recheck_killswitches(NMRfkillManager *self)
 {
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
-    GSList                 *iter;
+    Killswitch             *ks;
     NMRfkillState           poll_states[NM_RFKILL_TYPE_MAX];
     NMRfkillState           platform_states[NM_RFKILL_TYPE_MAX];
     gboolean                platform_checked[NM_RFKILL_TYPE_MAX];
@@ -183,8 +187,7 @@ recheck_killswitches(NMRfkillManager *self)
     }
 
     /* Poll the states of all killswitches */
-    for (iter = priv->killswitches; iter; iter = g_slist_next(iter)) {
-        Killswitch         *ks = iter->data;
+    c_list_for_each_entry (ks, &priv->killswitch_lst_head, killswitch_lst) {
         struct udev_device *device;
         NMRfkillState       dev_state;
         int                 sysfs_state;
@@ -218,6 +221,7 @@ recheck_killswitches(NMRfkillManager *self)
             if (dev_state > platform_states[ks->rtype])
                 platform_states[ks->rtype] = dev_state;
         }
+
         udev_device_unref(device);
     }
 
@@ -247,15 +251,13 @@ static Killswitch *
 killswitch_find_by_name(NMRfkillManager *self, const char *name)
 {
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
-    GSList                 *iter;
+    Killswitch             *ks;
 
-    g_return_val_if_fail(name != NULL, NULL);
+    nm_assert(name);
 
-    for (iter = priv->killswitches; iter; iter = g_slist_next(iter)) {
-        Killswitch *candidate = iter->data;
-
-        if (!strcmp(name, candidate->name))
-            return candidate;
+    c_list_for_each_entry (ks, &priv->killswitch_lst_head, killswitch_lst) {
+        if (nm_streq(name, ks->name))
+            return ks;
     }
     return NULL;
 }
@@ -284,8 +286,8 @@ add_one_killswitch(NMRfkillManager *self, struct udev_device *device)
     if (rtype == NM_RFKILL_TYPE_UNKNOWN)
         return;
 
-    ks                 = killswitch_new(device, rtype);
-    priv->killswitches = g_slist_prepend(priv->killswitches, ks);
+    ks = killswitch_new(device, rtype);
+    c_list_link_front(&priv->killswitch_lst_head, &ks->killswitch_lst);
 
     nm_log_info(LOGD_RFKILL,
                 "%s: found %s radio killswitch (at %s) (%sdriver %s)",
@@ -313,21 +315,20 @@ static void
 rfkill_remove(NMRfkillManager *self, struct udev_device *device)
 {
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
-    GSList                 *iter;
+    Killswitch             *ks;
     const char             *name;
 
     g_return_if_fail(device != NULL);
+
     name = udev_device_get_sysname(device);
+
     g_return_if_fail(name != NULL);
 
-    for (iter = priv->killswitches; iter; iter = g_slist_next(iter)) {
-        Killswitch *ks = iter->data;
-
-        if (!strcmp(ks->name, name)) {
+    c_list_for_each_entry (ks, &priv->killswitch_lst_head, killswitch_lst) {
+        if (nm_streq(ks->name, name)) {
             nm_log_info(LOGD_RFKILL, "radio killswitch %s disappeared", ks->path);
-            priv->killswitches = g_slist_remove(priv->killswitches, ks);
             killswitch_destroy(ks);
-            break;
+            return;
         }
     }
 }
@@ -370,6 +371,8 @@ nm_rfkill_manager_init(NMRfkillManager *self)
     struct udev_list_entry *iter;
     guint                   i;
 
+    c_list_init(&priv->killswitch_lst_head);
+
     for (i = 0; i < NM_RFKILL_TYPE_MAX; i++)
         priv->rfkill_states[i] = NM_RFKILL_STATE_UNBLOCKED;
 
@@ -405,11 +408,10 @@ dispose(GObject *object)
 {
     NMRfkillManager        *self = NM_RFKILL_MANAGER(object);
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
+    Killswitch             *ks;
 
-    if (priv->killswitches) {
-        g_slist_free_full(priv->killswitches, (GDestroyNotify) killswitch_destroy);
-        priv->killswitches = NULL;
-    }
+    while ((ks = c_list_first_entry(&priv->killswitch_lst_head, Killswitch, killswitch_lst)))
+        killswitch_destroy(ks);
 
     priv->udev_client = nm_udev_client_destroy(priv->udev_client);
 
