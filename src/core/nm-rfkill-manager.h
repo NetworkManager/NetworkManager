@@ -25,6 +25,8 @@ typedef enum {
     NM_RFKILL_TYPE_MAX = NM_RFKILL_TYPE_UNKNOWN,
 } NMRfkillType;
 
+const char *nm_rfkill_type_to_string(NMRfkillType rtype);
+
 #define NM_TYPE_RFKILL_MANAGER (nm_rfkill_manager_get_type())
 #define NM_RFKILL_MANAGER(obj) \
     (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_RFKILL_MANAGER, NMRfkillManager))
