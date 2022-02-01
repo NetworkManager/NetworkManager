@@ -771,6 +771,8 @@ lease_to_ip6_config(NMDedupMultiIndex *multi_idx,
     uint32_t                                lft_pref, lft_valid;
     char                                    addr_str[NM_UTILS_INET_ADDRSTRLEN];
     char                                  **domains;
+    char                                  **ntp_fqdns;
+    struct in6_addr                        *ntp_addrs;
     const char                             *s;
     nm_auto_free_gstring GString           *str               = NULL;
     gboolean                                has_any_addresses = FALSE;
@@ -837,6 +839,30 @@ lease_to_ip6_config(NMDedupMultiIndex *multi_idx,
 
     if (sd_dhcp6_lease_get_fqdn(lease, &s) >= 0) {
         nm_dhcp_option_add_option(options, AF_INET6, NM_DHCP_OPTION_DHCP6_FQDN, s);
+    }
+
+    /* RFC 5908, section 4 states: "This option MUST include one, and only
+     * one, time source suboption." It is not clear why systemd chose to
+     * return array of addresses and FQDNs. Given there seem to be no
+     * technical obstacles to including multiple options, let's just
+     * pass on whatever systemd tells us.
+     */
+    nm_gstring_prepare(&str);
+    num = sd_dhcp6_lease_get_ntp_fqdn(lease, &ntp_fqdns);
+    if (num > 0) {
+        for (i = 0; i < num; i++) {
+            g_string_append(nm_gstring_add_space_delimiter(str), ntp_fqdns[i]);
+        }
+    }
+    num = sd_dhcp6_lease_get_ntp_addrs(lease, &ntp_addrs);
+    if (num > 0) {
+        for (i = 0; i < num; i++) {
+            _nm_utils_inet6_ntop(&ntp_addrs[i], addr_str);
+            g_string_append(nm_gstring_add_space_delimiter(str), addr_str);
+        }
+    }
+    if (str->len) {
+        nm_dhcp_option_add_option(options, AF_INET6, NM_DHCP_OPTION_DHCP6_NTP_SERVER, str->str);
     }
 
     nm_l3_config_data_set_dhcp_lease_from_options(l3cd, AF_INET6, g_steal_pointer(&options));
