@@ -247,7 +247,7 @@ _sorted_options_generate_sort(gconstpointer pa, gconstpointer pb, gpointer user_
     const NMDhcpOption *const *b = pb;
 
     NM_CMP_DIRECT((*a)->option_num, (*b)->option_num);
-    return nm_assert_unreachable_val(0);
+    return 0;
 }
 
 static char *
@@ -283,6 +283,16 @@ _ASSERT_sorted(int IS_IPv4, const NMDhcpOption *const *const sorted, int n)
     for (i = 0; i < n; i++) {
         const NMDhcpOption *opt = sorted[i];
 
+        if (!opt || opt < options || opt >= &options[n]) {
+            g_error("%s:%d: _sorted_options_%c[%d] must be a valid pointer into "
+                    "_nm_dhcp_option_dhcp%c_options, but is %p",
+                    __FILE__,
+                    __LINE__,
+                    IS_IPv4 ? '4' : '6',
+                    i,
+                    IS_IPv4 ? '4' : '6',
+                    opt);
+        }
         g_assert(opt);
         g_assert(opt >= options);
         g_assert(opt < &options[n]);
@@ -291,7 +301,7 @@ _ASSERT_sorted(int IS_IPv4, const NMDhcpOption *const *const sorted, int n)
             const NMDhcpOption *opt2 = sorted[j];
 
             if (opt == opt2) {
-                g_error("%s:%d: the _sorted_options_%c at [%d] (opt=%u, %s) is duplicated at "
+                g_error("%s:%d: _sorted_options_%c[%d] (opt=%u, %s) is duplicated at "
                         "[%d] (SORT: %s)",
                         __FILE__,
                         __LINE__,
@@ -308,7 +318,7 @@ _ASSERT_sorted(int IS_IPv4, const NMDhcpOption *const *const sorted, int n)
             const NMDhcpOption *opt2 = sorted[i - 1];
 
             if (opt2->option_num >= opt->option_num) {
-                g_error("%s:%d: the _sorted_options_%c at [%d] (opt=%u, %s) should come before "
+                g_error("%s:%d: _sorted_options_%c[%d] (opt=%u, %s) should come before "
                         "[%d] (opt=%u, %s) (SORT: %s)",
                         __FILE__,
                         __LINE__,
