@@ -201,6 +201,7 @@ const NMDhcpOption _nm_dhcp_option_dhcp6_options[] = {
     REQ(NM_DHCP_OPTION_DHCP6_DOMAIN_LIST, "dhcp6_domain_search", TRUE),
     REQ(NM_DHCP_OPTION_DHCP6_SNTP_SERVERS, "dhcp6_sntp_servers", TRUE),
     REQ(NM_DHCP_OPTION_DHCP6_FQDN, "fqdn_fqdn", FALSE),
+    REQ(NM_DHCP_OPTION_DHCP6_NTP_SERVER, "dhcp6_ntp_server", TRUE),
     REQ(NM_DHCP_OPTION_DHCP6_MUD_URL, "dhcp6_mud_url", FALSE),
 
     /* Internal values */
@@ -235,6 +236,7 @@ static const NMDhcpOption *const _sorted_options_6[G_N_ELEMENTS(_nm_dhcp_option_
     A(13),
     A(14),
     A(15),
+    A(16),
 #undef A
 };
 
