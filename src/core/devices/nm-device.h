@@ -207,7 +207,7 @@ typedef struct _NMDeviceClass {
 
     bool can_reapply_change_ovs_external_ids : 1;
 
-    RfKillType rfkill_type : 4;
+    NMRfkillType rfkill_type : 4;
 
     void (*state_changed)(NMDevice           *device,
                           NMDeviceState       new_state,
@@ -535,7 +535,7 @@ gboolean nm_device_get_enabled(NMDevice *device);
 
 void nm_device_set_enabled(NMDevice *device, gboolean enabled);
 
-RfKillType nm_device_get_rfkill_type(NMDevice *device);
+NMRfkillType nm_device_get_rfkill_type(NMDevice *device);
 
 /* IPv6 prefix delegation */
 

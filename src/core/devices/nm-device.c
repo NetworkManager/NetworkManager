@@ -5147,16 +5147,16 @@ nm_device_get_applied_setting(NMDevice *self, GType setting_type)
     return connection ? nm_connection_get_setting(connection, setting_type) : NULL;
 }
 
-RfKillType
+NMRfkillType
 nm_device_get_rfkill_type(NMDevice *self)
 {
-    RfKillType t;
+    NMRfkillType t;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
     t = NM_DEVICE_GET_CLASS(self)->rfkill_type;
 
-    nm_assert(NM_IN_SET(t, RFKILL_TYPE_UNKNOWN, RFKILL_TYPE_WLAN, RFKILL_TYPE_WWAN));
+    nm_assert(NM_IN_SET(t, NM_RFKILL_TYPE_UNKNOWN, NM_RFKILL_TYPE_WLAN, NM_RFKILL_TYPE_WWAN));
     return t;
 }
 
@@ -17576,7 +17576,7 @@ nm_device_class_init(NMDeviceClass *klass)
     klass->reapply_connection            = reapply_connection;
     klass->set_platform_mtu              = set_platform_mtu;
 
-    klass->rfkill_type = RFKILL_TYPE_UNKNOWN;
+    klass->rfkill_type = NM_RFKILL_TYPE_UNKNOWN;
 
     obj_properties[PROP_UDI] =
         g_param_spec_string(NM_DEVICE_UDI,

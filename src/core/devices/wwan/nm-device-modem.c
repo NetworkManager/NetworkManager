@@ -838,7 +838,7 @@ nm_device_modem_class_init(NMDeviceModemClass *klass)
 
     device_class->state_changed = device_state_changed;
 
-    device_class->rfkill_type = RFKILL_TYPE_WWAN;
+    device_class->rfkill_type = NM_RFKILL_TYPE_WWAN;
 
     obj_properties[PROP_MODEM] =
         g_param_spec_object(NM_DEVICE_MODEM_MODEM,

@@ -1250,7 +1250,7 @@ nm_device_iwd_p2p_class_init(NMDeviceIwdP2PClass *klass)
 
     device_class->state_changed = device_state_changed;
 
-    device_class->rfkill_type = RFKILL_TYPE_WLAN;
+    device_class->rfkill_type = NM_RFKILL_TYPE_WLAN;
 
     obj_properties[PROP_PEERS] = g_param_spec_boxed(NM_DEVICE_IWD_P2P_PEERS,
                                                     "",

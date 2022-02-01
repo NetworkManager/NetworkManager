@@ -3488,7 +3488,7 @@ nm_device_iwd_class_init(NMDeviceIwdClass *klass)
 
     device_class->state_changed = device_state_changed;
 
-    device_class->rfkill_type = RFKILL_TYPE_WLAN;
+    device_class->rfkill_type = NM_RFKILL_TYPE_WLAN;
 
     obj_properties[PROP_MODE] = g_param_spec_uint(NM_DEVICE_IWD_MODE,
                                                   "",
