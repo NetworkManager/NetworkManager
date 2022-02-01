@@ -305,6 +305,7 @@ rfkill_add(NMRfkillManager *self, struct udev_device *device)
 
     g_return_if_fail(device != NULL);
     name = udev_device_get_sysname(device);
+
     g_return_if_fail(name != NULL);
 
     if (!killswitch_find_by_name(self, name))
@@ -346,16 +347,16 @@ handle_uevent(NMUdevClient *client, struct udev_device *device, gpointer user_da
 
     /* A bit paranoid */
     subsys = udev_device_get_subsystem(device);
-    g_return_if_fail(!g_strcmp0(subsys, "rfkill"));
+    g_return_if_fail(nm_streq0(subsys, "rfkill"));
 
     nm_log_dbg(LOGD_PLATFORM,
                "udev rfkill event: action '%s' device '%s'",
                action,
                udev_device_get_sysname(device));
 
-    if (!strcmp(action, "add"))
+    if (nm_streq(action, "add"))
         rfkill_add(self, device);
-    else if (!strcmp(action, "remove"))
+    else if (nm_streq(action, "remove"))
         rfkill_remove(self, device);
 
     recheck_killswitches(self);
