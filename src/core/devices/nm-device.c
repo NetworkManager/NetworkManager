@@ -137,9 +137,8 @@ typedef struct {
 typedef enum {
     /* The various NML3ConfigData types that we track explicitly. Note that
      * their relative order matters: higher numbers in this enum means more
-     * important (and during merge overwrites other settings). */
-
-    L3_CONFIG_DATA_TYPE_MANUALIP,
+     * important (and during merge overwrites other settings). This is passed
+     * as priority to nm_l3cfg_add_config(). */
 
     L3_CONFIG_DATA_TYPE_LL_4,
     L3_CONFIG_DATA_TYPE_LL_6,
@@ -183,12 +182,16 @@ typedef enum {
         _t;                                        \
     })
 
+    L3_CONFIG_DATA_TYPE_MANUALIP,
+
     _L3_CONFIG_DATA_TYPE_NUM,
     _L3_CONFIG_DATA_TYPE_NONE,
     _L3_CONFIG_DATA_TYPE_ACD_ONLY,
 } L3ConfigDataType;
 
 G_STATIC_ASSERT(NM_L3CFG_CONFIG_PRIORITY_IPV4LL == L3_CONFIG_DATA_TYPE_LL_4);
+G_STATIC_ASSERT(NM_L3CFG_CONFIG_PRIORITY_IPV6LL == L3_CONFIG_DATA_TYPE_LL_6);
+G_STATIC_ASSERT(NM_L3CFG_CONFIG_PRIORITY_VPN == L3_CONFIG_DATA_TYPE_DEVIP_6);
 
 typedef enum {
     HW_ADDR_TYPE_UNSET = 0,
