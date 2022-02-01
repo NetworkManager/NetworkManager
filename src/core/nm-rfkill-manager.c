@@ -63,16 +63,18 @@ nm_rfkill_manager_get_rfkill_state(NMRfkillManager *self, NMRfkillType rtype)
     return NM_RFKILL_MANAGER_GET_PRIVATE(self)->rfkill_states[rtype];
 }
 
-static const char *
-rfkill_type_to_desc(NMRfkillType rtype)
+const char *
+nm_rfkill_type_to_string(NMRfkillType type)
 {
-    if (rtype == 0)
+    switch (type) {
+    case NM_RFKILL_TYPE_WLAN:
         return "Wi-Fi";
-    else if (rtype == 1)
+    case NM_RFKILL_TYPE_WWAN:
         return "WWAN";
-    else if (rtype == 2)
-        return "WiMAX";
-    return "unknown";
+    case NM_RFKILL_TYPE_UNKNOWN:
+        break;
+    }
+    return nm_assert_unreachable_val("unknown");
 }
 
 static const char *
@@ -196,7 +198,7 @@ recheck_killswitches(NMRfkillManager *self)
 
         nm_log_dbg(LOGD_RFKILL,
                    "%s rfkill%s switch %s state now %d/%u",
-                   rfkill_type_to_desc(ks->rtype),
+                   nm_rfkill_type_to_string(ks->rtype),
                    ks->platform ? " platform" : "",
                    ks->name,
                    sysfs_state,
@@ -226,7 +228,7 @@ recheck_killswitches(NMRfkillManager *self)
         if (poll_states[i] != priv->rfkill_states[i]) {
             nm_log_dbg(LOGD_RFKILL,
                        "%s rfkill state now '%s'",
-                       rfkill_type_to_desc(i),
+                       nm_rfkill_type_to_string(i),
                        rfkill_state_to_desc(poll_states[i]));
 
             priv->rfkill_states[i] = poll_states[i];
@@ -284,7 +286,7 @@ add_one_killswitch(NMRfkillManager *self, struct udev_device *device)
     nm_log_info(LOGD_RFKILL,
                 "%s: found %s radio killswitch (at %s) (%sdriver %s)",
                 ks->name,
-                rfkill_type_to_desc(rtype),
+                nm_rfkill_type_to_string(rtype),
                 ks->path,
                 ks->platform ? "platform " : "",
                 ks->driver ?: "<unknown>");

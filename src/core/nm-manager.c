@@ -54,7 +54,6 @@
 /*****************************************************************************/
 
 typedef struct {
-    const char                  *desc;
     guint                        prop_id;
     guint                        hw_prop_id;
     NMConfigRunStatePropertyType key;
@@ -2283,14 +2282,12 @@ _static_hostname_changed_cb(NMHostnameManager *hostname_manager, GParamSpec *psp
 static const RfkillTypeDesc _rfkill_type_desc[NM_RFKILL_TYPE_MAX] = {
     [NM_RFKILL_TYPE_WLAN] =
         {
-            .desc       = "Wi-Fi",
             .prop_id    = PROP_WIRELESS_ENABLED,
             .hw_prop_id = PROP_WIRELESS_HARDWARE_ENABLED,
             .key        = NM_CONFIG_STATE_PROPERTY_WIFI_ENABLED,
         },
     [NM_RFKILL_TYPE_WWAN] =
         {
-            .desc       = "WWAN",
             .prop_id    = PROP_WWAN_ENABLED,
             .hw_prop_id = PROP_WWAN_HARDWARE_ENABLED,
             .key        = NM_CONFIG_STATE_PROPERTY_WWAN_ENABLED,
@@ -2387,7 +2384,7 @@ _rfkill_update_one_type(NMManager *self, NMRfkillType rtype)
     /* Print out all states affecting device enablement */
     _LOGD(LOGD_RFKILL,
           "rfkill: %s hw-enabled %d sw-enabled %d",
-          _rfkill_type_desc[rtype].desc,
+          nm_rfkill_type_to_string(rtype),
           rstate->hw_enabled,
           rstate->sw_enabled);
 
@@ -2396,7 +2393,7 @@ _rfkill_update_one_type(NMManager *self, NMRfkillType rtype)
     if (old_rfkilled != new_rfkilled) {
         _LOGI(LOGD_RFKILL,
               "rfkill: %s now %s by radio killswitch",
-              _rfkill_type_desc[rtype].desc,
+              nm_rfkill_type_to_string(rtype),
               new_rfkilled ? "enabled" : "disabled");
     }
 
@@ -2457,7 +2454,7 @@ _rfkill_update_system(NMManager *self, NMRfkillType rtype, gboolean enabled)
         if (errno == EACCES)
             _LOGW(LOGD_RFKILL,
                   "rfkill: (%s): failed to open killswitch device",
-                  _rfkill_type_desc[rtype].desc);
+                  nm_rfkill_type_to_string(rtype));
         return;
     }
 
@@ -2465,7 +2462,7 @@ _rfkill_update_system(NMManager *self, NMRfkillType rtype, gboolean enabled)
         _LOGW(LOGD_RFKILL,
               "rfkill: (%s): failed to set killswitch device for "
               "non-blocking operation",
-              _rfkill_type_desc[rtype].desc);
+              nm_rfkill_type_to_string(rtype));
         return;
     }
 
@@ -2488,19 +2485,19 @@ _rfkill_update_system(NMManager *self, NMRfkillType rtype, gboolean enabled)
         errsv = errno;
         _LOGW(LOGD_RFKILL,
               "rfkill: (%s): failed to change Wi-Fi killswitch state: (%d) %s",
-              _rfkill_type_desc[rtype].desc,
+              nm_rfkill_type_to_string(rtype),
               errsv,
               nm_strerror_native(errsv));
     } else if (len == sizeof(event)) {
         _LOGI(LOGD_RFKILL,
               "rfkill: %s hardware radio set %s",
-              _rfkill_type_desc[rtype].desc,
+              nm_rfkill_type_to_string(rtype),
               enabled ? "enabled" : "disabled");
     } else {
         /* Failed to write full structure */
         _LOGW(LOGD_RFKILL,
               "rfkill: (%s): failed to change Wi-Fi killswitch state",
-              _rfkill_type_desc[rtype].desc);
+              nm_rfkill_type_to_string(rtype));
     }
 }
 
@@ -2517,7 +2514,7 @@ _rfkill_update_from_user(NMManager *self, NMRfkillType rtype, gboolean enabled)
 
     _LOGD(LOGD_RFKILL,
           "rfkill: (%s): setting radio %s by user",
-          _rfkill_type_desc[rtype].desc,
+          nm_rfkill_type_to_string(rtype),
           enabled ? "enabled" : "disabled");
 
     /* Update enabled key in state file */
@@ -6472,7 +6469,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                 _LOGD(LOGD_RFKILL,
                       "rfkill: %s %s devices (hw_enabled %d, sw_enabled %d, user_enabled %d)",
                       enabled ? "enabling" : "disabling",
-                      _rfkill_type_desc[rtype].desc,
+                      nm_rfkill_type_to_string(rtype),
                       rstate->hw_enabled,
                       rstate->sw_enabled,
                       rstate->user_enabled);
@@ -7072,7 +7069,7 @@ nm_manager_start(NMManager *self, GError **error)
 
         _LOGI(LOGD_RFKILL,
               "rfkill: %s %s by radio killswitch; %s by state file",
-              _rfkill_type_desc[rtype].desc,
+              nm_rfkill_type_to_string(rtype),
               (rstate->hw_enabled && rstate->sw_enabled) ? "enabled" : "disabled",
               rstate->user_enabled ? "enabled" : "disabled");
         enabled = _rfkill_radio_state_get_enabled(rstate, TRUE);
