@@ -78,15 +78,17 @@ nm_rfkill_type_to_string(NMRfkillType type)
 }
 
 static const char *
-rfkill_state_to_desc(NMRfkillState rstate)
+nm_rfkill_state_to_string(NMRfkillState state)
 {
-    if (rstate == 0)
+    switch (state) {
+    case NM_RFKILL_STATE_UNBLOCKED:
         return "unblocked";
-    else if (rstate == 1)
+    case NM_RFKILL_STATE_SOFT_BLOCKED:
         return "soft-blocked";
-    else if (rstate == 2)
+    case NM_RFKILL_STATE_HARD_BLOCKED:
         return "hard-blocked";
-    return "unknown";
+    }
+    return nm_assert_unreachable_val("unknown");
 }
 
 static Killswitch *
@@ -229,7 +231,7 @@ recheck_killswitches(NMRfkillManager *self)
             nm_log_dbg(LOGD_RFKILL,
                        "%s rfkill state now '%s'",
                        nm_rfkill_type_to_string(i),
-                       rfkill_state_to_desc(poll_states[i]));
+                       nm_rfkill_state_to_string(poll_states[i]));
 
             priv->rfkill_states[i] = poll_states[i];
             g_signal_emit(self, signals[RFKILL_CHANGED], 0, i, priv->rfkill_states[i]);
