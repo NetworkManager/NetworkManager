@@ -259,12 +259,12 @@ killswitch_find_by_name(NMRfkillManager *self, const char *name)
 static NMRfkillType
 rfkill_type_to_enum(const char *str)
 {
-    g_return_val_if_fail(str != NULL, NM_RFKILL_TYPE_UNKNOWN);
-
-    if (!strcmp(str, "wlan"))
-        return NM_RFKILL_TYPE_WLAN;
-    else if (!strcmp(str, "wwan"))
-        return NM_RFKILL_TYPE_WWAN;
+    if (str) {
+        if (nm_streq(str, "wlan"))
+            return NM_RFKILL_TYPE_WLAN;
+        if (nm_streq(str, "wwan"))
+            return NM_RFKILL_TYPE_WWAN;
+    }
 
     return NM_RFKILL_TYPE_UNKNOWN;
 }
@@ -273,12 +273,10 @@ static void
 add_one_killswitch(NMRfkillManager *self, struct udev_device *device)
 {
     NMRfkillManagerPrivate *priv = NM_RFKILL_MANAGER_GET_PRIVATE(self);
-    const char             *str_type;
     NMRfkillType            rtype;
     Killswitch             *ks;
 
-    str_type = udev_device_get_property_value(device, "RFKILL_TYPE");
-    rtype    = rfkill_type_to_enum(str_type);
+    rtype = rfkill_type_to_enum(udev_device_get_property_value(device, "RFKILL_TYPE"));
     if (rtype == NM_RFKILL_TYPE_UNKNOWN)
         return;
 
