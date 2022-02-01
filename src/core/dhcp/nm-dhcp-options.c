@@ -272,7 +272,6 @@ _sorted_options_generate(const NMDhcpOption *base, const NMDhcpOption *const *so
 
 _nm_unused static void
 _ASSERT_sorted(int IS_IPv4, const NMDhcpOption *const *const sorted, int n)
-
 {
     const NMDhcpOption *const options =
         IS_IPv4 ? _nm_dhcp_option_dhcp4_options : _nm_dhcp_option_dhcp6_options;
