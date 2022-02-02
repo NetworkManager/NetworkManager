@@ -3802,11 +3802,13 @@ platform_query_devices(NMManager *self)
 }
 
 static void
-rfkill_manager_rfkill_changed_cb(NMRfkillManager *rfkill_mgr,
-                                 NMRfkillType     rtype,
-                                 NMRfkillState    udev_state,
-                                 gpointer         user_data)
+rfkill_manager_rfkill_changed_cb(NMRfkillManager          *rfkill_mgr,
+                                 /* NMRfkillType */ guint  rtype,
+                                 /* NMRfkillState */ guint udev_state,
+                                 gpointer                  user_data)
 {
+    nm_assert(rtype < NM_RFKILL_TYPE_MAX);
+
     _rfkill_update(NM_MANAGER(user_data), rtype);
 }
 
