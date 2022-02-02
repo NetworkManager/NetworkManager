@@ -9,9 +9,9 @@
 #include "nm-utils.h"
 #include "libnmt-newt/nmt-newt.h"
 
-typedef enum { /*< skip >*/
-               NMT_MAC_ENTRY_TYPE_MAC,
-               NMT_MAC_ENTRY_TYPE_CLONED,
+typedef enum {
+    NMT_MAC_ENTRY_TYPE_MAC,
+    NMT_MAC_ENTRY_TYPE_CLONED,
 } NmtMacEntryType;
 
 #define NMT_TYPE_MAC_ENTRY (nmt_mac_entry_get_type())
