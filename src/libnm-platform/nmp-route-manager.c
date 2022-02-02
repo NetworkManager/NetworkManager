@@ -165,7 +165,7 @@ _track_data_destroy(gpointer data)
     c_list_unlink_stale(&track_data->obj_lst);
     c_list_unlink_stale(&track_data->user_tag_lst);
     nmp_object_unref(track_data->obj);
-    g_slice_free(TrackData, track_data);
+    nm_g_slice_free(track_data);
 }
 
 static const TrackData *
@@ -227,7 +227,7 @@ _track_obj_data_destroy(gpointer data)
 
     c_list_unlink_stale(&obj_data->obj_lst_head);
     nmp_object_unref(obj_data->obj);
-    g_slice_free(TrackObjData, obj_data);
+    nm_g_slice_free(obj_data);
 }
 
 static guint
@@ -253,7 +253,7 @@ _track_user_tag_data_destroy(gpointer data)
     TrackUserTagData *user_tag_data = data;
 
     c_list_unlink_stale(&user_tag_data->user_tag_lst_head);
-    g_slice_free(TrackUserTagData, user_tag_data);
+    nm_g_slice_free(user_tag_data);
 }
 
 static TrackData *
@@ -763,5 +763,5 @@ nmp_route_manager_unref(NMPRouteManager *self)
     g_hash_table_destroy(self->by_obj);
     g_hash_table_destroy(self->by_data);
     g_object_unref(self->platform);
-    g_slice_free(NMPRouteManager, self);
+    nm_g_slice_free(self);
 }
