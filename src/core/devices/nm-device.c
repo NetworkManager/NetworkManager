@@ -6459,10 +6459,11 @@ device_link_changed(gpointer user_data)
         /* If the device has no explicit ip_iface, then changing iface changes ip_iface too. */
         ip_ifname_changed = !priv->ip_iface;
 
-        if (nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT))
-            nm_device_set_unmanaged_by_user_settings(self);
-        else
+        if (!nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT)) {
+            /* Since the interface name changed, we need to re-evaluate the
+             * user settings specs. */
             update_unmanaged_specs = TRUE;
+        }
 
         _notify(self, PROP_IFACE);
         if (ip_ifname_changed)
