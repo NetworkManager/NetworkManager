@@ -102,7 +102,11 @@ nmtstp_platform_ip_address_find(NMPlatform *self, int ifindex, int addr_family, 
     nm_assert_addr_family(addr_family);
     nm_assert(addr);
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex);
+    if (ifindex > 0)
+        nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex);
+    else
+        nmp_lookup_init_obj_type(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
+
     nm_platform_iter_obj_for_each (&iter, self, &lookup, &obj) {
         const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS(obj);
 

@@ -2142,7 +2142,15 @@ nmp_lookup_init_object(NMPLookup *lookup, NMPObjectType obj_type, int ifindex)
                         NMP_OBJECT_TYPE_QDISC,
                         NMP_OBJECT_TYPE_TFILTER));
 
-    if (ifindex <= 0) {
+    if (G_UNLIKELY(
+            (ifindex < 0)
+            || (ifindex == 0
+                && !NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)))) {
+        /* This function used to have a fallback that meant to lookup all objects, if
+         * ifindex is non-positive. As routes can have a zero ifindex, that fallback is
+         * confusing and no longer supported. Only have this code, to catch accidental bugs
+         * after the API change. */
+        nm_assert_not_reached();
         return nmp_lookup_init_obj_type(lookup, obj_type);
     }
 
