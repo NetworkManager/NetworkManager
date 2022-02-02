@@ -26,22 +26,7 @@ struct _NMPRouteManager {
 #define _NMLOG_DOMAIN      LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME "route-manager"
 
-#define _NMLOG(level, ...)                                                 \
-    G_STMT_START                                                           \
-    {                                                                      \
-        const NMLogLevel __level = (level);                                \
-                                                                           \
-        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {                  \
-            _nm_log(__level,                                               \
-                    _NMLOG_DOMAIN,                                         \
-                    0,                                                     \
-                    NULL,                                                  \
-                    NULL,                                                  \
-                    "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),             \
-                    _NMLOG_PREFIX_NAME _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-        }                                                                  \
-    }                                                                      \
-    G_STMT_END
+#define _NMLOG(level, ...) __NMLOG_DEFAULT(level, LOGD_PLATFORM, _NMLOG_PREFIX_NAME, __VA_ARGS__)
 
 /*****************************************************************************/
 
