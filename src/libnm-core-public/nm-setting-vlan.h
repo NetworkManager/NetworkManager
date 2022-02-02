@@ -42,12 +42,10 @@ typedef struct _NMSettingVlanClass NMSettingVlanClass;
  * A selector for traffic priority maps; these map Linux SKB priorities
  * to 802.1p priorities used in VLANs.
  **/
-/* clang-format off */
 typedef enum {
     NM_VLAN_INGRESS_MAP,
-    NM_VLAN_EGRESS_MAP
+    NM_VLAN_EGRESS_MAP,
 } NMVlanPriorityMap;
-/* clang-format on */
 
 /**
  * NMVlanFlags:
