@@ -23,10 +23,6 @@ struct _NMPRouteManager {
 
 /*****************************************************************************/
 
-static void _rules_init(NMPRouteManager *self);
-
-/*****************************************************************************/
-
 #define _NMLOG_DOMAIN      LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME "route-manager"
 
@@ -328,8 +324,6 @@ nmp_route_manager_track_rule(NMPRouteManager             *self,
     g_return_if_fail(user_tag);
     nm_assert(track_priority != G_MININT32);
 
-    _rules_init(self);
-
     p_obj_stack = nmp_object_stackinit(&obj_stack, NMP_OBJECT_TYPE_ROUTING_RULE, routing_rule);
 
     nm_assert(nmp_object_is_visible(p_obj_stack));
@@ -477,8 +471,6 @@ nmp_route_manager_untrack_rule(NMPRouteManager             *self,
     g_return_if_fail(routing_rule);
     g_return_if_fail(user_tag);
 
-    _rules_init(self);
-
     p_obj_stack = nmp_object_stackinit(&obj_stack, NMP_OBJECT_TYPE_ROUTING_RULE, routing_rule);
 
     nm_assert(nmp_object_is_visible(p_obj_stack));
@@ -496,9 +488,6 @@ nmp_route_manager_set_dirty(NMPRouteManager *self, gconstpointer user_tag)
 
     g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
     g_return_if_fail(user_tag);
-
-    if (!self->by_data)
-        return;
 
     user_tag_data = g_hash_table_lookup(self->by_user_tag, &user_tag);
     if (!user_tag_data)
@@ -519,9 +508,6 @@ nmp_route_manager_untrack_all(NMPRouteManager *self,
 
     g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
     g_return_if_fail(user_tag);
-
-    if (!self->by_data)
-        return;
 
     user_tag_data = g_hash_table_lookup(self->by_user_tag, &user_tag);
     if (!user_tag_data)
@@ -551,9 +537,6 @@ nmp_route_manager_sync_rules(NMPRouteManager *self, gboolean keep_deleted_rules)
     const RulesData             *rd_best;
 
     g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
-
-    if (!self->by_data)
-        return;
 
     _LOGD("sync%s", keep_deleted_rules ? " (don't remove any rules)" : "");
 
@@ -750,22 +733,6 @@ nmp_route_manager_track_rule_default(NMPRouteManager *self,
     }
 }
 
-static void
-_rules_init(NMPRouteManager *self)
-{
-    if (self->by_data)
-        return;
-
-    self->by_data =
-        g_hash_table_new_full(_rules_data_hash, _rules_data_equal, NULL, _rules_data_destroy);
-    self->by_obj =
-        g_hash_table_new_full(_rules_obj_hash, _rules_obj_equal, NULL, _rules_obj_destroy);
-    self->by_user_tag = g_hash_table_new_full(_rules_user_tag_hash,
-                                              _rules_user_tag_equal,
-                                              NULL,
-                                              _rules_user_tag_destroy);
-}
-
 /*****************************************************************************/
 
 NMPRouteManager *
@@ -779,6 +746,14 @@ nmp_route_manager_new(NMPlatform *platform)
     *self = (NMPRouteManager){
         .ref_count = 1,
         .platform  = g_object_ref(platform),
+        .by_data =
+            g_hash_table_new_full(_rules_data_hash, _rules_data_equal, NULL, _rules_data_destroy),
+        .by_obj =
+            g_hash_table_new_full(_rules_obj_hash, _rules_obj_equal, NULL, _rules_obj_destroy),
+        .by_user_tag = g_hash_table_new_full(_rules_user_tag_hash,
+                                             _rules_user_tag_equal,
+                                             NULL,
+                                             _rules_user_tag_destroy),
     };
     return self;
 }
@@ -799,11 +774,9 @@ nmp_route_manager_unref(NMPRouteManager *self)
     if (--self->ref_count > 0)
         return;
 
-    if (self->by_data) {
-        g_hash_table_destroy(self->by_user_tag);
-        g_hash_table_destroy(self->by_obj);
-        g_hash_table_destroy(self->by_data);
-    }
+    g_hash_table_destroy(self->by_user_tag);
+    g_hash_table_destroy(self->by_obj);
+    g_hash_table_destroy(self->by_data);
     g_object_unref(self->platform);
     g_slice_free(NMPRouteManager, self);
 }
