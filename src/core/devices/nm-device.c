@@ -9354,7 +9354,7 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
     keep_deleted_rules = FALSE;
     if (set_mode == NM_TERNARY_DEFAULT) {
         /* when exiting NM, we leave the device up and the rules configured.
-         * We just all nmp_route_manager_sync_rules() to forget about the synced rules,
+         * We just call nmp_route_manager_sync() to forget about the synced rules,
          * but we don't actually delete them.
          *
          * FIXME: that is a problem after restart of NetworkManager, because these
@@ -9368,7 +9368,7 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
          * file and track them after restart again. */
         keep_deleted_rules = TRUE;
     }
-    nmp_route_manager_sync_rules(route_manager, keep_deleted_rules);
+    nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, keep_deleted_rules);
 }
 
 static gboolean
