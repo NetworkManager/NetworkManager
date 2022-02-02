@@ -230,23 +230,6 @@ _track_obj_data_destroy(gpointer data)
     nm_g_slice_free(obj_data);
 }
 
-static guint
-_track_user_tag_data_hash(gconstpointer data)
-{
-    const TrackUserTagData *user_tag_data = data;
-
-    return nm_hash_val(644693447u, user_tag_data->user_tag);
-}
-
-static gboolean
-_track_user_tag_data_equal(gconstpointer data_a, gconstpointer data_b)
-{
-    const TrackUserTagData *user_tag_data_a = data_a;
-    const TrackUserTagData *user_tag_data_b = data_b;
-
-    return user_tag_data_a->user_tag == user_tag_data_b->user_tag;
-}
-
 static void
 _track_user_tag_data_destroy(gpointer data)
 {
@@ -725,6 +708,8 @@ nmp_route_manager_new(NMPlatform *platform)
 
     g_return_val_if_fail(NM_IS_PLATFORM(platform), NULL);
 
+    G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(TrackUserTagData, user_tag) == 0);
+
     self  = g_slice_new(NMPRouteManager);
     *self = (NMPRouteManager){
         .ref_count = 1,
@@ -735,8 +720,8 @@ nmp_route_manager_new(NMPlatform *platform)
                                         _track_obj_data_equal,
                                         NULL,
                                         _track_obj_data_destroy),
-        .by_user_tag = g_hash_table_new_full(_track_user_tag_data_hash,
-                                             _track_user_tag_data_equal,
+        .by_user_tag = g_hash_table_new_full(nm_pdirect_hash,
+                                             nm_pdirect_equal,
                                              NULL,
                                              _track_user_tag_data_destroy),
     };
