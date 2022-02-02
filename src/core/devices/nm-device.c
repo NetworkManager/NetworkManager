@@ -9970,7 +9970,7 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
 
         if (!notify_data->lease_update.l3cd) {
             _LOGT_ipdhcp(addr_family, "lease lost");
-            return;
+            goto lease_update_out;
         }
 
         if (notify_data->lease_update.accepted)
@@ -10004,6 +10004,8 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
             }
         }
 
+lease_update_out:
+        nm_device_update_metered(self);
         return;
     }
 
