@@ -716,7 +716,6 @@ _l3cfg_l3cd_update(NMVpnConnection *self, L3CDType l3cd_type)
 {
     NMVpnConnectionPrivate      *priv = NM_VPN_CONNECTION_GET_PRIVATE(self);
     NML3Cfg                     *l3cfg;
-    int                          priority;
     const NML3ConfigData *const *p_l3cd;
 
     if (NM_IN_SET(l3cd_type, L3CD_TYPE_IP_4, L3CD_TYPE_IP_6, L3CD_TYPE_GENERIC, L3CD_TYPE_STATIC)) {
@@ -743,13 +742,11 @@ _l3cfg_l3cd_update(NMVpnConnection *self, L3CDType l3cd_type)
         goto handle_changed;
     }
 
-    priority = 0;
-
     if (!nm_l3cfg_add_config(l3cfg,
                              p_l3cd,
                              TRUE,
                              *p_l3cd,
-                             priority,
+                             NM_L3CFG_CONFIG_PRIORITY_VPN,
                              get_route_table(self, AF_INET, TRUE),
                              get_route_table(self, AF_INET6, TRUE),
                              nm_vpn_connection_get_ip_route_metric(self, AF_INET),

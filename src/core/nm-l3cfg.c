@@ -3055,9 +3055,9 @@ _l3_config_datas_get_sorted_cmp(gconstpointer p_a, gconstpointer p_b, gpointer u
     nm_assert(b);
     nm_assert(nm_l3_config_data_get_ifindex(a->l3cd) == nm_l3_config_data_get_ifindex(b->l3cd));
 
-    /* we sort the entries with higher priority (more important, lower numerical value)
+    /* we sort the entries with higher priority (higher numerical value, more important)
      * first. */
-    NM_CMP_FIELD(a, b, priority_confdata);
+    NM_CMP_FIELD(b, a, priority_confdata);
 
     /* if the priority is not unique, we sort them in the order they were added,
      * with the oldest first (lower numerical value). */
@@ -3105,6 +3105,14 @@ nm_l3cfg_mark_config_dirty(NML3Cfg *self, gconstpointer tag, gboolean dirty)
     }
 }
 
+/*
+ * nm_l3cfg_add_config:
+ * @priority: all l3cd get merged/combined. This merging requires that some
+ *   l3cd are more important than others. For example, coming from static IP
+ *   configuration needs to take precedence over DHCP. The @priority determines
+ *   the order in which l3cds get merged (and thus the outcome). Higher numbers
+ *   mean more important!!
+ */
 gboolean
 nm_l3cfg_add_config(NML3Cfg              *self,
                     gconstpointer         tag,
@@ -3470,6 +3478,20 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
         l3_config_datas_arr[i] = _l3_config_datas_at(self->priv.p->l3_config_datas, i);
 
     if (l3_config_datas_len > 1) {
+        /* We are about to merge the l3cds. The order in which we do that matters.
+         *
+         * Below, we iterate over the l3cds and merge them into a new one. nm_l3_config_data_merge()
+         * uses "NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE" flag, which means to keep the first entry.
+         *
+         * Consider for example addresses/routes, which have a set of ID attributes  (based on
+         * which no duplicates can be accepted) and additional attributes. For example, trying
+         * to add the same address twice ("same" according to their ID), only one can be added.
+         * If they differ in their lifetimes, we need to make a choice.
+         * We could merge the attributes in a sensible way. Instead, NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE
+         * takes care to only take the first one.
+         *
+         * So we want to sort the more important entries *first*, and this is based on
+         * the priority_confdata.  */
         g_qsort_with_data(l3_config_datas_arr,
                           l3_config_datas_len,
                           sizeof(l3_config_datas_arr[0]),
@@ -3498,6 +3520,14 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
 
         for (i = 0; i < l3_config_datas_len; i++) {
             const L3ConfigData *l3cd_data = l3_config_datas_arr[i];
+
+            /* more important entries must be sorted *first*. */
+            nm_assert(
+                i == 0
+                || (l3_config_datas_arr[i - 1]->priority_confdata > l3cd_data->priority_confdata)
+                || (l3_config_datas_arr[i - 1]->priority_confdata == l3cd_data->priority_confdata
+                    && l3_config_datas_arr[i - 1]->pseudo_timestamp_confdata
+                           < l3cd_data->pseudo_timestamp_confdata));
 
             if (NM_FLAGS_HAS(l3cd_data->config_flags, NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD))
                 continue;
