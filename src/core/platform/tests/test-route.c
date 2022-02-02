@@ -1675,14 +1675,14 @@ again:
                                              NULL);
             }
             if (nmtst_get_rand_uint32() % objs_sync->len == 0) {
-                nmp_route_manager_sync_rules(route_manager, FALSE);
+                nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
                 g_assert_cmpint(nmtstp_platform_routing_rules_get_count(platform, AF_UNSPEC),
                                 ==,
                                 i + 1);
             }
         }
 
-        nmp_route_manager_sync_rules(route_manager, FALSE);
+        nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
         g_assert_cmpint(nmtstp_platform_routing_rules_get_count(platform, AF_UNSPEC),
                         ==,
                         objs_sync->len);
@@ -1713,14 +1713,14 @@ again:
                 break;
             }
             if (nmtst_get_rand_uint32() % objs_sync->len == 0) {
-                nmp_route_manager_sync_rules(route_manager, FALSE);
+                nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
                 g_assert_cmpint(nmtstp_platform_routing_rules_get_count(platform, AF_UNSPEC),
                                 ==,
                                 objs_sync->len - i - 1);
             }
         }
 
-        nmp_route_manager_sync_rules(route_manager, FALSE);
+        nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
 
     } else {
         for (i = 0; i < objs->len;) {
