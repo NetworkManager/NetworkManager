@@ -18,7 +18,7 @@
 #include "nm-device-private.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-object.h"
-#include "libnm-platform/nmp-rules-manager.h"
+#include "libnm-platform/nmp-route-manager.h"
 #include "nm-device-factory.h"
 #include "nm-active-connection.h"
 #include "nm-act-request.h"

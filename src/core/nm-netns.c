@@ -15,7 +15,7 @@
 #include "nm-l3cfg.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-netns.h"
-#include "libnm-platform/nmp-rules-manager.h"
+#include "libnm-platform/nmp-route-manager.h"
 
 /*****************************************************************************/
 
