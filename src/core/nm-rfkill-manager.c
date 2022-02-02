@@ -242,7 +242,11 @@ recheck_killswitches(NMRfkillManager *self)
                        nm_rfkill_state_to_string(poll_states[i]));
 
             priv->rfkill_states[i] = poll_states[i];
-            g_signal_emit(self, signals[RFKILL_CHANGED], 0, i, priv->rfkill_states[i]);
+            g_signal_emit(self,
+                          signals[RFKILL_CHANGED],
+                          0,
+                          (guint) i,
+                          (guint) priv->rfkill_states[i]);
         }
     }
 }
@@ -435,6 +439,6 @@ nm_rfkill_manager_class_init(NMRfkillManagerClass *klass)
                                            NULL,
                                            G_TYPE_NONE,
                                            2,
-                                           G_TYPE_UINT,
-                                           G_TYPE_UINT);
+                                           G_TYPE_UINT /* NMRfkillType */,
+                                           G_TYPE_UINT /* NMRfkillState */);
 }
