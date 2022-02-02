@@ -68,7 +68,7 @@ typedef struct {
      *
      * Otherwise, the track_priority_val goes together with track_priority_present.
      * In case of one rule being tracked multiple times (with different priorities),
-     * the one with higher priority wins. See _rules_obj_get_best_data().
+     * the one with higher priority wins. See _track_obj_data_get_best_data().
      * Then, the winning present state either enforces that the rule is present
      * or absent.
      *
@@ -79,7 +79,7 @@ typedef struct {
     bool    track_priority_present : 1;
 
     bool dirty : 1;
-} RulesData;
+} TrackData;
 
 typedef enum {
     CONFIG_STATE_NONE          = 0,
@@ -113,92 +113,92 @@ typedef struct {
      * That is partially fixed by NetworkManager taking over the rules that it
      * actively configures (see %NMP_ROUTE_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG). */
     ConfigState config_state;
-} RulesObjData;
+} TrackObjData;
 
 typedef struct {
     gconstpointer user_tag;
     CList         user_tag_lst_head;
-} RulesUserTagData;
+} TrackUserTagData;
 
 /*****************************************************************************/
 
-static void _rules_data_untrack(NMPRouteManager *self,
-                                RulesData       *rules_data,
+static void _track_data_untrack(NMPRouteManager *self,
+                                TrackData       *track_data,
                                 gboolean         remove_user_tag_data,
                                 gboolean         make_owned_by_us);
 
 /*****************************************************************************/
 
 static void
-_rules_data_assert(const RulesData *rules_data, gboolean linked)
+_track_data_assert(const TrackData *track_data, gboolean linked)
 {
-    nm_assert(rules_data);
-    nm_assert(NMP_OBJECT_GET_TYPE(rules_data->obj) == NMP_OBJECT_TYPE_ROUTING_RULE);
-    nm_assert(nmp_object_is_visible(rules_data->obj));
-    nm_assert(rules_data->user_tag);
-    nm_assert(!linked || !c_list_is_empty(&rules_data->obj_lst));
-    nm_assert(!linked || !c_list_is_empty(&rules_data->user_tag_lst));
+    nm_assert(track_data);
+    nm_assert(NMP_OBJECT_GET_TYPE(track_data->obj) == NMP_OBJECT_TYPE_ROUTING_RULE);
+    nm_assert(nmp_object_is_visible(track_data->obj));
+    nm_assert(track_data->user_tag);
+    nm_assert(!linked || !c_list_is_empty(&track_data->obj_lst));
+    nm_assert(!linked || !c_list_is_empty(&track_data->user_tag_lst));
 }
 
 static guint
-_rules_data_hash(gconstpointer data)
+_track_data_hash(gconstpointer data)
 {
-    const RulesData *rules_data = data;
+    const TrackData *track_data = data;
     NMHashState      h;
 
-    _rules_data_assert(rules_data, FALSE);
+    _track_data_assert(track_data, FALSE);
 
     nm_hash_init(&h, 269297543u);
-    nm_platform_routing_rule_hash_update(NMP_OBJECT_CAST_ROUTING_RULE(rules_data->obj),
+    nm_platform_routing_rule_hash_update(NMP_OBJECT_CAST_ROUTING_RULE(track_data->obj),
                                          NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID,
                                          &h);
-    nm_hash_update_val(&h, rules_data->user_tag);
+    nm_hash_update_val(&h, track_data->user_tag);
     return nm_hash_complete(&h);
 }
 
 static gboolean
-_rules_data_equal(gconstpointer data_a, gconstpointer data_b)
+_track_data_equal(gconstpointer data_a, gconstpointer data_b)
 {
-    const RulesData *rules_data_a = data_a;
-    const RulesData *rules_data_b = data_b;
+    const TrackData *track_data_a = data_a;
+    const TrackData *track_data_b = data_b;
 
-    _rules_data_assert(rules_data_a, FALSE);
-    _rules_data_assert(rules_data_b, FALSE);
+    _track_data_assert(track_data_a, FALSE);
+    _track_data_assert(track_data_b, FALSE);
 
-    return rules_data_a->user_tag == rules_data_b->user_tag
-           && (nm_platform_routing_rule_cmp(NMP_OBJECT_CAST_ROUTING_RULE(rules_data_a->obj),
-                                            NMP_OBJECT_CAST_ROUTING_RULE(rules_data_b->obj),
+    return track_data_a->user_tag == track_data_b->user_tag
+           && (nm_platform_routing_rule_cmp(NMP_OBJECT_CAST_ROUTING_RULE(track_data_a->obj),
+                                            NMP_OBJECT_CAST_ROUTING_RULE(track_data_b->obj),
                                             NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID)
                == 0);
 }
 
 static void
-_rules_data_destroy(gpointer data)
+_track_data_destroy(gpointer data)
 {
-    RulesData *rules_data = data;
+    TrackData *track_data = data;
 
-    _rules_data_assert(rules_data, FALSE);
+    _track_data_assert(track_data, FALSE);
 
-    c_list_unlink_stale(&rules_data->obj_lst);
-    c_list_unlink_stale(&rules_data->user_tag_lst);
-    nmp_object_unref(rules_data->obj);
-    g_slice_free(RulesData, rules_data);
+    c_list_unlink_stale(&track_data->obj_lst);
+    c_list_unlink_stale(&track_data->user_tag_lst);
+    nmp_object_unref(track_data->obj);
+    g_slice_free(TrackData, track_data);
 }
 
-static const RulesData *
-_rules_obj_get_best_data(RulesObjData *obj_data)
+static const TrackData *
+_track_obj_data_get_best_data(TrackObjData *obj_data)
 {
-    RulesData       *rules_data;
-    const RulesData *rd_best = NULL;
+    TrackData       *track_data;
+    const TrackData *td_best = NULL;
 
-    c_list_for_each_entry (rules_data, &obj_data->obj_lst_head, obj_lst) {
-        _rules_data_assert(rules_data, TRUE);
+    c_list_for_each_entry (track_data, &obj_data->obj_lst_head, obj_lst) {
+        _track_data_assert(track_data, TRUE);
 
-        if (rd_best) {
-            if (rd_best->track_priority_val > rules_data->track_priority_val)
+        if (td_best) {
+            if (td_best->track_priority_val > track_data->track_priority_val)
                 continue;
-            if (rd_best->track_priority_val == rules_data->track_priority_val) {
-                if (rd_best->track_priority_present || !rules_data->track_priority_present) {
+            if (td_best->track_priority_val == track_data->track_priority_val) {
+                if (td_best->track_priority_present || !track_data->track_priority_present) {
                     /* if the priorities are identical, then "present" wins over
                      * "!present" (absent). */
                     continue;
@@ -206,16 +206,16 @@ _rules_obj_get_best_data(RulesObjData *obj_data)
             }
         }
 
-        rd_best = rules_data;
+        td_best = track_data;
     }
 
-    return rd_best;
+    return td_best;
 }
 
 static guint
-_rules_obj_hash(gconstpointer data)
+_track_obj_data_hash(gconstpointer data)
 {
-    const RulesObjData *obj_data = data;
+    const TrackObjData *obj_data = data;
     NMHashState         h;
 
     nm_hash_init(&h, 432817559u);
@@ -226,10 +226,10 @@ _rules_obj_hash(gconstpointer data)
 }
 
 static gboolean
-_rules_obj_equal(gconstpointer data_a, gconstpointer data_b)
+_track_obj_data_equal(gconstpointer data_a, gconstpointer data_b)
 {
-    const RulesObjData *obj_data_a = data_a;
-    const RulesObjData *obj_data_b = data_b;
+    const TrackObjData *obj_data_a = data_a;
+    const TrackObjData *obj_data_b = data_b;
 
     return (nm_platform_routing_rule_cmp(NMP_OBJECT_CAST_ROUTING_RULE(obj_data_a->obj),
                                          NMP_OBJECT_CAST_ROUTING_RULE(obj_data_b->obj),
@@ -238,50 +238,50 @@ _rules_obj_equal(gconstpointer data_a, gconstpointer data_b)
 }
 
 static void
-_rules_obj_destroy(gpointer data)
+_track_obj_data_destroy(gpointer data)
 {
-    RulesObjData *obj_data = data;
+    TrackObjData *obj_data = data;
 
     c_list_unlink_stale(&obj_data->obj_lst_head);
     nmp_object_unref(obj_data->obj);
-    g_slice_free(RulesObjData, obj_data);
+    g_slice_free(TrackObjData, obj_data);
 }
 
 static guint
-_rules_user_tag_hash(gconstpointer data)
+_track_user_tag_data_hash(gconstpointer data)
 {
-    const RulesUserTagData *user_tag_data = data;
+    const TrackUserTagData *user_tag_data = data;
 
     return nm_hash_val(644693447u, user_tag_data->user_tag);
 }
 
 static gboolean
-_rules_user_tag_equal(gconstpointer data_a, gconstpointer data_b)
+_track_user_tag_data_equal(gconstpointer data_a, gconstpointer data_b)
 {
-    const RulesUserTagData *user_tag_data_a = data_a;
-    const RulesUserTagData *user_tag_data_b = data_b;
+    const TrackUserTagData *user_tag_data_a = data_a;
+    const TrackUserTagData *user_tag_data_b = data_b;
 
     return user_tag_data_a->user_tag == user_tag_data_b->user_tag;
 }
 
 static void
-_rules_user_tag_destroy(gpointer data)
+_track_user_tag_data_destroy(gpointer data)
 {
-    RulesUserTagData *user_tag_data = data;
+    TrackUserTagData *user_tag_data = data;
 
     c_list_unlink_stale(&user_tag_data->user_tag_lst_head);
-    g_slice_free(RulesUserTagData, user_tag_data);
+    g_slice_free(TrackUserTagData, user_tag_data);
 }
 
-static RulesData *
-_rules_data_lookup(GHashTable *by_data, const NMPObject *obj, gconstpointer user_tag)
+static TrackData *
+_track_data_lookup(GHashTable *by_data, const NMPObject *obj, gconstpointer user_tag)
 {
-    RulesData rules_data_needle = {
+    TrackData track_data_needle = {
         .obj      = obj,
         .user_tag = user_tag,
     };
 
-    return g_hash_table_lookup(by_data, &rules_data_needle);
+    return g_hash_table_lookup(by_data, &track_data_needle);
 }
 
 /**
@@ -312,9 +312,9 @@ nmp_route_manager_track_rule(NMPRouteManager             *self,
 {
     NMPObject         obj_stack;
     const NMPObject  *p_obj_stack;
-    RulesData        *rules_data;
-    RulesObjData     *obj_data;
-    RulesUserTagData *user_tag_data;
+    TrackData        *track_data;
+    TrackObjData     *obj_data;
+    TrackUserTagData *user_tag_data;
     gboolean          changed = FALSE;
     guint32           track_priority_val;
     gboolean          track_priority_present;
@@ -336,11 +336,11 @@ nmp_route_manager_track_rule(NMPRouteManager             *self,
         track_priority_present = FALSE;
     }
 
-    rules_data = _rules_data_lookup(self->by_data, p_obj_stack, user_tag);
+    track_data = _track_data_lookup(self->by_data, p_obj_stack, user_tag);
 
-    if (!rules_data) {
-        rules_data  = g_slice_new(RulesData);
-        *rules_data = (RulesData){
+    if (!track_data) {
+        track_data  = g_slice_new(TrackData);
+        *track_data = (TrackData){
             .obj      = nm_dedup_multi_index_obj_intern(nm_platform_get_multi_idx(self->platform),
                                                    p_obj_stack),
             .user_tag = user_tag,
@@ -348,98 +348,98 @@ nmp_route_manager_track_rule(NMPRouteManager             *self,
             .track_priority_present = track_priority_present,
             .dirty                  = FALSE,
         };
-        g_hash_table_add(self->by_data, rules_data);
+        g_hash_table_add(self->by_data, track_data);
 
-        obj_data = g_hash_table_lookup(self->by_obj, &rules_data->obj);
+        obj_data = g_hash_table_lookup(self->by_obj, &track_data->obj);
         if (!obj_data) {
-            obj_data  = g_slice_new(RulesObjData);
-            *obj_data = (RulesObjData){
-                .obj          = nmp_object_ref(rules_data->obj),
+            obj_data  = g_slice_new(TrackObjData);
+            *obj_data = (TrackObjData){
+                .obj          = nmp_object_ref(track_data->obj),
                 .obj_lst_head = C_LIST_INIT(obj_data->obj_lst_head),
                 .config_state = CONFIG_STATE_NONE,
             };
             g_hash_table_add(self->by_obj, obj_data);
         }
-        c_list_link_tail(&obj_data->obj_lst_head, &rules_data->obj_lst);
+        c_list_link_tail(&obj_data->obj_lst_head, &track_data->obj_lst);
 
-        user_tag_data = g_hash_table_lookup(self->by_user_tag, &rules_data->user_tag);
+        user_tag_data = g_hash_table_lookup(self->by_user_tag, &track_data->user_tag);
         if (!user_tag_data) {
-            user_tag_data  = g_slice_new(RulesUserTagData);
-            *user_tag_data = (RulesUserTagData){
+            user_tag_data  = g_slice_new(TrackUserTagData);
+            *user_tag_data = (TrackUserTagData){
                 .user_tag          = user_tag,
                 .user_tag_lst_head = C_LIST_INIT(user_tag_data->user_tag_lst_head),
             };
             g_hash_table_add(self->by_user_tag, user_tag_data);
         }
-        c_list_link_tail(&user_tag_data->user_tag_lst_head, &rules_data->user_tag_lst);
+        c_list_link_tail(&user_tag_data->user_tag_lst_head, &track_data->user_tag_lst);
         changed = TRUE;
     } else {
-        rules_data->dirty = FALSE;
-        if (rules_data->track_priority_val != track_priority_val
-            || rules_data->track_priority_present != track_priority_present) {
-            rules_data->track_priority_val     = track_priority_val;
-            rules_data->track_priority_present = track_priority_present;
+        track_data->dirty = FALSE;
+        if (track_data->track_priority_val != track_priority_val
+            || track_data->track_priority_present != track_priority_present) {
+            track_data->track_priority_val     = track_priority_val;
+            track_data->track_priority_present = track_priority_present;
             changed                            = TRUE;
         }
     }
 
     if (user_tag_untrack) {
         if (user_tag != user_tag_untrack) {
-            RulesData *rules_data_untrack;
+            TrackData *track_data_untrack;
 
-            rules_data_untrack = _rules_data_lookup(self->by_data, p_obj_stack, user_tag_untrack);
-            if (rules_data_untrack)
-                _rules_data_untrack(self, rules_data_untrack, FALSE, TRUE);
+            track_data_untrack = _track_data_lookup(self->by_data, p_obj_stack, user_tag_untrack);
+            if (track_data_untrack)
+                _track_data_untrack(self, track_data_untrack, FALSE, TRUE);
         } else
             nm_assert_not_reached();
     }
 
-    _rules_data_assert(rules_data, TRUE);
+    _track_data_assert(track_data, TRUE);
 
     if (changed) {
         _LOGD("routing-rule: track [" NM_HASH_OBFUSCATE_PTR_FMT ",%s%u] \"%s\")",
-              _USER_TAG_LOG(rules_data->user_tag),
-              (rules_data->track_priority_val == 0
+              _USER_TAG_LOG(track_data->user_tag),
+              (track_data->track_priority_val == 0
                    ? ""
-                   : (rules_data->track_priority_present ? "+" : "-")),
-              (guint) rules_data->track_priority_val,
-              nmp_object_to_string(rules_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+                   : (track_data->track_priority_present ? "+" : "-")),
+              (guint) track_data->track_priority_val,
+              nmp_object_to_string(track_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
     }
 }
 
 static void
-_rules_data_untrack(NMPRouteManager *self,
-                    RulesData       *rules_data,
+_track_data_untrack(NMPRouteManager *self,
+                    TrackData       *track_data,
                     gboolean         remove_user_tag_data,
                     gboolean         make_owned_by_us)
 {
-    RulesObjData *obj_data;
+    TrackObjData *obj_data;
 
     nm_assert(NMP_IS_ROUTE_MANAGER(self));
-    _rules_data_assert(rules_data, TRUE);
+    _track_data_assert(track_data, TRUE);
     nm_assert(self->by_data);
-    nm_assert(g_hash_table_lookup(self->by_data, rules_data) == rules_data);
+    nm_assert(g_hash_table_lookup(self->by_data, track_data) == track_data);
 
     _LOGD("routing-rule: untrack [" NM_HASH_OBFUSCATE_PTR_FMT "] \"%s\"",
-          _USER_TAG_LOG(rules_data->user_tag),
-          nmp_object_to_string(rules_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+          _USER_TAG_LOG(track_data->user_tag),
+          nmp_object_to_string(track_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
 #if NM_MORE_ASSERTS
     {
-        RulesUserTagData *user_tag_data;
+        TrackUserTagData *user_tag_data;
 
-        user_tag_data = g_hash_table_lookup(self->by_user_tag, &rules_data->user_tag);
+        user_tag_data = g_hash_table_lookup(self->by_user_tag, &track_data->user_tag);
         nm_assert(user_tag_data);
-        nm_assert(c_list_contains(&user_tag_data->user_tag_lst_head, &rules_data->user_tag_lst));
+        nm_assert(c_list_contains(&user_tag_data->user_tag_lst_head, &track_data->user_tag_lst));
     }
 #endif
 
-    nm_assert(!c_list_is_empty(&rules_data->user_tag_lst));
+    nm_assert(!c_list_is_empty(&track_data->user_tag_lst));
 
-    obj_data = g_hash_table_lookup(self->by_obj, &rules_data->obj);
+    obj_data = g_hash_table_lookup(self->by_obj, &track_data->obj);
     nm_assert(obj_data);
-    nm_assert(c_list_contains(&obj_data->obj_lst_head, &rules_data->obj_lst));
-    nm_assert(obj_data == g_hash_table_lookup(self->by_obj, &rules_data->obj));
+    nm_assert(c_list_contains(&obj_data->obj_lst_head, &track_data->obj_lst));
+    nm_assert(obj_data == g_hash_table_lookup(self->by_obj, &track_data->obj));
 
     if (make_owned_by_us) {
         if (obj_data->config_state == CONFIG_STATE_NONE) {
@@ -447,15 +447,15 @@ _rules_data_untrack(NMPRouteManager *self,
              * sync. */
             obj_data->config_state = CONFIG_STATE_OWNED_BY_US;
         }
-    } else if (remove_user_tag_data && c_list_length_is(&rules_data->user_tag_lst, 1))
-        g_hash_table_remove(self->by_user_tag, &rules_data->user_tag);
+    } else if (remove_user_tag_data && c_list_length_is(&track_data->user_tag_lst, 1))
+        g_hash_table_remove(self->by_user_tag, &track_data->user_tag);
 
     /* if obj_data is marked to be "added_by_us" or "removed_by_us", we need to keep this entry
      * around for the next sync -- so that we can undo what we did earlier. */
-    if (obj_data->config_state == CONFIG_STATE_NONE && c_list_length_is(&rules_data->obj_lst, 1))
-        g_hash_table_remove(self->by_obj, &rules_data->obj);
+    if (obj_data->config_state == CONFIG_STATE_NONE && c_list_length_is(&track_data->obj_lst, 1))
+        g_hash_table_remove(self->by_obj, &track_data->obj);
 
-    g_hash_table_remove(self->by_data, rules_data);
+    g_hash_table_remove(self->by_data, track_data);
 }
 
 void
@@ -465,7 +465,7 @@ nmp_route_manager_untrack_rule(NMPRouteManager             *self,
 {
     NMPObject        obj_stack;
     const NMPObject *p_obj_stack;
-    RulesData       *rules_data;
+    TrackData       *track_data;
 
     g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
     g_return_if_fail(routing_rule);
@@ -475,16 +475,16 @@ nmp_route_manager_untrack_rule(NMPRouteManager             *self,
 
     nm_assert(nmp_object_is_visible(p_obj_stack));
 
-    rules_data = _rules_data_lookup(self->by_data, p_obj_stack, user_tag);
-    if (rules_data)
-        _rules_data_untrack(self, rules_data, TRUE, FALSE);
+    track_data = _track_data_lookup(self->by_data, p_obj_stack, user_tag);
+    if (track_data)
+        _track_data_untrack(self, track_data, TRUE, FALSE);
 }
 
 void
 nmp_route_manager_set_dirty(NMPRouteManager *self, gconstpointer user_tag)
 {
-    RulesData        *rules_data;
-    RulesUserTagData *user_tag_data;
+    TrackData        *track_data;
+    TrackUserTagData *user_tag_data;
 
     g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
     g_return_if_fail(user_tag);
@@ -493,8 +493,8 @@ nmp_route_manager_set_dirty(NMPRouteManager *self, gconstpointer user_tag)
     if (!user_tag_data)
         return;
 
-    c_list_for_each_entry (rules_data, &user_tag_data->user_tag_lst_head, user_tag_lst)
-        rules_data->dirty = TRUE;
+    c_list_for_each_entry (track_data, &user_tag_data->user_tag_lst_head, user_tag_lst)
+        track_data->dirty = TRUE;
 }
 
 void
@@ -502,9 +502,9 @@ nmp_route_manager_untrack_all(NMPRouteManager *self,
                               gconstpointer    user_tag,
                               gboolean         all /* or only dirty */)
 {
-    RulesData        *rules_data;
-    RulesData        *rules_data_safe;
-    RulesUserTagData *user_tag_data;
+    TrackData        *track_data;
+    TrackData        *track_data_safe;
+    TrackUserTagData *user_tag_data;
 
     g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
     g_return_if_fail(user_tag);
@@ -513,12 +513,12 @@ nmp_route_manager_untrack_all(NMPRouteManager *self,
     if (!user_tag_data)
         return;
 
-    c_list_for_each_entry_safe (rules_data,
-                                rules_data_safe,
+    c_list_for_each_entry_safe (track_data,
+                                track_data_safe,
                                 &user_tag_data->user_tag_lst_head,
                                 user_tag_lst) {
-        if (all || rules_data->dirty)
-            _rules_data_untrack(self, rules_data, FALSE, FALSE);
+        if (all || track_data->dirty)
+            _track_data_untrack(self, track_data, FALSE, FALSE);
     }
     if (c_list_is_empty(&user_tag_data->user_tag_lst_head))
         g_hash_table_remove(self->by_user_tag, user_tag_data);
@@ -531,10 +531,10 @@ nmp_route_manager_sync_rules(NMPRouteManager *self, gboolean keep_deleted_rules)
     NMDedupMultiIter             pl_iter;
     const NMPObject             *plobj;
     gs_unref_ptrarray GPtrArray *rules_to_delete = NULL;
-    RulesObjData                *obj_data;
+    TrackObjData                *obj_data;
     GHashTableIter               h_iter;
     guint                        i;
-    const RulesData             *rd_best;
+    const TrackData             *td_best;
 
     g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
 
@@ -551,14 +551,14 @@ nmp_route_manager_sync_rules(NMPRouteManager *self, gboolean keep_deleted_rules)
                 continue;
             }
 
-            rd_best = _rules_obj_get_best_data(obj_data);
-            if (rd_best) {
-                if (rd_best->track_priority_present) {
+            td_best = _track_obj_data_get_best_data(obj_data);
+            if (td_best) {
+                if (td_best->track_priority_present) {
                     if (obj_data->config_state == CONFIG_STATE_OWNED_BY_US)
                         obj_data->config_state = CONFIG_STATE_ADDED_BY_US;
                     continue;
                 }
-                if (rd_best->track_priority_val == 0) {
+                if (td_best->track_priority_val == 0) {
                     if (!NM_IN_SET(obj_data->config_state,
                                    CONFIG_STATE_ADDED_BY_US,
                                    CONFIG_STATE_OWNED_BY_US)) {
@@ -591,19 +591,19 @@ nmp_route_manager_sync_rules(NMPRouteManager *self, gboolean keep_deleted_rules)
 
     g_hash_table_iter_init(&h_iter, self->by_obj);
     while (g_hash_table_iter_next(&h_iter, (gpointer *) &obj_data, NULL)) {
-        rd_best = _rules_obj_get_best_data(obj_data);
+        td_best = _track_obj_data_get_best_data(obj_data);
 
-        if (!rd_best) {
+        if (!td_best) {
             g_hash_table_iter_remove(&h_iter);
             continue;
         }
 
-        if (!rd_best->track_priority_present) {
+        if (!td_best->track_priority_present) {
             if (obj_data->config_state == CONFIG_STATE_OWNED_BY_US)
                 obj_data->config_state = CONFIG_STATE_REMOVED_BY_US;
             continue;
         }
-        if (rd_best->track_priority_val == 0) {
+        if (td_best->track_priority_val == 0) {
             if (!NM_IN_SET(obj_data->config_state,
                            CONFIG_STATE_REMOVED_BY_US,
                            CONFIG_STATE_OWNED_BY_US)) {
@@ -747,13 +747,15 @@ nmp_route_manager_new(NMPlatform *platform)
         .ref_count = 1,
         .platform  = g_object_ref(platform),
         .by_data =
-            g_hash_table_new_full(_rules_data_hash, _rules_data_equal, NULL, _rules_data_destroy),
-        .by_obj =
-            g_hash_table_new_full(_rules_obj_hash, _rules_obj_equal, NULL, _rules_obj_destroy),
-        .by_user_tag = g_hash_table_new_full(_rules_user_tag_hash,
-                                             _rules_user_tag_equal,
+            g_hash_table_new_full(_track_data_hash, _track_data_equal, NULL, _track_data_destroy),
+        .by_obj      = g_hash_table_new_full(_track_obj_data_hash,
+                                        _track_obj_data_equal,
+                                        NULL,
+                                        _track_obj_data_destroy),
+        .by_user_tag = g_hash_table_new_full(_track_user_tag_data_hash,
+                                             _track_user_tag_data_equal,
                                              NULL,
-                                             _rules_user_tag_destroy),
+                                             _track_user_tag_data_destroy),
     };
     return self;
 }
