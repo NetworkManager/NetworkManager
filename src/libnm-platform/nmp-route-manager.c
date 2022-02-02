@@ -18,6 +18,7 @@ struct _NMPRouteManager {
     GHashTable *by_obj;
     GHashTable *by_user_tag;
     GHashTable *by_data;
+    CList       by_obj_lst_heads[3];
     guint       ref_count;
 };
 
@@ -85,6 +86,8 @@ typedef struct {
     const NMPObject *obj;
     CList            obj_lst_head;
 
+    CList by_obj_lst;
+
     /* indicates whether we configured/removed the rule (during sync()). We need that, so
      * if the rule gets untracked, that we know to remove/restore it.
      *
@@ -109,6 +112,25 @@ static void _track_data_untrack(NMPRouteManager *self,
                                 TrackData       *track_data,
                                 gboolean         remove_user_tag_data,
                                 gboolean         make_owned_by_us);
+
+/*****************************************************************************/
+
+static CList *
+_by_obj_lst_head(NMPRouteManager *self, NMPObjectType obj_type)
+{
+    G_STATIC_ASSERT(G_N_ELEMENTS(self->by_obj_lst_heads) == 3);
+
+    switch (obj_type) {
+    case NMP_OBJECT_TYPE_IP4_ROUTE:
+        return &self->by_obj_lst_heads[0];
+    case NMP_OBJECT_TYPE_IP6_ROUTE:
+        return &self->by_obj_lst_heads[1];
+    case NMP_OBJECT_TYPE_ROUTING_RULE:
+        return &self->by_obj_lst_heads[2];
+    default:
+        return nm_assert_unreachable_val(NULL);
+    }
+}
 
 /*****************************************************************************/
 
@@ -216,6 +238,7 @@ _track_obj_data_destroy(gpointer data)
     TrackObjData *obj_data = data;
 
     c_list_unlink_stale(&obj_data->obj_lst_head);
+    c_list_unlink_stale(&obj_data->by_obj_lst);
     nmp_object_unref(obj_data->obj);
     nm_g_slice_free(obj_data);
 }
@@ -328,6 +351,7 @@ nmp_route_manager_track(NMPRouteManager *self,
                 .config_state = CONFIG_STATE_NONE,
             };
             g_hash_table_add(self->by_obj, obj_data);
+            c_list_link_tail(_by_obj_lst_head(self, obj_type), &obj_data->by_obj_lst);
         }
         c_list_link_tail(&obj_data->obj_lst_head, &track_data->obj_lst);
 
@@ -510,7 +534,8 @@ nmp_route_manager_sync(NMPRouteManager *self, NMPObjectType obj_type, gboolean k
     const NMPObject             *plobj;
     gs_unref_ptrarray GPtrArray *objs_to_delete = NULL;
     TrackObjData                *obj_data;
-    GHashTableIter               h_iter;
+    TrackObjData                *obj_data_safe;
+    CList                       *by_obj_lst_head;
     guint                        i;
     const TrackData             *td_best;
 
@@ -578,19 +603,15 @@ nmp_route_manager_sync(NMPRouteManager *self, NMPObjectType obj_type, gboolean k
             nm_platform_object_delete(self->platform, objs_to_delete->pdata[i]);
     }
 
-    g_hash_table_iter_init(&h_iter, self->by_obj);
-    while (g_hash_table_iter_next(&h_iter, (gpointer *) &obj_data, NULL)) {
-        if (NMP_OBJECT_GET_TYPE(obj_data->obj) != obj_type) {
-            /* Here we need to iterate over all objects (rules and ip4/ip6 routes)
-             * and skip over the non-interesting ones. It might be better to
-             * track 3 separate CList by object type. */
-            continue;
-        }
+    by_obj_lst_head = _by_obj_lst_head(self, obj_type);
+
+    c_list_for_each_entry_safe (obj_data, obj_data_safe, by_obj_lst_head, by_obj_lst) {
+        nm_assert(NMP_OBJECT_GET_TYPE(obj_data->obj) == obj_type);
 
         td_best = _track_obj_data_get_best_data(obj_data);
 
         if (!td_best) {
-            g_hash_table_iter_remove(&h_iter);
+            g_hash_table_remove(self->by_obj, obj_data);
             continue;
         }
 
@@ -752,14 +773,17 @@ nmp_route_manager_new(NMPlatform *platform)
         .platform  = g_object_ref(platform),
         .by_data =
             g_hash_table_new_full(_track_data_hash, _track_data_equal, NULL, _track_data_destroy),
-        .by_obj      = g_hash_table_new_full(_track_obj_data_hash,
+        .by_obj              = g_hash_table_new_full(_track_obj_data_hash,
                                         _track_obj_data_equal,
                                         NULL,
                                         _track_obj_data_destroy),
-        .by_user_tag = g_hash_table_new_full(nm_pdirect_hash,
+        .by_user_tag         = g_hash_table_new_full(nm_pdirect_hash,
                                              nm_pdirect_equal,
                                              NULL,
                                              _track_user_tag_data_destroy),
+        .by_obj_lst_heads[0] = C_LIST_INIT(self->by_obj_lst_heads[0]),
+        .by_obj_lst_heads[1] = C_LIST_INIT(self->by_obj_lst_heads[1]),
+        .by_obj_lst_heads[2] = C_LIST_INIT(self->by_obj_lst_heads[2]),
     };
     return self;
 }
@@ -783,6 +807,9 @@ nmp_route_manager_unref(NMPRouteManager *self)
     g_hash_table_destroy(self->by_user_tag);
     g_hash_table_destroy(self->by_obj);
     g_hash_table_destroy(self->by_data);
+    nm_assert(c_list_is_empty(&self->by_obj_lst_heads[0]));
+    nm_assert(c_list_is_empty(&self->by_obj_lst_heads[1]));
+    nm_assert(c_list_is_empty(&self->by_obj_lst_heads[2]));
     g_object_unref(self->platform);
     nm_g_slice_free(self);
 }
