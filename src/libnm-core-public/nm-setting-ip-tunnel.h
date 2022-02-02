@@ -60,14 +60,14 @@ typedef struct _NMSettingIPTunnelClass NMSettingIPTunnelClass;
  *
  * Since: 1.12
  */
-typedef enum { /*< flags, prefix=NM_IP_TUNNEL_FLAG >*/
-               NM_IP_TUNNEL_FLAG_NONE                   = 0x0,
-               NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT    = 0x1,
-               NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS    = 0x2,
-               NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL = 0x4,
-               NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV           = 0x8,
-               NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY      = 0x10,
-               NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK    = 0x20,
+typedef enum /*< prefix=NM_IP_TUNNEL_FLAG, flags >*/ {
+    NM_IP_TUNNEL_FLAG_NONE                   = 0x0,
+    NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT    = 0x1,
+    NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS    = 0x2,
+    NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL = 0x4,
+    NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV           = 0x8,
+    NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY      = 0x10,
+    NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK    = 0x20,
 } NMIPTunnelFlags;
 
 NM_AVAILABLE_IN_1_2

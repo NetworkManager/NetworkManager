@@ -49,20 +49,20 @@ G_BEGIN_DECLS
  *
  * Since: 1.2
  */
-typedef enum {                                             /*< flags >*/
-               NM_SETTING_WIRED_WAKE_ON_LAN_NONE      = 0, /*< skip >*/
-               NM_SETTING_WIRED_WAKE_ON_LAN_PHY       = 0x2,
-               NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST   = 0x4,
-               NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST = 0x8,
-               NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST = 0x10,
-               NM_SETTING_WIRED_WAKE_ON_LAN_ARP       = 0x20,
-               NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC     = 0x40,
+typedef enum /*< flags >*/ {
+    NM_SETTING_WIRED_WAKE_ON_LAN_NONE      = 0, /*< skip >*/
+    NM_SETTING_WIRED_WAKE_ON_LAN_PHY       = 0x2,
+    NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST   = 0x4,
+    NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST = 0x8,
+    NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST = 0x10,
+    NM_SETTING_WIRED_WAKE_ON_LAN_ARP       = 0x20,
+    NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC     = 0x40,
 
-               NM_SETTING_WIRED_WAKE_ON_LAN_ALL = 0x7E, /*< skip >*/
+    NM_SETTING_WIRED_WAKE_ON_LAN_ALL = 0x7E, /*< skip >*/
 
-               NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT         = 0x1,
-               NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE          = 0x8000,
-               NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS = 0x8001, /*< skip >*/
+    NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT         = 0x1,
+    NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE          = 0x8000,
+    NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS = 0x8001, /*< skip >*/
 } NMSettingWiredWakeOnLan;
 
 #define NM_SETTING_WIRED_PORT                      "port"
