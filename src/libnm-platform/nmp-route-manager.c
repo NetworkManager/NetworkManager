@@ -37,8 +37,6 @@ NMP_IS_ROUTE_MANAGER(gpointer self)
            && NM_IS_PLATFORM(((NMPRouteManager *) self)->platform);
 }
 
-#define _USER_TAG_LOG(user_tag) nm_hash_obfuscate_ptr(1240261787u, (user_tag))
-
 /*****************************************************************************/
 
 typedef struct {
@@ -383,7 +381,7 @@ nmp_route_manager_track_rule(NMPRouteManager             *self,
 
     if (changed) {
         _LOGD("routing-rule: track [" NM_HASH_OBFUSCATE_PTR_FMT ",%s%u] \"%s\")",
-              _USER_TAG_LOG(track_data->user_tag),
+              NM_HASH_OBFUSCATE_PTR(track_data->user_tag),
               (track_data->track_priority_val == 0
                    ? ""
                    : (track_data->track_priority_present ? "+" : "-")),
@@ -406,7 +404,7 @@ _track_data_untrack(NMPRouteManager *self,
     nm_assert(g_hash_table_lookup(self->by_data, track_data) == track_data);
 
     _LOGD("routing-rule: untrack [" NM_HASH_OBFUSCATE_PTR_FMT "] \"%s\"",
-          _USER_TAG_LOG(track_data->user_tag),
+          NM_HASH_OBFUSCATE_PTR(track_data->user_tag),
           nmp_object_to_string(track_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
 
 #if NM_MORE_ASSERTS
