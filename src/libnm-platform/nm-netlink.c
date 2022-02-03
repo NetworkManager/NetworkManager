@@ -1171,12 +1171,12 @@ nl_recvmsgs(struct nl_sock *sk, const struct nl_cb *cb)
     int                    n, nmerr = 0, multipart = 0, interrupted = 0, nrecv = 0;
     gs_free unsigned char *buf = NULL;
     struct nlmsghdr       *hdr;
-    struct sockaddr_nl     nla = {0};
+    struct sockaddr_nl     nla;
     struct ucred           creds;
     gboolean               creds_has;
 
 continue_reading:
-    n = nl_recv(sk, &nla, &buf, &creds, &creds_has);
+    n = nl_recv(sk, NULL, 0, &nla, &buf, &creds, &creds_has);
     if (n <= 0)
         return n;
 
@@ -1401,8 +1401,37 @@ nl_send_auto(struct nl_sock *sk, struct nl_msg *msg)
     return nl_send(sk, msg);
 }
 
+/**
+ * nl_recv():
+ * @sk: the netlink socket
+ * @buf0: NULL or a receive buffer of length @buf0_len
+ * @buf0_len: the length of the optional receive buffer.
+ * @nla: (out): the source address on success.
+ * @buf: (out): pointer to the result buffer on success. This is
+ *   either @buf0 or an allocated buffer that gets returned.
+ * @out_creds: (out) (allow-none): optional out buffer for the credentials
+ *   on success.
+ * @out_creds_has: (out) (allow-none): result indicating whether
+ *   @out_creds was filled.
+ *
+ * If @buf0_len is zero, the function will g_malloc() a new receive buffer of size
+ * nl_socket_get_msg_buf_size(). If @buf0_len is larger than zero, then @buf0
+ * is used as receive buffer. That is also the buffer returned by @buf.
+ *
+ * If NL_MSG_PEEK is not enabled and the receive buffer is too small, then
+ * the message was lost and -NME_NL_MSG_TRUNC gets returned.
+ * If NL_MSG_PEEK is enabled, then we first peek. If the buffer is too small,
+ * we g_malloc() a new buffer. In any case, we proceed to receive the buffer.
+ * NL_MSG_PEEK is great because it means no messages are lost. But it's bad,
+ * because we always need two syscalls on every receive.
+ *
+ * Returns: a negative error code or the length of the received message in
+ *   @buf.
+ */
 int
 nl_recv(struct nl_sock     *sk,
+        unsigned char      *buf0,
+        size_t              buf0_len,
         struct sockaddr_nl *nla,
         unsigned char     **buf,
         struct ucred       *out_creds,
@@ -1443,8 +1472,13 @@ nl_recv(struct nl_sock     *sk,
         || (!(sk->s_flags & NL_MSG_PEEK_EXPLICIT) && sk->s_bufsize == 0))
         flags |= MSG_PEEK | MSG_TRUNC;
 
-    iov.iov_len  = sk->s_bufsize ?: (((size_t) nm_utils_getpagesize()) * 4u);
-    iov.iov_base = g_malloc(iov.iov_len);
+    if (buf0_len > 0) {
+        iov.iov_len  = buf0_len;
+        iov.iov_base = buf0;
+    } else {
+        iov.iov_len  = sk->s_bufsize ?: (((size_t) nm_utils_getpagesize()) * 4u);
+        iov.iov_base = g_malloc(iov.iov_len);
+    }
 
     if (out_creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
         msg.msg_controllen = sizeof(msg_contol_buf);
@@ -1482,7 +1516,7 @@ retry:
         /* Provided buffer is not long enough, enlarge it
          * to size of n (which should be total length of the message)
          * and try again. */
-        iov.iov_base = g_realloc(iov.iov_base, n);
+        iov.iov_base = g_realloc(iov.iov_base != buf0 ? iov.iov_base : NULL, n);
         iov.iov_len  = n;
         flags        = 0;
         goto retry;
@@ -1517,7 +1551,8 @@ retry:
 
 abort:
     if (retval <= 0) {
-        g_free(iov.iov_base);
+        if (iov.iov_base != buf0)
+            g_free(iov.iov_base);
         return retval;
     }
 
