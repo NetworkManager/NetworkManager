@@ -1243,7 +1243,8 @@ static const NMVariantAttributeSpec *const ip_route_attribute_spec[] = {
                                      .v6 = TRUE, ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_SCOPE,
                                      G_VARIANT_TYPE_BYTE,
-                                     .v4 = TRUE, ),
+                                     .v4          = TRUE,
+                                     .type_detail = 's'),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_SRC,
                                      G_VARIANT_TYPE_STRING,
                                      .v4          = TRUE,
@@ -1279,35 +1280,26 @@ nm_ip_route_get_variant_attribute_spec(void)
     return ip_route_attribute_spec;
 }
 
-/**
- * nm_ip_route_attribute_validate:
- * @name: the attribute name
- * @value: the attribute value
- * @family: IP address family of the route
- * @known: (out): on return, whether the attribute name is a known one
- * @error: (allow-none): return location for a #GError, or %NULL
- *
- * Validates a route attribute, i.e. checks that the attribute is a known one
- * and the value is of the correct type and well-formed.
- *
- * Returns: %TRUE if the attribute is valid, %FALSE otherwise
- *
- * Since: 1.8
- */
-gboolean
-nm_ip_route_attribute_validate(const char *name,
-                               GVariant   *value,
-                               int         family,
-                               gboolean   *known,
-                               GError    **error)
+typedef struct {
+    int type;
+    int scope;
+} IPRouteAttrParseData;
+
+static gboolean
+_ip_route_attribute_validate(const char           *name,
+                             GVariant             *value,
+                             int                   family,
+                             IPRouteAttrParseData *parse_data,
+                             gboolean             *known,
+                             GError              **error)
 {
     const NMVariantAttributeSpec *spec;
     const char                   *string;
 
-    g_return_val_if_fail(name, FALSE);
-    g_return_val_if_fail(value, FALSE);
-    g_return_val_if_fail(family == AF_INET || family == AF_INET6, FALSE);
-    g_return_val_if_fail(!error || !*error, FALSE);
+    nm_assert(name);
+    nm_assert(value);
+    nm_assert(family == AF_INET || family == AF_INET6);
+    nm_assert(!error || !*error);
 
     spec = _nm_variant_attribute_spec_find_binary_search(ip_route_attribute_spec,
                                                          G_N_ELEMENTS(ip_route_attribute_spec) - 1,
@@ -1388,8 +1380,12 @@ nm_ip_route_attribute_validate(const char *name,
         break;
     }
     case 'T': /* route type. */
+    {
+        int type;
+
         string = g_variant_get_string(value, NULL);
-        if (!NM_IN_SET(nm_net_aux_rtnl_rtntype_a2n(string), RTN_UNICAST, RTN_LOCAL)) {
+        type   = nm_net_aux_rtnl_rtntype_a2n(string);
+        if (!NM_IN_SET(type, RTN_UNICAST, RTN_LOCAL)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1397,6 +1393,14 @@ nm_ip_route_attribute_validate(const char *name,
                         string);
             return FALSE;
         }
+
+        if (parse_data)
+            parse_data->type = type;
+        break;
+    }
+    case 's': /* scope */
+        if (parse_data)
+            parse_data->scope = g_variant_get_byte(value);
         break;
     case '\0':
         break;
@@ -1408,6 +1412,36 @@ nm_ip_route_attribute_validate(const char *name,
     return TRUE;
 }
 
+/**
+ * nm_ip_route_attribute_validate:
+ * @name: the attribute name
+ * @value: the attribute value
+ * @family: IP address family of the route
+ * @known: (out): on return, whether the attribute name is a known one
+ * @error: (allow-none): return location for a #GError, or %NULL
+ *
+ * Validates a route attribute, i.e. checks that the attribute is a known one
+ * and the value is of the correct type and well-formed.
+ *
+ * Returns: %TRUE if the attribute is valid, %FALSE otherwise
+ *
+ * Since: 1.8
+ */
+gboolean
+nm_ip_route_attribute_validate(const char *name,
+                               GVariant   *value,
+                               int         family,
+                               gboolean   *known,
+                               GError    **error)
+{
+    g_return_val_if_fail(name, FALSE);
+    g_return_val_if_fail(value, FALSE);
+    g_return_val_if_fail(family == AF_INET || family == AF_INET6, FALSE);
+    g_return_val_if_fail(!error || !*error, FALSE);
+
+    return _ip_route_attribute_validate(name, value, family, NULL, known, error);
+}
+
 gboolean
 _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
 {
@@ -1415,9 +1449,11 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
     gs_free NMUtilsNamedValue *attrs_free = NULL;
     const NMUtilsNamedValue   *attrs;
     guint                      attrs_len;
-    GVariant                  *val;
     guint                      i;
-    guint8                     u8;
+    IPRouteAttrParseData       parse_data = {
+              .type  = RTN_UNICAST,
+              .scope = -1,
+    };
 
     g_return_val_if_fail(route, FALSE);
     g_return_val_if_fail(!error || !*error, FALSE);
@@ -1430,34 +1466,26 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
                                                attrs_static,
                                                &attrs_free);
     for (i = 0; i < attrs_len; i++) {
-        const char *key  = attrs[i].name;
-        GVariant   *val2 = attrs[i].value_ptr;
-
-        if (!nm_ip_route_attribute_validate(key, val2, route->family, NULL, error))
+        if (!_ip_route_attribute_validate(attrs[i].name,
+                                          attrs[i].value_ptr,
+                                          route->family,
+                                          &parse_data,
+                                          NULL,
+                                          error))
             return FALSE;
     }
 
-    if ((val = g_hash_table_lookup(route->attributes, NM_IP_ROUTE_ATTRIBUTE_TYPE))) {
-        int v_i;
-
-        nm_assert(g_variant_is_of_type(val, G_VARIANT_TYPE_STRING));
-
-        v_i = nm_net_aux_rtnl_rtntype_a2n(g_variant_get_string(val, NULL));
-        nm_assert(v_i >= 0);
-
-        if (v_i == RTN_LOCAL && route->family == AF_INET
-            && (val = g_hash_table_lookup(route->attributes, NM_IP_ROUTE_ATTRIBUTE_SCOPE))) {
-            nm_assert(g_variant_is_of_type(val, G_VARIANT_TYPE_BYTE));
-            u8 = g_variant_get_byte(val);
-
-            if (!NM_IN_SET(u8, RT_SCOPE_HOST, RT_SCOPE_NOWHERE)) {
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("route scope is invalid"));
-                return FALSE;
-            }
+    switch (parse_data.type) {
+    case RTN_LOCAL:
+        if (route->family == AF_INET && parse_data.scope >= 0
+            && !NM_IN_SET(parse_data.scope, RT_SCOPE_HOST, RT_SCOPE_NOWHERE)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("route scope is invalid for local route"));
+            return FALSE;
         }
+        break;
     }
 
     return TRUE;
