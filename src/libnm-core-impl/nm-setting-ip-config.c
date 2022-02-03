@@ -1203,8 +1203,8 @@ static const NMVariantAttributeSpec *const ip_route_attribute_spec[] = {
                                      .v6 = TRUE, ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_FROM,
                                      G_VARIANT_TYPE_STRING,
-                                     .v6       = TRUE,
-                                     .str_type = 'p', ),
+                                     .v6          = TRUE,
+                                     .type_detail = 'p', ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_INITCWND,
                                      G_VARIANT_TYPE_UINT32,
                                      .v4 = TRUE,
@@ -1246,9 +1246,9 @@ static const NMVariantAttributeSpec *const ip_route_attribute_spec[] = {
                                      .v4 = TRUE, ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_SRC,
                                      G_VARIANT_TYPE_STRING,
-                                     .v4       = TRUE,
-                                     .v6       = TRUE,
-                                     .str_type = 'a', ),
+                                     .v4          = TRUE,
+                                     .v6          = TRUE,
+                                     .type_detail = 'a', ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_TABLE,
                                      G_VARIANT_TYPE_UINT32,
                                      .v4 = TRUE,
@@ -1256,9 +1256,9 @@ static const NMVariantAttributeSpec *const ip_route_attribute_spec[] = {
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_TOS, G_VARIANT_TYPE_BYTE, .v4 = TRUE, ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_TYPE,
                                      G_VARIANT_TYPE_STRING,
-                                     .v4       = TRUE,
-                                     .v6       = TRUE,
-                                     .str_type = 'T', ),
+                                     .v4          = TRUE,
+                                     .v6          = TRUE,
+                                     .type_detail = 'T', ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_WINDOW,
                                      G_VARIANT_TYPE_UINT32,
                                      .v4 = TRUE,
@@ -1302,6 +1302,7 @@ nm_ip_route_attribute_validate(const char *name,
                                GError    **error)
 {
     const NMVariantAttributeSpec *spec;
+    const char                   *string;
 
     g_return_val_if_fail(name, FALSE);
     g_return_val_if_fail(value, FALSE);
@@ -1340,65 +1341,68 @@ nm_ip_route_attribute_validate(const char *name,
         return FALSE;
     }
 
-    if (g_variant_type_equal(spec->type, G_VARIANT_TYPE_STRING)) {
-        const char *string = g_variant_get_string(value, NULL);
+    switch (spec->type_detail) {
+    case 'a': /* IP address */
+        string = g_variant_get_string(value, NULL);
+        if (!nm_utils_ipaddr_is_valid(family, string)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_FAILED,
+                        family == AF_INET ? _("'%s' is not a valid IPv4 address")
+                                          : _("'%s' is not a valid IPv6 address"),
+                        string);
+            return FALSE;
+        }
+        break;
+    case 'p': /* IP address + optional prefix */
+    {
+        gs_free char *addr_free = NULL;
+        const char   *addr;
+        const char   *str;
 
-        switch (spec->str_type) {
-        case 'a': /* IP address */
-            if (!nm_utils_ipaddr_is_valid(family, string)) {
+        string = g_variant_get_string(value, NULL);
+        addr   = string;
+
+        str = strchr(addr, '/');
+        if (str) {
+            addr = nm_strndup_a(200, addr, str - addr, &addr_free);
+            str++;
+            if (_nm_utils_ascii_str_to_int64(str, 10, 0, family == AF_INET ? 32 : 128, -1) < 0) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_FAILED,
-                            family == AF_INET ? _("'%s' is not a valid IPv4 address")
-                                              : _("'%s' is not a valid IPv6 address"),
-                            string);
+                            _("invalid prefix %s"),
+                            str);
                 return FALSE;
             }
-            break;
-        case 'p': /* IP address + optional prefix */
-        {
-            gs_free char *addr_free = NULL;
-            const char   *addr      = string;
-            const char   *str;
-
-            str = strchr(addr, '/');
-            if (str) {
-                addr = nm_strndup_a(200, addr, str - addr, &addr_free);
-                str++;
-                if (_nm_utils_ascii_str_to_int64(str, 10, 0, family == AF_INET ? 32 : 128, -1)
-                    < 0) {
-                    g_set_error(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_FAILED,
-                                _("invalid prefix %s"),
-                                str);
-                    return FALSE;
-                }
-            }
-            if (!nm_utils_ipaddr_is_valid(family, addr)) {
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_FAILED,
-                            family == AF_INET ? _("'%s' is not a valid IPv4 address")
-                                              : _("'%s' is not a valid IPv6 address"),
-                            string);
-                return FALSE;
-            }
-            break;
         }
-        case 'T': /* route type. */
-            if (!NM_IN_SET(nm_net_aux_rtnl_rtntype_a2n(string), RTN_UNICAST, RTN_LOCAL)) {
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("%s is not a valid route type"),
-                            string);
-                return FALSE;
-            }
-            break;
-        default:
-            break;
+        if (!nm_utils_ipaddr_is_valid(family, addr)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_FAILED,
+                        family == AF_INET ? _("'%s' is not a valid IPv4 address")
+                                          : _("'%s' is not a valid IPv6 address"),
+                        string);
+            return FALSE;
         }
+        break;
+    }
+    case 'T': /* route type. */
+        string = g_variant_get_string(value, NULL);
+        if (!NM_IN_SET(nm_net_aux_rtnl_rtntype_a2n(string), RTN_UNICAST, RTN_LOCAL)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("%s is not a valid route type"),
+                        string);
+            return FALSE;
+        }
+        break;
+    case '\0':
+        break;
+    default:
+        nm_assert_not_reached();
+        break;
     }
 
     return TRUE;
