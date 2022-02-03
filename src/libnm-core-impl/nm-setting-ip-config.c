@@ -169,9 +169,10 @@ G_DEFINE_BOXED_TYPE(NMIPAddress, nm_ip_address, nm_ip_address_dup, nm_ip_address
 struct NMIPAddress {
     guint refcount;
 
-    char *address;
-    int   prefix, family;
+    gint8  family;
+    guint8 prefix;
 
+    char       *address;
     GHashTable *attributes;
 };
 
@@ -608,13 +609,14 @@ G_DEFINE_BOXED_TYPE(NMIPRoute, nm_ip_route, nm_ip_route_dup, nm_ip_route_unref)
 struct NMIPRoute {
     guint refcount;
 
-    int    family;
-    char  *dest;
-    guint  prefix;
-    char  *next_hop;
-    gint64 metric;
+    gint8  family;
+    guint8 prefix;
 
+    char       *dest;
+    char       *next_hop;
     GHashTable *attributes;
+
+    gint64 metric;
 };
 
 /**
