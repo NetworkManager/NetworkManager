@@ -825,7 +825,8 @@ static void _dev_ipac6_start(NMDevice *self);
 
 static void _dev_ipac6_set_state(NMDevice *self, NMDeviceIPState state);
 
-static void _dev_unamanged_check_external_down(NMDevice *self, gboolean only_if_unmanaged);
+static void
+_dev_unmanaged_check_external_down(NMDevice *self, gboolean only_if_unmanaged, gboolean now);
 
 static void _dev_ipshared4_start(NMDevice *self);
 static void _dev_ipshared4_spawn_dnsmasq(NMDevice *self);
@@ -3914,7 +3915,7 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
                          nmp_object_type_to_flags(NMP_OBJECT_TYPE_LINK)
                              | nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP4_ADDRESS)
                              | nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP6_ADDRESS)))
-            _dev_unamanged_check_external_down(self, TRUE);
+            _dev_unmanaged_check_external_down(self, TRUE, TRUE);
 
         if (NM_FLAGS_ANY(notify_data->platform_change_on_idle.obj_type_flags,
                          nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP4_ADDRESS)
@@ -6047,7 +6048,7 @@ _dev_unmanaged_is_external_down(NMDevice *self, gboolean consider_can)
 }
 
 static void
-_dev_unamanged_check_external_down(NMDevice *self, gboolean only_if_unmanaged)
+_dev_unmanaged_check_external_down(NMDevice *self, gboolean only_if_unmanaged, gboolean now)
 {
     NMUnmanFlagOp ext_flags;
 
@@ -6067,10 +6068,17 @@ _dev_unamanged_check_external_down(NMDevice *self, gboolean only_if_unmanaged)
         nm_device_queue_recheck_assume(self);
     }
 
-    nm_device_set_unmanaged_by_flags(self,
-                                     NM_UNMANAGED_EXTERNAL_DOWN,
-                                     ext_flags,
-                                     NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+    if (now) {
+        nm_device_set_unmanaged_by_flags(self,
+                                         NM_UNMANAGED_EXTERNAL_DOWN,
+                                         ext_flags,
+                                         NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+    } else {
+        nm_device_set_unmanaged_by_flags_queue(self,
+                                               NM_UNMANAGED_EXTERNAL_DOWN,
+                                               ext_flags,
+                                               NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+    }
 }
 
 void
@@ -6459,10 +6467,11 @@ device_link_changed(gpointer user_data)
         /* If the device has no explicit ip_iface, then changing iface changes ip_iface too. */
         ip_ifname_changed = !priv->ip_iface;
 
-        if (nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT))
-            nm_device_set_unmanaged_by_user_settings(self);
-        else
+        if (!nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT)) {
+            /* Since the interface name changed, we need to re-evaluate the
+             * user settings specs. */
             update_unmanaged_specs = TRUE;
+        }
 
         _notify(self, PROP_IFACE);
         if (ip_ifname_changed)
@@ -6521,11 +6530,16 @@ device_link_changed(gpointer user_data)
             }
         }
 
+        /* The assume check should happen before the device transitions to
+         * UNAVAILABLE, because in UNAVAILABLE we already clean up the IP
+         * configuration. Therefore, this function should never trigger a
+         * sync state transition.
+         */
         nm_device_queue_recheck_assume(self);
-        nm_device_set_unmanaged_by_flags(self, NM_UNMANAGED_PLATFORM_INIT, FALSE, reason);
+        nm_device_set_unmanaged_by_flags_queue(self, NM_UNMANAGED_PLATFORM_INIT, FALSE, reason);
     }
 
-    _dev_unamanged_check_external_down(self, FALSE);
+    _dev_unmanaged_check_external_down(self, FALSE, FALSE);
 
     device_recheck_slave_status(self, pllink);
 
@@ -6544,7 +6558,7 @@ device_link_changed(gpointer user_data)
     }
 
     if (update_unmanaged_specs)
-        nm_device_set_unmanaged_by_user_settings(self);
+        nm_device_set_unmanaged_by_user_settings(self, FALSE);
 
     if (got_hw_addr && !priv->up && nm_device_get_state(self) == NM_DEVICE_STATE_UNAVAILABLE) {
         /*
@@ -14126,7 +14140,7 @@ nm_device_check_unrealized_device_managed(NMDevice *self)
 }
 
 void
-nm_device_set_unmanaged_by_user_settings(NMDevice *self)
+nm_device_set_unmanaged_by_user_settings(NMDevice *self, gboolean now)
 {
     gboolean unmanaged;
 
@@ -14148,11 +14162,13 @@ nm_device_set_unmanaged_by_user_settings(NMDevice *self)
         self,
         nm_settings_get_unmanaged_specs(NM_DEVICE_GET_PRIVATE(self)->settings));
 
-    nm_device_set_unmanaged_by_flags(self,
-                                     NM_UNMANAGED_USER_SETTINGS,
-                                     !!unmanaged,
-                                     unmanaged ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED
-                                               : NM_DEVICE_STATE_REASON_NOW_MANAGED);
+    _set_unmanaged_flags(self,
+                         NM_UNMANAGED_USER_SETTINGS,
+                         !!unmanaged,
+                         TRUE,
+                         now,
+                         unmanaged ? NM_DEVICE_STATE_REASON_NOW_UNMANAGED
+                                   : NM_DEVICE_STATE_REASON_NOW_MANAGED);
 }
 
 void
