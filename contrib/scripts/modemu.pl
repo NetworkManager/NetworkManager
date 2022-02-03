@@ -144,6 +144,10 @@ my $pty = new IO::Pty;
 my $ptyname = ttyname $pty;
 symlink $ptyname, "/dev/$name" or die "Can't create /dev/$name: $!";
 send_netlink (ACTION => 'add', %props);
+my ($pdptype, $apn);
+
+# Here's a good refernce of AT command a modern-ish modem probably uses:
+# https://infocenter.nordicsemi.com/index.jsp?topic=%2Fref_at_commands%2FREF%2Fat_commands%2Fpacket_domain%2Fcgact_set.html
 
 while (<$pty>) {
 	chomp;
@@ -173,6 +177,11 @@ while (<$pty>) {
 		print $pty "\r\n";
 		print $pty "OK\r\n";
 
+	# The PDP (packet data protocol/profile?) context handling below is very
+	# rudimentary: just enough to keep ModemManager 1.18 happy. It basically
+	# just starts with no contexts at all and then expects MM to set and
+	# activate profile number 1.
+
 	} elsif (/^AT\+CGDCONT=\?$/) {
 		# Get supported PDP contexts
 		print $pty "\r\n";
@@ -180,13 +189,28 @@ while (<$pty>) {
 		print $pty "+CGDCONT: (1-10),(\"IPV6\"),,,(0-1),(0-1)\r\n";
 		print $pty "OK\r\n";
 
-	} elsif (/^AT\+CGACT=0,1$/) {
-		# Activate a PDP context
+	} elsif (/^AT\+CGDCONT=1,"(.*)","(.*)"$/) {
+		# Create the PDP context. Remember it, MM is going to check it later
+		($pdptype, $apn) = ($1, $2);
 		print $pty "\r\n";
 		print $pty "OK\r\n";
 
-	} elsif (/^AT\+CGDCONT=1,"(.*)","(.*)"$/) {
-		# Set PDP context. We accept any.
+
+	} elsif (/^AT\+CGDCONT\?$/) {
+		# List the PDP context we're aware of.
+		print $pty "\r\n";
+		print $pty "+CGDCONT: 1,\"$pdptype\",\"$apn\",\"0.0.0.0\",0,0,0,0\r\n"
+			if defined $pdptype;
+		print $pty "OK\r\n";
+
+	} elsif (/^AT\+CGACT\?$/) {
+		# List available PDP contexts with states: profile 1 state 0 (inactive)
+		print $pty "\r\n";
+		print $pty "+CGACT: 0,1\r\n";
+		print $pty "OK\r\n";
+
+	} elsif (/^AT\+CGACT=0,1$/) {
+		# Deactivate a PDP context
 		print $pty "\r\n";
 		print $pty "OK\r\n";
 
