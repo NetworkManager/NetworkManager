@@ -271,7 +271,6 @@ struct timespec *timespec_store_nsec(struct timespec *ts, nsec_t n)  {
         return ts;
 }
 
-#if 0 /* NM_IGNORED */
 usec_t timeval_load(const struct timeval *tv) {
         assert(tv);
 
@@ -286,6 +285,7 @@ usec_t timeval_load(const struct timeval *tv) {
                 (usec_t) tv->tv_usec;
 }
 
+#if 0 /* NM_IGNORED */
 struct timeval *timeval_store(struct timeval *tv, usec_t u) {
         assert(tv);
 
@@ -676,7 +676,7 @@ static int parse_timestamp_impl(const char *t, usec_t *usec, bool with_tz) {
                         goto finish;
 
                 } else if ((k = endswith(t, " ago"))) {
-                        t = strndupa(t, k - t);
+                        t = strndupa_safe(t, k - t);
 
                         r = parse_sec(t, &minus);
                         if (r < 0)
@@ -685,7 +685,7 @@ static int parse_timestamp_impl(const char *t, usec_t *usec, bool with_tz) {
                         goto finish;
 
                 } else if ((k = endswith(t, " left"))) {
-                        t = strndupa(t, k - t);
+                        t = strndupa_safe(t, k - t);
 
                         r = parse_sec(t, &plus);
                         if (r < 0)
@@ -697,7 +697,7 @@ static int parse_timestamp_impl(const char *t, usec_t *usec, bool with_tz) {
                 /* See if the timestamp is suffixed with UTC */
                 utc = endswith_no_case(t, " UTC");
                 if (utc)
-                        t = strndupa(t, utc - t);
+                        t = strndupa_safe(t, utc - t);
                 else {
                         const char *e = NULL;
                         int j;
@@ -728,7 +728,7 @@ static int parse_timestamp_impl(const char *t, usec_t *usec, bool with_tz) {
 
                         if (IN_SET(j, 0, 1)) {
                                 /* Found one of the two timezones specified. */
-                                t = strndupa(t, e - t - 1);
+                                t = strndupa_safe(t, e - t - 1);
                                 dst = j;
                                 tzn = tzname[j];
                         }
@@ -929,7 +929,7 @@ int parse_timestamp(const char *t, usec_t *usec) {
 
                 /* Cut off the timezone if we don't need it. */
                 if (with_tz)
-                        t = strndupa(t, last_space - t);
+                        t = strndupa_safe(t, last_space - t);
 
                 shared->return_value = parse_timestamp_impl(t, &shared->usec, with_tz);
 

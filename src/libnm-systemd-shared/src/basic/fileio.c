@@ -169,7 +169,7 @@ int write_string_stream_ts(
                  * it won't be equal to the new value. */
                 if (read_virtual_file_fd(fd, strlen(line)+1, &t, NULL) > 0 &&
                     streq_skip_trailing_chars(line, t, NEWLINE)) {
-                        log_debug("No change in value '%s', supressing write", line);
+                        log_debug("No change in value '%s', suppressing write", line);
                         return 0;
                 }
 
@@ -551,12 +551,25 @@ int read_virtual_file_fd(int fd, size_t max_size, char **ret_contents, size_t *r
         return !truncated;
 }
 
-int read_virtual_file(const char *filename, size_t max_size, char **ret_contents, size_t *ret_size) {
+int read_virtual_file_at(
+                int dir_fd,
+                const char *filename,
+                size_t max_size,
+                char **ret_contents,
+                size_t *ret_size) {
+
         _cleanup_close_ int fd = -1;
 
-        assert(filename);
+        assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
 
-        fd = open(filename, O_RDONLY | O_NOCTTY | O_CLOEXEC);
+        if (!filename) {
+                if (dir_fd == AT_FDCWD)
+                        return -EBADF;
+
+                return read_virtual_file_fd(dir_fd, max_size, ret_contents, ret_size);
+        }
+
+        fd = openat(dir_fd, filename, O_RDONLY | O_NOCTTY | O_CLOEXEC);
         if (fd < 0)
                 return -errno;
 
@@ -933,6 +946,9 @@ DIR *xopendirat(int fd, const char *name, int flags) {
         DIR *d;
 
         assert(!(flags & O_CREAT));
+
+        if (fd == AT_FDCWD && flags == 0)
+                return opendir(name);
 
         nfd = openat(fd, name, O_RDONLY|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC|flags, 0);
         if (nfd < 0)

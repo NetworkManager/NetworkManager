@@ -20,6 +20,7 @@
 #include <asm/sgidefs.h>
 #endif
 
+#include "macro.h"
 #include "missing_keyctl.h"
 #include "missing_stat.h"
 #include "missing_syscall_def.h"
@@ -79,7 +80,8 @@ static inline int missing_memfd_create(const char *name, unsigned int flags) {
 /* ======================================================================= */
 
 #if !HAVE_GETRANDOM
-static inline int missing_getrandom(void *buffer, size_t count, unsigned flags) {
+/* glibc says getrandom() returns ssize_t */
+static inline ssize_t missing_getrandom(void *buffer, size_t count, unsigned flags) {
 #  ifdef __NR_getrandom
         return syscall(__NR_getrandom, buffer, count, flags);
 #  else
@@ -466,8 +468,52 @@ struct mount_attr {
 struct mount_attr;
 #endif
 
+#ifndef MOUNT_ATTR_RDONLY
+#define MOUNT_ATTR_RDONLY       0x00000001 /* Mount read-only */
+#endif
+
+#ifndef MOUNT_ATTR_NOSUID
+#define MOUNT_ATTR_NOSUID       0x00000002 /* Ignore suid and sgid bits */
+#endif
+
+#ifndef MOUNT_ATTR_NODEV
+#define MOUNT_ATTR_NODEV        0x00000004 /* Disallow access to device special files */
+#endif
+
+#ifndef MOUNT_ATTR_NOEXEC
+#define MOUNT_ATTR_NOEXEC       0x00000008 /* Disallow program execution */
+#endif
+
+#ifndef MOUNT_ATTR__ATIME
+#define MOUNT_ATTR__ATIME       0x00000070 /* Setting on how atime should be updated */
+#endif
+
+#ifndef MOUNT_ATTR_RELATIME
+#define MOUNT_ATTR_RELATIME     0x00000000 /* - Update atime relative to mtime/ctime. */
+#endif
+
+#ifndef MOUNT_ATTR_NOATIME
+#define MOUNT_ATTR_NOATIME      0x00000010 /* - Do not update access times. */
+#endif
+
+#ifndef MOUNT_ATTR_STRICTATIME
+#define MOUNT_ATTR_STRICTATIME  0x00000020 /* - Always perform atime updates */
+#endif
+
+#ifndef MOUNT_ATTR_NODIRATIME
+#define MOUNT_ATTR_NODIRATIME   0x00000080 /* Do not update directory access times */
+#endif
+
 #ifndef MOUNT_ATTR_IDMAP
-#define MOUNT_ATTR_IDMAP 0x00100000
+#define MOUNT_ATTR_IDMAP        0x00100000 /* Idmap mount to @userns_fd in struct mount_attr. */
+#endif
+
+#ifndef MOUNT_ATTR_NOSYMFOLLOW
+#define MOUNT_ATTR_NOSYMFOLLOW  0x00200000 /* Do not follow symlinks */
+#endif
+
+#ifndef MOUNT_ATTR_SIZE_VER0
+#define MOUNT_ATTR_SIZE_VER0    32 /* sizeof first published struct */
 #endif
 
 #ifndef AT_RECURSIVE
@@ -544,5 +590,21 @@ static inline int missing_move_mount(
 }
 
 #  define move_mount missing_move_mount
+#endif
+
+/* ======================================================================= */
+
+#if !HAVE_GETDENTS64
+
+static inline ssize_t missing_getdents64(int fd, void *buffer, size_t length) {
+#  if defined __NR_getdents64 && __NR_getdents64 >= 0
+        return syscall(__NR_getdents64, fd, buffer, length);
+#  else
+        errno = ENOSYS;
+        return -1;
+#  endif
+}
+
+#  define getdents64 missing_getdents64
 #endif
 #endif /* NM_IGNORED */
