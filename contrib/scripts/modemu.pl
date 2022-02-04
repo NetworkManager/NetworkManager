@@ -222,6 +222,14 @@ while (<$pty>) {
 		print $pty "+COPS: 0,2,\"65302\",7\r\n"; # MCCMNC
 		print $pty "OK\r\n";
 
+	} elsif (/^AT\+COPS\?$/) {
+		# Current operators
+		# Not strictly required, but allows NetworkManager to just connect
+		# the modem device without explicitly setting an APN
+		print $pty "\r\n";
+		print $pty "+COPS: 0,2,\"65302\",7\r\n"; # MCCMNC
+		print $pty "OK\r\n";
+
 	} elsif (/^ATD/) {
 		print $pty "\r\n";
 		print $pty "CONNECT 28800000\r\n";
