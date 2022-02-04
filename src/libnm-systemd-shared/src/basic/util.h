@@ -20,7 +20,6 @@ int prot_from_flags(int flags) _const_;
 bool in_initrd(void);
 void in_initrd_force(bool value);
 
-#if 0 /* NM_IGNORED */
 /* Note: log2(0) == log2(1) == 0 here and below. */
 
 #define CONST_LOG2ULL(x) ((x) > 1 ? (unsigned) __builtin_clzll(x) ^ 63U : 0)
@@ -28,7 +27,11 @@ void in_initrd_force(bool value);
                 unsigned long long _x = (x);                       \
                 _x > 1 ? (unsigned) __builtin_clzll(_x) ^ 63U : 0; \
         })
+#if 0 /* NM_IGNORED */
 #define LOG2ULL(x) __builtin_choose_expr(__builtin_constant_p(x), CONST_LOG2ULL(x), NONCONST_LOG2ULL(x))
+#else /* NM_IGNORED */
+#define LOG2ULL(x) NONCONST_LOG2ULL(x)
+#endif /* NM_IGNORED */
 
 static inline unsigned log2u64(uint64_t x) {
 #if __SIZEOF_LONG_LONG__ == 8
@@ -37,7 +40,6 @@ static inline unsigned log2u64(uint64_t x) {
 #  error "Wut?"
 #endif
 }
-#endif /* NM_IGNORED */
 
 static inline unsigned u32ctz(uint32_t n) {
 #if __SIZEOF_INT__ == 4
@@ -52,7 +54,11 @@ static inline unsigned u32ctz(uint32_t n) {
                 unsigned _x = (x);                                       \
                 _x > 1 ? __SIZEOF_INT__ * 8 - __builtin_clz(_x) - 1 : 0; \
         })
+#if 0 /* NM_IGNORED */
 #define LOG2U(x) __builtin_choose_expr(__builtin_constant_p(x), CONST_LOG2U(x), NONCONST_LOG2U(x))
+#else /* NM_IGNORED */
+#define LOG2U(x) NONCONST_LOG2U(x)
+#endif /* NM_IGNORED */
 
 static inline unsigned log2i(int x) {
         return LOG2U(x);

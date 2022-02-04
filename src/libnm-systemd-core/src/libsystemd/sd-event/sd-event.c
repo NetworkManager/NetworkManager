@@ -4194,7 +4194,6 @@ _public_ int sd_event_dispatch(sd_event *e) {
         return 1;
 }
 
-#if 0 /* NM_IGNORED */
 static void event_log_delays(sd_event *e) {
         char b[ELEMENTSOF(e->delays) * DECIMAL_STR_MAX(unsigned) + 1], *p;
         size_t l, i;
@@ -4274,7 +4273,6 @@ _public_ int sd_event_loop(sd_event *e) {
 
         return e->exit_code;
 }
-#endif /* NM_IGNORED */
 
 _public_ int sd_event_get_fd(sd_event *e) {
         assert_return(e, -EINVAL);
