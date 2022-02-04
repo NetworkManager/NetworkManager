@@ -20,6 +20,7 @@ int prot_from_flags(int flags) _const_;
 bool in_initrd(void);
 void in_initrd_force(bool value);
 
+#if 0 /* NM_IGNORED */
 /* Note: log2(0) == log2(1) == 0 here and below. */
 
 #define CONST_LOG2ULL(x) ((x) > 1 ? (unsigned) __builtin_clzll(x) ^ 63U : 0)
@@ -36,6 +37,7 @@ static inline unsigned log2u64(uint64_t x) {
 #  error "Wut?"
 #endif
 }
+#endif /* NM_IGNORED */
 
 static inline unsigned u32ctz(uint32_t n) {
 #if __SIZEOF_INT__ == 4
