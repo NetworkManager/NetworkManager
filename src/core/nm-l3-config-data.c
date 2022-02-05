@@ -2995,12 +2995,12 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                         NML3ConfigMergeHookAddObj hook_add_obj,
                         gpointer                  hook_user_data)
 {
-    static const guint32 x_default_route_table_x[2]   = {RT_TABLE_MAIN, RT_TABLE_MAIN};
     static const guint32 x_default_route_metric_x[2]  = {NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
                                                         NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4};
     static const guint32 x_default_route_penalty_x[2] = {0, 0};
     static const int     x_default_dns_priority_x[2]  = {NM_DNS_PRIORITY_DEFAULT_NORMAL,
                                                     NM_DNS_PRIORITY_DEFAULT_NORMAL};
+    guint32              default_route_table_coerced_x[2];
     NMDedupMultiIter     iter;
     const NMPObject     *obj;
     int                  IS_IPv4;
@@ -3008,8 +3008,16 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
     nm_assert(_NM_IS_L3_CONFIG_DATA(src, TRUE));
 
-    if (!default_route_table_x)
-        default_route_table_x = x_default_route_table_x;
+    if (default_route_table_x) {
+        default_route_table_coerced_x[0] = nm_platform_route_table_coerce(default_route_table_x[0]);
+        default_route_table_coerced_x[1] = nm_platform_route_table_coerce(default_route_table_x[1]);
+    } else {
+        default_route_table_coerced_x[0] = nm_platform_route_table_coerce(RT_TABLE_MAIN);
+        default_route_table_coerced_x[1] = nm_platform_route_table_coerce(RT_TABLE_MAIN);
+    }
+    nm_assert(nm_platform_route_table_uncoerce(default_route_table_coerced_x[0], FALSE) != 0);
+    nm_assert(nm_platform_route_table_uncoerce(default_route_table_coerced_x[1], FALSE) != 0);
+
     if (!default_route_metric_x)
         default_route_metric_x = x_default_route_metric_x;
     if (!default_route_penalty_x)
@@ -3017,8 +3025,6 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
     if (!default_dns_priority_x)
         default_dns_priority_x = x_default_dns_priority_x;
 
-    nm_assert(default_route_table_x[0] != 0);
-    nm_assert(default_route_table_x[1] != 0);
     nm_assert(default_route_metric_x[0] != 0); /* IPv6 route metric cannot be zero. */
 
     nm_assert(!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)
@@ -3145,7 +3151,7 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                     if (r_src->table_any) {
                         _ensure_r();
                         r.rx.table_any     = FALSE;
-                        r.rx.table_coerced = default_route_table_x[IS_IPv4];
+                        r.rx.table_coerced = default_route_table_coerced_x[IS_IPv4];
                     }
 
                     if (r_src->metric_any) {
