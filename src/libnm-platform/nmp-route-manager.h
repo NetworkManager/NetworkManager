@@ -13,8 +13,8 @@ typedef struct _NMPRouteManager NMPRouteManager;
 
 NMPRouteManager *nmp_route_manager_new(NMPlatform *platform);
 
-void nmp_route_manager_ref(NMPRouteManager *self);
-void nmp_route_manager_unref(NMPRouteManager *self);
+NMPRouteManager *nmp_route_manager_ref(NMPRouteManager *self);
+void             nmp_route_manager_unref(NMPRouteManager *self);
 
 #define nm_auto_unref_route_manager nm_auto(_nmp_route_manager_unref)
 NM_AUTO_DEFINE_FCN0(NMPRouteManager *, _nmp_route_manager_unref, nmp_route_manager_unref);

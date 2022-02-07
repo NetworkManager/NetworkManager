@@ -788,12 +788,13 @@ nmp_route_manager_new(NMPlatform *platform)
     return self;
 }
 
-void
+NMPRouteManager *
 nmp_route_manager_ref(NMPRouteManager *self)
 {
-    g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
+    g_return_val_if_fail(NMP_IS_ROUTE_MANAGER(self), NULL);
 
     self->ref_count++;
+    return self;
 }
 
 void
