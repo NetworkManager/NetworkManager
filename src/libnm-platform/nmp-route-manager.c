@@ -286,8 +286,10 @@ _track_data_lookup(GHashTable *by_data, const NMPObject *obj, gconstpointer user
  *   because it enforces ownership of the now tracked rule. On the other hand,
  *   a plain nmp_route_manager_untrack_rule() merely forgets about the tracking.
  *   The purpose here is to set this to %NMP_ROUTE_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG.
+ *
+ * Returns: %TRUE, if something changed.
  */
-void
+gboolean
 nmp_route_manager_track(NMPRouteManager *self,
                         NMPObjectType    obj_type,
                         gconstpointer    obj,
@@ -300,19 +302,22 @@ nmp_route_manager_track(NMPRouteManager *self,
     TrackData        *track_data;
     TrackObjData     *obj_data;
     TrackUserTagData *user_tag_data;
-    gboolean          changed = FALSE;
+    gboolean          changed         = FALSE;
+    gboolean          changed_untrack = FALSE;
     guint32           track_priority_val;
     gboolean          track_priority_present;
 
-    g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
-    g_return_if_fail(obj);
-    g_return_if_fail(user_tag);
+    g_return_val_if_fail(NMP_IS_ROUTE_MANAGER(self), FALSE);
+    g_return_val_if_fail(obj, FALSE);
+    g_return_val_if_fail(user_tag, FALSE);
 
     /* The route must not be tied to an interface. We can only handle here
      * blackhole/unreachable/prohibit route types. */
-    g_return_if_fail(obj_type == NMP_OBJECT_TYPE_ROUTING_RULE
-                     || (NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)
-                         && ((const NMPlatformIPRoute *) obj)->ifindex == 0));
+    g_return_val_if_fail(
+        obj_type == NMP_OBJECT_TYPE_ROUTING_RULE
+            || (NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)
+                && ((const NMPlatformIPRoute *) obj)->ifindex == 0),
+        FALSE);
 
     nm_assert(track_priority != G_MININT32);
 
@@ -381,8 +386,10 @@ nmp_route_manager_track(NMPRouteManager *self,
             TrackData *track_data_untrack;
 
             track_data_untrack = _track_data_lookup(self->by_data, p_obj_stack, user_tag_untrack);
-            if (track_data_untrack)
+            if (track_data_untrack) {
                 _track_data_untrack(self, track_data_untrack, FALSE, TRUE);
+                changed_untrack = TRUE;
+            }
         } else
             nm_assert_not_reached();
     }
@@ -399,6 +406,8 @@ nmp_route_manager_track(NMPRouteManager *self,
               NMP_OBJECT_GET_CLASS(track_data->obj)->obj_type_name,
               nmp_object_to_string(track_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
     }
+
+    return changed || changed_untrack;
 }
 
 static void
@@ -453,7 +462,7 @@ _track_data_untrack(NMPRouteManager *self,
     g_hash_table_remove(self->by_data, track_data);
 }
 
-void
+gboolean
 nmp_route_manager_untrack(NMPRouteManager *self,
                           NMPObjectType    obj_type,
                           gconstpointer    obj,
@@ -462,22 +471,27 @@ nmp_route_manager_untrack(NMPRouteManager *self,
     NMPObject        obj_stack;
     const NMPObject *p_obj_stack;
     TrackData       *track_data;
+    gboolean         changed = FALSE;
 
-    g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
+    g_return_val_if_fail(NMP_IS_ROUTE_MANAGER(self), FALSE);
     nm_assert(NM_IN_SET(obj_type,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE,
                         NMP_OBJECT_TYPE_ROUTING_RULE));
-    g_return_if_fail(obj);
-    g_return_if_fail(user_tag);
+    g_return_val_if_fail(obj, FALSE);
+    g_return_val_if_fail(user_tag, FALSE);
 
     p_obj_stack = nmp_object_stackinit(&obj_stack, obj_type, obj);
 
     nm_assert(nmp_object_is_visible(p_obj_stack));
 
     track_data = _track_data_lookup(self->by_data, p_obj_stack, user_tag);
-    if (track_data)
+    if (track_data) {
         _track_data_untrack(self, track_data, TRUE, FALSE);
+        changed = TRUE;
+    }
+
+    return changed;
 }
 
 void
@@ -497,7 +511,7 @@ nmp_route_manager_set_dirty(NMPRouteManager *self, gconstpointer user_tag)
         track_data->dirty = TRUE;
 }
 
-void
+gboolean
 nmp_route_manager_untrack_all(NMPRouteManager *self,
                               gconstpointer    user_tag,
                               gboolean         all /* or only dirty */)
@@ -505,23 +519,28 @@ nmp_route_manager_untrack_all(NMPRouteManager *self,
     TrackData        *track_data;
     TrackData        *track_data_safe;
     TrackUserTagData *user_tag_data;
+    gboolean          changed = FALSE;
 
-    g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
-    g_return_if_fail(user_tag);
+    g_return_val_if_fail(NMP_IS_ROUTE_MANAGER(self), FALSE);
+    g_return_val_if_fail(user_tag, FALSE);
 
     user_tag_data = g_hash_table_lookup(self->by_user_tag, &user_tag);
     if (!user_tag_data)
-        return;
+        return FALSE;
 
     c_list_for_each_entry_safe (track_data,
                                 track_data_safe,
                                 &user_tag_data->user_tag_lst_head,
                                 user_tag_lst) {
-        if (all || track_data->dirty)
+        if (all || track_data->dirty) {
             _track_data_untrack(self, track_data, FALSE, FALSE);
+            changed = TRUE;
+        }
     }
     if (c_list_is_empty(&user_tag_data->user_tag_lst_head))
         g_hash_table_remove(self->by_user_tag, user_tag_data);
+
+    return changed;
 }
 
 /*****************************************************************************/
