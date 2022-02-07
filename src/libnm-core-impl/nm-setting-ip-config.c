@@ -1385,7 +1385,12 @@ _ip_route_attribute_validate(const char           *name,
 
         string = g_variant_get_string(value, NULL);
         type   = nm_net_aux_rtnl_rtntype_a2n(string);
-        if (!NM_IN_SET(type, RTN_UNICAST, RTN_LOCAL)) {
+        if (!NM_IN_SET(type,
+                       RTN_UNICAST,
+                       RTN_LOCAL,
+                       RTN_BLACKHOLE,
+                       RTN_UNREACHABLE,
+                       RTN_PROHIBIT)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1483,6 +1488,18 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
                         _("route scope is invalid for local route"));
+            return FALSE;
+        }
+        break;
+    case RTN_BLACKHOLE:
+    case RTN_UNREACHABLE:
+    case RTN_PROHIBIT:
+        if (route->next_hop) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("a %s route cannot have a next-hop"),
+                        nm_net_aux_rtnl_rtntype_n2a(parse_data.type));
             return FALSE;
         }
         break;
