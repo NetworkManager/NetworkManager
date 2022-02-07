@@ -1008,18 +1008,11 @@ typedef struct {
 } ObjStatesSyncFilterData;
 
 static gboolean
-_obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer user_data)
+_obj_states_sync_filter(NML3Cfg *self, const NMPObject *obj, NML3CfgCommitType commit_type)
 {
-    char                           sbuf[sizeof(_nm_utils_to_string_buffer)];
-    const NMPObject               *obj              = o;
-    const ObjStatesSyncFilterData *sync_filter_data = user_data;
-    NMPObjectType                  obj_type;
-    ObjStateData                  *obj_state;
-    NML3Cfg                       *self;
-
-    nm_assert(sync_filter_data);
-    nm_assert(NM_IS_L3CFG(sync_filter_data->self));
-    self = sync_filter_data->self;
+    char          sbuf[sizeof(_nm_utils_to_string_buffer)];
+    NMPObjectType obj_type;
+    ObjStateData *obj_state;
 
     obj_type = NMP_OBJECT_GET_TYPE(obj);
 
@@ -1027,14 +1020,14 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
         && NMP_OBJECT_CAST_IP4_ADDRESS(obj)->a_acd_not_ready)
         return FALSE;
 
-    obj_state = g_hash_table_lookup(sync_filter_data->self->priv.p->obj_state_hash, &obj);
+    obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
 
-    nm_assert_obj_state(sync_filter_data->self, obj_state);
+    nm_assert_obj_state(self, obj_state);
     nm_assert(obj_state->obj == obj);
     nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
 
     if (!obj_state->os_nm_configured) {
-        if (sync_filter_data->commit_type == NM_L3_CFG_COMMIT_TYPE_ASSUME
+        if (commit_type == NM_L3_CFG_COMMIT_TYPE_ASSUME
             && !_obj_state_data_get_assume_config_once(obj_state))
             return FALSE;
 
@@ -1051,11 +1044,70 @@ _obj_states_sync_filter(/* const NMDedupMultiObj * */ gconstpointer o, gpointer 
         return TRUE;
     }
 
-    if (!obj_state->os_plobj && sync_filter_data->commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
+    if (!obj_state->os_plobj && commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
         && !nmp_object_get_force_commit(obj))
         return FALSE;
 
     return TRUE;
+}
+
+static gboolean
+_obj_states_sync_filter_predicate(gconstpointer o, gpointer user_data)
+{
+    const NMPObject               *obj              = o;
+    const ObjStatesSyncFilterData *sync_filter_data = user_data;
+
+    return _obj_states_sync_filter(sync_filter_data->self, obj, sync_filter_data->commit_type);
+}
+
+static GPtrArray *
+_commit_collect_addresses(NML3Cfg *self, int addr_family, NML3CfgCommitType commit_type)
+{
+    const int                     IS_IPv4 = NM_IS_IPv4(addr_family);
+    const NMDedupMultiHeadEntry  *head_entry;
+    const ObjStatesSyncFilterData sync_filter_data = {
+        .self        = self,
+        .commit_type = commit_type,
+    };
+
+    head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
+                                               NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
+    return nm_dedup_multi_objs_to_ptr_array_head(head_entry,
+                                                 _obj_states_sync_filter_predicate,
+                                                 (gpointer) &sync_filter_data);
+}
+
+static void
+_commit_collect_routes(NML3Cfg          *self,
+                       int               addr_family,
+                       NML3CfgCommitType commit_type,
+                       GPtrArray       **routes)
+{
+    const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
+    const NMDedupMultiHeadEntry *head_entry;
+    const NMDedupMultiEntry     *entry;
+
+    nm_assert(routes && !*routes);
+
+    head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
+                                               NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4));
+
+    if (!head_entry)
+        return;
+
+    c_list_for_each_entry (entry, &head_entry->lst_entries_head, lst_entries) {
+        const NMPObject *obj = entry->obj;
+
+        if (!_obj_states_sync_filter(self, obj, commit_type))
+            continue;
+
+        if (!*routes) {
+            *routes =
+                g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
+        }
+
+        g_ptr_array_add(*routes, (gpointer) nmp_object_ref(obj));
+    }
 }
 
 static void
@@ -3789,6 +3841,7 @@ out_prune:
 }
 
 /*****************************************************************************/
+
 static const char *
 ip6_privacy_to_str(NMSettingIP6ConfigPrivacy ip6_privacy)
 {
@@ -4070,23 +4123,9 @@ _l3_commit_one(NML3Cfg              *self,
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
 
     if (self->priv.p->combined_l3cd_commited) {
-        const NMDedupMultiHeadEntry  *head_entry;
-        const ObjStatesSyncFilterData sync_filter_data = {
-            .self        = self,
-            .commit_type = commit_type,
-        };
+        addresses = _commit_collect_addresses(self, addr_family, commit_type);
 
-        head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
-                                                   NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
-        addresses  = nm_dedup_multi_objs_to_ptr_array_head(head_entry,
-                                                          _obj_states_sync_filter,
-                                                          (gpointer) &sync_filter_data);
-
-        head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
-                                                   NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4));
-        routes     = nm_dedup_multi_objs_to_ptr_array_head(head_entry,
-                                                       _obj_states_sync_filter,
-                                                       (gpointer) &sync_filter_data);
+        _commit_collect_routes(self, addr_family, commit_type, &routes);
 
         route_table_sync =
             nm_l3_config_data_get_route_table_sync(self->priv.p->combined_l3cd_commited,
