@@ -12,6 +12,7 @@
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-object.h"
+#include "libnm-platform/nmp-route-manager.h"
 #include "nm-netns.h"
 #include "n-acd/src/n-acd.h"
 #include "nm-l3-ipv4ll.h"
@@ -409,6 +410,25 @@ static NM_UTILS_LOOKUP_DEFINE(_l3_acd_addr_state_to_string,
                               NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED,
                                                    "external-removed"),
                               NM_UTILS_LOOKUP_ITEM(NM_L3_ACD_ADDR_STATE_USED, "used"), );
+
+static gboolean
+_obj_is_route_nodev(const NMPObject *obj)
+{
+    gboolean has_ifindex;
+
+    nm_assert(obj);
+
+    has_ifindex = (NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj)->ifindex > 0);
+
+    nm_assert(has_ifindex
+              == !(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj),
+                             NMP_OBJECT_TYPE_IP4_ROUTE,
+                             NMP_OBJECT_TYPE_IP6_ROUTE)
+                   && nm_platform_route_type_is_nodev(nm_platform_route_type_uncoerce(
+                       NMP_OBJECT_CAST_IP_ROUTE(obj)->type_coerced))));
+
+    return !has_ifindex;
+}
 
 /*****************************************************************************/
 
@@ -952,6 +972,11 @@ _obj_states_update_all(NML3Cfg *self)
                                              self->priv.p->combined_l3cd_commited,
                                              &obj,
                                              obj_type) {
+            if (_obj_is_route_nodev(obj)) {
+                /* this is a nodev route. We don't track an obj-state for this. */
+                continue;
+            }
+
             obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
             if (!obj_state) {
                 obj_state =
@@ -1081,13 +1106,15 @@ static void
 _commit_collect_routes(NML3Cfg          *self,
                        int               addr_family,
                        NML3CfgCommitType commit_type,
-                       GPtrArray       **routes)
+                       GPtrArray       **routes,
+                       GPtrArray       **routes_nodev)
 {
     const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMDedupMultiHeadEntry *head_entry;
     const NMDedupMultiEntry     *entry;
 
     nm_assert(routes && !*routes);
+    nm_assert(routes_nodev && !*routes_nodev);
 
     head_entry = nm_l3_config_data_lookup_objs(self->priv.p->combined_l3cd_commited,
                                                NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4));
@@ -1097,16 +1124,20 @@ _commit_collect_routes(NML3Cfg          *self,
 
     c_list_for_each_entry (entry, &head_entry->lst_entries_head, lst_entries) {
         const NMPObject *obj = entry->obj;
+        GPtrArray      **r;
 
-        if (!_obj_states_sync_filter(self, obj, commit_type))
-            continue;
-
-        if (!*routes) {
-            *routes =
-                g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
+        if (_obj_is_route_nodev(obj))
+            r = routes_nodev;
+        else {
+            if (!_obj_states_sync_filter(self, obj, commit_type))
+                continue;
+            r = routes;
         }
 
-        g_ptr_array_add(*routes, (gpointer) nmp_object_ref(obj));
+        if (!*r)
+            *r = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
+
+        g_ptr_array_add(*r, (gpointer) nmp_object_ref(obj));
     }
 }
 
@@ -3403,6 +3434,53 @@ nm_l3cfg_remove_config_all_dirty(NML3Cfg *self, gconstpointer tag)
 
 /*****************************************************************************/
 
+#define _NODEV_ROUTES_TAG(self, IS_IPv4) ((gconstpointer) (&(&(self)->priv.route_manager)[IS_IPv4]))
+
+static gboolean
+_nodev_routes_untrack(NML3Cfg *self, int addr_family)
+{
+    return nmp_route_manager_untrack_all(self->priv.route_manager,
+                                         _NODEV_ROUTES_TAG(self, NM_IS_IPv4(addr_family)),
+                                         FALSE,
+                                         TRUE);
+}
+
+static void
+_nodev_routes_sync(NML3Cfg          *self,
+                   int               addr_family,
+                   NML3CfgCommitType commit_type,
+                   GPtrArray        *routes_nodev)
+{
+    const int           IS_IPv4  = NM_IS_IPv4(addr_family);
+    const NMPObjectType obj_type = NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4);
+    guint               i;
+    gboolean            changed = FALSE;
+
+    if (!routes_nodev)
+        goto out_clear;
+
+    for (i = 0; i < routes_nodev->len; i++) {
+        const NMPObject *obj = routes_nodev->pdata[i];
+
+        if (nmp_route_manager_track(self->priv.route_manager,
+                                    obj_type,
+                                    NMP_OBJECT_CAST_IP_ROUTE(obj),
+                                    1,
+                                    _NODEV_ROUTES_TAG(self, IS_IPv4),
+                                    NULL))
+            changed = TRUE;
+    }
+
+out_clear:
+    if (_nodev_routes_untrack(self, addr_family))
+        changed = TRUE;
+
+    if (changed || commit_type >= NM_L3_CFG_COMMIT_TYPE_REAPPLY)
+        nmp_route_manager_sync(self->priv.route_manager, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), FALSE);
+}
+
+/*****************************************************************************/
+
 typedef struct {
     NML3Cfg      *self;
     gconstpointer tag;
@@ -4102,6 +4180,7 @@ _l3_commit_one(NML3Cfg              *self,
     const int                    IS_IPv4                            = NM_IS_IPv4(addr_family);
     gs_unref_ptrarray GPtrArray *addresses                          = NULL;
     gs_unref_ptrarray GPtrArray *routes                             = NULL;
+    gs_unref_ptrarray GPtrArray *routes_nodev                       = NULL;
     gs_unref_ptrarray GPtrArray *addresses_prune                    = NULL;
     gs_unref_ptrarray GPtrArray *routes_prune                       = NULL;
     gs_unref_ptrarray GPtrArray *routes_temporary_not_available_arr = NULL;
@@ -4125,7 +4204,7 @@ _l3_commit_one(NML3Cfg              *self,
     if (self->priv.p->combined_l3cd_commited) {
         addresses = _commit_collect_addresses(self, addr_family, commit_type);
 
-        _commit_collect_routes(self, addr_family, commit_type, &routes);
+        _commit_collect_routes(self, addr_family, commit_type, &routes, &routes_nodev);
 
         route_table_sync =
             nm_l3_config_data_get_route_table_sync(self->priv.p->combined_l3cd_commited,
@@ -4162,6 +4241,8 @@ _l3_commit_one(NML3Cfg              *self,
                                 self->priv.ifindex,
                                 addresses,
                                 addresses_prune);
+
+    _nodev_routes_sync(self, addr_family, commit_type, routes_nodev);
 
     if (!nm_platform_ip_route_sync(self->priv.platform,
                                    addr_family,
@@ -4597,6 +4678,8 @@ constructed(GObject *object)
     self->priv.platform = g_object_ref(nm_netns_get_platform(self->priv.netns));
     nm_assert(NM_IS_PLATFORM(self->priv.platform));
 
+    self->priv.route_manager = nmp_route_manager_ref(nm_netns_get_route_manager(self->priv.netns));
+
     _LOGT("created (netns=" NM_HASH_OBFUSCATE_PTR_FMT ")", NM_HASH_OBFUSCATE_PTR(self->priv.netns));
 
     G_OBJECT_CLASS(nm_l3cfg_parent_class)->constructed(object);
@@ -4647,8 +4730,14 @@ finalize(GObject *object)
     nm_assert(c_list_is_empty(&self->priv.p->obj_state_temporary_not_available_lst_head));
     nm_assert(c_list_is_empty(&self->priv.p->obj_state_zombie_lst_head));
 
+    if (_nodev_routes_untrack(self, AF_INET))
+        nmp_route_manager_sync(self->priv.route_manager, NMP_OBJECT_TYPE_IP4_ROUTE, FALSE);
+    if (_nodev_routes_untrack(self, AF_INET6))
+        nmp_route_manager_sync(self->priv.route_manager, NMP_OBJECT_TYPE_IP6_ROUTE, FALSE);
+
     g_clear_object(&self->priv.netns);
     g_clear_object(&self->priv.platform);
+    nm_clear_pointer(&self->priv.route_manager, nmp_route_manager_unref);
 
     nm_clear_l3cd(&self->priv.p->combined_l3cd_merged);
     nm_clear_l3cd(&self->priv.p->combined_l3cd_commited);
