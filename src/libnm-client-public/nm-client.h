@@ -27,9 +27,9 @@ G_BEGIN_DECLS
  *
  * Since: 1.24
  */
-typedef enum { /*< flags >*/
-               NM_CLIENT_INSTANCE_FLAGS_NONE                      = 0,
-               NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS = 1,
+typedef enum /*< flags >*/ {
+    NM_CLIENT_INSTANCE_FLAGS_NONE                      = 0,
+    NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS = 1,
 } NMClientInstanceFlags;
 
 #define NM_TYPE_CLIENT            (nm_client_get_type())

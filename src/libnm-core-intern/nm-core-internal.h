@@ -189,14 +189,14 @@ NM_TERNARY_TO_OPTION_BOOL(NMTernary v)
 
 NMSetting **_nm_connection_get_settings_arr(NMConnection *connection);
 
-typedef enum { /*< skip >*/
-               NM_SETTING_PARSE_FLAGS_NONE        = 0,
-               NM_SETTING_PARSE_FLAGS_STRICT      = 1LL << 0,
-               NM_SETTING_PARSE_FLAGS_BEST_EFFORT = 1LL << 1,
-               NM_SETTING_PARSE_FLAGS_NORMALIZE   = 1LL << 2,
+typedef enum /*< skip >*/ {
+    NM_SETTING_PARSE_FLAGS_NONE        = 0,
+    NM_SETTING_PARSE_FLAGS_STRICT      = 1LL << 0,
+    NM_SETTING_PARSE_FLAGS_BEST_EFFORT = 1LL << 1,
+    NM_SETTING_PARSE_FLAGS_NORMALIZE   = 1LL << 2,
 
-               _NM_SETTING_PARSE_FLAGS_LAST,
-               NM_SETTING_PARSE_FLAGS_ALL = ((_NM_SETTING_PARSE_FLAGS_LAST - 1) << 1) - 1,
+    _NM_SETTING_PARSE_FLAGS_LAST,
+    NM_SETTING_PARSE_FLAGS_ALL = ((_NM_SETTING_PARSE_FLAGS_LAST - 1) << 1) - 1,
 } NMSettingParseFlags;
 
 gboolean _nm_connection_replace_settings(NMConnection       *connection,

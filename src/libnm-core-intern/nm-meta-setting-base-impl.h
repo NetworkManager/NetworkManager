@@ -38,15 +38,15 @@
  *
  * 10: NMSettingUser
  */
-typedef enum { /*< skip >*/
-               NM_SETTING_PRIORITY_INVALID     = 0,
-               NM_SETTING_PRIORITY_CONNECTION  = 1,
-               NM_SETTING_PRIORITY_HW_BASE     = 2,
-               NM_SETTING_PRIORITY_HW_NON_BASE = 3,
-               NM_SETTING_PRIORITY_HW_AUX      = 4,
-               NM_SETTING_PRIORITY_AUX         = 5,
-               NM_SETTING_PRIORITY_IP          = 6,
-               NM_SETTING_PRIORITY_USER        = 10,
+typedef enum /*< skip >*/ {
+    NM_SETTING_PRIORITY_INVALID     = 0,
+    NM_SETTING_PRIORITY_CONNECTION  = 1,
+    NM_SETTING_PRIORITY_HW_BASE     = 2,
+    NM_SETTING_PRIORITY_HW_NON_BASE = 3,
+    NM_SETTING_PRIORITY_HW_AUX      = 4,
+    NM_SETTING_PRIORITY_AUX         = 5,
+    NM_SETTING_PRIORITY_IP          = 6,
+    NM_SETTING_PRIORITY_USER        = 10,
 } NMSettingPriority;
 
 /*****************************************************************************/

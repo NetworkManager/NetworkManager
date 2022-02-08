@@ -57,13 +57,13 @@ G_BEGIN_DECLS
  * is to be stored and/or requested when it is needed.
  *
  **/
-typedef enum { /*< flags >*/
-               NM_SETTING_SECRET_FLAG_NONE         = 0x00000000,
-               NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
-               NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002,
-               NM_SETTING_SECRET_FLAG_NOT_REQUIRED = 0x00000004
+typedef enum /*< flags >*/ {
+    NM_SETTING_SECRET_FLAG_NONE         = 0x00000000,
+    NM_SETTING_SECRET_FLAG_AGENT_OWNED  = 0x00000001,
+    NM_SETTING_SECRET_FLAG_NOT_SAVED    = 0x00000002,
+    NM_SETTING_SECRET_FLAG_NOT_REQUIRED = 0x00000004
 
-               /* NOTE: if adding flags, update nm-core-internal.h as well */
+    /* NOTE: if adding flags, update nm-core-internal.h as well */
 } NMSettingSecretFlags;
 
 /**

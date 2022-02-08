@@ -26,11 +26,11 @@ G_BEGIN_DECLS
  * @NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS: the arp_ping link watcher option
  *    'send_always' is enabled (set to true).
  */
-typedef enum {                                                           /*< flags >*/
-               NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE              = 0, /*< skip >*/
-               NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE   = 0x2,
-               NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE = 0x4,
-               NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS       = 0x8,
+typedef enum /*< flags >*/ {
+    NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE              = 0, /*< skip >*/
+    NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_ACTIVE   = 0x2,
+    NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_VALIDATE_INACTIVE = 0x4,
+    NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS       = 0x8,
 } NMTeamLinkWatcherArpPingFlags;
 
 #define NM_TEAM_LINK_WATCHER_ETHTOOL   "ethtool"

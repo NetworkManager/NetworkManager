@@ -7,22 +7,22 @@
 #ifndef __NM_RFKILL_MANAGER_H__
 #define __NM_RFKILL_MANAGER_H__
 
-typedef enum { /*< skip >*/
-               RFKILL_UNBLOCKED    = 0,
-               RFKILL_SOFT_BLOCKED = 1,
-               RFKILL_HARD_BLOCKED = 2
+typedef enum {
+    RFKILL_UNBLOCKED    = 0,
+    RFKILL_SOFT_BLOCKED = 1,
+    RFKILL_HARD_BLOCKED = 2,
 } RfKillState;
 
-typedef enum { /*< skip >*/
-               RFKILL_TYPE_WLAN = 0,
-               RFKILL_TYPE_WWAN = 1,
+typedef enum {
+    RFKILL_TYPE_WLAN = 0,
+    RFKILL_TYPE_WWAN = 1,
 
-               /* UNKNOWN and MAX should always be 1 more than
+    /* UNKNOWN and MAX should always be 1 more than
      * the last rfkill type since RFKILL_TYPE_MAX is
      * used as an array size.
      */
-               RFKILL_TYPE_UNKNOWN, /* KEEP LAST */
-               RFKILL_TYPE_MAX = RFKILL_TYPE_UNKNOWN
+    RFKILL_TYPE_UNKNOWN, /* KEEP LAST */
+    RFKILL_TYPE_MAX = RFKILL_TYPE_UNKNOWN,
 } RfKillType;
 
 #define NM_TYPE_RFKILL_MANAGER (nm_rfkill_manager_get_type())
