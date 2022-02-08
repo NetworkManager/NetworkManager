@@ -1229,8 +1229,6 @@ nm_device_wifi_p2p_new(const char *iface)
                         NM_DEVICE_TYPE_WIFI_P2P,
                         NM_DEVICE_LINK_TYPE,
                         NM_LINK_TYPE_WIFI,
-                        NM_DEVICE_RFKILL_TYPE,
-                        RFKILL_TYPE_WLAN,
                         NULL);
 }
 
@@ -1292,6 +1290,8 @@ nm_device_wifi_p2p_class_init(NMDeviceWifiP2PClass *klass)
     device_class->unmanaged_on_quit = unmanaged_on_quit;
 
     device_class->state_changed = device_state_changed;
+
+    device_class->rfkill_type = NM_RFKILL_TYPE_WLAN;
 
     obj_properties[PROP_PEERS] = g_param_spec_boxed(NM_DEVICE_WIFI_P2P_PEERS,
                                                     "",

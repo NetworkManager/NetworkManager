@@ -3426,8 +3426,6 @@ nm_device_iwd_new(const char *iface)
                         NM_DEVICE_TYPE_WIFI,
                         NM_DEVICE_LINK_TYPE,
                         NM_LINK_TYPE_WIFI,
-                        NM_DEVICE_RFKILL_TYPE,
-                        RFKILL_TYPE_WLAN,
                         NULL);
 }
 
@@ -3489,6 +3487,8 @@ nm_device_iwd_class_init(NMDeviceIwdClass *klass)
     device_class->act_stage2_config_also_for_external_or_assume  = TRUE;
 
     device_class->state_changed = device_state_changed;
+
+    device_class->rfkill_type = NM_RFKILL_TYPE_WLAN;
 
     obj_properties[PROP_MODE] = g_param_spec_uint(NM_DEVICE_IWD_MODE,
                                                   "",
