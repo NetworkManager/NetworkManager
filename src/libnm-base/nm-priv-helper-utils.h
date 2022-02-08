@@ -5,9 +5,9 @@
 
 /*****************************************************************************/
 
-#define NM_PRIV_HELPER_DBUS_BUS_NAME    "org.freedesktop.nm-priv-helper"
-#define NM_PRIV_HELPER_DBUS_OBJECT_PATH "/org/freedesktop/nm-priv-helper"
-#define NM_PRIV_HELPER_DBUS_IFACE_NAME  "org.freedesktop.nm-priv-helper"
+#define NM_PRIV_HELPER_DBUS_BUS_NAME    "org.freedesktop.nm_priv_helper"
+#define NM_PRIV_HELPER_DBUS_OBJECT_PATH "/org/freedesktop/nm_priv_helper"
+#define NM_PRIV_HELPER_DBUS_IFACE_NAME  "org.freedesktop.nm_priv_helper"
 
 /*****************************************************************************/
 

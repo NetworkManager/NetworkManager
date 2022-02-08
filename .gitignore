@@ -72,7 +72,7 @@ test-*.trs
 /src/nm-dispatcher/tests/test-dispatcher-envp
 
 /src/nm-priv-helper/nm-priv-helper
-/src/nm-priv-helper/org.freedesktop.nm-priv-helper.service
+/src/nm-priv-helper/org.freedesktop.nm_priv_helper.service
 
 /data/NetworkManager.service
 /data/NetworkManager-wait-online.service
@@ -437,6 +437,7 @@ test-*.trs
 /src/ndisc/tests/test-ndisc-linux
 /src/nm-daemon-helper/nm-daemon-helper
 /src/nm-iface-helper
+/src/nm-priv-helper/org.freedesktop.nm-priv-helper.service
 /src/nm-sudo/nm-sudo
 /src/nm-sudo/org.freedesktop.nm.sudo.service
 /src/platform/tests/dump
