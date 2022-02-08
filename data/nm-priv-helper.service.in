@@ -73,7 +73,3 @@ CapabilityBoundingSet=CAP_DAC_OVERRIDE
 PrivateUsers=no
 RestrictAddressFamilies=AF_UNIX
 SystemCallFilter=@resources
-
-
-[Install]
-Alias=dbus-org.freedesktop.nm_priv_helper.service
