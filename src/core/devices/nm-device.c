@@ -9298,9 +9298,6 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
         int                is_ipv4;
 
         untrack_only_dirty = TRUE;
-        nmp_route_manager_set_dirty(route_manager, user_tag_1);
-        if (klass->get_extra_rules)
-            nmp_route_manager_set_dirty(route_manager, user_tag_2);
 
         applied_connection = nm_device_get_applied_connection(self);
 
@@ -9347,9 +9344,9 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
         }
     }
 
-    nmp_route_manager_untrack_all(route_manager, user_tag_1, !untrack_only_dirty);
+    nmp_route_manager_untrack_all(route_manager, user_tag_1, !untrack_only_dirty, TRUE);
     if (klass->get_extra_rules)
-        nmp_route_manager_untrack_all(route_manager, user_tag_2, !untrack_only_dirty);
+        nmp_route_manager_untrack_all(route_manager, user_tag_2, !untrack_only_dirty, TRUE);
 
     keep_deleted_rules = FALSE;
     if (set_mode == NM_TERNARY_DEFAULT) {

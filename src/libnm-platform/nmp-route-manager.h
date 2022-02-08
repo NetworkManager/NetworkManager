@@ -69,7 +69,8 @@ void nmp_route_manager_set_dirty(NMPRouteManager *self, gconstpointer user_tag);
 
 gboolean nmp_route_manager_untrack_all(NMPRouteManager *self,
                                        gconstpointer    user_tag,
-                                       gboolean         all /* or only dirty */);
+                                       gboolean         all /* or only dirty */,
+                                       gboolean         make_survivors_dirty);
 
 void nmp_route_manager_sync(NMPRouteManager *self, NMPObjectType obj_type, gboolean keep_deleted);
 

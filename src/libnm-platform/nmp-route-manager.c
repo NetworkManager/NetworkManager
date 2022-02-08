@@ -514,7 +514,8 @@ nmp_route_manager_set_dirty(NMPRouteManager *self, gconstpointer user_tag)
 gboolean
 nmp_route_manager_untrack_all(NMPRouteManager *self,
                               gconstpointer    user_tag,
-                              gboolean         all /* or only dirty */)
+                              gboolean         all /* or only dirty */,
+                              gboolean         make_survivors_dirty)
 {
     TrackData        *track_data;
     TrackData        *track_data_safe;
@@ -535,7 +536,10 @@ nmp_route_manager_untrack_all(NMPRouteManager *self,
         if (all || track_data->dirty) {
             _track_data_untrack(self, track_data, FALSE, FALSE);
             changed = TRUE;
+            continue;
         }
+        if (make_survivors_dirty)
+            track_data->dirty = TRUE;
     }
     if (c_list_is_empty(&user_tag_data->user_tag_lst_head))
         g_hash_table_remove(self->by_user_tag, user_tag_data);
