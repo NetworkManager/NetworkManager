@@ -18,7 +18,7 @@ Description=NetworkManager Privileged Helper
 
 [Service]
 Type=dbus
-BusName=org.freedesktop.nm-priv-helper
+BusName=org.freedesktop.nm_priv_helper
 ExecStart=@libexecdir@/nm-priv-helper
 NotifyAccess=main
 
@@ -76,4 +76,4 @@ SystemCallFilter=@resources
 
 
 [Install]
-Alias=dbus-org.freedesktop.nm-priv-helper.service
+Alias=dbus-org.freedesktop.nm_priv_helper.service
