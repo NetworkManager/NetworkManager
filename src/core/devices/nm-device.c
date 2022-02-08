@@ -2943,7 +2943,7 @@ _dev_ip_state_req_timeout_cb_x(NMDevice *self, int addr_family)
 
     _LOGD_ip(addr_family, "required-timeout: expired");
     nm_clear_g_source_inst(&priv->ip_data_x[NM_IS_IPv4(addr_family)].req_timeout_source);
-    _dev_ip_state_check(self, addr_family);
+    _dev_ip_state_check(self, nm_utils_addr_family_other(addr_family));
     return G_SOURCE_CONTINUE;
 }
 
