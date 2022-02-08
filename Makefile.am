@@ -4595,19 +4595,19 @@ src_nm_priv_helper_nm_priv_helper_LDADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-src/nm-priv-helper/org.freedesktop.nm-priv-helper.service: $(srcdir)/src/nm-priv-helper/org.freedesktop.nm-priv-helper.service.in
+src/nm-priv-helper/org.freedesktop.nm_priv_helper.service: $(srcdir)/src/nm-priv-helper/org.freedesktop.nm_priv_helper.service.in
 	@sed \
 	-e 's|@libexecdir[@]|$(libexecdir)|g' \
 	$< >$@
 
-dbusactivation_DATA += src/nm-priv-helper/org.freedesktop.nm-priv-helper.service
-CLEANFILES += src/nm-priv-helper/org.freedesktop.nm-priv-helper.service
+dbusactivation_DATA += src/nm-priv-helper/org.freedesktop.nm_priv_helper.service
+CLEANFILES += src/nm-priv-helper/org.freedesktop.nm_priv_helper.service
 
 dbusservice_DATA += src/nm-priv-helper/nm-priv-helper.conf
 
 EXTRA_DIST += \
 	src/nm-priv-helper/nm-priv-helper.conf \
-	src/nm-priv-helper/org.freedesktop.nm-priv-helper.service.in \
+	src/nm-priv-helper/org.freedesktop.nm_priv_helper.service.in \
 	src/nm-priv-helper/meson.build \
 	$(NULL)
 
