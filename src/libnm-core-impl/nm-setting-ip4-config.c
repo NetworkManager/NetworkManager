@@ -1047,6 +1047,23 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                        .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                        .from_dbus_fcn = ip4_route_data_set, ));
 
+    /* ---nmcli---
+     * property: routing-rules
+     * format: a comma separated list of routing rules
+     * description: A comma separated list of routing rules for policy routing.
+     * description-docbook:
+     *   <para>
+     *   A comma separated list of routing rules for policy routing. The format
+     *   is based on <command>ip rule add</command> syntax and mostly compatible.
+     *   One difference is that routing rules in NetworkManager always need a
+     *   fixed priority.
+     *   </para>
+     *   <para>
+     *   Example: <literal>priority 5 from 192.167.4.0/24 table 45</literal>
+     *   </para>
+     * ---end---
+     */
+
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
     _nm_setting_class_commit(setting_class,
