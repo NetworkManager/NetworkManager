@@ -123,18 +123,6 @@ def write_data(setting_node, parsed_data):
         property_node.append(des)
 
 
-def pretty_xml(element, newline, level=0):
-    if element:
-        if (element.text is None) or element.text.isspace():
-            element.text = newline
-        else:
-            element.text = newline + element.text.strip() + newline
-    temp = list(element)
-    for subelement in temp:
-        subelement.tail = newline
-        pretty_xml(subelement, newline, level=level + 1)
-
-
 if len(sys.argv) < 4:
     print("Usage: %s [plugin] [output-xml-file] [srcfiles]" % (sys.argv[0]))
     exit(1)
@@ -151,7 +139,5 @@ for one_file in source_files:
         setting_node = ET.SubElement(root_node, "setting", name=setting_name)
         setting_node.text = "\n"
         scan_doc_comments(plugin, setting_node, one_file, start_tag, end_tag)
-
-pretty_xml(root_node, "\n")
 
 ET.ElementTree(root_node).write(output)
