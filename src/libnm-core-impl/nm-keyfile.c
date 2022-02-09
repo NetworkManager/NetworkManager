@@ -2768,6 +2768,11 @@ struct _ParseInfoProperty {
      * default value. By setting this flag to TRUE, also
      * default values are written. */
     bool writer_persist_default : 1;
+
+    /*  This flag indicates that the property should always
+     * be written to keyfile, even if it's the default.
+     * This is currently only implemented for STRV properties. */
+    bool always_write : 1;
 };
 
 #define PARSE_INFO_PROPERTY(_property_name, ...) \
@@ -2869,53 +2874,57 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
         NM_META_SETTING_TYPE_INFINIBAND,
         PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_INFINIBAND_MAC_ADDRESS,
                                                   .parser = mac_address_parser_INFINIBAND, ), ), ),
-    PARSE_INFO_SETTING(NM_META_SETTING_TYPE_IP4_CONFIG,
-                       PARSE_INFO_PROPERTIES(
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ADDRESSES,
-                                               .parser_no_check_key = TRUE,
-                                               .parser              = ip_address_or_route_parser,
-                                               .writer              = addr_writer, ),
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS,
-                                               .parser_no_check_key = TRUE,
-                                               .parser              = ip_dns_parser,
-                                               .writer              = dns_writer, ),
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .writer_skip = TRUE, ),
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
-                                               .parser_no_check_key = TRUE,
-                                               .parser              = ip_address_or_route_parser,
-                                               .writer              = route_writer, ),
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTING_RULES,
-                                               .parser_no_check_key = TRUE,
-                                               .parser_full         = ip_routing_rule_parser_full,
-                                               .writer_full         = ip_routing_rule_writer_full,
-                                               .has_parser_full     = TRUE,
-                                               .has_writer_full     = TRUE, ), ), ),
-    PARSE_INFO_SETTING(NM_META_SETTING_TYPE_IP6_CONFIG,
-                       PARSE_INFO_PROPERTIES(
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
-                                               .parser_no_check_key    = TRUE,
-                                               .parser                 = ip6_addr_gen_mode_parser,
-                                               .writer                 = ip6_addr_gen_mode_writer,
-                                               .writer_persist_default = TRUE, ),
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ADDRESSES,
-                                               .parser_no_check_key = TRUE,
-                                               .parser              = ip_address_or_route_parser,
-                                               .writer              = addr_writer, ),
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS,
-                                               .parser_no_check_key = TRUE,
-                                               .parser              = ip_dns_parser,
-                                               .writer              = dns_writer, ),
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .writer_skip = TRUE, ),
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
-                                               .parser_no_check_key = TRUE,
-                                               .parser              = ip_address_or_route_parser,
-                                               .writer              = route_writer, ),
-                           PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTING_RULES,
-                                               .parser_no_check_key = TRUE,
-                                               .parser_full         = ip_routing_rule_parser_full,
-                                               .writer_full         = ip_routing_rule_writer_full,
-                                               .has_parser_full     = TRUE,
-                                               .has_writer_full     = TRUE, ), ), ),
+    PARSE_INFO_SETTING(
+        NM_META_SETTING_TYPE_IP4_CONFIG,
+        PARSE_INFO_PROPERTIES(
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ADDRESSES,
+                                .parser_no_check_key = TRUE,
+                                .parser              = ip_address_or_route_parser,
+                                .writer              = addr_writer, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS,
+                                .parser_no_check_key = TRUE,
+                                .parser              = ip_dns_parser,
+                                .writer              = dns_writer, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_OPTIONS, .always_write = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .writer_skip = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
+                                .parser_no_check_key = TRUE,
+                                .parser              = ip_address_or_route_parser,
+                                .writer              = route_writer, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTING_RULES,
+                                .parser_no_check_key = TRUE,
+                                .parser_full         = ip_routing_rule_parser_full,
+                                .writer_full         = ip_routing_rule_writer_full,
+                                .has_parser_full     = TRUE,
+                                .has_writer_full     = TRUE, ), ), ),
+    PARSE_INFO_SETTING(
+        NM_META_SETTING_TYPE_IP6_CONFIG,
+        PARSE_INFO_PROPERTIES(
+            PARSE_INFO_PROPERTY(NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
+                                .parser_no_check_key    = TRUE,
+                                .parser                 = ip6_addr_gen_mode_parser,
+                                .writer                 = ip6_addr_gen_mode_writer,
+                                .writer_persist_default = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ADDRESSES,
+                                .parser_no_check_key = TRUE,
+                                .parser              = ip_address_or_route_parser,
+                                .writer              = addr_writer, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS,
+                                .parser_no_check_key = TRUE,
+                                .parser              = ip_dns_parser,
+                                .writer              = dns_writer, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_DNS_OPTIONS, .always_write = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_GATEWAY, .writer_skip = TRUE, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTES,
+                                .parser_no_check_key = TRUE,
+                                .parser              = ip_address_or_route_parser,
+                                .writer              = route_writer, ),
+            PARSE_INFO_PROPERTY(NM_SETTING_IP_CONFIG_ROUTING_RULES,
+                                .parser_no_check_key = TRUE,
+                                .parser_full         = ip_routing_rule_parser_full,
+                                .writer_full         = ip_routing_rule_writer_full,
+                                .has_parser_full     = TRUE,
+                                .has_writer_full     = TRUE, ), ), ),
     PARSE_INFO_SETTING(
         NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
         PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_OVS_EXTERNAL_IDS_DATA,
@@ -3949,11 +3958,13 @@ write_setting_value(KeyfileWriterInfo        *info,
         char **array;
 
         array = (char **) g_value_get_boxed(&value);
-        nm_keyfile_plugin_kf_set_string_list(info->keyfile,
-                                             setting_info->setting_name,
-                                             key,
-                                             (const char **const) array,
-                                             g_strv_length(array));
+        if ((g_strv_length(array) != 0) || (pip && pip->always_write)) {
+            nm_keyfile_plugin_kf_set_string_list(info->keyfile,
+                                                 setting_info->setting_name,
+                                                 key,
+                                                 (const char **const) array,
+                                                 g_strv_length(array));
+        }
     } else if (type == G_TYPE_HASH_TABLE) {
         write_hash_of_string(info->keyfile, setting, key, &value);
     } else if (type == G_TYPE_ARRAY) {
