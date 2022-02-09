@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 configure_file(
-  input: 'org.freedesktop.nm-priv-helper.service.in',
+  input: 'org.freedesktop.nm_priv_helper.service.in',
   output: '@BASENAME@',
   install_dir: dbus_system_bus_services_dir,
   configuration: data_conf,
