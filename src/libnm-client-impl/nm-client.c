@@ -5365,7 +5365,7 @@ nm_client_add_and_activate_connection2(NMClient           *client,
  * @client: an #NMClient
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
- * @out_result: (allow-none) (transfer full): the output result
+ * @out_result: (allow-none) (transfer full) (out): the output result
  *   of type "a{sv}" returned by D-Bus' AddAndActivate2 call. Currently, no
  *   output is implemented yet.
  *
