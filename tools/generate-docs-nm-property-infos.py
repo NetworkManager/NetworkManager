@@ -54,27 +54,29 @@ def scan_doc_comments(plugin, setting_node, file, start_tag, end_tag):
     return
 
 
+keywords = [
+    "property",
+    "variable",
+    "format",
+    "values",
+    "default",
+    "example",
+    "description",
+    "description-docbook",
+]
+kwd_first_line_re = re.compile(
+    r"^\s*\**\s+({}):\s+(.*?)\s*$".format("|".join(keywords))
+)
+kwd_more_line_re = re.compile(r"^\s*\**\s+(.*?)\s*$")
+
+
 def process_data(data):
     parsed_data = {}
     if not data:
         return parsed_data
-    keywords = [
-        "property",
-        "variable",
-        "format",
-        "values",
-        "default",
-        "example",
-        "description",
-        "description-docbook",
-    ]
-    kwd_pat = "|".join(keywords)
     keyword = ""
     for line in data:
-        kwd_first_line_found = re.search(
-            r"^\s*\**\s+({}):\s+(.*?)\s*$".format(kwd_pat), line
-        )
-        kwd_more_line_found = re.search(r"^\s*\**\s+(.*?)\s*$", line)
+        kwd_first_line_found = kwd_first_line_re.search(line)
         if kwd_first_line_found:
             keyword = kwd_first_line_found.group(1)
             if keyword == "description-docbook":
@@ -82,16 +84,17 @@ def process_data(data):
             else:
                 value = kwd_first_line_found.group(2) + " "
             parsed_data[keyword] = value
-        elif kwd_more_line_found:
+            continue
+        kwd_more_line_found = kwd_more_line_re.search(line)
+        if kwd_more_line_found:
             if not keyword:
                 print("Extra mess in a comment: %s" % (line))
                 exit(1)
+            if keyword == "description-docbook":
+                value = kwd_more_line_found.group(1) + "\n"
             else:
-                if keyword == "description-docbook":
-                    value = kwd_more_line_found.group(1) + "\n"
-                else:
-                    value = kwd_more_line_found.group(1) + " "
-                parsed_data[keyword] += value
+                value = kwd_more_line_found.group(1) + " "
+            parsed_data[keyword] += value
     for keyword in keywords:
         if keyword == "variable" and keyword not in parsed_data:
             parsed_data[keyword] = parsed_data["property"]
