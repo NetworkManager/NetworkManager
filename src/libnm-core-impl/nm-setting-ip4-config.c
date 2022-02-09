@@ -949,9 +949,73 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * property: routes
      * format: a comma separated list of routes
      * description: A list of IPv4 destination addresses, prefix length, optional IPv4
-     * next hop addresses, optional route metric, optional attribute. The valid syntax is:
-     * "ip[/prefix] [next-hop] [metric] [attribute=val]...[,ip[/prefix]...]". For example
-     * "192.0.2.0/24 10.1.1.1 77, 198.51.100.0/24".
+     *   next hop addresses, optional route metric, optional attribute. The valid syntax is:
+     *   "ip[/prefix] [next-hop] [metric] [attribute=val]...[,ip[/prefix]...]". For example
+     *   "192.0.2.0/24 10.1.1.1 77, 198.51.100.0/24".
+     * description-docbook:
+     *   <para>
+     *     A list of IPv4 destination addresses, prefix length, optional IPv4
+     *     next hop addresses, optional route metric, optional attribute. The valid syntax is:
+     *     "ip[/prefix] [next-hop] [metric] [attribute=val]...[,ip[/prefix]...]".
+     *     For example "192.0.2.0/24 10.1.1.1 77, 198.51.100.0/24".
+     *   </para>
+     *   <para>
+     *     Various attributes are supported:
+     *     <itemizedlist>
+     *      <listitem>
+     *        <para><literal>"cwnd"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"initcwnd"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"initrwnd"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-cwnd"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-initcwnd"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-initrwnd"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-mtu"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-window"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"mtu"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"onlink"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"scope"</literal> - an unsigned 8 bit integer. IPv4 only.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"src"</literal> - an IPv4 address.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"table"</literal> - an unsigned 32 bit integer. The default depends on ipv4.route-table.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"tos"</literal> - an unsigned 8 bit integer. IPv4 only.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"type"</literal> - one of <literal>unicast</literal>, <literal>local</literal>, <literal>blackhole</literal>,
+     *          <literal>unavailable</literal>, <literal>prohibit</literal>. The default is <literal>unicast</literal>.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"window"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *     </itemizedlist>
+     *   </para>
+     *   <para>
+     *   For details see also `man ip-route`.
+     *   </para>
      * ---end---
      */
     _nm_properties_override_gobj(
