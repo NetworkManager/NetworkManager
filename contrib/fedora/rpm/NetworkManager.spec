@@ -1047,7 +1047,7 @@ fi
 %dir %{_localstatedir}/lib/NetworkManager
 %dir %{_sysconfdir}/sysconfig/network-scripts
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
-%{_datadir}/dbus-1/system-services/org.freedesktop.nm-priv-helper.service
+%{_datadir}/dbus-1/system-services/org.freedesktop.nm_priv_helper.service
 %{_datadir}/polkit-1/actions/*.policy
 %{_prefix}/lib/udev/rules.d/*.rules
 %if %{with firewalld_zone}
