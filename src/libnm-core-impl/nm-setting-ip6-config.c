@@ -989,6 +989,71 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *   default metric for the device.
      * ---end---
      */
+    /* ---nmcli---
+     * property: routes
+     * format: a comma separated list of routes
+     * description-docbook:
+     *   <para>
+     *     A list of IPv6 destination addresses, prefix length, optional IPv6
+     *     next hop addresses, optional route metric, optional attribute. The valid syntax is:
+     *     "ip[/prefix] [next-hop] [metric] [attribute=val]...[,ip[/prefix]...]".
+     *   </para>
+     *   <para>
+     *     Various attributes are supported:
+     *     <itemizedlist>
+     *      <listitem>
+     *        <para><literal>"cwnd"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"from"</literal> - an IPv6 address with optional prefix. IPv6 only.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"initcwnd"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"initrwnd"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-cwnd"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-initcwnd"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-initrwnd"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-mtu"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-window"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"mtu"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"onlink"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"src"</literal> - an IPv6 address.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"table"</literal> - an unsigned 32 bit integer. The default depends on ipv6.route-table.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"type"</literal> - one of <literal>unicast</literal>, <literal>local</literal>, <literal>blackhole</literal>,
+     *          <literal>unavailable</literal>, <literal>prohibit</literal>. The default is <literal>unicast</literal>.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"window"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *     </itemizedlist>
+     *   </para>
+     *   <para>
+     *   For details see also `man ip-route`.
+     *   </para>
+     * ---end---
+     */
     _nm_properties_override_gobj(
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
@@ -1017,6 +1082,23 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                        .to_dbus_fcn   = ip6_route_data_get,
                                        .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
                                        .from_dbus_fcn = ip6_route_data_set, ));
+
+    /* ---nmcli---
+     * property: routing-rules
+     * format: a comma separated list of routing rules
+     * description: A comma separated list of routing rules for policy routing.
+     * description-docbook:
+     *   <para>
+     *   A comma separated list of routing rules for policy routing. The format
+     *   is based on <command>ip rule add</command> syntax and mostly compatible.
+     *   One difference is that routing rules in NetworkManager always need a
+     *   fixed priority.
+     *   </para>
+     *   <para>
+     *   Example: <literal>priority 5 from 1:2:3::5/128 table 45</literal>
+     *   </para>
+     * ---end---
+     */
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

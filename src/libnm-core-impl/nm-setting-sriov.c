@@ -350,13 +350,13 @@ nm_sriov_vf_get_attribute(const NMSriovVF *vf, const char *name)
 const NMVariantAttributeSpec *const _nm_sriov_vf_attribute_spec[] = {
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_SRIOV_VF_ATTRIBUTE_MAC,
                                      G_VARIANT_TYPE_STRING,
-                                     .str_type = 'm', ),
+                                     .type_detail = 'm', ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_SRIOV_VF_ATTRIBUTE_SPOOF_CHECK, G_VARIANT_TYPE_BOOLEAN, ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_SRIOV_VF_ATTRIBUTE_TRUST, G_VARIANT_TYPE_BOOLEAN, ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_SRIOV_VF_ATTRIBUTE_MIN_TX_RATE, G_VARIANT_TYPE_UINT32, ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_SRIOV_VF_ATTRIBUTE_MAX_TX_RATE, G_VARIANT_TYPE_UINT32, ),
     /* D-Bus only, synthetic attributes */
-    NM_VARIANT_ATTRIBUTE_SPEC_DEFINE("vlans", G_VARIANT_TYPE_STRING, .str_type = 'd', ),
+    NM_VARIANT_ATTRIBUTE_SPEC_DEFINE("vlans", G_VARIANT_TYPE_STRING, .type_detail = 'd', ),
     NULL,
 };
 
@@ -379,6 +379,7 @@ nm_sriov_vf_attribute_validate(const char *name, GVariant *value, gboolean *know
 {
     const NMVariantAttributeSpec *const *iter;
     const NMVariantAttributeSpec        *spec = NULL;
+    const char                          *string;
 
     g_return_val_if_fail(name, FALSE);
     g_return_val_if_fail(value, FALSE);
@@ -391,7 +392,7 @@ nm_sriov_vf_attribute_validate(const char *name, GVariant *value, gboolean *know
         }
     }
 
-    if (!spec || spec->str_type == 'd') {
+    if (!spec || spec->type_detail == 'd') {
         NM_SET_OUT(known, FALSE);
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
@@ -411,24 +412,23 @@ nm_sriov_vf_attribute_validate(const char *name, GVariant *value, gboolean *know
         return FALSE;
     }
 
-    if (g_variant_type_equal(spec->type, G_VARIANT_TYPE_STRING)) {
-        const char *string;
-
-        switch (spec->str_type) {
-        case 'm': /* MAC address */
-            string = g_variant_get_string(value, NULL);
-            if (!nm_utils_hwaddr_valid(string, -1)) {
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_FAILED,
-                            _("'%s' is not a valid MAC address"),
-                            string);
-                return FALSE;
-            }
-            break;
-        default:
-            break;
+    switch (spec->type_detail) {
+    case 'm': /* MAC address */
+        string = g_variant_get_string(value, NULL);
+        if (!nm_utils_hwaddr_valid(string, -1)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_FAILED,
+                        _("'%s' is not a valid MAC address"),
+                        string);
+            return FALSE;
         }
+        break;
+    case '\0':
+        break;
+    default:
+        nm_assert_not_reached();
+        break;
     }
 
     return TRUE;

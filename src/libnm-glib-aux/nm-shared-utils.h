@@ -3148,7 +3148,13 @@ struct _NMVariantAttributeSpec {
     bool                v6 : 1;
     bool                no_value : 1;
     bool                consumes_rest : 1;
-    char                str_type;
+
+    /* This indicates a non-standard parsing behavior. What this is,
+     * depends on the actual validation and how to handle it.
+     *
+     * Note that the entire NMVariantAttributeSpec is internal API,
+     * so we can change behavior and adjust it as it fits. */
+    char type_detail;
 };
 
 typedef struct _NMVariantAttributeSpec NMVariantAttributeSpec;
