@@ -10,7 +10,7 @@
 
 #include "nm-core-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "libnm-platform/nmp-rules-manager.h"
+#include "libnm-platform/nmp-route-manager.h"
 
 #include "test-common.h"
 
@@ -1637,8 +1637,8 @@ again:
 
     if (TEST_SYNC) {
         gs_unref_hashtable GHashTable *unique_priorities = g_hash_table_new(NULL, NULL);
-        nm_auto_unref_rules_manager NMPRulesManager *rules_manager =
-            nmp_rules_manager_new(platform);
+        nm_auto_unref_route_manager NMPRouteManager *route_manager =
+            nmp_route_manager_new(platform);
         gs_unref_ptrarray GPtrArray *objs_sync  = NULL;
         gconstpointer                USER_TAG_1 = &platform;
         gconstpointer                USER_TAG_2 = &unique_priorities;
@@ -1660,29 +1660,29 @@ again:
         }
 
         for (i = 0; i < objs_sync->len; i++) {
-            nmp_rules_manager_track(rules_manager,
-                                    NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                    1,
-                                    USER_TAG_1,
-                                    NULL);
+            nmp_route_manager_track_rule(route_manager,
+                                         NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                         1,
+                                         USER_TAG_1,
+                                         NULL);
             if (nmtst_get_rand_bool()) {
                 /* this has no effect, because a negative priority (of same absolute value)
                  * has lower priority than the positive priority above. */
-                nmp_rules_manager_track(rules_manager,
-                                        NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                        -1,
-                                        USER_TAG_2,
-                                        NULL);
+                nmp_route_manager_track_rule(route_manager,
+                                             NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                             -1,
+                                             USER_TAG_2,
+                                             NULL);
             }
             if (nmtst_get_rand_uint32() % objs_sync->len == 0) {
-                nmp_rules_manager_sync(rules_manager, FALSE);
+                nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
                 g_assert_cmpint(nmtstp_platform_routing_rules_get_count(platform, AF_UNSPEC),
                                 ==,
                                 i + 1);
             }
         }
 
-        nmp_rules_manager_sync(rules_manager, FALSE);
+        nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
         g_assert_cmpint(nmtstp_platform_routing_rules_get_count(platform, AF_UNSPEC),
                         ==,
                         objs_sync->len);
@@ -1690,37 +1690,37 @@ again:
         for (i = 0; i < objs_sync->len; i++) {
             switch (nmtst_get_rand_uint32() % 3) {
             case 0:
-                nmp_rules_manager_untrack(rules_manager,
-                                          NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                          USER_TAG_1);
-                nmp_rules_manager_untrack(rules_manager,
-                                          NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                          USER_TAG_1);
+                nmp_route_manager_untrack_rule(route_manager,
+                                               NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                               USER_TAG_1);
+                nmp_route_manager_untrack_rule(route_manager,
+                                               NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                               USER_TAG_1);
                 break;
             case 1:
-                nmp_rules_manager_track(rules_manager,
-                                        NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                        -1,
-                                        USER_TAG_1,
-                                        NULL);
+                nmp_route_manager_track_rule(route_manager,
+                                             NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                             -1,
+                                             USER_TAG_1,
+                                             NULL);
                 break;
             case 2:
-                nmp_rules_manager_track(rules_manager,
-                                        NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                        -2,
-                                        USER_TAG_2,
-                                        NULL);
+                nmp_route_manager_track_rule(route_manager,
+                                             NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                             -2,
+                                             USER_TAG_2,
+                                             NULL);
                 break;
             }
             if (nmtst_get_rand_uint32() % objs_sync->len == 0) {
-                nmp_rules_manager_sync(rules_manager, FALSE);
+                nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
                 g_assert_cmpint(nmtstp_platform_routing_rules_get_count(platform, AF_UNSPEC),
                                 ==,
                                 objs_sync->len - i - 1);
             }
         }
 
-        nmp_rules_manager_sync(rules_manager, FALSE);
+        nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
 
     } else {
         for (i = 0; i < objs->len;) {
@@ -1886,6 +1886,64 @@ again:
 
 /*****************************************************************************/
 
+static void
+test_blackhole(gconstpointer test_data)
+{
+    int                          TEST_IDX    = GPOINTER_TO_INT(test_data);
+    const int                    addr_family = (TEST_IDX == 1) ? AF_INET : AF_INET6;
+    const int                    IS_IPv4     = NM_IS_IPv4(addr_family);
+    const NMDedupMultiHeadEntry *head_entry;
+    NMDedupMultiIter             iter;
+    const NMPObject             *obj;
+    NMPObject                    obj_stack;
+    NMPlatformIPXRoute           rr = {};
+    int                          r  = -1;
+    int                          i;
+
+    if (IS_IPv4) {
+        rr.r4 = (const NMPlatformIP4Route){
+            .type_coerced = nmtst_rand_select(RTN_BLACKHOLE, RTN_UNREACHABLE, RTN_PROHIBIT),
+        };
+    } else {
+        rr.r6 = (const NMPlatformIP6Route){
+            .type_coerced = nmtst_rand_select(RTN_BLACKHOLE, RTN_UNREACHABLE, RTN_PROHIBIT),
+            .metric       = 1000,
+        };
+    }
+
+    nm_platform_ip_route_normalize(addr_family, &rr.rx);
+
+    if (IS_IPv4)
+        r = nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r4);
+    else
+        r = nm_platform_ip6_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r6);
+
+    g_assert_cmpint(r, ==, 0);
+
+    nmp_object_stackinit(&obj_stack, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), &rr);
+
+    obj = nm_platform_lookup_obj(NM_PLATFORM_GET, NMP_CACHE_ID_TYPE_OBJECT_TYPE, &obj_stack);
+
+    _LOGT(">>> adding %s",
+          nmp_object_to_string(&obj_stack, NMP_OBJECT_TO_STRING_ALL, g_alloca(1000), 1000));
+    _LOGT(">>> found  %s",
+          nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_ALL, g_alloca(1000), 1000));
+
+    g_assert(obj);
+
+    head_entry = nm_platform_lookup_object(NM_PLATFORM_GET, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), 0);
+    g_assert(head_entry);
+    g_assert_cmpint(head_entry->len, ==, 1);
+    i = 0;
+    nm_dedup_multi_iter_for_each (&iter, head_entry) {
+        i++;
+        g_assert(iter.current->obj == obj);
+    }
+    g_assert_cmpint(i, ==, 1);
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
 
 void
@@ -1922,5 +1980,9 @@ _nmtstp_setup_tests(void)
         add_test_func_data("/route/rule/2", test_rule, GINT_TO_POINTER(2));
         add_test_func_data("/route/rule/3", test_rule, GINT_TO_POINTER(3));
         add_test_func_data("/route/rule/4", test_rule, GINT_TO_POINTER(4));
+    }
+    if (nmtstp_is_root_test()) {
+        add_test_func_data("/route/blackhole/1", test_blackhole, GINT_TO_POINTER(1));
+        add_test_func_data("/route/blackhole/2", test_blackhole, GINT_TO_POINTER(2));
     }
 }

@@ -54,27 +54,29 @@ def scan_doc_comments(plugin, setting_node, file, start_tag, end_tag):
     return
 
 
+keywords = [
+    "property",
+    "variable",
+    "format",
+    "values",
+    "default",
+    "example",
+    "description",
+    "description-docbook",
+]
+kwd_first_line_re = re.compile(
+    r"^\s*\**\s+({}):\s+(.*?)\s*$".format("|".join(keywords))
+)
+kwd_more_line_re = re.compile(r"^\s*\**\s+(.*?)\s*$")
+
+
 def process_data(data):
     parsed_data = {}
     if not data:
         return parsed_data
-    keywords = [
-        "property",
-        "variable",
-        "format",
-        "values",
-        "default",
-        "example",
-        "description",
-        "description-docbook",
-    ]
-    kwd_pat = "|".join(keywords)
     keyword = ""
     for line in data:
-        kwd_first_line_found = re.search(
-            r"^\s*\**\s+({}):\s+(.*?)\s*$".format(kwd_pat), line
-        )
-        kwd_more_line_found = re.search(r"^\s*\**\s+(.*?)\s*$", line)
+        kwd_first_line_found = kwd_first_line_re.search(line)
         if kwd_first_line_found:
             keyword = kwd_first_line_found.group(1)
             if keyword == "description-docbook":
@@ -82,16 +84,17 @@ def process_data(data):
             else:
                 value = kwd_first_line_found.group(2) + " "
             parsed_data[keyword] = value
-        elif kwd_more_line_found:
+            continue
+        kwd_more_line_found = kwd_more_line_re.search(line)
+        if kwd_more_line_found:
             if not keyword:
                 print("Extra mess in a comment: %s" % (line))
                 exit(1)
+            if keyword == "description-docbook":
+                value = kwd_more_line_found.group(1) + "\n"
             else:
-                if keyword == "description-docbook":
-                    value = kwd_more_line_found.group(1) + "\n"
-                else:
-                    value = kwd_more_line_found.group(1) + " "
-                parsed_data[keyword] += value
+                value = kwd_more_line_found.group(1) + " "
+            parsed_data[keyword] += value
     for keyword in keywords:
         if keyword == "variable" and keyword not in parsed_data:
             parsed_data[keyword] = parsed_data["property"]
@@ -120,18 +123,6 @@ def write_data(setting_node, parsed_data):
         property_node.append(des)
 
 
-def pretty_xml(element, newline, level=0):
-    if element:
-        if (element.text is None) or element.text.isspace():
-            element.text = newline
-        else:
-            element.text = newline + element.text.strip() + newline
-    temp = list(element)
-    for subelement in temp:
-        subelement.tail = newline
-        pretty_xml(subelement, newline, level=level + 1)
-
-
 if len(sys.argv) < 4:
     print("Usage: %s [plugin] [output-xml-file] [srcfiles]" % (sys.argv[0]))
     exit(1)
@@ -148,7 +139,5 @@ for one_file in source_files:
         setting_node = ET.SubElement(root_node, "setting", name=setting_name)
         setting_node.text = "\n"
         scan_doc_comments(plugin, setting_node, one_file, start_tag, end_tag)
-
-pretty_xml(root_node, "\n")
 
 ET.ElementTree(root_node).write(output)

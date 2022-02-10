@@ -1316,6 +1316,7 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
                                         NMPlatformIPRoute *r,
                                         gint64             route_table)
 {
+    const int           IS_IPv4 = NM_IS_IPv4(addr_family);
     GVariant           *variant;
     guint32             table;
     NMIPAddr            addr;
@@ -1324,7 +1325,7 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
     gboolean            onlink;
 
     nm_assert(s_route);
-    nm_assert_addr_family(addr_family);
+    nm_assert(addr_family == nm_ip_route_get_family(s_route));
     nm_assert(r);
     nm_assert(route_table >= -1);
     nm_assert(route_table <= (gint64) G_MAXUINT32);
@@ -1346,7 +1347,8 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
         int type;
 
         type = nm_net_aux_rtnl_rtntype_a2n(g_variant_get_string(variant, NULL));
-        nm_assert(NM_IN_SET(type, RTN_UNICAST, RTN_LOCAL));
+        nm_assert(
+            NM_IN_SET(type, RTN_UNICAST, RTN_LOCAL, RTN_BLACKHOLE, RTN_UNREACHABLE, RTN_PROHIBIT));
 
         r->type_coerced = nm_platform_route_type_coerce(type);
     } else
@@ -1365,7 +1367,7 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
     else
         r->table_any = TRUE;
 
-    if (NM_IS_IPv4(addr_family)) {
+    if (IS_IPv4) {
         guint8 scope;
 
         GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_TOS, r4->tos, BYTE, byte, 0);
@@ -1391,15 +1393,14 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
     if ((variant = nm_ip_route_get_attribute(s_route, NM_IP_ROUTE_ATTRIBUTE_SRC))
         && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {
         if (inet_pton(addr_family, g_variant_get_string(variant, NULL), &addr) == 1) {
-            if (NM_IS_IPv4(addr_family))
+            if (IS_IPv4)
                 r4->pref_src = addr.addr4;
             else
                 r6->pref_src = addr.addr6;
         }
     }
 
-    if (!NM_IS_IPv4(addr_family)
-        && (variant = nm_ip_route_get_attribute(s_route, NM_IP_ROUTE_ATTRIBUTE_FROM))
+    if (!IS_IPv4 && (variant = nm_ip_route_get_attribute(s_route, NM_IP_ROUTE_ATTRIBUTE_FROM))
         && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {
         int prefix;
 

@@ -603,8 +603,8 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	src/libnm-platform/nmp-netns.h \
 	src/libnm-platform/nmp-object.c \
 	src/libnm-platform/nmp-object.h \
-	src/libnm-platform/nmp-rules-manager.c \
-	src/libnm-platform/nmp-rules-manager.h \
+	src/libnm-platform/nmp-route-manager.c \
+	src/libnm-platform/nmp-route-manager.h \
 	src/libnm-platform/wifi/nm-wifi-utils-nl80211.c \
 	src/libnm-platform/wifi/nm-wifi-utils-nl80211.h \
 	src/libnm-platform/wifi/nm-wifi-utils-private.h \

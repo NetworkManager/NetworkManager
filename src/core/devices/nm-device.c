@@ -41,7 +41,7 @@
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nmp-object.h"
-#include "libnm-platform/nmp-rules-manager.h"
+#include "libnm-platform/nmp-route-manager.h"
 #include "ndisc/nm-ndisc.h"
 #include "ndisc/nm-lndp-ndisc.h"
 
@@ -9283,7 +9283,7 @@ static void
 _routing_rules_sync(NMDevice *self, NMTernary set_mode)
 {
     NMDevicePrivate *priv               = NM_DEVICE_GET_PRIVATE(self);
-    NMPRulesManager *rules_manager      = nm_netns_get_rules_manager(nm_device_get_netns(self));
+    NMPRouteManager *route_manager      = nm_netns_get_route_manager(nm_device_get_netns(self));
     NMDeviceClass   *klass              = NM_DEVICE_GET_CLASS(self);
     gboolean         untrack_only_dirty = FALSE;
     gboolean         keep_deleted_rules;
@@ -9301,9 +9301,6 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
         int                is_ipv4;
 
         untrack_only_dirty = TRUE;
-        nmp_rules_manager_set_dirty(rules_manager, user_tag_1);
-        if (klass->get_extra_rules)
-            nmp_rules_manager_set_dirty(rules_manager, user_tag_2);
 
         applied_connection = nm_device_get_applied_connection(self);
 
@@ -9323,13 +9320,13 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
                 nm_ip_routing_rule_to_platform(rule, &plrule);
 
                 /* We track this rule, but we also make it explicitly not weakly-tracked
-                 * (meaning to untrack NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG at
+                 * (meaning to untrack NMP_ROUTE_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG at
                  * the same time). */
-                nmp_rules_manager_track(rules_manager,
-                                        &plrule,
-                                        10,
-                                        user_tag_1,
-                                        NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+                nmp_route_manager_track_rule(route_manager,
+                                             &plrule,
+                                             10,
+                                             user_tag_1,
+                                             NMP_ROUTE_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
             }
         }
 
@@ -9339,24 +9336,25 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
             extra_rules = klass->get_extra_rules(self);
             if (extra_rules) {
                 for (i = 0; i < extra_rules->len; i++) {
-                    nmp_rules_manager_track(rules_manager,
-                                            NMP_OBJECT_CAST_ROUTING_RULE(extra_rules->pdata[i]),
-                                            10,
-                                            user_tag_2,
-                                            NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+                    nmp_route_manager_track_rule(
+                        route_manager,
+                        NMP_OBJECT_CAST_ROUTING_RULE(extra_rules->pdata[i]),
+                        10,
+                        user_tag_2,
+                        NMP_ROUTE_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
                 }
             }
         }
     }
 
-    nmp_rules_manager_untrack_all(rules_manager, user_tag_1, !untrack_only_dirty);
+    nmp_route_manager_untrack_all(route_manager, user_tag_1, !untrack_only_dirty, TRUE);
     if (klass->get_extra_rules)
-        nmp_rules_manager_untrack_all(rules_manager, user_tag_2, !untrack_only_dirty);
+        nmp_route_manager_untrack_all(route_manager, user_tag_2, !untrack_only_dirty, TRUE);
 
     keep_deleted_rules = FALSE;
     if (set_mode == NM_TERNARY_DEFAULT) {
         /* when exiting NM, we leave the device up and the rules configured.
-         * We just all nmp_rules_manager_sync() to forget about the synced rules,
+         * We just call nmp_route_manager_sync() to forget about the synced rules,
          * but we don't actually delete them.
          *
          * FIXME: that is a problem after restart of NetworkManager, because these
@@ -9370,7 +9368,7 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
          * file and track them after restart again. */
         keep_deleted_rules = TRUE;
     }
-    nmp_rules_manager_sync(rules_manager, keep_deleted_rules);
+    nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, keep_deleted_rules);
 }
 
 static gboolean
