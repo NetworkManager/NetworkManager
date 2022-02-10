@@ -2469,9 +2469,9 @@ handle_init:
             nm_utils_get_monotonic_timestamp_msec_cached(p_now_msec);
 
             if (acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING) {
-                if (acd_data->probing_timestamp_msec + ACD_WAIT_PROBING_EXTRA_TIME_MSEC
-                        + ACD_WAIT_PROBING_EXTRA_TIME2_MSEC
-                    >= (*p_now_msec)) {
+                if ((*p_now_msec) > acd_data->probing_timestamp_msec
+                                        + ACD_WAIT_PROBING_EXTRA_TIME_MSEC
+                                        + ACD_WAIT_PROBING_EXTRA_TIME2_MSEC) {
                     /* hm. We failed to create a new probe too long. Something is really wrong
                      * internally, but let's ignore the issue and assume the address is good. What
                      * else would we do? Assume the address is USED? */
