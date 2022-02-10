@@ -3467,12 +3467,12 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
             nh.ifindex    = rtnh->rtnh_ifindex;
 
             if (rtnh->rtnh_len > sizeof(*rtnh)) {
-                struct nlattr *ntb[G_N_ELEMENTS(policy)];
+                struct nlattr *ntb[RTA_GATEWAY + 1];
 
                 if (nla_parse_arr(ntb,
                                   (struct nlattr *) RTNH_DATA(rtnh),
                                   rtnh->rtnh_len - sizeof(*rtnh),
-                                  policy)
+                                  NULL)
                     < 0)
                     return NULL;
 
