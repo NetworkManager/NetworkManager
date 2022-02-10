@@ -2305,8 +2305,21 @@ wired_s390_options_writer_full(KeyfileWriterInfo        *info,
 {
     NMSettingWired *s_wired = NM_SETTING_WIRED(setting);
     guint           i, n;
+    const char     *setting_alias;
 
     n = nm_setting_wired_get_num_s390_options(s_wired);
+    if (n == 0)
+        return;
+
+    setting_alias = nm_keyfile_plugin_get_alias_for_setting_name(NM_SETTING_WIRED_SETTING_NAME);
+    if (!g_key_file_has_group(info->keyfile, NM_SETTING_WIRED_SETTING_NAME)
+        && !g_key_file_has_group(info->keyfile, setting_alias)) {
+        /* groups in the keyfile are ordered. When we are about to add [ethernet-s390-options],
+         * we want to also have an [ethernet] group, first. */
+
+        nm_keyfile_add_group(info->keyfile, setting_alias ?: NM_SETTING_WIRED_SETTING_NAME);
+    }
+
     for (i = 0; i < n; i++) {
         gs_free char *key_to_free = NULL;
         const char   *opt_key;
@@ -4190,10 +4203,7 @@ nm_keyfile_write(NMConnection         *connection,
             || g_key_file_has_group(info.keyfile, setting_name)) {
             /* we have a section for the setting. Nothing to do. */
         } else {
-            /* ensure the group is present. There is no API for that, so add and remove
-             * a dummy key. */
-            g_key_file_set_value(info.keyfile, setting_alias ?: setting_name, ".X", "1");
-            g_key_file_remove_key(info.keyfile, setting_alias ?: setting_name, ".X", NULL);
+            nm_keyfile_add_group(info.keyfile, setting_alias ?: setting_name);
         }
 
         if (NM_IS_SETTING_WIREGUARD(setting)) {
