@@ -1,5 +1,5 @@
 =============================================
-NetworkManager-1.36-rc1
+NetworkManager-1.36-rc2
 Overview of changes since NetworkManager-1.34
 =============================================
 
@@ -21,10 +21,15 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * 5G NR (New Radio) modems are now supported.
 * The "rd.znet_ifnames" kernel command line option is now honored on
   network bootups on an IBM s390 platform.
-* Wi-Fi P2P support dows now work with the IWD backend, in addition to
+* Wi-Fi P2P support does now work with the IWD backend, in addition to
   wpa_supplicant backend.
+* Support for special route types have been added: "prohibit", "blackhole"
+  and "unreachable".
 * Routes managed by routing daemons are now ignored. This is done to
   address a performance bottleneck on specialized routers.
+* Handling of IP addressing and routing information is now slightly
+  more efficient and uses less memory. This is apparent on systems with
+  large amount of IP configuration information.
 * It is now possible to start NetworkManager without root user privileges.
   This is experimental doesn't necessarily result in a working daemon.
   NetworkManager service already drops many of capabilities available
@@ -37,6 +42,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   options are now handled gracefully.
 * Bridge support has gained the possibility of turning off MAC ageing.
 * "configure-and-quit" mode and nm-iface-helper have been removed.
+* A number of bugs that could cause NetworkManager to crash in rare
+  conditions have been fixed.
 
 It is likely that some of these changes have been or will be included in
 1.34.x stable releases. This section will be updated to reflect that in
