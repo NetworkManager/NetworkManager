@@ -3143,7 +3143,8 @@ nm_platform_wpan_set_channel(NMPlatform *self, int ifindex, guint8 page, guint8 
 static const char *
 _to_string_dev(NMPlatform *self, int ifindex, char *buf, size_t size)
 {
-    g_assert(buf && size >= TO_STRING_DEV_BUF_SIZE);
+    nm_assert(buf);
+    nm_assert(size >= TO_STRING_DEV_BUF_SIZE);
 
     if (ifindex) {
         const char *name = ifindex > 0 && self ? nm_platform_link_get_name(self, ifindex) : NULL;
@@ -6458,12 +6459,19 @@ _rtm_flags_to_string_full(char *buf, gsize buf_size, unsigned rtm_flags)
 const char *
 nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsize len)
 {
-    char s_network[INET_ADDRSTRLEN], s_gateway[INET_ADDRSTRLEN];
+    char s_network[INET_ADDRSTRLEN];
+    char s_gateway[INET_ADDRSTRLEN];
     char s_pref_src[INET_ADDRSTRLEN];
     char str_dev[TO_STRING_DEV_BUF_SIZE];
     char str_table[30];
-    char str_scope[30], s_source[50];
-    char str_tos[32], str_window[32], str_cwnd[32], str_initcwnd[32], str_initrwnd[32], str_mtu[32];
+    char str_scope[30];
+    char s_source[50];
+    char str_tos[32];
+    char str_window[32];
+    char str_cwnd[32];
+    char str_initcwnd[32];
+    char str_initrwnd[32];
+    char str_mtu[32];
     char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
     char str_type[30];
     char str_metric[30];
@@ -6472,7 +6480,11 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         return buf;
 
     inet_ntop(AF_INET, &route->network, s_network, sizeof(s_network));
-    inet_ntop(AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
+
+    if (route->gateway == 0)
+        s_gateway[0] = '\0';
+    else
+        inet_ntop(AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
 
     _to_string_dev(NULL, route->ifindex, str_dev, sizeof(str_dev));
 
@@ -6482,21 +6494,22 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         "type %s " /* type */
         "%s"       /* table */
         "%s/%d"
-        " via %s"
+        "%s%s" /* gateway */
         "%s"
         " metric %s"
-        " mss %" G_GUINT32_FORMAT " rt-src %s" /* protocol */
-        "%s"                                   /* rtm_flags */
-        "%s%s"                                 /* scope */
-        "%s%s"                                 /* pref-src */
-        "%s"                                   /* tos */
-        "%s"                                   /* window */
-        "%s"                                   /* cwnd */
-        "%s"                                   /* initcwnd */
-        "%s"                                   /* initrwnd */
-        "%s"                                   /* mtu */
-        "%s"                                   /* r_assume_config_once */
-        "%s"                                   /* r_force_commit */
+        " mss %" G_GUINT32_FORMAT /* mss */
+        " rt-src %s"              /* protocol */
+        "%s"                      /* rtm_flags */
+        "%s%s"                    /* scope */
+        "%s%s"                    /* pref-src */
+        "%s"                      /* tos */
+        "%s"                      /* window */
+        "%s"                      /* cwnd */
+        "%s"                      /* initcwnd */
+        "%s"                      /* initrwnd */
+        "%s"                      /* mtu */
+        "%s"                      /* r_assume_config_once */
+        "%s"                      /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -6509,6 +6522,7 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
                    : ""),
         s_network,
         route->plen,
+        s_gateway[0] ? " via " : "",
         s_gateway,
         str_dev,
         route->metric_any
@@ -6596,7 +6610,11 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         return buf;
 
     inet_ntop(AF_INET6, &route->network, s_network, sizeof(s_network));
-    inet_ntop(AF_INET6, &route->gateway, s_gateway, sizeof(s_gateway));
+
+    if (IN6_IS_ADDR_UNSPECIFIED(&route->gateway))
+        s_gateway[0] = '\0';
+    else
+        inet_ntop(AF_INET6, &route->gateway, s_gateway, sizeof(s_gateway));
 
     if (IN6_IS_ADDR_UNSPECIFIED(&route->pref_src))
         s_pref_src[0] = 0;
@@ -6611,21 +6629,22 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         "type %s " /* type */
         "%s"       /* table */
         "%s/%d"
-        " via %s"
+        "%s%s" /* gateway */
         "%s"
         " metric %s"
-        " mss %" G_GUINT32_FORMAT " rt-src %s" /* protocol */
-        "%s"                                   /* source */
-        "%s"                                   /* rtm_flags */
-        "%s%s"                                 /* pref-src */
-        "%s"                                   /* window */
-        "%s"                                   /* cwnd */
-        "%s"                                   /* initcwnd */
-        "%s"                                   /* initrwnd */
-        "%s"                                   /* mtu */
-        "%s"                                   /* pref */
-        "%s"                                   /* r_assume_config_once */
-        "%s"                                   /* r_force_commit */
+        " mss %" G_GUINT32_FORMAT /* mss */
+        " rt-src %s"              /* protocol */
+        "%s"                      /* source */
+        "%s"                      /* rtm_flags */
+        "%s%s"                    /* pref-src */
+        "%s"                      /* window */
+        "%s"                      /* cwnd */
+        "%s"                      /* initcwnd */
+        "%s"                      /* initrwnd */
+        "%s"                      /* mtu */
+        "%s"                      /* pref */
+        "%s"                      /* r_assume_config_once */
+        "%s"                      /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -6638,6 +6657,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
                    : ""),
         s_network,
         route->plen,
+        s_gateway[0] ? " via " : "",
         s_gateway,
         str_dev,
         route->metric_any

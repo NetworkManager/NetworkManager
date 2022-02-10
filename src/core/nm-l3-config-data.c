@@ -1094,8 +1094,22 @@ _l3_config_data_add_obj(NMDedupMultiIndex      *multi_idx,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ADDRESS,
                         NMP_OBJECT_TYPE_IP6_ROUTE));
+    nm_assert((!!obj_new) != (!!pl_new));
+
+    if (NM_IN_SET(idx_type->obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)) {
+        const NMPlatformIPRoute *r;
+
+        r = obj_new ? NMP_OBJECT_CAST_IP_ROUTE(obj_new) : (NMPlatformIPRoute *) pl_new;
+
+        if (nm_platform_route_type_is_nodev(nm_platform_route_type_uncoerce(r->type_coerced))) {
+            /* such routes don't have a device/next-hop. We track them without ifindex. */
+            ifindex = 0;
+        }
+    }
+
     /* we go through extra lengths to accept a full obj_new object. That one,
-     * can be reused by increasing the ref-count. */
+     * can be reused by increasing the ref-count. We thus accept any ifindex, and
+     * set it here. */
     if (!obj_new) {
         nm_assert(pl_new);
         obj_new = nmp_object_stackinit(&obj_new_stackinit, idx_type->obj_type, pl_new);

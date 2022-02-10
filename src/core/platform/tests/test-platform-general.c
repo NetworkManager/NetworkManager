@@ -748,6 +748,31 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
 
 /*****************************************************************************/
 
+static void
+test_route_type_is_nodev(void)
+{
+    int i;
+
+    for (i = -1; i <= 257; i++) {
+        gboolean is_nodev;
+
+        switch ((guint8) i) {
+        case RTN_BLACKHOLE:
+        case RTN_UNREACHABLE:
+        case RTN_PROHIBIT:
+            is_nodev = TRUE;
+            break;
+        default:
+            is_nodev = FALSE;
+            break;
+        }
+
+        g_assert_cmpint(is_nodev, ==, nm_platform_route_type_is_nodev(i));
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -767,6 +792,7 @@ main(int argc, char **argv)
     g_test_add_data_func("/general/platform_ip_address_pretty_sort_cmp/6/2",
                          GINT_TO_POINTER(2),
                          test_platform_ip_address_pretty_sort_cmp);
+    g_test_add_func("/general/test_route_type_is_nodev", test_route_type_is_nodev);
 
     return g_test_run();
 }

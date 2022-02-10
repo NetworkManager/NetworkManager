@@ -15,7 +15,7 @@
 #include "nm-l3cfg.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-netns.h"
-#include "libnm-platform/nmp-rules-manager.h"
+#include "libnm-platform/nmp-route-manager.h"
 
 /*****************************************************************************/
 
@@ -25,7 +25,7 @@ typedef struct {
     NMNetns         *_self_signal_user_data;
     NMPlatform      *platform;
     NMPNetns        *platform_netns;
-    NMPRulesManager *rules_manager;
+    NMPRouteManager *route_manager;
     GHashTable      *l3cfgs;
     GHashTable      *shared_ips;
     CList            l3cfg_signal_pending_lst_head;
@@ -79,10 +79,10 @@ nm_netns_get_platform(NMNetns *self)
     return NM_NETNS_GET_PRIVATE(self)->platform;
 }
 
-NMPRulesManager *
-nm_netns_get_rules_manager(NMNetns *self)
+NMPRouteManager *
+nm_netns_get_route_manager(NMNetns *self)
 {
-    return NM_NETNS_GET_PRIVATE(self)->rules_manager;
+    return NM_NETNS_GET_PRIVATE(self)->route_manager;
 }
 
 NMDedupMultiIndex *
@@ -397,14 +397,14 @@ constructed(GObject *object)
 
     priv->platform_netns = nm_platform_netns_get(priv->platform);
 
-    priv->rules_manager = nmp_rules_manager_new(priv->platform);
+    priv->route_manager = nmp_route_manager_new(priv->platform);
 
     /* Weakly track the default rules with a dummy user-tag. These
      * rules are always weekly tracked... */
-    nmp_rules_manager_track_default(priv->rules_manager,
-                                    AF_UNSPEC,
-                                    0,
-                                    nm_netns_parent_class /* static dummy user-tag */);
+    nmp_route_manager_track_rule_default(priv->route_manager,
+                                         AF_UNSPEC,
+                                         0,
+                                         nm_netns_parent_class /* static dummy user-tag */);
 
     /* Also weakly track all existing rules. These were added before NetworkManager
      * starts, so they are probably none of NetworkManager's business.
@@ -414,12 +414,12 @@ constructed(GObject *object)
      * of NetworkManager, we just don't know.
      *
      * For that reason, whenever we will touch such rules later one, we make them
-     * fully owned and no longer weekly tracked. See %NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG. */
-    nmp_rules_manager_track_from_platform(priv->rules_manager,
-                                          NULL,
-                                          AF_UNSPEC,
-                                          0,
-                                          NMP_RULES_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+     * fully owned and no longer weekly tracked. See %NMP_ROUTE_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG. */
+    nmp_route_manager_track_rule_from_platform(priv->route_manager,
+                                               NULL,
+                                               AF_UNSPEC,
+                                               0,
+                                               NMP_ROUTE_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG);
 
     G_OBJECT_CLASS(nm_netns_parent_class)->constructed(object);
 
@@ -469,7 +469,7 @@ dispose(GObject *object)
     g_clear_object(&priv->platform);
     nm_clear_pointer(&priv->l3cfgs, g_hash_table_unref);
 
-    nm_clear_pointer(&priv->rules_manager, nmp_rules_manager_unref);
+    nm_clear_pointer(&priv->route_manager, nmp_route_manager_unref);
 
     G_OBJECT_CLASS(nm_netns_parent_class)->dispose(object);
 }

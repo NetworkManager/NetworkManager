@@ -386,7 +386,11 @@ _idx_obj_part(const DedupMultiIdxType *idx_type,
                 nm_hash_update_val(h, obj_a);
             return 0;
         }
-        nm_assert(NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj_a)->ifindex > 0);
+        nm_assert(NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj_a)->ifindex > 0
+                  || (NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj_a)->ifindex == 0
+                      && NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_a),
+                                   NMP_OBJECT_TYPE_IP4_ROUTE,
+                                   NMP_OBJECT_TYPE_IP6_ROUTE)));
         if (obj_b) {
             return NMP_OBJECT_GET_TYPE(obj_a) == NMP_OBJECT_GET_TYPE(obj_b)
                    && NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj_a)->ifindex
@@ -401,14 +405,14 @@ _idx_obj_part(const DedupMultiIdxType *idx_type,
     case NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID:
         obj_type = NMP_OBJECT_GET_TYPE(obj_a);
         if (!NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)
-            || NMP_OBJECT_CAST_IP_ROUTE(obj_a)->ifindex <= 0) {
+            || NMP_OBJECT_CAST_IP_ROUTE(obj_a)->ifindex < 0) {
             if (h)
                 nm_hash_update_val(h, obj_a);
             return 0;
         }
         if (obj_b) {
             return obj_type == NMP_OBJECT_GET_TYPE(obj_b)
-                   && NMP_OBJECT_CAST_IP_ROUTE(obj_b)->ifindex > 0
+                   && NMP_OBJECT_CAST_IP_ROUTE(obj_b)->ifindex >= 0
                    && (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE
                            ? (nm_platform_ip4_route_cmp(&obj_a->ip4_route,
                                                         &obj_b->ip4_route,
@@ -1740,8 +1744,7 @@ _vt_cmd_obj_is_alive_ipx_route(const NMPObject *obj)
      * Instead we create a dead object, and nmp_cache_update_netlink()
      * will remove the old version of the update.
      **/
-    return NMP_OBJECT_CAST_IP_ROUTE(obj)->ifindex > 0
-           && !NM_FLAGS_HAS(obj->ip_route.r_rtm_flags, RTM_F_CLONED);
+    return !NM_FLAGS_HAS(NMP_OBJECT_CAST_IP_ROUTE(obj)->r_rtm_flags, RTM_F_CLONED);
 }
 
 static gboolean
@@ -2143,7 +2146,15 @@ nmp_lookup_init_object(NMPLookup *lookup, NMPObjectType obj_type, int ifindex)
                         NMP_OBJECT_TYPE_QDISC,
                         NMP_OBJECT_TYPE_TFILTER));
 
-    if (ifindex <= 0) {
+    if (G_UNLIKELY(
+            (ifindex < 0)
+            || (ifindex == 0
+                && !NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)))) {
+        /* This function used to have a fallback that meant to lookup all objects, if
+         * ifindex is non-positive. As routes can have a zero ifindex, that fallback is
+         * confusing and no longer supported. Only have this code, to catch accidental bugs
+         * after the API change. */
+        nm_assert_not_reached();
         return nmp_lookup_init_obj_type(lookup, obj_type);
     }
 

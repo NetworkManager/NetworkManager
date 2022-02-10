@@ -1408,6 +1408,12 @@ _nm_platform_link_get_inet6_addr_gen_mode(const NMPlatformLink *pllink)
     return _nm_platform_uint8_inv(pllink->inet6_addr_gen_mode_inv);
 }
 
+static inline gboolean
+nm_platform_route_type_is_nodev(guint8 type)
+{
+    return NM_IN_SET(type, 6 /* RTN_BLACKHOLE */, 7 /* RTN_UNREACHABLE */, 8 /* RTN_PROHIBIT */);
+}
+
 /**
  * nm_platform_route_type_coerce:
  * @table: the route type, in its original value.
