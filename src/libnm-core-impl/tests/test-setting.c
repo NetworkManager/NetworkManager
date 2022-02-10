@@ -4583,6 +4583,12 @@ test_setting_metadata(void)
                          == _nm_setting_property_to_dbus_fcn_direct);
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_BYTES);
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_STRV) {
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "as"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_STRV);
             } else
                 g_assert_not_reached();
 
@@ -4671,7 +4677,12 @@ check_done:;
             }
             if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_direct) {
                 /* for the moment, all direct properties allow transformation. */
-                g_assert(sip->property_type->from_dbus_direct_allow_transform);
+                if (NM_IN_SET(sip->property_type->direct_type,
+                              NM_VALUE_TYPE_BYTES,
+                              NM_VALUE_TYPE_STRV))
+                    g_assert(!sip->property_type->from_dbus_direct_allow_transform);
+                else
+                    g_assert(sip->property_type->from_dbus_direct_allow_transform);
             }
 
             if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_gprop)
