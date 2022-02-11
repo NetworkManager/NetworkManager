@@ -24,7 +24,6 @@
 %global obsoletes_initscripts_updown 1:1.35.4
 
 %global systemd_dir %{_prefix}/lib/systemd/system
-%global sysctl_dir %{_prefix}/lib/sysctl.d
 %global nmlibdir %{_prefix}/lib/%{name}
 %global nmplugindir %{_libdir}/%{name}/%{version}-%{release}
 
