@@ -50,6 +50,7 @@ typedef struct {
     GVariant             *argument;
     NMDnsSystemdResolved *self;
     int                   ifindex;
+    int                   ref_count;
 } RequestItem;
 
 struct _NMDnsSystemdResolvedResolveHandle {
@@ -82,8 +83,10 @@ typedef struct {
     char            *dbus_owner;
     CList            handle_lst_head;
     guint            name_owner_changed_id;
+    guint            n_pending;
     bool             send_updates_warn_ratelimited : 1;
     bool             try_start_blocked : 1;
+    bool             stopped : 1;
     bool             dbus_initied : 1;
     bool             send_updates_waiting : 1;
     /* These two variables ensure that the log is not spammed with
@@ -146,10 +149,29 @@ static void _resolve_start(NMDnsSystemdResolved *self, NMDnsSystemdResolvedResol
 
 /*****************************************************************************/
 
-static void
-_request_item_free(RequestItem *request_item)
+static RequestItem *
+_request_item_ref(RequestItem *request_item)
 {
-    c_list_unlink_stale(&request_item->request_queue_lst);
+    nm_assert(request_item);
+    nm_assert(request_item->ref_count > 0);
+    nm_assert(request_item->ref_count < G_MAXINT);
+    nm_assert(!c_list_is_empty(&request_item->request_queue_lst));
+
+    request_item->ref_count++;
+    return request_item;
+}
+
+static void
+_request_item_unref(RequestItem *request_item)
+{
+    nm_assert(request_item);
+    nm_assert(request_item->ref_count > 0);
+
+    if (--request_item->ref_count > 0)
+        return;
+
+    nm_assert(c_list_is_empty(&request_item->request_queue_lst));
+
     g_variant_unref(request_item->argument);
     nm_g_slice_free(request_item);
 }
@@ -165,6 +187,7 @@ _request_item_append(NMDnsSystemdResolved *self,
 
     request_item  = g_slice_new(RequestItem);
     *request_item = (RequestItem){
+        .ref_count = 1,
         .operation = operation,
         .argument  = g_variant_ref_sink(argument),
         .self      = self,
@@ -191,42 +214,48 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
     NMDnsSystemdResolvedPrivate *priv;
     RequestItem                 *request_item;
     NMLogLevel                   log_level;
-
-    v = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), r, &error);
-    if (nm_utils_error_is_cancelled(error))
-        return;
+    const char                  *operation;
+    int                          ifindex;
 
     request_item = user_data;
     self         = request_item->self;
-    priv         = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    operation    = request_item->operation;
+    ifindex      = request_item->ifindex;
+    _request_item_unref(request_item);
+
+    priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+
+    v = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), r, &error);
+    if (nm_utils_error_is_cancelled(error))
+        goto out_dec_pending;
 
     if (v) {
-        if (request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
+        if (operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
             && priv->has_link_default_route == NM_TERNARY_DEFAULT) {
             priv->has_link_default_route = NM_TERNARY_TRUE;
             _LOGD("systemd-resolved support for SetLinkDefaultRoute(): API supported");
         }
-        if (request_item->operation == DBUS_OP_SET_LINK_DNS_OVER_TLS
+        if (operation == DBUS_OP_SET_LINK_DNS_OVER_TLS
             && priv->has_link_dns_over_tls == NM_TERNARY_DEFAULT) {
             priv->has_link_dns_over_tls = NM_TERNARY_TRUE;
             _LOGD("systemd-resolved support for SetLinkDNSOverTLS(): API supported");
         }
         priv->send_updates_warn_ratelimited = FALSE;
-        return;
+        goto out_dec_pending;
     }
 
     if (nm_g_error_matches(error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD)) {
         if (priv->has_link_default_route == NM_TERNARY_DEFAULT
-            && request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE) {
+            && operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE) {
             priv->has_link_default_route = NM_TERNARY_FALSE;
             _LOGD("systemd-resolved support for SetLinkDefaultRoute(): API not supported");
         }
         if (priv->has_link_dns_over_tls == NM_TERNARY_DEFAULT
-            && request_item->operation == DBUS_OP_SET_LINK_DNS_OVER_TLS) {
+            && operation == DBUS_OP_SET_LINK_DNS_OVER_TLS) {
             priv->has_link_dns_over_tls = NM_TERNARY_FALSE;
             _LOGD("systemd-resolved support for SetLinkDNSOverTLS(): API not supported");
         }
-        return;
+        goto out_dec_pending;
     }
 
     log_level = LOGL_DEBUG;
@@ -234,11 +263,17 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
         priv->send_updates_warn_ratelimited = TRUE;
         log_level                           = LOGL_WARN;
     }
-    _NMLOG(log_level,
-           "send-updates %s@%d failed: %s",
-           request_item->operation,
-           request_item->ifindex,
-           error->message);
+    _NMLOG(log_level, "send-updates %s@%d failed: %s", operation, ifindex, error->message);
+
+out_dec_pending:
+    nm_assert(priv->n_pending > 0);
+    if (--priv->n_pending <= 0) {
+        /* We keep @self alive while pending operations are in progress. It's simpler
+         * to implement. But this requires that we implement "stop()" signal to cancel
+         * all pending requests. Cancelling is necessary, because during shutdown,
+         * we must wrap up fast, and not hang an undefined amount time. */
+        g_object_unref(self);
+    }
 }
 
 static gboolean
@@ -299,9 +334,12 @@ free_pending_updates(NMDnsSystemdResolved *self)
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     RequestItem                 *request_item;
 
-    while ((request_item =
-                c_list_first_entry(&priv->request_queue_lst_head, RequestItem, request_queue_lst)))
-        _request_item_free(request_item);
+    while (
+        (request_item =
+             c_list_first_entry(&priv->request_queue_lst_head, RequestItem, request_queue_lst))) {
+        c_list_unlink(&request_item->request_queue_lst);
+        _request_item_unref(request_item);
+    }
 }
 
 static gboolean
@@ -457,6 +495,9 @@ ensure_resolved_running(NMDnsSystemdResolved *self)
 {
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
 
+    if (priv->stopped)
+        return NM_TERNARY_FALSE;
+
     if (!priv->dbus_initied)
         return NM_TERNARY_DEFAULT;
 
@@ -533,6 +574,9 @@ send_updates(NMDnsSystemdResolved *self)
               request_item->operation,
               (ss = g_variant_print(request_item->argument, FALSE)));
 
+        if (priv->n_pending++ == 0)
+            g_object_ref(self);
+
         g_dbus_connection_call(priv->dbus_connection,
                                priv->dbus_owner,
                                SYSTEMD_RESOLVED_DBUS_PATH,
@@ -544,7 +588,7 @@ send_updates(NMDnsSystemdResolved *self)
                                -1,
                                priv->cancellable,
                                call_done,
-                               request_item);
+                               _request_item_ref(request_item));
     }
 
 start_resolve:
@@ -576,6 +620,8 @@ update(NMDnsPlugin             *plugin,
     GHashTableIter                 iter;
     gs_unref_array GArray         *dirty_array = NULL;
     guint                          i;
+
+    nm_assert(!priv->stopped);
 
     /* Group configs by ifindex/interfaces. */
     interfaces =
@@ -990,6 +1036,48 @@ nm_dns_systemd_resolved_resolve_cancel(NMDnsSystemdResolvedResolveHandle *handle
 /*****************************************************************************/
 
 static void
+stop(NMDnsPlugin *plugin)
+{
+    NMDnsSystemdResolved              *self = NM_DNS_SYSTEMD_RESOLVED(plugin);
+    NMDnsSystemdResolvedPrivate       *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    NMDnsSystemdResolvedResolveHandle *handle;
+
+    /* This function must be re-entrant!!
+     *
+     * Currently there is no concept of unregistering/shutting down. It's not
+     * clear whether we should de-configure anything in systemd-resolved, we
+     * don't.
+     *
+     * Implementing stop() is important because pending operations take a
+     * reference on @self. We can only cancel (fast shutdown) the instance
+     * by cancelling those requests. */
+
+    priv->stopped           = TRUE;
+    priv->try_start_blocked = TRUE;
+
+    nm_clear_g_cancellable(&priv->cancellable);
+
+    nm_clear_g_free(&priv->dbus_owner);
+
+    while ((handle = c_list_first_entry(&priv->handle_lst_head,
+                                        NMDnsSystemdResolvedResolveHandle,
+                                        handle_lst))) {
+        gs_free_error GError *error = NULL;
+
+        nm_utils_error_set_cancelled(&error, TRUE, "NMDnsSystemdResolved");
+        _resolve_complete_error(handle, error);
+    }
+
+    free_pending_updates(self);
+
+    nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
+
+    nm_clear_g_source_inst(&priv->try_start_timeout_source);
+}
+
+/*****************************************************************************/
+
+static void
 nm_dns_systemd_resolved_init(NMDnsSystemdResolved *self)
 {
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
@@ -1031,33 +1119,15 @@ nm_dns_systemd_resolved_new(void)
 static void
 dispose(GObject *object)
 {
-    NMDnsSystemdResolved              *self = NM_DNS_SYSTEMD_RESOLVED(object);
-    NMDnsSystemdResolvedPrivate       *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
-    NMDnsSystemdResolvedResolveHandle *handle;
+    NMDnsSystemdResolved        *self = NM_DNS_SYSTEMD_RESOLVED(object);
+    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
 
-    while ((handle = c_list_first_entry(&priv->handle_lst_head,
-                                        NMDnsSystemdResolvedResolveHandle,
-                                        handle_lst))) {
-        gs_free_error GError *error = NULL;
-
-        nm_utils_error_set_cancelled(&error, TRUE, "NMDnsSystemdResolved");
-        _resolve_complete_error(handle, error);
-    }
-
-    free_pending_updates(self);
-
-    nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
-
-    nm_clear_g_cancellable(&priv->cancellable);
-
-    nm_clear_g_source_inst(&priv->try_start_timeout_source);
+    stop(NM_DNS_PLUGIN(self));
 
     g_clear_object(&priv->dbus_connection);
-    nm_clear_pointer(&priv->dirty_interfaces, g_hash_table_unref);
+    nm_clear_pointer(&priv->dirty_interfaces, g_hash_table_destroy);
 
     G_OBJECT_CLASS(nm_dns_systemd_resolved_parent_class)->dispose(object);
-
-    nm_clear_g_free(&priv->dbus_owner);
 }
 
 static void
@@ -1070,5 +1140,6 @@ nm_dns_systemd_resolved_class_init(NMDnsSystemdResolvedClass *dns_class)
 
     plugin_class->plugin_name = "systemd-resolved";
     plugin_class->is_caching  = TRUE;
+    plugin_class->stop        = stop;
     plugin_class->update      = update;
 }
