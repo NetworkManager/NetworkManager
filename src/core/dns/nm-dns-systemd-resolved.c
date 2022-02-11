@@ -40,8 +40,8 @@ static const char *const DBUS_OP_SET_LINK_DNS_OVER_TLS  = "SetLinkDNSOverTLS";
 /*****************************************************************************/
 
 typedef struct {
-    int   ifindex;
-    CList configs_lst_head;
+    int        ifindex;
+    GPtrArray *ip_data_list;
 } InterfaceConfig;
 
 typedef struct {
@@ -178,7 +178,7 @@ _request_item_append(NMDnsSystemdResolved *self,
 static void
 _interface_config_free(InterfaceConfig *config)
 {
-    nm_c_list_elem_free_all(&config->configs_lst_head, NULL);
+    nm_g_ptr_array_unref(config->ip_data_list);
     nm_g_slice_free(config);
 }
 
@@ -309,7 +309,6 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
 {
     GVariantBuilder               dns;
     GVariantBuilder               domains;
-    NMCListElem                  *elem;
     NMSettingConnectionMdns       mdns              = NM_SETTING_CONNECTION_MDNS_DEFAULT;
     NMSettingConnectionLlmnr      llmnr             = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
     NMSettingConnectionDnsOverTls dns_over_tls      = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
@@ -318,6 +317,7 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
     const char                   *dns_over_tls_arg  = NULL;
     gboolean                      has_config        = FALSE;
     gboolean                      has_default_route = FALSE;
+    guint                         i;
 
     g_variant_builder_init(&dns, G_VARIANT_TYPE("(ia(iay))"));
     g_variant_builder_add(&dns, "i", ic->ifindex);
@@ -327,19 +327,22 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
     g_variant_builder_add(&domains, "i", ic->ifindex);
     g_variant_builder_open(&domains, G_VARIANT_TYPE("a(sb)"));
 
-    c_list_for_each_entry (elem, &ic->configs_lst_head, lst) {
-        const NMDnsConfigIPData *ip_data = elem->data;
+    if (ic->ip_data_list) {
+        for (i = 0; i < ic->ip_data_list->len; i++) {
+            const NMDnsConfigIPData *ip_data = ic->ip_data_list->pdata[i];
 
-        if (update_add_ip_config(self, &dns, &domains, ip_data))
-            has_config = TRUE;
+            if (update_add_ip_config(self, &dns, &domains, ip_data))
+                has_config = TRUE;
 
-        if (ip_data->domains.has_default_route)
-            has_default_route = TRUE;
+            if (ip_data->domains.has_default_route)
+                has_default_route = TRUE;
 
-        if (NM_IS_IPv4(ip_data->addr_family)) {
-            mdns         = NM_MAX(mdns, nm_l3_config_data_get_mdns(ip_data->l3cd));
-            llmnr        = NM_MAX(llmnr, nm_l3_config_data_get_llmnr(ip_data->l3cd));
-            dns_over_tls = NM_MAX(dns_over_tls, nm_l3_config_data_get_dns_over_tls(ip_data->l3cd));
+            if (NM_IS_IPv4(ip_data->addr_family)) {
+                mdns  = NM_MAX(mdns, nm_l3_config_data_get_mdns(ip_data->l3cd));
+                llmnr = NM_MAX(llmnr, nm_l3_config_data_get_llmnr(ip_data->l3cd));
+                dns_over_tls =
+                    NM_MAX(dns_over_tls, nm_l3_config_data_get_dns_over_tls(ip_data->l3cd));
+            }
         }
     }
 
@@ -586,13 +589,15 @@ update(NMDnsPlugin             *plugin,
 
         ic = g_hash_table_lookup(interfaces, GINT_TO_POINTER(ifindex));
         if (!ic) {
-            ic          = g_slice_new(InterfaceConfig);
-            ic->ifindex = ifindex;
-            c_list_init(&ic->configs_lst_head);
+            ic  = g_slice_new(InterfaceConfig);
+            *ic = (InterfaceConfig){
+                .ifindex      = ifindex,
+                .ip_data_list = g_ptr_array_sized_new(4),
+            };
             g_hash_table_insert(interfaces, GINT_TO_POINTER(ifindex), ic);
         }
 
-        c_list_link_tail(&ic->configs_lst_head, &nm_c_list_elem_new_stale(ip_data)->lst);
+        g_ptr_array_add(ic->ip_data_list, ip_data);
     }
 
     free_pending_updates(self);
@@ -638,8 +643,8 @@ update(NMDnsPlugin             *plugin,
 
             _LOGT("clear previously configured ifindex %d", ifindex);
             ic = (InterfaceConfig){
-                .ifindex          = ifindex,
-                .configs_lst_head = C_LIST_INIT(ic.configs_lst_head),
+                .ifindex      = ifindex,
+                .ip_data_list = NULL,
             };
             prepare_one_interface(self, &ic);
         }
