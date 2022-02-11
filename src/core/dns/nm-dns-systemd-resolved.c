@@ -561,10 +561,12 @@ update(NMDnsPlugin             *plugin,
        const char              *hostdomain,
        GError                 **error)
 {
-    NMDnsSystemdResolved          *self            = NM_DNS_SYSTEMD_RESOLVED(plugin);
-    NMDnsSystemdResolvedPrivate   *priv            = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
-    gs_unref_hashtable GHashTable *interfaces      = NULL;
-    gs_free gpointer              *interfaces_keys = NULL;
+    NMDnsSystemdResolved          *self       = NM_DNS_SYSTEMD_RESOLVED(plugin);
+    NMDnsSystemdResolvedPrivate   *priv       = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    gs_unref_hashtable GHashTable *interfaces = NULL;
+    const NMUtilsNamedValue       *interfaces_arr;
+    NMUtilsNamedValue              interfaces_arr_stack[50];
+    gs_free NMUtilsNamedValue     *interfaces_arr_heap = NULL;
     guint                          interfaces_len;
     gpointer                       pointer;
     NMDnsConfigIPData             *ip_data;
@@ -595,11 +597,14 @@ update(NMDnsPlugin             *plugin,
 
     free_pending_updates(self);
 
-    interfaces_keys =
-        nm_utils_hash_keys_to_array(interfaces, nm_cmp_int2ptr_p_with_data, NULL, &interfaces_len);
+    interfaces_arr = nm_utils_hash_to_array_with_buffer(interfaces,
+                                                        &interfaces_len,
+                                                        nm_cmp_int2ptr_p_with_data,
+                                                        NULL,
+                                                        interfaces_arr_stack,
+                                                        &interfaces_arr_heap);
     for (i = 0; i < interfaces_len; i++) {
-        const InterfaceConfig *ic =
-            g_hash_table_lookup(interfaces, GINT_TO_POINTER(interfaces_keys[i]));
+        const InterfaceConfig *ic = interfaces_arr[i].value_ptr;
 
         if (prepare_one_interface(self, ic))
             g_hash_table_add(priv->dirty_interfaces, GINT_TO_POINTER(ic->ifindex));
