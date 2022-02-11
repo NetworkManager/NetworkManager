@@ -1977,6 +1977,7 @@ typedef struct {
         NMUtilsNamedEntry named_entry;
         const char       *name;
         char             *name_mutable;
+        gpointer          name_ptr;
     };
     union {
         const char *value_str;
