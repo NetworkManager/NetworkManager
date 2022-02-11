@@ -89,6 +89,7 @@ typedef struct {
     bool             stopped : 1;
     bool             dbus_initied : 1;
     bool             send_updates_waiting : 1;
+    bool             update_pending : 1;
     /* These two variables ensure that the log is not spammed with
      * API (not) supported messages.
      * They can be removed when no distro uses systemd-resolved < v240 anymore
@@ -109,7 +110,7 @@ struct _NMDnsSystemdResolvedClass {
 G_DEFINE_TYPE(NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN)
 
 #define NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self) \
-    _NM_GET_PRIVATE(self, NMDnsSystemdResolved, NM_IS_DNS_SYSTEMD_RESOLVED)
+    _NM_GET_PRIVATE(self, NMDnsSystemdResolved, NM_IS_DNS_SYSTEMD_RESOLVED, NMDnsPlugin)
 
 /*****************************************************************************/
 
@@ -146,6 +147,65 @@ G_DEFINE_TYPE(NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN)
 static void _resolve_complete_error(NMDnsSystemdResolvedResolveHandle *handle, GError *error);
 
 static void _resolve_start(NMDnsSystemdResolved *self, NMDnsSystemdResolvedResolveHandle *handle);
+
+/*****************************************************************************/
+
+static gboolean
+_update_pending_detect(NMDnsSystemdResolved *self)
+{
+    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+
+    if (priv->n_pending > 0) {
+        /* we have pending calls. We definitely want to wait for them to complete. */
+        return TRUE;
+    }
+    if (!priv->dbus_initied) {
+        if (!priv->dbus_connection)
+            return FALSE;
+        /* D-Bus not yet initialized (and we don't know the name owner yet). Pending. */
+        return TRUE;
+    }
+    if (priv->try_start_timeout_source) {
+        /* We are waiting to D-Bus activate resolved. Pending. */
+        return TRUE;
+    }
+    if (priv->try_start_blocked) {
+        /* We earlier tried to start resolved, but are rate limited. We are not pending an update
+         * (that we expect to complete any time soon). */
+        return FALSE;
+    }
+    if (priv->send_updates_waiting) {
+        /* we wait to send updates. We are pending. */
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static void
+_update_pending_maybe_changed(NMDnsSystemdResolved *self)
+{
+    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    gboolean                     update_pending;
+
+    /* Important: we need to make sure that we call _update_pending_maybe_changed(), when
+     * the state changes. */
+
+    update_pending = _update_pending_detect(self);
+    if (priv->update_pending != update_pending) {
+        priv->update_pending = update_pending;
+        _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+    }
+}
+
+static gboolean
+get_update_pending(NMDnsPlugin *plugin)
+{
+    NMDnsSystemdResolved        *self = NM_DNS_SYSTEMD_RESOLVED(plugin);
+    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+
+    nm_assert(priv->update_pending == _update_pending_detect(self));
+    return priv->update_pending;
+}
 
 /*****************************************************************************/
 
@@ -268,6 +328,7 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
 out_dec_pending:
     nm_assert(priv->n_pending > 0);
     if (--priv->n_pending <= 0) {
+        _update_pending_maybe_changed(self);
         /* We keep @self alive while pending operations are in progress. It's simpler
          * to implement. But this requires that we implement "stop()" signal to cancel
          * all pending requests. Cancelling is necessary, because during shutdown,
@@ -487,6 +548,7 @@ again:
         goto again;
     }
 
+    _update_pending_maybe_changed(self);
     return G_SOURCE_CONTINUE;
 }
 
@@ -520,6 +582,7 @@ ensure_resolved_running(NMDnsSystemdResolved *self)
                                                       NULL,
                                                       NULL,
                                                       NULL);
+        _update_pending_maybe_changed(self);
         return NM_TERNARY_DEFAULT;
     }
 
@@ -574,8 +637,11 @@ send_updates(NMDnsSystemdResolved *self)
               request_item->operation,
               (ss = g_variant_print(request_item->argument, FALSE)));
 
-        if (priv->n_pending++ == 0)
+        if (priv->n_pending++ == 0) {
+            /* We are inside send_updates(). All callers are already calling
+             * _update_pending_maybe_changed() afterwards. */
             g_object_ref(self);
+        }
 
         g_dbus_connection_call(priv->dbus_connection,
                                priv->dbus_owner,
@@ -698,6 +764,7 @@ update(NMDnsPlugin             *plugin,
 
     priv->send_updates_waiting = TRUE;
     send_updates(self);
+    _update_pending_maybe_changed(self);
     return TRUE;
 }
 
@@ -728,6 +795,7 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
     }
 
     send_updates(self);
+    _update_pending_maybe_changed(self);
 }
 
 static void
@@ -1095,6 +1163,8 @@ nm_dns_systemd_resolved_init(NMDnsSystemdResolved *self)
         return;
     }
 
+    priv->update_pending = TRUE;
+
     priv->name_owner_changed_id =
         nm_dbus_connection_signal_subscribe_name_owner_changed(priv->dbus_connection,
                                                                SYSTEMD_RESOLVED_DBUS_SERVICE,
@@ -1138,8 +1208,9 @@ nm_dns_systemd_resolved_class_init(NMDnsSystemdResolvedClass *dns_class)
 
     object_class->dispose = dispose;
 
-    plugin_class->plugin_name = "systemd-resolved";
-    plugin_class->is_caching  = TRUE;
-    plugin_class->stop        = stop;
-    plugin_class->update      = update;
+    plugin_class->plugin_name        = "systemd-resolved";
+    plugin_class->is_caching         = TRUE;
+    plugin_class->stop               = stop;
+    plugin_class->update             = update;
+    plugin_class->get_update_pending = get_update_pending;
 }
