@@ -19,6 +19,8 @@
 #define NM_DNS_PLUGIN_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DNS_PLUGIN, NMDnsPluginClass))
 
+#define NM_DNS_PLUGIN_UPDATE_PENDING_CHANGED "update-pending-changed"
+
 struct _NMDnsPluginPrivate;
 
 typedef struct {
@@ -41,6 +43,8 @@ typedef struct {
                        GError                 **error);
 
     void (*stop)(NMDnsPlugin *self);
+
+    gboolean (*get_update_pending)(NMDnsPlugin *self);
 
     const char *plugin_name;
 
@@ -65,5 +69,9 @@ gboolean nm_dns_plugin_update(NMDnsPlugin             *self,
                               GError                 **error);
 
 void nm_dns_plugin_stop(NMDnsPlugin *self);
+
+gboolean nm_dns_plugin_get_update_pending(NMDnsPlugin *self);
+
+void _nm_dns_plugin_update_pending_maybe_changed(NMDnsPlugin *self);
 
 #endif /* __NM_DNS_PLUGIN_H__ */
