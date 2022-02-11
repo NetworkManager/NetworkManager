@@ -3432,51 +3432,6 @@ nm_utils_named_value_clear_with_g_free(NMUtilsNamedValue *val)
 
 G_STATIC_ASSERT(G_STRUCT_OFFSET(NMUtilsNamedValue, name) == 0);
 
-NMUtilsNamedValue *
-nm_utils_named_values_from_strdict_full(GHashTable         *hash,
-                                        guint              *out_len,
-                                        GCompareDataFunc    compare_func,
-                                        gpointer            user_data,
-                                        NMUtilsNamedValue  *provided_buffer,
-                                        guint               provided_buffer_len,
-                                        NMUtilsNamedValue **out_allocated_buffer)
-{
-    GHashTableIter     iter;
-    NMUtilsNamedValue *values;
-    guint              i, len;
-
-    nm_assert(provided_buffer_len == 0 || provided_buffer);
-    nm_assert(!out_allocated_buffer || !*out_allocated_buffer);
-
-    if (!hash || !(len = g_hash_table_size(hash))) {
-        NM_SET_OUT(out_len, 0);
-        return NULL;
-    }
-
-    if (provided_buffer_len >= len + 1) {
-        /* the buffer provided by the caller is large enough. Use it. */
-        values = provided_buffer;
-    } else {
-        /* allocate a new buffer. */
-        values = g_new(NMUtilsNamedValue, len + 1);
-        NM_SET_OUT(out_allocated_buffer, values);
-    }
-
-    i = 0;
-    g_hash_table_iter_init(&iter, hash);
-    while (g_hash_table_iter_next(&iter, (gpointer *) &values[i].name, &values[i].value_ptr))
-        i++;
-    nm_assert(i == len);
-    values[i].name      = NULL;
-    values[i].value_ptr = NULL;
-
-    if (compare_func)
-        nm_utils_named_value_list_sort(values, len, compare_func, user_data);
-
-    NM_SET_OUT(out_len, len);
-    return values;
-}
-
 gssize
 nm_utils_named_value_list_find(const NMUtilsNamedValue *arr,
                                gsize                    len,
@@ -3624,6 +3579,52 @@ nm_utils_hash_values_to_array(GHashTable      *hash,
 
     NM_SET_OUT(out_len, len);
     return arr;
+}
+
+NMUtilsNamedValue *
+nm_utils_hash_to_array_full(GHashTable         *hash,
+                            guint              *out_len,
+                            GCompareDataFunc    compare_func,
+                            gpointer            user_data,
+                            NMUtilsNamedValue  *provided_buffer,
+                            guint               provided_buffer_len,
+                            NMUtilsNamedValue **out_allocated_buffer)
+{
+    GHashTableIter     iter;
+    NMUtilsNamedValue *values;
+    guint              len;
+    guint              i;
+
+    nm_assert(provided_buffer_len == 0 || provided_buffer);
+    nm_assert(!out_allocated_buffer || !*out_allocated_buffer);
+
+    if (!hash || ((len = g_hash_table_size(hash)) == 0)) {
+        NM_SET_OUT(out_len, 0);
+        return NULL;
+    }
+
+    if (provided_buffer_len >= len + 1) {
+        /* the buffer provided by the caller is large enough. Use it. */
+        values = provided_buffer;
+    } else {
+        /* allocate a new buffer. */
+        values = g_new(NMUtilsNamedValue, len + 1);
+        NM_SET_OUT(out_allocated_buffer, values);
+    }
+
+    i = 0;
+    g_hash_table_iter_init(&iter, hash);
+    while (g_hash_table_iter_next(&iter, &values[i].name_ptr, &values[i].value_ptr))
+        i++;
+    nm_assert(i == len);
+    values[i].name_ptr  = NULL;
+    values[i].value_ptr = NULL;
+
+    if (compare_func && len > 1)
+        g_qsort_with_data(values, len, sizeof(NMUtilsNamedValue), compare_func, user_data);
+
+    NM_SET_OUT(out_len, len);
+    return values;
 }
 
 /*****************************************************************************/
