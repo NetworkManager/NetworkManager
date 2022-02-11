@@ -569,6 +569,7 @@ update(NMDnsPlugin             *plugin,
     gpointer                       pointer;
     NMDnsConfigIPData             *ip_data;
     GHashTableIter                 iter;
+    gs_unref_array GArray         *dirty_array = NULL;
     guint                          i;
 
     /* Group configs by ifindex/interfaces. */
@@ -611,21 +612,32 @@ update(NMDnsPlugin             *plugin,
      * reset the resolved configuration for that ifindex. */
     g_hash_table_iter_init(&iter, priv->dirty_interfaces);
     while (g_hash_table_iter_next(&iter, &pointer, NULL)) {
-        int             ifindex = GPOINTER_TO_INT(pointer);
-        InterfaceConfig ic;
+        int ifindex = GPOINTER_TO_INT(pointer);
 
         if (g_hash_table_contains(interfaces, GINT_TO_POINTER(ifindex))) {
             /* the interface is still tracked and still dirty. Keep. */
             continue;
         }
 
-        _LOGT("clear previously configured ifindex %d", ifindex);
-        ic = (InterfaceConfig){
-            .ifindex          = ifindex,
-            .configs_lst_head = C_LIST_INIT(ic.configs_lst_head),
-        };
-        prepare_one_interface(self, &ic);
+        if (!dirty_array)
+            dirty_array = g_array_new(FALSE, FALSE, sizeof(int));
+        g_array_append_val(dirty_array, ifindex);
+
         g_hash_table_iter_remove(&iter);
+    }
+    if (dirty_array) {
+        g_array_sort_with_data(dirty_array, nm_cmp_int2ptr_p_with_data, NULL);
+        for (i = 0; i < dirty_array->len; i++) {
+            int             ifindex = g_array_index(dirty_array, int, i);
+            InterfaceConfig ic;
+
+            _LOGT("clear previously configured ifindex %d", ifindex);
+            ic = (InterfaceConfig){
+                .ifindex          = ifindex,
+                .configs_lst_head = C_LIST_INIT(ic.configs_lst_head),
+            };
+            prepare_one_interface(self, &ic);
+        }
     }
 
     priv->send_updates_waiting = TRUE;
