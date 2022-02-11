@@ -80,9 +80,10 @@ typedef struct _NMDnsConfigData {
     (G_TYPE_INSTANCE_GET_CLASS((o), NM_TYPE_DNS_MANAGER, NMDnsManagerClass))
 
 /* properties */
-#define NM_DNS_MANAGER_MODE          "mode"
-#define NM_DNS_MANAGER_RC_MANAGER    "rc-manager"
-#define NM_DNS_MANAGER_CONFIGURATION "configuration"
+#define NM_DNS_MANAGER_MODE           "mode"
+#define NM_DNS_MANAGER_RC_MANAGER     "rc-manager"
+#define NM_DNS_MANAGER_CONFIGURATION  "configuration"
+#define NM_DNS_MANAGER_UPDATE_PENDING "update-pending"
 
 /* internal signals */
 #define NM_DNS_MANAGER_CONFIG_CHANGED "config-changed"
@@ -148,6 +149,8 @@ typedef enum {
 void nm_dns_manager_stop(NMDnsManager *self);
 
 NMDnsPlugin *nm_dns_manager_get_systemd_resolved(NMDnsManager *self);
+
+gboolean nm_dns_manager_get_update_pending(NMDnsManager *self);
 
 /*****************************************************************************/
 
