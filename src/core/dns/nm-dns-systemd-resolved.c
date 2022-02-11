@@ -242,10 +242,10 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
 }
 
 static gboolean
-update_add_ip_config(NMDnsSystemdResolved *self,
-                     GVariantBuilder      *dns,
-                     GVariantBuilder      *domains,
-                     NMDnsConfigIPData    *ip_data)
+update_add_ip_config(NMDnsSystemdResolved    *self,
+                     GVariantBuilder         *dns,
+                     GVariantBuilder         *domains,
+                     const NMDnsConfigIPData *ip_data)
 {
     gsize         addr_size;
     guint         n;
@@ -305,7 +305,7 @@ free_pending_updates(NMDnsSystemdResolved *self)
 }
 
 static gboolean
-prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
+prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
 {
     GVariantBuilder               dns;
     GVariantBuilder               domains;
@@ -328,7 +328,7 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     g_variant_builder_open(&domains, G_VARIANT_TYPE("a(sb)"));
 
     c_list_for_each_entry (elem, &ic->configs_lst_head, lst) {
-        NMDnsConfigIPData *ip_data = elem->data;
+        const NMDnsConfigIPData *ip_data = elem->data;
 
         if (update_add_ip_config(self, &dns, &domains, ip_data))
             has_config = TRUE;
@@ -597,7 +597,8 @@ update(NMDnsPlugin             *plugin,
     interfaces_keys =
         nm_utils_hash_keys_to_array(interfaces, nm_cmp_int2ptr_p_with_data, NULL, &interfaces_len);
     for (i = 0; i < interfaces_len; i++) {
-        InterfaceConfig *ic = g_hash_table_lookup(interfaces, GINT_TO_POINTER(interfaces_keys[i]));
+        const InterfaceConfig *ic =
+            g_hash_table_lookup(interfaces, GINT_TO_POINTER(interfaces_keys[i]));
 
         if (prepare_one_interface(self, ic))
             g_hash_table_add(priv->dirty_interfaces, GINT_TO_POINTER(ic->ifindex));
