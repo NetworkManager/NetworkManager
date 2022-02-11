@@ -179,7 +179,7 @@ static void
 _interface_config_free(InterfaceConfig *config)
 {
     nm_c_list_elem_free_all(&config->configs_lst_head, NULL);
-    g_slice_free(InterfaceConfig, config);
+    nm_g_slice_free(config);
 }
 
 static void
@@ -258,8 +258,12 @@ update_add_ip_config(NMDnsSystemdResolved *self,
     addr_size = nm_utils_addr_family_to_size(ip_data->addr_family);
 
     if ((!ip_data->domains.search || !ip_data->domains.search[0])
-        && !ip_data->domains.has_default_route_exclusive && !ip_data->domains.has_default_route)
+        && !ip_data->domains.has_default_route_exclusive && !ip_data->domains.has_default_route) {
+        /* we have no search domain (which systemd-resolved uses to routing the request), but
+         * also the "DefaultRoute" is not set on the interface. This setting has no effect and
+         * gets ignored. */
         return FALSE;
+    }
 
     nameservers = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &n);
     for (i = 0; i < n; i++) {
@@ -306,10 +310,12 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     GVariantBuilder               dns;
     GVariantBuilder               domains;
     NMCListElem                  *elem;
-    NMSettingConnectionMdns       mdns         = NM_SETTING_CONNECTION_MDNS_DEFAULT;
-    NMSettingConnectionLlmnr      llmnr        = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
-    NMSettingConnectionDnsOverTls dns_over_tls = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
-    const char                   *mdns_arg = NULL, *llmnr_arg = NULL, *dns_over_tls_arg = NULL;
+    NMSettingConnectionMdns       mdns              = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+    NMSettingConnectionLlmnr      llmnr             = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
+    NMSettingConnectionDnsOverTls dns_over_tls      = NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT;
+    const char                   *mdns_arg          = NULL;
+    const char                   *llmnr_arg         = NULL;
+    const char                   *dns_over_tls_arg  = NULL;
     gboolean                      has_config        = FALSE;
     gboolean                      has_default_route = FALSE;
 
@@ -324,7 +330,8 @@ prepare_one_interface(NMDnsSystemdResolved *self, InterfaceConfig *ic)
     c_list_for_each_entry (elem, &ic->configs_lst_head, lst) {
         NMDnsConfigIPData *ip_data = elem->data;
 
-        has_config |= update_add_ip_config(self, &dns, &domains, ip_data);
+        if (update_add_ip_config(self, &dns, &domains, ip_data))
+            has_config = TRUE;
 
         if (ip_data->domains.has_default_route)
             has_default_route = TRUE;
@@ -559,19 +566,19 @@ update(NMDnsPlugin             *plugin,
     gs_unref_hashtable GHashTable *interfaces      = NULL;
     gs_free gpointer              *interfaces_keys = NULL;
     guint                          interfaces_len;
-    int                            ifindex;
     gpointer                       pointer;
     NMDnsConfigIPData             *ip_data;
     GHashTableIter                 iter;
     guint                          i;
 
+    /* Group configs by ifindex/interfaces. */
     interfaces =
         g_hash_table_new_full(nm_direct_hash, NULL, NULL, (GDestroyNotify) _interface_config_free);
 
     c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst) {
-        InterfaceConfig *ic = NULL;
+        InterfaceConfig *ic      = NULL;
+        int              ifindex = ip_data->data->ifindex;
 
-        ifindex = ip_data->data->ifindex;
         nm_assert(ifindex == nm_l3_config_data_get_ifindex(ip_data->l3cd));
 
         ic = g_hash_table_lookup(interfaces, GINT_TO_POINTER(ifindex));
@@ -602,19 +609,22 @@ update(NMDnsPlugin             *plugin,
      * resolved, and the current update doesn't contain that interface,
      * reset the resolved configuration for that ifindex. */
     g_hash_table_iter_init(&iter, priv->dirty_interfaces);
-    while (g_hash_table_iter_next(&iter, (gpointer *) &pointer, NULL)) {
-        ifindex = GPOINTER_TO_INT(pointer);
-        if (!g_hash_table_contains(interfaces, GINT_TO_POINTER(ifindex))) {
-            InterfaceConfig ic;
+    while (g_hash_table_iter_next(&iter, &pointer, NULL)) {
+        int             ifindex = GPOINTER_TO_INT(pointer);
+        InterfaceConfig ic;
 
-            _LOGT("clear previously configured ifindex %d", ifindex);
-            ic = (InterfaceConfig){
-                .ifindex          = ifindex,
-                .configs_lst_head = C_LIST_INIT(ic.configs_lst_head),
-            };
-            prepare_one_interface(self, &ic);
-            g_hash_table_iter_remove(&iter);
+        if (g_hash_table_contains(interfaces, GINT_TO_POINTER(ifindex))) {
+            /* the interface is still tracked and still dirty. Keep. */
+            continue;
         }
+
+        _LOGT("clear previously configured ifindex %d", ifindex);
+        ic = (InterfaceConfig){
+            .ifindex          = ifindex,
+            .configs_lst_head = C_LIST_INIT(ic.configs_lst_head),
+        };
+        prepare_one_interface(self, &ic);
+        g_hash_table_iter_remove(&iter);
     }
 
     priv->send_updates_waiting = TRUE;
