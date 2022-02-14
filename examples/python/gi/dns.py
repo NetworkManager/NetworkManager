@@ -15,23 +15,23 @@ main_loop = None
 
 
 def handle_config(config):
-    print " ---- new configuration ----"
+    print(" ---- new configuration ----")
     for entry in config:
-        print " * servers: %s" % ", ".join(map(str, entry.get_nameservers()))
+        print(" * servers: %s" % ", ".join(map(str, entry.get_nameservers())))
 
         domains = entry.get_domains()
         if domains and domains[0]:
-            print "   domains: %s" % ", ".join(map(str, domains))
+            print("   domains: %s" % ", ".join(map(str, domains)))
 
         if entry.get_interface():
-            print "   interface: %s" % entry.get_interface()
+            print("   interface: %s" % entry.get_interface())
 
-        print "   priority: %d" % entry.get_priority()
+        print("   priority: %d" % entry.get_priority())
 
         if entry.get_vpn():
-            print "   vpn: yes"
+            print("   vpn: yes")
 
-        print ""
+        print("")
 
 
 def dns_config_changed(self, property):
