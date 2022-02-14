@@ -2948,6 +2948,23 @@ nm_l3cfg_get_acd_addr_info(NML3Cfg *self, in_addr_t addr)
 /*****************************************************************************/
 
 gboolean
+nm_l3cfg_has_temp_not_available_obj(NML3Cfg *self, int addr_family)
+{
+    ObjStateData *obj_state;
+
+    nm_assert(NM_IS_L3CFG(self));
+    nm_assert_addr_family(addr_family);
+
+    c_list_for_each_entry (obj_state,
+                           &self->priv.p->obj_state_temporary_not_available_lst_head,
+                           os_temporary_not_available_lst) {
+        if (NMP_OBJECT_GET_ADDR_FAMILY(obj_state->obj) == addr_family)
+            return TRUE;
+    }
+    return FALSE;
+}
+
+gboolean
 nm_l3cfg_check_ready(NML3Cfg               *self,
                      const NML3ConfigData  *l3cd,
                      int                    addr_family,
