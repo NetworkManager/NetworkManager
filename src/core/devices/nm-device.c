@@ -3057,6 +3057,7 @@ _dev_ip_state_check(NMDevice *self, int addr_family)
     gboolean         s_is_started = FALSE;
     gboolean         s_is_failed  = FALSE;
     gboolean         s_is_pending = FALSE;
+    gboolean         has_tna      = FALSE;
     gboolean         v_bool;
     NMDeviceIPState  ip_state;
     NMDeviceIPState  ip_state_other;
@@ -3188,6 +3189,10 @@ _dev_ip_state_check(NMDevice *self, int addr_family)
                                 &s_is_pending,
                                 &s_is_failed);
 
+    has_tna = priv->l3cfg && nm_l3cfg_has_temp_not_available_obj(priv->l3cfg, addr_family);
+    if (has_tna)
+        s_is_pending = TRUE;
+
     if (s_is_failed)
         ip_state = NM_DEVICE_IP_STATE_FAILED;
     else if (s_is_pending)
@@ -3215,7 +3220,7 @@ got_ip_state:
     nm_assert(!priv->ip_data_4.is_ignore);
 
     _LOGT_ip(addr_family,
-             "check-state: state %s => %s, is_failed=%d, is_pending=%d, is_started=%d, "
+             "check-state: state %s => %s, is_failed=%d, is_pending=%d, is_started=%d temp_na=%d, "
              "may-fail-4=%d, may-fail-6=%d;"
              "%s;%s%s%s%s%s%s;%s%s%s%s%s%s%s%s",
              nm_device_ip_state_to_string(priv->ip_data_x[IS_IPv4].state),
@@ -3223,6 +3228,7 @@ got_ip_state:
              s_is_failed,
              s_is_pending,
              s_is_started,
+             has_tna,
              _prop_get_ipvx_may_fail_cached(self, AF_INET, IS_IPv4 ? &may_fail : &may_fail_other),
              _prop_get_ipvx_may_fail_cached(self, AF_INET6, !IS_IPv4 ? &may_fail : &may_fail_other),
              priv->ip_data_4.is_disabled ? " disabled4" : "",
