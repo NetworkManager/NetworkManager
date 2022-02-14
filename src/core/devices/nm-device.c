@@ -3930,6 +3930,9 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
                                     AF_INET6,
                                     NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY,
                                     NULL)) {
+            if (nm_l3cfg_has_temp_not_available_obj(priv->l3cfg, AF_INET6))
+                _dev_l3_cfg_commit(self, FALSE);
+
             nm_clear_l3cd(&priv->ipac6_data.l3cd);
             _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
             _dev_ip_state_check_async(self, AF_INET6);
@@ -9824,6 +9827,14 @@ _dev_ipmanual_check_ready(NMDevice *self)
             _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
             _dev_ip_state_check_async(self, AF_UNSPEC);
         } else if (ready) {
+            if (priv->ipmanual_data.state_x[IS_IPv4] != NM_DEVICE_IP_STATE_READY
+                && nm_l3cfg_has_temp_not_available_obj(priv->l3cfg, addr_family)) {
+                /* Addresses with pending ACD/DAD are a possible cause for the
+                 * presence of temporarily-not-available objects. Once all addresses
+                 * are ready, retry to commit those unavailable objects. */
+                _dev_l3_cfg_commit(self, FALSE);
+            }
+
             _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
             _dev_ip_state_check_async(self, AF_UNSPEC);
         }
