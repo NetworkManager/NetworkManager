@@ -3103,28 +3103,24 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP *ap)
 {
-    NMDevice     *device     = NM_DEVICE(self);
-    const char   *band       = nm_setting_wireless_get_band(s_wifi);
-    const guint32 a_freqs[]  = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
-    const guint32 bg_freqs[] = {2412, 2437, 2462, 2472, 0};
-    guint32       freq       = 0;
+    static const guint32 a_freqs[]  = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
+    static const guint32 bg_freqs[] = {2412, 2437, 2462, 2472, 0};
+    NMDevice            *device     = NM_DEVICE(self);
+    const char          *band       = nm_setting_wireless_get_band(s_wifi);
+    guint32              freq;
 
-    g_assert(ap);
+    nm_assert(ap);
+    nm_assert(NM_IN_STRSET(band, NULL, "a", "bg"));
 
     if (nm_wifi_ap_get_freq(ap))
         return;
 
-    if (g_strcmp0(band, "a") == 0)
-        freq = nm_platform_wifi_find_frequency(nm_device_get_platform(device),
-                                               nm_device_get_ifindex(device),
-                                               a_freqs);
-    else
-        freq = nm_platform_wifi_find_frequency(nm_device_get_platform(device),
-                                               nm_device_get_ifindex(device),
-                                               bg_freqs);
+    freq = nm_platform_wifi_find_frequency(nm_device_get_platform(device),
+                                           nm_device_get_ifindex(device),
+                                           nm_streq0(band, "a") ? a_freqs : bg_freqs);
 
     if (!freq)
-        freq = (g_strcmp0(band, "a") == 0) ? 5180 : 2462;
+        freq = nm_streq0(band, "a") ? 5180 : 2462;
 
     if (nm_wifi_ap_set_freq(ap, freq))
         _ap_dump(self, LOGL_DEBUG, ap, "updated", 0);
