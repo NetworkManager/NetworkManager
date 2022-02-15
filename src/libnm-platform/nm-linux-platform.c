@@ -8451,6 +8451,7 @@ static gboolean
 wifi_get_capabilities(NMPlatform *platform, int ifindex, _NMDeviceWifiCapabilities *caps)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
+
     if (caps)
         *caps = nm_wifi_utils_get_caps(wifi_data);
     return TRUE;
@@ -8460,6 +8461,7 @@ static guint32
 wifi_get_frequency(NMPlatform *platform, int ifindex)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, 0);
+
     return nm_wifi_utils_get_freq(wifi_data);
 }
 
@@ -8471,6 +8473,7 @@ wifi_get_station(NMPlatform  *platform,
                  guint32     *out_rate)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
+
     return nm_wifi_utils_get_station(wifi_data, out_bssid, out_quality, out_rate);
 }
 
@@ -8478,6 +8481,7 @@ static _NM80211Mode
 wifi_get_mode(NMPlatform *platform, int ifindex)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, _NM_802_11_MODE_UNKNOWN);
+
     return nm_wifi_utils_get_mode(wifi_data);
 }
 
@@ -8485,6 +8489,7 @@ static void
 wifi_set_mode(NMPlatform *platform, int ifindex, _NM80211Mode mode)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, );
+
     nm_wifi_utils_set_mode(wifi_data, mode);
 }
 
@@ -8492,6 +8497,7 @@ static void
 wifi_set_powersave(NMPlatform *platform, int ifindex, guint32 powersave)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, );
+
     nm_wifi_utils_set_powersave(wifi_data, powersave);
 }
 
@@ -8499,6 +8505,7 @@ static guint32
 wifi_find_frequency(NMPlatform *platform, int ifindex, const guint32 *freqs)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, 0);
+
     return nm_wifi_utils_find_freq(wifi_data, freqs);
 }
 
@@ -8506,6 +8513,7 @@ static void
 wifi_indicate_addressing_running(NMPlatform *platform, int ifindex, gboolean running)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, );
+
     nm_wifi_utils_indicate_addressing_running(wifi_data, running);
 }
 
@@ -8513,6 +8521,7 @@ static _NMSettingWirelessWakeOnWLan
 wifi_get_wake_on_wlan(NMPlatform *platform, int ifindex)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
+
     return nm_wifi_utils_get_wake_on_wlan(wifi_data);
 }
 
@@ -8520,6 +8529,7 @@ static gboolean
 wifi_set_wake_on_wlan(NMPlatform *platform, int ifindex, _NMSettingWirelessWakeOnWLan wowl)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
+
     return nm_wifi_utils_set_wake_on_wlan(wifi_data, wowl);
 }
 
@@ -8565,6 +8575,7 @@ static guint32
 mesh_get_channel(NMPlatform *platform, int ifindex)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, 0);
+
     return nm_wifi_utils_get_mesh_channel(wifi_data);
 }
 
@@ -8572,6 +8583,7 @@ static gboolean
 mesh_set_channel(NMPlatform *platform, int ifindex, guint32 channel)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
+
     return nm_wifi_utils_set_mesh_channel(wifi_data, channel);
 }
 
@@ -8579,6 +8591,7 @@ static gboolean
 mesh_set_ssid(NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
+
     return nm_wifi_utils_set_mesh_ssid(wifi_data, ssid, len);
 }
 
