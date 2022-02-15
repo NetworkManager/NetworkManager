@@ -382,12 +382,12 @@ wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs)
 {
     NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
     int                 i;
+    int                 j;
 
     for (i = 0; i < self->num_freqs; i++) {
-        while (*freqs) {
-            if (self->freqs[i] == *freqs)
-                return *freqs;
-            freqs++;
+        for (j = 0; freqs[j] != 0; j++) {
+            if (self->freqs[i] == freqs[j])
+                return freqs[j];
         }
     }
     return 0;
