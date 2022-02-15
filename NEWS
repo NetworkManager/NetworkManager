@@ -8,6 +8,9 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Wi-Fi hotspots will use a (stable) random channel number unless one is
+  chosen manually.
+
 =============================================
 NetworkManager-1.36
 Overview of changes since NetworkManager-1.34

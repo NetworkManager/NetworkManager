@@ -3103,11 +3103,16 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP *ap)
 {
-    static const guint32 a_freqs[]  = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
-    static const guint32 bg_freqs[] = {2412, 2437, 2462, 2472, 0};
-    NMDevice            *device     = NM_DEVICE(self);
-    const char          *band       = nm_setting_wireless_get_band(s_wifi);
-    guint32              freq;
+    guint32     a_freqs[]  = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
+    guint32     bg_freqs[] = {2412, 2437, 2462, 2472, 0};
+    guint32    *rnd_freqs;
+    guint       rnd_freqs_len;
+    NMDevice   *device = NM_DEVICE(self);
+    const char *band   = nm_setting_wireless_get_band(s_wifi);
+    guint32     freq;
+    guint64     rnd;
+    guint       i;
+    guint       l;
 
     nm_assert(ap);
     nm_assert(NM_IN_STRSET(band, NULL, "a", "bg"));
@@ -3115,12 +3120,58 @@ ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP
     if (nm_wifi_ap_get_freq(ap))
         return;
 
+    {
+        GBytes       *ssid;
+        gsize         ssid_len;
+        const guint8 *ssid_data;
+        const guint8  random_seed[16] = {0x9a,
+                                        0xdc,
+                                        0x86,
+                                        0x9a,
+                                        0xa8,
+                                        0xa2,
+                                        0x07,
+                                        0x97,
+                                        0xbe,
+                                        0x6d,
+                                        0xe6,
+                                        0x99,
+                                        0x9f,
+                                        0xa8,
+                                        0x09,
+                                        0x2b};
+
+        /* Calculate a stable "random" number based on the SSID. */
+        ssid      = nm_setting_wireless_get_ssid(s_wifi);
+        ssid_data = g_bytes_get_data(ssid, &ssid_len);
+        rnd       = c_siphash_hash(random_seed, ssid_data, ssid_len);
+    }
+
+    if (nm_streq0(band, "a")) {
+        rnd_freqs     = a_freqs;
+        rnd_freqs_len = G_N_ELEMENTS(a_freqs) - 1;
+    } else {
+        rnd_freqs     = bg_freqs;
+        rnd_freqs_len = G_N_ELEMENTS(bg_freqs) - 1;
+    }
+
+    /* shuffle the frequencies (inplace). The idea is to choose
+     * a different frequency depending on the SSID. */
+    for (i = 0, l = rnd_freqs_len; l > 1; i++, l--) {
+        /* Add an arbitrary chosen (prime) number to rnd, to get more "random"
+         * numbers. Since we only shuffle a handful of elements, that's good
+         * enough (and stable). */
+        rnd += 5630246189u;
+        NM_SWAP(&rnd_freqs[i], &rnd_freqs[i + (rnd % l)]);
+    }
+
     freq = nm_platform_wifi_find_frequency(nm_device_get_platform(device),
                                            nm_device_get_ifindex(device),
-                                           nm_streq0(band, "a") ? a_freqs : bg_freqs);
+                                           rnd_freqs);
+    if (freq == 0)
+        freq = rnd_freqs[0];
 
-    if (!freq)
-        freq = nm_streq0(band, "a") ? 5180 : 2462;
+    _LOGD(LOGD_WIFI, "set frequency for hotspot AP to %u", freq);
 
     if (nm_wifi_ap_set_freq(ap, freq))
         _ap_dump(self, LOGL_DEBUG, ap, "updated", 0);
