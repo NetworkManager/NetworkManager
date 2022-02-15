@@ -252,13 +252,13 @@ static guint32
 wifi_wext_find_freq(NMWifiUtils *data, const guint32 *freqs)
 {
     NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
-    int              i;
+    guint            i;
+    guint            j;
 
     for (i = 0; i < wext->num_freqs; i++) {
-        while (*freqs) {
-            if (wext->freqs[i] == *freqs)
-                return *freqs;
-            freqs++;
+        for (j = 0; freqs[j] != 0; j++) {
+            if (wext->freqs[i] == freqs[j])
+                return freqs[j];
         }
     }
     return 0;
