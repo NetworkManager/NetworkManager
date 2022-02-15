@@ -15079,8 +15079,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
         if (ifindex > 0) {
             NMPlatform *platform = nm_device_get_platform(self);
 
-            nm_platform_ip_route_flush(platform, AF_UNSPEC, ifindex);
-            nm_platform_ip_address_flush(platform, AF_UNSPEC, ifindex);
+            nm_device_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_REAPPLY, TRUE);
 
             if (nm_device_get_applied_setting(self, NM_TYPE_SETTING_TC_CONFIG)) {
                 nm_platform_tc_sync(platform, ifindex, NULL, NULL);
