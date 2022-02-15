@@ -255,8 +255,10 @@ wifi_wext_find_freq(NMWifiUtils *data, const guint32 *freqs)
     guint            i;
     guint            j;
 
-    for (i = 0; i < wext->num_freqs; i++) {
-        for (j = 0; freqs[j] != 0; j++) {
+    /* It's important to check the values in the order of @freqs, because
+     * that array might be sorted to contain preferred frequencies first. */
+    for (j = 0; freqs[j] != 0; j++) {
+        for (i = 0; i < wext->num_freqs; i++) {
             if (wext->freqs[i] == freqs[j])
                 return freqs[j];
         }
