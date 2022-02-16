@@ -321,7 +321,7 @@ AC_ARG_WITH([systemdsystemunitdir],
                            [Directory for systemd service files]))
 # default location
 AS_IF([test -z "$with_systemdsystemunitdir" && $PKG_CONFIG systemd],
-      with_systemdsystemunitdir="\$(prefix)/lib/systemd/system")
+      with_systemdsystemunitdir=`$PKG_CONFIG systemd '--define-variable=prefix=${prefix}' '--define-variable=root_prefix=${prefix}' --variable systemdsystemunitdir`)
 AS_IF([test -z "$with_systemdsystemunitdir"], with_systemdsystemunitdir=no)
 # add conditional and subst
 AM_CONDITIONAL(HAVE_SYSTEMD, [test "$with_systemdsystemunitdir" != no])
