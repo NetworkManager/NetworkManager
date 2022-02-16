@@ -2,11 +2,6 @@ So you're interested in hacking on NetworkManager?  Here's some cool
 stuff you could do...
 
 
-* IPv6 Multihop Routes in Platform
-
-See src/libnm-platform/README.md
-
-
 * Use netlink API instead of ioctl based ethtool.
 
 NetworkManager uses ethtool API to set/obtain certain settings of network
