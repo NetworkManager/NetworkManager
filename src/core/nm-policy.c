@@ -2005,7 +2005,8 @@ device_state_changed(NMDevice           *device,
                                          AF_UNSPEC,
                                          device,
                                          nm_device_get_l3cd(device, TRUE),
-                                         NM_DNS_IP_CONFIG_TYPE_DEFAULT,
+                                         nm_device_is_vpn(device) ? NM_DNS_IP_CONFIG_TYPE_VPN
+                                                                  : NM_DNS_IP_CONFIG_TYPE_DEFAULT,
                                          TRUE);
         }
         update_ip_dns(self, AF_INET, device);
@@ -2147,7 +2148,8 @@ device_l3cd_changed(NMDevice             *device,
                                      AF_UNSPEC,
                                      device,
                                      l3cd_new,
-                                     NM_DNS_IP_CONFIG_TYPE_DEFAULT,
+                                     nm_device_is_vpn(device) ? NM_DNS_IP_CONFIG_TYPE_VPN
+                                                              : NM_DNS_IP_CONFIG_TYPE_DEFAULT,
                                      TRUE);
         update_ip_dns(self, AF_INET, device);
         update_ip_dns(self, AF_INET6, device);
