@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <termios.h>
 #include <unistd.h>
 #include <locale.h>
 #if HAVE_EDITLINE_READLINE
@@ -119,7 +118,6 @@ typedef struct {
 
 /* --- Global variables --- */
 GMainLoop     *loop = NULL;
-struct termios termios_orig;
 
 NM_CACHED_QUARK_FCN("nmcli-error-quark", nmcli_error_quark);
 
@@ -935,7 +933,6 @@ nmc_clear_sigint(void)
 void
 nmc_exit(void)
 {
-    tcsetattr(STDIN_FILENO, TCSADRAIN, &termios_orig);
     nmc_cleanup_readline();
     exit(1);
 }
@@ -1025,9 +1022,6 @@ main(int argc, char *argv[])
     bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
     textdomain(GETTEXT_PACKAGE);
 #endif
-
-    /* Save terminal settings */
-    tcgetattr(STDIN_FILENO, &termios_orig);
 
     nm_cli.return_text = g_string_new(_("Success"));
     loop               = g_main_loop_new(NULL, FALSE);
