@@ -2323,6 +2323,11 @@ _rfkill_radio_state_set_from_manager(NMRfkillManager  *rfkill_mgr,
         rstate->sw_enabled = FALSE;
         rstate->hw_enabled = FALSE;
         return;
+    case NM_RFKILL_STATE_HARD_BLOCKED_OS_NOT_OWNER:
+        /* TODO: do something special here */
+        rstate->sw_enabled = FALSE;
+        rstate->hw_enabled = FALSE;
+        return;
     }
     nm_assert_not_reached();
 }
