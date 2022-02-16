@@ -1246,7 +1246,7 @@ _ppp_manager_stop(NMPPPManager            *self,
                               SIGTERM,
                               LOGD_PPP,
                               "pppd",
-                              NM_SHUTDOWN_TIMEOUT_MS,
+                              5000,
                               _stop_child_cb,
                               handle);
 
