@@ -63,6 +63,7 @@ typedef struct {
     bool user_enabled : 1;
     bool sw_enabled : 1;
     bool hw_enabled : 1;
+    bool os_owner : 1;
 } RfkillRadioState;
 
 typedef enum {
@@ -2299,6 +2300,9 @@ _rfkill_radio_state_get_enabled(const RfkillRadioState *rstate, gboolean check_c
 {
     gboolean enabled;
 
+    /* If the device is not owned by the os, hw_enabled will be FALSE, hence
+     * we don't need to consider os_owner here.
+     */
     enabled = rstate->user_enabled && rstate->hw_enabled;
     if (check_changeable)
         enabled &= rstate->sw_enabled;
@@ -2314,19 +2318,23 @@ _rfkill_radio_state_set_from_manager(NMRfkillManager  *rfkill_mgr,
     case NM_RFKILL_STATE_UNBLOCKED:
         rstate->sw_enabled = TRUE;
         rstate->hw_enabled = TRUE;
+        rstate->os_owner   = TRUE;
         return;
     case NM_RFKILL_STATE_SOFT_BLOCKED:
         rstate->sw_enabled = FALSE;
         rstate->hw_enabled = TRUE;
+        rstate->os_owner   = TRUE;
         return;
     case NM_RFKILL_STATE_HARD_BLOCKED:
         rstate->sw_enabled = FALSE;
         rstate->hw_enabled = FALSE;
+        /* In case the OS doesn't own the NIC, we would be in NM_RFKILL_STATE_HARD_BLOCKED */
+        rstate->os_owner = TRUE;
         return;
     case NM_RFKILL_STATE_HARD_BLOCKED_OS_NOT_OWNER:
-        /* TODO: do something special here */
         rstate->sw_enabled = FALSE;
         rstate->hw_enabled = FALSE;
+        rstate->os_owner   = FALSE;
         return;
     }
     nm_assert_not_reached();
@@ -2388,10 +2396,11 @@ _rfkill_update_one_type(NMManager *self, NMRfkillType rtype)
 
     /* Print out all states affecting device enablement */
     _LOGD(LOGD_RFKILL,
-          "rfkill: %s hw-enabled %d sw-enabled %d",
+          "rfkill: %s hw-enabled %d sw-enabled %d os-owner %d",
           nm_rfkill_type_to_string(rtype),
           rstate->hw_enabled,
-          rstate->sw_enabled);
+          rstate->sw_enabled,
+          rstate->os_owner);
 
     /* Log new killswitch state */
     new_rfkilled = rstate->hw_enabled && rstate->sw_enabled;
@@ -6474,12 +6483,14 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                 gboolean                enabled = _rfkill_radio_state_get_enabled(rstate, TRUE);
 
                 _LOGD(LOGD_RFKILL,
-                      "rfkill: %s %s devices (hw_enabled %d, sw_enabled %d, user_enabled %d)",
+                      "rfkill: %s %s devices (hw_enabled %d, sw_enabled %d, user_enabled %d, "
+                      "os_owner %d)",
                       enabled ? "enabling" : "disabling",
                       nm_rfkill_type_to_string(rtype),
                       rstate->hw_enabled,
                       rstate->sw_enabled,
-                      rstate->user_enabled);
+                      rstate->user_enabled,
+                      rstate->os_owner);
                 if (nm_device_get_rfkill_type(device) == rtype)
                     nm_device_set_enabled(device, enabled);
             }
@@ -7941,11 +7952,13 @@ nm_manager_init(NMManager *self)
         .user_enabled = TRUE,
         .sw_enabled   = FALSE,
         .hw_enabled   = TRUE,
+        .os_owner     = TRUE,
     };
     priv->radio_states[NM_RFKILL_TYPE_WWAN] = (RfkillRadioState){
         .user_enabled = TRUE,
         .sw_enabled   = FALSE,
         .hw_enabled   = TRUE,
+        .os_owner     = TRUE,
     };
 
     priv->sleeping = FALSE;
