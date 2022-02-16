@@ -410,6 +410,8 @@ gboolean nm_l3cfg_check_ready(NML3Cfg               *self,
                               NML3CfgCheckReadyFlags flags,
                               gboolean              *acd_used);
 
+gboolean nm_l3cfg_has_temp_not_available_obj(NML3Cfg *self, int addr_family);
+
 /*****************************************************************************/
 
 NML3CfgCommitType nm_l3cfg_commit_type_get(NML3Cfg *self);
