@@ -10455,14 +10455,14 @@ nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device)
         l3cd_src = priv_src->l3cds[L3_CONFIG_DATA_TYPE_AC_6].d;
     }
     if (l3cd_src) {
-        const char *const            *strvarr;
-        const struct in6_addr *const *addrs;
-        guint                         n;
-        guint                         i;
+        const char *const     *strvarr;
+        const struct in6_addr *addrs;
+        guint                  n;
+        guint                  i;
 
         addrs = nm_l3_config_data_get_nameservers(l3cd_src, AF_INET6, &n);
         for (i = 0; i < n; i++)
-            nm_l3_config_data_add_nameserver(l3cd, AF_INET6, addrs[i]);
+            nm_l3_config_data_add_nameserver(l3cd, AF_INET6, &addrs[i]);
 
         strvarr = nm_l3_config_data_get_searches(l3cd_src, AF_INET6, &n);
         for (i = 0; i < n; i++)
