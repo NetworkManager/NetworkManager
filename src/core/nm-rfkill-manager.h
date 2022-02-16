@@ -11,6 +11,7 @@ typedef enum {
     NM_RFKILL_STATE_UNBLOCKED    = 0,
     NM_RFKILL_STATE_SOFT_BLOCKED = 1,
     NM_RFKILL_STATE_HARD_BLOCKED = 2,
+    NM_RFKILL_STATE_HARD_BLOCKED_NOT_OWNER = 3,
 } NMRfkillState;
 
 typedef enum {
