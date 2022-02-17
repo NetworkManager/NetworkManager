@@ -117,7 +117,7 @@ typedef struct {
 } ArgsInfo;
 
 /* --- Global variables --- */
-GMainLoop     *loop = NULL;
+GMainLoop *loop = NULL;
 
 NM_CACHED_QUARK_FCN("nmcli-error-quark", nmcli_error_quark);
 
