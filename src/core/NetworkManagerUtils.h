@@ -103,23 +103,23 @@ NMPlatformRoutingRule *nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rul
 /*****************************************************************************/
 
 /* during shutdown, there are two relevant timeouts. One is
- * NM_SHUTDOWN_TIMEOUT_MS which is plenty of time, that we give for all
+ * NM_SHUTDOWN_TIMEOUT_MAX_MSEC which is plenty of time, that we give for all
  * actions to complete. Of course, during shutdown components should hurry
  * to cleanup.
  *
  * When we initiate shutdown, we should start killing child processes
- * with SIGTERM. If they don't complete within NM_SHUTDOWN_TIMEOUT_MS, we send
+ * with SIGTERM. If they don't complete within NM_SHUTDOWN_TIMEOUT_MAX_MSEC, we send
  * SIGKILL.
  *
- * After NM_SHUTDOWN_TIMEOUT_MS, NetworkManager will however not yet terminate right
- * away. It iterates the mainloop for another NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG. This
+ * After NM_SHUTDOWN_TIMEOUT_MAX_MSEC, NetworkManager will however not yet terminate right
+ * away. It iterates the mainloop for another NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC. This
  * should give time to reap the child process (after SIGKILL).
  *
  * So, the maximum time we should wait before sending SIGKILL should be at most
- * NM_SHUTDOWN_TIMEOUT_MS.
+ * NM_SHUTDOWN_TIMEOUT_MAX_MSEC.
  */
-#define NM_SHUTDOWN_TIMEOUT_MS          1500
-#define NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG 500
+#define NM_SHUTDOWN_TIMEOUT_MAX_MSEC        1500
+#define NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC 500
 
 typedef enum {
     /* There is no watched_obj argument, and the shutdown is delayed until the user
@@ -131,7 +131,7 @@ typedef enum {
     NM_SHUTDOWN_WAIT_TYPE_OBJECT,
 
     /* The watched_obj argument is a GCancellable, and shutdown is delayed until the object
-     * gets destroyed (or unregistered). Note that after NM_SHUTDOWN_TIMEOUT_MS, the
+     * gets destroyed (or unregistered). Note that after NM_SHUTDOWN_TIMEOUT_MAX_MSEC, the
      * cancellable will be cancelled to notify listeners about the shutdown. */
     NM_SHUTDOWN_WAIT_TYPE_CANCELLABLE,
 } NMShutdownWaitType;

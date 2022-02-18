@@ -1037,7 +1037,7 @@ _shutdown_waitobj_cb(gpointer user_data, GObject *where_the_object_was)
  * is still used.
  *
  * If @wait_type is %NM_SHUTDOWN_WAIT_TYPE_CANCELLABLE, then during shutdown
- * (after %NM_SHUTDOWN_TIMEOUT_MS), the cancellable will be cancelled to notify
+ * (after %NM_SHUTDOWN_TIMEOUT_MAX_MSEC), the cancellable will be cancelled to notify
  * the source of the shutdown. Note that otherwise, in this mode also @watched_obj
  * is only tracked with a weak-pointer. Especially, it does not register to the
  * "cancelled" signal to automatically unregister (otherwise, you would never
@@ -1046,7 +1046,7 @@ _shutdown_waitobj_cb(gpointer user_data, GObject *where_the_object_was)
  * FIXME(shutdown): proper shutdown is not yet implemented, and registering
  *   an object (currently) has no effect.
  *
- * FIXME(shutdown): during shutdown, after %NM_SHUTDOWN_TIMEOUT_MS timeout, cancel
+ * FIXME(shutdown): during shutdown, after %NM_SHUTDOWN_TIMEOUT_MAX_MSEC timeout, cancel
  *   all remaining %NM_SHUTDOWN_WAIT_TYPE_CANCELLABLE instances. Also, when somebody
  *   enqueues a cancellable after that point, cancel it right away on an idle handler.
  *
