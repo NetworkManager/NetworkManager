@@ -1714,8 +1714,11 @@ __nmtst_spawn_sync(const char *working_directory,
                            standard_err,
                            &exit_status,
                            &error);
-    if (!success)
+    if (!success) {
+        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         g_error("nmtst_spawn_sync(%s): %s", ((char **) argv->pdata)[0], error->message);
+        NM_PRAGMA_WARNING_REENABLE
+    }
     g_assert(!error);
 
     g_assert(!standard_out || *standard_out);
@@ -1844,7 +1847,8 @@ _nmtst_assert_resolve_relative_path_equals(const char *f1,
 
     /* Fixme: later we might need to coalesce repeated '/', "./", and "../".
      * For now, it's good enough. */
-    if (g_strcmp0(p1, p2) != 0)
+    if (g_strcmp0(p1, p2) != 0) {
+        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         g_error("%s:%d : filenames don't match \"%s\" vs. \"%s\" // \"%s\" - \"%s\"",
                 file,
                 line,
@@ -1852,6 +1856,8 @@ _nmtst_assert_resolve_relative_path_equals(const char *f1,
                 f2,
                 p1,
                 p2);
+        NM_PRAGMA_WARNING_REENABLE
+    }
 }
 #define nmtst_assert_resolve_relative_path_equals(f1, f2) \
     _nmtst_assert_resolve_relative_path_equals(f1, f2, __FILE__, __LINE__);
@@ -2404,9 +2410,11 @@ _nmtst_assert_connection_has_settings(NMConnection *connection,
     settings = nm_connection_get_settings(connection, &len);
     for (i = 0; i < len; i++) {
         if (!g_hash_table_remove(names, nm_setting_get_name(settings[i])) && has_at_most) {
+            NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
             g_error(
                 "nmtst_assert_connection_has_settings(): has setting \"%s\" which is not expected",
                 nm_setting_get_name(settings[i]));
+            NM_PRAGMA_WARNING_REENABLE
         }
     }
     if (g_hash_table_size(names) > 0 && has_at_least) {
@@ -2419,11 +2427,13 @@ _nmtst_assert_connection_has_settings(NMConnection *connection,
             settings_names[i] = nm_setting_get_name(settings[i]);
         has_str = g_strjoinv(" ", (char **) settings_names);
 
+        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         g_error("nmtst_assert_connection_has_settings(): the setting lacks %u expected settings "
                 "(expected: [%s] vs. has: [%s])",
                 g_hash_table_size(names),
                 expected_str,
                 has_str);
+        NM_PRAGMA_WARNING_REENABLE
     }
 }
 #define nmtst_assert_connection_has_settings(connection, ...) \
