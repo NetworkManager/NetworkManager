@@ -34,6 +34,10 @@
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT(NM_SHUTDOWN_TIMEOUT_1500_MSEC <= NM_SHUTDOWN_TIMEOUT_MAX_MSEC);
+
+/*****************************************************************************/
+
 /**
  * nm_utils_get_shared_wifi_permission:
  * @connection: the NMConnection to lookup the permission.
