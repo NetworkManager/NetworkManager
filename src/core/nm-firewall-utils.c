@@ -546,7 +546,7 @@ _fw_nft_call(GBytes             *stdin_buf,
                                    call_data);
 
     call_data->timeout_source =
-        nm_g_source_attach(nm_g_timeout_source_new((NM_SHUTDOWN_TIMEOUT_MAX_MSEC * 2) / 3,
+        nm_g_source_attach(nm_g_timeout_source_new((NM_SHUTDOWN_TIMEOUT_1500_MSEC * 2) / 3,
                                                    G_PRIORITY_DEFAULT,
                                                    _fw_nft_call_timeout_cb,
                                                    call_data,
