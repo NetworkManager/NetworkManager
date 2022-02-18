@@ -1245,7 +1245,6 @@ _ppp_manager_stop(NMPPPManager            *self,
     nm_utils_term_child_async(nm_steal_int(&priv->pid),
                               LOGD_PPP,
                               "pppd",
-                              NM_SHUTDOWN_TIMEOUT_MS,
                               _stop_child_cb,
                               handle);
 

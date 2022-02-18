@@ -167,7 +167,6 @@ typedef void (*NMUtilsKillChildAsyncCb)(pid_t    pid,
 void     nm_utils_term_child_async(pid_t                   pid,
                                    guint64                 log_domain,
                                    const char             *log_name,
-                                   guint32                 wait_before_kill_msec,
                                    NMUtilsKillChildAsyncCb callback,
                                    void                   *user_data);
 gboolean nm_utils_kill_child_sync(pid_t       pid,

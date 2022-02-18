@@ -13373,7 +13373,6 @@ ip_check_gw_ping_cleanup(NMDevice *self)
         nm_utils_term_child_async(priv->gw_ping.pid,
                                   priv->gw_ping.log_domain,
                                   "ping",
-                                  1000,
                                   NULL,
                                   NULL);
         priv->gw_ping.pid = 0;
