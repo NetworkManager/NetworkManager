@@ -302,8 +302,8 @@ if ! _is_true "$NMTST_USE_VALGRIND" 0; then
     export NM_TEST_UNDER_VALGRIND=0
     "${NMTST_DBUS_RUN_SESSION[@]}" "$TEST" "${TEST_ARGV[@]}"
     r=$?
-    [ $r == 0 ] || die "exec \"$TEST\" failed with exit code $r"
-    exit 0
+    [ $r == 0 -o $r == 77 ] || die "exec \"$TEST\" failed with exit code $r"
+    exit $r
 fi
 
 if [[ -z "${NMTST_VALGRIND}" ]]; then
