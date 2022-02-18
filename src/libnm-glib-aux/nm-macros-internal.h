@@ -202,6 +202,18 @@ _nm_auto_freev(gpointer ptr)
 
 /*****************************************************************************/
 
+/* Seems gcc-12 has a tendency for false-positive -Wdangling-pointer warnings with
+ * g_error()'s `for(;;);`.
+ *
+ * Work around that, but it's only for gcc 12 (for now). */
+#if defined(__GNUC__) && __GNUC__ == 12
+#define NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER NM_PRAGMA_WARNING_DISABLE("-Wdangling-pointer")
+#else
+#define NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER NM_PRAGMA_DIAGNOSTICS_PUSH
+#endif
+
+/*****************************************************************************/
+
 /**
  * NM_G_ERROR_MSG:
  * @error: (allow-none): the #GError instance
