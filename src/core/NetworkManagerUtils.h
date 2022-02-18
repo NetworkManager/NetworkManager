@@ -121,6 +121,17 @@ NMPlatformRoutingRule *nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rul
 #define NM_SHUTDOWN_TIMEOUT_MAX_MSEC        1500
 #define NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC 500
 
+/**
+ * NM_SHUTDOWN_TIMEOUT_1500_MSEC: this is just 1500 msec. The special
+ *   thing about the define is that you are guaranteed that this is not
+ *   longer than NM_SHUTDOWN_TIMEOUT_MAX_MSEC.
+ *   When you perform an async operation, it must either be cancellable
+ *   (and complete fast) or never take longer than NM_SHUTDOWN_TIMEOUT_MAX_MSEC.
+ *   The usage of this macro makes that relation to NM_SHUTDOWN_TIMEOUT_MAX_MSEC
+ *   explicit.
+ */
+#define NM_SHUTDOWN_TIMEOUT_1500_MSEC 1500
+
 typedef enum {
     /* There is no watched_obj argument, and the shutdown is delayed until the user
      * explicitly calls unregister on the returned handle. */
