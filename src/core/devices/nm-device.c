@@ -7003,7 +7003,7 @@ sriov_op_queue(NMDevice               *self,
      *
      * FIXME(shutdown): However, during shutdown we don't have a follow-up write request to cancel
      * this operation and we have to give it at least some time to complete. The solution is that
-     * we register a way to abort the last call during shutdown, and after NM_SHUTDOWN_TIMEOUT_MS
+     * we register a way to abort the last call during shutdown, and after NM_SHUTDOWN_TIMEOUT_MAX_MSEC
      * grace period we pull the plug and cancel it. */
 
     op  = g_slice_new(SriovOp);
