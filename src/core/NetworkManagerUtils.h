@@ -118,7 +118,7 @@ NMPlatformRoutingRule *nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rul
  * So, the maximum time we should wait before sending SIGKILL should be at most
  * NM_SHUTDOWN_TIMEOUT_MAX_MSEC.
  */
-#define NM_SHUTDOWN_TIMEOUT_MAX_MSEC        1500
+#define NM_SHUTDOWN_TIMEOUT_MAX_MSEC        5000
 #define NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC 500
 
 /**
@@ -131,6 +131,9 @@ NMPlatformRoutingRule *nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rul
  *   explicit.
  */
 #define NM_SHUTDOWN_TIMEOUT_1500_MSEC 1500
+
+/* See NM_SHUTDOWN_TIMEOUT_1500_MSEC. */
+#define NM_SHUTDOWN_TIMEOUT_5000_MSEC 5000
 
 typedef enum {
     /* There is no watched_obj argument, and the shutdown is delayed until the user

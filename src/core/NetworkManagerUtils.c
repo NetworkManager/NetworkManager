@@ -35,6 +35,7 @@
 /*****************************************************************************/
 
 G_STATIC_ASSERT(NM_SHUTDOWN_TIMEOUT_1500_MSEC <= NM_SHUTDOWN_TIMEOUT_MAX_MSEC);
+G_STATIC_ASSERT(NM_SHUTDOWN_TIMEOUT_5000_MSEC <= NM_SHUTDOWN_TIMEOUT_MAX_MSEC);
 
 /*****************************************************************************/
 
