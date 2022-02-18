@@ -60,7 +60,7 @@ test_nm_utils_monotonic_timestamp_as_boottime(void)
 
 /*****************************************************************************/
 
-struct test_nm_utils_kill_child_async_data {
+struct test_nm_utils_term_child_async_data {
     GMainLoop *loop;
     pid_t      pid;
     gboolean   called;
@@ -69,9 +69,9 @@ struct test_nm_utils_kill_child_async_data {
 };
 
 static void
-test_nm_utils_kill_child_async_cb(pid_t pid, gboolean success, int child_status, void *user_data)
+test_nm_utils_term_child_async_cb(pid_t pid, gboolean success, int child_status, void *user_data)
 {
-    struct test_nm_utils_kill_child_async_data *data = user_data;
+    struct test_nm_utils_term_child_async_data *data = user_data;
 
     g_assert(success == !!data->expected_success);
     g_assert(pid == data->pid);
@@ -87,37 +87,35 @@ test_nm_utils_kill_child_async_cb(pid_t pid, gboolean success, int child_status,
 }
 
 static gboolean
-test_nm_utils_kill_child_async_fail_cb(void *user_data)
+test_nm_utils_term_child_async_fail_cb(void *user_data)
 {
     g_assert_not_reached();
 }
 
 static void
-test_nm_utils_kill_child_async_do(const char *name,
+test_nm_utils_term_child_async_do(const char *name,
                                   pid_t       pid,
-                                  int         sig,
                                   guint32     wait_before_kill_msec,
                                   gboolean    expected_success,
                                   const int  *expected_child_status)
 {
     gboolean                                   success;
-    struct test_nm_utils_kill_child_async_data data = {};
+    struct test_nm_utils_term_child_async_data data = {};
     int                                        timeout_id;
 
     data.pid                   = pid;
     data.expected_success      = expected_success;
     data.expected_child_status = expected_child_status;
 
-    nm_utils_kill_child_async(pid,
-                              sig,
+    nm_utils_term_child_async(pid,
                               LOGD_CORE,
                               name,
                               wait_before_kill_msec,
-                              test_nm_utils_kill_child_async_cb,
+                              test_nm_utils_term_child_async_cb,
                               &data);
     g_assert(!data.called);
 
-    timeout_id = g_timeout_add_seconds(5, test_nm_utils_kill_child_async_fail_cb, &data);
+    timeout_id = g_timeout_add_seconds(5, test_nm_utils_term_child_async_fail_cb, &data);
 
     data.loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(data.loop);
@@ -258,7 +256,7 @@ do_test_nm_utils_kill_child(void)
         "trap \"while true; do :; done\" TERM; while true; do :; done; #" TEST_TOKEN,
         NULL,
     };
-    pid_t pid1a_1, pid1a_2, pid1a_3, pid2a, pid3a, pid4a;
+    pid_t pid1a_1, pid2a, pid4a;
     pid_t pid1s_1, pid1s_2, pid1s_3, pid2s, pid3s, pid4s;
 
     const int expected_exit_47     = 12032; /* exit with status 47 */
@@ -275,10 +273,7 @@ do_test_nm_utils_kill_child(void)
     pid4s   = test_nm_utils_kill_child_spawn(argv4, TRUE);
 
     pid1a_1 = test_nm_utils_kill_child_spawn(argv1, TRUE);
-    pid1a_2 = test_nm_utils_kill_child_spawn(argv1, TRUE);
-    pid1a_3 = test_nm_utils_kill_child_spawn(argv1, TRUE);
     pid2a   = test_nm_utils_kill_child_spawn(argv2, TRUE);
-    pid3a   = test_nm_utils_kill_child_spawn(argv3, TRUE);
     pid4a   = test_nm_utils_kill_child_spawn(argv4, TRUE);
 
     /* give processes time to start (and potentially block signals) ... */
@@ -349,59 +344,26 @@ do_test_nm_utils_kill_child(void)
                           "after sending SIGTERM (15) (send SIGKILL in 3000 milliseconds)...");
     NMTST_EXPECT_NM_DEBUG(
         "kill child process 'test-a-1-1' (*): terminated by signal 15 (* usec elapsed)");
-    test_nm_utils_kill_child_async_do("test-a-1-1",
+    test_nm_utils_term_child_async_do("test-a-1-1",
                                       pid1a_1,
-                                      SIGTERM,
                                       3000,
                                       TRUE,
                                       &expected_signal_TERM);
-
-    NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-1-2' (*): wait for process to terminate "
-                          "after sending SIGKILL (9)...");
-    NMTST_EXPECT_NM_DEBUG(
-        "kill child process 'test-a-1-2' (*): terminated by signal 9 (* usec elapsed)");
-    test_nm_utils_kill_child_async_do("test-a-1-2",
-                                      pid1a_2,
-                                      SIGKILL,
-                                      1000 / 2,
-                                      TRUE,
-                                      &expected_signal_KILL);
-
-    NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-1-3' (*): wait for process to terminate "
-                          "after sending no signal (0) (send SIGKILL in 1 milliseconds)...");
-    NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-1-3' (*): process not terminated after * "
-                          "usec. Sending SIGKILL signal");
-    NMTST_EXPECT_NM_DEBUG(
-        "kill child process 'test-a-1-3' (*): terminated by signal 9 (* usec elapsed)");
-    test_nm_utils_kill_child_async_do("test-a-1-3", pid1a_3, 0, 1, TRUE, &expected_signal_KILL);
 
     NMTST_EXPECT_NM_DEBUG(
         "kill child process 'test-a-2' (*): process * already terminated normally with status 47");
     NMTST_EXPECT_NM_DEBUG(
         "kill child process 'test-a-2' (*): invoke callback: terminated normally with status 47");
-    test_nm_utils_kill_child_async_do("test-a-2", pid2a, SIGTERM, 3000, TRUE, &expected_exit_47);
+    test_nm_utils_term_child_async_do("test-a-2", pid2a, 3000, TRUE, &expected_exit_47);
 
-    NMTST_EXPECT_NM_ERROR("kill child process 'test-a-3-0' (*): unexpected error sending "
-                          "Unexpected signal: Invalid argument (22)");
-    NMTST_EXPECT_NM_DEBUG(
-        "kill child process 'test-a-3-0' (*): invoke callback: killing child failed");
-    /* coverity[negative_returns] */
-    test_nm_utils_kill_child_async_do("test-a-3-0", pid3a, -1, 1000 / 2, FALSE, NULL);
-
-    NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-3-1' (*): wait for process to terminate "
-                          "after sending SIGTERM (15) (send SIGKILL in 3000 milliseconds)...");
-    NMTST_EXPECT_NM_DEBUG(
-        "kill child process 'test-a-3-1' (*): terminated normally with status 47 (* usec elapsed)");
-    test_nm_utils_kill_child_async_do("test-a-3-1", pid3a, SIGTERM, 3000, TRUE, &expected_exit_47);
-
-    /* pid3a should not be a valid process, hence the call should fail. Note, that there
+    /* pid3s should not be a valid process, hence the call should fail. Note, that there
      * is a race here. */
     NMTST_EXPECT_NM_ERROR(
         "kill child process 'test-a-3-2' (*): failed due to unexpected return value -1 by waitpid "
-        "(No child process*, 10) after sending no signal (0)");
+        "(No child process*, 10) after sending SIGTERM (15)");
     NMTST_EXPECT_NM_DEBUG(
         "kill child process 'test-a-3-2' (*): invoke callback: killing child failed");
-    test_nm_utils_kill_child_async_do("test-a-3-2", pid3a, 0, 0, FALSE, NULL);
+    test_nm_utils_term_child_async_do("test-a-3-2", pid3s, 0, FALSE, NULL);
 
     NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-4' (*): wait for process to terminate after "
                           "sending SIGTERM (15) (send SIGKILL in 1 milliseconds)...");
@@ -409,7 +371,7 @@ do_test_nm_utils_kill_child(void)
                           "Sending SIGKILL signal");
     NMTST_EXPECT_NM_DEBUG(
         "kill child process 'test-a-4' (*): terminated by signal 9 (* usec elapsed)");
-    test_nm_utils_kill_child_async_do("test-a-4", pid4a, SIGTERM, 1, TRUE, &expected_signal_KILL);
+    test_nm_utils_term_child_async_do("test-a-4", pid4a, 1, TRUE, &expected_signal_KILL);
 
     g_log_set_always_fatal(fatal_mask);
 

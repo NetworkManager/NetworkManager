@@ -299,7 +299,7 @@ nm_dnsmasq_manager_stop(NMDnsMasqManager *manager)
     nm_clear_g_source(&priv->dm_watch_id);
 
     if (priv->pid) {
-        nm_utils_kill_child_async(priv->pid, SIGTERM, LOGD_SHARING, "dnsmasq", 2000, NULL, NULL);
+        nm_utils_term_child_async(priv->pid, LOGD_SHARING, "dnsmasq", 2000, NULL, NULL);
         priv->pid = 0;
     }
 

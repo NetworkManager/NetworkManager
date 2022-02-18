@@ -1242,8 +1242,7 @@ _ppp_manager_stop(NMPPPManager            *self,
      * that delays shutdown. */
     handle->shutdown_waitobj = g_object_new(G_TYPE_OBJECT, NULL);
     nm_shutdown_wait_obj_register_object(handle->shutdown_waitobj, "ppp-manager-wait-kill-pppd");
-    nm_utils_kill_child_async(nm_steal_int(&priv->pid),
-                              SIGTERM,
+    nm_utils_term_child_async(nm_steal_int(&priv->pid),
                               LOGD_PPP,
                               "pppd",
                               NM_SHUTDOWN_TIMEOUT_MS,
@@ -1269,7 +1268,7 @@ _ppp_manager_stop_cancel(NMPPPManagerStopHandle *handle)
 
     /* a real handle. Only invoke the callback (synchronously). This marks
      * the handle as handled, but it keeps shutdown_waitobj around, until
-     * nm_utils_kill_child_async() returns. */
+     * nm_utils_term_child_async() returns. */
     _stop_handle_complete(handle, TRUE);
 }
 
