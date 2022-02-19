@@ -287,11 +287,9 @@ teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
 
     if (priv->teamd_pid > 0) {
         priv->kill_in_progress = TRUE;
-        nm_utils_kill_child_async(priv->teamd_pid,
-                                  SIGTERM,
+        nm_utils_term_child_async(priv->teamd_pid,
                                   LOGD_TEAM,
                                   "teamd",
-                                  2000,
                                   teamd_kill_cb,
                                   g_object_ref(self));
         priv->teamd_pid = 0;

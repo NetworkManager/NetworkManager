@@ -13370,11 +13370,9 @@ ip_check_gw_ping_cleanup(NMDevice *self)
     nm_clear_g_source(&priv->gw_ping.timeout);
 
     if (priv->gw_ping.pid) {
-        nm_utils_kill_child_async(priv->gw_ping.pid,
-                                  SIGTERM,
+        nm_utils_term_child_async(priv->gw_ping.pid,
                                   priv->gw_ping.log_domain,
                                   "ping",
-                                  1000,
                                   NULL,
                                   NULL);
         priv->gw_ping.pid = 0;

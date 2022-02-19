@@ -461,31 +461,14 @@ _kc_invoke_callback(pid_t                   pid,
     nm_g_idle_add(_kc_invoke_callback_idle, data);
 }
 
-/* nm_utils_kill_child_async:
- * @pid: the process id of the process to kill
- * @sig: signal to send initially. Set to 0 to send not signal.
- * @log_domain: the logging domain used for logging (LOGD_NONE to suppress logging)
- * @log_name: for logging, the name of the processes to kill
- * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
- * to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter is ignored.
- * @callback: (allow-none): callback after the child terminated. This function will always
- *   be invoked asynchronously.
- * @user_data: passed on to callback
- *
- * Uses g_child_watch_add(), so note the glib comment: if you obtain pid from g_spawn_async() or
- * g_spawn_async_with_pipes() you will need to pass %G_SPAWN_DO_NOT_REAP_CHILD as flag to the spawn
- * function for the child watching to work.
- * Also note, that you must g_source_remove() any other child watchers for @pid because glib
- * supports only one watcher per child.
- **/
-void
-nm_utils_kill_child_async(pid_t                   pid,
-                          int                     sig,
-                          NMLogDomain             log_domain,
-                          const char             *log_name,
-                          guint32                 wait_before_kill_msec,
-                          NMUtilsKillChildAsyncCb callback,
-                          void                   *user_data)
+static void
+_kill_child_async(pid_t                   pid,
+                  int                     sig,
+                  NMLogDomain             log_domain,
+                  const char             *log_name,
+                  guint32                 wait_before_kill_msec,
+                  NMUtilsKillChildAsyncCb callback,
+                  void                   *user_data)
 {
     int                 status = 0, errsv;
     pid_t               ret;
@@ -580,6 +563,37 @@ nm_utils_kill_child_async(pid_t                   pid,
     }
 
     g_child_watch_add(pid, _kc_cb_watch_child, data);
+}
+
+/* nm_utils_term_child_async:
+ * @pid: the process id of the process to kill
+ * @log_domain: the logging domain used for logging (LOGD_NONE to suppress logging)
+ * @log_name: for logging, the name of the processes to kill
+ * to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter is ignored.
+ * @callback: (allow-none): callback after the child terminated. This function will always
+ *   be invoked asynchronously.
+ * @user_data: passed on to callback
+ *
+ * Sends a SIGTERM to a process, then waits 5 seconds and unless the process
+ * has terminated it forces exit with SIGKILL.
+ *
+ * The value of 5 seconds is chosen to give even the sluggiest programs (pppd)
+ * a fair chance to clean up. Change with caution!
+ *
+ * Uses g_child_watch_add(), so note the glib comment: if you obtain pid from g_spawn_async() or
+ * g_spawn_async_with_pipes() you will need to pass %G_SPAWN_DO_NOT_REAP_CHILD as flag to the spawn
+ * function for the child watching to work.
+ * Also note, that you must g_source_remove() any other child watchers for @pid because glib
+ * supports only one watcher per child.
+ **/
+void
+nm_utils_term_child_async(pid_t                   pid,
+                          NMLogDomain             log_domain,
+                          const char             *log_name,
+                          NMUtilsKillChildAsyncCb callback,
+                          void                   *user_data)
+{
+    _kill_child_async(pid, SIGTERM, log_domain, log_name, 5000, callback, user_data);
 }
 
 static gulong
@@ -4887,7 +4901,7 @@ helper_info_free(gpointer data)
 
     if (info->pid != -1) {
         nm_assert(info->pid > 1);
-        nm_utils_kill_child_async(info->pid, SIGKILL, LOGD_CORE, _NMLOG_PREFIX_NAME, 0, NULL, NULL);
+        _kill_child_async(info->pid, SIGKILL, LOGD_CORE, _NMLOG_PREFIX_NAME, 0, NULL, NULL);
     }
 
     g_free(info);
