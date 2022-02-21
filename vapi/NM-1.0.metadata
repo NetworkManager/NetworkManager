@@ -6,6 +6,7 @@
 
 * cheader_filename="NetworkManager.h"
 
+DeviceWifi.request_scan_options_async finish_name="nm_device_wifi_request_scan_finish"
 Setting.get_secret_flags#virtual_method skip
 Setting.set_secret_flags#virtual_method skip
 Setting.verify#virtual_method skip
