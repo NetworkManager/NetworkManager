@@ -221,6 +221,7 @@ _assert_expected_content(NMConnection *connection, const char *filename, const c
             success = g_file_set_contents(expected, content_written, len_written, &error);
             nmtst_assert_success(success, error);
         } else {
+            NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
             g_error(
                 "The content of \"%s\" (%zu) differs from \"%s\" (%zu). Set "
                 "NMTST_IFCFG_RH_UPDATE_EXPECTED=yes (or NM_TEST_REGENERATE=1) to update the files "
@@ -231,6 +232,7 @@ _assert_expected_content(NMConnection *connection, const char *filename, const c
                 len_expectd,
                 content_written,
                 content_expectd);
+            NM_PRAGMA_WARNING_REENABLE
         }
     }
 }

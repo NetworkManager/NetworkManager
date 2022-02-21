@@ -241,6 +241,7 @@ _nmtstp_platform_ip_addresses_assert(const char        *filename,
         if ((IS_IPv4 ? force_exact_4 : force_exact_6) && nm_g_ptr_array_len(plat_addrs) > 0) {
             char sbuf[sizeof(_nm_utils_to_string_buffer)];
 
+            NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
             g_error("%s:%d: %u IPv%c addresses found on ifindex %d that should not be there (one "
                     "is %s)",
                     filename,
@@ -252,6 +253,7 @@ _nmtstp_platform_ip_addresses_assert(const char        *filename,
                                          NMP_OBJECT_TO_STRING_PUBLIC,
                                          sbuf,
                                          sizeof(sbuf)));
+            NM_PRAGMA_WARNING_REENABLE
         }
     }
 }
@@ -580,6 +582,7 @@ _nmtstp_assert_ip4_route_exists(const char *file,
     if (c != c_exists && c_exists != -1) {
         char sbuf[NM_UTILS_INET_ADDRSTRLEN];
 
+        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         g_error("[%s:%u] %s(): The ip4 route %s/%d metric %u tos %u shall exist %u times, but "
                 "platform has it %u times",
                 file,
@@ -591,6 +594,7 @@ _nmtstp_assert_ip4_route_exists(const char *file,
                 tos,
                 c_exists,
                 c);
+        NM_PRAGMA_WARNING_REENABLE
     }
 
     return r;
@@ -673,6 +677,7 @@ _nmtstp_assert_ip6_route_exists(const char            *file,
         char s_src[NM_UTILS_INET_ADDRSTRLEN];
         char s_network[NM_UTILS_INET_ADDRSTRLEN];
 
+        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         g_error("[%s:%u] %s(): The ip6 route %s/%d metric %u src %s/%d shall exist %u times, but "
                 "platform has it %u times",
                 file,
@@ -685,6 +690,7 @@ _nmtstp_assert_ip6_route_exists(const char            *file,
                 src_plen,
                 c_exists,
                 c);
+        NM_PRAGMA_WARNING_REENABLE
     }
 
     return r;

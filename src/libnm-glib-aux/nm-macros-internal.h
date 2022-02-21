@@ -184,22 +184,32 @@ _nm_auto_freev(gpointer ptr)
  * same name for the same warning. */
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#define NM_PRAGMA_DIAGNOSTICS_PUSH _Pragma("GCC diagnostic push")
 #define NM_PRAGMA_WARNING_DISABLE(warning) \
-    _Pragma("GCC diagnostic push") _Pragma(_NM_PRAGMA_WARNING_DO(warning))
-#elif defined(__clang__)
-#define NM_PRAGMA_WARNING_DISABLE(warning)                                                      \
-    _Pragma("clang diagnostic push") _Pragma(_NM_PRAGMA_WARNING_DO("-Wunknown-warning-option")) \
-        _Pragma(_NM_PRAGMA_WARNING_DO(warning))
-#else
-#define NM_PRAGMA_WARNING_DISABLE(warning)
-#endif
-
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+    NM_PRAGMA_DIAGNOSTICS_PUSH _Pragma(_NM_PRAGMA_WARNING_DO(warning))
 #define NM_PRAGMA_WARNING_REENABLE _Pragma("GCC diagnostic pop")
 #elif defined(__clang__)
+#define NM_PRAGMA_DIAGNOSTICS_PUSH _Pragma("clang diagnostic push")
+#define NM_PRAGMA_WARNING_DISABLE(warning)                                                \
+    NM_PRAGMA_DIAGNOSTICS_PUSH _Pragma(_NM_PRAGMA_WARNING_DO("-Wunknown-warning-option")) \
+        _Pragma(_NM_PRAGMA_WARNING_DO(warning))
 #define NM_PRAGMA_WARNING_REENABLE _Pragma("clang diagnostic pop")
 #else
+#define NM_PRAGMA_DIAGNOSTICS_PUSH
+#define NM_PRAGMA_WARNING_DISABLE(warning)
 #define NM_PRAGMA_WARNING_REENABLE
+#endif
+
+/*****************************************************************************/
+
+/* Seems gcc-12 has a tendency for false-positive -Wdangling-pointer warnings with
+ * g_error()'s `for(;;);`.
+ *
+ * Work around that, but it's only for gcc 12 (for now). */
+#if defined(__GNUC__) && __GNUC__ == 12
+#define NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER NM_PRAGMA_WARNING_DISABLE("-Wdangling-pointer")
+#else
+#define NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER NM_PRAGMA_DIAGNOSTICS_PUSH
 #endif
 
 /*****************************************************************************/

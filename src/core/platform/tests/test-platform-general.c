@@ -731,15 +731,17 @@ test_platform_ip_address_pretty_sort_cmp(gconstpointer test_data)
                                             &bin_len);
 
         if (bin_len != ELM_SIZE * N_ADDRESSES || memcmp(addresses, bin_arr, bin_len) != 0) {
-            char *addresses_str = nm_utils_bin2hexstr(addresses, ELM_SIZE * N_ADDRESSES, -1);
+            gs_free char *addresses_str = NULL;
 
+            NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
             g_error(">>> test_platform_ip_address_pretty_sort_cmp() will fail:\n"
                     ">>> addresses[%zu]: %s\n"
                     ">>> expected [%zu]: %s\n",
                     ELM_SIZE * N_ADDRESSES,
-                    addresses_str,
+                    (addresses_str = nm_utils_bin2hexstr(addresses, ELM_SIZE * N_ADDRESSES, -1)),
                     bin_len,
                     EXPECTED_BUFFER[TEST_DATA_I]);
+            NM_PRAGMA_WARNING_REENABLE
         }
 
         g_assert_cmpmem(addresses, ELM_SIZE * N_ADDRESSES, bin_arr, bin_len);
