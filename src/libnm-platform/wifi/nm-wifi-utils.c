@@ -60,6 +60,7 @@ _NM80211Mode
 nm_wifi_utils_get_mode(NMWifiUtils *data)
 {
     g_return_val_if_fail(data != NULL, _NM_802_11_MODE_UNKNOWN);
+
     return NM_WIFI_UTILS_GET_CLASS(data)->get_mode(data);
 }
 
@@ -118,6 +119,7 @@ guint32
 nm_wifi_utils_get_freq(NMWifiUtils *data)
 {
     g_return_val_if_fail(data != NULL, 0);
+
     return NM_WIFI_UTILS_GET_CLASS(data)->get_freq(data);
 }
 
@@ -126,6 +128,7 @@ nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs)
 {
     g_return_val_if_fail(data != NULL, 0);
     g_return_val_if_fail(freqs != NULL, 0);
+
     return NM_WIFI_UTILS_GET_CLASS(data)->find_freq(data, freqs);
 }
 

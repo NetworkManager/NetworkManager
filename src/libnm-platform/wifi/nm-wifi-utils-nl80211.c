@@ -382,12 +382,14 @@ wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs)
 {
     NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
     int                 i;
+    int                 j;
 
-    for (i = 0; i < self->num_freqs; i++) {
-        while (*freqs) {
-            if (self->freqs[i] == *freqs)
-                return *freqs;
-            freqs++;
+    /* It's important to check the values in the order of @freqs, because
+     * that array might be sorted to contain preferred frequencies first. */
+    for (j = 0; freqs[j] != 0; j++) {
+        for (i = 0; i < self->num_freqs; i++) {
+            if (self->freqs[i] == freqs[j])
+                return freqs[j];
         }
     }
     return 0;
