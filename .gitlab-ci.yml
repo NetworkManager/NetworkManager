@@ -7,7 +7,7 @@
 ########################################
 
 
-.templates_sha: &template_sha 14731f78c23c7b523a85a26a068ade9ac1ecd2f3 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+.templates_sha: &template_sha 3e66ea37e5672bb8f48e3056ba92915b5fc5b888 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
 include:
   # Alpine container builder template
@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2022-02-14.0-8384452eb54e'
-  UBUNTU_TAG:  '2022-02-14.0-bd3c060f94c2'
-  DEBIAN_TAG:  '2022-02-14.0-bd3c060f94c2'
-  CENTOS_TAG:  '2022-02-14.0-8384452eb54e'
-  ALPINE_TAG:  '2022-02-14.0-0990abecb69f'
+  FEDORA_TAG:  '2022-02-21.0-f42312ef8cae'
+  UBUNTU_TAG:  '2022-02-21.0-ab561a08b357'
+  DEBIAN_TAG:  '2022-02-21.0-ab561a08b357'
+  CENTOS_TAG:  '2022-02-21.0-f42312ef8cae'
+  ALPINE_TAG:  '2022-02-21.0-bad60eeb6900'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -304,6 +304,36 @@ centos:7.9.2009@container-prep:
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
     FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
 
+centos:8.1.1911@container-prep:
+  extends:
+    - .fdo.container-build@centos
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '8.1.1911'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
+
+centos:8.2.2004@container-prep:
+  extends:
+    - .fdo.container-build@centos
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '8.2.2004'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
+
+centos:8.3.2011@container-prep:
+  extends:
+    - .fdo.container-build@centos
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '8.3.2011'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
+
 alpine:latest@container-prep:
   extends:
     - .fdo.container-build@alpine
@@ -544,6 +574,33 @@ centos:7.9.2009@container-clean:
     GIT_STRATEGY: none
     CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
     FDO_DISTRIBUTION_VERSION: '7.9.2009'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+
+centos:8.1.1911@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '8.1.1911'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+
+centos:8.2.2004@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '8.2.2004'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+
+centos:8.3.2011@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/centos/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '8.3.2011'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
 
 alpine:latest@container-clean:
@@ -815,6 +872,39 @@ t_centos:7.9.2009:
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
     - "centos:7.9.2009@container-prep"
+  when: manual
+
+t_centos:8.1.1911:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@centos
+  variables:
+    FDO_DISTRIBUTION_VERSION: '8.1.1911'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+  needs:
+    - "centos:8.1.1911@container-prep"
+  when: manual
+
+t_centos:8.2.2004:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@centos
+  variables:
+    FDO_DISTRIBUTION_VERSION: '8.2.2004'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+  needs:
+    - "centos:8.2.2004@container-prep"
+  when: manual
+
+t_centos:8.3.2011:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@centos
+  variables:
+    FDO_DISTRIBUTION_VERSION: '8.3.2011'
+    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
+  needs:
+    - "centos:8.3.2011@container-prep"
   when: manual
 
 t_alpine:latest:
