@@ -706,8 +706,7 @@ Preferably use nmcli instead.
 	-Dresolvconf=no \
 	-Dnetconfig=no \
 	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
-	-Dconfig_logging_backend_default=%{logging_backend_default} \
-	-Djson_validation=true
+	-Dconfig_logging_backend_default=%{logging_backend_default}
 
 %meson_build
 
