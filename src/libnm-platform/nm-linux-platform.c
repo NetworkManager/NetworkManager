@@ -1114,20 +1114,22 @@ _linktype_get_type(NMPlatform       *platform,
             return link_type;
     }
 
-    if (arptype == ARPHRD_LOOPBACK)
+    switch (arptype) {
+    case ARPHRD_LOOPBACK:
         return NM_LINK_TYPE_LOOPBACK;
-    else if (arptype == ARPHRD_INFINIBAND)
+    case ARPHRD_INFINIBAND:
         return NM_LINK_TYPE_INFINIBAND;
-    else if (arptype == ARPHRD_SIT)
+    case ARPHRD_SIT:
         return NM_LINK_TYPE_SIT;
-    else if (arptype == ARPHRD_TUNNEL6)
+    case ARPHRD_TUNNEL6:
         return NM_LINK_TYPE_IP6TNL;
-    else if (arptype == ARPHRD_PPP)
+    case ARPHRD_PPP:
         return NM_LINK_TYPE_PPP;
-    else if (arptype == ARPHRD_IEEE802154)
+    case ARPHRD_IEEE802154:
         return NM_LINK_TYPE_WPAN;
-    else if (arptype == ARPHRD_6LOWPAN)
+    case ARPHRD_6LOWPAN:
         return NM_LINK_TYPE_6LOWPAN;
+    }
 
     {
         NMPUtilsEthtoolDriverInfo driver_info;
