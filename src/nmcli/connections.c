@@ -4189,6 +4189,7 @@ set_option(NmCli                    *nmc,
            NMConnection             *connection,
            const NMMetaAbstractInfo *abstract_info,
            const char               *value,
+           gboolean                  allow_reset,
            GError                  **error)
 {
     const char            *setting_name, *property_name, *option_name;
@@ -4209,7 +4210,7 @@ set_option(NmCli                    *nmc,
                        NULL);
     if (option && option->check_and_set) {
         return option->check_and_set(nmc, connection, option, value, error);
-    } else {
+    } else if (value || allow_reset) {
         set_property(nmc->client,
                      connection,
                      setting_name,
@@ -5199,7 +5200,7 @@ nmc_process_connection_properties(NmCli              *nmc,
         if (!*argc && nmc->complete)
             complete_option(nmc, chosen, value ?: "", connection);
 
-        if (!set_option(nmc, connection, chosen, value, error))
+        if (!set_option(nmc, connection, chosen, value, TRUE, error))
             return FALSE;
 
     } while (*argc);
@@ -5410,7 +5411,7 @@ again:
     if (multi && !value)
         return;
 
-    if (!set_option(nmc, connection, abstract_info, value, &error)) {
+    if (!set_option(nmc, connection, abstract_info, value, FALSE, &error)) {
         g_printerr("%s\n", error->message);
         g_clear_error(&error);
         goto again;
