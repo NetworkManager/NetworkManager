@@ -917,7 +917,9 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
         return;
     }
 
-    nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
+    /* Even if this is a zombie (os_zombie_lst), it is still in platform. We continue
+     * tracking it, until it gets deleted from platform or until the os_zombie_count
+     * drops to zero. We don't need to handle this specially here. */
 
     if (in_platform) {
         nmp_object_ref_set(&obj_state->os_plobj, obj);
