@@ -153,9 +153,9 @@
 %endif
 
 %if 0%{?rhel} > 8 || 0%{?fedora} > 32
-%global config_plugins_default keyfile,ifcfg-rh
+%global config_plugins_default_ifcfg_rh 0
 %else
-%global config_plugins_default ifcfg-rh
+%global config_plugins_default_ifcfg_rh 1
 %endif
 
 %if 0%{?fedora}
@@ -699,7 +699,9 @@ Preferably use nmcli instead.
 	-Dfirewalld_zone=false \
 %endif
 	-Ddist_version=%{version}-%{release} \
-	-Dconfig_plugins_default=%{config_plugins_default} \
+%if %{?config_plugins_default_ifcfg_rh}
+	-Dconfig_plugins_default=ifcfg-rh \
+%endif
 	-Dresolvconf=no \
 	-Dnetconfig=no \
 	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
