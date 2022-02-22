@@ -411,10 +411,10 @@ _kc_cb_timeout_grace_period(void *user_data)
                        errsv);
         }
     } else {
-        nm_log_dbg(data->log_domain,
-                   "%s: process not terminated after %ld usec. Sending SIGKILL signal",
-                   data->log_name,
-                   (long) (nm_utils_get_monotonic_timestamp_usec() - data->async.wait_start_us));
+        nm_log_warn(data->log_domain,
+                    "%s: process not terminated after %ld usec. Sending SIGKILL signal",
+                    data->log_name,
+                    (long) (nm_utils_get_monotonic_timestamp_usec() - data->async.wait_start_us));
     }
 
     return G_SOURCE_REMOVE;

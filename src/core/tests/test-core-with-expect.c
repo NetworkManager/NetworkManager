@@ -369,8 +369,8 @@ do_test_nm_utils_kill_child(void)
 
     NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-1-3' (*): wait for process to terminate "
                           "after sending no signal (0) (send SIGKILL in 1 milliseconds)...");
-    NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-1-3' (*): process not terminated after * "
-                          "usec. Sending SIGKILL signal");
+    NMTST_EXPECT_NM_WARN("kill child process 'test-a-1-3' (*): process not terminated after * "
+                         "usec. Sending SIGKILL signal");
     NMTST_EXPECT_NM_DEBUG(
         "kill child process 'test-a-1-3' (*): terminated by signal 9 (* usec elapsed)");
     test_nm_utils_kill_child_async_do("test-a-1-3", pid1a_3, 0, 1, TRUE, &expected_signal_KILL);
@@ -405,8 +405,8 @@ do_test_nm_utils_kill_child(void)
 
     NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-4' (*): wait for process to terminate after "
                           "sending SIGTERM (15) (send SIGKILL in 1 milliseconds)...");
-    NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-4' (*): process not terminated after * usec. "
-                          "Sending SIGKILL signal");
+    NMTST_EXPECT_NM_WARN("kill child process 'test-a-4' (*): process not terminated after * usec. "
+                         "Sending SIGKILL signal");
     NMTST_EXPECT_NM_DEBUG(
         "kill child process 'test-a-4' (*): terminated by signal 9 (* usec elapsed)");
     test_nm_utils_kill_child_async_do("test-a-4", pid4a, SIGTERM, 1, TRUE, &expected_signal_KILL);
