@@ -2635,8 +2635,11 @@ _escape_filename(gboolean with_extension, const char *filename, gboolean would_b
     g_assert(esc && esc[0]);
     g_assert(!strchr(esc, '/'));
 
-    if (nm_keyfile_utils_ignore_filename(esc, with_extension))
+    if (nm_keyfile_utils_ignore_filename(esc, with_extension)) {
+        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         g_error("Escaping filename \"%s\" yielded \"%s\", but this is ignored", filename, esc);
+        NM_PRAGMA_WARNING_REENABLE
+    }
 }
 
 static void

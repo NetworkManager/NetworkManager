@@ -8966,6 +8966,8 @@ finalize(GObject *object)
     g_clear_object(&self->_netns);
     nm_dedup_multi_index_unref(priv->multi_idx);
     nmp_cache_free(priv->cache);
+
+    G_OBJECT_CLASS(nm_platform_parent_class)->finalize(object);
 }
 
 static void

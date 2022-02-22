@@ -131,11 +131,13 @@ test_nmp_link_mode_all_advertised_modes_bits(void)
 
     for (i = 0; i < (int) G_N_ELEMENTS(_nmp_link_mode_all_advertised_modes); i++) {
         if (flags[i] != _nmp_link_mode_all_advertised_modes[i]) {
+            NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
             g_error("_nmp_link_mode_all_advertised_modes[%d] should be 0x%0x but is 0x%0x "
                     "(according to the bits in _nmp_link_mode_all_advertised_modes_bits)",
                     i,
                     flags[i],
                     _nmp_link_mode_all_advertised_modes[i]);
+            NM_PRAGMA_WARNING_REENABLE
         }
     }
 }
