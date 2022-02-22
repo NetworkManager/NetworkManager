@@ -2092,7 +2092,10 @@ nm_platform_link_release(NMPlatform *self, int master, int ifindex)
     if (nm_platform_link_get_master(self, ifindex) != master)
         return FALSE;
 
-    _LOG3D("link: releasing from master '%s'", nm_platform_link_get_name(self, master));
+    _LOG3D("link: releasing %d from master '%s' (%d)",
+           ifindex,
+           nm_platform_link_get_name(self, master),
+           master);
     return klass->link_release(self, master, ifindex);
 }
 
