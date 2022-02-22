@@ -185,12 +185,6 @@ AC_ARG_WITH(config-plugins-default,
             AS_HELP_STRING([--with-config-plugins-default=PLUGINS],
                            [Default configuration option for main.plugins setting, used as fallback if the configuration option is unset]),
             [config_plugins_default="$withval"], [config_plugins_default=""])
-if test -z "$config_plugins_default" -o "$config_plugins_default" = no; then
-	config_plugins_default=''
-	test "$enable_ifcfg_rh" = "yes"           && config_plugins_default="$config_plugins_default,ifcfg-rh"
-	test "$enable_ifupdown" = "yes"           && config_plugins_default="$config_plugins_default,ifupdown"
-	config_plugins_default="${config_plugins_default#,}"
-fi
 
 AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_PLUGINS, "$config_plugins_default", [Default configuration option for main.plugins setting])
 
@@ -198,6 +192,18 @@ if test "$enable_ifcfg_rh" = "yes"; then
 	DISTRO_NETWORK_SERVICE=network.service
 fi
 AC_SUBST(DISTRO_NETWORK_SERVICE)
+
+if test "$enable_ifcfg_rh" = yes; then
+	AC_DEFINE(WITH_CONFIG_PLUGIN_IFCFG_RH, 1, [Build with ifcfg-rh settings plugin])
+else
+	AC_DEFINE(WITH_CONFIG_PLUGIN_IFCFG_RH, 0, [Build with ifcfg-rh settings plugin])
+fi
+
+if test "$enable_ifupdown" = yes; then
+	AC_DEFINE(WITH_CONFIG_PLUGIN_IFUPDOWN, 1, [Build with ifupdown settings plugin])
+else
+	AC_DEFINE(WITH_CONFIG_PLUGIN_IFUPDOWN, 0, [Build with ifupdown settings plugin])
+fi
 
 # Code coverage
 GNOME_CODE_COVERAGE
