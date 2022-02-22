@@ -7616,7 +7616,8 @@ impl_manager_checkpoint_create(NMDBusObject                      *obj,
                         ~((guint32) (NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL
                                      | NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS
                                      | NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES
-                                     | NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING)))) {
+                                     | NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING
+                                     | NM_CHECKPOINT_CREATE_FLAG_NO_PRESERVE_EXTERNAL_PORTS)))) {
         g_dbus_method_invocation_return_error_literal(invocation,
                                                       NM_MANAGER_ERROR,
                                                       NM_MANAGER_ERROR_INVALID_ARGUMENTS,
