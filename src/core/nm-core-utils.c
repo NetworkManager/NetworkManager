@@ -284,8 +284,8 @@ typedef struct {
     NMLogDomain log_domain;
     union {
         struct {
-            gint64 wait_start_us;
-            guint  source_timeout_kill_id;
+            gint64   wait_start_us;
+            GSource *timeout_kill_source;
         } async;
         struct {
             gboolean success;
@@ -376,8 +376,7 @@ _kc_cb_watch_child(GPid pid, int status, gpointer user_data)
     KillChildAsyncData *data = user_data;
     char                buf_exit[KC_EXIT_TO_STRING_BUF_SIZE], buf_wait[KC_WAITED_TO_STRING];
 
-    if (data->async.source_timeout_kill_id)
-        g_source_remove(data->async.source_timeout_kill_id);
+    nm_clear_g_source_inst(&data->async.timeout_kill_source);
 
     nm_log_dbg(data->log_domain,
                "%s: terminated %s%s",
@@ -397,7 +396,7 @@ _kc_cb_timeout_grace_period(void *user_data)
     KillChildAsyncData *data = user_data;
     int                 ret, errsv;
 
-    data->async.source_timeout_kill_id = 0;
+    nm_clear_g_source_inst(&data->async.timeout_kill_source);
 
     if ((ret = kill(data->pid, SIGKILL)) != 0) {
         errsv = errno;
@@ -417,7 +416,7 @@ _kc_cb_timeout_grace_period(void *user_data)
                     (long) (nm_utils_get_monotonic_timestamp_usec() - data->async.wait_start_us));
     }
 
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static gboolean
@@ -564,8 +563,8 @@ nm_utils_kill_child_async(pid_t                   pid,
     data->async.wait_start_us = nm_utils_get_monotonic_timestamp_usec();
 
     if (sig != SIGKILL && wait_before_kill_msec > 0) {
-        data->async.source_timeout_kill_id =
-            g_timeout_add(wait_before_kill_msec, _kc_cb_timeout_grace_period, data);
+        data->async.timeout_kill_source =
+            nm_g_timeout_add_source(wait_before_kill_msec, _kc_cb_timeout_grace_period, data);
         nm_log_dbg(log_domain,
                    "%s: wait for process to terminate after sending %s (send SIGKILL in %ld "
                    "milliseconds)...",
@@ -573,7 +572,7 @@ nm_utils_kill_child_async(pid_t                   pid,
                    _kc_signal_to_string(sig),
                    (long) wait_before_kill_msec);
     } else {
-        data->async.source_timeout_kill_id = 0;
+        data->async.timeout_kill_source = NULL;
         nm_log_dbg(log_domain,
                    "%s: wait for process to terminate after sending %s...",
                    data->log_name,
