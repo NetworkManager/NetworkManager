@@ -145,6 +145,7 @@ static void
 release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
 {
     NMDeviceOvsPort *self = NM_DEVICE_OVS_PORT(device);
+    bool slave_removed = nm_device_sys_iface_state_get(slave) == NM_DEVICE_SYS_IFACE_STATE_REMOVED;
 
     _LOGI(LOGD_DEVICE, "releasing ovs interface %s", nm_device_get_ip_iface(slave));
 
@@ -152,10 +153,12 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
      * removed and thus we're called with configure=FALSE), we still need
      * to make sure its OVSDB entry is gone.
      */
-    nm_ovsdb_del_interface(nm_ovsdb_get(),
-                           nm_device_get_iface(slave),
-                           del_iface_cb,
-                           g_object_ref(slave));
+    if (configure || slave_removed) {
+        nm_ovsdb_del_interface(nm_ovsdb_get(),
+                               nm_device_get_iface(slave),
+                               del_iface_cb,
+                               g_object_ref(slave));
+    }
 
     if (configure) {
         /* Open VSwitch is going to delete this one. We must ignore what happens
