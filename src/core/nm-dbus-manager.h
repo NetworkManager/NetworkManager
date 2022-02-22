@@ -52,6 +52,9 @@ gboolean nm_dbus_manager_is_stopping(NMDBusManager *self);
 
 gpointer nm_dbus_manager_lookup_object(NMDBusManager *self, const char *path);
 
+gpointer
+nm_dbus_manager_lookup_object_with_type(NMDBusManager *self, GType gtype, const char *path);
+
 void _nm_dbus_manager_obj_export(NMDBusObject *obj);
 void _nm_dbus_manager_obj_unexport(NMDBusObject *obj);
 void
