@@ -15,7 +15,8 @@
 #include "nm-active-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ovs-port.h"
-#include "nm-setting-ovs-port.h"
+#include "nm-setting-ovs-interface.h"
+#include "nm-setting-wired.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceOvsPort
 #include "devices/nm-device-logging.h"
@@ -88,12 +89,40 @@ add_iface_cb(GError *error, gpointer user_data)
 }
 
 static gboolean
+_ovs_interface_is_dpdk(NMDevice *device)
+{
+    NMSettingOvsInterface *s_ovs_iface;
+
+    s_ovs_iface = nm_device_get_applied_setting(device, NM_TYPE_SETTING_OVS_INTERFACE);
+
+    g_return_val_if_fail(s_ovs_iface, FALSE);
+
+    return nm_streq(nm_setting_ovs_interface_get_interface_type(s_ovs_iface), "dpdk");
+}
+
+static void
+set_mtu_cb(GError *error, gpointer user_data)
+{
+    NMDevice *self = user_data;
+
+    if (error && !g_error_matches(error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING)) {
+        _LOGW(LOGD_DEVICE,
+              "could not change mtu of '%s': %s",
+              nm_device_get_iface(self),
+              error->message);
+    }
+
+    g_object_unref(self);
+}
+
+static gboolean
 enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gboolean configure)
 {
     NMDeviceOvsPort    *self      = NM_DEVICE_OVS_PORT(device);
     NMActiveConnection *ac_port   = NULL;
     NMActiveConnection *ac_bridge = NULL;
     NMDevice           *bridge_device;
+    NMSettingWired     *s_wired;
 
     if (!configure)
         return TRUE;
@@ -121,6 +150,21 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
                            slave,
                            add_iface_cb,
                            g_object_ref(slave));
+
+    /* DPDK ports does not have a link after the devbind, so the MTU must be
+     * set on ovsdb after adding the interface. */
+    if (NM_IS_DEVICE_OVS_INTERFACE(slave) && _ovs_interface_is_dpdk(slave)) {
+        s_wired = nm_device_get_applied_setting(slave, NM_TYPE_SETTING_WIRED);
+
+        if (!s_wired || !nm_setting_wired_get_mtu(s_wired))
+            return TRUE;
+
+        nm_ovsdb_set_interface_mtu(nm_ovsdb_get(),
+                                   nm_device_get_ip_iface(slave),
+                                   nm_setting_wired_get_mtu(s_wired),
+                                   set_mtu_cb,
+                                   g_object_ref(slave));
+    }
 
     return TRUE;
 }
