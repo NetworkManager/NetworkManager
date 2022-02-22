@@ -5878,11 +5878,9 @@ static SlaveInfo *
 find_slave_info(NMDevice *self, NMDevice *slave)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    CList           *iter;
     SlaveInfo       *info;
 
-    c_list_for_each (iter, &priv->slaves) {
-        info = c_list_entry(iter, SlaveInfo, lst_slave);
+    c_list_for_each_entry (info, &priv->slaves, lst_slave) {
         if (info->slave == slave)
             return info;
     }
@@ -7627,14 +7625,12 @@ nm_device_master_check_slave_physical_port(NMDevice *self, NMDevice *slave, NMLo
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     const char      *slave_physical_port_id, *existing_physical_port_id;
     SlaveInfo       *info;
-    CList           *iter;
 
     slave_physical_port_id = nm_device_get_physical_port_id(slave);
     if (!slave_physical_port_id)
         return;
 
-    c_list_for_each (iter, &priv->slaves) {
-        info = c_list_entry(iter, SlaveInfo, lst_slave);
+    c_list_for_each_entry (info, &priv->slaves, lst_slave) {
         if (info->slave == slave)
             continue;
 
@@ -7660,7 +7656,8 @@ nm_device_master_release_slaves(NMDevice *self)
 {
     NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceStateReason reason;
-    CList              *iter, *safe;
+    SlaveInfo          *info;
+    SlaveInfo          *safe;
 
     /* Don't release the slaves if this connection doesn't belong to NM. */
     if (nm_device_sys_iface_state_is_external(self))
@@ -7670,9 +7667,7 @@ nm_device_master_release_slaves(NMDevice *self)
     if (priv->state == NM_DEVICE_STATE_FAILED)
         reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
 
-    c_list_for_each_safe (iter, safe, &priv->slaves) {
-        SlaveInfo *info = c_list_entry(iter, SlaveInfo, lst_slave);
-
+    c_list_for_each_entry_safe (info, safe, &priv->slaves, lst_slave) {
         if (priv->activation_state_preserve_external_ports
             && nm_device_sys_iface_state_is_external(info->slave)) {
             _LOGT(LOGD_DEVICE,
@@ -9437,7 +9432,7 @@ activate_stage2_device_config(NMDevice *self)
     NMActStageReturn ret;
     NMSettingWired  *s_wired;
     gboolean         no_firmware = FALSE;
-    CList           *iter;
+    SlaveInfo       *info;
     NMTernary        accept_all_mac_addresses;
 
     nm_device_state_changed(self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
@@ -9484,8 +9479,7 @@ activate_stage2_device_config(NMDevice *self)
     }
 
     /* If we have slaves that aren't yet enslaved, do that now */
-    c_list_for_each (iter, &priv->slaves) {
-        SlaveInfo    *info        = c_list_entry(iter, SlaveInfo, lst_slave);
+    c_list_for_each_entry (info, &priv->slaves, lst_slave) {
         NMDeviceState slave_state = nm_device_get_state(info->slave);
 
         if (slave_state == NM_DEVICE_STATE_IP_CONFIG)
@@ -10413,14 +10407,12 @@ have_any_ready_slaves(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     SlaveInfo       *info;
-    CList           *iter;
 
     /* Any enslaved slave is "ready" in the generic case as it's
-     * at least >= NM_DEVCIE_STATE_IP_CONFIG and has had Layer 2
+     * at least >= NM_DEVICE_STATE_IP_CONFIG and has had Layer 2
      * properties set up.
      */
-    c_list_for_each (iter, &priv->slaves) {
-        info = c_list_entry(iter, SlaveInfo, lst_slave);
+    c_list_for_each_entry (info, &priv->slaves, lst_slave) {
         if (NM_DEVICE_GET_PRIVATE(info->slave)->is_enslaved)
             return TRUE;
     }
