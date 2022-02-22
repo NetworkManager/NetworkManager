@@ -188,8 +188,10 @@ del_iface_cb(GError *error, gpointer user_data)
 static void
 release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
 {
-    NMDeviceOvsPort *self = NM_DEVICE_OVS_PORT(device);
-    bool slave_removed = nm_device_sys_iface_state_get(slave) == NM_DEVICE_SYS_IFACE_STATE_REMOVED;
+    NMDeviceOvsPort *self              = NM_DEVICE_OVS_PORT(device);
+    bool             slave_not_managed = !NM_IN_SET(nm_device_sys_iface_state_get(slave),
+                                        NM_DEVICE_SYS_IFACE_STATE_MANAGED,
+                                        NM_DEVICE_SYS_IFACE_STATE_ASSUME);
 
     _LOGI(LOGD_DEVICE, "releasing ovs interface %s", nm_device_get_ip_iface(slave));
 
@@ -197,7 +199,7 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
      * removed and thus we're called with configure=FALSE), we still need
      * to make sure its OVSDB entry is gone.
      */
-    if (configure || slave_removed) {
+    if (configure || slave_not_managed) {
         nm_ovsdb_del_interface(nm_ovsdb_get(),
                                nm_device_get_iface(slave),
                                del_iface_cb,
