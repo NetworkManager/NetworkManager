@@ -1,0 +1,4 @@
+https://bugzilla.redhat.com/show_bug.cgi?id=2043514
+Fixes-test: @nmcli_general_activate_static_connection_carrier_not_ignored
+
+https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/merge_requests/1115
