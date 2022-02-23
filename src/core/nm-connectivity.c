@@ -694,6 +694,7 @@ do_curl_request(NMConnectivityCheckHandle *cb_data)
     curl_easy_setopt(ehandle, CURLOPT_INTERFACE, cb_data->ifspec);
     curl_easy_setopt(ehandle, CURLOPT_RESOLVE, cb_data->concheck.hosts);
     curl_easy_setopt(ehandle, CURLOPT_IPRESOLVE, resolve);
+    curl_easy_setopt(ehandle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
 
     curl_multi_add_handle(mhandle, ehandle);
 }
