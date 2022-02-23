@@ -5954,7 +5954,7 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
 }
 
 /**
- * nm_device_master_release_one_slave:
+ * nm_device_master_release_slave:
  * @self: the master device
  * @slave: the slave device to release
  * @configure: whether @self needs to actually release @slave
@@ -5967,10 +5967,10 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
  * updates the state of @self and @slave to reflect its release.
  */
 static void
-nm_device_master_release_one_slave(NMDevice           *self,
-                                   NMDevice           *slave,
-                                   ReleaseSlaveType    release_type,
-                                   NMDeviceStateReason reason)
+nm_device_master_release_slave(NMDevice           *self,
+                               NMDevice           *slave,
+                               ReleaseSlaveType    release_type,
+                               NMDeviceStateReason reason)
 {
     NMDevicePrivate          *priv;
     NMDevicePrivate          *slave_priv;
@@ -6344,10 +6344,10 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
             goto out;
         }
 
-        nm_device_master_release_one_slave(priv->master,
-                                           self,
-                                           RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                           NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+        nm_device_master_release_slave(priv->master,
+                                       self,
+                                       RELEASE_SLAVE_TYPE_NO_CONFIG,
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
     }
 
     if (master && NM_DEVICE_GET_CLASS(master)->enslave_slave) {
@@ -7540,11 +7540,11 @@ slave_state_changed(NMDevice           *slave,
         configure = priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED
                     && nm_device_sys_iface_state_get(slave) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
 
-        nm_device_master_release_one_slave(self,
-                                           slave,
-                                           configure ? RELEASE_SLAVE_TYPE_CONFIG
-                                                     : RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                           reason);
+        nm_device_master_release_slave(self,
+                                       slave,
+                                       configure ? RELEASE_SLAVE_TYPE_CONFIG
+                                                 : RELEASE_SLAVE_TYPE_NO_CONFIG,
+                                       reason);
         /* Bridge/bond/team interfaces are left up until manually deactivated */
         if (c_list_is_empty(&priv->slaves) && priv->state == NM_DEVICE_STATE_ACTIVATED)
             _LOGD(LOGD_DEVICE, "last slave removed; remaining activated");
@@ -7666,9 +7666,8 @@ nm_device_master_check_slave_physical_port(NMDevice *self, NMDevice *slave, NMLo
     }
 }
 
-/* release all slaves */
 void
-nm_device_master_release_slaves(NMDevice *self)
+nm_device_master_release_slaves_all(NMDevice *self)
 {
     NMDevicePrivate    *priv = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceStateReason reason;
@@ -7691,7 +7690,7 @@ nm_device_master_release_slaves(NMDevice *self)
                   nm_device_get_iface(info->slave));
             continue;
         }
-        nm_device_master_release_one_slave(self, info->slave, RELEASE_SLAVE_TYPE_CONFIG, reason);
+        nm_device_master_release_slave(self, info->slave, RELEASE_SLAVE_TYPE_CONFIG, reason);
     }
 
     /* We only need this flag for a short time. It served its purpose. Clear
@@ -7866,10 +7865,10 @@ nm_device_removed(NMDevice *self, gboolean unconfigure_ip_config)
     if (priv->master) {
         /* this is called when something externally messes with the slave or during shut-down.
          * Release the slave from master, but don't touch the device. */
-        nm_device_master_release_one_slave(priv->master,
-                                           self,
-                                           RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                           NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+        nm_device_master_release_slave(priv->master,
+                                       self,
+                                       RELEASE_SLAVE_TYPE_NO_CONFIG,
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
     }
 
     _dev_l3_register_l3cds(self, priv->l3cfg, FALSE, unconfigure_ip_config);
@@ -8941,10 +8940,10 @@ master_ready(NMDevice *self, NMActiveConnection *active)
     _LOGD(LOGD_DEVICE, "master connection ready; master device %s", nm_device_get_iface(master));
 
     if (priv->master && priv->master != master)
-        nm_device_master_release_one_slave(priv->master,
-                                           self,
-                                           RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                           NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+        nm_device_master_release_slave(priv->master,
+                                       self,
+                                       RELEASE_SLAVE_TYPE_NO_CONFIG,
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
 
     /* If the master didn't change, add-slave only rechecks whether to assume a connection. */
     nm_device_master_add_slave(master,
@@ -9226,10 +9225,10 @@ activate_stage1_device_prepare(NMDevice *self)
     if (master)
         master_ready(self, active);
     else if (priv->master) {
-        nm_device_master_release_one_slave(priv->master,
-                                           self,
-                                           RELEASE_SLAVE_TYPE_CONFIG_FORCE,
-                                           NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+        nm_device_master_release_slave(priv->master,
+                                       self,
+                                       RELEASE_SLAVE_TYPE_CONFIG_FORCE,
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
     }
 
     nm_device_activate_schedule_stage2_device_config(self, TRUE);
@@ -15093,7 +15092,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
 
     if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
         /* master: release slaves */
-        nm_device_master_release_slaves(self);
+        nm_device_master_release_slaves_all(self);
 
         /* Take out any entries in the routing table and any IP address the device had. */
         if (ifindex > 0) {
@@ -15118,10 +15117,10 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
     /* slave: mark no longer enslaved */
     if (priv->master && priv->ifindex > 0
         && nm_platform_link_get_master(nm_device_get_platform(self), priv->ifindex) <= 0) {
-        nm_device_master_release_one_slave(priv->master,
-                                           self,
-                                           RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                           NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+        nm_device_master_release_slave(priv->master,
+                                       self,
+                                       RELEASE_SLAVE_TYPE_NO_CONFIG,
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
     }
 
     lldp_setup(self, NM_TERNARY_FALSE);
@@ -15622,7 +15621,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
               sett_conn ? nm_settings_connection_get_id(sett_conn) : "<unknown>");
 
         /* Notify any slaves of the unexpected failure */
-        nm_device_master_release_slaves(self);
+        nm_device_master_release_slaves_all(self);
 
         /* If the connection doesn't yet have a timestamp, set it to zero so that
          * we can distinguish between connections we've tried to activate and have
