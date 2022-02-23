@@ -11,6 +11,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Wi-Fi hotspots will use a (stable) random channel number unless one is
   chosen manually.
 * libnm: add new dummy crypto backend "null" that does nothing.
+* Veth devices with name "eth*" are now managed by default via the
+  udev rule. This is to support managing the network in LXD containers.
 
 =============================================
 NetworkManager-1.36
