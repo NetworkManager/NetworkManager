@@ -511,7 +511,7 @@ nm_secret_agent_cancel_call(NMSecretAgent *self, NMSecretAgentCallId *call_id)
             g_variant_new("(os)", call_id->path, call_id->setting_name),
             G_VARIANT_TYPE("()"),
             G_DBUS_CALL_FLAGS_NO_AUTO_START,
-            NM_SHUTDOWN_TIMEOUT_MS,
+            NM_SHUTDOWN_TIMEOUT_1500_MSEC,
             NULL, /* this operation is not cancellable. We rely on the timeout. */
             _call_cancel_cb,
             call_id);

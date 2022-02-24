@@ -72,25 +72,25 @@ shutdown starts. And no singleton getters work reliably after the main() functio
 because singletons unref themselves. In general, avoid singleton getters and see
 that somebody hands you a reference.
 
-After NM_SHUTDOWN_TIMEOUT_MS we loose patience that it's taking too long.
+After NM_SHUTDOWN_TIMEOUT_MAX_MSEC we loose patience that it's taking too long.
 We now log a debug message about who is still blocking shutdown.
 We also cancel the cancellables from nm_shutdown_wait_obj_register_cancellable()
-and give NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG more time. If we then are still
+and give NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC more time. If we then are still
 not complete, we log an error message about who is still blocking shutdown,
 and just exit with an assertion failure. We encountered a bug.
 
 This means, *all* async operations in NetworkManager must either be cancellable (and
 afterwards complete fast) or they must not take long to begin with. In particular,
-every individual async operation must be completed in at most NM_SHUTDOWN_TIMEOUT_MS,
-and all async cleanup operations must complete in NM_SHUTDOWN_TIMEOUT_MS too.
+every individual async operation must be completed in at most NM_SHUTDOWN_TIMEOUT_MAX_MSEC,
+and all async cleanup operations must complete in NM_SHUTDOWN_TIMEOUT_MAX_MSEC too.
 
 So if you make an async operation not cancellable, but guarantee that you don't take
-longer than NM_SHUTDOWN_TIMEOUT_MS you are mostly fine (better would be to actually
-complete fast, if you can). That's why reaching NM_SHUTDOWN_TIMEOUT_MS timeout is
-still not a bug scenario. But reaching NM_SHUTDOWN_TIMEOUT_MS+NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG
+longer than NM_SHUTDOWN_TIMEOUT_MAX_MSEC you are mostly fine (better would be to actually
+complete fast, if you can). That's why reaching NM_SHUTDOWN_TIMEOUT_MAX_MSEC timeout is
+still not a bug scenario. But reaching NM_SHUTDOWN_TIMEOUT_MAX_MSEC+NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC
 is a bug.
 
-As NM_SHUTDOWN_TIMEOUT_MS and nm_shutdown_wait_obj_register_object() API already exists,
+As NM_SHUTDOWN_TIMEOUT_MAX_MSEC and nm_shutdown_wait_obj_register_object() API already exists,
 the first step is to ensure that all parts of NetworkManager can be shutdown and be terminated
 in a timely manner.
 

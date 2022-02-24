@@ -103,23 +103,37 @@ NMPlatformRoutingRule *nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rul
 /*****************************************************************************/
 
 /* during shutdown, there are two relevant timeouts. One is
- * NM_SHUTDOWN_TIMEOUT_MS which is plenty of time, that we give for all
+ * NM_SHUTDOWN_TIMEOUT_MAX_MSEC which is plenty of time, that we give for all
  * actions to complete. Of course, during shutdown components should hurry
  * to cleanup.
  *
  * When we initiate shutdown, we should start killing child processes
- * with SIGTERM. If they don't complete within NM_SHUTDOWN_TIMEOUT_MS, we send
+ * with SIGTERM. If they don't complete within NM_SHUTDOWN_TIMEOUT_MAX_MSEC, we send
  * SIGKILL.
  *
- * After NM_SHUTDOWN_TIMEOUT_MS, NetworkManager will however not yet terminate right
- * away. It iterates the mainloop for another NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG. This
+ * After NM_SHUTDOWN_TIMEOUT_MAX_MSEC, NetworkManager will however not yet terminate right
+ * away. It iterates the mainloop for another NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC. This
  * should give time to reap the child process (after SIGKILL).
  *
  * So, the maximum time we should wait before sending SIGKILL should be at most
- * NM_SHUTDOWN_TIMEOUT_MS.
+ * NM_SHUTDOWN_TIMEOUT_MAX_MSEC.
  */
-#define NM_SHUTDOWN_TIMEOUT_MS          1500
-#define NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG 500
+#define NM_SHUTDOWN_TIMEOUT_MAX_MSEC        5000
+#define NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC 500
+
+/**
+ * NM_SHUTDOWN_TIMEOUT_1500_MSEC: this is just 1500 msec. The special
+ *   thing about the define is that you are guaranteed that this is not
+ *   longer than NM_SHUTDOWN_TIMEOUT_MAX_MSEC.
+ *   When you perform an async operation, it must either be cancellable
+ *   (and complete fast) or never take longer than NM_SHUTDOWN_TIMEOUT_MAX_MSEC.
+ *   The usage of this macro makes that relation to NM_SHUTDOWN_TIMEOUT_MAX_MSEC
+ *   explicit.
+ */
+#define NM_SHUTDOWN_TIMEOUT_1500_MSEC 1500
+
+/* See NM_SHUTDOWN_TIMEOUT_1500_MSEC. */
+#define NM_SHUTDOWN_TIMEOUT_5000_MSEC 5000
 
 typedef enum {
     /* There is no watched_obj argument, and the shutdown is delayed until the user
@@ -131,7 +145,7 @@ typedef enum {
     NM_SHUTDOWN_WAIT_TYPE_OBJECT,
 
     /* The watched_obj argument is a GCancellable, and shutdown is delayed until the object
-     * gets destroyed (or unregistered). Note that after NM_SHUTDOWN_TIMEOUT_MS, the
+     * gets destroyed (or unregistered). Note that after NM_SHUTDOWN_TIMEOUT_MAX_MSEC, the
      * cancellable will be cancelled to notify listeners about the shutdown. */
     NM_SHUTDOWN_WAIT_TYPE_CANCELLABLE,
 } NMShutdownWaitType;
