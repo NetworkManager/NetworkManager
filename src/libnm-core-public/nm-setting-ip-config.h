@@ -31,9 +31,9 @@ G_BEGIN_DECLS
  *
  * Since: 1.22
  */
-typedef enum { /*< flags >*/
-               NM_IP_ADDRESS_CMP_FLAGS_NONE       = 0,
-               NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS = 0x1,
+typedef enum /*< flags >*/ {
+    NM_IP_ADDRESS_CMP_FLAGS_NONE       = 0,
+    NM_IP_ADDRESS_CMP_FLAGS_WITH_ATTRS = 0x1,
 } NMIPAddressCmpFlags;
 
 typedef struct NMIPAddress NMIPAddress;
@@ -86,9 +86,9 @@ void     nm_ip_route_ref(NMIPRoute *route);
 void     nm_ip_route_unref(NMIPRoute *route);
 gboolean nm_ip_route_equal(NMIPRoute *route, NMIPRoute *other);
 
-enum { /*< flags >*/
-       NM_IP_ROUTE_EQUAL_CMP_FLAGS_NONE       = 0,
-       NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS = 0x1,
+enum /*< flags >*/ {
+    NM_IP_ROUTE_EQUAL_CMP_FLAGS_NONE       = 0,
+    NM_IP_ROUTE_EQUAL_CMP_FLAGS_WITH_ATTRS = 0x1,
 };
 
 NM_AVAILABLE_IN_1_10
@@ -277,12 +277,12 @@ gboolean nm_ip_routing_rule_validate(const NMIPRoutingRule *self, GError **error
  *
  * Since: 1.18
  */
-typedef enum { /*< flags >*/
-               NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE = 0,
+typedef enum /*< flags >*/ {
+    NM_IP_ROUTING_RULE_AS_STRING_FLAGS_NONE = 0,
 
-               NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET  = 0x1,
-               NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6 = 0x2,
-               NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE = 0x4,
+    NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET  = 0x1,
+    NM_IP_ROUTING_RULE_AS_STRING_FLAGS_AF_INET6 = 0x2,
+    NM_IP_ROUTING_RULE_AS_STRING_FLAGS_VALIDATE = 0x4,
 } NMIPRoutingRuleAsStringFlags;
 
 NM_AVAILABLE_IN_1_18
@@ -386,14 +386,14 @@ typedef struct _NMSettingIPConfigClass NMSettingIPConfigClass;
  *
  * Since: 1.22
  */
-typedef enum { /*< flags >*/
-               NM_DHCP_HOSTNAME_FLAG_NONE = 0x0,
+typedef enum /*< flags >*/ {
+    NM_DHCP_HOSTNAME_FLAG_NONE = 0x0,
 
-               NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE = 0x1,
-               NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED     = 0x2,
-               NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE   = 0x4,
+    NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE = 0x1,
+    NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED     = 0x2,
+    NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE   = 0x4,
 
-               NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS = 0x8,
+    NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS = 0x8,
 
 } NMDhcpHostnameFlags;
 

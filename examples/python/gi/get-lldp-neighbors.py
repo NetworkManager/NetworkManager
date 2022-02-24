@@ -28,12 +28,12 @@ if __name__ == "__main__":
     for neighbor in neighbors:
         ret, chassis = neighbor.get_attr_string_value("chassis-id")
         ret, port = neighbor.get_attr_string_value("port-id")
-        print "Neighbor: %s - %s" % (chassis, port)
+        print("Neighbor: %s - %s" % (chassis, port))
         for attr in neighbor.get_attr_names():
             attr_type = neighbor.get_attr_type(attr)
             if attr_type.equal(GLib.VariantType.new("s")):
                 ret, value = neighbor.get_attr_string_value(attr)
-                print "  %-32s: %s" % (attr, value)
+                print("  %-32s: %s" % (attr, value))
             elif attr_type.equal(GLib.VariantType.new("u")):
                 ret, value = neighbor.get_attr_uint_value(attr)
-                print "  %-32s: %u" % (attr, value)
+                print("  %-32s: %u" % (attr, value))

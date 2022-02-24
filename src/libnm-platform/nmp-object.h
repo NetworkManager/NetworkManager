@@ -91,17 +91,17 @@ typedef struct _NMPWireGuardPeer {
 
 /*****************************************************************************/
 
-typedef enum { /*< skip >*/
-               NMP_OBJECT_TO_STRING_ID,
-               NMP_OBJECT_TO_STRING_PUBLIC,
-               NMP_OBJECT_TO_STRING_ALL,
+typedef enum {
+    NMP_OBJECT_TO_STRING_ID,
+    NMP_OBJECT_TO_STRING_PUBLIC,
+    NMP_OBJECT_TO_STRING_ALL,
 } NMPObjectToStringMode;
 
-typedef enum { /*< skip >*/
-               NMP_CACHE_OPS_UNCHANGED = NM_PLATFORM_SIGNAL_NONE,
-               NMP_CACHE_OPS_ADDED     = NM_PLATFORM_SIGNAL_ADDED,
-               NMP_CACHE_OPS_UPDATED   = NM_PLATFORM_SIGNAL_CHANGED,
-               NMP_CACHE_OPS_REMOVED   = NM_PLATFORM_SIGNAL_REMOVED,
+typedef enum {
+    NMP_CACHE_OPS_UNCHANGED = NM_PLATFORM_SIGNAL_NONE,
+    NMP_CACHE_OPS_ADDED     = NM_PLATFORM_SIGNAL_ADDED,
+    NMP_CACHE_OPS_UPDATED   = NM_PLATFORM_SIGNAL_CHANGED,
+    NMP_CACHE_OPS_REMOVED   = NM_PLATFORM_SIGNAL_REMOVED,
 } NMPCacheOpsType;
 
 /* The NMPCacheIdType are the different index types.

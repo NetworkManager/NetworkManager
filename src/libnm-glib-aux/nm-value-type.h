@@ -9,25 +9,26 @@
 typedef enum _nm_packed {
     NM_VALUE_TYPE_NONE   = 0,
     NM_VALUE_TYPE_UNSPEC = 1,
-    NM_VALUE_TYPE_BOOL   = 2,
-    NM_VALUE_TYPE_INT32  = 3,
-    NM_VALUE_TYPE_INT    = 4,
-    NM_VALUE_TYPE_INT64  = 5,
-    NM_VALUE_TYPE_UINT32 = 6,
-    NM_VALUE_TYPE_UINT   = 7,
-    NM_VALUE_TYPE_UINT64 = 8,
+
+    NM_VALUE_TYPE_BOOL,
+    NM_VALUE_TYPE_INT32,
+    NM_VALUE_TYPE_INT,
+    NM_VALUE_TYPE_INT64,
+    NM_VALUE_TYPE_UINT32,
+    NM_VALUE_TYPE_UINT,
+    NM_VALUE_TYPE_UINT64,
 
     /* Flags are for G_TYPE_FLAGS. That is, internally they are tracked
      * as a guint, they have a g_param_spec_flags() property and they are
      * serialized on D-Bus as "u". */
-    NM_VALUE_TYPE_FLAGS = 9,
+    NM_VALUE_TYPE_FLAGS,
 
     /* G_TYPE_ENUM */
-    NM_VALUE_TYPE_ENUM = 10,
+    NM_VALUE_TYPE_ENUM,
 
-    NM_VALUE_TYPE_STRING = 11,
-
-    NM_VALUE_TYPE_BYTES = 12,
+    NM_VALUE_TYPE_STRING,
+    NM_VALUE_TYPE_BYTES,
+    NM_VALUE_TYPE_STRV,
 } NMValueType;
 
 /*****************************************************************************/
@@ -112,14 +113,17 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
         return 0;
     case NM_VALUE_TYPE_STRING:
         return nm_strcmp0(*((const char *const *) p_a), *((const char *const *) p_b));
+
     case NM_VALUE_TYPE_BYTES:
-        return nm_g_bytes_equal0(*((const GBytes *const *) p_a), *((const GBytes *const *) p_b));
+    case NM_VALUE_TYPE_STRV:
+        /* These types have implementation define memory representations. */
+        break;
+
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
     }
-    nm_assert_not_reached();
-    return 0;
+    return nm_assert_unreachable_val(0);
 }
 
 static inline gboolean
@@ -163,14 +167,12 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
             *((char **) dst) = g_strdup(*((const char *const *) src));
         }
         return;
-    case NM_VALUE_TYPE_BYTES:
-        /* self assignment safe! */
-        if (*((GBytes **) dst) != *((const GBytes *const *) src)) {
-            _nm_unused gs_unref_bytes GBytes *old = *((GBytes **) dst);
 
-            *((GBytes **) dst) = g_bytes_ref(*((GBytes *const *) src));
-        }
-        return;
+    case NM_VALUE_TYPE_BYTES:
+    case NM_VALUE_TYPE_STRV:
+        /* These types have implementation define memory representations. */
+        break;
+
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
@@ -212,14 +214,18 @@ nm_value_type_get_from_variant(NMValueType value_type,
         return;
 
     case NM_VALUE_TYPE_BYTES:
+    case NM_VALUE_TYPE_STRV:
+        /* These types have implementation define memory representations. */
+        break;
+
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
     case NM_VALUE_TYPE_ENUM:
     case NM_VALUE_TYPE_FLAGS:
         /* These types don't have a defined variant type, because it's not
          * clear how many bits we would need or how to handle the type. */
+        break;
 
-        /* fall-through */
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
@@ -230,8 +236,7 @@ nm_value_type_get_from_variant(NMValueType value_type,
 static inline GVariant *
 nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
 {
-    const char   *v_string;
-    const GBytes *v_bytes;
+    const char *v_string;
 
     switch (value_type) {
     case NM_VALUE_TYPE_BOOL:
@@ -247,9 +252,11 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
     case NM_VALUE_TYPE_STRING:
         v_string = *((const char *const *) src);
         return v_string ? g_variant_new_string(v_string) : NULL;
+
     case NM_VALUE_TYPE_BYTES:
-        v_bytes = *((const GBytes *const *) src);
-        return v_bytes ? nm_g_bytes_to_variant_ay(v_bytes) : NULL;
+    case NM_VALUE_TYPE_STRV:
+        /* These types have implementation define memory representations. */
+        break;
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:
@@ -257,14 +264,13 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
     case NM_VALUE_TYPE_FLAGS:
         /* These types don't have a defined variant type, because it's not
          * clear how many bits we would need or how to handle the type. */
+        break;
 
-        /* fall-through */
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
         break;
     }
-    nm_assert_not_reached();
-    return NULL;
+    return nm_assert_unreachable_val(NULL);
 }
 
 static inline const GVariantType *
@@ -285,6 +291,8 @@ nm_value_type_get_variant_type(NMValueType value_type)
         return G_VARIANT_TYPE_STRING;
     case NM_VALUE_TYPE_BYTES:
         return G_VARIANT_TYPE_BYTESTRING;
+    case NM_VALUE_TYPE_STRV:
+        return G_VARIANT_TYPE_STRING_ARRAY;
 
     case NM_VALUE_TYPE_INT:
     case NM_VALUE_TYPE_UINT:

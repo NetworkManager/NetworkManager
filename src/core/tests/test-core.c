@@ -2319,10 +2319,25 @@ test_machine_id_read(void)
     char          machine_id_str[33];
     gpointer      logstate;
 
+    /* This unit test checks our functions to read /etc/machine-id. As
+     * the path name is not configurable (and the test does not setup
+     * a chroot/mountns), we read the actual file from the system. That
+     * is ugly, as the test depends on the system where it's running.
+     *
+     * Still, better a bad test, than no test. Patch welcome to fix this
+     * shortcoming.
+     *
+     * Also, if you have a sufficiently broken system, the unit test fails.
+     * In particular, if the machine-id file exists but does not contain
+     * a valid ID. Just don't have that. Fix your system. */
+
     logstate = nmtst_logging_disable(FALSE);
     /* If you run this test as root, without a valid /etc/machine-id,
      * the code will try to get the secret-key. That is a bit ugly,
-     * but no real problem. */
+     * but no real problem.
+     *
+     * The real answer is: don't run our unit tests as root. That's
+     * not the way to do it. */
     machine_id = nm_utils_machine_id_bin();
     nmtst_logging_reenable(logstate);
 
@@ -2338,9 +2353,15 @@ test_machine_id_read(void)
          * is invalid. Our machine-id is fake, and we have nothing to
          * compare against. */
 
-        /* NOTE: this test will fail, if you don't have /etc/machine-id,
-         * but a valid "LOCALSTATEDIR/lib/dbus/machine-id" file.
-         * Just don't do that. */
+        if (g_file_test(LOCALSTATEDIR "/lib/dbus/machine-id", G_FILE_TEST_EXISTS)) {
+            /* Hm. So systemd failed to read /etc/machine-id, but we may have the one from D-Bus.
+             * With LOCALSTATEDIR"/lib/dbus/machine-id", we don't really know whether we
+             * parsed that file. Assume we don't know and skip the test on this system. */
+            g_assert(!nm_utils_machine_id_is_fake());
+            return;
+        }
+
+        /* OK, in this case, our function should have generated a random machine ID. */
         g_assert(nm_utils_machine_id_is_fake());
     } else {
         g_assert(!nm_utils_machine_id_is_fake());

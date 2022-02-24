@@ -530,8 +530,11 @@ test_generic(const char *file, const char *override_vpn_ip_iface)
 
     g_assert((!denv && error_message) || (denv && !error_message));
 
-    if (error_message)
+    if (error_message) {
+        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         g_error("FAILED: %s", error_message);
+        NM_PRAGMA_WARNING_REENABLE
+    }
 
     if (g_strv_length(denv) != g_hash_table_size(expected_env)) {
         _print_env(NM_CAST_STRV_CC(denv), expected_env);
@@ -552,8 +555,10 @@ test_generic(const char *file, const char *override_vpn_ip_iface)
 
         foo = g_hash_table_lookup(expected_env, i_value);
         if (!foo) {
+            NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
             _print_env(NM_CAST_STRV_CC(denv), expected_env);
             g_error("Failed to find %s in environment", i_value);
+            NM_PRAGMA_WARNING_REENABLE
         }
     }
 

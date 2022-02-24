@@ -159,7 +159,9 @@ nmtstc_service_init(void)
                  * via pygobject. */
                 return NULL;
             }
+            NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
             g_error("test service %s exited with error code %d", NMTSTC_NM_SERVICE, data.exit_code);
+            NM_PRAGMA_WARNING_REENABLE
         }
     }
 

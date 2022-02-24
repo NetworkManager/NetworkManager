@@ -35,11 +35,11 @@ G_BEGIN_DECLS
  *
  * DCB feature flags.
  **/
-typedef enum { /*< flags >*/
-               NM_SETTING_DCB_FLAG_NONE      = 0x00000000,
-               NM_SETTING_DCB_FLAG_ENABLE    = 0x00000001,
-               NM_SETTING_DCB_FLAG_ADVERTISE = 0x00000002,
-               NM_SETTING_DCB_FLAG_WILLING   = 0x00000004
+typedef enum /*< flags >*/ {
+    NM_SETTING_DCB_FLAG_NONE      = 0x00000000,
+    NM_SETTING_DCB_FLAG_ENABLE    = 0x00000001,
+    NM_SETTING_DCB_FLAG_ADVERTISE = 0x00000002,
+    NM_SETTING_DCB_FLAG_WILLING   = 0x00000004
 } NMSettingDcbFlags;
 
 /**

@@ -7,8 +7,8 @@ dnl  - add corresponding NM_VERSION_x_y_z macros in
 dnl    "shared/nm-version-macros.h.in"
 dnl  - update number in meson.build
 m4_define([nm_major_version], [1])
-m4_define([nm_minor_version], [36])
-m4_define([nm_micro_version], [0])
+m4_define([nm_minor_version], [37])
+m4_define([nm_micro_version], [1])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version])
 
@@ -321,7 +321,7 @@ AC_ARG_WITH([systemdsystemunitdir],
                            [Directory for systemd service files]))
 # default location
 AS_IF([test -z "$with_systemdsystemunitdir" && $PKG_CONFIG systemd],
-      with_systemdsystemunitdir="\$(prefix)/lib/systemd/system")
+      with_systemdsystemunitdir=`$PKG_CONFIG systemd '--define-variable=prefix=${prefix}' '--define-variable=root_prefix=${prefix}' --variable systemdsystemunitdir`)
 AS_IF([test -z "$with_systemdsystemunitdir"], with_systemdsystemunitdir=no)
 # add conditional and subst
 AM_CONDITIONAL(HAVE_SYSTEMD, [test "$with_systemdsystemunitdir" != no])
@@ -716,7 +716,7 @@ AM_CONDITIONAL(HAVE_CRYPTO_GNUTLS, test "${have_crypto_gnutls}" = 'yes')
 AM_CONDITIONAL(HAVE_CRYPTO_NSS, test "${have_crypto_nss}" = 'yes')
 
 AC_ARG_WITH(crypto,
-            AS_HELP_STRING([--with-crypto=nss|gnutls],
+            AS_HELP_STRING([--with-crypto=nss|gnutls|null],
                            [Cryptography library to use for certificate and key operations]),
             with_crypto=$withval,
             with_crypto=nss)
@@ -728,8 +728,10 @@ elif test "$with_crypto" = 'gnutls'; then
 	if test "${have_crypto_gnutls}" != "yes"; then
 		AC_MSG_ERROR([No usable gnutls found for --with-crypto=gnutls])
 	fi
+elif test "$with_crypto" = 'null'; then
+	:
 else
-	AC_MSG_ERROR([Please choose either 'nss' or 'gnutls' for certificate and crypto operations])
+	AC_MSG_ERROR([Please choose either 'nss', 'gnutls' or 'null' for certificate and crypto operations])
 fi
 AM_CONDITIONAL(WITH_NSS, test "$with_crypto" = 'nss')
 AM_CONDITIONAL(WITH_GNUTLS, test "$with_crypto" = 'gnutls')

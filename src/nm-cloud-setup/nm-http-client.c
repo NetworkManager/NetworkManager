@@ -305,6 +305,7 @@ nm_http_client_get(NMHttpClient       *self,
     curl_easy_setopt(edata->ehandle, CURLOPT_WRITEFUNCTION, _get_writefunction_cb);
     curl_easy_setopt(edata->ehandle, CURLOPT_WRITEDATA, edata);
     curl_easy_setopt(edata->ehandle, CURLOPT_PRIVATE, edata);
+    curl_easy_setopt(edata->ehandle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
 
     if (http_headers) {
         for (i = 0; http_headers[i]; ++i) {

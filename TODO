@@ -2,7 +2,107 @@ So you're interested in hacking on NetworkManager?  Here's some cool
 stuff you could do...
 
 
-* Use netlink API instead of ioctl based ethtool.
+Improve Shutdown of NetworkManager
+==================================
+
+NetworkManager quits when receiving SIGTERM.
+
+Currently, it stops iterating the GMainContext (g_main_loop_quit()) and performs
+some synchronous cleanup actions.
+
+That is problematic for the following reasons.
+
+- We generally avoid blocking operations in NetworkManager (except currently during shutdown).
+  Hence it's normal at any time to have async operations pending. Async operations
+  with glib basically mean that we will receive a callback from the mainloop. For that
+  to work, we need to keep iterating the GMainContext. If we stop iterating,
+  we cannot cleanup the pending operations and leak resources. It's not possible
+  to free all resources, unless we iterate as long as we have pending operations.
+
+  That is because even if you g_cancellable_cancel() an sync operation, you still
+  get a callback. The fact that an async operation will always get (one) callback
+  invocation is an important guarantee in glib. If we no longer have that guarantee,
+  it would be effectively impossible to implement cancellation and proper cleanup
+  and it would require to do that for all async operations (changing the guaranteed
+  semantics of all async operations).
+
+  Often it wouldn't matter whether we free all resources during shutdown. However,
+  unless we have a strict policy and method for freeing all, we will inevitably
+  leak resources where it does matter.
+
+  It's anyway hard to move from a "running" state to a "shutdown" state. It's
+  impossible to get right, if we have pending async operations that no longer can
+  complete.
+
+- Once we stop iterating the mainloop, we also cannot make async operations anymore.
+  This reduces our shutdown to blocking operations (or a string of async operations that
+  get chained together to one blocking operation, e.g. by using a separate GMainContext).
+  This is very limiting, also because it's getting really hard to do things in
+  parallel (unless you strongly intertwine them or essentially re-implement a
+  main loop). Doing things in parallel will be necessary, for example if deactivate
+  two devices, then both should shutdown in parallel.
+
+The real problem is that our shutdown is really messy due to this. And this is a
+fundamental limitation of the current implementation.
+
+The solution will be the following.
+
+When we receive SIGTERM we go into shutdown mode. This may mean to reject new D-Bus
+requests and in general to move into a shutdown state. All the while we keep iterating
+the GMainContext, but we also start to tear down and cancel/complete pending operations.
+While we do that, we may need to start new async operations. For example, during
+shutdown we may want to kill dnsmasq, which itself is a new asynchronous operation.
+
+The API nm_shutdown_wait_obj_register_object() and family allow for things to register
+themselves to block shutdown. This works using weak pointers. Basically, NetworkManager will
+keep iterating the GMainContext as long as we have objects registered there. While shutting
+down, we expect those objects to complete and unregister themselves.
+
+Currently, our singleton objects (NM_DEFINE_SINGLETON_REGISTER) get unrefed after
+the `main()` functions. For some/all of those singletons, during SIGTERM we may
+want to register them as nm_shutdown_wait_obj_register_object() and unref them when
+we initiate the shutdown.
+Singletons also use weak pointers and can work together with nm_shutdown_wait_obj_register_object().
+For that to work, we need that nobody is calling the singleton getter *after* shutdown
+starts. That means, instead of using the singleton getter, you need to get the reference
+from somebody. For example, NMDevice has a reference to a NMNetns and NMPlatform
+and should use those instead of NM_PLATFORM_GET(). For those singeltons that works
+this way (maybe all of them), the singleton getters only works reliably before
+shutdown starts. And no singleton getters work reliably after the main() function
+because singletons unref themselves. In general, avoid singleton getters and see
+that somebody hands you a reference.
+
+After NM_SHUTDOWN_TIMEOUT_MAX_MSEC we loose patience that it's taking too long.
+We now log a debug message about who is still blocking shutdown.
+We also cancel the cancellables from nm_shutdown_wait_obj_register_cancellable()
+and give NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC more time. If we then are still
+not complete, we log an error message about who is still blocking shutdown,
+and just exit with an assertion failure. We encountered a bug.
+
+This means, *all* async operations in NetworkManager must either be cancellable (and
+afterwards complete fast) or they must not take long to begin with. In particular,
+every individual async operation must be completed in at most NM_SHUTDOWN_TIMEOUT_MAX_MSEC,
+and all async cleanup operations must complete in NM_SHUTDOWN_TIMEOUT_MAX_MSEC too.
+
+So if you make an async operation not cancellable, but guarantee that you don't take
+longer than NM_SHUTDOWN_TIMEOUT_MAX_MSEC you are mostly fine (better would be to actually
+complete fast, if you can). That's why reaching NM_SHUTDOWN_TIMEOUT_MAX_MSEC timeout is
+still not a bug scenario. But reaching NM_SHUTDOWN_TIMEOUT_MAX_MSEC+NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC
+is a bug.
+
+As NM_SHUTDOWN_TIMEOUT_MAX_MSEC and nm_shutdown_wait_obj_register_object() API already exists,
+the first step is to ensure that all parts of NetworkManager can be shutdown and be terminated
+in a timely manner.
+
+The second step is to replace the current sync cleanup operations with iterating the
+GMainContext. This is gonna be difficult.
+
+Search for `FIXME(shutdown` for places that are related to this effort and that need
+consideration.
+
+
+Use netlink API instead of ioctl based ethtool
+==============================================
 
 NetworkManager uses ethtool API to set/obtain certain settings of network
 devices. This is an ioctl based API and implmented in "src/platform/nm-platform-utils.c".
@@ -15,14 +115,16 @@ also implements this API, however it is under an incompatible license,
 so better don't look and make sure not to use the code.
 
 
-* Add 802-1x capability to nmtui.
+Add 802-1x capability to nmtui
+==============================
 
 Add dialogs to nmtui for 802-1x. This will be useful for ethernet (with 802-1x
 port authentication), enterprise Wi-Fi and MACSec. From the GUI and dialog design,
 possibly get inspired by nm-connection-editor.
 
 
-* Ethernet Network Auto-detection
+Ethernet Network Auto-detection
+===============================
 
 There are various methods we can use to autodetect which wired network connection
 to use if the user connects to more than one wired network on a frequent basis.
@@ -80,7 +182,8 @@ un-authenticated connections and that additional credentials are required to
 successfully connect to this network.
 
 
-* VPN re-connect (bgo #349151)
+VPN re-connect (bgo #349151)
+============================
 
 NM should remember whether a VPN was connected if a connection disconnects
 (like Wi-Fi drops out or short carrier drop) or if the laptop goes to sleep.
@@ -90,7 +193,8 @@ the VPN because Wi-Fi choked for 10 seconds, but reconnect the VPN if it was
 connected before the drop.
 
 
-* VPN IP Methods
+VPN IP Methods
+==============
 
 Some VPNs (openvpn with TAP for example) require that DHCP is run on a
 pseudo-ethernet device to obtain addressing information.  Currenty, this is not
@@ -133,7 +237,8 @@ failure of the VPN connection, just like DHCP timeouts and lease-renewal
 failures do for other devices (see dhcp_state_changed() in nm-device.c).
 
 
-* VPN Service Daemon Secret Requests
+VPN Service Daemon Secret Requests
+==================================
 
 In addition to NM asking the service daemons whether more secrets are required,
 VPN service daemons (like nm-vpnc-service, nm-openvpn-service, etc) should be
@@ -171,7 +276,8 @@ challenge-response and does not use the "--non-inter" flag which suppresses that
 behavior.
 
 
-* WPS
+WPS
+===
 
 wpa_supplicant has support for WPS (Wifi Protected Setup, basically Bluetooth-
 like PIN codes for setting up a wifi connection) and we should add support for
@@ -215,7 +321,8 @@ because the user has no physical access to the router itself, but has been given
 as passphrase/PSK instead.
 
 
-* Better Tablet/Mobile Behavior
+Better Tablet/Mobile Behavior
+=============================
 
 There are a few components to this:
 

@@ -2327,13 +2327,14 @@ _do_read_vpn_details_impl1(const char              *file,
                 if (nm_streq(_expected[_i].key, _k))                                          \
                     break;                                                                    \
             }                                                                                 \
-            if (_i >= _expected_len)                                                          \
+            if (_i >= _expected_len) {                                                        \
                 g_error("%s:%d: hash '%s' contains unexpected data key '%s' with value '%s'", \
                         file,                                                                 \
                         line,                                                                 \
                         G_STRINGIFY(hash),                                                    \
                         _k,                                                                   \
                         _v);                                                                  \
+            }                                                                                 \
         }                                                                                     \
                                                                                               \
         for (_i = 0; _i < _expected_len; _i++) {                                              \
@@ -2342,7 +2343,7 @@ _do_read_vpn_details_impl1(const char              *file,
             g_assert(_d->key);                                                                \
             g_assert(_d->val);                                                                \
             _v = g_hash_table_lookup(_hash, _d->key);                                         \
-            if (!nm_streq0(_v, _d->val))                                                      \
+            if (!nm_streq0(_v, _d->val)) {                                                    \
                 g_error("%s:%d: hash '%s' contains data key '%s' with value %s%s%s but we "   \
                         "expected '%s'",                                                      \
                         file,                                                                 \
@@ -2351,14 +2352,17 @@ _do_read_vpn_details_impl1(const char              *file,
                         _d->key,                                                              \
                         NM_PRINT_FMT_QUOTE_STRING(_v),                                        \
                         _d->val);                                                             \
+            }                                                                                 \
         }                                                                                     \
                                                                                               \
         g_assert_cmpint(g_hash_table_size(_hash), ==, _expected_len);                         \
     }                                                                                         \
     G_STMT_END
 
+    NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
     _assert_hash(data, expected_data, expected_data_len);
     _assert_hash(secrets, expected_secrets, expected_secrets_len);
+    NM_PRAGMA_WARNING_REENABLE
 
 #undef _assert_hash
     return TRUE;
@@ -3049,10 +3053,12 @@ check_dbus_properties:
                     break;
                 p_expected_type++;
                 if (p_expected_type >= &expected_types[G_N_ELEMENTS(expected_types)]) {
+                    NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
                     g_error("D-Bus type \"%s\" is not implemented (in property %s.%s)",
                             (const char *) mpr->dbus_type,
                             mif->dbus_iface_name,
                             mpr->dbus_property_name);
+                    NM_PRAGMA_WARNING_REENABLE
                 }
             }
 
@@ -3151,6 +3157,7 @@ check_dbus_properties:
                             break;
                     }
                     if (p_expected_type_2 >= &expected_types[G_N_ELEMENTS(expected_types)]) {
+                        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
                         g_error("D-Bus property \"%s.%s\" (type \"%s\") maps to property \"%s\", "
                                 "but that has an unexpected property type %s (expected %s)",
                                 mif->dbus_iface_name,
@@ -3159,6 +3166,7 @@ check_dbus_properties:
                                 pspec->name,
                                 g_type_name(pspec->value_type),
                                 g_type_name(p_expected_type->default_gtype));
+                        NM_PRAGMA_WARNING_REENABLE
                     }
                 }
 

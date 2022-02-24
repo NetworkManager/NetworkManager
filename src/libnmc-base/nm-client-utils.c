@@ -732,7 +732,7 @@ nmc_print_qrcode(const char *str)
  * Example of @passwd_file contents:
  *   wifi.psk:tajne heslo
  *   802-1x.password:krakonos
- *   802-11-wireless-security:leap-password:my leap password
+ *   802-11-wireless-security.leap-password:my leap password
  *
  * Returns: (transfer full): hash table with parsed passwords, or %NULL on an error
  */

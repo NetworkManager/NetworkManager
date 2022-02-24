@@ -609,7 +609,10 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
     _LOGI(LOGD_DNS, "set-hostname: set hostname to '%s' (%s)", name, msg);
 
     /* Ask NMSettings to update the transient hostname using its
-     * systemd-hostnamed proxy */
+     * systemd-hostnamed proxy.
+     *
+     * FIXME(shutdown): an async request must be cancellable, so we are guaranteed
+     *   to tear down in a reasonable time.*/
     nm_hostname_manager_set_transient_hostname(priv->hostname_manager,
                                                name,
                                                settings_set_hostname_cb,

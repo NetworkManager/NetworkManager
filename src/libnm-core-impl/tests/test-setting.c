@@ -4565,6 +4565,12 @@ test_setting_metadata(void)
                          == _nm_setting_property_to_dbus_fcn_direct);
                 g_assert(sip->param_spec);
                 g_assert(sip->param_spec->value_type == G_TYPE_BYTES);
+            } else if (sip->property_type->direct_type == NM_VALUE_TYPE_STRV) {
+                g_assert(g_variant_type_equal(sip->property_type->dbus_type, "as"));
+                g_assert(sip->property_type->to_dbus_fcn
+                         == _nm_setting_property_to_dbus_fcn_direct);
+                g_assert(sip->param_spec);
+                g_assert(sip->param_spec->value_type == G_TYPE_STRV);
             } else
                 g_assert_not_reached();
 
@@ -4653,7 +4659,12 @@ check_done:;
             }
             if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_direct) {
                 /* for the moment, all direct properties allow transformation. */
-                g_assert(sip->property_type->from_dbus_direct_allow_transform);
+                if (NM_IN_SET(sip->property_type->direct_type,
+                              NM_VALUE_TYPE_BYTES,
+                              NM_VALUE_TYPE_STRV))
+                    g_assert(!sip->property_type->from_dbus_direct_allow_transform);
+                else
+                    g_assert(sip->property_type->from_dbus_direct_allow_transform);
             }
 
             if (sip->property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_gprop)
@@ -4763,10 +4774,12 @@ check_done:;
                         g_assert(NM_IS_SETTING_VPN(setting));
                         g_assert_cmpstr(sip->name, ==, NM_SETTING_VPN_SECRETS);
                     } else {
+                        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
                         g_error("secret %s.%s is of unexpected property type %s",
                                 nm_setting_get_name(setting),
                                 sip->name,
                                 g_type_name(sip->param_spec->value_type));
+                        NM_PRAGMA_WARNING_REENABLE
                     }
                 }
             }
@@ -4889,12 +4902,14 @@ check_done:;
 
                 /* the property-types with same content should all be shared. Here we have two that
                  * are the same content, but different instances. Bug. */
+                NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
                 g_error("The identical property type for D-Bus type \"%s\" is used by: %s and %s. "
                         "If a NMSettInfoPropertType is identical, it should be shared by creating "
                         "a common instance of the property type",
                         (const char *) pt->dbus_type,
                         _PROP_IDX_OWNER(h_property_types, pt),
                         _PROP_IDX_OWNER(h_property_types, pt_2));
+                NM_PRAGMA_WARNING_REENABLE
             }
         }
     }

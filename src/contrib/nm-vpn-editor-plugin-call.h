@@ -27,9 +27,9 @@
  * @NM_VPN_EDITOR_PLUGIN_SERVICE_FLAGS_CAN_ADD: whether the plugin can
  *   add a new connection for the given service-type.
  **/
-typedef enum { /*< skip >*/
-               NM_VPN_EDITOR_PLUGIN_SERVICE_FLAGS_NONE    = 0x00,
-               NM_VPN_EDITOR_PLUGIN_SERVICE_FLAGS_CAN_ADD = 0x01,
+typedef enum /*< skip >*/ {
+    NM_VPN_EDITOR_PLUGIN_SERVICE_FLAGS_NONE    = 0x00,
+    NM_VPN_EDITOR_PLUGIN_SERVICE_FLAGS_CAN_ADD = 0x01,
 } NMVpnEditorPluginServiceFlags;
 
 struct _NMVpnEditorPluginVT {

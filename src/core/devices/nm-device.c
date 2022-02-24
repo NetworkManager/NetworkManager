@@ -361,7 +361,6 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDevice,
                              PROP_FIRMWARE_MISSING,
                              PROP_NM_PLUGIN_MISSING,
                              PROP_TYPE_DESC,
-                             PROP_RFKILL_TYPE,
                              PROP_IFINDEX,
                              PROP_AVAILABLE_CONNECTIONS,
                              PROP_PHYSICAL_PORT_ID,
@@ -473,7 +472,6 @@ typedef struct _NMDevicePrivate {
     char                *driver;
     char                *driver_version;
     char                *firmware_version;
-    RfKillType           rfkill_type;
     bool                 firmware_missing : 1;
     bool                 nm_plugin_missing : 1;
     bool
@@ -5158,12 +5156,17 @@ nm_device_get_applied_setting(NMDevice *self, GType setting_type)
     return connection ? nm_connection_get_setting(connection, setting_type) : NULL;
 }
 
-RfKillType
+NMRfkillType
 nm_device_get_rfkill_type(NMDevice *self)
 {
+    NMRfkillType t;
+
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
-    return NM_DEVICE_GET_PRIVATE(self)->rfkill_type;
+    t = NM_DEVICE_GET_CLASS(self)->rfkill_type;
+
+    nm_assert(NM_IN_SET(t, NM_RFKILL_TYPE_UNKNOWN, NM_RFKILL_TYPE_WLAN, NM_RFKILL_TYPE_WWAN));
+    return t;
 }
 
 static const char *
@@ -7000,7 +7003,7 @@ sriov_op_queue(NMDevice               *self,
      *
      * FIXME(shutdown): However, during shutdown we don't have a follow-up write request to cancel
      * this operation and we have to give it at least some time to complete. The solution is that
-     * we register a way to abort the last call during shutdown, and after NM_SHUTDOWN_TIMEOUT_MS
+     * we register a way to abort the last call during shutdown, and after NM_SHUTDOWN_TIMEOUT_MAX_MSEC
      * grace period we pull the plug and cancel it. */
 
     op  = g_slice_new(SriovOp);
@@ -17001,9 +17004,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_TYPE_DESC:
         g_value_set_string(value, priv->type_desc);
         break;
-    case PROP_RFKILL_TYPE:
-        g_value_set_uint(value, priv->rfkill_type);
-        break;
     case PROP_AVAILABLE_CONNECTIONS:
         nm_dbus_utils_g_value_set_object_path_from_hash(value, priv->available_connections, TRUE);
         break;
@@ -17139,10 +17139,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         /* construct-only */
         priv->type_desc = g_value_dup_string(value);
         break;
-    case PROP_RFKILL_TYPE:
-        /* construct-only */
-        priv->rfkill_type = g_value_get_uint(value);
-        break;
     case PROP_PERM_HW_ADDRESS:
         /* construct-only */
         priv->hw_addr_perm = g_value_dup_string(value);
@@ -17192,7 +17188,6 @@ nm_device_init(NMDevice *self)
     priv->capabilities          = NM_DEVICE_CAP_NM_SUPPORTED;
     priv->state                 = NM_DEVICE_STATE_UNMANAGED;
     priv->state_reason          = NM_DEVICE_STATE_REASON_NONE;
-    priv->rfkill_type           = RFKILL_TYPE_UNKNOWN;
     priv->unmanaged_flags       = NM_UNMANAGED_PLATFORM_INIT;
     priv->unmanaged_mask        = priv->unmanaged_flags;
     priv->available_connections = g_hash_table_new_full(nm_direct_hash, NULL, g_object_unref, NULL);
@@ -17595,6 +17590,8 @@ nm_device_class_init(NMDeviceClass *klass)
     klass->reapply_connection            = reapply_connection;
     klass->set_platform_mtu              = set_platform_mtu;
 
+    klass->rfkill_type = NM_RFKILL_TYPE_UNKNOWN;
+
     obj_properties[PROP_UDI] =
         g_param_spec_string(NM_DEVICE_UDI,
                             "",
@@ -17752,14 +17749,6 @@ nm_device_class_init(NMDeviceClass *klass)
                             "",
                             NULL,
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
-    obj_properties[PROP_RFKILL_TYPE] =
-        g_param_spec_uint(NM_DEVICE_RFKILL_TYPE,
-                          "",
-                          "",
-                          RFKILL_TYPE_WLAN,
-                          RFKILL_TYPE_MAX,
-                          RFKILL_TYPE_UNKNOWN,
-                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_IFINDEX] = g_param_spec_int(NM_DEVICE_IFINDEX,
                                                     "",
                                                     "",

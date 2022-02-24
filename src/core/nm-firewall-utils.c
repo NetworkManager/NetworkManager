@@ -422,7 +422,7 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
                 nm_g_main_context_push_thread_default_if_necessary(NULL);
 
             nm_shutdown_wait_obj_register_object(call_data->subprocess, "nft-terminate");
-            G_STATIC_ASSERT_EXPR(200 < NM_SHUTDOWN_TIMEOUT_MS_WATCHDOG * 2 / 3);
+            G_STATIC_ASSERT_EXPR(200 < NM_SHUTDOWN_TIMEOUT_ADDITIONAL_MSEC * 2 / 3);
             nm_g_subprocess_terminate_in_background(call_data->subprocess, 200);
         }
     } else if (g_subprocess_get_successful(call_data->subprocess)) {
@@ -546,7 +546,7 @@ _fw_nft_call(GBytes             *stdin_buf,
                                    call_data);
 
     call_data->timeout_source =
-        nm_g_source_attach(nm_g_timeout_source_new((NM_SHUTDOWN_TIMEOUT_MS * 2) / 3,
+        nm_g_source_attach(nm_g_timeout_source_new((NM_SHUTDOWN_TIMEOUT_1500_MSEC * 2) / 3,
                                                    G_PRIORITY_DEFAULT,
                                                    _fw_nft_call_timeout_cb,
                                                    call_data,

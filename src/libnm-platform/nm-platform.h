@@ -259,17 +259,17 @@ struct _NMPlatformLink {
     bool initialized : 1;
 };
 
-typedef enum { /*< skip >*/
-               NM_PLATFORM_SIGNAL_ID_NONE,
-               NM_PLATFORM_SIGNAL_ID_LINK,
-               NM_PLATFORM_SIGNAL_ID_IP4_ADDRESS,
-               NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
-               NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
-               NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
-               NM_PLATFORM_SIGNAL_ID_ROUTING_RULE,
-               NM_PLATFORM_SIGNAL_ID_QDISC,
-               NM_PLATFORM_SIGNAL_ID_TFILTER,
-               _NM_PLATFORM_SIGNAL_ID_LAST,
+typedef enum {
+    NM_PLATFORM_SIGNAL_ID_NONE,
+    NM_PLATFORM_SIGNAL_ID_LINK,
+    NM_PLATFORM_SIGNAL_ID_IP4_ADDRESS,
+    NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
+    NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
+    NM_PLATFORM_SIGNAL_ID_IP6_ROUTE,
+    NM_PLATFORM_SIGNAL_ID_ROUTING_RULE,
+    NM_PLATFORM_SIGNAL_ID_QDISC,
+    NM_PLATFORM_SIGNAL_ID_TFILTER,
+    _NM_PLATFORM_SIGNAL_ID_LAST,
 } NMPlatformSignalIdType;
 
 guint _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type);

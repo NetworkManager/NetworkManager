@@ -21,8 +21,8 @@ G_BEGIN_DECLS
  *
  * Since: 1.30
  */
-typedef enum { /*< flags >*/
-               NM_KEYFILE_HANDLER_FLAGS_NONE = 0,
+typedef enum /*< flags >*/ {
+    NM_KEYFILE_HANDLER_FLAGS_NONE = 0,
 } NMKeyfileHandlerFlags;
 
 /**

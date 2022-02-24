@@ -2684,7 +2684,7 @@ nm_ip_routing_rule_validate(const NMIPRoutingRule *self, GError **error)
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("invalid priority"));
+                            _("missing priority"));
         return FALSE;
     }
 

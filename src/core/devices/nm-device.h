@@ -65,7 +65,6 @@
 #define NM_DEVICE_SLAVES "slaves" /* partially internal */
 
 #define NM_DEVICE_TYPE_DESC          "type-desc"          /* Internal only */
-#define NM_DEVICE_RFKILL_TYPE        "rfkill-type"        /* Internal only */
 #define NM_DEVICE_IFINDEX            "ifindex"            /* Internal only */
 #define NM_DEVICE_MASTER             "master"             /* Internal only */
 #define NM_DEVICE_HAS_PENDING_ACTION "has-pending-action" /* Internal only */
@@ -105,38 +104,38 @@ typedef enum NMActStageReturn NMActStageReturn;
  * a condition, so that adding a flag might make a connection available that would
  * not be available otherwise. Adding a flag should never make a connection
  * not available if it would be available otherwise. */
-typedef enum { /*< skip >*/
-               NM_DEVICE_CHECK_CON_AVAILABLE_NONE = 0,
+typedef enum {
+    NM_DEVICE_CHECK_CON_AVAILABLE_NONE = 0,
 
-               /* since NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST is a collection of flags with more fine grained
+    /* since NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST is a collection of flags with more fine grained
      * parts, this flag in general indicates that this is a user-request. */
-               _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST = (1L << 0),
+    _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST = (1L << 0),
 
-               /* we also consider devices which have no carrier but are still waiting for the driver
+    /* we also consider devices which have no carrier but are still waiting for the driver
      * to detect carrier. Usually, such devices are not yet available, however for a user-request
      * they are. They might fail later if carrier doesn't come. */
-               _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER = (1L << 1),
+    _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER = (1L << 1),
 
-               /* usually, a profile is only available if the Wi-Fi AP is in range. For an
+    /* usually, a profile is only available if the Wi-Fi AP is in range. For an
      * explicit user request, we also consider profiles for APs that are not (yet)
      * visible. */
-               _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP = (1L << 2),
+    _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP = (1L << 2),
 
-               /* a device can be marked as unmanaged for various reasons. Some of these reasons
+    /* a device can be marked as unmanaged for various reasons. Some of these reasons
      * are authoritative, others not. Non-authoritative reasons can be overruled by
      * `nmcli device set $DEVICE managed yes`. Also, for an explicit user activation
      * request we may want to consider the device as managed. This flag makes devices
      * that are unmanaged appear available. */
-               _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED = (1L << 3),
+    _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED = (1L << 3),
 
-               /* a collection of flags, that are commonly set for an explicit user-request. */
-               NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST =
-                   _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST
-                   | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER
-                   | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP
-                   | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED,
+    /* a collection of flags, that are commonly set for an explicit user-request. */
+    NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST =
+        _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST
+        | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER
+        | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_IGNORE_AP
+        | _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_OVERRULE_UNMANAGED,
 
-               NM_DEVICE_CHECK_CON_AVAILABLE_ALL = (1L << 4) - 1,
+    NM_DEVICE_CHECK_CON_AVAILABLE_ALL = (1L << 4) - 1,
 } NMDeviceCheckConAvailableFlags;
 
 struct _NMDevicePrivate;
@@ -149,19 +148,18 @@ struct _NMDevice {
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make
  * a device appear more available. It can never make a device less available. */
-typedef enum { /*< skip >*/
-               NM_DEVICE_CHECK_DEV_AVAILABLE_NONE = 0,
+typedef enum {
+    NM_DEVICE_CHECK_DEV_AVAILABLE_NONE = 0,
 
-               /* the device is considered available, even if it has no carrier.
+    /* the device is considered available, even if it has no carrier.
      *
      * For various device types (software devices) we ignore carrier based
      * on the type. So, for them, this flag has no effect anyway. */
-               _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER = (1L << 0),
+    _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER = (1L << 0),
 
-               NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST =
-                   _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER,
+    NM_DEVICE_CHECK_DEV_AVAILABLE_FOR_USER_REQUEST = _NM_DEVICE_CHECK_DEV_AVAILABLE_IGNORE_CARRIER,
 
-               NM_DEVICE_CHECK_DEV_AVAILABLE_ALL = (1L << 1) - 1,
+    NM_DEVICE_CHECK_DEV_AVAILABLE_ALL = (1L << 1) - 1,
 } NMDeviceCheckDevAvailableFlags;
 
 typedef void (*NMDeviceDeactivateCallback)(NMDevice *self, GError *error, gpointer user_data);
@@ -208,6 +206,8 @@ typedef struct _NMDeviceClass {
     bool act_stage1_prepare_set_hwaddr_ethernet : 1;
 
     bool can_reapply_change_ovs_external_ids : 1;
+
+    NMRfkillType rfkill_type : 4;
 
     void (*state_changed)(NMDevice           *device,
                           NMDeviceState       new_state,
@@ -410,7 +410,6 @@ typedef struct _NMDeviceClass {
     gboolean (*set_platform_mtu)(NMDevice *self, guint32 mtu);
 
     const char *(*get_dhcp_anycast_address)(NMDevice *self);
-
 } NMDeviceClass;
 
 GType nm_device_get_type(void);
@@ -536,7 +535,7 @@ gboolean nm_device_get_enabled(NMDevice *device);
 
 void nm_device_set_enabled(NMDevice *device, gboolean enabled);
 
-RfKillType nm_device_get_rfkill_type(NMDevice *device);
+NMRfkillType nm_device_get_rfkill_type(NMDevice *device);
 
 /* IPv6 prefix delegation */
 

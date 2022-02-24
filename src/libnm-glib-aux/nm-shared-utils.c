@@ -1130,6 +1130,7 @@ nm_utils_parse_inaddr_bin_full(int         addr_family,
 
 #if NM_MORE_ASSERTS > 10
     if (addr_family == AF_INET) {
+        NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         gs_free_error GError *error = NULL;
         in_addr_t             a;
 
@@ -1145,6 +1146,7 @@ nm_utils_parse_inaddr_bin_full(int         addr_family,
                     error->message);
         }
         nm_assert(addrbin.addr4 == a);
+        NM_PRAGMA_WARNING_REENABLE
     }
 #endif
 

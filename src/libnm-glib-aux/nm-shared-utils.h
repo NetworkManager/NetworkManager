@@ -3139,6 +3139,33 @@ nm_strvarray_remove_first(GArray *strv, const char *needle)
     return TRUE;
 }
 
+static inline int
+nm_strvarray_cmp(const GArray *a, const GArray *b)
+{
+    NM_CMP_SELF(a, b);
+
+    return nm_strv_cmp_n((const char *const *) a->data,
+                         a->len,
+                         (const char *const *) b->data,
+                         b->len);
+}
+
+#define nm_strvarray_equal(a, b) (nm_strvarray_cmp((a), (b)) == 0)
+
+static inline int
+_nm_strvarray_cmp_strv(const GArray *strv, const char *const *ss, gsize ss_len)
+{
+    return nm_strv_cmp_n(strv ? (const char *const *) strv->data : NULL,
+                         strv ? ((gssize) strv->len) : -1,
+                         ss,
+                         ss_len);
+}
+#define nm_strvarray_cmp_strv(strv, ss, ss_len) \
+    _nm_strvarray_cmp_strv((strv), NM_CAST_STRV_CC(ss), (ss_len))
+
+#define nm_strvarray_equal_strv(strv, ss, ss_len) \
+    (nm_strvarray_cmp_strv((strv), (ss), (ss_len)) == 0)
+
 /*****************************************************************************/
 
 struct _NMVariantAttributeSpec {

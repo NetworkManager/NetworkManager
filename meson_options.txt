@@ -71,6 +71,6 @@ option('valgrind', type: 'array', value: ['no'], description: 'Use valgrind to m
 option('valgrind_suppressions', type: 'string', value: '', description: 'Use specific valgrind suppression file')
 option('ld_gc', type: 'boolean', value: true, description: 'Enable garbage collection of unused symbols on linking')
 option('libpsl', type: 'boolean', value: true, description: 'Link against libpsl')
-option('crypto', type: 'combo', choices: ['nss', 'gnutls'], value: 'nss', description: 'Cryptography library to use for certificate and key operations')
+option('crypto', type: 'combo', choices: ['nss', 'gnutls', 'null'], value: 'nss', description: 'Cryptography library to use for certificate and key operations')
 option('qt', type: 'boolean', value: true, description: 'enable Qt examples')
 option('readline', type: 'combo', choices: ['auto', 'libreadline', 'libedit', 'none'], description: 'Using readline (auto) or libedit)')

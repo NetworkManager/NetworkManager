@@ -74,6 +74,7 @@ src/libnm-core-aux-intern/nm-libnm-core-utils.c
 src/libnm-core-impl/nm-connection.c
 src/libnm-core-impl/nm-crypto-gnutls.c
 src/libnm-core-impl/nm-crypto-nss.c
+src/libnm-core-impl/nm-crypto-null.c
 src/libnm-core-impl/nm-crypto.c
 src/libnm-core-impl/nm-dbus-utils.c
 src/libnm-core-impl/nm-keyfile-utils.c

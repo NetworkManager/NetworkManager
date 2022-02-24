@@ -25,11 +25,11 @@ typedef enum {
     NM_TEST_GENERAL_META_FLAGS_0x4  = (1 << 4),
 } NMTestGeneralMetaFlags;
 
-typedef enum {                                        /*< flags >*/
-               NM_TEST_GENERAL_COLOR_FLAGS_WHITE = 1, /*< skip >*/
-               NM_TEST_GENERAL_COLOR_FLAGS_BLUE  = 2,
-               NM_TEST_GENERAL_COLOR_FLAGS_RED   = 4,
-               NM_TEST_GENERAL_COLOR_FLAGS_GREEN = 8,
+typedef enum /*< flags >*/ {
+    NM_TEST_GENERAL_COLOR_FLAGS_WHITE = 1, /*< skip >*/
+    NM_TEST_GENERAL_COLOR_FLAGS_BLUE  = 2,
+    NM_TEST_GENERAL_COLOR_FLAGS_RED   = 4,
+    NM_TEST_GENERAL_COLOR_FLAGS_GREEN = 8,
 } NMTestGeneralColorFlags;
 
 #endif /* _NM_TEST_GENERAL_ENUMS_H_ */

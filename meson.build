@@ -6,7 +6,7 @@ project(
 #  - add corresponding NM_VERSION_x_y_z macros in
 #    "src/libnm-core-public/nm-version-macros.h.in"
 #  - update number in configure.ac
-  version: '1.36.0',
+  version: '1.37.1',
   license: 'GPL2+',
   default_options: [
     'buildtype=debugoptimized',
@@ -551,10 +551,11 @@ crypto = get_option('crypto')
 if crypto == 'nss'
     assert(crypto_nss_dep.found(), 'Requires nss crypto support')
     crypto_dep = crypto_nss_dep
-else
-    assert(crypto == 'gnutls', 'Unexpected setting "crypto=' + crypto + '"')
+elif crypto == 'gnutls'
     assert(crypto_gnutls_dep.found(), 'Requires gnutls crypto support')
     crypto_dep = crypto_gnutls_dep
+else
+    assert(crypto == 'null', 'Unexpected setting "crypto=' + crypto + '"')
 endif
 
 dbus_conf_dir = get_option('dbus_conf_dir')

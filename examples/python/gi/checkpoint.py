@@ -5,6 +5,7 @@
 #
 
 import sys
+import re
 
 import gi
 
@@ -21,10 +22,11 @@ def usage():
     print(
         "            create TIMEOUT [--destroy-all|--delete-new-connections|--disconnect-new-devices|--allow-overlapping|DEV]..."
     )
-    print("            destroy PATH|NUMBER")
-    print("            rollback PATH|NUMBER")
-    print("            adjust-rollback-timeout PATH|NUMBER TIMEOUT")
+    print("            destroy ['--last'|PATH|NUMBER[")
+    print("            rollback ['--last'|PATH|NUMBER]")
+    print("            adjust-rollback-timeout '--last'|PATH|NUMBER TIMEOUT")
     print("")
+    print(" For destroy|rollback, when omitted then '--last' is the default.")
     sys.exit(1)
 
 
@@ -54,32 +56,65 @@ def show(c, ts=None):
     )
 
 
-def find_checkpoint(client, path):
-    for c in client.get_checkpoints():
+def checkpoint_path_to_num(path):
+    m = re.match(r"^/org/freedesktop/NetworkManager/Checkpoint/([1-9][0-9]*)$", path)
+    if m:
+        return int(m.group(1))
+    raise Exception(f'Unexpected D-Bus path "{path}"for checkpoint')
+
+
+def find_checkpoint(nmc, path):
+    for c in nmc.get_checkpoints():
         if c.get_path() == path:
             return c
     return None
 
 
-def validate_path(path, client):
+def find_checkpoint_last(nmc):
+    l = [c.get_path() for c in nmc.get_checkpoints()]
+    if not l:
+        return None
+    l.sort(key=checkpoint_path_to_num)
+    return l[-1]
+
+
+def validate_path(path, nmc):
+    if path == "--last":
+        path = find_checkpoint_last(nmc)
+        if path is None:
+            sys.exit("Has no checkpoint")
+        return path
+
     try:
         num = int(path)
-        path = "/org/freedesktop/NetworkManager/Checkpoint/%u" % (num)
+        path = f"/org/freedesktop/NetworkManager/Checkpoint/{num}"
     except Exception as e:
         pass
 
     if not path or path[0] != "/":
         sys.exit('Invalid checkpoint path "%s"' % (path))
 
-    if client is not None:
-        checkpoint = find_checkpoint(client, path)
+    if nmc is not None:
+        checkpoint = find_checkpoint(nmc, path)
         if checkpoint is None:
             print('WARNING: no checkpoint with path "%s" found' % (path))
 
     return path
 
 
-def do_create(client):
+def validate_path_from_argv(nmc):
+    assert len(sys.argv) >= 2
+    if len(sys.argv) == 2:
+        path = "--last"
+    elif len(sys.argv) > 3:
+        sys.exit("Failed: invalid extra argument")
+    else:
+        path = sys.argv[2]
+
+    return validate_path(path, nmc)
+
+
+def do_create(nmc):
     flags = NM.CheckpointCreateFlags.NONE
     if len(sys.argv) < 3:
         sys.exit("Failed: missing argument timeout")
@@ -96,50 +131,44 @@ def do_create(client):
         elif arg == "--allow-overlapping":
             flags |= NM.CheckpointCreateFlags.ALLOW_OVERLAPPING
         else:
-            d = client.get_device_by_iface(arg)
+            d = nmc.get_device_by_iface(arg)
             if d is None:
                 sys.exit("Unknown device %s" % arg)
             devices.append(d)
 
-    def create_cb(client, result, data):
+    def create_cb(nmc, result, data):
         try:
-            checkpoint = client.checkpoint_create_finish(result)
+            checkpoint = nmc.checkpoint_create_finish(result)
             print("%s" % checkpoint.get_path())
         except Exception as e:
             sys.stderr.write("Failed: %s\n" % e.message)
         main_loop.quit()
 
-    client.checkpoint_create(devices, timeout, flags, None, create_cb, None)
+    nmc.checkpoint_create(devices, timeout, flags, None, create_cb, None)
 
 
-def do_destroy(client):
-    if len(sys.argv) < 3:
-        sys.exit("Missing checkpoint path")
+def do_destroy(nmc):
+    path = validate_path_from_argv(nmc)
 
-    path = validate_path(sys.argv[2], client)
-
-    def destroy_cb(client, result, data):
+    def destroy_cb(nmc, result, data):
         try:
-            if client.checkpoint_destroy_finish(result) == True:
+            if nmc.checkpoint_destroy_finish(result) == True:
                 print("Success")
         except Exception as e:
             sys.stderr.write("Failed: %s\n" % e.message)
         main_loop.quit()
 
-    client.checkpoint_destroy(path, None, destroy_cb, None)
+    nmc.checkpoint_destroy(path, None, destroy_cb, None)
 
 
-def do_rollback(client):
-    if len(sys.argv) < 3:
-        sys.exit("Missing checkpoint path")
+def do_rollback(nmc):
+    path = validate_path_from_argv(nmc)
 
-    path = validate_path(sys.argv[2], client)
-
-    def rollback_cb(client, result, data):
+    def rollback_cb(nmc, result, data):
         try:
-            res = client.checkpoint_rollback_finish(result)
+            res = nmc.checkpoint_rollback_finish(result)
             for path in res:
-                d = client.get_device_by_path(path)
+                d = nmc.get_device_by_path(path)
                 if d is None:
                     iface = path
                 else:
@@ -149,10 +178,10 @@ def do_rollback(client):
             sys.stderr.write("Failed: %s\n" % e.message)
         main_loop.quit()
 
-    client.checkpoint_rollback(path, None, rollback_cb, None)
+    nmc.checkpoint_rollback(path, None, rollback_cb, None)
 
 
-def do_adjust_rollback_timeout(client):
+def do_adjust_rollback_timeout(nmc):
     if len(sys.argv) < 3:
         sys.exit("Missing checkpoint path")
     if len(sys.argv) < 4:
@@ -162,42 +191,42 @@ def do_adjust_rollback_timeout(client):
     except Exception:
         sys.exit("Invalid timeout")
 
-    path = validate_path(sys.argv[2], client)
+    path = validate_path(sys.argv[2], nmc)
 
-    def adjust_rollback_timeout_cb(client, result, data):
+    def adjust_rollback_timeout_cb(nmc, result, data):
         try:
-            client.checkpoint_adjust_rollback_timeout_finish(result)
+            nmc.checkpoint_adjust_rollback_timeout_finish(result)
             print("Success")
         except Exception as e:
             sys.stderr.write("Failed: %s\n" % e.message)
         main_loop.quit()
 
-    client.checkpoint_adjust_rollback_timeout(
+    nmc.checkpoint_adjust_rollback_timeout(
         path, add_timeout, None, adjust_rollback_timeout_cb, None
     )
 
 
-def do_show(client):
+def do_show(nmc):
     ts = NM.utils_get_timestamp_msec()
-    for c in client.get_checkpoints():
+    for c in nmc.get_checkpoints():
         show(c, ts)
 
 
 if __name__ == "__main__":
-    nm_client = NM.Client.new(None)
+    nmc = NM.Client.new(None)
     main_loop = GLib.MainLoop()
 
     if len(sys.argv) < 2 or sys.argv[1] == "show":
-        do_show(nm_client)
+        do_show(nmc)
         sys.exit(0)
     elif sys.argv[1] == "create":
-        do_create(nm_client)
+        do_create(nmc)
     elif sys.argv[1] == "destroy":
-        do_destroy(nm_client)
+        do_destroy(nmc)
     elif sys.argv[1] == "rollback":
-        do_rollback(nm_client)
+        do_rollback(nmc)
     elif sys.argv[1] == "adjust-rollback-timeout":
-        do_adjust_rollback_timeout(nm_client)
+        do_adjust_rollback_timeout(nmc)
     else:
         usage()
 
