@@ -1,11 +1,7 @@
 =============================================
-NetworkManager-1.36-rc2
+NetworkManager-1.36
 Overview of changes since NetworkManager-1.34
 =============================================
-
-This is a release candidate. The API is subject to change
-and not guaranteed to be compatible with the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * The handling of Layer 3 configurations has been substantially reworked.
   While this is mostly internal change, it results in more robust
@@ -44,10 +40,6 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * "configure-and-quit" mode and nm-iface-helper have been removed.
 * A number of bugs that could cause NetworkManager to crash in rare
   conditions have been fixed.
-
-It is likely that some of these changes have been or will be included in
-1.34.x stable releases. This section will be updated to reflect that in
-the 1.36.0 release.
 
 =============================================
 NetworkManager-1.34
