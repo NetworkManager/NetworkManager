@@ -1411,7 +1411,11 @@ _nm_platform_link_get_inet6_addr_gen_mode(const NMPlatformLink *pllink)
 static inline gboolean
 nm_platform_route_type_is_nodev(guint8 type)
 {
-    return NM_IN_SET(type, 6 /* RTN_BLACKHOLE */, 7 /* RTN_UNREACHABLE */, 8 /* RTN_PROHIBIT */);
+    return NM_IN_SET(type,
+                     6 /* RTN_BLACKHOLE */,
+                     7 /* RTN_UNREACHABLE */,
+                     8 /* RTN_PROHIBIT */,
+                     9 /* RTN_THROW */);
 }
 
 /**

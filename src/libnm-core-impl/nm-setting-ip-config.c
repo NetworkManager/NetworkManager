@@ -1390,7 +1390,8 @@ _ip_route_attribute_validate(const char           *name,
                        RTN_LOCAL,
                        RTN_BLACKHOLE,
                        RTN_UNREACHABLE,
-                       RTN_PROHIBIT)) {
+                       RTN_PROHIBIT,
+                       RTN_THROW)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -1494,6 +1495,7 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
     case RTN_BLACKHOLE:
     case RTN_UNREACHABLE:
     case RTN_PROHIBIT:
+    case RTN_THROW:
         if (route->next_hop) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,

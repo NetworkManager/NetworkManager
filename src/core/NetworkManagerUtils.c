@@ -1352,8 +1352,13 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
         int type;
 
         type = nm_net_aux_rtnl_rtntype_a2n(g_variant_get_string(variant, NULL));
-        nm_assert(
-            NM_IN_SET(type, RTN_UNICAST, RTN_LOCAL, RTN_BLACKHOLE, RTN_UNREACHABLE, RTN_PROHIBIT));
+        nm_assert(NM_IN_SET(type,
+                            RTN_UNICAST,
+                            RTN_LOCAL,
+                            RTN_BLACKHOLE,
+                            RTN_UNREACHABLE,
+                            RTN_PROHIBIT,
+                            RTN_THROW));
 
         r->type_coerced = nm_platform_route_type_coerce(type);
     } else

@@ -1899,14 +1899,17 @@ test_blackhole(gconstpointer test_data)
     NMPlatformIPXRoute           rr = {};
     int                          r  = -1;
     int                          i;
+    guint8                       rtn_type;
+
+    rtn_type = nmtst_rand_select(RTN_BLACKHOLE, RTN_UNREACHABLE, RTN_PROHIBIT, RTN_THROW);
 
     if (IS_IPv4) {
         rr.r4 = (const NMPlatformIP4Route){
-            .type_coerced = nmtst_rand_select(RTN_BLACKHOLE, RTN_UNREACHABLE, RTN_PROHIBIT),
+            .type_coerced = nm_platform_route_type_coerce(rtn_type),
         };
     } else {
         rr.r6 = (const NMPlatformIP6Route){
-            .type_coerced = nmtst_rand_select(RTN_BLACKHOLE, RTN_UNREACHABLE, RTN_PROHIBIT),
+            .type_coerced = nm_platform_route_type_coerce(rtn_type),
             .metric       = 1000,
         };
     }
