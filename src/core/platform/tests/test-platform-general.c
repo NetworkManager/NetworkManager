@@ -762,6 +762,7 @@ test_route_type_is_nodev(void)
         case RTN_BLACKHOLE:
         case RTN_UNREACHABLE:
         case RTN_PROHIBIT:
+        case RTN_THROW:
             is_nodev = TRUE;
             break;
         default:

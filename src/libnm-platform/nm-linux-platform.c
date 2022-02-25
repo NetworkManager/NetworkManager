@@ -3455,7 +3455,8 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter *parse
                    RTN_LOCAL,
                    RTN_BLACKHOLE,
                    RTN_UNREACHABLE,
-                   RTN_PROHIBIT))
+                   RTN_PROHIBIT,
+                   RTN_THROW))
         return NULL;
 
     if (nlmsg_parse_arr(nlh, sizeof(struct rtmsg), tb, policy) < 0)
