@@ -1090,11 +1090,13 @@ _connection_changed_update(NMSettings                      *self,
 
     is_new = c_list_is_empty(&sett_conn->_connections_lst);
 
-    _LOGT("update[%s]: %s connection \"%s\" (" NM_SETTINGS_STORAGE_PRINT_FMT ")",
+    _LOGT("update[%s]: %s connection \"%s\" (" NM_SETTINGS_STORAGE_PRINT_FMT "), "
+          "new version-id %" G_GUINT64_FORMAT,
           nm_settings_storage_get_uuid(storage),
           is_new ? "adding" : "updating",
           nm_connection_get_id(connection),
-          NM_SETTINGS_STORAGE_PRINT_ARG(storage));
+          NM_SETTINGS_STORAGE_PRINT_ARG(storage),
+          (nm_settings_connection_get_version_id(sett_conn) + 1u));
 
     _nm_settings_connection_set_storage(sett_conn, storage);
 
@@ -1165,6 +1167,8 @@ _connection_changed_update(NMSettings                      *self,
                                      "++ ",
                                      path);
     }
+
+    nm_settings_connection_bump_version_id(sett_conn);
 
     if (is_new) {
         nm_dbus_object_emit_signal(NM_DBUS_OBJECT(self),

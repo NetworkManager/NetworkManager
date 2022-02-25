@@ -1932,6 +1932,7 @@ global:
 
 libnm_1_44_0 {
 global:
+	nm_remote_connection_get_version_id;
 	nm_setting_gsm_get_initial_eps_apn;
 	nm_setting_gsm_get_initial_eps_config;
 	nm_setting_ip6_config_get_dhcp_pd_hint;

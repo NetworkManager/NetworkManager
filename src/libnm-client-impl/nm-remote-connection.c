@@ -31,12 +31,14 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMRemoteConnection,
                              PROP_UNSAVED,
                              PROP_FLAGS,
                              PROP_FILENAME,
+                             PROP_VERSION_ID,
                              PROP_VISIBLE, );
 
 typedef struct {
     GCancellable *get_settings_cancellable;
 
     char   *filename;
+    guint64 version_id;
     guint32 flags;
     bool    unsaved;
 
@@ -602,6 +604,23 @@ nm_remote_connection_get_filename(NMRemoteConnection *connection)
 }
 
 /**
+ * nm_remote_connection_get_version_id:
+ * @connection: the #NMRemoteConnection
+ *
+ * Returns: the version-id of the profile. This ID is incremented
+ *   whenever the profile is modified.
+ *
+ * Since: 1.44
+ */
+guint64
+nm_remote_connection_get_version_id(NMRemoteConnection *connection)
+{
+    g_return_val_if_fail(NM_IS_REMOTE_CONNECTION(connection), 0);
+
+    return NM_REMOTE_CONNECTION_GET_PRIVATE(connection)->version_id;
+}
+
+/**
  * nm_remote_connection_get_visible:
  * @connection: the #NMRemoteConnection
  *
@@ -724,6 +743,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_FILENAME:
         g_value_set_string(value, NM_REMOTE_CONNECTION_GET_PRIVATE(object)->filename);
         break;
+    case PROP_VERSION_ID:
+        g_value_set_uint64(value, NM_REMOTE_CONNECTION_GET_PRIVATE(object)->version_id);
+        break;
     case PROP_VISIBLE:
         g_value_set_boolean(value, NM_REMOTE_CONNECTION_GET_PRIVATE(object)->visible);
         break;
@@ -759,10 +781,11 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_settings_connection = NML_DBUS_ME
                                       NMRemoteConnection,
                                       _priv.filename),
         NML_DBUS_META_PROPERTY_INIT_U("Flags", PROP_FLAGS, NMRemoteConnection, _priv.flags),
-        NML_DBUS_META_PROPERTY_INIT_B("Unsaved",
-                                      PROP_UNSAVED,
+        NML_DBUS_META_PROPERTY_INIT_B("Unsaved", PROP_UNSAVED, NMRemoteConnection, _priv.unsaved),
+        NML_DBUS_META_PROPERTY_INIT_T("VersionId",
+                                      PROP_VERSION_ID,
                                       NMRemoteConnection,
-                                      _priv.unsaved), ), );
+                                      _priv.version_id), ), );
 
 static void
 nm_remote_connection_class_init(NMRemoteConnectionClass *klass)
@@ -818,6 +841,23 @@ nm_remote_connection_class_init(NMRemoteConnectionClass *klass)
                                                         "",
                                                         NULL,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMRemoteConnection:version-id:
+     *
+     * The version ID of the profile that is incremented when the profile gets modified.
+     * This can be used to track concurrent modifications of the profile.
+     *
+     * Since: 1.44
+     **/
+    obj_properties[PROP_VERSION_ID] =
+        g_param_spec_uint64(NM_REMOTE_CONNECTION_VERSION_ID,
+                            "",
+                            "",
+                            0,
+                            G_MAXUINT64,
+                            0,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMRemoteConnection:visible:

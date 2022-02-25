@@ -141,9 +141,10 @@ typedef enum {
 #define NM_SETTINGS_CONNECTION_FLAGS_CHANGED    "flags-changed"
 
 /* Properties */
-#define NM_SETTINGS_CONNECTION_UNSAVED  "unsaved"
-#define NM_SETTINGS_CONNECTION_FLAGS    "flags"
-#define NM_SETTINGS_CONNECTION_FILENAME "filename"
+#define NM_SETTINGS_CONNECTION_UNSAVED    "unsaved"
+#define NM_SETTINGS_CONNECTION_VERSION_ID "version-id"
+#define NM_SETTINGS_CONNECTION_FLAGS      "flags"
+#define NM_SETTINGS_CONNECTION_FILENAME   "filename"
 
 /**
  * NMSettingsConnectionIntFlags:
@@ -230,6 +231,9 @@ gboolean nm_settings_connection_still_valid(NMSettingsConnection *self);
 const char *nm_settings_connection_get_filename(NMSettingsConnection *self);
 
 guint64 nm_settings_connection_get_last_secret_agent_version_id(NMSettingsConnection *self);
+
+guint64 nm_settings_connection_get_version_id(NMSettingsConnection *self);
+void    nm_settings_connection_bump_version_id(NMSettingsConnection *self);
 
 gboolean
 nm_settings_connection_has_unmodified_applied_connection(NMSettingsConnection *self,
