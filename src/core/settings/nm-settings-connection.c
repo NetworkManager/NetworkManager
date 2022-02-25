@@ -109,7 +109,11 @@ _seen_bssids_hash_new(void)
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMSettingsConnection, PROP_UNSAVED, PROP_FLAGS, PROP_FILENAME, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMSettingsConnection,
+                             PROP_VERSION_ID,
+                             PROP_UNSAVED,
+                             PROP_FLAGS,
+                             PROP_FILENAME, );
 
 enum { UPDATED_INTERNAL, FLAGS_CHANGED, LAST_SIGNAL };
 
@@ -155,6 +159,8 @@ typedef struct _NMSettingsConnectionPrivate {
     guint64 timestamp; /* Up-to-date timestamp of connection use */
 
     guint64 last_secret_agent_version_id;
+
+    guint64 version_id;
 
     bool timestamp_set : 1;
 
@@ -2642,6 +2648,23 @@ nm_settings_connection_get_uuid(NMSettingsConnection *self)
     return uuid;
 }
 
+guint64
+nm_settings_connection_get_version_id(NMSettingsConnection *self)
+{
+    g_return_val_if_fail(NM_IS_SETTINGS_CONNECTION(self), 0);
+
+    return NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->version_id;
+}
+
+void
+nm_settings_connection_bump_version_id(NMSettingsConnection *self)
+{
+    g_return_if_fail(NM_IS_SETTINGS_CONNECTION(self));
+
+    NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->version_id++;
+    _notify(self, PROP_VERSION_ID);
+}
+
 const char *
 nm_settings_connection_get_connection_type(NMSettingsConnection *self)
 {
@@ -2665,9 +2688,13 @@ _nm_settings_connection_cleanup_after_remove(NMSettingsConnection *self)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingsConnection *self = NM_SETTINGS_CONNECTION(object);
+    NMSettingsConnection        *self = NM_SETTINGS_CONNECTION(object);
+    NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
 
     switch (prop_id) {
+    case PROP_VERSION_ID:
+        g_value_set_uint64(value, priv->version_id);
+        break;
     case PROP_UNSAVED:
         g_value_set_boolean(value, nm_settings_connection_get_unsaved(self));
         break;
@@ -2704,6 +2731,8 @@ nm_settings_connection_init(NMSettingsConnection *self)
 
     priv->agent_mgr = g_object_ref(nm_agent_manager_get());
     priv->settings  = g_object_ref(nm_settings_get());
+
+    priv->version_id = 1;
 }
 
 NMSettingsConnection *
@@ -2817,7 +2846,10 @@ static const NMDBusInterfaceInfoExtended interface_info_settings_connection = {
                                                            NM_SETTINGS_CONNECTION_FLAGS),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Filename",
                                                            "s",
-                                                           NM_SETTINGS_CONNECTION_FILENAME), ), ),
+                                                           NM_SETTINGS_CONNECTION_FILENAME),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("VersionId",
+                                                           "t",
+                                                           NM_SETTINGS_CONNECTION_VERSION_ID), ), ),
 };
 
 static void
@@ -2834,6 +2866,15 @@ nm_settings_connection_class_init(NMSettingsConnectionClass *klass)
 
     object_class->dispose      = dispose;
     object_class->get_property = get_property;
+
+    obj_properties[PROP_VERSION_ID] =
+        g_param_spec_uint64(NM_SETTINGS_CONNECTION_VERSION_ID,
+                            "",
+                            "",
+                            0,
+                            G_MAXUINT64,
+                            0,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_UNSAVED] = g_param_spec_boolean(NM_SETTINGS_CONNECTION_UNSAVED,
                                                         "",
