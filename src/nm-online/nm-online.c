@@ -246,7 +246,8 @@ main(int argc, char *argv[])
          0,
          G_OPTION_ARG_INT,
          &t_secs,
-         N_("Time to wait for a connection, in seconds (without the option, default value is 30)"),
+         N_("Time to wait for a connection, in seconds (without the option, default value is 30). "
+               "Maximum value is 2073600 seconds."),
          "<timeout>"},
         {"exit",
          'x',
@@ -289,7 +290,7 @@ main(int argc, char *argv[])
         return EXIT_FAILURE_ERROR;
     }
 
-    if (t_secs < 0 || t_secs > 3600) {
+    if (t_secs < 0 || t_secs > 2073600) {
         g_printerr("%s: %s\n",
                    argv[0],
                    _("Invalid option.  Please use --help to see a list of valid options."));
