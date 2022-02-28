@@ -903,6 +903,27 @@ nla_put_failure:
     g_return_val_if_reached(FALSE);
 }
 
+static gboolean
+wifi_nl80211_intel_vnd_get_device_from_csme(NMWifiUtils *data)
+{
+    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
+    nm_auto_nlmsg struct nl_msg *msg  = NULL;
+    int                          err;
+
+    msg = nl80211_alloc_msg(self, NL80211_CMD_VENDOR, 0);
+    NLA_PUT_U32(msg, NL80211_ATTR_VENDOR_ID, INTEL_OUI);
+    NLA_PUT_U32(msg, NL80211_ATTR_VENDOR_SUBCMD, IWL_MVM_VENDOR_CMD_HOST_GET_OWNERSHIP);
+
+    err = nl80211_send_and_recv(self, msg, NULL, NULL);
+    if (err < 0)
+        _LOGD("IWL_MVM_VENDOR_CMD_HOST_GET_OWNERSHIP request failed: %s", nm_strerror(err));
+
+    return err >= 0;
+
+nla_put_failure:
+    g_return_val_if_reached(FALSE);
+}
+
 static void
 nm_wifi_utils_nl80211_init(NMWifiUtilsNl80211 *self)
 {}
@@ -928,6 +949,7 @@ nm_wifi_utils_nl80211_class_init(NMWifiUtilsNl80211Class *klass)
     wifi_utils_class->set_mesh_channel            = wifi_nl80211_set_mesh_channel;
     wifi_utils_class->set_mesh_ssid               = wifi_nl80211_set_mesh_ssid;
     wifi_utils_class->get_csme_conn_info          = wifi_nl80211_intel_vnd_get_csme_conn_info;
+    wifi_utils_class->get_device_from_csme        = wifi_nl80211_intel_vnd_get_device_from_csme;
 }
 
 NMWifiUtils *

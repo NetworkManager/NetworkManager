@@ -3073,6 +3073,16 @@ nm_platform_wifi_get_csme_conn_info(NMPlatform             *self,
     return klass->wifi_get_csme_conn_info(self, ifindex, out_conn_info);
 }
 
+gboolean
+nm_platform_wifi_get_device_from_csme(NMPlatform *self, int ifindex)
+{
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    return klass->wifi_get_device_from_csme(self, ifindex);
+}
+
 guint32
 nm_platform_mesh_get_channel(NMPlatform *self, int ifindex)
 {

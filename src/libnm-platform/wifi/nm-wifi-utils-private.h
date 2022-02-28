@@ -56,6 +56,8 @@ typedef struct {
     gboolean (*indicate_addressing_running)(NMWifiUtils *data, gboolean running);
 
     gboolean (*get_csme_conn_info)(NMWifiUtils *data, NMPlatformCsmeConnInfo *out_conn_info);
+
+    gboolean (*get_device_from_csme)(NMWifiUtils *data);
 } NMWifiUtilsClass;
 
 struct NMWifiUtils {

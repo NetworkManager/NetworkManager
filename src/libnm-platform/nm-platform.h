@@ -1215,6 +1215,7 @@ typedef struct {
     gboolean (*wifi_get_csme_conn_info)(NMPlatform             *self,
                                         int                     ifindex,
                                         NMPlatformCsmeConnInfo *out_conn_info);
+    gboolean (*wifi_get_device_from_csme)(NMPlatform *self, int ifindex);
 
     guint32 (*mesh_get_channel)(NMPlatform *self, int ifindex);
     gboolean (*mesh_set_channel)(NMPlatform *self, int ifindex, guint32 channel);
@@ -2042,6 +2043,7 @@ nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, _NMSettingWirel
 gboolean nm_platform_wifi_get_csme_conn_info(NMPlatform             *self,
                                              int                     ifindex,
                                              NMPlatformCsmeConnInfo *out_conn_info);
+gboolean nm_platform_wifi_get_device_from_csme(NMPlatform *self, int ifindex);
 
 guint32  nm_platform_mesh_get_channel(NMPlatform *self, int ifindex);
 gboolean nm_platform_mesh_set_channel(NMPlatform *self, int ifindex, guint32 channel);

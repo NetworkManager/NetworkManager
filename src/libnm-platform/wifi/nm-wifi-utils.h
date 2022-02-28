@@ -67,6 +67,8 @@ struct _NMPlatformCsmeConnInfo;
 gboolean nm_wifi_utils_get_csme_conn_info(NMWifiUtils                    *data,
                                           struct _NMPlatformCsmeConnInfo *out_conn_info);
 
+gboolean nm_wifi_utils_get_device_from_csme(NMWifiUtils *data);
+
 /* OLPC Mesh-only functions */
 guint32 nm_wifi_utils_get_mesh_channel(NMWifiUtils *data);
 

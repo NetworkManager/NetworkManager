@@ -8544,6 +8544,14 @@ wifi_get_csme_conn_info(NMPlatform *platform, int ifindex, NMPlatformCsmeConnInf
     return nm_wifi_utils_get_csme_conn_info(wifi_data, out_conn_info);
 }
 
+static gboolean
+wifi_get_device_from_csme(NMPlatform *platform, int ifindex)
+{
+    WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, FALSE);
+
+    return nm_wifi_utils_get_device_from_csme(wifi_data);
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -9963,6 +9971,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->wifi_get_wake_on_wlan            = wifi_get_wake_on_wlan;
     platform_class->wifi_set_wake_on_wlan            = wifi_set_wake_on_wlan;
     platform_class->wifi_get_csme_conn_info          = wifi_get_csme_conn_info;
+    platform_class->wifi_get_device_from_csme        = wifi_get_device_from_csme;
 
     platform_class->mesh_get_channel = mesh_get_channel;
     platform_class->mesh_set_channel = mesh_set_channel;
