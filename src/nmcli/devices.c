@@ -1249,12 +1249,12 @@ sort_access_points(const GPtrArray *aps)
 }
 
 typedef struct {
-    NmCli      *nmc;
-    int         index;
-    guint32     output_flags;
-    const char *active_bssid;
-    const char *device;
-    GPtrArray  *output_data;
+    NmCli         *nmc;
+    int            index;
+    guint32        output_flags;
+    NMAccessPoint *active_ap;
+    const char    *device;
+    GPtrArray     *output_data;
 } APInfo;
 
 static void
@@ -1263,7 +1263,7 @@ fill_output_access_point(gpointer data, gpointer user_data)
     NMAccessPoint         *ap   = NM_ACCESS_POINT(data);
     APInfo                *info = user_data;
     NmcOutputField        *arr;
-    gboolean               active = FALSE;
+    gboolean               active;
     NM80211ApFlags         flags;
     NM80211ApSecurityFlags wpa_flags, rsn_flags;
     guint32                freq, bitrate;
@@ -1284,11 +1284,7 @@ fill_output_access_point(gpointer data, gpointer user_data)
     const char            *sig_bars;
     NMMetaColor            color;
 
-    if (info->active_bssid) {
-        const char *current_bssid = nm_access_point_get_bssid(ap);
-        if (current_bssid && !strcmp(current_bssid, info->active_bssid))
-            active = TRUE;
-    }
+    active = (info->active_ap == ap);
 
     /* Get AP properties */
     flags     = nm_access_point_get_flags(ap);
@@ -1679,18 +1675,14 @@ show_device_info(NMDevice *device, NmCli *nmc)
 
         /* Wireless specific information */
         if ((NM_IS_DEVICE_WIFI(device))) {
-            NMAccessPoint *active_ap    = NULL;
-            const char    *active_bssid = NULL;
-
             /* section AP */
             if (!g_ascii_strcasecmp(nmc_fields_dev_show_sections[section_idx]->name,
                                     nmc_fields_dev_show_sections[4]->name)) {
+                NMAccessPoint *active_ap = NULL;
                 NMC_OUTPUT_DATA_DEFINE_SCOPED(out);
 
-                if (state == NM_DEVICE_STATE_ACTIVATED) {
-                    active_ap    = nm_device_wifi_get_active_access_point(NM_DEVICE_WIFI(device));
-                    active_bssid = active_ap ? nm_access_point_get_bssid(active_ap) : NULL;
-                }
+                if (state == NM_DEVICE_STATE_ACTIVATED)
+                    active_ap = nm_device_wifi_get_active_access_point(NM_DEVICE_WIFI(device));
 
                 tmpl = (const NMMetaAbstractInfo *const *) nmc_fields_dev_wifi_list;
                 out_indices =
@@ -1708,7 +1700,7 @@ show_device_info(NMDevice *device, NmCli *nmc)
                                               .nmc          = nmc,
                                               .index        = 1,
                                               .output_flags = NMC_OF_FLAG_SECTION_PREFIX,
-                                              .active_bssid = active_bssid,
+                                              .active_ap    = active_ap,
                                               .device       = nm_device_get_iface(device),
                                               .output_data  = out.output_data,
                     };
@@ -2991,14 +2983,11 @@ find_ap_on_device(NMDevice *device, const char *bssid, const char *ssid, gboolea
 static void
 show_access_point_info(NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
 {
-    NMAccessPoint  *active_ap    = NULL;
-    const char     *active_bssid = NULL;
+    NMAccessPoint  *active_ap = NULL;
     NmcOutputField *arr;
 
-    if (nm_device_get_state(NM_DEVICE(wifi)) == NM_DEVICE_STATE_ACTIVATED) {
-        active_ap    = nm_device_wifi_get_active_access_point(wifi);
-        active_bssid = active_ap ? nm_access_point_get_bssid(active_ap) : NULL;
-    }
+    if (nm_device_get_state(NM_DEVICE(wifi)) == NM_DEVICE_STATE_ACTIVATED)
+        active_ap = nm_device_wifi_get_active_access_point(wifi);
 
     arr = nmc_dup_fields_array((const NMMetaAbstractInfo *const *) nmc_fields_dev_wifi_list,
                                NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
@@ -3010,7 +2999,7 @@ show_access_point_info(NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
                                   .nmc          = nmc,
                                   .index        = 1,
                                   .output_flags = 0,
-                                  .active_bssid = active_bssid,
+                                  .active_ap    = active_ap,
                                   .device       = nm_device_get_iface(NM_DEVICE(wifi)),
                                   .output_data  = out->output_data,
         };
@@ -3064,7 +3053,6 @@ wifi_print_aps(NMDeviceWifi                    *wifi,
                 .nmc          = nmc,
                 .index        = 1,
                 .output_flags = 0,
-                .active_bssid = NULL,
                 .device       = nm_device_get_iface(NM_DEVICE(wifi)),
                 .output_data  = out.output_data,
             };
