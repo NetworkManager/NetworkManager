@@ -717,4 +717,14 @@ _nm_deprecated("Don't use this API") void _nm_forbidden_glib_api_n(gconstpointer
 
 /*****************************************************************************/
 
+/* g_alloca0() evaluates the "size" argument multiple times. That seems an error
+ * prone API (as it's not function-like).
+ *
+ * We could fix it by using an expression statement. But it doesn't seem
+ * worth it, so hide it to prevent its use. */
+#undef g_alloca0
+#undef g_newa0
+
+/*****************************************************************************/
+
 #endif /* __NM_GLIB_H__ */
