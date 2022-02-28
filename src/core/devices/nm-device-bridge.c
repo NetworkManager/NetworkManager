@@ -791,6 +791,44 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
     return TRUE;
 }
 
+static void
+_platform_lnk_bridge_init_from_setting(NMSettingBridge *s_bridge, NMPlatformLnkBridge *props)
+{
+    *props = (NMPlatformLnkBridge){
+        .forward_delay = _DEFAULT_IF_ZERO(nm_setting_bridge_get_forward_delay(s_bridge) * 100u,
+                                          NM_BRIDGE_FORWARD_DELAY_DEF_SYS),
+        .hello_time    = _DEFAULT_IF_ZERO(nm_setting_bridge_get_hello_time(s_bridge) * 100u,
+                                       NM_BRIDGE_HELLO_TIME_DEF_SYS),
+        .max_age       = _DEFAULT_IF_ZERO(nm_setting_bridge_get_max_age(s_bridge) * 100u,
+                                    NM_BRIDGE_MAX_AGE_DEF_SYS),
+        .ageing_time   = nm_setting_bridge_get_ageing_time(s_bridge) * 100u,
+        .stp_state     = nm_setting_bridge_get_stp(s_bridge),
+        .priority      = nm_setting_bridge_get_priority(s_bridge),
+        .vlan_protocol = to_sysfs_vlan_protocol_sys(nm_setting_bridge_get_vlan_protocol(s_bridge)),
+        .vlan_stats_enabled = nm_setting_bridge_get_vlan_stats_enabled(s_bridge),
+        .group_fwd_mask     = nm_setting_bridge_get_group_forward_mask(s_bridge),
+        .mcast_snooping     = nm_setting_bridge_get_multicast_snooping(s_bridge),
+        .mcast_router =
+            to_sysfs_multicast_router_sys(nm_setting_bridge_get_multicast_router(s_bridge)),
+        .mcast_query_use_ifaddr    = nm_setting_bridge_get_multicast_query_use_ifaddr(s_bridge),
+        .mcast_querier             = nm_setting_bridge_get_multicast_querier(s_bridge),
+        .mcast_hash_max            = nm_setting_bridge_get_multicast_hash_max(s_bridge),
+        .mcast_last_member_count   = nm_setting_bridge_get_multicast_last_member_count(s_bridge),
+        .mcast_startup_query_count = nm_setting_bridge_get_multicast_startup_query_count(s_bridge),
+        .mcast_last_member_interval =
+            nm_setting_bridge_get_multicast_last_member_interval(s_bridge),
+        .mcast_membership_interval = nm_setting_bridge_get_multicast_membership_interval(s_bridge),
+        .mcast_querier_interval    = nm_setting_bridge_get_multicast_querier_interval(s_bridge),
+        .mcast_query_interval      = nm_setting_bridge_get_multicast_query_interval(s_bridge),
+        .mcast_query_response_interval =
+            nm_setting_bridge_get_multicast_query_response_interval(s_bridge),
+        .mcast_startup_query_interval =
+            nm_setting_bridge_get_multicast_startup_query_interval(s_bridge),
+    };
+
+    to_sysfs_group_address_sys(nm_setting_bridge_get_group_address(s_bridge), &props->group_addr);
+}
+
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
@@ -1054,39 +1092,7 @@ create_and_realize(NMDevice              *device,
         }
     }
 
-    props = (NMPlatformLnkBridge){
-        .forward_delay = _DEFAULT_IF_ZERO(nm_setting_bridge_get_forward_delay(s_bridge) * 100u,
-                                          NM_BRIDGE_FORWARD_DELAY_DEF_SYS),
-        .hello_time    = _DEFAULT_IF_ZERO(nm_setting_bridge_get_hello_time(s_bridge) * 100u,
-                                       NM_BRIDGE_HELLO_TIME_DEF_SYS),
-        .max_age       = _DEFAULT_IF_ZERO(nm_setting_bridge_get_max_age(s_bridge) * 100u,
-                                    NM_BRIDGE_MAX_AGE_DEF_SYS),
-        .ageing_time   = nm_setting_bridge_get_ageing_time(s_bridge) * 100u,
-        .stp_state     = nm_setting_bridge_get_stp(s_bridge),
-        .priority      = nm_setting_bridge_get_priority(s_bridge),
-        .vlan_protocol = to_sysfs_vlan_protocol_sys(nm_setting_bridge_get_vlan_protocol(s_bridge)),
-        .vlan_stats_enabled = nm_setting_bridge_get_vlan_stats_enabled(s_bridge),
-        .group_fwd_mask     = nm_setting_bridge_get_group_forward_mask(s_bridge),
-        .mcast_snooping     = nm_setting_bridge_get_multicast_snooping(s_bridge),
-        .mcast_router =
-            to_sysfs_multicast_router_sys(nm_setting_bridge_get_multicast_router(s_bridge)),
-        .mcast_query_use_ifaddr    = nm_setting_bridge_get_multicast_query_use_ifaddr(s_bridge),
-        .mcast_querier             = nm_setting_bridge_get_multicast_querier(s_bridge),
-        .mcast_hash_max            = nm_setting_bridge_get_multicast_hash_max(s_bridge),
-        .mcast_last_member_count   = nm_setting_bridge_get_multicast_last_member_count(s_bridge),
-        .mcast_startup_query_count = nm_setting_bridge_get_multicast_startup_query_count(s_bridge),
-        .mcast_last_member_interval =
-            nm_setting_bridge_get_multicast_last_member_interval(s_bridge),
-        .mcast_membership_interval = nm_setting_bridge_get_multicast_membership_interval(s_bridge),
-        .mcast_querier_interval    = nm_setting_bridge_get_multicast_querier_interval(s_bridge),
-        .mcast_query_interval      = nm_setting_bridge_get_multicast_query_interval(s_bridge),
-        .mcast_query_response_interval =
-            nm_setting_bridge_get_multicast_query_response_interval(s_bridge),
-        .mcast_startup_query_interval =
-            nm_setting_bridge_get_multicast_startup_query_interval(s_bridge),
-    };
-
-    to_sysfs_group_address_sys(nm_setting_bridge_get_group_address(s_bridge), &props.group_addr);
+    _platform_lnk_bridge_init_from_setting(s_bridge, &props);
 
     /* If mtu != 0, we set the MTU of the new bridge at creation time. However, kernel will still
      * automatically adjust the MTU of the bridge based on the minimum of the slave's MTU.
