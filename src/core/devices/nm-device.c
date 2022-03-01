@@ -4459,9 +4459,9 @@ _parent_set_ifindex(NMDevice *self, int parent_ifindex, gboolean force_check)
             _LOGD(LOGD_DEVICE, "parent: ifindex %d, no device", priv->parent_ifindex);
         else {
             _LOGD(LOGD_DEVICE,
-                  "parent: ifindex %d, device %p, %s",
+                  "parent: ifindex %d, device " NM_HASH_OBFUSCATE_PTR_FMT ", %s",
                   priv->parent_ifindex,
-                  priv->parent_device.obj,
+                  NM_HASH_OBFUSCATE_PTR(priv->parent_device.obj),
                   nm_device_get_iface(priv->parent_device.obj));
         }
 
@@ -5988,8 +5988,8 @@ nm_device_master_release_slave(NMDevice           *self,
     info = find_slave_info(self, slave);
 
     _LOGT(LOGD_CORE,
-          "master: release one slave %p/%s %s%s",
-          slave,
+          "master: release one slave " NM_HASH_OBFUSCATE_PTR_FMT "/%s %s%s",
+          NM_HASH_OBFUSCATE_PTR(slave),
           nm_device_get_iface(slave),
           !info ? "(not registered)" : (info->slave_is_enslaved ? "(enslaved)" : "(not enslaved)"),
           release_type == RELEASE_SLAVE_TYPE_CONFIG_FORCE
@@ -7582,8 +7582,8 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
     info = find_slave_info(self, slave);
 
     _LOGT(LOGD_CORE,
-          "master: add one slave %p/%s%s",
-          slave,
+          "master: add one slave " NM_HASH_OBFUSCATE_PTR_FMT "/%s%s",
+          NM_HASH_OBFUSCATE_PTR(slave),
           nm_device_get_iface(slave),
           info ? " (already registered)" : "");
 
