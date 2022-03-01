@@ -316,8 +316,20 @@ nm_uuid_generate_from_string(NMUuid       *uuid,
                              NMUuidType    uuid_type,
                              const NMUuid *type_args)
 {
-    g_return_val_if_fail(uuid, FALSE);
-    g_return_val_if_fail(slen == 0 || s, FALSE);
+    nm_auto_free_checksum GChecksum *sum = NULL;
+    union {
+        guint8 sha1[NM_UTILS_CHECKSUM_LENGTH_SHA1];
+        guint8 md5[NM_UTILS_CHECKSUM_LENGTH_MD5];
+        NMUuid uuid;
+    } digest;
+    gsize         digest_len;
+    GChecksumType checksum_type;
+
+    G_STATIC_ASSERT_EXPR(sizeof(digest.md5) >= sizeof(digest.uuid));
+    G_STATIC_ASSERT_EXPR(sizeof(digest.sha1) >= sizeof(digest.uuid));
+
+    g_return_val_if_fail(uuid, NULL);
+    g_return_val_if_fail(slen <= 0 || s, NULL);
 
     if (slen < 0)
         slen = s ? strlen(s) : 0;
@@ -325,43 +337,41 @@ nm_uuid_generate_from_string(NMUuid       *uuid,
     switch (uuid_type) {
     case NM_UUID_TYPE_LEGACY:
         nm_assert(!type_args);
-        nm_crypto_md5_hash(NULL, 0, (guint8 *) s, slen, (guint8 *) uuid, sizeof(*uuid));
+        type_args     = NULL;
+        checksum_type = G_CHECKSUM_MD5;
         break;
     case NM_UUID_TYPE_VERSION3:
-    case NM_UUID_TYPE_VERSION5:
-    {
         if (!type_args)
             type_args = &nm_uuid_ns_zero;
-
-        if (uuid_type == NM_UUID_TYPE_VERSION3) {
-            nm_crypto_md5_hash((guint8 *) s,
-                               slen,
-                               (guint8 *) type_args,
-                               sizeof(*type_args),
-                               (guint8 *) uuid,
-                               sizeof(*uuid));
-        } else {
-            nm_auto_free_checksum GChecksum *sum = NULL;
-            union {
-                guint8 sha1[NM_UTILS_CHECKSUM_LENGTH_SHA1];
-                NMUuid uuid;
-            } digest;
-
-            sum = g_checksum_new(G_CHECKSUM_SHA1);
-            g_checksum_update(sum, (guchar *) type_args, sizeof(*type_args));
-            g_checksum_update(sum, (guchar *) s, slen);
-            nm_utils_checksum_get_digest(sum, digest.sha1);
-
-            G_STATIC_ASSERT_EXPR(sizeof(digest.sha1) > sizeof(digest.uuid));
-            *uuid = digest.uuid;
-        }
-
-        uuid->uuid[6] = (uuid->uuid[6] & 0x0F) | (uuid_type << 4);
-        uuid->uuid[8] = (uuid->uuid[8] & 0x3F) | 0x80;
+        checksum_type = G_CHECKSUM_MD5;
         break;
-    }
+    case NM_UUID_TYPE_VERSION5:
+        if (!type_args)
+            type_args = &nm_uuid_ns_zero;
+        checksum_type = G_CHECKSUM_SHA1;
+        break;
     default:
         g_return_val_if_reached(NULL);
+    }
+
+    sum = g_checksum_new(checksum_type);
+    if (type_args)
+        g_checksum_update(sum, (guchar *) type_args, sizeof(*type_args));
+    g_checksum_update(sum, (guchar *) s, slen);
+
+    digest_len = sizeof(digest);
+    g_checksum_get_digest(sum, (guint8 *) &digest, &digest_len);
+
+    nm_assert(digest_len >= sizeof(digest.uuid));
+    nm_assert(digest_len
+              == ((checksum_type == G_CHECKSUM_MD5 ? NM_UTILS_CHECKSUM_LENGTH_MD5
+                                                   : NM_UTILS_CHECKSUM_LENGTH_SHA1)));
+
+    *uuid = digest.uuid;
+
+    if (uuid_type != NM_UUID_TYPE_LEGACY) {
+        uuid->uuid[6] = (uuid->uuid[6] & 0x0F) | (uuid_type << 4);
+        uuid->uuid[8] = (uuid->uuid[8] & 0x3F) | 0x80;
     }
 
     return uuid;
