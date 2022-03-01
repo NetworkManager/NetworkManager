@@ -6641,7 +6641,7 @@ static void
 link_changed_cb(NMPlatform     *platform,
                 int             obj_type_i,
                 int             ifindex,
-                NMPlatformLink *info,
+                NMPlatformLink *pllink,
                 int             change_type_i,
                 NMDevice       *self)
 {
@@ -6654,7 +6654,7 @@ link_changed_cb(NMPlatform     *platform,
     priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (ifindex == nm_device_get_ifindex(self)) {
-        if (!(info->n_ifi_flags & IFF_UP))
+        if (!(pllink->n_ifi_flags & IFF_UP))
             priv->device_link_changed_down = TRUE;
         if (!priv->device_link_changed_id) {
             priv->device_link_changed_id = g_idle_add(device_link_changed, self);
