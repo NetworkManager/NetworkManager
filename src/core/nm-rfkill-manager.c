@@ -211,9 +211,10 @@ recheck_killswitches(NMRfkillManager *self)
                                          G_MININT,
                                          G_MAXINT,
                                          -1);
+
         sysfs_reason = _nm_utils_ascii_str_to_int64(
-            udev_device_get_property_value(device, "RFKILL_STATE_REASON"),
-            10,
+            udev_device_get_property_value(device, "RFKILL_HW_BLOCK_REASON"),
+            16,
             G_MININT,
             G_MAXINT,
             1); /* defaults to SIGNAL in case the kernel does not support this */
