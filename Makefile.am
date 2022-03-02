@@ -5434,11 +5434,12 @@ CLEANFILES += $(man_nm_settings_xml)
 endif
 
 man_pages += \
-	man/NetworkManager.8 \
 	man/NetworkManager-dispatcher.8 \
+	man/NetworkManager-wait-online.service.8 \
+	man/NetworkManager.8 \
 	man/NetworkManager.conf.5 \
-	man/nm-online.1 \
 	man/nm-initrd-generator.8 \
+	man/nm-online.1 \
 	man/nmcli-examples.7 \
 	man/nmcli.1 \
 	man/nmtui.1 \

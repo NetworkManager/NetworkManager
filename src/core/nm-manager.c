@@ -1640,6 +1640,9 @@ check_if_startup_complete(NMManager *self)
         return;
     }
 
+    /* Most of our logging is not API/stable, but this line is kinda important and
+     * what people will look for when debugging NetworkManager-wait-online.service.
+     * Take care before rewording this message. */
     _LOGI(LOGD_CORE, "startup complete");
 
     priv->startup = FALSE;
