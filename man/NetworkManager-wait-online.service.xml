@@ -1,0 +1,169 @@
+<?xml version='1.0'?>
+<?xml-stylesheet type="text/xsl" href="http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+"http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd" [
+<!ENTITY % entities SYSTEM "common.ent" >
+%entities;
+]>
+
+<!--
+  NetworkManager-wait-online.service(8) manual page
+
+  Permission is granted to copy, distribute and/or modify this document
+  under the terms of the GNU Free Documentation License, Version 1.1
+  or any later version published by the Free Software Foundation;
+  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
+  Texts. You may obtain a copy of the GNU Free Documentation License
+  from the Free Software Foundation by visiting their Web site or by
+  writing to:
+
+  Free Software Foundation, Inc.,
+  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+-->
+
+<refentry id="NetworkManager-wait-online.service">
+  <refentryinfo>
+    <title>NetworkManager-wait-online.service</title>
+    <author>NetworkManager developers</author>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>NetworkManager-wait-online.service</refentrytitle>
+    <manvolnum>8</manvolnum>
+    <refmiscinfo class="source">NetworkManager-wait-online.service</refmiscinfo>
+    <refmiscinfo class="manual">Network management daemons</refmiscinfo>
+    <refmiscinfo class="version">&NM_VERSION;</refmiscinfo>
+  </refmeta>
+
+  <refnamediv>
+    <refname>NetworkManager-wait-online.service</refname>
+    <refpurpose>Wait for network to come online</refpurpose>
+  </refnamediv>
+
+  <refsect1>
+    <title>Description</title>
+    <para>
+      NetworkManager-wait-online.service delays network-online.target until network
+      is ready.
+    </para>
+    <para>
+      The systemd target <literal>network-online.target</literal> acts as a synchronization point
+      for services to start after network is configured. Such services should
+      order themselves <literal>After=network-online.target</literal>
+      (and never <literal>After=NetworkManager-wait-online.service</literal>).
+      <literal>NetworkManager-wait-online.service</literal> is a one-shot service
+      that itself is ordered <literal>Before=network-online.target</literal>
+      and this way delays the target until the network is configured.
+    </para>
+    <para>
+      <literal>NetworkManager-wait-online.service</literal> itself is almost not configurable
+      itself. Instead the connection profiles and configuration in NetworkManager affects
+      the behavior.
+    </para>
+    <para>
+      In the best case, all services on the system can react to networking changes dynamically and
+      no service orders itself after <literal>network-online.target</literal>. That way,
+      <literal>NetworkManager-wait-online.service</literal> has no effect and, for example,
+      does not delay the boot. That means, if the problem is a long boot time related to
+      <literal>NetworkManager-wait-online.service</literal>, a possible solution is to
+      investigate the services that claim to require network and fix those.
+    </para>
+    <para>
+      For services that require network configured,
+      <literal>NetworkManager-wait-online.service</literal> is the default implementation
+      provided by NetworkManager to delay the target. But it does nothing magical. With
+      special requirements, it may be sensible to disable <literal>NetworkManager-wait-online.service</literal>
+      and replace it with a similar service that better implements the requirement.
+    </para>
+    <para>
+      <literal>NetworkManager-wait-online.service</literal> blocks until
+      NetworkManager logs "startup complete" and announces startup complete
+      on D-Bus. How long that takes depends on the network
+      and the NetworkManager configuration. If it takes longer than expected, then
+      the reasons need to be investigated in NetworkManager.
+    </para>
+    <para>
+      There are various reasons what affects NetworkManager reaching "startup complete"
+      and how long <literal>NetworkManager-wait-online.service</literal> blocks.
+      <itemizedlist>
+        <listitem>
+          <para>
+            In general, startup complete is not reached as long as NetworkManager is busy
+            activating a device and as long as there are profiles in activating state.
+            During boot, NetworkManager starts autoactivating
+            suitable profiles that are configured to autoconnect. If activation fails,
+            NetworkManager might retry right away (depending on <literal>connection.autoconnect-retries</literal>
+            setting). While trying and retrying, NetworkManager is busy until all
+            profiles and devices either reached an activated or disconnected state
+            and no further events are expected.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            When a device reaches activated state, depends on its configuration.
+            For example, with a profile with both IPv4 and IPv6 addressing
+            enabled, the device is possibly considered fully activated when
+            either of the address families is ready. This can be controlled with the
+            <literal>ipv4.may-fail</literal> and <literal>ipv6.may-fail</literal>
+            settings, to indicate that the address family is required.
+            There are also <literal>ipv4.required-timeout</literal> and <literal>ipv6.required-timeout</literal>
+            settings which affect how long to wait for an address family.
+            Likewise, properties like <literal>ipv4.dhcp-timeout</literal> and
+            <literal>ipv6.ra-timeout</literal> affect how long NetworkManager
+            will try the IP configuration before giving up.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            For example, a bridge or bond profile cannot do IP configuration
+            without ports. When booting with such profiles that autoactivate
+            without ports, <literal>NetworkManager-wait-online.service</literal> blocks until timeout.
+            This is a configuration error.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            The property <literal>connection.wait-device-timeout</literal> of the connection
+            profiles waits until the waited devices appear. This is useful if the driver
+            takes a longer time to detect the networking interfaces.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            With Wi-Fi devices, NetworkManager needs to wait for the first scan
+            result to know which networks might be available. That always adds a delay.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            With ethernet devices, NetworkManager waits for carrier until the
+            configurable <literal>[device*].carrier-timeout</literal> is reached.
+            This is because some devices take a long time to detect carrier
+            and it means to boot with cable unplugged, will unnecessarily delay
+            <literal>NetworkManager-wait-online.service</literal>.
+          </para>
+        </listitem>
+      </itemizedlist>
+    </para>
+    <para>
+      <literal>NetworkManager-wait-online.service</literal> internally uses
+      <literal>nm-online</literal>.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>Bugs</title>
+    <para>
+      Please report any bugs in NetworkManager at the
+      <ulink url="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues">NetworkManager issue tracker</ulink>.
+    </para>
+  </refsect1>
+
+  <refsect1>
+    <title>See Also</title>
+    <para>
+      <ulink url="https://networkmanager.dev">NetworkManager home page</ulink>,
+      <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
+      <link linkend='nm-online'><citerefentry><refentrytitle>nm-online</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>,
+    </para>
+  </refsect1>
+</refentry>
