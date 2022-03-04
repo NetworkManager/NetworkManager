@@ -795,7 +795,6 @@ try_spawn_vpn_auth_helper(RequestData *request, GPtrArray *secrets)
                                   &auth_dialog_out_fd,
                                   NULL,
                                   &error)) {
-        g_warning("Failed to spawn the auth dialog%s\n", error->message);
         return FALSE;
     }
 
