@@ -30,6 +30,7 @@
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-connection.h"
@@ -5200,4 +5201,51 @@ again:
     }
 
     return g;
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_shorten_hostname:
+ * @hostname: the input hostname
+ * @shortened: (out) (transfer full): on return, the shortened hostname
+ *
+ * Checks whether the input hostname is valid. If not, tries to shorten it
+ * to HOST_NAME_MAX or to the first dot, whatever comes earlier.
+ * The new hostname is returned in @shortened.
+ *
+ * Returns: %TRUE if the input hostname was already valid or if was shortened
+ * successfully; %FALSE otherwise
+ */
+gboolean
+nm_utils_shorten_hostname(const char *hostname, char **shortened)
+{
+    gs_free char *s = NULL;
+    const char   *dot;
+    gsize         l;
+
+    nm_assert(hostname);
+    nm_assert(shortened);
+
+    if (nm_sd_hostname_is_valid(hostname, FALSE)) {
+        *shortened = NULL;
+        return TRUE;
+    }
+
+    dot = strchr(hostname, '.');
+    if (dot)
+        l = (dot - hostname);
+    else
+        l = strlen(hostname);
+    l = MIN(l, (gsize) HOST_NAME_MAX);
+
+    s = g_strndup(hostname, l);
+
+    if (!nm_sd_hostname_is_valid(s, FALSE)) {
+        *shortened = NULL;
+        return FALSE;
+    }
+
+    *shortened = g_steal_pointer(&s);
+    return TRUE;
 }
