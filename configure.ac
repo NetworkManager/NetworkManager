@@ -192,10 +192,6 @@ if test -z "$config_plugins_default" -o "$config_plugins_default" = no; then
 	config_plugins_default="${config_plugins_default#,}"
 fi
 
-test "$enable_ifcfg_rh" = "yes"           && distro_plugins="$distro_plugins,ifcfg-rh"
-test "$enable_ifupdown" = "yes"           && distro_plugins="$distro_plugins,ifupdown"
-distro_plugins="${distro_plugins#,}"
-
 AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_MAIN_PLUGINS, "$config_plugins_default", [Default configuration option for main.plugins setting])
 
 if test "$enable_ifcfg_rh" = "yes"; then
