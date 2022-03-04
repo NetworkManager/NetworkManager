@@ -606,7 +606,7 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
          */
         priv->updating_dns = TRUE;
         nm_dns_manager_set_hostname(priv->dns_manager,
-                                    priv->cur_hostname,
+                                    priv->cur_hostname_full,
                                     all_devices_not_active(self));
         priv->updating_dns = FALSE;
     }
