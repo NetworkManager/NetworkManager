@@ -7453,14 +7453,30 @@ impl_manager_checkpoint_create(NMDBusObject                      *obj,
                                GDBusMethodInvocation             *invocation,
                                GVariant                          *parameters)
 {
-    NMManager        *self = NM_MANAGER(obj);
-    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
-    NMAuthChain      *chain;
-    char            **devices;
-    guint32           rollback_timeout;
-    guint32           flags;
+    NMManager         *self = NM_MANAGER(obj);
+    NMManagerPrivate  *priv = NM_MANAGER_GET_PRIVATE(self);
+    NMAuthChain       *chain;
+    gs_strfreev char **devices = NULL;
+    guint32            rollback_timeout;
+    guint32            flags;
 
     G_STATIC_ASSERT_EXPR(sizeof(flags) <= sizeof(NMCheckpointCreateFlags));
+
+    g_variant_get(parameters, "(^aouu)", &devices, &rollback_timeout, &flags);
+
+    if ((NMCheckpointCreateFlags) flags != flags
+        || NM_FLAGS_ANY(flags,
+                        ~((guint32) (NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL
+                                     | NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS
+                                     | NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES
+                                     | NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING
+                                     | NM_CHECKPOINT_CREATE_FLAG_NO_PRESERVE_EXTERNAL_PORTS)))) {
+        g_dbus_method_invocation_return_error_literal(invocation,
+                                                      NM_MANAGER_ERROR,
+                                                      NM_MANAGER_ERROR_INVALID_ARGUMENTS,
+                                                      "Invalid flags");
+        return;
+    }
 
     chain = nm_auth_chain_new_context(invocation, checkpoint_auth_done_cb, self);
     if (!chain) {
@@ -7471,11 +7487,12 @@ impl_manager_checkpoint_create(NMDBusObject                      *obj,
         return;
     }
 
-    g_variant_get(parameters, "(^aouu)", &devices, &rollback_timeout, &flags);
-
     c_list_link_tail(&priv->auth_lst_head, nm_auth_chain_parent_lst_list(chain));
     nm_auth_chain_set_data(chain, "audit-op", NM_AUDIT_OP_CHECKPOINT_CREATE, NULL);
-    nm_auth_chain_set_data(chain, "devices", devices, (GDestroyNotify) g_strfreev);
+    nm_auth_chain_set_data(chain,
+                           "devices",
+                           g_steal_pointer(&devices),
+                           (GDestroyNotify) g_strfreev);
     nm_auth_chain_set_data(chain, "flags", GUINT_TO_POINTER(flags), NULL);
     nm_auth_chain_set_data(chain, "timeout", GUINT_TO_POINTER(rollback_timeout), NULL);
     nm_auth_chain_add_call(chain, NM_AUTH_PERMISSION_CHECKPOINT_ROLLBACK, TRUE);

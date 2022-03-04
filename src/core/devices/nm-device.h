@@ -444,6 +444,8 @@ NMDeviceType nm_device_get_device_type(NMDevice *dev);
 NMLinkType   nm_device_get_link_type(NMDevice *dev);
 NMMetered    nm_device_get_metered(NMDevice *dev);
 
+void nm_device_activation_state_set_preserve_external_ports(NMDevice *self, gboolean flag);
+
 guint32 nm_device_get_route_table(NMDevice *self, int addr_family);
 guint32 nm_device_get_route_metric(NMDevice *dev, int addr_family);
 

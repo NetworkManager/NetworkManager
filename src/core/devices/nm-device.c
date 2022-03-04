@@ -76,6 +76,7 @@
 #include "nm-hostname-manager.h"
 
 #include "nm-device-generic.h"
+#include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
 #include "nm-device-vrf.h"
 #include "nm-device-wireguard.h"
@@ -483,9 +484,12 @@ typedef struct _NMDevicePrivate {
 
     NMUtilsStableType current_stable_id_type : 3;
 
+    bool activation_state_preserve_external_ports : 1;
+
     bool nm_owned : 1; /* whether the device is a device owned and created by NM */
 
-    bool  assume_state_guess_assume : 1;
+    bool assume_state_guess_assume : 1;
+
     char *assume_state_connection_uuid;
 
     guint64 udi_id;
@@ -7666,8 +7670,19 @@ nm_device_master_release_slaves(NMDevice *self)
     c_list_for_each_safe (iter, safe, &priv->slaves) {
         SlaveInfo *info = c_list_entry(iter, SlaveInfo, lst_slave);
 
+        if (priv->activation_state_preserve_external_ports
+            && nm_device_sys_iface_state_is_external(info->slave)) {
+            _LOGT(LOGD_DEVICE,
+                  "master: preserve external port %s",
+                  nm_device_get_iface(info->slave));
+            continue;
+        }
         nm_device_master_release_one_slave(self, info->slave, TRUE, FALSE, reason);
     }
+
+    /* We only need this flag for a short time. It served its purpose. Clear
+     * it again. */
+    nm_device_activation_state_set_preserve_external_ports(self, FALSE);
 }
 
 /**
@@ -15386,6 +15401,16 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     if (state > NM_DEVICE_STATE_DISCONNECTED)
         nm_device_assume_state_reset(self);
 
+    if (state < NM_DEVICE_STATE_UNAVAILABLE
+        || (state >= NM_DEVICE_STATE_IP_CONFIG && state < NM_DEVICE_STATE_ACTIVATED)) {
+        /* preserve-external-ports is used by NMCheckpoint to activate a master
+         * device, and preserve already attached ports. This means, this state is only
+         * relevant during the deactivation and the following activation of the
+         * right profile. Once we are sufficiently far in the activation of the
+         * intended profile, we clear the state again. */
+        nm_device_activation_state_set_preserve_external_ports(self, FALSE);
+    }
+
     if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
         if (available_connections_del_all(self))
             _notify(self, PROP_AVAILABLE_CONNECTIONS);
@@ -15788,6 +15813,50 @@ nm_device_get_state(NMDevice *self)
     g_return_val_if_fail(NM_IS_DEVICE(self), NM_DEVICE_STATE_UNKNOWN);
 
     return NM_DEVICE_GET_PRIVATE(self)->state;
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_device_activation_state_set_preserve_external_ports:
+ * @self: the NMDevice.
+ * @flag: whether to set or clear the the flag.
+ *
+ * This sets an internal flag to true, which does something specific.
+ * For non-master devices, it has no effect. For master devices, this
+ * will prevent to detach all external ports, until the next activation
+ * completes.
+ *
+ * This is used during checkpoint/rollback. We may want to preserve
+ * externally attached ports during the restore. NMCheckpoint will
+ * call this before doing a re-activation. By setting the flag,
+ * we basically preserve such ports.
+ *
+ * Once we reach again ACTIVATED state, the flag gets cleared. This
+ * only has effect for the next activation cycle. */
+void
+nm_device_activation_state_set_preserve_external_ports(NMDevice *self, gboolean flag)
+{
+    NMDevicePrivate *priv;
+
+    g_return_if_fail(NM_IS_DEVICE(self));
+
+    priv = NM_DEVICE_GET_PRIVATE(self);
+
+    if (!NM_IS_DEVICE_BRIDGE(self)) {
+        /* This is actually only implemented for bridge devices. While it might
+         * make sense for bond/team or OVS, it's not clear that it is actually
+         * useful or desirable. */
+        return;
+    }
+
+    if (priv->activation_state_preserve_external_ports == flag)
+        return;
+
+    priv->activation_state_preserve_external_ports = flag;
+    _LOGD(LOGD_DEVICE,
+          "activation-state: preserve-external-ports %s",
+          flag ? "enabled" : "disabled");
 }
 
 /*****************************************************************************/

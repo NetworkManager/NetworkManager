@@ -959,17 +959,23 @@ typedef enum {
  *   overlapping younger checkpoints. This opts-in that the
  *   checkpoint can be automatically destroyed by the rollback
  *   of an older checkpoint. Since: 1.12.
+ * @NM_CHECKPOINT_CREATE_FLAG_NO_PRESERVE_EXTERNAL_PORTS: during rollback,
+ *   by default externally added ports attached to bridge devices are preserved.
+ *   With this flag, the rollback detaches all external ports.
+ *   This only has an effect for bridge ports. Before 1.38, 1.36.2, this was the default
+ *   behavior. Since: 1.38, 1.36.2.
  *
  * The flags for CheckpointCreate call
  *
  * Since: 1.4 (gi flags generated since 1.12)
  */
 typedef enum { /*< flags >*/
-               NM_CHECKPOINT_CREATE_FLAG_NONE                   = 0,
-               NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL            = 0x01,
-               NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS = 0x02,
-               NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES = 0x04,
-               NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING      = 0x08,
+               NM_CHECKPOINT_CREATE_FLAG_NONE                       = 0,
+               NM_CHECKPOINT_CREATE_FLAG_DESTROY_ALL                = 0x01,
+               NM_CHECKPOINT_CREATE_FLAG_DELETE_NEW_CONNECTIONS     = 0x02,
+               NM_CHECKPOINT_CREATE_FLAG_DISCONNECT_NEW_DEVICES     = 0x04,
+               NM_CHECKPOINT_CREATE_FLAG_ALLOW_OVERLAPPING          = 0x08,
+               NM_CHECKPOINT_CREATE_FLAG_NO_PRESERVE_EXTERNAL_PORTS = 0x10,
 } NMCheckpointCreateFlags;
 
 /**
