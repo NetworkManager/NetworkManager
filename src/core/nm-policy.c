@@ -2764,7 +2764,7 @@ constructed(GObject *object)
                      self);
 
     priv->dns_manager = g_object_ref(nm_dns_manager_get());
-    nm_dns_manager_set_initial_hostname(priv->dns_manager, priv->orig_hostname);
+    nm_dns_manager_set_hostname(priv->dns_manager, priv->orig_hostname, TRUE);
     priv->config_changed_id = g_signal_connect(priv->dns_manager,
                                                NM_DNS_MANAGER_CONFIG_CHANGED,
                                                G_CALLBACK(dns_config_changed),
