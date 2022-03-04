@@ -1249,21 +1249,19 @@ sort_access_points(const GPtrArray *aps)
 }
 
 typedef struct {
-    NmCli      *nmc;
-    int         index;
-    guint32     output_flags;
-    const char *active_bssid;
-    const char *device;
-    GPtrArray  *output_data;
+    NmCli         *nmc;
+    NMAccessPoint *active_ap;
+    const char    *device;
+    GPtrArray     *output_data;
+    int           *p_index;
+    guint32        output_flags;
 } APInfo;
 
 static void
-fill_output_access_point(gpointer data, gpointer user_data)
+fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
 {
-    NMAccessPoint         *ap   = NM_ACCESS_POINT(data);
-    APInfo                *info = (APInfo *) user_data;
     NmcOutputField        *arr;
-    gboolean               active = FALSE;
+    gboolean               active;
     NM80211ApFlags         flags;
     NM80211ApSecurityFlags wpa_flags, rsn_flags;
     guint32                freq, bitrate;
@@ -1284,11 +1282,7 @@ fill_output_access_point(gpointer data, gpointer user_data)
     const char            *sig_bars;
     NMMetaColor            color;
 
-    if (info->active_bssid) {
-        const char *current_bssid = nm_access_point_get_bssid(ap);
-        if (current_bssid && !strcmp(current_bssid, info->active_bssid))
-            active = TRUE;
-    }
+    active = (info->active_ap == ap);
 
     /* Get AP properties */
     flags     = nm_access_point_get_flags(ap);
@@ -1348,7 +1342,7 @@ fill_output_access_point(gpointer data, gpointer user_data)
     arr = nmc_dup_fields_array((const NMMetaAbstractInfo *const *) nmc_fields_dev_wifi_list,
                                info->output_flags);
 
-    ap_name = g_strdup_printf("AP[%d]", info->index++); /* AP */
+    ap_name = g_strdup_printf("AP[%d]", ++(*info->p_index)); /* AP */
     set_val_str(arr, 0, ap_name);
     set_val_str(arr, 1, ssid_str);
     set_val_str(arr, 2, ssid_hex_str);
@@ -1379,6 +1373,12 @@ fill_output_access_point(gpointer data, gpointer user_data)
         arr[15].color = NM_META_COLOR_CONNECTION_ACTIVATED;
 
     g_ptr_array_add(info->output_data, arr);
+}
+
+static void
+fill_output_access_point_void(gpointer data, gpointer user_data)
+{
+    fill_output_access_point(data, user_data);
 }
 
 static char *
@@ -1679,18 +1679,14 @@ show_device_info(NMDevice *device, NmCli *nmc)
 
         /* Wireless specific information */
         if ((NM_IS_DEVICE_WIFI(device))) {
-            NMAccessPoint *active_ap    = NULL;
-            const char    *active_bssid = NULL;
-
             /* section AP */
             if (!g_ascii_strcasecmp(nmc_fields_dev_show_sections[section_idx]->name,
                                     nmc_fields_dev_show_sections[4]->name)) {
+                NMAccessPoint *active_ap = NULL;
                 NMC_OUTPUT_DATA_DEFINE_SCOPED(out);
 
-                if (state == NM_DEVICE_STATE_ACTIVATED) {
-                    active_ap    = nm_device_wifi_get_active_access_point(NM_DEVICE_WIFI(device));
-                    active_bssid = active_ap ? nm_access_point_get_bssid(active_ap) : NULL;
-                }
+                if (state == NM_DEVICE_STATE_ACTIVATED)
+                    active_ap = nm_device_wifi_get_active_access_point(NM_DEVICE_WIFI(device));
 
                 tmpl = (const NMMetaAbstractInfo *const *) nmc_fields_dev_wifi_list;
                 out_indices =
@@ -1703,19 +1699,20 @@ show_device_info(NMDevice *device, NmCli *nmc)
                 g_ptr_array_add(out.output_data, arr);
 
                 {
-                    gs_unref_ptrarray GPtrArray *aps  = NULL;
-                    APInfo                       info = {
+                    gs_unref_ptrarray GPtrArray *aps        = NULL;
+                    int                          info_index = 0;
+                    const APInfo                 info       = {
                                               .nmc          = nmc,
-                                              .index        = 1,
+                                              .p_index      = &info_index,
                                               .output_flags = NMC_OF_FLAG_SECTION_PREFIX,
-                                              .active_bssid = active_bssid,
+                                              .active_ap    = active_ap,
                                               .device       = nm_device_get_iface(device),
                                               .output_data  = out.output_data,
                     };
 
                     aps = sort_access_points(
                         nm_device_wifi_get_access_points(NM_DEVICE_WIFI(device)));
-                    g_ptr_array_foreach(aps, fill_output_access_point, &info);
+                    g_ptr_array_foreach(aps, fill_output_access_point_void, (gpointer) &info);
                 }
 
                 print_data_prepare_width(out.output_data);
@@ -2991,32 +2988,30 @@ find_ap_on_device(NMDevice *device, const char *bssid, const char *ssid, gboolea
 static void
 show_access_point_info(NMDeviceWifi *wifi, NmCli *nmc, NmcOutputData *out)
 {
-    NMAccessPoint  *active_ap    = NULL;
-    const char     *active_bssid = NULL;
+    NMAccessPoint  *active_ap = NULL;
     NmcOutputField *arr;
 
-    if (nm_device_get_state(NM_DEVICE(wifi)) == NM_DEVICE_STATE_ACTIVATED) {
-        active_ap    = nm_device_wifi_get_active_access_point(wifi);
-        active_bssid = active_ap ? nm_access_point_get_bssid(active_ap) : NULL;
-    }
+    if (nm_device_get_state(NM_DEVICE(wifi)) == NM_DEVICE_STATE_ACTIVATED)
+        active_ap = nm_device_wifi_get_active_access_point(wifi);
 
     arr = nmc_dup_fields_array((const NMMetaAbstractInfo *const *) nmc_fields_dev_wifi_list,
                                NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
     g_ptr_array_add(out->output_data, arr);
 
     {
-        gs_unref_ptrarray GPtrArray *aps  = NULL;
-        APInfo                       info = {
+        gs_unref_ptrarray GPtrArray *aps        = NULL;
+        int                          info_index = 0;
+        const APInfo                 info       = {
                                   .nmc          = nmc,
-                                  .index        = 1,
+                                  .p_index      = &info_index,
                                   .output_flags = 0,
-                                  .active_bssid = active_bssid,
+                                  .active_ap    = active_ap,
                                   .device       = nm_device_get_iface(NM_DEVICE(wifi)),
                                   .output_data  = out->output_data,
         };
 
         aps = sort_access_points(nm_device_wifi_get_access_points(wifi));
-        g_ptr_array_foreach(aps, fill_output_access_point, &info);
+        g_ptr_array_foreach(aps, fill_output_access_point_void, (gpointer) &info);
     }
 
     print_data_prepare_width(out->output_data);
@@ -3032,7 +3027,6 @@ wifi_print_aps(NMDeviceWifi                    *wifi,
 {
     NMAccessPoint   *ap = NULL;
     const GPtrArray *aps;
-    APInfo          *info;
     guint            i;
     NmcOutputField  *arr;
     const char      *base_hdr = _("Wi-Fi scan list");
@@ -3061,23 +3055,23 @@ wifi_print_aps(NMDeviceWifi                    *wifi,
                 ap = candidate_ap;
         }
         if (ap) {
+            int          info_index = 0;
+            const APInfo info       = {
+                      .nmc          = nmc,
+                      .p_index      = &info_index,
+                      .output_flags = 0,
+                      .device       = nm_device_get_iface(NM_DEVICE(wifi)),
+                      .output_data  = out.output_data,
+            };
+
             /* Add headers (field names) */
             arr = nmc_dup_fields_array(tmpl, NMC_OF_FLAG_MAIN_HEADER_ADD | NMC_OF_FLAG_FIELD_NAMES);
             g_ptr_array_add(out.output_data, arr);
 
-            info               = g_malloc0(sizeof(APInfo));
-            info->nmc          = nmc;
-            info->index        = 1;
-            info->output_flags = 0;
-            info->active_bssid = NULL;
-            info->device       = nm_device_get_iface(NM_DEVICE(wifi));
-            info->output_data  = out.output_data;
-
-            fill_output_access_point(ap, info);
+            fill_output_access_point(ap, &info);
 
             print_data_prepare_width(out.output_data);
             print_data(&nmc->nmc_config, &nmc->pager_data, out_indices, header_name, 0, &out);
-            g_free(info);
 
             *bssid_found = TRUE;
             empty_line   = TRUE;
