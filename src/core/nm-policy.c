@@ -75,8 +75,9 @@ typedef struct {
     guint schedule_activate_all_id; /* idle handler for schedule_activate_all(). */
 
     NMPolicyHostnameMode hostname_mode;
-    char                *orig_hostname; /* hostname at NM start time */
-    char                *cur_hostname;  /* hostname we want to assign */
+    char                *orig_hostname;     /* hostname at NM start time */
+    char                *cur_hostname;      /* hostname we want to assign */
+    char                *cur_hostname_full; /* similar to @last_hostname, but before shortening */
     char *
         last_hostname; /* last hostname NM set (to detect if someone else changed it in the meanwhile) */
 
@@ -560,6 +561,7 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
 {
     NMPolicyPrivate *priv         = NM_POLICY_GET_PRIVATE(self);
     gs_free char    *old_hostname = NULL;
+    gboolean         cur_hostname_full_changed;
     const char      *name;
 
     /* The incoming hostname *can* be NULL, which will get translated to
@@ -568,13 +570,36 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
      * there was no valid hostname to start with.
      */
 
+    if (nm_strdup_reset(&priv->cur_hostname_full, new_hostname)) {
+        gs_free char *shortened = NULL;
+
+        cur_hostname_full_changed = TRUE;
+
+        if (priv->cur_hostname_full
+            && !nm_utils_shorten_hostname(priv->cur_hostname_full, &shortened)) {
+            _LOGW(LOGD_DNS,
+                  "set-hostname: hostname '%s' %s is invalid",
+                  priv->cur_hostname_full,
+                  msg);
+            return;
+        }
+
+        if (shortened) {
+            _LOGI(LOGD_DNS,
+                  "set-hostname: shortened hostname %s from '%s' to '%s'",
+                  msg,
+                  priv->cur_hostname_full,
+                  shortened);
+            nm_strdup_reset_take(&priv->cur_hostname, g_steal_pointer(&shortened));
+        } else
+            nm_strdup_reset(&priv->cur_hostname, priv->cur_hostname_full);
+    } else
+        cur_hostname_full_changed = FALSE;
+
     /* Update the DNS only if the hostname is actually
      * going to change.
      */
-    if (!nm_streq0(priv->cur_hostname, new_hostname)) {
-        g_free(priv->cur_hostname);
-        priv->cur_hostname = g_strdup(new_hostname);
-
+    if (cur_hostname_full_changed) {
         /* Notify the DNS manager of the hostname change so that the domain part, if
          * present, can be added to the search list. Set the @updating_dns flag
          * so that dns_config_changed() doesn't try again to restart DNS lookup.
@@ -587,13 +612,8 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
     }
 
     /* Finally, set kernel hostname */
-    if (!new_hostname)
-        name = FALLBACK_HOSTNAME4;
-    else if (!new_hostname[0]) {
-        g_warn_if_reached();
-        name = FALLBACK_HOSTNAME4;
-    } else
-        name = new_hostname;
+    nm_assert(!priv->cur_hostname || priv->cur_hostname[0]);
+    name = priv->cur_hostname ?: FALLBACK_HOSTNAME4;
 
     /* Don't set the hostname if it isn't actually changing */
     if ((old_hostname = _get_hostname(self)) && (nm_streq(name, old_hostname))) {
@@ -602,8 +622,7 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
     }
 
     /* Keep track of the last set hostname */
-    g_free(priv->last_hostname);
-    priv->last_hostname     = g_strdup(name);
+    nm_strdup_reset(&priv->last_hostname, name);
     priv->changing_hostname = TRUE;
 
     _LOGI(LOGD_DNS, "set-hostname: set hostname to '%s' (%s)", name, msg);
@@ -2895,6 +2914,7 @@ dispose(GObject *object)
 
     nm_clear_g_free(&priv->orig_hostname);
     nm_clear_g_free(&priv->cur_hostname);
+    nm_clear_g_free(&priv->cur_hostname_full);
     nm_clear_g_free(&priv->last_hostname);
 
     if (priv->hostname_manager) {
