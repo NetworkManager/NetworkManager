@@ -3266,7 +3266,7 @@ add_plugin(NMSettings *self, NMSettingsPlugin *plugin, const char *pname, const 
 }
 
 static gboolean
-add_plugin_load_file(NMSettings *self, const char *pname, GError **error)
+add_plugin_load_file(NMSettings *self, const char *pname, gboolean ignore_not_found, GError **error)
 {
     gs_free char                     *full_name = NULL;
     gs_free char                     *path      = NULL;
@@ -3281,10 +3281,12 @@ add_plugin_load_file(NMSettings *self, const char *pname, GError **error)
 
     if (stat(path, &st) != 0) {
         errsv = errno;
-        _LOGW("could not load plugin '%s' from file '%s': %s",
-              pname,
-              path,
-              nm_strerror_native(errsv));
+        if (!ignore_not_found) {
+            _LOGW("could not load plugin '%s' from file '%s': %s",
+                  pname,
+                  path,
+                  nm_strerror_native(errsv));
+        }
         return TRUE;
     }
     if (!S_ISREG(st.st_mode)) {
@@ -3378,7 +3380,7 @@ load_plugins(NMSettings *self, const char *const *plugins, GError **error)
             continue;
         }
 
-        success = add_plugin_load_file(self, pname, error);
+        success = add_plugin_load_file(self, pname, FALSE, error);
         if (!success)
             break;
     }
@@ -3872,8 +3874,18 @@ nm_settings_start(NMSettings *self, GError **error)
     /* Load the plugins; fail if a plugin is not found. */
     plugins = nm_config_data_get_plugins(nm_config_get_data_orig(priv->config), TRUE);
 
-    if (!load_plugins(self, (const char *const *) plugins, error))
-        return FALSE;
+    if (plugins && plugins[0]) {
+        if (!load_plugins(self, (const char *const *) plugins, error))
+            return FALSE;
+    } else {
+        add_plugin_keyfile(self);
+#if WITH_CONFIG_PLUGIN_IFCFG_RH
+        add_plugin_load_file(self, "ifcfg-rh", TRUE, NULL);
+#endif
+#if WITH_CONFIG_PLUGIN_IFUPDOWN
+        add_plugin_load_file(self, "ifupdown", TRUE, NULL);
+#endif
+    }
 
     for (iter = priv->plugins; iter; iter = iter->next) {
         NMSettingsPlugin *plugin = NM_SETTINGS_PLUGIN(iter->data);
