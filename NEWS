@@ -13,6 +13,11 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * libnm: add new dummy crypto backend "null" that does nothing.
 * Veth devices with name "eth*" are now managed by default via the
   udev rule. This is to support managing the network in LXD containers.
+* When the list of plugins is not specified via "main.plugins" in
+  NetworkManager.conf and no build-time default is set with
+  "--with-config-plugins-default" configure argument, now all known
+  plugins found in the plugin directory are loaded (and the built-in
+  "keyfile" plugin is preferred over others).
 
 =============================================
 NetworkManager-1.36

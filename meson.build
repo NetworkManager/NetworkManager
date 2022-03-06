@@ -308,20 +308,10 @@ enable_ifcfg_rh = get_option('ifcfg_rh') or (distro == 'redhat')
 enable_ifupdown = get_option('ifupdown') or (distro == 'debian')
 
 config_plugins_default = get_option('config_plugins_default')
-if config_plugins_default == ''
-  config_plugins = []
-
-  if enable_ifcfg_rh
-    config_plugins += ['ifcfg-rh']
-  endif
-
-  if enable_ifupdown
-    config_plugins += ['ifupdown']
-  endif
-
-  config_plugins_default = ','.join(config_plugins)
-endif
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_PLUGINS', config_plugins_default)
+
+config_h.set10('WITH_CONFIG_PLUGIN_IFCFG_RH', enable_ifcfg_rh)
+config_h.set10('WITH_CONFIG_PLUGIN_IFUPDOWN', enable_ifupdown)
 
 config_h.set_quoted('NM_DIST_VERSION', dist_version)
 
