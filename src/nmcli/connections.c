@@ -4211,16 +4211,16 @@ set_option(NmCli                    *nmc,
     if (option && option->check_and_set) {
         return option->check_and_set(nmc, connection, option, value, error);
     } else if (value || allow_reset) {
-        set_property(nmc->client,
-                     connection,
-                     setting_name,
-                     property_name,
-                     value,
-                     !value ? NM_META_ACCESSOR_MODIFIER_DEL
-                            : (inf_flags & NM_META_PROPERTY_INF_FLAG_MULTI
-                                   ? NM_META_ACCESSOR_MODIFIER_ADD
-                                   : NM_META_ACCESSOR_MODIFIER_SET),
-                     error);
+        return set_property(nmc->client,
+                            connection,
+                            setting_name,
+                            property_name,
+                            value,
+                            !value ? NM_META_ACCESSOR_MODIFIER_DEL
+                                   : (inf_flags & NM_META_PROPERTY_INF_FLAG_MULTI
+                                          ? NM_META_ACCESSOR_MODIFIER_ADD
+                                          : NM_META_ACCESSOR_MODIFIER_SET),
+                            error);
     }
 
     return TRUE;
