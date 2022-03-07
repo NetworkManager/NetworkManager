@@ -2377,6 +2377,93 @@ _rfkill_update_devices(NMManager *self, NMRfkillType rtype, gboolean enabled)
     }
 }
 
+static gboolean
+wifi_filter_func(NMSettings *settings, NMSettingsConnection *set_con, gpointer user_data)
+{
+    NMConnection                 *connection = nm_settings_connection_get_connection(set_con);
+    NMSettingWireless            *s_wifi;
+    GBytes                       *ssid;
+    const guint8                 *ssid_data;
+    const NMPlatformCsmeConnInfo *conn_info = (const NMPlatformCsmeConnInfo *) user_data;
+    gsize                         csme_ssid_len;
+    gsize                         ssid_len;
+
+    if (!nm_connection_is_type(connection, NM_SETTING_WIRELESS_SETTING_NAME))
+        return FALSE;
+
+    s_wifi = nm_connection_get_setting_wireless(connection);
+    if (!s_wifi)
+        return FALSE;
+
+    ssid = nm_setting_wireless_get_ssid(s_wifi);
+    if (!ssid)
+        return FALSE;
+
+    /* Don't call strlen on a string that might not be NUL-terminated */
+    csme_ssid_len = conn_info->ssid[31] != '\0' ? 32 : strlen((const char *) conn_info->ssid);
+
+    ssid_data = g_bytes_get_data(ssid, &ssid_len);
+
+    if (ssid_len != csme_ssid_len || memcmp(ssid_data, conn_info->ssid, csme_ssid_len))
+        return FALSE;
+
+    /* TODO: check that the connection is activatable, auto-connect? */
+    return TRUE;
+}
+
+static void
+_rfkill_os_not_owner(NMManager *self)
+{
+    NMManagerPrivate      *priv = NM_MANAGER_GET_PRIVATE(self);
+    NMPlatformCsmeConnInfo conn_info;
+    NMDevice              *device;
+    const CList           *tmp_lst;
+
+    nm_manager_for_each_device (self, device, tmp_lst) {
+        if (nm_device_get_device_type(device) != NM_DEVICE_TYPE_WIFI)
+            continue;
+
+        if (nm_platform_wifi_get_csme_conn_info(priv->platform,
+                                                nm_device_get_ifindex(device),
+                                                &conn_info)) {
+            gs_free NMSettingsConnection **connections = NULL;
+            guint                          connections_len;
+
+            _LOGW(LOGD_RFKILL,
+                  "rfkill: CSME is associated to SSID %s on channel %d",
+                  conn_info.ssid,
+                  conn_info.channel);
+
+            /* TODO: this logic should be run also in case the user manually adds a connection */
+            connections = nm_settings_get_connections_clone(priv->settings,
+                                                            &connections_len,
+                                                            wifi_filter_func,
+                                                            (gpointer) &conn_info,
+                                                            NULL,
+                                                            NULL);
+
+            if (!connections[0]) {
+                _LOGW(LOGD_RFKILL, "rfkill: No connection that matches CSME's connection");
+                return;
+            }
+
+            _LOGW(LOGD_RFKILL, "rfkill: Found a connection that matches CSME's connection");
+            /* TODO: find a way to
+             *  1) disable all the other connections, enable only this one
+             *  2) make sure we connect to the specific BSSID
+             *  3) scan only the frequency CSME is operation on
+             */
+
+            /* We are ready to take the device from CSME */
+            if (nm_platform_wifi_get_device_from_csme(priv->platform,
+                                                      nm_device_get_ifindex(device))) {
+                _LOGW(LOGD_RFKILL, "rfkill: Could not get ownership on the device");
+                /* TODO: trigger a timer and try again in ~30 seconds */
+            }
+        }
+    }
+}
+
 static void
 _rfkill_update_one_type(NMManager *self, NMRfkillType rtype)
 {
@@ -2413,6 +2500,9 @@ _rfkill_update_one_type(NMManager *self, NMRfkillType rtype)
               nm_rfkill_type_to_string(rtype),
               new_rfkilled ? "enabled" : "disabled");
     }
+
+    if (!rstate->os_owner)
+        _rfkill_os_not_owner(self);
 
     /* Send out property changed signal for HW enabled */
     if (rstate->hw_enabled != old_hwe)
