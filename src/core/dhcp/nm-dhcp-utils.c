@@ -876,7 +876,7 @@ nm_dhcp_utils_merge_new_dhcp6_lease(const NML3ConfigData  *l3cd_old,
      * addresses from the same transaction into a single configuration.
      **/
 
-    l3cd_merged = nm_l3_config_data_new_clone(l3cd_old, -1);
+    l3cd_merged = nm_l3_config_data_new_clone(l3cd_old, 0);
 
     nm_l3_config_data_iter_ip6_address_for_each (&iter, l3cd_new, &addr)
         nm_l3_config_data_add_address_6(l3cd_merged, addr);
