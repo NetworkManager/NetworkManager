@@ -7305,9 +7305,9 @@ _init_start_check_complete(NMClient *self)
 static void
 _init_start_cancelled_cb(GCancellable *cancellable, gpointer user_data)
 {
-    NMClient        *self = user_data;
-    NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
-    GError          *error;
+    NMClient        *self  = user_data;
+    NMClientPrivate *priv  = NM_CLIENT_GET_PRIVATE(self);
+    GError          *error = NULL;
 
     nm_assert(NM_IS_CLIENT(self));
     nm_assert(priv->init_data);
