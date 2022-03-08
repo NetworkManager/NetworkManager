@@ -8280,9 +8280,12 @@ editor_menu_main(NmCli *nmc, NMConnection *connection, const char *connection_ty
                     connection_changed = FALSE;
                 }
 
-                source = g_timeout_source_new(10 * NM_UTILS_MSEC_PER_SEC);
-                g_source_set_callback(source, editor_save_timeout, &timeout, NULL);
-                g_source_attach(source, g_main_loop_get_context(loop));
+                source = nm_g_source_attach(nm_g_timeout_source_new(10 * NM_UTILS_MSEC_PER_SEC,
+                                                                    G_PRIORITY_DEFAULT,
+                                                                    editor_save_timeout,
+                                                                    &timeout,
+                                                                    NULL),
+                                            g_main_loop_get_context(loop));
 
                 while (!nmc_editor_cb_called && !timeout)
                     g_main_context_iteration(NULL, TRUE);

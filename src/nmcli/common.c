@@ -889,13 +889,7 @@ nmc_readline_helper(const NmcConfig *nmc_config, const char *prompt)
 
     nmc_set_in_readline(TRUE);
 
-    io_source = nm_g_unix_fd_source_new(STDIN_FILENO,
-                                        G_IO_IN,
-                                        G_PRIORITY_DEFAULT,
-                                        stdin_ready_cb,
-                                        NULL,
-                                        NULL);
-    g_source_attach(io_source, NULL);
+    io_source = nm_g_unix_fd_add_source(STDIN_FILENO, G_IO_IN, stdin_ready_cb, NULL);
 
 read_again:
     rl_string   = NULL;
