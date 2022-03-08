@@ -1789,7 +1789,7 @@ nm_g_idle_add_source(GSourceFunc func, gpointer user_data)
     /* A convenience function to attach a new timeout source to the default GMainContext.
      * In that sense it's very similar to g_idle_add() except that it returns a
      * reference to the new source.  */
-    return nm_g_source_attach(nm_g_idle_source_new(G_PRIORITY_DEFAULT, func, user_data, NULL),
+    return nm_g_source_attach(nm_g_idle_source_new(G_PRIORITY_DEFAULT_IDLE, func, user_data, NULL),
                               NULL);
 }
 
