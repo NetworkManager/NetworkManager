@@ -6261,7 +6261,6 @@ nm_client_get_capabilities(NMClient *client, gsize *length)
     NMClientPrivate *priv;
 
     g_return_val_if_fail(NM_IS_CLIENT(client), NULL);
-    g_return_val_if_fail(length, NULL);
 
     priv = NM_CLIENT_GET_PRIVATE(client);
 
