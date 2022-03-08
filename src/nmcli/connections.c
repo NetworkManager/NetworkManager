@@ -513,6 +513,40 @@ _con_show_fcn_get_type(NMConnection *c, NMActiveConnection *ac, NMMetaAccessorGe
     return connection_type_to_display(s, get_type);
 }
 
+static const char *
+_connection_check_deprecated(NMConnection *c)
+{
+    NMSettingWirelessSecurity *s_wsec;
+    const char                *key_mgmt;
+    const char                *type;
+
+    type = nm_connection_get_connection_type(c);
+
+    if (strcmp(type, NM_SETTING_WIMAX_SETTING_NAME) == 0)
+        return _("WiMax is no longer supported");
+
+    s_wsec = nm_connection_get_setting_wireless_security(c);
+    if (s_wsec) {
+        key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
+        if (NM_IN_STRSET(key_mgmt, "ieee8021x", "none"))
+		return _("WEP encryption is known to be insecure");
+    }
+
+    return NULL;
+}
+
+static NMMetaColor
+_connection_to_color(NMConnection *c, NMActiveConnection *ac)
+{
+    if (ac)
+        return nmc_active_connection_state_to_color(ac);
+
+    if (_connection_check_deprecated(c))
+        return NM_META_COLOR_CONNECTION_DEPRECATED;
+
+    return NM_META_COLOR_CONNECTION_UNKNOWN;
+}
+
 static gconstpointer
 _metagen_con_show_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
@@ -523,7 +557,7 @@ _metagen_con_show_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     const char                  *s;
     char                        *s_mut;
 
-    NMC_HANDLE_COLOR(nmc_active_connection_state_to_color(ac));
+    NMC_HANDLE_COLOR(_connection_to_color(c, ac));
 
     if (c)
         s_con = nm_connection_get_setting_connection(c);
@@ -1478,9 +1512,6 @@ nmc_active_connection_state_to_color(NMActiveConnection *ac)
 {
     NMActiveConnectionState state;
 
-    if (!ac)
-        return NM_META_COLOR_CONNECTION_UNKNOWN;
-
     if (NM_FLAGS_HAS(nm_active_connection_get_state_flags(ac), NM_ACTIVATION_STATE_FLAG_EXTERNAL))
         return NM_META_COLOR_CONNECTION_EXTERNAL;
 
@@ -1881,6 +1912,7 @@ con_show_get_items_cmp(gconstpointer pa, gconstpointer pb, gpointer user_data)
             }
         }
 
+        NM_CMP_DIRECT(!!_connection_check_deprecated(c_a), !!_connection_check_deprecated(c_b));
         NM_CMP_DIRECT_STRCMP0(nm_connection_get_uuid(c_a), nm_connection_get_uuid(c_b));
         NM_CMP_DIRECT_STRCMP0(nm_connection_get_path(c_a), nm_connection_get_path(c_b));
     }
