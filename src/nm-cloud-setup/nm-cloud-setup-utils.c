@@ -146,7 +146,7 @@ nmcs_wait_for_objects_iterate_until_done(GMainContext *context, int timeout_msec
         nm_auto_destroy_and_unref_gsource GSource *idle_source = NULL;
 
         idle_source =
-            nm_g_source_attach(nm_g_idle_source_new(G_PRIORITY_DEFAULT,
+            nm_g_source_attach(nm_g_idle_source_new(G_PRIORITY_DEFAULT_IDLE,
                                                     _wait_for_objects_iterate_until_done_idle_cb,
                                                     &data,
                                                     NULL),
@@ -364,7 +364,7 @@ nmcs_utils_poll(int                         poll_timeout_ms,
     }
 
     poll_task_data->source_next_poll = nm_g_source_attach(
-        nm_g_idle_source_new(G_PRIORITY_DEFAULT, _poll_start_cb, poll_task_data, NULL),
+        nm_g_idle_source_new(G_PRIORITY_DEFAULT_IDLE, _poll_start_cb, poll_task_data, NULL),
         poll_task_data->context);
 
     if (cancellable) {

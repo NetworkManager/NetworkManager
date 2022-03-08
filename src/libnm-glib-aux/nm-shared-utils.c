@@ -4691,14 +4691,20 @@ _nm_utils_invoke_on_idle_start(gboolean                    use_timeout,
     }
 
     if (use_timeout) {
+        /* We use G_PRIORITY_DEFAULT_IDLE both for the with/without timeout
+         * case. The reason is not strong, but it seems right that the caller
+         * requests a lower priority than G_PRIORITY_DEFAULT. That is unlike
+         * what g_timeout_add() would do. */
         source = nm_g_timeout_source_new(timeout_msec,
-                                         G_PRIORITY_DEFAULT,
+                                         G_PRIORITY_DEFAULT_IDLE,
                                          _nm_utils_invoke_on_idle_cb_idle,
                                          data,
                                          NULL);
     } else {
-        source =
-            nm_g_idle_source_new(G_PRIORITY_DEFAULT, _nm_utils_invoke_on_idle_cb_idle, data, NULL);
+        source = nm_g_idle_source_new(G_PRIORITY_DEFAULT_IDLE,
+                                      _nm_utils_invoke_on_idle_cb_idle,
+                                      data,
+                                      NULL);
     }
 
     /* use the current thread default context. */
