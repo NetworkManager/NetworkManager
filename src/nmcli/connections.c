@@ -5241,14 +5241,47 @@ nmc_process_connection_properties(NmCli              *nmc,
 }
 
 static void
+connection_warnings(NmCli *nmc, NMConnection *connection)
+{
+    const GPtrArray *connections;
+    guint            i, found;
+    const char      *id;
+
+    connections = nm_client_get_connections(nmc->client);
+    if (!connections)
+        return;
+
+    id    = nm_connection_get_id(connection);
+    found = 0;
+    for (i = 0; i < connections->len; i++) {
+        NMConnection *candidate = NM_CONNECTION(connections->pdata[i]);
+
+        if ((NMConnection *) connection == candidate)
+            continue;
+        if (nm_streq0(nm_connection_get_id(candidate), id))
+            found++;
+    }
+
+    if (found > 0) {
+        g_printerr(g_dngettext(GETTEXT_PACKAGE,
+                               "Warning: There is another connection with the name '%1$s'. "
+                               "Reference the connection by its uuid '%2$s'\n",
+                               "Warning: There are %3$u other connections with the name "
+                               "'%1$s'. Reference the connection by its uuid '%2$s'\n",
+                               found),
+                   id,
+                   nm_connection_get_uuid(NM_CONNECTION(connection)),
+                   found);
+    }
+}
+
+static void
 add_connection_cb(GObject *client, GAsyncResult *result, gpointer user_data)
 {
     nm_auto_free_add_connection_info AddConnectionInfo *info = user_data;
     NmCli                                              *nmc  = info->nmc;
     NMRemoteConnection                                 *connection;
     GError                                             *error = NULL;
-    const GPtrArray                                    *connections;
-    guint                                               i, found;
 
     connection = nm_client_add_connection2_finish(NM_CLIENT(client), result, NULL, &error);
     if (error) {
@@ -5259,29 +5292,7 @@ add_connection_cb(GObject *client, GAsyncResult *result, gpointer user_data)
         g_error_free(error);
         nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
     } else {
-        connections = nm_client_get_connections(nmc->client);
-        if (connections) {
-            found = 0;
-            for (i = 0; i < connections->len; i++) {
-                NMConnection *candidate = NM_CONNECTION(connections->pdata[i]);
-
-                if ((NMConnection *) connection == candidate)
-                    continue;
-                if (nm_streq0(nm_connection_get_id(candidate), info->new_id))
-                    found++;
-            }
-            if (found > 0) {
-                g_printerr(g_dngettext(GETTEXT_PACKAGE,
-                                       "Warning: There is another connection with the name '%1$s'. "
-                                       "Reference the connection by its uuid '%2$s'\n",
-                                       "Warning: There are %3$u other connections with the name "
-                                       "'%1$s'. Reference the connection by its uuid '%2$s'\n",
-                                       found),
-                           info->new_id,
-                           nm_connection_get_uuid(NM_CONNECTION(connection)),
-                           found);
-            }
-        }
+        connection_warnings(nmc, NM_CONNECTION(connection));
 
         /* We print here human readable text, but as scripts might parse this output
          * (with LANG=C), this is important to not change in the future. At least
