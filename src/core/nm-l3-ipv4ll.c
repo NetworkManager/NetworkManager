@@ -921,8 +921,10 @@ _ipv4ll_state_change_on_idle(NML3IPv4LL *self)
     nm_assert(NM_IS_L3_IPV4LL(self));
 
     if (!self->state_change_on_idle_source) {
-        self->state_change_on_idle_source =
-            nm_g_idle_source_new(G_PRIORITY_DEFAULT, _ipv4ll_state_change_on_idle_cb, self, NULL);
+        self->state_change_on_idle_source = nm_g_idle_source_new(G_PRIORITY_DEFAULT_IDLE,
+                                                                 _ipv4ll_state_change_on_idle_cb,
+                                                                 self,
+                                                                 NULL);
         g_source_attach(self->state_change_on_idle_source, NULL);
     }
 }

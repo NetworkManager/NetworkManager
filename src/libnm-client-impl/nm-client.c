@@ -7349,7 +7349,10 @@ _init_start_with_bus(NMClient *self)
                                    NULL);
         if (id == 0) {
             priv->init_data->cancel_on_idle_source =
-                nm_g_idle_source_new(G_PRIORITY_DEFAULT, _init_start_cancel_on_idle_cb, self, NULL);
+                nm_g_idle_source_new(G_PRIORITY_DEFAULT_IDLE,
+                                     _init_start_cancel_on_idle_cb,
+                                     self,
+                                     NULL);
             g_source_attach(priv->init_data->cancel_on_idle_source, priv->main_context);
             return;
         }
