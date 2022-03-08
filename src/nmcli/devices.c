@@ -1237,6 +1237,9 @@ compare_aps(gconstpointer a, gconstpointer b, gpointer user_data)
     NMAccessPoint *apa = *(NMAccessPoint **) a;
     NMAccessPoint *apb = *(NMAccessPoint **) b;
 
+    /* Sort the deprecated WEP connections last. */
+    NM_CMP_DIRECT(_ap_is_wep(apb), _ap_is_wep(apa));
+
     NM_CMP_DIRECT(nm_access_point_get_strength(apb), nm_access_point_get_strength(apa));
     NM_CMP_DIRECT(nm_access_point_get_frequency(apa), nm_access_point_get_frequency(apb));
     NM_CMP_DIRECT(nm_access_point_get_max_bitrate(apb), nm_access_point_get_max_bitrate(apa));
@@ -1382,6 +1385,8 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
 
     /* Set colors */
     color = wifi_signal_to_color(strength);
+    if (_ap_is_wep(ap))
+        color = NM_META_COLOR_WIFI_DEPRECATED;
     set_val_color_all(arr, color);
     if (active)
         arr[15].color = NM_META_COLOR_CONNECTION_ACTIVATED;
