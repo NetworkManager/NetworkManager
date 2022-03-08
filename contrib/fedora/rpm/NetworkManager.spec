@@ -867,7 +867,9 @@ intltoolize --automake --copy --force
 	--disable-firewalld-zone \
 %endif
 	--with-dist-version=%{version}-%{release} \
-	--with-config-plugins-default=%{config_plugins_default} \
+%if %{?config_plugins_default_ifcfg_rh}
+	--with-config-plugins-default=ifcfg-rh \
+%endif
 	--with-resolvconf=no \
 	--with-netconfig=no \
 	--with-config-dns-rc-manager-default=%{dns_rc_manager_default} \
