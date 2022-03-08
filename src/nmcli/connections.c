@@ -5246,6 +5246,11 @@ connection_warnings(NmCli *nmc, NMConnection *connection)
     const GPtrArray *connections;
     guint            i, found;
     const char      *id;
+    const char      *deprecated;
+
+    deprecated = _connection_check_deprecated(NM_CONNECTION(connection));
+    if (deprecated)
+        g_printerr(_("Warning: %s.\n"), deprecated);
 
     connections = nm_client_get_connections(nmc->client);
     if (!connections)
