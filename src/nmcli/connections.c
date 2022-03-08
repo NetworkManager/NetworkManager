@@ -8897,6 +8897,8 @@ modify_connection_cb(GObject *connection, GAsyncResult *result, gpointer user_da
                         error->message);
         nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
     } else {
+        connection_warnings(nmc, NM_CONNECTION(connection));
+
         if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
             g_print(_("Connection '%s' (%s) successfully modified.\n"),
                     nm_connection_get_id(NM_CONNECTION(connection)),
