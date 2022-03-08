@@ -680,14 +680,13 @@ _mhandle_socketfunction_cb(CURL         *e_handle,
             condition = 0;
 
         if (condition) {
-            source_socket = nm_g_unix_fd_source_new(fd,
-                                                    condition,
-                                                    G_PRIORITY_DEFAULT,
-                                                    _mhandle_socket_cb,
-                                                    self,
-                                                    NULL);
-            g_source_attach(source_socket, priv->context);
-
+            source_socket = _source_attach(self,
+                                           nm_g_unix_fd_source_new(fd,
+                                                                   condition,
+                                                                   G_PRIORITY_DEFAULT,
+                                                                   _mhandle_socket_cb,
+                                                                   self,
+                                                                   NULL));
             g_hash_table_insert(priv->source_sockets_hashtable, GINT_TO_POINTER(fd), source_socket);
         }
     }

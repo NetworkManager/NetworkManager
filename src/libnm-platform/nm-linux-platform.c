@@ -9759,13 +9759,10 @@ constructed(GObject *_object)
           fd);
 
     priv->event_source =
-        nm_g_unix_fd_source_new(fd,
+        nm_g_unix_fd_add_source(fd,
                                 G_IO_IN | G_IO_NVAL | G_IO_PRI | G_IO_ERR | G_IO_HUP,
-                                G_PRIORITY_DEFAULT,
                                 event_handler,
-                                platform,
-                                NULL);
-    g_source_attach(priv->event_source, NULL);
+                                platform);
 
     /* complete construction of the GObject instance before populating the cache. */
     G_OBJECT_CLASS(nm_linux_platform_parent_class)->constructed(_object);
