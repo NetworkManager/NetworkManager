@@ -487,6 +487,22 @@ nm_streq0(const char *s1, const char *s2)
     return (s1 == s2) || (s1 && s2 && strcmp(s1, s2) == 0);
 }
 
+/*
+ * Very similar to g_str_has_prefix() with the obvious meaning.
+ * Differences:
+ * 1) suffix is enforced to be a C string literal
+ *   (it is thus more restricted, but you'll know it at compile time).
+ * 2) it accepts str==NULL
+ *   (it is thus more forgiving than g_str_has_prefix())
+ * 3) it can get the job done with one strncmp() (with
+ *   the length argument being a compile time constant, and compiler optimizing
+ *   strncmp() call).
+ *   Compare to g_str_has_prefix() which requires one call into glib, then
+ *   one strlen() and one strncmp() call.
+ *
+ * If it compiles (re:1), NM_STR_HAS_PREFIX() can fully replace g_str_has_prefix().
+ * The other way is not necessarily possible due to 2).
+ */
 #define NM_STR_HAS_PREFIX(str, prefix)                                                       \
     ({                                                                                       \
         const char *const _str_has_prefix = (str);                                           \
@@ -496,6 +512,22 @@ nm_streq0(const char *s1, const char *s2)
         _str_has_prefix && (strncmp(_str_has_prefix, "" prefix "", NM_STRLEN(prefix)) == 0); \
     })
 
+/*
+ * Very similar to g_str_has_suffix() with the obvious meaning.
+ * Differences:
+ * 1) suffix is enforced to be a C string literal
+ *   (it is thus more restricted, but you'll know it at compile time).
+ * 2) it accepts str==NULL
+ *   (it is thus more forgiving than g_str_has_suffix())
+ * 3) it can get the job done with one strlen() and one memcpy() call (with
+ *   the length argument being a compile time constant, and compiler optimizing
+ *   memcpy() call).
+ *   Compare to g_str_has_suffix() which requires one call into glib, then
+ *   two strlen() and one strcmp() call.
+ *
+ * If it compiles (re:1), NM_STR_HAS_SUFFIX() can fully replace g_str_has_suffix().
+ * The other way is not necessarily possible due to 2).
+ */
 #define NM_STR_HAS_SUFFIX(str, suffix)                                                         \
     ({                                                                                         \
         const char *const _str_has_suffix = (str);                                             \
