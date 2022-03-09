@@ -70,7 +70,7 @@ ip4_start(NMDhcpClient *client, GError **error)
     const NMDhcpClientConfig    *client_config;
     gs_unref_ptrarray GPtrArray *argv = NULL;
     pid_t                        pid;
-    GError                      *local   = NULL;
+    gs_free_error GError        *local   = NULL;
     gs_free char                *cmd_str = NULL;
     const char                  *dhcpcd_path;
 
@@ -143,7 +143,6 @@ ip4_start(NMDhcpClient *client, GError **error)
                            NM_UTILS_ERROR_UNKNOWN,
                            "dhcpcd failed to start: %s",
                            local->message);
-        g_error_free(local);
         return FALSE;
     }
 
