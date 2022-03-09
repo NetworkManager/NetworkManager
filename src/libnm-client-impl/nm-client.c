@@ -7327,8 +7327,8 @@ _init_start_cancelled_cb(GCancellable *cancellable, gpointer user_data)
 static gboolean
 _init_start_cancel_on_idle_cb(gpointer user_data)
 {
-    NMClient *self = user_data;
-    GError   *error;
+    NMClient *self  = user_data;
+    GError   *error = NULL;
 
     nm_utils_error_set_cancelled(&error, FALSE, NULL);
     _init_start_complete(self, error);
