@@ -957,7 +957,7 @@ constructed(GObject *object)
     NMDeviceTeamPrivate   *priv    = NM_DEVICE_TEAM_GET_PRIVATE(device);
     gs_free char          *tmp_str = NULL;
     gs_unref_object GFile *file    = NULL;
-    GError                *error;
+    gs_free_error GError  *error   = NULL;
 
     G_OBJECT_CLASS(nm_device_team_parent_class)->constructed(object);
 
