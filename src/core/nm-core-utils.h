@@ -233,6 +233,7 @@ void nm_utils_log_connection_diff(NMConnection *connection,
                                   const char   *dbus_path);
 
 gboolean nm_utils_is_specific_hostname(const char *name);
+gboolean nm_utils_shorten_hostname(const char *hostname, char **shortened);
 
 struct _NMUuid;
 

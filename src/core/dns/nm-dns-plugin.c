@@ -60,7 +60,7 @@ gboolean
 nm_dns_plugin_update(NMDnsPlugin             *self,
                      const NMGlobalDnsConfig *global_config,
                      const CList             *ip_config_lst_head,
-                     const char              *hostname,
+                     const char              *hostdomain,
                      GError                 **error)
 {
     g_return_val_if_fail(NM_DNS_PLUGIN_GET_CLASS(self)->update != NULL, FALSE);
@@ -68,7 +68,7 @@ nm_dns_plugin_update(NMDnsPlugin             *self,
     return NM_DNS_PLUGIN_GET_CLASS(self)->update(self,
                                                  global_config,
                                                  ip_config_lst_head,
-                                                 hostname,
+                                                 hostdomain,
                                                  error);
 }
 

@@ -212,6 +212,62 @@ test_hw_addr_gen_stable_eth(void)
                     "04:0D:CD:0C:9E:2C");
 }
 
+static void
+test_shorten_hostname(void)
+{
+    gboolean res;
+    char    *shortened = NULL;
+
+    res = nm_utils_shorten_hostname("name1", &shortened);
+    g_assert_cmpint(res, ==, TRUE);
+    g_assert_cmpstr(shortened, ==, NULL);
+    nm_clear_g_free(&shortened);
+
+    res = nm_utils_shorten_hostname("name1.example.com", &shortened);
+    g_assert_cmpint(res, ==, TRUE);
+    g_assert_cmpstr(shortened, ==, NULL);
+    nm_clear_g_free(&shortened);
+
+    res = nm_utils_shorten_hostname(
+        "123456789-123456789-123456789-123456789-123456789-123456789-1234",
+        &shortened);
+    g_assert_cmpint(res, ==, TRUE);
+    g_assert_cmpstr(shortened, ==, NULL);
+    nm_clear_g_free(&shortened);
+
+    res = nm_utils_shorten_hostname(
+        "123456789-123456789-123456789-123456789-123456789-123456789-12345",
+        &shortened);
+    g_assert_cmpint(res, ==, TRUE);
+    g_assert_cmpstr(shortened,
+                    ==,
+                    "123456789-123456789-123456789-123456789-123456789-123456789-1234");
+    nm_clear_g_free(&shortened);
+
+    res = nm_utils_shorten_hostname(
+        "name1.test-dhcp-this-one-here-is-a-very-very-long-domain.example.com",
+        &shortened);
+    g_assert_cmpint(res, ==, TRUE);
+    g_assert_cmpstr(shortened, ==, "name1");
+    nm_clear_g_free(&shortened);
+
+    res = nm_utils_shorten_hostname(
+        "test-dhcp-this-one-here-is-a-very-very-long-hostname-without-domainname",
+        &shortened);
+    g_assert_cmpint(res, ==, TRUE);
+    g_assert_cmpstr(shortened,
+                    ==,
+                    "test-dhcp-this-one-here-is-a-very-very-long-hostname-without-dom");
+    nm_clear_g_free(&shortened);
+
+    res = nm_utils_shorten_hostname(
+        ".test-dhcp-this-one-here-is-a-very-very-long-hostname.example.com",
+        &shortened);
+    g_assert_cmpint(res, ==, FALSE);
+    g_assert_cmpstr(shortened, ==, NULL);
+    nm_clear_g_free(&shortened);
+}
+
 /*****************************************************************************/
 
 NMTST_DEFINE();
@@ -223,6 +279,7 @@ main(int argc, char **argv)
 
     g_test_add_func("/utils/stable_privacy", test_stable_privacy);
     g_test_add_func("/utils/hw_addr_gen_stable_eth", test_hw_addr_gen_stable_eth);
+    g_test_add_func("/utils/shorten-hostname", test_shorten_hostname);
 
     return g_test_run();
 }
