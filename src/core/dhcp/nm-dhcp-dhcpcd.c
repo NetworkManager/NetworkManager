@@ -70,7 +70,7 @@ ip4_start(NMDhcpClient *client, GError **error)
     const NMDhcpClientConfig    *client_config;
     gs_unref_ptrarray GPtrArray *argv = NULL;
     pid_t                        pid;
-    GError                      *local;
+    GError                      *local   = NULL;
     gs_free char                *cmd_str = NULL;
     const char                  *dhcpcd_path;
 
