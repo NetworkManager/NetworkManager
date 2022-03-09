@@ -18,6 +18,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   "--with-config-plugins-default" configure argument, now all known
   plugins found in the plugin directory are loaded (and the built-in
   "keyfile" plugin is preferred over others).
+* The hostname received from DHCP is now shortened to the first dot
+  (or to 64 characters, whatever comes first) if it's too long.
 
 =============================================
 NetworkManager-1.36
