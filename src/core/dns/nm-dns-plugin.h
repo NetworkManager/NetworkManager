@@ -34,7 +34,7 @@ typedef struct {
     gboolean (*update)(NMDnsPlugin             *self,
                        const NMGlobalDnsConfig *global_config,
                        const CList             *ip_config_lst_head,
-                       const char              *hostname,
+                       const char              *hostdomain,
                        GError                 **error);
 
     void (*stop)(NMDnsPlugin *self);

@@ -551,7 +551,7 @@ static gboolean
 update(NMDnsPlugin             *plugin,
        const NMGlobalDnsConfig *global_config,
        const CList             *ip_data_lst_head,
-       const char              *hostname,
+       const char              *hostdomain,
        GError                 **error)
 {
     NMDnsSystemdResolved          *self            = NM_DNS_SYSTEMD_RESOLVED(plugin);

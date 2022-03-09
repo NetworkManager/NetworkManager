@@ -28,7 +28,7 @@ static gboolean
 update(NMDnsPlugin             *plugin,
        const NMGlobalDnsConfig *global_config,
        const CList             *ip_config_lst_head,
-       const char              *hostname,
+       const char              *hostdomain,
        GError                 **error)
 {
     char                 *argv[] = {DNSSEC_TRIGGER_PATH, "--async", "--update", NULL};

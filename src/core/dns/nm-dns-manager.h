@@ -105,7 +105,6 @@ gboolean nm_dns_manager_set_ip_config(NMDnsManager         *self,
                                       NMDnsIPConfigType     ip_config_type,
                                       gboolean              replace_all);
 
-void nm_dns_manager_set_initial_hostname(NMDnsManager *self, const char *hostname);
 void nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean skip_update);
 
 /**

@@ -848,7 +848,7 @@ static GVariant *
 create_update_args(NMDnsDnsmasq            *self,
                    const NMGlobalDnsConfig *global_config,
                    const CList             *ip_data_lst_head,
-                   const char              *hostname)
+                   const char              *hostdomain)
 {
     GVariantBuilder          servers;
     const NMDnsConfigIPData *ip_data;
@@ -1124,7 +1124,7 @@ static gboolean
 update(NMDnsPlugin             *plugin,
        const NMGlobalDnsConfig *global_config,
        const CList             *ip_data_lst_head,
-       const char              *hostname,
+       const char              *hostdomain,
        GError                 **error)
 {
     NMDnsDnsmasq        *self = NM_DNS_DNSMASQ(plugin);
@@ -1135,7 +1135,7 @@ update(NMDnsPlugin             *plugin,
 
     nm_clear_pointer(&priv->set_server_ex_args, g_variant_unref);
     priv->set_server_ex_args =
-        g_variant_ref_sink(create_update_args(self, global_config, ip_data_lst_head, hostname));
+        g_variant_ref_sink(create_update_args(self, global_config, ip_data_lst_head, hostdomain));
 
     send_dnsmasq_update(self);
     return TRUE;

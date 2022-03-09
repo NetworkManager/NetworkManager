@@ -26,6 +26,7 @@
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"
@@ -97,7 +98,7 @@ typedef struct {
 
     bool config_changed : 1;
 
-    char *hostname;
+    char *hostdomain;
     guint updates_queue;
 
     guint8 hash[HASH_LEN];      /* SHA1 hash of current DNS config */
@@ -1260,24 +1261,8 @@ _collect_resolv_conf_data(NMDnsManager      *self,
         }
     }
 
-    /* If the hostname is a FQDN ("dcbw.example.com"), then add the domain part of it
-     * ("example.com") to the searches list, to ensure that we can still resolve its
-     * non-FQ form ("dcbw") too. (Also, if there are no other search domains specified,
-     * this makes a good default.) However, if the hostname is the top level of a domain
-     * (eg, "example.com"), then use the hostname itself as the search (since the user is
-     * unlikely to want "com" as a search domain).
-     */
-    if (priv->hostname) {
-        const char *hostdomain = strchr(priv->hostname, '.');
-
-        if (hostdomain && !nm_utils_ipaddr_is_valid(AF_UNSPEC, priv->hostname)) {
-            hostdomain++;
-            if (domain_is_valid(hostdomain, TRUE))
-                add_string_item(rc.searches, hostdomain, TRUE);
-            else if (domain_is_valid(priv->hostname, TRUE))
-                add_string_item(rc.searches, priv->hostname, TRUE);
-        }
-    }
+    if (priv->hostdomain)
+        add_string_item(rc.searches, priv->hostdomain, TRUE);
 
     if (rc.has_trust_ad == NM_TERNARY_TRUE)
         g_ptr_array_add(rc.options, g_strdup(NM_SETTING_DNS_OPTION_TRUST_AD));
@@ -1695,7 +1680,7 @@ update_dns(NMDnsManager *self, gboolean no_caching, gboolean force_emit, GError 
         nm_dns_plugin_update(priv->sd_resolve_plugin,
                              global_config,
                              _mgr_get_ip_data_lst_head(self),
-                             priv->hostname,
+                             priv->hostdomain,
                              NULL);
     }
 
@@ -1717,7 +1702,7 @@ update_dns(NMDnsManager *self, gboolean no_caching, gboolean force_emit, GError 
         if (!nm_dns_plugin_update(plugin,
                                   global_config,
                                   _mgr_get_ip_data_lst_head(self),
-                                  priv->hostname,
+                                  priv->hostdomain,
                                   &plugin_error)) {
             _LOGW("update-dns: plugin %s update failed: %s", plugin_name, plugin_error->message);
 
@@ -2003,27 +1988,39 @@ done:
 }
 
 void
-nm_dns_manager_set_initial_hostname(NMDnsManager *self, const char *hostname)
-{
-    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
-
-    g_free(priv->hostname);
-    priv->hostname = g_strdup(hostname);
-}
-
-void
 nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean skip_update)
 {
-    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+    NMDnsManagerPrivate *priv   = NM_DNS_MANAGER_GET_PRIVATE(self);
+    const char          *domain = NULL;
 
     /* Certain hostnames we don't want to include in resolv.conf 'searches' */
-    if (hostname && nm_utils_is_specific_hostname(hostname) && !strstr(hostname, ".in-addr.arpa")
-        && strchr(hostname, '.')) {
-        /* pass */
-    } else
-        hostname = NULL;
+    if (hostname && nm_utils_is_specific_hostname(hostname)
+        && !g_str_has_suffix(hostname, ".in-addr.arpa")
+        && !nm_utils_ipaddr_is_valid(AF_UNSPEC, hostname)) {
+        domain = strchr(hostname, '.');
+        if (domain) {
+            domain++;
+            /* If the hostname is a FQDN ("dcbw.example.com"), then add
+             * the domain part of it ("example.com") to the searches list,
+             * to ensure that we can still resolve its non-FQ form
+             * ("dcbw") too. (Also, if there are no other search domains
+             * specified, this makes a good default.) However, if the
+             * hostname is the top level of a domain (eg, "example.com"),
+             * then use the hostname itself as the search (since the user
+             * is unlikely to want "com" as a search domain).a
+             */
+            if (domain_is_valid(domain, TRUE)) {
+                /* pass */
+            } else if (domain_is_valid(hostname, TRUE)) {
+                domain = hostname;
+            }
 
-    if (!nm_strdup_reset(&priv->hostname, hostname))
+            if (!nm_sd_hostname_is_valid(domain, FALSE))
+                domain = NULL;
+        }
+    }
+
+    if (!nm_strdup_reset(&priv->hostdomain, domain))
         return;
 
     if (skip_update)
@@ -2668,7 +2665,7 @@ finalize(GObject *object)
     NMDnsManager        *self = NM_DNS_MANAGER(object);
     NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
 
-    g_free(priv->hostname);
+    g_free(priv->hostdomain);
     g_free(priv->mode);
 
     G_OBJECT_CLASS(nm_dns_manager_parent_class)->finalize(object);
