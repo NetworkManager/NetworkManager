@@ -671,6 +671,9 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
             if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
                 continue;
 
+            if (tb_freq[NL80211_FREQUENCY_ATTR_DISABLED])
+                continue;
+
             if (info->num_freqs >= num_alloc) {
                 num_alloc *= 2;
                 info->freqs = g_renew(guint32, info->freqs, num_alloc);
