@@ -1,0 +1,1 @@
+Fixes: 21b008d0ff72 ('libnm: add nm_client_get_capabilities() to expose server Capabilities')
