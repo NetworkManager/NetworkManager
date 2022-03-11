@@ -6680,3 +6680,23 @@ nm_g_main_context_iterate_for_msec(GMainContext *context, guint timeout_msec)
     while (source)
         g_main_context_iteration(context, TRUE);
 }
+
+/*****************************************************************************/
+
+gboolean
+nm_g_main_context_can_acquire(GMainContext *context)
+{
+    /* Fast path. Usually we don't pass contexts between threads
+     * and operate while iterating the context. Hence, usually we
+     * already acquired the context. Check that first. */
+    if (g_main_context_is_owner(context))
+        return TRUE;
+
+    /* Either the context is not owned, or owned by somebody else. Only
+     * one way to find out. */
+    if (!g_main_context_acquire(context))
+        return FALSE;
+
+    g_main_context_release(context);
+    return TRUE;
+}
