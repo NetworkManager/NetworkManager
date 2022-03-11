@@ -764,7 +764,7 @@ _nm_client_set_property_sync_legacy(NMClient   *self,
                 NMClientPrivate *_priv = NM_CLIENT_GET_PRIVATE(self);         \
                                                                               \
                 nm_assert(g_source_get_context(_source) == _priv->x_context); \
-                nm_assert(g_main_context_is_owner(_priv->x_context));         \
+                nm_assert(nm_g_main_context_can_acquire(_priv->x_context));   \
             }                                                                 \
         }                                                                     \
     }                                                                         \
@@ -778,7 +778,7 @@ _nm_client_set_property_sync_legacy(NMClient   *self,
                                                                                         \
             nm_assert((g_main_context_get_thread_default() ?: g_main_context_default()) \
                       == _priv->x_context);                                             \
-            nm_assert(g_main_context_is_owner(_priv->x_context));                       \
+            nm_assert(nm_g_main_context_can_acquire(_priv->x_context));                 \
         }                                                                               \
     }                                                                                   \
     G_STMT_END
