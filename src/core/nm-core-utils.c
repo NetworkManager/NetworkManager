@@ -3421,7 +3421,7 @@ nm_utils_stable_id_parse(const char *stable_id,
     ({                                                                        \
         gboolean _match = FALSE;                                              \
                                                                               \
-        if (g_str_has_prefix(&stable_id[i], "" prefix "")) {                  \
+        if (NM_STR_HAS_PREFIX(&stable_id[i], "" prefix "")) {                 \
             _match = TRUE;                                                    \
             if (!str)                                                         \
                 str = g_string_sized_new(256);                                \
