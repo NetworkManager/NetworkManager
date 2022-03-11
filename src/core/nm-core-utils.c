@@ -2693,8 +2693,9 @@ _host_id_read_timestamp(gboolean      use_secret_key_file,
      * timestamp. It is wrong to worry about using a fake timestamp (which is tied to
      * the secret_key) if we are unable to access the secret_key file in the first place.
      *
-     * Pick a random timestamp from the past two years. Yes, this timestamp
-     * is not stable across restarts, but apparently neither is the host-id
+     * Pick a timestamp from the past two years, by using a generated timespan
+     * by hashing the host-id. Yes, this timestamp counts back from @now, and is
+     * thus not stable across restarts. But apparently neither is the host-id
      * nor the secret_key itself. */
 
 #define EPOCH_TWO_YEARS (G_GINT64_CONSTANT(2 * 365 * 24 * 3600) * NM_UTILS_NSEC_PER_SEC)
@@ -2875,7 +2876,13 @@ out:
 typedef struct {
     guint8 *host_id;
     gsize   host_id_len;
+
+    /* The timestamp (in nsec since the Epoch) returned by nm_utils_host_id_get_timestamp_ns().
+     * It is associated with the host (and the host-id). We currently use this for the LLT DUID
+     * generation for IPv6. Instead of persisting the timestamp separately to disk, we re-use the
+     * file timestamp of the secret_key file. */
     gint64  timestamp_ns;
+
     bool    is_good : 1;
     bool    timestamp_is_good : 1;
 } HostIdData;
