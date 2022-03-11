@@ -1802,7 +1802,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * is commonly also included, so that different systems end up generating
      * different IDs. Or with ipv6.addr-gen-mode=stable-privacy, also the device's
      * name is included, so that different interfaces yield different addresses.
-     * The per-host key is the identity of your machine and stored in /var/lib/NetworkManager/secret-key.
+     * The per-host key is the identity of your machine and stored in /var/lib/NetworkManager/secret_key.
+     * See NetworkManager(8) manual about the secret-key and the host identity.
      *
      * The '$' character is treated special to perform dynamic substitutions
      * at runtime. Currently, supported are "${CONNECTION}", "${DEVICE}", "${MAC}",
