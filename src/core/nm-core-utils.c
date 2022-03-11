@@ -3350,8 +3350,13 @@ nm_utils_stable_id_generated_complete(const char *stable_id_generated)
 static void
 _stable_id_append(GString *str, const char *substitution)
 {
-    if (!substitution)
+    if (!substitution) {
+        /* Would have been nicer to append "=NIL;" to differentiate between
+         * empty and NULL.
+         *
+         * Can't do that now, as it would change behavior. */
         substitution = "";
+    }
     g_string_append_printf(str, "=%zu{%s}", strlen(substitution), substitution);
 }
 
