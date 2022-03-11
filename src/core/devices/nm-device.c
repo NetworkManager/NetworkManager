@@ -1133,7 +1133,7 @@ _prop_get_ipv6_dhcp_duid(NMDevice     *self,
             duid_out = nm_utils_generate_duid_llt(arp_type,
                                                   hwaddr_bin,
                                                   hwaddr_len,
-                                                  nm_utils_host_id_get_timestamp_ns()
+                                                  nm_utils_host_id_get_timestamp_nsec()
                                                       / NM_UTILS_NSEC_PER_SEC);
         }
 
@@ -1234,7 +1234,7 @@ _prop_get_ipv6_dhcp_duid(NMDevice     *self,
              * before. Let's compute the time (in seconds) from 0 to 3 years; then we'll
              * subtract it from the host_id timestamp.
              */
-            time = nm_utils_host_id_get_timestamp_ns() / NM_UTILS_NSEC_PER_SEC;
+            time = nm_utils_host_id_get_timestamp_nsec() / NM_UTILS_NSEC_PER_SEC;
 
             /* don't use too old timestamps. They cannot be expressed in DUID-LLT and
              * would all be truncated to zero. */

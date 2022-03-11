@@ -2877,14 +2877,14 @@ typedef struct {
     guint8 *host_id;
     gsize   host_id_len;
 
-    /* The timestamp (in nsec since the Epoch) returned by nm_utils_host_id_get_timestamp_ns().
+    /* The timestamp (in nsec since the Epoch) returned by nm_utils_host_id_get_timestamp_nsec().
      * It is associated with the host (and the host-id). We currently use this for the LLT DUID
      * generation for IPv6. Instead of persisting the timestamp separately to disk, we re-use the
      * file timestamp of the secret_key file. */
-    gint64  timestamp_ns;
+    gint64 timestamp_nsec;
 
-    bool    is_good : 1;
-    bool    timestamp_is_good : 1;
+    bool is_good : 1;
+    bool timestamp_is_good : 1;
 } HostIdData;
 
 static const HostIdData *volatile host_id_static;
@@ -2908,7 +2908,7 @@ again:
         host_id_data.timestamp_is_good = _host_id_read_timestamp(host_id_data.is_good,
                                                                  host_id_data.host_id,
                                                                  host_id_data.host_id_len,
-                                                                 &host_id_data.timestamp_ns);
+                                                                 &host_id_data.timestamp_nsec);
         if (!host_id_data.timestamp_is_good && host_id_data.is_good)
             nm_log_warn(LOGD_CORE, "secret-key: failure reading host timestamp (use fake one)");
 
@@ -2947,9 +2947,9 @@ nm_utils_host_id_get(const guint8 **out_host_id, gsize *out_host_id_len)
 }
 
 gint64
-nm_utils_host_id_get_timestamp_ns(void)
+nm_utils_host_id_get_timestamp_nsec(void)
 {
-    return _host_id_get()->timestamp_ns;
+    return _host_id_get()->timestamp_nsec;
 }
 
 static GArray    *nmtst_host_id_stack = NULL;
@@ -2960,7 +2960,7 @@ void
 nmtst_utils_host_id_push(const guint8 *host_id,
                          gssize        host_id_len,
                          gboolean      is_good,
-                         const gint64 *timestamp_ns)
+                         const gint64 *p_timestamp_nsec)
 {
     NM_G_MUTEX_LOCKED(&nmtst_host_id_lock);
     gs_free char *str1_to_free = NULL;
@@ -2979,8 +2979,8 @@ nmtst_utils_host_id_push(const guint8 *host_id,
                                             &str1_to_free),
                (gsize) host_id_len,
                !!is_good,
-               timestamp_ns ? *timestamp_ns : 0,
-               timestamp_ns ? "" : " (not-good)");
+               p_timestamp_nsec ? *p_timestamp_nsec : 0,
+               p_timestamp_nsec ? "" : " (not-good)");
 
     if (!nmtst_host_id_stack) {
         nmtst_host_id_stack    = g_array_new(FALSE, FALSE, sizeof(HostIdData));
@@ -2992,9 +2992,9 @@ nmtst_utils_host_id_push(const guint8 *host_id,
     *h = (HostIdData){
         .host_id           = nm_memdup(host_id, host_id_len),
         .host_id_len       = host_id_len,
-        .timestamp_ns      = timestamp_ns ? *timestamp_ns : 0,
+        .timestamp_nsec    = p_timestamp_nsec ? *p_timestamp_nsec : 0,
         .is_good           = is_good,
-        .timestamp_is_good = !!timestamp_ns,
+        .timestamp_is_good = !!p_timestamp_nsec,
     };
 
     g_atomic_pointer_set(&host_id_static, h);
