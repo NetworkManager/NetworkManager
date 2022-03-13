@@ -1743,9 +1743,7 @@ again:
 
     n_acd_get_fd(self->priv.p->nacd, &fd);
 
-    self->priv.p->nacd_source =
-        nm_g_unix_fd_source_new(fd, G_IO_IN, G_PRIORITY_DEFAULT, _l3_acd_nacd_event, self, NULL);
-    nm_g_source_attach(self->priv.p->nacd_source, NULL);
+    self->priv.p->nacd_source = nm_g_unix_fd_add_source(fd, G_IO_IN, _l3_acd_nacd_event, self);
 
     NM_SET_OUT(out_acd_not_supported, FALSE);
     return self->priv.p->nacd;

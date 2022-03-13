@@ -114,13 +114,10 @@ st_sd_init(NMSessionMonitor *monitor)
         return;
     }
 
-    monitor->sd.watch = nm_g_unix_fd_source_new(sd_login_monitor_get_fd(monitor->sd.monitor),
+    monitor->sd.watch = nm_g_unix_fd_add_source(sd_login_monitor_get_fd(monitor->sd.monitor),
                                                 G_IO_IN,
-                                                G_PRIORITY_DEFAULT,
                                                 st_sd_changed,
-                                                monitor,
-                                                NULL);
-    g_source_attach(monitor->sd.watch, NULL);
+                                                monitor);
 }
 
 static void

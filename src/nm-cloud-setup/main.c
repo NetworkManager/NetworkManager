@@ -625,12 +625,7 @@ main(int argc, const char *const *argv)
 
     sigterm_cancellable = g_cancellable_new();
 
-    sigterm_source = nm_g_source_attach(nm_g_unix_signal_source_new(SIGTERM,
-                                                                    G_PRIORITY_DEFAULT,
-                                                                    sigterm_handler,
-                                                                    sigterm_cancellable,
-                                                                    NULL),
-                                        NULL);
+    sigterm_source = nm_g_unix_signal_add_source(SIGTERM, sigterm_handler, sigterm_cancellable);
 
     provider = _provider_detect(sigterm_cancellable);
     if (!provider)

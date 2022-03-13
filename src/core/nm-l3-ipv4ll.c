@@ -748,12 +748,8 @@ _ipv4ll_set_timed_out_update(NML3IPv4LL *self, TimedOutState new_state)
         if (self->timed_out_expiry_msec == 0 || self->timed_out_expiry_msec < expiry_msec) {
             self->timed_out_expiry_msec = expiry_msec;
             nm_clear_g_source_inst(&self->timed_out_source);
-            self->timed_out_source = nm_g_timeout_source_new(timeout_msec,
-                                                             G_PRIORITY_DEFAULT,
-                                                             _ipv4ll_set_timed_out_timeout_cb,
-                                                             self,
-                                                             NULL);
-            g_source_attach(self->timed_out_source, NULL);
+            self->timed_out_source =
+                nm_g_timeout_add_source(timeout_msec, _ipv4ll_set_timed_out_timeout_cb, self);
         }
         break;
     }
@@ -922,8 +918,7 @@ _ipv4ll_state_change_on_idle(NML3IPv4LL *self)
 
     if (!self->state_change_on_idle_source) {
         self->state_change_on_idle_source =
-            nm_g_idle_source_new(G_PRIORITY_DEFAULT, _ipv4ll_state_change_on_idle_cb, self, NULL);
-        g_source_attach(self->state_change_on_idle_source, NULL);
+            nm_g_idle_add_source(_ipv4ll_state_change_on_idle_cb, self);
     }
 }
 

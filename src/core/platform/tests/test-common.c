@@ -2778,13 +2778,7 @@ nmtstp_acd_defender_new(int ifindex, in_addr_t ip_addr, const NMEtherAddr *mac_a
     n_acd_get_fd(defender->nacd, &fd);
     g_assert_cmpint(fd, >=, 0);
 
-    defender->source = nm_g_source_attach(nm_g_unix_fd_source_new(fd,
-                                                                  G_IO_IN,
-                                                                  G_PRIORITY_DEFAULT,
-                                                                  _l3_acd_nacd_event,
-                                                                  defender,
-                                                                  NULL),
-                                          NULL);
+    defender->source = nm_g_unix_fd_add_source(fd, G_IO_IN, _l3_acd_nacd_event, defender);
 
     return defender;
 }
