@@ -993,6 +993,7 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
           " MESH%c"
           " FAST%c"
           " WFD%c"
+          " SUITEB192%c"
           "",
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_AP),
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_PMF),
@@ -1002,7 +1003,8 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_SHA384),
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_MESH),
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_FAST),
-          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_WFD));
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_WFD),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_SUITEB192));
 
     nm_assert(g_hash_table_size(priv->supp_ifaces) == 0);
     nm_assert(c_list_is_empty(&priv->supp_lst_head));
