@@ -1082,6 +1082,21 @@ nm_dbus_manager_lookup_object(NMDBusManager *self, const char *path)
     return obj;
 }
 
+gpointer
+nm_dbus_manager_lookup_object_with_type(NMDBusManager *self, GType gtype, const char *path)
+{
+    gpointer ptr;
+
+    nm_assert(g_type_is_a(gtype, NM_TYPE_DBUS_OBJECT));
+    nm_assert(gtype != NM_TYPE_DBUS_OBJECT);
+
+    ptr = nm_dbus_manager_lookup_object(self, path);
+    if (!ptr || !G_TYPE_CHECK_INSTANCE_TYPE(ptr, gtype))
+        return NULL;
+
+    return ptr;
+}
+
 void
 _nm_dbus_manager_obj_export(NMDBusObject *obj)
 {
