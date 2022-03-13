@@ -1881,6 +1881,13 @@
       </varlistentry>
 
       <varlistentry>
+        <term><option>connection-deprecated</option></term>
+        <listitem>
+          <para>Connection that uses deprecated settings. It might not be possible to activate it.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
         <term><option>connectivity-full</option></term>
         <listitem>
           <para>Connectivity state when Internet is reachable.</para>
@@ -2101,6 +2108,13 @@
         <term><option>wifi-signal-unknown</option></term>
         <listitem>
           <para>Wi-Fi network that hasn't been actually seen (a hidden AP).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>wifi-deprecated</option></term>
+        <listitem>
+          <para>Wi-Fi network that might be impossible to connect to due to use of deprecated functionality.</para>
         </listitem>
       </varlistentry>
 

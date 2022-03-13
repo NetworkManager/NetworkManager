@@ -513,6 +513,40 @@ _con_show_fcn_get_type(NMConnection *c, NMActiveConnection *ac, NMMetaAccessorGe
     return connection_type_to_display(s, get_type);
 }
 
+static const char *
+_connection_check_deprecated(NMConnection *c)
+{
+    NMSettingWirelessSecurity *s_wsec;
+    const char                *key_mgmt;
+    const char                *type;
+
+    type = nm_connection_get_connection_type(c);
+
+    if (strcmp(type, NM_SETTING_WIMAX_SETTING_NAME) == 0)
+        return _("WiMax is no longer supported");
+
+    s_wsec = nm_connection_get_setting_wireless_security(c);
+    if (s_wsec) {
+        key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
+        if (NM_IN_STRSET(key_mgmt, "ieee8021x", "none"))
+		return _("WEP encryption is known to be insecure");
+    }
+
+    return NULL;
+}
+
+static NMMetaColor
+_connection_to_color(NMConnection *c, NMActiveConnection *ac)
+{
+    if (ac)
+        return nmc_active_connection_state_to_color(ac);
+
+    if (_connection_check_deprecated(c))
+        return NM_META_COLOR_CONNECTION_DEPRECATED;
+
+    return NM_META_COLOR_CONNECTION_UNKNOWN;
+}
+
 static gconstpointer
 _metagen_con_show_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
 {
@@ -523,7 +557,7 @@ _metagen_con_show_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
     const char                  *s;
     char                        *s_mut;
 
-    NMC_HANDLE_COLOR(nmc_active_connection_state_to_color(ac));
+    NMC_HANDLE_COLOR(_connection_to_color(c, ac));
 
     if (c)
         s_con = nm_connection_get_setting_connection(c);
@@ -1478,9 +1512,6 @@ nmc_active_connection_state_to_color(NMActiveConnection *ac)
 {
     NMActiveConnectionState state;
 
-    if (!ac)
-        return NM_META_COLOR_CONNECTION_UNKNOWN;
-
     if (NM_FLAGS_HAS(nm_active_connection_get_state_flags(ac), NM_ACTIVATION_STATE_FLAG_EXTERNAL))
         return NM_META_COLOR_CONNECTION_EXTERNAL;
 
@@ -1881,6 +1912,7 @@ con_show_get_items_cmp(gconstpointer pa, gconstpointer pb, gpointer user_data)
             }
         }
 
+        NM_CMP_DIRECT(!!_connection_check_deprecated(c_a), !!_connection_check_deprecated(c_b));
         NM_CMP_DIRECT_STRCMP0(nm_connection_get_uuid(c_a), nm_connection_get_uuid(c_b));
         NM_CMP_DIRECT_STRCMP0(nm_connection_get_path(c_a), nm_connection_get_path(c_b));
     }
@@ -5209,14 +5241,52 @@ nmc_process_connection_properties(NmCli              *nmc,
 }
 
 static void
+connection_warnings(NmCli *nmc, NMConnection *connection)
+{
+    const GPtrArray *connections;
+    guint            i, found;
+    const char      *id;
+    const char      *deprecated;
+
+    deprecated = _connection_check_deprecated(NM_CONNECTION(connection));
+    if (deprecated)
+        g_printerr(_("Warning: %s.\n"), deprecated);
+
+    connections = nm_client_get_connections(nmc->client);
+    if (!connections)
+        return;
+
+    id    = nm_connection_get_id(connection);
+    found = 0;
+    for (i = 0; i < connections->len; i++) {
+        NMConnection *candidate = NM_CONNECTION(connections->pdata[i]);
+
+        if ((NMConnection *) connection == candidate)
+            continue;
+        if (nm_streq0(nm_connection_get_id(candidate), id))
+            found++;
+    }
+
+    if (found > 0) {
+        g_printerr(g_dngettext(GETTEXT_PACKAGE,
+                               "Warning: There is another connection with the name '%1$s'. "
+                               "Reference the connection by its uuid '%2$s'\n",
+                               "Warning: There are %3$u other connections with the name "
+                               "'%1$s'. Reference the connection by its uuid '%2$s'\n",
+                               found),
+                   id,
+                   nm_connection_get_uuid(NM_CONNECTION(connection)),
+                   found);
+    }
+}
+
+static void
 add_connection_cb(GObject *client, GAsyncResult *result, gpointer user_data)
 {
     nm_auto_free_add_connection_info AddConnectionInfo *info = user_data;
     NmCli                                              *nmc  = info->nmc;
     NMRemoteConnection                                 *connection;
     GError                                             *error = NULL;
-    const GPtrArray                                    *connections;
-    guint                                               i, found;
 
     connection = nm_client_add_connection2_finish(NM_CLIENT(client), result, NULL, &error);
     if (error) {
@@ -5227,29 +5297,7 @@ add_connection_cb(GObject *client, GAsyncResult *result, gpointer user_data)
         g_error_free(error);
         nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
     } else {
-        connections = nm_client_get_connections(nmc->client);
-        if (connections) {
-            found = 0;
-            for (i = 0; i < connections->len; i++) {
-                NMConnection *candidate = NM_CONNECTION(connections->pdata[i]);
-
-                if ((NMConnection *) connection == candidate)
-                    continue;
-                if (nm_streq0(nm_connection_get_id(candidate), info->new_id))
-                    found++;
-            }
-            if (found > 0) {
-                g_printerr(g_dngettext(GETTEXT_PACKAGE,
-                                       "Warning: There is another connection with the name '%1$s'. "
-                                       "Reference the connection by its uuid '%2$s'\n",
-                                       "Warning: There are %3$u other connections with the name "
-                                       "'%1$s'. Reference the connection by its uuid '%2$s'\n",
-                                       found),
-                           info->new_id,
-                           nm_connection_get_uuid(NM_CONNECTION(connection)),
-                           found);
-            }
-        }
+        connection_warnings(nmc, NM_CONNECTION(connection));
 
         /* We print here human readable text, but as scripts might parse this output
          * (with LANG=C), this is important to not change in the future. At least
@@ -8854,6 +8902,8 @@ modify_connection_cb(GObject *connection, GAsyncResult *result, gpointer user_da
                         error->message);
         nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
     } else {
+        connection_warnings(nmc, NM_CONNECTION(connection));
+
         if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY) {
             g_print(_("Connection '%s' (%s) successfully modified.\n"),
                     nm_connection_get_id(NM_CONNECTION(connection)),
