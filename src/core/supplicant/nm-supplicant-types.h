@@ -48,6 +48,8 @@ typedef enum {
     NM_SUPPL_CAP_TYPE_FAST,
     NM_SUPPL_CAP_TYPE_WFD,
     NM_SUPPL_CAP_TYPE_SUITEB192,
+    /* Note: if you're adding a capability here, log its presence at the
+     * bottom of _dbus_get_capabilities_cb(). */
     _NM_SUPPL_CAP_TYPE_NUM,
 } NMSupplCapType;
 
