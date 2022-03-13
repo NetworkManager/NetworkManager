@@ -1216,11 +1216,29 @@ get_device(NmCli *nmc, int *argc, const char *const **argv, GError **error)
     return devices[i];
 }
 
+static bool
+_ap_is_wep(NMAccessPoint *ap)
+{
+    NM80211ApFlags         flags     = nm_access_point_get_flags(ap);
+    NM80211ApSecurityFlags wpa_flags = nm_access_point_get_wpa_flags(ap);
+    NM80211ApSecurityFlags rsn_flags = nm_access_point_get_rsn_flags(ap);
+
+    if ((flags & NM_802_11_AP_FLAGS_PRIVACY) && (wpa_flags == NM_802_11_AP_SEC_NONE)
+        && (rsn_flags == NM_802_11_AP_SEC_NONE)) {
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
 static int
 compare_aps(gconstpointer a, gconstpointer b, gpointer user_data)
 {
     NMAccessPoint *apa = *(NMAccessPoint **) a;
     NMAccessPoint *apb = *(NMAccessPoint **) b;
+
+    /* Sort the deprecated WEP connections last. */
+    NM_CMP_DIRECT(_ap_is_wep(apb), _ap_is_wep(apa));
 
     NM_CMP_DIRECT(nm_access_point_get_strength(apb), nm_access_point_get_strength(apa));
     NM_CMP_DIRECT(nm_access_point_get_frequency(apa), nm_access_point_get_frequency(apb));
@@ -1262,7 +1280,6 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
 {
     NmcOutputField        *arr;
     gboolean               active;
-    NM80211ApFlags         flags;
     NM80211ApSecurityFlags wpa_flags, rsn_flags;
     guint32                freq, bitrate;
     guint8                 strength;
@@ -1285,7 +1302,6 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     active = (info->active_ap == ap);
 
     /* Get AP properties */
-    flags     = nm_access_point_get_flags(ap);
     wpa_flags = nm_access_point_get_wpa_flags(ap);
     rsn_flags = nm_access_point_get_rsn_flags(ap);
     ssid      = nm_access_point_get_ssid(ap);
@@ -1314,26 +1330,27 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
 
     security_str = g_string_new(NULL);
 
-    if ((flags & NM_802_11_AP_FLAGS_PRIVACY) && (wpa_flags == NM_802_11_AP_SEC_NONE)
-        && (rsn_flags == NM_802_11_AP_SEC_NONE)) {
+    if (_ap_is_wep(ap)) {
         g_string_append(security_str, "WEP ");
-    }
-    if (wpa_flags != NM_802_11_AP_SEC_NONE) {
-        g_string_append(security_str, "WPA1 ");
-    }
-    if ((rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-        || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
-        g_string_append(security_str, "WPA2 ");
-    }
-    if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
-        g_string_append(security_str, "WPA3 ");
-    }
-    if (NM_FLAGS_ANY(rsn_flags, NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
-        g_string_append(security_str, "OWE ");
-    }
-    if ((wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
-        || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
-        g_string_append(security_str, "802.1X ");
+    } else {
+        if (wpa_flags != NM_802_11_AP_SEC_NONE) {
+            g_string_append(security_str, "WPA1 ");
+        }
+        if ((rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+            || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+            g_string_append(security_str, "WPA2 ");
+        }
+        if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
+            g_string_append(security_str, "WPA3 ");
+        }
+        if (NM_FLAGS_ANY(rsn_flags,
+                         NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
+            g_string_append(security_str, "OWE ");
+        }
+        if ((wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
+            || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
+            g_string_append(security_str, "802.1X ");
+        }
     }
 
     if (security_str->len > 0)
@@ -1368,6 +1385,8 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
 
     /* Set colors */
     color = wifi_signal_to_color(strength);
+    if (_ap_is_wep(ap))
+        color = NM_META_COLOR_WIFI_DEPRECATED;
     set_val_color_all(arr, color);
     if (active)
         arr[15].color = NM_META_COLOR_CONNECTION_ACTIVATED;

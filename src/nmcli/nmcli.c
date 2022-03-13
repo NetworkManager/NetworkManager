@@ -43,6 +43,7 @@
             [NM_META_COLOR_CONNECTION_DISCONNECTING] = "31",   \
             [NM_META_COLOR_CONNECTION_INVISIBLE]     = "2",    \
             [NM_META_COLOR_CONNECTION_EXTERNAL]      = "32;2", \
+            [NM_META_COLOR_CONNECTION_DEPRECATED]    = "2",    \
             [NM_META_COLOR_CONNECTIVITY_FULL]        = "32",   \
             [NM_META_COLOR_CONNECTIVITY_LIMITED]     = "33",   \
             [NM_META_COLOR_CONNECTIVITY_NONE]        = "31",   \
@@ -73,6 +74,7 @@
             [NM_META_COLOR_WIFI_SIGNAL_GOOD]         = "33",   \
             [NM_META_COLOR_WIFI_SIGNAL_POOR]         = "36",   \
             [NM_META_COLOR_WIFI_SIGNAL_UNKNOWN]      = "2",    \
+            [NM_META_COLOR_WIFI_DEPRECATED]          = "2",    \
             [NM_META_COLOR_ENABLED]                  = "32",   \
             [NM_META_COLOR_DISABLED]                 = "31",   \
         },                                                     \
@@ -549,6 +551,7 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"connection-external", NM_META_COLOR_CONNECTION_EXTERNAL},
     {"connection-invisible", NM_META_COLOR_CONNECTION_INVISIBLE},
     {"connection-unknown", NM_META_COLOR_CONNECTION_UNKNOWN},
+    {"connection-deprecated", NM_META_COLOR_CONNECTION_DEPRECATED},
     {"connectivity-full", NM_META_COLOR_CONNECTIVITY_FULL},
     {"connectivity-limited", NM_META_COLOR_CONNECTIVITY_LIMITED},
     {"connectivity-none", NM_META_COLOR_CONNECTIVITY_NONE},
@@ -585,7 +588,8 @@ static NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"wifi-signal-fair", NM_META_COLOR_WIFI_SIGNAL_FAIR},
     {"wifi-signal-good", NM_META_COLOR_WIFI_SIGNAL_GOOD},
     {"wifi-signal-poor", NM_META_COLOR_WIFI_SIGNAL_POOR},
-    {"wifi-signal-unknown", NM_META_COLOR_WIFI_SIGNAL_UNKNOWN}, );
+    {"wifi-signal-unknown", NM_META_COLOR_WIFI_SIGNAL_UNKNOWN},
+    {"wifi-deprecated", NM_META_COLOR_WIFI_DEPRECATED}, );
 
 static gboolean
 parse_color_scheme(char *palette_buffer, NmcColorPalette *out_palette, GError **error)
