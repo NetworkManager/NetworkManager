@@ -1159,8 +1159,10 @@ active_connection_get_by_path(NMManager *self, const char *path)
     NMManagerPrivate   *priv = NM_MANAGER_GET_PRIVATE(self);
     NMActiveConnection *ac;
 
-    ac = nm_dbus_manager_lookup_object(nm_dbus_object_get_manager(NM_DBUS_OBJECT(self)), path);
-    if (!ac || !NM_IS_ACTIVE_CONNECTION(ac) || c_list_is_empty(&ac->active_connections_lst))
+    ac = nm_dbus_manager_lookup_object_with_type(nm_dbus_object_get_manager(NM_DBUS_OBJECT(self)),
+                                                 NM_TYPE_ACTIVE_CONNECTION,
+                                                 path);
+    if (!ac || c_list_is_empty(&ac->active_connections_lst))
         return NULL;
 
     nm_assert(c_list_contains(&priv->active_connections_lst_head, &ac->active_connections_lst));
@@ -1292,8 +1294,11 @@ nm_manager_get_device_by_path(NMManager *self, const char *path)
 
     g_return_val_if_fail(path, NULL);
 
-    device = nm_dbus_manager_lookup_object(nm_dbus_object_get_manager(NM_DBUS_OBJECT(self)), path);
-    if (!device || !NM_IS_DEVICE(device) || c_list_is_empty(&device->devices_lst))
+    device =
+        nm_dbus_manager_lookup_object_with_type(nm_dbus_object_get_manager(NM_DBUS_OBJECT(self)),
+                                                NM_TYPE_DEVICE,
+                                                path);
+    if (!device || c_list_is_empty(&device->devices_lst))
         return NULL;
 
     nm_assert(c_list_contains(&priv->devices_lst_head, &device->devices_lst));

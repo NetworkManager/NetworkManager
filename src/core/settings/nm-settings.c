@@ -3201,8 +3201,10 @@ nm_settings_get_connection_by_path(NMSettings *self, const char *path)
     priv = NM_SETTINGS_GET_PRIVATE(self);
 
     connection =
-        nm_dbus_manager_lookup_object(nm_dbus_object_get_manager(NM_DBUS_OBJECT(self)), path);
-    if (!connection || !NM_IS_SETTINGS_CONNECTION(connection))
+        nm_dbus_manager_lookup_object_with_type(nm_dbus_object_get_manager(NM_DBUS_OBJECT(self)),
+                                                NM_TYPE_SETTINGS_CONNECTION,
+                                                path);
+    if (!connection)
         return NULL;
 
     nm_assert(c_list_contains(&priv->connections_lst_head, &connection->_connections_lst));

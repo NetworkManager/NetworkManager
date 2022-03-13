@@ -373,7 +373,7 @@ apply_bonding_config(NMDeviceBond *self)
                                                             NM_SETTING_BOND_OPTION_MODE);
     /* Need to release all slaves before we can change bond mode */
     if (!nm_streq0(device_bond_mode, mode_str))
-        nm_device_master_release_slaves(device);
+        nm_device_master_release_slaves_all(device);
 
     set_bond_attr_or_default(device, s_bond, NM_SETTING_BOND_OPTION_MODE);
 
