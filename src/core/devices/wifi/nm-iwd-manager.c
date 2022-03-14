@@ -947,6 +947,7 @@ mirror_connection(NMIwdManager         *self,
         return NULL;
 
     if (!nm_settings_add_connection(
+            NULL,
             priv->settings,
             connection,
             NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
