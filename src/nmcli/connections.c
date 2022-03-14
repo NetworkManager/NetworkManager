@@ -1231,10 +1231,10 @@ usage_connection_delete(void)
 {
     g_printerr(_("Usage: nmcli connection delete { ARGUMENTS | help }\n"
                  "\n"
-                 "ARGUMENTS := [id | uuid | path] <ID>\n"
+                 "ARGUMENTS := [id | uuid | path] <ID>, ...\n"
                  "\n"
-                 "Delete a connection profile.\n"
-                 "The profile is identified by its name, UUID or D-Bus path.\n\n"));
+                 "Delete connection profiles.\n"
+                 "The profiles are identified by their name, UUID or D-Bus path.\n\n"));
 }
 
 static void
