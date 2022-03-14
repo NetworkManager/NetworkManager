@@ -601,7 +601,7 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
     struct nlattr              *nl_freq;
     int                         rem_freq;
     int                         rem_band;
-    int                         freq_idx;
+    guint                       num_alloc;
 
 #ifdef NL80211_FREQUENCY_ATTR_NO_IR
     G_STATIC_ASSERT_EXPR(NL80211_FREQUENCY_ATTR_PASSIVE_SCAN == NL80211_FREQUENCY_ATTR_NO_IR
@@ -655,8 +655,10 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
         }
     }
 
-    /* Find number of supported frequencies */
+    /* Read supported frequencies */
+    num_alloc       = 32;
     info->num_freqs = 0;
+    info->freqs     = g_new(guint32, num_alloc);
 
     nla_for_each_nested (nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
         if (nla_parse_nested_arr(tb_band, nl_band, NULL) < 0)
@@ -668,38 +670,28 @@ nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
 
             if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
                 continue;
+
+            if (tb_freq[NL80211_FREQUENCY_ATTR_DISABLED])
+                continue;
+
+            if (info->num_freqs >= num_alloc) {
+                num_alloc *= 2;
+                info->freqs = g_renew(guint32, info->freqs, num_alloc);
+            }
+
+            info->freqs[info->num_freqs] = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
+            info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_VALID;
+
+            if (info->freqs[info->num_freqs] > 2400 && info->freqs[info->num_freqs] < 2500)
+                info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
+            if (info->freqs[info->num_freqs] > 4900 && info->freqs[info->num_freqs] < 6000)
+                info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
             info->num_freqs++;
         }
     }
 
-    /* Read supported frequencies */
-    info->freqs = g_malloc0(sizeof(guint32) * info->num_freqs);
-
-    freq_idx = 0;
-    nla_for_each_nested (nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
-        if (nla_parse_nested_arr(tb_band, nl_band, NULL) < 0)
-            return NL_SKIP;
-
-        nla_for_each_nested (nl_freq, tb_band[NL80211_BAND_ATTR_FREQS], rem_freq) {
-            if (nla_parse_nested_arr(tb_freq, nl_freq, freq_policy) < 0)
-                continue;
-
-            if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
-                continue;
-
-            info->freqs[freq_idx] = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
-
-            info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_VALID;
-
-            if (info->freqs[freq_idx] > 2400 && info->freqs[freq_idx] < 2500)
-                info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
-            if (info->freqs[freq_idx] > 4900 && info->freqs[freq_idx] < 6000)
-                info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
-
-            freq_idx++;
-        }
-    }
+    info->freqs = g_renew(guint32, info->freqs, info->num_freqs);
 
     /* Read security/encryption support */
     if (tb[NL80211_ATTR_CIPHER_SUITES]) {
