@@ -3859,6 +3859,7 @@ update_external_connection(NMDevice *self)
 
     if (connection_new) {
         nm_settings_connection_update(settings_connection,
+                                      NULL,
                                       connection_new,
                                       NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY,
                                       NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,

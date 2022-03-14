@@ -606,6 +606,7 @@ _secrets_update(NMConnection  *connection,
 
 gboolean
 nm_settings_connection_update(NMSettingsConnection            *self,
+                              const char                      *plugin_name,
                               NMConnection                    *new_connection,
                               NMSettingsConnectionPersistMode  persist_mode,
                               NMSettingsConnectionIntFlags     sett_flags,
@@ -618,6 +619,7 @@ nm_settings_connection_update(NMSettingsConnection            *self,
 
     return nm_settings_update_connection(NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->settings,
                                          self,
+                                         plugin_name,
                                          new_connection,
                                          persist_mode,
                                          sett_flags,
@@ -835,6 +837,7 @@ nm_settings_connection_new_secrets(NMSettingsConnection *self,
 
     if (!nm_settings_connection_update(
             self,
+            NULL,
             new_connection ?: connection,
             NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
             NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
@@ -980,6 +983,7 @@ get_secrets_done_cb(NMAgentManager              *manager,
     }
     if (!nm_settings_connection_update(
             self,
+            NULL,
             new_connection,
             agent_had_system ? NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP
                              : NM_SETTINGS_CONNECTION_PERSIST_MODE_NO_PERSIST,
@@ -1409,6 +1413,7 @@ typedef struct {
     NMConnection          *new_settings;
     NMSettingsUpdate2Flags flags;
     char                  *audit_args;
+    char                  *plugin_name;
     bool                   is_update2 : 1;
 } UpdateInfo;
 
@@ -1436,6 +1441,7 @@ update_complete(NMSettingsConnection *self, UpdateInfo *info, GError *error)
     g_clear_object(&info->agent_mgr);
     g_clear_object(&info->new_settings);
     g_free(info->audit_args);
+    g_free(info->plugin_name);
     g_slice_free(UpdateInfo, info);
 }
 
@@ -1572,6 +1578,7 @@ update_auth_cb(NMSettingsConnection  *self,
 
     nm_settings_connection_update(
         self,
+        info->plugin_name,
         info->new_settings,
         persist_mode,
         (NM_FLAGS_HAS(info->flags, NM_SETTINGS_UPDATE2_FLAG_VOLATILE)
@@ -1642,6 +1649,7 @@ settings_connection_update(NMSettingsConnection  *self,
                            gboolean               is_update2,
                            GDBusMethodInvocation *context,
                            GVariant              *new_settings,
+                           const char            *plugin_name,
                            NMSettingsUpdate2Flags flags)
 {
     NMSettingsConnectionPrivate *priv    = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
@@ -1696,6 +1704,7 @@ settings_connection_update(NMSettingsConnection  *self,
     info->subject      = subject;
     info->flags        = flags;
     info->new_settings = tmp;
+    info->plugin_name  = g_strdup(plugin_name);
 
     permission = get_update_modify_permission(nm_settings_connection_get_connection(self),
                                               tmp ?: nm_settings_connection_get_connection(self));
@@ -1724,7 +1733,12 @@ impl_settings_connection_update(NMDBusObject                      *obj,
     gs_unref_variant GVariant *settings = NULL;
 
     g_variant_get(parameters, "(@a{sa{sv}})", &settings);
-    settings_connection_update(self, FALSE, invocation, settings, NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
+    settings_connection_update(self,
+                               FALSE,
+                               invocation,
+                               settings,
+                               NULL,
+                               NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
 }
 
 static void
@@ -1744,6 +1758,7 @@ impl_settings_connection_update_unsaved(NMDBusObject                      *obj,
                                FALSE,
                                invocation,
                                settings,
+                               NULL,
                                NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY);
 }
 
@@ -1758,7 +1773,12 @@ impl_settings_connection_save(NMDBusObject                      *obj,
 {
     NMSettingsConnection *self = NM_SETTINGS_CONNECTION(obj);
 
-    settings_connection_update(self, FALSE, invocation, NULL, NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
+    settings_connection_update(self,
+                               FALSE,
+                               invocation,
+                               NULL,
+                               NULL,
+                               NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
 }
 
 static void
@@ -1770,13 +1790,15 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
                                  GDBusMethodInvocation             *invocation,
                                  GVariant                          *parameters)
 {
-    NMSettingsConnection      *self     = NM_SETTINGS_CONNECTION(obj);
-    gs_unref_variant GVariant *settings = NULL;
-    gs_unref_variant GVariant *args     = NULL;
+    NMSettingsConnection      *self        = NM_SETTINGS_CONNECTION(obj);
+    gs_unref_variant GVariant *settings    = NULL;
+    gs_unref_variant GVariant *args        = NULL;
+    gs_free char              *plugin_name = NULL;
     guint32                    flags_u;
     GError                    *error = NULL;
     GVariantIter               iter;
     const char                *args_name;
+    GVariant                  *args_value;
     NMSettingsUpdate2Flags     flags;
 
     g_variant_get(parameters, "(@a{sa{sv}}u@a{sv})", &settings, &flags_u, &args);
@@ -1812,7 +1834,13 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
     nm_assert(g_variant_is_of_type(args, G_VARIANT_TYPE("a{sv}")));
 
     g_variant_iter_init(&iter, args);
-    while (g_variant_iter_next(&iter, "{&sv}", &args_name, NULL)) {
+    while (g_variant_iter_next(&iter, "{&sv}", &args_name, &args_value)) {
+        if (plugin_name == NULL && nm_streq(args_name, "plugin")
+            && g_variant_is_of_type(args_value, G_VARIANT_TYPE_STRING)) {
+            plugin_name = g_variant_dup_string(args_value, NULL);
+            continue;
+        }
+
         error = g_error_new(NM_SETTINGS_ERROR,
                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
                             "Unsupported argument '%s'",
@@ -1821,7 +1849,7 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
         return;
     }
 
-    settings_connection_update(self, TRUE, invocation, settings, flags);
+    settings_connection_update(self, TRUE, invocation, settings, plugin_name, flags);
 }
 
 static void
@@ -2010,6 +2038,7 @@ dbus_clear_secrets_auth_cb(NMSettingsConnection  *self,
 
     if (!nm_settings_connection_update(
             self,
+            NULL,
             connection_cloned,
             NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
             NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,

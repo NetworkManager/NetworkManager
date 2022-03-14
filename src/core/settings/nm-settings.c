@@ -236,12 +236,16 @@ _sett_conn_entry_get_conn(SettConnEntry *sett_conn_entry)
  * update-connection. If this parameter is omitted, then it's about what happens
  * when adding a new profile (add-connection).
  *
+ * @storage_check_ignore is optional, and if given then it skips this particular
+ * storage.
+ *
  * Returns: the conflicting storage or %NULL if there is none.
  */
 static NMSettingsStorage *
 _sett_conn_entry_storage_find_conflicting_storage(SettConnEntry     *sett_conn_entry,
                                                   NMSettingsPlugin  *target_plugin,
                                                   NMSettingsStorage *storage_check_including,
+                                                  NMSettingsStorage *storage_check_ignore,
                                                   const GSList      *plugins)
 {
     StorageData *sd;
@@ -266,6 +270,12 @@ _sett_conn_entry_storage_find_conflicting_storage(SettConnEntry     *sett_conn_e
             /* We only consider storages with connection. In particular,
              * tombstones are not relevant, because we can delete them to
              * resolve the conflict. */
+            continue;
+        }
+
+        if (sd->storage == storage_check_ignore) {
+            /* We ignore this one, because we're in the process of
+             * replacing it. */
             continue;
         }
 
@@ -1472,6 +1482,7 @@ _add_connection_to_first_plugin(NMSettings                  *self,
                                 gboolean                     shadowed_owned,
                                 NMSettingsStorage          **out_new_storage,
                                 NMConnection               **out_new_connection,
+                                NMSettingsStorage           *drop_storage,
                                 GError                     **error)
 {
     NMSettingsPrivate    *priv        = NM_SETTINGS_GET_PRIVATE(self);
@@ -1506,6 +1517,7 @@ _add_connection_to_first_plugin(NMSettings                  *self,
             conflicting_storage = _sett_conn_entry_storage_find_conflicting_storage(sett_conn_entry,
                                                                                     plugin,
                                                                                     NULL,
+                                                                                    drop_storage,
                                                                                     priv->plugins);
             if (conflicting_storage) {
                 /* we have a connection provided by a plugin with higher priority than the one
@@ -1820,6 +1832,7 @@ nm_settings_add_connection(NMSettings                     *self,
             sett_conn_entry,
             nm_settings_storage_get_plugin(shadowed_storage),
             shadowed_storage,
+            NULL,
             priv->plugins);
         if (conflicting_storage) {
             /* We cannot add the profile as @shadowed_storage, because there is another, existing storage
@@ -1853,6 +1866,7 @@ again_add_connection:
                                                   FALSE,
                                                   &new_storage,
                                                   &new_connection,
+                                                  NULL,
                                                   &local);
     } else {
         success = _update_connection_to_plugin(self,
@@ -1969,6 +1983,7 @@ again_delete_tombstone:
 gboolean
 nm_settings_update_connection(NMSettings                      *self,
                               NMSettingsConnection            *sett_conn,
+                              const char                      *plugin_name,
                               NMConnection                    *connection,
                               NMSettingsConnectionPersistMode  persist_mode,
                               NMSettingsConnectionIntFlags     sett_flags,
@@ -2175,8 +2190,9 @@ nm_settings_update_connection(NMSettings                      *self,
         } else if (nm_settings_storage_is_keyfile_lib(cur_storage)) {
             /* the profile is a keyfile in /usr/lib. It cannot be overwritten, we must migrate it
              * from /usr/lib to /etc. */
-        } else
+        } else {
             update_storage = cur_storage;
+        }
 
         if (new_in_memory) {
             if (persist_mode == NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY) {
@@ -2195,9 +2211,22 @@ nm_settings_update_connection(NMSettings                      *self,
             }
         }
 
+        if (update_storage && plugin_name) {
+            NMSettingsPlugin *plugin = nm_settings_storage_get_plugin(update_storage);
+
+            if (strcmp(plugin_name, nm_settings_plugin_get_plugin_name(plugin))) {
+                /* We're updating a connection, we're confined to a particular
+                 * plugin, but the connection is currently using a different one.
+                 * We need to migrate. Drop the existing storage and look out for
+                 * a new one. */
+                drop_storage   = update_storage;
+                update_storage = NULL;
+            }
+        }
+
         if (!update_storage) {
             success = _add_connection_to_first_plugin(self,
-                                                      NULL,
+                                                      plugin_name,
                                                       sett_conn_entry,
                                                       connection,
                                                       new_in_memory,
@@ -2206,6 +2235,7 @@ nm_settings_update_connection(NMSettings                      *self,
                                                       new_shadowed_owned,
                                                       &new_storage,
                                                       &new_connection,
+                                                      drop_storage,
                                                       &local);
         } else {
             success = _update_connection_to_plugin(self,

@@ -3060,6 +3060,7 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
 
                 nm_settings_connection_update(
                     sett_conn,
+                    NULL,
                     con2,
                     NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
                     NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
