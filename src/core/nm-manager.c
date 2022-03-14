@@ -2939,6 +2939,7 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
     nm_device_assume_state_reset(device);
 
     if (!nm_settings_add_connection(priv->settings,
+                                    NULL,
                                     connection,
                                     NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
                                     NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
@@ -5915,6 +5916,7 @@ _add_and_activate_auth_done(NMManager                      *self,
      * shutdown. */
     nm_settings_add_connection_dbus(
         priv->settings,
+        NULL,
         connection,
         persist_mode,
         NM_SETTINGS_CONNECTION_ADD_REASON_NONE,

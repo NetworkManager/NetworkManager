@@ -1463,6 +1463,7 @@ _plugin_connections_reload(NMSettings *self)
 
 static gboolean
 _add_connection_to_first_plugin(NMSettings                  *self,
+                                const char                  *plugin_name,
                                 SettConnEntry               *sett_conn_entry,
                                 NMConnection                *new_connection,
                                 gboolean                     in_memory,
@@ -1477,6 +1478,7 @@ _add_connection_to_first_plugin(NMSettings                  *self,
     gs_free_error GError *first_error = NULL;
     GSList               *iter;
     const char           *uuid;
+    gboolean              no_plugin = TRUE;
 
     uuid = nm_connection_get_uuid(new_connection);
 
@@ -1492,6 +1494,11 @@ _add_connection_to_first_plugin(NMSettings                  *self,
         gs_free_error GError              *add_error                = NULL;
         gboolean                           success;
         const char                        *filename;
+
+        if (plugin_name && strcmp(plugin_name, nm_settings_plugin_get_plugin_name(plugin))) {
+            /* Not the plugin we're confined to. Ignore. */
+            continue;
+        }
 
         if (!in_memory) {
             NMSettingsStorage *conflicting_storage;
@@ -1545,6 +1552,8 @@ _add_connection_to_first_plugin(NMSettings                  *self,
                                                         &add_error);
         }
 
+        no_plugin = FALSE;
+
         if (!success) {
             _LOGT("add-connection: failed to add %s/'%s': %s",
                   nm_connection_get_uuid(new_connection),
@@ -1588,8 +1597,18 @@ _add_connection_to_first_plugin(NMSettings                  *self,
         return TRUE;
     }
 
-    nm_assert(first_error);
-    g_propagate_error(error, g_steal_pointer(&first_error));
+    if (no_plugin) {
+        nm_assert(plugin_name);
+        nm_assert(!first_error);
+        g_set_error(error,
+                    NM_SETTINGS_ERROR,
+                    NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
+                    "a plugin by the name of '%s' is not available",
+                    plugin_name);
+    } else {
+        nm_assert(first_error);
+        g_propagate_error(error, g_steal_pointer(&first_error));
+    }
     return FALSE;
 }
 
@@ -1704,6 +1723,7 @@ _set_nmmeta_tombstone(NMSettings *self,
  */
 gboolean
 nm_settings_add_connection(NMSettings                     *self,
+                           const char                     *plugin,
                            NMConnection                   *connection,
                            NMSettingsConnectionPersistMode persist_mode,
                            NMSettingsConnectionAddReason   add_reason,
@@ -1824,6 +1844,7 @@ again_add_connection:
 
     if (!update_storage) {
         success = _add_connection_to_first_plugin(self,
+                                                  plugin,
                                                   sett_conn_entry,
                                                   connection,
                                                   new_in_memory,
@@ -2176,6 +2197,7 @@ nm_settings_update_connection(NMSettings                      *self,
 
         if (!update_storage) {
             success = _add_connection_to_first_plugin(self,
+                                                      NULL,
                                                       sett_conn_entry,
                                                       connection,
                                                       new_in_memory,
@@ -2462,6 +2484,7 @@ pk_add_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer user_data
         nm_assert(NM_IS_CONNECTION(connection));
 
         nm_settings_add_connection(self,
+                                   nm_auth_chain_get_data(chain, "plugin"),
                                    connection,
                                    GPOINTER_TO_UINT(nm_auth_chain_get_data(chain, "persist-mode")),
                                    GPOINTER_TO_UINT(nm_auth_chain_get_data(chain, "add-reason")),
@@ -2489,6 +2512,7 @@ pk_add_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer user_data
 
 void
 nm_settings_add_connection_dbus(NMSettings                     *self,
+                                const char                     *plugin,
                                 NMConnection                   *connection,
                                 NMSettingsConnectionPersistMode persist_mode,
                                 NMSettingsConnectionAddReason   add_reason,
@@ -2549,6 +2573,7 @@ nm_settings_add_connection_dbus(NMSettings                     *self,
     nm_auth_chain_set_data(chain, "persist-mode", GUINT_TO_POINTER(persist_mode), NULL);
     nm_auth_chain_set_data(chain, "add-reason", GUINT_TO_POINTER(add_reason), NULL);
     nm_auth_chain_set_data(chain, "sett-flags", GUINT_TO_POINTER(sett_flags), NULL);
+    nm_auth_chain_set_data(chain, "plugin", g_strdup(plugin), g_free);
     nm_auth_chain_add_call_unsafe(chain, perm, TRUE);
     return;
 
@@ -2601,6 +2626,7 @@ settings_add_connection_helper(NMSettings                   *self,
                                GDBusMethodInvocation        *context,
                                gboolean                      is_add_connection_2,
                                GVariant                     *settings,
+                               const char                   *plugin,
                                NMSettingsAddConnection2Flags flags)
 {
     gs_unref_object NMConnection   *connection = NULL;
@@ -2636,6 +2662,7 @@ settings_add_connection_helper(NMSettings                   *self,
 
     nm_settings_add_connection_dbus(
         self,
+        plugin,
         connection,
         persist_mode,
         NM_FLAGS_HAS(flags, NM_SETTINGS_ADD_CONNECTION2_FLAG_BLOCK_AUTOCONNECT)
@@ -2665,6 +2692,7 @@ impl_settings_add_connection(NMDBusObject                      *obj,
                                    invocation,
                                    FALSE,
                                    settings,
+                                   NULL,
                                    NM_SETTINGS_ADD_CONNECTION2_FLAG_TO_DISK);
 }
 
@@ -2685,6 +2713,7 @@ impl_settings_add_connection_unsaved(NMDBusObject                      *obj,
                                    invocation,
                                    FALSE,
                                    settings,
+                                   NULL,
                                    NM_SETTINGS_ADD_CONNECTION2_FLAG_IN_MEMORY);
 }
 
@@ -2700,8 +2729,10 @@ impl_settings_add_connection2(NMDBusObject                      *obj,
     NMSettings                   *self     = NM_SETTINGS(obj);
     gs_unref_variant GVariant    *settings = NULL;
     gs_unref_variant GVariant    *args     = NULL;
+    gs_free char                 *plugin   = NULL;
     NMSettingsAddConnection2Flags flags;
     const char                   *args_name;
+    GVariant                     *args_value;
     GVariantIter                  iter;
     guint32                       flags_u;
 
@@ -2745,7 +2776,13 @@ impl_settings_add_connection2(NMDBusObject                      *obj,
     nm_assert(g_variant_is_of_type(args, G_VARIANT_TYPE("a{sv}")));
 
     g_variant_iter_init(&iter, args);
-    while (g_variant_iter_next(&iter, "{&sv}", &args_name, NULL)) {
+    while (g_variant_iter_next(&iter, "{&sv}", &args_name, &args_value)) {
+        if (plugin == NULL && nm_streq(args_name, "plugin")
+            && g_variant_is_of_type(args_value, G_VARIANT_TYPE_STRING)) {
+            plugin = g_variant_dup_string(args_value, NULL);
+            continue;
+        }
+
         g_dbus_method_invocation_take_error(invocation,
                                             g_error_new(NM_SETTINGS_ERROR,
                                                         NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
@@ -2754,7 +2791,7 @@ impl_settings_add_connection2(NMDBusObject                      *obj,
         return;
     }
 
-    settings_add_connection_helper(self, invocation, TRUE, settings, flags);
+    settings_add_connection_helper(self, invocation, TRUE, settings, plugin, flags);
 }
 
 /*****************************************************************************/
@@ -3606,6 +3643,7 @@ device_realized(NMDevice *device, GParamSpec *pspec, NMSettings *self)
           nm_device_get_iface(device));
 
     nm_settings_add_connection(self,
+                               NULL,
                                connection,
                                NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
                                NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
