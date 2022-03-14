@@ -24,6 +24,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-audit-manager.h"
 #include "nm-settings.h"
+#include "nm-settings-plugin.h"
 #include "nm-dbus-manager.h"
 #include "settings/plugins/keyfile/nms-keyfile-storage.h"
 
@@ -112,7 +113,11 @@ _seen_bssids_hash_new(void)
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMSettingsConnection, PROP_UNSAVED, PROP_FLAGS, PROP_FILENAME, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMSettingsConnection,
+                             PROP_UNSAVED,
+                             PROP_FLAGS,
+                             PROP_FILENAME,
+                             PROP_SETTINGS_PLUGIN, );
 
 enum { UPDATED_INTERNAL, FLAGS_CHANGED, LAST_SIGNAL };
 
@@ -141,6 +146,8 @@ typedef struct _NMSettingsConnectionPrivate {
     NMSettingsStorage *storage;
 
     char *filename;
+
+    const char *plugin_name;
 
     NMDevice *default_wired_device;
 
@@ -264,7 +271,9 @@ void
 _nm_settings_connection_set_storage(NMSettingsConnection *self, NMSettingsStorage *storage)
 {
     NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+    NMSettingsPlugin            *plugin;
     const char                  *filename;
+    const char                  *plugin_name;
 
     nm_assert(NM_IS_SETTINGS_STORAGE(storage));
     nm_assert(!priv->storage
@@ -279,6 +288,14 @@ _nm_settings_connection_set_storage(NMSettingsConnection *self, NMSettingsStorag
         g_free(priv->filename);
         priv->filename = g_strdup(filename);
         _notify(self, PROP_FILENAME);
+    }
+
+    plugin      = nm_settings_storage_get_plugin(priv->storage);
+    plugin_name = nm_settings_plugin_get_plugin_name(plugin);
+
+    if (!nm_streq0(priv->plugin_name, plugin_name)) {
+        priv->plugin_name = plugin_name;
+        _notify(self, PROP_SETTINGS_PLUGIN);
     }
 }
 
@@ -2679,7 +2696,8 @@ _nm_settings_connection_cleanup_after_remove(NMSettingsConnection *self)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingsConnection *self = NM_SETTINGS_CONNECTION(object);
+    NMSettingsConnection        *self = NM_SETTINGS_CONNECTION(object);
+    NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
 
     switch (prop_id) {
     case PROP_UNSAVED:
@@ -2692,6 +2710,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case PROP_FILENAME:
         g_value_set_string(value, nm_settings_connection_get_filename(self));
+        break;
+    case PROP_SETTINGS_PLUGIN:
+        g_value_set_string(value, priv->plugin_name);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -2831,7 +2852,11 @@ static const NMDBusInterfaceInfoExtended interface_info_settings_connection = {
                                                            NM_SETTINGS_CONNECTION_FLAGS),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Filename",
                                                            "s",
-                                                           NM_SETTINGS_CONNECTION_FILENAME), ), ),
+                                                           NM_SETTINGS_CONNECTION_FILENAME),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE(
+                "SettingsPlugin",
+                "s",
+                NM_SETTINGS_CONNECTION_SETTINGS_PLUGIN), ), ),
 };
 
 static void
@@ -2868,6 +2893,13 @@ nm_settings_connection_class_init(NMSettingsConnectionClass *klass)
                                                         "",
                                                         NULL,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_SETTINGS_PLUGIN] =
+        g_param_spec_string(NM_SETTINGS_CONNECTION_SETTINGS_PLUGIN,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

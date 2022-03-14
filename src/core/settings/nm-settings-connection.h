@@ -138,9 +138,10 @@ typedef enum {
 #define NM_SETTINGS_CONNECTION_FLAGS_CHANGED    "flags-changed"
 
 /* Properties */
-#define NM_SETTINGS_CONNECTION_UNSAVED  "unsaved"
-#define NM_SETTINGS_CONNECTION_FLAGS    "flags"
-#define NM_SETTINGS_CONNECTION_FILENAME "filename"
+#define NM_SETTINGS_CONNECTION_UNSAVED         "unsaved"
+#define NM_SETTINGS_CONNECTION_FLAGS           "flags"
+#define NM_SETTINGS_CONNECTION_FILENAME        "filename"
+#define NM_SETTINGS_CONNECTION_SETTINGS_PLUGIN "settings-plugin"
 
 /**
  * NMSettingsConnectionIntFlags:

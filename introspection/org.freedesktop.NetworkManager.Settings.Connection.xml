@@ -186,5 +186,15 @@
     -->
     <property name="Filename" type="s" access="read"/>
 
+    <!--
+        SettingsPlugin:
+
+        Settings plugin that stores the connection.
+        See "plugins" in
+        <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>.
+
+        Since: 1.38
+    -->
+    <property name="SettingsPlugin" type="s" access="read"/>
   </interface>
 </node>
