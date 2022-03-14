@@ -263,7 +263,7 @@ msgstr "Conexiune fictivă"
 #: ../src/core/devices/nm-device-ethernet-utils.c:20
 #, c-format
 msgid "Wired connection %d"
-msgstr "Conexiune prin fir %s"
+msgstr "Conexiune prin fir %d"
 
 #: ../src/core/devices/nm-device-ethernet.c:1630
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8241
