@@ -529,7 +529,7 @@ _connection_check_deprecated(NMConnection *c)
     if (s_wsec) {
         key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
         if (NM_IN_STRSET(key_mgmt, "ieee8021x", "none"))
-		return _("WEP encryption is known to be insecure");
+            return _("WEP encryption is known to be insecure");
     }
 
     return NULL;
