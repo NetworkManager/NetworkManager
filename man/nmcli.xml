@@ -659,6 +659,7 @@
         <arg choice='plain'><command>load</command></arg>
         <arg choice='plain'><command>import</command></arg>
         <arg choice='plain'><command>export</command></arg>
+        <arg choice='plain'><command>migrate</command></arg>
       </group>
       <arg rep='repeat'><replaceable>ARGUMENTS</replaceable></arg>
     </cmdsynopsis>
@@ -1312,6 +1313,40 @@
           data will be printed to standard output.</para>
         </listitem>
       </varlistentry>
+
+      <varlistentry>
+        <term>
+          <command>migrate</command>
+          <arg>
+             <option>--plugin</option>
+             <arg choice='plain' rep='repeat'><replaceable>plugin</replaceable></arg>
+          </arg>
+          <group>
+            <arg choice='plain'><option>id</option></arg>
+            <arg choice='plain'><option>uuid</option></arg>
+            <arg choice='plain'><option>path</option></arg>
+          </group>
+          <arg rep='repeat'><replaceable>ID</replaceable></arg>
+        </term>
+        <listitem>
+	  <para>Migrate connection profiles to a different settings plugin, such
+	  as <literal>keyfile</literal> (default) or <literal>ifcfg-rh</literal>.</para>
+
+          <para>The connection to be migrated is identified by its name, UUID or D-Bus path.
+	  If <replaceable>ID</replaceable> is ambiguous, a keyword <option>id</option>,
+	  <option>uuid</option> or <option>path</option> can be used. See <command>connection
+	  show</command> above for the description of the
+	  <replaceable>ID</replaceable>-specifying keywords.</para>
+
+          <para>If no connections are specified, the command acts on all available
+	  connections. Therefore, with no arguments, the command migrates all connection
+          profiles to the <literal>keyfile</literal> plugin.</para>
+
+          <para>If <option>--wait</option> option is not specified, the default timeout will be 10
+          seconds.</para>
+        </listitem>
+      </varlistentry>
+
     </variablelist>
   </refsect1>
 
