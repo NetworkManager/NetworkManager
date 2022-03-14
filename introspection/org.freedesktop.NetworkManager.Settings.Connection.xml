@@ -114,9 +114,12 @@
           "0x20" (block-autoconnect),
           "0x40" (no-reapply).
           Unknown flags cause the call to fail.
-        @args: optional arguments dictionary, for extentibility. Currently, no
-          arguments are accepted. Specifying unknown keys causes the call
-          to fail.
+        @args: optional arguments dictionary, for extensibility. Currently, the
+          following arguments are accepted:
+          "plugin" (s) string that specifies the settings plugin the newly
+            added connection will use, such as "keyfile" or "ifcfg-rh".
+            Since: 1.38
+          Specifying unknown or duplicate keys causes the call to fail.
         @result: output argument, currently no results are returned.
 
         Update the connection with new settings and properties (replacing all

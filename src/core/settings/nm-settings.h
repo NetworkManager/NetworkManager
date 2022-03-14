@@ -101,6 +101,7 @@ gboolean nm_settings_add_connection(NMSettings                     *settings,
 
 gboolean nm_settings_update_connection(NMSettings                      *self,
                                        NMSettingsConnection            *sett_conn,
+                                       const char                      *plugin_name,
                                        NMConnection                    *new_connection,
                                        NMSettingsConnectionPersistMode  persist_mode,
                                        NMSettingsConnectionIntFlags     sett_flags,
