@@ -222,10 +222,9 @@ get_ip_method_auto(NMDevice *device, int addr_family)
         return NM_SETTING_IP6_CONFIG_METHOD_MANUAL;
     }
 
-    /* We can do autoconf6 on an PPP link, but we should already get an IPv6
-     * address from pppd. Use that instead. We however do want to generate our
-     * (own) IPv6 link local address, so return "link-local". */
-    return NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL;
+    /* We get a interface identifier via IPV6CP, used to construct a link-local
+     * address. Method auto means autoconf6 as usual.*/
+    return NM_SETTING_IP6_CONFIG_METHOD_AUTO;
 }
 
 static gboolean
