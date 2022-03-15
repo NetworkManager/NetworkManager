@@ -1163,11 +1163,10 @@ _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, 
             gs_free char         *old_name = NULL;
             gs_free_error GError *error    = NULL;
 
-            if (!nm_device_take_over_link(device, callback_data->data.ifindex, &old_name, &error)) {
+            if (!nm_device_set_ip_ifindex(device, callback_data->data.ifindex)) {
                 _LOGW(LOGD_DEVICE | LOGD_PPP,
-                      "could not take control of link %d: %s",
-                      callback_data->data.ifindex,
-                      error->message);
+                      "could not set ip-ifindex %d",
+                      callback_data->data.ifindex);
                 _ppp_mgr_cleanup(self);
                 nm_device_state_changed(device,
                                         NM_DEVICE_STATE_FAILED,
