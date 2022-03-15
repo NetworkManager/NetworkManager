@@ -48,8 +48,8 @@ variables:
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
   FEDORA_TAG:  '2022-02-21.0-f42312ef8cae'
-  UBUNTU_TAG:  '2022-02-21.0-ab561a08b357'
-  DEBIAN_TAG:  '2022-02-21.0-ab561a08b357'
+  UBUNTU_TAG:  '2022-02-21.0-e99d8c573303'
+  DEBIAN_TAG:  '2022-02-21.0-e99d8c573303'
   CENTOS_TAG:  '2022-02-21.0-f42312ef8cae'
   ALPINE_TAG:  '2022-02-21.0-bad60eeb6900'
 
