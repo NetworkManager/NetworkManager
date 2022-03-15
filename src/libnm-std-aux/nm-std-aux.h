@@ -778,7 +778,7 @@ nm_streq0(const char *s1, const char *s2)
 
 /*****************************************************************************/
 
-#define _NM_IN_SET_OP(x, idx) (_x == (x))
+#define _NM_IN_SET_OP(x, idx) ((int) (_x == (x)))
 #define _NM_IN_SET(op, type, x, ...)                                \
     ({                                                              \
         type _x = (x);                                              \
@@ -814,7 +814,7 @@ _NM_IN_STRSET_EVAL_op_streq(const char *x1, const char *x)
     return x && nm_streq(x1, x);
 }
 
-#define _NM_IN_STRSET_EVAL_OP_NULL(x, idx)  (((const char *) NULL) == (x))
+#define _NM_IN_STRSET_EVAL_OP_NULL(x, idx)  ((int) (((const char *) NULL) == (x)))
 #define _NM_IN_STRSET_EVAL_OP_STREQ(x, idx) _NM_IN_STRSET_EVAL_op_streq(_x1, x)
 #define _NM_IN_STRSET_EVAL(op, eval_op, x1, ...)                                         \
     ({                                                                                   \
