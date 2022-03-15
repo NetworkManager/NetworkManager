@@ -215,57 +215,47 @@ test_hw_addr_gen_stable_eth(void)
 static void
 test_shorten_hostname(void)
 {
-    gboolean res;
-    char    *shortened = NULL;
+    gs_free char *maxhost = NULL;
+    char         *hostname;
 
-    res = nm_utils_shorten_hostname("name1", &shortened);
-    g_assert_cmpint(res, ==, TRUE);
-    g_assert_cmpstr(shortened, ==, NULL);
-    nm_clear_g_free(&shortened);
+#define do_test_shorten_hostname(_host, _exp_res, _exp_short) \
+    G_STMT_START                                              \
+    {                                                         \
+        gboolean      _res;                                   \
+        gs_free char *_short = NULL;                          \
+                                                              \
+        _res = nm_utils_shorten_hostname((_host), &_short);   \
+        g_assert_cmpint((_res), ==, (_exp_res));              \
+        g_assert_cmpstr(_short, ==, (_exp_short));            \
+    }                                                         \
+    G_STMT_END
 
-    res = nm_utils_shorten_hostname("name1.example.com", &shortened);
-    g_assert_cmpint(res, ==, TRUE);
-    g_assert_cmpstr(shortened, ==, NULL);
-    nm_clear_g_free(&shortened);
+    /* 'maxhost' is the longest allowed hostname according to
+     * system configuration (`getconf HOST_NAME_MAX`). On Linux
+     * it's typically 64 characters, but POSIX allows up to
+     * 255 characters.
+     */
+    maxhost = g_strnfill(HOST_NAME_MAX, 'a');
 
-    res = nm_utils_shorten_hostname(
-        "123456789-123456789-123456789-123456789-123456789-123456789-1234",
-        &shortened);
-    g_assert_cmpint(res, ==, TRUE);
-    g_assert_cmpstr(shortened, ==, NULL);
-    nm_clear_g_free(&shortened);
+    do_test_shorten_hostname("name1", TRUE, NULL);
 
-    res = nm_utils_shorten_hostname(
-        "123456789-123456789-123456789-123456789-123456789-123456789-12345",
-        &shortened);
-    g_assert_cmpint(res, ==, TRUE);
-    g_assert_cmpstr(shortened,
-                    ==,
-                    "123456789-123456789-123456789-123456789-123456789-123456789-1234");
-    nm_clear_g_free(&shortened);
+    do_test_shorten_hostname("name1.example.com", TRUE, NULL);
 
-    res = nm_utils_shorten_hostname(
-        "name1.test-dhcp-this-one-here-is-a-very-very-long-domain.example.com",
-        &shortened);
-    g_assert_cmpint(res, ==, TRUE);
-    g_assert_cmpstr(shortened, ==, "name1");
-    nm_clear_g_free(&shortened);
+    do_test_shorten_hostname(maxhost, TRUE, NULL);
 
-    res = nm_utils_shorten_hostname(
-        "test-dhcp-this-one-here-is-a-very-very-long-hostname-without-domainname",
-        &shortened);
-    g_assert_cmpint(res, ==, TRUE);
-    g_assert_cmpstr(shortened,
-                    ==,
-                    "test-dhcp-this-one-here-is-a-very-very-long-hostname-without-dom");
-    nm_clear_g_free(&shortened);
+    hostname = g_strdup_printf("%sbbb", maxhost);
+    do_test_shorten_hostname(hostname, TRUE, maxhost);
+    nm_clear_g_free(&hostname);
 
-    res = nm_utils_shorten_hostname(
-        ".test-dhcp-this-one-here-is-a-very-very-long-hostname.example.com",
-        &shortened);
-    g_assert_cmpint(res, ==, FALSE);
-    g_assert_cmpstr(shortened, ==, NULL);
-    nm_clear_g_free(&shortened);
+    hostname = g_strdup_printf("%s.com", maxhost);
+    do_test_shorten_hostname(hostname, TRUE, maxhost);
+    nm_clear_g_free(&hostname);
+
+    hostname = g_strdup_printf("name1.%s.com", maxhost);
+    do_test_shorten_hostname(hostname, TRUE, "name1");
+    nm_clear_g_free(&hostname);
+
+    do_test_shorten_hostname(".name1", FALSE, NULL);
 }
 
 /*****************************************************************************/
