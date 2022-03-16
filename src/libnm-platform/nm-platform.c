@@ -1304,6 +1304,45 @@ nm_platform_link_add(NMPlatform            *self,
         ->link_add(self, type, name, parent, address, address_len, mtu, extra_data, out_link);
 }
 
+int
+nm_platform_link_change(NMPlatform *self, NMLinkType type, int ifindex, gconstpointer extra_data)
+{
+    char        buf[512];
+    const char *name = nm_platform_link_get_name(self, ifindex);
+
+    _CHECK_SELF(self, klass, -NME_BUG);
+
+    _LOG2D("link: changing link: "
+           "%s "    /* type */
+           "\"%s\"" /* name */
+           "%s"     /* extra_data */
+           "",
+           nm_link_type_to_string(type),
+           name,
+           ({
+               char *buf_p   = buf;
+               gsize buf_len = sizeof(buf);
+
+               buf[0] = '\0';
+
+               switch (type) {
+               case NM_LINK_TYPE_BRIDGE:
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_platform_lnk_bridge_to_string((const NMPlatformLnkBridge *) extra_data,
+                                                    buf_p,
+                                                    buf_len);
+                   break;
+               default:
+                   nm_assert(!extra_data);
+                   break;
+               }
+
+               buf;
+           }));
+
+    return klass->link_change(self, type, ifindex, extra_data);
+}
+
 /**
  * nm_platform_link_delete:
  * @self: platform instance

@@ -7539,6 +7539,21 @@ out:
 }
 
 static int
+link_change(NMPlatform *platform, NMLinkType type, int ifindex, gconstpointer extra_data)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+    nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, 0);
+    if (!nlmsg)
+        return -NME_UNSPEC;
+
+    if (!_nl_msg_new_link_set_linkinfo(nlmsg, type, extra_data))
+        return -NME_UNSPEC;
+
+    return do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL);
+}
+
+static int
 link_add(NMPlatform            *platform,
          NMLinkType             type,
          const char            *name,
@@ -9920,6 +9935,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->sysctl_get       = sysctl_get;
 
     platform_class->link_add    = link_add;
+    platform_class->link_change = link_change;
     platform_class->link_delete = link_delete;
 
     platform_class->link_refresh = link_refresh;
