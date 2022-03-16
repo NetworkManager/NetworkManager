@@ -832,20 +832,27 @@ _platform_lnk_bridge_init_from_setting(NMSettingBridge *s_bridge, NMPlatformLnkB
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMConnection *connection;
-    NMSetting    *s_bridge;
-    const Option *option;
+    NMConnection       *connection;
+    NMSettingBridge    *s_bridge;
+    NMPlatformLnkBridge props;
+    int                 r;
+    int                 ifindex = nm_device_get_ifindex(device);
 
     connection = nm_device_get_applied_connection(device);
     g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
 
-    s_bridge = (NMSetting *) nm_connection_get_setting_bridge(connection);
+    s_bridge = nm_connection_get_setting_bridge(connection);
     g_return_val_if_fail(s_bridge, NM_ACT_STAGE_RETURN_FAILURE);
 
-    for (option = master_options; option->name; option++)
-        commit_option(device, s_bridge, option, FALSE);
+    _platform_lnk_bridge_init_from_setting(s_bridge, &props);
 
-    if (!bridge_set_vlan_options(device, (NMSettingBridge *) s_bridge)) {
+    r = nm_platform_link_bridge_change(nm_device_get_platform(device), ifindex, &props);
+    if (r < 0) {
+        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+        return NM_ACT_STAGE_RETURN_FAILURE;
+    }
+
+    if (!bridge_set_vlan_options(device, s_bridge)) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
