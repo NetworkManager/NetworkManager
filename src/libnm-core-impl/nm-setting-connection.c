@@ -1953,6 +1953,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * Note that autoconnect is not implemented for VPN profiles. See
      * #NMSettingConnection:secondaries as an alternative to automatically
      * connect VPN profiles.
+     *
+     * If multiple profiles are ready to autoconnect on the same device,
+     * the one with the better "connection.autoconnect-priority" is chosen. If
+     * the priorities are equal, then the most recently connected profile is activated.
+     * If the profiles were not connected earlier or their
+     * "connection.timestamp" is identical, the choice is undefined.
+     *
+     * Depending on "connection.multi-connect", a profile can (auto)connect only
+     * once at a time or multiple times.
      **/
     /* ---ifcfg-rh---
      * property: autoconnect
