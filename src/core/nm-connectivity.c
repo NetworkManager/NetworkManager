@@ -621,6 +621,49 @@ _timeout_cb(gpointer user_data)
     cb_data_complete(cb_data, NM_CONNECTIVITY_LIMITED, "timeout");
     return G_SOURCE_REMOVE;
 }
+
+static int
+easy_debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr)
+{
+    NMConnectivityCheckHandle *cb_data = userptr;
+    const char                *escaped = NULL;
+    gs_free char              *to_free = NULL;
+
+    switch (type) {
+    case CURLINFO_TEXT:
+        escaped = nm_utils_buf_utf8safe_escape((char *) data,
+                                               size,
+                                               NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                               &to_free);
+        _LOG2T("libcurl: == Info: %s", escaped ?: "");
+    /* fall-through */
+    default: /* in case a new one is introduced to shock us */
+        return 0;
+
+    case CURLINFO_DATA_OUT:
+        _LOG2T("libcurl => Send data");
+        return 0;
+    case CURLINFO_SSL_DATA_OUT:
+        _LOG2T("libcurl => Send SSL data");
+        return 0;
+    case CURLINFO_HEADER_IN:
+        _LOG2T("libcurl <= Recv header");
+        return 0;
+    case CURLINFO_DATA_IN:
+        _LOG2T("libcurl <= Recv data");
+        return 0;
+    case CURLINFO_SSL_DATA_IN:
+        _LOG2T("libcurl <= Recv SSL data");
+        return 0;
+    case CURLINFO_HEADER_OUT:
+        escaped = nm_utils_buf_utf8safe_escape((char *) data,
+                                               size,
+                                               NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                               &to_free);
+        _LOG2T("libcurl => Send header: %s", escaped ?: "");
+        return 0;
+    }
+}
 #endif
 
 static gboolean
@@ -695,6 +738,11 @@ do_curl_request(NMConnectivityCheckHandle *cb_data)
     curl_easy_setopt(ehandle, CURLOPT_RESOLVE, cb_data->concheck.hosts);
     curl_easy_setopt(ehandle, CURLOPT_IPRESOLVE, resolve);
     curl_easy_setopt(ehandle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    if (_LOGT_ENABLED()) {
+        curl_easy_setopt(ehandle, CURLOPT_DEBUGFUNCTION, easy_debug_cb);
+        curl_easy_setopt(ehandle, CURLOPT_DEBUGDATA, cb_data);
+        curl_easy_setopt(ehandle, CURLOPT_VERBOSE, 1L);
+    }
 
     curl_multi_add_handle(mhandle, ehandle);
 }
