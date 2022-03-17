@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2022-03-15.0-fb4fc6b5dff6'
-  UBUNTU_TAG:  '2022-03-15.0-6b7641ec0d2b'
-  DEBIAN_TAG:  '2022-03-15.0-6b7641ec0d2b'
-  CENTOS_TAG:  '2022-03-15.0-fb4fc6b5dff6'
-  ALPINE_TAG:  '2022-03-15.0-f6b3036d4e95'
+  FEDORA_TAG:  '2022-03-15.0-91d80571b06e'
+  UBUNTU_TAG:  '2022-03-15.0-9ebce5ba0bf3'
+  DEBIAN_TAG:  '2022-03-15.0-9ebce5ba0bf3'
+  CENTOS_TAG:  '2022-03-15.0-91d80571b06e'
+  ALPINE_TAG:  '2022-03-15.0-b47b4f8d562a'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -623,8 +623,15 @@ alpine:latest@container-clean:
   stage: test
   script:
     - env
-    - .gitlab-ci/run-test.sh
+    - .gitlab-ci/run-test.sh 2>&1 | tee /tmp/nm-test.log
+  after_script:
+    - mv /tmp/nm-test.log .
   dependencies: []
+  artifacts:
+    expire_in: 5 days
+    paths:
+      - nm-test.log
+
 
 #################################################################
 #                                                               #
@@ -932,6 +939,7 @@ check-patch:
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
+  after_script:
   allow_failure: true
 
 check-tree:
@@ -944,6 +952,7 @@ check-tree:
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
+  after_script:
 
 pages:
   stage: deploy
