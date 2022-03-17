@@ -5,7 +5,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: networkmanager.networkmanager-0-6-0-release.pot\n"
+"Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-06-01 17:17+0200\n"
 "PO-Revision-Date: 2007-03-20 10:17+0530\n"
