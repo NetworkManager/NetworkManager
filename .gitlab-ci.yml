@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2022-03-15.0-1c8fb45999e9'
-  UBUNTU_TAG:  '2022-03-15.0-f7d56c5dcd47'
-  DEBIAN_TAG:  '2022-03-15.0-f7d56c5dcd47'
-  CENTOS_TAG:  '2022-03-15.0-1c8fb45999e9'
-  ALPINE_TAG:  '2022-03-15.0-91803105505b'
+  FEDORA_TAG:  '2022-03-15.0-fb4fc6b5dff6'
+  UBUNTU_TAG:  '2022-03-15.0-6b7641ec0d2b'
+  DEBIAN_TAG:  '2022-03-15.0-6b7641ec0d2b'
+  CENTOS_TAG:  '2022-03-15.0-fb4fc6b5dff6'
+  ALPINE_TAG:  '2022-03-15.0-f6b3036d4e95'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -622,6 +622,7 @@ alpine:latest@container-clean:
 .build@template:
   stage: test
   script:
+    - env
     - .gitlab-ci/run-test.sh
   dependencies: []
 
