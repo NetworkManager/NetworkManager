@@ -745,14 +745,14 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
             continue;
 
         address_buf = g_variant_get_fixed_array(address, &len, 1);
-        if ((addr_family == AF_INET && len != sizeof(struct in_addr))
-            || (addr_family == AF_INET6 && len != sizeof(struct in6_addr)))
+        if (len != nm_utils_addr_family_to_size(addr_family))
             continue;
 
-        host_entry              = g_strdup_printf("%s:%s:%s",
+        host_entry = g_strdup_printf("%s:%s:%s",
                                      cb_data->concheck.con_config->host,
                                      cb_data->concheck.con_config->port ?: "80",
                                      nm_utils_inet_ntop(addr_family, address_buf, str_addr));
+
         cb_data->concheck.hosts = curl_slist_append(cb_data->concheck.hosts, host_entry);
         _LOG2T("adding '%s' to curl resolve list", host_entry);
     }
