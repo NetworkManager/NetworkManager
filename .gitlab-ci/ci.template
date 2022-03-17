@@ -52,11 +52,20 @@ variables:
   variables:
     NM_BUILD_TARBALL: 1
   artifacts:
-    expire_in: 2 days
+    expire_in: 5 days
+    when: always
     paths:
       - docs-html
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
+      - nm-test.log
+
+.nm_artifacts_debug:
+  artifacts:
+    expire_in: 5 days
+    when: always
+    paths:
+      - nm-test.log
 
 .nm_artifacts_undo:
   variables:
@@ -145,8 +154,11 @@ variables:
   stage: test
   script:
     - env
-    - .gitlab-ci/run-test.sh
+    - .gitlab-ci/run-test.sh 2>&1 | tee /tmp/nm-test.log
+  after_script:
+    - mv /tmp/nm-test.log .
   dependencies: []
+
 
 #################################################################
 #                                                               #
@@ -164,6 +176,8 @@ t_{{distro.name}}:{{version}}:
 {% if distro.name == pages_build.name and
       version == pages_build.version %}
     - .nm_artifacts
+{% else %}
+    - .nm_artifacts_debug
 {% endif %}
   variables:
     FDO_DISTRIBUTION_VERSION: '{{version}}'
@@ -195,6 +209,7 @@ check-patch:
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
+  after_script:
   allow_failure: true
 
 check-tree:
@@ -207,6 +222,7 @@ check-tree:
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
+  after_script:
 
 pages:
   stage: deploy
