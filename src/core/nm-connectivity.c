@@ -738,6 +738,9 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
 
         g_variant_get_child(addresses, i, "(ii@ay)", &ifindex, &addr_family, &address);
 
+        if (!NM_IN_SET(addr_family, AF_INET, AF_INET6))
+            continue;
+
         if (cb_data->addr_family != AF_UNSPEC && cb_data->addr_family != addr_family)
             continue;
 
