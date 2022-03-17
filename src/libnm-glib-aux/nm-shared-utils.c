@@ -2960,8 +2960,8 @@ _str_buf_append_c_escape_octal(NMStrBuf *strbuf, char ch)
  *
  * Returns: the unescaped buffer of length @out_len. If @str is %NULL, this returns %NULL
  *   and sets @out_len to 0. Otherwise, a non-%NULL binary buffer is returned with
- *   @out_len bytes. Note that the binary buffer is guaranteed to be NUL terminated. That
- *   is @result[@out_len] is NUL.
+ *   @out_len bytes. Note that the binary buffer is guaranteed to be NUL terminated
+ *   (@result[@out_len] is NUL).
  *   Note that the result is binary, and may have embedded NUL characters and non-UTF-8.
  *   If the function can avoid cloning the input string, it will return a pointer inside
  *   the input @str. For example, if there is no backslash, no cloning is necessary. In that
@@ -3123,11 +3123,14 @@ nm_utils_buf_utf8safe_unescape(const char             *str,
  * invalid UTF-8 sequences, and other (depending on @flags).
  *
  * Returns: the escaped input buffer, as valid UTF-8. If no escaping
- *   is necessary, it returns the input @buf. Otherwise, an allocated
- *   string @to_free is returned which must be freed by the caller
- *   with g_free. The escaping can be reverted by g_strcompress().
- *   There are cases where this function can return NULL:
- *   - if @buflen is 0
+ *   is necessary and @buflen is negative, it returns the input @buf
+ *   that can be interpreted as NUL terminated UTF-8 string.
+ *   Otherwise, an allocated string @to_free is returned which must be freed
+ *   by the caller with g_free().
+ *   The escaping can be reverted by nm_utils_buf_utf8safe_unescape()
+ *   (or, if in the absence of NUL characters, with g_strcompress()).
+ *   There are cases where this function returns %NULL:
+ *   - if @buflen is 0.
  *   - if @buflen is negative and @buf is NULL.
  **/
 const char *
