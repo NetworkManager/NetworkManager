@@ -1092,7 +1092,7 @@ fi
 %{_unitdir}/nm-priv-helper.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
-%doc NEWS AUTHORS README CONTRIBUTING.md TODO
+%doc NEWS AUTHORS README CONTRIBUTING.md
 %license COPYING
 %license COPYING.LGPL
 %license COPYING.GFDL
