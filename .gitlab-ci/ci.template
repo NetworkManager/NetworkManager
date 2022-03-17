@@ -144,7 +144,7 @@ variables:
 .build@template:
   stage: test
   script:
-    - .gitlab-ci/build.sh
+    - .gitlab-ci/run-test.sh
   dependencies: []
 
 #################################################################
