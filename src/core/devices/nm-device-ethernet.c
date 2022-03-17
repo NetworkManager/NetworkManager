@@ -1160,8 +1160,7 @@ _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, 
 
     if (device_state < NM_DEVICE_STATE_IP_CONFIG) {
         if (callback_data->data.state >= NM_PPP_MGR_STATE_HAVE_IFINDEX) {
-            gs_free char         *old_name = NULL;
-            gs_free_error GError *error    = NULL;
+            gs_free char *old_name = NULL;
 
             if (!nm_device_set_ip_ifindex(device, callback_data->data.ifindex)) {
                 _LOGW(LOGD_DEVICE | LOGD_PPP,
