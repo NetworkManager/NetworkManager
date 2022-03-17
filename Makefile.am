@@ -5578,6 +5578,13 @@ plugin_LTLIBRARIES += $(core_plugins)
 TESTS += $(check_programs)
 
 EXTRA_DIST += \
+	\
+	AUTHORS \
+	COPYING \
+	ChangeLog \
+	NEWS \
+	README.md \
+	\
 	CONTRIBUTING.md \
 	COPYING.LGPL \
 	COPYING.GFDL \
