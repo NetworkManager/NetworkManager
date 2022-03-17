@@ -89,7 +89,7 @@ struct _NMConnectivityCheckHandle {
 
     int addr_family;
 
-    guint timeout_id;
+    GSource *timeout_source;
 
     NMConnectivityState completed_state;
     const char         *completed_reason;
@@ -245,7 +245,7 @@ cb_data_complete(NMConnectivityCheckHandle *cb_data,
     nm_clear_g_cancellable(&cb_data->concheck.resolve_cancellable);
 #endif
 
-    nm_clear_g_source(&cb_data->timeout_id);
+    nm_clear_g_source_inst(&cb_data->timeout_source);
 
     _LOG2D("check completed: %s; %s", nm_connectivity_state_to_string(state), log_message);
 
@@ -633,9 +633,9 @@ _idle_cb(gpointer user_data)
                               &cb_data->handles_lst));
     nm_assert(cb_data->completed_reason);
 
-    cb_data->timeout_id = 0;
+    nm_clear_g_source_inst(&cb_data->timeout_source);
     cb_data_complete(cb_data, cb_data->completed_state, cb_data->completed_reason);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 #if WITH_CONCHECK
@@ -662,7 +662,7 @@ do_curl_request(NMConnectivityCheckHandle *cb_data)
     cb_data->concheck.curl_mhandle    = mhandle;
     cb_data->concheck.curl_ehandle    = ehandle;
     cb_data->concheck.request_headers = curl_slist_append(NULL, "Connection: close");
-    cb_data->timeout_id               = g_timeout_add_seconds(20, _timeout_cb, cb_data);
+    cb_data->timeout_source           = nm_g_timeout_add_seconds_source(20, _timeout_cb, cb_data);
 
     curl_multi_setopt(mhandle, CURLMOPT_SOCKETFUNCTION, multi_socket_cb);
     curl_multi_setopt(mhandle, CURLMOPT_SOCKETDATA, cb_data);
@@ -878,7 +878,7 @@ nm_connectivity_check_start(NMConnectivity             *self,
                 _LOG2D("skip connectivity check due to %s", reason);
                 cb_data->completed_state  = state;
                 cb_data->completed_reason = reason;
-                cb_data->timeout_id       = g_idle_add(_idle_cb, cb_data);
+                cb_data->timeout_source   = nm_g_idle_add_source(_idle_cb, cb_data);
                 return cb_data;
             }
         }
@@ -914,7 +914,7 @@ nm_connectivity_check_start(NMConnectivity             *self,
                 _LOG2D("start fake request (fail due to no D-Bus connection)");
                 cb_data->completed_state  = NM_CONNECTIVITY_ERROR;
                 cb_data->completed_reason = "no D-Bus connection";
-                cb_data->timeout_id       = g_idle_add(_idle_cb, cb_data);
+                cb_data->timeout_source   = nm_g_idle_add_source(_idle_cb, cb_data);
                 return cb_data;
             }
 
@@ -957,7 +957,7 @@ nm_connectivity_check_start(NMConnectivity             *self,
         cb_data->completed_reason = "fake result";
     }
     _LOG2D("start fake request (%s)", cb_data->completed_reason);
-    cb_data->timeout_id = g_idle_add(_idle_cb, cb_data);
+    cb_data->timeout_source = nm_g_idle_add_source(_idle_cb, cb_data);
 
     return cb_data;
 }
