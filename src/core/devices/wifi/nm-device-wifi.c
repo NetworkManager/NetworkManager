@@ -978,14 +978,16 @@ deactivate_reset_hw_addr(NMDevice *device)
 static gboolean
 check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
-    NMDeviceWifi        *self = NM_DEVICE_WIFI(device);
-    NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
-    NMSettingWireless   *s_wireless;
-    const char          *mac;
-    const char *const   *mac_blacklist;
-    int                  i;
-    const char          *mode;
-    const char          *perm_hw_addr;
+    NMDeviceWifi              *self = NM_DEVICE_WIFI(device);
+    NMDeviceWifiPrivate       *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
+    NMSettingWireless         *s_wireless;
+    NMSettingWirelessSecurity *s_wsec;
+    const char                *mac;
+    const char *const         *mac_blacklist;
+    int                        i;
+    const char                *mode;
+    const char                *perm_hw_addr;
+    const char                *key_mgmt;
 
     if (!NM_DEVICE_CLASS(nm_device_wifi_parent_class)
              ->check_connection_compatible(device, connection, error))
@@ -1067,6 +1069,20 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
                                            "wpa_supplicant does not support Mesh mode");
                 return FALSE;
             }
+        }
+    }
+
+    s_wsec = nm_connection_get_setting_wireless_security(connection);
+    if (s_wsec) {
+        key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
+
+        if (nm_supplicant_interface_get_capability(priv->sup_iface, NM_SUPPL_CAP_TYPE_WEP)
+                == NM_TERNARY_FALSE
+            && NM_IN_STRSET(key_mgmt, "ieee8021x", "none")) {
+            nm_utils_error_set_literal(error,
+                                       NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                       "wpa_supplicant does not support WEP encryption");
+            return FALSE;
         }
     }
 

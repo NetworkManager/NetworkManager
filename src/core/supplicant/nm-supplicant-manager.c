@@ -920,6 +920,7 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
                     _caps_set(priv, NM_SUPPL_CAP_TYPE_PMF, NM_TERNARY_FALSE);
                     _caps_set(priv, NM_SUPPL_CAP_TYPE_FILS, NM_TERNARY_FALSE);
                     _caps_set(priv, NM_SUPPL_CAP_TYPE_SUITEB192, NM_TERNARY_FALSE);
+                    _caps_set(priv, NM_SUPPL_CAP_TYPE_WEP, NM_TERNARY_TRUE);
                     if (array) {
                         for (a = array; *a; a++) {
                             if (nm_streq(*a, "ap")) {
@@ -952,6 +953,10 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
                             }
                             if (nm_streq(*a, "suiteb192")) {
                                 _caps_set(priv, NM_SUPPL_CAP_TYPE_SUITEB192, NM_TERNARY_TRUE);
+                                continue;
+                            }
+                            if (nm_streq(*a, "wep_disabled")) {
+                                _caps_set(priv, NM_SUPPL_CAP_TYPE_WEP, NM_TERNARY_FALSE);
                                 continue;
                             }
                         }
@@ -993,6 +998,8 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
           " MESH%c"
           " FAST%c"
           " WFD%c"
+          " SUITEB192%c"
+          " WEP%c"
           "",
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_AP),
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_PMF),
@@ -1002,7 +1009,9 @@ _dbus_get_capabilities_cb(GVariant *res, GError *error, gpointer user_data)
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_SHA384),
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_MESH),
           NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_FAST),
-          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_WFD));
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_WFD),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_SUITEB192),
+          NM_SUPPL_CAP_TO_CHAR(priv->capabilities, NM_SUPPL_CAP_TYPE_WEP));
 
     nm_assert(g_hash_table_size(priv->supp_ifaces) == 0);
     nm_assert(c_list_is_empty(&priv->supp_lst_head));
