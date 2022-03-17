@@ -9132,8 +9132,11 @@ do_connection_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
             nmc->return_value = error->code;
             g_clear_error(&error);
 
-            if (nmc->return_value != NMC_RESULT_ERROR_NOT_FOUND)
+            if (nmc->return_value != NMC_RESULT_ERROR_NOT_FOUND) {
+                g_string_free(invalid_cons, TRUE);
+                invalid_cons = NULL;
                 goto finish;
+            }
 
             if (!invalid_cons)
                 invalid_cons = g_string_new(NULL);
@@ -9186,7 +9189,6 @@ finish:
         g_string_printf(nmc->return_text,
                         _("Error: cannot delete unknown connection(s): %s."),
                         invalid_cons->str);
-        nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
     }
 }
 
