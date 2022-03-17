@@ -15,7 +15,6 @@ do_clean() {
 
 uname -a
 ! command -v locale &>/dev/null || locale -a
-env
 meson --version
 
 ! command -v dpkg &>/dev/null || dpkg -l
