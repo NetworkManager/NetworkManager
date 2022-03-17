@@ -58,12 +58,6 @@ variables:
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
 
-.nm_artifacts_undo:
-  variables:
-    NM_BUILD_TARBALL: 0
-  artifacts:
-    paths: []
-
 #################################################################
 #                                                               #
 #                     containers stage                          #
@@ -197,25 +191,31 @@ t_{{distro.name}}:{{version}}:
 
 check-patch:
   extends:
-   - t_{{pages_build.name}}:{{pages_build.version}}
-   - .nm_artifacts_undo
+    - .fdo.distribution-image@{{pages_build.name}}
+  variables:
+    FDO_DISTRIBUTION_VERSION: '{{pages_build.version}}'
+    FDO_DISTRIBUTION_TAG: ${{pages_build.name.upper()}}_TAG
+  needs:
+    - "{{pages_build.name}}:{{pages_build.version}}@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
-  after_script:
   allow_failure: true
 
 check-tree:
   extends:
-   - t_{{pages_build.name}}:{{pages_build.version}}
-   - .nm_artifacts_undo
+    - .fdo.distribution-image@{{pages_build.name}}
+  variables:
+    FDO_DISTRIBUTION_VERSION: '{{pages_build.version}}'
+    FDO_DISTRIBUTION_TAG: ${{pages_build.name.upper()}}_TAG
+  needs:
+    - "{{pages_build.name}}:{{pages_build.version}}@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
-  after_script:
 
 pages:
   stage: deploy
