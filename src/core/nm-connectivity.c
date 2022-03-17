@@ -15,6 +15,7 @@
 #include <linux/rtnetlink.h>
 
 #include "c-list/src/c-list.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-platform/nmp-object.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-config.h"
@@ -758,7 +759,8 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
     int                        addr_family;
     gsize                      len = 0;
     gsize                      i;
-    gs_free_error GError      *error = NULL;
+    gs_free_error GError      *error        = NULL;
+    nm_auto_str_buf NMStrBuf   strbuf_hosts = NM_STR_BUF_INIT(0, FALSE);
 
     result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(object), res, &error);
     if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
@@ -781,7 +783,6 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
     for (i = 0; i < no_addresses; i++) {
         gs_unref_variant GVariant *address = NULL;
         char                       str_addr[NM_UTILS_INET_ADDRSTRLEN];
-        gs_free char              *host_entry = NULL;
         const guchar              *address_buf;
 
         g_variant_get_child(addresses, i, "(ii@ay)", &ifindex, &addr_family, &address);
@@ -796,13 +797,21 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
         if (len != nm_utils_addr_family_to_size(addr_family))
             continue;
 
-        host_entry = g_strdup_printf("%s:%s:%s",
+        if (strbuf_hosts.len == 0) {
+            nm_str_buf_append_printf(&strbuf_hosts,
+                                     "%s:%s:",
                                      cb_data->concheck.con_config->host,
-                                     cb_data->concheck.con_config->port ?: "80",
-                                     nm_utils_inet_ntop(addr_family, address_buf, str_addr));
+                                     cb_data->concheck.con_config->port ?: "80");
+        } else
+            nm_str_buf_append_c(&strbuf_hosts, ',');
 
-        cb_data->concheck.hosts = curl_slist_append(cb_data->concheck.hosts, host_entry);
-        _LOG2T("adding '%s' to curl resolve list", host_entry);
+        nm_str_buf_append(&strbuf_hosts, nm_utils_inet_ntop(addr_family, address_buf, str_addr));
+    }
+    if (strbuf_hosts.len > 0) {
+        const char *s = nm_str_buf_get_str(&strbuf_hosts);
+
+        cb_data->concheck.hosts = curl_slist_append(NULL, s);
+        _LOG2T("set curl resolve list to '%s'", s);
     }
 
     do_curl_request(cb_data);
