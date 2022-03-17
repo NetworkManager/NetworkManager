@@ -7,7 +7,7 @@
 # Thomas Haller <thaller@redhat.com>, 2017. #zanata.
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/NetworkMan"
 "ager/issues\n"
 "POT-Creation-Date: 2022-03-14 03:27+0000\n"
