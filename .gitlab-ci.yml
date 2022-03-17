@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2022-03-15.0-6be5ac812004'
-  UBUNTU_TAG:  '2022-03-15.0-34b078846bf1'
-  DEBIAN_TAG:  '2022-03-15.0-34b078846bf1'
-  CENTOS_TAG:  '2022-03-15.0-6be5ac812004'
-  ALPINE_TAG:  '2022-03-15.0-5dc0a455ed5c'
+  FEDORA_TAG:  '2022-03-15.0-fe6b35cace78'
+  UBUNTU_TAG:  '2022-03-15.0-ad509d98bfc2'
+  DEBIAN_TAG:  '2022-03-15.0-ad509d98bfc2'
+  CENTOS_TAG:  '2022-03-15.0-fe6b35cace78'
+  ALPINE_TAG:  '2022-03-15.0-913fc0767f1d'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -77,12 +77,6 @@ variables:
     when: always
     paths:
       - nm-test.log
-
-.nm_artifacts_undo:
-  variables:
-    NM_BUILD_TARBALL: 0
-  artifacts:
-    paths: []
 
 #################################################################
 #                                                               #
@@ -964,25 +958,31 @@ t_alpine:latest:
 
 check-patch:
   extends:
-   - t_fedora:35
-   - .nm_artifacts_undo
+    - .fdo.distribution-image@fedora
+  variables:
+    FDO_DISTRIBUTION_VERSION: '35'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "fedora:35@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
-  after_script:
   allow_failure: true
 
 check-tree:
   extends:
-   - t_fedora:35
-   - .nm_artifacts_undo
+    - .fdo.distribution-image@fedora
+  variables:
+    FDO_DISTRIBUTION_VERSION: '35'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "fedora:35@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
-  after_script:
 
 pages:
   stage: deploy
