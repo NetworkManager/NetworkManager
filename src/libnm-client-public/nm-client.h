@@ -496,6 +496,10 @@ gboolean nm_client_dbus_set_property_finish(NMClient *client, GAsyncResult *resu
 NM_AVAILABLE_IN_1_30
 void nm_utils_print(int output_mode, const char *msg);
 
+gboolean nm_utils_file_is_certificate(const char *filename);
+gboolean nm_utils_file_is_private_key(const char *filename, gboolean *out_encrypted);
+gboolean nm_utils_file_is_pkcs12(const char *filename);
+
 G_END_DECLS
 
 #endif /* __NM_CLIENT_H__ */

@@ -111,10 +111,6 @@ GPtrArray *nm_utils_ip_routes_from_variant(GVariant *value, int family);
 
 char *nm_utils_uuid_generate(void);
 
-gboolean nm_utils_file_is_certificate(const char *filename);
-gboolean nm_utils_file_is_private_key(const char *filename, gboolean *out_encrypted);
-gboolean nm_utils_file_is_pkcs12(const char *filename);
-
 typedef gboolean (*NMUtilsFileSearchInPathsPredicate)(const char *filename, gpointer user_data);
 
 struct stat;
