@@ -103,40 +103,62 @@
 
     <!--
         Update2:
-        @settings: New connection settings, properties, and (optionally) secrets.
-          Provide an empty array, to use the current settings.
-        @flags: optional flags argument. Currently, supported flags are:
-          "0x1" (to-disk),
-          "0x2" (in-memory),
-          "0x4" (in-memory-detached),
-          "0x8" (in-memory-only),
-          "0x10" (volatile),
-          "0x20" (block-autoconnect),
-          "0x40" (no-reapply).
-          Unknown flags cause the call to fail.
-        @args: optional arguments dictionary, for extentibility. Currently, no
-          arguments are accepted. Specifying unknown keys causes the call
-          to fail.
-        @result: output argument, currently no results are returned.
+        @settings: New connection settings, properties, and (optionally) secrets. Provide an empty array to use the current settings.
+        @flags: Optional flags. Unknown flags cause the call to fail.
+        @args: Optional arguments dictionary, for extentibility. Currently, no arguments are accepted. Specifying unknown keys causes the call to fail.
+        @result: Currently no results are returned.
         @since: 1.12
 
         Update the connection with new settings and properties (replacing all
-        previous settings and properties). If the flag 0x1 is present,
-        the connection is persisted to disk. If the flag 0x2 is present,
-        the change is only made in memory (without touching an eventual
-        profile on disk). If neither 0x1 nor 0x2 is set, the change is made
-        in memory only, if the connection is already in memory only.
-        The flags 0x4 (in-memory-detached) and 0x8 (in-memory-only) are like
-        "in-memory", but behave slightly different when migrating the profile
-        from disk to in-memory.
-        The flag 0x20 (block-autoconnect) blocks auto-connect on the updated
-        profile, and 0x40 (no-reapply) prevents "connection.zone" and "connection.metered"
-        properties to take effect on currently active devices.
+        previous settings and properties).
+
+        Update2 is an alternative to
+        <link linkend="gdbus-method-org-freedesktop-NetworkManager-Settings-Connection.Update">Update</link>,
+        <link linkend="gdbus-method-org-freedesktop-NetworkManager-Settings-Connection.UpdateUnsaved">UpdateUnsaved</link>
+        and <link linkend="gdbus-method-org-freedesktop-NetworkManager-Settings-Connection.Save">Save</link>
+        extensible with extra %flags and %args arguments.
+
+        The %flags argument accepts the combination of following values,
+        logically or-ed together:
+
+        <variablelist>
+        <varlistentry>
+          <term><literal>0x1 (to-disk)</literal>:</term>
+          <listitem><para>The connection is persisted to disk.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>0x2 (in-memory)</literal>:</term>
+          <listitem><para>The change is only made in memory (without touching an eventual
+          profile on disk). If neither 0x1 nor 0x2 is set, the change is made in memory
+          only, if the connection is already in memory only.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>0x4 (in-memory-detached)</literal>:</term>
+          <listitem><para>Like "in-memory", but behaves slightly different when migrating
+          the profile from disk to in-memory.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>0x8 (in-memory-only)</literal>:</term>
+          <listitem><para>Like "in-memory", but behaves slightly different when migrating
+          the profile from disk to in-memory.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>0x10 (volatile)</literal>:</term>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>0x20 (block-autoconnect)</literal>:</term>
+          <listitem><para>Blocks auto-connect on the updated profile</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><literal>0x40 (no-reapply)</literal>:</term>
+          <listitem><para>Prevents "connection.zone" and "connection.metered" properties
+          to take effect on currently active devices.</para></listitem>
+        </varlistentry>
+        </variablelist>
+
         Secrets may be part of the update request, and will be either stored in persistent
         storage or sent to a Secret Agent for storage, depending on the flags
         associated with each secret.
-
-        Update2 is a extensible alternative to Update, UpdateUnsaved and Save.
     -->
     <method name="Update2">
       <arg name="settings" type="a{sa{sv}}" direction="in"/>
