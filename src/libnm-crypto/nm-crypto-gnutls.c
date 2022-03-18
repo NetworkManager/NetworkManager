@@ -330,17 +330,17 @@ _nm_crypto_verify_pkcs12(const guint8 *data, gsize data_len, const char *passwor
     }
 
     err = gnutls_pkcs12_verify_mac(p12, password);
-
-    gnutls_pkcs12_deinit(p12);
-
     if (err != GNUTLS_E_SUCCESS) {
         g_set_error(error,
                     _NM_CRYPTO_ERROR,
                     _NM_CRYPTO_ERROR_DECRYPTION_FAILED,
                     _("Couldn't verify PKCS#12 file: %s"),
                     gnutls_strerror(err));
+        gnutls_pkcs12_deinit(p12);
         return FALSE;
     }
+
+    gnutls_pkcs12_deinit(p12);
 
     return TRUE;
 }

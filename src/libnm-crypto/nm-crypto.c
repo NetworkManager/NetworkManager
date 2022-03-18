@@ -757,8 +757,8 @@ out:
 gboolean
 nm_crypto_is_pkcs12_data(const guint8 *data, gsize data_len, GError **error)
 {
-    GError  *local = NULL;
-    gboolean success;
+    gs_free_error GError *local = NULL;
+    gboolean              success;
 
     if (!data_len) {
         g_set_error(error,
@@ -774,17 +774,14 @@ nm_crypto_is_pkcs12_data(const guint8 *data, gsize data_len, GError **error)
         return FALSE;
 
     success = _nm_crypto_verify_pkcs12(data, data_len, NULL, &local);
-    if (success == FALSE) {
-        /* If the error was just a decryption error, then it's pkcs#12 */
-        if (local) {
-            if (g_error_matches(local, _NM_CRYPTO_ERROR, _NM_CRYPTO_ERROR_DECRYPTION_FAILED)) {
-                success = TRUE;
-                g_error_free(local);
-            } else
-                g_propagate_error(error, local);
-        }
+
+    /* If the error was just a decryption error, then it's pkcs#12 */
+    if (!success && !g_error_matches(local, _NM_CRYPTO_ERROR, _NM_CRYPTO_ERROR_DECRYPTION_FAILED)) {
+        g_propagate_error(error, g_steal_pointer(&local));
+        return FALSE;
     }
-    return success;
+
+    return TRUE;
 }
 
 gboolean

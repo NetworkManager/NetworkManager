@@ -509,6 +509,7 @@ out:
     if (pw.data)
         SECITEM_ZfreeItem(&pw, PR_FALSE);
 
+    nm_assert(!error || (success == (!*error)));
     return success;
 }
 
