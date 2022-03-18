@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "nm-crypto-impl.h"
+#include "libnm-crypto/nm-crypto-impl.h"
 #include "nm-utils.h"
 #include "nm-errors.h"
 #include "libnm-core-intern/nm-core-internal.h"
