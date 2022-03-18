@@ -16,7 +16,6 @@
 #include "libnm-glib-aux/nm-io-utils.h"
 
 #include "nm-crypto-impl.h"
-#include "nm-utils.h"
 #include "nm-errors.h"
 
 #define PEM_RSA_KEY_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
@@ -965,7 +964,7 @@ nmtst_crypto_rsa_key_encrypt(const guint8 *data,
 
         if (!nm_crypto_randomize(pw_buf.bin, pw_buf.len, error))
             return NULL;
-        tmp_password = nm_utils_bin2hexstr(pw_buf.bin, pw_buf.len, -1);
+        tmp_password = _nm_utils_bin2hexstr(pw_buf.bin, pw_buf.len, -1);
         in_password  = tmp_password;
     }
 
@@ -1009,7 +1008,7 @@ nmtst_crypto_rsa_key_encrypt(const guint8 *data,
         pem,
         g_strdup_printf("DEK-Info: %s,",
                         nm_crypto_cipher_get_info(NM_CRYPTO_CIPHER_DES_EDE3_CBC)->name));
-    g_ptr_array_add(pem, nm_utils_bin2hexstr(salt, sizeof(salt), sizeof(salt) * 2));
+    g_ptr_array_add(pem, _nm_utils_bin2hexstr(salt, sizeof(salt), sizeof(salt) * 2));
     g_ptr_array_add(pem, g_strdup("\n\n"));
 
     /* Convert the encrypted key to a base64 string */
