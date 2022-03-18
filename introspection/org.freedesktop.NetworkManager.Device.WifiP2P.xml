@@ -26,11 +26,19 @@
 
     <!--
         StartFind:
-        @options: Options of find. Currently, 'timeout' option with value of "i"
-                  in the range of 1-600 seconds is supported. The default is
-                  30 seconds.
+        @options: Options of find.
 
         Start a find operation for Wi-Fi P2P peers.
+
+        The %options argument accepts the following keys:
+
+        <variablelist>
+        <varlistentry>
+          <term><literal>i timeout</literal>:</term>
+          <listitem><para>Timeout value in the range of 1-600 seconds.</para>
+          <para>The default is 30 seconds.</para></listitem>
+        </varlistentry>
+        </variablelist>
     -->
     <method name="StartFind">
       <arg name="options" type="a{sv}" direction="in"/>
