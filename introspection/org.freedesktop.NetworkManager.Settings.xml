@@ -76,6 +76,7 @@
           to fail.
         @path: Object path of the new connection that was just added.
         @result: output argument, currently no additional results are returned.
+        @since: 1.20
 
         Add a new connection profile.
 
@@ -87,8 +88,6 @@
 
         AddConnection2 is a extensible alternative to AddConnection, and AddConnectionUnsaved.
         The new variant can do everything that the older variants could, and more.
-
-        Since: 1.20
     -->
     <method name="AddConnection2">
       <arg name="settings" type="a{sa{sv}}" direction="in"/>

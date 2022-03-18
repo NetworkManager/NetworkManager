@@ -93,10 +93,10 @@
         StateChanged:
         @state: (<link linkend="NMActiveConnectionState">NMActiveConnectionState</link>) The new state of the active connection.
         @reason: (<link linkend="NMActiveConnectionStateReason">NMActiveConnectionStateReason</link>) Reason code describing the change to the new state.
+        @since: 1.8
 
         Emitted when the state of the active connection has changed.
 
-        Since: 1.8
     -->
     <signal name="StateChanged">
       <arg name="state" type="u"/>

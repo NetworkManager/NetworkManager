@@ -118,6 +118,7 @@
           arguments are accepted. Specifying unknown keys causes the call
           to fail.
         @result: output argument, currently no results are returned.
+        @since: 1.12
 
         Update the connection with new settings and properties (replacing all
         previous settings and properties). If the flag 0x1 is present,
@@ -136,8 +137,6 @@
         associated with each secret.
 
         Update2 is a extensible alternative to Update, UpdateUnsaved and Save.
-
-        Since: 1.12
     -->
     <method name="Update2">
       <arg name="settings" type="a{sa{sv}}" direction="in"/>
@@ -168,21 +167,19 @@
 
     <!--
         Flags:
+        @since: 1.12
 
         Additional flags of the connection profile.
 
         Returns: <link linkend="NMSettingsConnectionFlags">NMSettingsConnectionFlags</link>
-
-        Since: 1.12
     -->
     <property name="Flags" type="u" access="read"/>
 
     <!--
         Filename:
+        @since: 1.12
 
         File that stores the connection in case the connection is file-backed.
-
-        Since: 1.12
     -->
     <property name="Filename" type="s" access="read"/>
 

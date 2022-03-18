@@ -296,10 +296,9 @@
           will be recalculated to give the approximate new expiration time.
           The new "RollbackTimeout" property will be approximate up to
           one second precision, which is the accuracy of the property.
+        @since: 1.12
 
         Reset the timeout for rollback for the checkpoint.
-
-        Since: 1.12
     -->
     <method name="CheckpointAdjustRollbackTimeout">
       <arg name="checkpoint" type="o" direction="in"/>
