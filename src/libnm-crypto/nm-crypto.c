@@ -4,7 +4,7 @@
  * Copyright (C) 2007 - 2018 Red Hat, Inc.
  */
 
-#include "libnm-core-impl/nm-default-libnm-core.h"
+#include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-crypto.h"
 

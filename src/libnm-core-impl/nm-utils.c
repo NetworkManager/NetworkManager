@@ -17,6 +17,7 @@
 #include <linux/pkt_sched.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-crypto/nm-crypto.h"
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-json-aux.h"
 #include "libnm-glib-aux/nm-str-buf.h"
@@ -27,7 +28,6 @@
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
-#include "nm-crypto.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-bond-port.h"
 #include "nm-setting-bridge.h"

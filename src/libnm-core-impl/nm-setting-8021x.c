@@ -9,8 +9,8 @@
 #include "nm-setting-8021x.h"
 
 #include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-crypto/nm-crypto.h"
 #include "nm-utils.h"
-#include "nm-crypto.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
 #include "nm-core-enum-types.h"

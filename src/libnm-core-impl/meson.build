@@ -2,45 +2,6 @@
 
 libnm_core_impl_inc = include_directories('.')
 
-if crypto_nss_dep.found()
-  libnm_crypto_nss = static_library(
-    'nm-crypto-nss',
-    sources: 'nm-crypto-nss.c',
-    dependencies: [
-      libnm_core_public_dep,
-      crypto_nss_dep,
-    ],
-  )
-endif
-
-if crypto_gnutls_dep.found()
-  libnm_crypto_gnutls = static_library(
-    'nm-crypto-gnutls',
-    sources: 'nm-crypto-gnutls.c',
-    dependencies: [
-      libnm_core_public_dep,
-      crypto_gnutls_dep,
-    ],
-  )
-endif
-
-libnm_crypto_null = static_library(
-  'nm-crypto-null',
-  sources: 'nm-crypto-null.c',
-  dependencies: [
-    libnm_core_public_dep,
-  ],
-)
-
-if crypto == 'nss'
-  libnm_crypto = libnm_crypto_nss
-elif crypto == 'gnutls'
-  libnm_crypto = libnm_crypto_gnutls
-else
-  assert(crypto == 'null', 'Unexpected setting "crypto=' + crypto + '"')
-  libnm_crypto = libnm_crypto_null
-endif
-
 libnm_core_settings_sources = files(
   'nm-setting-6lowpan.c',
   'nm-setting-8021x.c',
@@ -99,7 +60,6 @@ libnm_core_settings_sources = files(
 
 libnm_core_impl_sources = files(
   'nm-connection.c',
-  'nm-crypto.c',
   'nm-dbus-utils.c',
   'nm-errors.c',
   'nm-keyfile-utils.c',
