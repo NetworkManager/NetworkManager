@@ -8,6 +8,7 @@
 #define __NM_CRYPTO_IMPL_H__
 
 #include "nm-crypto.h"
+#include "libnm-base/nm-base.h"
 
 gboolean _nm_crypto_init(GError **error);
 

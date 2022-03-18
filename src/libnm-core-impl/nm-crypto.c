@@ -16,7 +16,8 @@
 #include "libnm-glib-aux/nm-io-utils.h"
 
 #include "nm-crypto-impl.h"
-#include "nm-errors.h"
+
+/*****************************************************************************/
 
 #define PEM_RSA_KEY_BEGIN "-----BEGIN RSA PRIVATE KEY-----"
 #define PEM_RSA_KEY_END   "-----END RSA PRIVATE KEY-----"
@@ -202,8 +203,8 @@ parse_old_openssl_key_file(const guint8       *data,
         end_tag   = PEM_DSA_KEY_END;
     } else {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("PEM key file had no start tag"));
         return FALSE;
     }
@@ -211,8 +212,8 @@ parse_old_openssl_key_file(const guint8       *data,
     start += strlen(start_tag);
     if (!find_tag(end_tag, data, data_len, start, &end)) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("PEM key file had no end tag '%s'."),
                     end_tag);
         return FALSE;
@@ -239,8 +240,8 @@ parse_old_openssl_key_file(const guint8       *data,
         if (!strncmp(p, PROC_TYPE_TAG, strlen(PROC_TYPE_TAG))) {
             if (enc_tags++ != 0 || str_p != str) {
                 g_set_error(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             _("Malformed PEM file: Proc-Type was not first tag."));
                 return FALSE;
             }
@@ -248,8 +249,8 @@ parse_old_openssl_key_file(const guint8       *data,
             p += strlen(PROC_TYPE_TAG);
             if (strcmp(p, "4,ENCRYPTED")) {
                 g_set_error(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             _("Malformed PEM file: unknown Proc-Type tag '%s'."),
                             p);
                 return FALSE;
@@ -261,8 +262,8 @@ parse_old_openssl_key_file(const guint8       *data,
 
             if (enc_tags++ != 1 || str_p != str) {
                 g_set_error(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             _("Malformed PEM file: DEK-Info was not the second tag."));
                 return FALSE;
             }
@@ -273,8 +274,8 @@ parse_old_openssl_key_file(const guint8       *data,
             comma = strchr(p, ',');
             if (!comma || (*(comma + 1) == '\0')) {
                 g_set_error(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             _("Malformed PEM file: no IV found in DEK-Info tag."));
                 return FALSE;
             }
@@ -282,8 +283,8 @@ parse_old_openssl_key_file(const guint8       *data,
             comma++;
             if (!g_ascii_isxdigit(*comma)) {
                 g_set_error(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             _("Malformed PEM file: invalid format of IV in DEK-Info tag."));
                 return FALSE;
             }
@@ -294,8 +295,8 @@ parse_old_openssl_key_file(const guint8       *data,
             cipher_info = nm_crypto_cipher_get_info_by_name(p, p_len);
             if (!cipher_info) {
                 g_set_error(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             _("Malformed PEM file: unknown private key cipher '%s'."),
                             p);
                 return FALSE;
@@ -304,8 +305,8 @@ parse_old_openssl_key_file(const guint8       *data,
         } else {
             if (enc_tags == 1) {
                 g_set_error(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             "Malformed PEM file: both Proc-Type and DEK-Info tags are required.");
                 return FALSE;
             }
@@ -317,8 +318,8 @@ parse_old_openssl_key_file(const guint8       *data,
     parsed.bin = (guint8 *) g_base64_decode(str, &parsed.len);
     if (!parsed.bin || parsed.len == 0) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("Could not decode private key."));
         nm_secret_ptr_clear(&parsed);
         return FALSE;
@@ -359,8 +360,8 @@ parse_pkcs8_key_file(const guint8 *data,
         encrypted = FALSE;
     } else {
         g_set_error_literal(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             _("Failed to find expected PKCS#8 start tag."));
         return FALSE;
     }
@@ -368,8 +369,8 @@ parse_pkcs8_key_file(const guint8 *data,
     start += strlen(start_tag);
     if (!find_tag(end_tag, data, data_len, start, &end)) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("Failed to find expected PKCS#8 end tag '%s'."),
                     end_tag);
         return FALSE;
@@ -381,8 +382,8 @@ parse_pkcs8_key_file(const guint8 *data,
     parsed->bin = (guint8 *) g_base64_decode(der_base64, &parsed->len);
     if (!parsed->bin || parsed->len == 0) {
         g_set_error_literal(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             _("Failed to decode PKCS#8 private key."));
         nm_secret_ptr_clear(parsed);
         return FALSE;
@@ -411,8 +412,8 @@ parse_tpm2_wrapped_key_file(const guint8 *data,
         end_tag   = PEM_TPM2_OLD_WRAPPED_KEY_END;
     } else {
         g_set_error_literal(error,
-                            NM_CRYPTO_ERROR,
-                            NM_CRYPTO_ERROR_INVALID_DATA,
+                            _NM_CRYPTO_ERROR,
+                            _NM_CRYPTO_ERROR_INVALID_DATA,
                             _("Failed to find expected TSS start tag."));
         return FALSE;
     }
@@ -420,8 +421,8 @@ parse_tpm2_wrapped_key_file(const guint8 *data,
     start += strlen(start_tag);
     if (!find_tag(end_tag, data, data_len, start, &end)) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("Failed to find expected TSS end tag '%s'."),
                     end_tag);
         return FALSE;
@@ -475,8 +476,8 @@ _nmtst_convert_iv(const char *src, gsize *out_len, GError **error)
     num = strlen(src);
     if (num == 0 || (num % 2) != 0) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("IV must be an even number of bytes in length."));
         return NULL;
     }
@@ -492,8 +493,8 @@ _nmtst_convert_iv(const char *src, gsize *out_len, GError **error)
         if (((c0 = nm_utils_hexchar_to_int(*(src++))) < 0)
             || ((c1 = nm_utils_hexchar_to_int(*(src++))) < 0)) {
             g_set_error(error,
-                        NM_CRYPTO_ERROR,
-                        NM_CRYPTO_ERROR_INVALID_DATA,
+                        _NM_CRYPTO_ERROR,
+                        _NM_CRYPTO_ERROR_INVALID_DATA,
                         _("IV contains non-hexadecimal digits."));
             nm_explicit_bzero(c, i);
             return FALSE;
@@ -568,8 +569,8 @@ _nmtst_decrypt_key(NMCryptoCipherType cipher,
 
     if (bin_iv.len < 8) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("IV must contain at least 8 characters"));
         return FALSE;
     }
@@ -618,8 +619,8 @@ nmtst_crypto_decrypt_openssl_private_key_data(const guint8    *data,
 
     if (!parse_old_openssl_key_file(data, data_len, &parsed, &key_type, &cipher, &iv, NULL)) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("Unable to determine private key type."));
         return NULL;
     }
@@ -631,8 +632,8 @@ nmtst_crypto_decrypt_openssl_private_key_data(const guint8    *data,
 
         if (cipher == NM_CRYPTO_CIPHER_UNKNOWN || !iv) {
             g_set_error(error,
-                        NM_CRYPTO_ERROR,
-                        NM_CRYPTO_ERROR_INVALID_PASSWORD,
+                        _NM_CRYPTO_ERROR,
+                        _NM_CRYPTO_ERROR_INVALID_PASSWORD,
                         _("Password provided, but key was not encrypted."));
             return NULL;
         }
@@ -687,8 +688,8 @@ extract_pem_cert_data(const guint8 *contents,
 
     if (!find_tag(PEM_CERT_BEGIN, contents, contents_len, 0, &start)) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("PEM certificate had no start tag '%s'."),
                     PEM_CERT_BEGIN);
         return FALSE;
@@ -697,8 +698,8 @@ extract_pem_cert_data(const guint8 *contents,
     start += strlen(PEM_CERT_BEGIN);
     if (!find_tag(PEM_CERT_END, contents, contents_len, start, &end)) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("PEM certificate had no end tag '%s'."),
                     PEM_CERT_END);
         return FALSE;
@@ -710,8 +711,8 @@ extract_pem_cert_data(const guint8 *contents,
     out_cert->bin = (guint8 *) g_base64_decode(der_base64, &out_cert->len);
     if (!out_cert->bin || !out_cert->len) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("Failed to decode certificate."));
         nm_secret_ptr_clear(out_cert);
         return FALSE;
@@ -739,8 +740,8 @@ nm_crypto_load_and_verify_certificate(const char         *file,
 
     if (contents.len == 0) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("Certificate file is empty"));
         goto out;
     }
@@ -772,8 +773,8 @@ nm_crypto_load_and_verify_certificate(const char         *file,
     }
 
     g_set_error(error,
-                NM_CRYPTO_ERROR,
-                NM_CRYPTO_ERROR_INVALID_DATA,
+                _NM_CRYPTO_ERROR,
+                _NM_CRYPTO_ERROR_INVALID_DATA,
                 _("Failed to recognize certificate"));
 
 out:
@@ -790,8 +791,8 @@ nm_crypto_is_pkcs12_data(const guint8 *data, gsize data_len, GError **error)
 
     if (!data_len) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("Certificate file is empty"));
         return FALSE;
     }
@@ -805,7 +806,7 @@ nm_crypto_is_pkcs12_data(const guint8 *data, gsize data_len, GError **error)
     if (success == FALSE) {
         /* If the error was just a decryption error, then it's pkcs#12 */
         if (local) {
-            if (g_error_matches(local, NM_CRYPTO_ERROR, NM_CRYPTO_ERROR_DECRYPTION_FAILED)) {
+            if (g_error_matches(local, _NM_CRYPTO_ERROR, _NM_CRYPTO_ERROR_DECRYPTION_FAILED)) {
                 success = TRUE;
                 g_error_free(local);
             } else
@@ -880,8 +881,8 @@ nm_crypto_verify_private_key_data(const guint8 *data,
 
     if (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN && error && !*error) {
         g_set_error(error,
-                    NM_CRYPTO_ERROR,
-                    NM_CRYPTO_ERROR_INVALID_DATA,
+                    _NM_CRYPTO_ERROR,
+                    _NM_CRYPTO_ERROR_INVALID_DATA,
                     _("not a valid private key"));
     }
 
