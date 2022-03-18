@@ -2615,6 +2615,33 @@ need_secrets_tls(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
 }
 
 static gboolean
+verify_identity(NMSetting8021x *self, gboolean phase2, GError **error)
+{
+    NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
+
+    if (nm_str_is_empty(priv->identity)) {
+        if (!priv->identity) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                                _("property is missing"));
+        } else {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("property is empty"));
+        }
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_802_1X_SETTING_NAME,
+                       NM_SETTING_802_1X_IDENTITY);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static gboolean
 verify_tls(NMSetting8021x *self, gboolean phase2, GError **error)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
@@ -2689,24 +2716,8 @@ verify_ttls(NMSetting8021x *self, gboolean phase2, GError **error)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
 
-    if (nm_str_is_empty(priv->identity)) {
-        if (!priv->identity) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                                _("property is missing"));
-        } else {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("property is empty"));
-        }
-        g_prefix_error(error,
-                       "%s.%s: ",
-                       NM_SETTING_802_1X_SETTING_NAME,
-                       NM_SETTING_802_1X_IDENTITY);
+    if (!verify_identity(self, phase2, error))
         return FALSE;
-    }
 
     if ((!priv->phase2_auth && !priv->phase2_autheap)
         || (priv->phase2_auth && priv->phase2_autheap)) {
@@ -2720,33 +2731,6 @@ verify_ttls(NMSetting8021x *self, gboolean phase2, GError **error)
                        NM_SETTING_802_1X_PHASE2_AUTH,
                        NM_SETTING_802_1X_SETTING_NAME,
                        NM_SETTING_802_1X_PHASE2_AUTHEAP);
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
-static gboolean
-verify_identity(NMSetting8021x *self, gboolean phase2, GError **error)
-{
-    NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
-
-    if (nm_str_is_empty(priv->identity)) {
-        if (!priv->identity) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                                _("property is missing"));
-        } else {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("property is empty"));
-        }
-        g_prefix_error(error,
-                       "%s.%s: ",
-                       NM_SETTING_802_1X_SETTING_NAME,
-                       NM_SETTING_802_1X_IDENTITY);
         return FALSE;
     }
 
