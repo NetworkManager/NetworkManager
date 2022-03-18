@@ -2618,132 +2618,66 @@ static gboolean
 verify_tls(NMSetting8021x *self, gboolean phase2, GError **error)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
+    GBytes                *client_cert;
+    GBytes                *private_key;
+    const char            *prop_client_cert;
+    const char            *prop_private_key;
 
-    if (phase2) {
-        if (!priv->phase2_client_cert) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                                _("property is missing"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
-            return FALSE;
-        } else if (!g_bytes_get_size(priv->phase2_client_cert)) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("property is empty"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
-            return FALSE;
-        }
+    client_cert = phase2 ? priv->phase2_client_cert : priv->client_cert;
+    private_key = phase2 ? priv->phase2_private_key : priv->private_key;
+    prop_client_cert =
+        phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT : NM_SETTING_802_1X_CLIENT_CERT;
+    prop_private_key =
+        phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY : NM_SETTING_802_1X_PRIVATE_KEY;
 
-        /* Private key is required for TLS */
-        if (!priv->phase2_private_key) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                                _("property is missing"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-            return FALSE;
-        } else if (!g_bytes_get_size(priv->phase2_private_key)) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("property is empty"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-            return FALSE;
-        }
-
-        /* If the private key is PKCS#12, check that it matches the client cert */
-        if (nm_crypto_is_pkcs12_data(g_bytes_get_data(priv->phase2_private_key, NULL),
-                                     g_bytes_get_size(priv->phase2_private_key),
-                                     NULL)) {
-            if (!g_bytes_equal(priv->phase2_private_key, priv->phase2_client_cert)) {
-                g_set_error(error,
+    if (!client_cert) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("property is missing"));
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, prop_client_cert);
+        return FALSE;
+    }
+    if (g_bytes_get_size(client_cert) == 0) {
+        g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("has to match '%s' property for PKCS#12"),
-                            NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
-                g_prefix_error(error,
-                               "%s.%s: ",
-                               NM_SETTING_802_1X_SETTING_NAME,
-                               NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
-                return FALSE;
-            }
-        }
-    } else {
-        if (!priv->client_cert) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                                _("property is missing"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_CLIENT_CERT);
-            return FALSE;
-        } else if (!g_bytes_get_size(priv->client_cert)) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("property is empty"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_CLIENT_CERT);
-            return FALSE;
-        }
+                            _("property is empty"));
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, prop_client_cert);
+        return FALSE;
+    }
 
-        /* Private key is required for TLS */
-        if (!priv->private_key) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_MISSING_PROPERTY,
-                                _("property is missing"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PRIVATE_KEY);
-            return FALSE;
-        } else if (!g_bytes_get_size(priv->private_key)) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("property is empty"));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           NM_SETTING_802_1X_SETTING_NAME,
-                           NM_SETTING_802_1X_PRIVATE_KEY);
-            return FALSE;
-        }
+    /* Private key is required for TLS */
+    if (!private_key) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("property is missing"));
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, prop_private_key);
+        return FALSE;
+    }
 
-        /* If the private key is PKCS#12, check that it matches the client cert */
-        if (nm_crypto_is_pkcs12_data(g_bytes_get_data(priv->private_key, NULL),
-                                     g_bytes_get_size(priv->private_key),
-                                     NULL)) {
-            if (!g_bytes_equal(priv->private_key, priv->client_cert)) {
-                g_set_error(error,
+    if (g_bytes_get_size(private_key) == 0) {
+        g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("has to match '%s' property for PKCS#12"),
-                            NM_SETTING_802_1X_PRIVATE_KEY);
-                g_prefix_error(error,
-                               "%s.%s: ",
-                               NM_SETTING_802_1X_SETTING_NAME,
-                               NM_SETTING_802_1X_CLIENT_CERT);
-                return FALSE;
-            }
+                            _("property is empty"));
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, prop_private_key);
+        return FALSE;
+    }
+
+    /* If the private key is PKCS#12, check that it matches the client cert */
+    if (nm_crypto_is_pkcs12_data(g_bytes_get_data(private_key, NULL),
+                                 g_bytes_get_size(private_key),
+                                 NULL)) {
+        if (!g_bytes_equal(private_key, client_cert)) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("has to match '%s' property for PKCS#12"),
+                        prop_private_key);
+            g_prefix_error(error, "%s.%s: ", NM_SETTING_802_1X_SETTING_NAME, prop_client_cert);
+            return FALSE;
         }
     }
 
