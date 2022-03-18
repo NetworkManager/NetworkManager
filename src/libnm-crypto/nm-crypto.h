@@ -93,4 +93,7 @@ guint8 *nmtst_crypto_make_des_aes_key(NMCryptoCipherType cipher,
 
 /*****************************************************************************/
 
+gboolean nm_crypto_utils_file_is_certificate(const char *filename);
+gboolean nm_crypto_utils_file_is_private_key(const char *filename, gboolean *out_encrypted);
+
 #endif /* __NM_CRYPTO_H__ */

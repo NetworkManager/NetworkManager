@@ -1042,3 +1042,54 @@ nmtst_crypto_rsa_key_encrypt(const guint8 *data,
     NM_SET_OUT(out_password, g_strdup(tmp_password));
     return nm_secret_buf_to_gbytes_take(ret, ret_len);
 }
+
+/*****************************************************************************/
+
+static gboolean
+file_has_extension(const char *filename, const char *extensions[])
+{
+    const char *ext;
+    gsize       i;
+
+    ext = strrchr(filename, '.');
+    if (!ext)
+        return FALSE;
+
+    for (i = 0; extensions[i]; i++) {
+        if (!g_ascii_strcasecmp(ext, extensions[i]))
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+gboolean
+nm_crypto_utils_file_is_certificate(const char *filename)
+{
+    const char        *extensions[] = {".der", ".pem", ".crt", ".cer", NULL};
+    NMCryptoFileFormat file_format;
+
+    nm_assert(filename);
+
+    if (!file_has_extension(filename, extensions))
+        return FALSE;
+
+    if (!nm_crypto_load_and_verify_certificate(filename, &file_format, NULL, NULL))
+        return FALSE;
+    return file_format = NM_CRYPTO_FILE_FORMAT_X509;
+}
+
+gboolean
+nm_crypto_utils_file_is_private_key(const char *filename, gboolean *out_encrypted)
+{
+    const char *extensions[] = {".der", ".pem", ".p12", ".key", NULL};
+
+    nm_assert(filename);
+
+    NM_SET_OUT(out_encrypted, FALSE);
+    if (!file_has_extension(filename, extensions))
+        return FALSE;
+
+    return nm_crypto_verify_private_key(filename, NULL, out_encrypted, NULL)
+           != NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+}
