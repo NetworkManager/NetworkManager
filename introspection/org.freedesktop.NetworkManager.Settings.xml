@@ -117,7 +117,6 @@
         LoadConnections:
         @filenames: Array of paths to on-disk connection profiles in directories monitored by NetworkManager.
         @status: Success or failure of the operation as a whole. True if NetworkManager at least tried to load the indicated connections, even if it did not succeed. False if an error occurred before trying to load the connections (eg, permission denied).
-          Note that before 1.20, NetworkManager had a bug and this @status value was wrong. It is better to assume success if the method does not return with a D-Bus error. On top of that, you can look at @failures to know whether any of the requested files failed.
         @failures: Paths of connection files that could not be loaded.
 
         Loads or reloads the indicated connections from disk. You should call this
@@ -125,6 +124,10 @@
         that NetworkManager sees the changes.
         As with AddConnection(), this operation does not necessarily
         start the network connection.
+
+        Note that before 1.20, NetworkManager had a bug and this @status value was wrong.
+        It is better to assume success if the method does not return with a D-Bus error.
+        On top of that, you can look at @failures to know whether any of the requested files failed.
     -->
     <method name="LoadConnections">
       <arg name="filenames" type="as" direction="in"/>
