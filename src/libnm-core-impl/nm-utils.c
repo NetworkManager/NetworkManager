@@ -3795,22 +3795,13 @@ nm_utils_hwaddr_aton(const char *asc, gpointer buffer, gsize length)
 char *
 nm_utils_bin2hexstr(gconstpointer src, gsize len, int final_len)
 {
-    char *result;
     gsize buflen = (len * 2) + 1;
 
     g_return_val_if_fail(src != NULL, NULL);
     g_return_val_if_fail(len > 0 && (buflen - 1) / 2 == len, NULL);
     g_return_val_if_fail(final_len < 0 || (gsize) final_len < buflen, NULL);
 
-    result = g_malloc(buflen);
-
-    nm_utils_bin2hexstr_full(src, len, '\0', FALSE, result);
-
-    /* Cut converted key off at the correct length for this cipher type */
-    if (final_len >= 0 && (gsize) final_len < buflen)
-        result[final_len] = '\0';
-
-    return result;
+    return _nm_utils_bin2hexstr(src, len, final_len);
 }
 
 /**
