@@ -10,6 +10,8 @@
 
 #include <malloc.h>
 
+#include "nm-io-utils.h"
+
 /*****************************************************************************/
 
 void
@@ -175,4 +177,35 @@ nm_utils_memeqzero_secret(gconstpointer data, gsize length)
         asm volatile("" : "=r"(acc) : "0"(acc));
     }
     return 1 & ((acc - 1) >> 8);
+}
+
+/*****************************************************************************/
+
+gboolean
+nm_utils_read_crypto_file(const char *filename, NMSecretPtr *out_contents, GError **error)
+{
+    nm_assert(out_contents);
+    nm_assert(out_contents->len == 0);
+    nm_assert(!out_contents->str);
+
+    return nm_utils_file_get_contents(-1,
+                                      filename,
+                                      100 * 1024 * 1024,
+                                      NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
+                                      &out_contents->str,
+                                      &out_contents->len,
+                                      NULL,
+                                      error);
+}
+
+GBytes *
+nm_utils_read_crypto_file_to_bytes(const char *filename, GError **error)
+{
+    nm_auto_clear_secret_ptr NMSecretPtr contents = {0};
+
+    g_return_val_if_fail(filename, NULL);
+
+    if (!nm_utils_read_crypto_file(filename, &contents, error))
+        return NULL;
+    return nm_secret_copy_to_gbytes(contents.bin, contents.len);
 }
