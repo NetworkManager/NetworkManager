@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device:
-      @short_description: Device
+      @short_description: Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device">

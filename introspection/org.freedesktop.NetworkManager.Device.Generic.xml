@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Generic:
-      @short_description: Unrecognized Device
+      @short_description: Unrecognized Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Generic">

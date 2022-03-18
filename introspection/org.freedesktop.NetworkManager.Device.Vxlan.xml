@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Vxlan:
-      @short_description: VXLAN Device
+      @short_description: VXLAN Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Vxlan">

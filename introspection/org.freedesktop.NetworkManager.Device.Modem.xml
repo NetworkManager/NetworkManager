@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Modem:
-      @short_description: Modem Device
+      @short_description: Modem Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Modem">

@@ -3,7 +3,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.PPP:
-      @short_description: Helper interface for a PPP plugin
+      @short_description: Helper interface for a PPP plugin.
 
   -->
   <interface name="org.freedesktop.NetworkManager.PPP">

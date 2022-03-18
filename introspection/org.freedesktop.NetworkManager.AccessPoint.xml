@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.AccessPoint:
-      @short_description: Wi-Fi Access Point
+      @short_description: Wi-Fi Access Point.
 
   -->
   <interface name="org.freedesktop.NetworkManager.AccessPoint">

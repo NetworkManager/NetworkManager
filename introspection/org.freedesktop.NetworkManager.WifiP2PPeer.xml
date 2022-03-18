@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.WifiP2PPeer:
-      @short_description: Wi-Fi P2P Peer
+      @short_description: Wi-Fi P2P Peer.
       @since: 1.16
   -->
   <interface name="org.freedesktop.NetworkManager.WifiP2PPeer">

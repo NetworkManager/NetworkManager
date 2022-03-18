@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Tun:
-      @short_description: Userspace Tunneling Device
+      @short_description: Userspace Tunneling Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Tun">

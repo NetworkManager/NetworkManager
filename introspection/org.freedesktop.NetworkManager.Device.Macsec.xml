@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Macsec:
-      @short_description: MACSec Device
+      @short_description: MACSec Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Macsec">

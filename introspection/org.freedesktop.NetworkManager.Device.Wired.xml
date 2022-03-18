@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Wired:
-      @short_description: Wired Ethernet Device
+      @short_description: Wired Ethernet Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Wired">

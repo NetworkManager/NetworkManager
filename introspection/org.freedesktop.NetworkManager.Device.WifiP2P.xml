@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.WifiP2P:
-      @short_description: Wi-Fi P2P Device
+      @short_description: Wi-Fi P2P Device.
       @since: 1.16
   -->
   <interface name="org.freedesktop.NetworkManager.Device.WifiP2P">
