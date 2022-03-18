@@ -2751,17 +2751,14 @@ need_secrets_phase2(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
     if (!method)
         method = priv->phase2_autheap;
 
-    if (!method) {
-        g_warning("Couldn't find EAP method.");
-        g_assert_not_reached();
-        return;
-    }
+    if (!method)
+        g_return_if_reached();
 
     /* Ask the configured phase2 method if it needs secrets */
     for (i = 0; eap_methods_table[i].method; i++) {
-        if (eap_methods_table[i].ns_func == NULL)
+        if (!eap_methods_table[i].ns_func)
             continue;
-        if (!strcmp(eap_methods_table[i].method, method)) {
+        if (nm_streq(eap_methods_table[i].method, method)) {
             (*eap_methods_table[i].ns_func)(self, secrets, TRUE);
             break;
         }
