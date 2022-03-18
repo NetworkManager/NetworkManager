@@ -2673,10 +2673,11 @@ verify_tls(NMSetting8021x *self, gboolean phase2, GError **error)
         return FALSE;
     }
 
-    /* If the private key is PKCS#12, check that it matches the client cert */
-    if (nm_crypto_is_pkcs12_data(g_bytes_get_data(private_key, NULL),
-                                 g_bytes_get_size(private_key),
-                                 NULL)) {
+    if (_nm_setting_802_1x_cert_get_scheme(private_key, NULL) == NM_SETTING_802_1X_CK_SCHEME_BLOB
+        && nm_crypto_is_pkcs12_data(g_bytes_get_data(private_key, NULL),
+                                    g_bytes_get_size(private_key),
+                                    NULL)) {
+        /* If the private key is PKCS#12, check that it matches the client cert */
         if (!g_bytes_equal(private_key, client_cert)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
