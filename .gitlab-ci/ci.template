@@ -52,11 +52,20 @@ variables:
   variables:
     NM_BUILD_TARBALL: 1
   artifacts:
-    expire_in: 2 days
+    expire_in: 5 days
+    when: always
     paths:
       - docs-html
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
+      - nm-test.log
+
+.nm_artifacts_debug:
+  artifacts:
+    expire_in: 5 days
+    when: always
+    paths:
+      - nm-test.log
 
 #################################################################
 #                                                               #
@@ -143,10 +152,6 @@ variables:
   after_script:
     - mv /tmp/nm-test.log .
   dependencies: []
-  artifacts:
-    expire_in: 5 days
-    paths:
-      - nm-test.log
 
 
 #################################################################
@@ -165,6 +170,8 @@ t_{{distro.name}}:{{version}}:
 {% if distro.name == pages_build.name and
       version == pages_build.version %}
     - .nm_artifacts
+{% else %}
+    - .nm_artifacts_debug
 {% endif %}
   variables:
     FDO_DISTRIBUTION_VERSION: '{{version}}'

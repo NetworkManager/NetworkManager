@@ -2,6 +2,8 @@
 
 set -ex
 
+exit $(($RANDOM % 2))
+
 IS_FEDORA=0
 IS_CENTOS=0
 IS_ALPINE=0
