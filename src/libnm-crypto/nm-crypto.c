@@ -432,35 +432,6 @@ parse_tpm2_wrapped_key_file(const guint8 *data,
     return TRUE;
 }
 
-static gboolean
-file_read_contents(const char *filename, NMSecretPtr *out_contents, GError **error)
-{
-    nm_assert(out_contents);
-    nm_assert(out_contents->len == 0);
-    nm_assert(!out_contents->str);
-
-    return nm_utils_file_get_contents(-1,
-                                      filename,
-                                      100 * 1024 * 1024,
-                                      NM_UTILS_FILE_GET_CONTENTS_FLAG_SECRET,
-                                      &out_contents->str,
-                                      &out_contents->len,
-                                      NULL,
-                                      error);
-}
-
-GBytes *
-nm_crypto_read_file(const char *filename, GError **error)
-{
-    nm_auto_clear_secret_ptr NMSecretPtr contents = {0};
-
-    g_return_val_if_fail(filename, NULL);
-
-    if (!file_read_contents(filename, &contents, error))
-        return NULL;
-    return nm_secret_copy_to_gbytes(contents.bin, contents.len);
-}
-
 /*
  * Convert a hex string into bytes.
  */
@@ -661,7 +632,7 @@ nmtst_crypto_decrypt_openssl_private_key(const char      *file,
     if (!_nm_crypto_init(error))
         return NULL;
 
-    if (!file_read_contents(file, &contents, error))
+    if (!nm_utils_read_crypto_file(file, &contents, error))
         return NULL;
 
     return nmtst_crypto_decrypt_openssl_private_key_data(contents.bin,
@@ -735,7 +706,7 @@ nm_crypto_load_and_verify_certificate(const char         *file,
     if (!_nm_crypto_init(error))
         goto out;
 
-    if (!file_read_contents(file, &contents, error))
+    if (!nm_utils_read_crypto_file(file, &contents, error))
         goto out;
 
     if (contents.len == 0) {
@@ -826,7 +797,7 @@ nm_crypto_is_pkcs12_file(const char *file, GError **error)
     if (!_nm_crypto_init(error))
         return FALSE;
 
-    if (!file_read_contents(file, &contents, error))
+    if (!nm_utils_read_crypto_file(file, &contents, error))
         return FALSE;
 
     return nm_crypto_is_pkcs12_data(contents.bin, contents.len, error);
@@ -904,7 +875,7 @@ nm_crypto_verify_private_key(const char *filename,
     if (!_nm_crypto_init(error))
         return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-    if (!file_read_contents(filename, &contents, error))
+    if (!nm_utils_read_crypto_file(filename, &contents, error))
         return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
     return nm_crypto_verify_private_key_data(contents.bin,

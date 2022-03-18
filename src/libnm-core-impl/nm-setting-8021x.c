@@ -516,7 +516,7 @@ _cert_impl_set(NMSetting8021x         *setting,
         gs_unref_bytes GBytes *file = NULL;
 
         if (NM_IN_SET(property, PROP_PRIVATE_KEY, PROP_PHASE2_PRIVATE_KEY)) {
-            file = nm_crypto_read_file(value, error);
+            file = nm_utils_read_crypto_file_to_bytes(value, error);
             if (!file)
                 goto err;
             format = nm_crypto_verify_private_key_data(g_bytes_get_data(file, NULL),
