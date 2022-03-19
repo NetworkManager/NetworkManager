@@ -188,8 +188,6 @@ create_dm_cmd_line(const char           *iface,
         nm_strv_ptrarray_add_string_dup(cmd, "--dhcp-option-force=43,ANDROID_METERED");
     }
 
-    nm_strv_ptrarray_add_string_dup(cmd, "--dhcp-lease-max=50");
-
     nm_strv_ptrarray_add_string_printf(cmd,
                                        "--dhcp-leasefile=%s/dnsmasq-%s.leases",
                                        NMSTATEDIR,
