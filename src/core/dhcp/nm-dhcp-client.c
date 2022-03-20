@@ -1209,6 +1209,7 @@ dispose(GObject *object)
 
     nm_clear_g_source_inst(&priv->no_lease_timeout_source);
     nm_clear_g_source_inst(&priv->ipv6_lladdr_timeout_source);
+    nm_clear_pointer(&priv->effective_client_id, g_bytes_unref);
 
     G_OBJECT_CLASS(nm_dhcp_client_parent_class)->dispose(object);
 }
