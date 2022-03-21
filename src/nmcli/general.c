@@ -145,12 +145,22 @@ _metagen_general_status_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARGS)
         v_bool = nm_client_networking_get_enabled(nmc->client);
         goto enabled_out;
     case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIFI_HW:
+        if (!(nm_client_get_radio_flags(nmc->client) & NM_RADIO_FLAG_WLAN_AVAILABLE)) {
+            NMC_HANDLE_COLOR(NM_META_COLOR_NONE);
+            value = N_("missing");
+            goto translate_and_out;
+        }
         v_bool = nm_client_wireless_hardware_get_enabled(nmc->client);
         goto enabled_out;
     case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WIFI:
         v_bool = nm_client_wireless_get_enabled(nmc->client);
         goto enabled_out;
     case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WWAN_HW:
+        if (!(nm_client_get_radio_flags(nmc->client) & NM_RADIO_FLAG_WWAN_AVAILABLE)) {
+            NMC_HANDLE_COLOR(NM_META_COLOR_NONE);
+            value = N_("missing");
+            goto translate_and_out;
+        }
         v_bool = nm_client_wwan_hardware_get_enabled(nmc->client);
         goto enabled_out;
     case NMC_GENERIC_INFO_TYPE_GENERAL_STATUS_WWAN:
