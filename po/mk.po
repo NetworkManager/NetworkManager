@@ -10,7 +10,7 @@
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2021-06-01 17:17+0200\n"
 "PO-Revision-Date: 2016-04-16 12:56-0400\n"

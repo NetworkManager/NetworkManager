@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2022-03-15.0-9d8288d70d58'
-  UBUNTU_TAG:  '2022-03-15.0-c933c3fced1c'
-  DEBIAN_TAG:  '2022-03-15.0-c933c3fced1c'
-  CENTOS_TAG:  '2022-03-15.0-9d8288d70d58'
-  ALPINE_TAG:  '2022-03-15.0-499639d17df6'
+  FEDORA_TAG:  '2022-03-15.0-fe6b35cace78'
+  UBUNTU_TAG:  '2022-03-15.0-ad509d98bfc2'
+  DEBIAN_TAG:  '2022-03-15.0-ad509d98bfc2'
+  CENTOS_TAG:  '2022-03-15.0-fe6b35cace78'
+  ALPINE_TAG:  '2022-03-15.0-913fc0767f1d'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -63,17 +63,20 @@ variables:
   variables:
     NM_BUILD_TARBALL: 1
   artifacts:
-    expire_in: 2 days
+    expire_in: 5 days
+    when: always
     paths:
       - docs-html
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
+      - nm-test.log
 
-.nm_artifacts_undo:
-  variables:
-    NM_BUILD_TARBALL: 0
+.nm_artifacts_debug:
   artifacts:
-    paths: []
+    expire_in: 5 days
+    when: always
+    paths:
+      - nm-test.log
 
 #################################################################
 #                                                               #
@@ -622,8 +625,12 @@ alpine:latest@container-clean:
 .build@template:
   stage: test
   script:
-    - .gitlab-ci/build.sh
+    - env
+    - .gitlab-ci/run-test.sh 2>&1 | tee /tmp/nm-test.log
+  after_script:
+    - mv /tmp/nm-test.log .
   dependencies: []
+
 
 #################################################################
 #                                                               #
@@ -636,6 +643,7 @@ t_fedora:30:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '30'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -647,6 +655,7 @@ t_fedora:31:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '31'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -658,6 +667,7 @@ t_fedora:32:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '32'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -669,6 +679,7 @@ t_fedora:33:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '33'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -680,6 +691,7 @@ t_fedora:34:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '34'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -702,6 +714,7 @@ t_fedora:36:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '36'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -713,6 +726,7 @@ t_ubuntu:16.04:
   extends:
     - .build@template
     - .fdo.distribution-image@ubuntu
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '16.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
@@ -724,6 +738,7 @@ t_ubuntu:18.04:
   extends:
     - .build@template
     - .fdo.distribution-image@ubuntu
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '18.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
@@ -735,6 +750,7 @@ t_ubuntu:20.04:
   extends:
     - .build@template
     - .fdo.distribution-image@ubuntu
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '20.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
@@ -746,6 +762,7 @@ t_ubuntu:devel:
   extends:
     - .build@template
     - .fdo.distribution-image@ubuntu
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: 'devel'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
@@ -757,6 +774,7 @@ t_ubuntu:rolling:
   extends:
     - .build@template
     - .fdo.distribution-image@ubuntu
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: 'rolling'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
@@ -768,6 +786,7 @@ t_debian:9:
   extends:
     - .build@template
     - .fdo.distribution-image@debian
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '9'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
@@ -779,6 +798,7 @@ t_debian:10:
   extends:
     - .build@template
     - .fdo.distribution-image@debian
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '10'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
@@ -790,6 +810,7 @@ t_debian:11:
   extends:
     - .build@template
     - .fdo.distribution-image@debian
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '11'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
@@ -801,6 +822,7 @@ t_debian:testing:
   extends:
     - .build@template
     - .fdo.distribution-image@debian
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: 'testing'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
@@ -812,6 +834,7 @@ t_debian:sid:
   extends:
     - .build@template
     - .fdo.distribution-image@debian
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: 'sid'
     FDO_DISTRIBUTION_TAG: $DEBIAN_TAG
@@ -823,6 +846,7 @@ t_centos:7.5.1804:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '7.5.1804'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
@@ -834,6 +858,7 @@ t_centos:7.6.1810:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '7.6.1810'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
@@ -845,6 +870,7 @@ t_centos:7.7.1908:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '7.7.1908'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
@@ -856,6 +882,7 @@ t_centos:7.8.2003:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '7.8.2003'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
@@ -867,6 +894,7 @@ t_centos:7.9.2009:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '7.9.2009'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
@@ -878,6 +906,7 @@ t_centos:8.1.1911:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '8.1.1911'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
@@ -889,6 +918,7 @@ t_centos:8.2.2004:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '8.2.2004'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
@@ -900,6 +930,7 @@ t_centos:8.3.2011:
   extends:
     - .build@template
     - .fdo.distribution-image@centos
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '8.3.2011'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
@@ -911,6 +942,7 @@ t_alpine:latest:
   extends:
     - .build@template
     - .fdo.distribution-image@alpine
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: 'latest'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
@@ -926,8 +958,12 @@ t_alpine:latest:
 
 check-patch:
   extends:
-   - t_fedora:35
-   - .nm_artifacts_undo
+    - .fdo.distribution-image@fedora
+  variables:
+    FDO_DISTRIBUTION_VERSION: '35'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "fedora:35@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
@@ -935,8 +971,12 @@ check-patch:
 
 check-tree:
   extends:
-   - t_fedora:35
-   - .nm_artifacts_undo
+    - .fdo.distribution-image@fedora
+  variables:
+    FDO_DISTRIBUTION_VERSION: '35'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "fedora:35@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set

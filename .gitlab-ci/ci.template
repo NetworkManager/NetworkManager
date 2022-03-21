@@ -52,17 +52,20 @@ variables:
   variables:
     NM_BUILD_TARBALL: 1
   artifacts:
-    expire_in: 2 days
+    expire_in: 5 days
+    when: always
     paths:
       - docs-html
       - NetworkManager-1*.tar.xz
       - NetworkManager-1*.src.rpm
+      - nm-test.log
 
-.nm_artifacts_undo:
-  variables:
-    NM_BUILD_TARBALL: 0
+.nm_artifacts_debug:
   artifacts:
-    paths: []
+    expire_in: 5 days
+    when: always
+    paths:
+      - nm-test.log
 
 #################################################################
 #                                                               #
@@ -144,8 +147,12 @@ variables:
 .build@template:
   stage: test
   script:
-    - .gitlab-ci/build.sh
+    - env
+    - .gitlab-ci/run-test.sh 2>&1 | tee /tmp/nm-test.log
+  after_script:
+    - mv /tmp/nm-test.log .
   dependencies: []
+
 
 #################################################################
 #                                                               #
@@ -163,6 +170,8 @@ t_{{distro.name}}:{{version}}:
 {% if distro.name == pages_build.name and
       version == pages_build.version %}
     - .nm_artifacts
+{% else %}
+    - .nm_artifacts_debug
 {% endif %}
   variables:
     FDO_DISTRIBUTION_VERSION: '{{version}}'
@@ -189,8 +198,12 @@ t_{{distro.name}}:{{version}}:
 
 check-patch:
   extends:
-   - t_{{pages_build.name}}:{{pages_build.version}}
-   - .nm_artifacts_undo
+    - .fdo.distribution-image@{{pages_build.name}}
+  variables:
+    FDO_DISTRIBUTION_VERSION: '{{pages_build.version}}'
+    FDO_DISTRIBUTION_TAG: ${{pages_build.name.upper()}}_TAG
+  needs:
+    - "{{pages_build.name}}:{{pages_build.version}}@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
@@ -198,8 +211,12 @@ check-patch:
 
 check-tree:
   extends:
-   - t_{{pages_build.name}}:{{pages_build.version}}
-   - .nm_artifacts_undo
+    - .fdo.distribution-image@{{pages_build.name}}
+  variables:
+    FDO_DISTRIBUTION_VERSION: '{{pages_build.version}}'
+    FDO_DISTRIBUTION_TAG: ${{pages_build.name.upper()}}_TAG
+  needs:
+    - "{{pages_build.name}}:{{pages_build.version}}@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
