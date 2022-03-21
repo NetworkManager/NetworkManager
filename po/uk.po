@@ -10,8 +10,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/NetworkMan"
 "ager/issues\n"
-"POT-Creation-Date: 2022-03-14 03:27+0000\n"
-"PO-Revision-Date: 2022-03-14 11:43+0200\n"
+"POT-Creation-Date: 2022-03-21 15:29+0000\n"
+"PO-Revision-Date: 2022-03-21 18:30+0200\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
 "Language: uk\n"
@@ -274,16 +274,16 @@ msgstr "Фіктивне з'єднання"
 msgid "Wired connection %d"
 msgstr "Дротове з'єднання %d"
 
-#: ../src/core/devices/nm-device-ethernet.c:1630
+#: ../src/core/devices/nm-device-ethernet.c:1628
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8241
 msgid "Veth connection"
 msgstr "З'єднання veth"
 
-#: ../src/core/devices/nm-device-ethernet.c:1688
+#: ../src/core/devices/nm-device-ethernet.c:1686
 msgid "PPPoE connection"
 msgstr "З'єднання PPPoE"
 
-#: ../src/core/devices/nm-device-ethernet.c:1688
+#: ../src/core/devices/nm-device-ethernet.c:1686
 msgid "Wired connection"
 msgstr "Дротове з'єднання"
 
@@ -3818,48 +3818,48 @@ msgstr ""
 "значення «%s» типу «%s» є некоректним для властивості «%s» типу «%s» або не "
 "належить до припустимого діапазону значень"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5664
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5667
 msgid "interface name is missing"
 msgstr "пропущено назву інтерфейсу"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5672
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5675
 msgid "interface name is too short"
 msgstr "назва інтерфейсу є надто короткою"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5680
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5683
 msgid "interface name is reserved"
 msgstr "таку назву інтерфейсу зарезервовано"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5693
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5696
 msgid "interface name contains an invalid character"
 msgstr "назва інтерфейсу містить некоректний символ"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5701
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5704
 msgid "interface name is longer than 15 characters"
 msgstr "назва інтерфейсу є довшою за 15 символів"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5726
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5729
 #, c-format
 msgid "'%%' is not allowed in interface names"
 msgstr "«%%» не можна використовувати у назвах інтерфейсів"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5738
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5741
 #, c-format
 msgid "'%s' is not allowed as interface name"
 msgstr "«%s» не можна використовувати як назву інтерфейсу"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5760
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5763
 msgid ""
 "interface name must be alphanumerical with no forward or backward slashes"
 msgstr ""
 "назва інтерфейсу має складатися з літер і цифр без початкового і "
 "завершального символів похилої риски"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5777
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5780
 msgid "interface name must not be empty"
 msgstr "назва інтерфейсу не може бути порожньою"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5785
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5788
 msgid "interface name must be UTF-8 encoded"
 msgstr "назва інтерфейсу має бути набором символів у кодуванні UTF-8"
 
@@ -7766,6 +7766,16 @@ msgstr ""
 "розпізнавання за протоколом 802-1x."
 
 #: ../src/libnmc-setting/settings-docs.h.in:155
+#| msgid ""
+#| "Whether or not the connection should be automatically connected by "
+#| "NetworkManager when the resources for the connection are available. TRUE "
+#| "to automatically activate the connection, FALSE to require manual "
+#| "intervention to activate the connection. Autoconnect happens when the "
+#| "circumstances are suitable. That means for example that the device is "
+#| "currently managed and not active. Autoconnect thus never replaces or "
+#| "competes with an already active profile. Note that autoconnect is not "
+#| "implemented for VPN profiles. See \"secondaries\" as an alternative to "
+#| "automatically connect VPN profiles."
 msgid ""
 "Whether or not the connection should be automatically connected by "
 "NetworkManager when the resources for the connection are available. TRUE to "
@@ -7774,7 +7784,13 @@ msgid ""
 "suitable. That means for example that the device is currently managed and "
 "not active. Autoconnect thus never replaces or competes with an already "
 "active profile. Note that autoconnect is not implemented for VPN profiles. "
-"See \"secondaries\" as an alternative to automatically connect VPN profiles."
+"See \"secondaries\" as an alternative to automatically connect VPN profiles. "
+"If multiple profiles are ready to autoconnect on the same device, the one "
+"with the better \"connection.autoconnect-priority\" is chosen. If the "
+"priorities are equal, then the most recently connected profile is activated. "
+"If the profiles were not connected earlier or their \"connection.timestamp\" "
+"is identical, the choice is undefined. Depending on \"connection.multi-"
+"connect\", a profile can (auto)connect only once at a time or multiple times."
 msgstr ""
 "Визначає, чи слід автоматично встановлювати з'єднання за допомогою "
 "NetworkManager, якщо доступні ресурси для з'єднання. Значення TRUE "
@@ -7785,7 +7801,14 @@ msgstr ""
 "чином, автоматичне з'єднання ніколи не замінює собою і не конфліктує із вже "
 "активним профілем. Зауважте, що автоматичне з'єднання не реалізовано для "
 "профілів VPN. Див. \"secondaries\", якщо потрібна альтернатива для "
-"автоматичного встановлення з'єднань для профілів VPN."
+"автоматичного встановлення з'єднань для профілів VPN. Якщо на одному пристрої"
+" готовими до автоматичного з'єднання є декілька профілів, буде вибрано той з"
+" них, у якого краща «connection.autoconnect-priority». Якщо пріоритетності є"
+" рівними, буде активовано профіль, з'єднання за яким відбувалося останнім."
+" Якщо з'єднання за профілями ще не відбувалося або їхні значення"
+" «connection.timestamp» є однаковими, вибір не є визначеним. Залежно від"
+" «connection.multi-connect», за профілем може бути встановлено"
+" (авто)з'єднання одного разу або декілька разів."
 
 #: ../src/libnmc-setting/settings-docs.h.in:156
 msgid ""
@@ -8055,37 +8078,6 @@ msgstr ""
 "з'єднання (наприклад «bond») або NULL, якщо це з'єднання не є підлеглим."
 
 #: ../src/libnmc-setting/settings-docs.h.in:174
-#| msgid ""
-#| "This represents the identity of the connection used for various purposes. "
-#| "It allows to configure multiple profiles to share the identity. Also, the "
-#| "stable-id can contain placeholders that are substituted dynamically and "
-#| "deterministically depending on the context. The stable-id is used for "
-#| "generating IPv6 stable private addresses with ipv6.addr-gen-mode=stable-"
-#| "privacy. It is also used to seed the generated cloned MAC address for "
-#| "ethernet.cloned-mac-address=stable and wifi.cloned-mac-address=stable. It "
-#| "is also used as DHCP client identifier with ipv4.dhcp-client-id=stable "
-#| "and to derive the DHCP DUID with ipv6.dhcp-duid=stable-[llt,ll,uuid]. "
-#| "Note that depending on the context where it is used, other parameters are "
-#| "also seeded into the generation algorithm. For example, a per-host key is "
-#| "commonly also included, so that different systems end up generating "
-#| "different IDs. Or with ipv6.addr-gen-mode=stable-privacy, also the "
-#| "device's name is included, so that different interfaces yield different "
-#| "addresses. The per-host key is the identity of your machine and stored "
-#| "in /var/lib/NetworkManager/secret-key. The '$' character is treated "
-#| "special to perform dynamic substitutions at runtime. Currently, supported "
-#| "are \"${CONNECTION}\", \"${DEVICE}\", \"${MAC}\", \"${BOOT}\", "
-#| "\"${RANDOM}\". These effectively create unique IDs per-connection, per-"
-#| "device, per-boot, or every time. Note that \"${DEVICE}\" corresponds to "
-#| "the interface name of the device and \"${MAC}\" is the permanent MAC "
-#| "address of the device. Any unrecognized patterns following '$' are "
-#| "treated verbatim, however are reserved for future use. You are thus "
-#| "advised to avoid '$' or escape it as \"$$\". For example, set it to "
-#| "\"${CONNECTION}-${BOOT}-${DEVICE}\" to create a unique id for this "
-#| "connection that changes with every reboot and differs depending on the "
-#| "interface where the profile activates. If the value is unset, a global "
-#| "connection default is consulted. If the value is still unset, the default "
-#| "is similar to \"${CONNECTION}\" and uses a unique, fixed ID for the "
-#| "connection."
 msgid ""
 "This represents the identity of the connection used for various purposes. It "
 "allows to configure multiple profiles to share the identity. Also, the "
@@ -8132,29 +8124,28 @@ msgstr ""
 "бути включено інші параметри. Наприклад, часто використовується окремий ключ "
 "вузла, щоб у різних систем були різні ідентифікатори. Якщо вказано ipv6.addr-"
 "gen-mode=stable-privacy, до обчислення буде включено назву пристрою, щоб "
-"різні інтерфейси мали різні адреси. Ключем вузла є профіль вашого комп'ютера."
-" Ключ зберігається у /var/lib/NetworkManager/secret_key. Дані щодо закритого"
-" ключа та профілю вузла можна знайти у підручнику з NetworkManager(8). Символ"
-" «$» є спеціальним символом для "
-"визначення динамічного підставляння під час роботи. У поточній версії "
-"передбачено підтримку ідентифікаторів «${CONNECTION}», «${DEVICE}», "
-"«${MAC}», «${BOOT}», «${RANDOM}». Використання цих ідентифікаторів "
-"призводить, відповідно, до створення унікальних ідентифікаторів для кожного "
-"з'єднання, для кожного пристрою, для кожного завантаження системи і для будь-"
-"яких умов. Зауважте, що запис «${DEVICE}» відповідає назві інтерфейсу "
-"пристрою, а запис «${MAC}» — сталій MAC-адресі пристрою. Усі невизначені "
-"рядки після «$» сприйматимуться програмою буквально. Втім, можливо, у "
-"майбутніх версіях буде додано ще якісь ідентифікатори. Отже, не варто "
-"використовувати у ваших нетипових ідентифікаторах символ «$» або слід додати "
-"екранування до цього символу: «$$». Приклад: встановіть значення "
-"«${CONNECTION}-${BOOT}-${DEVICE}» для створення унікального ідентифікатора "
-"для цього з'єднання, який змінюватиметься після кожного перезавантаження "
-"системи і залежатиме від інтерфейсу, на якому активовано профіль. Якщо "
-"значення не встановлено, буде використано типові параметри загального "
-"з'єднання. Якщо значення не вдасться визначити і після врахування цих "
-"параметрів, буде використано алгоритм визначення значення, подібний до "
-"алгоритму для «${CONNECTION}», і використано унікальний фіксований "
-"ідентифікатор для з'єднання."
+"різні інтерфейси мали різні адреси. Ключем вузла є профіль вашого "
+"комп'ютера. Ключ зберігається у /var/lib/NetworkManager/secret_key. Дані "
+"щодо закритого ключа та профілю вузла можна знайти у підручнику з "
+"NetworkManager(8). Символ «$» є спеціальним символом для визначення "
+"динамічного підставляння під час роботи. У поточній версії передбачено "
+"підтримку ідентифікаторів «${CONNECTION}», «${DEVICE}», «${MAC}», «${BOOT}», "
+"«${RANDOM}». Використання цих ідентифікаторів призводить, відповідно, до "
+"створення унікальних ідентифікаторів для кожного з'єднання, для кожного "
+"пристрою, для кожного завантаження системи і для будь-яких умов. Зауважте, "
+"що запис «${DEVICE}» відповідає назві інтерфейсу пристрою, а запис «${MAC}» "
+"— сталій MAC-адресі пристрою. Усі невизначені рядки після «$» "
+"сприйматимуться програмою буквально. Втім, можливо, у майбутніх версіях буде "
+"додано ще якісь ідентифікатори. Отже, не варто використовувати у ваших "
+"нетипових ідентифікаторах символ «$» або слід додати екранування до цього "
+"символу: «$$». Приклад: встановіть значення «${CONNECTION}-${BOOT}-"
+"${DEVICE}» для створення унікального ідентифікатора для цього з'єднання, "
+"який змінюватиметься після кожного перезавантаження системи і залежатиме від "
+"інтерфейсу, на якому активовано профіль. Якщо значення не встановлено, буде "
+"використано типові параметри загального з'єднання. Якщо значення не вдасться "
+"визначити і після врахування цих параметрів, буде використано алгоритм "
+"визначення значення, подібний до алгоритму для «${CONNECTION}», і "
+"використано унікальний фіксований ідентифікатор для з'єднання."
 
 #: ../src/libnmc-setting/settings-docs.h.in:175
 msgid ""
@@ -9925,8 +9916,18 @@ msgstr ""
 "Спосіб налаштовування проксі. Типовим є NM_SETTING_PROXY_METHOD_NONE (0)"
 
 #: ../src/libnmc-setting/settings-docs.h.in:343
-msgid "PAC script for the connection."
-msgstr "Скрипт PAC для з'єднання."
+msgid ""
+"The PAC script. In the profile this must be an UTF-8 encoded javascript code "
+"that defines a FindProxyForURL() function. When setting the property in "
+"nmcli, a filename is accepted too. In that case, nmcli will read the content "
+"of the file and set the script. The prefixes \"file://\" and \"js://\" are "
+"supported to explicitly differentiate between the two."
+msgstr ""
+"Скрипт PAC. У профілі це має бути код JavaScript у кодуванні UTF-8, який"
+" визначає функцію FindProxyForURL(). При встановленні властивості у nmcli"
+" приймається і назва файла. Якщо вказано назву файла, nmcli прочитає вміст"
+" файла і встановить скрипт. Для явного розмежування двох можливих випадків"
+" передбачено підтримку префіксів «file://» і «js://»."
 
 #: ../src/libnmc-setting/settings-docs.h.in:344
 msgid "PAC URL for obtaining PAC file."
@@ -12053,7 +12054,6 @@ msgstr "Помилка: некоректний аргумент <парамет�
 
 #: ../src/nmcli/connections.c:5253
 #, c-format
-#| msgid "Warning: %s\n"
 msgid "Warning: %s.\n"
 msgstr "Попередження: %s.\n"
 
