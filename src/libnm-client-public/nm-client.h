@@ -61,6 +61,8 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_CLIENT_WWAN_HARDWARE_ENABLED     "wwan-hardware-enabled"
 #define NM_CLIENT_WIMAX_HARDWARE_ENABLED    "wimax-hardware-enabled"
 
+#define NM_CLIENT_RADIO_FLAGS "radio-flags"
+
 #define NM_CLIENT_ACTIVE_CONNECTIONS           "active-connections"
 #define NM_CLIENT_CONNECTIVITY                 "connectivity"
 #define NM_CLIENT_CONNECTIVITY_CHECK_URI       "connectivity-check-uri"
@@ -212,6 +214,9 @@ void nm_client_wimax_set_enabled(NMClient *client, gboolean enabled);
 
 NM_DEPRECATED_IN_1_22
 gboolean nm_client_wimax_hardware_get_enabled(NMClient *client);
+
+NM_AVAILABLE_IN_1_38
+NMRadioFlags nm_client_get_radio_flags(NMClient *client);
 
 NM_AVAILABLE_IN_1_10
 gboolean nm_client_connectivity_check_get_available(NMClient *client);
