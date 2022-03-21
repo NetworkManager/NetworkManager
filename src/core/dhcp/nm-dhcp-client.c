@@ -116,16 +116,13 @@ _set_effective_client_id(NMDhcpClient *self, GBytes *client_id, gboolean take)
 
     nm_assert(!client_id || g_bytes_get_size(client_id) >= 2);
 
-    if (priv->effective_client_id == client_id
-        || (priv->effective_client_id && client_id
-            && g_bytes_equal(priv->effective_client_id, client_id))) {
+    if (nm_g_bytes_equal0(priv->effective_client_id, client_id)) {
         if (take && client_id)
             g_bytes_unref(client_id);
         return;
     }
 
-    if (priv->effective_client_id)
-        g_bytes_unref(priv->effective_client_id);
+    g_bytes_unref(priv->effective_client_id);
     priv->effective_client_id = client_id;
     if (!take && client_id)
         g_bytes_ref(client_id);
