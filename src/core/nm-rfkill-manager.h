@@ -55,4 +55,6 @@ NMRfkillManager *nm_rfkill_manager_new(void);
 
 NMRfkillState nm_rfkill_manager_get_rfkill_state(NMRfkillManager *manager, NMRfkillType rtype);
 
+NMRadioFlags nm_rfkill_type_to_radio_available_flag(NMRfkillType type);
+
 #endif /* __NM_RFKILL_MANAGER_H__ */

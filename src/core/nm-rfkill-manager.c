@@ -66,6 +66,20 @@ nm_rfkill_manager_get_rfkill_state(NMRfkillManager *self, NMRfkillType rtype)
     return NM_RFKILL_MANAGER_GET_PRIVATE(self)->rfkill_states[rtype];
 }
 
+NMRadioFlags
+nm_rfkill_type_to_radio_available_flag(NMRfkillType type)
+{
+    switch (type) {
+    case NM_RFKILL_TYPE_WLAN:
+        return NM_RADIO_FLAG_WLAN_AVAILABLE;
+    case NM_RFKILL_TYPE_WWAN:
+        return NM_RADIO_FLAG_WWAN_AVAILABLE;
+    case NM_RFKILL_TYPE_UNKNOWN:
+        break;
+    }
+    return nm_assert_unreachable_val(NM_RADIO_FLAG_NONE);
+}
+
 const char *
 nm_rfkill_type_to_string(NMRfkillType type)
 {
