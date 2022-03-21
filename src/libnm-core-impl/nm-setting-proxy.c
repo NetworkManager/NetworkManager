@@ -114,7 +114,7 @@ nm_setting_proxy_get_pac_url(NMSettingProxy *setting)
  * nm_setting_proxy_get_pac_script:
  * @setting: the #NMSettingProxy
  *
- * Returns: the PAC script
+ * Returns: the PAC script.
  *
  * Since: 1.6
  **/
@@ -315,15 +315,25 @@ nm_setting_proxy_class_init(NMSettingProxyClass *klass)
     /**
      * NMSettingProxy:pac-script:
      *
-     * PAC script for the connection.
+     * PAC script for the connection. This is an UTF-8 encoded javascript code
+     * that defines a FindProxyForURL() function.
      *
      * Since: 1.6
      **/
+    /* ---nmcli---
+     * property: pac-script
+     * description: The PAC script. In the profile this must be an UTF-8 encoded javascript code that defines
+     *   a FindProxyForURL() function.
+     *   When setting the property in nmcli, a filename is accepted too. In that case,
+     *   nmcli will read the content of the file and set the script. The prefixes "file://" and "js://" are
+     *   supported to explicitly differentiate between the two.
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: pac-script
      * variable: PAC_SCRIPT(+)
-     * description: Path of the PAC script.
-     * example: PAC_SCRIPT=/home/joe/proxy.pac
+     * description: The PAC script. This is an UTF-8 encoded javascript code that defines a FindProxyForURL() function.
+     * example: PAC_SCRIPT="function FindProxyForURL (url, host) { return 'PROXY proxy.example.com:8080; DIRECT'; }"
      * ---end---
      */
     _nm_setting_property_define_direct_string(properties_override,

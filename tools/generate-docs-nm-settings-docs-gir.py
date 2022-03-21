@@ -149,7 +149,13 @@ def get_docs(propxml):
     doc = re.sub(r"#([A-Z]\w*)", r"\1", doc)
 
     # Remove sentences that refer to functions
-    doc = re.sub(r"\.\s+[^.]*\w\(\)[^.]*\.", r".", doc)
+    if "FindProxyForURL()" in doc:
+        # FIXME: this would break the description for "proxy.pac-script"
+        # Work around. But really the entire approach here is flawed
+        # and needs improvement.
+        pass
+    else:
+        doc = re.sub(r"\.\s+[^.]*\w\(\)[^.]*\.", r".", doc)
 
     return doc
 

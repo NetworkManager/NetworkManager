@@ -340,7 +340,7 @@
 #define DESCRIBE_DOC_NM_SETTING_PPPOE_USERNAME N_("Username used to authenticate with the PPPoE service.")
 #define DESCRIBE_DOC_NM_SETTING_PROXY_BROWSER_ONLY N_("Whether the proxy configuration is for browser only.")
 #define DESCRIBE_DOC_NM_SETTING_PROXY_METHOD N_("Method for proxy configuration, Default is NM_SETTING_PROXY_METHOD_NONE (0)")
-#define DESCRIBE_DOC_NM_SETTING_PROXY_PAC_SCRIPT N_("PAC script for the connection.")
+#define DESCRIBE_DOC_NM_SETTING_PROXY_PAC_SCRIPT N_("The PAC script. In the profile this must be an UTF-8 encoded javascript code that defines a FindProxyForURL() function. When setting the property in nmcli, a filename is accepted too. In that case, nmcli will read the content of the file and set the script. The prefixes \"file://\" and \"js://\" are supported to explicitly differentiate between the two.")
 #define DESCRIBE_DOC_NM_SETTING_PROXY_PAC_URL N_("PAC URL for obtaining PAC file.")
 #define DESCRIBE_DOC_NM_SETTING_SERIAL_BAUD N_("Speed to use for communication over the serial port.  Note that this value usually has no effect for mobile broadband modems as they generally ignore speed settings and use the highest available speed.")
 #define DESCRIBE_DOC_NM_SETTING_SERIAL_BITS N_("Byte-width of the serial communication. The 8 in \"8n1\" for example.")

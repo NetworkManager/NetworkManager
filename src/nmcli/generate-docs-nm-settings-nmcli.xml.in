@@ -911,7 +911,7 @@
                   description="PAC URL for obtaining PAC file." />
         <property name="pac-script"
                   alias="pac-script"
-                  description="PAC script for the connection." />
+                  description="The PAC script. In the profile this must be an UTF-8 encoded javascript code that defines a FindProxyForURL() function. When setting the property in nmcli, a filename is accepted too. In that case, nmcli will read the content of the file and set the script. The prefixes &quot;file://&quot; and &quot;js://&quot; are supported to explicitly differentiate between the two." />
     </setting>
     <setting name="serial" >
         <property name="baud"
