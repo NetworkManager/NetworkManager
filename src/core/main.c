@@ -302,8 +302,6 @@ main(int argc, char *argv[])
     g_type_ensure(G_TYPE_DBUS_CONNECTION);
     g_type_ensure(NM_TYPE_DBUS_MANAGER);
 
-    main_loop = g_main_loop_new(NULL, FALSE);
-
     /* we determine a first-start (contrary to a restart during the same boot)
      * based on the existence of NM_CONFIG_DEVICE_STATE_DIR directory. */
     config_cli = nm_config_cmd_line_options_new(
@@ -402,6 +400,8 @@ main(int argc, char *argv[])
         }
         wrote_pidfile = nm_main_utils_write_pidfile(global_opt.pidfile);
     }
+
+    main_loop = g_main_loop_new(NULL, FALSE);
 
     /* Set up unix signal handling - before creating threads, but after daemonizing! */
     nm_main_utils_setup_signals(main_loop);
