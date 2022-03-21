@@ -2520,84 +2520,77 @@ need_secrets_sim(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
         g_ptr_array_add(secrets, NM_SETTING_802_1X_PIN);
 }
 
-static gboolean
-need_private_key_password(GBytes                *blob,
-                          NMSetting8021xCKScheme scheme,
-                          const char            *path,
-                          const char            *password,
-                          NMSettingSecretFlags   flags)
-{
-    NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-
-    if (flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
-        return FALSE;
-
-    /* Private key password is required */
-    if (password) {
-        if (path)
-            format = nm_crypto_verify_private_key(path, password, NULL, NULL);
-        else if (blob)
-            format = nm_crypto_verify_private_key_data(g_bytes_get_data(blob, NULL),
-                                                       g_bytes_get_size(blob),
-                                                       password,
-                                                       NULL,
-                                                       NULL);
-        else
-            return FALSE;
-    }
-
-    return (format == NM_CRYPTO_FILE_FORMAT_UNKNOWN);
-}
-
 static void
 need_secrets_tls(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
     NMSetting8021xCKScheme scheme;
-    GBytes                *blob = NULL;
-    const char            *path = NULL;
 
-    scheme = phase2 ? nm_setting_802_1x_get_phase2_private_key_scheme(self)
-                    : nm_setting_802_1x_get_private_key_scheme(self);
-    if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH)
-        path = phase2 ? nm_setting_802_1x_get_phase2_private_key_path(self)
-                      : nm_setting_802_1x_get_private_key_path(self);
-    else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
-        blob = phase2 ? nm_setting_802_1x_get_phase2_private_key_blob(self)
-                      : nm_setting_802_1x_get_private_key_blob(self);
-    if (need_private_key_password(
-            blob,
-            scheme,
-            path,
-            phase2 ? priv->phase2_private_key_password : priv->private_key_password,
-            phase2 ? priv->phase2_private_key_password_flags : priv->private_key_password_flags)) {
-        g_ptr_array_add(secrets,
-                        phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD
-                               : NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+    if (!NM_FLAGS_HAS(phase2 ? priv->phase2_private_key_password_flags
+                             : priv->private_key_password_flags,
+                      NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
+        NMCryptoFileFormat format       = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+        gboolean           has_password = FALSE;
+        const char        *password;
+
+        password = phase2 ? priv->phase2_private_key_password : priv->private_key_password;
+
+        /* Check whether the password works. */
+        if (password) {
+            scheme = phase2 ? nm_setting_802_1x_get_phase2_private_key_scheme(self)
+                            : nm_setting_802_1x_get_private_key_scheme(self);
+
+            if (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH) {
+                const char *path = phase2 ? nm_setting_802_1x_get_phase2_private_key_path(self)
+                                          : nm_setting_802_1x_get_private_key_path(self);
+
+                if (path)
+                    format = nm_crypto_verify_private_key(path, password, NULL, NULL);
+            } else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB) {
+                GBytes *blob = phase2 ? nm_setting_802_1x_get_phase2_private_key_blob(self)
+                                      : nm_setting_802_1x_get_private_key_blob(self);
+
+                if (blob)
+                    format = nm_crypto_verify_private_key_data(g_bytes_get_data(blob, NULL),
+                                                               g_bytes_get_size(blob),
+                                                               password,
+                                                               NULL,
+                                                               NULL);
+            } else {
+                /* For PKCS#11 URLS, we assume the password is correct. */
+                has_password = TRUE;
+            }
+        }
+        if (!has_password && format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
+            g_ptr_array_add(secrets,
+                            phase2 ? NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD
+                                   : NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+        }
     }
 
-    scheme = phase2 ? nm_setting_802_1x_get_phase2_ca_cert_scheme(self)
-                    : nm_setting_802_1x_get_ca_cert_scheme(self);
-    if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
-        && !NM_FLAGS_HAS(phase2 ? priv->phase2_ca_cert_password_flags
-                                : priv->ca_cert_password_flags,
-                         NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
-        && !(phase2 ? priv->phase2_ca_cert_password : priv->ca_cert_password)) {
-        g_ptr_array_add(secrets,
-                        phase2 ? NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD
-                               : NM_SETTING_802_1X_CA_CERT_PASSWORD);
+    if (!NM_FLAGS_HAS(phase2 ? priv->phase2_ca_cert_password_flags : priv->ca_cert_password_flags,
+                      NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
+        scheme = phase2 ? nm_setting_802_1x_get_phase2_ca_cert_scheme(self)
+                        : nm_setting_802_1x_get_ca_cert_scheme(self);
+        if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
+            && !(phase2 ? priv->phase2_ca_cert_password : priv->ca_cert_password)) {
+            g_ptr_array_add(secrets,
+                            phase2 ? NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD
+                                   : NM_SETTING_802_1X_CA_CERT_PASSWORD);
+        }
     }
 
-    scheme = phase2 ? nm_setting_802_1x_get_phase2_client_cert_scheme(self)
-                    : nm_setting_802_1x_get_client_cert_scheme(self);
-    if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
-        && !NM_FLAGS_HAS(phase2 ? priv->phase2_client_cert_password_flags
-                                : priv->client_cert_password_flags,
-                         NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
-        && !(phase2 ? priv->phase2_client_cert_password : priv->client_cert_password)) {
-        g_ptr_array_add(secrets,
-                        phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD
-                               : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD);
+    if (!NM_FLAGS_HAS(phase2 ? priv->phase2_client_cert_password_flags
+                             : priv->client_cert_password_flags,
+                      NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
+        scheme = phase2 ? nm_setting_802_1x_get_phase2_client_cert_scheme(self)
+                        : nm_setting_802_1x_get_client_cert_scheme(self);
+        if (scheme == NM_SETTING_802_1X_CK_SCHEME_PKCS11
+            && !(phase2 ? priv->phase2_client_cert_password : priv->client_cert_password)) {
+            g_ptr_array_add(secrets,
+                            phase2 ? NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD
+                                   : NM_SETTING_802_1X_CLIENT_CERT_PASSWORD);
+        }
     }
 }
 
