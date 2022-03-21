@@ -109,22 +109,22 @@ nm_dhcp_client_get_pid(NMDhcpClient *self)
     return NM_DHCP_CLIENT_GET_PRIVATE(self)->pid;
 }
 
-static void
-_set_effective_client_id(NMDhcpClient *self, GBytes *client_id, gboolean take)
+void
+nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
-    nm_assert(!client_id || g_bytes_get_size(client_id) >= 2);
+    g_return_if_fail(NM_IS_DHCP_CLIENT(self));
+    g_return_if_fail(!client_id || g_bytes_get_size(client_id) >= 2);
 
-    if (nm_g_bytes_equal0(priv->effective_client_id, client_id)) {
-        if (take && client_id)
-            g_bytes_unref(client_id);
+    priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    if (nm_g_bytes_equal0(priv->effective_client_id, client_id))
         return;
-    }
 
     g_bytes_unref(priv->effective_client_id);
     priv->effective_client_id = client_id;
-    if (!take && client_id)
+    if (client_id)
         g_bytes_ref(client_id);
 
     {
@@ -136,15 +136,6 @@ _set_effective_client_id(NMDhcpClient *self, GBytes *client_id, gboolean take)
                   ? (s = nm_dhcp_utils_duid_to_string(priv->effective_client_id))
                   : "default");
     }
-}
-
-void
-nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id)
-{
-    g_return_if_fail(NM_IS_DHCP_CLIENT(self));
-    g_return_if_fail(!client_id || g_bytes_get_size(client_id) >= 2);
-
-    _set_effective_client_id(self, client_id, FALSE);
 }
 
 /*****************************************************************************/
@@ -675,7 +666,7 @@ nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error)
     if (!priv->config.v6.enforce_duid)
         own_client_id = NM_DHCP_CLIENT_GET_CLASS(self)->get_duid(self);
 
-    _set_effective_client_id(self, own_client_id ?: priv->config.client_id, FALSE);
+    nm_dhcp_client_set_effective_client_id(self, own_client_id ?: priv->config.client_id);
 
     addr = ipv6_lladdr_find(self);
     if (!addr) {
