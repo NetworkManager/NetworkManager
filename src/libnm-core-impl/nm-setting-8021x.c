@@ -2565,8 +2565,6 @@ need_secrets_tls(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
     else if (scheme == NM_SETTING_802_1X_CK_SCHEME_BLOB)
         blob = phase2 ? nm_setting_802_1x_get_phase2_private_key_blob(self)
                       : nm_setting_802_1x_get_private_key_blob(self);
-    else if (scheme != NM_SETTING_802_1X_CK_SCHEME_PKCS11)
-        g_warning("%s: unknown %sprivate key scheme %d", __func__, phase2 ? "phase2 " : "", scheme);
     if (need_private_key_password(
             blob,
             scheme,
