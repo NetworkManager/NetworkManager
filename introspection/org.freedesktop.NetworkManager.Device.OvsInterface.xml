@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.OvsInterface:
-      @short_description: OvsInterface Device
+      @short_description: OvsInterface Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.OvsInterface">

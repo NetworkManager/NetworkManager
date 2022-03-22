@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.IPTunnel:
-      @short_description: IP Tunneling Device
+      @short_description: IP Tunneling Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.IPTunnel">

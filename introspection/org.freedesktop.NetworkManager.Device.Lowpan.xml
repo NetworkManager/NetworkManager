@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Lowpan:
-      @short_description: 6LoWPAN Device
+      @short_description: 6LoWPAN Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Lowpan">

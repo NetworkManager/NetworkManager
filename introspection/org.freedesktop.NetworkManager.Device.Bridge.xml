@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Bridge:
-      @short_description: Bridging Device
+      @short_description: Bridging Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Bridge">

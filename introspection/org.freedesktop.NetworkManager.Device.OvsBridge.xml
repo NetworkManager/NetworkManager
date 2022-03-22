@@ -2,19 +2,18 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.OvsBridge:
-      @short_description: OvsBridge Device
+      @short_description: OvsBridge Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.OvsBridge">
 
     <!--
         Slaves:
+        @since: 1.14
 
         DEPRECATED. Use the "Ports" property in
         "org.freedesktop.NetworkManager.Device" instead which exists since
         version NetworkManager 1.34.0.
-
-        Since: 1.14
     -->
     <property name="Slaves" type="ao" access="read"/>
 

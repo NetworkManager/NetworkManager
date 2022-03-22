@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Infiniband:
-      @short_description: Infiniband Device
+      @short_description: Infiniband Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Infiniband">

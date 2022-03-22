@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.IP4Config:
-      @short_description: IPv4 Configuration Set
+      @short_description: IPv4 Configuration Set.
 
   -->
   <interface name="org.freedesktop.NetworkManager.IP4Config">
@@ -61,11 +61,10 @@
 
     <!--
         NameserverData:
+        @since: 1.14
 
         The nameservers in use. Currently, only the value "address"
         is recognized (with an IP address string).
-
-        Since: 1.14
     -->
     <property name="NameserverData" type="aa{sv}" access="read"/>
 
@@ -108,10 +107,9 @@
 
     <!--
         WinsServerData:
+        @since: 1.14
 
         The Windows Internet Name Service servers associated with the connection.
-
-        Since: 1.14
     -->
     <property name="WinsServerData" type="as" access="read"/>
 

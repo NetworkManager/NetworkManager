@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Macvlan:
-      @short_description: MAC VLAN Device
+      @short_description: MAC VLAN Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Macvlan">

@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Ppp:
-      @short_description: PPP Device
+      @short_description: PPP Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Ppp">

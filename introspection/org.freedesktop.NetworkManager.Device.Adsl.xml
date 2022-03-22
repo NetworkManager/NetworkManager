@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Adsl:
-      @short_description: ADSL Device
+      @short_description: ADSL Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Adsl">

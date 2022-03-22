@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Vlan:
-      @short_description: Virtual LAN Device
+      @short_description: Virtual LAN Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Vlan">
