@@ -1,3 +1,15 @@
+===============================================
+NetworkManager-1.36.4
+Overview of changes since NetworkManager-1.36.2
+===============================================
+
+* The internal DHCPv4 client now discards NAKs packets coming
+  from servers different from the one that sent the offer.
+* Fix activation of PPPoE connections with "pppoe.parent" unset.
+* Fix potential libnm crash when the client object initialization gets
+  canceled.
+* Other various fixes and improvements.
+
 =============================================
 NetworkManager-1.36.2
 Overview of changes since NetworkManager-1.36
