@@ -2,7 +2,7 @@
 <node name="/org/freedesktop/NetworkManager/AgentManager">
   <!--
       org.freedesktop.NetworkManager.AgentManager:
-      @short_description: Secret Agent Manager
+      @short_description: Secret Agent Manager.
 
   -->
   <interface name="org.freedesktop.NetworkManager.AgentManager">

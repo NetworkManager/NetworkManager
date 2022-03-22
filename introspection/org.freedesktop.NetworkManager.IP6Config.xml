@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.IP6Config:
-      @short_description: IPv6 Configuration Set
+      @short_description: IPv6 Configuration Set.
 
   -->
   <interface name="org.freedesktop.NetworkManager.IP6Config">

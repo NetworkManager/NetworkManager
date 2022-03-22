@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Vrf:
-      @short_description: VRF Device
+      @short_description: VRF Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Vrf">

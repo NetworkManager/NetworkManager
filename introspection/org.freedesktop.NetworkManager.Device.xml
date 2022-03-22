@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device:
-      @short_description: Device
+      @short_description: Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device">
@@ -268,10 +268,9 @@
 
     <!--
         Ip4Connectivity:
+        @since: 1.16
 
         The result of the last IPv4 connectivity check.
-
-        Since: 1.16
 
         Returns: <link linkend="NMConnectivityState">NMConnectivityState</link>
     -->
@@ -279,10 +278,9 @@
 
     <!--
         Ip6Connectivity:
+        @since: 1.16
 
         The result of the last IPv6 connectivity check.
-
-        Since: 1.16
 
         Returns: <link linkend="NMConnectivityState">NMConnectivityState</link>
     -->
@@ -290,36 +288,33 @@
 
     <!--
         InterfaceFlags:
+        @since: 1.22
 
         The flags of the network interface. See
         <link linkend="NMDeviceInterfaceFlags">NMDeviceInterfaceFlags</link> for
         the currently defined flags.
-
-        Since: 1.22
     -->
     <property name="InterfaceFlags" type="u" access="read"/>
 
     <!--
         HwAddress:
+        @since: 1.24
 
         The hardware address of the device.
 
         This replaces the other 'HwAddress' properties on the device-specific D-Bus interfaces.
-
-        Since: 1.24
     -->
     <property name="HwAddress" type="s" access="read"/>
 
     <!--
         Ports:
+        @since: 1.34
 
         The port devices of the controller device.
 
         Array of object paths representing devices which are currently set as
         port of this device. This replaces the 'Slaves' properties on the
         device-specific D-Bus interfaces.
-
-        Since: 1.34
     -->
     <property name="Ports" type="ao" access="read"/>
 

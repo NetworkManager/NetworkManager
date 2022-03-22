@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Veth:
-      @short_description: Virtual Ethernet Device
+      @short_description: Virtual Ethernet Device.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Veth">

@@ -2,7 +2,7 @@
 <node name="/">
   <!--
       org.freedesktop.NetworkManager.Device.Statistics:
-      @short_description: Device Statistic Counters
+      @short_description: Device Statistic Counters.
 
   -->
   <interface name="org.freedesktop.NetworkManager.Device.Statistics">

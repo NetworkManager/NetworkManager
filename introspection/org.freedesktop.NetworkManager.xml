@@ -2,7 +2,7 @@
 <node name="/org/freedesktop/NetworkManager">
   <!--
       org.freedesktop.NetworkManager:
-      @short_description: Connection Manager
+      @short_description: Connection Manager.
 
   -->
   <interface name="org.freedesktop.NetworkManager">
@@ -10,7 +10,7 @@
 
     <!--
         Reload:
-        @flags: optional flags to specify which parts shall be reloaded.
+        @flags: Optional flags to specify which parts shall be reloaded.
 
         Reload NetworkManager's configuration and perform certain updates, like flushing a cache or
         rewriting external state to disk. This is similar to sending SIGHUP to NetworkManager but it
@@ -119,8 +119,7 @@
         @options: Further options for the method call.
         @path: Object path of the new connection that was just added.
         @active_connection: The path of the active connection object representing this active connection.
-        @result: a dictionary of additional output arguments for future extension. Currently, not additional
-          output arguments are supported.
+        @result: A dictionary of additional output arguments for future extension. Currently, not additional output arguments are supported.
 
         Adds a new connection using the given details (if any) as a template
         (automatically filling in missing settings with the capabilities of the
@@ -287,19 +286,19 @@
 
     <!--
         CheckpointAdjustRollbackTimeout:
-        @add_timeout: number of seconds from ~now~ in which the
-          timeout will expire. Set to 0 to disable the timeout.
-          Note that the added seconds start counting from now,
-          not "Created" timestamp or the previous expiration
-          time. Note that the "Created" property of the checkpoint
-          will stay unchanged by this call. However, the "RollbackTimeout"
-          will be recalculated to give the approximate new expiration time.
-          The new "RollbackTimeout" property will be approximate up to
-          one second precision, which is the accuracy of the property.
+        @checkpoint: The checkpoint to be rolled back.
+        @add_timeout: Number of seconds from <emphasis>now</emphasis> in which the timeout will expire. Set to 0 to disable the timeout.
+        @since: 1.12
 
         Reset the timeout for rollback for the checkpoint.
 
-        Since: 1.12
+        Note that the added seconds start counting from now,
+        not "Created" timestamp or the previous expiration
+        time. Note that the "Created" property of the checkpoint
+        will stay unchanged by this call. However, the "RollbackTimeout"
+        will be recalculated to give the approximate new expiration time.
+        The new "RollbackTimeout" property will be approximate up to
+        one second precision, which is the accuracy of the property.
     -->
     <method name="CheckpointAdjustRollbackTimeout">
       <arg name="checkpoint" type="o" direction="in"/>
