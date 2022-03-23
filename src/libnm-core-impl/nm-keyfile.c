@@ -3849,6 +3849,14 @@ write_setting_value(KeyfileWriterInfo        *info,
 
     _parse_info_find(setting, key, &setting_info, NULL, &pip);
 
+    if (pip && pip->has_writer_full) {
+        pip->writer_full(info, setting_info, property_info, pip, setting);
+        return;
+    }
+
+    if (pip && pip->writer_skip)
+        return;
+
     if (!pip) {
         if (!setting_info) {
             /* the setting type is unknown. That is highly unexpected
@@ -3864,13 +3872,6 @@ write_setting_value(KeyfileWriterInfo        *info,
         if (!property_info->param_spec)
             return;
         if (nm_streq(key, NM_SETTING_NAME))
-            return;
-    } else {
-        if (pip->has_writer_full) {
-            pip->writer_full(info, setting_info, property_info, pip, setting);
-            return;
-        }
-        if (pip->writer_skip)
             return;
     }
 
