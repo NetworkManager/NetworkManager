@@ -3896,7 +3896,7 @@ nm_setting_option_set(NMSetting *setting, const char *opt_name, GVariant *varian
     g_hash_table_insert(hash, g_strdup(opt_name), g_variant_ref_sink(variant));
 
     if (changed_value)
-        _nm_setting_option_notify(setting, !changed_name);
+        _nm_setting_option_notify(setting, changed_name);
 }
 
 /**
@@ -3933,7 +3933,7 @@ nm_setting_option_set_boolean(NMSetting *setting, const char *opt_name, gboolean
     g_hash_table_insert(hash, g_strdup(opt_name), g_variant_ref_sink(g_variant_new_boolean(value)));
 
     if (changed_value)
-        _nm_setting_option_notify(setting, !changed_name);
+        _nm_setting_option_notify(setting, changed_name);
 }
 
 /**
@@ -3968,7 +3968,7 @@ nm_setting_option_set_uint32(NMSetting *setting, const char *opt_name, guint32 v
     g_hash_table_insert(hash, g_strdup(opt_name), g_variant_ref_sink(g_variant_new_uint32(value)));
 
     if (changed_value)
-        _nm_setting_option_notify(setting, !changed_name);
+        _nm_setting_option_notify(setting, changed_name);
 }
 
 /*****************************************************************************/
