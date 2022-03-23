@@ -115,6 +115,8 @@ _key_file_handler_data_init_write(NMKeyfileHandlerData *handler_data,
                                 &info->error);
 }
 
+/*****************************************************************************/
+
 _nm_printf(5, 6) static void _read_handle_warn(KeyfileReaderInfo    *info,
                                                const char           *kf_key,
                                                const char           *cur_property,
@@ -162,6 +164,61 @@ _nm_printf(5, 6) static void _read_handle_warn(KeyfileReaderInfo    *info,
                               __VA_ARGS__);                                          \
         }                                                                            \
         _info->error == NULL;                                                        \
+    })
+
+/*****************************************************************************/
+
+_nm_unused _nm_printf(6, 7) static void _write_handle_warn(KeyfileWriterInfo    *info,
+                                                           NMSetting            *setting,
+                                                           const char           *kf_key,
+                                                           const char           *cur_property,
+                                                           NMKeyfileWarnSeverity severity,
+                                                           const char           *fmt,
+                                                           ...)
+{
+    NMKeyfileHandlerData handler_data;
+
+    _key_file_handler_data_init_write(&handler_data,
+                                      NM_KEYFILE_HANDLER_TYPE_WARN,
+                                      info,
+                                      nm_setting_get_name(setting),
+                                      cur_property,
+                                      setting,
+                                      kf_key);
+    handler_data.warn = (NMKeyfileHandlerDataWarn){
+        .severity = severity,
+        .message  = NULL,
+        .fmt      = fmt,
+    };
+
+    va_start(handler_data.warn.ap, fmt);
+
+    info->write_handler(info->connection,
+                        info->keyfile,
+                        NM_KEYFILE_HANDLER_TYPE_WARN,
+                        &handler_data,
+                        info->user_data);
+
+    va_end(handler_data.warn.ap);
+
+    g_free(handler_data.warn.message);
+}
+
+#define write_handle_warn(arg_info, arg_setting, arg_kf_key, arg_property_name, arg_severity, ...) \
+    ({                                                                                             \
+        KeyfileWriterInfo *_info = (arg_info);                                                     \
+                                                                                                   \
+        nm_assert(!_info->error);                                                                  \
+                                                                                                   \
+        if (_info->write_handler) {                                                                \
+            _write_handle_warn(_info,                                                              \
+                               (arg_setting),                                                      \
+                               (arg_kf_key),                                                       \
+                               (arg_property_name),                                                \
+                               (arg_severity),                                                     \
+                               __VA_ARGS__);                                                       \
+        }                                                                                          \
+        _info->error == NULL;                                                                      \
     })
 
 /*****************************************************************************/
