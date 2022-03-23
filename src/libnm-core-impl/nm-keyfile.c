@@ -168,13 +168,13 @@ _nm_printf(5, 6) static void _read_handle_warn(KeyfileReaderInfo    *info,
 
 /*****************************************************************************/
 
-_nm_unused _nm_printf(6, 7) static void _write_handle_warn(KeyfileWriterInfo    *info,
-                                                           NMSetting            *setting,
-                                                           const char           *kf_key,
-                                                           const char           *cur_property,
-                                                           NMKeyfileWarnSeverity severity,
-                                                           const char           *fmt,
-                                                           ...)
+_nm_printf(6, 7) static void _write_handle_warn(KeyfileWriterInfo    *info,
+                                                NMSetting            *setting,
+                                                const char           *kf_key,
+                                                const char           *cur_property,
+                                                NMKeyfileWarnSeverity severity,
+                                                const char           *fmt,
+                                                ...)
 {
     NMKeyfileHandlerData handler_data;
 
@@ -3929,14 +3929,8 @@ write_setting_value(KeyfileWriterInfo        *info,
 
     if (!pip) {
         if (!setting_info) {
-            /* the setting type is unknown. That is highly unexpected
-             * (and as this is currently only called from NetworkManager
-             * daemon, not possible).
-             *
-             * Still, handle it gracefully, because later keyfile writer will become
-             * public API of libnm, where @setting is (untrusted) user input.
-             *
-             * Gracefully here just means: ignore the setting. */
+            /* the setting type is unknown. Handle this gracefully by
+             * ignoring the setting. */
             return;
         }
         if (!property_info->param_spec)
@@ -4154,8 +4148,10 @@ _write_setting_wireguard(NMSetting *setting, KeyfileWriterInfo *info)
  * @user_data: argument for @handler.
  * @error: the #GError in case writing fails.
  *
- * @connection must verify as a valid profile according to
- * nm_connection_verify().
+ * @connection should verify as a valid profile according to
+ * nm_connection_verify(). If it does not verify, the keyfile may
+ * be incomplete and the parser may not be able to fully recreate
+ * the original profile.
  *
  * Returns: (transfer full): a new #GKeyFile or %NULL on error.
  *
@@ -4169,7 +4165,6 @@ nm_keyfile_write(NMConnection         *connection,
                  GError              **error)
 {
     nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
-    GError                         *local   = NULL;
     KeyfileWriterInfo               info;
     NMSetting                     **settings;
     int                             i;
@@ -4178,28 +4173,6 @@ nm_keyfile_write(NMConnection         *connection,
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
     g_return_val_if_fail(!error || !*error, NULL);
     g_return_val_if_fail(handler_flags == NM_KEYFILE_HANDLER_FLAGS_NONE, NULL);
-
-    /* Technically, we might not require that a profile is valid in
-     * order to serialize it. Like also nm_keyfile_read() does not
-     * ensure that the read profile validates.
-     *
-     * However, if the profile does not validate, then there might be
-     * unexpected edge cases when we try to serialize it. Edge cases
-     * that might result in dangerous crash.
-     *
-     * So, for now we require valid profiles. */
-    if (!nm_connection_verify(connection, error ? &local : NULL)) {
-        if (error) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_FAILED,
-                        _("the profile is not valid: %s"),
-                        local->message);
-            g_error_free(local);
-        } else
-            nm_assert(!local);
-        return NULL;
-    }
 
     keyfile = g_key_file_new();
 
@@ -4254,11 +4227,16 @@ nm_keyfile_write(NMConnection         *connection,
                                               key,
                                               (guint64) g_variant_get_uint32(v));
                     } else {
-                        /* BUG: The variant type is not implemented. Since the connection
-                         * verifies, this can only mean we either wrongly didn't reject
-                         * the connection as invalid, or we didn't properly implement the
-                         * variant type. */
-                        nm_assert_not_reached();
+                        if (!write_handle_warn(&info,
+                                               setting,
+                                               NULL,
+                                               key,
+                                               NM_KEYFILE_WARN_SEVERITY_WARN,
+                                               _("unsupported option \"%s.%s\" of variant type %s"),
+                                               setting_name,
+                                               key,
+                                               g_variant_get_type_string(v)))
+                            goto out_with_info_error;
                         continue;
                     }
                 }
