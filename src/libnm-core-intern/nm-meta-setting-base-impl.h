@@ -51,7 +51,7 @@ typedef enum /*< skip >*/ {
 
 /*****************************************************************************/
 
-typedef enum {
+typedef enum _nm_packed {
     NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT,
     NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT,
     NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT,
@@ -91,6 +91,8 @@ typedef struct {
 
 extern const NMSetting8021xSchemeVtable
     nm_setting_8021x_scheme_vtable[_NM_SETTING_802_1X_SCHEME_TYPE_NUM + 1];
+
+const NMSetting8021xSchemeVtable *nm_setting_8021x_scheme_vtable_by_setting_key(const char *key);
 
 /*****************************************************************************/
 

@@ -153,6 +153,68 @@ const NMSetting8021xSchemeVtable nm_setting_8021x_scheme_vtable[] = {
 #undef _D
 };
 
+const NMSetting8021xSchemeVtable *
+nm_setting_8021x_scheme_vtable_by_setting_key(const char *key)
+{
+    static const NMSetting8021xSchemeType sorted_index[] = {
+        NM_SETTING_802_1X_SCHEME_TYPE_CA_CERT,
+        NM_SETTING_802_1X_SCHEME_TYPE_CLIENT_CERT,
+        NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CA_CERT,
+        NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_CLIENT_CERT,
+        NM_SETTING_802_1X_SCHEME_TYPE_PHASE2_PRIVATE_KEY,
+        NM_SETTING_802_1X_SCHEME_TYPE_PRIVATE_KEY,
+    };
+    int imin, imax;
+
+    nm_assert(key);
+
+    if (NM_MORE_ASSERT_ONCE(5)) {
+        const NMSetting8021xSchemeVtable *vtable_prev = NULL;
+        int                               i, j;
+
+        for (i = 0; i < (int) G_N_ELEMENTS(sorted_index); i++) {
+            const NMSetting8021xSchemeType    t = sorted_index[i];
+            const NMSetting8021xSchemeVtable *vtable;
+
+            nm_assert(_NM_INT_NOT_NEGATIVE(t));
+            nm_assert(t < G_N_ELEMENTS(nm_setting_8021x_scheme_vtable) - 1);
+
+            for (j = 0; j < i; j++)
+                nm_assert(t != sorted_index[j]);
+
+            vtable = &nm_setting_8021x_scheme_vtable[t];
+
+            nm_assert(vtable->scheme_type == t);
+            nm_assert(vtable->setting_key);
+
+            if (vtable_prev)
+                nm_assert(strcmp(vtable_prev->setting_key, vtable->setting_key) < 0);
+            vtable_prev = vtable;
+        }
+    }
+
+    imin = 0;
+    imax = G_N_ELEMENTS(sorted_index) - 1;
+    while (imin <= imax) {
+        const NMSetting8021xSchemeVtable *vtable;
+        const int                         imid = imin + (imax - imin) / 2;
+        int                               cmp;
+
+        vtable = &nm_setting_8021x_scheme_vtable[sorted_index[imid]];
+
+        cmp = strcmp(vtable->setting_key, key);
+        if (cmp == 0)
+            return vtable;
+
+        if (cmp < 0)
+            imin = imid + 1;
+        else
+            imax = imid - 1;
+    }
+
+    return NULL;
+}
+
 /*****************************************************************************/
 
 const NMMetaSettingInfo nm_meta_setting_infos[] = {
