@@ -2689,16 +2689,10 @@ cert_writer_default(NMConnection                     *connection,
 static void
 cert_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const GValue *value)
 {
-    const NMSetting8021xSchemeVtable *vtable = NULL;
+    const NMSetting8021xSchemeVtable *vtable;
     const char                       *setting_name;
-    guint                             i;
 
-    for (i = 0; nm_setting_8021x_scheme_vtable[i].setting_key; i++) {
-        if (nm_streq0(nm_setting_8021x_scheme_vtable[i].setting_key, key)) {
-            vtable = &nm_setting_8021x_scheme_vtable[i];
-            break;
-        }
-    }
+    vtable = nm_setting_8021x_scheme_vtable_by_setting_key(key);
     if (!vtable)
         g_return_if_reached();
 
