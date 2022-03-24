@@ -20,6 +20,21 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   "keyfile" plugin is preferred over others).
 * The hostname received from DHCP is now shortened to the first dot
   (or to 64 characters, whatever comes first) if it's too long.
+* As the insecure WEP encryption for Wi-Fi network is phased out,
+  nmcli now discourages its use when activating or modifying a
+  profile.
+* Attempt to connect to WEP-encrypted Wi-Fi network will now fail
+  gracefully with a recent version of wpa_supplicant when built
+  without WEP support.
+* NetworkManager will no longer advertise frequencies as supported when
+  they're disallowed in configured regulatory domain.
+* Fixed a couple of regressions in PPPoE support in NetworkManager-1.36.
+* DHCP client behavior is now more robust in misconfigured networks
+  where rogue DHCP servers NAK requests that would be serviced by
+  legitimate servers.
+* Fix connectivity checks in case the check endpoint address resolves to
+  multiple addresses.
+* Updated translations.
 
 =============================================
 NetworkManager-1.36
