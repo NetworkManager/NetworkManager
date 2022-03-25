@@ -3987,6 +3987,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
     const gint32                   now     = nm_utils_get_monotonic_timestamp_sec();
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
     NMPLookup                      lookup;
+    const gboolean                 EXTRA_LOGGING       = FALSE;
     gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
     gs_unref_ptrarray GPtrArray   *plat_addresses      = NULL;
     gboolean                       success;
@@ -3996,6 +3997,39 @@ nm_platform_ip_address_sync(NMPlatform *self,
     guint                          j;
 
     _CHECK_SELF(self, klass, FALSE);
+
+    /* Disabled. Enable this for printf debugging. */
+    if (EXTRA_LOGGING) {
+        char sbuf[sizeof(_nm_utils_to_string_buffer)];
+        char sbuf1[50];
+
+        _LOG3T("IPv%c address sync on %d (%u addresses, %u to prune)",
+               nm_utils_addr_family_to_char(addr_family),
+               ifindex,
+               nm_g_ptr_array_len(known_addresses),
+               nm_g_ptr_array_len(addresses_prune));
+        for (i = 0; known_addresses && i < known_addresses->len; i++) {
+            _LOG3T("  address#%u: %s%s",
+                   i,
+                   nmp_object_to_string(known_addresses->pdata[i],
+                                        NMP_OBJECT_TO_STRING_ALL,
+                                        sbuf,
+                                        sizeof(sbuf)),
+                   IS_IPv4 ? ""
+                           : nm_sprintf_buf(sbuf1,
+                                            " (scope %d)",
+                                            (int) ip6_address_scope(NMP_OBJECT_CAST_IP6_ADDRESS(
+                                                known_addresses->pdata[i]))));
+        }
+        for (i = 0; addresses_prune && i < addresses_prune->len; i++) {
+            _LOG3T("  prune  #%u: %s",
+                   i,
+                   nmp_object_to_string(addresses_prune->pdata[i],
+                                        NMP_OBJECT_TO_STRING_ALL,
+                                        sbuf,
+                                        sizeof(sbuf)));
+        }
+    }
 
     /* @known_addresses (IPv4) are in decreasing priority order (highest priority addresses first).
      * @known_addresses (IPv6) are in increasing priority order (highest priority addresses last) (we will sort them by scope next). */
@@ -4046,6 +4080,25 @@ nm_platform_ip_address_sync(NMPlatform *self,
         nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex),
         NULL,
         NULL);
+
+    if (EXTRA_LOGGING && plat_addresses) {
+        for (i = 0; i < plat_addresses->len; i++) {
+            char sbuf[sizeof(_nm_utils_to_string_buffer)];
+            char sbuf1[50];
+
+            _LOG3T("  platform#%u: %s%s",
+                   i,
+                   nmp_object_to_string(plat_addresses->pdata[i],
+                                        NMP_OBJECT_TO_STRING_ALL,
+                                        sbuf,
+                                        sizeof(sbuf)),
+                   IS_IPv4 ? ""
+                           : nm_sprintf_buf(sbuf1,
+                                            " (scope %d)",
+                                            (int) ip6_address_scope(NMP_OBJECT_CAST_IP6_ADDRESS(
+                                                plat_addresses->pdata[i]))));
+        }
+    }
 
     if (nm_g_ptr_array_len(plat_addresses) > 0) {
         /* Delete addresses that interfere with our intended order. */
