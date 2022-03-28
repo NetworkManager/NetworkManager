@@ -2097,6 +2097,29 @@ gboolean nm_platform_ip4_address_delete(NMPlatform *self,
 gboolean
 nm_platform_ip6_address_delete(NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
 
+static inline gboolean
+nm_platform_ip_address_delete(NMPlatform                                       *self,
+                              int                                               addr_family,
+                              int                                               ifindex,
+                              gconstpointer /* (const NMPlatformIPAddress *) */ addr)
+{
+    if (NM_IS_IPv4(addr_family)) {
+        const NMPlatformIP4Address *a = addr;
+
+        if (ifindex <= 0)
+            ifindex = a->ifindex;
+
+        return nm_platform_ip4_address_delete(self, ifindex, a->address, a->plen, a->peer_address);
+    } else {
+        const NMPlatformIP6Address *a = addr;
+
+        if (ifindex <= 0)
+            ifindex = a->ifindex;
+
+        return nm_platform_ip6_address_delete(self, ifindex, a->address, a->plen);
+    }
+}
+
 gboolean nm_platform_ip_address_sync(NMPlatform *self,
                                      int         addr_family,
                                      int         ifindex,
