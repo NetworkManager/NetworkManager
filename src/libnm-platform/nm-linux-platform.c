@@ -7405,6 +7405,8 @@ do_delete_object(NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *n
              && NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_id), NMP_OBJECT_TYPE_IP6_ADDRESS)) {
         /* On RHEL7 kernel, deleting a non existing address fails with ENXIO */
         log_detail = ", meaning the address was already removed";
+    } else if (NM_IN_SET(-((int) seq_result), ENODEV)) {
+        log_detail = ", meaning the device was already removed";
     } else if (NM_IN_SET(-((int) seq_result), EADDRNOTAVAIL)
                && NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_id),
                             NMP_OBJECT_TYPE_IP4_ADDRESS,
