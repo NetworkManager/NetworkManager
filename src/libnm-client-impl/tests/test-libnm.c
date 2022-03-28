@@ -2550,8 +2550,14 @@ test_nm_vpn_service_plugin_read_vpn_details(void)
                          "DONE\n"
                          "\n"
                          "",
-                         READ_VPN_DETAIL_DATA({"some\nkey-2", "val2"}, {"some-key", "string"}, ),
-                         READ_VPN_DETAIL_DATA(), );
+                         READ_VPN_DETAIL_DATA({"some\nkey-2", "val2"},
+                                              {"some-key", "string"},
+                                              {"key3\nkey-2", "val3"}, ),
+                         READ_VPN_DETAIL_DATA({"some-secret", "val3"},
+                                              {"key-inval", "in\xc1val"},
+                                              {"ke\xc0yx", "inval"},
+                                              {"keyx", ""},
+                                              {"", "val3"}), );
 }
 
 /*****************************************************************************/

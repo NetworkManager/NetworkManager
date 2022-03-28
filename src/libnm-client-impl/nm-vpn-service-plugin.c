@@ -795,6 +795,12 @@ nm_vpn_service_plugin_read_vpn_details(int fd, GHashTable **out_data, GHashTable
             }
             break;
         }
+
+        if (nr > 0 && c == '\0') {
+            /* '\0' are not supported. Replace with newline. */
+            c = '\n';
+        }
+
         if (nr > 0 && c != '\n') {
             g_string_append_c(line, c);
             if (line->len > 512 * 1024) {
