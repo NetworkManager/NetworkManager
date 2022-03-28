@@ -68,6 +68,7 @@ typedef void (*NMSettingsAddCallback)(NMSettings            *settings,
                                       gpointer               user_data);
 
 void nm_settings_add_connection_dbus(NMSettings                     *self,
+                                     const char                     *plugin,
                                      NMConnection                   *connection,
                                      NMSettingsConnectionPersistMode persist_mode,
                                      NMSettingsConnectionAddReason   add_reason,
@@ -90,6 +91,7 @@ NMSettingsConnection **nm_settings_get_connections_clone(NMSettings             
                                                          gpointer         sort_data);
 
 gboolean nm_settings_add_connection(NMSettings                     *settings,
+                                    const char                     *plugin,
                                     NMConnection                   *connection,
                                     NMSettingsConnectionPersistMode persist_mode,
                                     NMSettingsConnectionAddReason   add_reason,
@@ -99,6 +101,7 @@ gboolean nm_settings_add_connection(NMSettings                     *settings,
 
 gboolean nm_settings_update_connection(NMSettings                      *self,
                                        NMSettingsConnection            *sett_conn,
+                                       const char                      *plugin_name,
                                        NMConnection                    *new_connection,
                                        NMSettingsConnectionPersistMode  persist_mode,
                                        NMSettingsConnectionIntFlags     sett_flags,

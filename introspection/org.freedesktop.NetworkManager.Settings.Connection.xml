@@ -105,7 +105,7 @@
         Update2:
         @settings: New connection settings, properties, and (optionally) secrets. Provide an empty array to use the current settings.
         @flags: Optional flags. Unknown flags cause the call to fail.
-        @args: Optional arguments dictionary, for extentibility. Currently, no arguments are accepted. Specifying unknown keys causes the call to fail.
+        @args: Optional arguments dictionary, for extentibility. Specifying unknown keys causes the call to fail.
         @result: Currently no results are returned.
         @since: 1.12
 
@@ -153,6 +153,17 @@
           <term><literal>0x40 (no-reapply)</literal>:</term>
           <listitem><para>Prevents "connection.zone" and "connection.metered" properties
           to take effect on currently active devices.</para></listitem>
+        </varlistentry>
+        </variablelist>
+
+        The %args argument accepts the following keys:
+
+        <variablelist>
+        <varlistentry>
+          <term><literal>plugin</literal>:</term>
+          <listitem><para>The settings plugin the connection will be migrated to
+          such as "keyfile" or "ifcfg-rh".</para>
+          <para role="since">Since 1.38</para></listitem>
         </varlistentry>
         </variablelist>
 

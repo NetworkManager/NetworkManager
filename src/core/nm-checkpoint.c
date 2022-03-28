@@ -231,6 +231,7 @@ restore_and_activate_connection(NMCheckpoint *self, DeviceCheckpoint *dev_checkp
             persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP;
             nm_settings_connection_update(
                 connection,
+                NULL,
                 dev_checkpoint->settings_connection,
                 persist_mode,
                 sett_flags,
@@ -247,6 +248,7 @@ restore_and_activate_connection(NMCheckpoint *self, DeviceCheckpoint *dev_checkp
 
         persist_mode = NM_SETTINGS_CONNECTION_PERSIST_MODE_TO_DISK;
         if (!nm_settings_add_connection(NM_SETTINGS_GET,
+                                        NULL,
                                         dev_checkpoint->settings_connection,
                                         persist_mode,
                                         NM_SETTINGS_CONNECTION_ADD_REASON_NONE,
