@@ -84,6 +84,8 @@ static const char *
 nm_rfkill_state_to_string(NMRfkillState state)
 {
     switch (state) {
+    case NM_RFKILL_STATE_UNAVAILABLE:
+        return "unavailable";
     case NM_RFKILL_STATE_UNBLOCKED:
         return "unblocked";
     case NM_RFKILL_STATE_SOFT_BLOCKED:
@@ -188,8 +190,8 @@ recheck_killswitches(NMRfkillManager *self)
 
     /* Default state is unblocked */
     for (i = 0; i < NM_RFKILL_TYPE_MAX; i++) {
-        poll_states[i]      = NM_RFKILL_STATE_UNBLOCKED;
-        platform_states[i]  = NM_RFKILL_STATE_UNBLOCKED;
+        poll_states[i]      = NM_RFKILL_STATE_UNAVAILABLE;
+        platform_states[i]  = NM_RFKILL_STATE_UNAVAILABLE;
         platform_checked[i] = FALSE;
     }
 
@@ -222,12 +224,12 @@ recheck_killswitches(NMRfkillManager *self)
         dev_state = sysfs_state_to_nm_state(sysfs_state, sysfs_reason);
 
         nm_log_dbg(LOGD_RFKILL,
-                   "%s rfkill%s switch %s state now %d/%u reason: 0x%x",
+                   "%s rfkill%s switch %s state now %d/%s reason: 0x%x",
                    nm_rfkill_type_to_string(ks->rtype),
                    ks->platform ? " platform" : "",
                    ks->name,
                    sysfs_state,
-                   dev_state,
+                   nm_rfkill_state_to_string(dev_state),
                    sysfs_reason);
 
         if (ks->platform == FALSE) {
@@ -248,7 +250,7 @@ recheck_killswitches(NMRfkillManager *self)
             /* blocked platform switch state overrides device state, otherwise
              * let the device state stand. (bgo #655773)
              */
-            if (platform_states[i] != NM_RFKILL_STATE_UNBLOCKED)
+            if (platform_states[i] > NM_RFKILL_STATE_UNBLOCKED)
                 poll_states[i] = platform_states[i];
         }
 
@@ -396,7 +398,7 @@ nm_rfkill_manager_init(NMRfkillManager *self)
     c_list_init(&priv->killswitch_lst_head);
 
     for (i = 0; i < NM_RFKILL_TYPE_MAX; i++)
-        priv->rfkill_states[i] = NM_RFKILL_STATE_UNBLOCKED;
+        priv->rfkill_states[i] = NM_RFKILL_STATE_UNAVAILABLE;
 
     priv->udev_client = nm_udev_client_new(NM_MAKE_STRV("rfkill"), handle_uevent, self);
 

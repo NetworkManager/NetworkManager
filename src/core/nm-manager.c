@@ -2323,6 +2323,11 @@ _rfkill_radio_state_set_from_manager(NMRfkillManager  *rfkill_mgr,
                                      RfkillRadioState *rstate)
 {
     switch (nm_rfkill_manager_get_rfkill_state(rfkill_mgr, rtype)) {
+    case NM_RFKILL_STATE_UNAVAILABLE:
+        rstate->sw_enabled = TRUE;
+        rstate->hw_enabled = TRUE;
+        rstate->os_owner   = TRUE;
+        return;
     case NM_RFKILL_STATE_UNBLOCKED:
         rstate->sw_enabled = TRUE;
         rstate->hw_enabled = TRUE;
