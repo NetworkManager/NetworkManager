@@ -232,7 +232,7 @@ nmt_editor_grid_get_components(NmtNewtWidget *widget)
 
         if (rows[i].label) {
             child_cos = nmt_newt_widget_get_components(rows[i].label);
-            g_assert(child_cos[0] && !child_cos[1]);
+            g_return_val_if_fail(child_cos[0] && !child_cos[1], NULL);
             g_ptr_array_add(cos, child_cos[0]);
             g_free(child_cos);
         }

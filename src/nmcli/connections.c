@@ -1444,13 +1444,13 @@ nmc_connection_profile_details(NMConnection *connection, NmCli *nmc)
                             TRUE,
                             &prop_array,
                             &error);
-    if (error) {
+    if (!print_settings_array) {
+        g_return_val_if_fail(error, FALSE);
         g_string_printf(nmc->return_text, _("Error: 'connection show': %s"), error->message);
         g_error_free(error);
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
         return FALSE;
     }
-    g_assert(print_settings_array);
 
     /* Main header */
     {
@@ -1551,13 +1551,13 @@ nmc_active_connection_details(NMActiveConnection *acon, NmCli *nmc)
         TRUE,
         &group_fields,
         &error);
-    if (error) {
+    if (!print_groups) {
+        g_return_val_if_fail(error, FALSE);
         g_string_printf(nmc->return_text, _("Error: 'connection show': %s"), error->message);
         g_error_free(error);
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
         return FALSE;
     }
-    g_assert(print_groups);
 
     /* Main header */
     {
@@ -2182,7 +2182,7 @@ do_connections_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
                 goto finish;
             break;
         default:
-            g_assert_not_reached();
+            g_return_if_reached();
             break;
         }
     }
@@ -2502,7 +2502,7 @@ find_device_for_connection(NmCli        *nmc,
     g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
 
     s_con = nm_connection_get_setting_connection(connection);
-    g_assert(s_con);
+    g_return_val_if_fail(s_con, FALSE);
     con_type = nm_setting_connection_get_connection_type(s_con);
 
     if (nm_streq(con_type, NM_SETTING_VPN_SETTING_NAME)) {
@@ -2991,7 +2991,7 @@ do_connection_up(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
         gs_free char *line = NULL;
 
         /* nmc_do_cmd() should not call this with argc=0. */
-        g_assert(!nmc->complete);
+        g_return_if_fail(!nmc->complete);
 
         line = nmc_readline(&nmc->nmc_config, PROMPT_CONNECTION);
         nmc_string_to_arg_array(line, NULL, TRUE, &arg_arr, &arg_num);
@@ -3247,7 +3247,7 @@ do_connection_down(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
 
     if (argc == 0) {
         /* nmc_do_cmd() should not call this with argc=0. */
-        g_assert(!nmc->complete);
+        g_return_if_fail(!nmc->complete);
 
         if (nmc->ask) {
             gs_free char *line = NULL;
@@ -3692,7 +3692,8 @@ is_setting_mandatory(NMConnection *connection, NMSetting *setting)
     guint                                    i;
 
     s_con = nm_connection_get_setting_connection(connection);
-    g_assert(s_con);
+    g_return_val_if_fail(s_con, FALSE);
+
     c_type = nm_setting_connection_get_connection_type(s_con);
     s_type = nm_setting_connection_get_slave_type(s_con);
 
@@ -3771,7 +3772,7 @@ normalized_master_for_slave(const GPtrArray *connections,
     for (i = 0; i < connections->len; i++) {
         connection = NM_CONNECTION(connections->pdata[i]);
         s_con      = nm_connection_get_setting_connection(connection);
-        g_assert(s_con);
+        g_return_val_if_fail(s_con, NULL);
         con_type = nm_setting_connection_get_connection_type(s_con);
         if (type && !nm_streq0(con_type, type))
             continue;
@@ -4275,7 +4276,7 @@ con_settings(NMConnection                             *connection,
     g_return_val_if_fail(slv_settings, FALSE);
 
     s_con = nm_connection_get_setting_connection(connection);
-    g_assert(s_con);
+    g_return_val_if_fail(s_con, FALSE);
 
     con_type      = nm_setting_connection_get_slave_type(s_con);
     *slv_settings = nm_meta_setting_info_valid_parts_for_slave_type(con_type, NULL);
@@ -7300,7 +7301,8 @@ editor_show_status_line(NMConnection *connection, gboolean dirty, gboolean temp)
     const char          *con_type, *con_id, *con_uuid;
 
     s_con = nm_connection_get_setting_connection(connection);
-    g_assert(s_con);
+    g_return_if_fail(s_con);
+
     con_type = nm_setting_connection_get_connection_type(s_con);
     con_id   = nm_connection_get_id(connection);
     con_uuid = nm_connection_get_uuid(connection);
@@ -7643,15 +7645,18 @@ confirm_connection_saving(const NmcConfig *nmc_config, NMConnection *local, NMCo
     gboolean             confirmed = TRUE;
 
     s_con_loc = nm_connection_get_setting_connection(local);
-    g_assert(s_con_loc);
+    g_return_val_if_fail(s_con_loc, FALSE);
+
     ac_local = nm_setting_connection_get_autoconnect(s_con_loc);
 
     if (remote) {
         s_con_rem = nm_connection_get_setting_connection(remote);
-        g_assert(s_con_rem);
+        g_return_val_if_fail(s_con_rem, FALSE);
+
         ac_remote = nm_setting_connection_get_autoconnect(s_con_rem);
-    } else
+    } else {
         ac_remote = FALSE;
+    }
 
     if (ac_local && !ac_remote) {
         gs_free char *answer = NULL;
@@ -8578,7 +8583,8 @@ editor_init_new_connection(NmCli *nmc, NMConnection *connection, const char *sla
     const char          *con_type;
 
     s_con = nm_connection_get_setting_connection(connection);
-    g_assert(s_con);
+    g_return_if_fail(s_con);
+
     con_type = nm_setting_connection_get_connection_type(s_con);
 
     /* Initialize new connection according to its type using sensible defaults. */
@@ -9008,7 +9014,7 @@ do_connection_clone(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
         gs_free char *line = NULL;
 
         /* nmc_do_cmd() should not call this with argc=0. */
-        g_assert(!nmc->complete);
+        g_return_if_fail(!nmc->complete);
 
         line = nmc_readline(&nmc->nmc_config, PROMPT_CONNECTION);
         nmc_string_to_arg_array(line, NULL, TRUE, &arg_arr, &arg_num);
@@ -9107,7 +9113,7 @@ do_connection_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
             gs_free char *line = NULL;
 
             /* nmc_do_cmd() should not call this with argc=0. */
-            g_assert(!nmc->complete);
+            g_return_if_fail(!nmc->complete);
 
             line = nmc_readline(&nmc->nmc_config, PROMPT_CONNECTIONS);
             nmc_string_to_arg_array(line, NULL, TRUE, &arg_arr, &arg_num);
@@ -9245,7 +9251,7 @@ do_connection_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
         /* No connections specified. Monitor all. */
 
         /* nmc_do_cmd() should not call this with argc=0. */
-        g_assert(!nmc->complete);
+        g_return_if_fail(!nmc->complete);
 
         connections = nm_client_get_connections(nmc->client);
     } else {
@@ -9402,7 +9408,7 @@ do_connection_import(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
 
     if (argc == 0) {
         /* nmc_do_cmd() should not call this with argc=0. */
-        g_assert(!nmc->complete);
+        g_return_if_fail(!nmc->complete);
 
         if (nmc->ask) {
             type_ask =
@@ -9545,7 +9551,7 @@ do_connection_export(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
         gs_free char *line = NULL;
 
         /* nmc_do_cmd() should not call this with argc=0. */
-        g_assert(!nmc->complete);
+        g_return_if_fail(!nmc->complete);
 
         line = nmc_readline(&nmc->nmc_config, PROMPT_VPN_CONNECTION);
         nmc_string_to_arg_array(line, NULL, TRUE, &arg_arr, &arg_num);
