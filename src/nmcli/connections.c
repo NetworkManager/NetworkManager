@@ -9723,7 +9723,7 @@ do_connection_migrate(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
             gs_free char *line = NULL;
 
             /* nmc_do_cmd() should not call this with argc=0. */
-            g_assert(!nmc->complete);
+            g_return_if_fail(!nmc->complete);
 
             line = nmc_readline(&nmc->nmc_config, PROMPT_CONNECTIONS);
             nmc_string_to_arg_array(line, NULL, TRUE, &arg_arr, &arg_num);
