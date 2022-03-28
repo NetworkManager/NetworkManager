@@ -4402,8 +4402,6 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
     if (!head_entry)
         return NULL;
 
-    result = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nmp_object_unref);
-
     c_list_for_each (iter, &head_entry->lst_entries_head) {
         const NMPObject *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
 
@@ -4444,13 +4442,12 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
             }
         }
 
+        if (!result)
+            result = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nmp_object_unref);
+
         g_ptr_array_add(result, (gpointer) nmp_object_ref(obj));
     }
 
-    if (result->len == 0) {
-        g_ptr_array_unref(result);
-        return NULL;
-    }
     return result;
 }
 
@@ -4461,7 +4458,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                                     NMIPRouteTableSyncMode route_table_sync)
 {
     NMPLookup                    lookup;
-    GPtrArray                   *routes_prune;
+    GPtrArray                   *routes_prune = NULL;
     const NMDedupMultiHeadEntry *head_entry;
     CList                       *iter;
     NMPlatformIP4Route           rt_local4;
@@ -4492,8 +4489,6 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
     rt_local4.plen = 0;
     rt_local6.plen = 0;
     rt_mcast6.plen = 0;
-
-    routes_prune = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
 
     c_list_for_each (iter, &head_entry->lst_entries_head) {
         const NMPObject          *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
@@ -4632,13 +4627,14 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
             break;
         }
 
+        if (!routes_prune) {
+            routes_prune =
+                g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
+        }
+
         g_ptr_array_add(routes_prune, (gpointer) nmp_object_ref(obj));
     }
 
-    if (routes_prune->len == 0) {
-        g_ptr_array_unref(routes_prune);
-        return NULL;
-    }
     return routes_prune;
 }
 
