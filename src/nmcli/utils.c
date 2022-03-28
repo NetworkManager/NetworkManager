@@ -156,7 +156,7 @@ next_arg(NmCli *nmc, int *argc, const char *const **argv, ...)
     va_list     args;
     const char *cmd_option;
 
-    g_assert(*argc >= 0);
+    g_return_val_if_fail(*argc >= 0, -1);
 
     do {
         int cmd_option_pos = 1;
@@ -1229,7 +1229,7 @@ _print_do(const NmcConfig           *nmc_config,
     guint                         i_row, i_col;
     nm_auto_free_gstring GString *str = NULL;
 
-    g_assert(col_len);
+    g_return_if_fail(col_len);
 
     /* Main header */
     if (nmc_config->print_output == NMC_PRINT_PRETTY && header_name_no_l10n) {
@@ -1628,7 +1628,7 @@ print_required_fields(const NmcConfig      *nmc_config,
             gboolean is_array = field_values[idx].value_is_array;
 
             /* section prefix can't be an array */
-            g_assert(!is_array || !section_prefix || idx != 0);
+            g_return_if_fail(!is_array || !section_prefix || idx != 0);
 
             if (section_prefix && idx == 0) /* The first field is section prefix */
                 continue;

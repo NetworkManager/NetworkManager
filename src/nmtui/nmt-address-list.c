@@ -121,19 +121,20 @@ nmt_address_list_create_widget(NmtWidgetList *list, int num)
     NmtAddressListPrivate *priv = NMT_ADDRESS_LIST_GET_PRIVATE(list);
     NmtNewtWidget         *entry;
 
-    if (priv->list_type == NMT_ADDRESS_LIST_IP4_WITH_PREFIX)
+    if (priv->list_type == NMT_ADDRESS_LIST_IP4_WITH_PREFIX) {
         entry = nmt_ip_entry_new(25, AF_INET, TRUE, FALSE);
-    else if (priv->list_type == NMT_ADDRESS_LIST_IP4)
+    } else if (priv->list_type == NMT_ADDRESS_LIST_IP4) {
         entry = nmt_ip_entry_new(25, AF_INET, FALSE, FALSE);
-    else if (priv->list_type == NMT_ADDRESS_LIST_IP6_WITH_PREFIX)
+    } else if (priv->list_type == NMT_ADDRESS_LIST_IP6_WITH_PREFIX) {
         entry = nmt_ip_entry_new(25, AF_INET6, TRUE, FALSE);
-    else if (priv->list_type == NMT_ADDRESS_LIST_IP6)
+    } else if (priv->list_type == NMT_ADDRESS_LIST_IP6) {
         entry = nmt_ip_entry_new(25, AF_INET6, FALSE, FALSE);
-    else if (priv->list_type == NMT_ADDRESS_LIST_HOSTNAME) {
+    } else if (priv->list_type == NMT_ADDRESS_LIST_HOSTNAME) {
         entry = nmt_newt_entry_new(25, NMT_NEWT_ENTRY_NONEMPTY);
         nmt_newt_entry_set_filter(NMT_NEWT_ENTRY(entry), hostname_filter, list);
-    } else
-        g_assert_not_reached();
+    } else {
+        g_return_val_if_reached(NULL);
+    }
 
     g_object_bind_property_full(list,
                                 "strings",
