@@ -620,10 +620,16 @@ nm_str_realloc(char *str)
 /* invokes _notify() for all arguments (of type _PropertyEnums). Note, that if
  * there are more than one prop arguments, this will involve a freeze/thaw
  * of GObject property notifications. */
-#define nm_gobject_notify_together_full(suffix, obj, ...)          \
-    _nm_gobject_notify_together_impl##suffix(obj,                  \
-                                             NM_NARG(__VA_ARGS__), \
-                                             (const _PropertyEnums##suffix[]){__VA_ARGS__})
+#define nm_gobject_notify_together_full(suffix, obj, ...)                            \
+    G_STMT_START                                                                     \
+    {                                                                                \
+        const _PropertyEnums##suffix _props[] = {__VA_ARGS__};                       \
+                                                                                     \
+        G_STATIC_ASSERT(G_N_ELEMENTS(_props) == NM_NARG(__VA_ARGS__));               \
+                                                                                     \
+        _nm_gobject_notify_together_impl##suffix(obj, G_N_ELEMENTS(_props), _props); \
+    }                                                                                \
+    G_STMT_END
 
 #define nm_gobject_notify_together(obj, ...) nm_gobject_notify_together_full(, obj, __VA_ARGS__)
 

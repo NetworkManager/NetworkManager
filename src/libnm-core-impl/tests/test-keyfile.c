@@ -5,16 +5,18 @@
 
 #include "libnm-core-impl/nm-default-libnm-core.h"
 
-#include "libnm-glib-aux/nm-json-aux.h"
-#include "libnm-core-intern/nm-keyfile-utils.h"
+#include "libnm-base/nm-ethtool-utils-base.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
-#include "nm-simple-connection.h"
-#include "nm-setting-connection.h"
-#include "nm-setting-wired.h"
+#include "libnm-core-intern/nm-keyfile-utils.h"
+#include "libnm-glib-aux/nm-json-aux.h"
 #include "nm-setting-8021x.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-ethtool.h"
+#include "nm-setting-proxy.h"
 #include "nm-setting-team.h"
 #include "nm-setting-user.h"
-#include "nm-setting-proxy.h"
+#include "nm-setting-wired.h"
+#include "nm-simple-connection.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
 
@@ -887,6 +889,100 @@ test_bridge_port_vlans(void)
 
 /*****************************************************************************/
 
+typedef struct {
+    bool  expect;
+    guint n_calls;
+} InvalidOptionWriteData;
+
+static gboolean
+_invalid_option_write_handler(NMConnection         *connection,
+                              GKeyFile             *keyfile,
+                              NMKeyfileHandlerType  handler_type,
+                              NMKeyfileHandlerData *handler_data,
+                              void                 *user_data)
+{
+    InvalidOptionWriteData *data = user_data;
+    const char             *message;
+    NMKeyfileWarnSeverity   severity;
+
+    g_assert(data);
+    g_assert(data->expect);
+
+    g_assert(data->n_calls == 0);
+    data->n_calls++;
+
+    switch (handler_type) {
+    case NM_KEYFILE_HANDLER_TYPE_WARN:
+        nm_keyfile_handler_data_warn_get(handler_data, &message, &severity);
+        g_assert(message && strstr(message, "ethtool.bogus"));
+        break;
+    default:
+        g_assert_not_reached();
+    }
+
+    return TRUE;
+}
+
+static void
+test_invalid_option(void)
+{
+    gs_unref_object NMConnection   *con = NULL;
+    NMSetting                      *s_ethtool;
+    nm_auto_unref_keyfile GKeyFile *kf    = NULL;
+    gs_free_error GError           *error = NULL;
+    InvalidOptionWriteData          data;
+
+    con = nmtst_create_minimal_connection("test invalid option",
+                                          NULL,
+                                          NM_SETTING_WIRED_SETTING_NAME,
+                                          NULL);
+
+    s_ethtool = nm_setting_ethtool_new();
+
+    nm_connection_add_setting(con, s_ethtool);
+
+    nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_PAUSE_RX, TRUE);
+
+    data = (InvalidOptionWriteData){};
+    kf   = nm_keyfile_write(con,
+                          NM_KEYFILE_HANDLER_FLAGS_NONE,
+                          _invalid_option_write_handler,
+                          &data,
+                          nmtst_get_rand_bool() ? &error : NULL);
+    nmtst_assert_success(kf, error);
+    nm_clear_pointer(&kf, g_key_file_unref);
+
+    nmtst_connection_normalize(con);
+
+    nmtst_assert_connection_verifies_without_normalization(con);
+
+    data = (InvalidOptionWriteData){};
+    kf   = nm_keyfile_write(con,
+                          NM_KEYFILE_HANDLER_FLAGS_NONE,
+                          _invalid_option_write_handler,
+                          &data,
+                          nmtst_get_rand_bool() ? &error : NULL);
+    nmtst_assert_success(kf, error);
+    nm_clear_pointer(&kf, g_key_file_unref);
+
+    nm_setting_option_set(s_ethtool, "bogus", g_variant_new_int64(0));
+
+    data = (InvalidOptionWriteData){
+        .expect = TRUE,
+    };
+    kf = nm_keyfile_write(con,
+                          NM_KEYFILE_HANDLER_FLAGS_NONE,
+                          _invalid_option_write_handler,
+                          &data,
+                          nmtst_get_rand_bool() ? &error : NULL);
+    nmtst_assert_success(kf, error);
+    nm_clear_pointer(&kf, g_key_file_unref);
+
+    g_assert_cmpint(data.n_calls, ==, 1);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -904,6 +1000,7 @@ main(int argc, char **argv)
     g_test_add_func("/core/keyfile/test_vpn/1", test_vpn_1);
     g_test_add_func("/core/keyfile/bridge/vlans", test_bridge_vlans);
     g_test_add_func("/core/keyfile/bridge-port/vlans", test_bridge_port_vlans);
+    g_test_add_func("/core/keyfile/invalid-option", test_invalid_option);
 
     return g_test_run();
 }
