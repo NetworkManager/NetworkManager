@@ -3878,19 +3878,17 @@ ip6_address_scope(const NMPlatformIP6Address *a)
 }
 
 static int
-ip6_address_scope_cmp(gconstpointer p_a, gconstpointer p_b, gpointer increasing)
+ip6_address_scope_cmp_ascending(gconstpointer p_a, gconstpointer p_b, gpointer unused)
 {
-    const NMPlatformIP6Address *a;
-    const NMPlatformIP6Address *b;
-
-    if (!increasing)
-        NM_SWAP(&p_a, &p_b);
-
-    a = NMP_OBJECT_CAST_IP6_ADDRESS(*(const NMPObject *const *) p_a);
-    b = NMP_OBJECT_CAST_IP6_ADDRESS(*(const NMPObject *const *) p_b);
-
-    NM_CMP_DIRECT(ip6_address_scope(a), ip6_address_scope(b));
+    NM_CMP_DIRECT(ip6_address_scope(NMP_OBJECT_CAST_IP6_ADDRESS(*(const NMPObject *const *) p_a)),
+                  ip6_address_scope(NMP_OBJECT_CAST_IP6_ADDRESS(*(const NMPObject *const *) p_b)));
     return 0;
+}
+
+static int
+ip6_address_scope_cmp_descending(gconstpointer p_a, gconstpointer p_b, gpointer unused)
+{
+    return ip6_address_scope_cmp_ascending(p_b, p_a, NULL);
 }
 
 /**
@@ -3977,9 +3975,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
      * unnecessary change the order of addresses with different scopes. */
     if (!IS_IPv4) {
         if (known_addresses)
-            g_ptr_array_sort_with_data(known_addresses,
-                                       ip6_address_scope_cmp,
-                                       GINT_TO_POINTER(TRUE));
+            g_ptr_array_sort_with_data(known_addresses, ip6_address_scope_cmp_ascending, NULL);
     }
 
     if (!_addr_array_clean_expired(addr_family,
@@ -4148,9 +4144,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
             /* For IPv6, we only compare addresses per-scope. Addresses in different
              * scopes don't have a defined order. */
 
-            g_ptr_array_sort_with_data(plat_addresses,
-                                       ip6_address_scope_cmp,
-                                       GINT_TO_POINTER(FALSE));
+            g_ptr_array_sort_with_data(plat_addresses, ip6_address_scope_cmp_descending, NULL);
 
             known_addresses_len = nm_g_ptr_array_len(known_addresses);
 
