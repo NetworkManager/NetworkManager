@@ -1231,10 +1231,10 @@ usage_connection_delete(void)
 {
     g_printerr(_("Usage: nmcli connection delete { ARGUMENTS | help }\n"
                  "\n"
-                 "ARGUMENTS := [id | uuid | path] <ID>\n"
+                 "ARGUMENTS := [id | uuid | path] <ID>, ...\n"
                  "\n"
-                 "Delete a connection profile.\n"
-                 "The profile is identified by its name, UUID or D-Bus path.\n\n"));
+                 "Delete connection profiles.\n"
+                 "The profiles are identified by their name, UUID or D-Bus path.\n\n"));
 }
 
 static void
@@ -1292,6 +1292,17 @@ usage_connection_export(void)
                  "\n"
                  "Export a connection. Only VPN connections are supported at the moment.\n"
                  "The data are directed to standard output or to a file if a name is given.\n\n"));
+}
+
+static void
+usage_connection_migrate(void)
+{
+    g_printerr(_("Usage: nmcli connection migrate { ARGUMENTS | help }\n"
+                 "\n"
+                 "ARGUMENTS := [--plugin <plugin>] [id | uuid | path] <ID>, ...\n"
+                 "\n"
+                 "Migrate connection profiles to a different settings plugin,\n"
+                 "such as \"keyfile\" (default) or \"ifcfg-rh\".\n\n"));
 }
 
 static void
@@ -9138,8 +9149,11 @@ do_connection_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
             nmc->return_value = error->code;
             g_clear_error(&error);
 
-            if (nmc->return_value != NMC_RESULT_ERROR_NOT_FOUND)
+            if (nmc->return_value != NMC_RESULT_ERROR_NOT_FOUND) {
+                g_string_free(invalid_cons, TRUE);
+                invalid_cons = NULL;
                 goto finish;
+            }
 
             if (!invalid_cons)
                 invalid_cons = g_string_new(NULL);
@@ -9192,7 +9206,6 @@ finish:
         g_string_printf(nmc->return_text,
                         _("Error: cannot delete unknown connection(s): %s."),
                         invalid_cons->str);
-        nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
     }
 }
 
@@ -9645,6 +9658,154 @@ finish:
         unlink(path);
 }
 
+static void
+migrate_cb(GObject *obj, GAsyncResult *result, gpointer user_data)
+{
+    ConnectionCbInfo          *info       = (ConnectionCbInfo *) user_data;
+    NMConnection              *connection = NM_CONNECTION(obj);
+    gs_unref_variant GVariant *res        = NULL;
+    GError                    *error      = NULL;
+
+    res = nm_remote_connection_update2_finish(NM_REMOTE_CONNECTION(obj), result, &error);
+    if (!res) {
+        g_string_printf(info->nmc->return_text, _("Error: not all connections migrated."));
+        g_printerr(_("Error: Connection migration failed: %s\n"), error->message);
+        g_error_free(error);
+        info->nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+    } else {
+        g_print(_("Connection '%s' (%s) successfully migrated.\n"),
+                nm_connection_get_id(connection),
+                nm_connection_get_uuid(connection));
+    }
+    connection_cb_info_finish(info, obj);
+}
+
+static void
+do_connection_migrate(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
+{
+    NMConnection                 *connection;
+    ConnectionCbInfo             *info    = NULL;
+    gs_strfreev char            **arg_arr = NULL;
+    const char *const            *arg_ptr;
+    guint                         i;
+    int                           arg_num;
+    nm_auto_free_gstring GString *invalid_cons = NULL;
+    gs_unref_ptrarray GPtrArray  *found_cons   = NULL;
+    GError                       *error        = NULL;
+    const char                   *plugin       = "keyfile";
+    const GPtrArray              *connections  = NULL;
+    int                           option;
+
+    if (nmc->timeout == -1)
+        nmc->timeout = 10;
+
+    while ((option = next_arg(nmc, &argc, &argv, "--plugin", NULL)) > 0) {
+        switch (option) {
+        case 1: /* --plugin */
+            argc--;
+            argv++;
+            if (!argc) {
+                g_set_error_literal(&error, NMCLI_ERROR, 0, _("'--plugin' argument is missing"));
+                goto finish;
+            }
+            plugin = *argv;
+            break;
+        default:
+            g_return_if_reached();
+            break;
+        }
+    }
+
+    arg_ptr = argv;
+    arg_num = argc;
+    if (argc == 0) {
+        if (nmc->ask) {
+            gs_free char *line = NULL;
+
+            /* nmc_do_cmd() should not call this with argc=0. */
+            g_assert(!nmc->complete);
+
+            line = nmc_readline(&nmc->nmc_config, PROMPT_CONNECTIONS);
+            nmc_string_to_arg_array(line, NULL, TRUE, &arg_arr, &arg_num);
+            arg_ptr = (const char *const *) arg_arr;
+        }
+    }
+
+    while (arg_num > 0) {
+        const char *cur_selector, *cur_value;
+
+        connection =
+            get_connection(nmc, &arg_num, &arg_ptr, &cur_selector, &cur_value, &found_cons, &error);
+        if (!connection) {
+            if (!nmc->complete)
+                g_printerr(_("Error: %s.\n"), error->message);
+            g_string_printf(nmc->return_text, _("Error: not all connections found."));
+            nmc->return_value = error->code;
+            g_clear_error(&error);
+
+            if (nmc->return_value != NMC_RESULT_ERROR_NOT_FOUND) {
+                g_string_free(invalid_cons, TRUE);
+                invalid_cons = NULL;
+                goto finish;
+            }
+
+            if (!invalid_cons)
+                invalid_cons = g_string_new(NULL);
+            if (cur_selector)
+                g_string_append_printf(invalid_cons, "%s '%s', ", cur_selector, cur_value);
+            else
+                g_string_append_printf(invalid_cons, "'%s', ", cur_value);
+        }
+    }
+
+    if (nmc->complete)
+        goto finish;
+
+    if (invalid_cons)
+        goto finish;
+
+    if (!found_cons) {
+        /* No connections specified explicitly? Fine, add all. */
+        found_cons  = g_ptr_array_new();
+        connections = nm_client_get_connections(nmc->client);
+        for (i = 0; i < connections->len; i++) {
+            connection = connections->pdata[i];
+            g_ptr_array_add(found_cons, connection);
+        }
+    }
+
+    info           = g_slice_new0(ConnectionCbInfo);
+    info->nmc      = nmc;
+    info->obj_list = g_ptr_array_sized_new(found_cons->len);
+    for (i = 0; i < found_cons->len; i++) {
+        connection = found_cons->pdata[i];
+        g_ptr_array_add(info->obj_list, g_object_ref(connection));
+    }
+    info->timeout_id  = g_timeout_add_seconds(nmc->timeout, connection_op_timeout_cb, info);
+    info->cancellable = g_cancellable_new();
+
+    nmc->nowait_flag = (nmc->timeout == 0);
+    nmc->should_wait++;
+
+    for (i = 0; i < found_cons->len; i++) {
+        nm_remote_connection_update2(NM_REMOTE_CONNECTION(found_cons->pdata[i]),
+                                     NULL,
+                                     0,
+                                     g_variant_new_parsed("{'plugin': <%s>}", plugin),
+                                     info->cancellable,
+                                     migrate_cb,
+                                     info);
+    }
+
+finish:
+    if (invalid_cons) {
+        g_string_truncate(invalid_cons, invalid_cons->len - 2); /* truncate trailing ", " */
+        g_string_printf(nmc->return_text,
+                        _("Error: cannot migrate unknown connection(s): %s."),
+                        invalid_cons->str);
+    }
+}
+
 static char *
 gen_func_connection_names(const char *text, int state)
 {
@@ -9752,6 +9913,7 @@ nmc_command_func_connection(const NMCCommand *cmd, NmCli *nmc, int argc, const c
         {"clone", do_connection_clone, usage_connection_clone, TRUE, TRUE},
         {"import", do_connection_import, usage_connection_import, TRUE, TRUE},
         {"export", do_connection_export, usage_connection_export, TRUE, TRUE},
+        {"migrate", do_connection_migrate, usage_connection_migrate, TRUE, TRUE},
         {"monitor", do_connection_monitor, usage_connection_monitor, TRUE, TRUE},
         {NULL, do_connections_show, usage, TRUE, TRUE},
     };

@@ -1352,6 +1352,7 @@ _conn_create_panu_connection(NMBluezManager *self, BzDBusObj *bzobj)
           bzobj->d_device.address);
 
     nm_settings_add_connection(priv->settings,
+                               NULL,
                                connection,
                                NM_SETTINGS_CONNECTION_PERSIST_MODE_IN_MEMORY_ONLY,
                                NM_SETTINGS_CONNECTION_ADD_REASON_NONE,

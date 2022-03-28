@@ -240,6 +240,7 @@ nm_settings_connection_has_unmodified_applied_connection(NMSettingsConnection *s
                                                          NMSettingCompareFlags compare_flage);
 
 gboolean nm_settings_connection_update(NMSettingsConnection            *self,
+                                       const char                      *plugin_name,
                                        NMConnection                    *new_connection,
                                        NMSettingsConnectionPersistMode  persist_mode,
                                        NMSettingsConnectionIntFlags     sett_flags,
