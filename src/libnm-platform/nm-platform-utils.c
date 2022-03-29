@@ -2132,12 +2132,15 @@ guint32
 nmp_utils_lifetime_get(guint32  timestamp,
                        guint32  lifetime,
                        guint32  preferred,
-                       gint32   now,
+                       gint32  *cached_now,
                        guint32 *out_preferred)
 {
-    guint32 t_lifetime, t_preferred;
+    guint32 t_lifetime;
+    guint32 t_preferred;
+    gint32  now;
 
-    nm_assert(now >= 0);
+    nm_assert(cached_now);
+    nm_assert(*cached_now >= 0);
 
     if (timestamp == 0 && lifetime == 0) {
         /* We treat lifetime==0 && timestamp==0 addresses as permanent addresses to allow easy
@@ -2150,8 +2153,7 @@ nmp_utils_lifetime_get(guint32  timestamp,
         return NM_PLATFORM_LIFETIME_PERMANENT;
     }
 
-    if (now <= 0)
-        now = nm_utils_get_monotonic_timestamp_sec();
+    now = nm_utils_get_monotonic_timestamp_sec_cached(cached_now);
 
     t_lifetime = nmp_utils_lifetime_rebase_relative_time_on_now(timestamp, lifetime, now);
     if (!t_lifetime) {
