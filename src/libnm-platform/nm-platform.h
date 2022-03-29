@@ -776,10 +776,10 @@ typedef struct {
 #undef __NMPlatformObjWithIfindex_COMMON
 
 typedef struct {
-    gboolean      is_ip4;
+    bool          is_ip4;
+    gint8         addr_family;
+    guint8        sizeof_route;
     NMPObjectType obj_type;
-    int           addr_family;
-    gsize         sizeof_route;
     int (*route_cmp)(const NMPlatformIPXRoute *a,
                      const NMPlatformIPXRoute *b,
                      NMPlatformIPRouteCmpType  cmp_type);
