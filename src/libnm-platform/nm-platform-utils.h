@@ -86,7 +86,7 @@ nmp_utils_lifetime_rebase_relative_time_on_now(guint32 timestamp, guint32 durati
 guint32 nmp_utils_lifetime_get(guint32  timestamp,
                                guint32  lifetime,
                                guint32  preferred,
-                               gint32   now,
+                               gint32  *cached_now,
                                guint32 *out_preferred);
 
 int nmp_utils_modprobe(GError **error, gboolean suppress_error_logging, const char *arg1, ...)

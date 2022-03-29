@@ -996,6 +996,7 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
     const NMPObject       *obj;
     guint                  len;
     guint                  i;
+    gint32                 fake_now = NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000;
 
     nm_assert(NM_IS_NDISC(ndisc));
     nm_assert(nm_ndisc_get_node_type(ndisc) == NM_NDISC_NODE_TYPE_ROUTER);
@@ -1018,7 +1019,7 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
         lifetime = nmp_utils_lifetime_get(addr->timestamp,
                                           addr->lifetime,
                                           addr->preferred,
-                                          NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000,
+                                          &fake_now,
                                           &preferred);
         if (!lifetime)
             continue;
