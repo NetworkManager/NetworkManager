@@ -799,7 +799,7 @@ nmp_object_new_link(int ifindex)
 
 /*****************************************************************************/
 
-static void
+static NMPObject *
 _nmp_object_stackinit_from_class(NMPObject *obj, const NMPClass *klass)
 {
     nm_assert(obj);
@@ -812,25 +812,13 @@ _nmp_object_stackinit_from_class(NMPObject *obj, const NMPClass *klass)
                 ._ref_count = NM_OBJ_REF_COUNT_STACKINIT,
             },
     };
+    return obj;
 }
 
 static NMPObject *
 _nmp_object_stackinit_from_type(NMPObject *obj, NMPObjectType obj_type)
 {
-    const NMPClass *klass;
-
-    nm_assert(obj);
-    klass = nmp_class_from_type(obj_type);
-    nm_assert(klass);
-
-    *obj = (NMPObject){
-        .parent =
-            {
-                .klass      = (const NMDedupMultiObjClass *) klass,
-                ._ref_count = NM_OBJ_REF_COUNT_STACKINIT,
-            },
-    };
-    return obj;
+    return _nmp_object_stackinit_from_class(obj, nmp_class_from_type(obj_type));
 }
 
 const NMPObject *
