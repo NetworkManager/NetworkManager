@@ -3696,7 +3696,7 @@ static gboolean
 _addr_array_clean_expired(int          addr_family,
                           int          ifindex,
                           GPtrArray   *array,
-                          guint32      now,
+                          gint32      *cached_now,
                           GHashTable **idx)
 {
     guint    i;
@@ -3704,7 +3704,8 @@ _addr_array_clean_expired(int          addr_family,
 
     nm_assert_addr_family(addr_family);
     nm_assert(ifindex > 0);
-    nm_assert(now > 0);
+    nm_assert(cached_now);
+    nm_assert(*cached_now >= 0);
 
     if (!array)
         return FALSE;
@@ -3738,7 +3739,7 @@ _addr_array_clean_expired(int          addr_family,
             goto clear_and_next;
         }
 
-        if (!nmp_utils_lifetime_get(a->timestamp, a->lifetime, a->preferred, now, NULL))
+        if (!nmp_utils_lifetime_get(a->timestamp, a->lifetime, a->preferred, cached_now, NULL))
             goto clear_and_next;
 
         if (G_UNLIKELY(!*idx)) {
@@ -3981,7 +3982,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
                             GPtrArray  *known_addresses,
                             GPtrArray  *addresses_prune)
 {
-    const gint32                   now     = nm_utils_get_monotonic_timestamp_sec();
+    gint32                         now     = 0;
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
     NMPLookup                      lookup;
     const gboolean                 EXTRA_LOGGING       = FALSE;
@@ -4043,7 +4044,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
     if (!_addr_array_clean_expired(addr_family,
                                    ifindex,
                                    known_addresses,
-                                   now,
+                                   &now,
                                    &known_addresses_idx))
         known_addresses = NULL;
 
@@ -4328,7 +4329,7 @@ next_plat:;
         lifetime = nmp_utils_lifetime_get(known_address->ax.timestamp,
                                           known_address->ax.lifetime,
                                           known_address->ax.preferred,
-                                          now,
+                                          &now,
                                           &preferred);
         nm_assert(lifetime > 0);
 
